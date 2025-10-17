@@ -1,8 +1,71 @@
-# Documentation to Claude Skill Converter
+# Skill Seeker
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 
-**Single powerful tool to convert ANY documentation website into a Claude skill.**
+**Automatically convert any documentation website into a Claude AI skill in minutes.**
+
+## What is Skill Seeker?
+
+Skill Seeker is an automated tool that transforms any documentation website into a production-ready [Claude AI skill](https://claude.ai). Instead of manually reading and summarizing documentation, Skill Seeker:
+
+1. **Scrapes** documentation websites automatically
+2. **Organizes** content into categorized reference files
+3. **Enhances** with AI to extract best examples and key concepts
+4. **Packages** everything into an uploadable `.zip` file for Claude
+
+**Result:** Get comprehensive Claude skills for any framework, API, or tool in 20-40 minutes instead of hours of manual work.
+
+## Why Use This?
+
+- 🎯 **For Developers**: Quickly create Claude skills for your favorite frameworks (React, Vue, Django, etc.)
+- 🎮 **For Game Devs**: Generate skills for game engines (Godot, Unity documentation, etc.)
+- 🔧 **For Teams**: Create internal documentation skills for your company's APIs
+- 📚 **For Learners**: Build comprehensive reference skills for technologies you're learning
+
+## Key Features
+
+✅ **Universal Scraper** - Works with ANY documentation website
+✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
+✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
+✅ **Smart Categorization** - Automatically organizes content by topic
+✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
+✅ **No API Costs** - FREE local enhancement using Claude Code Max
+✅ **Caching System** - Scrape once, rebuild instantly
+
+## Quick Example
+
+```bash
+# Install dependencies (2 pip packages)
+pip3 install requests beautifulsoup4
+
+# Generate a React skill in one command
+python3 doc_scraper.py --config configs/react.json --enhance-local
+
+# Upload output/react.zip to Claude - Done!
+```
+
+**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+## How It Works
+
+```mermaid
+graph LR
+    A[Documentation Website] --> B[Skill Seeker]
+    B --> C[Scraper]
+    B --> D[AI Enhancement]
+    B --> E[Packager]
+    C --> F[Organized References]
+    D --> F
+    F --> E
+    E --> G[Claude Skill .zip]
+    G --> H[Upload to Claude AI]
+```
+
+1. **Scrape**: Extracts all pages from documentation
+2. **Categorize**: Organizes content into topics (API, guides, tutorials, etc.)
+3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples
+4. **Package**: Bundles everything into a Claude-ready `.zip` file
 
 ## 🚀 Quick Start
 
