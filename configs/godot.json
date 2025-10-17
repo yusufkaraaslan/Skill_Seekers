@@ -1,0 +1,34 @@
+{
+  "name": "godot",
+  "description": "Godot Engine game development. Use for Godot projects, GDScript/C# coding, scene setup, node systems, 2D/3D development, physics, animation, UI, shaders, or any Godot-specific questions.",
+  "base_url": "https://docs.godotengine.org/en/stable/",
+  "selectors": {
+    "main_content": "div[role='main']",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": [
+      "/genindex.html",
+      "/search.html",
+      "/_static/",
+      "/_sources/"
+    ]
+  },
+  "categories": {
+    "getting_started": ["introduction", "getting_started", "first", "your_first"],
+    "scripting": ["scripting", "gdscript", "c#", "csharp"],
+    "2d": ["/2d/", "sprite", "canvas", "tilemap"],
+    "3d": ["/3d/", "spatial", "mesh", "3d_"],
+    "physics": ["physics", "collision", "rigidbody", "characterbody"],
+    "animation": ["animation", "tween", "animationplayer"],
+    "ui": ["ui", "control", "gui", "theme"],
+    "shaders": ["shader", "material", "visual_shader"],
+    "audio": ["audio", "sound"],
+    "networking": ["networking", "multiplayer", "rpc"],
+    "export": ["export", "platform", "deploy"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 500
+}

@@ -1,0 +1,24 @@
+{
+  "name": "fastapi",
+  "description": "FastAPI modern Python web framework. Use for building APIs, async endpoints, dependency injection, and Python backend development.",
+  "base_url": "https://fastapi.tiangolo.com/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/tutorial/", "/advanced/", "/reference/"],
+    "exclude": ["/help/", "/external-links/"]
+  },
+  "categories": {
+    "getting_started": ["first-steps", "tutorial", "intro"],
+    "path_operations": ["path", "operations", "routing"],
+    "request_data": ["request", "body", "query", "parameters"],
+    "dependencies": ["dependencies", "injection"],
+    "security": ["security", "oauth", "authentication"],
+    "database": ["database", "sql", "orm"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 250
+}

@@ -1,0 +1,25 @@
+{
+  "name": "django",
+  "description": "Django web framework for Python. Use for Django models, views, templates, ORM, authentication, and web development.",
+  "base_url": "https://docs.djangoproject.com/en/stable/",
+  "selectors": {
+    "main_content": "div.document",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/topics/", "/ref/", "/howto/"],
+    "exclude": ["/faq/", "/misc/"]
+  },
+  "categories": {
+    "getting_started": ["intro", "tutorial", "install"],
+    "models": ["models", "database", "orm", "queries"],
+    "views": ["views", "urlconf", "routing"],
+    "templates": ["templates", "template"],
+    "forms": ["forms", "form"],
+    "authentication": ["auth", "authentication", "user"],
+    "api": ["ref", "reference"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 500
+}

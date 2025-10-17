@@ -1,0 +1,23 @@
+{
+  "name": "vue",
+  "description": "Vue.js progressive JavaScript framework. Use for Vue components, reactivity, composition API, and frontend development.",
+  "base_url": "https://vuejs.org/guide/",
+  "selectors": {
+    "main_content": "main",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/guide/", "/api/", "/examples/"],
+    "exclude": ["/about/", "/sponsor/"]
+  },
+  "categories": {
+    "getting_started": ["quick-start", "introduction", "essentials"],
+    "components": ["component", "props", "events"],
+    "reactivity": ["reactivity", "reactive", "ref", "computed"],
+    "composition_api": ["composition", "setup"],
+    "api": ["api", "reference"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}
