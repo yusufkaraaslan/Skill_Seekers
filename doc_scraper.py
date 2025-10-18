@@ -24,27 +24,29 @@ from collections import deque, defaultdict
 
 
 class DocToSkillConverter:
-    def __init__(self, config):
+    def __init__(self, config, dry_run=False):
         self.config = config
         self.name = config['name']
         self.base_url = config['base_url']
-        
+        self.dry_run = dry_run
+
         # Paths
         self.data_dir = f"output/{self.name}_data"
         self.skill_dir = f"output/{self.name}"
-        
+
         # State
         self.visited_urls = set()
         # Support multiple starting URLs
         start_urls = config.get('start_urls', [self.base_url])
         self.pending_urls = deque(start_urls)
         self.pages = []
-        
-        # Create directories
-        os.makedirs(f"{self.data_dir}/pages", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
+
+        # Create directories (unless dry-run)
+        if not dry_run:
+            os.makedirs(f"{self.data_dir}/pages", exist_ok=True)
+            os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
+            os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
+            os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
     
     def is_valid_url(self, url):
         """Check if URL should be scraped"""
@@ -228,27 +230,64 @@ class DocToSkillConverter:
     def scrape_all(self):
         """Scrape all pages"""
         print(f"\n{'='*60}")
-        print(f"SCRAPING: {self.name}")
+        if self.dry_run:
+            print(f"DRY RUN: {self.name}")
+        else:
+            print(f"SCRAPING: {self.name}")
         print(f"{'='*60}")
         print(f"Base URL: {self.base_url}")
-        print(f"Output: {self.data_dir}\n")
-        
+
+        if self.dry_run:
+            print(f"Mode: Preview only (no actual scraping)\n")
+        else:
+            print(f"Output: {self.data_dir}\n")
+
         max_pages = self.config.get('max_pages', 500)
-        
-        while self.pending_urls and len(self.visited_urls) < max_pages:
+
+        # Dry run: preview first 20 URLs
+        preview_limit = 20 if self.dry_run else max_pages
+
+        while self.pending_urls and len(self.visited_urls) < preview_limit:
             url = self.pending_urls.popleft()
-            
+
             if url in self.visited_urls:
                 continue
-            
+
             self.visited_urls.add(url)
-            self.scrape_page(url)
-            
+
+            if self.dry_run:
+                # Just show what would be scraped
+                print(f"  [Preview] {url}")
+                # Simulate finding links without actually scraping
+                try:
+                    headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper - Dry Run)'}
+                    response = requests.get(url, headers=headers, timeout=10)
+                    soup = BeautifulSoup(response.content, 'html.parser')
+
+                    main_selector = self.config.get('selectors', {}).get('main_content', 'div[role="main"]')
+                    main = soup.select_one(main_selector)
+
+                    if main:
+                        for link in main.find_all('a', href=True):
+                            href = urljoin(url, link['href'])
+                            if self.is_valid_url(href) and href not in self.visited_urls:
+                                self.pending_urls.append(href)
+                except:
+                    pass  # Ignore errors in dry run
+            else:
+                self.scrape_page(url)
+
             if len(self.visited_urls) % 10 == 0:
                 print(f"  [{len(self.visited_urls)} pages]")
-        
-        print(f"\n✅ Scraped {len(self.visited_urls)} pages")
-        self.save_summary()
+
+        if self.dry_run:
+            print(f"\n✅ Dry run complete: would scrape ~{len(self.visited_urls)} pages")
+            if len(self.visited_urls) >= preview_limit:
+                print(f"   (showing first {preview_limit}, actual scraping may find more)")
+            print(f"\n💡 To actually scrape, run without --dry-run")
+        else:
+            print(f"\n✅ Scraped {len(self.visited_urls)} pages")
+            self.save_summary()
     
     def save_summary(self):
         """Save scraping summary"""
@@ -601,10 +640,108 @@ To refresh this skill with updated documentation:
         return True
 
 
+def validate_config(config):
+    """Validate configuration structure"""
+    errors = []
+
+    # Required fields
+    required_fields = ['name', 'base_url']
+    for field in required_fields:
+        if field not in config:
+            errors.append(f"Missing required field: '{field}'")
+
+    # Validate name (alphanumeric, hyphens, underscores only)
+    if 'name' in config:
+        if not re.match(r'^[a-zA-Z0-9_-]+$', config['name']):
+            errors.append(f"Invalid name: '{config['name']}' (use only letters, numbers, hyphens, underscores)")
+
+    # Validate base_url
+    if 'base_url' in config:
+        if not config['base_url'].startswith(('http://', 'https://')):
+            errors.append(f"Invalid base_url: '{config['base_url']}' (must start with http:// or https://)")
+
+    # Validate selectors structure
+    if 'selectors' in config:
+        if not isinstance(config['selectors'], dict):
+            errors.append("'selectors' must be a dictionary")
+        else:
+            recommended_selectors = ['main_content', 'title', 'code_blocks']
+            for selector in recommended_selectors:
+                if selector not in config['selectors']:
+                    errors.append(f"Missing recommended selector: '{selector}'")
+    else:
+        errors.append("Missing 'selectors' section (recommended)")
+
+    # Validate url_patterns
+    if 'url_patterns' in config:
+        if not isinstance(config['url_patterns'], dict):
+            errors.append("'url_patterns' must be a dictionary")
+        else:
+            for key in ['include', 'exclude']:
+                if key in config['url_patterns']:
+                    if not isinstance(config['url_patterns'][key], list):
+                        errors.append(f"'url_patterns.{key}' must be a list")
+
+    # Validate categories
+    if 'categories' in config:
+        if not isinstance(config['categories'], dict):
+            errors.append("'categories' must be a dictionary")
+        else:
+            for cat_name, keywords in config['categories'].items():
+                if not isinstance(keywords, list):
+                    errors.append(f"'categories.{cat_name}' must be a list of keywords")
+
+    # Validate rate_limit
+    if 'rate_limit' in config:
+        try:
+            rate = float(config['rate_limit'])
+            if rate < 0 or rate > 10:
+                errors.append(f"'rate_limit' should be between 0 and 10 (got {rate})")
+        except (ValueError, TypeError):
+            errors.append(f"'rate_limit' must be a number (got {config['rate_limit']})")
+
+    # Validate max_pages
+    if 'max_pages' in config:
+        try:
+            max_p = int(config['max_pages'])
+            if max_p < 1 or max_p > 10000:
+                errors.append(f"'max_pages' should be between 1 and 10000 (got {max_p})")
+        except (ValueError, TypeError):
+            errors.append(f"'max_pages' must be an integer (got {config['max_pages']})")
+
+    # Validate start_urls if present
+    if 'start_urls' in config:
+        if not isinstance(config['start_urls'], list):
+            errors.append("'start_urls' must be a list")
+        else:
+            for url in config['start_urls']:
+                if not url.startswith(('http://', 'https://')):
+                    errors.append(f"Invalid start_url: '{url}' (must start with http:// or https://)")
+
+    return errors
+
+
 def load_config(config_path):
-    """Load configuration from file"""
-    with open(config_path, 'r') as f:
-        return json.load(f)
+    """Load and validate configuration from file"""
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"❌ Error: Invalid JSON in config file: {e}")
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"❌ Error: Config file not found: {config_path}")
+        sys.exit(1)
+
+    # Validate config
+    errors = validate_config(config)
+    if errors:
+        print(f"❌ Configuration validation errors in {config_path}:")
+        for error in errors:
+            print(f"   - {error}")
+        sys.exit(1)
+
+    return config
 
 
 def interactive_config():
@@ -678,6 +815,8 @@ def main():
                        help='Skill description')
     parser.add_argument('--skip-scrape', action='store_true',
                        help='Skip scraping, use existing data')
+    parser.add_argument('--dry-run', action='store_true',
+                       help='Preview what will be scraped without actually scraping')
     parser.add_argument('--enhance', action='store_true',
                        help='Enhance SKILL.md using Claude API after building (requires API key)')
     parser.add_argument('--enhance-local', action='store_true',
@@ -707,18 +846,36 @@ def main():
             'max_pages': 500
         }
     
+    # Dry run mode - preview only
+    if args.dry_run:
+        print(f"\n{'='*60}")
+        print("DRY RUN MODE")
+        print(f"{'='*60}")
+        print("This will show what would be scraped without saving anything.\n")
+
+        converter = DocToSkillConverter(config, dry_run=True)
+        converter.scrape_all()
+
+        print(f"\n📋 Configuration Summary:")
+        print(f"   Name: {config['name']}")
+        print(f"   Base URL: {config['base_url']}")
+        print(f"   Max pages: {config.get('max_pages', 500)}")
+        print(f"   Rate limit: {config.get('rate_limit', 0.5)}s")
+        print(f"   Categories: {len(config.get('categories', {}))}")
+        return
+
     # Check for existing data
     exists, page_count = check_existing_data(config['name'])
-    
+
     if exists and not args.skip_scrape:
         print(f"\n✓ Found existing data: {page_count} pages")
         response = input("Use existing data? (y/n): ").strip().lower()
         if response == 'y':
             args.skip_scrape = True
-    
+
     # Create converter
     converter = DocToSkillConverter(config)
-    
+
     # Scrape or skip
     if not args.skip_scrape:
         try:
@@ -730,7 +887,7 @@ def main():
                 return
     else:
         print(f"\n⏭️  Skipping scrape, using existing data")
-    
+
     # Build skill
     success = converter.build_skill()
 
@@ -775,7 +932,7 @@ def main():
             print(f"  python3 enhance_skill_local.py output/{config['name']}/")
 
     print(f"\n📦 Package your skill:")
-    print(f"  python3 /mnt/skills/examples/skill-creator/scripts/package_skill.py output/{config['name']}/")
+    print(f"  python3 package_skill.py output/{config['name']}/")
 
     if not args.enhance and not args.enhance_local:
         print(f"\n💡 Optional: Enhance SKILL.md with Claude:")
