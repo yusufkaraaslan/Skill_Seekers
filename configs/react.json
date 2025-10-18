@@ -2,6 +2,14 @@
   "name": "react",
   "description": "React framework for building user interfaces. Use for React components, hooks, state management, JSX, and modern frontend development.",
   "base_url": "https://react.dev/",
+  "start_urls": [
+    "https://react.dev/learn",
+    "https://react.dev/learn/quick-start",
+    "https://react.dev/learn/thinking-in-react",
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-dom",
+    "https://react.dev/reference/react/hooks"
+  ],
   "selectors": {
     "main_content": "article",
     "title": "h1",

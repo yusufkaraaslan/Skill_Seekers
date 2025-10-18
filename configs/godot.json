@@ -2,13 +2,26 @@
   "name": "godot",
   "description": "Godot Engine game development. Use for Godot projects, GDScript/C# coding, scene setup, node systems, 2D/3D development, physics, animation, UI, shaders, or any Godot-specific questions.",
   "base_url": "https://docs.godotengine.org/en/stable/",
+  "start_urls": [
+    "https://docs.godotengine.org/en/stable/getting_started/introduction/index.html",
+    "https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/index.html",
+    "https://docs.godotengine.org/en/stable/tutorials/2d/index.html",
+    "https://docs.godotengine.org/en/stable/tutorials/3d/index.html",
+    "https://docs.godotengine.org/en/stable/tutorials/physics/index.html",
+    "https://docs.godotengine.org/en/stable/tutorials/animation/index.html",
+    "https://docs.godotengine.org/en/stable/classes/index.html"
+  ],
   "selectors": {
     "main_content": "div[role='main']",
     "title": "title",
     "code_blocks": "pre"
   },
   "url_patterns": {
-    "include": [],
+    "include": [
+      "/getting_started/",
+      "/tutorials/",
+      "/classes/"
+    ],
     "exclude": [
       "/genindex.html",
       "/search.html",
