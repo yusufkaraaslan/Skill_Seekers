@@ -40,11 +40,15 @@ python3 doc_scraper.py --config configs/fastapi.json
 # 1. Install dependencies (one-time)
 pip3 install requests beautifulsoup4
 
-# 2. Scrape with local enhancement (uses Claude Code Max, no API key)
+# 2. Estimate page count BEFORE scraping (fast, no data download)
+python3 estimate_pages.py configs/godot.json
+# Time: ~1-2 minutes, shows estimated total pages and recommended max_pages
+
+# 3. Scrape with local enhancement (uses Claude Code Max, no API key)
 python3 doc_scraper.py --config configs/godot.json --enhance-local
 # Time: 20-40 minutes scraping + 60 seconds enhancement
 
-# 3. Package the skill
+# 4. Package the skill
 python3 package_skill.py output/godot/
 
 # Result: godot.zip ready to upload to Claude
@@ -109,6 +113,35 @@ rm -rf output/godot_data/
 python3 doc_scraper.py --config configs/godot.json
 ```
 
+### Estimate Page Count (Before Scraping)
+
+```bash
+# Quick estimation - discover up to 100 pages
+python3 estimate_pages.py configs/react.json --max-discovery 100
+# Time: ~30-60 seconds
+
+# Full estimation - discover up to 1000 pages (default)
+python3 estimate_pages.py configs/godot.json
+# Time: ~1-2 minutes
+
+# Deep estimation - discover up to 2000 pages
+python3 estimate_pages.py configs/vue.json --max-discovery 2000
+# Time: ~3-5 minutes
+
+# What it shows:
+# - Estimated total pages
+# - Recommended max_pages value
+# - Estimated scraping time
+# - Discovery rate (pages/sec)
+```
+
+**Why use estimation:**
+- Validates config URL patterns before full scrape
+- Helps set optimal `max_pages` value
+- Estimates total scraping time
+- Fast (only HEAD requests + minimal parsing)
+- No data downloaded or stored
+
 ## Repository Architecture
 
 ### File Structure
@@ -116,9 +149,11 @@ python3 doc_scraper.py --config configs/godot.json
 ```
 Skill_Seekers/
 ├── doc_scraper.py              # Main tool (single-file, ~790 lines)
+├── estimate_pages.py           # Page count estimator (fast, no data)
 ├── enhance_skill.py            # AI enhancement (API-based)
 ├── enhance_skill_local.py      # AI enhancement (LOCAL, no API)
 ├── package_skill.py            # Skill packager
+├── run_tests.py                # Test runner (71 tests)
 ├── configs/                    # Preset configurations
 │   ├── godot.json
 │   ├── react.json

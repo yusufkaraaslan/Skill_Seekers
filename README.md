@@ -75,6 +75,9 @@ graph LR
 # Install dependencies (macOS)
 pip3 install requests beautifulsoup4
 
+# Optional: Estimate pages first (fast, 1-2 minutes)
+python3 estimate_pages.py configs/godot.json
+
 # Use Godot preset
 python3 doc_scraper.py --config configs/godot.json
 
@@ -119,7 +122,27 @@ doc-to-skill/
 
 ## ✨ Features
 
-### 1. Auto-Detect Existing Data
+### 1. Fast Page Estimation (NEW!)
+
+```bash
+python3 estimate_pages.py configs/react.json
+
+# Output:
+📊 ESTIMATION RESULTS
+✅ Pages Discovered: 180
+📈 Estimated Total: 230
+⏱️  Time Elapsed: 1.2 minutes
+💡 Recommended max_pages: 280
+```
+
+**Benefits:**
+- Know page count BEFORE scraping (saves time)
+- Validates URL patterns work correctly
+- Estimates total scraping time
+- Recommends optimal `max_pages` setting
+- Fast (1-2 minutes vs 20-40 minutes full scrape)
+
+### 2. Auto-Detect Existing Data
 
 ```bash
 python3 doc_scraper.py --config configs/godot.json
@@ -130,7 +153,7 @@ Use existing data? (y/n): y
 ⏭️  Skipping scrape, using existing data
 ```
 
-### 2. Knowledge Generation
+### 3. Knowledge Generation
 
 **Automatic pattern extraction:**
 - Extracts common code patterns from docs
@@ -144,7 +167,7 @@ Use existing data? (y/n): y
 - Common patterns section
 - Quick reference from actual usage examples
 
-### 3. Smart Categorization
+### 4. Smart Categorization
 
 Automatically infers categories from:
 - URL structure
@@ -152,7 +175,7 @@ Automatically infers categories from:
 - Content keywords
 - With scoring for better accuracy
 
-### 4. Code Language Detection
+### 5. Code Language Detection
 
 ```python
 # Automatically detects:
