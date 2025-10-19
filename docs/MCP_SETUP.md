@@ -25,10 +25,10 @@ Step-by-step guide to set up the Skill Seeker MCP server with Claude Code.
 
 ### Required Software
 
-1. **Python 3.7 or higher**
+1. **Python 3.9 or higher**
    ```bash
    python3 --version
-   # Should show: Python 3.7.x or higher
+   # Should show: Python 3.9.x or higher
    ```
 
 2. **Claude Code installed**

@@ -25,7 +25,7 @@ Skill Seeker automatically converts any documentation website into a Claude AI s
 
 ## Prerequisites
 
-**Python Version:** Python 3.7 or higher
+**Python Version:** Python 3.9 or higher
 
 **Required Dependencies:**
 ```bash

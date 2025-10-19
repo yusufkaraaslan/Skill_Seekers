@@ -10,15 +10,16 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
         exclude:
           # Exclude some combinations to speed up CI
           - os: macos-latest
-            python-version: '3.7'
+            python-version: '3.9'
           - os: macos-latest
-            python-version: '3.8'
+            python-version: '3.10'
 
     steps:
     - uses: actions/checkout@v3

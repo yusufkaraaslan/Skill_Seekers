@@ -103,7 +103,7 @@ We actively welcome your pull requests!
 
 ### Prerequisites
 
-- Python 3.7 or higher
+- Python 3.9 or higher
 - Git
 
 ### Setup Steps
