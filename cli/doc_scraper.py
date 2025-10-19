@@ -24,15 +24,22 @@ from collections import deque, defaultdict
 
 
 class DocToSkillConverter:
-    def __init__(self, config, dry_run=False):
+    def __init__(self, config, dry_run=False, resume=False):
         self.config = config
         self.name = config['name']
         self.base_url = config['base_url']
         self.dry_run = dry_run
+        self.resume = resume
 
         # Paths
         self.data_dir = f"output/{self.name}_data"
         self.skill_dir = f"output/{self.name}"
+        self.checkpoint_file = f"{self.data_dir}/checkpoint.json"
+
+        # Checkpoint config
+        checkpoint_config = config.get('checkpoint', {})
+        self.checkpoint_enabled = checkpoint_config.get('enabled', False)
+        self.checkpoint_interval = checkpoint_config.get('interval', 1000)
 
         # State
         self.visited_urls = set()
@@ -40,6 +47,7 @@ class DocToSkillConverter:
         start_urls = config.get('start_urls', [self.base_url])
         self.pending_urls = deque(start_urls)
         self.pages = []
+        self.pages_scraped = 0
 
         # Create directories (unless dry-run)
         if not dry_run:
@@ -47,24 +55,83 @@ class DocToSkillConverter:
             os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
+
+        # Load checkpoint if resuming
+        if resume and not dry_run:
+            self.load_checkpoint()
     
     def is_valid_url(self, url):
         """Check if URL should be scraped"""
         if not url.startswith(self.base_url):
             return False
-        
+
         # Include patterns
         includes = self.config.get('url_patterns', {}).get('include', [])
         if includes and not any(pattern in url for pattern in includes):
             return False
-        
+
         # Exclude patterns
         excludes = self.config.get('url_patterns', {}).get('exclude', [])
         if any(pattern in url for pattern in excludes):
             return False
-        
+
         return True
-    
+
+    def save_checkpoint(self):
+        """Save progress checkpoint"""
+        if not self.checkpoint_enabled or self.dry_run:
+            return
+
+        checkpoint_data = {
+            "config": self.config,
+            "visited_urls": list(self.visited_urls),
+            "pending_urls": list(self.pending_urls),
+            "pages_scraped": self.pages_scraped,
+            "last_updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "checkpoint_interval": self.checkpoint_interval
+        }
+
+        try:
+            with open(self.checkpoint_file, 'w') as f:
+                json.dump(checkpoint_data, f, indent=2)
+            print(f"  💾 Checkpoint saved ({self.pages_scraped} pages)")
+        except Exception as e:
+            print(f"  ⚠️  Failed to save checkpoint: {e}")
+
+    def load_checkpoint(self):
+        """Load progress from checkpoint"""
+        if not os.path.exists(self.checkpoint_file):
+            print("ℹ️  No checkpoint found, starting fresh")
+            return
+
+        try:
+            with open(self.checkpoint_file, 'r') as f:
+                checkpoint_data = json.load(f)
+
+            self.visited_urls = set(checkpoint_data["visited_urls"])
+            self.pending_urls = deque(checkpoint_data["pending_urls"])
+            self.pages_scraped = checkpoint_data["pages_scraped"]
+
+            print(f"✅ Resumed from checkpoint")
+            print(f"   Pages already scraped: {self.pages_scraped}")
+            print(f"   URLs visited: {len(self.visited_urls)}")
+            print(f"   URLs pending: {len(self.pending_urls)}")
+            print(f"   Last updated: {checkpoint_data['last_updated']}")
+            print("")
+
+        except Exception as e:
+            print(f"⚠️  Failed to load checkpoint: {e}")
+            print("   Starting fresh")
+
+    def clear_checkpoint(self):
+        """Remove checkpoint file"""
+        if os.path.exists(self.checkpoint_file):
+            try:
+                os.remove(self.checkpoint_file)
+                print(f"✅ Checkpoint cleared")
+            except Exception as e:
+                print(f"⚠️  Failed to clear checkpoint: {e}")
+
     def extract_content(self, soup, url):
         """Extract content with improved code and pattern detection"""
         page = {
@@ -276,6 +343,11 @@ class DocToSkillConverter:
                     pass  # Ignore errors in dry run
             else:
                 self.scrape_page(url)
+                self.pages_scraped += 1
+
+                # Save checkpoint at interval
+                if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
+                    self.save_checkpoint()
 
             if len(self.visited_urls) % 10 == 0:
                 print(f"  [{len(self.visited_urls)} pages]")
@@ -698,6 +770,8 @@ def validate_config(config):
             rate = float(config['rate_limit'])
             if rate < 0:
                 errors.append(f"'rate_limit' must be non-negative (got {rate})")
+            elif rate > 10:
+                warnings.append(f"'rate_limit' is very high ({rate}s) - this may slow down scraping significantly")
         except (ValueError, TypeError):
             errors.append(f"'rate_limit' must be a number (got {config['rate_limit']})")
 
@@ -707,6 +781,8 @@ def validate_config(config):
             max_p = int(config['max_pages'])
             if max_p < 1:
                 errors.append(f"'max_pages' must be at least 1 (got {max_p})")
+            elif max_p > 10000:
+                warnings.append(f"'max_pages' is very high ({max_p}) - scraping may take a very long time")
         except (ValueError, TypeError):
             errors.append(f"'max_pages' must be an integer (got {config['max_pages']})")
 
@@ -833,6 +909,10 @@ def main():
                        help='Enhance SKILL.md using Claude Code in new terminal (no API key needed)')
     parser.add_argument('--api-key', type=str,
                        help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
+    parser.add_argument('--resume', action='store_true',
+                       help='Resume from last checkpoint (for interrupted scrapes)')
+    parser.add_argument('--fresh', action='store_true',
+                       help='Clear checkpoint and start fresh')
 
     args = parser.parse_args()
     
@@ -884,14 +964,29 @@ def main():
             args.skip_scrape = True
 
     # Create converter
-    converter = DocToSkillConverter(config)
+    converter = DocToSkillConverter(config, resume=args.resume)
+
+    # Handle fresh start (clear checkpoint)
+    if args.fresh:
+        converter.clear_checkpoint()
 
     # Scrape or skip
     if not args.skip_scrape:
         try:
             converter.scrape_all()
+            # Save final checkpoint
+            if converter.checkpoint_enabled:
+                converter.save_checkpoint()
+                print("\n💾 Final checkpoint saved")
+                # Clear checkpoint after successful completion
+                converter.clear_checkpoint()
+                print("✅ Scraping complete - checkpoint cleared")
         except KeyboardInterrupt:
             print("\n\nScraping interrupted.")
+            if converter.checkpoint_enabled:
+                converter.save_checkpoint()
+                print(f"💾 Progress saved to checkpoint")
+                print(f"   Resume with: --config {args.config if args.config else 'config.json'} --resume")
             response = input("Continue with skill building? (y/n): ").strip().lower()
             if response != 'y':
                 return

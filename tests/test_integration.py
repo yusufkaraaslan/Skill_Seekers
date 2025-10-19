@@ -15,7 +15,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from doc_scraper import DocToSkillConverter, load_config, validate_config
+from cli.doc_scraper import DocToSkillConverter, load_config, validate_config
 
 
 class TestDryRunMode(unittest.TestCase):
@@ -150,7 +150,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/godot.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"Godot config should be valid, got errors: {errors}")
 
     def test_react_config(self):
@@ -158,7 +158,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/react.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"React config should be valid, got errors: {errors}")
 
     def test_vue_config(self):
@@ -166,7 +166,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/vue.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"Vue config should be valid, got errors: {errors}")
 
     def test_django_config(self):
@@ -174,7 +174,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/django.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"Django config should be valid, got errors: {errors}")
 
     def test_fastapi_config(self):
@@ -182,7 +182,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/fastapi.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"FastAPI config should be valid, got errors: {errors}")
 
     def test_steam_economy_config(self):
@@ -190,7 +190,7 @@ class TestRealConfigFiles(unittest.TestCase):
         config_path = 'configs/steam-economy-complete.json'
         if os.path.exists(config_path):
             config = load_config(config_path)
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             self.assertEqual(len(errors), 0, f"Steam Economy config should be valid, got errors: {errors}")
 
 

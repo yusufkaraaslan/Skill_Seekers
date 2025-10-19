@@ -11,7 +11,7 @@ import unittest
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from doc_scraper import validate_config
+from cli.doc_scraper import validate_config
 
 
 class TestConfigValidation(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestConfigValidation(unittest.TestCase):
             'name': 'test-skill',
             'base_url': 'https://example.com/'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         # Should have warnings about missing selectors, but no critical errors
         self.assertIsInstance(errors, list)
 
@@ -49,7 +49,7 @@ class TestConfigValidation(unittest.TestCase):
             'rate_limit': 0.5,
             'max_pages': 500
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertEqual(len(errors), 0, f"Valid config should have no errors, got: {errors}")
 
     def test_missing_name(self):
@@ -57,7 +57,7 @@ class TestConfigValidation(unittest.TestCase):
         config = {
             'base_url': 'https://example.com/'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('name' in error.lower() for error in errors))
 
     def test_missing_base_url(self):
@@ -65,7 +65,7 @@ class TestConfigValidation(unittest.TestCase):
         config = {
             'name': 'test'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('base_url' in error.lower() for error in errors))
 
     def test_invalid_name_special_chars(self):
@@ -74,7 +74,7 @@ class TestConfigValidation(unittest.TestCase):
             'name': 'test@skill!',
             'base_url': 'https://example.com/'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('invalid name' in error.lower() for error in errors))
 
     def test_valid_name_formats(self):
@@ -85,7 +85,7 @@ class TestConfigValidation(unittest.TestCase):
                 'name': name,
                 'base_url': 'https://example.com/'
             }
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             name_errors = [e for e in errors if 'invalid name' in e.lower()]
             self.assertEqual(len(name_errors), 0, f"Name '{name}' should be valid")
 
@@ -95,7 +95,7 @@ class TestConfigValidation(unittest.TestCase):
             'name': 'test',
             'base_url': 'example.com'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('base_url' in error.lower() for error in errors))
 
     def test_valid_url_protocols(self):
@@ -105,7 +105,7 @@ class TestConfigValidation(unittest.TestCase):
                 'name': 'test',
                 'base_url': f'{protocol}example.com/'
             }
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             url_errors = [e for e in errors if 'base_url' in e.lower() and 'invalid' in e.lower()]
             self.assertEqual(len(url_errors), 0, f"Protocol '{protocol}' should be valid")
 
@@ -116,7 +116,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'selectors': 'invalid'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('selectors' in error.lower() and 'dictionary' in error.lower() for error in errors))
 
     def test_missing_recommended_selectors(self):
@@ -129,9 +129,9 @@ class TestConfigValidation(unittest.TestCase):
                 # Missing 'title' and 'code_blocks'
             }
         }
-        errors = validate_config(config)
-        self.assertTrue(any('title' in error.lower() for error in errors))
-        self.assertTrue(any('code_blocks' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('title' in warning.lower() for warning in warnings))
+        self.assertTrue(any('code_blocks' in warning.lower() for warning in warnings))
 
     def test_invalid_url_patterns_not_dict(self):
         """Test invalid url_patterns (not a dictionary)"""
@@ -140,7 +140,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'url_patterns': []
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('url_patterns' in error.lower() and 'dictionary' in error.lower() for error in errors))
 
     def test_invalid_url_patterns_include_not_list(self):
@@ -152,7 +152,7 @@ class TestConfigValidation(unittest.TestCase):
                 'include': 'not-a-list'
             }
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('include' in error.lower() and 'list' in error.lower() for error in errors))
 
     def test_invalid_categories_not_dict(self):
@@ -162,7 +162,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'categories': []
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('categories' in error.lower() and 'dictionary' in error.lower() for error in errors))
 
     def test_invalid_category_keywords_not_list(self):
@@ -174,7 +174,7 @@ class TestConfigValidation(unittest.TestCase):
                 'getting_started': 'not-a-list'
             }
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('getting_started' in error.lower() and 'list' in error.lower() for error in errors))
 
     def test_invalid_rate_limit_negative(self):
@@ -184,7 +184,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'rate_limit': -1
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('rate_limit' in error.lower() for error in errors))
 
     def test_invalid_rate_limit_too_high(self):
@@ -194,8 +194,8 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'rate_limit': 20
         }
-        errors = validate_config(config)
-        self.assertTrue(any('rate_limit' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('rate_limit' in warning.lower() for warning in warnings))
 
     def test_invalid_rate_limit_not_number(self):
         """Test invalid rate_limit (not a number)"""
@@ -204,7 +204,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'rate_limit': 'fast'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('rate_limit' in error.lower() for error in errors))
 
     def test_valid_rate_limit_range(self):
@@ -215,7 +215,7 @@ class TestConfigValidation(unittest.TestCase):
                 'base_url': 'https://example.com/',
                 'rate_limit': rate
             }
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             rate_errors = [e for e in errors if 'rate_limit' in e.lower()]
             self.assertEqual(len(rate_errors), 0, f"Rate limit {rate} should be valid")
 
@@ -226,7 +226,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'max_pages': 0
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('max_pages' in error.lower() for error in errors))
 
     def test_invalid_max_pages_too_high(self):
@@ -236,8 +236,8 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'max_pages': 20000
         }
-        errors = validate_config(config)
-        self.assertTrue(any('max_pages' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('max_pages' in warning.lower() for warning in warnings))
 
     def test_invalid_max_pages_not_int(self):
         """Test invalid max_pages (not an integer)"""
@@ -246,7 +246,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'max_pages': 'many'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('max_pages' in error.lower() for error in errors))
 
     def test_valid_max_pages_range(self):
@@ -257,7 +257,7 @@ class TestConfigValidation(unittest.TestCase):
                 'base_url': 'https://example.com/',
                 'max_pages': max_p
             }
-            errors = validate_config(config)
+            errors, _ = validate_config(config)
             max_errors = [e for e in errors if 'max_pages' in e.lower()]
             self.assertEqual(len(max_errors), 0, f"Max pages {max_p} should be valid")
 
@@ -268,7 +268,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'start_urls': 'https://example.com/page1'
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('start_urls' in error.lower() and 'list' in error.lower() for error in errors))
 
     def test_invalid_start_urls_bad_protocol(self):
@@ -278,7 +278,7 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'start_urls': ['ftp://example.com/page1']
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         self.assertTrue(any('start_url' in error.lower() for error in errors))
 
     def test_valid_start_urls(self):
@@ -292,7 +292,7 @@ class TestConfigValidation(unittest.TestCase):
                 'https://example.com/api/docs'
             ]
         }
-        errors = validate_config(config)
+        errors, _ = validate_config(config)
         url_errors = [e for e in errors if 'start_url' in e.lower()]
         self.assertEqual(len(url_errors), 0, "Valid start_urls should pass validation")
 
