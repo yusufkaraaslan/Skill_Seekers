@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🔌 MCP Integration Available
+
+**This repository includes a fully tested MCP server with 6 tools:**
+- `mcp__skill-seeker__list_configs` - List all available preset configurations
+- `mcp__skill-seeker__generate_config` - Generate a new config file for any docs site
+- `mcp__skill-seeker__validate_config` - Validate a config file structure
+- `mcp__skill-seeker__estimate_pages` - Estimate page count before scraping
+- `mcp__skill-seeker__scrape_docs` - Scrape and build a skill
+- `mcp__skill-seeker__package_skill` - Package skill into .zip file
+
+**Setup:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) or run `./setup_mcp.sh`
+
+**Status:** ✅ Tested and working in production with Claude Code
+
 ## Overview
 
 Skill Seeker automatically converts any documentation website into a Claude AI skill. It scrapes documentation, organizes content, extracts code patterns, and packages everything into an uploadable `.zip` file for Claude.

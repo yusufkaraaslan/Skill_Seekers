@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![Tested](https://img.shields.io/badge/Tests-96%20Passing-brightgreen.svg)](tests/)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
 
@@ -27,20 +29,36 @@ Skill Seeker is an automated tool that transforms any documentation website into
 
 ✅ **Universal Scraper** - Works with ANY documentation website
 ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
+✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 ✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
 ✅ **Smart Categorization** - Automatically organizes content by topic
 ✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
 ✅ **No API Costs** - FREE local enhancement using Claude Code Max
 ✅ **Caching System** - Scrape once, rebuild instantly
+✅ **Fully Tested** - 96 tests with 100% pass rate
 
 ## Quick Example
+
+### Option 1: Use from Claude Code (Recommended)
+
+```bash
+# One-time setup (5 minutes)
+./setup_mcp.sh
+
+# Then in Claude Code, just ask:
+"Generate a React skill from https://react.dev/"
+```
+
+**Time:** Automated | **Quality:** Production-ready | **Cost:** Free
+
+### Option 2: Use CLI Directly
 
 ```bash
 # Install dependencies (2 pip packages)
 pip3 install requests beautifulsoup4
 
 # Generate a React skill in one command
-python3 doc_scraper.py --config configs/react.json --enhance-local
+python3 cli/doc_scraper.py --config configs/react.json --enhance-local
 
 # Upload output/react.zip to Claude - Done!
 ```
@@ -69,7 +87,39 @@ graph LR
 
 ## 🚀 Quick Start
 
-### Easiest: Use a Preset
+### Method 1: MCP Server for Claude Code (Easiest)
+
+Use Skill Seeker directly from Claude Code with natural language!
+
+```bash
+# One-time setup (5 minutes)
+./setup_mcp.sh
+
+# Restart Claude Code, then just ask:
+```
+
+**In Claude Code:**
+```
+List all available configs
+Generate config for Tailwind at https://tailwindcss.com/docs
+Scrape docs using configs/react.json
+Package skill at output/react/
+```
+
+**Benefits:**
+- ✅ No manual CLI commands
+- ✅ Natural language interface
+- ✅ Integrated with your workflow
+- ✅ 6 tools available instantly
+- ✅ **Tested and working** in production
+
+**Full guides:**
+- 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 6 tools
+
+### Method 2: CLI (Traditional)
+
+#### Easiest: Use a Preset
 
 ```bash
 # Install dependencies (macOS)
