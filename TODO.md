@@ -39,10 +39,21 @@
 ## Current Sprint (Week of Oct 19)
 
 ### Priority Tasks
-1. [ ] Fix 3 test failures (warnings vs errors)
-2. [ ] Create `.claude/mcp_config.json` example
-3. [ ] Test MCP with actual Claude Code
-4. [ ] Document MCP setup process
+1. [ ] Fix 3 test failures (warnings vs errors) - **STARTED**
+2. [ ] Create MCP setup guide for Claude Code - **STARTED**
+3. [ ] Test MCP server to ensure it works - **STARTED**
+4. [ ] Update documentation for new monorepo structure - **STARTED**
+
+### In Progress
+- Setting up tasks in planning tools
+- Organizing GitHub issues
+- Creating visual project board
+
+### Completed Today
+- [x] Monorepo refactor (cli/ and mcp/)
+- [x] MCP server implementation (6 tools)
+- [x] Planning structure (TODO.md, ROADMAP.md)
+- [x] Issue templates
 
 ### Blockers
 - None
@@ -51,3 +62,4 @@
 - MCP server uses stdio protocol
 - All CLI tools work via subprocess
 - Tests at 95.8% (68/71 passing)
+- Branch: MCP_refactor
