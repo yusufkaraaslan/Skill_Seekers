@@ -1,0 +1,17 @@
+{
+  "name": "astro",
+  "description": "Astro web framework for content-focused websites. Use for Astro components, islands architecture, content collections, SSR/SSG, and modern web development.",
+  "base_url": "https://docs.astro.build",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": []
+  },
+  "categories": {},
+  "rate_limit": 0.5,
+  "max_pages": 15
+}
