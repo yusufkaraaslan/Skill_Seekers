@@ -6,6 +6,7 @@ Model Context Protocol server for generating Claude AI skills from documentation
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -116,7 +117,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="package_skill",
-            description="Package a skill directory into a .zip file ready for Claude upload.",
+            description="Package a skill directory into a .zip file ready for Claude upload. Automatically uploads if ANTHROPIC_API_KEY is set.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -124,8 +125,27 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": "Path to skill directory (e.g., output/react/)",
                     },
+                    "auto_upload": {
+                        "type": "boolean",
+                        "description": "Try to upload automatically if API key is available (default: true). If false, only package without upload attempt.",
+                        "default": True,
+                    },
                 },
                 "required": ["skill_dir"],
+            },
+        ),
+        Tool(
+            name="upload_skill",
+            description="Upload a skill .zip file to Claude automatically (requires ANTHROPIC_API_KEY)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "skill_zip": {
+                        "type": "string",
+                        "description": "Path to skill .zip file (e.g., output/react.zip)",
+                    },
+                },
+                "required": ["skill_zip"],
             },
         ),
         Tool(
@@ -213,6 +233,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await scrape_docs_tool(arguments)
         elif name == "package_skill":
             return await package_skill_tool(arguments)
+        elif name == "upload_skill":
+            return await upload_skill_tool(arguments)
         elif name == "list_configs":
             return await list_configs_tool(arguments)
         elif name == "validate_config":
@@ -333,14 +355,66 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
 
 
 async def package_skill_tool(args: dict) -> list[TextContent]:
-    """Package skill to .zip"""
+    """Package skill to .zip and optionally auto-upload"""
     skill_dir = args["skill_dir"]
+    auto_upload = args.get("auto_upload", True)
+
+    # Check if API key exists - only upload if available
+    has_api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    should_upload = auto_upload and has_api_key
 
     # Run package_skill.py
     cmd = [
         sys.executable,
         str(CLI_DIR / "package_skill.py"),
-        skill_dir
+        skill_dir,
+        "--no-open"  # Don't open folder in MCP context
+    ]
+
+    # Add upload flag only if we have API key
+    if should_upload:
+        cmd.append("--upload")
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        output = result.stdout
+
+        if should_upload:
+            # Upload succeeded
+            output += "\n\n✅ Skill packaged and uploaded automatically!"
+            output += "\n   Your skill is now available in Claude!"
+        elif auto_upload and not has_api_key:
+            # User wanted upload but no API key
+            output += "\n\n📝 Skill packaged successfully!"
+            output += "\n"
+            output += "\n💡 To enable automatic upload:"
+            output += "\n   1. Get API key from https://console.anthropic.com/"
+            output += "\n   2. Set: export ANTHROPIC_API_KEY=sk-ant-..."
+            output += "\n"
+            output += "\n📤 Manual upload:"
+            output += "\n   1. Find the .zip file in your output/ folder"
+            output += "\n   2. Go to https://claude.ai/skills"
+            output += "\n   3. Click 'Upload Skill' and select the .zip file"
+        else:
+            # auto_upload=False, just packaged
+            output += "\n\n✅ Skill packaged successfully!"
+            output += "\n   Upload manually to https://claude.ai/skills"
+
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"Error: {result.stderr}\n{result.stdout}")]
+
+
+async def upload_skill_tool(args: dict) -> list[TextContent]:
+    """Upload skill .zip to Claude"""
+    skill_zip = args["skill_zip"]
+
+    # Run upload_skill.py
+    cmd = [
+        sys.executable,
+        str(CLI_DIR / "upload_skill.py"),
+        skill_zip
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -348,7 +422,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
     if result.returncode == 0:
         return [TextContent(type="text", text=result.stdout)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}")]
+        return [TextContent(type="text", text=f"Error: {result.stderr}\n{result.stdout}")]
 
 
 async def list_configs_tool(args: dict) -> list[TextContent]:

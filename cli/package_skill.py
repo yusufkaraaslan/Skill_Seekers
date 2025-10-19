@@ -6,31 +6,52 @@ Packages a skill directory into a .zip file for Claude.
 Usage:
     python3 package_skill.py output/steam-inventory/
     python3 package_skill.py output/react/
+    python3 package_skill.py output/react/ --no-open  # Don't open folder
 """
 
 import os
 import sys
 import zipfile
+import argparse
 from pathlib import Path
 
+# Import utilities
+try:
+    from utils import (
+        open_folder,
+        print_upload_instructions,
+        format_file_size,
+        validate_skill_directory
+    )
+except ImportError:
+    # If running from different directory, add cli to path
+    sys.path.insert(0, str(Path(__file__).parent))
+    from utils import (
+        open_folder,
+        print_upload_instructions,
+        format_file_size,
+        validate_skill_directory
+    )
 
-def package_skill(skill_dir):
-    """Package a skill directory into a .zip file"""
+
+def package_skill(skill_dir, open_folder_after=True):
+    """
+    Package a skill directory into a .zip file
+
+    Args:
+        skill_dir: Path to skill directory
+        open_folder_after: Whether to open the output folder after packaging
+
+    Returns:
+        tuple: (success, zip_path) where success is bool and zip_path is Path or None
+    """
     skill_path = Path(skill_dir)
 
-    if not skill_path.exists():
-        print(f"❌ Error: Directory not found: {skill_dir}")
-        return False
-
-    if not skill_path.is_dir():
-        print(f"❌ Error: Not a directory: {skill_dir}")
-        return False
-
-    # Verify SKILL.md exists
-    skill_md = skill_path / "SKILL.md"
-    if not skill_md.exists():
-        print(f"❌ Error: SKILL.md not found in {skill_dir}")
-        return False
+    # Validate skill directory
+    is_valid, error_msg = validate_skill_directory(skill_path)
+    if not is_valid:
+        print(f"❌ Error: {error_msg}")
+        return False, None
 
     # Create zip filename
     skill_name = skill_path.name
@@ -55,23 +76,101 @@ def package_skill(skill_dir):
     # Get zip size
     zip_size = zip_path.stat().st_size
     print(f"\n✅ Package created: {zip_path}")
-    print(f"   Size: {zip_size:,} bytes ({zip_size / 1024:.1f} KB)")
+    print(f"   Size: {zip_size:,} bytes ({format_file_size(zip_size)})")
 
-    return True
+    # Open folder in file browser
+    if open_folder_after:
+        print(f"\n📂 Opening folder: {zip_path.parent}")
+        open_folder(zip_path.parent)
+
+    # Print upload instructions
+    print_upload_instructions(zip_path)
+
+    return True, zip_path
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 package_skill.py <skill_directory>")
-        print()
-        print("Examples:")
-        print("  python3 package_skill.py output/steam-inventory/")
-        print("  python3 package_skill.py output/react/")
+    parser = argparse.ArgumentParser(
+        description="Package a skill directory into a .zip file for Claude",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Package skill and open folder
+  python3 package_skill.py output/react/
+
+  # Package skill without opening folder
+  python3 package_skill.py output/react/ --no-open
+
+  # Get help
+  python3 package_skill.py --help
+        """
+    )
+
+    parser.add_argument(
+        'skill_dir',
+        help='Path to skill directory (e.g., output/react/)'
+    )
+
+    parser.add_argument(
+        '--no-open',
+        action='store_true',
+        help='Do not open the output folder after packaging'
+    )
+
+    parser.add_argument(
+        '--upload',
+        action='store_true',
+        help='Automatically upload to Claude after packaging (requires ANTHROPIC_API_KEY)'
+    )
+
+    args = parser.parse_args()
+
+    success, zip_path = package_skill(args.skill_dir, open_folder_after=not args.no_open)
+
+    if not success:
         sys.exit(1)
 
-    skill_dir = sys.argv[1]
-    success = package_skill(skill_dir)
-    sys.exit(0 if success else 1)
+    # Auto-upload if requested
+    if args.upload:
+        # Check if API key is set BEFORE attempting upload
+        api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+
+        if not api_key:
+            # No API key - show helpful message but DON'T fail
+            print("\n" + "="*60)
+            print("💡 Automatic Upload")
+            print("="*60)
+            print()
+            print("To enable automatic upload:")
+            print("  1. Get API key from https://console.anthropic.com/")
+            print("  2. Set: export ANTHROPIC_API_KEY=sk-ant-...")
+            print("  3. Run package_skill.py with --upload flag")
+            print()
+            print("For now, use manual upload (instructions above) ☝️")
+            print("="*60)
+            # Exit successfully - packaging worked!
+            sys.exit(0)
+
+        # API key exists - try upload
+        try:
+            from upload_skill import upload_skill_api
+            print("\n" + "="*60)
+            upload_success, message = upload_skill_api(zip_path)
+            if not upload_success:
+                print(f"❌ Upload failed: {message}")
+                print()
+                print("💡 Try manual upload instead (instructions above) ☝️")
+                print("="*60)
+                # Exit successfully - packaging worked even if upload failed
+                sys.exit(0)
+            else:
+                print("="*60)
+                sys.exit(0)
+        except ImportError:
+            print("\n❌ Error: upload_skill.py not found")
+            sys.exit(1)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

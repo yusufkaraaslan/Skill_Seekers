@@ -4,13 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🔌 MCP Integration Available
 
-**This repository includes a fully tested MCP server with 6 tools:**
+**This repository includes a fully tested MCP server with 9 tools:**
 - `mcp__skill-seeker__list_configs` - List all available preset configurations
 - `mcp__skill-seeker__generate_config` - Generate a new config file for any docs site
 - `mcp__skill-seeker__validate_config` - Validate a config file structure
 - `mcp__skill-seeker__estimate_pages` - Estimate page count before scraping
 - `mcp__skill-seeker__scrape_docs` - Scrape and build a skill
-- `mcp__skill-seeker__package_skill` - Package skill into .zip file
+- `mcp__skill-seeker__package_skill` - Package skill into .zip file (with auto-upload)
+- `mcp__skill-seeker__upload_skill` - Upload .zip to Claude (NEW)
+- `mcp__skill-seeker__split_config` - Split large documentation configs
+- `mcp__skill-seeker__generate_router` - Generate router/hub skills
 
 **Setup:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) or run `./setup_mcp.sh`
 
@@ -111,12 +114,22 @@ python3 cli/enhance_skill.py output/react/
 python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
 ```
 
-### Package the Skill
+### Package and Upload the Skill
 
 ```bash
-# Package skill directory into .zip file
+# Package skill (opens folder, shows upload instructions)
 python3 cli/package_skill.py output/godot/
 # Result: output/godot.zip
+
+# Package and auto-upload (requires ANTHROPIC_API_KEY)
+export ANTHROPIC_API_KEY=sk-ant-...
+python3 cli/package_skill.py output/godot/ --upload
+
+# Upload existing .zip
+python3 cli/upload_skill.py output/godot.zip
+
+# Package without opening folder
+python3 cli/package_skill.py output/godot/ --no-open
 ```
 
 ### Force Re-scrape

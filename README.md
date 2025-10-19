@@ -114,13 +114,14 @@ Package skill at output/react/
 - ✅ No manual CLI commands
 - ✅ Natural language interface
 - ✅ Integrated with your workflow
-- ✅ 8 tools available instantly (includes large docs support!)
+- ✅ 9 tools available instantly (includes automatic upload!)
 - ✅ **Tested and working** in production
 
 **Full guides:**
 - 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 8 tools
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 9 tools
 - 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
+- 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
 
 ### Method 2: CLI (Traditional)
 
@@ -158,12 +159,90 @@ python3 doc_scraper.py \
   --description "React framework for UIs"
 ```
 
+## 📤 Uploading Skills to Claude
+
+Once your skill is packaged, you need to upload it to Claude:
+
+### Option 1: Automatic Upload (API-based)
+
+```bash
+# Set your API key (one-time)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Package and upload automatically
+python3 cli/package_skill.py output/react/ --upload
+
+# OR upload existing .zip
+python3 cli/upload_skill.py output/react.zip
+```
+
+**Benefits:**
+- ✅ Fully automatic
+- ✅ No manual steps
+- ✅ Works from command line
+
+**Requirements:**
+- Anthropic API key (get from https://console.anthropic.com/)
+
+### Option 2: Manual Upload (No API Key)
+
+```bash
+# Package skill
+python3 cli/package_skill.py output/react/
+
+# This will:
+# 1. Create output/react.zip
+# 2. Open the output/ folder automatically
+# 3. Show upload instructions
+
+# Then manually upload:
+# - Go to https://claude.ai/skills
+# - Click "Upload Skill"
+# - Select output/react.zip
+# - Done!
+```
+
+**Benefits:**
+- ✅ No API key needed
+- ✅ Works for everyone
+- ✅ Folder opens automatically
+
+### Option 3: Claude Code (MCP) - Smart & Automatic
+
+```
+In Claude Code, just ask:
+"Package and upload the React skill"
+
+# With API key set:
+# - Packages the skill
+# - Uploads to Claude automatically
+# - Done! ✅
+
+# Without API key:
+# - Packages the skill
+# - Shows where to find the .zip
+# - Provides manual upload instructions
+```
+
+**Benefits:**
+- ✅ Natural language
+- ✅ Smart auto-detection (uploads if API key available)
+- ✅ Works with or without API key
+- ✅ No errors or failures
+
+---
+
 ## 📁 Simple Structure
 
 ```
 doc-to-skill/
-├── doc_scraper.py          # Main scraping tool
-├── enhance_skill.py        # Optional: AI-powered SKILL.md enhancement
+├── cli/
+│   ├── doc_scraper.py      # Main scraping tool
+│   ├── package_skill.py    # Package to .zip
+│   ├── upload_skill.py     # Auto-upload (API)
+│   └── enhance_skill.py    # AI enhancement
+├── mcp/                    # MCP server for Claude Code
+│   └── server.py           # 9 MCP tools
 ├── configs/                # Preset configurations
 │   ├── godot.json         # Godot Engine
 │   ├── react.json         # React
@@ -172,7 +251,8 @@ doc-to-skill/
 │   └── fastapi.json       # FastAPI
 └── output/                 # All output (auto-created)
     ├── godot_data/        # Scraped data
-    └── godot/             # Built skill
+    ├── godot/             # Built skill
+    └── godot.zip          # Packaged skill
 ```
 
 ## ✨ Features

@@ -2,15 +2,51 @@
 
 ## Quick Answer
 
-**You upload the `.zip` file created by `package_skill.py`**
+**You have 3 options to upload the `.zip` file:**
+
+### Option 1: Automatic Upload (Recommended for CLI)
 
 ```bash
-# Create the zip file
-python3 package_skill.py output/steam-economy/
+# Set your API key (one-time setup)
+export ANTHROPIC_API_KEY=sk-ant-...
 
-# This creates: output/steam-economy.zip
-# Upload this file to Claude!
+# Package and upload automatically
+python3 cli/package_skill.py output/react/ --upload
+
+# OR upload existing .zip
+python3 cli/upload_skill.py output/react.zip
 ```
+
+✅ **Fully automatic** | No manual steps | Requires API key
+
+### Option 2: Manual Upload (No API Key)
+
+```bash
+# Package the skill
+python3 cli/package_skill.py output/react/
+
+# This will:
+# 1. Create output/react.zip
+# 2. Open output/ folder automatically
+# 3. Show clear upload instructions
+
+# Then upload manually to https://claude.ai/skills
+```
+
+✅ **No API key needed** | Works for everyone | Simple
+
+### Option 3: Claude Code MCP (Easiest)
+
+```
+In Claude Code, just say:
+"Package and upload the React skill"
+
+# Automatically packages and uploads!
+```
+
+✅ **Natural language** | Fully automatic | Best UX
+
+---
 
 ## What's Inside the Zip?
 
@@ -232,13 +268,76 @@ After uploading `steam-economy.zip`:
 - Searches references/microtransactions.md
 - Provides detailed answer with code examples
 
+## API-Based Automatic Upload
+
+### Setup (One-Time)
+
+```bash
+# Get your API key from https://console.anthropic.com/
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Add to your shell profile to persist
+echo 'export ANTHROPIC_API_KEY=sk-ant-...' >> ~/.bashrc  # or ~/.zshrc
+```
+
+### Usage
+
+```bash
+# Upload existing .zip
+python3 cli/upload_skill.py output/react.zip
+
+# OR package and upload in one command
+python3 cli/package_skill.py output/react/ --upload
+```
+
+### How It Works
+
+The upload tool uses the Anthropic `/v1/skills` API endpoint to:
+1. Read your .zip file
+2. Authenticate with your API key
+3. Upload to Claude's skill storage
+4. Verify upload success
+
+### Troubleshooting
+
+**"ANTHROPIC_API_KEY not set"**
+```bash
+# Check if set
+echo $ANTHROPIC_API_KEY
+
+# If empty, set it
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**"Authentication failed"**
+- Verify your API key is correct
+- Check https://console.anthropic.com/ for valid keys
+
+**"Upload timed out"**
+- Check your internet connection
+- Try again or use manual upload
+
+**Upload fails with error**
+- Falls back to showing manual upload instructions
+- You can still upload via https://claude.ai/skills
+
+---
+
 ## Summary
 
 **What you need to do:**
-1. ✅ Scrape: `python3 doc_scraper.py --config configs/YOUR-CONFIG.json`
-2. ✅ Enhance: `python3 enhance_skill_local.py output/YOUR-SKILL/`
-3. ✅ Package: `python3 package_skill.py output/YOUR-SKILL/`
-4. ✅ Upload: Upload the `.zip` file to Claude
+
+### With API Key (Automatic):
+1. ✅ Scrape: `python3 cli/doc_scraper.py --config configs/YOUR-CONFIG.json`
+2. ✅ Enhance: `python3 cli/enhance_skill_local.py output/YOUR-SKILL/`
+3. ✅ Package & Upload: `python3 cli/package_skill.py output/YOUR-SKILL/ --upload`
+4. ✅ Done! Skill is live in Claude
+
+### Without API Key (Manual):
+1. ✅ Scrape: `python3 cli/doc_scraper.py --config configs/YOUR-CONFIG.json`
+2. ✅ Enhance: `python3 cli/enhance_skill_local.py output/YOUR-SKILL/`
+3. ✅ Package: `python3 cli/package_skill.py output/YOUR-SKILL/`
+4. ✅ Upload: Go to https://claude.ai/skills and upload the `.zip`
 
 **What you upload:**
 - The `.zip` file from `output/` directory
