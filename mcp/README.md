@@ -1,28 +1,43 @@
 # Skill Seeker MCP Server
 
-Model Context Protocol (MCP) server for Skill Seeker - Generate Claude AI skills from documentation websites directly from Claude Code.
+Model Context Protocol (MCP) server for Skill Seeker - enables Claude Code to generate documentation skills directly.
 
-## What is MCP?
+## What is This?
 
-MCP (Model Context Protocol) allows Claude Code to use external tools. This server provides tools for:
-- Generating config files for documentation sites
-- Estimating page counts before scraping
-- Scraping documentation and building skills
-- Packaging skills for upload
-- Managing configurations
+This MCP server allows Claude Code to use Skill Seeker's tools directly through natural language commands. Instead of running CLI commands manually, you can ask Claude Code to:
 
-## Installation
+- Generate config files for any documentation site
+- Estimate page counts before scraping
+- Scrape documentation and build skills
+- Package skills into `.zip` files
+- List and validate configurations
+
+## Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
-cd mcp
-pip install -r requirements.txt
+# From repository root
+pip3 install -r mcp/requirements.txt
+pip3 install requests beautifulsoup4
 ```
 
-### 2. Configure Claude Code
+### 2. Quick Setup (Automated)
 
-Add to your Claude Code MCP settings (`~/.config/claude-code/mcp.json`):
+```bash
+# Run the setup script
+./setup_mcp.sh
+
+# Follow the prompts - it will:
+# - Install dependencies
+# - Test the server
+# - Generate configuration
+# - Guide you through Claude Code setup
+```
+
+### 3. Manual Setup
+
+Add to `~/.config/claude-code/mcp.json`:
 
 ```json
 {
@@ -38,201 +53,370 @@ Add to your Claude Code MCP settings (`~/.config/claude-code/mcp.json`):
 }
 ```
 
-**Replace `/path/to/Skill_Seekers` with your actual repository path!**
+**Replace `/path/to/Skill_Seekers`** with your actual repository path!
 
-### 3. Restart Claude Code
+### 4. Restart Claude Code
 
-Restart Claude Code to load the MCP server.
+Quit and reopen Claude Code (don't just close the window).
+
+### 5. Test
+
+In Claude Code, type:
+```
+List all available configs
+```
+
+You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-### 1. `generate_config`
+The MCP server exposes 6 tools:
 
-Generate a config file for any documentation website.
+### 1. `generate_config`
+Create a new configuration file for any documentation website.
 
 **Parameters:**
-- `name` (required): Skill name (lowercase, alphanumeric, hyphens, underscores)
-- `url` (required): Base documentation URL (must include http:// or https://)
-- `description` (required): Description of when to use this skill
+- `name` (required): Skill name (e.g., "tailwind")
+- `url` (required): Documentation URL (e.g., "https://tailwindcss.com/docs")
+- `description` (required): When to use this skill
 - `max_pages` (optional): Maximum pages to scrape (default: 100)
 - `rate_limit` (optional): Delay between requests in seconds (default: 0.5)
 
 **Example:**
 ```
-Generate config for Tailwind CSS docs at https://tailwindcss.com/docs
+Generate config for Tailwind CSS at https://tailwindcss.com/docs
 ```
 
 ### 2. `estimate_pages`
-
-Estimate how many pages will be scraped from a config.
+Estimate how many pages will be scraped from a config (fast, no data downloaded).
 
 **Parameters:**
-- `config_path` (required): Path to config JSON file
+- `config_path` (required): Path to config file (e.g., "configs/react.json")
 - `max_discovery` (optional): Maximum pages to discover (default: 1000)
 
 **Example:**
 ```
-Estimate pages for configs/tailwind.json
+Estimate pages for configs/react.json
 ```
 
 ### 3. `scrape_docs`
-
 Scrape documentation and build Claude skill.
 
 **Parameters:**
-- `config_path` (required): Path to config JSON file
+- `config_path` (required): Path to config file
 - `enhance_local` (optional): Open terminal for local enhancement (default: false)
-- `skip_scrape` (optional): Skip scraping, use cached data (default: false)
+- `skip_scrape` (optional): Use cached data (default: false)
 - `dry_run` (optional): Preview without saving (default: false)
 
 **Example:**
 ```
-Scrape docs using configs/tailwind.json
+Scrape docs using configs/react.json
 ```
 
 ### 4. `package_skill`
-
-Package a skill directory into a .zip file.
+Package a skill directory into a `.zip` file ready for Claude upload.
 
 **Parameters:**
-- `skill_dir` (required): Path to skill directory
+- `skill_dir` (required): Path to skill directory (e.g., "output/react/")
 
 **Example:**
 ```
-Package skill at output/tailwind/
+Package skill at output/react/
 ```
 
 ### 5. `list_configs`
-
 List all available preset configurations.
+
+**Parameters:** None
 
 **Example:**
 ```
-Show me all available configs
+List all available configs
 ```
 
 ### 6. `validate_config`
-
 Validate a config file for errors.
 
 **Parameters:**
-- `config_path` (required): Path to config JSON file
+- `config_path` (required): Path to config file
 
 **Example:**
 ```
-Validate configs/tailwind.json
+Validate configs/godot.json
 ```
 
-## Usage Workflow
+## Example Workflows
 
-### Quick Start
-
-```
-1. "Generate config for Next.js docs at https://nextjs.org/docs"
-2. "Estimate pages for configs/nextjs.json"
-3. "Scrape docs using configs/nextjs.json"
-4. "Package skill at output/nextjs/"
-5. Upload nextjs.zip to Claude!
-```
-
-### With Enhancement
+### Generate a New Skill from Scratch
 
 ```
-1. "Generate config for Svelte docs at https://svelte.dev/docs"
-2. "Scrape docs using configs/svelte.json with local enhancement"
-3. (Terminal opens for Claude Code to enhance SKILL.md)
-4. "Package skill at output/svelte/"
+User: Generate config for Svelte at https://svelte.dev/docs
+
+Claude: ✅ Config created: configs/svelte.json
+
+User: Estimate pages for configs/svelte.json
+
+Claude: 📊 Estimated pages: 150
+
+User: Scrape docs using configs/svelte.json
+
+Claude: ✅ Skill created at output/svelte/
+
+User: Package skill at output/svelte/
+
+Claude: ✅ Created: output/svelte.zip
+      Ready to upload to Claude!
 ```
 
-### Using Presets
+### Use Existing Preset
 
 ```
-1. "List all available configs"
-2. "Scrape docs using configs/react.json"
-3. "Package skill at output/react/"
+User: List all available configs
+
+Claude: [Shows all configs: godot, react, vue, django, fastapi, etc.]
+
+User: Scrape docs using configs/react.json
+
+Claude: ✅ Skill created at output/react/
+
+User: Package skill at output/react/
+
+Claude: ✅ Created: output/react.zip
 ```
+
+### Validate Before Scraping
+
+```
+User: Validate configs/godot.json
+
+Claude: ✅ Config is valid!
+        Name: godot
+        Base URL: https://docs.godotengine.org/en/stable/
+        Max pages: 500
+        Rate limit: 0.5s
+
+User: Scrape docs using configs/godot.json
+
+Claude: [Starts scraping...]
+```
+
+## Architecture
+
+### Server Structure
+
+```
+mcp/
+├── server.py           # Main MCP server
+├── requirements.txt    # MCP dependencies
+└── README.md          # This file
+```
+
+### How It Works
+
+1. **Claude Code** sends MCP requests to the server
+2. **Server** routes requests to appropriate tool functions
+3. **Tools** call CLI scripts (`doc_scraper.py`, `estimate_pages.py`, etc.)
+4. **CLI scripts** perform actual work (scraping, packaging, etc.)
+5. **Results** returned to Claude Code via MCP protocol
+
+### Tool Implementation
+
+Each tool is implemented as an async function:
+
+```python
+async def generate_config_tool(args: dict) -> list[TextContent]:
+    """Generate a config file"""
+    # Create config JSON
+    # Save to configs/
+    # Return success message
+```
+
+Tools use `subprocess.run()` to call CLI scripts:
+
+```python
+result = subprocess.run([
+    sys.executable,
+    str(CLI_DIR / "doc_scraper.py"),
+    "--config", config_path
+], capture_output=True, text=True)
+```
+
+## Testing
+
+The MCP server has comprehensive test coverage:
+
+```bash
+# Run MCP server tests (25 tests)
+python3 -m pytest tests/test_mcp_server.py -v
+
+# Expected output: 25 passed in ~0.3s
+```
+
+### Test Coverage
+
+- **Server initialization** (2 tests)
+- **Tool listing** (2 tests)
+- **generate_config** (3 tests)
+- **estimate_pages** (3 tests)
+- **scrape_docs** (4 tests)
+- **package_skill** (2 tests)
+- **list_configs** (3 tests)
+- **validate_config** (3 tests)
+- **Tool routing** (2 tests)
+- **Integration** (1 test)
+
+**Total: 25 tests | Pass rate: 100%**
 
 ## Troubleshooting
 
 ### MCP Server Not Loading
 
-1. Check MCP config path: `cat ~/.config/claude-code/mcp.json`
-2. Verify Python path: `which python3`
-3. Test server manually: `python3 mcp/server.py`
-4. Check Claude Code logs
+**Symptoms:**
+- Tools don't appear in Claude Code
+- No response to skill-seeker commands
 
-### Tools Not Appearing
+**Solutions:**
 
-1. Restart Claude Code completely
-2. Verify mcp package is installed: `pip show mcp`
-3. Check server.py has execute permissions: `chmod +x mcp/server.py`
+1. Check configuration:
+   ```bash
+   cat ~/.config/claude-code/mcp.json
+   ```
 
-### Import Errors
+2. Verify server can start:
+   ```bash
+   python3 mcp/server.py
+   # Should start without errors (Ctrl+C to exit)
+   ```
 
-Make sure you're running commands from the repository root:
-```bash
-cd /path/to/Skill_Seekers
-python3 mcp/server.py
-```
+3. Check dependencies:
+   ```bash
+   pip3 install -r mcp/requirements.txt
+   ```
 
-## Architecture
+4. Completely restart Claude Code (quit and reopen)
 
-```
-Skill_Seekers/
-├── cli/                    # CLI tools (used by MCP)
-│   ├── doc_scraper.py
-│   ├── estimate_pages.py
-│   ├── enhance_skill.py
-│   ├── package_skill.py
-│   └── ...
-├── mcp/                    # MCP server
-│   ├── server.py          # Main MCP server
-│   ├── requirements.txt   # MCP dependencies
-│   └── README.md         # This file
-├── configs/               # Shared configs
-└── output/                # Generated skills
-```
+5. Check Claude Code logs:
+   - macOS: `~/Library/Logs/Claude Code/`
+   - Linux: `~/.config/claude-code/logs/`
 
-## Development
-
-### Adding New Tools
-
-Edit `mcp/server.py`:
-
-```python
-# 1. Add tool definition to list_tools()
-Tool(
-    name="my_tool",
-    description="Tool description",
-    inputSchema={...}
-)
-
-# 2. Add tool handler to call_tool()
-elif name == "my_tool":
-    return await my_tool_handler(arguments)
-
-# 3. Implement handler
-async def my_tool_handler(args: dict) -> list[TextContent]:
-    # Tool logic here
-    return [TextContent(type="text", text=result)]
-```
-
-### Testing
+### "ModuleNotFoundError: No module named 'mcp'"
 
 ```bash
-# Test server manually
-python3 mcp/server.py
-
-# Test with MCP inspector (if available)
-mcp-inspector mcp/server.py
+pip3 install -r mcp/requirements.txt
 ```
 
-## Links
+### Tools Appear But Don't Work
 
-- [Main CLI Documentation](../README.md)
-- [MCP Protocol](https://modelcontextprotocol.io/)
-- [Claude Code](https://claude.ai/code)
+**Solutions:**
+
+1. Verify `cwd` in config points to repository root
+2. Check CLI tools exist:
+   ```bash
+   ls cli/doc_scraper.py
+   ls cli/estimate_pages.py
+   ls cli/package_skill.py
+   ```
+
+3. Test CLI tools directly:
+   ```bash
+   python3 cli/doc_scraper.py --help
+   ```
+
+### Slow Operations
+
+1. Check rate limit in configs (increase if needed)
+2. Use smaller `max_pages` for testing
+3. Use `skip_scrape` to avoid re-downloading data
+
+## Advanced Configuration
+
+### Using Virtual Environment
+
+```bash
+# Create venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r mcp/requirements.txt
+pip install requests beautifulsoup4
+which python3  # Copy this path
+```
+
+Configure Claude Code to use venv Python:
+
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "command": "/path/to/Skill_Seekers/venv/bin/python3",
+      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "cwd": "/path/to/Skill_Seekers"
+    }
+  }
+}
+```
+
+### Debug Mode
+
+Enable verbose logging:
+
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "command": "python3",
+      "args": ["-u", "/path/to/Skill_Seekers/mcp/server.py"],
+      "cwd": "/path/to/Skill_Seekers",
+      "env": {
+        "DEBUG": "1"
+      }
+    }
+  }
+}
+```
+
+### With API Enhancement
+
+For API-based enhancement (requires Anthropic API key):
+
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "command": "python3",
+      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "cwd": "/path/to/Skill_Seekers",
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-your-key-here"
+      }
+    }
+  }
+}
+```
+
+## Performance
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| List configs | <1s | Instant |
+| Generate config | <1s | Creates JSON file |
+| Validate config | <1s | Quick validation |
+| Estimate pages | 1-2min | Fast, no data download |
+| Scrape docs | 15-45min | First time only |
+| Scrape (cached) | <1min | With `skip_scrape` |
+| Package skill | 5-10s | Creates .zip |
+
+## Documentation
+
+- **Full Setup Guide**: [docs/MCP_SETUP.md](../docs/MCP_SETUP.md)
+- **Main README**: [README.md](../README.md)
+- **Usage Guide**: [docs/USAGE.md](../docs/USAGE.md)
+- **Testing Guide**: [docs/TESTING.md](../docs/TESTING.md)
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/yusufkaraaslan/Skill_Seekers/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yusufkaraaslan/Skill_Seekers/discussions)
 
 ## License
 
-Same as parent project (see ../LICENSE)
+MIT License - See [LICENSE](../LICENSE) for details

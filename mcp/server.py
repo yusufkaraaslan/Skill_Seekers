@@ -338,11 +338,19 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
 
     # Import validation function
     sys.path.insert(0, str(CLI_DIR))
-    from doc_scraper import load_config, validate_config
+    from doc_scraper import validate_config
+    import json
 
     try:
-        config = load_config(config_path)
-        errors = validate_config(config)
+        # Load config manually to avoid sys.exit() calls
+        if not Path(config_path).exists():
+            return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
+
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        # Validate config - returns (errors, warnings) tuple
+        errors, warnings = validate_config(config)
 
         if errors:
             result = f"❌ Config validation failed:\n\n"
@@ -354,6 +362,11 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
             result += f"  Base URL: {config['base_url']}\n"
             result += f"  Max pages: {config.get('max_pages', 'Not set')}\n"
             result += f"  Rate limit: {config.get('rate_limit', 'Not set')}s\n"
+
+            if warnings:
+                result += f"\n⚠️  Warnings:\n"
+                for warning in warnings:
+                    result += f"  • {warning}\n"
 
         return [TextContent(type="text", text=result)]
 
