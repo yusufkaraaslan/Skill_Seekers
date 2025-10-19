@@ -16,26 +16,50 @@ pip3 install requests beautifulsoup4
 
 ### Run with a preset configuration
 ```bash
-python3 doc_scraper.py --config configs/godot.json
-python3 doc_scraper.py --config configs/react.json
-python3 doc_scraper.py --config configs/vue.json
-python3 doc_scraper.py --config configs/django.json
-python3 doc_scraper.py --config configs/fastapi.json
+python3 cli/doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/vue.json
+python3 cli/doc_scraper.py --config configs/django.json
+python3 cli/doc_scraper.py --config configs/fastapi.json
 ```
 
 ### Interactive mode (for new frameworks)
 ```bash
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 ```
 
 ### Quick mode (minimal config)
 ```bash
-python3 doc_scraper.py --name react --url https://react.dev/ --description "React framework"
+python3 cli/doc_scraper.py --name react --url https://react.dev/ --description "React framework"
 ```
 
 ### Skip scraping (use cached data)
 ```bash
-python3 doc_scraper.py --config configs/godot.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+```
+
+### Resume interrupted scrapes
+```bash
+# If scrape was interrupted
+python3 cli/doc_scraper.py --config configs/godot.json --resume
+
+# Start fresh (clear checkpoint)
+python3 cli/doc_scraper.py --config configs/godot.json --fresh
+```
+
+### Large documentation (10K-40K+ pages)
+```bash
+# 1. Estimate page count
+python3 cli/estimate_pages.py configs/godot.json
+
+# 2. Split into focused sub-skills
+python3 cli/split_config.py configs/godot.json --strategy router
+
+# 3. Generate router skill
+python3 cli/generate_router.py configs/godot-*.json
+
+# 4. Package multiple skills
+python3 cli/package_multi.py output/godot*/
 ```
 
 ### AI-powered SKILL.md enhancement
@@ -43,19 +67,34 @@ python3 doc_scraper.py --config configs/godot.json --skip-scrape
 # Option 1: During scraping (API-based, requires ANTHROPIC_API_KEY)
 pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
-python3 doc_scraper.py --config configs/react.json --enhance
+python3 cli/doc_scraper.py --config configs/react.json --enhance
 
 # Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-python3 doc_scraper.py --config configs/react.json --enhance-local
+python3 cli/doc_scraper.py --config configs/react.json --enhance-local
 
 # Option 3: Standalone after scraping (API-based)
-python3 enhance_skill.py output/react/
+python3 cli/enhance_skill.py output/react/
 
 # Option 4: Standalone after scraping (LOCAL, no API key)
-python3 enhance_skill_local.py output/react/
+python3 cli/enhance_skill_local.py output/react/
 ```
 
 The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) opens a new terminal with Claude Code, which analyzes reference files and enhances SKILL.md automatically. This requires Claude Code Max plan but no API key.
+
+### MCP Integration (Claude Code)
+```bash
+# One-time setup
+./setup_mcp.sh
+
+# Then in Claude Code, use natural language:
+"List all available configs"
+"Generate config for Tailwind at https://tailwindcss.com/docs"
+"Split configs/godot.json using router strategy"
+"Generate router for configs/godot-*.json"
+"Package skill at output/react/"
+```
+
+8 MCP tools available: list_configs, generate_config, validate_config, estimate_pages, scrape_docs, package_skill, split_config, generate_router
 
 ### Test with limited pages (edit config first)
 Set `"max_pages": 20` in the config file to test with fewer pages.
@@ -84,19 +123,35 @@ The entire tool is contained in `doc_scraper.py` (~737 lines). It follows a clas
 
 ### Directory Structure
 ```
-doc-to-skill/
-├── doc_scraper.py             # Main scraping & building tool
-├── enhance_skill.py           # AI enhancement (API-based)
-├── enhance_skill_local.py     # AI enhancement (LOCAL, no API)
-├── configs/                   # Preset configurations
+Skill_Seekers/
+├── cli/                        # CLI tools
+│   ├── doc_scraper.py         # Main scraping & building tool
+│   ├── enhance_skill.py       # AI enhancement (API-based)
+│   ├── enhance_skill_local.py # AI enhancement (LOCAL, no API)
+│   ├── estimate_pages.py      # Page count estimator
+│   ├── split_config.py        # Large docs splitter (NEW)
+│   ├── generate_router.py     # Router skill generator (NEW)
+│   ├── package_skill.py       # Single skill packager
+│   └── package_multi.py       # Multi-skill packager (NEW)
+├── mcp/                        # MCP server
+│   ├── server.py              # 8 MCP tools (includes split/router)
+│   └── README.md
+├── configs/                    # Preset configurations
 │   ├── godot.json
+│   ├── godot-large-example.json  # Large docs example (NEW)
 │   ├── react.json
-│   ├── steam-inventory.json
 │   └── ...
-└── output/
+├── docs/                       # Documentation
+│   ├── CLAUDE.md              # Technical architecture (this file)
+│   ├── LARGE_DOCUMENTATION.md # Large docs guide (NEW)
+│   ├── ENHANCEMENT.md
+│   ├── MCP_SETUP.md
+│   └── ...
+└── output/                     # Generated output (git-ignored)
     ├── {name}_data/           # Raw scraped data (cached)
     │   ├── pages/             # Individual page JSONs
-    │   └── summary.json       # Scraping summary
+    │   ├── summary.json       # Scraping summary
+    │   └── checkpoint.json    # Resume checkpoint (NEW)
     └── {name}/                # Generated skill
         ├── SKILL.md           # Main skill file with examples
         ├── SKILL.md.backup    # Backup (if enhanced)
@@ -124,6 +179,14 @@ Config files in `configs/*.json` contain:
 - `categories`: Keyword-based categorization mapping
 - `rate_limit`: Delay between requests (seconds)
 - `max_pages`: Maximum pages to scrape
+- `split_strategy`: (Optional) How to split large docs: "auto", "category", "router", "size"
+- `split_config`: (Optional) Split configuration
+  - `target_pages_per_skill`: Pages per sub-skill (default: 5000)
+  - `create_router`: Create router/hub skill (default: true)
+  - `split_by_categories`: Category names to split by
+- `checkpoint`: (Optional) Checkpoint/resume configuration
+  - `enabled`: Enable checkpointing (default: false)
+  - `interval`: Save every N pages (default: 1000)
 
 ### Key Features
 
@@ -154,6 +217,20 @@ Config files in `configs/*.json` contain:
 - Extracts best examples, explains key concepts, adds navigation guidance
 - Success rate: 9/10 quality (based on steam-economy test)
 
+**Large Documentation Support (NEW)**: Handle 10K-40K+ page documentation:
+- `split_config.py`: Split large configs into multiple focused sub-skills
+- `generate_router.py`: Create intelligent router/hub skills that direct queries
+- `package_multi.py`: Package multiple skills at once
+- 4 split strategies: auto, category, router, size
+- Parallel scraping support for faster processing
+- MCP integration for natural language usage
+
+**Checkpoint/Resume (NEW)**: Never lose progress on long scrapes:
+- Auto-saves every N pages (configurable, default: 1000)
+- Resume with `--resume` flag
+- Clear checkpoint with `--fresh` flag
+- Saves on interruption (Ctrl+C)
+
 ## Key Code Locations
 
 - **URL validation**: `is_valid_url()` doc_scraper.py:47-62
@@ -172,11 +249,11 @@ Config files in `configs/*.json` contain:
 ### First time scraping (with scraping)
 ```bash
 # 1. Scrape + Build
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 # Time: 20-40 minutes
 
-# 2. Package (assuming skill-creator is available)
-python3 package_skill.py output/godot/
+# 2. Package
+python3 cli/package_skill.py output/godot/
 
 # Result: godot.zip
 ```
@@ -184,23 +261,53 @@ python3 package_skill.py output/godot/
 ### Using cached data (fast iteration)
 ```bash
 # 1. Use existing data
-python3 doc_scraper.py --config configs/godot.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
 # Time: 1-3 minutes
 
 # 2. Package
-python3 package_skill.py output/godot/
+python3 cli/package_skill.py output/godot/
 ```
 
 ### Creating a new framework config
 ```bash
 # Option 1: Interactive
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 
 # Option 2: Copy and modify
 cp configs/react.json configs/myframework.json
 # Edit configs/myframework.json
-python3 doc_scraper.py --config configs/myframework.json
+python3 cli/doc_scraper.py --config configs/myframework.json
 ```
+
+### Large documentation workflow (40K pages)
+```bash
+# 1. Estimate page count (fast, 1-2 minutes)
+python3 cli/estimate_pages.py configs/godot.json
+
+# 2. Split into focused sub-skills
+python3 cli/split_config.py configs/godot.json --strategy router --target-pages 5000
+
+# Creates: godot-scripting.json, godot-2d.json, godot-3d.json, etc.
+
+# 3. Scrape all in parallel (4-8 hours instead of 20-40!)
+for config in configs/godot-*.json; do
+  python3 cli/doc_scraper.py --config $config &
+done
+wait
+
+# 4. Generate intelligent router skill
+python3 cli/generate_router.py configs/godot-*.json
+
+# 5. Package all skills
+python3 cli/package_multi.py output/godot*/
+
+# 6. Upload all .zip files to Claude
+# Result: Router automatically directs queries to the right sub-skill!
+```
+
+**Time savings:** Parallel scraping reduces 20-40 hours to 4-8 hours
+
+**See full guide:** [Large Documentation Guide](LARGE_DOCUMENTATION.md)
 
 ## Testing Selectors
 

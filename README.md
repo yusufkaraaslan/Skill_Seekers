@@ -30,10 +30,14 @@ Skill Seeker is an automated tool that transforms any documentation website into
 ✅ **Universal Scraper** - Works with ANY documentation website
 ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
+✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
+✅ **Router/Hub Skills** - Intelligent routing to specialized sub-skills
 ✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
 ✅ **Smart Categorization** - Automatically organizes content by topic
 ✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
 ✅ **No API Costs** - FREE local enhancement using Claude Code Max
+✅ **Checkpoint/Resume** - Never lose progress on long scrapes
+✅ **Parallel Scraping** - Process multiple skills simultaneously
 ✅ **Caching System** - Scrape once, rebuild instantly
 ✅ **Fully Tested** - 96 tests with 100% pass rate
 
@@ -110,12 +114,13 @@ Package skill at output/react/
 - ✅ No manual CLI commands
 - ✅ Natural language interface
 - ✅ Integrated with your workflow
-- ✅ 6 tools available instantly
+- ✅ 8 tools available instantly (includes large docs support!)
 - ✅ **Tested and working** in production
 
 **Full guides:**
 - 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 6 tools
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 8 tools
+- 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
 
 ### Method 2: CLI (Traditional)
 
@@ -246,22 +251,22 @@ python3 doc_scraper.py --config configs/react.json
 python3 doc_scraper.py --config configs/react.json --skip-scrape
 ```
 
-### 6. AI-Powered SKILL.md Enhancement (NEW!)
+### 6. AI-Powered SKILL.md Enhancement
 
 ```bash
 # Option 1: During scraping (API-based, requires API key)
 pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
-python3 doc_scraper.py --config configs/react.json --enhance
+python3 cli/doc_scraper.py --config configs/react.json --enhance
 
 # Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-python3 doc_scraper.py --config configs/react.json --enhance-local
+python3 cli/doc_scraper.py --config configs/react.json --enhance-local
 
 # Option 3: After scraping (API-based, standalone)
-python3 enhance_skill.py output/react/
+python3 cli/enhance_skill.py output/react/
 
 # Option 4: After scraping (LOCAL, no API key, standalone)
-python3 enhance_skill_local.py output/react/
+python3 cli/enhance_skill_local.py output/react/
 ```
 
 **What it does:**
@@ -280,6 +285,101 @@ python3 enhance_skill_local.py output/react/
 - Analyzes reference files automatically
 - Takes 30-60 seconds
 - Quality: 9/10 (comparable to API version)
+
+### 7. Large Documentation Support (10K-40K+ Pages)
+
+**For massive documentation sites like Godot (40K pages), AWS, or Microsoft Docs:**
+
+```bash
+# 1. Estimate first (discover page count)
+python3 cli/estimate_pages.py configs/godot.json
+
+# 2. Auto-split into focused sub-skills
+python3 cli/split_config.py configs/godot.json --strategy router
+
+# Creates:
+# - godot-scripting.json (5K pages)
+# - godot-2d.json (8K pages)
+# - godot-3d.json (10K pages)
+# - godot-physics.json (6K pages)
+# - godot-shaders.json (11K pages)
+
+# 3. Scrape all in parallel (4-8 hours instead of 20-40!)
+for config in configs/godot-*.json; do
+  python3 cli/doc_scraper.py --config $config &
+done
+wait
+
+# 4. Generate intelligent router/hub skill
+python3 cli/generate_router.py configs/godot-*.json
+
+# 5. Package all skills
+python3 cli/package_multi.py output/godot*/
+
+# 6. Upload all .zip files to Claude
+# Users just ask questions naturally!
+# Router automatically directs to the right sub-skill!
+```
+
+**Split Strategies:**
+- **auto** - Intelligently detects best strategy based on page count
+- **category** - Split by documentation categories (scripting, 2d, 3d, etc.)
+- **router** - Create hub skill + specialized sub-skills (RECOMMENDED)
+- **size** - Split every N pages (for docs without clear categories)
+
+**Benefits:**
+- ✅ Faster scraping (parallel execution)
+- ✅ More focused skills (better Claude performance)
+- ✅ Easier maintenance (update one topic at a time)
+- ✅ Natural user experience (router handles routing)
+- ✅ Avoids context window limits
+
+**Configuration:**
+```json
+{
+  "name": "godot",
+  "max_pages": 40000,
+  "split_strategy": "router",
+  "split_config": {
+    "target_pages_per_skill": 5000,
+    "create_router": true,
+    "split_by_categories": ["scripting", "2d", "3d", "physics"]
+  }
+}
+```
+
+**Full Guide:** [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md)
+
+### 8. Checkpoint/Resume for Long Scrapes
+
+**Never lose progress on long-running scrapes:**
+
+```bash
+# Enable in config
+{
+  "checkpoint": {
+    "enabled": true,
+    "interval": 1000  // Save every 1000 pages
+  }
+}
+
+# If scrape is interrupted (Ctrl+C or crash)
+python3 cli/doc_scraper.py --config configs/godot.json --resume
+
+# Resume from last checkpoint
+✅ Resuming from checkpoint (12,450 pages scraped)
+⏭️  Skipping 12,450 already-scraped pages
+🔄 Continuing from where we left off...
+
+# Start fresh (clear checkpoint)
+python3 cli/doc_scraper.py --config configs/godot.json --fresh
+```
+
+**Benefits:**
+- ✅ Auto-saves every 1000 pages (configurable)
+- ✅ Saves on interruption (Ctrl+C)
+- ✅ Resume with `--resume` flag
+- ✅ Never lose hours of scraping progress
 
 ## 🎯 Complete Workflows
 
@@ -552,8 +652,10 @@ python3 doc_scraper.py --config configs/godot.json
 ## 📚 Documentation
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Get started in 3 steps
+- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
 - **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
 - **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
+- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
 - **[docs/CLAUDE.md](docs/CLAUDE.md)** - Technical architecture
 - **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
 

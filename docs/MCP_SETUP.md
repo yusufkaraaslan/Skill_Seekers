@@ -2,10 +2,10 @@
 
 Step-by-step guide to set up the Skill Seeker MCP server with Claude Code.
 
-**✅ Fully Tested and Working**: All 6 MCP tools verified in production use with Claude Code
-- ✅ 25 comprehensive unit tests (100% pass rate)
+**✅ Fully Tested and Working**: All 8 MCP tools verified in production use with Claude Code
+- ✅ 31 comprehensive unit tests (100% pass rate)
 - ✅ Integration tested via actual Claude Code MCP protocol
-- ✅ All 6 tools working with natural language commands
+- ✅ All 8 tools working with natural language commands (includes large docs support!)
 
 ---
 

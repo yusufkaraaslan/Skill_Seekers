@@ -11,6 +11,8 @@ This MCP server allows Claude Code to use Skill Seeker's tools directly through 
 - Scrape documentation and build skills
 - Package skills into `.zip` files
 - List and validate configurations
+- **NEW:** Split large documentation (10K-40K+ pages) into focused sub-skills
+- **NEW:** Generate intelligent router/hub skills for split documentation
 
 ## Quick Start
 
@@ -70,7 +72,7 @@ You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-The MCP server exposes 6 tools:
+The MCP server exposes 8 tools:
 
 ### 1. `generate_config`
 Create a new configuration file for any documentation website.
@@ -145,6 +147,44 @@ Validate a config file for errors.
 Validate configs/godot.json
 ```
 
+### 7. `split_config` (NEW)
+Split large documentation config into multiple focused skills. For 10K+ page documentation.
+
+**Parameters:**
+- `config_path` (required): Path to config JSON file (e.g., "configs/godot.json")
+- `strategy` (optional): Split strategy - "auto", "none", "category", "router", "size" (default: "auto")
+- `target_pages` (optional): Target pages per skill (default: 5000)
+- `dry_run` (optional): Preview without saving files (default: false)
+
+**Example:**
+```
+Split configs/godot.json using router strategy with 5000 pages per skill
+```
+
+**Strategies:**
+- **auto** - Intelligently detects best strategy based on page count and config
+- **category** - Split by documentation categories (creates focused sub-skills)
+- **router** - Create router/hub skill + specialized sub-skills (RECOMMENDED for 10K+ pages)
+- **size** - Split every N pages (for docs without clear categories)
+
+### 8. `generate_router` (NEW)
+Generate router/hub skill for split documentation. Creates intelligent routing to sub-skills.
+
+**Parameters:**
+- `config_pattern` (required): Config pattern for sub-skills (e.g., "configs/godot-*.json")
+- `router_name` (optional): Router skill name (inferred from configs if not provided)
+
+**Example:**
+```
+Generate router for configs/godot-*.json
+```
+
+**What it does:**
+- Analyzes all sub-skill configs
+- Extracts routing keywords from categories and names
+- Creates router SKILL.md with intelligent routing logic
+- Users can ask questions naturally, router directs to appropriate sub-skill
+
 ## Example Workflows
 
 ### Generate a New Skill from Scratch
@@ -198,6 +238,54 @@ Claude: ✅ Config is valid!
 User: Scrape docs using configs/godot.json
 
 Claude: [Starts scraping...]
+```
+
+### Large Documentation (40K Pages) - NEW
+
+```
+User: Estimate pages for configs/godot.json
+
+Claude: 📊 Estimated pages: 40,000
+        ⚠️  Large documentation detected!
+        💡 Recommend splitting into multiple skills
+
+User: Split configs/godot.json using router strategy
+
+Claude: ✅ Split complete!
+        Created 5 sub-skills:
+        - godot-scripting.json (5,000 pages)
+        - godot-2d.json (8,000 pages)
+        - godot-3d.json (10,000 pages)
+        - godot-physics.json (6,000 pages)
+        - godot-shaders.json (11,000 pages)
+
+User: Scrape all godot sub-skills in parallel
+
+Claude: [Starts scraping all 5 configs in parallel...]
+        ✅ All skills created in 4-8 hours instead of 20-40!
+
+User: Generate router for configs/godot-*.json
+
+Claude: ✅ Router skill created at output/godot/
+        Routing logic:
+        - "scripting", "gdscript" → godot-scripting
+        - "2d", "sprites", "tilemap" → godot-2d
+        - "3d", "meshes", "camera" → godot-3d
+        - "physics", "collision" → godot-physics
+        - "shaders", "visual shader" → godot-shaders
+
+User: Package all godot skills
+
+Claude: ✅ 6 skills packaged:
+        - godot.zip (router)
+        - godot-scripting.zip
+        - godot-2d.zip
+        - godot-3d.zip
+        - godot-physics.zip
+        - godot-shaders.zip
+
+        Upload all to Claude!
+        Users just ask questions naturally - router handles routing!
 ```
 
 ## Architecture
@@ -262,10 +350,12 @@ python3 -m pytest tests/test_mcp_server.py -v
 - **package_skill** (2 tests)
 - **list_configs** (3 tests)
 - **validate_config** (3 tests)
+- **split_config** (3 tests) - NEW
+- **generate_router** (3 tests) - NEW
 - **Tool routing** (2 tests)
 - **Integration** (1 test)
 
-**Total: 25 tests | Pass rate: 100%**
+**Total: 31 tests | Pass rate: 100%**
 
 ## Troubleshooting
 
@@ -401,9 +491,14 @@ For API-based enhancement (requires Anthropic API key):
 | Generate config | <1s | Creates JSON file |
 | Validate config | <1s | Quick validation |
 | Estimate pages | 1-2min | Fast, no data download |
+| Split config | 1-3min | Analyzes and creates sub-configs |
+| Generate router | 10-30s | Creates router SKILL.md |
 | Scrape docs | 15-45min | First time only |
+| Scrape docs (40K pages) | 20-40hrs | Sequential |
+| Scrape docs (40K pages, parallel) | 4-8hrs | 5 skills in parallel |
 | Scrape (cached) | <1min | With `skip_scrape` |
 | Package skill | 5-10s | Creates .zip |
+| Package multi | 30-60s | Packages 5-10 skills |
 
 ## Documentation
 
