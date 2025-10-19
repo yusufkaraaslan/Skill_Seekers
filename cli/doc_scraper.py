@@ -698,6 +698,8 @@ def validate_config(config):
             rate = float(config['rate_limit'])
             if rate < 0:
                 errors.append(f"'rate_limit' must be non-negative (got {rate})")
+            elif rate > 10:
+                warnings.append(f"'rate_limit' is very high ({rate}s) - this may slow down scraping significantly")
         except (ValueError, TypeError):
             errors.append(f"'rate_limit' must be a number (got {config['rate_limit']})")
 
@@ -707,6 +709,8 @@ def validate_config(config):
             max_p = int(config['max_pages'])
             if max_p < 1:
                 errors.append(f"'max_pages' must be at least 1 (got {max_p})")
+            elif max_p > 10000:
+                warnings.append(f"'max_pages' is very high ({max_p}) - scraping may take a very long time")
         except (ValueError, TypeError):
             errors.append(f"'max_pages' must be an integer (got {config['max_pages']})")
 

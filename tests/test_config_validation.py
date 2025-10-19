@@ -129,9 +129,9 @@ class TestConfigValidation(unittest.TestCase):
                 # Missing 'title' and 'code_blocks'
             }
         }
-        errors, _ = validate_config(config)
-        self.assertTrue(any('title' in error.lower() for error in errors))
-        self.assertTrue(any('code_blocks' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('title' in warning.lower() for warning in warnings))
+        self.assertTrue(any('code_blocks' in warning.lower() for warning in warnings))
 
     def test_invalid_url_patterns_not_dict(self):
         """Test invalid url_patterns (not a dictionary)"""
@@ -194,8 +194,8 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'rate_limit': 20
         }
-        errors, _ = validate_config(config)
-        self.assertTrue(any('rate_limit' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('rate_limit' in warning.lower() for warning in warnings))
 
     def test_invalid_rate_limit_not_number(self):
         """Test invalid rate_limit (not a number)"""
@@ -236,8 +236,8 @@ class TestConfigValidation(unittest.TestCase):
             'base_url': 'https://example.com/',
             'max_pages': 20000
         }
-        errors, _ = validate_config(config)
-        self.assertTrue(any('max_pages' in error.lower() for error in errors))
+        _, warnings = validate_config(config)
+        self.assertTrue(any('max_pages' in warning.lower() for warning in warnings))
 
     def test_invalid_max_pages_not_int(self):
         """Test invalid max_pages (not an integer)"""
