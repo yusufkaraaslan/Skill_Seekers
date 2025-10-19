@@ -150,6 +150,53 @@ async def list_tools() -> list[Tool]:
                 "required": ["config_path"],
             },
         ),
+        Tool(
+            name="split_config",
+            description="Split large documentation config into multiple focused skills. For 10K+ page documentation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to config JSON file (e.g., configs/godot.json)",
+                    },
+                    "strategy": {
+                        "type": "string",
+                        "description": "Split strategy: auto, none, category, router, size (default: auto)",
+                        "default": "auto",
+                    },
+                    "target_pages": {
+                        "type": "integer",
+                        "description": "Target pages per skill (default: 5000)",
+                        "default": 5000,
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "description": "Preview without saving files (default: false)",
+                        "default": False,
+                    },
+                },
+                "required": ["config_path"],
+            },
+        ),
+        Tool(
+            name="generate_router",
+            description="Generate router/hub skill for split documentation. Creates intelligent routing to sub-skills.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_pattern": {
+                        "type": "string",
+                        "description": "Config pattern for sub-skills (e.g., 'configs/godot-*.json')",
+                    },
+                    "router_name": {
+                        "type": "string",
+                        "description": "Router skill name (optional, inferred from configs)",
+                    },
+                },
+                "required": ["config_pattern"],
+            },
+        ),
     ]
 
 
@@ -170,6 +217,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await list_configs_tool(arguments)
         elif name == "validate_config":
             return await validate_config_tool(arguments)
+        elif name == "split_config":
+            return await split_config_tool(arguments)
+        elif name == "generate_router":
+            return await generate_router_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -372,6 +423,63 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
 
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def split_config_tool(args: dict) -> list[TextContent]:
+    """Split large config into multiple focused configs"""
+    config_path = args["config_path"]
+    strategy = args.get("strategy", "auto")
+    target_pages = args.get("target_pages", 5000)
+    dry_run = args.get("dry_run", False)
+
+    # Run split_config.py
+    cmd = [
+        sys.executable,
+        str(CLI_DIR / "split_config.py"),
+        config_path,
+        "--strategy", strategy,
+        "--target-pages", str(target_pages)
+    ]
+
+    if dry_run:
+        cmd.append("--dry-run")
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        return [TextContent(type="text", text=result.stdout)]
+    else:
+        return [TextContent(type="text", text=f"Error: {result.stderr}\n\n{result.stdout}")]
+
+
+async def generate_router_tool(args: dict) -> list[TextContent]:
+    """Generate router skill for split documentation"""
+    import glob
+
+    config_pattern = args["config_pattern"]
+    router_name = args.get("router_name")
+
+    # Expand glob pattern
+    config_files = glob.glob(config_pattern)
+
+    if not config_files:
+        return [TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")]
+
+    # Run generate_router.py
+    cmd = [
+        sys.executable,
+        str(CLI_DIR / "generate_router.py"),
+    ] + config_files
+
+    if router_name:
+        cmd.extend(["--name", router_name])
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        return [TextContent(type="text", text=result.stdout)]
+    else:
+        return [TextContent(type="text", text=f"Error: {result.stderr}\n\n{result.stdout}")]
 
 
 async def main():
