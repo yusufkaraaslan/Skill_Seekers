@@ -72,7 +72,7 @@ You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-The MCP server exposes 8 tools:
+The MCP server exposes 9 tools:
 
 ### 1. `generate_config`
 Create a new configuration file for any documentation website.
@@ -116,17 +116,29 @@ Scrape docs using configs/react.json
 ```
 
 ### 4. `package_skill`
-Package a skill directory into a `.zip` file ready for Claude upload.
+Package a skill directory into a `.zip` file ready for Claude upload. Automatically uploads if ANTHROPIC_API_KEY is set.
 
 **Parameters:**
 - `skill_dir` (required): Path to skill directory (e.g., "output/react/")
+- `auto_upload` (optional): Try to upload automatically if API key is available (default: true)
 
 **Example:**
 ```
 Package skill at output/react/
 ```
 
-### 5. `list_configs`
+### 5. `upload_skill`
+Upload a skill .zip file to Claude automatically (requires ANTHROPIC_API_KEY).
+
+**Parameters:**
+- `skill_zip` (required): Path to skill .zip file (e.g., "output/react.zip")
+
+**Example:**
+```
+Upload output/react.zip using upload_skill
+```
+
+### 6. `list_configs`
 List all available preset configurations.
 
 **Parameters:** None
@@ -136,7 +148,7 @@ List all available preset configurations.
 List all available configs
 ```
 
-### 6. `validate_config`
+### 7. `validate_config`
 Validate a config file for errors.
 
 **Parameters:**
@@ -147,7 +159,7 @@ Validate a config file for errors.
 Validate configs/godot.json
 ```
 
-### 7. `split_config` (NEW)
+### 8. `split_config`
 Split large documentation config into multiple focused skills. For 10K+ page documentation.
 
 **Parameters:**
@@ -167,7 +179,7 @@ Split configs/godot.json using router strategy with 5000 pages per skill
 - **router** - Create router/hub skill + specialized sub-skills (RECOMMENDED for 10K+ pages)
 - **size** - Split every N pages (for docs without clear categories)
 
-### 8. `generate_router` (NEW)
+### 9. `generate_router`
 Generate router/hub skill for split documentation. Creates intelligent routing to sub-skills.
 
 **Parameters:**
@@ -347,15 +359,16 @@ python3 -m pytest tests/test_mcp_server.py -v
 - **generate_config** (3 tests)
 - **estimate_pages** (3 tests)
 - **scrape_docs** (4 tests)
-- **package_skill** (2 tests)
+- **package_skill** (3 tests)
+- **upload_skill** (2 tests)
 - **list_configs** (3 tests)
 - **validate_config** (3 tests)
-- **split_config** (3 tests) - NEW
-- **generate_router** (3 tests) - NEW
+- **split_config** (3 tests)
+- **generate_router** (3 tests)
 - **Tool routing** (2 tests)
 - **Integration** (1 test)
 
-**Total: 31 tests | Pass rate: 100%**
+**Total: 34 tests | Pass rate: 100%**
 
 ## Troubleshooting
 

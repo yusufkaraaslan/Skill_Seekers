@@ -2,10 +2,10 @@
 
 Step-by-step guide to set up the Skill Seeker MCP server with Claude Code.
 
-**✅ Fully Tested and Working**: All 8 MCP tools verified in production use with Claude Code
-- ✅ 31 comprehensive unit tests (100% pass rate)
+**✅ Fully Tested and Working**: All 9 MCP tools verified in production use with Claude Code
+- ✅ 34 comprehensive unit tests (100% pass rate)
 - ✅ Integration tested via actual Claude Code MCP protocol
-- ✅ All 8 tools working with natural language commands (includes large docs support!)
+- ✅ All 9 tools working with natural language commands (includes upload support!)
 
 ---
 
@@ -182,13 +182,16 @@ In Claude Code, type:
 List all available MCP tools
 ```
 
-You should see 6 Skill Seeker tools:
+You should see 9 Skill Seeker tools:
 - `generate_config`
 - `estimate_pages`
 - `scrape_docs`
 - `package_skill`
+- `upload_skill`
 - `list_configs`
 - `validate_config`
+- `split_config`
+- `generate_router`
 
 ### Step 2: Test a Simple Command
 

@@ -94,7 +94,7 @@ The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) ope
 "Package skill at output/react/"
 ```
 
-8 MCP tools available: list_configs, generate_config, validate_config, estimate_pages, scrape_docs, package_skill, split_config, generate_router
+9 MCP tools available: list_configs, generate_config, validate_config, estimate_pages, scrape_docs, package_skill, upload_skill, split_config, generate_router
 
 ### Test with limited pages (edit config first)
 Set `"max_pages": 20` in the config file to test with fewer pages.
@@ -134,7 +134,7 @@ Skill_Seekers/
 │   ├── package_skill.py       # Single skill packager
 │   └── package_multi.py       # Multi-skill packager (NEW)
 ├── mcp/                        # MCP server
-│   ├── server.py              # 8 MCP tools (includes split/router)
+│   ├── server.py              # 9 MCP tools (includes upload)
 │   └── README.md
 ├── configs/                    # Preset configurations
 │   ├── godot.json
