@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        exclude:
+          # Exclude some combinations to speed up CI
+          - os: macos-latest
+            python-version: '3.7'
+          - os: macos-latest
+            python-version: '3.8'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', 'mcp/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+        pip install pytest pytest-cov
+        if [ -f mcp/requirements.txt ]; then pip install -r mcp/requirements.txt; fi
+
+    - name: Run CLI tests
+      run: |
+        python -m pytest tests/test_scraper_features.py -v
+        python -m pytest tests/test_config_validation.py -v
+        python -m pytest tests/test_integration.py -v
+
+    - name: Run MCP server tests
+      run: |
+        python -m pytest tests/test_mcp_server.py -v
+
+    - name: Generate coverage report
+      run: |
+        python -m pytest tests/ --cov=cli --cov=mcp --cov-report=xml --cov-report=term
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

@@ -1,9 +1,10 @@
 # Skill Seeker
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-96%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-14%20Passing-brightgreen.svg)](tests/)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
 
