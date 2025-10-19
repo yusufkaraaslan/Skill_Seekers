@@ -643,6 +643,7 @@ To refresh this skill with updated documentation:
 def validate_config(config):
     """Validate configuration structure"""
     errors = []
+    warnings = []
 
     # Required fields
     required_fields = ['name', 'base_url']
@@ -668,9 +669,9 @@ def validate_config(config):
             recommended_selectors = ['main_content', 'title', 'code_blocks']
             for selector in recommended_selectors:
                 if selector not in config['selectors']:
-                    errors.append(f"Missing recommended selector: '{selector}'")
+                    warnings.append(f"Missing recommended selector: '{selector}'")
     else:
-        errors.append("Missing 'selectors' section (recommended)")
+        warnings.append("Missing 'selectors' section (recommended)")
 
     # Validate url_patterns
     if 'url_patterns' in config:
@@ -695,8 +696,8 @@ def validate_config(config):
     if 'rate_limit' in config:
         try:
             rate = float(config['rate_limit'])
-            if rate < 0 or rate > 10:
-                errors.append(f"'rate_limit' should be between 0 and 10 (got {rate})")
+            if rate < 0:
+                errors.append(f"'rate_limit' must be non-negative (got {rate})")
         except (ValueError, TypeError):
             errors.append(f"'rate_limit' must be a number (got {config['rate_limit']})")
 
@@ -704,8 +705,8 @@ def validate_config(config):
     if 'max_pages' in config:
         try:
             max_p = int(config['max_pages'])
-            if max_p < 1 or max_p > 10000:
-                errors.append(f"'max_pages' should be between 1 and 10000 (got {max_p})")
+            if max_p < 1:
+                errors.append(f"'max_pages' must be at least 1 (got {max_p})")
         except (ValueError, TypeError):
             errors.append(f"'max_pages' must be an integer (got {config['max_pages']})")
 
@@ -718,7 +719,7 @@ def validate_config(config):
                 if not url.startswith(('http://', 'https://')):
                     errors.append(f"Invalid start_url: '{url}' (must start with http:// or https://)")
 
-    return errors
+    return errors, warnings
 
 
 def load_config(config_path):
@@ -734,7 +735,16 @@ def load_config(config_path):
         sys.exit(1)
 
     # Validate config
-    errors = validate_config(config)
+    errors, warnings = validate_config(config)
+
+    # Show warnings (non-blocking)
+    if warnings:
+        print(f"⚠️  Configuration warnings in {config_path}:")
+        for warning in warnings:
+            print(f"   - {warning}")
+        print()
+
+    # Show errors (blocking)
     if errors:
         print(f"❌ Configuration validation errors in {config_path}:")
         for error in errors:
