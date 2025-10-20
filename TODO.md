@@ -46,12 +46,18 @@ Instead of rigid milestones, we now have:
 
 ## ✅ This Week's Focus (Oct 20-27)
 
+### Completed This Week:
+- [x] **H1.1** - Responded to Issue #8: Added bulletproof docs & fixed MCP setup ✅
+- [x] **H1.2** - Fixed Issue #7: All 11 configs working (Django, Laravel, Astro, Tailwind) ✅
+- [x] **H1.4** - Linked Issue #4 to roadmap: Connected to A2/A3 knowledge sharing plans ✅
+- [x] **PR #5** - Reviewed and approved: Anchor stripping feature (security verified) ✅
+
 ### Immediate Tasks (Pick 3-5):
-- [ ] **H1.1** - Respond to Issue #8: Prereqs to Getting Started (30 min)
 - [ ] **J1.1** - Install MCP package: `pip install mcp` (5 min)
 - [ ] **A3.1** - Create simple GitHub Pages site (1-2 hours)
 - [ ] **B1.1** - Research PDF parsing libraries (30-60 min)
 - [ ] **F1.1** - Add URL normalization (1-2 hours)
+- [ ] **H1.3** - Create example project folder (2-3 hours)
 
 **See [NEXT_TASKS.md](NEXT_TASKS.md) for more recommendations!**
 
@@ -147,14 +153,21 @@ Instead of rigid milestones, we now have:
 
 ## 📊 Progress Tracking
 
-### Completed This Week:
+### Completed This Week (Oct 20-21):
 - [x] Updated all planning documents
-- [x] Created flexible roadmap
-- [x] Organized 100+ tasks
-- [ ] _Your tasks here_
+- [x] Created flexible roadmap with 134 tasks
+- [x] Organized tasks into 22 feature groups
+- [x] Set up GitHub Project Board (100% complete)
+- [x] **H1.1** - Issue #8: Bulletproof Quick Start + Troubleshooting docs
+- [x] **H1.1** - Fixed MCP setup script (path expansion bug)
+- [x] **H1.2** - Issue #7: Fixed all broken configs (11/11 working)
+- [x] **H1.2** - Created Laravel config (new!)
+- [x] **H1.4** - Issue #4: Linked to roadmap A2/A3 knowledge sharing
+- [x] **PR #5** - Reviewed and approved anchor stripping (security verified)
 
 ### In Progress:
-- [ ] _Pick from NEXT_TASKS.md_
+- [ ] Merging PR #5
+- [ ] H1.3 - Create example project folder
 
 ### Backlog:
 - See [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) for full list
