@@ -103,7 +103,7 @@ echo "You need to add this configuration to Claude Code:"
 echo ""
 echo -e "${YELLOW}Configuration file:${NC} ~/.config/claude-code/mcp.json"
 echo ""
-echo "Add this JSON configuration:"
+echo "Add this JSON configuration (paths are auto-detected for YOUR system):"
 echo ""
 echo -e "${GREEN}{"
 echo "  \"mcpServers\": {"
@@ -117,27 +117,7 @@ echo "    }"
 echo "  }"
 echo -e "}${NC}"
 echo ""
-echo "To configure automatically, run:"
-echo ""
-echo -e "${YELLOW}  mkdir -p ~/.config/claude-code${NC}"
-echo ""
-echo "Then edit ~/.config/claude-code/mcp.json and add the configuration above"
-echo ""
-echo "Or use this one-liner (BE CAREFUL - this may overwrite existing config):"
-echo ""
-echo -e "${RED}cat > ~/.config/claude-code/mcp.json << 'EOF'
-{
-  \"mcpServers\": {
-    \"skill-seeker\": {
-      \"command\": \"python3\",
-      \"args\": [
-        \"$REPO_PATH/mcp/server.py\"
-      ],
-      \"cwd\": \"$REPO_PATH\"
-    }
-  }
-}
-EOF${NC}"
+echo -e "${YELLOW}Note:${NC} The paths above are YOUR actual paths (not placeholders!)"
 echo ""
 
 # Ask if user wants auto-configure
@@ -164,7 +144,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Create config directory
     mkdir -p ~/.config/claude-code
 
-    # Write configuration
+    # Write configuration with actual expanded path
     cat > ~/.config/claude-code/mcp.json << EOF
 {
   "mcpServers": {
@@ -180,13 +160,46 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 EOF
 
     echo -e "${GREEN}✓${NC} Configuration written to ~/.config/claude-code/mcp.json"
+    echo ""
+    echo "Configuration contents:"
+    cat ~/.config/claude-code/mcp.json
+    echo ""
+
+    # Verify the path exists
+    if [ -f "$REPO_PATH/mcp/server.py" ]; then
+        echo -e "${GREEN}✓${NC} Verified: MCP server file exists at $REPO_PATH/mcp/server.py"
+    else
+        echo -e "${RED}❌ Warning: MCP server not found at $REPO_PATH/mcp/server.py${NC}"
+        echo "Please check the path!"
+    fi
 else
     echo "Skipping auto-configuration"
     echo "Please manually configure Claude Code using the JSON above"
+    echo ""
+    echo "IMPORTANT: Replace \$REPO_PATH with the actual path: $REPO_PATH"
 fi
 echo ""
 
-# Step 7: Final instructions
+# Step 7: Test the configuration
+if [ -f ~/.config/claude-code/mcp.json ]; then
+    echo "Step 7: Testing MCP configuration..."
+    echo "Checking if paths are correct..."
+
+    # Extract the configured path
+    if command -v jq &> /dev/null; then
+        CONFIGURED_PATH=$(jq -r '.mcpServers["skill-seeker"].args[0]' ~/.config/claude-code/mcp.json 2>/dev/null || echo "")
+        if [ -n "$CONFIGURED_PATH" ] && [ -f "$CONFIGURED_PATH" ]; then
+            echo -e "${GREEN}✓${NC} MCP server path is valid: $CONFIGURED_PATH"
+        elif [ -n "$CONFIGURED_PATH" ]; then
+            echo -e "${YELLOW}⚠${NC} Warning: Configured path doesn't exist: $CONFIGURED_PATH"
+        fi
+    else
+        echo "Install 'jq' for config validation: brew install jq (macOS) or apt install jq (Linux)"
+    fi
+fi
+echo ""
+
+# Step 8: Final instructions
 echo "=================================================="
 echo "Setup Complete!"
 echo "=================================================="
@@ -195,7 +208,7 @@ echo "Next steps:"
 echo ""
 echo "  1. ${YELLOW}Restart Claude Code${NC} (quit and reopen, don't just close window)"
 echo "  2. In Claude Code, test with: ${GREEN}\"List all available configs\"${NC}"
-echo "  3. You should see 6 Skill Seeker tools available"
+echo "  3. You should see 9 Skill Seeker tools available"
 echo ""
 echo "Available MCP Tools:"
 echo "  • generate_config   - Create new config files"

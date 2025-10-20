@@ -95,6 +95,20 @@ graph LR
 3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples
 4. **Package**: Bundles everything into a Claude-ready `.zip` file
 
+## 📋 Prerequisites
+
+**Before you start, make sure you have:**
+
+1. **Python 3.10 or higher** - [Download](https://www.python.org/downloads/) | Check: `python3 --version`
+2. **Git** - [Download](https://git-scm.com/) | Check: `git --version`
+3. **15-30 minutes** for first-time setup
+
+**First time user?** → **[Start Here: Bulletproof Quick Start Guide](BULLETPROOF_QUICKSTART.md)** 🎯
+
+This guide walks you through EVERYTHING step-by-step (Python install, git clone, first skill creation).
+
+---
+
 ## 🚀 Quick Start
 
 ### Method 1: MCP Server for Claude Code (Easiest)
@@ -102,6 +116,10 @@ graph LR
 Use Skill Seeker directly from Claude Code with natural language!
 
 ```bash
+# Clone repository
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+
 # One-time setup (5 minutes)
 ./setup_mcp.sh
 
@@ -737,11 +755,18 @@ python3 doc_scraper.py --config configs/godot.json
 
 ## 📚 Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 3 steps
+### Getting Started
+- **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **START HERE** if you're new!
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start for experienced users
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Guides
 - **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
 - **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
 - **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
+
+### Technical
 - **[docs/CLAUDE.md](docs/CLAUDE.md)** - Technical architecture
 - **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
 
