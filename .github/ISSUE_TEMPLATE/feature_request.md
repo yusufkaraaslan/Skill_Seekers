@@ -1,36 +1,39 @@
 ---
 name: Feature Request
-about: Suggest a new feature for Skill Seeker or MCP server
+about: Suggest a new feature for Skill Seekers
 title: '[FEATURE] '
-labels: enhancement
+labels: 'type: feature'
 assignees: ''
 ---
 
-## Feature Description
-<!-- Clear description of the feature -->
+## 🚀 Feature Description
 
-## Use Case
-<!-- Why is this feature needed? What problem does it solve? -->
+A clear and concise description of the feature you'd like to see.
 
-## Proposed Solution
-<!-- How should this feature work? -->
+## 💡 Use Case
 
-## Component
-- [ ] CLI Tool
-- [ ] MCP Server
-- [ ] Configuration
-- [ ] Documentation
-- [ ] Tests
+Describe the problem this feature would solve. What is the user trying to accomplish?
 
-## Examples
-<!-- Code examples, screenshots, or mockups -->
+## 📋 Proposed Solution
 
-```bash
-# Example usage
-```
+Describe how you envision this feature working.
 
-## Alternatives Considered
-<!-- Other approaches you've thought about -->
+## 🔄 Alternatives Considered
 
-## Additional Context
-<!-- Any other information -->
+Have you considered any alternative solutions or workarounds?
+
+## 📊 Expected Impact
+
+- **Priority:** Low / Medium / High / Critical
+- **Effort:** XS / S / M / L / XL
+- **Users Affected:** Describe who would benefit
+
+## 📝 Additional Context
+
+Add any other context, screenshots, or examples about the feature request.
+
+## ✅ Acceptance Criteria
+
+- [ ] Criteria 1
+- [ ] Criteria 2
+- [ ] Criteria 3
