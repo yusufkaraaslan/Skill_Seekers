@@ -11,7 +11,7 @@
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
 
-> 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 127 tasks across 10 categories, pick any to contribute!
+> 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tasks across 10 categories, pick any to contribute!
 
 ## What is Skill Seeker?
 
