@@ -7,8 +7,11 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
 [![Tested](https://img.shields.io/badge/Tests-14%20Passing-brightgreen.svg)](tests/)
+[![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
+
+> 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 127 tasks across 10 categories, pick any to contribute!
 
 ## What is Skill Seeker?
 
