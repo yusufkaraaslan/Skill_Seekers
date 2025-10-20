@@ -12,7 +12,7 @@
     "https://docs.djangoproject.com/en/stable/ref/models/"
   ],
   "selectors": {
-    "main_content": "div.document",
+    "main_content": "article",
     "title": "h1",
     "code_blocks": "pre"
   },

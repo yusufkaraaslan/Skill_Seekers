@@ -9,7 +9,7 @@
     "https://tailwindcss.com/docs/hover-focus-and-other-states"
   ],
   "selectors": {
-    "main_content": "article",
+    "main_content": "div.prose",
     "title": "h1",
     "code_blocks": "pre code"
   },
