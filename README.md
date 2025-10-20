@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
 # Skill Seeker
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.0.0)
