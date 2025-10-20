@@ -196,7 +196,9 @@ class DocToSkillConverter:
         # Extract links
         for link in main.find_all('a', href=True):
             href = urljoin(url, link['href'])
-            if self.is_valid_url(href):
+            # Strip anchor fragments to avoid treating #anchors as separate pages
+            href = href.split('#')[0]
+            if self.is_valid_url(href) and href not in page['links']:
                 page['links'].append(href)
         
         return page

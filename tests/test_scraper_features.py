@@ -316,6 +316,97 @@ class TestCategorization(unittest.TestCase):
         self.assertNotIn('guides', categories)
 
 
+class TestLinkExtraction(unittest.TestCase):
+    """Test link extraction and anchor fragment handling"""
+
+    def setUp(self):
+        """Set up test converter"""
+        config = {
+            'name': 'test',
+            'base_url': 'https://example.com/',
+            'selectors': {'main_content': 'article', 'title': 'h1', 'code_blocks': 'pre code'},
+            'url_patterns': {
+                'include': [],
+                'exclude': []
+            },
+            'rate_limit': 0.1,
+            'max_pages': 10
+        }
+        self.converter = DocToSkillConverter(config, dry_run=True)
+
+    def test_extract_links_strips_anchor_fragments(self):
+        """Test that anchor fragments (#anchor) are stripped from extracted links"""
+        html = '''
+        <article>
+            <h1>Test Page</h1>
+            <p>Content with links</p>
+            <a href="https://example.com/docs/page.html#section1">Link 1</a>
+            <a href="https://example.com/docs/page.html#section2">Link 2</a>
+            <a href="https://example.com/docs/other.html">Link 3</a>
+        </article>
+        '''
+        soup = BeautifulSoup(html, 'html.parser')
+        page = self.converter.extract_content(soup, 'https://example.com/')
+
+        # Should have 2 unique URLs (page.html and other.html), not 3
+        # The two links with different anchors should be deduplicated
+        self.assertEqual(len(page['links']), 2)
+        self.assertIn('https://example.com/docs/page.html', page['links'])
+        self.assertIn('https://example.com/docs/other.html', page['links'])
+
+    def test_extract_links_no_anchor_duplicates(self):
+        """Test that multiple anchor links to same page don't create duplicates"""
+        html = '''
+        <article>
+            <h1>Test Page</h1>
+            <a href="https://example.com/docs/api.html#cb1-1">Anchor 1</a>
+            <a href="https://example.com/docs/api.html#cb1-2">Anchor 2</a>
+            <a href="https://example.com/docs/api.html#cb1-3">Anchor 3</a>
+            <a href="https://example.com/docs/api.html#cb1-4">Anchor 4</a>
+            <a href="https://example.com/docs/api.html#cb1-5">Anchor 5</a>
+        </article>
+        '''
+        soup = BeautifulSoup(html, 'html.parser')
+        page = self.converter.extract_content(soup, 'https://example.com/')
+
+        # All 5 links point to the same page, should result in only 1 URL
+        self.assertEqual(len(page['links']), 1)
+        self.assertEqual(page['links'][0], 'https://example.com/docs/api.html')
+
+    def test_extract_links_preserves_query_params(self):
+        """Test that query parameters are preserved when stripping anchors"""
+        html = '''
+        <article>
+            <h1>Test Page</h1>
+            <a href="https://example.com/search?q=test#result1">Search Result</a>
+        </article>
+        '''
+        soup = BeautifulSoup(html, 'html.parser')
+        page = self.converter.extract_content(soup, 'https://example.com/')
+
+        # Query params should be preserved, only anchor stripped
+        self.assertEqual(len(page['links']), 1)
+        self.assertEqual(page['links'][0], 'https://example.com/search?q=test')
+
+    def test_extract_links_relative_urls_with_anchors(self):
+        """Test that relative URLs with anchors are handled correctly"""
+        html = '''
+        <article>
+            <h1>Test Page</h1>
+            <a href="/docs/guide.html#intro">Relative Link 1</a>
+            <a href="/docs/guide.html#advanced">Relative Link 2</a>
+            <a href="/docs/tutorial.html#start">Relative Link 3</a>
+        </article>
+        '''
+        soup = BeautifulSoup(html, 'html.parser')
+        page = self.converter.extract_content(soup, 'https://example.com/')
+
+        # Should have 2 unique URLs (guide.html and tutorial.html)
+        self.assertEqual(len(page['links']), 2)
+        self.assertIn('https://example.com/docs/guide.html', page['links'])
+        self.assertIn('https://example.com/docs/tutorial.html', page['links'])
+
+
 class TestTextCleaning(unittest.TestCase):
     """Test text cleaning utility"""
 
