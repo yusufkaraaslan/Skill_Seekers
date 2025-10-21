@@ -156,13 +156,13 @@ Package skill at output/react/
 pip3 install requests beautifulsoup4
 
 # Optional: Estimate pages first (fast, 1-2 minutes)
-python3 estimate_pages.py configs/godot.json
+python3 cli/estimate_pages.py configs/godot.json
 
 # Use Godot preset
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # Use React preset
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # See all presets
 ls configs/
@@ -171,13 +171,13 @@ ls configs/
 ### Interactive Mode
 
 ```bash
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 ```
 
 ### Quick Mode
 
 ```bash
-python3 doc_scraper.py \
+python3 cli/doc_scraper.py \
   --name react \
   --url https://react.dev/ \
   --description "React framework for UIs"
@@ -284,7 +284,7 @@ doc-to-skill/
 ### 1. Fast Page Estimation (NEW!)
 
 ```bash
-python3 estimate_pages.py configs/react.json
+python3 cli/estimate_pages.py configs/react.json
 
 # Output:
 📊 ESTIMATION RESULTS
@@ -304,7 +304,7 @@ python3 estimate_pages.py configs/react.json
 ### 2. Auto-Detect Existing Data
 
 ```bash
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # If data exists:
 ✓ Found existing data: 245 pages
@@ -349,10 +349,10 @@ Automatically infers categories from:
 
 ```bash
 # Scrape once
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # Later, just rebuild (instant)
-python3 doc_scraper.py --config configs/react.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/react.json --skip-scrape
 ```
 
 ### 6. AI-Powered SKILL.md Enhancement
@@ -491,14 +491,14 @@ python3 cli/doc_scraper.py --config configs/godot.json --fresh
 
 ```bash
 # 1. Scrape + Build + AI Enhancement (LOCAL, no API key)
-python3 doc_scraper.py --config configs/godot.json --enhance-local
+python3 cli/doc_scraper.py --config configs/godot.json --enhance-local
 
 # 2. Wait for new terminal to close (enhancement completes)
 # Check the enhanced SKILL.md:
 cat output/godot/SKILL.md
 
 # 3. Package
-python3 package_skill.py output/godot/
+python3 cli/package_skill.py output/godot/
 
 # 4. Done! You have godot.zip with excellent SKILL.md
 ```
@@ -509,11 +509,11 @@ python3 package_skill.py output/godot/
 
 ```bash
 # 1. Use cached data + Local Enhancement
-python3 doc_scraper.py --config configs/godot.json --skip-scrape
-python3 enhance_skill_local.py output/godot/
+python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+python3 cli/enhance_skill_local.py output/godot/
 
 # 2. Package
-python3 package_skill.py output/godot/
+python3 cli/package_skill.py output/godot/
 
 # 3. Done!
 ```
@@ -524,10 +524,10 @@ python3 package_skill.py output/godot/
 
 ```bash
 # 1. Scrape + Build (no enhancement)
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # 2. Package
-python3 package_skill.py output/godot/
+python3 cli/package_skill.py output/godot/
 
 # 3. Done! (SKILL.md will be basic template)
 ```
@@ -549,19 +549,19 @@ python3 package_skill.py output/godot/
 
 ```bash
 # Godot
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # React
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # Vue
-python3 doc_scraper.py --config configs/vue.json
+python3 cli/doc_scraper.py --config configs/vue.json
 
 # Django
-python3 doc_scraper.py --config configs/django.json
+python3 cli/doc_scraper.py --config configs/django.json
 
 # FastAPI
-python3 doc_scraper.py --config configs/fastapi.json
+python3 cli/doc_scraper.py --config configs/fastapi.json
 ```
 
 ## 🎨 Creating Your Own Config
@@ -569,7 +569,7 @@ python3 doc_scraper.py --config configs/fastapi.json
 ### Option 1: Interactive
 
 ```bash
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 # Follow prompts, it will create the config for you
 ```
 
@@ -583,7 +583,7 @@ cp configs/react.json configs/myframework.json
 nano configs/myframework.json
 
 # Use it
-python3 doc_scraper.py --config configs/myframework.json
+python3 cli/doc_scraper.py --config configs/myframework.json
 ```
 
 ### Config Structure
@@ -634,19 +634,19 @@ output/
 
 ```bash
 # Interactive mode
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 
 # Use config file
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # Quick mode
-python3 doc_scraper.py --name react --url https://react.dev/
+python3 cli/doc_scraper.py --name react --url https://react.dev/
 
 # Skip scraping (use existing data)
-python3 doc_scraper.py --config configs/godot.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
 
 # With description
-python3 doc_scraper.py \
+python3 cli/doc_scraper.py \
   --name react \
   --url https://react.dev/ \
   --description "React framework for building UIs"
@@ -667,11 +667,11 @@ Edit `max_pages` in config to test:
 
 ```bash
 # Scrape once
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # Rebuild multiple times (instant)
-python3 doc_scraper.py --config configs/react.json --skip-scrape
-python3 doc_scraper.py --config configs/react.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/react.json --skip-scrape
+python3 cli/doc_scraper.py --config configs/react.json --skip-scrape
 ```
 
 ### 3. Finding Selectors
@@ -708,7 +708,7 @@ cat output/godot/references/index.md  # Categories
 ```bash
 # Force re-scrape
 rm -rf output/myframework_data/
-python3 doc_scraper.py --config configs/myframework.json
+python3 cli/doc_scraper.py --config configs/myframework.json
 ```
 
 ### Categories Not Good?
@@ -720,7 +720,7 @@ Edit the config `categories` section with better keywords.
 rm -rf output/godot_data/
 
 # Re-scrape
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 ```
 
 ## 📈 Performance
@@ -774,13 +774,13 @@ python3 doc_scraper.py --config configs/godot.json
 
 ```bash
 # Try Godot
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # Try React
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # Or go interactive
-python3 doc_scraper.py --interactive
+python3 cli/doc_scraper.py --interactive
 ```
 
 ## 📝 License
