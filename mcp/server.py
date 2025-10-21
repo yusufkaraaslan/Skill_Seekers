@@ -55,8 +55,13 @@ async def list_tools() -> list[Tool]:
                     },
                     "max_pages": {
                         "type": "integer",
-                        "description": "Maximum pages to scrape (default: 100)",
+                        "description": "Maximum pages to scrape (default: 100, use -1 for unlimited)",
                         "default": 100,
+                    },
+                    "unlimited": {
+                        "type": "boolean",
+                        "description": "Remove all limits - scrape all pages (default: false). Overrides max_pages.",
+                        "default": False,
                     },
                     "rate_limit": {
                         "type": "number",
@@ -79,8 +84,13 @@ async def list_tools() -> list[Tool]:
                     },
                     "max_discovery": {
                         "type": "integer",
-                        "description": "Maximum pages to discover during estimation (default: 1000)",
+                        "description": "Maximum pages to discover during estimation (default: 1000, use -1 for unlimited)",
                         "default": 1000,
+                    },
+                    "unlimited": {
+                        "type": "boolean",
+                        "description": "Remove discovery limit - estimate all pages (default: false). Overrides max_discovery.",
+                        "default": False,
                     },
                 },
                 "required": ["config_path"],
@@ -95,6 +105,11 @@ async def list_tools() -> list[Tool]:
                     "config_path": {
                         "type": "string",
                         "description": "Path to config JSON file (e.g., configs/react.json)",
+                    },
+                    "unlimited": {
+                        "type": "boolean",
+                        "description": "Remove page limit - scrape all pages (default: false). Overrides max_pages in config.",
+                        "default": False,
                     },
                     "enhance_local": {
                         "type": "boolean",
@@ -256,7 +271,18 @@ async def generate_config_tool(args: dict) -> list[TextContent]:
     url = args["url"]
     description = args["description"]
     max_pages = args.get("max_pages", 100)
+    unlimited = args.get("unlimited", False)
     rate_limit = args.get("rate_limit", 0.5)
+
+    # Handle unlimited mode
+    if unlimited:
+        max_pages = None
+        limit_msg = "unlimited (no page limit)"
+    elif max_pages == -1:
+        max_pages = None
+        limit_msg = "unlimited (no page limit)"
+    else:
+        limit_msg = str(max_pages)
 
     # Create config
     config = {
@@ -289,7 +315,7 @@ async def generate_config_tool(args: dict) -> list[TextContent]:
 Configuration:
   Name: {name}
   URL: {url}
-  Max pages: {max_pages}
+  Max pages: {limit_msg}
   Rate limit: {rate_limit}s
 
 Next steps:
@@ -307,6 +333,11 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
     """Estimate page count"""
     config_path = args["config_path"]
     max_discovery = args.get("max_discovery", 1000)
+    unlimited = args.get("unlimited", False)
+
+    # Handle unlimited mode
+    if unlimited or max_discovery == -1:
+        max_discovery = -1
 
     # Run estimate_pages.py
     cmd = [
@@ -327,15 +358,34 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
 async def scrape_docs_tool(args: dict) -> list[TextContent]:
     """Scrape documentation"""
     config_path = args["config_path"]
+    unlimited = args.get("unlimited", False)
     enhance_local = args.get("enhance_local", False)
     skip_scrape = args.get("skip_scrape", False)
     dry_run = args.get("dry_run", False)
+
+    # Handle unlimited mode by modifying config temporarily
+    if unlimited:
+        # Load config
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        # Set max_pages to None (unlimited)
+        config['max_pages'] = None
+
+        # Create temporary config file
+        temp_config_path = config_path.replace('.json', '_unlimited_temp.json')
+        with open(temp_config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        config_to_use = temp_config_path
+    else:
+        config_to_use = config_path
 
     # Build command
     cmd = [
         sys.executable,
         str(CLI_DIR / "doc_scraper.py"),
-        "--config", config_path
+        "--config", config_to_use
     ]
 
     if enhance_local:
@@ -347,6 +397,10 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
 
     # Run doc_scraper.py
     result = subprocess.run(cmd, capture_output=True, text=True)
+
+    # Clean up temporary config
+    if unlimited and Path(config_to_use).exists():
+        Path(config_to_use).unlink()
 
     if result.returncode == 0:
         return [TextContent(type="text", text=result.stdout)]

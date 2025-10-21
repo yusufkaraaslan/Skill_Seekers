@@ -313,10 +313,18 @@ class DocToSkillConverter:
 
         max_pages = self.config.get('max_pages', 500)
 
+        # Handle unlimited mode
+        if max_pages is None or max_pages == -1:
+            print(f"⚠️  UNLIMITED MODE: No page limit (will scrape all pages)\n")
+            unlimited = True
+        else:
+            unlimited = False
+
         # Dry run: preview first 20 URLs
         preview_limit = 20 if self.dry_run else max_pages
 
-        while self.pending_urls and len(self.visited_urls) < preview_limit:
+        # Loop condition: stop if no more URLs, or if limit reached (when not unlimited)
+        while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
             url = self.pending_urls.popleft()
 
             if url in self.visited_urls:
@@ -779,14 +787,23 @@ def validate_config(config):
 
     # Validate max_pages
     if 'max_pages' in config:
-        try:
-            max_p = int(config['max_pages'])
-            if max_p < 1:
-                errors.append(f"'max_pages' must be at least 1 (got {max_p})")
-            elif max_p > 10000:
-                warnings.append(f"'max_pages' is very high ({max_p}) - scraping may take a very long time")
-        except (ValueError, TypeError):
-            errors.append(f"'max_pages' must be an integer (got {config['max_pages']})")
+        max_p_value = config['max_pages']
+
+        # Allow None for unlimited
+        if max_p_value is None:
+            warnings.append("'max_pages' is None (unlimited) - this will scrape ALL pages. Use with caution!")
+        else:
+            try:
+                max_p = int(max_p_value)
+                # Allow -1 for unlimited
+                if max_p == -1:
+                    warnings.append("'max_pages' is -1 (unlimited) - this will scrape ALL pages. Use with caution!")
+                elif max_p < 1:
+                    errors.append(f"'max_pages' must be at least 1 or -1 for unlimited (got {max_p})")
+                elif max_p > 10000:
+                    warnings.append(f"'max_pages' is very high ({max_p}) - scraping may take a very long time")
+            except (ValueError, TypeError):
+                errors.append(f"'max_pages' must be an integer, -1, or null (got {config['max_pages']})")
 
     # Validate start_urls if present
     if 'start_urls' in config:
