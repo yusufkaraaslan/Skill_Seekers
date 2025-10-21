@@ -41,6 +41,9 @@ class DocToSkillConverter:
         self.checkpoint_enabled = checkpoint_config.get('enabled', False)
         self.checkpoint_interval = checkpoint_config.get('interval', 1000)
 
+        # Parallel scraping config
+        self.workers = config.get('workers', 1)
+
         # State
         self.visited_urls = set()
         # Support multiple starting URLs
@@ -48,6 +51,11 @@ class DocToSkillConverter:
         self.pending_urls = deque(start_urls)
         self.pages = []
         self.pages_scraped = 0
+
+        # Thread-safe lock for parallel scraping
+        if self.workers > 1:
+            import threading
+            self.lock = threading.Lock()
 
         # Create directories (unless dry-run)
         if not dry_run:
@@ -271,33 +279,52 @@ class DocToSkillConverter:
             json.dump(page, f, indent=2, ensure_ascii=False)
     
     def scrape_page(self, url):
-        """Scrape a single page"""
+        """Scrape a single page (thread-safe)"""
         try:
-            print(f"  {url}")
-            
+            # Scraping part (no lock needed - independent)
             headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper)'}
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
-            
+
             soup = BeautifulSoup(response.content, 'html.parser')
             page = self.extract_content(soup, url)
-            
-            self.save_page(page)
-            self.pages.append(page)
-            
-            # Add new URLs
-            for link in page['links']:
-                if link not in self.visited_urls and link not in self.pending_urls:
-                    self.pending_urls.append(link)
-            
+
+            # Thread-safe operations (lock required)
+            if self.workers > 1:
+                with self.lock:
+                    print(f"  {url}")
+                    self.save_page(page)
+                    self.pages.append(page)
+
+                    # Add new URLs
+                    for link in page['links']:
+                        if link not in self.visited_urls and link not in self.pending_urls:
+                            self.pending_urls.append(link)
+            else:
+                # Single-threaded mode (no lock needed)
+                print(f"  {url}")
+                self.save_page(page)
+                self.pages.append(page)
+
+                # Add new URLs
+                for link in page['links']:
+                    if link not in self.visited_urls and link not in self.pending_urls:
+                        self.pending_urls.append(link)
+
             # Rate limiting
-            time.sleep(self.config.get('rate_limit', 0.5))
-            
+            rate_limit = self.config.get('rate_limit', 0.5)
+            if rate_limit > 0:
+                time.sleep(rate_limit)
+
         except Exception as e:
-            print(f"  ✗ Error: {e}")
+            if self.workers > 1:
+                with self.lock:
+                    print(f"  ✗ Error on {url}: {e}")
+            else:
+                print(f"  ✗ Error: {e}")
     
     def scrape_all(self):
-        """Scrape all pages"""
+        """Scrape all pages (supports parallel scraping)"""
         print(f"\n{'='*60}")
         if self.dry_run:
             print(f"DRY RUN: {self.name}")
@@ -309,7 +336,10 @@ class DocToSkillConverter:
         if self.dry_run:
             print(f"Mode: Preview only (no actual scraping)\n")
         else:
-            print(f"Output: {self.data_dir}\n")
+            print(f"Output: {self.data_dir}")
+            if self.workers > 1:
+                print(f"Workers: {self.workers} parallel threads")
+            print()
 
         max_pages = self.config.get('max_pages', 500)
 
@@ -323,44 +353,93 @@ class DocToSkillConverter:
         # Dry run: preview first 20 URLs
         preview_limit = 20 if self.dry_run else max_pages
 
-        # Loop condition: stop if no more URLs, or if limit reached (when not unlimited)
-        while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
-            url = self.pending_urls.popleft()
+        # Single-threaded mode (original sequential logic)
+        if self.workers <= 1:
+            while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
+                url = self.pending_urls.popleft()
 
-            if url in self.visited_urls:
-                continue
+                if url in self.visited_urls:
+                    continue
 
-            self.visited_urls.add(url)
+                self.visited_urls.add(url)
 
-            if self.dry_run:
-                # Just show what would be scraped
-                print(f"  [Preview] {url}")
-                # Simulate finding links without actually scraping
-                try:
-                    headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper - Dry Run)'}
-                    response = requests.get(url, headers=headers, timeout=10)
-                    soup = BeautifulSoup(response.content, 'html.parser')
+                if self.dry_run:
+                    # Just show what would be scraped
+                    print(f"  [Preview] {url}")
+                    try:
+                        headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper - Dry Run)'}
+                        response = requests.get(url, headers=headers, timeout=10)
+                        soup = BeautifulSoup(response.content, 'html.parser')
 
-                    main_selector = self.config.get('selectors', {}).get('main_content', 'div[role="main"]')
-                    main = soup.select_one(main_selector)
+                        main_selector = self.config.get('selectors', {}).get('main_content', 'div[role="main"]')
+                        main = soup.select_one(main_selector)
 
-                    if main:
-                        for link in main.find_all('a', href=True):
-                            href = urljoin(url, link['href'])
-                            if self.is_valid_url(href) and href not in self.visited_urls:
-                                self.pending_urls.append(href)
-                except:
-                    pass  # Ignore errors in dry run
-            else:
-                self.scrape_page(url)
-                self.pages_scraped += 1
+                        if main:
+                            for link in main.find_all('a', href=True):
+                                href = urljoin(url, link['href'])
+                                if self.is_valid_url(href) and href not in self.visited_urls:
+                                    self.pending_urls.append(href)
+                    except:
+                        pass
+                else:
+                    self.scrape_page(url)
+                    self.pages_scraped += 1
 
-                # Save checkpoint at interval
-                if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
-                    self.save_checkpoint()
+                    if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
+                        self.save_checkpoint()
 
-            if len(self.visited_urls) % 10 == 0:
-                print(f"  [{len(self.visited_urls)} pages]")
+                if len(self.visited_urls) % 10 == 0:
+                    print(f"  [{len(self.visited_urls)} pages]")
+
+        # Multi-threaded mode (parallel scraping)
+        else:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            print(f"🚀 Starting parallel scraping with {self.workers} workers\n")
+
+            with ThreadPoolExecutor(max_workers=self.workers) as executor:
+                futures = []
+
+                while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
+                    # Get next batch of URLs
+                    batch = []
+                    batch_size = min(self.workers * 2, len(self.pending_urls))
+
+                    for _ in range(batch_size):
+                        if not self.pending_urls:
+                            break
+                        url = self.pending_urls.popleft()
+
+                        if url not in self.visited_urls:
+                            self.visited_urls.add(url)
+                            batch.append(url)
+
+                    # Submit batch to executor
+                    for url in batch:
+                        if unlimited or len(self.visited_urls) <= preview_limit:
+                            future = executor.submit(self.scrape_page, url)
+                            futures.append(future)
+
+                    # Wait for some to complete before submitting more
+                    completed = 0
+                    for future in as_completed(futures[:batch_size]):
+                        completed += 1
+                        self.pages_scraped += 1
+
+                        if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
+                            with self.lock:
+                                self.save_checkpoint()
+
+                        if self.pages_scraped % 10 == 0:
+                            with self.lock:
+                                print(f"  [{self.pages_scraped} pages scraped]")
+
+                    # Remove completed futures
+                    futures = [f for f in futures if not f.done()]
+
+                # Wait for remaining futures
+                for future in as_completed(futures):
+                    self.pages_scraped += 1
 
         if self.dry_run:
             print(f"\n✅ Dry run complete: would scrape ~{len(self.visited_urls)} pages")
@@ -932,9 +1011,15 @@ def main():
                        help='Resume from last checkpoint (for interrupted scrapes)')
     parser.add_argument('--fresh', action='store_true',
                        help='Clear checkpoint and start fresh')
+    parser.add_argument('--rate-limit', '-r', type=float, metavar='SECONDS',
+                       help='Override rate limit in seconds (default: from config or 0.5). Use 0 for no delay.')
+    parser.add_argument('--workers', '-w', type=int, metavar='N',
+                       help='Number of parallel workers for faster scraping (default: 1, max: 10)')
+    parser.add_argument('--no-rate-limit', action='store_true',
+                       help='Disable rate limiting completely (same as --rate-limit 0)')
 
     args = parser.parse_args()
-    
+
     # Get configuration
     if args.config:
         config = load_config(args.config)
@@ -954,6 +1039,29 @@ def main():
             'rate_limit': 0.5,
             'max_pages': 500
         }
+
+    # Apply CLI overrides
+    if args.no_rate_limit:
+        config['rate_limit'] = 0
+        print(f"⚡ Rate limiting disabled")
+    elif args.rate_limit is not None:
+        config['rate_limit'] = args.rate_limit
+        if args.rate_limit == 0:
+            print(f"⚡ Rate limiting disabled")
+        else:
+            print(f"⚡ Rate limit override: {args.rate_limit}s per page")
+
+    if args.workers:
+        # Validate workers count
+        if args.workers < 1:
+            print(f"❌ Error: --workers must be at least 1")
+            sys.exit(1)
+        if args.workers > 10:
+            print(f"⚠️  Warning: --workers capped at 10 (requested {args.workers})")
+            args.workers = 10
+        config['workers'] = args.workers
+        if args.workers > 1:
+            print(f"🚀 Parallel scraping enabled: {args.workers} workers")
     
     # Dry run mode - preview only
     if args.dry_run:
