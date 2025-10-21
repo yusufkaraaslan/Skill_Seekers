@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,75 @@ app = Server("skill-seeker")
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent / "cli"
+
+
+def run_subprocess_with_streaming(cmd, timeout=None):
+    """
+    Run subprocess with real-time output streaming.
+    Returns (stdout, stderr, returncode).
+
+    This solves the blocking issue where long-running processes (like scraping)
+    would cause MCP to appear frozen. Now we stream output as it comes.
+    """
+    try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,  # Line buffered
+            universal_newlines=True
+        )
+
+        stdout_lines = []
+        stderr_lines = []
+        start_time = time.time()
+
+        # Read output line by line as it comes
+        while True:
+            # Check timeout
+            if timeout and (time.time() - start_time) > timeout:
+                process.kill()
+                stderr_lines.append(f"\n⚠️ Process killed after {timeout}s timeout")
+                break
+
+            # Check if process finished
+            if process.poll() is not None:
+                break
+
+            # Read available output (non-blocking)
+            try:
+                import select
+                readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
+
+                if process.stdout in readable:
+                    line = process.stdout.readline()
+                    if line:
+                        stdout_lines.append(line)
+
+                if process.stderr in readable:
+                    line = process.stderr.readline()
+                    if line:
+                        stderr_lines.append(line)
+            except:
+                # Fallback for Windows (no select)
+                time.sleep(0.1)
+
+        # Get any remaining output
+        remaining_stdout, remaining_stderr = process.communicate()
+        if remaining_stdout:
+            stdout_lines.append(remaining_stdout)
+        if remaining_stderr:
+            stderr_lines.append(remaining_stderr)
+
+        stdout = ''.join(stdout_lines)
+        stderr = ''.join(stderr_lines)
+        returncode = process.returncode
+
+        return stdout, stderr, returncode
+
+    except Exception as e:
+        return "", f"Error running subprocess: {str(e)}", 1
 
 
 @app.list_tools()
@@ -338,6 +408,10 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
     # Handle unlimited mode
     if unlimited or max_discovery == -1:
         max_discovery = -1
+        timeout = 1800  # 30 minutes for unlimited discovery
+    else:
+        # Estimate: 0.5s per page discovered
+        timeout = max(300, max_discovery // 2)  # Minimum 5 minutes
 
     # Run estimate_pages.py
     cmd = [
@@ -347,12 +421,17 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
         "--max-discovery", str(max_discovery)
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    progress_msg = f"🔄 Estimating page count...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    if result.returncode == 0:
-        return [TextContent(type="text", text=result.stdout)]
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}")]
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
 async def scrape_docs_tool(args: dict) -> list[TextContent]:
@@ -395,17 +474,46 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     if dry_run:
         cmd.append("--dry-run")
 
-    # Run doc_scraper.py
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Determine timeout based on operation type
+    if dry_run:
+        timeout = 300  # 5 minutes for dry run
+    elif skip_scrape:
+        timeout = 600  # 10 minutes for building from cache
+    elif unlimited:
+        timeout = None  # No timeout for unlimited mode (user explicitly requested)
+    else:
+        # Read config to estimate timeout
+        try:
+            with open(config_to_use, 'r') as f:
+                config = json.load(f)
+            max_pages = config.get('max_pages', 500)
+            # Estimate: 30s per page + buffer
+            timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
+        except:
+            timeout = 14400  # Default: 4 hours
+
+    # Add progress message
+    progress_msg = f"🔄 Starting scraping process...\n"
+    if timeout:
+        progress_msg += f"⏱️ Maximum time allowed: {timeout // 60} minutes\n"
+    else:
+        progress_msg += f"⏱️ Unlimited mode - no timeout\n"
+    progress_msg += f"📝 Progress will be shown below:\n\n"
+
+    # Run doc_scraper.py with streaming
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
 
     # Clean up temporary config
     if unlimited and Path(config_to_use).exists():
         Path(config_to_use).unlink()
 
-    if result.returncode == 0:
-        return [TextContent(type="text", text=result.stdout)]
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}\n{result.stdout}")]
+        error_output = output + f"\n\n❌ Error:\n{stderr}"
+        return [TextContent(type="text", text=error_output)]
 
 
 async def package_skill_tool(args: dict) -> list[TextContent]:
@@ -429,11 +537,19 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
     if should_upload:
         cmd.append("--upload")
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Timeout: 5 minutes for packaging + upload
+    timeout = 300
 
-    if result.returncode == 0:
-        output = result.stdout
+    progress_msg = "📦 Packaging skill...\n"
+    if should_upload:
+        progress_msg += "📤 Will auto-upload if successful\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
         if should_upload:
             # Upload succeeded
             output += "\n\n✅ Skill packaged and uploaded automatically!"
@@ -457,7 +573,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
 
         return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}\n{result.stdout}")]
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
 async def upload_skill_tool(args: dict) -> list[TextContent]:
@@ -471,12 +587,20 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
         skill_zip
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Timeout: 5 minutes for upload
+    timeout = 300
 
-    if result.returncode == 0:
-        return [TextContent(type="text", text=result.stdout)]
+    progress_msg = "📤 Uploading skill to Claude...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}\n{result.stdout}")]
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
 async def list_configs_tool(args: dict) -> list[TextContent]:
@@ -572,12 +696,20 @@ async def split_config_tool(args: dict) -> list[TextContent]:
     if dry_run:
         cmd.append("--dry-run")
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Timeout: 5 minutes for config splitting
+    timeout = 300
 
-    if result.returncode == 0:
-        return [TextContent(type="text", text=result.stdout)]
+    progress_msg = "✂️ Splitting configuration...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}\n\n{result.stdout}")]
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
 async def generate_router_tool(args: dict) -> list[TextContent]:
@@ -602,12 +734,20 @@ async def generate_router_tool(args: dict) -> list[TextContent]:
     if router_name:
         cmd.extend(["--name", router_name])
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Timeout: 5 minutes for router generation
+    timeout = 300
 
-    if result.returncode == 0:
-        return [TextContent(type="text", text=result.stdout)]
+    progress_msg = "🧭 Generating router skill...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
     else:
-        return [TextContent(type="text", text=f"Error: {result.stderr}\n\n{result.stdout}")]
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
 async def main():
