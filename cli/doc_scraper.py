@@ -401,18 +401,19 @@ class DocToSkillConverter:
                 futures = []
 
                 while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
-                    # Get next batch of URLs
+                    # Get next batch of URLs (thread-safe)
                     batch = []
                     batch_size = min(self.workers * 2, len(self.pending_urls))
 
-                    for _ in range(batch_size):
-                        if not self.pending_urls:
-                            break
-                        url = self.pending_urls.popleft()
+                    with self.lock:
+                        for _ in range(batch_size):
+                            if not self.pending_urls:
+                                break
+                            url = self.pending_urls.popleft()
 
-                        if url not in self.visited_urls:
-                            self.visited_urls.add(url)
-                            batch.append(url)
+                            if url not in self.visited_urls:
+                                self.visited_urls.add(url)
+                                batch.append(url)
 
                     # Submit batch to executor
                     for url in batch:
@@ -423,15 +424,22 @@ class DocToSkillConverter:
                     # Wait for some to complete before submitting more
                     completed = 0
                     for future in as_completed(futures[:batch_size]):
-                        completed += 1
-                        self.pages_scraped += 1
-
-                        if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
+                        # Check for exceptions
+                        try:
+                            future.result()  # Raises exception if scrape_page failed
+                        except Exception as e:
                             with self.lock:
+                                print(f"  ⚠️  Worker exception: {e}")
+
+                        completed += 1
+
+                        with self.lock:
+                            self.pages_scraped += 1
+
+                            if self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
                                 self.save_checkpoint()
 
-                        if self.pages_scraped % 10 == 0:
-                            with self.lock:
+                            if self.pages_scraped % 10 == 0:
                                 print(f"  [{self.pages_scraped} pages scraped]")
 
                     # Remove completed futures
@@ -439,7 +447,15 @@ class DocToSkillConverter:
 
                 # Wait for remaining futures
                 for future in as_completed(futures):
-                    self.pages_scraped += 1
+                    # Check for exceptions
+                    try:
+                        future.result()
+                    except Exception as e:
+                        with self.lock:
+                            print(f"  ⚠️  Worker exception: {e}")
+
+                    with self.lock:
+                        self.pages_scraped += 1
 
         if self.dry_run:
             print(f"\n✅ Dry run complete: would scrape ~{len(self.visited_urls)} pages")
