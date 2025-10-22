@@ -58,14 +58,35 @@ Skill Seeker automatically converts any documentation website into a Claude AI s
 
 **Python Version:** Python 3.10 or higher (required for MCP integration)
 
-**Required Dependencies:**
+**Setup with Virtual Environment (Recommended):**
 ```bash
-pip3 install requests beautifulsoup4
+# One-time setup
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux (Windows: venv\Scripts\activate)
+pip install requests beautifulsoup4 pytest
+pip freeze > requirements.txt
+
+# Every time you use Skill Seeker in a new terminal session
+source venv/bin/activate  # Activate before using any commands
+```
+
+**Why use a virtual environment?**
+- Keeps dependencies isolated from system Python
+- Prevents package version conflicts
+- Standard Python development practice
+- Required for running tests with pytest
+
+**If someone else clones this repo:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 **Optional (for API-based enhancement):**
 ```bash
-pip3 install anthropic
+source venv/bin/activate
+pip install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 

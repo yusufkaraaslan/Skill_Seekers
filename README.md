@@ -149,20 +149,49 @@ Package skill at output/react/
 
 ### Method 2: CLI (Traditional)
 
+#### One-Time Setup: Create Virtual Environment
+
+```bash
+# Clone repository
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+# OR on Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install requests beautifulsoup4 pytest
+
+# Save dependencies
+pip freeze > requirements.txt
+
+# Optional: Install anthropic for API-based enhancement (not needed for LOCAL enhancement)
+# pip install anthropic
+```
+
+**Always activate the virtual environment before using Skill Seeker:**
+```bash
+source venv/bin/activate  # Run this each time you start a new terminal session
+```
+
 #### Easiest: Use a Preset
 
 ```bash
-# Install dependencies (macOS)
-pip3 install requests beautifulsoup4
+# Make sure venv is activated (you should see (venv) in your prompt)
+source venv/bin/activate
 
 # Optional: Estimate pages first (fast, 1-2 minutes)
-python3 estimate_pages.py configs/godot.json
+python3 cli/estimate_pages.py configs/godot.json
 
 # Use Godot preset
-python3 doc_scraper.py --config configs/godot.json
+python3 cli/doc_scraper.py --config configs/godot.json
 
 # Use React preset
-python3 doc_scraper.py --config configs/react.json
+python3 cli/doc_scraper.py --config configs/react.json
 
 # See all presets
 ls configs/
