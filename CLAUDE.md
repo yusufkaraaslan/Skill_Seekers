@@ -568,15 +568,19 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 | Enhancement (API) | 20-40 sec | Requires API key |
 | Packaging | 5-10 sec | Final zip |
 
-## Available Production Configs (11 Total - All Verified Working)
+## Available Production Configs (12 Total - All Verified Working)
 
 **Web Frameworks:**
 - ✅ `react.json` - React (article selector, 7,102 chars)
 - ✅ `vue.json` - Vue.js (main selector, 1,029 chars)
 - ✅ `astro.json` - Astro (article selector, 145 chars)
 - ✅ `django.json` - Django (article selector, 6,468 chars)
-- ✅ `laravel.json` - Laravel 9.x (#main-content selector, 16,131 chars) **NEW!**
+- ✅ `laravel.json` - Laravel 9.x (#main-content selector, 16,131 chars)
 - ✅ `fastapi.json` - FastAPI (article selector, 11,906 chars)
+
+**DevOps & Automation:**
+- ✅ `ansible-core.json` - Ansible Core 2.19 (div[role='main'] selector, ~32K chars) **NEW!**
+- ✅ `kubernetes.json` - Kubernetes (main selector, 2,100 chars)
 
 **Game Engines:**
 - ✅ `godot.json` - Godot (div[role='main'] selector, 1,688 chars)
@@ -584,12 +588,11 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 
 **CSS & Utilities:**
 - ✅ `tailwind.json` - Tailwind CSS (div.prose selector, 195 chars)
-- ✅ `kubernetes.json` - Kubernetes (main selector, 2,100 chars)
 
 **Gaming:**
 - ✅ `steam-economy-complete.json` - Steam Economy (div.documentation_bbcode, 588 chars)
 
-**All configs tested and verified as of October 21, 2025**
+**All configs tested and verified as of October 22, 2025**
 
 ## Additional Documentation
 

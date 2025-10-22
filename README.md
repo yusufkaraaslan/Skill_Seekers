@@ -544,6 +544,7 @@ python3 cli/package_skill.py output/godot/
 | `vue.json` | Vue.js | Progressive framework |
 | `django.json` | Django | Python web framework |
 | `fastapi.json` | FastAPI | Modern Python API |
+| `ansible-core.json` | Ansible Core 2.19 | Automation & configuration |
 
 ### Using Presets
 
@@ -562,6 +563,9 @@ python3 cli/doc_scraper.py --config configs/django.json
 
 # FastAPI
 python3 cli/doc_scraper.py --config configs/fastapi.json
+
+# Ansible
+python3 cli/doc_scraper.py --config configs/ansible-core.json
 ```
 
 ## 🎨 Creating Your Own Config
