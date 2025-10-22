@@ -22,6 +22,14 @@ from doc_scraper import DocToSkillConverter
 class TestParallelScrapingConfiguration(unittest.TestCase):
     """Test parallel scraping configuration and initialization"""
 
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
+
     def test_single_worker_default(self):
         """Test default is single-worker mode"""
         config = {
@@ -71,6 +79,14 @@ class TestParallelScrapingConfiguration(unittest.TestCase):
 class TestUnlimitedMode(unittest.TestCase):
     """Test unlimited scraping mode"""
 
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
+
     def test_unlimited_with_none(self):
         """Test max_pages: None enables unlimited mode"""
         config = {
@@ -118,6 +134,14 @@ class TestUnlimitedMode(unittest.TestCase):
 class TestRateLimiting(unittest.TestCase):
     """Test rate limiting configuration"""
 
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
+
     def test_rate_limit_from_config(self):
         """Test rate_limit is read from config"""
         config = {
@@ -163,6 +187,14 @@ class TestRateLimiting(unittest.TestCase):
 class TestThreadSafety(unittest.TestCase):
     """Test thread-safety fixes"""
 
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
+
     def test_lock_protects_visited_urls(self):
         """Test visited_urls operations are protected by lock"""
         config = {
@@ -200,6 +232,14 @@ class TestThreadSafety(unittest.TestCase):
 
 class TestScrapingModes(unittest.TestCase):
     """Test different scraping mode combinations"""
+
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
 
     def test_single_threaded_limited(self):
         """Test traditional single-threaded limited mode"""
@@ -271,6 +311,14 @@ class TestScrapingModes(unittest.TestCase):
 
 class TestDryRunWithNewFeatures(unittest.TestCase):
     """Test dry-run mode works with new features"""
+
+    def setUp(self):
+        """Save original working directory"""
+        self.original_cwd = os.getcwd()
+
+    def tearDown(self):
+        """Restore original working directory"""
+        os.chdir(self.original_cwd)
 
     def test_dry_run_with_parallel(self):
         """Test dry-run with parallel workers"""
