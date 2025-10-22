@@ -4,9 +4,9 @@ SKILL.md Enhancement Script
 Uses Claude API to improve SKILL.md by analyzing reference documentation.
 
 Usage:
-    python3 enhance_skill.py output/steam-inventory/
-    python3 enhance_skill.py output/react/
-    python3 enhance_skill.py output/godot/ --api-key YOUR_API_KEY
+    python3 cli/enhance_skill.py output/steam-inventory/
+    python3 cli/enhance_skill.py output/react/
+    python3 cli/enhance_skill.py output/godot/ --api-key YOUR_API_KEY
 """
 
 import os
@@ -279,7 +279,7 @@ Examples:
         print("\nSet your API key:")
         print("  export ANTHROPIC_API_KEY=sk-ant-...")
         print("Or provide it directly:")
-        print(f"  python3 enhance_skill.py {skill_dir} --api-key sk-ant-...")
+        print(f"  python3 cli/enhance_skill.py {skill_dir} --api-key sk-ant-...")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

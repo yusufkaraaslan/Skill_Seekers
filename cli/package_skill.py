@@ -102,7 +102,7 @@ Examples:
   python3 cli/package_skill.py output/react/ --no-open
 
   # Get help
-  python3 package_skill.py --help
+  python3 cli/package_skill.py --help
         """
     )
 
