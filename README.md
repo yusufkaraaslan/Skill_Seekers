@@ -34,6 +34,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 ## Key Features
 
 ✅ **Universal Scraper** - Works with ANY documentation website
+✅ **PDF Documentation Support** - Extract text, code, and images from PDF files (**NEW!**)
 ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 ✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
@@ -57,11 +58,12 @@ Skill Seeker is an automated tool that transforms any documentation website into
 
 # Then in Claude Code, just ask:
 "Generate a React skill from https://react.dev/"
+"Scrape PDF at docs/manual.pdf and create skill"
 ```
 
 **Time:** Automated | **Quality:** Production-ready | **Cost:** Free
 
-### Option 2: Use CLI Directly
+### Option 2: Use CLI Directly (HTML Docs)
 
 ```bash
 # Install dependencies (2 pip packages)
@@ -74,6 +76,20 @@ python3 cli/doc_scraper.py --config configs/react.json --enhance-local
 ```
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+### Option 3: Use CLI for PDF Documentation
+
+```bash
+# Install PDF support
+pip3 install PyMuPDF
+
+# Extract and convert PDF to skill
+python3 cli/pdf_scraper.py --pdf docs/manual.pdf --name myskill
+
+# Upload output/myskill.zip to Claude - Done!
+```
+
+**Time:** ~5-15 minutes | **Quality:** Production-ready | **Cost:** Free
 
 ## How It Works
 

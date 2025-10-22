@@ -11,8 +11,9 @@ This MCP server allows Claude Code to use Skill Seeker's tools directly through 
 - Scrape documentation and build skills
 - Package skills into `.zip` files
 - List and validate configurations
-- **NEW:** Split large documentation (10K-40K+ pages) into focused sub-skills
-- **NEW:** Generate intelligent router/hub skills for split documentation
+- Split large documentation (10K-40K+ pages) into focused sub-skills
+- Generate intelligent router/hub skills for split documentation
+- **NEW:** Scrape PDF documentation and extract code/images
 
 ## Quick Start
 
@@ -72,7 +73,7 @@ You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-The MCP server exposes 9 tools:
+The MCP server exposes 10 tools:
 
 ### 1. `generate_config`
 Create a new configuration file for any documentation website.
@@ -197,6 +198,35 @@ Generate router for configs/godot-*.json
 - Creates router SKILL.md with intelligent routing logic
 - Users can ask questions naturally, router directs to appropriate sub-skill
 
+### 10. `scrape_pdf`
+Scrape PDF documentation and build Claude skill. Extracts text, code blocks, and images from PDF files.
+
+**Parameters:**
+- `config_path` (optional): Path to PDF config JSON file (e.g., "configs/manual_pdf.json")
+- `pdf_path` (optional): Direct PDF path (alternative to config_path)
+- `name` (optional): Skill name (required with pdf_path)
+- `description` (optional): Skill description
+- `from_json` (optional): Build from extracted JSON file (e.g., "output/manual_extracted.json")
+
+**Examples:**
+```
+Scrape PDF at docs/manual.pdf and create skill named api-docs
+Create skill from configs/example_pdf.json
+Build skill from output/manual_extracted.json
+```
+
+**What it does:**
+- Extracts text and markdown from PDF pages
+- Detects code blocks using 3 methods (font, indent, pattern)
+- Detects programming language with confidence scoring (19+ languages)
+- Validates syntax and scores code quality (0-10 scale)
+- Extracts images with size filtering
+- Detects chapters and creates page chunks
+- Categorizes content automatically
+- Generates complete skill structure (SKILL.md + references)
+
+**See:** `docs/PDF_SCRAPER.md` for complete PDF documentation guide
+
 ## Example Workflows
 
 ### Generate a New Skill from Scratch
@@ -252,7 +282,25 @@ User: Scrape docs using configs/godot.json
 Claude: [Starts scraping...]
 ```
 
-### Large Documentation (40K Pages) - NEW
+### PDF Documentation - NEW
+
+```
+User: Scrape PDF at docs/api-manual.pdf and create skill named api-docs
+
+Claude: 📄 Scraping PDF documentation...
+        ✅ Extracted 120 pages
+        ✅ Found 45 code blocks (Python, JavaScript, C++)
+        ✅ Extracted 12 images
+        ✅ Created skill at output/api-docs/
+        📦 Package with: python3 cli/package_skill.py output/api-docs/
+
+User: Package skill at output/api-docs/
+
+Claude: ✅ Created: output/api-docs.zip
+        Ready to upload to Claude!
+```
+
+### Large Documentation (40K Pages)
 
 ```
 User: Estimate pages for configs/godot.json
