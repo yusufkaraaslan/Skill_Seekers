@@ -80,7 +80,7 @@ The package script:
 
 **Example:**
 ```bash
-python3 package_skill.py output/steam-economy/
+python3 cli/package_skill.py output/steam-economy/
 
 📦 Packaging skill: steam-economy
    Source: output/steam-economy
@@ -99,7 +99,7 @@ python3 package_skill.py output/steam-economy/
 
 ### Step 1: Scrape & Build
 ```bash
-python3 doc_scraper.py --config configs/steam-economy.json
+python3 cli/doc_scraper.py --config configs/steam-economy.json
 ```
 
 **Output:**
@@ -108,7 +108,7 @@ python3 doc_scraper.py --config configs/steam-economy.json
 
 ### Step 2: Enhance (Recommended)
 ```bash
-python3 enhance_skill_local.py output/steam-economy/
+python3 cli/enhance_skill_local.py output/steam-economy/
 ```
 
 **What it does:**
@@ -122,7 +122,7 @@ python3 enhance_skill_local.py output/steam-economy/
 
 ### Step 3: Package
 ```bash
-python3 package_skill.py output/steam-economy/
+python3 cli/package_skill.py output/steam-economy/
 ```
 
 **Output:**
@@ -181,7 +181,7 @@ Claude has generous size limits, so most documentation-based skills fit easily.
 
 ### Package a Skill
 ```bash
-python3 package_skill.py output/steam-economy/
+python3 cli/package_skill.py output/steam-economy/
 ```
 
 ### Package Multiple Skills
@@ -189,7 +189,7 @@ python3 package_skill.py output/steam-economy/
 # Package all skills in output/
 for dir in output/*/; do
   if [ -f "$dir/SKILL.md" ]; then
-    python3 package_skill.py "$dir"
+    python3 cli/package_skill.py "$dir"
   fi
 done
 ```
@@ -212,10 +212,10 @@ cat temp-test/SKILL.md
 ### "SKILL.md not found"
 ```bash
 # Make sure you scraped and built first
-python3 doc_scraper.py --config configs/steam-economy.json
+python3 cli/doc_scraper.py --config configs/steam-economy.json
 
 # Then package
-python3 package_skill.py output/steam-economy/
+python3 cli/package_skill.py output/steam-economy/
 ```
 
 ### "Directory not found"
@@ -224,7 +224,7 @@ python3 package_skill.py output/steam-economy/
 ls output/
 
 # Use correct path
-python3 package_skill.py output/YOUR-SKILL-NAME/
+python3 cli/package_skill.py output/YOUR-SKILL-NAME/
 ```
 
 ### Zip is Too Large
