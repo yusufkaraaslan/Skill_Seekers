@@ -302,6 +302,36 @@ async def list_tools() -> list[Tool]:
                 "required": ["config_pattern"],
             },
         ),
+        Tool(
+            name="scrape_pdf",
+            description="Scrape PDF documentation and build Claude skill. Extracts text, code, and images from PDF files.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to PDF config JSON file (e.g., configs/manual_pdf.json)",
+                    },
+                    "pdf_path": {
+                        "type": "string",
+                        "description": "Direct PDF path (alternative to config_path)",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Skill name (required with pdf_path)",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Skill description (optional)",
+                    },
+                    "from_json": {
+                        "type": "string",
+                        "description": "Build from extracted JSON file (e.g., output/manual_extracted.json)",
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -328,6 +358,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await split_config_tool(arguments)
         elif name == "generate_router":
             return await generate_router_tool(arguments)
+        elif name == "scrape_pdf":
+            return await scrape_pdf_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -738,6 +770,50 @@ async def generate_router_tool(args: dict) -> list[TextContent]:
     timeout = 300
 
     progress_msg = "🧭 Generating router skill...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def scrape_pdf_tool(args: dict) -> list[TextContent]:
+    """Scrape PDF documentation and build skill"""
+    config_path = args.get("config_path")
+    pdf_path = args.get("pdf_path")
+    name = args.get("name")
+    description = args.get("description")
+    from_json = args.get("from_json")
+
+    # Build command
+    cmd = [sys.executable, str(CLI_DIR / "pdf_scraper.py")]
+
+    # Mode 1: Config file
+    if config_path:
+        cmd.extend(["--config", config_path])
+
+    # Mode 2: Direct PDF
+    elif pdf_path and name:
+        cmd.extend(["--pdf", pdf_path, "--name", name])
+        if description:
+            cmd.extend(["--description", description])
+
+    # Mode 3: From JSON
+    elif from_json:
+        cmd.extend(["--from-json", from_json])
+
+    else:
+        return [TextContent(type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json")]
+
+    # Run pdf_scraper.py with streaming (can take a while)
+    timeout = 600  # 10 minutes for PDF extraction
+
+    progress_msg = "📄 Scraping PDF documentation...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
