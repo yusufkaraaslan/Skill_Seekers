@@ -4,6 +4,7 @@ First off, thank you for considering contributing to Skill Seeker! It's people l
 
 ## Table of Contents
 
+- [Branch Workflow](#branch-workflow)
 - [Code of Conduct](#code-of-conduct)
 - [How Can I Contribute?](#how-can-i-contribute)
 - [Development Setup](#development-setup)
@@ -11,6 +12,67 @@ First off, thank you for considering contributing to Skill Seeker! It's people l
 - [Coding Standards](#coding-standards)
 - [Testing](#testing)
 - [Documentation](#documentation)
+
+---
+
+## Branch Workflow
+
+**⚠️ IMPORTANT:** Skill Seekers uses a two-branch workflow.
+
+### Branch Structure
+
+```
+main (production)
+  ↑
+  │ (only maintainer merges)
+  │
+development (integration) ← default branch for PRs
+  ↑
+  │ (all contributor PRs go here)
+  │
+feature branches
+```
+
+### Branches
+
+- **`main`** - Production branch
+  - Always stable
+  - Only receives merges from `development` by maintainers
+  - Protected: requires tests + 1 review
+
+- **`development`** - Integration branch
+  - **Default branch for all PRs**
+  - Active development happens here
+  - Protected: requires tests to pass
+  - Gets merged to `main` by maintainers
+
+- **Feature branches** - Your work
+  - Created from `development`
+  - Named descriptively (e.g., `add-github-scraping`)
+  - Merged back to `development` via PR
+
+### Workflow Example
+
+```bash
+# 1. Fork and clone
+git clone https://github.com/YOUR_USERNAME/Skill_Seekers.git
+cd Skill_Seekers
+
+# 2. Add upstream
+git remote add upstream https://github.com/yusufkaraaslan/Skill_Seekers.git
+
+# 3. Create feature branch from development
+git checkout development
+git pull upstream development
+git checkout -b my-feature
+
+# 4. Make changes, commit, push
+git add .
+git commit -m "Add my feature"
+git push origin my-feature
+
+# 5. Create PR targeting 'development' branch
+```
 
 ---
 
@@ -90,12 +152,14 @@ Adds configuration for Svelte documentation (https://svelte.dev/docs).
 
 We actively welcome your pull requests!
 
-1. Fork the repo and create your branch from `main`
+**⚠️ IMPORTANT:** All PRs must target the `development` branch, not `main`.
+
+1. Fork the repo and create your branch from `development`
 2. If you've added code, add tests
 3. If you've changed APIs, update the documentation
 4. Ensure the test suite passes
 5. Make sure your code follows our coding standards
-6. Issue that pull request!
+6. Issue that pull request to `development` branch!
 
 ---
 
@@ -121,8 +185,10 @@ We actively welcome your pull requests!
    pip install -r mcp/requirements.txt
    ```
 
-3. **Create a feature branch**
+3. **Create a feature branch from development**
    ```bash
+   git checkout development
+   git pull upstream development
    git checkout -b feature/my-awesome-feature
    ```
 
