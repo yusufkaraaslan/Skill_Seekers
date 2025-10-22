@@ -5,8 +5,8 @@ Opens a new terminal with Claude Code to enhance SKILL.md, then reports back.
 No API key needed - uses your existing Claude Code Max plan!
 
 Usage:
-    python3 enhance_skill_local.py output/steam-inventory/
-    python3 enhance_skill_local.py output/react/
+    python3 cli/enhance_skill_local.py output/steam-inventory/
+    python3 cli/enhance_skill_local.py output/react/
 """
 
 import os
@@ -218,18 +218,18 @@ rm {prompt_file}
         print("💡 When done:")
         print(f"  1. Check the enhanced SKILL.md: {self.skill_md_path}")
         print(f"  2. If you don't like it, restore: mv {self.skill_md_path.with_suffix('.md.backup')} {self.skill_md_path}")
-        print(f"  3. Package: python3 /mnt/skills/examples/skill-creator/scripts/package_skill.py {self.skill_dir}/")
+        print(f"  3. Package: python3 cli/package_skill.py {self.skill_dir}/")
 
         return True
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 enhance_skill_local.py <skill_directory>")
+        print("Usage: python3 cli/enhance_skill_local.py <skill_directory>")
         print()
         print("Examples:")
-        print("  python3 enhance_skill_local.py output/steam-inventory/")
-        print("  python3 enhance_skill_local.py output/react/")
+        print("  python3 cli/enhance_skill_local.py output/steam-inventory/")
+        print("  python3 cli/enhance_skill_local.py output/react/")
         sys.exit(1)
 
     skill_dir = sys.argv[1]

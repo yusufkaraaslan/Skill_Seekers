@@ -207,7 +207,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         print(f"  1. Review: {self.skill_md_path}")
         print(f"  2. If you don't like it, restore backup: {self.skill_md_path.with_suffix('.md.backup')}")
         print(f"  3. Package your skill:")
-        print(f"     python3 /mnt/skills/examples/skill-creator/scripts/package_skill.py {self.skill_dir}/")
+        print(f"     python3 cli/package_skill.py {self.skill_dir}/")
 
         return True
 
@@ -220,13 +220,13 @@ def main():
 Examples:
   # Using ANTHROPIC_API_KEY environment variable
   export ANTHROPIC_API_KEY=sk-ant-...
-  python3 enhance_skill.py output/steam-inventory/
+  python3 cli/enhance_skill.py output/steam-inventory/
 
   # Providing API key directly
-  python3 enhance_skill.py output/react/ --api-key sk-ant-...
+  python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
 
   # Show what would be done (dry run)
-  python3 enhance_skill.py output/godot/ --dry-run
+  python3 cli/enhance_skill.py output/godot/ --dry-run
 """
     )
 
@@ -265,7 +265,7 @@ Examples:
                 print(f"     - {rf.name} ({size:,} bytes)")
 
         print("\nTo actually run enhancement:")
-        print(f"  python3 enhance_skill.py {skill_dir}")
+        print(f"  python3 cli/enhance_skill.py {skill_dir}")
         return
 
     # Create enhancer and run
