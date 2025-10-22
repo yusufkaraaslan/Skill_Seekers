@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,7 +45,19 @@ jobs:
           echo "Release ${{ steps.get_version.outputs.VERSION }}" > release_notes.md
         fi
 
+    - name: Check if release exists
+      id: check_release
+      run: |
+        if gh release view ${{ github.ref_name }} > /dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Create GitHub Release
+      if: steps.check_release.outputs.exists == 'false'
       uses: softprops/action-gh-release@v1
       with:
         body_path: release_notes.md
@@ -50,3 +65,9 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Skip Release Creation
+      if: steps.check_release.outputs.exists == 'true'
+      run: |
+        echo "ℹ️  Release ${{ github.ref_name }} already exists, skipping creation"
+        echo "View at: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
