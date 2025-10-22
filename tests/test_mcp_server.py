@@ -203,14 +203,12 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch('subprocess.run')
-    async def test_estimate_pages_success(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_estimate_pages_success(self, mock_streaming):
         """Test successful page estimation"""
-        # Mock successful subprocess run
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Estimated 50 pages"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        # Returns (stdout, stderr, returncode)
+        mock_streaming.return_value = ("Estimated 50 pages", "", 0)
 
         args = {
             "config_path": str(self.config_path)
@@ -221,14 +219,14 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(result, list)
         self.assertIsInstance(result[0], TextContent)
         self.assertIn("50 pages", result[0].text)
+        # Should also have progress message
+        self.assertIn("Estimating page count", result[0].text)
 
-    @patch('subprocess.run')
-    async def test_estimate_pages_with_max_discovery(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_estimate_pages_with_max_discovery(self, mock_streaming):
         """Test page estimation with custom max_discovery"""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Estimated 100 pages"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        mock_streaming.return_value = ("Estimated 100 pages", "", 0)
 
         args = {
             "config_path": str(self.config_path),
@@ -238,18 +236,16 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         result = await skill_seeker_server.estimate_pages_tool(args)
 
         # Verify subprocess was called with correct args
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
+        mock_streaming.assert_called_once()
+        call_args = mock_streaming.call_args[0][0]
         self.assertIn("--max-discovery", call_args)
         self.assertIn("500", call_args)
 
-    @patch('subprocess.run')
-    async def test_estimate_pages_error(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_estimate_pages_error(self, mock_streaming):
         """Test error handling in page estimation"""
-        mock_result = MagicMock()
-        mock_result.returncode = 1
-        mock_result.stderr = "Config file not found"
-        mock_run.return_value = mock_result
+        # Mock failed subprocess run with streaming
+        mock_streaming.return_value = ("", "Config file not found", 1)
 
         args = {
             "config_path": "nonexistent.json"
@@ -290,13 +286,11 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch('subprocess.run')
-    async def test_scrape_docs_basic(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_scrape_docs_basic(self, mock_streaming):
         """Test basic documentation scraping"""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Scraping completed successfully"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        mock_streaming.return_value = ("Scraping completed successfully", "", 0)
 
         args = {
             "config_path": str(self.config_path)
@@ -307,13 +301,11 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(result, list)
         self.assertIn("success", result[0].text.lower())
 
-    @patch('subprocess.run')
-    async def test_scrape_docs_with_skip_scrape(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_scrape_docs_with_skip_scrape(self, mock_streaming):
         """Test scraping with skip_scrape flag"""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Using cached data"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        mock_streaming.return_value = ("Using cached data", "", 0)
 
         args = {
             "config_path": str(self.config_path),
@@ -323,16 +315,14 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         result = await skill_seeker_server.scrape_docs_tool(args)
 
         # Verify --skip-scrape was passed
-        call_args = mock_run.call_args[0][0]
+        call_args = mock_streaming.call_args[0][0]
         self.assertIn("--skip-scrape", call_args)
 
-    @patch('subprocess.run')
-    async def test_scrape_docs_with_dry_run(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_scrape_docs_with_dry_run(self, mock_streaming):
         """Test scraping with dry_run flag"""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Dry run completed"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        mock_streaming.return_value = ("Dry run completed", "", 0)
 
         args = {
             "config_path": str(self.config_path),
@@ -341,16 +331,14 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
 
         result = await skill_seeker_server.scrape_docs_tool(args)
 
-        call_args = mock_run.call_args[0][0]
+        call_args = mock_streaming.call_args[0][0]
         self.assertIn("--dry-run", call_args)
 
-    @patch('subprocess.run')
-    async def test_scrape_docs_with_enhance_local(self, mock_run):
+    @patch('server.run_subprocess_with_streaming')
+    async def test_scrape_docs_with_enhance_local(self, mock_streaming):
         """Test scraping with local enhancement"""
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Scraping with enhancement"
-        mock_run.return_value = mock_result
+        # Mock successful subprocess run with streaming
+        mock_streaming.return_value = ("Scraping with enhancement", "", 0)
 
         args = {
             "config_path": str(self.config_path),
@@ -359,7 +347,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
 
         result = await skill_seeker_server.scrape_docs_tool(args)
 
-        call_args = mock_run.call_args[0][0]
+        call_args = mock_streaming.call_args[0][0]
         self.assertIn("--enhance-local", call_args)
 
 

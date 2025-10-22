@@ -18,7 +18,7 @@ def estimate_pages(config, max_discovery=1000, timeout=30):
 
     Args:
         config: Configuration dictionary
-        max_discovery: Maximum pages to discover (safety limit)
+        max_discovery: Maximum pages to discover (safety limit, use -1 for unlimited)
         timeout: Timeout for HTTP requests in seconds
 
     Returns:
@@ -36,16 +36,26 @@ def estimate_pages(config, max_discovery=1000, timeout=30):
     include_patterns = url_patterns.get('include', [])
     exclude_patterns = url_patterns.get('exclude', [])
 
+    # Handle unlimited mode
+    unlimited = (max_discovery == -1 or max_discovery is None)
+
     print(f"🔍 Estimating pages for: {config['name']}")
     print(f"📍 Base URL: {base_url}")
     print(f"🎯 Start URLs: {len(start_urls)}")
     print(f"⏱️  Rate limit: {rate_limit}s")
-    print(f"🔢 Max discovery: {max_discovery}")
+
+    if unlimited:
+        print(f"🔢 Max discovery: UNLIMITED (will discover all pages)")
+        print(f"⚠️  WARNING: This may take a long time!")
+    else:
+        print(f"🔢 Max discovery: {max_discovery}")
+
     print()
 
     start_time = time.time()
 
-    while pending and discovered < max_discovery:
+    # Loop condition: stop if no more URLs, or if limit reached (when not unlimited)
+    while pending and (unlimited or discovered < max_discovery):
         url = pending.pop(0)
 
         # Skip if already visited
@@ -112,7 +122,8 @@ def estimate_pages(config, max_discovery=1000, timeout=30):
         'estimated_total': discovered + len(pending),
         'elapsed_seconds': round(elapsed, 2),
         'discovery_rate': round(discovered / elapsed if elapsed > 0 else 0, 2),
-        'hit_limit': discovered >= max_discovery
+        'hit_limit': (not unlimited) and (discovered >= max_discovery),
+        'unlimited': unlimited
     }
 
     return results
@@ -158,7 +169,11 @@ def print_results(results, config):
     print(f"⏱️  Time Elapsed: {results['elapsed_seconds']}s")
     print(f"⚡ Discovery Rate: {results['discovery_rate']} pages/sec")
 
-    if results['hit_limit']:
+    if results.get('unlimited', False):
+        print()
+        print("✅ UNLIMITED MODE - Discovered all reachable pages")
+        print(f"   Total pages: {results['estimated_total']}")
+    elif results['hit_limit']:
         print()
         print("⚠️  Hit discovery limit - actual total may be higher")
         print("   Increase max_discovery parameter for more accurate estimate")
@@ -227,18 +242,23 @@ Examples:
 
     parser.add_argument('config', help='Path to config JSON file')
     parser.add_argument('--max-discovery', '-m', type=int, default=1000,
-                       help='Maximum pages to discover (default: 1000)')
+                       help='Maximum pages to discover (default: 1000, use -1 for unlimited)')
+    parser.add_argument('--unlimited', '-u', action='store_true',
+                       help='Remove discovery limit - discover all pages (same as --max-discovery -1)')
     parser.add_argument('--timeout', '-t', type=int, default=30,
                        help='HTTP request timeout in seconds (default: 30)')
 
     args = parser.parse_args()
+
+    # Handle unlimited flag
+    max_discovery = -1 if args.unlimited else args.max_discovery
 
     # Load config
     config = load_config(args.config)
 
     # Run estimation
     try:
-        results = estimate_pages(config, args.max_discovery, args.timeout)
+        results = estimate_pages(config, max_discovery, args.timeout)
         print_results(results, config)
 
         # Return exit code based on results
