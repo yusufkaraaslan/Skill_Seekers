@@ -117,6 +117,7 @@ git --version
 
 Pick a location for the project. Good choices:
 - macOS/Linux: `~/Projects/` or `~/Documents/`
+  - Note: `~` means your home directory (`$HOME` or `/Users/yourname` on macOS, `/home/yourname` on Linux)
 - Windows: `C:\Users\YourName\Projects\`
 
 ### Clone the Repository
@@ -143,7 +144,10 @@ remote: Counting objects: 100% (245/245), done.
 **Verify you're in the right place:**
 ```bash
 pwd
-# Should show: /Users/yourname/Projects/Skill_Seekers (or similar)
+# Should show something like:
+#   macOS: /Users/yourname/Projects/Skill_Seekers
+#   Linux: /home/yourname/Projects/Skill_Seekers
+# (Replace 'yourname' with YOUR actual username)
 
 ls
 # Should show: README.md, cli/, mcp/, configs/, etc.
@@ -161,31 +165,67 @@ ping google.com
 
 ---
 
-## Step 4: Install Dependencies (2 minutes)
+## Step 4: Setup Virtual Environment & Install Dependencies (3 minutes)
+
+A virtual environment keeps Skill Seeker's dependencies isolated and prevents conflicts.
 
 ```bash
 # Make sure you're in the Skill_Seekers directory
-cd ~/Projects/Skill_Seekers  # Adjust path if you chose different location
+cd ~/Projects/Skill_Seekers  # ~ means your home directory ($HOME)
+                             # Adjust if you chose a different location
 
-# Install required packages
-pip3 install requests beautifulsoup4
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate  # macOS/Linux
+# Windows users: venv\Scripts\activate
 ```
 
 **✅ Success looks like:**
 ```
-Successfully installed requests-2.31.0 beautifulsoup4-4.12.3
+(venv) username@computer Skill_Seekers %
+```
+Notice `(venv)` appears in your prompt - this means the virtual environment is active!
+
+```bash
+# Now install packages (only needed once)
+pip install requests beautifulsoup4 pytest
+
+# Save the dependency list
+pip freeze > requirements.txt
 ```
 
-**❌ If pip3 not found:**
+**✅ Success looks like:**
+```
+Successfully installed requests-2.32.5 beautifulsoup4-4.14.2 pytest-8.4.2 ...
+```
+
+**Optional - Only if you want API-based enhancement (not needed for LOCAL enhancement):**
+```bash
+pip install anthropic
+```
+
+**Important Notes:**
+- **Every time** you open a new terminal to use Skill Seeker, run `source venv/bin/activate` first
+- You'll know it's active when you see `(venv)` in your terminal prompt
+- To deactivate later: just type `deactivate`
+
+**❌ If python3 not found:**
 ```bash
 # Try without the 3
-pip install requests beautifulsoup4
+python -m venv venv
 ```
 
 **❌ If permission denied:**
 ```bash
-# Add --user flag
-pip3 install --user requests beautifulsoup4
+# Virtual environment approach doesn't need sudo - you might have the wrong path
+# Make sure you're in the Skill_Seekers directory:
+pwd
+# Should show something like:
+#   macOS: /Users/yourname/Projects/Skill_Seekers
+#   Linux: /home/yourname/Projects/Skill_Seekers
+# (Replace 'yourname' with YOUR actual username)
 ```
 
 ---
