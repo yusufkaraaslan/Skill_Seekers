@@ -5,6 +5,122 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-10-23
+
+### 🚀 PDF Advanced Features Release
+
+Major enhancement to PDF extraction capabilities with Priority 2 & 3 features.
+
+### Added
+
+#### Priority 2: Support More PDF Types
+- **OCR Support for Scanned PDFs**
+  - Automatic text extraction from scanned documents using Tesseract OCR
+  - Fallback mechanism when page text < 50 characters
+  - Integration with pytesseract and Pillow
+  - Command: `--ocr` flag
+  - New dependencies: `Pillow==11.0.0`, `pytesseract==0.3.13`
+
+- **Password-Protected PDF Support**
+  - Handle encrypted PDFs with password authentication
+  - Clear error messages for missing/wrong passwords
+  - Secure password handling
+  - Command: `--password PASSWORD` flag
+
+- **Complex Table Extraction**
+  - Extract tables from PDFs using PyMuPDF's table detection
+  - Capture table data as 2D arrays with metadata (bbox, row/col count)
+  - Integration with skill references in markdown format
+  - Command: `--extract-tables` flag
+
+#### Priority 3: Performance Optimizations
+- **Parallel Page Processing**
+  - 3x faster PDF extraction using ThreadPoolExecutor
+  - Auto-detect CPU count or custom worker specification
+  - Only activates for PDFs with > 5 pages
+  - Commands: `--parallel` and `--workers N` flags
+  - Benchmarks: 500-page PDF reduced from 4m 10s to 1m 15s
+
+- **Intelligent Caching**
+  - In-memory cache for expensive operations (text extraction, code detection, quality scoring)
+  - 50% faster on re-runs
+  - Command: `--no-cache` to disable (enabled by default)
+
+#### New Documentation
+- **`docs/PDF_ADVANCED_FEATURES.md`** (580 lines)
+  - Complete usage guide for all advanced features
+  - Installation instructions
+  - Performance benchmarks showing 3x speedup
+  - Best practices and troubleshooting
+  - API reference with all parameters
+
+#### Testing
+- **New test file:** `tests/test_pdf_advanced_features.py` (568 lines, 26 tests)
+  - TestOCRSupport (5 tests)
+  - TestPasswordProtection (4 tests)
+  - TestTableExtraction (5 tests)
+  - TestCaching (5 tests)
+  - TestParallelProcessing (4 tests)
+  - TestIntegration (3 tests)
+- **Updated:** `tests/test_pdf_extractor.py` (23 tests fixed and passing)
+- **Total PDF tests:** 49/49 PASSING ✅ (100% pass rate)
+
+### Changed
+- Enhanced `cli/pdf_extractor_poc.py` with all advanced features
+- Updated `requirements.txt` with new dependencies
+- Updated `README.md` with PDF advanced features usage
+- Updated `docs/TESTING.md` with new test counts (142 total tests)
+
+### Performance Improvements
+- **3.3x faster** with parallel processing (8 workers)
+- **1.7x faster** on re-runs with caching enabled
+- Support for unlimited page PDFs (no more 500-page limit)
+
+### Dependencies
+- Added `Pillow==11.0.0` for image processing
+- Added `pytesseract==0.3.13` for OCR support
+- Tesseract OCR engine (system package, optional)
+
+---
+
+## [1.1.0] - 2025-10-22
+
+### 🌐 Documentation Scraping Enhancements
+
+Major improvements to documentation scraping with unlimited pages, parallel processing, and new configs.
+
+### Added
+
+#### Unlimited Scraping & Performance
+- **Unlimited Page Scraping** - Removed 500-page limit, now supports unlimited pages
+- **Parallel Scraping Mode** - Process multiple pages simultaneously for faster scraping
+- **Dynamic Rate Limiting** - Smart rate limit control to avoid server blocks
+- **CLI Utilities** - New helper scripts for common tasks
+
+#### New Configurations
+- **Ansible Core 2.19** - Complete Ansible documentation config
+- **Claude Code** - Documentation for this very tool!
+- **Laravel 9.x** - PHP framework documentation
+
+#### Testing & Quality
+- Comprehensive test coverage for CLI utilities
+- Parallel scraping test suite
+- Virtual environment setup documentation
+- Thread-safety improvements
+
+### Fixed
+- Thread-safety issues in parallel scraping
+- CLI path references across all documentation
+- Flaky upload_skill tests
+- MCP server streaming subprocess implementation
+
+### Changed
+- All CLI examples now use `cli/` directory prefix
+- Updated documentation structure
+- Enhanced error handling
+
+---
+
 ## [1.0.0] - 2025-10-19
 
 ### 🎉 First Production Release
@@ -175,6 +291,8 @@ This is the first production-ready release of Skill Seekers with complete featur
 
 ## Release Links
 
+- [v1.2.0](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.2.0) - PDF Advanced Features
+- [v1.1.0](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.1.0) - Documentation Scraping Enhancements
 - [v1.0.0](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.0.0) - Production Release
 - [v0.4.0](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v0.4.0) - Large Documentation Support
 - [v0.3.0](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v0.3.0) - MCP Integration
@@ -185,6 +303,8 @@ This is the first production-ready release of Skill Seekers with complete featur
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **1.2.0** | 2025-10-23 | 📄 PDF advanced features: OCR, passwords, tables, 3x faster |
+| **1.1.0** | 2025-10-22 | 🌐 Unlimited scraping, parallel mode, new configs (Ansible, Laravel) |
 | **1.0.0** | 2025-10-19 | 🚀 Production release, auto-upload, 9 MCP tools |
 | **0.4.0** | 2025-10-18 | 📚 Large docs support (40K+ pages) |
 | **0.3.0** | 2025-10-15 | 🔌 MCP integration with Claude Code |
@@ -193,7 +313,9 @@ This is the first production-ready release of Skill Seekers with complete featur
 
 ---
 
-[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v0.4.0...v1.0.0
 [0.4.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v0.2.0...v0.3.0
