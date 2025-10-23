@@ -40,6 +40,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
   - 📊 **Table Extraction** - Extract complex tables from PDFs (**v1.2.0**)
   - ⚡ **3x Faster** - Parallel processing for large PDFs (**v1.2.0**)
   - 💾 **Intelligent Caching** - 50% faster on re-runs (**v1.2.0**)
+
 ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 ✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
