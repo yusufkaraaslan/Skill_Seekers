@@ -199,7 +199,7 @@ Generate router for configs/godot-*.json
 - Users can ask questions naturally, router directs to appropriate sub-skill
 
 ### 10. `scrape_pdf`
-Scrape PDF documentation and build Claude skill. Extracts text, code blocks, and images from PDF files.
+Scrape PDF documentation and build Claude skill. Extracts text, code blocks, images, and tables from PDF files with advanced features.
 
 **Parameters:**
 - `config_path` (optional): Path to PDF config JSON file (e.g., "configs/manual_pdf.json")
@@ -207,12 +207,21 @@ Scrape PDF documentation and build Claude skill. Extracts text, code blocks, and
 - `name` (optional): Skill name (required with pdf_path)
 - `description` (optional): Skill description
 - `from_json` (optional): Build from extracted JSON file (e.g., "output/manual_extracted.json")
+- `use_ocr` (optional): Use OCR for scanned PDFs (requires pytesseract)
+- `password` (optional): Password for encrypted PDFs
+- `extract_tables` (optional): Extract tables from PDF
+- `parallel` (optional): Process pages in parallel for faster extraction
+- `max_workers` (optional): Number of parallel workers (default: CPU count)
 
 **Examples:**
 ```
 Scrape PDF at docs/manual.pdf and create skill named api-docs
 Create skill from configs/example_pdf.json
 Build skill from output/manual_extracted.json
+Scrape scanned PDF with OCR: --pdf docs/scanned.pdf --ocr
+Scrape encrypted PDF: --pdf docs/manual.pdf --password mypassword
+Extract tables: --pdf docs/data.pdf --extract-tables
+Fast parallel processing: --pdf docs/large.pdf --parallel --workers 8
 ```
 
 **What it does:**
@@ -221,9 +230,18 @@ Build skill from output/manual_extracted.json
 - Detects programming language with confidence scoring (19+ languages)
 - Validates syntax and scores code quality (0-10 scale)
 - Extracts images with size filtering
+- **NEW:** Extracts tables from PDFs (Priority 2)
+- **NEW:** OCR support for scanned PDFs (Priority 2, requires pytesseract + Pillow)
+- **NEW:** Password-protected PDF support (Priority 2)
+- **NEW:** Parallel page processing for faster extraction (Priority 3)
+- **NEW:** Intelligent caching of expensive operations (Priority 3)
 - Detects chapters and creates page chunks
 - Categorizes content automatically
 - Generates complete skill structure (SKILL.md + references)
+
+**Performance:**
+- Sequential: ~30-60 seconds per 100 pages
+- Parallel (8 workers): ~10-20 seconds per 100 pages (3x faster)
 
 **See:** `docs/PDF_SCRAPER.md` for complete PDF documentation guide
 

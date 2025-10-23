@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PDF Text Extractor - Complete Feature Set (Tasks B1.2 + B1.3 + B1.4 + B1.5)
+PDF Text Extractor - Complete Feature Set (Tasks B1.2 + B1.3 + B1.4 + B1.5 + Priority 2 & 3)
 
 Extracts text, code blocks, and images from PDF documentation files.
 Uses PyMuPDF (fitz) for fast, high-quality extraction.
@@ -11,23 +11,41 @@ Features:
     - Language detection with confidence scoring (19+ languages) (B1.4)
     - Syntax validation and quality scoring (B1.4)
     - Quality statistics and filtering (B1.4)
-    - Image extraction to files (NEW in B1.5)
-    - Image filtering by size (NEW in B1.5)
+    - Image extraction to files (B1.5)
+    - Image filtering by size (B1.5)
     - Page chunking and chapter detection (B1.3)
     - Code block merging across pages (B1.3)
 
+Advanced Features (Priority 2 & 3):
+    - OCR support for scanned PDFs (requires pytesseract) (Priority 2)
+    - Password-protected PDF support (Priority 2)
+    - Table extraction (Priority 2)
+    - Parallel page processing (Priority 3)
+    - Caching of expensive operations (Priority 3)
+
 Usage:
+    # Basic extraction
     python3 pdf_extractor_poc.py input.pdf
     python3 pdf_extractor_poc.py input.pdf --output output.json
     python3 pdf_extractor_poc.py input.pdf --verbose
-    python3 pdf_extractor_poc.py input.pdf --chunk-size 20
+
+    # Quality filtering
     python3 pdf_extractor_poc.py input.pdf --min-quality 5.0
+
+    # Image extraction
     python3 pdf_extractor_poc.py input.pdf --extract-images
     python3 pdf_extractor_poc.py input.pdf --extract-images --image-dir images/
-    python3 pdf_extractor_poc.py input.pdf --extract-images --min-image-size 200
+
+    # Advanced features
+    python3 pdf_extractor_poc.py scanned.pdf --ocr
+    python3 pdf_extractor_poc.py encrypted.pdf --password mypassword
+    python3 pdf_extractor_poc.py input.pdf --extract-tables
+    python3 pdf_extractor_poc.py large.pdf --parallel --workers 8
 
 Example:
-    python3 pdf_extractor_poc.py docs/manual.pdf -o output.json -v --chunk-size 15 --min-quality 6.0 --extract-images
+    python3 pdf_extractor_poc.py docs/manual.pdf -o output.json -v \
+        --chunk-size 15 --min-quality 6.0 --extract-images \
+        --extract-tables --parallel
 """
 
 import os
@@ -45,12 +63,28 @@ except ImportError:
     print("Install with: pip install PyMuPDF")
     sys.exit(1)
 
+# Optional dependencies for advanced features
+try:
+    import pytesseract
+    from PIL import Image
+    TESSERACT_AVAILABLE = True
+except ImportError:
+    TESSERACT_AVAILABLE = False
+
+try:
+    import concurrent.futures
+    CONCURRENT_AVAILABLE = True
+except ImportError:
+    CONCURRENT_AVAILABLE = False
+
 
 class PDFExtractor:
     """Extract text and code from PDF documentation"""
 
     def __init__(self, pdf_path, verbose=False, chunk_size=10, min_quality=0.0,
-                 extract_images=False, image_dir=None, min_image_size=100):
+                 extract_images=False, image_dir=None, min_image_size=100,
+                 use_ocr=False, password=None, extract_tables=False,
+                 parallel=False, max_workers=None, use_cache=True):
         self.pdf_path = pdf_path
         self.verbose = verbose
         self.chunk_size = chunk_size  # Pages per chunk (0 = no chunking)
@@ -58,15 +92,121 @@ class PDFExtractor:
         self.extract_images = extract_images  # Extract images to files (NEW in B1.5)
         self.image_dir = image_dir  # Directory to save images (NEW in B1.5)
         self.min_image_size = min_image_size  # Minimum image dimension (NEW in B1.5)
+
+        # Advanced features (Priority 2 & 3)
+        self.use_ocr = use_ocr  # OCR for scanned PDFs (Priority 2)
+        self.password = password  # Password for encrypted PDFs (Priority 2)
+        self.extract_tables = extract_tables  # Extract tables (Priority 2)
+        self.parallel = parallel  # Parallel processing (Priority 3)
+        self.max_workers = max_workers or os.cpu_count()  # Worker threads (Priority 3)
+        self.use_cache = use_cache  # Cache expensive operations (Priority 3)
+
         self.doc = None
         self.pages = []
         self.chapters = []  # Detected chapters/sections
         self.extracted_images = []  # List of extracted image info (NEW in B1.5)
+        self._cache = {}  # Cache for expensive operations (Priority 3)
 
     def log(self, message):
         """Print message if verbose mode enabled"""
         if self.verbose:
             print(message)
+
+    def extract_text_with_ocr(self, page):
+        """
+        Extract text from scanned PDF page using OCR (Priority 2).
+        Falls back to regular text extraction if OCR is not available.
+
+        Args:
+            page: PyMuPDF page object
+
+        Returns:
+            str: Extracted text
+        """
+        # Try regular text extraction first
+        text = page.get_text("text").strip()
+
+        # If page has very little text, it might be scanned
+        if len(text) < 50 and self.use_ocr:
+            if not TESSERACT_AVAILABLE:
+                self.log("⚠️  OCR requested but pytesseract not installed")
+                self.log("   Install with: pip install pytesseract Pillow")
+                return text
+
+            try:
+                # Render page as image
+                pix = page.get_pixmap()
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+                # Run OCR
+                ocr_text = pytesseract.image_to_string(img)
+                self.log(f"   OCR extracted {len(ocr_text)} chars (was {len(text)})")
+                return ocr_text if len(ocr_text) > len(text) else text
+
+            except Exception as e:
+                self.log(f"   OCR failed: {e}")
+                return text
+
+        return text
+
+    def extract_tables_from_page(self, page):
+        """
+        Extract tables from PDF page (Priority 2).
+        Uses PyMuPDF's table detection.
+
+        Args:
+            page: PyMuPDF page object
+
+        Returns:
+            list: List of extracted tables as dicts
+        """
+        if not self.extract_tables:
+            return []
+
+        tables = []
+        try:
+            # PyMuPDF table extraction
+            tabs = page.find_tables()
+            for idx, tab in enumerate(tabs.tables):
+                table_data = {
+                    'table_index': idx,
+                    'rows': tab.extract(),
+                    'bbox': tab.bbox,
+                    'row_count': len(tab.extract()),
+                    'col_count': len(tab.extract()[0]) if tab.extract() else 0
+                }
+                tables.append(table_data)
+                self.log(f"   Found table {idx}: {table_data['row_count']}x{table_data['col_count']}")
+
+        except Exception as e:
+            self.log(f"   Table extraction failed: {e}")
+
+        return tables
+
+    def get_cached(self, key):
+        """
+        Get cached value (Priority 3).
+
+        Args:
+            key: Cache key
+
+        Returns:
+            Cached value or None
+        """
+        if not self.use_cache:
+            return None
+        return self._cache.get(key)
+
+    def set_cached(self, key, value):
+        """
+        Set cached value (Priority 3).
+
+        Args:
+            key: Cache key
+            value: Value to cache
+        """
+        if self.use_cache:
+            self._cache[key] = value
 
     def detect_language_from_code(self, code):
         """
@@ -717,13 +857,26 @@ class PDFExtractor:
 
         Returns dict with page content, code blocks, and metadata.
         """
+        # Check cache first (Priority 3)
+        cache_key = f"page_{page_num}"
+        cached = self.get_cached(cache_key)
+        if cached is not None:
+            self.log(f"  Page {page_num + 1}: Using cached data")
+            return cached
+
         page = self.doc.load_page(page_num)
 
-        # Extract plain text
-        text = page.get_text("text")
+        # Extract plain text (with OCR if enabled - Priority 2)
+        if self.use_ocr:
+            text = self.extract_text_with_ocr(page)
+        else:
+            text = page.get_text("text")
 
         # Extract markdown (better structure preservation)
         markdown = page.get_text("markdown")
+
+        # Extract tables (Priority 2)
+        tables = self.extract_tables_from_page(page)
 
         # Get page images (for diagrams)
         images = page.get_images()
@@ -783,25 +936,46 @@ class PDFExtractor:
             'code_samples': code_samples,
             'images_count': len(images),
             'extracted_images': extracted_images,  # NEW in B1.5
+            'tables': tables,  # NEW in Priority 2
             'char_count': len(text),
-            'code_blocks_count': len(code_samples)
+            'code_blocks_count': len(code_samples),
+            'tables_count': len(tables)  # NEW in Priority 2
         }
 
-        self.log(f"  Page {page_num + 1}: {len(text)} chars, {len(code_samples)} code blocks, {len(headings)} headings, {len(extracted_images)} images")
+        # Cache the result (Priority 3)
+        self.set_cached(cache_key, page_data)
+
+        self.log(f"  Page {page_num + 1}: {len(text)} chars, {len(code_samples)} code blocks, {len(headings)} headings, {len(extracted_images)} images, {len(tables)} tables")
 
         return page_data
 
     def extract_all(self):
         """
         Extract content from all pages of the PDF.
+        Enhanced with password support and parallel processing.
 
         Returns dict with metadata and pages array.
         """
         print(f"\n📄 Extracting from: {self.pdf_path}")
 
-        # Open PDF
+        # Open PDF (with password support - Priority 2)
         try:
             self.doc = fitz.open(self.pdf_path)
+
+            # Handle encrypted PDFs (Priority 2)
+            if self.doc.is_encrypted:
+                if self.password:
+                    print(f"   🔐 PDF is encrypted, trying password...")
+                    if self.doc.authenticate(self.password):
+                        print(f"   ✅ Password accepted")
+                    else:
+                        print(f"   ❌ Invalid password")
+                        return None
+                else:
+                    print(f"   ❌ PDF is encrypted but no password provided")
+                    print(f"   Use --password option to provide password")
+                    return None
+
         except Exception as e:
             print(f"❌ Error opening PDF: {e}")
             return None
@@ -815,12 +989,31 @@ class PDFExtractor:
             self.image_dir = f"output/{pdf_basename}_images"
             print(f"   Image directory: {self.image_dir}")
 
+        # Show feature status
+        if self.use_ocr:
+            status = "✅ enabled" if TESSERACT_AVAILABLE else "⚠️  not available (install pytesseract)"
+            print(f"   OCR: {status}")
+        if self.extract_tables:
+            print(f"   Table extraction: ✅ enabled")
+        if self.parallel:
+            status = "✅ enabled" if CONCURRENT_AVAILABLE else "⚠️  not available"
+            print(f"   Parallel processing: {status} ({self.max_workers} workers)")
+        if self.use_cache:
+            print(f"   Caching: ✅ enabled")
+
         print("")
 
-        # Extract each page
-        for page_num in range(len(self.doc)):
-            page_data = self.extract_page(page_num)
-            self.pages.append(page_data)
+        # Extract each page (with parallel processing - Priority 3)
+        if self.parallel and CONCURRENT_AVAILABLE and len(self.doc) > 5:
+            print(f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)...")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                page_numbers = list(range(len(self.doc)))
+                self.pages = list(executor.map(self.extract_page, page_numbers))
+        else:
+            # Sequential extraction
+            for page_num in range(len(self.doc)):
+                page_data = self.extract_page(page_num)
+                self.pages.append(page_data)
 
         # Merge code blocks that span across pages
         self.log("\n🔗 Merging code blocks across pages...")
@@ -835,6 +1028,7 @@ class PDFExtractor:
         total_code_blocks = sum(p['code_blocks_count'] for p in self.pages)
         total_headings = sum(len(p['headings']) for p in self.pages)
         total_images = sum(p['images_count'] for p in self.pages)
+        total_tables = sum(p['tables_count'] for p in self.pages)  # NEW in Priority 2
 
         # Detect languages used
         languages = {}
@@ -882,6 +1076,7 @@ class PDFExtractor:
             'total_headings': total_headings,
             'total_images': total_images,
             'total_extracted_images': len(self.extracted_images),  # NEW in B1.5
+            'total_tables': total_tables,  # NEW in Priority 2
             'image_directory': self.image_dir if self.extract_images else None,  # NEW in B1.5
             'extracted_images': self.extracted_images,  # NEW in B1.5
             'total_chunks': len(chunks),
@@ -904,6 +1099,8 @@ class PDFExtractor:
             print(f"   Images extracted: {len(self.extracted_images)}")
             if self.image_dir:
                 print(f"   Image directory: {self.image_dir}")
+        if self.extract_tables:
+            print(f"   Tables found: {total_tables}")
         print(f"   Chunks created: {len(chunks)}")
         print(f"   Chapters detected: {len(chapters)}")
         print(f"   Languages detected: {', '.join(languages.keys())}")
@@ -958,6 +1155,20 @@ Examples:
     parser.add_argument('--min-image-size', type=int, default=100,
                         help='Minimum image dimension in pixels (filters icons, default: 100)')
 
+    # Advanced features (Priority 2 & 3)
+    parser.add_argument('--ocr', action='store_true',
+                        help='Use OCR for scanned PDFs (requires pytesseract)')
+    parser.add_argument('--password', type=str, default=None,
+                        help='Password for encrypted PDF')
+    parser.add_argument('--extract-tables', action='store_true',
+                        help='Extract tables from PDF (Priority 2)')
+    parser.add_argument('--parallel', action='store_true',
+                        help='Process pages in parallel (Priority 3)')
+    parser.add_argument('--workers', type=int, default=None,
+                        help='Number of parallel workers (default: CPU count)')
+    parser.add_argument('--no-cache', action='store_true',
+                        help='Disable caching of expensive operations')
+
     args = parser.parse_args()
 
     # Validate input file
@@ -976,7 +1187,14 @@ Examples:
         min_quality=args.min_quality,
         extract_images=args.extract_images,
         image_dir=args.image_dir,
-        min_image_size=args.min_image_size
+        min_image_size=args.min_image_size,
+        # Advanced features (Priority 2 & 3)
+        use_ocr=args.ocr,
+        password=args.password,
+        extract_tables=args.extract_tables,
+        parallel=args.parallel,
+        max_workers=args.workers,
+        use_cache=not args.no_cache
     )
     result = extractor.extract_all()
 
