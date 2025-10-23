@@ -2,11 +2,11 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.2.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-14%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-142%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
@@ -34,6 +34,12 @@ Skill Seeker is an automated tool that transforms any documentation website into
 ## Key Features
 
 ✅ **Universal Scraper** - Works with ANY documentation website
+✅ **PDF Documentation Support** - Extract text, code, and images from PDF files
+  - 📄 **OCR for Scanned PDFs** - Extract text from scanned documents (**v1.2.0**)
+  - 🔐 **Password-Protected PDFs** - Handle encrypted PDFs (**v1.2.0**)
+  - 📊 **Table Extraction** - Extract complex tables from PDFs (**v1.2.0**)
+  - ⚡ **3x Faster** - Parallel processing for large PDFs (**v1.2.0**)
+  - 💾 **Intelligent Caching** - 50% faster on re-runs (**v1.2.0**)
 ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 ✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
@@ -45,7 +51,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 ✅ **Checkpoint/Resume** - Never lose progress on long scrapes
 ✅ **Parallel Scraping** - Process multiple skills simultaneously
 ✅ **Caching System** - Scrape once, rebuild instantly
-✅ **Fully Tested** - 96 tests with 100% pass rate
+✅ **Fully Tested** - 142 tests with 100% pass rate
 
 ## Quick Example
 
@@ -57,11 +63,12 @@ Skill Seeker is an automated tool that transforms any documentation website into
 
 # Then in Claude Code, just ask:
 "Generate a React skill from https://react.dev/"
+"Scrape PDF at docs/manual.pdf and create skill"
 ```
 
 **Time:** Automated | **Quality:** Production-ready | **Cost:** Free
 
-### Option 2: Use CLI Directly
+### Option 2: Use CLI Directly (HTML Docs)
 
 ```bash
 # Install dependencies (2 pip packages)
@@ -74,6 +81,39 @@ python3 cli/doc_scraper.py --config configs/react.json --enhance-local
 ```
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+### Option 3: Use CLI for PDF Documentation
+
+```bash
+# Install PDF support
+pip3 install PyMuPDF
+
+# Basic PDF extraction
+python3 cli/pdf_scraper.py --pdf docs/manual.pdf --name myskill
+
+# Advanced features
+python3 cli/pdf_scraper.py --pdf docs/manual.pdf --name myskill \
+    --extract-tables \        # Extract tables
+    --parallel \              # Fast parallel processing
+    --workers 8               # Use 8 CPU cores
+
+# Scanned PDFs (requires: pip install pytesseract Pillow)
+python3 cli/pdf_scraper.py --pdf docs/scanned.pdf --name myskill --ocr
+
+# Password-protected PDFs
+python3 cli/pdf_scraper.py --pdf docs/encrypted.pdf --name myskill --password mypassword
+
+# Upload output/myskill.zip to Claude - Done!
+```
+
+**Time:** ~5-15 minutes (or 2-5 minutes with parallel) | **Quality:** Production-ready | **Cost:** Free
+
+**Advanced Features:**
+- ✅ OCR for scanned PDFs (requires pytesseract)
+- ✅ Password-protected PDF support
+- ✅ Table extraction
+- ✅ Parallel processing (3x faster)
+- ✅ Intelligent caching
 
 ## How It Works
 

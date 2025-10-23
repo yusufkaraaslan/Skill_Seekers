@@ -21,6 +21,9 @@ pydantic==2.12.3
 pydantic-settings==2.11.0
 pydantic_core==2.41.4
 Pygments==2.19.2
+PyMuPDF==1.24.14
+Pillow==11.0.0
+pytesseract==0.3.13
 pytest==8.4.2
 pytest-cov==7.0.0
 python-dotenv==1.1.1
