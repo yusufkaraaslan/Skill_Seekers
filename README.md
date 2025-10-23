@@ -33,26 +33,34 @@ Skill Seeker is an automated tool that transforms any documentation website into
 
 ## Key Features
 
-✅ **Universal Scraper** - Works with ANY documentation website
-✅ **PDF Documentation Support** - Extract text, code, and images from PDF files
-  - 📄 **OCR for Scanned PDFs** - Extract text from scanned documents (**v1.2.0**)
-  - 🔐 **Password-Protected PDFs** - Handle encrypted PDFs (**v1.2.0**)
-  - 📊 **Table Extraction** - Extract complex tables from PDFs (**v1.2.0**)
-  - ⚡ **3x Faster** - Parallel processing for large PDFs (**v1.2.0**)
-  - 💾 **Intelligent Caching** - 50% faster on re-runs (**v1.2.0**)
+### 🌐 Documentation Scraping
+- ✅ **Universal Scraper** - Works with ANY documentation website
+- ✅ **Smart Categorization** - Automatically organizes content by topic
+- ✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
+- ✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
 
-✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
-✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
-✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
-✅ **Router/Hub Skills** - Intelligent routing to specialized sub-skills
-✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
-✅ **Smart Categorization** - Automatically organizes content by topic
-✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
-✅ **No API Costs** - FREE local enhancement using Claude Code Max
-✅ **Checkpoint/Resume** - Never lose progress on long scrapes
-✅ **Parallel Scraping** - Process multiple skills simultaneously
-✅ **Caching System** - Scrape once, rebuild instantly
-✅ **Fully Tested** - 142 tests with 100% pass rate
+### 📄 PDF Support (**v1.2.0**)
+- ✅ **Basic PDF Extraction** - Extract text, code, and images from PDF files
+- ✅ **OCR for Scanned PDFs** - Extract text from scanned documents
+- ✅ **Password-Protected PDFs** - Handle encrypted PDFs
+- ✅ **Table Extraction** - Extract complex tables from PDFs
+- ✅ **Parallel Processing** - 3x faster for large PDFs
+- ✅ **Intelligent Caching** - 50% faster on re-runs
+
+### 🤖 AI & Enhancement
+- ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
+- ✅ **No API Costs** - FREE local enhancement using Claude Code Max
+- ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
+
+### ⚡ Performance & Scale
+- ✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
+- ✅ **Router/Hub Skills** - Intelligent routing to specialized sub-skills
+- ✅ **Parallel Scraping** - Process multiple skills simultaneously
+- ✅ **Checkpoint/Resume** - Never lose progress on long scrapes
+- ✅ **Caching System** - Scrape once, rebuild instantly
+
+### ✅ Quality Assurance
+- ✅ **Fully Tested** - 142 tests with 100% pass rate
 
 ## Quick Example
 
