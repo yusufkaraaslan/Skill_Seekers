@@ -51,6 +51,7 @@ class DocToSkillConverter:
         # llms.txt detection state
         self.llms_txt_detected = False
         self.llms_txt_variant = None
+        self.llms_txt_variants = []  # Track all downloaded variants
 
         # Parallel scraping config
         self.workers = config.get('workers', 1)
@@ -337,10 +338,13 @@ class DocToSkillConverter:
     def _try_llms_txt(self) -> bool:
         """
         Try to use llms.txt instead of HTML scraping.
+        Downloads ALL available variants and stores with .md extension.
 
         Returns:
-            True if llms.txt was found and parsed successfully
+            True if llms.txt was found and processed successfully
         """
+        print(f"\n🔍 Checking for llms.txt at {self.base_url}...")
+
         # Check for explicit config URL first
         explicit_url = self.config.get('llms_txt_url')
         if explicit_url:
@@ -349,16 +353,21 @@ class DocToSkillConverter:
             downloader = LlmsTxtDownloader(explicit_url)
             content = downloader.download()
 
-            if not content:
-                print("⚠️  Failed to download, falling back to auto-detection")
-                # Continue to auto-detection below
-            else:
-                # Parse and save (same as auto-detected flow)
+            if content:
+                # Save with proper .md extension
+                filename = downloader.get_proper_filename()
+                filepath = os.path.join(self.skill_dir, "references", filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f"  💾 Saved {filename} ({len(content)} chars)")
+
+                # Parse and save pages
                 parser = LlmsTxtParser(content)
                 pages = parser.parse()
 
                 if pages:
-                    print(f"📄 Parsed {len(pages)} sections")
                     for page in pages:
                         self.save_page(page)
                         self.pages.append(page)
@@ -367,46 +376,68 @@ class DocToSkillConverter:
                     self.llms_txt_variant = 'explicit'
                     return True
 
-        # Original auto-detection logic continues...
-        print(f"\n🔍 Checking for llms.txt at {self.base_url}...")
-
-        # Detect llms.txt
+        # Auto-detection: Find ALL variants
         detector = LlmsTxtDetector(self.base_url)
-        result = detector.detect()
+        variants = detector.detect_all()
 
-        if not result:
+        if not variants:
             print("ℹ️  No llms.txt found, using HTML scraping")
             return False
 
-        print(f"✅ Found {result['variant']} llms.txt: {result['url']}")
+        print(f"✅ Found {len(variants)} llms.txt variant(s)")
 
-        # Download content
-        downloader = LlmsTxtDownloader(result['url'])
-        content = downloader.download()
+        # Download ALL variants
+        downloaded = {}
+        for variant_info in variants:
+            url = variant_info['url']
+            variant = variant_info['variant']
 
-        if not content:
-            print("⚠️  Failed to download llms.txt, falling back to HTML scraping")
+            print(f"  📥 Downloading {variant}...")
+            downloader = LlmsTxtDownloader(url)
+            content = downloader.download()
+
+            if content:
+                filename = downloader.get_proper_filename()
+                downloaded[variant] = {
+                    'content': content,
+                    'filename': filename,
+                    'size': len(content)
+                }
+                print(f"     ✓ {filename} ({len(content)} chars)")
+
+        if not downloaded:
+            print("⚠️  Failed to download any variants, falling back to HTML scraping")
             return False
 
-        print(f"📥 Downloaded {len(content)} characters")
+        # Save ALL variants to references/
+        os.makedirs(os.path.join(self.skill_dir, "references"), exist_ok=True)
 
-        # Parse into pages
-        parser = LlmsTxtParser(content)
+        for variant, data in downloaded.items():
+            filepath = os.path.join(self.skill_dir, "references", data['filename'])
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(data['content'])
+            print(f"  💾 Saved {data['filename']}")
+
+        # Parse LARGEST variant for skill building
+        largest = max(downloaded.items(), key=lambda x: x[1]['size'])
+        print(f"\n📄 Parsing {largest[1]['filename']} for skill building...")
+
+        parser = LlmsTxtParser(largest[1]['content'])
         pages = parser.parse()
 
         if not pages:
             print("⚠️  Failed to parse llms.txt, falling back to HTML scraping")
             return False
 
-        print(f"📄 Parsed {len(pages)} sections")
+        print(f"  ✓ Parsed {len(pages)} sections")
 
-        # Save pages
+        # Save pages for skill building
         for page in pages:
             self.save_page(page)
             self.pages.append(page)
 
         self.llms_txt_detected = True
-        self.llms_txt_variant = result['variant']
+        self.llms_txt_variants = list(downloaded.keys())
 
         return True
 

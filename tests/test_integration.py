@@ -527,6 +527,70 @@ app.use('*', cors())
                 self.assertIn('llms_txt_detected', summary)
                 self.assertTrue(summary['llms_txt_detected'])
 
+    def test_multi_variant_download(self):
+        """Test downloading all 3 llms.txt variants"""
+        from unittest.mock import patch, Mock
+
+        config = {
+            'name': 'test-multi-variant',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        # Mock all 3 variants
+        sample_full = "# Full\n" + "x" * 1000
+        sample_standard = "# Standard\n" + "x" * 200
+        sample_small = "# Small\n" + "x" * 500
+
+        with patch('cli.llms_txt_detector.requests.head') as mock_head, \
+             patch('cli.llms_txt_downloader.requests.get') as mock_get:
+
+            # Mock detection (all exist)
+            mock_head_response = Mock()
+            mock_head_response.status_code = 200
+            mock_head.return_value = mock_head_response
+
+            # Mock downloads
+            def mock_download(url, **kwargs):
+                response = Mock()
+                response.status_code = 200
+                if 'llms-full.txt' in url:
+                    response.text = sample_full
+                elif 'llms-small.txt' in url:
+                    response.text = sample_small
+                else:  # llms.txt
+                    response.text = sample_standard
+                response.raise_for_status = Mock()
+                return response
+
+            mock_get.side_effect = mock_download
+
+            # Run scraper
+            from cli.doc_scraper import DocToSkillConverter as DocumentationScraper
+            scraper = DocumentationScraper(config, dry_run=False)
+            result = scraper._try_llms_txt()
+
+            # Verify all 3 files created
+            refs_dir = Path(f"output/{config['name']}/references")
+
+            self.assertTrue(refs_dir.exists(), "references directory should exist")
+            self.assertTrue((refs_dir / 'llms-full.md').exists(), "llms-full.md should exist")
+            self.assertTrue((refs_dir / 'llms.md').exists(), "llms.md should exist")
+            self.assertTrue((refs_dir / 'llms-small.md').exists(), "llms-small.md should exist")
+
+            # Verify content not truncated
+            full_content = (refs_dir / 'llms-full.md').read_text()
+            self.assertEqual(len(full_content), len(sample_full))
+
+        # Clean up
+        shutil.rmtree(f"output/{config['name']}_data", ignore_errors=True)
+        shutil.rmtree(f"output/{config['name']}", ignore_errors=True)
+
 
 if __name__ == '__main__':
     unittest.main()
