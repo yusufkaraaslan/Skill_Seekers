@@ -344,3 +344,23 @@ cat output/godot/SKILL.md              # Should have real code examples
 cat output/godot/references/index.md   # Should show categories
 ls output/godot/references/            # Should have category .md files
 ```
+
+## llms.txt Support
+
+Skill_Seekers automatically detects llms.txt files before HTML scraping:
+
+### Detection Order
+1. `{base_url}/llms-full.txt` (complete documentation)
+2. `{base_url}/llms.txt` (standard version)
+3. `{base_url}/llms-small.txt` (quick reference)
+
+### Benefits
+- ⚡ 10x faster (< 5 seconds vs 20-60 seconds)
+- ✅ More reliable (maintained by docs authors)
+- 🎯 Better quality (pre-formatted for LLMs)
+- 🚫 No rate limiting needed
+
+### Example Sites
+- Hono: https://hono.dev/llms-full.txt
+
+If no llms.txt is found, automatically falls back to HTML scraping.
