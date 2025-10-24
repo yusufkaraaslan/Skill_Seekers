@@ -5,6 +5,26 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added - Phase 1: Active Skills Foundation
+- Multi-variant llms.txt detection: downloads all 3 variants (full, standard, small)
+- Automatic .txt → .md file extension conversion
+- No content truncation: preserves complete documentation
+- `detect_all()` method for finding all llms.txt variants
+- `get_proper_filename()` for correct .md naming
+
+### Changed
+- `_try_llms_txt()` now downloads all available variants instead of just one
+- Reference files now contain complete content (no 2500 char limit)
+- Code samples now include full code (no 600 char limit)
+
+### Fixed
+- File extension bug: llms.txt files now saved as .md
+- Content loss: 0% truncation (was 36%)
+
+---
+
 ## [1.2.0] - 2025-10-23
 
 ### 🚀 PDF Advanced Features Release
