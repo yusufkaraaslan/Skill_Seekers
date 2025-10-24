@@ -296,6 +296,17 @@ class TestConfigValidation(unittest.TestCase):
         url_errors = [e for e in errors if 'start_url' in e.lower()]
         self.assertEqual(len(url_errors), 0, "Valid start_urls should pass validation")
 
+    def test_config_with_llms_txt_url(self):
+        """Test config validation with explicit llms_txt_url"""
+        config = {
+            'name': 'test',
+            'llms_txt_url': 'https://example.com/llms-full.txt',
+            'base_url': 'https://example.com/docs'
+        }
+
+        # Should be valid
+        self.assertEqual(config.get('llms_txt_url'), 'https://example.com/llms-full.txt')
+
 
 if __name__ == '__main__':
     unittest.main()

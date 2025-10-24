@@ -341,6 +341,33 @@ class DocToSkillConverter:
         Returns:
             True if llms.txt was found and parsed successfully
         """
+        # Check for explicit config URL first
+        explicit_url = self.config.get('llms_txt_url')
+        if explicit_url:
+            print(f"\n📌 Using explicit llms_txt_url from config: {explicit_url}")
+
+            downloader = LlmsTxtDownloader(explicit_url)
+            content = downloader.download()
+
+            if not content:
+                print("⚠️  Failed to download, falling back to auto-detection")
+                # Continue to auto-detection below
+            else:
+                # Parse and save (same as auto-detected flow)
+                parser = LlmsTxtParser(content)
+                pages = parser.parse()
+
+                if pages:
+                    print(f"📄 Parsed {len(pages)} sections")
+                    for page in pages:
+                        self.save_page(page)
+                        self.pages.append(page)
+
+                    self.llms_txt_detected = True
+                    self.llms_txt_variant = 'explicit'
+                    return True
+
+        # Original auto-detection logic continues...
         print(f"\n🔍 Checking for llms.txt at {self.base_url}...")
 
         # Detect llms.txt
