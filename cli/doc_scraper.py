@@ -350,11 +350,12 @@ class DocToSkillConverter:
         if explicit_url:
             print(f"\n📌 Using explicit llms_txt_url from config: {explicit_url}")
 
+            # Download explicit file first
             downloader = LlmsTxtDownloader(explicit_url)
             content = downloader.download()
 
             if content:
-                # Save with proper .md extension
+                # Save explicit file with proper .md extension
                 filename = downloader.get_proper_filename()
                 filepath = os.path.join(self.skill_dir, "references", filename)
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -363,7 +364,32 @@ class DocToSkillConverter:
                     f.write(content)
                 print(f"  💾 Saved {filename} ({len(content)} chars)")
 
-                # Parse and save pages
+                # Also try to detect and download ALL other variants
+                detector = LlmsTxtDetector(self.base_url)
+                variants = detector.detect_all()
+
+                if variants:
+                    print(f"\n🔍 Found {len(variants)} total variant(s), downloading remaining...")
+                    for variant_info in variants:
+                        url = variant_info['url']
+                        variant = variant_info['variant']
+
+                        # Skip the explicit one we already downloaded
+                        if url == explicit_url:
+                            continue
+
+                        print(f"  📥 Downloading {variant}...")
+                        extra_downloader = LlmsTxtDownloader(url)
+                        extra_content = extra_downloader.download()
+
+                        if extra_content:
+                            extra_filename = extra_downloader.get_proper_filename()
+                            extra_filepath = os.path.join(self.skill_dir, "references", extra_filename)
+                            with open(extra_filepath, 'w', encoding='utf-8') as f:
+                                f.write(extra_content)
+                            print(f"     ✓ {extra_filename} ({len(extra_content)} chars)")
+
+                # Parse explicit file for skill building
                 parser = LlmsTxtParser(content)
                 pages = parser.parse()
 
