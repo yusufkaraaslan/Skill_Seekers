@@ -22,6 +22,13 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from collections import deque, defaultdict
 
+# Add parent directory to path for imports when run as script
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cli.llms_txt_detector import LlmsTxtDetector
+from cli.llms_txt_parser import LlmsTxtParser
+from cli.llms_txt_downloader import LlmsTxtDownloader
+
 
 class DocToSkillConverter:
     def __init__(self, config, dry_run=False, resume=False):
@@ -40,6 +47,10 @@ class DocToSkillConverter:
         checkpoint_config = config.get('checkpoint', {})
         self.checkpoint_enabled = checkpoint_config.get('enabled', False)
         self.checkpoint_interval = checkpoint_config.get('interval', 1000)
+
+        # llms.txt detection state
+        self.llms_txt_detected = False
+        self.llms_txt_variant = None
 
         # Parallel scraping config
         self.workers = config.get('workers', 1)
@@ -322,9 +333,67 @@ class DocToSkillConverter:
                     print(f"  ✗ Error on {url}: {e}")
             else:
                 print(f"  ✗ Error: {e}")
-    
+
+    def _try_llms_txt(self) -> bool:
+        """
+        Try to use llms.txt instead of HTML scraping.
+
+        Returns:
+            True if llms.txt was found and parsed successfully
+        """
+        print(f"\n🔍 Checking for llms.txt at {self.base_url}...")
+
+        # Detect llms.txt
+        detector = LlmsTxtDetector(self.base_url)
+        result = detector.detect()
+
+        if not result:
+            print("ℹ️  No llms.txt found, using HTML scraping")
+            return False
+
+        print(f"✅ Found {result['variant']} llms.txt: {result['url']}")
+
+        # Download content
+        downloader = LlmsTxtDownloader(result['url'])
+        content = downloader.download()
+
+        if not content:
+            print("⚠️  Failed to download llms.txt, falling back to HTML scraping")
+            return False
+
+        print(f"📥 Downloaded {len(content)} characters")
+
+        # Parse into pages
+        parser = LlmsTxtParser(content)
+        pages = parser.parse()
+
+        if not pages:
+            print("⚠️  Failed to parse llms.txt, falling back to HTML scraping")
+            return False
+
+        print(f"📄 Parsed {len(pages)} sections")
+
+        # Save pages
+        for page in pages:
+            self.save_page(page)
+            self.pages.append(page)
+
+        self.llms_txt_detected = True
+        self.llms_txt_variant = result['variant']
+
+        return True
+
     def scrape_all(self):
-        """Scrape all pages (supports parallel scraping)"""
+        """Scrape all pages (supports llms.txt and HTML scraping)"""
+
+        # Try llms.txt first (unless dry-run)
+        if not self.dry_run:
+            llms_result = self._try_llms_txt()
+            if llms_result:
+                print(f"\n✅ Used llms.txt ({self.llms_txt_variant}) - skipping HTML scraping")
+                return
+
+        # HTML scraping (original logic)
         print(f"\n{'='*60}")
         if self.dry_run:
             print(f"DRY RUN: {self.name}")

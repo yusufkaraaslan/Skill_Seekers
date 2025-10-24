@@ -247,6 +247,48 @@ class TestURLProcessing(unittest.TestCase):
         self.assertEqual(len(converter.pending_urls), 3)
 
 
+class TestLlmsTxtIntegration(unittest.TestCase):
+    """Test llms.txt integration into scraping workflow"""
+
+    def test_scraper_has_llms_txt_attributes(self):
+        """Test that scraper has llms.txt detection attributes"""
+        config = {
+            'name': 'test-llms',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        scraper = DocToSkillConverter(config, dry_run=True)
+
+        # Should have llms.txt attributes
+        self.assertFalse(scraper.llms_txt_detected)
+        self.assertIsNone(scraper.llms_txt_variant)
+
+    def test_scraper_has_try_llms_txt_method(self):
+        """Test that scraper has _try_llms_txt method"""
+        config = {
+            'name': 'test-llms',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        scraper = DocToSkillConverter(config, dry_run=True)
+
+        # Should have _try_llms_txt method
+        self.assertTrue(hasattr(scraper, '_try_llms_txt'))
+        self.assertTrue(callable(getattr(scraper, '_try_llms_txt')))
+
+
 class TestContentExtraction(unittest.TestCase):
     """Test content extraction functionality"""
 
