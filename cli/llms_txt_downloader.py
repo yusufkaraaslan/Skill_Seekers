@@ -13,6 +13,29 @@ class LlmsTxtDownloader:
         self.timeout = timeout
         self.max_retries = max_retries
 
+    def get_proper_filename(self) -> str:
+        """
+        Extract filename from URL and convert .txt to .md
+
+        Returns:
+            Proper filename with .md extension
+
+        Examples:
+            https://hono.dev/llms-full.txt -> llms-full.md
+            https://hono.dev/llms.txt -> llms.md
+            https://hono.dev/llms-small.txt -> llms-small.md
+        """
+        # Extract filename from URL
+        from urllib.parse import urlparse
+        parsed = urlparse(self.url)
+        filename = parsed.path.split('/')[-1]
+
+        # Replace .txt with .md
+        if filename.endswith('.txt'):
+            filename = filename[:-4] + '.md'
+
+        return filename
+
     def _is_markdown(self, content: str) -> bool:
         """
         Check if content looks like markdown.

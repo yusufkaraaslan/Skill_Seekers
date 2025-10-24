@@ -143,3 +143,28 @@ def test_user_agent_header():
     # Verify custom user agent was passed
     call_kwargs = mock_get.call_args[1]
     assert call_kwargs['headers']['User-Agent'] == 'Skill-Seekers-llms.txt-Reader/1.0'
+
+def test_get_proper_filename():
+    """Test filename conversion from .txt to .md"""
+    downloader = LlmsTxtDownloader("https://hono.dev/llms-full.txt")
+
+    filename = downloader.get_proper_filename()
+
+    assert filename == "llms-full.md"
+    assert not filename.endswith('.txt')
+
+def test_get_proper_filename_standard():
+    """Test standard variant naming"""
+    downloader = LlmsTxtDownloader("https://hono.dev/llms.txt")
+
+    filename = downloader.get_proper_filename()
+
+    assert filename == "llms.md"
+
+def test_get_proper_filename_small():
+    """Test small variant naming"""
+    downloader = LlmsTxtDownloader("https://hono.dev/llms-small.txt")
+
+    filename = downloader.get_proper_filename()
+
+    assert filename == "llms-small.md"
