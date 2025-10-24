@@ -2,7 +2,7 @@
 # ABOUTME: Supports llms-full.txt, llms.txt, and llms-small.txt variants
 
 import requests
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from urllib.parse import urlparse
 
 class LlmsTxtDetector:
@@ -34,6 +34,28 @@ class LlmsTxtDetector:
                 return {'url': url, 'variant': variant}
 
         return None
+
+    def detect_all(self) -> List[Dict[str, str]]:
+        """
+        Detect all available llms.txt variants.
+
+        Returns:
+            List of dicts with 'url' and 'variant' keys for each found variant
+        """
+        found_variants = []
+
+        for filename, variant in self.VARIANTS:
+            parsed = urlparse(self.base_url)
+            root_url = f"{parsed.scheme}://{parsed.netloc}"
+            url = f"{root_url}/{filename}"
+
+            if self._check_url_exists(url):
+                found_variants.append({
+                    'url': url,
+                    'variant': variant
+                })
+
+        return found_variants
 
     def _check_url_exists(self, url: str) -> bool:
         """Check if URL returns 200 status"""
