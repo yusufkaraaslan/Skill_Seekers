@@ -168,7 +168,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="scrape_docs",
-            description="Scrape documentation and build Claude skill. Creates SKILL.md and reference files.",
+            description="Scrape documentation and build Claude skill. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available.",
             inputSchema={
                 "type": "object",
                 "properties": {
