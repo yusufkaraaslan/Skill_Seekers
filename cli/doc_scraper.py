@@ -740,15 +740,12 @@ class DocToSkillConverter:
                     lines.append(f"{indent}- {h['text']}")
                 lines.append("")
             
-            # Content
+            # Content (NO TRUNCATION)
             if page.get('content'):
-                content = page['content'][:2500]
-                if len(page['content']) > 2500:
-                    content += "\n\n*[Content truncated]*"
-                lines.append(content)
+                lines.append(page['content'])
                 lines.append("")
-            
-            # Code examples with language
+
+            # Code examples with language (NO TRUNCATION)
             if page.get('code_samples'):
                 lines.append("**Examples:**\n")
                 for i, sample in enumerate(page['code_samples'][:4], 1):
@@ -756,9 +753,7 @@ class DocToSkillConverter:
                     code = sample.get('code', sample if isinstance(sample, str) else '')
                     lines.append(f"Example {i} ({lang}):")
                     lines.append(f"```{lang}")
-                    lines.append(code[:600])
-                    if len(code) > 600:
-                        lines.append("...")
+                    lines.append(code)  # Full code, no truncation
                     lines.append("```\n")
             
             lines.append("---\n")

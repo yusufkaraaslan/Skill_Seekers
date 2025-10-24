@@ -591,6 +591,57 @@ app.use('*', cors())
         shutil.rmtree(f"output/{config['name']}_data", ignore_errors=True)
         shutil.rmtree(f"output/{config['name']}", ignore_errors=True)
 
+def test_no_content_truncation():
+    """Test that content is NOT truncated in reference files"""
+    from unittest.mock import Mock
+    import tempfile
+
+    config = {
+        'name': 'test-no-truncate',
+        'base_url': 'https://example.com/docs',
+        'selectors': {
+            'main_content': 'article',
+            'title': 'h1',
+            'code_blocks': 'pre code'
+        },
+        'max_pages': 50
+    }
+
+    # Create scraper with long content
+    from cli.doc_scraper import DocToSkillConverter
+    scraper = DocToSkillConverter(config, dry_run=False)
+
+    # Create page with content > 2500 chars
+    long_content = "x" * 5000
+    long_code = "y" * 1000
+
+    pages = [{
+        'title': 'Long Page',
+        'url': 'https://example.com/long',
+        'content': long_content,
+        'code_samples': [
+            {'code': long_code, 'language': 'python'}
+        ],
+        'headings': []
+    }]
+
+    # Create reference file
+    scraper.create_reference_file('test', pages)
+
+    # Verify no truncation
+    ref_file = Path(f"output/{config['name']}/references/test.md")
+    with open(ref_file, 'r') as f:
+        content = f.read()
+
+    assert long_content in content  # Full content included
+    assert long_code in content     # Full code included
+    assert '[Content truncated]' not in content
+    assert '...' not in content or content.count('...') == 0
+
+    # Clean up
+    shutil.rmtree(f"output/{config['name']}_data", ignore_errors=True)
+    shutil.rmtree(f"output/{config['name']}", ignore_errors=True)
+
 
 if __name__ == '__main__':
     unittest.main()
