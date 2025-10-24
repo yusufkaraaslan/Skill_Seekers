@@ -418,6 +418,7 @@ class DocToSkillConverter:
             llms_result = self._try_llms_txt()
             if llms_result:
                 print(f"\n✅ Used llms.txt ({self.llms_txt_variant}) - skipping HTML scraping")
+                self.save_summary()
                 return
 
         # HTML scraping (original logic)
@@ -568,9 +569,11 @@ class DocToSkillConverter:
             'name': self.name,
             'total_pages': len(self.pages),
             'base_url': self.base_url,
+            'llms_txt_detected': self.llms_txt_detected,
+            'llms_txt_variant': self.llms_txt_variant,
             'pages': [{'title': p['title'], 'url': p['url']} for p in self.pages]
         }
-        
+
         with open(f"{self.data_dir}/summary.json", 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
     

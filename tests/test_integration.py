@@ -347,5 +347,186 @@ class TestContentExtraction(unittest.TestCase):
         self.assertEqual(page['code_samples'][0]['language'], 'python')
 
 
+class TestFullLlmsTxtWorkflow(unittest.TestCase):
+    """Test complete llms.txt workflow with mocked HTTP requests"""
+
+    def setUp(self):
+        """Set up test configuration and temporary directory"""
+        self.temp_dir = tempfile.mkdtemp()
+        self.config = {
+            'name': 'test-e2e-llms',
+            'base_url': 'https://hono.dev/docs',
+            'llms_txt_url': 'https://hono.dev/llms-full.txt',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        # Sample llms.txt content for testing
+        self.sample_llms_content = """# Getting Started
+
+Welcome to the framework documentation. This is the introduction section.
+
+## Installation
+
+To install the framework, run the following command:
+
+```bash
+npm install hono
+```
+
+## Quick Start
+
+Create a simple application:
+
+```javascript
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/', (c) => {
+  return c.text('Hello World!')
+})
+
+export default app
+```
+
+# API Reference
+
+This section covers the API documentation for the framework.
+
+## Context
+
+The context object provides request and response handling:
+
+```typescript
+interface Context {
+  req: Request
+  res: Response
+  text: (text: string) => Response
+}
+```
+
+# Middleware
+
+Middleware functions run before route handlers.
+
+## Built-in Middleware
+
+The framework provides several built-in middleware functions:
+
+```javascript
+import { logger, cors } from 'hono/middleware'
+
+app.use('*', logger())
+app.use('*', cors())
+```
+"""
+
+    def tearDown(self):
+        """Clean up temporary directory and test output"""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+        # Clean up test output directories
+        shutil.rmtree(f"output/{self.config['name']}_data", ignore_errors=True)
+        shutil.rmtree(f"output/{self.config['name']}", ignore_errors=True)
+
+    def test_full_llms_txt_workflow(self):
+        """Test complete workflow: config -> scrape (llms.txt) -> build -> verify"""
+        from unittest.mock import patch, MagicMock
+        import requests
+
+        # Mock the requests.get call for downloading llms.txt
+        with patch('cli.llms_txt_downloader.requests.get') as mock_get:
+            # Configure mock response
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.text = self.sample_llms_content
+            mock_response.raise_for_status = MagicMock()
+            mock_get.return_value = mock_response
+
+            # Create scraper and scrape
+            scraper = DocToSkillConverter(self.config, dry_run=False)
+            scraper.scrape_all()
+
+            # Verify llms.txt was detected
+            self.assertTrue(scraper.llms_txt_detected,
+                          "llms.txt should be detected")
+            self.assertEqual(scraper.llms_txt_variant, 'explicit',
+                           "Should use explicit variant from config")
+
+            # Verify pages were parsed
+            self.assertGreater(len(scraper.pages), 0,
+                             "Should have parsed pages from llms.txt")
+
+            # Verify page structure
+            self.assertTrue(all('title' in page for page in scraper.pages),
+                          "All pages should have titles")
+            self.assertTrue(all('content' in page for page in scraper.pages),
+                          "All pages should have content")
+            self.assertTrue(any(len(page.get('code_samples', [])) > 0
+                              for page in scraper.pages),
+                          "At least one page should have code samples")
+
+            # Verify code samples have language detection
+            pages_with_code = [p for p in scraper.pages
+                             if len(p.get('code_samples', [])) > 0]
+            if pages_with_code:
+                sample = pages_with_code[0]['code_samples'][0]
+                self.assertIn('language', sample,
+                            "Code samples should have language field")
+                self.assertIn('code', sample,
+                            "Code samples should have code field")
+
+            # Build skill
+            scraper.build_skill()
+
+            # Verify SKILL.md exists
+            skill_md_path = Path(f"output/{self.config['name']}/SKILL.md")
+            self.assertTrue(skill_md_path.exists(),
+                          "SKILL.md should be created")
+
+            # Verify SKILL.md content
+            skill_content = skill_md_path.read_text()
+            self.assertIn(self.config['name'], skill_content,
+                        "SKILL.md should contain skill name")
+            self.assertGreater(len(skill_content), 100,
+                             "SKILL.md should have substantial content")
+
+            # Verify references directory exists
+            refs_dir = Path(f"output/{self.config['name']}/references")
+            self.assertTrue(refs_dir.exists(),
+                          "references directory should exist")
+
+            # Verify at least index.md was created
+            index_md = refs_dir / 'index.md'
+            self.assertTrue(index_md.exists(),
+                          "references/index.md should exist")
+
+            # Verify reference files have content
+            ref_files = list(refs_dir.glob('*.md'))
+            self.assertGreater(len(ref_files), 0,
+                             "Should have at least one reference file")
+
+            # Verify data directory was created and has summary
+            data_dir = Path(f"output/{self.config['name']}_data")
+            self.assertTrue(data_dir.exists(),
+                          "Data directory should exist")
+
+            summary_path = data_dir / 'summary.json'
+            self.assertTrue(summary_path.exists(),
+                          "summary.json should exist")
+
+            # Verify summary content
+            with open(summary_path) as f:
+                summary = json.load(f)
+                self.assertEqual(summary['name'], self.config['name'])
+                self.assertGreater(summary['total_pages'], 0)
+                self.assertIn('llms_txt_detected', summary)
+                self.assertTrue(summary['llms_txt_detected'])
+
+
 if __name__ == '__main__':
     unittest.main()
