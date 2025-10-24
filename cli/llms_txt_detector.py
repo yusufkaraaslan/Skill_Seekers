@@ -3,6 +3,7 @@
 
 import requests
 from typing import Optional, Dict
+from urllib.parse import urlparse
 
 class LlmsTxtDetector:
     """Detect llms.txt files at documentation URLs"""
@@ -23,9 +24,11 @@ class LlmsTxtDetector:
         Returns:
             Dict with 'url' and 'variant' keys, or None if not found
         """
+        parsed = urlparse(self.base_url)
+        root_url = f"{parsed.scheme}://{parsed.netloc}"
+
         for filename, variant in self.VARIANTS:
-            # Try at base URL root
-            url = f"{self.base_url.split('/docs')[0]}/{filename}"
+            url = f"{root_url}/{filename}"
 
             if self._check_url_exists(url):
                 return {'url': url, 'variant': variant}
