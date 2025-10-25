@@ -13,35 +13,70 @@ import time
 from pathlib import Path
 from typing import Any
 
-# CRITICAL: Remove current directory from sys.path to avoid shadowing the mcp package
-# Our local 'mcp/' directory would otherwise shadow the installed 'mcp' package
-current_dir = str(Path(__file__).parent.parent)
-if current_dir in sys.path:
-    sys.path.remove(current_dir)
-if '' in sys.path:
-    sys.path.remove('')
-if '.' in sys.path:
-    sys.path.remove('.')
+# CRITICAL NOTE: This file has a naming conflict with the external 'mcp' package
+# Our local 'mcp/' directory shadows the 'mcp' package from PyPI
+# This means 'from mcp.server import Server' will fail when run from project root
+#
+# WORKAROUND: The tests import this module differently (as 'server' directly)
+# and check MCP_AVAILABLE before running MCP-dependent tests.
+#
+# LONG-TERM FIX: Rename this directory from 'mcp/' to 'skill_seeker_mcp/'
 
-# Now import the external MCP package (from site-packages)
-try:
-    from mcp.server import Server
-    from mcp.types import Tool, TextContent
-except ImportError:
-    print("❌ Error: mcp package not installed")
-    print("Install with: pip install mcp")
-    sys.exit(1)
+# Try to import external MCP package
+# This will FAIL when imported as 'mcp.server' from project root (shadowing issue)
+# This will SUCCEED when:
+#   1. Imported as 'server' after adding mcp/ to path (how tests do it)
+#   2. Run from outside project directory
+#   3. After we rename the mcp/ directory (future refactor)
 
-# NOW add parent directory back for importing local cli modules
-# The MCP package is already imported, so no more shadowing
-sys.path.insert(0, current_dir)
+MCP_AVAILABLE = False
+Server = None
+Tool = None
+TextContent = None
+
+# Check if external mcp package was already imported (by tests before adding local mcp/ to path)
+if 'mcp.server' in sys.modules and 'mcp.types' in sys.modules:
+    try:
+        Server = sys.modules['mcp.server'].Server
+        Tool = sys.modules['mcp.types'].Tool
+        TextContent = sys.modules['mcp.types'].TextContent
+        MCP_AVAILABLE = True
+    except AttributeError:
+        pass
+
+# If not already imported, try to import it now
+if not MCP_AVAILABLE:
+    try:
+        # This import will fail due to shadowing when run from project root
+        from mcp.server import Server
+        from mcp.types import Tool, TextContent
+        MCP_AVAILABLE = True
+    except ImportError as e:
+        # Make import failure non-fatal
+        # Tests will skip MCP tests when MCP_AVAILABLE = False
+        if __name__ == "__main__":
+            print("❌ Error: mcp package not installed")
+            print("Install with: pip install mcp")
+            print(f"Import error: {e}")
+            sys.exit(1)
 
 
-# Initialize MCP server
-app = Server("skill-seeker")
+# Initialize MCP server (only if MCP is available)
+app = Server("skill-seeker") if MCP_AVAILABLE and Server is not None else None
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent / "cli"
+
+# Helper decorator that works even when app is None
+def safe_decorator(decorator_func):
+    """Returns the decorator if MCP is available, otherwise returns a no-op"""
+    if MCP_AVAILABLE and app is not None:
+        return decorator_func
+    else:
+        # Return a decorator that just returns the function unchanged
+        def noop_decorator(func):
+            return func
+        return noop_decorator
 
 
 def run_subprocess_with_streaming(cmd, timeout=None):
@@ -113,7 +148,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
         return "", f"Error running subprocess: {str(e)}", 1
 
 
-@app.list_tools()
+@safe_decorator(app.list_tools() if app else lambda: lambda f: f)
 async def list_tools() -> list[Tool]:
     """List available tools"""
     return [
@@ -347,7 +382,7 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@app.call_tool()
+@safe_decorator(app.call_tool() if app else lambda: lambda f: f)
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls"""
 
@@ -840,6 +875,10 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
 
 async def main():
     """Run the MCP server"""
+    if not MCP_AVAILABLE or app is None:
+        print("❌ Error: MCP server cannot start - MCP package not available")
+        sys.exit(1)
+
     from mcp.server.stdio import stdio_server
 
     async with stdio_server() as (read_stream, write_stream):

@@ -1,0 +1,459 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0 -- /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers
+plugins: cov-7.0.0, anyio-4.11.0
+collecting ... collected 297 items
+
+tests/test_cli_paths.py::TestCLIPathsInDocstrings::test_doc_scraper_usage_paths PASSED [  0%]
+tests/test_cli_paths.py::TestCLIPathsInDocstrings::test_enhance_skill_local_usage_paths PASSED [  0%]
+tests/test_cli_paths.py::TestCLIPathsInDocstrings::test_enhance_skill_usage_paths PASSED [  1%]
+tests/test_cli_paths.py::TestCLIPathsInDocstrings::test_estimate_pages_usage_paths PASSED [  1%]
+tests/test_cli_paths.py::TestCLIPathsInDocstrings::test_package_skill_usage_paths PASSED [  1%]
+tests/test_cli_paths.py::TestCLIPathsInPrintStatements::test_doc_scraper_print_statements PASSED [  2%]
+tests/test_cli_paths.py::TestCLIPathsInPrintStatements::test_enhance_skill_local_print_statements PASSED [  2%]
+tests/test_cli_paths.py::TestCLIPathsInPrintStatements::test_enhance_skill_print_statements PASSED [  2%]
+tests/test_cli_paths.py::TestCLIPathsInSubprocessCalls::test_doc_scraper_subprocess_calls PASSED [  3%]
+tests/test_cli_paths.py::TestDocumentationPaths::test_enhancement_guide_paths PASSED [  3%]
+tests/test_cli_paths.py::TestDocumentationPaths::test_quickstart_paths PASSED [  3%]
+tests/test_cli_paths.py::TestDocumentationPaths::test_upload_guide_paths PASSED [  4%]
+tests/test_cli_paths.py::TestCLIHelpOutput::test_doc_scraper_help_output PASSED [  4%]
+tests/test_cli_paths.py::TestCLIHelpOutput::test_package_skill_help_output PASSED [  4%]
+tests/test_cli_paths.py::TestScriptExecutability::test_doc_scraper_executes_with_cli_prefix PASSED [  5%]
+tests/test_cli_paths.py::TestScriptExecutability::test_enhance_skill_local_executes_with_cli_prefix PASSED [  5%]
+tests/test_cli_paths.py::TestScriptExecutability::test_estimate_pages_executes_with_cli_prefix PASSED [  5%]
+tests/test_cli_paths.py::TestScriptExecutability::test_package_skill_executes_with_cli_prefix PASSED [  6%]
+tests/test_config_validation.py::TestConfigValidation::test_config_with_llms_txt_url PASSED [  6%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_base_url_no_protocol PASSED [  6%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_categories_not_dict PASSED [  7%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_category_keywords_not_list PASSED [  7%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_max_pages_not_int PASSED [  7%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_max_pages_too_high PASSED [  8%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_max_pages_zero PASSED [  8%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_name_special_chars PASSED [  8%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_rate_limit_negative PASSED [  9%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_rate_limit_not_number PASSED [  9%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_rate_limit_too_high PASSED [  9%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_selectors_not_dict PASSED [ 10%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_start_urls_bad_protocol PASSED [ 10%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_start_urls_not_list PASSED [ 10%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_url_patterns_include_not_list PASSED [ 11%]
+tests/test_config_validation.py::TestConfigValidation::test_invalid_url_patterns_not_dict PASSED [ 11%]
+tests/test_config_validation.py::TestConfigValidation::test_missing_base_url PASSED [ 11%]
+tests/test_config_validation.py::TestConfigValidation::test_missing_name PASSED [ 12%]
+tests/test_config_validation.py::TestConfigValidation::test_missing_recommended_selectors PASSED [ 12%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_complete_config PASSED [ 12%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_max_pages_range PASSED [ 13%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_minimal_config PASSED [ 13%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_name_formats PASSED [ 13%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_rate_limit_range PASSED [ 14%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_start_urls PASSED [ 14%]
+tests/test_config_validation.py::TestConfigValidation::test_valid_url_protocols PASSED [ 14%]
+tests/test_estimate_pages.py::TestEstimatePages::test_estimate_pages_respects_max_discovery PASSED [ 15%]
+tests/test_estimate_pages.py::TestEstimatePages::test_estimate_pages_returns_discovered_count PASSED [ 15%]
+tests/test_estimate_pages.py::TestEstimatePages::test_estimate_pages_with_minimal_config PASSED [ 15%]
+tests/test_estimate_pages.py::TestEstimatePages::test_estimate_pages_with_start_urls PASSED [ 16%]
+tests/test_estimate_pages.py::TestEstimatePagesCLI::test_cli_executes_with_help_flag PASSED [ 16%]
+tests/test_estimate_pages.py::TestEstimatePagesCLI::test_cli_help_output PASSED [ 16%]
+tests/test_estimate_pages.py::TestEstimatePagesCLI::test_cli_requires_config_argument PASSED [ 17%]
+tests/test_estimate_pages.py::TestEstimatePagesWithRealConfig::test_estimate_with_real_config_file PASSED [ 17%]
+tests/test_integration.py::TestDryRunMode::test_dry_run_flag_set PASSED  [ 17%]
+tests/test_integration.py::TestDryRunMode::test_dry_run_no_directories_created PASSED [ 18%]
+tests/test_integration.py::TestDryRunMode::test_normal_mode_creates_directories PASSED [ 18%]
+tests/test_integration.py::TestConfigLoading::test_load_config_with_validation_errors PASSED [ 18%]
+tests/test_integration.py::TestConfigLoading::test_load_invalid_json PASSED [ 19%]
+tests/test_integration.py::TestConfigLoading::test_load_nonexistent_file PASSED [ 19%]
+tests/test_integration.py::TestConfigLoading::test_load_valid_config PASSED [ 19%]
+tests/test_integration.py::TestRealConfigFiles::test_django_config PASSED [ 20%]
+tests/test_integration.py::TestRealConfigFiles::test_fastapi_config PASSED [ 20%]
+tests/test_integration.py::TestRealConfigFiles::test_godot_config PASSED [ 20%]
+tests/test_integration.py::TestRealConfigFiles::test_react_config PASSED [ 21%]
+tests/test_integration.py::TestRealConfigFiles::test_steam_economy_config PASSED [ 21%]
+tests/test_integration.py::TestRealConfigFiles::test_vue_config PASSED   [ 21%]
+tests/test_integration.py::TestURLProcessing::test_multiple_start_urls PASSED [ 22%]
+tests/test_integration.py::TestURLProcessing::test_start_urls_fallback PASSED [ 22%]
+tests/test_integration.py::TestURLProcessing::test_url_normalization PASSED [ 22%]
+tests/test_integration.py::TestLlmsTxtIntegration::test_scraper_has_llms_txt_attributes PASSED [ 23%]
+tests/test_integration.py::TestLlmsTxtIntegration::test_scraper_has_try_llms_txt_method PASSED [ 23%]
+tests/test_integration.py::TestContentExtraction::test_extract_basic_content PASSED [ 23%]
+tests/test_integration.py::TestContentExtraction::test_extract_empty_content PASSED [ 24%]
+tests/test_integration.py::TestFullLlmsTxtWorkflow::test_full_llms_txt_workflow PASSED [ 24%]
+tests/test_integration.py::TestFullLlmsTxtWorkflow::test_multi_variant_download PASSED [ 24%]
+tests/test_integration.py::test_no_content_truncation PASSED             [ 25%]
+tests/test_llms_txt_detector.py::test_detect_llms_txt_variants PASSED    [ 25%]
+tests/test_llms_txt_detector.py::test_detect_no_llms_txt PASSED          [ 25%]
+tests/test_llms_txt_detector.py::test_url_parsing_with_complex_paths PASSED [ 26%]
+tests/test_llms_txt_detector.py::test_detect_all_variants PASSED         [ 26%]
+tests/test_llms_txt_downloader.py::test_successful_download PASSED       [ 26%]
+tests/test_llms_txt_downloader.py::test_timeout_with_retry PASSED        [ 27%]
+tests/test_llms_txt_downloader.py::test_empty_content_rejection PASSED   [ 27%]
+tests/test_llms_txt_downloader.py::test_non_markdown_rejection PASSED    [ 27%]
+tests/test_llms_txt_downloader.py::test_http_error_handling PASSED       [ 28%]
+tests/test_llms_txt_downloader.py::test_exponential_backoff PASSED       [ 28%]
+tests/test_llms_txt_downloader.py::test_markdown_validation PASSED       [ 28%]
+tests/test_llms_txt_downloader.py::test_custom_timeout PASSED            [ 29%]
+tests/test_llms_txt_downloader.py::test_custom_max_retries PASSED        [ 29%]
+tests/test_llms_txt_downloader.py::test_user_agent_header PASSED         [ 29%]
+tests/test_llms_txt_downloader.py::test_get_proper_filename PASSED       [ 30%]
+tests/test_llms_txt_downloader.py::test_get_proper_filename_standard PASSED [ 30%]
+tests/test_llms_txt_downloader.py::test_get_proper_filename_small PASSED [ 30%]
+tests/test_llms_txt_parser.py::test_parse_markdown_sections PASSED       [ 31%]
+tests/test_mcp_server.py::TestMCPServerInitialization::test_server_import SKIPPED [ 31%]
+tests/test_mcp_server.py::TestMCPServerInitialization::test_server_initialization SKIPPED [ 31%]
+tests/test_mcp_server.py::TestListTools::test_list_tools_returns_tools SKIPPED [ 32%]
+tests/test_mcp_server.py::TestListTools::test_tool_schemas SKIPPED (...) [ 32%]
+tests/test_mcp_server.py::TestGenerateConfigTool::test_generate_config_basic SKIPPED [ 32%]
+tests/test_mcp_server.py::TestGenerateConfigTool::test_generate_config_defaults SKIPPED [ 33%]
+tests/test_mcp_server.py::TestGenerateConfigTool::test_generate_config_with_options SKIPPED [ 33%]
+tests/test_mcp_server.py::TestEstimatePagesTool::test_estimate_pages_error SKIPPED [ 34%]
+tests/test_mcp_server.py::TestEstimatePagesTool::test_estimate_pages_success SKIPPED [ 34%]
+tests/test_mcp_server.py::TestEstimatePagesTool::test_estimate_pages_with_max_discovery SKIPPED [ 34%]
+tests/test_mcp_server.py::TestScrapeDocsTool::test_scrape_docs_basic SKIPPED [ 35%]
+tests/test_mcp_server.py::TestScrapeDocsTool::test_scrape_docs_with_dry_run SKIPPED [ 35%]
+tests/test_mcp_server.py::TestScrapeDocsTool::test_scrape_docs_with_enhance_local SKIPPED [ 35%]
+tests/test_mcp_server.py::TestScrapeDocsTool::test_scrape_docs_with_skip_scrape SKIPPED [ 36%]
+tests/test_mcp_server.py::TestPackageSkillTool::test_package_skill_error SKIPPED [ 36%]
+tests/test_mcp_server.py::TestPackageSkillTool::test_package_skill_success SKIPPED [ 36%]
+tests/test_mcp_server.py::TestListConfigsTool::test_list_configs_empty SKIPPED [ 37%]
+tests/test_mcp_server.py::TestListConfigsTool::test_list_configs_no_directory SKIPPED [ 37%]
+tests/test_mcp_server.py::TestListConfigsTool::test_list_configs_success SKIPPED [ 37%]
+tests/test_mcp_server.py::TestValidateConfigTool::test_validate_invalid_config SKIPPED [ 38%]
+tests/test_mcp_server.py::TestValidateConfigTool::test_validate_nonexistent_config SKIPPED [ 38%]
+tests/test_mcp_server.py::TestValidateConfigTool::test_validate_valid_config SKIPPED [ 38%]
+tests/test_mcp_server.py::TestCallToolRouter::test_call_tool_exception_handling SKIPPED [ 39%]
+tests/test_mcp_server.py::TestCallToolRouter::test_call_tool_unknown SKIPPED [ 39%]
+tests/test_mcp_server.py::TestMCPServerIntegration::test_full_workflow_simulation SKIPPED [ 39%]
+tests/test_package_skill.py::TestPackageSkill::test_package_creates_correct_zip_structure PASSED [ 40%]
+tests/test_package_skill.py::TestPackageSkill::test_package_creates_zip_in_correct_location PASSED [ 40%]
+tests/test_package_skill.py::TestPackageSkill::test_package_directory_without_skill_md PASSED [ 40%]
+tests/test_package_skill.py::TestPackageSkill::test_package_excludes_backup_files PASSED [ 41%]
+tests/test_package_skill.py::TestPackageSkill::test_package_nonexistent_directory PASSED [ 41%]
+tests/test_package_skill.py::TestPackageSkill::test_package_valid_skill_directory PASSED [ 41%]
+tests/test_package_skill.py::TestPackageSkill::test_package_zip_name_matches_skill_name PASSED [ 42%]
+tests/test_package_skill.py::TestPackageSkillCLI::test_cli_executes_without_errors PASSED [ 42%]
+tests/test_package_skill.py::TestPackageSkillCLI::test_cli_help_output PASSED [ 42%]
+tests/test_package_structure.py::TestCliPackage::test_cli_package_exists PASSED [ 43%]
+tests/test_package_structure.py::TestCliPackage::test_cli_has_version PASSED [ 43%]
+tests/test_package_structure.py::TestCliPackage::test_cli_has_all PASSED [ 43%]
+tests/test_package_structure.py::TestCliPackage::test_llms_txt_detector_import PASSED [ 44%]
+tests/test_package_structure.py::TestCliPackage::test_llms_txt_downloader_import PASSED [ 44%]
+tests/test_package_structure.py::TestCliPackage::test_llms_txt_parser_import PASSED [ 44%]
+tests/test_package_structure.py::TestCliPackage::test_open_folder_import PASSED [ 45%]
+tests/test_package_structure.py::TestCliPackage::test_cli_exports_match_all PASSED [ 45%]
+tests/test_package_structure.py::TestMcpPackage::test_mcp_package_exists PASSED [ 45%]
+tests/test_package_structure.py::TestMcpPackage::test_mcp_has_version PASSED [ 46%]
+tests/test_package_structure.py::TestMcpPackage::test_mcp_has_all PASSED [ 46%]
+tests/test_package_structure.py::TestMcpPackage::test_mcp_tools_package_exists PASSED [ 46%]
+tests/test_package_structure.py::TestMcpPackage::test_mcp_tools_has_version PASSED [ 47%]
+tests/test_package_structure.py::TestPackageStructure::test_cli_init_file_exists PASSED [ 47%]
+tests/test_package_structure.py::TestPackageStructure::test_mcp_init_file_exists PASSED [ 47%]
+tests/test_package_structure.py::TestPackageStructure::test_mcp_tools_init_file_exists PASSED [ 48%]
+tests/test_package_structure.py::TestPackageStructure::test_cli_init_has_docstring PASSED [ 48%]
+tests/test_package_structure.py::TestPackageStructure::test_mcp_init_has_docstring PASSED [ 48%]
+tests/test_package_structure.py::TestImportPatterns::test_direct_module_import PASSED [ 49%]
+tests/test_package_structure.py::TestImportPatterns::test_class_import_from_package PASSED [ 49%]
+tests/test_package_structure.py::TestImportPatterns::test_package_level_import PASSED [ 49%]
+tests/test_package_structure.py::TestBackwardsCompatibility::test_direct_file_import_still_works PASSED [ 50%]
+tests/test_package_structure.py::TestBackwardsCompatibility::test_module_path_import_still_works PASSED [ 50%]
+tests/test_parallel_scraping.py::TestParallelScrapingConfiguration::test_multiple_workers_creates_lock PASSED [ 50%]
+tests/test_parallel_scraping.py::TestParallelScrapingConfiguration::test_single_worker_default PASSED [ 51%]
+tests/test_parallel_scraping.py::TestParallelScrapingConfiguration::test_workers_from_config PASSED [ 51%]
+tests/test_parallel_scraping.py::TestUnlimitedMode::test_limited_mode_default PASSED [ 51%]
+tests/test_parallel_scraping.py::TestUnlimitedMode::test_unlimited_with_minus_one PASSED [ 52%]
+tests/test_parallel_scraping.py::TestUnlimitedMode::test_unlimited_with_none PASSED [ 52%]
+tests/test_parallel_scraping.py::TestRateLimiting::test_rate_limit_default PASSED [ 52%]
+tests/test_parallel_scraping.py::TestRateLimiting::test_rate_limit_from_config PASSED [ 53%]
+tests/test_parallel_scraping.py::TestRateLimiting::test_zero_rate_limit_disables PASSED [ 53%]
+tests/test_parallel_scraping.py::TestThreadSafety::test_lock_protects_visited_urls PASSED [ 53%]
+tests/test_parallel_scraping.py::TestThreadSafety::test_single_worker_no_lock PASSED [ 54%]
+tests/test_parallel_scraping.py::TestScrapingModes::test_fast_scraping_mode PASSED [ 54%]
+tests/test_parallel_scraping.py::TestScrapingModes::test_parallel_limited PASSED [ 54%]
+tests/test_parallel_scraping.py::TestScrapingModes::test_parallel_unlimited PASSED [ 55%]
+tests/test_parallel_scraping.py::TestScrapingModes::test_single_threaded_limited PASSED [ 55%]
+tests/test_parallel_scraping.py::TestDryRunWithNewFeatures::test_dry_run_with_parallel PASSED [ 55%]
+tests/test_parallel_scraping.py::TestDryRunWithNewFeatures::test_dry_run_with_unlimited PASSED [ 56%]
+tests/test_pdf_advanced_features.py::TestOCRSupport::test_extract_text_with_ocr_disabled PASSED [ 56%]
+tests/test_pdf_advanced_features.py::TestOCRSupport::test_extract_text_with_ocr_sufficient_text PASSED [ 56%]
+tests/test_pdf_advanced_features.py::TestOCRSupport::test_ocr_extraction_triggered PASSED [ 57%]
+tests/test_pdf_advanced_features.py::TestOCRSupport::test_ocr_initialization PASSED [ 57%]
+tests/test_pdf_advanced_features.py::TestOCRSupport::test_ocr_unavailable_warning PASSED [ 57%]
+tests/test_pdf_advanced_features.py::TestPasswordProtection::test_encrypted_pdf_detection PASSED [ 58%]
+tests/test_pdf_advanced_features.py::TestPasswordProtection::test_missing_password_for_encrypted_pdf PASSED [ 58%]
+tests/test_pdf_advanced_features.py::TestPasswordProtection::test_password_initialization PASSED [ 58%]
+tests/test_pdf_advanced_features.py::TestPasswordProtection::test_wrong_password_handling PASSED [ 59%]
+tests/test_pdf_advanced_features.py::TestTableExtraction::test_multiple_tables_extraction PASSED [ 59%]
+tests/test_pdf_advanced_features.py::TestTableExtraction::test_table_extraction_basic PASSED [ 59%]
+tests/test_pdf_advanced_features.py::TestTableExtraction::test_table_extraction_disabled PASSED [ 60%]
+tests/test_pdf_advanced_features.py::TestTableExtraction::test_table_extraction_error_handling PASSED [ 60%]
+tests/test_pdf_advanced_features.py::TestTableExtraction::test_table_extraction_initialization PASSED [ 60%]
+tests/test_pdf_advanced_features.py::TestCaching::test_cache_disabled PASSED [ 61%]
+tests/test_pdf_advanced_features.py::TestCaching::test_cache_initialization PASSED [ 61%]
+tests/test_pdf_advanced_features.py::TestCaching::test_cache_miss PASSED [ 61%]
+tests/test_pdf_advanced_features.py::TestCaching::test_cache_overwrite PASSED [ 62%]
+tests/test_pdf_advanced_features.py::TestCaching::test_cache_set_and_get PASSED [ 62%]
+tests/test_pdf_advanced_features.py::TestParallelProcessing::test_custom_worker_count PASSED [ 62%]
+tests/test_pdf_advanced_features.py::TestParallelProcessing::test_parallel_disabled_by_default PASSED [ 63%]
+tests/test_pdf_advanced_features.py::TestParallelProcessing::test_parallel_initialization PASSED [ 63%]
+tests/test_pdf_advanced_features.py::TestParallelProcessing::test_worker_count_auto_detect PASSED [ 63%]
+tests/test_pdf_advanced_features.py::TestIntegration::test_feature_combinations PASSED [ 64%]
+tests/test_pdf_advanced_features.py::TestIntegration::test_full_initialization_with_all_features PASSED [ 64%]
+tests/test_pdf_advanced_features.py::TestIntegration::test_page_data_includes_tables PASSED [ 64%]
+tests/test_pdf_extractor.py::TestLanguageDetection::test_confidence_range PASSED [ 65%]
+tests/test_pdf_extractor.py::TestLanguageDetection::test_detect_cpp_with_confidence PASSED [ 65%]
+tests/test_pdf_extractor.py::TestLanguageDetection::test_detect_javascript_with_confidence PASSED [ 65%]
+tests/test_pdf_extractor.py::TestLanguageDetection::test_detect_python_with_confidence PASSED [ 66%]
+tests/test_pdf_extractor.py::TestLanguageDetection::test_detect_unknown_low_confidence PASSED [ 66%]
+tests/test_pdf_extractor.py::TestSyntaxValidation::test_validate_javascript_valid PASSED [ 67%]
+tests/test_pdf_extractor.py::TestSyntaxValidation::test_validate_natural_language_fails PASSED [ 67%]
+tests/test_pdf_extractor.py::TestSyntaxValidation::test_validate_python_invalid_indentation PASSED [ 67%]
+tests/test_pdf_extractor.py::TestSyntaxValidation::test_validate_python_unbalanced_brackets PASSED [ 68%]
+tests/test_pdf_extractor.py::TestSyntaxValidation::test_validate_python_valid PASSED [ 68%]
+tests/test_pdf_extractor.py::TestQualityScoring::test_high_quality_code PASSED [ 68%]
+tests/test_pdf_extractor.py::TestQualityScoring::test_low_quality_code PASSED [ 69%]
+tests/test_pdf_extractor.py::TestQualityScoring::test_quality_factors PASSED [ 69%]
+tests/test_pdf_extractor.py::TestQualityScoring::test_quality_score_range PASSED [ 69%]
+tests/test_pdf_extractor.py::TestChapterDetection::test_detect_chapter_uppercase PASSED [ 70%]
+tests/test_pdf_extractor.py::TestChapterDetection::test_detect_chapter_with_number PASSED [ 70%]
+tests/test_pdf_extractor.py::TestChapterDetection::test_detect_section_heading PASSED [ 70%]
+tests/test_pdf_extractor.py::TestChapterDetection::test_not_chapter PASSED [ 71%]
+tests/test_pdf_extractor.py::TestCodeBlockMerging::test_merge_continued_blocks PASSED [ 71%]
+tests/test_pdf_extractor.py::TestCodeBlockMerging::test_no_merge_different_languages PASSED [ 71%]
+tests/test_pdf_extractor.py::TestCodeDetectionMethods::test_indent_based_detection PASSED [ 72%]
+tests/test_pdf_extractor.py::TestCodeDetectionMethods::test_pattern_based_detection PASSED [ 72%]
+tests/test_pdf_extractor.py::TestQualityFiltering::test_filter_by_min_quality PASSED [ 72%]
+tests/test_pdf_scraper.py::TestPDFToSkillConverter::test_init_requires_name_or_config PASSED [ 73%]
+tests/test_pdf_scraper.py::TestPDFToSkillConverter::test_init_with_config PASSED [ 73%]
+tests/test_pdf_scraper.py::TestPDFToSkillConverter::test_init_with_name_and_pdf_path PASSED [ 73%]
+tests/test_pdf_scraper.py::TestCategorization::test_categorize_by_chapters PASSED [ 74%]
+tests/test_pdf_scraper.py::TestCategorization::test_categorize_by_keywords FAILED [ 74%]
+tests/test_pdf_scraper.py::TestCategorization::test_categorize_handles_no_chapters PASSED [ 74%]
+tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_reference_files FAILED [ 75%]
+tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_skill_md FAILED [ 75%]
+tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_structure FAILED [ 75%]
+tests/test_pdf_scraper.py::TestCodeBlockHandling::test_code_blocks_included_in_references FAILED [ 76%]
+tests/test_pdf_scraper.py::TestCodeBlockHandling::test_high_quality_code_preferred FAILED [ 76%]
+tests/test_pdf_scraper.py::TestImageHandling::test_image_references_in_markdown FAILED [ 76%]
+tests/test_pdf_scraper.py::TestImageHandling::test_images_saved_to_assets FAILED [ 77%]
+tests/test_pdf_scraper.py::TestErrorHandling::test_invalid_config_file PASSED [ 77%]
+tests/test_pdf_scraper.py::TestErrorHandling::test_missing_pdf_file FAILED [ 77%]
+tests/test_pdf_scraper.py::TestErrorHandling::test_missing_required_config_fields PASSED [ 78%]
+tests/test_pdf_scraper.py::TestJSONWorkflow::test_build_from_json_without_extraction PASSED [ 78%]
+tests/test_pdf_scraper.py::TestJSONWorkflow::test_load_from_json PASSED  [ 78%]
+tests/test_scraper_features.py::TestURLValidation::test_invalid_url_different_domain PASSED [ 79%]
+tests/test_scraper_features.py::TestURLValidation::test_invalid_url_no_include_match PASSED [ 79%]
+tests/test_scraper_features.py::TestURLValidation::test_invalid_url_with_exclude_pattern PASSED [ 79%]
+tests/test_scraper_features.py::TestURLValidation::test_url_validation_no_patterns PASSED [ 80%]
+tests/test_scraper_features.py::TestURLValidation::test_valid_url_with_api_pattern PASSED [ 80%]
+tests/test_scraper_features.py::TestURLValidation::test_valid_url_with_include_pattern PASSED [ 80%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_cpp PASSED [ 81%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_gdscript PASSED [ 81%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_javascript_from_arrow PASSED [ 81%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_javascript_from_const PASSED [ 82%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_language_from_class PASSED [ 82%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_language_from_lang_class PASSED [ 82%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_language_from_parent PASSED [ 83%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_python_from_def PASSED [ 83%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_python_from_heuristics PASSED [ 83%]
+tests/test_scraper_features.py::TestLanguageDetection::test_detect_unknown PASSED [ 84%]
+tests/test_scraper_features.py::TestPatternExtraction::test_extract_pattern_limit PASSED [ 84%]
+tests/test_scraper_features.py::TestPatternExtraction::test_extract_pattern_with_example_marker PASSED [ 84%]
+tests/test_scraper_features.py::TestPatternExtraction::test_extract_pattern_with_usage_marker PASSED [ 85%]
+tests/test_scraper_features.py::TestCategorization::test_categorize_by_content PASSED [ 85%]
+tests/test_scraper_features.py::TestCategorization::test_categorize_by_title PASSED [ 85%]
+tests/test_scraper_features.py::TestCategorization::test_categorize_by_url PASSED [ 86%]
+tests/test_scraper_features.py::TestCategorization::test_categorize_to_other PASSED [ 86%]
+tests/test_scraper_features.py::TestCategorization::test_empty_categories_removed PASSED [ 86%]
+tests/test_scraper_features.py::TestLinkExtraction::test_extract_links_no_anchor_duplicates PASSED [ 87%]
+tests/test_scraper_features.py::TestLinkExtraction::test_extract_links_preserves_query_params PASSED [ 87%]
+tests/test_scraper_features.py::TestLinkExtraction::test_extract_links_relative_urls_with_anchors PASSED [ 87%]
+tests/test_scraper_features.py::TestLinkExtraction::test_extract_links_strips_anchor_fragments PASSED [ 88%]
+tests/test_scraper_features.py::TestTextCleaning::test_clean_multiple_spaces PASSED [ 88%]
+tests/test_scraper_features.py::TestTextCleaning::test_clean_newlines PASSED [ 88%]
+tests/test_scraper_features.py::TestTextCleaning::test_clean_strip_whitespace PASSED [ 89%]
+tests/test_scraper_features.py::TestTextCleaning::test_clean_tabs PASSED [ 89%]
+tests/test_upload_skill.py::TestUploadSkillAPI::test_upload_accepts_path_object PASSED [ 89%]
+tests/test_upload_skill.py::TestUploadSkillAPI::test_upload_with_invalid_zip PASSED [ 90%]
+tests/test_upload_skill.py::TestUploadSkillAPI::test_upload_with_nonexistent_file PASSED [ 90%]
+tests/test_upload_skill.py::TestUploadSkillAPI::test_upload_without_api_key PASSED [ 90%]
+tests/test_upload_skill.py::TestUploadSkillCLI::test_cli_executes_without_errors PASSED [ 91%]
+tests/test_upload_skill.py::TestUploadSkillCLI::test_cli_help_output PASSED [ 91%]
+tests/test_upload_skill.py::TestUploadSkillCLI::test_cli_requires_zip_argument PASSED [ 91%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_get_api_key_returns_key PASSED [ 92%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_get_api_key_returns_none_when_not_set PASSED [ 92%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_get_api_key_strips_whitespace PASSED [ 92%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_has_api_key_when_empty_string PASSED [ 93%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_has_api_key_when_not_set PASSED [ 93%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_has_api_key_when_set PASSED [ 93%]
+tests/test_utilities.py::TestAPIKeyFunctions::test_has_api_key_when_whitespace_only PASSED [ 94%]
+tests/test_utilities.py::TestGetUploadURL::test_get_upload_url_returns_correct_url PASSED [ 94%]
+tests/test_utilities.py::TestGetUploadURL::test_get_upload_url_returns_string PASSED [ 94%]
+tests/test_utilities.py::TestFormatFileSize::test_format_bytes_below_1kb PASSED [ 95%]
+tests/test_utilities.py::TestFormatFileSize::test_format_kilobytes PASSED [ 95%]
+tests/test_utilities.py::TestFormatFileSize::test_format_large_files PASSED [ 95%]
+tests/test_utilities.py::TestFormatFileSize::test_format_megabytes PASSED [ 96%]
+tests/test_utilities.py::TestFormatFileSize::test_format_zero_bytes PASSED [ 96%]
+tests/test_utilities.py::TestValidateSkillDirectory::test_directory_without_skill_md PASSED [ 96%]
+tests/test_utilities.py::TestValidateSkillDirectory::test_file_instead_of_directory PASSED [ 97%]
+tests/test_utilities.py::TestValidateSkillDirectory::test_nonexistent_directory PASSED [ 97%]
+tests/test_utilities.py::TestValidateSkillDirectory::test_valid_skill_directory PASSED [ 97%]
+tests/test_utilities.py::TestValidateZipFile::test_directory_instead_of_file PASSED [ 98%]
+tests/test_utilities.py::TestValidateZipFile::test_nonexistent_file PASSED [ 98%]
+tests/test_utilities.py::TestValidateZipFile::test_valid_zip_file PASSED [ 98%]
+tests/test_utilities.py::TestValidateZipFile::test_wrong_extension PASSED [ 99%]
+tests/test_utilities.py::TestPrintUploadInstructions::test_print_upload_instructions_accepts_string_path PASSED [ 99%]
+tests/test_utilities.py::TestPrintUploadInstructions::test_print_upload_instructions_runs PASSED [100%]
+
+=================================== FAILURES ===================================
+________________ TestCategorization.test_categorize_by_keywords ________________
+tests/test_pdf_scraper.py:127: in test_categorize_by_keywords
+    categories = converter.categorize_content()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+📋 Categorizing content...
+__________ TestSkillBuilding.test_build_skill_creates_reference_files __________
+tests/test_pdf_scraper.py:287: in test_build_skill_creates_reference_files
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+_____________ TestSkillBuilding.test_build_skill_creates_skill_md ______________
+tests/test_pdf_scraper.py:256: in test_build_skill_creates_skill_md
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+_____________ TestSkillBuilding.test_build_skill_creates_structure _____________
+tests/test_pdf_scraper.py:232: in test_build_skill_creates_structure
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+________ TestCodeBlockHandling.test_code_blocks_included_in_references _________
+tests/test_pdf_scraper.py:340: in test_code_blocks_included_in_references
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+____________ TestCodeBlockHandling.test_high_quality_code_preferred ____________
+tests/test_pdf_scraper.py:375: in test_high_quality_code_preferred
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+_____________ TestImageHandling.test_image_references_in_markdown ______________
+tests/test_pdf_scraper.py:467: in test_image_references_in_markdown
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+________________ TestImageHandling.test_images_saved_to_assets _________________
+tests/test_pdf_scraper.py:429: in test_images_saved_to_assets
+    converter.build_skill()
+cli/pdf_scraper.py:167: in build_skill
+    categorized = self.categorize_content()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+cli/pdf_scraper.py:125: in categorize_content
+    headings_text = ' '.join([h['text'] for h in page['headings']]).lower()
+                                                 ^^^^^^^^^^^^^^^^
+E   KeyError: 'headings'
+----------------------------- Captured stdout call -----------------------------
+
+🏗️  Building skill: test_skill
+
+📋 Categorizing content...
+___________________ TestErrorHandling.test_missing_pdf_file ____________________
+tests/test_pdf_scraper.py:498: in test_missing_pdf_file
+    with self.assertRaises((FileNotFoundError, RuntimeError)):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: (<class 'FileNotFoundError'>, <class 'RuntimeError'>) not raised
+----------------------------- Captured stdout call -----------------------------
+
+🔍 Extracting from PDF: nonexistent.pdf
+
+📄 Extracting from: nonexistent.pdf
+❌ Error opening PDF: no such file: 'nonexistent.pdf'
+❌ Extraction failed
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_pdf_scraper.py::TestCategorization::test_categorize_by_keywords
+FAILED tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_reference_files
+FAILED tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_skill_md
+FAILED tests/test_pdf_scraper.py::TestSkillBuilding::test_build_skill_creates_structure
+FAILED tests/test_pdf_scraper.py::TestCodeBlockHandling::test_code_blocks_included_in_references
+FAILED tests/test_pdf_scraper.py::TestCodeBlockHandling::test_high_quality_code_preferred
+FAILED tests/test_pdf_scraper.py::TestImageHandling::test_image_references_in_markdown
+FAILED tests/test_pdf_scraper.py::TestImageHandling::test_images_saved_to_assets
+FAILED tests/test_pdf_scraper.py::TestErrorHandling::test_missing_pdf_file - ...
+============ 9 failed, 263 passed, 25 skipped, 5 warnings in 9.26s =============
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
