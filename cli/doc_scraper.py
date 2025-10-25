@@ -273,10 +273,16 @@ class DocToSkillConverter:
         # Check class attribute
         classes = elem.get('class', [])
         for cls in classes:
+            cls = re.sub(r'[^\w-]', '', cls)
             if 'language-' in cls:
                 return cls.replace('language-', '')
             if 'lang-' in cls:
                 return cls.replace('lang-', '')
+            if  cls in ["javascript", "java", "xml", "html", "python", "bash", "cpp", "typescript",
+                        "go", "rust", "php", "ruby", "swift", "kotlin", "csharp", "c", "sql",
+                        "yaml", "json", "markdown", "css", "scss", "sass", "jsx", "tsx", "vue",
+                        "shell", "powershell", "r", "scala", "dart", "perl", "lua", "elixir"]:
+                return cls
         
         # Check parent pre element
         parent = elem.parent
