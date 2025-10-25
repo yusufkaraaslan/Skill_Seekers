@@ -13,52 +13,23 @@ import time
 from pathlib import Path
 from typing import Any
 
-# CRITICAL NOTE: This file has a naming conflict with the external 'mcp' package
-# Our local 'mcp/' directory shadows the 'mcp' package from PyPI
-# This means 'from mcp.server import Server' will fail when run from project root
-#
-# WORKAROUND: The tests import this module differently (as 'server' directly)
-# and check MCP_AVAILABLE before running MCP-dependent tests.
-#
-# LONG-TERM FIX: Rename this directory from 'mcp/' to 'skill_seeker_mcp/'
-
-# Try to import external MCP package
-# This will FAIL when imported as 'mcp.server' from project root (shadowing issue)
-# This will SUCCEED when:
-#   1. Imported as 'server' after adding mcp/ to path (how tests do it)
-#   2. Run from outside project directory
-#   3. After we rename the mcp/ directory (future refactor)
-
+# Import external MCP package
+# NOTE: Directory renamed from 'mcp/' to 'skill_seeker_mcp/' to avoid shadowing the external mcp package
 MCP_AVAILABLE = False
 Server = None
 Tool = None
 TextContent = None
 
-# Check if external mcp package was already imported (by tests before adding local mcp/ to path)
-if 'mcp.server' in sys.modules and 'mcp.types' in sys.modules:
-    try:
-        Server = sys.modules['mcp.server'].Server
-        Tool = sys.modules['mcp.types'].Tool
-        TextContent = sys.modules['mcp.types'].TextContent
-        MCP_AVAILABLE = True
-    except AttributeError:
-        pass
-
-# If not already imported, try to import it now
-if not MCP_AVAILABLE:
-    try:
-        # This import will fail due to shadowing when run from project root
-        from mcp.server import Server
-        from mcp.types import Tool, TextContent
-        MCP_AVAILABLE = True
-    except ImportError as e:
-        # Make import failure non-fatal
-        # Tests will skip MCP tests when MCP_AVAILABLE = False
-        if __name__ == "__main__":
-            print("❌ Error: mcp package not installed")
-            print("Install with: pip install mcp")
-            print(f"Import error: {e}")
-            sys.exit(1)
+try:
+    from mcp.server import Server
+    from mcp.types import Tool, TextContent
+    MCP_AVAILABLE = True
+except ImportError as e:
+    if __name__ == "__main__":
+        print("❌ Error: mcp package not installed")
+        print("Install with: pip install mcp")
+        print(f"Import error: {e}")
+        sys.exit(1)
 
 
 # Initialize MCP server (only if MCP is available)

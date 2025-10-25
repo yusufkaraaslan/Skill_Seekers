@@ -36,8 +36,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import our local MCP server module
 if MCP_AVAILABLE:
-    # Add mcp directory to path to import our server module
-    mcp_dir = Path(__file__).parent.parent / "mcp"
+    # Add skill_seeker_mcp directory to path to import our server module
+    mcp_dir = Path(__file__).parent.parent / "skill_seeker_mcp"
     sys.path.insert(0, str(mcp_dir))
     try:
         import server as skill_seeker_server

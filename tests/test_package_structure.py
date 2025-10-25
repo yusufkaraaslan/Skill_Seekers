@@ -66,35 +66,35 @@ class TestCliPackage:
 
 
 class TestMcpPackage:
-    """Test mcp package structure and imports."""
+    """Test skill_seeker_mcp package structure and imports."""
 
     def test_mcp_package_exists(self):
-        """Test that mcp package can be imported."""
-        import mcp
-        assert mcp is not None
+        """Test that skill_seeker_mcp package can be imported."""
+        import skill_seeker_mcp
+        assert skill_seeker_mcp is not None
 
     def test_mcp_has_version(self):
-        """Test that mcp package has __version__."""
-        import mcp
-        assert hasattr(mcp, '__version__')
-        assert mcp.__version__ == '1.2.0'
+        """Test that skill_seeker_mcp package has __version__."""
+        import skill_seeker_mcp
+        assert hasattr(skill_seeker_mcp, '__version__')
+        assert skill_seeker_mcp.__version__ == '1.2.0'
 
     def test_mcp_has_all(self):
-        """Test that mcp package has __all__ export list."""
-        import mcp
-        assert hasattr(mcp, '__all__')
-        assert isinstance(mcp.__all__, list)
+        """Test that skill_seeker_mcp package has __all__ export list."""
+        import skill_seeker_mcp
+        assert hasattr(skill_seeker_mcp, '__all__')
+        assert isinstance(skill_seeker_mcp.__all__, list)
 
     def test_mcp_tools_package_exists(self):
-        """Test that mcp.tools subpackage can be imported."""
-        import mcp.tools
-        assert mcp.tools is not None
+        """Test that skill_seeker_mcp.tools subpackage can be imported."""
+        import skill_seeker_mcp.tools
+        assert skill_seeker_mcp.tools is not None
 
     def test_mcp_tools_has_version(self):
-        """Test that mcp.tools has __version__."""
-        import mcp.tools
-        assert hasattr(mcp.tools, '__version__')
-        assert mcp.tools.__version__ == '1.2.0'
+        """Test that skill_seeker_mcp.tools has __version__."""
+        import skill_seeker_mcp.tools
+        assert hasattr(skill_seeker_mcp.tools, '__version__')
+        assert skill_seeker_mcp.tools.__version__ == '1.2.0'
 
 
 class TestPackageStructure:
@@ -106,14 +106,14 @@ class TestPackageStructure:
         assert init_file.exists(), "cli/__init__.py not found"
 
     def test_mcp_init_file_exists(self):
-        """Test that mcp/__init__.py exists."""
-        init_file = Path(__file__).parent.parent / 'mcp' / '__init__.py'
-        assert init_file.exists(), "mcp/__init__.py not found"
+        """Test that skill_seeker_mcp/__init__.py exists."""
+        init_file = Path(__file__).parent.parent / 'skill_seeker_mcp' / '__init__.py'
+        assert init_file.exists(), "skill_seeker_mcp/__init__.py not found"
 
     def test_mcp_tools_init_file_exists(self):
-        """Test that mcp/tools/__init__.py exists."""
-        init_file = Path(__file__).parent.parent / 'mcp' / 'tools' / '__init__.py'
-        assert init_file.exists(), "mcp/tools/__init__.py not found"
+        """Test that skill_seeker_mcp/tools/__init__.py exists."""
+        init_file = Path(__file__).parent.parent / 'skill_seeker_mcp' / 'tools' / '__init__.py'
+        assert init_file.exists(), "skill_seeker_mcp/tools/__init__.py not found"
 
     def test_cli_init_has_docstring(self):
         """Test that cli/__init__.py has a module docstring."""
@@ -122,10 +122,10 @@ class TestPackageStructure:
         assert len(cli.__doc__) > 50  # Should have substantial documentation
 
     def test_mcp_init_has_docstring(self):
-        """Test that mcp/__init__.py has a module docstring."""
-        import mcp
-        assert mcp.__doc__ is not None
-        assert len(mcp.__doc__) > 50  # Should have substantial documentation
+        """Test that skill_seeker_mcp/__init__.py has a module docstring."""
+        import skill_seeker_mcp
+        assert skill_seeker_mcp.__doc__ is not None
+        assert len(skill_seeker_mcp.__doc__) > 50  # Should have substantial documentation
 
 
 class TestImportPatterns:
@@ -150,11 +150,11 @@ class TestImportPatterns:
     def test_package_level_import(self):
         """Test importing entire packages."""
         import cli
-        import mcp
-        import mcp.tools
+        import skill_seeker_mcp
+        import skill_seeker_mcp.tools
         assert 'cli' in sys.modules
-        assert 'mcp' in sys.modules
-        assert 'mcp.tools' in sys.modules
+        assert 'skill_seeker_mcp' in sys.modules
+        assert 'skill_seeker_mcp.tools' in sys.modules
 
 
 class TestBackwardsCompatibility:

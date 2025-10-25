@@ -211,6 +211,9 @@ class TestSkillBuilding(unittest.TestCase):
         }
         converter = self.PDFToSkillConverter(config)
 
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
         # Mock extracted data
         converter.extracted_data = {
             "pages": [
@@ -247,6 +250,9 @@ class TestSkillBuilding(unittest.TestCase):
         }
         converter = self.PDFToSkillConverter(config)
 
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
         converter.extracted_data = {
             "pages": [{"page_number": 1, "text": "Test", "code_blocks": [], "images": []}],
             "total_pages": 1
@@ -270,6 +276,9 @@ class TestSkillBuilding(unittest.TestCase):
             "pdf_path": "test.pdf"
         }
         converter = self.PDFToSkillConverter(config)
+
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
         converter.extracted_data = {
             "pages": [
@@ -314,6 +323,9 @@ class TestCodeBlockHandling(unittest.TestCase):
         }
         converter = self.PDFToSkillConverter(config)
 
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
         # Mock data with code blocks
         converter.extracted_data = {
             "pages": [
@@ -354,6 +366,9 @@ class TestCodeBlockHandling(unittest.TestCase):
             "pdf_path": "test.pdf"
         }
         converter = self.PDFToSkillConverter(config)
+
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
         # Mock data with varying quality
         converter.extracted_data = {
@@ -402,6 +417,9 @@ class TestImageHandling(unittest.TestCase):
         }
         converter = self.PDFToSkillConverter(config)
 
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
         # Mock image data (1x1 white PNG)
         mock_image_bytes = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
 
@@ -440,6 +458,9 @@ class TestImageHandling(unittest.TestCase):
             "pdf_path": "test.pdf"
         }
         converter = self.PDFToSkillConverter(config)
+
+        # Override skill_dir to use temp directory
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
         mock_image_bytes = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
 
