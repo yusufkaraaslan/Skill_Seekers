@@ -63,3 +63,18 @@ jobs:
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
+
+  # Summary job that provides a single status check for branch protection
+  tests-complete:
+    name: All Tests Complete
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test matrix results
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ Tests failed!"
+            exit 1
+          fi
+          echo "✅ All tests passed!"
