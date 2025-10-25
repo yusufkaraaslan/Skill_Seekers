@@ -14,10 +14,8 @@ import asyncio
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import MCP package components (from installed package)
+# CRITICAL: Import MCP package BEFORE adding project to path
+# to avoid shadowing the installed mcp package with our local mcp/ directory
 try:
     from mcp.server import Server
     from mcp.types import Tool, TextContent
@@ -25,6 +23,9 @@ try:
 except ImportError:
     MCP_AVAILABLE = False
     print("Warning: MCP package not available, skipping MCP tests")
+
+# NOW add parent directory to path for importing our local modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import our local MCP server module
 if MCP_AVAILABLE:

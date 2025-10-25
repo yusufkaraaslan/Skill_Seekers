@@ -13,9 +13,17 @@ import time
 from pathlib import Path
 from typing import Any
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# CRITICAL: Remove current directory from sys.path to avoid shadowing the mcp package
+# Our local 'mcp/' directory would otherwise shadow the installed 'mcp' package
+current_dir = str(Path(__file__).parent.parent)
+if current_dir in sys.path:
+    sys.path.remove(current_dir)
+if '' in sys.path:
+    sys.path.remove('')
+if '.' in sys.path:
+    sys.path.remove('.')
 
+# Now import the external MCP package (from site-packages)
 try:
     from mcp.server import Server
     from mcp.types import Tool, TextContent
@@ -23,6 +31,10 @@ except ImportError:
     print("❌ Error: mcp package not installed")
     print("Install with: pip install mcp")
     sys.exit(1)
+
+# NOW add parent directory back for importing local cli modules
+# The MCP package is already imported, so no more shadowing
+sys.path.insert(0, current_dir)
 
 
 # Initialize MCP server

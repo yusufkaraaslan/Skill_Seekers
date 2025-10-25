@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0 -- /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers
+plugins: cov-7.0.0, anyio-4.11.0
+collecting ... ❌ Error: mcp package not installed
+Install with: pip install mcp
+collected 93 items
+❌ Error: mcp package not installed
+Install with: pip install mcp
+
+============================ no tests ran in 0.09s =============================
