@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-142%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-207%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
@@ -34,6 +34,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 ## Key Features
 
 ### 🌐 Documentation Scraping
+- ✅ **llms.txt Support** - Automatically detects and uses LLM-ready documentation files (10x faster)
 - ✅ **Universal Scraper** - Works with ANY documentation website
 - ✅ **Smart Categorization** - Automatically organizes content by topic
 - ✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
@@ -60,7 +61,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 142 tests with 100% pass rate
+- ✅ **Fully Tested** - 207 tests with 100% pass rate
 
 ## Quick Example
 
@@ -139,6 +140,7 @@ graph LR
     G --> H[Upload to Claude AI]
 ```
 
+0. **Detect llms.txt** - Checks for llms-full.txt, llms.txt, llms-small.txt first
 1. **Scrape**: Extracts all pages from documentation
 2. **Categorize**: Organizes content into topics (API, guides, tutorials, etc.)
 3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples

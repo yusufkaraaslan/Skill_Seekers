@@ -8,6 +8,8 @@
 pip3 install requests beautifulsoup4
 ```
 
+> **Note:** Skill_Seekers automatically checks for llms.txt files first, which is 10x faster when available.
+
 ### Step 2: Run the Tool
 
 **Option A: Use a Preset (Easiest)**

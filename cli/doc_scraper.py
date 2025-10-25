@@ -22,6 +22,13 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from collections import deque, defaultdict
 
+# Add parent directory to path for imports when run as script
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cli.llms_txt_detector import LlmsTxtDetector
+from cli.llms_txt_parser import LlmsTxtParser
+from cli.llms_txt_downloader import LlmsTxtDownloader
+
 
 class DocToSkillConverter:
     def __init__(self, config, dry_run=False, resume=False):
@@ -40,6 +47,11 @@ class DocToSkillConverter:
         checkpoint_config = config.get('checkpoint', {})
         self.checkpoint_enabled = checkpoint_config.get('enabled', False)
         self.checkpoint_interval = checkpoint_config.get('interval', 1000)
+
+        # llms.txt detection state
+        self.llms_txt_detected = False
+        self.llms_txt_variant = None
+        self.llms_txt_variants = []  # Track all downloaded variants
 
         # Parallel scraping config
         self.workers = config.get('workers', 1)
@@ -322,9 +334,151 @@ class DocToSkillConverter:
                     print(f"  ✗ Error on {url}: {e}")
             else:
                 print(f"  ✗ Error: {e}")
-    
+
+    def _try_llms_txt(self) -> bool:
+        """
+        Try to use llms.txt instead of HTML scraping.
+        Downloads ALL available variants and stores with .md extension.
+
+        Returns:
+            True if llms.txt was found and processed successfully
+        """
+        print(f"\n🔍 Checking for llms.txt at {self.base_url}...")
+
+        # Check for explicit config URL first
+        explicit_url = self.config.get('llms_txt_url')
+        if explicit_url:
+            print(f"\n📌 Using explicit llms_txt_url from config: {explicit_url}")
+
+            # Download explicit file first
+            downloader = LlmsTxtDownloader(explicit_url)
+            content = downloader.download()
+
+            if content:
+                # Save explicit file with proper .md extension
+                filename = downloader.get_proper_filename()
+                filepath = os.path.join(self.skill_dir, "references", filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f"  💾 Saved {filename} ({len(content)} chars)")
+
+                # Also try to detect and download ALL other variants
+                detector = LlmsTxtDetector(self.base_url)
+                variants = detector.detect_all()
+
+                if variants:
+                    print(f"\n🔍 Found {len(variants)} total variant(s), downloading remaining...")
+                    for variant_info in variants:
+                        url = variant_info['url']
+                        variant = variant_info['variant']
+
+                        # Skip the explicit one we already downloaded
+                        if url == explicit_url:
+                            continue
+
+                        print(f"  📥 Downloading {variant}...")
+                        extra_downloader = LlmsTxtDownloader(url)
+                        extra_content = extra_downloader.download()
+
+                        if extra_content:
+                            extra_filename = extra_downloader.get_proper_filename()
+                            extra_filepath = os.path.join(self.skill_dir, "references", extra_filename)
+                            with open(extra_filepath, 'w', encoding='utf-8') as f:
+                                f.write(extra_content)
+                            print(f"     ✓ {extra_filename} ({len(extra_content)} chars)")
+
+                # Parse explicit file for skill building
+                parser = LlmsTxtParser(content)
+                pages = parser.parse()
+
+                if pages:
+                    for page in pages:
+                        self.save_page(page)
+                        self.pages.append(page)
+
+                    self.llms_txt_detected = True
+                    self.llms_txt_variant = 'explicit'
+                    return True
+
+        # Auto-detection: Find ALL variants
+        detector = LlmsTxtDetector(self.base_url)
+        variants = detector.detect_all()
+
+        if not variants:
+            print("ℹ️  No llms.txt found, using HTML scraping")
+            return False
+
+        print(f"✅ Found {len(variants)} llms.txt variant(s)")
+
+        # Download ALL variants
+        downloaded = {}
+        for variant_info in variants:
+            url = variant_info['url']
+            variant = variant_info['variant']
+
+            print(f"  📥 Downloading {variant}...")
+            downloader = LlmsTxtDownloader(url)
+            content = downloader.download()
+
+            if content:
+                filename = downloader.get_proper_filename()
+                downloaded[variant] = {
+                    'content': content,
+                    'filename': filename,
+                    'size': len(content)
+                }
+                print(f"     ✓ {filename} ({len(content)} chars)")
+
+        if not downloaded:
+            print("⚠️  Failed to download any variants, falling back to HTML scraping")
+            return False
+
+        # Save ALL variants to references/
+        os.makedirs(os.path.join(self.skill_dir, "references"), exist_ok=True)
+
+        for variant, data in downloaded.items():
+            filepath = os.path.join(self.skill_dir, "references", data['filename'])
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(data['content'])
+            print(f"  💾 Saved {data['filename']}")
+
+        # Parse LARGEST variant for skill building
+        largest = max(downloaded.items(), key=lambda x: x[1]['size'])
+        print(f"\n📄 Parsing {largest[1]['filename']} for skill building...")
+
+        parser = LlmsTxtParser(largest[1]['content'])
+        pages = parser.parse()
+
+        if not pages:
+            print("⚠️  Failed to parse llms.txt, falling back to HTML scraping")
+            return False
+
+        print(f"  ✓ Parsed {len(pages)} sections")
+
+        # Save pages for skill building
+        for page in pages:
+            self.save_page(page)
+            self.pages.append(page)
+
+        self.llms_txt_detected = True
+        self.llms_txt_variants = list(downloaded.keys())
+
+        return True
+
     def scrape_all(self):
-        """Scrape all pages (supports parallel scraping)"""
+        """Scrape all pages (supports llms.txt and HTML scraping)"""
+
+        # Try llms.txt first (unless dry-run)
+        if not self.dry_run:
+            llms_result = self._try_llms_txt()
+            if llms_result:
+                print(f"\n✅ Used llms.txt ({self.llms_txt_variant}) - skipping HTML scraping")
+                self.save_summary()
+                return
+
+        # HTML scraping (original logic)
         print(f"\n{'='*60}")
         if self.dry_run:
             print(f"DRY RUN: {self.name}")
@@ -472,9 +626,11 @@ class DocToSkillConverter:
             'name': self.name,
             'total_pages': len(self.pages),
             'base_url': self.base_url,
+            'llms_txt_detected': self.llms_txt_detected,
+            'llms_txt_variant': self.llms_txt_variant,
             'pages': [{'title': p['title'], 'url': p['url']} for p in self.pages]
         }
-        
+
         with open(f"{self.data_dir}/summary.json", 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
     
@@ -610,15 +766,12 @@ class DocToSkillConverter:
                     lines.append(f"{indent}- {h['text']}")
                 lines.append("")
             
-            # Content
+            # Content (NO TRUNCATION)
             if page.get('content'):
-                content = page['content'][:2500]
-                if len(page['content']) > 2500:
-                    content += "\n\n*[Content truncated]*"
-                lines.append(content)
+                lines.append(page['content'])
                 lines.append("")
-            
-            # Code examples with language
+
+            # Code examples with language (NO TRUNCATION)
             if page.get('code_samples'):
                 lines.append("**Examples:**\n")
                 for i, sample in enumerate(page['code_samples'][:4], 1):
@@ -626,9 +779,7 @@ class DocToSkillConverter:
                     code = sample.get('code', sample if isinstance(sample, str) else '')
                     lines.append(f"Example {i} ({lang}):")
                     lines.append(f"```{lang}")
-                    lines.append(code[:600])
-                    if len(code) > 600:
-                        lines.append("...")
+                    lines.append(code)  # Full code, no truncation
                     lines.append("```\n")
             
             lines.append("---\n")

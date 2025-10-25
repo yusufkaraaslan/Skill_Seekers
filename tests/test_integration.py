@@ -247,6 +247,48 @@ class TestURLProcessing(unittest.TestCase):
         self.assertEqual(len(converter.pending_urls), 3)
 
 
+class TestLlmsTxtIntegration(unittest.TestCase):
+    """Test llms.txt integration into scraping workflow"""
+
+    def test_scraper_has_llms_txt_attributes(self):
+        """Test that scraper has llms.txt detection attributes"""
+        config = {
+            'name': 'test-llms',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        scraper = DocToSkillConverter(config, dry_run=True)
+
+        # Should have llms.txt attributes
+        self.assertFalse(scraper.llms_txt_detected)
+        self.assertIsNone(scraper.llms_txt_variant)
+
+    def test_scraper_has_try_llms_txt_method(self):
+        """Test that scraper has _try_llms_txt method"""
+        config = {
+            'name': 'test-llms',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        scraper = DocToSkillConverter(config, dry_run=True)
+
+        # Should have _try_llms_txt method
+        self.assertTrue(hasattr(scraper, '_try_llms_txt'))
+        self.assertTrue(callable(getattr(scraper, '_try_llms_txt')))
+
+
 class TestContentExtraction(unittest.TestCase):
     """Test content extraction functionality"""
 
@@ -303,6 +345,302 @@ class TestContentExtraction(unittest.TestCase):
         self.assertIn('content', page['content'].lower())
         self.assertGreater(len(page['code_samples']), 0)
         self.assertEqual(page['code_samples'][0]['language'], 'python')
+
+
+class TestFullLlmsTxtWorkflow(unittest.TestCase):
+    """Test complete llms.txt workflow with mocked HTTP requests"""
+
+    def setUp(self):
+        """Set up test configuration and temporary directory"""
+        self.temp_dir = tempfile.mkdtemp()
+        self.config = {
+            'name': 'test-e2e-llms',
+            'base_url': 'https://hono.dev/docs',
+            'llms_txt_url': 'https://hono.dev/llms-full.txt',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        # Sample llms.txt content for testing
+        self.sample_llms_content = """# Getting Started
+
+Welcome to the framework documentation. This is the introduction section.
+
+## Installation
+
+To install the framework, run the following command:
+
+```bash
+npm install hono
+```
+
+## Quick Start
+
+Create a simple application:
+
+```javascript
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/', (c) => {
+  return c.text('Hello World!')
+})
+
+export default app
+```
+
+# API Reference
+
+This section covers the API documentation for the framework.
+
+## Context
+
+The context object provides request and response handling:
+
+```typescript
+interface Context {
+  req: Request
+  res: Response
+  text: (text: string) => Response
+}
+```
+
+# Middleware
+
+Middleware functions run before route handlers.
+
+## Built-in Middleware
+
+The framework provides several built-in middleware functions:
+
+```javascript
+import { logger, cors } from 'hono/middleware'
+
+app.use('*', logger())
+app.use('*', cors())
+```
+"""
+
+    def tearDown(self):
+        """Clean up temporary directory and test output"""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+        # Clean up test output directories
+        shutil.rmtree(f"output/{self.config['name']}_data", ignore_errors=True)
+        shutil.rmtree(f"output/{self.config['name']}", ignore_errors=True)
+
+    def test_full_llms_txt_workflow(self):
+        """Test complete workflow: config -> scrape (llms.txt) -> build -> verify"""
+        from unittest.mock import patch, MagicMock
+        import requests
+
+        # Mock the requests.get call for downloading llms.txt
+        with patch('cli.llms_txt_downloader.requests.get') as mock_get:
+            # Configure mock response
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.text = self.sample_llms_content
+            mock_response.raise_for_status = MagicMock()
+            mock_get.return_value = mock_response
+
+            # Create scraper and scrape
+            scraper = DocToSkillConverter(self.config, dry_run=False)
+            scraper.scrape_all()
+
+            # Verify llms.txt was detected
+            self.assertTrue(scraper.llms_txt_detected,
+                          "llms.txt should be detected")
+            self.assertEqual(scraper.llms_txt_variant, 'explicit',
+                           "Should use explicit variant from config")
+
+            # Verify pages were parsed
+            self.assertGreater(len(scraper.pages), 0,
+                             "Should have parsed pages from llms.txt")
+
+            # Verify page structure
+            self.assertTrue(all('title' in page for page in scraper.pages),
+                          "All pages should have titles")
+            self.assertTrue(all('content' in page for page in scraper.pages),
+                          "All pages should have content")
+            self.assertTrue(any(len(page.get('code_samples', [])) > 0
+                              for page in scraper.pages),
+                          "At least one page should have code samples")
+
+            # Verify code samples have language detection
+            pages_with_code = [p for p in scraper.pages
+                             if len(p.get('code_samples', [])) > 0]
+            if pages_with_code:
+                sample = pages_with_code[0]['code_samples'][0]
+                self.assertIn('language', sample,
+                            "Code samples should have language field")
+                self.assertIn('code', sample,
+                            "Code samples should have code field")
+
+            # Build skill
+            scraper.build_skill()
+
+            # Verify SKILL.md exists
+            skill_md_path = Path(f"output/{self.config['name']}/SKILL.md")
+            self.assertTrue(skill_md_path.exists(),
+                          "SKILL.md should be created")
+
+            # Verify SKILL.md content
+            skill_content = skill_md_path.read_text()
+            self.assertIn(self.config['name'], skill_content,
+                        "SKILL.md should contain skill name")
+            self.assertGreater(len(skill_content), 100,
+                             "SKILL.md should have substantial content")
+
+            # Verify references directory exists
+            refs_dir = Path(f"output/{self.config['name']}/references")
+            self.assertTrue(refs_dir.exists(),
+                          "references directory should exist")
+
+            # Verify at least index.md was created
+            index_md = refs_dir / 'index.md'
+            self.assertTrue(index_md.exists(),
+                          "references/index.md should exist")
+
+            # Verify reference files have content
+            ref_files = list(refs_dir.glob('*.md'))
+            self.assertGreater(len(ref_files), 0,
+                             "Should have at least one reference file")
+
+            # Verify data directory was created and has summary
+            data_dir = Path(f"output/{self.config['name']}_data")
+            self.assertTrue(data_dir.exists(),
+                          "Data directory should exist")
+
+            summary_path = data_dir / 'summary.json'
+            self.assertTrue(summary_path.exists(),
+                          "summary.json should exist")
+
+            # Verify summary content
+            with open(summary_path) as f:
+                summary = json.load(f)
+                self.assertEqual(summary['name'], self.config['name'])
+                self.assertGreater(summary['total_pages'], 0)
+                self.assertIn('llms_txt_detected', summary)
+                self.assertTrue(summary['llms_txt_detected'])
+
+    def test_multi_variant_download(self):
+        """Test downloading all 3 llms.txt variants"""
+        from unittest.mock import patch, Mock
+
+        config = {
+            'name': 'test-multi-variant',
+            'base_url': 'https://hono.dev/docs',
+            'selectors': {
+                'main_content': 'article',
+                'title': 'h1',
+                'code_blocks': 'pre code'
+            },
+            'max_pages': 50
+        }
+
+        # Mock all 3 variants
+        sample_full = "# Full\n" + "x" * 1000
+        sample_standard = "# Standard\n" + "x" * 200
+        sample_small = "# Small\n" + "x" * 500
+
+        with patch('cli.llms_txt_detector.requests.head') as mock_head, \
+             patch('cli.llms_txt_downloader.requests.get') as mock_get:
+
+            # Mock detection (all exist)
+            mock_head_response = Mock()
+            mock_head_response.status_code = 200
+            mock_head.return_value = mock_head_response
+
+            # Mock downloads
+            def mock_download(url, **kwargs):
+                response = Mock()
+                response.status_code = 200
+                if 'llms-full.txt' in url:
+                    response.text = sample_full
+                elif 'llms-small.txt' in url:
+                    response.text = sample_small
+                else:  # llms.txt
+                    response.text = sample_standard
+                response.raise_for_status = Mock()
+                return response
+
+            mock_get.side_effect = mock_download
+
+            # Run scraper
+            from cli.doc_scraper import DocToSkillConverter as DocumentationScraper
+            scraper = DocumentationScraper(config, dry_run=False)
+            result = scraper._try_llms_txt()
+
+            # Verify all 3 files created
+            refs_dir = Path(f"output/{config['name']}/references")
+
+            self.assertTrue(refs_dir.exists(), "references directory should exist")
+            self.assertTrue((refs_dir / 'llms-full.md').exists(), "llms-full.md should exist")
+            self.assertTrue((refs_dir / 'llms.md').exists(), "llms.md should exist")
+            self.assertTrue((refs_dir / 'llms-small.md').exists(), "llms-small.md should exist")
+
+            # Verify content not truncated
+            full_content = (refs_dir / 'llms-full.md').read_text()
+            self.assertEqual(len(full_content), len(sample_full))
+
+        # Clean up
+        shutil.rmtree(f"output/{config['name']}_data", ignore_errors=True)
+        shutil.rmtree(f"output/{config['name']}", ignore_errors=True)
+
+def test_no_content_truncation():
+    """Test that content is NOT truncated in reference files"""
+    from unittest.mock import Mock
+    import tempfile
+
+    config = {
+        'name': 'test-no-truncate',
+        'base_url': 'https://example.com/docs',
+        'selectors': {
+            'main_content': 'article',
+            'title': 'h1',
+            'code_blocks': 'pre code'
+        },
+        'max_pages': 50
+    }
+
+    # Create scraper with long content
+    from cli.doc_scraper import DocToSkillConverter
+    scraper = DocToSkillConverter(config, dry_run=False)
+
+    # Create page with content > 2500 chars
+    long_content = "x" * 5000
+    long_code = "y" * 1000
+
+    pages = [{
+        'title': 'Long Page',
+        'url': 'https://example.com/long',
+        'content': long_content,
+        'code_samples': [
+            {'code': long_code, 'language': 'python'}
+        ],
+        'headings': []
+    }]
+
+    # Create reference file
+    scraper.create_reference_file('test', pages)
+
+    # Verify no truncation
+    ref_file = Path(f"output/{config['name']}/references/test.md")
+    with open(ref_file, 'r') as f:
+        content = f.read()
+
+    assert long_content in content  # Full content included
+    assert long_code in content     # Full code included
+    assert '[Content truncated]' not in content
+    assert '...' not in content or content.count('...') == 0
+
+    # Clean up
+    shutil.rmtree(f"output/{config['name']}_data", ignore_errors=True)
+    shutil.rmtree(f"output/{config['name']}", ignore_errors=True)
 
 
 if __name__ == '__main__':
