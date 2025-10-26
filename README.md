@@ -9,27 +9,30 @@
 [![Tested](https://img.shields.io/badge/Tests-299%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 
-**Automatically convert any documentation website into a Claude AI skill in minutes.**
+**Automatically convert documentation websites, GitHub repositories, and PDFs into Claude AI skills in minutes.**
 
 > 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tasks across 10 categories, pick any to contribute!
 
 ## What is Skill Seeker?
 
-Skill Seeker is an automated tool that transforms any documentation website into a production-ready [Claude AI skill](https://claude.ai). Instead of manually reading and summarizing documentation, Skill Seeker:
+Skill Seeker is an automated tool that transforms documentation websites, GitHub repositories, and PDF files into production-ready [Claude AI skills](https://claude.ai). Instead of manually reading and summarizing documentation, Skill Seeker:
 
-1. **Scrapes** documentation websites automatically
-2. **Organizes** content into categorized reference files
-3. **Enhances** with AI to extract best examples and key concepts
-4. **Packages** everything into an uploadable `.zip` file for Claude
+1. **Scrapes** multiple sources (docs, GitHub repos, PDFs) automatically
+2. **Analyzes** code repositories with deep AST parsing
+3. **Detects** conflicts between documentation and code implementation
+4. **Organizes** content into categorized reference files
+5. **Enhances** with AI to extract best examples and key concepts
+6. **Packages** everything into an uploadable `.zip` file for Claude
 
 **Result:** Get comprehensive Claude skills for any framework, API, or tool in 20-40 minutes instead of hours of manual work.
 
 ## Why Use This?
 
-- 🎯 **For Developers**: Quickly create Claude skills for your favorite frameworks (React, Vue, Django, etc.)
-- 🎮 **For Game Devs**: Generate skills for game engines (Godot, Unity documentation, etc.)
-- 🔧 **For Teams**: Create internal documentation skills for your company's APIs
-- 📚 **For Learners**: Build comprehensive reference skills for technologies you're learning
+- 🎯 **For Developers**: Create skills from documentation + GitHub repos with conflict detection
+- 🎮 **For Game Devs**: Generate skills for game engines (Godot docs + GitHub, Unity, etc.)
+- 🔧 **For Teams**: Combine internal docs + code repositories into single source of truth
+- 📚 **For Learners**: Build comprehensive skills from docs, code examples, and PDFs
+- 🔍 **For Open Source**: Analyze repos to find documentation gaps and outdated examples
 
 ## Key Features
 
@@ -48,12 +51,13 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **Parallel Processing** - 3x faster for large PDFs
 - ✅ **Intelligent Caching** - 50% faster on re-runs
 
-### 🐙 GitHub Repository Scraping (**v1.4.0**)
-- ✅ **Repository Structure** - Extract README, file tree, and language breakdown
-- ✅ **GitHub Issues** - Fetch open/closed issues with labels and milestones
-- ✅ **CHANGELOG Extraction** - Automatically find and extract version history
-- ✅ **Release Notes** - Pull GitHub Releases with full version history
-- ✅ **Surface Layer Approach** - API signatures and docs (no implementation dumps)
+### 🐙 GitHub Repository Scraping (**v2.0.0**)
+- ✅ **Deep Code Analysis** - AST parsing for Python, JavaScript, TypeScript, Java, C++, Go
+- ✅ **API Extraction** - Functions, classes, methods with parameters and types
+- ✅ **Repository Metadata** - README, file tree, language breakdown, stars/forks
+- ✅ **GitHub Issues & PRs** - Fetch open/closed issues with labels and milestones
+- ✅ **CHANGELOG & Releases** - Automatically extract version history
+- ✅ **Conflict Detection** - Compare documented APIs vs actual code implementation
 - ✅ **MCP Integration** - Natural language: "Scrape GitHub repo facebook/react"
 
 ### 🔄 Unified Multi-Source Scraping (**NEW - v2.0.0**)
