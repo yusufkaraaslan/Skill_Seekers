@@ -23,9 +23,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests beautifulsoup4
-        pip install pytest
-        if [ -f mcp/requirements.txt ]; then pip install -r mcp/requirements.txt; fi
+        pip install -r requirements.txt
+        if [ -f skill_seeker_mcp/requirements.txt ]; then pip install -r skill_seeker_mcp/requirements.txt; fi
 
     - name: Run tests
       run: |
