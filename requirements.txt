@@ -20,6 +20,7 @@ pluggy==1.6.0
 pydantic==2.12.3
 pydantic-settings==2.11.0
 pydantic_core==2.41.4
+PyGithub==2.5.0
 Pygments==2.19.2
 PyMuPDF==1.24.14
 Pillow==11.0.0

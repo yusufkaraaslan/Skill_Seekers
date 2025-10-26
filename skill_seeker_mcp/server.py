@@ -350,6 +350,61 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="scrape_github",
+            description="Scrape GitHub repository and build Claude skill. Extracts README, Issues, Changelog, Releases, and code structure.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "repo": {
+                        "type": "string",
+                        "description": "GitHub repository (owner/repo, e.g., facebook/react)",
+                    },
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to GitHub config JSON file (e.g., configs/react_github.json)",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Skill name (default: repo name)",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Skill description",
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "GitHub personal access token (or use GITHUB_TOKEN env var)",
+                    },
+                    "no_issues": {
+                        "type": "boolean",
+                        "description": "Skip GitHub issues extraction (default: false)",
+                        "default": False,
+                    },
+                    "no_changelog": {
+                        "type": "boolean",
+                        "description": "Skip CHANGELOG extraction (default: false)",
+                        "default": False,
+                    },
+                    "no_releases": {
+                        "type": "boolean",
+                        "description": "Skip releases extraction (default: false)",
+                        "default": False,
+                    },
+                    "max_issues": {
+                        "type": "integer",
+                        "description": "Maximum issues to fetch (default: 100)",
+                        "default": 100,
+                    },
+                    "scrape_only": {
+                        "type": "boolean",
+                        "description": "Only scrape, don't build skill (default: false)",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -378,6 +433,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await generate_router_tool(arguments)
         elif name == "scrape_pdf":
             return await scrape_pdf_tool(arguments)
+        elif name == "scrape_github":
+            return await scrape_github_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -832,6 +889,65 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
     timeout = 600  # 10 minutes for PDF extraction
 
     progress_msg = "📄 Scraping PDF documentation...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def scrape_github_tool(args: dict) -> list[TextContent]:
+    """Scrape GitHub repository to Claude skill (C1.11)"""
+    repo = args.get("repo")
+    config_path = args.get("config_path")
+    name = args.get("name")
+    description = args.get("description")
+    token = args.get("token")
+    no_issues = args.get("no_issues", False)
+    no_changelog = args.get("no_changelog", False)
+    no_releases = args.get("no_releases", False)
+    max_issues = args.get("max_issues", 100)
+    scrape_only = args.get("scrape_only", False)
+
+    # Build command
+    cmd = [sys.executable, str(CLI_DIR / "github_scraper.py")]
+
+    # Mode 1: Config file
+    if config_path:
+        cmd.extend(["--config", config_path])
+
+    # Mode 2: Direct repo
+    elif repo:
+        cmd.extend(["--repo", repo])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+        if token:
+            cmd.extend(["--token", token])
+        if no_issues:
+            cmd.append("--no-issues")
+        if no_changelog:
+            cmd.append("--no-changelog")
+        if no_releases:
+            cmd.append("--no-releases")
+        if max_issues != 100:
+            cmd.extend(["--max-issues", str(max_issues)])
+        if scrape_only:
+            cmd.append("--scrape-only")
+
+    else:
+        return [TextContent(type="text", text="❌ Error: Must specify --repo or --config")]
+
+    # Run github_scraper.py with streaming (can take a while)
+    timeout = 600  # 10 minutes for GitHub scraping
+
+    progress_msg = "🐙 Scraping GitHub repository...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
