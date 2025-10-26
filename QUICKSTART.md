@@ -27,6 +27,13 @@ python3 cli/doc_scraper.py --interactive
 python3 cli/doc_scraper.py --name react --url https://react.dev/
 ```
 
+**Option D: Unified Multi-Source (NEW - v2.0.0)**
+```bash
+# Combine documentation + GitHub code in one skill
+python3 cli/unified_scraper.py --config configs/react_unified.json
+```
+*Detects conflicts between docs and code automatically!*
+
 ### Step 3: Enhance SKILL.md (Recommended)
 
 ```bash
@@ -63,6 +70,12 @@ python3 cli/doc_scraper.py --config configs/django.json
 
 # FastAPI
 python3 cli/doc_scraper.py --config configs/fastapi.json
+
+# Unified Multi-Source (NEW!)
+python3 cli/unified_scraper.py --config configs/react_unified.json
+python3 cli/unified_scraper.py --config configs/django_unified.json
+python3 cli/unified_scraper.py --config configs/fastapi_unified.json
+python3 cli/unified_scraper.py --config configs/godot_unified.json
 ```
 
 ---

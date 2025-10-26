@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v1.3.0)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
@@ -48,13 +48,22 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **Parallel Processing** - 3x faster for large PDFs
 - ✅ **Intelligent Caching** - 50% faster on re-runs
 
-### 🐙 GitHub Repository Scraping (**NEW - v1.4.0**)
+### 🐙 GitHub Repository Scraping (**v1.4.0**)
 - ✅ **Repository Structure** - Extract README, file tree, and language breakdown
 - ✅ **GitHub Issues** - Fetch open/closed issues with labels and milestones
 - ✅ **CHANGELOG Extraction** - Automatically find and extract version history
 - ✅ **Release Notes** - Pull GitHub Releases with full version history
 - ✅ **Surface Layer Approach** - API signatures and docs (no implementation dumps)
 - ✅ **MCP Integration** - Natural language: "Scrape GitHub repo facebook/react"
+
+### 🔄 Unified Multi-Source Scraping (**NEW - v2.0.0**)
+- ✅ **Combine Multiple Sources** - Mix documentation + GitHub + PDF in one skill
+- ✅ **Conflict Detection** - Automatically finds discrepancies between docs and code
+- ✅ **Intelligent Merging** - Rule-based or AI-powered conflict resolution
+- ✅ **Transparent Reporting** - Side-by-side comparison with ⚠️ warnings
+- ✅ **Documentation Gap Analysis** - Identifies outdated docs and undocumented features
+- ✅ **Single Source of Truth** - One skill showing both intent (docs) and reality (code)
+- ✅ **Backward Compatible** - Legacy single-source configs still work
 
 ### 🤖 AI & Enhancement
 - ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
@@ -172,6 +181,83 @@ python3 cli/github_scraper.py --repo django/django \
 - ✅ GitHub Releases with release notes
 - ✅ Repository metadata (stars, language, topics)
 - ✅ File structure and language breakdown
+
+### Option 5: Unified Multi-Source Scraping (**NEW - v2.0.0**)
+
+**The Problem:** Documentation and code often drift apart. Docs might be outdated, missing features that exist in code, or documenting features that were removed.
+
+**The Solution:** Combine documentation + GitHub + PDF into one unified skill that shows BOTH what's documented AND what actually exists, with clear warnings about discrepancies.
+
+```bash
+# Create unified config (mix documentation + GitHub)
+cat > configs/myframework_unified.json << 'EOF'
+{
+  "name": "myframework",
+  "description": "Complete framework knowledge from docs + code",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.myframework.com/",
+      "extract_api": true,
+      "max_pages": 200
+    },
+    {
+      "type": "github",
+      "repo": "owner/myframework",
+      "include_code": true,
+      "code_analysis_depth": "surface"
+    }
+  ]
+}
+EOF
+
+# Run unified scraper
+python3 cli/unified_scraper.py --config configs/myframework_unified.json
+
+# Upload output/myframework.zip to Claude - Done!
+```
+
+**Time:** ~30-45 minutes | **Quality:** Production-ready with conflict detection | **Cost:** Free
+
+**What Makes It Special:**
+
+✅ **Conflict Detection** - Automatically finds 4 types of discrepancies:
+- 🔴 **Missing in code** (high): Documented but not implemented
+- 🟡 **Missing in docs** (medium): Implemented but not documented
+- ⚠️ **Signature mismatch**: Different parameters/types
+- ℹ️ **Description mismatch**: Different explanations
+
+✅ **Transparent Reporting** - Shows both versions side-by-side:
+```markdown
+#### `move_local_x(delta: float)`
+
+⚠️ **Conflict**: Documentation signature differs from implementation
+
+**Documentation says:**
+```
+def move_local_x(delta: float)
+```
+
+**Code implementation:**
+```python
+def move_local_x(delta: float, snap: bool = False) -> None
+```
+```
+
+✅ **Advantages:**
+- **Identifies documentation gaps** - Find outdated or missing docs automatically
+- **Catches code changes** - Know when APIs change without docs being updated
+- **Single source of truth** - One skill showing intent (docs) AND reality (code)
+- **Actionable insights** - Get suggestions for fixing each conflict
+- **Development aid** - See what's actually in the codebase vs what's documented
+
+**Example Unified Configs:**
+- `configs/react_unified.json` - React docs + GitHub repo
+- `configs/django_unified.json` - Django docs + GitHub repo
+- `configs/fastapi_unified.json` - FastAPI docs + GitHub repo
+
+**Full Guide:** See [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) for complete documentation.
 
 ## How It Works
 
