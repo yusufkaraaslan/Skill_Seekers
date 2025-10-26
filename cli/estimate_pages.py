@@ -5,14 +5,24 @@ Quickly estimates how many pages a config will scrape without downloading conten
 """
 
 import sys
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import time
 import json
 
+# Add parent directory to path for imports when run as script
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def estimate_pages(config, max_discovery=1000, timeout=30):
+from cli.constants import (
+    DEFAULT_RATE_LIMIT,
+    DEFAULT_MAX_DISCOVERY,
+    DISCOVERY_THRESHOLD
+)
+
+
+def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
     """
     Estimate total pages that will be scraped
 
@@ -27,7 +37,7 @@ def estimate_pages(config, max_discovery=1000, timeout=30):
     base_url = config['base_url']
     start_urls = config.get('start_urls', [base_url])
     url_patterns = config.get('url_patterns', {'include': [], 'exclude': []})
-    rate_limit = config.get('rate_limit', 0.5)
+    rate_limit = config.get('rate_limit', DEFAULT_RATE_LIMIT)
 
     visited = set()
     pending = list(start_urls)
@@ -190,13 +200,13 @@ def print_results(results, config):
     if estimated <= current_max:
         print(f"✅ Current max_pages ({current_max}) is sufficient")
     else:
-        recommended = min(estimated + 50, 10000)  # Add 50 buffer, cap at 10k
+        recommended = min(estimated + 50, DISCOVERY_THRESHOLD)  # Add 50 buffer, cap at threshold
         print(f"⚠️  Current max_pages ({current_max}) may be too low")
         print(f"📝 Recommended max_pages: {recommended}")
         print(f"   (Estimated {estimated} + 50 buffer)")
 
     # Estimate time for full scrape
-    rate_limit = config.get('rate_limit', 0.5)
+    rate_limit = config.get('rate_limit', DEFAULT_RATE_LIMIT)
     estimated_time = (estimated * rate_limit) / 60  # in minutes
 
     print()
@@ -241,8 +251,8 @@ Examples:
     )
 
     parser.add_argument('config', help='Path to config JSON file')
-    parser.add_argument('--max-discovery', '-m', type=int, default=1000,
-                       help='Maximum pages to discover (default: 1000, use -1 for unlimited)')
+    parser.add_argument('--max-discovery', '-m', type=int, default=DEFAULT_MAX_DISCOVERY,
+                       help=f'Maximum pages to discover (default: {DEFAULT_MAX_DISCOVERY}, use -1 for unlimited)')
     parser.add_argument('--unlimited', '-u', action='store_true',
                        help='Remove discovery limit - discover all pages (same as --max-discovery -1)')
     parser.add_argument('--timeout', '-t', type=int, default=30,

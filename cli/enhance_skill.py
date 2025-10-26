@@ -15,6 +15,12 @@ import json
 import argparse
 from pathlib import Path
 
+# Add parent directory to path for imports when run as script
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cli.constants import API_CONTENT_LIMIT, API_PREVIEW_LIMIT
+from cli.utils import read_reference_files
+
 try:
     import anthropic
 except ImportError:
@@ -38,35 +44,6 @@ class SkillEnhancer:
             )
 
         self.client = anthropic.Anthropic(api_key=self.api_key)
-
-    def read_reference_files(self, max_chars=100000):
-        """Read reference files with size limit"""
-        references = {}
-
-        if not self.references_dir.exists():
-            print(f"⚠ No references directory found at {self.references_dir}")
-            return references
-
-        total_chars = 0
-        for ref_file in sorted(self.references_dir.glob("*.md")):
-            if ref_file.name == "index.md":
-                continue
-
-            content = ref_file.read_text(encoding='utf-8')
-
-            # Limit size per file
-            if len(content) > 40000:
-                content = content[:40000] + "\n\n[Content truncated...]"
-
-            references[ref_file.name] = content
-            total_chars += len(content)
-
-            # Stop if we've read enough
-            if total_chars > max_chars:
-                print(f"  ℹ Limiting input to {max_chars:,} characters")
-                break
-
-        return references
 
     def read_current_skill_md(self):
         """Read existing SKILL.md"""
@@ -172,7 +149,11 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
 
         # Read reference files
         print("📖 Reading reference documentation...")
-        references = self.read_reference_files()
+        references = read_reference_files(
+            self.skill_dir,
+            max_chars=API_CONTENT_LIMIT,
+            preview_limit=API_PREVIEW_LIMIT
+        )
 
         if not references:
             print("❌ No reference files found to analyze")

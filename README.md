@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-207%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-299%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 
 **Automatically convert any documentation website into a Claude AI skill in minutes.**
@@ -54,6 +54,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 
 ### ⚡ Performance & Scale
+- ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)
 - ✅ **Large Documentation Support** - Handle 10K-40K+ page docs with intelligent splitting
 - ✅ **Router/Hub Skills** - Intelligent routing to specialized sub-skills
 - ✅ **Parallel Scraping** - Process multiple skills simultaneously
@@ -61,7 +62,7 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 207 tests with 100% pass rate
+- ✅ **Fully Tested** - 299 tests with 100% pass rate
 
 ## Quick Example
 
@@ -435,7 +436,33 @@ python3 cli/doc_scraper.py --config configs/react.json
 python3 cli/doc_scraper.py --config configs/react.json --skip-scrape
 ```
 
-### 6. AI-Powered SKILL.md Enhancement
+### 6. Async Mode for Faster Scraping (2-3x Speed!)
+
+```bash
+# Enable async mode with 8 workers (recommended for large docs)
+python3 cli/doc_scraper.py --config configs/react.json --async --workers 8
+
+# Small docs (~100-500 pages)
+python3 cli/doc_scraper.py --config configs/mydocs.json --async --workers 4
+
+# Large docs (2000+ pages) with no rate limiting
+python3 cli/doc_scraper.py --config configs/largedocs.json --async --workers 8 --no-rate-limit
+```
+
+**Performance Comparison:**
+- **Sync mode (threads):** ~18 pages/sec, 120 MB memory
+- **Async mode:** ~55 pages/sec, 40 MB memory
+- **Result:** 3x faster, 66% less memory!
+
+**When to use:**
+- ✅ Large documentation (500+ pages)
+- ✅ Network latency is high
+- ✅ Memory is constrained
+- ❌ Small docs (< 100 pages) - overhead not worth it
+
+**See full guide:** [ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
+
+### 7. AI-Powered SKILL.md Enhancement
 
 ```bash
 # Option 1: During scraping (API-based, requires API key)
@@ -811,7 +838,8 @@ python3 cli/doc_scraper.py --config configs/godot.json
 
 | Task | Time | Notes |
 |------|------|-------|
-| Scraping | 15-45 min | First time only |
+| Scraping (sync) | 15-45 min | First time only, thread-based |
+| Scraping (async) | 5-15 min | 2-3x faster with --async flag |
 | Building | 1-3 min | Fast! |
 | Re-building | <1 min | With --skip-scrape |
 | Packaging | 5-10 sec | Final zip |
@@ -846,6 +874,7 @@ python3 cli/doc_scraper.py --config configs/godot.json
 
 ### Guides
 - **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
+- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
 - **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
 - **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup

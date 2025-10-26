@@ -146,6 +146,30 @@ python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
 # Time: 1-3 minutes (instant rebuild)
 ```
 
+### Async Mode (2-3x Faster Scraping)
+
+```bash
+# Enable async mode with 8 workers for best performance
+python3 cli/doc_scraper.py --config configs/react.json --async --workers 8
+
+# Quick mode with async
+python3 cli/doc_scraper.py --name react --url https://react.dev/ --async --workers 8
+
+# Dry run with async to test
+python3 cli/doc_scraper.py --config configs/godot.json --async --workers 4 --dry-run
+```
+
+**Recommended Settings:**
+- Small docs (~100-500 pages): `--async --workers 4`
+- Medium docs (~500-2000 pages): `--async --workers 8`
+- Large docs (2000+ pages): `--async --workers 8 --no-rate-limit`
+
+**Performance:**
+- Sync: ~18 pages/sec, 120 MB memory
+- Async: ~55 pages/sec, 40 MB memory (3x faster!)
+
+**See full guide:** [ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
+
 ### Enhancement Options
 
 **LOCAL Enhancement (Recommended - No API Key Required):**

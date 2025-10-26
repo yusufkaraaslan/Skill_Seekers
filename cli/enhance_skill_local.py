@@ -16,6 +16,12 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+# Add parent directory to path for imports when run as script
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
+from cli.utils import read_reference_files
+
 
 class LocalSkillEnhancer:
     def __init__(self, skill_dir):
@@ -27,7 +33,11 @@ class LocalSkillEnhancer:
         """Create the prompt file for Claude Code"""
 
         # Read reference files
-        references = self.read_reference_files()
+        references = read_reference_files(
+            self.skill_dir,
+            max_chars=LOCAL_CONTENT_LIMIT,
+            preview_limit=LOCAL_PREVIEW_LIMIT
+        )
 
         if not references:
             print("❌ No reference files found")
@@ -98,32 +108,6 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
 
         return prompt
 
-    def read_reference_files(self, max_chars=50000):
-        """Read reference files with size limit"""
-        references = {}
-
-        if not self.references_dir.exists():
-            return references
-
-        total_chars = 0
-        for ref_file in sorted(self.references_dir.glob("*.md")):
-            if ref_file.name == "index.md":
-                continue
-
-            content = ref_file.read_text(encoding='utf-8')
-
-            # Limit size per file
-            if len(content) > 20000:
-                content = content[:20000] + "\n\n[Content truncated...]"
-
-            references[ref_file.name] = content
-            total_chars += len(content)
-
-            if total_chars > max_chars:
-                break
-
-        return references
-
     def run(self):
         """Main enhancement workflow"""
         print(f"\n{'='*60}")
@@ -137,7 +121,11 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
 
         # Read reference files
         print("📖 Reading reference documentation...")
-        references = self.read_reference_files()
+        references = read_reference_files(
+            self.skill_dir,
+            max_chars=LOCAL_CONTENT_LIMIT,
+            preview_limit=LOCAL_PREVIEW_LIMIT
+        )
 
         if not references:
             print("❌ No reference files found to analyze")

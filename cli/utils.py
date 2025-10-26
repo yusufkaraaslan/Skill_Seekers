@@ -8,9 +8,10 @@ import sys
 import subprocess
 import platform
 from pathlib import Path
+from typing import Optional, Tuple, Dict, Union
 
 
-def open_folder(folder_path):
+def open_folder(folder_path: Union[str, Path]) -> bool:
     """
     Open a folder in the system file browser
 
@@ -50,7 +51,7 @@ def open_folder(folder_path):
         return False
 
 
-def has_api_key():
+def has_api_key() -> bool:
     """
     Check if ANTHROPIC_API_KEY is set in environment
 
@@ -61,7 +62,7 @@ def has_api_key():
     return len(api_key) > 0
 
 
-def get_api_key():
+def get_api_key() -> Optional[str]:
     """
     Get ANTHROPIC_API_KEY from environment
 
@@ -72,7 +73,7 @@ def get_api_key():
     return api_key if api_key else None
 
 
-def get_upload_url():
+def get_upload_url() -> str:
     """
     Get the Claude skills upload URL
 
@@ -82,7 +83,7 @@ def get_upload_url():
     return "https://claude.ai/skills"
 
 
-def print_upload_instructions(zip_path):
+def print_upload_instructions(zip_path: Union[str, Path]) -> None:
     """
     Print clear upload instructions for manual upload
 
@@ -105,7 +106,7 @@ def print_upload_instructions(zip_path):
     print()
 
 
-def format_file_size(size_bytes):
+def format_file_size(size_bytes: int) -> str:
     """
     Format file size in human-readable format
 
@@ -123,7 +124,7 @@ def format_file_size(size_bytes):
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
-def validate_skill_directory(skill_dir):
+def validate_skill_directory(skill_dir: Union[str, Path]) -> Tuple[bool, Optional[str]]:
     """
     Validate that a directory is a valid skill directory
 
@@ -148,7 +149,7 @@ def validate_skill_directory(skill_dir):
     return True, None
 
 
-def validate_zip_file(zip_path):
+def validate_zip_file(zip_path: Union[str, Path]) -> Tuple[bool, Optional[str]]:
     """
     Validate that a file is a valid skill .zip file
 
@@ -170,3 +171,54 @@ def validate_zip_file(zip_path):
         return False, f"Not a .zip file: {zip_path}"
 
     return True, None
+
+
+def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, preview_limit: int = 40000) -> Dict[str, str]:
+    """Read reference files from a skill directory with size limits.
+
+    This function reads markdown files from the references/ subdirectory
+    of a skill, applying both per-file and total content limits.
+
+    Args:
+        skill_dir (str or Path): Path to skill directory
+        max_chars (int): Maximum total characters to read (default: 100000)
+        preview_limit (int): Maximum characters per file (default: 40000)
+
+    Returns:
+        dict: Dictionary mapping filename to content
+
+    Example:
+        >>> refs = read_reference_files('output/react/', max_chars=50000)
+        >>> len(refs)
+        5
+    """
+    from pathlib import Path
+
+    skill_path = Path(skill_dir)
+    references_dir = skill_path / "references"
+    references: Dict[str, str] = {}
+
+    if not references_dir.exists():
+        print(f"⚠ No references directory found at {references_dir}")
+        return references
+
+    total_chars = 0
+    for ref_file in sorted(references_dir.glob("*.md")):
+        if ref_file.name == "index.md":
+            continue
+
+        content = ref_file.read_text(encoding='utf-8')
+
+        # Limit size per file
+        if len(content) > preview_limit:
+            content = content[:preview_limit] + "\n\n[Content truncated...]"
+
+        references[ref_file.name] = content
+        total_chars += len(content)
+
+        # Stop if we've read enough
+        if total_chars > max_chars:
+            print(f"  ℹ Limiting input to {max_chars:,} characters")
+            break
+
+    return references

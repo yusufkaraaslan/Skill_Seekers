@@ -393,8 +393,8 @@ class PDFExtractor:
             # Try to parse JSON
             try:
                 json.loads(code)
-            except:
-                issues.append('Invalid JSON syntax')
+            except (json.JSONDecodeError, ValueError) as e:
+                issues.append(f'Invalid JSON syntax: {str(e)[:50]}')
 
         # General checks
         # Check if code looks like natural language (too many common words)
