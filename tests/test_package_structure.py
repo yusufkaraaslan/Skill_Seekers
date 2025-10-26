@@ -21,7 +21,7 @@ class TestCliPackage:
         """Test that cli package has __version__."""
         import cli
         assert hasattr(cli, '__version__')
-        assert cli.__version__ == '1.2.0'
+        assert cli.__version__ == '1.3.0'
 
     def test_cli_has_all(self):
         """Test that cli package has __all__ export list."""
