@@ -48,6 +48,14 @@ Skill Seeker is an automated tool that transforms any documentation website into
 - ✅ **Parallel Processing** - 3x faster for large PDFs
 - ✅ **Intelligent Caching** - 50% faster on re-runs
 
+### 🐙 GitHub Repository Scraping (**NEW - v1.4.0**)
+- ✅ **Repository Structure** - Extract README, file tree, and language breakdown
+- ✅ **GitHub Issues** - Fetch open/closed issues with labels and milestones
+- ✅ **CHANGELOG Extraction** - Automatically find and extract version history
+- ✅ **Release Notes** - Pull GitHub Releases with full version history
+- ✅ **Surface Layer Approach** - API signatures and docs (no implementation dumps)
+- ✅ **MCP Integration** - Natural language: "Scrape GitHub repo facebook/react"
+
 ### 🤖 AI & Enhancement
 - ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 - ✅ **No API Costs** - FREE local enhancement using Claude Code Max
@@ -125,6 +133,45 @@ python3 cli/pdf_scraper.py --pdf docs/encrypted.pdf --name myskill --password my
 - ✅ Table extraction
 - ✅ Parallel processing (3x faster)
 - ✅ Intelligent caching
+
+### Option 4: Use CLI for GitHub Repository
+
+```bash
+# Install GitHub support
+pip3 install PyGithub
+
+# Basic repository scraping
+python3 cli/github_scraper.py --repo facebook/react
+
+# Using a config file
+python3 cli/github_scraper.py --config configs/react_github.json
+
+# With authentication (higher rate limits)
+export GITHUB_TOKEN=ghp_your_token_here
+python3 cli/github_scraper.py --repo facebook/react
+
+# Customize what to include
+python3 cli/github_scraper.py --repo django/django \
+    --include-issues \        # Extract GitHub Issues
+    --max-issues 100 \        # Limit issue count
+    --include-changelog \     # Extract CHANGELOG.md
+    --include-releases        # Extract GitHub Releases
+
+# MCP usage in Claude Code
+"Scrape GitHub repository facebook/react"
+
+# Upload output/react.zip to Claude - Done!
+```
+
+**Time:** ~5-10 minutes | **Quality:** Production-ready | **Cost:** Free
+
+**What Gets Extracted:**
+- ✅ README.md and documentation files
+- ✅ GitHub Issues (open/closed, labels, milestones)
+- ✅ CHANGELOG.md and version history
+- ✅ GitHub Releases with release notes
+- ✅ Repository metadata (stars, language, topics)
+- ✅ File structure and language breakdown
 
 ## How It Works
 
