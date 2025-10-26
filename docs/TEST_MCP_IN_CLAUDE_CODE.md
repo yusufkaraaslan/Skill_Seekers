@@ -45,7 +45,7 @@ Add this configuration (replace `/path/to/` with your actual path):
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/mcp/server.py"
+        "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers"
     }
@@ -245,7 +245,7 @@ Expected result: `output/svelte.zip` ready to upload to Claude!
 2. Verify server can start:
    ```bash
    cd /path/to/Skill_Seekers
-   python3 mcp/server.py
+   python3 skill_seeker_mcp/server.py
    # Should start without errors (Ctrl+C to exit)
    ```
 
@@ -264,13 +264,13 @@ Expected result: `output/svelte.zip` ready to upload to Claude!
 ### Issue: "Permission Denied"
 
 ```bash
-chmod +x mcp/server.py
+chmod +x skill_seeker_mcp/server.py
 ```
 
 ### Issue: "Module Not Found"
 
 ```bash
-pip3 install -r mcp/requirements.txt
+pip3 install -r skill_seeker_mcp/requirements.txt
 pip3 install requests beautifulsoup4
 ```
 

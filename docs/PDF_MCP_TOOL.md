@@ -165,7 +165,7 @@ Returns `TextContent` with:
 
 ### MCP Server Changes
 
-**Location:** `mcp/server.py`
+**Location:** `skill_seeker_mcp/server.py`
 
 **Changes:**
 1. Added `scrape_pdf` to `list_tools()` (lines 220-249)
@@ -304,7 +304,7 @@ Error: json.decoder.JSONDecodeError: Expecting value: line 1 column 1
 
 ```bash
 # 1. Start MCP server
-python3 mcp/server.py
+python3 skill_seeker_mcp/server.py
 
 # 2. Test with MCP client or via Claude Code
 

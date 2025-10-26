@@ -143,7 +143,7 @@ The B1 task group adds complete PDF documentation support to Skill Seeker, enabl
 
 ### ✅ B1.7: Add MCP Tool scrape_pdf
 **Commit:** `3fa1046`
-**File:** `mcp/server.py` (updated)
+**File:** `skill_seeker_mcp/server.py` (updated)
 **Documentation:** `docs/PDF_MCP_TOOL.md`
 
 **Deliverables:**
@@ -190,7 +190,7 @@ The B1 task group adds complete PDF documentation support to Skill Seeker, enabl
 |-----------|-------|-------------|
 | `pdf_extractor_poc.py` | 887 | Complete PDF extractor |
 | `pdf_scraper.py` | 486 | Skill builder CLI |
-| `mcp/server.py` | +35 | MCP tool integration |
+| `skill_seeker_mcp/server.py` | +35 | MCP tool integration |
 | **Total** | **1,408** | New code |
 
 ### Documentation Added
@@ -373,7 +373,7 @@ docs/B1_COMPLETE_SUMMARY.md      # This file
 ### Modified Files
 
 ```
-mcp/server.py                    # +35 lines - Added scrape_pdf tool
+skill_seeker_mcp/server.py       # +35 lines - Added scrape_pdf tool
 ```
 
 ### Total Impact

@@ -58,7 +58,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with Claude Code.
 cd /path/to/Skill_Seekers
 
 # Install MCP server dependencies
-pip3 install -r mcp/requirements.txt
+pip3 install -r skill_seeker_mcp/requirements.txt
 
 # Install CLI tool dependencies (for scraping)
 pip3 install requests beautifulsoup4
@@ -73,7 +73,7 @@ Successfully installed mcp-0.9.0 requests-2.31.0 beautifulsoup4-4.12.3
 
 ```bash
 # Test MCP server can start
-timeout 3 python3 mcp/server.py || echo "Server OK (timeout expected)"
+timeout 3 python3 skill_seeker_mcp/server.py || echo "Server OK (timeout expected)"
 
 # Should exit cleanly or timeout (both are normal)
 ```
@@ -134,7 +134,7 @@ nano ~/.config/claude-code/mcp.json
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/Users/username/Projects/Skill_Seekers/mcp/server.py"
+        "/Users/username/Projects/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/Users/username/Projects/Skill_Seekers",
       "env": {}
@@ -157,7 +157,7 @@ nano ~/.config/claude-code/mcp.json
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/Users/username/Projects/Skill_Seekers/mcp/server.py"
+        "/Users/username/Projects/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/Users/username/Projects/Skill_Seekers"
     }
@@ -317,7 +317,7 @@ Claude: [Scraping starts...]
 3. **Test server manually:**
    ```bash
    cd /path/to/Skill_Seekers
-   python3 mcp/server.py
+   python3 skill_seeker_mcp/server.py
    # Should start without errors
    ```
 
@@ -333,14 +333,14 @@ Claude: [Scraping starts...]
 
 **Solution:**
 ```bash
-pip3 install -r mcp/requirements.txt
+pip3 install -r skill_seeker_mcp/requirements.txt
 ```
 
 ### Issue: "Permission denied" when running server
 
 **Solution:**
 ```bash
-chmod +x mcp/server.py
+chmod +x skill_seeker_mcp/server.py
 ```
 
 ### Issue: Tools appear but don't work
@@ -399,7 +399,7 @@ chmod +x mcp/server.py
   "mcpServers": {
     "skill-seeker": {
       "command": "python3",
-      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["/path/to/Skill_Seekers/skill_seeker_mcp/server.py"],
       "cwd": "/path/to/Skill_Seekers",
       "env": {
         "ANTHROPIC_API_KEY": "sk-ant-...",
@@ -419,7 +419,7 @@ If you have multiple Python versions:
   "mcpServers": {
     "skill-seeker": {
       "command": "/usr/local/bin/python3.11",
-      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["/path/to/Skill_Seekers/skill_seeker_mcp/server.py"],
       "cwd": "/path/to/Skill_Seekers"
     }
   }
@@ -435,7 +435,7 @@ To use a Python virtual environment:
 cd /path/to/Skill_Seekers
 python3 -m venv venv
 source venv/bin/activate
-pip install -r mcp/requirements.txt
+pip install -r skill_seeker_mcp/requirements.txt
 pip install requests beautifulsoup4
 which python3
 # Copy this path for config
@@ -446,7 +446,7 @@ which python3
   "mcpServers": {
     "skill-seeker": {
       "command": "/path/to/Skill_Seekers/venv/bin/python3",
-      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["/path/to/Skill_Seekers/skill_seeker_mcp/server.py"],
       "cwd": "/path/to/Skill_Seekers"
     }
   }
@@ -464,7 +464,7 @@ Enable verbose logging:
       "command": "python3",
       "args": [
         "-u",
-        "/path/to/Skill_Seekers/mcp/server.py"
+        "/path/to/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/path/to/Skill_Seekers",
       "env": {
@@ -487,7 +487,7 @@ Enable verbose logging:
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/Users/username/Projects/Skill_Seekers/mcp/server.py"
+        "/Users/username/Projects/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/Users/username/Projects/Skill_Seekers"
     }
@@ -503,7 +503,7 @@ Enable verbose logging:
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/Users/username/Projects/Skill_Seekers/mcp/server.py"
+        "/Users/username/Projects/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/Users/username/Projects/Skill_Seekers",
       "env": {
@@ -525,7 +525,7 @@ Enable verbose logging:
 cd ~/Projects
 git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
 cd Skill_Seekers
-pip3 install -r mcp/requirements.txt
+pip3 install -r skill_seeker_mcp/requirements.txt
 pip3 install requests beautifulsoup4
 
 # 2. Configure
@@ -536,7 +536,7 @@ cat > ~/.config/claude-code/mcp.json << 'EOF'
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/Users/username/Projects/Skill_Seekers/mcp/server.py"
+        "/Users/username/Projects/Skill_Seekers/skill_seeker_mcp/server.py"
       ],
       "cwd": "/Users/username/Projects/Skill_Seekers"
     }
@@ -593,7 +593,7 @@ After successful setup:
 
 ```
 SETUP:
-1. Install dependencies: pip3 install -r mcp/requirements.txt
+1. Install dependencies: pip3 install -r skill_seeker_mcp/requirements.txt
 2. Configure: ~/.config/claude-code/mcp.json
 3. Restart Claude Code
 
@@ -609,7 +609,7 @@ GENERATE SKILL:
 
 TROUBLESHOOTING:
 - Check: cat ~/.config/claude-code/mcp.json
-- Test: python3 mcp/server.py
+- Test: python3 skill_seeker_mcp/server.py
 - Logs: ~/Library/Logs/Claude Code/
 ```
 
