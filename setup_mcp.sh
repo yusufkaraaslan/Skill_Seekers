@@ -41,7 +41,7 @@ echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Installing MCP server dependencies..."
-    pip3 install -r mcp/requirements.txt || {
+    pip3 install -r skill_seeker_mcp/requirements.txt || {
         echo -e "${RED}❌ Failed to install MCP dependencies${NC}"
         exit 1
     }
@@ -60,7 +60,7 @@ echo ""
 
 # Step 4: Test MCP server
 echo "Step 4: Testing MCP server..."
-timeout 3 python3 mcp/server.py 2>/dev/null || {
+timeout 3 python3 skill_seeker_mcp/server.py 2>/dev/null || {
     if [ $? -eq 124 ]; then
         echo -e "${GREEN}✓${NC} MCP server starts correctly (timeout expected)"
     else
@@ -110,7 +110,7 @@ echo "  \"mcpServers\": {"
 echo "    \"skill-seeker\": {"
 echo "      \"command\": \"python3\","
 echo "      \"args\": ["
-echo "        \"$REPO_PATH/mcp/server.py\""
+echo "        \"$REPO_PATH/skill_seeker_mcp/server.py\""
 echo "      ],"
 echo "      \"cwd\": \"$REPO_PATH\""
 echo "    }"
@@ -151,7 +151,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "$REPO_PATH/mcp/server.py"
+        "$REPO_PATH/skill_seeker_mcp/server.py"
       ],
       "cwd": "$REPO_PATH"
     }
@@ -166,10 +166,10 @@ EOF
     echo ""
 
     # Verify the path exists
-    if [ -f "$REPO_PATH/mcp/server.py" ]; then
-        echo -e "${GREEN}✓${NC} Verified: MCP server file exists at $REPO_PATH/mcp/server.py"
+    if [ -f "$REPO_PATH/skill_seeker_mcp/server.py" ]; then
+        echo -e "${GREEN}✓${NC} Verified: MCP server file exists at $REPO_PATH/skill_seeker_mcp/server.py"
     else
-        echo -e "${RED}❌ Warning: MCP server not found at $REPO_PATH/mcp/server.py${NC}"
+        echo -e "${RED}❌ Warning: MCP server not found at $REPO_PATH/skill_seeker_mcp/server.py${NC}"
         echo "Please check the path!"
     fi
 else
@@ -229,7 +229,7 @@ echo "  • Full docs: ${YELLOW}README.md${NC}"
 echo ""
 echo "Troubleshooting:"
 echo "  • Check logs: ~/Library/Logs/Claude Code/ (macOS)"
-echo "  • Test server: python3 mcp/server.py"
+echo "  • Test server: python3 skill_seeker_mcp/server.py"
 echo "  • Run tests: python3 -m pytest tests/test_mcp_server.py -v"
 echo ""
 echo "Happy skill creating! 🚀"
