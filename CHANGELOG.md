@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- (No unreleased changes yet)
+
+---
+
+## [1.3.0] - 2025-10-26
+
 ### Added - Refactoring & Performance Improvements
 - **Async/Await Support for Parallel Scraping** (2-3x performance boost)
   - `--async` flag to enable async mode
