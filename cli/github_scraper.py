@@ -31,6 +31,14 @@ except ImportError:
     print("Error: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
+# Import code analyzer for deep code analysis
+try:
+    from code_analyzer import CodeAnalyzer
+    CODE_ANALYZER_AVAILABLE = True
+except ImportError:
+    CODE_ANALYZER_AVAILABLE = False
+    logger.warning("Code analyzer not available - deep analysis disabled")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -72,8 +80,15 @@ class GitHubScraper:
         self.max_issues = config.get('max_issues', 100)
         self.include_changelog = config.get('include_changelog', True)
         self.include_releases = config.get('include_releases', True)
-        self.include_code = config.get('include_code', False)  # Surface layer only
+        self.include_code = config.get('include_code', False)
+        self.code_analysis_depth = config.get('code_analysis_depth', 'surface')  # 'surface', 'deep', 'full'
         self.file_patterns = config.get('file_patterns', [])
+
+        # Initialize code analyzer if deep analysis requested
+        self.code_analyzer = None
+        if self.code_analysis_depth != 'surface' and CODE_ANALYZER_AVAILABLE:
+            self.code_analyzer = CodeAnalyzer(depth=self.code_analysis_depth)
+            logger.info(f"Code analysis depth: {self.code_analysis_depth}")
 
         # Output paths
         self.skill_dir = f"output/{self.name}"
@@ -277,16 +292,107 @@ class GitHubScraper:
     def _extract_signatures_and_tests(self):
         """
         C1.3, C1.5, C1.6: Extract signatures, docstrings, and test examples.
-        Note: This is a simplified implementation - full extraction would require
-        parsing each file, which is implemented in the surface layer approach.
+
+        Extraction depth depends on code_analysis_depth setting:
+        - surface: File tree only (minimal)
+        - deep: Parse files for signatures, parameters, types
+        - full: Complete AST analysis (future enhancement)
         """
-        logger.info("Extracting code signatures and test examples...")
+        if self.code_analysis_depth == 'surface':
+            logger.info("Code extraction: Surface level (file tree only)")
+            return
 
-        # This would be implemented by parsing specific files
-        # For now, we note this as a placeholder for the surface layer
-        # Real implementation would parse Python/JS/TS files for signatures
+        if not self.code_analyzer:
+            logger.warning("Code analyzer not available - skipping deep analysis")
+            return
 
-        logger.info("Code extraction: Using surface layer (signatures only, no implementation)")
+        logger.info(f"Extracting code signatures ({self.code_analysis_depth} analysis)...")
+
+        # Get primary language for the repository
+        languages = self.extracted_data.get('languages', {})
+        if not languages:
+            logger.warning("No languages detected - skipping code analysis")
+            return
+
+        # Determine primary language
+        primary_language = max(languages.items(), key=lambda x: x[1]['bytes'])[0]
+        logger.info(f"Primary language: {primary_language}")
+
+        # Determine file extensions to analyze
+        extension_map = {
+            'Python': ['.py'],
+            'JavaScript': ['.js', '.jsx'],
+            'TypeScript': ['.ts', '.tsx'],
+            'C': ['.c', '.h'],
+            'C++': ['.cpp', '.hpp', '.cc', '.hh', '.cxx']
+        }
+
+        extensions = extension_map.get(primary_language, [])
+        if not extensions:
+            logger.warning(f"No file extensions mapped for {primary_language}")
+            return
+
+        # Analyze files matching patterns and extensions
+        analyzed_files = []
+        file_tree = self.extracted_data.get('file_tree', [])
+
+        for file_info in file_tree:
+            file_path = file_info['path']
+
+            # Check if file matches extension
+            if not any(file_path.endswith(ext) for ext in extensions):
+                continue
+
+            # Check if file matches patterns (if specified)
+            if self.file_patterns:
+                import fnmatch
+                if not any(fnmatch.fnmatch(file_path, pattern) for pattern in self.file_patterns):
+                    continue
+
+            # Analyze this file
+            try:
+                file_content = self.repo.get_contents(file_path)
+                content = file_content.decoded_content.decode('utf-8')
+
+                analysis_result = self.code_analyzer.analyze_file(
+                    file_path,
+                    content,
+                    primary_language
+                )
+
+                if analysis_result and (analysis_result.get('classes') or analysis_result.get('functions')):
+                    analyzed_files.append({
+                        'file': file_path,
+                        'language': primary_language,
+                        **analysis_result
+                    })
+
+                    logger.debug(f"Analyzed {file_path}: "
+                               f"{len(analysis_result.get('classes', []))} classes, "
+                               f"{len(analysis_result.get('functions', []))} functions")
+
+            except Exception as e:
+                logger.debug(f"Could not analyze {file_path}: {e}")
+                continue
+
+            # Limit number of files analyzed to avoid rate limits
+            if len(analyzed_files) >= 50:
+                logger.info(f"Reached analysis limit (50 files)")
+                break
+
+        self.extracted_data['code_analysis'] = {
+            'depth': self.code_analysis_depth,
+            'language': primary_language,
+            'files_analyzed': len(analyzed_files),
+            'files': analyzed_files
+        }
+
+        # Calculate totals
+        total_classes = sum(len(f.get('classes', [])) for f in analyzed_files)
+        total_functions = sum(len(f.get('functions', [])) for f in analyzed_files)
+
+        logger.info(f"Code analysis complete: {len(analyzed_files)} files, "
+                   f"{total_classes} classes, {total_functions} functions")
 
     def _extract_issues(self):
         """C1.7: Extract GitHub Issues (open/closed, labels, milestones)."""
