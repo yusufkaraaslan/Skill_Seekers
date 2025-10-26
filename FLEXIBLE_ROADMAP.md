@@ -110,9 +110,12 @@ Generate skills from actual code repositories
 - [ ] **Task C1.4:** Detect programming language per file
 - [ ] **Task C1.5:** Extract function/class signatures
 - [ ] **Task C1.6:** Build usage examples from tests
-- [ ] **Task C1.7:** Create `github_scraper.py` CLI tool
-- [ ] **Task C1.8:** Add MCP tool `scrape_github`
-- [ ] **Task C1.9:** Add config format for GitHub repos
+- [ ] **Task C1.7:** Extract GitHub Issues (open/closed, labels, milestones)
+- [ ] **Task C1.8:** Extract CHANGELOG.md and release notes
+- [ ] **Task C1.9:** Extract GitHub Releases with version history
+- [ ] **Task C1.10:** Create `github_scraper.py` CLI tool
+- [ ] **Task C1.11:** Add MCP tool `scrape_github`
+- [ ] **Task C1.12:** Add config format for GitHub repos
 
 **Start Small:** Pick C1.1 first (basic GitHub API connection)
 
@@ -167,13 +170,13 @@ Small improvements to existing MCP tools
 #### E1: New MCP Tools
 - [ ] **Task E1.1:** Add `fetch_config` MCP tool (download from website)
 - [ ] **Task E1.2:** Add `fetch_knowledge` MCP tool (download skills)
-- [ ] **Task E1.3:** Add `scrape_pdf` MCP tool
+- [x] **Task E1.3:** Add `scrape_pdf` MCP tool (✅ COMPLETED v1.0.0)
 - [ ] **Task E1.4:** Add `scrape_docx` MCP tool
 - [ ] **Task E1.5:** Add `scrape_xlsx` MCP tool
-- [ ] **Task E1.6:** Add `scrape_github` MCP tool
-- [ ] **Task E1.7:** Add `scrape_codebase` MCP tool
-- [ ] **Task E1.8:** Add `scrape_markdown_dir` MCP tool
-- [ ] **Task E1.9:** Add `sync_to_context7` MCP tool
+- [ ] **Task E1.6:** Add `scrape_github` MCP tool (see C1.11)
+- [ ] **Task E1.7:** Add `scrape_codebase` MCP tool (see C2.8)
+- [ ] **Task E1.8:** Add `scrape_markdown_dir` MCP tool (see B4.6)
+- [ ] **Task E1.9:** Add `sync_to_context7` MCP tool (see D2.5)
 
 **Start Small:** Pick E1.1 first (once A1.2 is done)
 
