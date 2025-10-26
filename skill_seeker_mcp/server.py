@@ -186,13 +186,13 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="scrape_docs",
-            description="Scrape documentation and build Claude skill. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available.",
+            description="Scrape documentation and build Claude skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "config_path": {
                         "type": "string",
-                        "description": "Path to config JSON file (e.g., configs/react.json)",
+                        "description": "Path to config JSON file (e.g., configs/react.json or configs/godot_unified.json)",
                     },
                     "unlimited": {
                         "type": "boolean",
@@ -213,6 +213,10 @@ async def list_tools() -> list[Tool]:
                         "type": "boolean",
                         "description": "Preview what will be scraped without saving (default: false)",
                         "default": False,
+                    },
+                    "merge_mode": {
+                        "type": "string",
+                        "description": "Override merge mode for unified configs: 'rule-based' or 'claude-enhanced' (default: from config)",
                     },
                 },
                 "required": ["config_path"],
@@ -350,6 +354,61 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="scrape_github",
+            description="Scrape GitHub repository and build Claude skill. Extracts README, Issues, Changelog, Releases, and code structure.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "repo": {
+                        "type": "string",
+                        "description": "GitHub repository (owner/repo, e.g., facebook/react)",
+                    },
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to GitHub config JSON file (e.g., configs/react_github.json)",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Skill name (default: repo name)",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Skill description",
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "GitHub personal access token (or use GITHUB_TOKEN env var)",
+                    },
+                    "no_issues": {
+                        "type": "boolean",
+                        "description": "Skip GitHub issues extraction (default: false)",
+                        "default": False,
+                    },
+                    "no_changelog": {
+                        "type": "boolean",
+                        "description": "Skip CHANGELOG extraction (default: false)",
+                        "default": False,
+                    },
+                    "no_releases": {
+                        "type": "boolean",
+                        "description": "Skip releases extraction (default: false)",
+                        "default": False,
+                    },
+                    "max_issues": {
+                        "type": "integer",
+                        "description": "Maximum issues to fetch (default: 100)",
+                        "default": 100,
+                    },
+                    "scrape_only": {
+                        "type": "boolean",
+                        "description": "Only scrape, don't build skill (default: false)",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -378,6 +437,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await generate_router_tool(arguments)
         elif name == "scrape_pdf":
             return await scrape_pdf_tool(arguments)
+        elif name == "scrape_github":
+            return await scrape_github_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -485,21 +546,32 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
 
 
 async def scrape_docs_tool(args: dict) -> list[TextContent]:
-    """Scrape documentation"""
+    """Scrape documentation - auto-detects unified vs legacy format"""
     config_path = args["config_path"]
     unlimited = args.get("unlimited", False)
     enhance_local = args.get("enhance_local", False)
     skip_scrape = args.get("skip_scrape", False)
     dry_run = args.get("dry_run", False)
+    merge_mode = args.get("merge_mode")
+
+    # Load config to detect format
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
+    # Detect if unified format (has 'sources' array)
+    is_unified = 'sources' in config and isinstance(config['sources'], list)
 
     # Handle unlimited mode by modifying config temporarily
     if unlimited:
-        # Load config
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-
         # Set max_pages to None (unlimited)
-        config['max_pages'] = None
+        if is_unified:
+            # For unified configs, set max_pages on documentation sources
+            for source in config.get('sources', []):
+                if source.get('type') == 'documentation':
+                    source['max_pages'] = None
+        else:
+            # For legacy configs
+            config['max_pages'] = None
 
         # Create temporary config file
         temp_config_path = config_path.replace('.json', '_unlimited_temp.json')
@@ -510,12 +582,26 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     else:
         config_to_use = config_path
 
+    # Choose scraper based on format
+    if is_unified:
+        scraper_script = "unified_scraper.py"
+        progress_msg = f"🔄 Starting unified multi-source scraping...\n"
+        progress_msg += f"📦 Config format: Unified (multiple sources)\n"
+    else:
+        scraper_script = "doc_scraper.py"
+        progress_msg = f"🔄 Starting scraping process...\n"
+        progress_msg += f"📦 Config format: Legacy (single source)\n"
+
     # Build command
     cmd = [
         sys.executable,
-        str(CLI_DIR / "doc_scraper.py"),
+        str(CLI_DIR / scraper_script),
         "--config", config_to_use
     ]
+
+    # Add merge mode for unified configs
+    if is_unified and merge_mode:
+        cmd.extend(["--merge-mode", merge_mode])
 
     if enhance_local:
         cmd.append("--enhance-local")
@@ -534,23 +620,29 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     else:
         # Read config to estimate timeout
         try:
-            with open(config_to_use, 'r') as f:
-                config = json.load(f)
-            max_pages = config.get('max_pages', 500)
+            if is_unified:
+                # For unified configs, estimate based on all sources
+                total_pages = 0
+                for source in config.get('sources', []):
+                    if source.get('type') == 'documentation':
+                        total_pages += source.get('max_pages', 500)
+                max_pages = total_pages or 500
+            else:
+                max_pages = config.get('max_pages', 500)
+
             # Estimate: 30s per page + buffer
             timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
         except:
             timeout = 14400  # Default: 4 hours
 
     # Add progress message
-    progress_msg = f"🔄 Starting scraping process...\n"
     if timeout:
         progress_msg += f"⏱️ Maximum time allowed: {timeout // 60} minutes\n"
     else:
         progress_msg += f"⏱️ Unlimited mode - no timeout\n"
     progress_msg += f"📝 Progress will be shown below:\n\n"
 
-    # Run doc_scraper.py with streaming
+    # Run scraper with streaming
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
 
     # Clean up temporary config
@@ -686,42 +778,86 @@ async def list_configs_tool(args: dict) -> list[TextContent]:
 
 
 async def validate_config_tool(args: dict) -> list[TextContent]:
-    """Validate a config file"""
+    """Validate a config file - supports both legacy and unified formats"""
     config_path = args["config_path"]
 
-    # Import validation function
+    # Import validation classes
     sys.path.insert(0, str(CLI_DIR))
-    from doc_scraper import validate_config
-    import json
 
     try:
-        # Load config manually to avoid sys.exit() calls
+        # Check if file exists
         if not Path(config_path).exists():
             return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
 
-        with open(config_path, 'r') as f:
-            config = json.load(f)
+        # Try unified config validator first
+        try:
+            from config_validator import validate_config
+            validator = validate_config(config_path)
 
-        # Validate config - returns (errors, warnings) tuple
-        errors, warnings = validate_config(config)
-
-        if errors:
-            result = f"❌ Config validation failed:\n\n"
-            for error in errors:
-                result += f"  • {error}\n"
-        else:
             result = f"✅ Config is valid!\n\n"
-            result += f"  Name: {config['name']}\n"
-            result += f"  Base URL: {config['base_url']}\n"
-            result += f"  Max pages: {config.get('max_pages', 'Not set')}\n"
-            result += f"  Rate limit: {config.get('rate_limit', 'Not set')}s\n"
 
-            if warnings:
-                result += f"\n⚠️  Warnings:\n"
-                for warning in warnings:
-                    result += f"  • {warning}\n"
+            # Show format
+            if validator.is_unified:
+                result += f"📦 Format: Unified (multi-source)\n"
+                result += f"  Name: {validator.config['name']}\n"
+                result += f"  Sources: {len(validator.config.get('sources', []))}\n"
 
-        return [TextContent(type="text", text=result)]
+                # Show sources
+                for i, source in enumerate(validator.config.get('sources', []), 1):
+                    result += f"\n  Source {i}: {source['type']}\n"
+                    if source['type'] == 'documentation':
+                        result += f"    URL: {source.get('base_url', 'N/A')}\n"
+                        result += f"    Max pages: {source.get('max_pages', 'Not set')}\n"
+                    elif source['type'] == 'github':
+                        result += f"    Repo: {source.get('repo', 'N/A')}\n"
+                        result += f"    Code depth: {source.get('code_analysis_depth', 'surface')}\n"
+                    elif source['type'] == 'pdf':
+                        result += f"    Path: {source.get('path', 'N/A')}\n"
+
+                # Show merge settings if applicable
+                if validator.needs_api_merge():
+                    merge_mode = validator.config.get('merge_mode', 'rule-based')
+                    result += f"\n  Merge mode: {merge_mode}\n"
+                    result += f"  API merging: Required (docs + code sources)\n"
+
+            else:
+                result += f"📦 Format: Legacy (single source)\n"
+                result += f"  Name: {validator.config['name']}\n"
+                result += f"  Base URL: {validator.config.get('base_url', 'N/A')}\n"
+                result += f"  Max pages: {validator.config.get('max_pages', 'Not set')}\n"
+                result += f"  Rate limit: {validator.config.get('rate_limit', 'Not set')}s\n"
+
+            return [TextContent(type="text", text=result)]
+
+        except ImportError:
+            # Fall back to legacy validation
+            from doc_scraper import validate_config
+            import json
+
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+
+            # Validate config - returns (errors, warnings) tuple
+            errors, warnings = validate_config(config)
+
+            if errors:
+                result = f"❌ Config validation failed:\n\n"
+                for error in errors:
+                    result += f"  • {error}\n"
+            else:
+                result = f"✅ Config is valid!\n\n"
+                result += f"📦 Format: Legacy (single source)\n"
+                result += f"  Name: {config['name']}\n"
+                result += f"  Base URL: {config['base_url']}\n"
+                result += f"  Max pages: {config.get('max_pages', 'Not set')}\n"
+                result += f"  Rate limit: {config.get('rate_limit', 'Not set')}s\n"
+
+                if warnings:
+                    result += f"\n⚠️  Warnings:\n"
+                    for warning in warnings:
+                        result += f"  • {warning}\n"
+
+            return [TextContent(type="text", text=result)]
 
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
@@ -832,6 +968,65 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
     timeout = 600  # 10 minutes for PDF extraction
 
     progress_msg = "📄 Scraping PDF documentation...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def scrape_github_tool(args: dict) -> list[TextContent]:
+    """Scrape GitHub repository to Claude skill (C1.11)"""
+    repo = args.get("repo")
+    config_path = args.get("config_path")
+    name = args.get("name")
+    description = args.get("description")
+    token = args.get("token")
+    no_issues = args.get("no_issues", False)
+    no_changelog = args.get("no_changelog", False)
+    no_releases = args.get("no_releases", False)
+    max_issues = args.get("max_issues", 100)
+    scrape_only = args.get("scrape_only", False)
+
+    # Build command
+    cmd = [sys.executable, str(CLI_DIR / "github_scraper.py")]
+
+    # Mode 1: Config file
+    if config_path:
+        cmd.extend(["--config", config_path])
+
+    # Mode 2: Direct repo
+    elif repo:
+        cmd.extend(["--repo", repo])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+        if token:
+            cmd.extend(["--token", token])
+        if no_issues:
+            cmd.append("--no-issues")
+        if no_changelog:
+            cmd.append("--no-changelog")
+        if no_releases:
+            cmd.append("--no-releases")
+        if max_issues != 100:
+            cmd.extend(["--max-issues", str(max_issues)])
+        if scrape_only:
+            cmd.append("--scrape-only")
+
+    else:
+        return [TextContent(type="text", text="❌ Error: Must specify --repo or --config")]
+
+    # Run github_scraper.py with streaming (can take a while)
+    timeout = 600  # 10 minutes for GitHub scraping
+
+    progress_msg = "🐙 Scraping GitHub repository...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
