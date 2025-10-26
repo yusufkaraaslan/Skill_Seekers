@@ -9,7 +9,11 @@ import sys
 import json
 import tempfile
 import asyncio
+import pytest
 from pathlib import Path
+
+# Configure pytest to only use asyncio backend (not trio)
+pytestmark = pytest.mark.anyio
 
 # Add skill_seeker_mcp to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'skill_seeker_mcp'))
