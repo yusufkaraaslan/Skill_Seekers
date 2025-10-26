@@ -529,11 +529,13 @@ class TestValidateConfigTool(unittest.IsolatedAsyncioTestCase):
 
     async def test_validate_invalid_config(self):
         """Test validating an invalid config"""
-        # Create invalid config
+        # Create invalid config (missing required fields)
         config_path = Path("configs/invalid.json")
         invalid_config = {
-            "name": "invalid@name",  # Invalid characters
-            "base_url": "example.com"  # Missing protocol
+            "description": "Missing name field",
+            "sources": [
+                {"type": "invalid_type", "url": "https://example.com"}  # Invalid source type
+            ]
         }
         with open(config_path, 'w') as f:
             json.dump(invalid_config, f)
@@ -544,6 +546,7 @@ class TestValidateConfigTool(unittest.IsolatedAsyncioTestCase):
 
         result = await skill_seeker_server.validate_config_tool(args)
 
+        # Should show error for invalid source type
         self.assertIn("❌", result[0].text)
 
     async def test_validate_nonexistent_config(self):
