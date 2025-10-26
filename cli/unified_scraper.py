@@ -17,6 +17,7 @@ import sys
 import json
 import logging
 import argparse
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -25,6 +26,7 @@ try:
     from config_validator import ConfigValidator, validate_config
     from conflict_detector import ConflictDetector
     from merge_sources import RuleBasedMerger, ClaudeEnhancedMerger
+    from unified_skill_builder import UnifiedSkillBuilder
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running from the project root directory")
@@ -116,15 +118,6 @@ class UnifiedScraper:
 
     def _scrape_documentation(self, source: Dict[str, Any]):
         """Scrape documentation website."""
-        # Import doc scraper
-        sys.path.insert(0, str(Path(__file__).parent))
-
-        try:
-            from doc_scraper import scrape_all, save_data
-        except ImportError:
-            logger.error("doc_scraper.py not found")
-            return
-
         # Create temporary config for doc scraper
         doc_config = {
             'name': f"{self.name}_docs",
@@ -136,20 +129,42 @@ class UnifiedScraper:
             'max_pages': source.get('max_pages', 100)
         }
 
-        # Scrape
+        # Write temporary config
+        temp_config_path = os.path.join(self.data_dir, 'temp_docs_config.json')
+        with open(temp_config_path, 'w') as f:
+            json.dump(doc_config, f, indent=2)
+
+        # Run doc_scraper as subprocess
         logger.info(f"Scraping documentation from {source['base_url']}")
-        pages = scrape_all(doc_config)
 
-        # Save data
-        docs_data_file = os.path.join(self.data_dir, 'documentation_data.json')
-        save_data(pages, docs_data_file, doc_config)
+        doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
+        cmd = [sys.executable, str(doc_scraper_path), '--config', temp_config_path]
 
-        self.scraped_data['documentation'] = {
-            'pages': pages,
-            'data_file': docs_data_file
-        }
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-        logger.info(f"✅ Documentation: {len(pages)} pages scraped")
+        if result.returncode != 0:
+            logger.error(f"Documentation scraping failed: {result.stderr}")
+            return
+
+        # Load scraped data
+        docs_data_file = f"output/{doc_config['name']}_data/summary.json"
+
+        if os.path.exists(docs_data_file):
+            with open(docs_data_file, 'r') as f:
+                summary = json.load(f)
+
+            self.scraped_data['documentation'] = {
+                'pages': summary.get('pages', []),
+                'data_file': docs_data_file
+            }
+
+            logger.info(f"✅ Documentation: {summary.get('total_pages', 0)} pages scraped")
+        else:
+            logger.warning("Documentation data file not found")
+
+        # Clean up temp config
+        if os.path.exists(temp_config_path):
+            os.remove(temp_config_path)
 
     def _scrape_github(self, source: Dict[str, Any]):
         """Scrape GitHub repository."""
@@ -339,24 +354,25 @@ class UnifiedScraper:
         logger.info("PHASE 4: Building unified skill")
         logger.info("=" * 60)
 
-        # This will be implemented in Phase 7
-        logger.info("Skill building to be implemented in Phase 7")
-        logger.info(f"Output directory: {self.output_dir}")
-        logger.info(f"Data directory: {self.data_dir}")
+        # Load conflicts if they exist
+        conflicts = []
+        conflicts_file = os.path.join(self.data_dir, 'conflicts.json')
+        if os.path.exists(conflicts_file):
+            with open(conflicts_file, 'r') as f:
+                conflicts_data = json.load(f)
+                conflicts = conflicts_data.get('conflicts', [])
 
-        # For now, just create a placeholder
-        skill_file = os.path.join(self.output_dir, 'SKILL.md')
-        with open(skill_file, 'w') as f:
-            f.write(f"# {self.config['name'].title()}\n\n")
-            f.write(f"{self.config['description']}\n\n")
-            f.write("## Sources\n\n")
+        # Build skill
+        builder = UnifiedSkillBuilder(
+            self.config,
+            self.scraped_data,
+            merged_data,
+            conflicts
+        )
 
-            for source in self.config.get('sources', []):
-                f.write(f"- {source['type']}\n")
+        builder.build()
 
-            f.write("\n*Skill building in progress...*\n")
-
-        logger.info(f"✅ Placeholder skill created: {skill_file}")
+        logger.info(f"✅ Unified skill built: {self.output_dir}/")
 
     def run(self):
         """
