@@ -267,31 +267,62 @@ class DocToSkillConverter:
                 page['links'].append(href)
         
         return page
-    
-    def detect_language(self, elem: Any, code: str) -> str:
-        """Detect programming language from code block"""
-        # Check class attribute
-        classes = elem.get('class', [])
+
+    def _extract_language_from_classes(self, classes):
+        """Extract language from class list
+
+        Supports multiple patterns:
+        - language-{lang} (e.g., "language-python")
+        - lang-{lang} (e.g., "lang-javascript")
+        - brush: {lang} (e.g., "brush: java")
+        - bare language name (e.g., "python", "java")
+
+        """
+        # Define common programming languages
+        known_languages = [
+            "javascript", "java", "xml", "html", "python", "bash", "cpp", "typescript",
+            "go", "rust", "php", "ruby", "swift", "kotlin", "csharp", "c", "sql",
+            "yaml", "json", "markdown", "css", "scss", "sass", "jsx", "tsx", "vue",
+            "shell", "powershell", "r", "scala", "dart", "perl", "lua", "elixir"
+        ]
+
         for cls in classes:
+            # Clean special characters (except word chars and hyphens)
             cls = re.sub(r'[^\w-]', '', cls)
+
             if 'language-' in cls:
                 return cls.replace('language-', '')
+
             if 'lang-' in cls:
                 return cls.replace('lang-', '')
-            if  cls in ["javascript", "java", "xml", "html", "python", "bash", "cpp", "typescript",
-                        "go", "rust", "php", "ruby", "swift", "kotlin", "csharp", "c", "sql",
-                        "yaml", "json", "markdown", "css", "scss", "sass", "jsx", "tsx", "vue",
-                        "shell", "powershell", "r", "scala", "dart", "perl", "lua", "elixir"]:
+
+            # Check for brush: pattern (e.g., "brush: java")
+            if 'brush' in cls.lower():
+                lang = cls.lower().replace('brush', '').strip()
+                if lang in known_languages:
+                    return lang
+
+            # Check for bare language name
+            if cls in known_languages:
                 return cls
-        
+
+        return None
+
+    def detect_language(self, elem, code):
+        """Detect programming language from code block"""
+
+        # Check element classes
+        lang = self._extract_language_from_classes(elem.get('class', []))
+        if lang:
+            return lang
+
         # Check parent pre element
         parent = elem.parent
         if parent and parent.name == 'pre':
-            classes = parent.get('class', [])
-            for cls in classes:
-                if 'language-' in cls:
-                    return cls.replace('language-', '')
-        
+            lang = self._extract_language_from_classes(parent.get('class', []))
+            if lang:
+                return lang
+
         # Heuristic detection
         if 'import ' in code and 'from ' in code:
             return 'python'
@@ -303,7 +334,7 @@ class DocToSkillConverter:
             return 'python'
         if '#include' in code or 'int main' in code:
             return 'cpp'
-        
+
         return 'unknown'
     
     def extract_patterns(self, main: Any, code_samples: List[Dict[str, Any]]) -> List[Dict[str, str]]:
