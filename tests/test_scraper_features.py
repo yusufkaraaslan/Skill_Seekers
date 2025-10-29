@@ -174,6 +174,27 @@ class TestLanguageDetection(unittest.TestCase):
         lang = self.converter.detect_language(elem, code)
         self.assertEqual(lang, 'unknown')
 
+    def test_detect_brush_pattern_in_pre(self):
+        """Test brush: pattern in pre element"""
+        html = '<pre class="brush: python"><code>x</code></pre>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        lang = self.converter.detect_language(elem, 'x')
+        self.assertEqual(lang, 'python', 'Should detect python from brush: python pattern')
+
+    def test_detect_bare_class_in_pre(self):
+        """Test bare class name in pre element"""
+        html = '<pre class="python"><code>x</code></pre>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        lang = self.converter.detect_language(elem, 'x')
+        self.assertEqual(lang, 'python', 'Should detect python from bare class name')
+
+    def test_detect_bare_class_in_code(self):
+        """Test bare class name in code element"""
+        html = '<code class="python">x</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        lang = self.converter.detect_language(elem, 'x')
+        self.assertEqual(lang, 'python', 'Should detect python from bare class name')
+
 
 class TestPatternExtraction(unittest.TestCase):
     """Test pattern extraction from documentation"""
