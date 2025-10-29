@@ -15,7 +15,7 @@
 
 ## What is Skill Seeker?
 
-Skill Seeker is an automated tool that transforms documentation websites, GitHub repositories, and PDF files into production-ready [Claude AI skills](https://claude.ai). Instead of manually reading and summarizing documentation, Skill Seeker:
+Skill Seeker is an automated tool that transforms documentation websites, GitHub repositories, and PDF files into production-ready [Claude AI skills](https://www.anthropic.com/news/skills). Instead of manually reading and summarizing documentation, Skill Seeker:
 
 1. **Scrapes** multiple sources (docs, GitHub repos, PDFs) automatically
 2. **Analyzes** code repositories with deep AST parsing
