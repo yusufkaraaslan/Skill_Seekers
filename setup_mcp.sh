@@ -35,19 +35,34 @@ echo ""
 
 # Step 3: Install dependencies
 echo "Step 3: Installing Python dependencies..."
+
+# Check if we're in a virtual environment
+if [[ -n "$VIRTUAL_ENV" ]]; then
+    echo -e "${GREEN}✓${NC} Virtual environment detected: $VIRTUAL_ENV"
+    PIP_CMD="pip"
+elif [[ -d "venv" ]]; then
+    echo -e "${YELLOW}⚠${NC} Virtual environment found but not activated"
+    echo "Activating venv..."
+    source venv/bin/activate
+    PIP_CMD="pip"
+else
+    echo "No virtual environment found. Using system pip with --user flag"
+    PIP_CMD="pip3 install --user"
+fi
+
 echo "This will install: mcp, requests, beautifulsoup4"
 read -p "Continue? (y/n) " -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Installing MCP server dependencies..."
-    pip3 install -r skill_seeker_mcp/requirements.txt || {
+    $PIP_CMD install -r skill_seeker_mcp/requirements.txt || {
         echo -e "${RED}❌ Failed to install MCP dependencies${NC}"
         exit 1
     }
 
     echo "Installing CLI tool dependencies..."
-    pip3 install requests beautifulsoup4 || {
+    $PIP_CMD install requests beautifulsoup4 || {
         echo -e "${RED}❌ Failed to install CLI dependencies${NC}"
         exit 1
     }
