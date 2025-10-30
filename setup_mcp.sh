@@ -46,7 +46,7 @@ elif [[ -d "venv" ]]; then
     source venv/bin/activate
     PIP_INSTALL_CMD="pip install"
 else
-    echo "No virtual environment found. Using system pip with --user flag"
+    echo "No virtual environment found. Using system pip with --user --break-system-packages flags"
     PIP_INSTALL_CMD="pip3 install --user --break-system-packages"
 fi
 
