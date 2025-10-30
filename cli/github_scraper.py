@@ -536,7 +536,18 @@ class GitHubToSkillConverter:
         """Generate main SKILL.md file."""
         repo_info = self.data.get('repo_info', {})
 
-        skill_content = f"""# {repo_info.get('name', self.name)}
+        # Generate skill name (lowercase, hyphens only, max 64 chars)
+        skill_name = self.name.lower().replace('_', '-').replace(' ', '-')[:64]
+
+        # Truncate description to 1024 chars if needed
+        desc = self.description[:1024] if len(self.description) > 1024 else self.description
+
+        skill_content = f"""---
+name: {skill_name}
+description: {desc}
+---
+
+# {repo_info.get('name', self.name)}
 
 {self.description}
 
