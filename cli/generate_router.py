@@ -10,7 +10,7 @@ import json
 import sys
 import argparse
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 
 class RouterGenerator:
