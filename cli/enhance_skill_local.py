@@ -7,6 +7,15 @@ No API key needed - uses your existing Claude Code Max plan!
 Usage:
     python3 cli/enhance_skill_local.py output/steam-inventory/
     python3 cli/enhance_skill_local.py output/react/
+
+Terminal Selection:
+    The script automatically detects which terminal app to use:
+    1. SKILL_SEEKER_TERMINAL env var (highest priority)
+       Example: export SKILL_SEEKER_TERMINAL="Ghostty"
+    2. TERM_PROGRAM env var (current terminal)
+    3. Terminal.app (fallback)
+
+    Supported terminals: Ghostty, iTerm, Terminal, WezTerm
 """
 
 import os
@@ -21,6 +30,55 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from cli.utils import read_reference_files
+
+
+def detect_terminal_app():
+    """Detect which terminal app to use with cascading priority.
+
+    Priority order:
+        1. SKILL_SEEKER_TERMINAL environment variable (explicit user preference)
+        2. TERM_PROGRAM environment variable (inherit current terminal)
+        3. Terminal.app (fallback default)
+
+    Returns:
+        tuple: (terminal_app_name, detection_method)
+            - terminal_app_name (str): Name of terminal app to launch (e.g., "Ghostty", "Terminal")
+            - detection_method (str): How the terminal was detected (for logging)
+
+    Examples:
+        >>> os.environ['SKILL_SEEKER_TERMINAL'] = 'Ghostty'
+        >>> detect_terminal_app()
+        ('Ghostty', 'SKILL_SEEKER_TERMINAL')
+
+        >>> os.environ['TERM_PROGRAM'] = 'iTerm.app'
+        >>> detect_terminal_app()
+        ('iTerm', 'TERM_PROGRAM')
+    """
+    # Map TERM_PROGRAM values to macOS app names
+    TERMINAL_MAP = {
+        'Apple_Terminal': 'Terminal',
+        'iTerm.app': 'iTerm',
+        'ghostty': 'Ghostty',
+        'WezTerm': 'WezTerm',
+    }
+
+    # Priority 1: Check SKILL_SEEKER_TERMINAL env var (explicit preference)
+    preferred_terminal = os.environ.get('SKILL_SEEKER_TERMINAL', '').strip()
+    if preferred_terminal:
+        return preferred_terminal, 'SKILL_SEEKER_TERMINAL'
+
+    # Priority 2: Check TERM_PROGRAM (inherit current terminal)
+    term_program = os.environ.get('TERM_PROGRAM', '').strip()
+    if term_program and term_program in TERMINAL_MAP:
+        return TERMINAL_MAP[term_program], 'TERM_PROGRAM'
+
+    # Priority 3: Fallback to Terminal.app
+    if term_program:
+        # TERM_PROGRAM is set but unknown
+        return 'Terminal', f'unknown TERM_PROGRAM ({term_program})'
+    else:
+        # No TERM_PROGRAM set
+        return 'Terminal', 'default'
 
 
 class LocalSkillEnhancer:
@@ -177,11 +235,24 @@ rm {prompt_file}
 
         # Launch in new terminal (macOS specific)
         if sys.platform == 'darwin':
-            # macOS Terminal - simple approach
+            # Detect which terminal app to use
+            terminal_app, detection_method = detect_terminal_app()
+
+            # Show detection info
+            if detection_method == 'SKILL_SEEKER_TERMINAL':
+                print(f"   Using terminal: {terminal_app} (from SKILL_SEEKER_TERMINAL)")
+            elif detection_method == 'TERM_PROGRAM':
+                print(f"   Using terminal: {terminal_app} (inherited from current terminal)")
+            elif detection_method.startswith('unknown TERM_PROGRAM'):
+                print(f"⚠️  {detection_method}")
+                print(f"   → Using Terminal.app as fallback")
+            else:
+                print(f"   Using terminal: {terminal_app} (default)")
+
             try:
-                subprocess.Popen(['open', '-a', 'Terminal', script_file])
+                subprocess.Popen(['open', '-a', terminal_app, script_file])
             except Exception as e:
-                print(f"⚠️  Error launching terminal: {e}")
+                print(f"⚠️  Error launching {terminal_app}: {e}")
                 print(f"\nManually run: {script_file}")
                 return False
         else:
