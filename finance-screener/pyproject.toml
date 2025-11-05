@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_backend"
+
+[project]
+name = "finance-screener"
+version = "0.1.0"
+description = "AI-powered value investing stock screener using MCP + Derek Snow's methodology"
+authors = [{name = "Finance Screener Team"}]
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.18.0",
+    "google-generativeai>=0.3.0",
+    "duckdb>=0.9.0",
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "pydantic>=2.0.0",
+    "mcp>=0.9.0",
+    "PyMuPDF>=1.23.0",
+    "beautifulsoup4>=4.12.0",
+    "requests>=2.31.0",
+    "rank-bm25>=0.2.2",
+    "faiss-cpu>=1.7.4",
+    "dspy-ai>=2.0.0",
+    "structlog>=23.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=skill_seeker_mcp",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
+    "--no-cov-on-fail",
+]
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests (requires databases)",
+    "slow: Slow tests (API calls, large file processing)",
+    "api: Tests requiring API keys",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]  # Line too long (handled by black)
