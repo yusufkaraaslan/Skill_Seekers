@@ -1,0 +1,592 @@
+# Code Index
+
+Generated: 2025-11-04T20:35:07.724604Z
+
+
+## Summary
+
+- Files analyzed: 56
+
+- Classes found: 103
+
+- Functions found: 42
+
+
+## Files
+
+- `cli/__init__.py` (Python) — 0 classes, 0 functions
+- `cli/code_analyzer.py` (Python) — 4 classes, 0 functions
+- `cli/config_validator.py` (Python) — 0 classes, 0 functions
+- `cli/conflict_detector.py` (Python) — 2 classes, 0 functions
+- `cli/constants.py` (Python) — 0 classes, 0 functions
+- `cli/doc_scraper.py` (Python) — 0 classes, 0 functions
+- `cli/enhance_skill.py` (Python) — 0 classes, 0 functions
+- `cli/enhance_skill_local.py` (Python) — 0 classes, 0 functions
+- `cli/estimate_pages.py` (Python) — 0 classes, 0 functions
+- `cli/generate_router.py` (Python) — 1 classes, 1 functions
+- `cli/github_scraper.py` (Python) — 0 classes, 0 functions
+- `cli/index_codebase.py` (Python) — 0 classes, 0 functions
+- `cli/llms_txt_detector.py` (Python) — 1 classes, 0 functions
+- `cli/llms_txt_downloader.py` (Python) — 1 classes, 0 functions
+- `cli/llms_txt_parser.py` (Python) — 1 classes, 0 functions
+- `cli/merge_sources.py` (Python) — 0 classes, 0 functions
+- `cli/package_multi.py` (Python) — 0 classes, 2 functions
+- `cli/package_skill.py` (Python) — 0 classes, 2 functions
+- `cli/pdf_extractor_poc.py` (Python) — 0 classes, 0 functions
+- `cli/pdf_scraper.py` (Python) — 0 classes, 0 functions
+- `cli/run_tests.py` (Python) — 0 classes, 0 functions
+- `cli/split_config.py` (Python) — 0 classes, 0 functions
+- `cli/test_unified_simple.py` (Python) — 0 classes, 5 functions
+- `cli/unified_scraper.py` (Python) — 0 classes, 0 functions
+- `cli/unified_skill_builder.py` (Python) — 1 classes, 0 functions
+- `cli/upload_skill.py` (Python) — 0 classes, 2 functions
+- `cli/utils.py` (Python) — 0 classes, 0 functions
+- `demo_conflicts.py` (Python) — 0 classes, 0 functions
+- `skill_seeker_mcp/__init__.py` (Python) — 0 classes, 0 functions
+- `skill_seeker_mcp/server.py` (Python) — 0 classes, 0 functions
+- `skill_seeker_mcp/tools/__init__.py` (Python) — 0 classes, 0 functions
+- `tests/__init__.py` (Python) — 0 classes, 0 functions
+- `tests/conftest.py` (Python) — 0 classes, 1 functions
+- `tests/test_async_scraping.py` (Python) — 7 classes, 1 functions
+- `tests/test_cli_paths.py` (Python) — 6 classes, 0 functions
+- `tests/test_config_validation.py` (Python) — 1 classes, 0 functions
+- `tests/test_constants.py` (Python) — 3 classes, 0 functions
+- `tests/test_estimate_pages.py` (Python) — 3 classes, 0 functions
+- `tests/test_github_scraper.py` (Python) — 8 classes, 2 functions
+- `tests/test_integration.py` (Python) — 7 classes, 2 functions
+- `tests/test_llms_txt_detector.py` (Python) — 0 classes, 5 functions
+- `tests/test_llms_txt_downloader.py` (Python) — 0 classes, 13 functions
+- `tests/test_llms_txt_parser.py` (Python) — 0 classes, 1 functions
+- `tests/test_mcp_server.py` (Python) — 10 classes, 0 functions
+- `tests/test_package_skill.py` (Python) — 2 classes, 0 functions
+- `tests/test_package_structure.py` (Python) — 5 classes, 0 functions
+- `tests/test_parallel_scraping.py` (Python) — 6 classes, 0 functions
+- `tests/test_pdf_advanced_features.py` (Python) — 6 classes, 0 functions
+- `tests/test_pdf_extractor.py` (Python) — 7 classes, 0 functions
+- `tests/test_pdf_scraper.py` (Python) — 7 classes, 0 functions
+- `tests/test_pr144_concerns.py` (Python) — 0 classes, 0 functions
+- `tests/test_scraper_features.py` (Python) — 6 classes, 0 functions
+- `tests/test_setup_scripts.py` (Python) — 0 classes, 0 functions
+- `tests/test_unified_mcp_integration.py` (Python) — 0 classes, 5 functions
+- `tests/test_upload_skill.py` (Python) — 2 classes, 0 functions
+- `tests/test_utilities.py` (Python) — 6 classes, 0 functions
+
+## Classes
+
+- `ClassSignature` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `CodeAnalyzer` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `Conflict` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `ConflictDetector` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `FunctionSignature` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `LlmsTxtDetector` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_detector.py
+- `LlmsTxtDownloader` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_downloader.py
+- `LlmsTxtParser` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_parser.py
+- `Parameter` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `RouterGenerator` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `TestAPIKeyFunctions` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `TestAsyncConfiguration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncDryRun` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncErrorHandling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncLlmsTxtIntegration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncPerformance` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncRouting` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestAsyncScrapeMethods` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `TestBackwardsCompatibility` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `TestCaching` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestCallToolRouter` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestCategorization` — 2 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestChangelogExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestChapterDetection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestCLIHelpOutput` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestCliPackage` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `TestCLIPathsInDocstrings` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestCLIPathsInPrintStatements` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestCLIPathsInSubprocessCalls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestCodeBlockHandling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestCodeBlockMerging` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestCodeDetectionMethods` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestConfigLoading` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestConfigValidation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `TestConstants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `TestConstantsExports` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `TestConstantsUsage` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `TestContentExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestDocumentationPaths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestDryRunMode` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestDryRunWithNewFeatures` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestErrorHandling` — 2 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestEstimatePages` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `TestEstimatePagesCLI` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `TestEstimatePagesTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestEstimatePagesWithRealConfig` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `TestFormatFileSize` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `TestFullLlmsTxtWorkflow` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestGenerateConfigTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestGetUploadURL` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `TestGitHubScraperInitialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestGitHubToSkillConverter` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestImageHandling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestImportPatterns` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `TestIntegration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestIssuesExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestJSONWorkflow` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestLanguageDetection` — 3 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestLinkExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `TestListConfigsTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestListTools` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestLlmsTxtIntegration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestMcpPackage` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `TestMCPServerInitialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestMCPServerIntegration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestOCRSupport` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestPackageSkill` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `TestPackageSkillCLI` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `TestPackageSkillTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestPackageStructure` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `TestParallelProcessing` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestParallelScrapingConfiguration` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestPasswordProtection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestPatternExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `TestPDFToSkillConverter` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestPrintUploadInstructions` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `TestQualityFiltering` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestQualityScoring` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestRateLimiting` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestREADMEExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestRealConfigFiles` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestReleasesExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `TestScrapeDocsTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestScrapingModes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestScriptExecutability` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `TestSkillBuilding` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `TestSyntaxValidation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `TestTableExtraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `TestTextCleaning` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `TestThreadSafety` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestUnlimitedMode` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `TestUploadSkillAPI` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `TestUploadSkillCLI` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `TestURLProcessing` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `TestURLValidation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `TestValidateConfigTool` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `TestValidateSkillDirectory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `TestValidateZipFile` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `UnifiedSkillBuilder` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+
+## Functions
+
+- `__init__` — 7 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `__post_init__` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_analyze_cpp` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_analyze_javascript` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_analyze_python` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_check_url_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_detector.py
+- `_compare_signatures` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_extract_code_apis` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_extract_docs_apis` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_extract_js_methods` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_extract_python_class` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_extract_python_function` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_find_missing_in_code` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_find_missing_in_docs` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_find_signature_mismatches` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_format_api_entry` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_format_code_signature` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_format_merged_apis` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_conflicts_report` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_docs_references` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_github_references` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_merged_api_reference` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_pdf_references` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_references` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_generate_skill_md` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `_is_markdown` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_downloader.py
+- `_parse_cpp_parameters` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_parse_doc_content_for_apis` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_parse_js_parameters` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `_parse_param_string` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `_parse_section` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_parser.py
+- `analyze_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/code_analyzer.py
+- `anyio_backend` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/conftest.py
+- `asyncSetUp` — 6 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `asyncTearDown` — 6 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `build` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/unified_skill_builder.py
+- `create_router_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `create_test_skill_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `create_test_zip` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `detect` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_detector.py
+- `detect_all` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_detector.py
+- `detect_all_conflicts` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `download` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_downloader.py
+- `extract_routing_keywords` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `generate` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `generate_skill_md` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `generate_summary` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `get_proper_filename` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_downloader.py
+- `infer_router_name` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `load_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `main` — 4 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/generate_router.py
+- `mock_download` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `mock_response` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_detector.py
+- `package_skill` — 2 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/package_multi.py
+- `parse` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/llms_txt_parser.py
+- `run_all_tests` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_unified_mcp_integration.py
+- `run_test` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `save_conflicts` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/conflict_detector.py
+- `setUp` — 51 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `side_effect` — 2 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `tearDown` — 30 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_all_exports_count` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_all_exports_exist` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_async_dry_run_completes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_handles_http_errors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_mode_default_false` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_mode_enabled_from_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_mode_with_workers` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_respects_llms_txt` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_async_uses_semaphore_for_concurrency_control` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_backward_compatibility` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/test_unified_simple.py
+- `test_build_from_json_without_extraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_build_skill_creates_directory_structure` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_build_skill_creates_reference_files` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_build_skill_creates_skill_md` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_build_skill_creates_structure` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_cache_disabled` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_cache_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_cache_miss` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_cache_overwrite` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_cache_set_and_get` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_call_tool_exception_handling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_call_tool_unknown` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_categorization_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_categorize_by_chapters` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_categorize_by_content` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_categorize_by_keywords` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_categorize_by_title` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_categorize_by_url` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_categorize_handles_no_chapters` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_categorize_to_other` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_class_import_from_package` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_clean_multiple_spaces` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_clean_newlines` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_clean_strip_whitespace` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_clean_tabs` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_cli_executes_with_help_flag` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_cli_executes_without_errors` — 2 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_cli_exports_match_all` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_has_all` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_has_version` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_help_output` — 3 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_cli_init_file_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_init_has_docstring` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_package_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_cli_requires_config_argument` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_cli_requires_zip_argument` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `test_code_blocks_included_in_references` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_confidence_range` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_config_validation_errors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/test_unified_simple.py
+- `test_config_with_llms_txt_url` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_content_analysis_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_create_temp_unified_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/test_unified_simple.py
+- `test_custom_max_retries` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_custom_timeout` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_custom_worker_count` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_detect_all_variants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_detector.py
+- `test_detect_chapter_uppercase` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_chapter_with_number` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_cpp` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_cpp_with_confidence` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_gdscript` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_javascript_from_arrow` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_javascript_from_const` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_javascript_with_confidence` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_language_from_class` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_language_from_lang_class` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_language_from_parent` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_llms_txt_variants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_detector.py
+- `test_detect_no_llms_txt` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_detector.py
+- `test_detect_python_from_def` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_python_from_heuristics` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_python_with_confidence` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_section_heading` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_detect_unknown` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_detect_unknown_low_confidence` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_direct_file_import_still_works` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_direct_module_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_directory_instead_of_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_directory_without_skill_md` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_django_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_doc_scraper_executes_with_cli_prefix` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_doc_scraper_help_output` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_doc_scraper_imports_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_doc_scraper_print_statements` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_doc_scraper_subprocess_calls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_doc_scraper_usage_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_dry_run_flag_set` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_dry_run_no_directories_created` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_dry_run_with_parallel` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_dry_run_with_unlimited` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_empty_categories_removed` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_empty_content_rejection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_encrypted_pdf_detection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_enhance_skill_imports_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_enhance_skill_local_executes_with_cli_prefix` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhance_skill_local_imports_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_enhance_skill_local_print_statements` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhance_skill_local_usage_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhance_skill_print_statements` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhance_skill_usage_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhancement_constants_exist` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_enhancement_constants_values` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_enhancement_guide_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_enhancement_limits_hierarchy` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_estimate_pages_error` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_estimate_pages_executes_with_cli_prefix` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_estimate_pages_imports_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_estimate_pages_respects_max_discovery` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_estimate_pages_returns_discovered_count` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_estimate_pages_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_estimate_pages_usage_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_estimate_pages_with_max_discovery` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_estimate_pages_with_minimal_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_estimate_pages_with_start_urls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_estimate_with_real_config_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_estimate_pages.py
+- `test_estimation_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_exponential_backoff` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_extract_basic_content` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_extract_changelog_not_found` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_changelog_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_changelog_tries_multiple_locations` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_empty_content` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_extract_issues_filters_pull_requests` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_issues_respects_max_limit` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_issues_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_languages_empty` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_languages_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_links_no_anchor_duplicates` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_links_preserves_query_params` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_links_relative_urls_with_anchors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_links_strips_anchor_fragments` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_pattern_limit` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_pattern_with_example_marker` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_pattern_with_usage_marker` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_extract_readme_not_found` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_readme_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_readme_tries_multiple_locations` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_releases_empty` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_releases_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_extract_text_with_ocr_disabled` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_extract_text_with_ocr_sufficient_text` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_fast_scraping_mode` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_fastapi_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_feature_combinations` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_file_instead_of_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_file_limit_constants` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_filter_by_min_quality` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_format_bytes_below_1kb` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_format_kilobytes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_format_large_files` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_format_megabytes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_format_zero_bytes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_full_initialization_with_all_features` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_full_llms_txt_workflow` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_full_workflow_simulation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_generate_config_basic` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_generate_config_defaults` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_generate_config_with_options` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_get_api_key_returns_key` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_get_api_key_returns_none_when_not_set` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_get_api_key_strips_whitespace` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_get_proper_filename` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_get_proper_filename_small` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_get_proper_filename_standard` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_get_upload_url_returns_correct_url` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_get_upload_url_returns_string` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_godot_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_has_api_key_when_empty_string` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_has_api_key_when_not_set` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_has_api_key_when_set` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_has_api_key_when_whitespace_only` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_high_quality_code` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_high_quality_code_preferred` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_http_error_handling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_image_references_in_markdown` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_images_saved_to_assets` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_indent_based_detection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_init_loads_data` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_init_requires_name_or_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_init_with_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_init_with_name_and_pdf_path` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_init_with_repo_name` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_init_with_token_from_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_init_with_token_from_env` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_init_without_token` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_invalid_base_url_no_protocol` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_categories_not_dict` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_category_keywords_not_list` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_config_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_invalid_max_pages_not_int` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_max_pages_too_high` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_max_pages_zero` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_name_special_chars` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_rate_limit_negative` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_rate_limit_not_number` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_rate_limit_too_high` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_repo_name` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_invalid_selectors_not_dict` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_start_urls_bad_protocol` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_start_urls_not_list` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_url_different_domain` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_invalid_url_no_include_match` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_invalid_url_patterns_include_not_list` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_url_patterns_not_dict` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_invalid_url_with_exclude_pattern` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_limited_mode_default` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_list_configs_empty` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_list_configs_no_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_list_configs_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_list_tools_returns_tools` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_llms_txt_detector_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_llms_txt_downloader_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_llms_txt_parser_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_load_config_with_validation_errors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_load_from_json` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_load_invalid_json` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_load_nonexistent_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_load_valid_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_lock_protects_visited_urls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_low_quality_code` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_markdown_validation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_mcp_has_all` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_has_version` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_init_file_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_init_has_docstring` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_merge_mode_override` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_unified_mcp_integration.py
+- `test_mcp_package_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_scrape_docs_detection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_unified_mcp_integration.py
+- `test_mcp_tools_has_version` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_tools_init_file_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_tools_package_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_mcp_validate_legacy_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_unified_mcp_integration.py
+- `test_mcp_validate_unified_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_unified_mcp_integration.py
+- `test_merge_continued_blocks` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_missing_base_url` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_missing_name` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_missing_password_for_encrypted_pdf` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_missing_pdf_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_missing_recommended_selectors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_missing_required_config_fields` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_scraper.py
+- `test_mixed_source_types` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/test_unified_simple.py
+- `test_module_path_import_still_works` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_multi_variant_download` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_multiple_start_urls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_multiple_tables_extraction` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_multiple_workers_creates_lock` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_no_content_truncation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_no_merge_different_languages` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_non_markdown_rejection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_nonexistent_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_nonexistent_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_normal_mode_creates_directories` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_not_chapter` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_ocr_extraction_triggered` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_ocr_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_ocr_unavailable_warning` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_open_folder_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_package_creates_correct_zip_structure` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_creates_zip_in_correct_location` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_directory_without_skill_md` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_excludes_backup_files` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_level_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_structure.py
+- `test_package_nonexistent_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_skill_error` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_package_skill_executes_with_cli_prefix` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_package_skill_help_output` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_package_skill_success` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_package_skill_usage_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_package_valid_skill_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_package_zip_name_matches_skill_name` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_package_skill.py
+- `test_page_data_includes_tables` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_parallel_disabled_by_default` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_parallel_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_parallel_limited` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_parallel_unlimited` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_parse_markdown_sections` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_parser.py
+- `test_password_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_pattern_based_detection` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_print_upload_instructions_accepts_string_path` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_print_upload_instructions_runs` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_quality_factors` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_quality_score_range` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_quickstart_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_rate_limit_default` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_rate_limit_error` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_rate_limit_from_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_react_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_scrape_all_async_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_scrape_all_routes_to_async_when_enabled` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_scrape_all_uses_sync_when_async_disabled` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_scrape_docs_basic` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_scrape_docs_with_dry_run` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_scrape_docs_with_enhance_local` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_scrape_docs_with_skip_scrape` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_scrape_page_async_exists` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_async_scraping.py
+- `test_scraper_has_llms_txt_attributes` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_scraper_has_try_llms_txt_method` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_scraping_constants_exist` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_scraping_constants_ranges` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_scraping_constants_types` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_constants.py
+- `test_server_import` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_server_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_single_threaded_limited` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_single_worker_default` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_single_worker_no_lock` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_start_urls_fallback` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_steam_economy_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_successful_download` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_table_extraction_basic` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_table_extraction_disabled` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_table_extraction_error_handling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_table_extraction_initialization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_timeout_with_retry` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_token_priority_env_over_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_github_scraper.py
+- `test_tool_schemas` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_unlimited_with_minus_one` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_unlimited_with_none` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_upload_accepts_path_object` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `test_upload_guide_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_cli_paths.py
+- `test_upload_with_invalid_zip` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `test_upload_with_nonexistent_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `test_upload_without_api_key` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_upload_skill.py
+- `test_url_normalization` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_url_parsing_with_complex_paths` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_detector.py
+- `test_url_validation_no_patterns` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_user_agent_header` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_llms_txt_downloader.py
+- `test_valid_complete_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_max_pages_range` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_minimal_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_name_formats` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_rate_limit_range` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_skill_directory` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_valid_start_urls` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_url_protocols` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_config_validation.py
+- `test_valid_url_with_api_pattern` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_valid_url_with_include_pattern` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_scraper_features.py
+- `test_valid_zip_file` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_validate_existing_unified_configs` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/test_unified_simple.py
+- `test_validate_invalid_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_validate_javascript_valid` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_validate_natural_language_fails` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_validate_nonexistent_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_validate_python_invalid_indentation` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_validate_python_unbalanced_brackets` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_validate_python_valid` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_extractor.py
+- `test_validate_valid_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_mcp_server.py
+- `test_vue_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_integration.py
+- `test_worker_count_auto_detect` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_workers_from_config` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `test_wrong_extension` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_utilities.py
+- `test_wrong_password_handling` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_pdf_advanced_features.py
+- `test_zero_rate_limit_disables` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/tests/test_parallel_scraping.py
+- `upload_skill_api` — 1 occurrence(s) e.g. /Users/docravikumar/Code/skill-test/Skill_Seekers/cli/upload_skill.py
+

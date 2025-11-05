@@ -1,8 +1,18 @@
-# CLAUDE.md
+# CLAUDE_ARCHIVE_V1.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> **⚠️ NOTICE: ARCHIVED DOCUMENTATION**
+> 
+> This file contains historical v1.x architecture documentation and has been archived.
+> 
+> **For current guidance, see [/CLAUDE.md](../CLAUDE.md) at repository root.**
+> 
+> This archive is preserved for historical reference and understanding the design evolution
+> of Skill Seekers from v1.x to v2.0.0. All technical architecture details have been merged
+> into the canonical CLAUDE.md with verified line numbers.
+> 
+> ---
 
-## Overview
+## Overview (v1.x Architecture)
 
 This is a Python-based documentation scraper that converts ANY documentation website into a Claude skill. It's a single-file tool (`doc_scraper.py`) that scrapes documentation, extracts code patterns, detects programming languages, and generates structured skill files ready for use with Claude.
 
