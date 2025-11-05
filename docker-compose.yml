@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  skill-seekers-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: skill-seekers:latest
+    container_name: skill-seekers-mcp
+    volumes:
+      - ./output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: skill-seekers-network
