@@ -1,0 +1,466 @@
+# Tool Usage Requirements Configuration - Enhanced
+# Defines required tools for each agent type in the orchestration system
+# Now includes orchestrator and referee agent validation
+
+# Agent type tool requirements
+agent_types:
+  # ===================================================================
+  # SPECIALIZED ANALYSIS AGENTS
+  # ===================================================================
+
+  security-analyst:
+    description: "Security vulnerability scanner and analyzer"
+    required_tools:
+      # Dependency Security Tools
+      - name: "pip-audit"
+        command: "pip-audit"
+        category: "dependency"
+        description: "Scan dependencies for known vulnerabilities"
+        install_command: "pip install pip-audit"
+        check_command: "pip-audit --version"
+        mandatory: true
+        usage_template: |
+          bash: pip-audit --requirement requirements.txt --format=json
+          # Analyze the JSON output for vulnerabilities
+          # Report each vulnerability with CVE ID, package, and severity
+
+      - name: "safety"
+        command: "safety"
+        category: "dependency"
+        description: "Check installed dependencies for security vulnerabilities"
+        install_command: "pip install safety"
+        check_command: "safety --version"
+        mandatory: true
+        usage_template: |
+          bash: safety check --json --output safety-report.json
+          # Parse and report all security findings
+
+      - name: "pipdeptree"
+        command: "pipdeptree"
+        category: "dependency"
+        description: "Display dependency tree for analysis"
+        install_command: "pip install pipdeptree"
+        check_command: "pipdeptree --version"
+        mandatory: false
+        usage_template: |
+          bash: pipdeptree --json --output dependency-tree.json
+          # Analyze transitive dependencies for potential issues
+
+      # Code Security Tools
+      - name: "bandit"
+        command: "bandit"
+        category: "code"
+        description: "Python code security linter"
+        install_command: "pip install bandit"
+        check_command: "bandit --version"
+        mandatory: true
+        usage_template: |
+          bash: bandit -r . -f json -o bandit-report.json
+          # Report high and medium severity findings
+
+      - name: "semgrep"
+        command: "semgrep"
+        category: "code"
+        description: "Static analysis for security vulnerabilities"
+        install_command: "pip install semgrep"
+        check_command: "semgrep --version"
+        mandatory: false
+        usage_template: |
+          bash: semgrep --config=auto --json --output=semgrep-report.json
+          # Focus on security-related findings
+
+      # Pattern Detection Tools
+      - name: "grep"
+        command: "grep"
+        category: "pattern"
+        description: "Pattern matching for sensitive data"
+        mandatory: true
+        usage_template: |
+          bash: grep -r -i "password\\|secret\\|key\\|token" --include="*.py" --include="*.json" .
+          # Find all instances of sensitive keywords
+
+      - name: "find"
+        command: "find"
+        category: "system"
+        description: "File system search for sensitive files"
+        mandatory: true
+        usage_template: |
+          bash: find . -name "*.pem" -o -name "*.key" -o -name "*secret*" -o -name "*.env*"
+          # List all potentially sensitive files
+
+  code-analyst:
+    description: "Code quality and structure analyzer"
+    required_tools:
+      - name: "grep"
+        command: "grep"
+        category: "pattern"
+        description: "Search code patterns"
+        mandatory: true
+
+      - name: "find"
+        command: "find"
+        category: "system"
+        description: "Find files matching criteria"
+        mandatory: true
+
+      - name: "wc"
+        command: "wc"
+        category: "metrics"
+        description: "Count lines, words, characters"
+        mandatory: true
+
+      - name: "ast"
+        command: "python"
+        category: "analysis"
+        description: "Python AST parsing"
+        mandatory: true
+        usage_template: |
+          python -c "import ast; print('AST module available')"
+
+  documentation-agent:
+    description: "Documentation analysis and generation"
+    required_tools:
+      - name: "grep"
+        command: "grep"
+        category: "pattern"
+        description: "Search documentation patterns"
+        mandatory: true
+
+      - name: "find"
+        command: "find"
+        category: "system"
+        description: "Find documentation files"
+        mandatory: true
+
+      - name: "bash"
+        command: "bash"
+        category: "execution"
+        description: "Execute documentation tools"
+        mandatory: true
+
+  # ===================================================================
+  # COORDINATION AND SYNTHESIS AGENTS (NEW VALIDATION)
+  # ===================================================================
+
+  orchestrator-agent:
+    description: "Chief-of-staff for multi-agent coordination and workflow management"
+    required_tools:
+      # Context Gathering Tools (Reduce Phase)
+      - name: "Read"
+        command: "read_file"
+        category: "context"
+        description: "Read files to gather context before delegation"
+        mandatory: true
+        usage_template: |
+          # Must read relevant files before delegating tasks
+          Read: cli/constants.py
+          Read: requirements.txt
+          Read: .claude/agents/security-analyst.md
+
+      - name: "Grep"
+        command: "grep"
+        category: "pattern"
+        description: "Search for specific patterns and information"
+        mandatory: true
+        usage_template: |
+          # Search for context patterns before task delegation
+          Grep: pattern="security" path="cli/" output_mode="files_with_matches"
+          Grep: pattern="import.*requests" path="cli/" output_mode="content"
+
+      # Delegation Tools (Delegate Phase)
+      - name: "Task"
+        command: "task"
+        category: "delegation"
+        description: "Deploy parallel subagent tasks"
+        mandatory: true
+        usage_template: |
+          # Must demonstrate parallel delegation capability
+          Task: description="Security analysis" subagent_type="security-analyst"
+          Task: description="Code analysis" subagent_type="code-analyst"
+          Task: description="Dependency analysis" subagent_type="security-analyst"
+
+      # Monitoring Tools
+      - name: "Bash"
+        command: "bash"
+        category: "monitoring"
+        description: "Monitor and poll long-running tasks"
+        mandatory: false
+        usage_template: |
+          # Monitor task progress and resource usage
+          bash: ps aux | grep python
+          bash: ls -la output/
+
+      # Synthesis Tools
+      - name: "Glob"
+        command: "glob"
+        category: "discovery"
+        description: "Discover and analyze output files"
+        mandatory: false
+        usage_template: |
+          # Find output files from delegated tasks
+          Glob: pattern="**/*.md" path="output/"
+          Glob: pattern="**/*.json" path="output/"
+
+    validation_criteria:
+      context_gathering: "Must read relevant files before delegation"
+      parallel_execution: "Must demonstrate parallel task deployment"
+      resource_optimization: "Must select appropriate models for subtasks"
+      monitoring_oversight: "Should monitor delegated task progress"
+      synthesis_quality: "Must integrate and synthesize results effectively"
+
+  referee-agent-csp:
+    description: "Convergent Synthesis Primitive for deterministic outcome evaluation"
+    required_tools:
+      # File Analysis Tools
+      - name: "Read"
+        command: "read_file"
+        category: "analysis"
+        description: "Read specifications and all candidate files for evaluation"
+        mandatory: true
+        usage_template: |
+          # Must read all candidate files for comparison
+          Read: candidate_1_output.md
+          Read: candidate_2_output.md
+          Read: candidate_3_output.md
+          Read: evaluation_specifications.md
+
+      # Validation Tools
+      - name: "Bash"
+        command: "bash"
+        category: "validation"
+        description: "Execute objective validation commands and scoring"
+        mandatory: true
+        usage_template: |
+          # Must execute objective validation commands
+          bash: python3 -c "
+          import json
+          with open('candidate_1_output.json') as f:
+            data1 = json.load(f)
+          print(f'Candidate 1 score: {len(data1.get(\"findings\", []))}')
+          "
+
+      # Pattern Analysis Tools
+      - name: "Grep"
+        command: "grep"
+        category: "pattern"
+        description: "Pattern matching and analysis across candidates"
+        mandatory: true
+        usage_template: |
+          # Must analyze patterns across all candidates
+          Grep: pattern="vulnerability|finding|issue" path="candidate_*_output.md" output_mode="content" -n
+          Grep: pattern="score|rating|metric" path="candidate_*_output.md" output_mode="content" -n
+
+      # Final Synthesis Tools
+      - name: "Task"
+        command: "task"
+        category: "synthesis"
+        description: "Execute final orchestration and selection steps"
+        mandatory: true
+        usage_template: |
+          # Must handle final selection and reporting
+          Task: description="Generate final synthesis report" subagent_type="general-purpose"
+
+      # Verification Tools
+      - name: "Write"
+        command: "write_file"
+        category: "output"
+        description: "Generate structured JSON output for programmatic processing"
+        mandatory: true
+        usage_template: |
+          # Must generate structured, programmatic output
+          Write: file_path="synthesis_results.json" content=json_dumps(results)
+
+    validation_criteria:
+      file_reading: "Must read all specification and candidate files"
+      objective_validation: "Must execute validation commands (not theoretical)"
+      quantitative_scoring: "Must provide scores with supporting evidence"
+      pattern_analysis: "Must analyze patterns across candidates"
+      structured_output: "Must generate JSON-structured, programmatic outputs"
+      deterministic_selection: "Must select based on objective metrics"
+
+# Tool usage validation rules
+validation_rules:
+  # Compliance thresholds
+  pre_execution_threshold: 80  # Must have 80% of tools available
+  post_execution_threshold: 70  # Must use 70% of mandatory tools
+
+  # Evidence requirements
+  require_output_capture: true
+  require_success_indicators: true
+  min_command_evidence: 1  # Minimum evidence per tool
+
+  # Quality checks
+  validate_tool_outputs: true
+  check_for_actual_execution: true
+  detect_reasoning_only: true
+
+  # Coordination-specific rules
+  orchestrator_context_required: true
+  referee_objective_validation: true
+  synthesis_evidence_required: true
+
+# Monitoring configuration
+monitoring:
+  # Metrics to track
+  track_metrics:
+    - "tool_invocation_rate"
+    - "tool_success_rate"
+    - "compliance_score"
+    - "missing_tool_incidents"
+    - "output_capture_rate"
+    - "context_gathering_quality"  # New for orchestrator
+    - "synthesis_quality"          # New for referee
+
+  # Alerting thresholds
+  alerts:
+    critical_compliance: 50  # Alert if compliance drops below 50%
+    warning_compliance: 70   # Warning if below 70%
+    missing_mandatory_tools: 2  # Alert if >2 mandatory tools missing
+    no_context_gathering: true   # Alert if orchestrator doesn't gather context
+    theoretical_synthesis: true  # Alert if referee doesn't use tools
+
+  # Reporting
+  reports:
+    daily_summary: true
+    weekly_trends: true
+    monthly_deep_dive: true
+    agent_performance: true
+    coordination_analysis: true  # New
+
+# Tool installation policies
+installation:
+  auto_install_mandatory: true
+  timeout_seconds: 300
+  retry_attempts: 2
+  require_sudo: false
+  pip_install_options: ["--user"]
+
+# Tool usage templates
+templates:
+  security_audit_workflow: |
+    ## Security Audit Workflow
+
+    ### 1. Dependency Vulnerability Scan
+    ```bash
+    pip-audit --requirement requirements.txt --format=json --output=audit-results.json
+    safety check --json --output=safety-results.json
+    ```
+
+    ### 2. Code Security Analysis
+    ```bash
+    bandit -r . -f json -o bandit-results.json --severity-level medium
+    semgrep --config=security --json --output=semgrep-results.json
+    ```
+
+    ### 3. Sensitive Data Detection
+    ```bash
+    grep -r -i "password\\|secret\\|api[_-]?key\\|token" --include="*.py" --include="*.yaml" --include="*.json" .
+    find . -name "*.pem" -o -name "*.key" -o -name "*.env*" -type f
+    ```
+
+    ### 4. Report Generation
+    Analyze all tool outputs and generate a comprehensive security report with:
+    - Summary of vulnerabilities found
+    - Risk assessment (Critical/High/Medium/Low)
+    - Specific recommendations for each issue
+    - Evidence from tool outputs
+
+  code_analysis_workflow: |
+    ## Code Analysis Workflow
+
+    ### 1. Code Metrics
+    ```bash
+    find . -name "*.py" | xargs wc -l
+    find . -name "*.py" | xargs grep -c "class\\|def\\|import"
+    ```
+
+    ### 2. Pattern Analysis
+    ```bash
+    grep -r "TODO\\|FIXME\\|XXX" --include="*.py" .
+    grep -r "print\\|debug" --include="*.py" .
+    ```
+
+    ### 3. Structure Analysis
+    ```python
+    import ast
+    # Parse and analyze code structure
+    ```
+
+  orchestrator_workflow: |
+    ## Orchestrator Workflow Template
+
+    ### 1. Context Gathering (MANDATORY)
+    # Must read relevant files before delegation
+    Read: cli/constants.py
+    Read: requirements.txt
+    Grep: pattern="def.*scrape" path="cli/" output_mode="files_with_matches"
+
+    ### 2. Task Delegation (MANDATORY)
+    # Must demonstrate parallel delegation
+    Task: description="Web scraping security" subagent_type="security-analyst"
+    Task: description="GitHub integration security" subagent_type="security-analyst"
+    Task: description="PDF processing security" subagent_type="security-analyst"
+
+    ### 3. Progress Monitoring
+    # Should monitor delegated tasks
+    Bash: ls -la output/ | head -10
+
+    ### 4. Result Synthesis
+    # Must integrate and synthesize results
+    Read: output/security_analysis_1.md
+    Read: output/security_analysis_2.md
+    # Synthesize findings into comprehensive report
+
+  referee_synthesis_template: |
+    ## Referee Agent Synthesis Template
+
+    ### 1. Load All Candidates (MANDATORY)
+    # Must read all candidate files
+    Read: candidate_1_analysis.md
+    Read: candidate_2_analysis.md
+    Read: candidate_3_analysis.md
+
+    ### 2. Objective Validation (MANDATORY)
+    # Must execute validation commands
+    Bash: python3 -c "
+    # Calculate objective scores
+    scores = {}
+    for i in range(1, 4):
+        with open(f'candidate_{i}_analysis.md') as f:
+            content = f.read()
+            scores[f'candidate_{i}'] = {
+                'findings_count': content.lower().count('vulnerability'),
+                'recommendations_count': content.lower().count('recommend'),
+                'evidence_count': content.count('bash:')
+            }
+    print(json.dumps(scores, indent=2))
+    "
+
+    ### 3. Pattern Analysis (MANDATORY)
+    # Must analyze patterns across candidates
+    Grep: pattern="critical|high|medium|low" path="candidate_*_analysis.md" output_mode="content" -n
+    Grep: pattern="bash:|python|find" path="candidate_*_analysis.md" output_mode="content" -n
+
+    ### 4. Deterministic Selection (MANDATORY)
+    # Must select based on objective metrics
+    # Generate JSON-structured output
+    Write: file_path="synthesis_results.json" content=json_dumps(selection_results)
+
+# Integration hooks
+integration:
+  orchestrator:
+    pre_execution_hook: "validate_tools_available"
+    post_execution_hook: "validate_tool_usage"
+    compliance_reporter: "generate_compliance_metrics"
+    context_validation: "verify_context_gathering"  # New
+    delegation_validation: "verify_parallel_delegation"  # New
+
+  referee:
+    validation_hook: "verify_objective_analysis"  # New
+    synthesis_hook: "verify_deterministic_selection"  # New
+    output_validation: "verify_structured_output"  # New
+
+  agents:
+    prompt_enhancement: "add_tool_requirements"
+    output_parser: "extract_tool_evidence"
+    quality_checker: "validate_tool_results"

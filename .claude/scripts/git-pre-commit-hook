@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# Git Pre-Commit Hook for Claude Code Agent Validation
+#
+# This hook validates agent files before allowing commits.
+# Install: cp .claude/scripts/git-pre-commit-hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}🔍 Validating agent files before commit...${NC}"
+
+# Get list of staged .md files in .claude/agents/
+AGENT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.claude/agents/.*\.md$' || true)
+
+if [ -z "$AGENT_FILES" ]; then
+    echo -e "${GREEN}✓ No agent files to validate${NC}"
+    exit 0
+fi
+
+# Set project directory
+export CLAUDE_PROJECT_DIR="$(git rev-parse --show-toplevel)"
+
+# Use skill's venv Python
+PYTHON_BIN="$CLAUDE_PROJECT_DIR/.claude/skills/agent-scaffolding-toolkit/.venv/bin/python3"
+
+# Fallback to system Python if venv doesn't exist
+if [ ! -f "$PYTHON_BIN" ]; then
+    echo -e "${YELLOW}⚠️  Skill venv not found, using system Python${NC}"
+    PYTHON_BIN="python3"
+fi
+
+# Validate each agent file
+VALIDATION_FAILED=0
+
+for file in $AGENT_FILES; do
+    echo -e "\n  Validating: ${file}"
+    
+    # Run validation script
+    if $PYTHON_BIN "$CLAUDE_PROJECT_DIR/.claude/scripts/validate-agent.py" <<EOF
+{
+  "tool_input": {
+    "file_path": "$CLAUDE_PROJECT_DIR/$file"
+  }
+}
+EOF
+    then
+        echo -e "${GREEN}  ✓ Valid${NC}"
+    else
+        echo -e "${RED}  ✗ Validation failed${NC}"
+        VALIDATION_FAILED=1
+    fi
+done
+
+if [ $VALIDATION_FAILED -eq 1 ]; then
+    echo -e "\n${RED}❌ Commit blocked: Agent validation failed${NC}"
+    echo -e "${YELLOW}Fix validation errors and try again${NC}"
+    exit 1
+fi
+
+echo -e "\n${GREEN}✅ All agent files validated successfully${NC}"
+exit 0

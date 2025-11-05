@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/skills/agent-scaffolding-toolkit/.venv/bin/python3 /Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/scripts/load-agent-registry.py",
+            "description": "Load agent registry and inject available agents into session context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/skills/agent-scaffolding-toolkit/.venv/bin/python3 /Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/scripts/check-agent-behavior.py",
+            "description": "Pre-validate agent files before writing (syntax check)"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You just created/edited a file. If this is an agent file (.claude/agents/*.md):\n\n1. Validate YAML frontmatter syntax\n2. Check if tools listed exist in Claude Code native tools\n3. Verify description is >= 50 characters and explains purpose\n4. Confirm use cases are realistic and actionable\n5. Check for security anti-patterns (e.g., unrestricted file access)\n\nReturn JSON:\n{\n  \"decision\": \"approve\" | \"block\" | \"warn\",\n  \"reason\": \"detailed explanation\",\n  \"suggestions\": [\"list of improvements\"]\n}\n\nIf decision is 'block', I will prevent the file from being saved. If 'warn', I'll save but notify you.",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "/Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/skills/agent-scaffolding-toolkit/.venv/bin/python3 /Users/docravikumar/Code/skill-test/Skill_Seekers/.claude/scripts/update-registry.py",
+            "description": "Update agent registry after successful agent creation/edit"
+          }
+        ]
+      }
+    ]
+  }
+}

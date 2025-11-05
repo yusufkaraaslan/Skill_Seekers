@@ -1,0 +1,3 @@
+# Test requirements for agent scaffolding toolkit
+pytest>=7.4.0
+PyYAML>=6.0

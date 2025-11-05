@@ -1,0 +1,8 @@
+# Core dependencies for agent scaffolding toolkit
+pyyaml>=6.0
+
+# Optional development dependencies (install with: pip install -e .[dev])
+# pytest>=7.0
+# pytest-cov>=4.0
+# black>=23.0
+# mypy>=1.0

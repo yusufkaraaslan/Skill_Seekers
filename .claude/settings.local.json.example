@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [],
+    "PostToolUse": []
+  },
+  "_comment": "This file is for local overrides and is gitignored. Copy to settings.local.json to customize."
+}
