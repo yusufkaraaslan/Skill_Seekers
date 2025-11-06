@@ -386,7 +386,10 @@ class DocToSkillConverter:
         """
         try:
             # Scraping part (no lock needed - independent)
-            headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper)'}
+            # Use realistic browser User-Agent to avoid 403 errors
+            headers = self.config.get('headers', {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            })
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
 
@@ -442,7 +445,10 @@ class DocToSkillConverter:
         async with semaphore:  # Limit concurrent requests
             try:
                 # Async HTTP request
-                headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper)'}
+                # Use realistic browser User-Agent to avoid 403 errors
+                headers = self.config.get('headers', {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                })
                 response = await client.get(url, headers=headers, timeout=30.0)
                 response.raise_for_status()
 
@@ -661,7 +667,10 @@ class DocToSkillConverter:
                     # Just show what would be scraped
                     logger.info("  [Preview] %s", url)
                     try:
-                        headers = {'User-Agent': 'Mozilla/5.0 (Documentation Scraper - Dry Run)'}
+                        # Use realistic browser User-Agent to avoid 403 errors
+                        headers = self.config.get('headers', {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        })
                         response = requests.get(url, headers=headers, timeout=10)
                         soup = BeautifulSoup(response.content, 'html.parser')
 

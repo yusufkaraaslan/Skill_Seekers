@@ -1,0 +1,52 @@
+{
+  "name": "noesis-github",
+  "description": "NoesisGUI samples and tutorials from GitHub. Use for NoesisGUI code examples, Unity integration samples, XAML UI patterns, and practical implementations.",
+  "base_url": "https://github.com/Noesis/Tutorials/tree/master/",
+  "start_urls": [
+    "https://github.com/Noesis/Tutorials",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/HelloWorld",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Integration",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/DataBinding",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Buttons",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Commands",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/UserControl",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Localization",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Menu3D",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/Inventory",
+    "https://github.com/Noesis/Tutorials/tree/master/Samples/WorldSpaceUI"
+  ],
+  "selectors": {
+    "main_content": "article, div[data-target='readme-toc.content'], div.Box-body",
+    "title": "h1, title",
+    "code_blocks": "pre, code, td.blob-code"
+  },
+  "url_patterns": {
+    "include": [
+      "/Noesis/Tutorials",
+      "/Samples/",
+      "README",
+      ".cs",
+      ".xaml"
+    ],
+    "exclude": [
+      "/issues",
+      "/pulls",
+      "/actions",
+      "/wiki",
+      "/blob/master/Samples/.*/C[+][+]/",
+      "/blob/master/Samples/.*/UE4/"
+    ]
+  },
+  "categories": {
+    "getting_started": ["HelloWorld", "Integration", "README"],
+    "xaml_ui": ["xaml", "XAML", "MainWindow"],
+    "data_binding": ["DataBinding", "Binding", "ViewModel"],
+    "controls": ["Button", "UserControl", "CustomControl"],
+    "3d_integration": ["Menu3D", "WorldSpaceUI", "Widget3D"],
+    "samples": ["Sample", "Inventory", "Login", "Scoreboard"],
+    "unity": ["Unity", "C#", ".cs"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 200
+}
