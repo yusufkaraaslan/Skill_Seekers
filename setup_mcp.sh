@@ -46,8 +46,30 @@ elif [[ -d "venv" ]]; then
     source venv/bin/activate
     PIP_INSTALL_CMD="pip install"
 else
-    echo "No virtual environment found. Using system pip with --user --break-system-packages flags"
-    PIP_INSTALL_CMD="pip3 install --user --break-system-packages"
+    echo -e "${YELLOW}⚠${NC} No virtual environment found"
+    echo "It's recommended to use a virtual environment to avoid conflicts."
+    echo ""
+    read -p "Would you like to create one now? (y/n) " -n 1 -r
+    echo ""
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Creating virtual environment..."
+        python3 -m venv venv || {
+            echo -e "${RED}❌ Failed to create virtual environment${NC}"
+            echo "Falling back to system install..."
+            PIP_INSTALL_CMD="pip3 install --user --break-system-packages"
+        }
+
+        if [[ -d "venv" ]]; then
+            source venv/bin/activate
+            PIP_INSTALL_CMD="pip install"
+            echo -e "${GREEN}✓${NC} Virtual environment created and activated"
+        fi
+    else
+        echo "Proceeding with system install (using --user --break-system-packages)..."
+        echo -e "${YELLOW}Note:${NC} This may override system-managed packages"
+        PIP_INSTALL_CMD="pip3 install --user --break-system-packages"
+    fi
 fi
 
 echo "This will install: mcp, requests, beautifulsoup4"
