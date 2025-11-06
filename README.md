@@ -85,9 +85,52 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 ### ✅ Quality Assurance
 - ✅ **Fully Tested** - 299 tests with 100% pass rate
 
-## Quick Example
+## Quick Start
 
-### Option 1: Use from Claude Code (Recommended)
+### Option 1: Install via uv (Recommended - Modern Python)
+
+```bash
+# Install with uv (no cloning needed!)
+uv tool install skill-seekers
+
+# Or run directly without installing
+uv tool run --from skill-seekers skill-seekers scrape --config https://raw.githubusercontent.com/yusufkaraaslan/Skill_Seekers/main/configs/react.json
+
+# Unified CLI - simple commands
+skill-seekers scrape --config configs/react.json
+skill-seekers github --repo facebook/react
+skill-seekers package output/react/
+```
+
+**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+### Option 2: Install via pip (Traditional)
+
+```bash
+# Install from PyPI
+pip install skill-seekers
+
+# Use the unified CLI
+skill-seekers scrape --config configs/react.json
+skill-seekers enhance output/react/
+skill-seekers package output/react/
+```
+
+**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+### Option 3: Development Install (From Source)
+
+```bash
+# Clone and install in editable mode
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+pip install -e .
+
+# Use the unified CLI
+skill-seekers scrape --config configs/react.json
+```
+
+### Option 4: Use from Claude Code (MCP Integration)
 
 ```bash
 # One-time setup (5 minutes)
@@ -100,100 +143,91 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 
 **Time:** Automated | **Quality:** Production-ready | **Cost:** Free
 
-### Option 2: Use CLI Directly (HTML Docs)
+### Option 5: Legacy CLI (Backwards Compatible)
 
 ```bash
-# Install dependencies (2 pip packages)
+# Install dependencies
 pip3 install requests beautifulsoup4
 
-# Generate a React skill in one command
-python3 cli/doc_scraper.py --config configs/react.json --enhance-local
+# Run scripts directly (old method)
+python3 src/skill_seekers/cli/doc_scraper.py --config configs/react.json
 
 # Upload output/react.zip to Claude - Done!
 ```
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
 
-### Option 3: Use CLI for PDF Documentation
+## Usage Examples
+
+### Documentation Scraping
 
 ```bash
-# Install PDF support
-pip3 install PyMuPDF
+# Scrape documentation website
+skill-seekers scrape --config configs/react.json
 
+# Quick scrape without config
+skill-seekers scrape --url https://react.dev --name react
+
+# With async mode (3x faster)
+skill-seekers scrape --config configs/godot.json --async --workers 8
+```
+
+### PDF Extraction
+
+```bash
 # Basic PDF extraction
-python3 cli/pdf_scraper.py --pdf docs/manual.pdf --name myskill
+skill-seekers pdf --pdf docs/manual.pdf --name myskill
 
 # Advanced features
-python3 cli/pdf_scraper.py --pdf docs/manual.pdf --name myskill \
+skill-seekers pdf --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # Extract tables
     --parallel \              # Fast parallel processing
     --workers 8               # Use 8 CPU cores
 
 # Scanned PDFs (requires: pip install pytesseract Pillow)
-python3 cli/pdf_scraper.py --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
 
 # Password-protected PDFs
-python3 cli/pdf_scraper.py --pdf docs/encrypted.pdf --name myskill --password mypassword
-
-# Upload output/myskill.zip to Claude - Done!
+skill-seekers pdf --pdf docs/encrypted.pdf --name myskill --password mypassword
 ```
 
 **Time:** ~5-15 minutes (or 2-5 minutes with parallel) | **Quality:** Production-ready | **Cost:** Free
 
-**Advanced Features:**
-- ✅ OCR for scanned PDFs (requires pytesseract)
-- ✅ Password-protected PDF support
-- ✅ Table extraction
-- ✅ Parallel processing (3x faster)
-- ✅ Intelligent caching
-
-### Option 4: Use CLI for GitHub Repository
+### GitHub Repository Scraping
 
 ```bash
-# Install GitHub support
-pip3 install PyGithub
-
 # Basic repository scraping
-python3 cli/github_scraper.py --repo facebook/react
+skill-seekers github --repo facebook/react
 
 # Using a config file
-python3 cli/github_scraper.py --config configs/react_github.json
+skill-seekers github --config configs/react_github.json
 
 # With authentication (higher rate limits)
 export GITHUB_TOKEN=ghp_your_token_here
-python3 cli/github_scraper.py --repo facebook/react
+skill-seekers github --repo facebook/react
 
 # Customize what to include
-python3 cli/github_scraper.py --repo django/django \
+skill-seekers github --repo django/django \
     --include-issues \        # Extract GitHub Issues
     --max-issues 100 \        # Limit issue count
     --include-changelog \     # Extract CHANGELOG.md
     --include-releases        # Extract GitHub Releases
-
-# MCP usage in Claude Code
-"Scrape GitHub repository facebook/react"
-
-# Upload output/react.zip to Claude - Done!
 ```
 
 **Time:** ~5-10 minutes | **Quality:** Production-ready | **Cost:** Free
 
-**What Gets Extracted:**
-- ✅ README.md and documentation files
-- ✅ GitHub Issues (open/closed, labels, milestones)
-- ✅ CHANGELOG.md and version history
-- ✅ GitHub Releases with release notes
-- ✅ Repository metadata (stars, language, topics)
-- ✅ File structure and language breakdown
-
-### Option 5: Unified Multi-Source Scraping (**NEW - v2.0.0**)
+### Unified Multi-Source Scraping (**NEW - v2.0.0**)
 
 **The Problem:** Documentation and code often drift apart. Docs might be outdated, missing features that exist in code, or documenting features that were removed.
 
 **The Solution:** Combine documentation + GitHub + PDF into one unified skill that shows BOTH what's documented AND what actually exists, with clear warnings about discrepancies.
 
 ```bash
-# Create unified config (mix documentation + GitHub)
+# Use existing unified configs
+skill-seekers unified --config configs/react_unified.json
+skill-seekers unified --config configs/django_unified.json
+
+# Or create unified config (mix documentation + GitHub)
 cat > configs/myframework_unified.json << 'EOF'
 {
   "name": "myframework",
@@ -217,8 +251,10 @@ cat > configs/myframework_unified.json << 'EOF'
 EOF
 
 # Run unified scraper
-python3 cli/unified_scraper.py --config configs/myframework_unified.json
+skill-seekers unified --config configs/myframework_unified.json
 
+# Package and upload
+skill-seekers package output/myframework/
 # Upload output/myframework.zip to Claude - Done!
 ```
 
