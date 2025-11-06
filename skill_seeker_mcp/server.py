@@ -603,6 +603,10 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     if is_unified and merge_mode:
         cmd.extend(["--merge-mode", merge_mode])
 
+    # Add --fresh to avoid user input prompts when existing data found
+    if not skip_scrape:
+        cmd.append("--fresh")
+
     if enhance_local:
         cmd.append("--enhance-local")
     if skip_scrape:
