@@ -12,7 +12,7 @@ Also provides backward compatibility detection for legacy configs.
 
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
@@ -33,10 +33,19 @@ class ConfigValidator:
     # Valid code analysis depth levels
     VALID_DEPTH_LEVELS = {'surface', 'deep', 'full'}
 
-    def __init__(self, config_path: str):
-        """Initialize validator with config file path."""
-        self.config_path = config_path
-        self.config = self._load_config()
+    def __init__(self, config_or_path: Union[Dict[str, Any], str]):
+        """
+        Initialize validator with config dict or file path.
+
+        Args:
+            config_or_path: Either a config dict or path to config JSON file
+        """
+        if isinstance(config_or_path, dict):
+            self.config_path = None
+            self.config = config_or_path
+        else:
+            self.config_path = config_or_path
+            self.config = self._load_config()
         self.is_unified = self._detect_format()
 
     def _load_config(self) -> Dict[str, Any]:

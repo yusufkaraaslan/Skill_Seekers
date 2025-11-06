@@ -68,19 +68,36 @@ class ConflictDetector:
         # Documentation structure varies, but typically has 'pages' or 'references'
         pages = self.docs_data.get('pages', {})
 
-        # Look for API reference pages
-        for url, page_data in pages.items():
-            content = page_data.get('content', '')
-            title = page_data.get('title', '')
+        # Handle both dict and list formats
+        if isinstance(pages, dict):
+            # Format: {url: page_data, ...}
+            for url, page_data in pages.items():
+                content = page_data.get('content', '')
+                title = page_data.get('title', '')
 
-            # Simple heuristic: if title or URL contains "api", "reference", "class", "function"
-            # it might be an API page
-            if any(keyword in title.lower() or keyword in url.lower()
-                   for keyword in ['api', 'reference', 'class', 'function', 'method']):
+                # Simple heuristic: if title or URL contains "api", "reference", "class", "function"
+                # it might be an API page
+                if any(keyword in title.lower() or keyword in url.lower()
+                       for keyword in ['api', 'reference', 'class', 'function', 'method']):
 
-                # Extract API signatures from content (simplified)
-                extracted_apis = self._parse_doc_content_for_apis(content, url)
-                apis.update(extracted_apis)
+                    # Extract API signatures from content (simplified)
+                    extracted_apis = self._parse_doc_content_for_apis(content, url)
+                    apis.update(extracted_apis)
+        elif isinstance(pages, list):
+            # Format: [{url: '...', apis: [...]}, ...]
+            for page in pages:
+                url = page.get('url', '')
+                page_apis = page.get('apis', [])
+
+                # If APIs are already extracted in the page data
+                for api in page_apis:
+                    api_name = api.get('name', '')
+                    if api_name:
+                        apis[api_name] = {
+                            'parameters': api.get('parameters', []),
+                            'return_type': api.get('return_type', 'Any'),
+                            'source_url': url
+                        }
 
         return apis
 
@@ -205,10 +222,11 @@ class ConflictDetector:
         if not code_analysis:
             return apis
 
-        files = code_analysis.get('files', [])
+        # Support both 'files' and 'analyzed_files' keys
+        files = code_analysis.get('files', code_analysis.get('analyzed_files', []))
 
         for file_info in files:
-            file_path = file_info['file']
+            file_path = file_info.get('file', 'unknown')
 
             # Extract classes and their methods
             for class_info in file_info.get('classes', []):

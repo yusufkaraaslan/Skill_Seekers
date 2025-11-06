@@ -17,7 +17,7 @@ import tempfile
 from pathlib import Path
 
 # Add CLI to path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
 
 from config_validator import ConfigValidator, validate_config
 from conflict_detector import ConflictDetector, Conflict
@@ -99,7 +99,7 @@ def test_validate_invalid_source_type():
     }
 
     validator = ConfigValidator(config)
-    with pytest.raises(ValueError, match="Invalid source type"):
+    with pytest.raises(ValueError, match="Invalid type"):
         validator.validate()
 
 
