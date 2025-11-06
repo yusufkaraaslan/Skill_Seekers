@@ -8,7 +8,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from cli.constants import (
+from skill_seekers.cli.constants import (
     DEFAULT_RATE_LIMIT,
     DEFAULT_MAX_PAGES,
     DEFAULT_CHECKPOINT_INTERVAL,

@@ -18,8 +18,8 @@ from pathlib import Path
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli.constants import API_CONTENT_LIMIT, API_PREVIEW_LIMIT
-from cli.utils import read_reference_files
+from skill_seekers.cli.constants import API_CONTENT_LIMIT, API_PREVIEW_LIMIT
+from skill_seekers.cli.utils import read_reference_files
 
 try:
     import anthropic

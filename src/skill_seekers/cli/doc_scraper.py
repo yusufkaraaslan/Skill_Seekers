@@ -29,10 +29,10 @@ from typing import Optional, Dict, List, Tuple, Set, Deque, Any
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli.llms_txt_detector import LlmsTxtDetector
-from cli.llms_txt_parser import LlmsTxtParser
-from cli.llms_txt_downloader import LlmsTxtDownloader
-from cli.constants import (
+from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
+from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
+from skill_seekers.cli.constants import (
     DEFAULT_RATE_LIMIT,
     DEFAULT_MAX_PAGES,
     DEFAULT_CHECKPOINT_INTERVAL,

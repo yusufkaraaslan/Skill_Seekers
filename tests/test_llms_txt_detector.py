@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, Mock
-from cli.llms_txt_detector import LlmsTxtDetector
+from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 
 def test_detect_llms_txt_variants():
     """Test detection of llms.txt file variants"""

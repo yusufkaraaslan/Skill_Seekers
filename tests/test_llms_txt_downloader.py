@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, Mock
 import requests
-from cli.llms_txt_downloader import LlmsTxtDownloader
+from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 
 def test_successful_download():
     """Test successful download with valid markdown content"""

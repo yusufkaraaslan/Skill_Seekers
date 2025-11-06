@@ -14,6 +14,6 @@ Current state:
     This directory is a placeholder for future modularization.
 """
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 
 __all__ = []

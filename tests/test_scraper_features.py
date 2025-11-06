@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli.doc_scraper import DocToSkillConverter
+from skill_seekers.cli.doc_scraper import DocToSkillConverter
 
 
 class TestURLValidation(unittest.TestCase):

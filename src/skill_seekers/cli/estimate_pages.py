@@ -15,7 +15,7 @@ import json
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli.constants import (
+from skill_seekers.cli.constants import (
     DEFAULT_RATE_LIMIT,
     DEFAULT_MAX_DISCOVERY,
     DISCOVERY_THRESHOLD

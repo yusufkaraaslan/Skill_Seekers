@@ -1,5 +1,5 @@
 import pytest
-from cli.llms_txt_parser import LlmsTxtParser
+from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
 
 def test_parse_markdown_sections():
     """Test parsing markdown into page sections"""

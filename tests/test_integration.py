@@ -15,7 +15,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli.doc_scraper import DocToSkillConverter, load_config, validate_config
+from skill_seekers.cli.doc_scraper import DocToSkillConverter, load_config, validate_config
 
 
 class TestDryRunMode(unittest.TestCase):
@@ -571,7 +571,7 @@ app.use('*', cors())
             mock_get.side_effect = mock_download
 
             # Run scraper
-            from cli.doc_scraper import DocToSkillConverter as DocumentationScraper
+            from skill_seekers.cli.doc_scraper import DocToSkillConverter as DocumentationScraper
             scraper = DocumentationScraper(config, dry_run=False)
             result = scraper._try_llms_txt()
 
@@ -608,7 +608,7 @@ def test_no_content_truncation():
     }
 
     # Create scraper with long content
-    from cli.doc_scraper import DocToSkillConverter
+    from skill_seekers.cli.doc_scraper import DocToSkillConverter
     scraper = DocToSkillConverter(config, dry_run=False)
 
     # Create page with content > 2500 chars

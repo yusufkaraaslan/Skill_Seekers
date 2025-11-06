@@ -14,7 +14,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from cli.enhance_skill_local import detect_terminal_app, LocalSkillEnhancer
+from skill_seekers.cli.enhance_skill_local import detect_terminal_app, LocalSkillEnhancer
 
 
 class TestDetectTerminalApp(unittest.TestCase):
@@ -298,7 +298,7 @@ class TestTerminalMapCompleteness(unittest.TestCase):
 
     def test_terminal_map_has_all_documented_terminals(self):
         """Verify TERMINAL_MAP contains all terminals mentioned in documentation."""
-        from cli.enhance_skill_local import detect_terminal_app
+        from skill_seekers.cli.enhance_skill_local import detect_terminal_app
 
         # Get the TERMINAL_MAP from the function's scope
         # We need to test this indirectly by checking each known terminal
