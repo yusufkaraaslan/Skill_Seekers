@@ -9,10 +9,7 @@ import zipfile
 from pathlib import Path
 import sys
 
-# Add cli directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from package_skill import package_skill
+from skill_seekers.cli.package_skill import package_skill
 
 
 class TestPackageSkill(unittest.TestCase):

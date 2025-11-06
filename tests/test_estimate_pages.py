@@ -9,10 +9,7 @@ import json
 from pathlib import Path
 import sys
 
-# Add cli directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from estimate_pages import estimate_pages
+from skill_seekers.cli.estimate_pages import estimate_pages
 
 
 class TestEstimatePages(unittest.TestCase):

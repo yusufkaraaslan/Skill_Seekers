@@ -10,10 +10,7 @@ import zipfile
 from pathlib import Path
 import sys
 
-# Add cli directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from utils import (
+from skill_seekers.cli.utils import (
     has_api_key,
     get_api_key,
     get_upload_url,

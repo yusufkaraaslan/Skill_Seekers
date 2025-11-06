@@ -10,10 +10,7 @@ import os
 from pathlib import Path
 import sys
 
-# Add cli directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from upload_skill import upload_skill_api
+from skill_seekers.cli.upload_skill import upload_skill_api
 
 
 class TestUploadSkillAPI(unittest.TestCase):

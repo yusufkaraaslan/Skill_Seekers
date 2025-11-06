@@ -13,10 +13,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from collections import deque
 
-# Add cli directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from doc_scraper import DocToSkillConverter
+from skill_seekers.cli.doc_scraper import DocToSkillConverter
 
 
 class TestParallelScrapingConfiguration(unittest.TestCase):

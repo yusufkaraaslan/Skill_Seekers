@@ -15,10 +15,7 @@ from pathlib import Path
 # Configure pytest to only use asyncio backend (not trio)
 pytestmark = pytest.mark.anyio
 
-# Add skill_seeker_mcp to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'skill_seeker_mcp'))
-
-from server import validate_config_tool, scrape_docs_tool
+from skill_seekers.mcp.server import validate_config_tool, scrape_docs_tool
 
 
 async def test_mcp_validate_unified_config():

@@ -16,13 +16,10 @@ import pytest
 import tempfile
 from pathlib import Path
 
-# Add CLI to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'cli'))
-
-from config_validator import ConfigValidator, validate_config
-from conflict_detector import ConflictDetector, Conflict
-from merge_sources import RuleBasedMerger
-from unified_skill_builder import UnifiedSkillBuilder
+from skill_seekers.cli.config_validator import ConfigValidator, validate_config
+from skill_seekers.cli.conflict_detector import ConflictDetector, Conflict
+from skill_seekers.cli.merge_sources import RuleBasedMerger
+from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
 
 
 # ===========================
