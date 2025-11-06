@@ -8,8 +8,8 @@ detects conflicts, merges intelligently, and builds unified skills.
 This is the main entry point for unified config workflow.
 
 Usage:
-    python3 cli/unified_scraper.py --config configs/godot_unified.json
-    python3 cli/unified_scraper.py --config configs/react_unified.json --merge-mode claude-enhanced
+    skill-seekers unified --config configs/godot_unified.json
+    skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
 """
 
 import os
@@ -422,13 +422,13 @@ def main():
         epilog="""
 Examples:
   # Basic usage with unified config
-  python3 cli/unified_scraper.py --config configs/godot_unified.json
+  skill-seekers unified --config configs/godot_unified.json
 
   # Override merge mode
-  python3 cli/unified_scraper.py --config configs/react_unified.json --merge-mode claude-enhanced
+  skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
 
   # Backward compatible with legacy configs
-  python3 cli/unified_scraper.py --config configs/react.json
+  skill-seekers unified --config configs/react.json
         """
     )
 

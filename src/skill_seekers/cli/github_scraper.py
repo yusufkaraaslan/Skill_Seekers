@@ -9,9 +9,9 @@ Converts GitHub repositories into Claude AI skills by extracting:
 - Usage examples from tests
 
 Usage:
-    python3 cli/github_scraper.py --repo facebook/react
-    python3 cli/github_scraper.py --config configs/react_github.json
-    python3 cli/github_scraper.py --repo owner/repo --token $GITHUB_TOKEN
+    skill-seekers github --repo facebook/react
+    skill-seekers github --config configs/react_github.json
+    skill-seekers github --repo owner/repo --token $GITHUB_TOKEN
 """
 
 import os
@@ -735,9 +735,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 cli/github_scraper.py --repo facebook/react
-  python3 cli/github_scraper.py --config configs/react_github.json
-  python3 cli/github_scraper.py --repo owner/repo --token $GITHUB_TOKEN
+  skill-seekers github --repo facebook/react
+  skill-seekers github --config configs/react_github.json
+  skill-seekers github --repo owner/repo --token $GITHUB_TOKEN
         """
     )
 
@@ -786,7 +786,7 @@ Examples:
         converter.build_skill()
 
         logger.info(f"\n✅ Success! Skill created at: output/{config.get('name', config['repo'].split('/')[-1])}/")
-        logger.info(f"Next step: python3 cli/package_skill.py output/{config.get('name', config['repo'].split('/')[-1])}/")
+        logger.info(f"Next step: skill-seekers-package output/{config.get('name', config['repo'].split('/')[-1])}/")
 
     except Exception as e:
         logger.error(f"Error: {e}")

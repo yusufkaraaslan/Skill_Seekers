@@ -4,9 +4,9 @@ SKILL.md Enhancement Script
 Uses Claude API to improve SKILL.md by analyzing reference documentation.
 
 Usage:
-    python3 cli/enhance_skill.py output/steam-inventory/
-    python3 cli/enhance_skill.py output/react/
-    python3 cli/enhance_skill.py output/godot/ --api-key YOUR_API_KEY
+    skill-seekers enhance output/steam-inventory/
+    skill-seekers enhance output/react/
+    skill-seekers enhance output/godot/ --api-key YOUR_API_KEY
 """
 
 import os
@@ -188,7 +188,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         print(f"  1. Review: {self.skill_md_path}")
         print(f"  2. If you don't like it, restore backup: {self.skill_md_path.with_suffix('.md.backup')}")
         print(f"  3. Package your skill:")
-        print(f"     python3 cli/package_skill.py {self.skill_dir}/")
+        print(f"     skill-seekers package {self.skill_dir}/")
 
         return True
 
@@ -201,13 +201,13 @@ def main():
 Examples:
   # Using ANTHROPIC_API_KEY environment variable
   export ANTHROPIC_API_KEY=sk-ant-...
-  python3 cli/enhance_skill.py output/steam-inventory/
+  skill-seekers enhance output/steam-inventory/
 
   # Providing API key directly
-  python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
+  skill-seekers enhance output/react/ --api-key sk-ant-...
 
   # Show what would be done (dry run)
-  python3 cli/enhance_skill.py output/godot/ --dry-run
+  skill-seekers enhance output/godot/ --dry-run
 """
     )
 
@@ -246,7 +246,7 @@ Examples:
                 print(f"     - {rf.name} ({size:,} bytes)")
 
         print("\nTo actually run enhancement:")
-        print(f"  python3 cli/enhance_skill.py {skill_dir}")
+        print(f"  skill-seekers enhance {skill_dir}")
         return
 
     # Create enhancer and run
@@ -260,7 +260,7 @@ Examples:
         print("\nSet your API key:")
         print("  export ANTHROPIC_API_KEY=sk-ant-...")
         print("Or provide it directly:")
-        print(f"  python3 cli/enhance_skill.py {skill_dir} --api-key sk-ant-...")
+        print(f"  skill-seekers enhance {skill_dir} --api-key sk-ant-...")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

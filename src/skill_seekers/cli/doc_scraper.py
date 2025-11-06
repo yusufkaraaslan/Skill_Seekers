@@ -4,9 +4,9 @@ Documentation to Claude Skill Converter
 Single tool to scrape any documentation and create high-quality Claude skills.
 
 Usage:
-    python3 cli/doc_scraper.py --interactive
-    python3 cli/doc_scraper.py --config configs/godot.json
-    python3 cli/doc_scraper.py --url https://react.dev/ --name react
+    skill-seekers scrape --interactive
+    skill-seekers scrape --config configs/godot.json
+    skill-seekers scrape --url https://react.dev/ --name react
 """
 
 import os
@@ -1735,7 +1735,7 @@ def execute_enhancement(config: Dict[str, Any], args: argparse.Namespace) -> Non
             logger.warning("\n⚠ Enhancement failed, but skill was still built")
         except FileNotFoundError:
             logger.warning("\n⚠ enhance_skill.py not found. Run manually:")
-            logger.info("  python3 cli/enhance_skill.py output/%s/", config['name'])
+            logger.info("  skill-seekers-enhance output/%s/", config['name'])
 
     # Optional enhancement with Claude Code (local, no API key)
     if args.enhance_local:
@@ -1750,18 +1750,18 @@ def execute_enhancement(config: Dict[str, Any], args: argparse.Namespace) -> Non
             logger.warning("\n⚠ Enhancement failed, but skill was still built")
         except FileNotFoundError:
             logger.warning("\n⚠ enhance_skill_local.py not found. Run manually:")
-            logger.info("  python3 cli/enhance_skill_local.py output/%s/", config['name'])
+            logger.info("  skill-seekers-enhance output/%s/", config['name'])
 
     # Print packaging instructions
     logger.info("\n📦 Package your skill:")
-    logger.info("  python3 cli/package_skill.py output/%s/", config['name'])
+    logger.info("  skill-seekers-package output/%s/", config['name'])
 
     # Suggest enhancement if not done
     if not args.enhance and not args.enhance_local:
         logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
-        logger.info("  API-based:  python3 cli/enhance_skill.py output/%s/", config['name'])
+        logger.info("  API-based:  skill-seekers-enhance output/%s/", config['name'])
         logger.info("              or re-run with: --enhance")
-        logger.info("  Local (no API key): python3 cli/enhance_skill_local.py output/%s/", config['name'])
+        logger.info("  Local (no API key): skill-seekers-enhance output/%s/", config['name'])
         logger.info("                      or re-run with: --enhance-local")
 
 

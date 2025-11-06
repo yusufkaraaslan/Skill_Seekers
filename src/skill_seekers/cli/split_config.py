@@ -310,9 +310,9 @@ Split Strategies:
         print("1. Review generated configs")
         print("2. Scrape each config:")
         for filepath in saved_files:
-            print(f"     python3 cli/doc_scraper.py --config {filepath}")
+            print(f"     skill-seekers scrape --config {filepath}")
         print("3. Package skills:")
-        print("     python3 cli/package_multi.py configs/<name>-*.json")
+        print("     skill-seekers-package-multi configs/<name>-*.json")
         print("")
 
 

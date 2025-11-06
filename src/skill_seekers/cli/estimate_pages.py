@@ -240,13 +240,13 @@ def main():
         epilog="""
 Examples:
   # Estimate pages for a config
-  python3 cli/estimate_pages.py configs/react.json
+  skill-seekers estimate configs/react.json
 
   # Estimate with higher discovery limit
-  python3 cli/estimate_pages.py configs/godot.json --max-discovery 2000
+  skill-seekers estimate configs/godot.json --max-discovery 2000
 
   # Quick estimate (stop at 100 pages)
-  python3 cli/estimate_pages.py configs/vue.json --max-discovery 100
+  skill-seekers estimate configs/vue.json --max-discovery 100
         """
     )
 

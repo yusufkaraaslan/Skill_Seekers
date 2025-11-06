@@ -4,9 +4,9 @@ Simple Skill Packager
 Packages a skill directory into a .zip file for Claude.
 
 Usage:
-    python3 cli/package_skill.py output/steam-inventory/
-    python3 cli/package_skill.py output/react/
-    python3 cli/package_skill.py output/react/ --no-open  # Don't open folder
+    skill-seekers package output/steam-inventory/
+    skill-seekers package output/react/
+    skill-seekers package output/react/ --no-open  # Don't open folder
 """
 
 import os
@@ -96,13 +96,13 @@ def main():
         epilog="""
 Examples:
   # Package skill and open folder
-  python3 cli/package_skill.py output/react/
+  skill-seekers package output/react/
 
   # Package skill without opening folder
-  python3 cli/package_skill.py output/react/ --no-open
+  skill-seekers package output/react/ --no-open
 
   # Get help
-  python3 cli/package_skill.py --help
+  skill-seekers package --help
         """
     )
 

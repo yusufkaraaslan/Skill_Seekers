@@ -195,7 +195,7 @@ class PDFToSkillConverter:
         self._generate_skill_md(categorized)
 
         print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: python3 cli/package_skill.py {self.skill_dir}/")
+        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
 
     def _generate_reference_file(self, cat_key, cat_data):
         """Generate a reference markdown file for a category"""

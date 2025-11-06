@@ -263,9 +263,9 @@ Examples:
     print(f"{'='*60}")
     print(f"1. Review router SKILL.md: {skill_path}")
     print(f"2. Optionally scrape router (for overview pages):")
-    print(f"     python3 cli/doc_scraper.py --config {config_path}")
+    print(f"     skill-seekers scrape --config {config_path}")
     print("3. Package router skill:")
-    print(f"     python3 cli/package_skill.py output/{generator.router_name}/")
+    print(f"     skill-seekers package output/{generator.router_name}/")
     print("4. Upload router + all sub-skills to Claude")
     print("")
 
