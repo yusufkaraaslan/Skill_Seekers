@@ -73,7 +73,18 @@ class UnifiedSkillBuilder:
         """Generate main SKILL.md file."""
         skill_path = os.path.join(self.skill_dir, 'SKILL.md')
 
-        content = f"""# {self.name.title()}
+        # Generate skill name (lowercase, hyphens only, max 64 chars)
+        skill_name = self.name.lower().replace('_', '-').replace(' ', '-')[:64]
+
+        # Truncate description to 1024 chars if needed
+        desc = self.description[:1024] if len(self.description) > 1024 else self.description
+
+        content = f"""---
+name: {skill_name}
+description: {desc}
+---
+
+# {self.name.title()}
 
 {self.description}
 
