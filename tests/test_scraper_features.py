@@ -195,6 +195,62 @@ class TestLanguageDetection(unittest.TestCase):
         lang = self.converter.detect_language(elem, 'x')
         self.assertEqual(lang, 'python', 'Should detect python from bare class name')
 
+    def test_detect_csharp_from_using_system(self):
+        """Test C# detection from 'using System' keyword"""
+        html = '<code>using System;\nnamespace MyApp { }</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from using System')
+
+    def test_detect_csharp_from_namespace(self):
+        """Test C# detection from 'namespace' keyword"""
+        html = '<code>namespace MyNamespace\n{\n    public class Test { }\n}</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from namespace')
+
+    def test_detect_csharp_from_property_syntax(self):
+        """Test C# detection from property syntax"""
+        html = '<code>public string Name { get; set; }</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from { get; set; } syntax')
+
+    def test_detect_csharp_from_public_class(self):
+        """Test C# detection from 'public class' keyword"""
+        html = '<code>public class MyClass\n{\n    private int value;\n}</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from public class')
+
+    def test_detect_csharp_from_private_class(self):
+        """Test C# detection from 'private class' keyword"""
+        html = '<code>private class Helper { }</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from private class')
+
+    def test_detect_csharp_from_public_static_void(self):
+        """Test C# detection from 'public static void' keyword"""
+        html = '<code>public static void Main(string[] args)\n{\n    Console.WriteLine("Test");\n}</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from public static void')
+
+    def test_detect_csharp_from_class_attribute(self):
+        """Test C# detection from CSS class attribute"""
+        html = '<code class="language-csharp">var x = 5;</code>'
+        elem = BeautifulSoup(html, 'html.parser').find('code')
+        code = elem.get_text()
+        lang = self.converter.detect_language(elem, code)
+        self.assertEqual(lang, 'csharp', 'Should detect C# from language-csharp class')
+
 
 class TestPatternExtraction(unittest.TestCase):
     """Test pattern extraction from documentation"""

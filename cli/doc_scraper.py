@@ -335,6 +335,13 @@ class DocToSkillConverter:
             return 'python'
         if '#include' in code or 'int main' in code:
             return 'cpp'
+        # C# detection
+        if 'using System' in code or 'namespace ' in code:
+            return 'csharp'
+        if '{ get; set; }' in code:
+            return 'csharp'
+        if any(keyword in code for keyword in ['public class ', 'private class ', 'internal class ', 'public static void ']):
+            return 'csharp'
 
         return 'unknown'
     
