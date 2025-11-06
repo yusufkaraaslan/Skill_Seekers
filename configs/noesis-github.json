@@ -1,25 +1,33 @@
 {
   "name": "noesis-github",
   "description": "NoesisGUI samples and tutorials from GitHub. Use for NoesisGUI code examples, Unity integration samples, XAML UI patterns, and practical implementations.",
-  "base_url": "https://github.com/Noesis/Tutorials/tree/master/",
+  "base_url": "https://github.com/Noesis/Tutorials/blob/master/",
   "start_urls": [
-    "https://github.com/Noesis/Tutorials",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/HelloWorld",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Integration",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/DataBinding",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Buttons",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Commands",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/UserControl",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Localization",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Menu3D",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/Inventory",
-    "https://github.com/Noesis/Tutorials/tree/master/Samples/WorldSpaceUI"
+    "https://github.com/Noesis/Tutorials/blob/master/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/HelloWorld/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Integration/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/DataBinding/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Buttons/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Commands/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/UserControl/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/CustomControl/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Localization/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Menu3D/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/WorldSpaceUI/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Inventory/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Login/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/QuestLog/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Scoreboard/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Widget3D/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/CustomAnimation/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/RenderTexture/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/Gallery/README.md",
+    "https://github.com/Noesis/Tutorials/blob/master/Samples/TicTacToe/README.md"
   ],
   "selectors": {
-    "main_content": "article, div[data-target='readme-toc.content'], div.Box-body",
+    "main_content": "article.markdown-body.entry-content",
     "title": "h1, title",
-    "code_blocks": "pre, code, td.blob-code"
+    "code_blocks": "pre, .highlight"
   },
   "url_patterns": {
     "include": [
@@ -47,6 +55,6 @@
     "samples": ["Sample", "Inventory", "Login", "Scoreboard"],
     "unity": ["Unity", "C#", ".cs"]
   },
-  "rate_limit": 1.0,
+  "rate_limit": 2.0,
   "max_pages": 200
 }

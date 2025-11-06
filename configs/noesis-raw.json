@@ -1,0 +1,55 @@
+{
+  "name": "noesis-raw",
+  "description": "NoesisGUI tutorials and samples for Unity. Use for NoesisGUI Unity integration, XAML UI patterns, data binding, and practical code examples.",
+  "base_url": "https://raw.githubusercontent.com/Noesis/Tutorials/master/",
+  "start_urls": [
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/HelloWorld/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Integration/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/DataBinding/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Buttons/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Commands/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/UserControl/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/CustomControl/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Localization/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Menu3D/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/WorldSpaceUI/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Inventory/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Login/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/QuestLog/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Scoreboard/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/Widget3D/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/CustomAnimation/README.md",
+    "https://raw.githubusercontent.com/Noesis/Tutorials/master/Samples/RenderTexture/README.md"
+  ],
+  "selectors": {
+    "main_content": "body",
+    "title": "title",
+    "code_blocks": "code, pre"
+  },
+  "url_patterns": {
+    "include": [
+      "/Noesis/Tutorials",
+      "README.md",
+      ".cs",
+      ".xaml"
+    ],
+    "exclude": [
+      "/C++/",
+      "/UE4/",
+      ".sln",
+      ".csproj"
+    ]
+  },
+  "categories": {
+    "getting_started": ["HelloWorld", "Integration", "README"],
+    "xaml_ui": ["xaml", "XAML", "MainWindow"],
+    "data_binding": ["DataBinding", "Binding", "ViewModel"],
+    "controls": ["Button", "UserControl", "CustomControl", "Commands"],
+    "3d_integration": ["Menu3D", "WorldSpaceUI", "Widget3D"],
+    "samples": ["Inventory", "Login", "QuestLog", "Scoreboard", "Localization"],
+    "advanced": ["CustomAnimation", "RenderTexture"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}
