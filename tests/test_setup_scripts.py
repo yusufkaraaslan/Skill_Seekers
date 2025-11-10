@@ -71,11 +71,11 @@ class TestSetupMCPScript:
 
     def test_referenced_files_exist(self):
         """Test that all files referenced in setup_mcp.sh actually exist"""
-        # Check critical paths
-        assert Path("skill_seeker_mcp/requirements.txt").exists(), \
-            "skill_seeker_mcp/requirements.txt should exist"
-        assert Path("skill_seeker_mcp/server.py").exists(), \
-            "skill_seeker_mcp/server.py should exist"
+        # Check critical paths (new src/ layout)
+        assert Path("src/skill_seekers/mcp/server.py").exists(), \
+            "src/skill_seekers/mcp/server.py should exist"
+        assert Path("requirements.txt").exists(), \
+            "requirements.txt should exist (root level)"
 
     def test_config_directory_exists(self):
         """Test that referenced config directory exists"""
@@ -199,19 +199,23 @@ class TestMCPServerPaths:
 
 
 def test_mcp_directory_structure():
-    """Test that MCP directory structure is correct"""
-    mcp_dir = Path("skill_seeker_mcp")
-    assert mcp_dir.exists(), "skill_seeker_mcp/ directory should exist"
-    assert mcp_dir.is_dir(), "skill_seeker_mcp should be a directory"
-    assert (mcp_dir / "server.py").exists(), "skill_seeker_mcp/server.py should exist"
-    assert (mcp_dir / "requirements.txt").exists(), "skill_seeker_mcp/requirements.txt should exist"
+    """Test that MCP directory structure is correct (new src/ layout)"""
+    mcp_dir = Path("src/skill_seekers/mcp")
+    assert mcp_dir.exists(), "src/skill_seekers/mcp/ directory should exist"
+    assert mcp_dir.is_dir(), "src/skill_seekers/mcp should be a directory"
+    assert (mcp_dir / "server.py").exists(), "src/skill_seekers/mcp/server.py should exist"
+    assert (mcp_dir / "__init__.py").exists(), "src/skill_seekers/mcp/__init__.py should exist"
 
-    # Old directory should NOT exist
+    # Old directories should NOT exist
     old_mcp = Path("mcp")
+    old_skill_seeker_mcp = Path("skill_seeker_mcp")
     if old_mcp.exists():
         # If it exists, it should not contain server.py (might be leftover empty dir)
         assert not (old_mcp / "server.py").exists(), \
-            "Old mcp/server.py should not exist - directory was renamed to skill_seeker_mcp/"
+            "Old mcp/server.py should not exist - migrated to src/skill_seekers/mcp/"
+    if old_skill_seeker_mcp.exists():
+        assert not (old_skill_seeker_mcp / "server.py").exists(), \
+            "Old skill_seeker_mcp/server.py should not exist - migrated to src/skill_seekers/mcp/"
 
 
 if __name__ == '__main__':
