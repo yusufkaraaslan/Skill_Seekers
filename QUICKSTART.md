@@ -14,23 +14,23 @@ pip3 install requests beautifulsoup4
 
 **Option A: Use a Preset (Easiest)**
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers scrape --config configs/godot.json
 ```
 
 **Option B: Interactive Mode**
 ```bash
-python3 cli/doc_scraper.py --interactive
+skill-seekers scrape --interactive
 ```
 
 **Option C: Quick Command**
 ```bash
-python3 cli/doc_scraper.py --name react --url https://react.dev/
+skill-seekers scrape --name react --url https://react.dev/
 ```
 
 **Option D: Unified Multi-Source (NEW - v2.0.0)**
 ```bash
 # Combine documentation + GitHub code in one skill
-python3 cli/unified_scraper.py --config configs/react_unified.json
+skill-seekers unified --config configs/react_unified.json
 ```
 *Detects conflicts between docs and code automatically!*
 
@@ -38,7 +38,7 @@ python3 cli/unified_scraper.py --config configs/react_unified.json
 
 ```bash
 # LOCAL enhancement (no API key, uses Claude Code Max)
-python3 cli/enhance_skill_local.py output/godot/
+skill-seekers enhance output/godot/
 ```
 
 **This takes 60 seconds and dramatically improves the SKILL.md quality!**
@@ -46,7 +46,7 @@ python3 cli/enhance_skill_local.py output/godot/
 ### Step 4: Package the Skill
 
 ```bash
-python3 cli/package_skill.py output/godot/
+skill-seekers package output/godot/
 ```
 
 **Done!** You now have `godot.zip` ready to use.
@@ -57,25 +57,25 @@ python3 cli/package_skill.py output/godot/
 
 ```bash
 # Godot Engine
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers scrape --config configs/godot.json
 
 # React
-python3 cli/doc_scraper.py --config configs/react.json
+skill-seekers scrape --config configs/react.json
 
 # Vue.js
-python3 cli/doc_scraper.py --config configs/vue.json
+skill-seekers scrape --config configs/vue.json
 
 # Django
-python3 cli/doc_scraper.py --config configs/django.json
+skill-seekers scrape --config configs/django.json
 
 # FastAPI
-python3 cli/doc_scraper.py --config configs/fastapi.json
+skill-seekers scrape --config configs/fastapi.json
 
 # Unified Multi-Source (NEW!)
-python3 cli/unified_scraper.py --config configs/react_unified.json
-python3 cli/unified_scraper.py --config configs/django_unified.json
-python3 cli/unified_scraper.py --config configs/fastapi_unified.json
-python3 cli/unified_scraper.py --config configs/godot_unified.json
+skill-seekers unified --config configs/react_unified.json
+skill-seekers unified --config configs/django_unified.json
+skill-seekers unified --config configs/fastapi_unified.json
+skill-seekers unified --config configs/godot_unified.json
 ```
 
 ---
@@ -85,7 +85,7 @@ python3 cli/unified_scraper.py --config configs/godot_unified.json
 If you already scraped once:
 
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers scrape --config configs/godot.json
 
 # When prompted:
 ✓ Found existing data: 245 pages
@@ -96,7 +96,7 @@ Use existing data? (y/n): y
 
 Or use `--skip-scrape`:
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+skill-seekers scrape --config configs/godot.json --skip-scrape
 ```
 
 ---
@@ -108,11 +108,11 @@ python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
 pip3 install requests beautifulsoup4
 
 # 2. Scrape React docs with LOCAL enhancement
-python3 cli/doc_scraper.py --config configs/react.json --enhance-local
+skill-seekers scrape --config configs/react.json --enhance-local
 # Wait 15-30 minutes (scraping) + 60 seconds (enhancement)
 
 # 3. Package
-python3 cli/package_skill.py output/react/
+skill-seekers package output/react/
 
 # 4. Use react.zip in Claude!
 ```
@@ -120,13 +120,13 @@ python3 cli/package_skill.py output/react/
 **Alternative: Enhancement after scraping**
 ```bash
 # 2a. Scrape only (no enhancement)
-python3 cli/doc_scraper.py --config configs/react.json
+skill-seekers scrape --config configs/react.json
 
 # 2b. Enhance later
-python3 cli/enhance_skill_local.py output/react/
+skill-seekers enhance output/react/
 
 # 3. Package
-python3 cli/package_skill.py output/react/
+skill-seekers package output/react/
 ```
 
 ---
@@ -144,7 +144,7 @@ Edit config file:
 ### Rebuild Instantly
 ```bash
 # After first scrape, you can rebuild instantly:
-python3 cli/doc_scraper.py --config configs/react.json --skip-scrape
+skill-seekers scrape --config configs/react.json --skip-scrape
 ```
 
 ### Create Custom Config
@@ -156,7 +156,7 @@ cp configs/react.json configs/myframework.json
 nano configs/myframework.json
 
 # Use it
-python3 cli/doc_scraper.py --config configs/myframework.json
+skill-seekers scrape --config configs/myframework.json
 ```
 
 ---
@@ -187,10 +187,10 @@ See **README.md** for:
 
 ```bash
 # Godot
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers scrape --config configs/godot.json
 
 # Or interactive
-python3 cli/doc_scraper.py --interactive
+skill-seekers scrape --interactive
 ```
 
 That's it! 🚀

@@ -123,12 +123,12 @@ FileNotFoundError: configs/react.json
 
 2. **Use full path:**
    ```bash
-   python3 cli/doc_scraper.py --config $(pwd)/configs/react.json
+   skill-seekers scrape --config $(pwd)/configs/react.json
    ```
 
 3. **Create missing config:**
    ```bash
-   python3 cli/doc_scraper.py --interactive
+   skill-seekers scrape --interactive
    ```
 
 ---
@@ -223,7 +223,7 @@ nano ~/.config/claude-code/mcp.json
 
 3. **Test CLI tools directly:**
    ```bash
-   python3 cli/doc_scraper.py --help
+   skill-seekers scrape --help
    ```
 
 ---
@@ -242,7 +242,7 @@ nano ~/.config/claude-code/mcp.json
 
 2. **Use smaller max_pages for testing:**
    ```bash
-   python3 cli/doc_scraper.py --config configs/test.json --max-pages 5
+   skill-seekers scrape --config configs/test.json --max-pages 5
    ```
 
 3. **Increase rate_limit in config:**
@@ -386,7 +386,7 @@ ls configs/
 cat ~/.config/claude-code/mcp.json
 
 # 5. Test scraper
-python3 cli/doc_scraper.py --help
+skill-seekers scrape --help
 
 # 6. Test MCP server
 timeout 3 python3 mcp/server.py || echo "Server OK"

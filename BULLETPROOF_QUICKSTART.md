@@ -236,7 +236,7 @@ Let's make sure everything works:
 
 ```bash
 # Test the main script can run
-python3 cli/doc_scraper.py --help
+skill-seekers scrape --help
 ```
 
 **✅ Success looks like:**
@@ -276,7 +276,7 @@ cat > configs/test.json << 'EOF'
 EOF
 
 # Run the scraper
-python3 cli/doc_scraper.py --config configs/test.json
+skill-seekers scrape --config configs/test.json
 ```
 
 **What happens:**
@@ -299,7 +299,7 @@ Page 2/5: Editor Setup
 
 ```bash
 # Use the React preset
-python3 cli/doc_scraper.py --config configs/react.json --max-pages 50
+skill-seekers scrape --config configs/react.json --max-pages 50
 ```
 
 **⏱️ Time:** ~5 minutes
@@ -325,7 +325,7 @@ head output/test-skill/SKILL.md
 
 ```bash
 # Package the skill
-python3 cli/package_skill.py output/test-skill/
+skill-seekers package output/test-skill/
 ```
 
 **✅ Success looks like:**
@@ -363,20 +363,20 @@ You now have a working Skill Seeker installation! Here's what you can do:
 ls configs/
 
 # Try Vue.js
-python3 cli/doc_scraper.py --config configs/vue.json --max-pages 50
+skill-seekers scrape --config configs/vue.json --max-pages 50
 
 # Try Django
-python3 cli/doc_scraper.py --config configs/django.json --max-pages 50
+skill-seekers scrape --config configs/django.json --max-pages 50
 ```
 
 ### Create Custom Skills
 
 ```bash
 # Interactive mode - answer questions
-python3 cli/doc_scraper.py --interactive
+skill-seekers scrape --interactive
 
 # Or create config for any website
-python3 cli/doc_scraper.py \
+skill-seekers scrape \
   --name myframework \
   --url https://docs.myframework.com/ \
   --description "My favorite framework"
@@ -457,7 +457,7 @@ pip3 install --user requests beautifulsoup4
 **Solution:**
 ```bash
 # Use smaller max_pages for testing
-python3 cli/doc_scraper.py --config configs/react.json --max-pages 10
+skill-seekers scrape --config configs/react.json --max-pages 10
 
 # Check internet connection
 ping google.com
@@ -493,10 +493,10 @@ curl -I https://docs.yoursite.com
 # Your typical workflow:
 
 # 1. Create/use a config
-python3 cli/doc_scraper.py --config configs/react.json --max-pages 50
+skill-seekers scrape --config configs/react.json --max-pages 50
 
 # 2. Package it
-python3 cli/package_skill.py output/react/
+skill-seekers package output/react/
 
 # 3. Upload output/react.zip to Claude
 
