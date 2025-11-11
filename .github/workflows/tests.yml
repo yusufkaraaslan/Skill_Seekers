@@ -40,6 +40,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         if [ -f skill_seeker_mcp/requirements.txt ]; then pip install -r skill_seeker_mcp/requirements.txt; fi
+        # Install package in editable mode for tests (required for src/ layout)
+        pip install -e .
 
     - name: Run CLI tests
       run: |
@@ -53,7 +55,7 @@ jobs:
 
     - name: Generate coverage report
       run: |
-        python -m pytest tests/ --cov=cli --cov=skill_seeker_mcp --cov-report=xml --cov-report=term
+        python -m pytest tests/ --cov=src/skill_seekers --cov-report=xml --cov-report=term
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
