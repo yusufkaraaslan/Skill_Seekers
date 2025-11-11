@@ -74,7 +74,8 @@ def upload_skill_api(zip_path):
     api_url = "https://api.anthropic.com/v1/skills"
     headers = {
         "x-api-key": api_key,
-        "anthropic-version": "2023-06-01"
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "skills-2025-10-02"
     }
 
     try:
@@ -86,7 +87,7 @@ def upload_skill_api(zip_path):
         print("⏳ Uploading to Anthropic API...")
 
         files = {
-            'skill': (zip_path.name, zip_data, 'application/zip')
+            'files[]': (zip_path.name, zip_data, 'application/zip')
         }
 
         response = requests.post(
