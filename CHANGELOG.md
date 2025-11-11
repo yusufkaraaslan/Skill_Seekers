@@ -12,6 +12,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2025-11-11
+
+### 🎉 Major Release: PyPI Publication + Modern Python Packaging
+
+**Skill Seekers is now available on PyPI!** Install with: `pip install skill-seekers`
+
+This is a major milestone release featuring complete restructuring for modern Python packaging, comprehensive testing improvements, and publication to the Python Package Index.
+
+### 🚀 Major Changes
+
+#### PyPI Publication
+- **Published to PyPI** - https://pypi.org/project/skill-seekers/
+- **Installation:** `pip install skill-seekers` or `uv tool install skill-seekers`
+- **No cloning required** - Install globally or in virtual environments
+- **Automatic dependency management** - All dependencies handled by pip/uv
+
+#### Modern Python Packaging
+- **pyproject.toml-based configuration** - Standard PEP 621 metadata
+- **src/ layout structure** - Best practice package organization
+- **Entry point scripts** - `skill-seekers` command available globally
+- **Proper dependency groups** - Separate dev, test, and MCP dependencies
+- **Build backend** - setuptools-based build with uv support
+
+#### Unified CLI Interface
+- **Single `skill-seekers` command** - Git-style subcommands
+- **Subcommands:** `scrape`, `github`, `pdf`, `unified`, `enhance`, `package`, `upload`, `estimate`
+- **Consistent interface** - All tools accessible through one entry point
+- **Help system** - Comprehensive `--help` for all commands
+
+### Added
+
+#### Testing Infrastructure
+- **379 passing tests** (up from 299) - Comprehensive test coverage
+- **0 test failures** - All tests passing successfully
+- **Test suite improvements:**
+  - Fixed import paths for src/ layout
+  - Updated CLI tests for unified entry points
+  - Added package structure verification tests
+  - Fixed MCP server import tests
+  - Added pytest configuration in pyproject.toml
+
+#### Documentation
+- **Updated README.md** - PyPI badges, reordered installation options
+- **FUTURE_RELEASES.md** - Roadmap for upcoming features
+- **Installation guides** - Simplified with PyPI as primary method
+- **Testing documentation** - How to run full test suite
+
+### Changed
+
+#### Package Structure
+- **Moved to src/ layout:**
+  - `src/skill_seekers/` - Main package
+  - `src/skill_seekers/cli/` - CLI tools
+  - `src/skill_seekers/mcp/` - MCP server
+- **Import paths updated** - All imports use proper package structure
+- **Entry points configured** - All CLI tools available as commands
+
+#### Import Fixes
+- **Fixed `merge_sources.py`** - Corrected conflict_detector import (`.conflict_detector`)
+- **Fixed MCP server tests** - Updated to use `skill_seekers.mcp.server` imports
+- **Fixed test paths** - All tests updated for src/ layout
+
+### Fixed
+
+#### Critical Bugs
+- **Import path errors** - Fixed relative imports in CLI modules
+- **MCP test isolation** - Added proper MCP availability checks
+- **Package installation** - Resolved entry point conflicts
+- **Dependency resolution** - All dependencies properly specified
+
+#### Test Improvements
+- **17 test fixes** - Updated for modern package structure
+- **MCP test guards** - Proper skipif decorators for MCP tests
+- **CLI test updates** - Accept both exit codes 0 and 2 for help
+- **Path validation** - Tests verify correct package structure
+
+### Technical Details
+
+#### Build System
+- **Build backend:** setuptools.build_meta
+- **Build command:** `uv build`
+- **Publish command:** `uv publish`
+- **Distribution formats:** wheel + source tarball
+
+#### Dependencies
+- **Core:** requests, beautifulsoup4, PyGithub, mcp, httpx
+- **PDF:** PyMuPDF, Pillow, pytesseract
+- **Dev:** pytest, pytest-cov, pytest-anyio, mypy
+- **MCP:** mcp package for Claude Code integration
+
+### Migration Guide
+
+#### For Users
+**Old way:**
+```bash
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+pip install -r requirements.txt
+python3 cli/doc_scraper.py --config configs/react.json
+```
+
+**New way:**
+```bash
+pip install skill-seekers
+skill-seekers scrape --config configs/react.json
+```
+
+#### For Developers
+- Update imports: `from cli.* → from skill_seekers.cli.*`
+- Use `pip install -e ".[dev]"` for development
+- Run tests: `python -m pytest`
+- Entry points instead of direct script execution
+
+### Breaking Changes
+- **CLI interface changed** - Use `skill-seekers` command instead of `python3 cli/...`
+- **Import paths changed** - Package now at `skill_seekers.*` instead of `cli.*`
+- **Installation method changed** - PyPI recommended over git clone
+
+### Deprecations
+- **Direct script execution** - Still works but deprecated (use `skill-seekers` command)
+- **Old import patterns** - Legacy imports still work but will be removed in v3.0
+
+### Compatibility
+- **Python 3.10+** required
+- **Backward compatible** - Old scripts still work with legacy CLI
+- **Config files** - No changes required
+- **Output format** - No changes to generated skills
+
+---
+
 ## [1.3.0] - 2025-10-26
 
 ### Added - Refactoring & Performance Improvements

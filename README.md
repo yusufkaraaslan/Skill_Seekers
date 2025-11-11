@@ -6,8 +6,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-299%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-379%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
+[![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 
 **Automatically convert documentation websites, GitHub repositories, and PDFs into Claude AI skills in minutes.**
 
@@ -83,14 +86,45 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 299 tests with 100% pass rate
+- ✅ **Fully Tested** - 379 tests with comprehensive coverage
+
+---
+
+## 📦 Now Available on PyPI!
+
+**Skill Seekers is now published on the Python Package Index!** Install with a single command:
+
+```bash
+pip install skill-seekers
+```
+
+Get started in seconds. No cloning, no setup - just install and run. See installation options below.
+
+---
 
 ## Quick Start
 
-### Option 1: Install via uv (Recommended - Modern Python)
+### Option 1: Install from PyPI (Recommended)
 
 ```bash
-# Install with uv (no cloning needed!)
+# Install from PyPI (easiest method!)
+pip install skill-seekers
+
+# Use the unified CLI
+skill-seekers scrape --config configs/react.json
+skill-seekers github --repo facebook/react
+skill-seekers enhance output/react/
+skill-seekers package output/react/
+```
+
+**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+📖 **New to Skill Seekers?** Check out our [Quick Start Guide](QUICKSTART.md) or [Bulletproof Guide](BULLETPROOF_QUICKSTART.md)
+
+### Option 2: Install via uv (Modern Python Tool)
+
+```bash
+# Install with uv (fast, modern alternative)
 uv tool install skill-seekers
 
 # Or run directly without installing
@@ -99,20 +133,6 @@ uv tool run --from skill-seekers skill-seekers scrape --config https://raw.githu
 # Unified CLI - simple commands
 skill-seekers scrape --config configs/react.json
 skill-seekers github --repo facebook/react
-skill-seekers package output/react/
-```
-
-**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
-
-### Option 2: Install via pip (Traditional)
-
-```bash
-# Install from PyPI
-pip install skill-seekers
-
-# Use the unified CLI
-skill-seekers scrape --config configs/react.json
-skill-seekers enhance output/react/
 skill-seekers package output/react/
 ```
 
