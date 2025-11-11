@@ -36,11 +36,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import our local MCP server module
 if MCP_AVAILABLE:
-    # Add skill_seeker_mcp directory to path to import our server module
-    mcp_dir = Path(__file__).parent.parent / "skill_seeker_mcp"
-    sys.path.insert(0, str(mcp_dir))
+    # Import from installed package (new src/ layout)
     try:
-        import server as skill_seeker_server
+        from skill_seekers.mcp import server as skill_seeker_server
     except ImportError as e:
         print(f"Warning: Could not import skill_seeker server: {e}")
         skill_seeker_server = None
@@ -211,7 +209,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_estimate_pages_success(self, mock_streaming):
         """Test successful page estimation"""
         # Mock successful subprocess run with streaming
@@ -230,7 +228,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         # Should also have progress message
         self.assertIn("Estimating page count", result[0].text)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_estimate_pages_with_max_discovery(self, mock_streaming):
         """Test page estimation with custom max_discovery"""
         # Mock successful subprocess run with streaming
@@ -249,7 +247,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         self.assertIn("--max-discovery", call_args)
         self.assertIn("500", call_args)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_estimate_pages_error(self, mock_streaming):
         """Test error handling in page estimation"""
         # Mock failed subprocess run with streaming
@@ -294,7 +292,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_scrape_docs_basic(self, mock_streaming):
         """Test basic documentation scraping"""
         # Mock successful subprocess run with streaming
@@ -309,7 +307,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(result, list)
         self.assertIn("success", result[0].text.lower())
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_scrape_docs_with_skip_scrape(self, mock_streaming):
         """Test scraping with skip_scrape flag"""
         # Mock successful subprocess run with streaming
@@ -326,7 +324,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         call_args = mock_streaming.call_args[0][0]
         self.assertIn("--skip-scrape", call_args)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_scrape_docs_with_dry_run(self, mock_streaming):
         """Test scraping with dry_run flag"""
         # Mock successful subprocess run with streaming
@@ -342,7 +340,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         call_args = mock_streaming.call_args[0][0]
         self.assertIn("--dry-run", call_args)
 
-    @patch('server.run_subprocess_with_streaming')
+    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
     async def test_scrape_docs_with_enhance_local(self, mock_streaming):
         """Test scraping with local enhancement"""
         # Mock successful subprocess run with streaming

@@ -6,18 +6,37 @@ Tests that the MCP server correctly handles unified configs.
 """
 
 import sys
+import os
 import json
 import tempfile
 import asyncio
 import pytest
 from pathlib import Path
 
+# WORKAROUND for shadowing issue: Temporarily change to /tmp to import external mcp
+# This avoids any local mcp/ directory being in the import path
+_original_dir = os.getcwd()
+MCP_AVAILABLE = False
+try:
+    os.chdir('/tmp')  # Change away from project directory
+    from mcp.types import TextContent
+    MCP_AVAILABLE = True
+except ImportError:
+    pass
+finally:
+    os.chdir(_original_dir)  # Restore original directory
+
 # Configure pytest to only use asyncio backend (not trio)
 pytestmark = pytest.mark.anyio
 
-from skill_seekers.mcp.server import validate_config_tool, scrape_docs_tool
+if MCP_AVAILABLE:
+    from skill_seekers.mcp.server import validate_config_tool, scrape_docs_tool
+else:
+    validate_config_tool = None
+    scrape_docs_tool = None
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 async def test_mcp_validate_unified_config():
     """Test that MCP can validate unified configs"""
     print("\n✓ Testing MCP validate_config_tool with unified config...")
@@ -41,6 +60,7 @@ async def test_mcp_validate_unified_config():
     print("  ✅ MCP correctly validates unified config")
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 async def test_mcp_validate_legacy_config():
     """Test that MCP can validate legacy configs"""
     print("\n✓ Testing MCP validate_config_tool with legacy config...")
@@ -63,6 +83,7 @@ async def test_mcp_validate_legacy_config():
     print("  ✅ MCP correctly validates legacy config")
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 async def test_mcp_scrape_docs_detection():
     """Test that MCP scrape_docs correctly detects format"""
     print("\n✓ Testing MCP scrape_docs format detection...")
@@ -121,6 +142,7 @@ async def test_mcp_scrape_docs_detection():
         Path(legacy_config_path).unlink(missing_ok=True)
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 async def test_mcp_merge_mode_override():
     """Test that MCP can override merge mode"""
     print("\n✓ Testing MCP merge_mode override...")
