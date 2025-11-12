@@ -1506,7 +1506,9 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument('--enhance', action='store_true',
                        help='Enhance SKILL.md using Claude API after building (requires API key)')
     parser.add_argument('--enhance-local', action='store_true',
-                       help='Enhance SKILL.md using Claude Code in new terminal (no API key needed)')
+                       help='Enhance SKILL.md using Claude Code (no API key needed, runs in background)')
+    parser.add_argument('--interactive-enhancement', action='store_true',
+                       help='Open terminal window for enhancement (use with --enhance-local)')
     parser.add_argument('--api-key', type=str,
                        help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
     parser.add_argument('--resume', action='store_true',
@@ -1740,16 +1742,25 @@ def execute_enhancement(config: Dict[str, Any], args: argparse.Namespace) -> Non
     # Optional enhancement with Claude Code (local, no API key)
     if args.enhance_local:
         logger.info("\n" + "=" * 60)
-        logger.info("ENHANCING SKILL.MD WITH CLAUDE CODE (LOCAL)")
+        if args.interactive_enhancement:
+            logger.info("ENHANCING SKILL.MD WITH CLAUDE CODE (INTERACTIVE)")
+        else:
+            logger.info("ENHANCING SKILL.MD WITH CLAUDE CODE (HEADLESS)")
         logger.info("=" * 60 + "\n")
 
         try:
-            enhance_cmd = ['python3', 'cli/enhance_skill_local.py', f'output/{config["name"]}/']
-            subprocess.run(enhance_cmd, check=True)
+            enhance_cmd = ['skill-seekers-enhance', f'output/{config["name"]}/']
+            if args.interactive_enhancement:
+                enhance_cmd.append('--interactive-enhancement')
+
+            result = subprocess.run(enhance_cmd, check=True)
+
+            if result.returncode == 0:
+                logger.info("\n✅ Enhancement complete!")
         except subprocess.CalledProcessError:
             logger.warning("\n⚠ Enhancement failed, but skill was still built")
         except FileNotFoundError:
-            logger.warning("\n⚠ enhance_skill_local.py not found. Run manually:")
+            logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
             logger.info("  skill-seekers-enhance output/%s/", config['name'])
 
     # Print packaging instructions
@@ -1759,10 +1770,11 @@ def execute_enhancement(config: Dict[str, Any], args: argparse.Namespace) -> Non
     # Suggest enhancement if not done
     if not args.enhance and not args.enhance_local:
         logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
-        logger.info("  API-based:  skill-seekers-enhance output/%s/", config['name'])
-        logger.info("              or re-run with: --enhance")
-        logger.info("  Local (no API key): skill-seekers-enhance output/%s/", config['name'])
-        logger.info("                      or re-run with: --enhance-local")
+        logger.info("  Local (recommended):  skill-seekers-enhance output/%s/", config['name'])
+        logger.info("                        or re-run with: --enhance-local")
+        logger.info("  API-based:            skill-seekers-enhance-api output/%s/", config['name'])
+        logger.info("                        or re-run with: --enhance")
+        logger.info("\n💡 Tip: Use --interactive-enhancement with --enhance-local to open terminal window")
 
 
 def main() -> None:
