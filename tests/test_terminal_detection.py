@@ -164,9 +164,9 @@ class TestDetectTerminalApp(unittest.TestCase):
             # Mock Popen to prevent actual terminal launch
             mock_popen.return_value = MagicMock()
 
-            # Run enhancer
+            # Run enhancer in interactive mode (not headless)
             enhancer = LocalSkillEnhancer(skill_dir)
-            result = enhancer.run()
+            result = enhancer.run(headless=False)
 
             # Verify Popen was called
             self.assertTrue(mock_popen.called)
@@ -239,7 +239,8 @@ class TestDetectTerminalApp(unittest.TestCase):
             old_stdout = sys.stdout
             sys.stdout = captured_output
 
-            result = enhancer.run()
+            # Run in interactive mode (not headless) to test terminal launch
+            result = enhancer.run(headless=False)
 
             # Restore stdout
             sys.stdout = old_stdout
@@ -279,7 +280,8 @@ class TestDetectTerminalApp(unittest.TestCase):
             # Mock Popen to prevent actual launch
             with patch('subprocess.Popen') as mock_popen:
                 mock_popen.return_value = MagicMock()
-                enhancer.run()
+                # Run in interactive mode (not headless) to test terminal detection
+                enhancer.run(headless=False)
 
             # Restore stdout
             sys.stdout = old_stdout
