@@ -12,6 +12,154 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2025-11-12
+
+### 🎉 Major Enhancement: Quality Assurance + Race Condition Fixes
+
+This release focuses on quality and reliability improvements, adding comprehensive quality checks and fixing critical race conditions in the enhancement workflow.
+
+### 🚀 Major Features
+
+#### Comprehensive Quality Checker
+- **Automatic quality checks before packaging** - Validates skill quality before upload
+- **Quality scoring system** - 0-100 score with A-F grades
+- **Enhancement verification** - Checks for template text, code examples, sections
+- **Structure validation** - Validates SKILL.md, references/ directory
+- **Content quality checks** - YAML frontmatter, language tags, "When to Use" section
+- **Link validation** - Validates internal markdown links
+- **Detailed reporting** - Errors, warnings, and info messages with file locations
+- **CLI tool** - `skill-seekers-quality-checker` with verbose and strict modes
+
+#### Headless Enhancement Mode (Default)
+- **No terminal windows** - Runs enhancement in background by default
+- **Proper waiting** - Main console waits for enhancement to complete
+- **Timeout protection** - 10-minute default timeout (configurable)
+- **Verification** - Checks that SKILL.md was actually updated
+- **Progress messages** - Clear status updates during enhancement
+- **Interactive mode available** - `--interactive-enhancement` flag for terminal mode
+
+### Added
+
+#### New CLI Tools
+- **quality_checker.py** - Comprehensive skill quality validation
+  - Structure checks (SKILL.md, references/)
+  - Enhancement verification (code examples, sections)
+  - Content validation (frontmatter, language tags)
+  - Link validation (internal markdown links)
+  - Quality scoring (0-100 + A-F grade)
+
+#### New Features
+- **Headless enhancement** - `skill-seekers-enhance` runs in background by default
+- **Quality checks in packaging** - Automatic validation before creating .zip
+- **MCP quality skip** - MCP server skips interactive checks
+- **Enhanced error handling** - Better error messages and timeout handling
+
+#### Tests
+- **+12 quality checker tests** - Comprehensive validation testing
+- **391 total tests passing** - Up from 379 in v2.0.0
+- **0 test failures** - All tests green
+- **CI improvements** - Fixed macOS terminal detection tests
+
+### Changed
+
+#### Enhancement Workflow
+- **Default mode changed** - Headless mode is now default (was terminal mode)
+- **Waiting behavior** - Main console waits for enhancement completion
+- **No race conditions** - Fixed "Package your skill" message appearing too early
+- **Better progress** - Clear status messages during enhancement
+
+#### Package Workflow
+- **Quality checks added** - Automatic validation before packaging
+- **User confirmation** - Ask to continue if warnings/errors found
+- **Skip option** - `--skip-quality-check` flag to bypass checks
+- **MCP context** - Automatically skips checks in non-interactive contexts
+
+#### CLI Arguments
+- **doc_scraper.py:**
+  - Updated `--enhance-local` help text (mentions headless mode)
+  - Added `--interactive-enhancement` flag
+- **enhance_skill_local.py:**
+  - Changed default to `headless=True`
+  - Added `--interactive-enhancement` flag
+  - Added `--timeout` flag (default: 600 seconds)
+- **package_skill.py:**
+  - Added `--skip-quality-check` flag
+
+### Fixed
+
+#### Critical Bugs
+- **Enhancement race condition** - Main console no longer exits before enhancement completes
+- **MCP stdin errors** - MCP server now skips interactive prompts
+- **Terminal detection tests** - Fixed for headless mode default
+
+#### Enhancement Issues
+- **Process detachment** - subprocess.run() now waits properly instead of Popen()
+- **Timeout handling** - Added timeout protection to prevent infinite hangs
+- **Verification** - Checks file modification time and size to verify success
+- **Error messages** - Better error handling and user-friendly messages
+
+#### Test Fixes
+- **package_skill tests** - Added skip_quality_check=True to prevent stdin errors
+- **Terminal detection tests** - Updated to use headless=False for interactive tests
+- **MCP server tests** - Fixed to skip quality checks in non-interactive context
+
+### Technical Details
+
+#### New Modules
+- `src/skill_seekers/cli/quality_checker.py` - Quality validation engine
+- `tests/test_quality_checker.py` - 12 comprehensive tests
+
+#### Modified Modules
+- `src/skill_seekers/cli/enhance_skill_local.py` - Added headless mode
+- `src/skill_seekers/cli/doc_scraper.py` - Updated enhancement integration
+- `src/skill_seekers/cli/package_skill.py` - Added quality checks
+- `src/skill_seekers/mcp/server.py` - Skip quality checks in MCP context
+- `tests/test_package_skill.py` - Updated for quality checker
+- `tests/test_terminal_detection.py` - Updated for headless default
+
+#### Commits in This Release
+- `e279ed6` - Phase 1: Enhancement race condition fix (headless mode)
+- `3272f9c` - Phases 2 & 3: Quality checker implementation
+- `2dd1027` - Phase 4: Tests (+12 quality checker tests)
+- `befcb89` - CI Fix: Skip quality checks in MCP context
+- `67ab627` - CI Fix: Update terminal tests for headless default
+
+### Upgrade Notes
+
+#### Breaking Changes
+- **Headless mode default** - Enhancement now runs in background by default
+  - Use `--interactive-enhancement` if you want the old terminal mode
+  - Affects: `skill-seekers-enhance` and `skill-seekers scrape --enhance-local`
+
+#### New Behavior
+- **Quality checks** - Packaging now runs quality checks by default
+  - May prompt for confirmation if warnings/errors found
+  - Use `--skip-quality-check` to bypass (not recommended)
+
+#### Recommendations
+- **Try headless mode** - Faster and more reliable than terminal mode
+- **Review quality reports** - Fix warnings before packaging
+- **Update scripts** - Add `--skip-quality-check` to automated packaging scripts if needed
+
+### Migration Guide
+
+**If you want the old terminal mode behavior:**
+```bash
+# Old (v2.0.0): Default was terminal mode
+skill-seekers-enhance output/react/
+
+# New (v2.1.0): Use --interactive-enhancement
+skill-seekers-enhance output/react/ --interactive-enhancement
+```
+
+**If you want to skip quality checks:**
+```bash
+# Add --skip-quality-check to package command
+skill-seekers-package output/react/ --skip-quality-check
+```
+
+---
+
 ## [2.0.0] - 2025-11-11
 
 ### 🎉 Major Release: PyPI Publication + Modern Python Packaging
