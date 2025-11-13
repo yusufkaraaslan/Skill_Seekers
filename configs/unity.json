@@ -1,0 +1,241 @@
+{
+  "name": "unity",
+  "description": "Unity Engine game development. Use for Unity projects, C# scripting, scene setup, GameObject systems, 2D/3D development, physics, animation, UI, shaders, VR/AR, or any Unity-specific questions.",
+  "base_url": "https://docs.unity3d.com/Manual/",
+  "start_urls": [
+    "https://docs.unity3d.com/Manual/index.html",
+    "https://docs.unity3d.com/Manual/ScriptingSection.html",
+    "https://docs.unity3d.com/Manual/Unity2D.html",
+    "https://docs.unity3d.com/Manual/PhysicsSection.html",
+    "https://docs.unity3d.com/Manual/render-pipelines.html",
+    "https://docs.unity3d.com/Manual/AnimationSection.html",
+    "https://docs.unity3d.com/Manual/UIElements.html",
+    "https://docs.unity3d.com/Manual/SL-Reference.html",
+    "https://docs.unity3d.com/Manual/XR.html",
+    "https://docs.unity3d.com/ScriptReference/",
+    "https://docs.unity3d.com/Manual/WhatsNew.html"
+  ],
+  "selectors": {
+    "main_content": "div.content",
+    "title": "h1, title",
+    "code_blocks": "pre, code",
+    "description": "div.description, p.description"
+  },
+  "url_patterns": {
+    "include": [
+      "/Manual/",
+      "/ScriptReference/",
+      "/Packages/"
+    ],
+    "exclude": [
+      "/LegacyTopics/",
+      "/Obsolete/",
+      "/_images/",
+      "/30_search.html",
+      "/genindex.html",
+      "/Documentation/ScriptReference/",
+      "/2017.",
+      "/2018.",
+      "/2019.",
+      "/2020."
+    ]
+  },
+  "categories": {
+    "getting_started": [
+      "UnityOverview",
+      "GettingStarted",
+      "CreatingGameplay",
+      "Quickstart"
+    ],
+    "scripting": [
+      "ScriptingSection",
+      "ScriptingConcepts",
+      "MonoBehaviour",
+      "Coroutines",
+      "ScriptCompilation",
+      "ScriptingRestrictions"
+    ],
+    "scene_management": [
+      "CreatingScenes",
+      "UsingTheSceneView",
+      "GameObjects",
+      "Transforms",
+      "Prefabs",
+      "SceneManagement"
+    ],
+    "2d": [
+      "2DSection",
+      "Sprites",
+      "2DPhysics",
+      "Tilemap",
+      "SpriteRenderer",
+      "2DAnimation"
+    ],
+    "3d": [
+      "3DSection",
+      "MeshRenderer",
+      "Terrain",
+      "ProBuilder",
+      "3DPhysics",
+      "Lighting"
+    ],
+    "physics": [
+      "PhysicsSection",
+      "Rigidbody",
+      "Collider",
+      "CharacterController",
+      "Joints",
+      "PhysicsMaterial"
+    ],
+    "animation": [
+      "AnimationSection",
+      "AnimationClips",
+      "AnimationWindow",
+      "Animator",
+      "Timeline",
+      "BlendTrees"
+    ],
+    "ui": [
+      "UIElements",
+      "UIToolkit",
+      "UGUI",
+      "Canvas",
+      "UICanvas",
+      "TextMeshPro"
+    ],
+    "shaders": [
+      "SL-Reference",
+      "shader",
+      "ShaderGraph",
+      "Materials",
+      "URP",
+      "HDRP",
+      "BuiltInShaders"
+    ],
+    "rendering": [
+      "Graphics",
+      "Cameras",
+      "LightingSection",
+      "PostProcessing",
+      "VisualEffectGraph",
+      "ParticleSystem"
+    ],
+    "audio": [
+      "Audio",
+      "AudioSource",
+      "AudioMixer",
+      "AudioClip"
+    ],
+    "xr": [
+      "XR",
+      "VR",
+      "AR",
+      "XRInteraction",
+      "XRToolkit"
+    ],
+    "networking": [
+      "Networking",
+      "Netcode",
+      "Multiplayer",
+      "UNet"
+    ],
+    "assets": [
+      "AssetWorkflow",
+      "AssetDatabase",
+      "AssetBundles",
+      "Addressables"
+    ],
+    "editor": [
+      "ExtendingTheEditor",
+      "EditorWindows",
+      "CustomEditors",
+      "EditorScripting",
+      "MenuItem"
+    ],
+    "optimization": [
+      "BestPracticeGuides",
+      "OptimizingGraphics",
+      "Profiler",
+      "MemoryProfiler"
+    ],
+    "platform": [
+      "PlatformSpecific",
+      "BuildSettings",
+      "PlayerSettings",
+      "iOSPlatform",
+      "AndroidPlatform",
+      "WebGLPlatform"
+    ],
+    "services": [
+      "UnityServices",
+      "Analytics",
+      "CloudBuild",
+      "Collaborate"
+    ]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 50000,
+  "_comment": "=== Split Strategy Configuration ===",
+  "split_strategy": "router",
+  "split_config": {
+    "target_pages_per_skill": 4000,
+    "create_router": true,
+    "split_by_categories": [
+      "scripting",
+      "scene_management",
+      "2d",
+      "3d",
+      "physics",
+      "animation",
+      "ui",
+      "shaders",
+      "rendering",
+      "xr",
+      "editor"
+    ],
+    "router_name": "unity",
+    "router_description": "Main Unity skill that routes to specialized sub-skills based on query topic",
+    "parallel_scraping": true,
+    "max_workers": 4
+  },
+  "_comment2": "=== Checkpoint Configuration ===",
+  "checkpoint": {
+    "enabled": true,
+    "interval": 500,
+    "save_path": "checkpoints/unity_scraper.json"
+  },
+  "_comment3": "=== Additional Unity-Specific Configuration ===",
+  "version_handling": {
+    "target_version": "2023.2",
+    "include_version_notes": true,
+    "version_url_pattern": "/2023.2/"
+  },
+  "special_handling": {
+    "script_reference": {
+      "enabled": true,
+      "base_url": "https://docs.unity3d.com/ScriptReference/",
+      "priority": "high",
+      "include_inheritance": true,
+      "include_examples": true
+    },
+    "packages": {
+      "enabled": true,
+      "base_url": "https://docs.unity3d.com/Packages/",
+      "priority_packages": [
+        "com.unity.xr.interaction.toolkit",
+        "com.unity.render-pipelines.universal",
+        "com.unity.render-pipelines.high-definition",
+        "com.unity.netcode.gameobjects",
+        "com.unity.cinemachine",
+        "com.unity.inputsystem"
+      ]
+    }
+  },
+  "content_processing": {
+    "extract_code_examples": true,
+    "extract_api_signatures": true,
+    "include_images": false,
+    "markdown_conversion": true,
+    "preserve_links": true
+  }
+}
