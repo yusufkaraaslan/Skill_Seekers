@@ -1,0 +1,29 @@
+2025-11-15 23:48:00,173 - __main__ - INFO - Directory structure and permissions verified
+2025-11-15 23:48:00,173 - __main__ - INFO - Starting atomic agent creation for: test-validation-agent
+2025-11-15 23:48:00,173 - __main__ - INFO - Starting validation for agent: test-validation-agent
+2025-11-15 23:48:00,173 - __main__ - INFO - Input validation passed
+2025-11-15 23:48:00,174 - __main__ - INFO - Creating agent file: test-validation-agent
+2025-11-15 23:48:00,174 - __main__ - INFO - Agent file created successfully: .claude/agents/test-validation-agent.md
+2025-11-15 23:48:00,174 - __main__ - INFO - Verifying agent creation: .claude/agents/test-validation-agent.md
+2025-11-15 23:48:00,175 - __main__ - ERROR - Agent creation failed: Agent creation failed in verification: Verification failed: Agent creation failed in verification: Content hash mismatch. Expected: 8c1250f78507df05910113793c7cc9c056ddc5092e72df80b91e169fd6f58246, Got: e4e9438cbcb1ef49e44adb2ffe51d12e98d10b9ff156e3d6dc569996447f0df6
+2025-11-15 23:49:36,129 - __main__ - INFO - Directory structure and permissions verified
+2025-11-15 23:49:36,129 - __main__ - INFO - Starting atomic agent creation for: test-validation-agent
+2025-11-15 23:49:36,129 - __main__ - INFO - Starting validation for agent: test-validation-agent
+2025-11-15 23:49:36,129 - __main__ - INFO - Input validation passed
+2025-11-15 23:49:36,130 - __main__ - INFO - Creating agent file: test-validation-agent
+2025-11-15 23:49:36,130 - __main__ - INFO - Agent file created successfully: .claude/agents/test-validation-agent.md
+2025-11-15 23:49:36,130 - __main__ - INFO - Verifying agent creation: .claude/agents/test-validation-agent.md
+2025-11-15 23:49:36,131 - __main__ - INFO - Agent creation verification passed
+2025-11-15 23:49:36,131 - __main__ - INFO - Updating agent registry
+2025-11-15 23:49:36,131 - __main__ - ERROR - Agent creation failed: Agent creation failed in registry_update: Registry update failed: list indices must be integers or slices, not str
+2025-11-15 23:50:21,578 - __main__ - INFO - Directory structure and permissions verified
+2025-11-15 23:50:21,579 - __main__ - INFO - Starting atomic agent creation for: test-validation-agent
+2025-11-15 23:50:21,579 - __main__ - INFO - Starting validation for agent: test-validation-agent
+2025-11-15 23:50:21,579 - __main__ - INFO - Input validation passed
+2025-11-15 23:50:21,579 - __main__ - INFO - Creating agent file: test-validation-agent
+2025-11-15 23:50:21,580 - __main__ - INFO - Agent file created successfully: .claude/agents/test-validation-agent.md
+2025-11-15 23:50:21,580 - __main__ - INFO - Verifying agent creation: .claude/agents/test-validation-agent.md
+2025-11-15 23:50:21,580 - __main__ - INFO - Agent creation verification passed
+2025-11-15 23:50:21,580 - __main__ - INFO - Updating agent registry
+2025-11-15 23:50:21,581 - __main__ - INFO - Agent registry updated successfully
+2025-11-15 23:50:21,581 - __main__ - INFO - Agent 'test-validation-agent' created successfully in 0.00s

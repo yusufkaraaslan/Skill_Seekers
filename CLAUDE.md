@@ -50,11 +50,20 @@ Skill_Seekers/
 ├── demo_conflicts.py             # Conflict detection demonstration
 └── .claude/                       # Claude Code project configuration
     ├── agents/                   # Available agents
-    │   ├── orchestrator-agent.md  # Chief-of-staff orchestrator
-    │   ├── referee-agent-csp.md   # Convergent Synthesis Primitive for deterministic evaluation
-    │   └── security-analyst.md    # Practical security specialist for development workflows
+    │   ├── architectural-critic.md    # Architectural complexity specialist
+    │   ├── code-analyzer.md           # Deep code analysis specialist
+    │   ├── cognitive-resonator.md     # Cognitive flow and developer experience specialist
+    │   ├── intelligence-orchestrator.md # Multi-Domain Intelligence Synthesis Specialist
+    │   ├── orchestrator-agent.md      # Chief-of-staff orchestrator
+    │   ├── performance-auditor.md     # Performance optimization specialist
+    │   ├── possibility-weaver.md      # Creative catalyst agent
+    │   ├── precision-editor.md        # Surgical code modification specialist
+    │   ├── referee-agent-csp.md       # Convergent Synthesis Primitive for deterministic evaluation
+    │   ├── security-analyst.md        # Practical security specialist for development workflows
+    │   └── test-generator.md          # Comprehensive test generation specialist
     ├── commands/                 # Custom commands
     │   ├── check-hook.md          # Comprehensive hook validation system
+    │   ├── create-agent.md        # Enhanced agent creation system with atomic operations and validation
     │   ├── refine-agent.md        # Multi-mental model agent refinement workflow
     │   └── update-CLAUDE.md      # Automatic documentation synchronization
     ├── hooks/                     # Hooks
@@ -182,12 +191,17 @@ python scripts/list_templates.py --detailed
 
 | Agent | Description | Use Case |
 |--------|-------------|---------|
-| **@code-analyzer** | Deep code analysis agent that examines code complexity, design patterns, anti-patterns, technical debt, and architectural issues. Provides actionable recommendations for improving code quality, maintainability, and performance. | 1: Pre-commit Review** |
+| **@architectural-critic** | Architectural complexity specialist that detects phase boundaries, system transitions, and structural evolution patterns in codebases through multi-dimensional analysis. Provides pre-emptive intervention strategies before architectural breakdown occurs. | Pre-emptive Architecture Review** |
+| **@code-analyzer** | Deep code analysis agent specializing in complexity metrics, design patterns, anti-patterns, and technical debt. Provides quantifiable assessments with actionable refactoring recommendations. | Pre-commit Review** |
+| **@cognitive-resonator** | Cognitive flow specialist that analyzes code harmony, mental model alignment, and developer experience optimization through psychological and computational analysis. Enhances developer productivity by ensuring code patterns resonate with natural cognitive processes. | Developer Experience Optimization** |
 | **@orchestrator-agent** | The single interface pattern applied to agent fleets. Manages, delegates, and synthesizes results from parallel subagents. | orchestration |
-| **@performance-auditor** | Performance profiling and optimization agent that identifies bottlenecks, memory leaks, inefficient algorithms, and resource-intensive operations. Provides data-driven recommendations for improving application performance, scalability, and resource utilization. | 1: API Endpoint Optimization** |
+| **@performance-auditor** | Performance optimization specialist that identifies bottlenecks, memory leaks, and inefficient algorithms through systematic profiling and data-driven analysis. Provides quantifiable performance improvements with ROI calculations. | API Endpoint Optimization** |
+| **@possibility-weaver** | Creative catalyst agent that introduces novel perspectives and beneficial constraints to break developers out of local optima. Uses constraint innovation and perspective synthesis to expand solution spaces while maintaining core system invariants. | Innovation & Problem Solving** |
+| **@precision-editor** | Surgical code modification specialist that performs precise, system-aware edits with minimal side effects and maximum architectural integrity. Uses gene-editing precision to make targeted modifications while preserving system coherence and design intent. | Surgical Code Modifications** |
 | **@referee-agent-csp** | Convergent Synthesis Primitive for deterministic outcome evaluation and autonomous selection. Performs metric-driven synthesis of multiple parallel agent outputs. | synthesis |
 | **@security-analyst** | Practical security specialist for development workflows. Analyzes code, configurations, and dependencies for common vulnerabilities without requiring security expertise. | security |
-| **@test-generator** | Automated test suite generation agent that creates comprehensive unit tests, integration tests, and edge case tests from source code. Analyzes code structure, identifies testable units, and generates test cases with high coverage and realistic scenarios. | 1: New Feature Testing** |
+| **@intelligence-orchestrator** | Multi-Domain Intelligence Synthesis Specialist that enhances the entire Skill_Seekers ecosystem through agent intelligence enhancement, testing intelligence, and workflow orchestration. | Intelligence Enhancement, Testing Optimization, Workflow Orchestration** |
+| **@test-generator** | Comprehensive test generation specialist that creates unit, integration, performance, and security tests with coverage optimization and CI/CD integration. Generates maintainable test suites using the T.E.S.T. methodology for maximum effectiveness and developer productivity. | New Feature Testing** |
 
 
 ### **Agent Creation Workflow**

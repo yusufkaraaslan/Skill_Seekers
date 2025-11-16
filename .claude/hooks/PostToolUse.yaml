@@ -1,0 +1,50 @@
+name: PostToolUse
+description: Comprehensive verification hook for critical operations including agent creation
+version: 1.0.0
+priority: high
+
+hooks:
+  - name: verify_agent_creation
+    description: Verify agent creation was successful and files were actually created
+    trigger: agent_creation
+    command: python3 .claude/hooks/verify_agent_creation.py
+    timeout: 30
+    required: true
+    params:
+      - agent_name
+      - agent_path
+      - expected_content_hash
+      - operation_id
+
+  - name: verify_file_operations
+    description: Verify critical file operations (writes, edits) were successful
+    trigger: file_operation
+    command: python3 .claude/hooks/verify_file_operations.py
+    timeout: 15
+    required: true
+    params:
+      - file_path
+      - operation_type
+      - expected_size
+
+  - name: validate_tool_usage
+    description: Validate critical tool usage completed successfully
+    trigger: tool_usage
+    command: python3 .claude/hooks/validate_tool_usage.py
+    timeout: 20
+    required: false
+    params:
+      - tool_name
+      - operation_result
+      - expected_result
+
+error_handling:
+  retry_count: 3
+  retry_delay: 1
+  on_failure: log_and_alert
+  rollback_enabled: true
+
+logging:
+  level: INFO
+  file: .claude/logs/hooks.log
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
