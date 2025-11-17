@@ -187,7 +187,8 @@ class UnifiedScraper:
             'include_releases': source.get('include_releases', True),
             'include_code': source.get('include_code', True),
             'code_analysis_depth': source.get('code_analysis_depth', 'surface'),
-            'file_patterns': source.get('file_patterns', [])
+            'file_patterns': source.get('file_patterns', []),
+            'local_repo_path': source.get('local_repo_path')  # Pass local_repo_path from config
         }
 
         # Scrape
