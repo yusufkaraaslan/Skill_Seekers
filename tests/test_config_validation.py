@@ -307,6 +307,30 @@ class TestConfigValidation(unittest.TestCase):
         # Should be valid
         self.assertEqual(config.get('llms_txt_url'), 'https://example.com/llms-full.txt')
 
+    def test_config_with_skip_llms_txt(self):
+        """Test config validation accepts skip_llms_txt"""
+        config = {
+            'name': 'test',
+            'base_url': 'https://example.com/docs',
+            'skip_llms_txt': True
+        }
+
+        errors, warnings = validate_config(config)
+        self.assertEqual(errors, [])
+        self.assertTrue(config.get('skip_llms_txt'))
+
+    def test_config_with_skip_llms_txt_false(self):
+        """Test config validation accepts skip_llms_txt as False"""
+        config = {
+            'name': 'test',
+            'base_url': 'https://example.com/docs',
+            'skip_llms_txt': False
+        }
+
+        errors, warnings = validate_config(config)
+        self.assertEqual(errors, [])
+        self.assertFalse(config.get('skip_llms_txt'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -86,6 +86,15 @@ class DocToSkillConverter:
         self.checkpoint_interval = checkpoint_config.get('interval', DEFAULT_CHECKPOINT_INTERVAL)
 
         # llms.txt detection state
+        skip_llms_txt_value = config.get('skip_llms_txt', False)
+        if not isinstance(skip_llms_txt_value, bool):
+            logger.warning(
+                "Invalid value for 'skip_llms_txt': %r (expected bool). Defaulting to False.",
+                skip_llms_txt_value
+            )
+            self.skip_llms_txt = False
+        else:
+            self.skip_llms_txt = skip_llms_txt_value
         self.llms_txt_detected = False
         self.llms_txt_variant = None
         self.llms_txt_variants: List[str] = []  # Track all downloaded variants
@@ -618,8 +627,8 @@ class DocToSkillConverter:
             asyncio.run(self.scrape_all_async())
             return
 
-        # Try llms.txt first (unless dry-run)
-        if not self.dry_run:
+        # Try llms.txt first (unless dry-run or explicitly disabled)
+        if not self.dry_run and not self.skip_llms_txt:
             llms_result = self._try_llms_txt()
             if llms_result:
                 logger.info("\n✅ Used llms.txt (%s) - skipping HTML scraping", self.llms_txt_variant)
@@ -778,8 +787,8 @@ class DocToSkillConverter:
 
         Performance: ~2-3x faster than sync mode with same worker count.
         """
-        # Try llms.txt first (unless dry-run)
-        if not self.dry_run:
+        # Try llms.txt first (unless dry-run or explicitly disabled)
+        if not self.dry_run and not self.skip_llms_txt:
             llms_result = self._try_llms_txt()
             if llms_result:
                 logger.info("\n✅ Used llms.txt (%s) - skipping HTML scraping", self.llms_txt_variant)
