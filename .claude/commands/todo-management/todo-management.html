@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Ideas Without Breaking Flow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #FFFFFF;
+            color: #000000;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            transition: transform 400ms ease-in-out;
+        }
+
+        section {
+            min-width: 100vw;
+            height: 100vh;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+            box-sizing: border-box;
+        }
+
+        #prompt-add, #prompt-check {
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+
+        .slide-nav {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #FFFFFF;
+            padding: 12px 20px;
+            border: 2px solid #000000;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero-content {
+            text-align: center;
+        }
+
+        .by-line {
+            font-size: 16px;
+            margin-top: 20px;
+            letter-spacing: 2px;
+        }
+
+        .problem-statement {
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .diagram-container {
+            width: 100%;
+            max-width: 1400px;
+            border: 2px solid #000000;
+            margin-bottom: 40px;
+            background: #FFFFFF;
+            padding: 40px;
+        }
+
+        .diagram-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .diagram-side {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diagram-label {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .flow-box {
+            padding: 20px 30px;
+            border: 2px solid #000000;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+            background: #FFFFFF;
+        }
+
+        .flow-box.filled {
+            background: #000000;
+            color: #FFFFFF;
+        }
+
+        .flow-box.problem {
+            background: #000000;
+            color: #FFFFFF;
+            font-size: 18px;
+        }
+
+        .arrow {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 8px 0;
+            text-align: center;
+        }
+
+        .example-text {
+            font-size: 16px;
+            line-height: 1.6;
+            text-align: center;
+            margin-top: 30px;
+            max-width: 800px;
+        }
+
+        .step-container {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .step-label {
+            min-width: 140px;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .step-box {
+            flex: 1;
+            padding: 20px 30px;
+            border: 2px solid #000000;
+            background: #f5f5f5;
+        }
+
+        .step-command {
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .step-details {
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .impact {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .vs-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin: 40px 0;
+        }
+
+        .vs-side {
+            flex: 1;
+            padding: 30px;
+            border: 2px solid #000000;
+            text-align: center;
+        }
+
+        .vs-divider {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .vs-label {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .outcome {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-top: 12px;
+        }
+
+        .flow-path {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .center-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .summary-box {
+            margin-top: 40px;
+            padding: 30px;
+            border: 2px solid #000000;
+            background: #FFFFFF;
+            max-width: 900px;
+        }
+
+        .summary-text {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .check-mark {
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+
+        /* Prompt walkthrough styles */
+        .prompt-section {
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+            padding-right: 20px;
+        }
+
+        .prompt-container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .prompt-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #000000;
+            background: #FFFFFF;
+        }
+
+        .collapsible-section {
+            margin-bottom: 20px;
+        }
+
+        .reveal-button {
+            width: 100%;
+            padding: 16px 24px;
+            border: 2px solid #000000;
+            background: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 200ms ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .reveal-button:hover {
+            background: #f5f5f5;
+        }
+
+        .reveal-button .arrow-icon {
+            font-size: 20px;
+            transition: transform 200ms ease;
+        }
+
+        .reveal-button.active .arrow-icon {
+            transform: rotate(90deg);
+        }
+
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 400ms ease;
+            border-left: 2px solid #000000;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
+        }
+
+        .section-content.expanded {
+            max-height: 2000px;
+        }
+
+        .section-inner {
+            padding: 24px;
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        .section-content.pastel-blue .section-inner {
+            background: #E3F2FD;
+        }
+
+        .section-content.pastel-green .section-inner {
+            background: #E8F5E9;
+        }
+
+        .section-content.pastel-yellow .section-inner {
+            background: #FFF9C4;
+        }
+
+        .section-content.pastel-purple .section-inner {
+            background: #F3E5F5;
+        }
+
+        .section-content.pastel-pink .section-inner {
+            background: #FCE4EC;
+        }
+
+        .section-inner h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-inner ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .section-inner ul li {
+            margin-bottom: 12px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .section-inner ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        .section-inner pre {
+            background: #000000;
+            color: #FFFFFF;
+            padding: 20px;
+            border-radius: 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 16px 0;
+        }
+
+        .section-inner code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border: 1px solid #000000;
+        }
+
+        .section-inner pre code {
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            section {
+                padding: 40px 20px;
+            }
+
+            h1 {
+                font-size: 32px;
+                line-height: 1.3;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+                margin-bottom: 40px;
+            }
+
+            .problem-statement {
+                font-size: 22px;
+            }
+
+            .by-line {
+                font-size: 14px;
+            }
+
+            .slide-nav {
+                bottom: 20px;
+                right: 20px;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .prompt-section {
+                max-height: calc(100vh - 140px);
+                padding-right: 10px;
+            }
+
+            .prompt-title {
+                font-size: 20px;
+                padding: 16px;
+                margin-bottom: 30px;
+            }
+
+            .reveal-button {
+                font-size: 14px;
+                padding: 12px 16px;
+            }
+
+            .section-inner {
+                padding: 16px;
+                font-size: 14px;
+            }
+
+            .section-inner h3 {
+                font-size: 18px;
+            }
+
+            .section-inner pre {
+                font-size: 12px;
+                padding: 12px;
+                overflow-x: auto;
+            }
+
+            .section-inner code {
+                font-size: 12px;
+                word-break: break-word;
+            }
+
+            .section-inner ul {
+                font-size: 14px;
+            }
+
+            .section-inner ul li {
+                padding-left: 20px;
+            }
+
+            .section-inner p {
+                font-size: 14px;
+            }
+
+            #prompt-add, #prompt-check {
+                padding-top: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 26px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .problem-statement {
+                font-size: 20px;
+            }
+
+            .prompt-title {
+                font-size: 18px;
+                padding: 12px;
+            }
+
+            .section-inner {
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .section-inner pre {
+                font-size: 11px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="hero-content">
+                <h1>Great ideas die in the gap between noticing and doing</h1>
+                <p class="subtitle">A to-do system for capturing inspiration mid-conversation with Claude Code</p>
+                <p class="by-line">BY TÂCHES</p>
+            </div>
+        </section>
+
+        <!-- Prompt Walkthrough: /add-to-todos -->
+        <section id="prompt-add">
+            <h2>/add-to-todos Prompt</h2>
+
+            <div class="prompt-section">
+                <div class="prompt-container">
+                    <div class="prompt-title">/add-to-todos [optional description]</div>
+
+                    <!-- Section 1: What This Does -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 0)">
+                            <span>What This Does</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-blue">
+                            <div class="section-inner">
+                                <p style="font-size: 16px; line-height: 1.8;">Captures the current conversation context as a structured todo item in <code>TO-DOS.md</code>.</p>
+                                <p style="font-size: 16px; line-height: 1.8; margin-top: 12px;">Works anywhere you use Claude Code. Each project gets its own todo list automatically.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: What Gets Captured -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 1)">
+                            <span>What Gets Captured</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-green">
+                            <div class="section-inner">
+                                <ul>
+                                    <li><strong>The problem or task</strong> - What needs to be done and why</li>
+                                    <li><strong>File paths with line numbers</strong> - Exact locations (<code>auth.ts:145-230</code>)</li>
+                                    <li><strong>Technical context</strong> - Error messages, root causes, constraints</li>
+                                    <li><strong>Timestamp</strong> - When you captured this idea</li>
+                                    <li><strong>Solution hints</strong> - Approach ideas if you've already discussed them (optional)</li>
+                                </ul>
+                                <p style="font-size: 16px; line-height: 1.8; margin-top: 16px;">Each todo is self-contained with enough context for Claude to understand the task weeks later.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Format Example -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 2)">
+                            <span>Format Example</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-yellow">
+                            <div class="section-inner">
+<pre><code>## Add Todo Command Improvements - 2025-11-15 14:23
+
+- **Add structured format to add-to-todos** - Standardize todo entries with
+  Problem/Files/Solution pattern. **Problem:** Current todos lack consistent
+  structure, making it hard for Claude to have enough context when revisiting
+  tasks later. **Files:** `commands/add-to-todos.md:22-29`. **Solution:** Use
+  inline bold labels with required Problem and Files fields, optional Solution
+  field.
+
+- **Create check-todos command** - Build companion command to list and select
+  todos. **Problem:** Need workflow to review outstanding todos and load context
+  for selected item. **Files:** `commands/check-todos.md` (new), `TO-DOS.md`
+  (reads from). **Solution:** Parse markdown list, display numbered list, accept
+  selection to load full context and remove item.</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: How It Works -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 3)">
+                            <span>How It Works</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-purple">
+                            <div class="section-inner">
+                                <ul>
+                                    <li><strong>With description:</strong> <code>/add-to-todos fix auth bug</code> - Uses your description as the focus</li>
+                                    <li><strong>Without description:</strong> <code>/add-to-todos</code> - Infers from the current conversation</li>
+                                    <li><strong>Duplicate detection:</strong> Checks for similar todos and asks before adding</li>
+                                    <li><strong>Smart grouping:</strong> Related todos captured in the same session are grouped together</li>
+                                    <li><strong>Always includes:</strong> File paths, line numbers, error context from the conversation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Prompt Walkthrough: /check-todos -->
+        <section id="prompt-check">
+            <h2>/check-todos Prompt</h2>
+
+            <div class="prompt-section">
+                <div class="prompt-container">
+                    <div class="prompt-title">/check-todos</div>
+
+                    <!-- Section 1: What This Does -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 4)">
+                            <span>What This Does</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-blue">
+                            <div class="section-inner">
+                                <p style="font-size: 16px; line-height: 1.8;">Lists all todos in a compact numbered format. Select one to load full context and begin work.</p>
+                                <p style="font-size: 16px; line-height: 1.8; margin-top: 12px;">Automatically removes the todo when you select it and checks for project-specific workflows.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: The Workflow -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 5)">
+                            <span>The Workflow</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-green">
+                            <div class="section-inner">
+                                <ul>
+                                    <li><strong>Parse all todos</strong> - Shows compact list with dates</li>
+                                    <li><strong>You select a number</strong> - Pick what you want to work on</li>
+                                    <li><strong>Load full context</strong> - Problem, Files, Solution hints all loaded</li>
+                                    <li><strong>Check for workflows</strong> - Reads CLAUDE.md and .claude/skills/ to see if this should use a specific workflow</li>
+                                    <li><strong>Suggest skill if found</strong> - "This looks like MCP work, use the create-mcp-servers skill?"</li>
+                                    <li><strong>Remove from list</strong> - Todo is deleted, you're ready to work</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Display Format -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 6)">
+                            <span>Display Format</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-yellow">
+                            <div class="section-inner">
+<pre><code>Outstanding Todos:
+
+1. Add structured format to add-to-todos (2025-11-15 14:23)
+2. Create check-todos command (2025-11-15 14:23)
+3. Fix cookie-extractor MCP workflow (2025-11-14 09:15)
+
+[Present selection UI]</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Workflow Detection -->
+                    <div class="collapsible-section">
+                        <button class="reveal-button" onclick="toggleSection(this, 7)">
+                            <span>Workflow Detection</span>
+                            <span class="arrow-icon">▶</span>
+                        </button>
+                        <div class="section-content pastel-purple">
+                            <div class="section-inner">
+                                <p style="font-size: 16px; line-height: 1.8; margin-bottom: 16px;">Before starting work, checks for established workflows:</p>
+                                <ul>
+                                    <li><strong>Reads CLAUDE.md</strong> - Project-specific patterns and rules</li>
+                                    <li><strong>Checks .claude/skills/</strong> - Available workflows for this project</li>
+                                    <li><strong>Matches file paths</strong> - <code>plugins/</code> → plugin workflow, <code>mcp-servers/</code> → MCP workflow</li>
+                                    <li><strong>Presents choice</strong> - "Use the skill or work directly?"</li>
+                                </ul>
+                                <p style="font-size: 16px; line-height: 1.8; margin-top: 16px;"><strong>Result:</strong> Ensures you follow project patterns automatically. Never start a todo the wrong way.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div class="slide-nav">
+        <span id="slide-indicator">1 / 3</span>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = document.querySelectorAll('section').length;
+        const container = document.querySelector('.container');
+        const indicator = document.getElementById('slide-indicator');
+
+        function updateSlide() {
+            container.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // Toggle collapsible sections
+        function toggleSection(button, index) {
+            const content = button.nextElementSibling;
+            const isExpanded = content.classList.contains('expanded');
+
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                button.classList.remove('active');
+            } else {
+                content.classList.add('expanded');
+                button.classList.add('active');
+
+                // Auto-scroll to show the newly expanded section
+                setTimeout(() => {
+                    button.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                }, 100);
+            }
+        }
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>
