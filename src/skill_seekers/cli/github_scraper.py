@@ -33,7 +33,7 @@ except ImportError:
 
 # Import code analyzer for deep code analysis
 try:
-    from code_analyzer import CodeAnalyzer
+    from .code_analyzer import CodeAnalyzer
     CODE_ANALYZER_AVAILABLE = True
 except ImportError:
     CODE_ANALYZER_AVAILABLE = False

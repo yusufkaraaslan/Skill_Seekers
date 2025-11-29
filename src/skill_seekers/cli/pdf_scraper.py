@@ -19,7 +19,7 @@ import argparse
 from pathlib import Path
 
 # Import the PDF extractor
-from pdf_extractor_poc import PDFExtractor
+from .pdf_extractor_poc import PDFExtractor
 
 
 class PDFToSkillConverter:
