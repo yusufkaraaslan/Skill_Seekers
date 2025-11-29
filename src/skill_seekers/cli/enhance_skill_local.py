@@ -166,8 +166,13 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
 
         return prompt
 
-    def run(self):
-        """Main enhancement workflow"""
+    def run(self, headless=True, timeout=600):
+        """Main enhancement workflow
+
+        Args:
+            headless: If True, run claude directly without opening terminal (default: True)
+            timeout: Maximum time to wait for enhancement in seconds (default: 600 = 10 minutes)
+        """
         print(f"\n{'='*60}")
         print(f"LOCAL ENHANCEMENT: {self.skill_dir.name}")
         print(f"{'='*60}\n")
@@ -207,7 +212,11 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
 
         print(f"  ✓ Prompt saved ({len(prompt):,} characters)\n")
 
-        # Launch Claude Code in new terminal
+        # Headless mode: Run claude directly without opening terminal
+        if headless:
+            return self._run_headless(prompt_file, timeout)
+
+        # Terminal mode: Launch Claude Code in new terminal
         print("🚀 Launching Claude Code in new terminal...")
         print("   This will:")
         print("   1. Open a new terminal window")
@@ -281,20 +290,159 @@ rm {prompt_file}
 
         return True
 
+    def _run_headless(self, prompt_file, timeout):
+        """Run Claude enhancement in headless mode (no terminal window)
+
+        Args:
+            prompt_file: Path to prompt file
+            timeout: Maximum seconds to wait
+
+        Returns:
+            bool: True if enhancement succeeded
+        """
+        import time
+        from pathlib import Path
+
+        print("✨ Running Claude Code enhancement (headless mode)...")
+        print(f"   Timeout: {timeout} seconds ({timeout//60} minutes)")
+        print()
+
+        # Record initial state
+        initial_mtime = self.skill_md_path.stat().st_mtime if self.skill_md_path.exists() else 0
+        initial_size = self.skill_md_path.stat().st_size if self.skill_md_path.exists() else 0
+
+        # Start timer
+        start_time = time.time()
+
+        try:
+            # Run claude command directly (this WAITS for completion)
+            print("   Running: claude {prompt_file}")
+            print("   ⏳ Please wait...")
+            print()
+
+            result = subprocess.run(
+                ['claude', prompt_file],
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+
+            elapsed = time.time() - start_time
+
+            # Check if successful
+            if result.returncode == 0:
+                # Verify SKILL.md was actually updated
+                if self.skill_md_path.exists():
+                    new_mtime = self.skill_md_path.stat().st_mtime
+                    new_size = self.skill_md_path.stat().st_size
+
+                    if new_mtime > initial_mtime and new_size > initial_size:
+                        print(f"✅ Enhancement complete! ({elapsed:.1f} seconds)")
+                        print(f"   SKILL.md updated: {new_size:,} bytes")
+                        print()
+
+                        # Clean up prompt file
+                        try:
+                            os.unlink(prompt_file)
+                        except:
+                            pass
+
+                        return True
+                    else:
+                        print(f"⚠️  Claude finished but SKILL.md was not updated")
+                        print(f"   This might indicate an error during enhancement")
+                        print()
+                        return False
+                else:
+                    print(f"❌ SKILL.md not found after enhancement")
+                    return False
+            else:
+                print(f"❌ Claude Code returned error (exit code: {result.returncode})")
+                if result.stderr:
+                    print(f"   Error: {result.stderr[:200]}")
+                return False
+
+        except subprocess.TimeoutExpired:
+            elapsed = time.time() - start_time
+            print(f"\n⚠️  Enhancement timed out after {elapsed:.0f} seconds")
+            print(f"   Timeout limit: {timeout} seconds")
+            print()
+            print("   Possible reasons:")
+            print("   - Skill is very large (many references)")
+            print("   - Claude is taking longer than usual")
+            print("   - Network issues")
+            print()
+            print("   Try:")
+            print("   1. Use terminal mode: --interactive-enhancement")
+            print("   2. Reduce reference content")
+            print("   3. Try again later")
+
+            # Clean up
+            try:
+                os.unlink(prompt_file)
+            except:
+                pass
+
+            return False
+
+        except FileNotFoundError:
+            print("❌ 'claude' command not found")
+            print()
+            print("   Make sure Claude Code CLI is installed:")
+            print("   See: https://docs.claude.com/claude-code")
+            print()
+            print("   Try terminal mode instead: --interactive-enhancement")
+
+            return False
+
+        except Exception as e:
+            print(f"❌ Unexpected error: {e}")
+            return False
+
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: skill-seekers enhance <skill_directory>")
-        print()
-        print("Examples:")
-        print("  skill-seekers enhance output/steam-inventory/")
-        print("  skill-seekers enhance output/react/")
-        sys.exit(1)
+    import argparse
 
-    skill_dir = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        description="Enhance a skill with Claude Code (local)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Headless mode (default - runs in background)
+  skill-seekers enhance output/react/
 
-    enhancer = LocalSkillEnhancer(skill_dir)
-    success = enhancer.run()
+  # Interactive mode (opens terminal window)
+  skill-seekers enhance output/react/ --interactive-enhancement
+
+  # Custom timeout
+  skill-seekers enhance output/react/ --timeout 1200
+"""
+    )
+
+    parser.add_argument(
+        'skill_directory',
+        help='Path to skill directory (e.g., output/react/)'
+    )
+
+    parser.add_argument(
+        '--interactive-enhancement',
+        action='store_true',
+        help='Open terminal window for enhancement (default: headless mode)'
+    )
+
+    parser.add_argument(
+        '--timeout',
+        type=int,
+        default=600,
+        help='Timeout in seconds for headless mode (default: 600 = 10 minutes)'
+    )
+
+    args = parser.parse_args()
+
+    # Run enhancement
+    enhancer = LocalSkillEnhancer(args.skill_directory)
+    headless = not args.interactive_enhancement  # Invert: default is headless
+    success = enhancer.run(headless=headless, timeout=args.timeout)
 
     sys.exit(0 if success else 1)
 

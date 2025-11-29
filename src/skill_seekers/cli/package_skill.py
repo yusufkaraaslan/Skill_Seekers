@@ -23,6 +23,7 @@ try:
         format_file_size,
         validate_skill_directory
     )
+    from quality_checker import SkillQualityChecker, print_report
 except ImportError:
     # If running from different directory, add cli to path
     sys.path.insert(0, str(Path(__file__).parent))
@@ -32,15 +33,17 @@ except ImportError:
         format_file_size,
         validate_skill_directory
     )
+    from quality_checker import SkillQualityChecker, print_report
 
 
-def package_skill(skill_dir, open_folder_after=True):
+def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False):
     """
     Package a skill directory into a .zip file
 
     Args:
         skill_dir: Path to skill directory
         open_folder_after: Whether to open the output folder after packaging
+        skip_quality_check: Skip quality checks before packaging
 
     Returns:
         tuple: (success, zip_path) where success is bool and zip_path is Path or None
@@ -52,6 +55,30 @@ def package_skill(skill_dir, open_folder_after=True):
     if not is_valid:
         print(f"❌ Error: {error_msg}")
         return False, None
+
+    # Run quality checks (unless skipped)
+    if not skip_quality_check:
+        print("\n" + "=" * 60)
+        print("QUALITY CHECK")
+        print("=" * 60)
+
+        checker = SkillQualityChecker(skill_path)
+        report = checker.check_all()
+
+        # Print report
+        print_report(report, verbose=False)
+
+        # If there are errors or warnings, ask user to confirm
+        if report.has_errors or report.has_warnings:
+            print("=" * 60)
+            response = input("\nContinue with packaging? (y/n): ").strip().lower()
+            if response != 'y':
+                print("\n❌ Packaging cancelled by user")
+                return False, None
+            print()
+        else:
+            print("=" * 60)
+            print()
 
     # Create zip filename
     skill_name = skill_path.name
@@ -95,11 +122,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Package skill and open folder
+  # Package skill with quality checks (recommended)
   skill-seekers package output/react/
 
   # Package skill without opening folder
   skill-seekers package output/react/ --no-open
+
+  # Skip quality checks (faster, but not recommended)
+  skill-seekers package output/react/ --skip-quality-check
+
+  # Package and auto-upload to Claude
+  skill-seekers package output/react/ --upload
 
   # Get help
   skill-seekers package --help
@@ -118,6 +151,12 @@ Examples:
     )
 
     parser.add_argument(
+        '--skip-quality-check',
+        action='store_true',
+        help='Skip quality checks before packaging'
+    )
+
+    parser.add_argument(
         '--upload',
         action='store_true',
         help='Automatically upload to Claude after packaging (requires ANTHROPIC_API_KEY)'
@@ -125,7 +164,11 @@ Examples:
 
     args = parser.parse_args()
 
-    success, zip_path = package_skill(args.skill_dir, open_folder_after=not args.no_open)
+    success, zip_path = package_skill(
+        args.skill_dir,
+        open_folder_after=not args.no_open,
+        skip_quality_check=args.skip_quality_check
+    )
 
     if not success:
         sys.exit(1)

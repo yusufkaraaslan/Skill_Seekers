@@ -40,34 +40,50 @@ class TestSetupMCPScript:
         assert result.returncode == 0, f"Bash syntax error: {result.stderr}"
 
     def test_references_correct_mcp_directory(self, script_content):
-        """Test that script references skill_seeker_mcp/ not old mcp/ directory"""
-        # Should NOT reference old mcp/ directory
-        old_refs = re.findall(r'(?:^|[^a-z_])mcp/(?!\.json)', script_content, re.MULTILINE)
-        assert len(old_refs) == 0, f"Found {len(old_refs)} references to old 'mcp/' directory: {old_refs}"
+        """Test that script references src/skill_seekers/mcp/ (v2.0.0 layout)"""
+        # Should NOT reference old mcp/ or skill_seeker_mcp/ directories
+        old_mcp_refs = re.findall(r'(?:^|[^a-z_])(?<!/)mcp/(?!\.json)', script_content, re.MULTILINE)
+        old_skill_seeker_refs = re.findall(r'skill_seeker_mcp/', script_content)
 
-        # SHOULD reference skill_seeker_mcp/
-        new_refs = re.findall(r'skill_seeker_mcp/', script_content)
-        assert len(new_refs) >= 6, f"Expected at least 6 references to 'skill_seeker_mcp/', found {len(new_refs)}"
+        # Allow /mcp/ (as in src/skill_seekers/mcp/) but not standalone mcp/
+        assert len(old_mcp_refs) == 0, f"Found {len(old_mcp_refs)} references to old 'mcp/' directory: {old_mcp_refs}"
+        assert len(old_skill_seeker_refs) == 0, f"Found {len(old_skill_seeker_refs)} references to old 'skill_seeker_mcp/': {old_skill_seeker_refs}"
+
+        # SHOULD reference src/skill_seekers/mcp/
+        new_refs = re.findall(r'src/skill_seekers/mcp/', script_content)
+        assert len(new_refs) >= 6, f"Expected at least 6 references to 'src/skill_seekers/mcp/', found {len(new_refs)}"
 
     def test_requirements_txt_path(self, script_content):
-        """Test that requirements.txt path is correct"""
-        assert "skill_seeker_mcp/requirements.txt" in script_content, \
-            "Should reference skill_seeker_mcp/requirements.txt"
-        # Check for old mcp/ directory (but not skill_seeker_mcp/)
+        """Test that script uses pip install -e . (v2.0.0 modern packaging)"""
+        # v2.0.0 uses '-e .' (editable install) instead of requirements files
+        # The actual command is "$PIP_INSTALL_CMD -e ."
+        assert " -e ." in script_content or " -e." in script_content, \
+            "Should use '-e .' for editable install (modern packaging)"
+
+        # Should NOT reference old requirements.txt paths
         import re
-        old_refs = re.findall(r'(?<!skill_seeker_)mcp/requirements\.txt', script_content)
-        assert len(old_refs) == 0, \
-            f"Should NOT reference old 'mcp/requirements.txt' (found {len(old_refs)}): {old_refs}"
+        old_skill_seeker_refs = re.findall(r'skill_seeker_mcp/requirements\.txt', script_content)
+        old_mcp_refs = re.findall(r'(?<!skill_seeker_)mcp/requirements\.txt', script_content)
+
+        assert len(old_skill_seeker_refs) == 0, \
+            f"Should NOT reference 'skill_seeker_mcp/requirements.txt' (found {len(old_skill_seeker_refs)})"
+        assert len(old_mcp_refs) == 0, \
+            f"Should NOT reference old 'mcp/requirements.txt' (found {len(old_mcp_refs)})"
 
     def test_server_py_path(self, script_content):
-        """Test that server.py path is correct"""
+        """Test that server.py path is correct (v2.0.0 layout)"""
         import re
-        assert "skill_seeker_mcp/server.py" in script_content, \
-            "Should reference skill_seeker_mcp/server.py"
-        # Check for old mcp/ directory (but not skill_seeker_mcp/)
-        old_refs = re.findall(r'(?<!skill_seeker_)mcp/server\.py', script_content)
-        assert len(old_refs) == 0, \
-            f"Should NOT reference old 'mcp/server.py' (found {len(old_refs)}): {old_refs}"
+        assert "src/skill_seekers/mcp/server.py" in script_content, \
+            "Should reference src/skill_seekers/mcp/server.py"
+
+        # Should NOT reference old paths
+        old_skill_seeker_refs = re.findall(r'skill_seeker_mcp/server\.py', script_content)
+        old_mcp_refs = re.findall(r'(?<!/)(?<!skill_seekers/)mcp/server\.py', script_content)
+
+        assert len(old_skill_seeker_refs) == 0, \
+            f"Should NOT reference old 'skill_seeker_mcp/server.py' (found {len(old_skill_seeker_refs)})"
+        assert len(old_mcp_refs) == 0, \
+            f"Should NOT reference old 'mcp/server.py' (found {len(old_mcp_refs)})"
 
     def test_referenced_files_exist(self):
         """Test that all files referenced in setup_mcp.sh actually exist"""
@@ -88,10 +104,10 @@ class TestSetupMCPScript:
         assert os.access(script_path, os.X_OK), "setup_mcp.sh should be executable"
 
     def test_json_config_path_format(self, script_content):
-        """Test that JSON config examples use correct format"""
+        """Test that JSON config examples use correct format (v2.0.0 layout)"""
         # Check for the config path format in the script
-        assert '"$REPO_PATH/skill_seeker_mcp/server.py"' in script_content, \
-            "Config should show correct server.py path with $REPO_PATH variable"
+        assert '"$REPO_PATH/src/skill_seekers/mcp/server.py"' in script_content, \
+            "Config should show correct server.py path with $REPO_PATH variable (v2.0.0 layout)"
 
     def test_no_hardcoded_paths(self, script_content):
         """Test that script doesn't contain hardcoded absolute paths"""
