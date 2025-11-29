@@ -1652,10 +1652,22 @@ def execute_scraping_and_building(config: Dict[str, Any], args: argparse.Namespa
     exists, page_count = check_existing_data(config['name'])
 
     if exists and not args.skip_scrape and not args.fresh:
-        logger.info("\n✓ Found existing data: %d pages", page_count)
-        response = input("Use existing data? (y/n): ").strip().lower()
-        if response == 'y':
-            args.skip_scrape = True
+        # Check force_rescrape flag from config
+        if config.get('force_rescrape', False):
+            # Auto-delete cached data and rescrape
+            logger.info("\n✓ Found existing data: %d pages", page_count)
+            logger.info("  force_rescrape enabled - deleting cached data and rescaping")
+            import shutil
+            data_dir = f"output/{config['name']}_data"
+            if os.path.exists(data_dir):
+                shutil.rmtree(data_dir)
+                logger.info(f"  Deleted: {data_dir}")
+        else:
+            # Only prompt if force_rescrape is False
+            logger.info("\n✓ Found existing data: %d pages", page_count)
+            response = input("Use existing data? (y/n): ").strip().lower()
+            if response == 'y':
+                args.skip_scrape = True
     elif exists and args.fresh:
         logger.info("\n✓ Found existing data: %d pages", page_count)
         logger.info("  --fresh flag set, will re-scrape from scratch")

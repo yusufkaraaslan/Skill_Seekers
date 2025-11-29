@@ -117,8 +117,17 @@ class CodeAnalyzer:
                 classes.append(asdict(class_sig))
             elif isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
                 # Only top-level functions (not methods)
-                if not any(isinstance(parent, ast.ClassDef)
-                          for parent in ast.walk(tree) if hasattr(parent, 'body') and node in parent.body):
+                # Fix AST parser to check isinstance(parent.body, list) before 'in' operator
+                is_method = False
+                try:
+                    is_method = any(isinstance(parent, ast.ClassDef)
+                                  for parent in ast.walk(tree)
+                                  if hasattr(parent, 'body') and isinstance(parent.body, list) and node in parent.body)
+                except (TypeError, AttributeError):
+                    # If body is not iterable or check fails, assume it's a top-level function
+                    is_method = False
+
+                if not is_method:
                     func_sig = self._extract_python_function(node)
                     functions.append(asdict(func_sig))
 

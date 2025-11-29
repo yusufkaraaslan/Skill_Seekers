@@ -46,6 +46,17 @@ except ImportError:
     CODE_ANALYZER_AVAILABLE = False
     logger.warning("Code analyzer not available - deep analysis disabled")
 
+# Directories to exclude from local repository analysis
+EXCLUDED_DIRS = {
+    'venv', 'env', '.venv', '.env',  # Virtual environments
+    'node_modules', '__pycache__', '.pytest_cache',  # Dependencies and caches
+    '.git', '.svn', '.hg',  # Version control
+    'build', 'dist', '*.egg-info',  # Build artifacts
+    'htmlcov', '.coverage',  # Coverage reports
+    '.tox', '.nox',  # Testing environments
+    '.mypy_cache', '.ruff_cache',  # Linter caches
+}
+
 
 class GitHubScraper:
     """
@@ -63,12 +74,18 @@ class GitHubScraper:
     - Releases
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], local_repo_path: Optional[str] = None):
         """Initialize GitHub scraper with configuration."""
         self.config = config
         self.repo_name = config['repo']
         self.name = config.get('name', self.repo_name.split('/')[-1])
         self.description = config.get('description', f'Skill for {self.repo_name}')
+
+        # Local repository path (optional - enables unlimited analysis)
+        self.local_repo_path = local_repo_path or config.get('local_repo_path')
+        if self.local_repo_path:
+            self.local_repo_path = os.path.expanduser(self.local_repo_path)
+            logger.info(f"Local repository mode enabled: {self.local_repo_path}")
 
         # GitHub client setup (C1.1)
         token = self._get_token()
@@ -262,10 +279,66 @@ class GitHubScraper:
         except GithubException as e:
             logger.warning(f"Could not fetch languages: {e}")
 
+    def should_exclude_dir(self, dir_name: str) -> bool:
+        """Check if directory should be excluded from analysis."""
+        return dir_name in EXCLUDED_DIRS or dir_name.startswith('.')
+
     def _extract_file_tree(self):
-        """Extract repository file tree structure."""
+        """Extract repository file tree structure (dual-mode: GitHub API or local filesystem)."""
         logger.info("Building file tree...")
 
+        if self.local_repo_path:
+            # Local filesystem mode - unlimited files
+            self._extract_file_tree_local()
+        else:
+            # GitHub API mode - limited by API rate limits
+            self._extract_file_tree_github()
+
+    def _extract_file_tree_local(self):
+        """Extract file tree from local filesystem (unlimited files)."""
+        if not os.path.exists(self.local_repo_path):
+            logger.error(f"Local repository path not found: {self.local_repo_path}")
+            return
+
+        file_tree = []
+        for root, dirs, files in os.walk(self.local_repo_path):
+            # Exclude directories in-place to prevent os.walk from descending into them
+            dirs[:] = [d for d in dirs if not self.should_exclude_dir(d)]
+
+            # Calculate relative path from repo root
+            rel_root = os.path.relpath(root, self.local_repo_path)
+            if rel_root == '.':
+                rel_root = ''
+
+            # Add directories
+            for dir_name in dirs:
+                dir_path = os.path.join(rel_root, dir_name) if rel_root else dir_name
+                file_tree.append({
+                    'path': dir_path,
+                    'type': 'dir',
+                    'size': None
+                })
+
+            # Add files
+            for file_name in files:
+                file_path = os.path.join(rel_root, file_name) if rel_root else file_name
+                full_path = os.path.join(root, file_name)
+                try:
+                    file_size = os.path.getsize(full_path)
+                except OSError:
+                    file_size = None
+
+                file_tree.append({
+                    'path': file_path,
+                    'type': 'file',
+                    'size': file_size
+                })
+
+        self.extracted_data['file_tree'] = file_tree
+        logger.info(f"File tree built (local mode): {len(file_tree)} items")
+
+    def _extract_file_tree_github(self):
+        """Extract file tree from GitHub API (rate-limited)."""
         try:
             contents = self.repo.get_contents("")
             file_tree = []
@@ -284,7 +357,7 @@ class GitHubScraper:
                     contents.extend(self.repo.get_contents(file_content.path))
 
             self.extracted_data['file_tree'] = file_tree
-            logger.info(f"File tree built: {len(file_tree)} items")
+            logger.info(f"File tree built (GitHub API mode): {len(file_tree)} items")
 
         except GithubException as e:
             logger.warning(f"Could not build file tree: {e}")
@@ -351,8 +424,16 @@ class GitHubScraper:
 
             # Analyze this file
             try:
-                file_content = self.repo.get_contents(file_path)
-                content = file_content.decoded_content.decode('utf-8')
+                # Read file content based on mode
+                if self.local_repo_path:
+                    # Local mode - read from filesystem
+                    full_path = os.path.join(self.local_repo_path, file_path)
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                else:
+                    # GitHub API mode - fetch from API
+                    file_content = self.repo.get_contents(file_path)
+                    content = file_content.decoded_content.decode('utf-8')
 
                 analysis_result = self.code_analyzer.analyze_file(
                     file_path,
@@ -375,9 +456,9 @@ class GitHubScraper:
                 logger.debug(f"Could not analyze {file_path}: {e}")
                 continue
 
-            # Limit number of files analyzed to avoid rate limits
-            if len(analyzed_files) >= 50:
-                logger.info(f"Reached analysis limit (50 files)")
+            # Limit number of files analyzed to avoid rate limits (GitHub API mode only)
+            if not self.local_repo_path and len(analyzed_files) >= 50:
+                logger.info(f"Reached analysis limit (50 files, GitHub API mode)")
                 break
 
         self.extracted_data['code_analysis'] = {
