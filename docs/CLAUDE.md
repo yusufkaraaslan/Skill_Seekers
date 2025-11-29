@@ -326,6 +326,40 @@ print(soup.select_one('main'))
 print(soup.select_one('div[role="main"]'))
 ```
 
+## Running Tests
+
+**IMPORTANT: You must install the package before running tests**
+
+```bash
+# 1. Install package in editable mode (one-time setup)
+pip install -e .
+
+# 2. Run all tests
+pytest
+
+# 3. Run specific test files
+pytest tests/test_config_validation.py
+pytest tests/test_github_scraper.py
+
+# 4. Run with verbose output
+pytest -v
+
+# 5. Run with coverage report
+pytest --cov=src/skill_seekers --cov-report=html
+```
+
+**Why install first?**
+- Tests import from `skill_seekers.cli` which requires the package to be installed
+- Modern Python packaging best practice (PEP 517/518)
+- CI/CD automatically installs with `pip install -e .`
+- conftest.py will show helpful error if package not installed
+
+**Test Coverage:**
+- 391+ tests passing
+- 39% code coverage
+- All core features tested
+- CI/CD tests on Ubuntu + macOS with Python 3.10-3.12
+
 ## Troubleshooting
 
 **No content extracted**: Check `main_content` selector. Common values: `article`, `main`, `div[role="main"]`, `div.content`
