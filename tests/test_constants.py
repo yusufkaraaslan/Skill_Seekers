@@ -109,14 +109,14 @@ class TestConstantsUsage(unittest.TestCase):
 
     def test_doc_scraper_imports_constants(self):
         """Test that doc_scraper imports and uses constants."""
-        from cli import doc_scraper
+        from skill_seekers.cli import doc_scraper
         # Check that doc_scraper can access the constants
         self.assertTrue(hasattr(doc_scraper, 'DEFAULT_RATE_LIMIT'))
         self.assertTrue(hasattr(doc_scraper, 'DEFAULT_MAX_PAGES'))
 
     def test_estimate_pages_imports_constants(self):
         """Test that estimate_pages imports and uses constants."""
-        from cli import estimate_pages
+        from skill_seekers.cli import estimate_pages
         # Verify function signature uses constants
         import inspect
         sig = inspect.signature(estimate_pages.estimate_pages)
@@ -125,7 +125,7 @@ class TestConstantsUsage(unittest.TestCase):
     def test_enhance_skill_imports_constants(self):
         """Test that enhance_skill imports constants."""
         try:
-            from cli import enhance_skill
+            from skill_seekers.cli import enhance_skill
             # Check module loads without errors
             self.assertIsNotNone(enhance_skill)
         except (ImportError, SystemExit) as e:
@@ -135,7 +135,7 @@ class TestConstantsUsage(unittest.TestCase):
 
     def test_enhance_skill_local_imports_constants(self):
         """Test that enhance_skill_local imports constants."""
-        from cli import enhance_skill_local
+        from skill_seekers.cli import enhance_skill_local
         self.assertIsNotNone(enhance_skill_local)
 
 
@@ -144,7 +144,7 @@ class TestConstantsExports(unittest.TestCase):
 
     def test_all_exports_exist(self):
         """Test that all items in __all__ exist."""
-        from cli import constants
+        from skill_seekers.cli import constants
         self.assertTrue(hasattr(constants, '__all__'))
         for name in constants.__all__:
             self.assertTrue(
@@ -154,7 +154,7 @@ class TestConstantsExports(unittest.TestCase):
 
     def test_all_exports_count(self):
         """Test that __all__ has expected number of exports."""
-        from cli import constants
+        from skill_seekers.cli import constants
         # We defined 18 constants (added DEFAULT_ASYNC_MODE)
         self.assertEqual(len(constants.__all__), 18)
 

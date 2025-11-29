@@ -31,20 +31,20 @@ except ImportError:
     print("Error: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
-# Import code analyzer for deep code analysis
-try:
-    from code_analyzer import CodeAnalyzer
-    CODE_ANALYZER_AVAILABLE = True
-except ImportError:
-    CODE_ANALYZER_AVAILABLE = False
-    logger.warning("Code analyzer not available - deep analysis disabled")
-
-# Configure logging
+# Configure logging FIRST (before using logger)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Import code analyzer for deep code analysis
+try:
+    from .code_analyzer import CodeAnalyzer
+    CODE_ANALYZER_AVAILABLE = True
+except ImportError:
+    CODE_ANALYZER_AVAILABLE = False
+    logger.warning("Code analyzer not available - deep analysis disabled")
 
 # Directories to exclude from local repository analysis
 EXCLUDED_DIRS = {

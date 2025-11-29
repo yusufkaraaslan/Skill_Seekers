@@ -676,7 +676,8 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
         sys.executable,
         str(CLI_DIR / "package_skill.py"),
         skill_dir,
-        "--no-open"  # Don't open folder in MCP context
+        "--no-open",  # Don't open folder in MCP context
+        "--skip-quality-check"  # Skip interactive quality checks in MCP context
     ]
 
     # Add upload flag only if we have API key
