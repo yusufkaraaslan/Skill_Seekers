@@ -13,10 +13,7 @@ import unittest
 import logging
 from unittest.mock import patch, Mock, MagicMock
 
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from cli.doc_scraper import DocToSkillConverter
+from skill_seekers.cli.doc_scraper import DocToSkillConverter
 
 
 class TestSkipLlmsTxtConfig(unittest.TestCase):
@@ -239,7 +236,7 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
             'skip_llms_txt': 0  # Invalid type
         }
 
-        with self.assertLogs('cli.doc_scraper', level='WARNING') as cm:
+        with self.assertLogs('skill_seekers.cli.doc_scraper', level='WARNING') as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
             self.assertTrue(any('Invalid value' in log and '0' in log for log in cm.output))
@@ -253,7 +250,7 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
             'skip_llms_txt': 1  # Invalid type
         }
 
-        with self.assertLogs('cli.doc_scraper', level='WARNING') as cm:
+        with self.assertLogs('skill_seekers.cli.doc_scraper', level='WARNING') as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
             self.assertTrue(any('Invalid value' in log and '1' in log for log in cm.output))
@@ -267,7 +264,7 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
             'skip_llms_txt': "true"  # Invalid type
         }
 
-        with self.assertLogs('cli.doc_scraper', level='WARNING') as cm:
+        with self.assertLogs('skill_seekers.cli.doc_scraper', level='WARNING') as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
             self.assertTrue(any('Invalid value' in log and 'true' in log for log in cm.output))
@@ -281,7 +278,7 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
             'skip_llms_txt': None  # Invalid type
         }
 
-        with self.assertLogs('cli.doc_scraper', level='WARNING') as cm:
+        with self.assertLogs('skill_seekers.cli.doc_scraper', level='WARNING') as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
             self.assertTrue(any('Invalid value' in log and 'None' in log for log in cm.output))
