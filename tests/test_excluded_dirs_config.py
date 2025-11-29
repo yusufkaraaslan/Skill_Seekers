@@ -242,5 +242,134 @@ class TestExcludedDirsEdgeCases(unittest.TestCase):
         self.assertFalse(scraper.should_exclude_dir('node_modules'))  # Different case
 
 
+class TestExcludedDirsWithLocalRepo(unittest.TestCase):
+    """Test exclude_dirs integration with local_repo_path."""
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    def test_exclude_dirs_with_local_repo_path(self, mock_github):
+        """Test that exclude_dirs works when local_repo_path is provided."""
+        config = {
+            'repo': 'owner/repo',
+            'local_repo_path': '/tmp/test/repo',
+            'exclude_dirs_additional': ['proprietary', 'internal']
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should have both defaults and additional
+        self.assertIn('venv', scraper.excluded_dirs)
+        self.assertIn('proprietary', scraper.excluded_dirs)
+        self.assertIn('internal', scraper.excluded_dirs)
+
+        # Test exclusion works
+        self.assertTrue(scraper.should_exclude_dir('proprietary'))
+        self.assertTrue(scraper.should_exclude_dir('internal'))
+        self.assertTrue(scraper.should_exclude_dir('venv'))
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    def test_replace_mode_with_local_repo_path(self, mock_github):
+        """Test that replace mode works with local_repo_path."""
+        config = {
+            'repo': 'owner/repo',
+            'local_repo_path': '/tmp/test/repo',
+            'exclude_dirs': ['only_this']
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should ONLY have specified dir
+        self.assertEqual(scraper.excluded_dirs, {'only_this'})
+        self.assertTrue(scraper.should_exclude_dir('only_this'))
+        self.assertFalse(scraper.should_exclude_dir('venv'))
+
+
+class TestExcludedDirsLogging(unittest.TestCase):
+    """Test logging output for exclude_dirs configuration."""
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    @patch('skill_seekers.cli.github_scraper.logger')
+    def test_extend_mode_logs_info(self, mock_logger, mock_github):
+        """Test that extend mode logs INFO level message."""
+        config = {
+            'repo': 'owner/repo',
+            'exclude_dirs_additional': ['custom1', 'custom2']
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should have logged INFO message
+        # Check that info was called with a message about adding custom exclusions
+        info_calls = [str(call) for call in mock_logger.info.call_args_list]
+        self.assertTrue(any('Added 2 custom directory exclusions' in call for call in info_calls))
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    @patch('skill_seekers.cli.github_scraper.logger')
+    def test_replace_mode_logs_warning(self, mock_logger, mock_github):
+        """Test that replace mode logs WARNING level message."""
+        config = {
+            'repo': 'owner/repo',
+            'exclude_dirs': ['only', 'these']
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should have logged WARNING message
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+        self.assertTrue(any('Using custom directory exclusions' in call and 'defaults overridden' in call for call in warning_calls))
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    @patch('skill_seekers.cli.github_scraper.logger')
+    def test_no_config_no_logging(self, mock_logger, mock_github):
+        """Test that default mode doesn't log exclude_dirs messages."""
+        config = {
+            'repo': 'owner/repo'
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should NOT have logged any exclude_dirs messages
+        info_calls = [str(call) for call in mock_logger.info.call_args_list]
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+
+        # Filter for exclude_dirs related messages
+        exclude_info = [c for c in info_calls if 'directory exclusion' in c]
+        exclude_warnings = [c for c in warning_calls if 'directory exclusion' in c]
+
+        self.assertEqual(len(exclude_info), 0)
+        self.assertEqual(len(exclude_warnings), 0)
+
+
+class TestExcludedDirsTypeHandling(unittest.TestCase):
+    """Test type handling for exclude_dirs configuration."""
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    def test_exclude_dirs_with_tuple(self, mock_github):
+        """Test that tuples are converted to sets correctly."""
+        config = {
+            'repo': 'owner/repo',
+            'exclude_dirs': ('node_modules', 'build')  # Tuple instead of list
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should work with tuples (set() accepts tuples)
+        self.assertEqual(scraper.excluded_dirs, {'node_modules', 'build'})
+
+    @patch('skill_seekers.cli.github_scraper.Github')
+    def test_exclude_dirs_additional_with_set(self, mock_github):
+        """Test that sets work correctly for exclude_dirs_additional."""
+        config = {
+            'repo': 'owner/repo',
+            'exclude_dirs_additional': {'custom1', 'custom2'}  # Set instead of list
+        }
+
+        scraper = GitHubScraper(config)
+
+        # Should work with sets
+        self.assertIn('custom1', scraper.excluded_dirs)
+        self.assertIn('custom2', scraper.excluded_dirs)
+        self.assertIn('venv', scraper.excluded_dirs)  # Defaults still there
+
+
 if __name__ == '__main__':
     unittest.main()
