@@ -8,17 +8,21 @@ We follow semantic versioning (MAJOR.MINOR.PATCH) and maintain backward compatib
 
 ---
 
-## Next Release: v2.1.0 (Estimated: December 2025)
+## ✅ Release: v2.1.0 (Released: November 29, 2025)
 
 **Focus:** Test Coverage & Quality Improvements
 
-### Planned Features
+### Completed Features
 
 #### Testing & Quality
-- [ ] **Fix 12 unified scraping tests** - Complete test coverage for unified multi-source scraping
+- [x] **Fix 12 unified scraping tests** ✅ - Complete test coverage for unified multi-source scraping
   - ConfigValidator expecting dict instead of file path
   - ConflictDetector expecting dict pages, not list
   - Full integration test suite for unified workflow
+
+### Planned Features (Future v2.2.0)
+
+#### Testing & Quality
 
 - [ ] **Improve test coverage to 60%+** (currently 39%)
   - Write tests for 0% coverage files:
@@ -259,7 +263,7 @@ We aim for predictable releases:
 | Version | Focus | ETA | Status |
 |---------|-------|-----|--------|
 | v2.0.0 | PyPI Publication | 2025-11-11 | ✅ Released |
-| v2.1.0 | Test Coverage & Quality | Dec 2025 | 🚧 Planning |
+| v2.1.0 | Test Coverage & Quality | 2025-11-29 | ✅ Released |
 | v2.2.0 | Web Presence | Q1 2026 | 📋 Planned |
 | v2.3.0 | Developer Experience | Q2 2026 | 📋 Planned |
 | v3.0.0 | Major Evolution | 2026 | 💡 Conceptual |

@@ -4,14 +4,21 @@
 
 ---
 
-## 🎯 Current Status: v1.0.0 Released ✅
+## 🎯 Current Status: v2.1.0 Released ✅
+
+**Latest Release:** v2.1.0 (November 29, 2025)
 
 **What Works:**
 - ✅ Documentation scraping (HTML websites)
+- ✅ GitHub repository scraping with unlimited local analysis
+- ✅ PDF extraction and conversion
+- ✅ Unified multi-source scraping (docs + GitHub + PDF)
 - ✅ 9 MCP tools fully functional
 - ✅ Auto-upload to Claude
-- ✅ 12 preset configs
+- ✅ 24 preset configs (including 5 unified configs)
 - ✅ Large docs support (40K+ pages)
+- ✅ Configurable directory exclusions
+- ✅ 427 tests passing
 
 ---
 

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Configurable directory exclusions** for local repository analysis ([#203](https://github.com/yusufkaraaslan/Skill_Seekers/issues/203))
+  - `exclude_dirs_additional`: Extend default exclusions with custom directories
+  - `exclude_dirs`: Replace default exclusions entirely (advanced users)
+  - 19 comprehensive tests covering all scenarios
+  - Logging: INFO for extend mode, WARNING for replace mode
 - Unlimited local repository analysis via `local_repo_path` configuration parameter
 - Auto-exclusion of virtual environments, build artifacts, and cache directories
 - Support for analyzing repositories without GitHub API rate limits (50 → unlimited files)

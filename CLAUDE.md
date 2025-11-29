@@ -2,12 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🎯 Current Status (November 11, 2025)
+## 🎯 Current Status (November 29, 2025)
 
-**Version:** v2.0.0 (Production Ready - Published on PyPI!)
+**Version:** v2.1.0 (Production Ready - Quality Assurance Complete!)
 **Active Development:** Flexible, incremental task-based approach
 
-### Recent Updates (This Week):
+### Recent Updates (November 2025):
 
 **🎉 MAJOR MILESTONE: Published on PyPI! (v2.0.0)**
 - **📦 PyPI Publication**: Install with `pip install skill-seekers` - https://pypi.org/project/skill-seekers/
@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **✅ CI/CD Fixed**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
 - **📚 Documentation Complete**: README, CHANGELOG, FUTURE_RELEASES.md all updated
 - **🚀 Unified CLI**: Single `skill-seekers` command with Git-style subcommands
-- **🧪 Test Coverage**: 391 tests passing, 39% coverage
+- **🧪 Test Coverage**: 427 tests passing (up from 391), 39% coverage
 - **🌐 Community**: GitHub Discussion, Release notes, announcements published
 
 **🚀 Unified Multi-Source Scraping (v2.0.0)**
@@ -40,17 +40,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 📝 Multi-source configs: django_unified, fastapi_unified, fastapi_unified_test, godot_unified, react_unified
 - 📝 Test/Example configs: godot_github, react_github, python-tutorial-test, example_pdf, test-manual
 
-**📋 Next Up (Post-v2.1.0):**
+**📋 Completed (November 29, 2025):**
 - **✅ DONE**: PyPI publication complete (v2.0.0)
 - **✅ DONE**: CI/CD fixed - all checks passing
 - **✅ DONE**: Documentation updated (README, CHANGELOG, FUTURE_RELEASES.md)
 - **✅ DONE**: Quality Assurance + Race Condition Fixes (v2.1.0)
 - **✅ DONE**: All critical bugs fixed (Issues #190, #192, #193)
-- **✅ DONE**: Test suite stabilized (391 tests passing)
+- **✅ DONE**: Test suite stabilized (427 tests passing)
 - **✅ DONE**: Unified tests fixed (all 22 passing)
-- **Priority 1**: Review and merge open PRs (#195, #196, #197, #198)
-- **Priority 2**: Task H1.3 - Create example project folder
-- **Priority 3**: Task A3.1 - GitHub Pages site (skillseekersweb.com)
+- **✅ DONE**: PR #195 merged - Unlimited local repository analysis
+- **✅ DONE**: PR #198 merged - Skip llms.txt config option
+- **✅ DONE**: Issue #203 - Configurable EXCLUDED_DIRS (19 tests, 2 commits)
+
+**📋 Next Up (Post-v2.1.0):**
+- **Priority 1**: Review open PRs (#187, #186)
+- **Priority 2**: Issue #202 - Add warning for missing local_repo_path
+- **Priority 3**: Task H1.3 - Create example project folder
+- **Priority 4**: Task A3.1 - GitHub Pages site (skillseekersweb.com)
 
 **📊 Roadmap Progress:**
 - 134 tasks organized into 22 feature groups
