@@ -436,6 +436,7 @@ Config files (`configs/*.json`) define scraping behavior:
 - `categories`: Keyword mapping for categorization
 - `rate_limit`: Delay between requests (seconds)
 - `max_pages`: Maximum pages to scrape
+- `skip_llms_txt`: Skip llms.txt detection, force HTML scraping (default: false)
 
 ## Key Features & Implementation
 
