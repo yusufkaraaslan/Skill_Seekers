@@ -437,11 +437,50 @@ Config files (`configs/*.json`) define scraping behavior:
 - `rate_limit`: Delay between requests (seconds)
 - `max_pages`: Maximum pages to scrape
 - `skip_llms_txt`: Skip llms.txt detection, force HTML scraping (default: false)
+- `exclude_dirs_additional`: Add custom directories to default exclusions (for local repo analysis)
+- `exclude_dirs`: Replace default directory exclusions entirely (advanced, for local repo analysis)
 
 ## Key Features & Implementation
 
 ### Auto-Detect Existing Data
 Tool checks for `output/{name}_data/` and prompts to reuse, avoiding re-scraping (check_existing_data() in doc_scraper.py:653-660).
+
+### Configurable Directory Exclusions (Local Repository Analysis)
+
+When using `local_repo_path` for unlimited local repository analysis, you can customize which directories to exclude from analysis.
+
+**Smart Defaults:**
+Automatically excludes common directories: `venv`, `node_modules`, `__pycache__`, `.git`, `build`, `dist`, `.pytest_cache`, `htmlcov`, `.tox`, `.mypy_cache`, etc.
+
+**Extend Mode** (`exclude_dirs_additional`): Add custom exclusions to defaults
+```json
+{
+  "sources": [{
+    "type": "github",
+    "local_repo_path": "/path/to/repo",
+    "exclude_dirs_additional": ["proprietary", "legacy", "third_party"]
+  }]
+}
+```
+
+**Replace Mode** (`exclude_dirs`): Override defaults entirely (advanced)
+```json
+{
+  "sources": [{
+    "type": "github",
+    "local_repo_path": "/path/to/repo",
+    "exclude_dirs": ["node_modules", ".git", "custom_vendor"]
+  }]
+}
+```
+
+**Use Cases:**
+- Monorepos with custom directory structures
+- Enterprise projects with non-standard naming
+- Including unusual directories (e.g., analyzing venv code)
+- Minimal exclusions for small/simple projects
+
+See: `should_exclude_dir()` in github_scraper.py:304-306
 
 ### Language Detection
 Detects code languages from:

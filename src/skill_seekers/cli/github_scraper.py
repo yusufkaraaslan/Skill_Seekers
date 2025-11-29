@@ -87,6 +87,28 @@ class GitHubScraper:
             self.local_repo_path = os.path.expanduser(self.local_repo_path)
             logger.info(f"Local repository mode enabled: {self.local_repo_path}")
 
+        # Configure directory exclusions (smart defaults + optional customization)
+        self.excluded_dirs = set(EXCLUDED_DIRS)  # Start with smart defaults
+
+        # Option 1: Replace mode - Use only specified exclusions
+        if 'exclude_dirs' in config:
+            self.excluded_dirs = set(config['exclude_dirs'])
+            logger.warning(
+                f"Using custom directory exclusions ({len(self.excluded_dirs)} dirs) - "
+                "defaults overridden"
+            )
+            logger.debug(f"Custom exclusions: {sorted(self.excluded_dirs)}")
+
+        # Option 2: Extend mode - Add to default exclusions
+        elif 'exclude_dirs_additional' in config:
+            additional = set(config['exclude_dirs_additional'])
+            self.excluded_dirs = self.excluded_dirs.union(additional)
+            logger.info(
+                f"Added {len(additional)} custom directory exclusions "
+                f"(total: {len(self.excluded_dirs)})"
+            )
+            logger.debug(f"Additional exclusions: {sorted(additional)}")
+
         # GitHub client setup (C1.1)
         token = self._get_token()
         self.github = Github(token) if token else Github()
@@ -281,7 +303,7 @@ class GitHubScraper:
 
     def should_exclude_dir(self, dir_name: str) -> bool:
         """Check if directory should be excluded from analysis."""
-        return dir_name in EXCLUDED_DIRS or dir_name.startswith('.')
+        return dir_name in self.excluded_dirs or dir_name.startswith('.')
 
     def _extract_file_tree(self):
         """Extract repository file tree structure (dual-mode: GitHub API or local filesystem)."""
