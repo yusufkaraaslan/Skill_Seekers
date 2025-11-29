@@ -14,7 +14,7 @@ from pathlib import Path
 # Add CLI to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config_validator import validate_config
+from .config_validator import validate_config
 
 def test_validate_existing_unified_configs():
     """Test that all existing unified configs are valid"""
