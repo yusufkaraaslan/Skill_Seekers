@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **✅ CI/CD Fixed**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
 - **📚 Documentation Complete**: README, CHANGELOG, FUTURE_RELEASES.md all updated
 - **🚀 Unified CLI**: Single `skill-seekers` command with Git-style subcommands
-- **🧪 Test Coverage**: 379 tests passing, 39% coverage
+- **🧪 Test Coverage**: 391 tests passing, 39% coverage
 - **🌐 Community**: GitHub Discussion, Release notes, announcements published
 
 **🚀 Unified Multi-Source Scraping (v2.0.0)**
@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **NEW**: Automatic conflict detection between docs and code
 - **NEW**: Rule-based and AI-powered merging
 - **NEW**: 5 example unified configs (React, Django, FastAPI, Godot, FastAPI-test)
-- **Status**: ⚠️ 12 unified tests need fixes (core functionality stable)
+- **Status**: ✅ All 22 unified tests passing (18 core + 4 MCP integration)
 
 **✅ Community Response (H1 Group):**
 - **Issue #8 Fixed** - Added BULLETPROOF_QUICKSTART.md and TROUBLESHOOTING.md for beginners
@@ -40,16 +40,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 📝 Multi-source configs: django_unified, fastapi_unified, fastapi_unified_test, godot_unified, react_unified
 - 📝 Test/Example configs: godot_github, react_github, python-tutorial-test, example_pdf, test-manual
 
-**📋 Next Up (Post-PyPI v2.0.0):**
-- **✅ DONE**: PyPI publication complete
+**📋 Next Up (Post-v2.1.0):**
+- **✅ DONE**: PyPI publication complete (v2.0.0)
 - **✅ DONE**: CI/CD fixed - all checks passing
 - **✅ DONE**: Documentation updated (README, CHANGELOG, FUTURE_RELEASES.md)
-- **Priority 1**: Fix 12 failing unified tests in tests/test_unified.py
-  - ConfigValidator expecting dict instead of file path
-  - ConflictDetector expecting dict pages, not list
+- **✅ DONE**: Quality Assurance + Race Condition Fixes (v2.1.0)
+- **✅ DONE**: All critical bugs fixed (Issues #190, #192, #193)
+- **✅ DONE**: Test suite stabilized (391 tests passing)
+- **✅ DONE**: Unified tests fixed (all 22 passing)
+- **Priority 1**: Review and merge open PRs (#195, #196, #197, #198)
 - **Priority 2**: Task H1.3 - Create example project folder
 - **Priority 3**: Task A3.1 - GitHub Pages site (skillseekersweb.com)
-- **Priority 4**: Task J1.1 - Install MCP package for testing
 
 **📊 Roadmap Progress:**
 - 134 tasks organized into 22 feature groups
@@ -325,12 +326,13 @@ Skill_Seekers/
 │       │   └── conflict_detector.py # Conflict detection
 │       └── mcp/                # MCP server integration
 │           └── server.py
-├── tests/                      # Test suite (379 tests passing)
+├── tests/                      # Test suite (391 tests passing)
 │   ├── test_scraper_features.py
 │   ├── test_config_validation.py
 │   ├── test_integration.py
 │   ├── test_mcp_server.py
-│   ├── test_unified.py         # (12 tests need fixes)
+│   ├── test_unified.py         # Unified scraping tests (18 tests)
+│   ├── test_unified_mcp_integration.py  # (4 tests)
 │   └── ...
 ├── configs/                    # Preset configurations (24 configs)
 │   ├── godot.json
@@ -743,11 +745,11 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 - ✅ `claude-code.json` - Claude Code documentation **NEW!**
 
 ### Unified Multi-Source Configs (5 configs - **NEW v2.0!**)
-- ⚠️ `react_unified.json` - React (docs + GitHub + code analysis)
-- ⚠️ `django_unified.json` - Django (docs + GitHub + code analysis)
-- ⚠️ `fastapi_unified.json` - FastAPI (docs + GitHub + code analysis)
-- ⚠️ `fastapi_unified_test.json` - FastAPI test config
-- ⚠️ `godot_unified.json` - Godot (docs + GitHub + code analysis)
+- ✅ `react_unified.json` - React (docs + GitHub + code analysis)
+- ✅ `django_unified.json` - Django (docs + GitHub + code analysis)
+- ✅ `fastapi_unified.json` - FastAPI (docs + GitHub + code analysis)
+- ✅ `fastapi_unified_test.json` - FastAPI test config
+- ✅ `godot_unified.json` - Godot (docs + GitHub + code analysis)
 
 ### Test/Example Configs (5 configs)
 - 📝 `godot_github.json` - GitHub-only scraping example
@@ -756,8 +758,8 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 - 📝 `example_pdf.json` - PDF extraction example
 - 📝 `test-manual.json` - Manual testing config
 
-**Note:** ⚠️ = Unified configs have 12 failing tests that need fixing
-**Last verified:** November 11, 2025 (v2.0.0 PyPI release)
+**Note:** All configs verified and working! Unified configs fully tested with 22 passing tests.
+**Last verified:** November 29, 2025 (Post-v2.1.0 bug fixes)
 
 ## Additional Documentation
 
@@ -789,7 +791,7 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 - ✅ **Modern Python Packaging**: pyproject.toml, src/ layout, entry points
 - ✅ **Unified CLI**: Single `skill-seekers` command with Git-style subcommands
 - ✅ **CI/CD Working**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
-- ✅ **Test Coverage**: 379 tests passing, 39% coverage
+- ✅ **Test Coverage**: 391 tests passing, 39% coverage
 - ✅ **Documentation**: Complete user and technical documentation
 
 **Architecture:**
@@ -801,7 +803,7 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 
 **Development Workflow:**
 1. **Install**: `pip install -e .` (editable mode for development)
-2. **Run tests**: `pytest tests/` (379 tests)
+2. **Run tests**: `pytest tests/` (391 tests)
 3. **Build package**: `uv build` or `python -m build`
 4. **Publish**: `uv publish` (PyPI)
 
