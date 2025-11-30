@@ -174,7 +174,7 @@
     ]
   },
   "rate_limit": 0.3,
-  "max_pages": 50000,
+  "max_pages": 5000,
   "_comment": "=== Split Strategy Configuration ===",
   "split_strategy": "router",
   "split_config": {
@@ -204,38 +204,5 @@
     "interval": 500,
     "save_path": "checkpoints/unity_scraper.json"
   },
-  "_comment3": "=== Additional Unity-Specific Configuration ===",
-  "version_handling": {
-    "target_version": "2023.2",
-    "include_version_notes": true,
-    "version_url_pattern": "/2023.2/"
-  },
-  "special_handling": {
-    "script_reference": {
-      "enabled": true,
-      "base_url": "https://docs.unity3d.com/ScriptReference/",
-      "priority": "high",
-      "include_inheritance": true,
-      "include_examples": true
-    },
-    "packages": {
-      "enabled": true,
-      "base_url": "https://docs.unity3d.com/Packages/",
-      "priority_packages": [
-        "com.unity.xr.interaction.toolkit",
-        "com.unity.render-pipelines.universal",
-        "com.unity.render-pipelines.high-definition",
-        "com.unity.netcode.gameobjects",
-        "com.unity.cinemachine",
-        "com.unity.inputsystem"
-      ]
-    }
-  },
-  "content_processing": {
-    "extract_code_examples": true,
-    "extract_api_signatures": true,
-    "include_images": false,
-    "markdown_conversion": true,
-    "preserve_links": true
-  }
+  "_comment3": "=== Additional Unity-Specific Configuration ==="
 }
