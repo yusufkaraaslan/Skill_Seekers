@@ -126,7 +126,7 @@ class TestUnifiedCLIEntryPoints(unittest.TestCase):
 
             # Should show version
             output = result.stdout + result.stderr
-            self.assertIn('2.0.0', output)
+            self.assertIn('2.1.1', output)
 
         except FileNotFoundError:
             # If skill-seekers is not installed, skip this test
