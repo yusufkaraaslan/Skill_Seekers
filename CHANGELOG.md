@@ -7,18 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.1.1] - 2025-11-30
+
+### 🚀 GitHub Repository Analysis Enhancements
+
+This release significantly improves GitHub repository scraping with unlimited local analysis, configurable directory exclusions, and numerous bug fixes.
+
 ### Added
 - **Configurable directory exclusions** for local repository analysis ([#203](https://github.com/yusufkaraaslan/Skill_Seekers/issues/203))
   - `exclude_dirs_additional`: Extend default exclusions with custom directories
   - `exclude_dirs`: Replace default exclusions entirely (advanced users)
   - 19 comprehensive tests covering all scenarios
   - Logging: INFO for extend mode, WARNING for replace mode
-- Unlimited local repository analysis via `local_repo_path` configuration parameter
-- Auto-exclusion of virtual environments, build artifacts, and cache directories
-- Support for analyzing repositories without GitHub API rate limits (50 → unlimited files)
+- **Unlimited local repository analysis** via `local_repo_path` configuration parameter
+- **Auto-exclusion** of virtual environments, build artifacts, and cache directories
+- **Support for analyzing repositories without GitHub API rate limits** (50 → unlimited files)
+- **Skip llms.txt option** - Force HTML scraping even when llms.txt is detected ([#198](https://github.com/yusufkaraaslan/Skill_Seekers/pull/198))
 
 ### Fixed
-- Fixed logger initialization error causing `AttributeError: 'NoneType' object has no attribute 'setLevel'` (Issue #190)
+- Fixed logger initialization error causing `AttributeError: 'NoneType' object has no attribute 'setLevel'` ([#190](https://github.com/yusufkaraaslan/Skill_Seekers/issues/190))
 - Fixed 3 NoneType subscriptable errors in release tag parsing
 - Fixed relative import paths causing `ModuleNotFoundError`
 - Fixed hardcoded 50-file analysis limit preventing comprehensive code analysis
@@ -32,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved file discovery from 140 to 345 files (+146%)
 - Improved class extraction from 55 to 585 classes (+964%)
 - Improved function extraction from 512 to 2,784 functions (+444%)
+- Test suite expanded to 427 tests (up from 391)
 
 ---
 
