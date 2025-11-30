@@ -38,12 +38,28 @@ Small tasks that build community features incrementally
   - **Features:** List 24 configs, filter by category, download by name, save to local directory
   - **Commands:** `list_available=true`, `category='web-frameworks'`, `config_name='react'`
   - **Branch:** `feature/a1-config-sharing`
-- [ ] **Task A1.3:** Create basic config upload form (HTML + backend)
-- [ ] **Task A1.4:** Add config rating/voting system
-- [ ] **Task A1.5:** Add config search/filter functionality
-- [ ] **Task A1.6:** Add user-submitted config review queue
+- [ ] **Task A1.3:** Add MCP tool `submit_config` to submit custom configs (Issue #11)
+  - **Purpose:** Allow users to submit custom configs via MCP (creates GitHub issue)
+  - **Features:** Validate config JSON, create GitHub issue, auto-label, return issue URL
+  - **Approach:** GitHub Issues backend (safe, uses GitHub auth/spam detection)
+  - **Time:** 2-3 hours
+- [ ] **Task A1.4:** Create static config catalog website (GitHub Pages) (Issue #12)
+  - **Purpose:** Read-only catalog to browse/search configs (like npm registry)
+  - **Features:** Static HTML/JS, pulls from API, search/filter, copy JSON button
+  - **Architecture:** Website = browse, MCP = download/submit/manage
+  - **Time:** 2-3 hours
+- [ ] **Task A1.5:** Add config rating/voting system (Issue #13)
+  - **Purpose:** Community feedback on config quality
+  - **Features:** Star ratings, vote counts, sort by rating, "most popular" section
+  - **Options:** GitHub reactions, backend database, or localStorage
+  - **Time:** 3-4 hours
+- [ ] **Task A1.6:** Admin review queue for submitted configs (Issue #14)
+  - **Purpose:** Review community-submitted configs before publishing
+  - **Approach:** Use GitHub Issues with labels (no custom code needed)
+  - **Workflow:** Review → Validate → Test → Approve/Reject
+  - **Time:** 1-2 hours (GitHub Issues) or 4-6 hours (custom dashboard)
 
-**Start Small:** ~~Pick A1.1 first (simple JSON endpoint)~~ ✅ A1.1 Complete! ~~Pick A1.2 next (MCP tool)~~ ✅ A1.2 Complete! Pick A1.3 next (upload form)
+**Start Small:** ~~Pick A1.1 first (simple JSON endpoint)~~ ✅ A1.1 Complete! ~~Pick A1.2 next (MCP tool)~~ ✅ A1.2 Complete! Pick A1.3 next (MCP submit tool)
 
 #### A2: Knowledge Sharing (Website Feature)
 - [ ] **Task A2.1:** Design knowledge database schema
