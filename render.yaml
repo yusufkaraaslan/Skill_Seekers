@@ -4,8 +4,9 @@ services:
     name: skill-seekers-api
     runtime: python
     plan: free
-    buildCommand: pip install -r api/requirements.txt
-    startCommand: cd api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10
