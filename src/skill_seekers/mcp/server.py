@@ -12,6 +12,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+import httpx
 
 # Import external MCP package
 # NOTE: Directory renamed from 'mcp/' to 'skill_seeker_mcp/' to avoid shadowing the external mcp package
@@ -409,6 +410,34 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="fetch_config",
+            description="Download a config file from api.skillseekersweb.com. List available configs or download a specific one by name.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name": {
+                        "type": "string",
+                        "description": "Name of the config to download (e.g., 'react', 'django', 'godot'). Omit to list all available configs.",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Directory to save the config file (default: 'configs/')",
+                        "default": "configs",
+                    },
+                    "list_available": {
+                        "type": "boolean",
+                        "description": "List all available configs from the API (default: false)",
+                        "default": False,
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "Filter configs by category when listing (e.g., 'web-frameworks', 'game-engines', 'devops')",
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -439,6 +468,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await scrape_pdf_tool(arguments)
         elif name == "scrape_github":
             return await scrape_github_tool(arguments)
+        elif name == "fetch_config":
+            return await fetch_config_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -1042,6 +1073,124 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=output)]
     else:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def fetch_config_tool(args: dict) -> list[TextContent]:
+    """Download config file from API"""
+    API_BASE_URL = "https://api.skillseekersweb.com"
+
+    config_name = args.get("config_name")
+    destination = args.get("destination", "configs")
+    list_available = args.get("list_available", False)
+    category = args.get("category")
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # List available configs if requested or no config_name provided
+            if list_available or not config_name:
+                # Build API URL with optional category filter
+                list_url = f"{API_BASE_URL}/api/configs"
+                params = {}
+                if category:
+                    params["category"] = category
+
+                response = await client.get(list_url, params=params)
+                response.raise_for_status()
+                data = response.json()
+
+                configs = data.get("configs", [])
+                total = data.get("total", 0)
+                filters = data.get("filters")
+
+                # Format list output
+                result = f"📋 Available Configs ({total} total)\n"
+                if filters:
+                    result += f"🔍 Filters: {filters}\n"
+                result += "\n"
+
+                # Group by category
+                by_category = {}
+                for config in configs:
+                    cat = config.get("category", "uncategorized")
+                    if cat not in by_category:
+                        by_category[cat] = []
+                    by_category[cat].append(config)
+
+                for cat, cat_configs in sorted(by_category.items()):
+                    result += f"\n**{cat.upper()}** ({len(cat_configs)} configs):\n"
+                    for cfg in cat_configs:
+                        name = cfg.get("name")
+                        desc = cfg.get("description", "")[:60]
+                        config_type = cfg.get("type", "unknown")
+                        tags = ", ".join(cfg.get("tags", [])[:3])
+                        result += f"  • {name} [{config_type}] - {desc}{'...' if len(cfg.get('description', '')) > 60 else ''}\n"
+                        if tags:
+                            result += f"    Tags: {tags}\n"
+
+                result += f"\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
+                result += f"📚 API Docs: {API_BASE_URL}/docs\n"
+
+                return [TextContent(type="text", text=result)]
+
+            # Download specific config
+            if not config_name:
+                return [TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")]
+
+            # Get config details first
+            detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
+            detail_response = await client.get(detail_url)
+
+            if detail_response.status_code == 404:
+                return [TextContent(type="text", text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.")]
+
+            detail_response.raise_for_status()
+            config_info = detail_response.json()
+
+            # Download the actual config file
+            download_url = f"{API_BASE_URL}/api/download/{config_name}.json"
+            download_response = await client.get(download_url)
+            download_response.raise_for_status()
+            config_data = download_response.json()
+
+            # Save to destination
+            dest_path = Path(destination)
+            dest_path.mkdir(parents=True, exist_ok=True)
+            config_file = dest_path / f"{config_name}.json"
+
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+
+            # Build result message
+            result = f"""✅ Config downloaded successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+📊 Category: {config_info.get('category', 'uncategorized')}
+🏷️  Tags: {', '.join(config_info.get('tags', []))}
+📄 Type: {config_info.get('type', 'unknown')}
+📝 Description: {config_info.get('description', 'No description')}
+
+🔗 Source: {config_info.get('primary_source', 'N/A')}
+📏 Max pages: {config_info.get('max_pages', 'N/A')}
+📦 File size: {config_info.get('file_size', 'N/A')} bytes
+🕒 Last updated: {config_info.get('last_updated', 'N/A')}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 More configs: Use list_available=true to see all available configs
+"""
+
+            return [TextContent(type="text", text=result)]
+
+    except httpx.HTTPError as e:
+        return [TextContent(type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later.")]
+    except json.JSONDecodeError as e:
+        return [TextContent(type="text", text=f"❌ JSON Error: Invalid response from API: {str(e)}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
 async def main():
