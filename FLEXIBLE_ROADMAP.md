@@ -58,6 +58,18 @@ Small tasks that build community features incrementally
   - **Approach:** Use GitHub Issues with labels (no custom code needed)
   - **Workflow:** Review → Validate → Test → Approve/Reject
   - **Time:** 1-2 hours (GitHub Issues) or 4-6 hours (custom dashboard)
+- [ ] **Task A1.7:** Add MCP tool `install_skill` for one-command workflow (Issue #204)
+  - **Purpose:** Complete one-command workflow: fetch → scrape → **enhance** → package → upload
+  - **Features:** Single command install, smart config detection, automatic AI enhancement (LOCAL)
+  - **Workflow:** fetch_config → scrape_docs → enhance_skill_local → package_skill → upload_skill
+  - **Critical:** Always includes AI enhancement step (30-60 sec, 3/10→9/10 quality boost)
+  - **Time:** 3-4 hours
+- [ ] **Task A1.8:** Add smart skill detection and auto-install (Issue #205)
+  - **Purpose:** Auto-detect missing skills from user queries and offer to install them
+  - **Features:** Topic extraction, skill gap analysis, API search, smart suggestions
+  - **Modes:** Ask first (default), Auto-install, Suggest only, Manual
+  - **Example:** User asks about React → Claude detects → Suggests installing React skill
+  - **Time:** 4-6 hours
 
 **Start Small:** ~~Pick A1.1 first (simple JSON endpoint)~~ ✅ A1.1 Complete! ~~Pick A1.2 next (MCP tool)~~ ✅ A1.2 Complete! Pick A1.3 next (MCP submit tool)
 
@@ -351,7 +363,7 @@ Improve test coverage and quality
 
 **Completed Tasks:** 2 (A1.1 ✅, A1.2 ✅)
 **In Progress:** 0
-**Total Available Tasks:** 134
+**Total Available Tasks:** 136
 
 ### Current Sprint: Choose Your Own Adventure!
 **Pick 1-3 tasks** from any category that interest you most.
