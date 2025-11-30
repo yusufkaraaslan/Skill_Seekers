@@ -33,13 +33,17 @@ Small tasks that build community features incrementally
   - **Features:** 6 REST endpoints, auto-categorization, auto-tags, filtering, SSL enabled
   - **Branch:** `feature/a1-config-sharing`
   - **Deployment:** Render with custom domain
-- [ ] **Task A1.2:** Add MCP tool `fetch_config` to download from website
+- [x] **Task A1.2:** Add MCP tool `fetch_config` to download from website ✅ **COMPLETE**
+  - **Status:** Implemented in MCP server
+  - **Features:** List 24 configs, filter by category, download by name, save to local directory
+  - **Commands:** `list_available=true`, `category='web-frameworks'`, `config_name='react'`
+  - **Branch:** `feature/a1-config-sharing`
 - [ ] **Task A1.3:** Create basic config upload form (HTML + backend)
 - [ ] **Task A1.4:** Add config rating/voting system
 - [ ] **Task A1.5:** Add config search/filter functionality
 - [ ] **Task A1.6:** Add user-submitted config review queue
 
-**Start Small:** ~~Pick A1.1 first (simple JSON endpoint)~~ ✅ A1.1 Complete! Pick A1.2 next (MCP tool)
+**Start Small:** ~~Pick A1.1 first (simple JSON endpoint)~~ ✅ A1.1 Complete! ~~Pick A1.2 next (MCP tool)~~ ✅ A1.2 Complete! Pick A1.3 next (upload form)
 
 #### A2: Knowledge Sharing (Website Feature)
 - [ ] **Task A2.1:** Design knowledge database schema
@@ -329,7 +333,7 @@ Improve test coverage and quality
 
 ## 📊 Progress Tracking
 
-**Completed Tasks:** 1 (A1.1 ✅)
+**Completed Tasks:** 2 (A1.1 ✅, A1.2 ✅)
 **In Progress:** 0
 **Total Available Tasks:** 134
 
