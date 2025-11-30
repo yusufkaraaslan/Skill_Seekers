@@ -48,7 +48,7 @@ async def root():
             "/docs": "API documentation",
         },
         "repository": "https://github.com/yusufkaraaslan/Skill_Seekers",
-        "website": "https://skillseekersweb.com"
+        "website": "https://api.skillseekersweb.com"
     }
 
 

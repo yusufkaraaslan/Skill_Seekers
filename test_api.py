@@ -8,7 +8,7 @@ from api.config_analyzer import ConfigAnalyzer
 
 # Initialize analyzer
 config_dir = Path('configs')
-analyzer = ConfigAnalyzer(config_dir, base_url="https://skillseekersweb.com")
+analyzer = ConfigAnalyzer(config_dir, base_url="https://api.skillseekersweb.com")
 
 # Test analyzing all configs
 print("Testing config analyzer...")

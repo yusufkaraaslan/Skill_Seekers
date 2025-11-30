@@ -53,7 +53,7 @@ class ConfigAnalyzer:
         "testing": ["test", "testing", "pytest", "jest"]
     }
 
-    def __init__(self, config_dir: Path, base_url: str = "https://skillseekersweb.com"):
+    def __init__(self, config_dir: Path, base_url: str = "https://api.skillseekersweb.com"):
         """
         Initialize config analyzer
 
