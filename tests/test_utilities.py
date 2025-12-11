@@ -17,7 +17,9 @@ from skill_seekers.cli.utils import (
     format_file_size,
     validate_skill_directory,
     validate_zip_file,
-    print_upload_instructions
+    print_upload_instructions,
+    retry_with_backoff,
+    retry_with_backoff_async
 )
 
 
@@ -216,6 +218,120 @@ class TestPrintUploadInstructions(unittest.TestCase):
                 print_upload_instructions(zip_path)
             except Exception as e:
                 self.fail(f"print_upload_instructions raised {e}")
+
+
+class TestRetryWithBackoff(unittest.TestCase):
+    """Test retry_with_backoff function"""
+
+    def test_successful_operation_first_try(self):
+        """Test operation that succeeds on first try"""
+        call_count = 0
+
+        def operation():
+            nonlocal call_count
+            call_count += 1
+            return "success"
+
+        result = retry_with_backoff(operation, max_attempts=3)
+        self.assertEqual(result, "success")
+        self.assertEqual(call_count, 1)
+
+    def test_successful_operation_after_retry(self):
+        """Test operation that fails once then succeeds"""
+        call_count = 0
+
+        def operation():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 2:
+                raise ConnectionError("Temporary failure")
+            return "success"
+
+        result = retry_with_backoff(operation, max_attempts=3, base_delay=0.01)
+        self.assertEqual(result, "success")
+        self.assertEqual(call_count, 2)
+
+    def test_all_retries_fail(self):
+        """Test operation that fails all retries"""
+        call_count = 0
+
+        def operation():
+            nonlocal call_count
+            call_count += 1
+            raise ConnectionError("Persistent failure")
+
+        with self.assertRaises(ConnectionError):
+            retry_with_backoff(operation, max_attempts=3, base_delay=0.01)
+        self.assertEqual(call_count, 3)
+
+    def test_exponential_backoff_timing(self):
+        """Test that delays follow exponential pattern"""
+        import time
+
+        call_times = []
+
+        def operation():
+            call_times.append(time.time())
+            if len(call_times) < 3:
+                raise ConnectionError("Fail")
+            return "success"
+
+        retry_with_backoff(operation, max_attempts=3, base_delay=0.1)
+
+        # Check that delays are increasing (exponential)
+        # First delay: ~0.1s, Second delay: ~0.2s
+        delay1 = call_times[1] - call_times[0]
+        delay2 = call_times[2] - call_times[1]
+
+        self.assertGreater(delay1, 0.05)  # First delay at least base_delay/2
+        self.assertGreater(delay2, delay1 * 1.5)  # Second should be ~2x first
+
+
+class TestRetryWithBackoffAsync(unittest.TestCase):
+    """Test retry_with_backoff_async function"""
+
+    def test_async_successful_operation(self):
+        """Test async operation that succeeds"""
+        import asyncio
+
+        async def operation():
+            return "async success"
+
+        result = asyncio.run(
+            retry_with_backoff_async(operation, max_attempts=3)
+        )
+        self.assertEqual(result, "async success")
+
+    def test_async_retry_then_success(self):
+        """Test async operation that fails then succeeds"""
+        import asyncio
+
+        call_count = 0
+
+        async def operation():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 2:
+                raise ConnectionError("Async failure")
+            return "async success"
+
+        result = asyncio.run(
+            retry_with_backoff_async(operation, max_attempts=3, base_delay=0.01)
+        )
+        self.assertEqual(result, "async success")
+        self.assertEqual(call_count, 2)
+
+    def test_async_all_retries_fail(self):
+        """Test async operation that fails all retries"""
+        import asyncio
+
+        async def operation():
+            raise ConnectionError("Persistent async failure")
+
+        with self.assertRaises(ConnectionError):
+            asyncio.run(
+                retry_with_backoff_async(operation, max_attempts=2, base_delay=0.01)
+            )
 
 
 if __name__ == '__main__':
