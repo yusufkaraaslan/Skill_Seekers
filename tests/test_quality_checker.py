@@ -258,6 +258,136 @@ See [this file](nonexistent.md) for more info.
             self.assertFalse(report2.is_excellent)
 
 
+class TestCompletenessChecks(unittest.TestCase):
+    """Test completeness check functionality"""
+
+    def create_test_skill(self, tmpdir, skill_md_content):
+        """Helper to create a test skill directory"""
+        skill_dir = Path(tmpdir) / "test-skill"
+        skill_dir.mkdir()
+
+        # Create SKILL.md
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(skill_md_content, encoding='utf-8')
+
+        # Create references directory
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "index.md").write_text("# Index\n", encoding='utf-8')
+
+        return skill_dir
+
+    def test_checker_detects_prerequisites_section(self):
+        """Test that checker detects prerequisites section"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """---
+name: test
+---
+
+# Test Skill
+
+## Prerequisites
+
+Make sure you have:
+- Python 3.10+
+- pip installed
+
+## Usage
+
+Run the command.
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+
+            checker = SkillQualityChecker(skill_dir)
+            report = checker.check_all()
+
+            # Should have info about found prerequisites
+            completeness_infos = [i for i in report.info if i.category == 'completeness']
+            self.assertTrue(any('prerequisites' in i.message.lower() or 'verification' in i.message.lower()
+                               for i in completeness_infos))
+
+    def test_checker_detects_troubleshooting_section(self):
+        """Test that checker detects troubleshooting section"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """---
+name: test
+---
+
+# Test Skill
+
+## Usage
+
+Run the command.
+
+## Troubleshooting
+
+### Common Issues
+
+If the command fails, check your permissions.
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+
+            checker = SkillQualityChecker(skill_dir)
+            report = checker.check_all()
+
+            # Should have info about found troubleshooting
+            completeness_infos = [i for i in report.info if i.category == 'completeness']
+            self.assertTrue(any('troubleshoot' in i.message.lower() or 'error handling' in i.message.lower()
+                               for i in completeness_infos))
+
+    def test_checker_detects_workflow_steps(self):
+        """Test that checker detects workflow steps"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """---
+name: test
+---
+
+# Test Skill
+
+## Getting Started
+
+First, install the dependencies.
+
+Then, configure your environment.
+
+Next, run the setup script.
+
+Finally, verify the installation.
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+
+            checker = SkillQualityChecker(skill_dir)
+            report = checker.check_all()
+
+            # Should have info about found workflow steps
+            completeness_infos = [i for i in report.info if i.category == 'completeness']
+            self.assertTrue(any('workflow' in i.message.lower() or 'step' in i.message.lower()
+                               for i in completeness_infos))
+
+    def test_checker_suggests_adding_prerequisites(self):
+        """Test that checker suggests adding prerequisites when missing"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """---
+name: test
+---
+
+# Test Skill
+
+## Usage
+
+Just run the command.
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+
+            checker = SkillQualityChecker(skill_dir)
+            report = checker.check_all()
+
+            # Should have info suggesting prerequisites
+            completeness_infos = [i for i in report.info if i.category == 'completeness']
+            self.assertTrue(any('consider' in i.message.lower() and 'prerequisites' in i.message.lower()
+                               for i in completeness_infos))
+
+
 class TestQualityCheckerCLI(unittest.TestCase):
     """Test quality checker CLI"""
 
