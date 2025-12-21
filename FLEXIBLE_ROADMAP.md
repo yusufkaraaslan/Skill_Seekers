@@ -230,7 +230,7 @@ Small improvements to existing MCP tools
 - [ ] **Task E2.3:** Add progress indicators for long operations
 - [ ] **Task E2.4:** Add validation for all inputs
 - [ ] **Task E2.5:** Add helpful error messages
-- [ ] **Task E2.6:** Add retry logic for network failures
+- [x] **Task E2.6:** Add retry logic for network failures *(Utilities ready via PR #208, integration pending)*
 
 **Start Small:** Pick E2.1 first (one tool at a time)
 
@@ -244,7 +244,7 @@ Technical improvements to existing features
 - [ ] **Task F1.2:** Add duplicate page detection
 - [ ] **Task F1.3:** Add memory-efficient streaming for large docs
 - [ ] **Task F1.4:** Add HTML parser fallback (lxml → html5lib)
-- [ ] **Task F1.5:** Add network retry with exponential backoff
+- [x] **Task F1.5:** Add network retry with exponential backoff *(Utilities ready via PR #208, scraper integration pending)*
 - [ ] **Task F1.6:** Fix package path output bug
 
 **Start Small:** Pick F1.1 first (URL normalization only)
