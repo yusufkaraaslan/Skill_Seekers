@@ -8,20 +8,22 @@ Usage:
     skill-seekers <command> [options]
 
 Commands:
-    scrape      Scrape documentation website
-    github      Scrape GitHub repository
-    pdf         Extract from PDF file
-    unified     Multi-source scraping (docs + GitHub + PDF)
-    enhance     AI-powered enhancement (local, no API key)
-    package     Package skill into .zip file
-    upload      Upload skill to Claude
-    estimate    Estimate page count before scraping
+    scrape        Scrape documentation website
+    github        Scrape GitHub repository
+    pdf           Extract from PDF file
+    unified       Multi-source scraping (docs + GitHub + PDF)
+    enhance       AI-powered enhancement (local, no API key)
+    package       Package skill into .zip file
+    upload        Upload skill to Claude
+    estimate      Estimate page count before scraping
+    install-agent Install skill to AI agent directories
 
 Examples:
     skill-seekers scrape --config configs/react.json
     skill-seekers github --repo microsoft/TypeScript
     skill-seekers unified --config configs/react_unified.json
     skill-seekers package output/react/
+    skill-seekers install-agent output/react/ --agent cursor
 """
 
 import sys
@@ -60,7 +62,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 2.2.0"
+        version="%(prog)s 2.3.0"
     )
 
     subparsers = parser.add_subparsers(
@@ -155,6 +157,32 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     estimate_parser.add_argument("config", help="Config JSON file")
     estimate_parser.add_argument("--max-discovery", type=int, help="Max pages to discover")
+
+    # === install-agent subcommand ===
+    install_agent_parser = subparsers.add_parser(
+        "install-agent",
+        help="Install skill to AI agent directories",
+        description="Copy skill to agent-specific installation directories"
+    )
+    install_agent_parser.add_argument(
+        "skill_directory",
+        help="Skill directory path (e.g., output/react/)"
+    )
+    install_agent_parser.add_argument(
+        "--agent",
+        required=True,
+        help="Agent name (claude, cursor, vscode, amp, goose, opencode, all)"
+    )
+    install_agent_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing installation without asking"
+    )
+    install_agent_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview installation without making changes"
+    )
 
     # === install subcommand ===
     install_parser = subparsers.add_parser(
@@ -299,6 +327,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.max_discovery:
                 sys.argv.extend(["--max-discovery", str(args.max_discovery)])
             return estimate_main() or 0
+
+        elif args.command == "install-agent":
+            from skill_seekers.cli.install_agent import main as install_agent_main
+            sys.argv = ["install_agent.py", args.skill_directory, "--agent", args.agent]
+            if args.force:
+                sys.argv.append("--force")
+            if args.dry_run:
+                sys.argv.append("--dry-run")
+            return install_agent_main() or 0
 
         elif args.command == "install":
             from skill_seekers.cli.install_skill import main as install_main

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.2.0"
+version = "2.3.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -110,6 +110,7 @@ skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
+skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 
 [tool.setuptools]
 packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]

@@ -717,6 +717,60 @@ In Claude Code, just ask:
 
 ---
 
+## 🤖 Installing to AI Agents
+
+Skill Seekers can automatically install skills to 10+ AI coding agents.
+
+### Quick Start
+
+```bash
+# Install to specific agent
+skill-seekers install-agent output/react/ --agent cursor
+
+# Install to all agents at once
+skill-seekers install-agent output/react/ --agent all
+
+# Overwrite existing installation
+skill-seekers install-agent output/react/ --agent claude --force
+
+# Preview without installing
+skill-seekers install-agent output/react/ --agent cursor --dry-run
+```
+
+### Supported Agents
+
+| Agent | Path | Type |
+|-------|------|------|
+| **Claude Code** | `~/.claude/skills/` | Global |
+| **Cursor** | `.cursor/skills/` | Project |
+| **VS Code / Copilot** | `.github/skills/` | Project |
+| **Amp** | `~/.amp/skills/` | Global |
+| **Goose** | `~/.config/goose/skills/` | Global |
+| **OpenCode** | `~/.opencode/skills/` | Global |
+| **Letta** | `~/.letta/skills/` | Global |
+| **Aide** | `~/.aide/skills/` | Global |
+| **Windsurf** | `~/.windsurf/skills/` | Global |
+
+**Global paths** install to user's home directory (~/).
+**Project paths** install to current project's root directory.
+
+### Complete Workflow
+
+```bash
+# 1. Scrape documentation
+skill-seekers scrape --config configs/react.json --enhance-local
+
+# 2. Package skill
+skill-seekers package output/react/
+
+# 3. Install to your agent
+skill-seekers install-agent output/react/ --agent cursor
+
+# 4. Restart Cursor to load the skill
+```
+
+---
+
 ## 📁 Simple Structure
 
 ```

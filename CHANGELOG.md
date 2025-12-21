@@ -18,6 +18,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2025-12-22
+
+### 🤖 Multi-Agent Installation Support
+
+This release adds automatic skill installation to 10+ AI coding agents with a single command.
+
+### Added
+- **Multi-agent installation support** (#210)
+  - New `install-agent` command to install skills to any AI coding agent
+  - Support for 10+ agents: Claude Code, Cursor, VS Code, Amp, Goose, OpenCode, Letta, Aide, Windsurf
+  - `--agent all` flag to install to all agents at once
+  - `--force` flag to overwrite existing installations
+  - `--dry-run` flag to preview installations
+  - Intelligent path resolution (global vs project-relative)
+  - Fuzzy matching for agent names with suggestions
+  - Comprehensive error handling and user feedback
+
+### Changed
+- Skills are now compatible with the Agent Skills open standard (agentskills.io)
+- Installation paths follow standard conventions for each agent
+- CLI updated with install-agent subcommand
+
+### Documentation
+- Added multi-agent installation guide to README.md
+- Updated CLAUDE.md with install-agent examples
+- Added agent compatibility table
+
+### Testing
+- Added 32 comprehensive tests for install-agent functionality
+- All tests passing (603 tests total, 86 skipped)
+- No regressions in existing functionality
+
+---
+
 ## [2.2.0] - 2025-12-21
 
 ### 🚀 Private Config Repositories - Team Collaboration Unlocked
