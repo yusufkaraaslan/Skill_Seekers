@@ -7,6 +7,7 @@ Model Context Protocol server for generating Claude AI skills from documentation
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -1273,6 +1274,25 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
             # Get format info
             is_unified = validator.is_unified
             config_name = config_data.get("name", "unnamed")
+
+            # Additional format validation (ConfigValidator only checks structure)
+            # Validate name format (alphanumeric, hyphens, underscores only)
+            if not re.match(r'^[a-zA-Z0-9_-]+$', config_name):
+                raise ValueError(f"Invalid name format: '{config_name}'\nNames must contain only alphanumeric characters, hyphens, and underscores")
+
+            # Validate URL formats
+            if not is_unified:
+                # Legacy config - check base_url
+                base_url = config_data.get('base_url', '')
+                if base_url and not (base_url.startswith('http://') or base_url.startswith('https://')):
+                    raise ValueError(f"Invalid base_url format: '{base_url}'\nURLs must start with http:// or https://")
+            else:
+                # Unified config - check URLs in sources
+                for idx, source in enumerate(config_data.get('sources', [])):
+                    if source.get('type') == 'documentation':
+                        source_url = source.get('base_url', '')
+                        if source_url and not (source_url.startswith('http://') or source_url.startswith('https://')):
+                            raise ValueError(f"Source {idx} (documentation): Invalid base_url format: '{source_url}'\nURLs must start with http:// or https://")
 
         except ValueError as validation_error:
             # Provide detailed validation feedback
