@@ -420,13 +420,13 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="fetch_config",
-            description="Download a config file from api.skillseekersweb.com. List available configs or download a specific one by name.",
+            description="Fetch config from API, git URL, or registered source. Supports three modes: (1) Named source from registry, (2) Direct git URL, (3) API (default). List available configs or download a specific one by name.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "config_name": {
                         "type": "string",
-                        "description": "Name of the config to download (e.g., 'react', 'django', 'godot'). Omit to list all available configs.",
+                        "description": "Name of the config to download (e.g., 'react', 'django', 'godot'). Required for git modes. Omit to list all available configs in API mode.",
                     },
                     "destination": {
                         "type": "string",
@@ -435,12 +435,34 @@ async def list_tools() -> list[Tool]:
                     },
                     "list_available": {
                         "type": "boolean",
-                        "description": "List all available configs from the API (default: false)",
+                        "description": "List all available configs from the API (only works in API mode, default: false)",
                         "default": False,
                     },
                     "category": {
                         "type": "string",
-                        "description": "Filter configs by category when listing (e.g., 'web-frameworks', 'game-engines', 'devops')",
+                        "description": "Filter configs by category when listing in API mode (e.g., 'web-frameworks', 'game-engines', 'devops')",
+                    },
+                    "git_url": {
+                        "type": "string",
+                        "description": "Git repository URL containing configs. If provided, fetches from git instead of API. Supports HTTPS and SSH URLs. Example: 'https://github.com/myorg/configs.git'",
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Named source from registry (highest priority). Use add_config_source to register sources first. Example: 'team', 'company'",
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Git branch to use (default: 'main'). Only used with git_url or source.",
+                        "default": "main",
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "Authentication token for private repos (optional). Prefer using environment variables (GITHUB_TOKEN, GITLAB_TOKEN, etc.).",
+                    },
+                    "refresh": {
+                        "type": "boolean",
+                        "description": "Force refresh cached git repository (default: false). Deletes cache and re-clones. Only used with git modes.",
+                        "default": False,
                     },
                 },
                 "required": [],
@@ -470,6 +492,77 @@ async def list_tools() -> list[Tool]:
                     },
                 },
                 "required": [],
+            },
+        ),
+        Tool(
+            name="add_config_source",
+            description="Register a git repository as a config source. Allows fetching configs from private/team repos. Use this to set up named sources that can be referenced by fetch_config. Supports GitHub, GitLab, Gitea, Bitbucket, and custom git servers.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Source identifier (lowercase, alphanumeric, hyphens/underscores allowed). Example: 'team', 'company-internal', 'my_configs'",
+                    },
+                    "git_url": {
+                        "type": "string",
+                        "description": "Git repository URL (HTTPS or SSH). Example: 'https://github.com/myorg/configs.git' or 'git@github.com:myorg/configs.git'",
+                    },
+                    "source_type": {
+                        "type": "string",
+                        "description": "Source type (default: 'github'). Options: 'github', 'gitlab', 'gitea', 'bitbucket', 'custom'",
+                        "default": "github",
+                    },
+                    "token_env": {
+                        "type": "string",
+                        "description": "Environment variable name for auth token (optional). Auto-detected if not provided. Example: 'GITHUB_TOKEN', 'GITLAB_TOKEN', 'MY_CUSTOM_TOKEN'",
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Git branch to use (default: 'main'). Example: 'main', 'master', 'develop'",
+                        "default": "main",
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "description": "Source priority (lower = higher priority, default: 100). Used for conflict resolution when same config exists in multiple sources.",
+                        "default": 100,
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Whether source is enabled (default: true)",
+                        "default": True,
+                    },
+                },
+                "required": ["name", "git_url"],
+            },
+        ),
+        Tool(
+            name="list_config_sources",
+            description="List all registered config sources. Shows git repositories that have been registered with add_config_source. Use this to see available sources for fetch_config.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enabled_only": {
+                        "type": "boolean",
+                        "description": "Only show enabled sources (default: false)",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="remove_config_source",
+            description="Remove a registered config source. Deletes the source from the registry. Does not delete cached git repository data.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Source identifier to remove. Example: 'team', 'company-internal'",
+                    },
+                },
+                "required": ["name"],
             },
         ),
     ]
@@ -506,6 +599,12 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await fetch_config_tool(arguments)
         elif name == "submit_config":
             return await submit_config_tool(arguments)
+        elif name == "add_config_source":
+            return await add_config_source_tool(arguments)
+        elif name == "list_config_sources":
+            return await list_config_sources_tool(arguments)
+        elif name == "remove_config_source":
+            return await remove_config_source_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -1112,81 +1211,63 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
 
 
 async def fetch_config_tool(args: dict) -> list[TextContent]:
-    """Download config file from API"""
-    API_BASE_URL = "https://api.skillseekersweb.com"
+    """Fetch config from API, git URL, or named source"""
+    from skill_seekers.mcp.git_repo import GitConfigRepo
+    from skill_seekers.mcp.source_manager import SourceManager
 
     config_name = args.get("config_name")
     destination = args.get("destination", "configs")
     list_available = args.get("list_available", False)
     category = args.get("category")
 
+    # Git mode parameters
+    source_name = args.get("source")
+    git_url = args.get("git_url")
+    branch = args.get("branch", "main")
+    token = args.get("token")
+    force_refresh = args.get("refresh", False)
+
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # List available configs if requested or no config_name provided
-            if list_available or not config_name:
-                # Build API URL with optional category filter
-                list_url = f"{API_BASE_URL}/api/configs"
-                params = {}
-                if category:
-                    params["category"] = category
-
-                response = await client.get(list_url, params=params)
-                response.raise_for_status()
-                data = response.json()
-
-                configs = data.get("configs", [])
-                total = data.get("total", 0)
-                filters = data.get("filters")
-
-                # Format list output
-                result = f"📋 Available Configs ({total} total)\n"
-                if filters:
-                    result += f"🔍 Filters: {filters}\n"
-                result += "\n"
-
-                # Group by category
-                by_category = {}
-                for config in configs:
-                    cat = config.get("category", "uncategorized")
-                    if cat not in by_category:
-                        by_category[cat] = []
-                    by_category[cat].append(config)
-
-                for cat, cat_configs in sorted(by_category.items()):
-                    result += f"\n**{cat.upper()}** ({len(cat_configs)} configs):\n"
-                    for cfg in cat_configs:
-                        name = cfg.get("name")
-                        desc = cfg.get("description", "")[:60]
-                        config_type = cfg.get("type", "unknown")
-                        tags = ", ".join(cfg.get("tags", [])[:3])
-                        result += f"  • {name} [{config_type}] - {desc}{'...' if len(cfg.get('description', '')) > 60 else ''}\n"
-                        if tags:
-                            result += f"    Tags: {tags}\n"
-
-                result += f"\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
-                result += f"📚 API Docs: {API_BASE_URL}/docs\n"
-
-                return [TextContent(type="text", text=result)]
-
-            # Download specific config
+        # MODE 1: Named Source (highest priority)
+        if source_name:
             if not config_name:
-                return [TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")]
+                return [TextContent(type="text", text="❌ Error: config_name is required when using source parameter")]
 
-            # Get config details first
-            detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
-            detail_response = await client.get(detail_url)
+            # Get source from registry
+            source_manager = SourceManager()
+            try:
+                source = source_manager.get_source(source_name)
+            except KeyError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
 
-            if detail_response.status_code == 404:
-                return [TextContent(type="text", text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.")]
+            git_url = source["git_url"]
+            branch = source.get("branch", branch)
+            token_env = source.get("token_env")
 
-            detail_response.raise_for_status()
-            config_info = detail_response.json()
+            # Get token from environment if not provided
+            if not token and token_env:
+                token = os.environ.get(token_env)
 
-            # Download the actual config file
-            download_url = f"{API_BASE_URL}/api/download/{config_name}.json"
-            download_response = await client.get(download_url)
-            download_response.raise_for_status()
-            config_data = download_response.json()
+            # Clone/pull repository
+            git_repo = GitConfigRepo()
+            try:
+                repo_path = git_repo.clone_or_pull(
+                    source_name=source_name,
+                    git_url=git_url,
+                    branch=branch,
+                    token=token,
+                    force_refresh=force_refresh
+                )
+            except Exception as e:
+                return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
+
+            # Load config from repository
+            try:
+                config_data = git_repo.get_config(repo_path, config_name)
+            except FileNotFoundError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
 
             # Save to destination
             dest_path = Path(destination)
@@ -1196,8 +1277,160 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
             with open(config_file, 'w') as f:
                 json.dump(config_data, f, indent=2)
 
-            # Build result message
-            result = f"""✅ Config downloaded successfully!
+            result = f"""✅ Config fetched from git source successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+🔗 Source: {source_name}
+🌿 Branch: {branch}
+📁 Repository: {git_url}
+🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 Manage sources: Use add_config_source, list_config_sources, remove_config_source tools
+"""
+            return [TextContent(type="text", text=result)]
+
+        # MODE 2: Direct Git URL
+        elif git_url:
+            if not config_name:
+                return [TextContent(type="text", text="❌ Error: config_name is required when using git_url parameter")]
+
+            # Clone/pull repository
+            git_repo = GitConfigRepo()
+            source_name_temp = f"temp_{config_name}"
+
+            try:
+                repo_path = git_repo.clone_or_pull(
+                    source_name=source_name_temp,
+                    git_url=git_url,
+                    branch=branch,
+                    token=token,
+                    force_refresh=force_refresh
+                )
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ Invalid git URL: {str(e)}")]
+            except Exception as e:
+                return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
+
+            # Load config from repository
+            try:
+                config_data = git_repo.get_config(repo_path, config_name)
+            except FileNotFoundError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+
+            # Save to destination
+            dest_path = Path(destination)
+            dest_path.mkdir(parents=True, exist_ok=True)
+            config_file = dest_path / f"{config_name}.json"
+
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+
+            result = f"""✅ Config fetched from git URL successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+📁 Repository: {git_url}
+🌿 Branch: {branch}
+🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 Register this source: Use add_config_source to save for future use
+"""
+            return [TextContent(type="text", text=result)]
+
+        # MODE 3: API (existing, backward compatible)
+        else:
+            API_BASE_URL = "https://api.skillseekersweb.com"
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # List available configs if requested or no config_name provided
+                if list_available or not config_name:
+                    # Build API URL with optional category filter
+                    list_url = f"{API_BASE_URL}/api/configs"
+                    params = {}
+                    if category:
+                        params["category"] = category
+
+                    response = await client.get(list_url, params=params)
+                    response.raise_for_status()
+                    data = response.json()
+
+                    configs = data.get("configs", [])
+                    total = data.get("total", 0)
+                    filters = data.get("filters")
+
+                    # Format list output
+                    result = f"📋 Available Configs ({total} total)\n"
+                    if filters:
+                        result += f"🔍 Filters: {filters}\n"
+                    result += "\n"
+
+                    # Group by category
+                    by_category = {}
+                    for config in configs:
+                        cat = config.get("category", "uncategorized")
+                        if cat not in by_category:
+                            by_category[cat] = []
+                        by_category[cat].append(config)
+
+                    for cat, cat_configs in sorted(by_category.items()):
+                        result += f"\n**{cat.upper()}** ({len(cat_configs)} configs):\n"
+                        for cfg in cat_configs:
+                            name = cfg.get("name")
+                            desc = cfg.get("description", "")[:60]
+                            config_type = cfg.get("type", "unknown")
+                            tags = ", ".join(cfg.get("tags", [])[:3])
+                            result += f"  • {name} [{config_type}] - {desc}{'...' if len(cfg.get('description', '')) > 60 else ''}\n"
+                            if tags:
+                                result += f"    Tags: {tags}\n"
+
+                    result += f"\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
+                    result += f"📚 API Docs: {API_BASE_URL}/docs\n"
+
+                    return [TextContent(type="text", text=result)]
+
+                # Download specific config
+                if not config_name:
+                    return [TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")]
+
+                # Get config details first
+                detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
+                detail_response = await client.get(detail_url)
+
+                if detail_response.status_code == 404:
+                    return [TextContent(type="text", text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.")]
+
+                detail_response.raise_for_status()
+                config_info = detail_response.json()
+
+                # Download the actual config file
+                download_url = f"{API_BASE_URL}/api/download/{config_name}.json"
+                download_response = await client.get(download_url)
+                download_response.raise_for_status()
+                config_data = download_response.json()
+
+                # Save to destination
+                dest_path = Path(destination)
+                dest_path.mkdir(parents=True, exist_ok=True)
+                config_file = dest_path / f"{config_name}.json"
+
+                with open(config_file, 'w') as f:
+                    json.dump(config_data, f, indent=2)
+
+                # Build result message
+                result = f"""✅ Config downloaded successfully!
 
 📦 Config: {config_name}
 📂 Saved to: {config_file}
@@ -1219,7 +1452,7 @@ Next steps:
 💡 More configs: Use list_available=true to see all available configs
 """
 
-            return [TextContent(type="text", text=result)]
+                return [TextContent(type="text", text=result)]
 
     except httpx.HTTPError as e:
         return [TextContent(type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later.")]
@@ -1427,6 +1660,176 @@ What happens next:
 
         except GithubException as e:
             return [TextContent(type="text", text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def add_config_source_tool(args: dict) -> list[TextContent]:
+    """Register a git repository as a config source"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    name = args.get("name")
+    git_url = args.get("git_url")
+    source_type = args.get("source_type", "github")
+    token_env = args.get("token_env")
+    branch = args.get("branch", "main")
+    priority = args.get("priority", 100)
+    enabled = args.get("enabled", True)
+
+    try:
+        # Validate required parameters
+        if not name:
+            return [TextContent(type="text", text="❌ Error: 'name' parameter is required")]
+        if not git_url:
+            return [TextContent(type="text", text="❌ Error: 'git_url' parameter is required")]
+
+        # Add source
+        source_manager = SourceManager()
+        source = source_manager.add_source(
+            name=name,
+            git_url=git_url,
+            source_type=source_type,
+            token_env=token_env,
+            branch=branch,
+            priority=priority,
+            enabled=enabled
+        )
+
+        # Check if this is an update
+        is_update = "updated_at" in source and source["added_at"] != source["updated_at"]
+
+        result = f"""✅ Config source {'updated' if is_update else 'registered'} successfully!
+
+📛 Name: {source['name']}
+📁 Repository: {source['git_url']}
+🔖 Type: {source['type']}
+🌿 Branch: {source['branch']}
+🔑 Token env: {source.get('token_env', 'None')}
+⚡ Priority: {source['priority']} (lower = higher priority)
+✓ Enabled: {source['enabled']}
+🕒 Added: {source['added_at'][:19]}
+
+Usage:
+  # Fetch config from this source
+  fetch_config(source="{source['name']}", config_name="your-config")
+
+  # List all sources
+  list_config_sources()
+
+  # Remove this source
+  remove_config_source(name="{source['name']}")
+
+💡 Make sure to set {source.get('token_env', 'GIT_TOKEN')} environment variable for private repos
+"""
+
+        return [TextContent(type="text", text=result)]
+
+    except ValueError as e:
+        return [TextContent(type="text", text=f"❌ Validation Error: {str(e)}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def list_config_sources_tool(args: dict) -> list[TextContent]:
+    """List all registered config sources"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    enabled_only = args.get("enabled_only", False)
+
+    try:
+        source_manager = SourceManager()
+        sources = source_manager.list_sources(enabled_only=enabled_only)
+
+        if not sources:
+            result = """📋 No config sources registered
+
+To add a source:
+  add_config_source(
+    name="team",
+    git_url="https://github.com/myorg/configs.git"
+  )
+
+💡 Once added, use: fetch_config(source="team", config_name="...")
+"""
+            return [TextContent(type="text", text=result)]
+
+        # Format sources list
+        result = f"📋 Config Sources ({len(sources)} total"
+        if enabled_only:
+            result += ", enabled only"
+        result += ")\n\n"
+
+        for source in sources:
+            status_icon = "✓" if source.get("enabled", True) else "✗"
+            result += f"{status_icon} **{source['name']}**\n"
+            result += f"  📁 {source['git_url']}\n"
+            result += f"  🔖 Type: {source['type']} | 🌿 Branch: {source['branch']}\n"
+            result += f"  🔑 Token: {source.get('token_env', 'None')} | ⚡ Priority: {source['priority']}\n"
+            result += f"  🕒 Added: {source['added_at'][:19]}\n"
+            result += "\n"
+
+        result += """Usage:
+  # Fetch config from a source
+  fetch_config(source="SOURCE_NAME", config_name="CONFIG_NAME")
+
+  # Add new source
+  add_config_source(name="...", git_url="...")
+
+  # Remove source
+  remove_config_source(name="SOURCE_NAME")
+"""
+
+        return [TextContent(type="text", text=result)]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def remove_config_source_tool(args: dict) -> list[TextContent]:
+    """Remove a registered config source"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    name = args.get("name")
+
+    try:
+        # Validate required parameter
+        if not name:
+            return [TextContent(type="text", text="❌ Error: 'name' parameter is required")]
+
+        # Remove source
+        source_manager = SourceManager()
+        removed = source_manager.remove_source(name)
+
+        if removed:
+            result = f"""✅ Config source removed successfully!
+
+📛 Removed: {name}
+
+⚠️  Note: Cached git repository data is NOT deleted
+To free up disk space, manually delete: ~/.skill-seekers/cache/{name}/
+
+Next steps:
+  # List remaining sources
+  list_config_sources()
+
+  # Add a different source
+  add_config_source(name="...", git_url="...")
+"""
+            return [TextContent(type="text", text=result)]
+        else:
+            # Not found - show available sources
+            sources = source_manager.list_sources()
+            available = [s["name"] for s in sources]
+
+            result = f"""❌ Source '{name}' not found
+
+Available sources: {', '.join(available) if available else 'none'}
+
+To see all sources:
+  list_config_sources()
+"""
+            return [TextContent(type="text", text=result)]
 
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]

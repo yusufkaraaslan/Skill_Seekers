@@ -42,6 +42,7 @@ dependencies = [
     "requests>=2.32.5",
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
+    "GitPython>=3.1.40",
     "mcp>=1.18.0",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
