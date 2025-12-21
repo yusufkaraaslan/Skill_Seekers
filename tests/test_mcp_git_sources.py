@@ -9,14 +9,15 @@ import pytest
 import os
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch, Mock
-from mcp.types import TextContent
 
 # Test if MCP is available
 try:
     import mcp
+    from mcp.types import TextContent
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
+    TextContent = None  # Define placeholder
 
 
 @pytest.fixture
