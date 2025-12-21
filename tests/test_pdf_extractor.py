@@ -32,12 +32,16 @@ class TestLanguageDetection(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_detect_python_with_confidence(self):
         """Test Python detection returns language and confidence"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        # Initialize language_detector manually (since __init__ not called)
+        from skill_seekers.cli.language_detector import LanguageDetector
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
         code = "def hello():\n    print('world')\n    return True"
 
         language, confidence = extractor.detect_language_from_code(code)
@@ -49,6 +53,10 @@ class TestLanguageDetection(unittest.TestCase):
     def test_detect_javascript_with_confidence(self):
         """Test JavaScript detection"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        # Initialize language_detector manually (since __init__ not called)
+        from skill_seekers.cli.language_detector import LanguageDetector
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
         code = "const handleClick = () => {\n  console.log('clicked');\n};"
 
         language, confidence = extractor.detect_language_from_code(code)
@@ -59,6 +67,10 @@ class TestLanguageDetection(unittest.TestCase):
     def test_detect_cpp_with_confidence(self):
         """Test C++ detection"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        # Initialize language_detector manually (since __init__ not called)
+        from skill_seekers.cli.language_detector import LanguageDetector
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
         code = "#include <iostream>\nint main() {\n  std::cout << \"Hello\";\n}"
 
         language, confidence = extractor.detect_language_from_code(code)
@@ -69,6 +81,10 @@ class TestLanguageDetection(unittest.TestCase):
     def test_detect_unknown_low_confidence(self):
         """Test unknown language returns low confidence"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        # Initialize language_detector manually (since __init__ not called)
+        from skill_seekers.cli.language_detector import LanguageDetector
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
         code = "this is not code at all just plain text"
 
         language, confidence = extractor.detect_language_from_code(code)
@@ -79,6 +95,10 @@ class TestLanguageDetection(unittest.TestCase):
     def test_confidence_range(self):
         """Test confidence is always between 0 and 1"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        # Initialize language_detector manually (since __init__ not called)
+        from skill_seekers.cli.language_detector import LanguageDetector
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
         test_codes = [
             "def foo(): pass",
             "const x = 10;",
@@ -99,7 +119,7 @@ class TestSyntaxValidation(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_validate_python_valid(self):
@@ -159,7 +179,7 @@ class TestQualityScoring(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_quality_score_range(self):
@@ -216,7 +236,7 @@ class TestChapterDetection(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_detect_chapter_with_number(self):
@@ -275,7 +295,7 @@ class TestCodeBlockMerging(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_merge_continued_blocks(self):
@@ -340,7 +360,7 @@ class TestCodeDetectionMethods(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_pattern_based_detection(self):
@@ -373,7 +393,7 @@ class TestQualityFiltering(unittest.TestCase):
     def setUp(self):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
-        from pdf_extractor_poc import PDFExtractor
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
         self.PDFExtractor = PDFExtractor
 
     def test_filter_by_min_quality(self):

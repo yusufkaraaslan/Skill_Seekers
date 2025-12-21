@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
+from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.constants import (
     DEFAULT_RATE_LIMIT,
     DEFAULT_MAX_PAGES,
@@ -110,6 +111,9 @@ class DocToSkillConverter:
         self.pending_urls = deque(start_urls)
         self.pages: List[Dict[str, Any]] = []
         self.pages_scraped = 0
+
+        # Language detection
+        self.language_detector = LanguageDetector(min_confidence=0.15)
 
         # Thread-safe lock for parallel scraping
         if self.workers > 1:
@@ -278,81 +282,18 @@ class DocToSkillConverter:
 
         return page
 
-    def _extract_language_from_classes(self, classes):
-        """Extract language from class list
-
-        Supports multiple patterns:
-        - language-{lang} (e.g., "language-python")
-        - lang-{lang} (e.g., "lang-javascript")
-        - brush: {lang} (e.g., "brush: java")
-        - bare language name (e.g., "python", "java")
-
-        """
-        # Define common programming languages
-        known_languages = [
-            "javascript", "java", "xml", "html", "python", "bash", "cpp", "typescript",
-            "go", "rust", "php", "ruby", "swift", "kotlin", "csharp", "c", "sql",
-            "yaml", "json", "markdown", "css", "scss", "sass", "jsx", "tsx", "vue",
-            "shell", "powershell", "r", "scala", "dart", "perl", "lua", "elixir"
-        ]
-
-        for cls in classes:
-            # Clean special characters (except word chars and hyphens)
-            cls = re.sub(r'[^\w-]', '', cls)
-
-            if 'language-' in cls:
-                return cls.replace('language-', '')
-
-            if 'lang-' in cls:
-                return cls.replace('lang-', '')
-
-            # Check for brush: pattern (e.g., "brush: java")
-            if 'brush' in cls.lower():
-                lang = cls.lower().replace('brush', '').strip()
-                if lang in known_languages:
-                    return lang
-
-            # Check for bare language name
-            if cls in known_languages:
-                return cls
-
-        return None
-
     def detect_language(self, elem, code):
-        """Detect programming language from code block"""
+        """Detect programming language from code block
 
-        # Check element classes
-        lang = self._extract_language_from_classes(elem.get('class', []))
-        if lang:
-            return lang
+        UPDATED: Now uses confidence-based detection with 20+ languages
+        """
+        lang, confidence = self.language_detector.detect_from_html(elem, code)
 
-        # Check parent pre element
-        parent = elem.parent
-        if parent and parent.name == 'pre':
-            lang = self._extract_language_from_classes(parent.get('class', []))
-            if lang:
-                return lang
+        # Log low-confidence detections for debugging
+        if confidence < 0.5:
+            logger.debug(f"Low confidence language detection: {lang} ({confidence:.2f})")
 
-        # Heuristic detection
-        if 'import ' in code and 'from ' in code:
-            return 'python'
-        if 'const ' in code or 'let ' in code or '=>' in code:
-            return 'javascript'
-        if 'func ' in code and 'var ' in code:
-            return 'gdscript'
-        if 'def ' in code and ':' in code:
-            return 'python'
-        if '#include' in code or 'int main' in code:
-            return 'cpp'
-        # C# detection
-        if 'using System' in code or 'namespace ' in code:
-            return 'csharp'
-        if '{ get; set; }' in code:
-            return 'csharp'
-        if any(keyword in code for keyword in ['public class ', 'private class ', 'internal class ', 'public static void ']):
-            return 'csharp'
-
-        return 'unknown'
+        return lang  # Return string for backward compatibility
     
     def extract_patterns(self, main: Any, code_samples: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Extract common coding patterns (NEW FEATURE)"""
