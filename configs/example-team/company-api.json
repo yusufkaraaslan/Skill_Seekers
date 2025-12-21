@@ -1,0 +1,42 @@
+{
+  "name": "company-api",
+  "description": "Internal company API documentation (example)",
+  "base_url": "https://docs.example.com/api/",
+  "selectors": {
+    "main_content": "div.documentation",
+    "title": "h1.page-title",
+    "code_blocks": "pre.highlight"
+  },
+  "url_patterns": {
+    "include": [
+      "/api/v2"
+    ],
+    "exclude": [
+      "/api/v1",
+      "/changelog",
+      "/deprecated"
+    ]
+  },
+  "categories": {
+    "authentication": ["api/v2/auth", "api/v2/oauth"],
+    "users": ["api/v2/users"],
+    "payments": ["api/v2/payments", "api/v2/billing"],
+    "webhooks": ["api/v2/webhooks"],
+    "rate_limits": ["api/v2/rate-limits"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 100,
+  "metadata": {
+    "team": "platform",
+    "api_version": "v2",
+    "last_updated": "2025-12-21",
+    "maintainer": "platform-team@example.com",
+    "internal": true,
+    "notes": "Only includes v2 API - v1 is deprecated. Requires VPN access to docs.example.com",
+    "example_urls": [
+      "https://docs.example.com/api/v2/auth/oauth",
+      "https://docs.example.com/api/v2/users/create",
+      "https://docs.example.com/api/v2/payments/charge"
+    ]
+  }
+}
