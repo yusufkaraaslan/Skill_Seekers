@@ -31,7 +31,11 @@ app.add_middleware(
 )
 
 # Initialize config analyzer
-CONFIG_DIR = Path(__file__).parent.parent / "configs"
+# Try configs_repo first (production), fallback to configs (local development)
+CONFIG_DIR = Path(__file__).parent / "configs_repo" / "official"
+if not CONFIG_DIR.exists():
+    CONFIG_DIR = Path(__file__).parent.parent / "configs"
+
 analyzer = ConfigAnalyzer(CONFIG_DIR)
 
 
@@ -45,9 +49,11 @@ async def root():
             "/api/configs": "List all available configs",
             "/api/configs/{name}": "Get specific config details",
             "/api/categories": "List all categories",
+            "/api/download/{name}": "Download config file",
             "/docs": "API documentation",
         },
         "repository": "https://github.com/yusufkaraaslan/Skill_Seekers",
+        "configs_repository": "https://github.com/yusufkaraaslan/skill-seekers-configs",
         "website": "https://api.skillseekersweb.com"
     }
 
@@ -178,9 +184,13 @@ async def download_config(config_name: str):
         if not config_name.endswith(".json"):
             config_name = f"{config_name}.json"
 
-        config_path = CONFIG_DIR / config_name
+        # Search recursively in all subdirectories
+        config_path = None
+        for found_path in CONFIG_DIR.rglob(config_name):
+            config_path = found_path
+            break
 
-        if not config_path.exists():
+        if not config_path or not config_path.exists():
             raise HTTPException(
                 status_code=404,
                 detail=f"Config file '{config_name}' not found"

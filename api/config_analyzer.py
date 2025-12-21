@@ -76,8 +76,8 @@ class ConfigAnalyzer:
         """
         configs = []
 
-        # Find all JSON files in configs directory
-        for config_file in sorted(self.config_dir.glob("*.json")):
+        # Find all JSON files recursively in configs directory and subdirectories
+        for config_file in sorted(self.config_dir.rglob("*.json")):
             try:
                 metadata = self.analyze_config(config_file)
                 if metadata:  # Skip invalid configs
