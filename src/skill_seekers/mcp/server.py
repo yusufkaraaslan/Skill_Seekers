@@ -39,6 +39,13 @@ app = Server("skill-seeker") if MCP_AVAILABLE and Server is not None else None
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent / "cli"
 
+# Import config validator for submit_config validation
+sys.path.insert(0, str(CLI_DIR))
+try:
+    from config_validator import ConfigValidator
+except ImportError:
+    ConfigValidator = None  # Graceful degradation if not available
+
 # Helper decorator that works even when app is None
 def safe_decorator(decorator_func):
     """Returns the decorator if MCP is available, otherwise returns a no-op"""
@@ -440,7 +447,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="submit_config",
-            description="Submit a custom config file to the community. Creates a GitHub issue in skill-seekers-configs repo for review.",
+            description="Submit a custom config file to the community. Validates config (legacy or unified format) and creates a GitHub issue in skill-seekers-configs repo for review.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -1255,24 +1262,77 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
         else:
             return [TextContent(type="text", text="❌ Error: Must provide either config_path or config_json")]
 
-        # Validate required fields
-        required_fields = ["name", "description", "base_url"]
-        missing_fields = [field for field in required_fields if field not in config_data]
+        # Use ConfigValidator for comprehensive validation
+        if ConfigValidator is None:
+            return [TextContent(type="text", text="❌ Error: ConfigValidator not available. Please ensure config_validator.py is in the CLI directory.")]
 
-        if missing_fields:
-            return [TextContent(type="text", text=f"❌ Error: Missing required fields: {', '.join(missing_fields)}\n\nRequired: name, description, base_url")]
+        try:
+            validator = ConfigValidator(config_data)
+            validator.validate()
 
-        # Detect category
-        name_lower = config_name.lower()
-        category = "other"
-        if any(x in name_lower for x in ["react", "vue", "django", "laravel", "fastapi", "astro", "hono"]):
-            category = "web-frameworks"
-        elif any(x in name_lower for x in ["godot", "unity", "unreal"]):
-            category = "game-engines"
-        elif any(x in name_lower for x in ["kubernetes", "ansible", "docker"]):
-            category = "devops"
-        elif any(x in name_lower for x in ["tailwind", "bootstrap", "bulma"]):
-            category = "css-frameworks"
+            # Get format info
+            is_unified = validator.is_unified
+            config_name = config_data.get("name", "unnamed")
+
+        except ValueError as validation_error:
+            # Provide detailed validation feedback
+            error_msg = f"""❌ Config validation failed:
+
+{str(validation_error)}
+
+Please fix these issues and try again.
+
+💡 Validation help:
+- Names: alphanumeric, hyphens, underscores only (e.g., "my-framework", "react_docs")
+- URLs: must start with http:// or https://
+- Selectors: should be a dict with keys like 'main_content', 'title', 'code_blocks'
+- Rate limit: non-negative number (default: 0.5)
+- Max pages: positive integer or -1 for unlimited
+
+📚 Example configs: https://github.com/yusufkaraaslan/skill-seekers-configs/tree/main/official
+"""
+            return [TextContent(type="text", text=error_msg)]
+
+        # Detect category based on config format and content
+        if is_unified:
+            # For unified configs, look at source types
+            source_types = [src.get('type') for src in config_data.get('sources', [])]
+            if 'documentation' in source_types and 'github' in source_types:
+                category = "multi-source"
+            elif 'documentation' in source_types and 'pdf' in source_types:
+                category = "multi-source"
+            elif len(source_types) > 1:
+                category = "multi-source"
+            else:
+                category = "unified"
+        else:
+            # For legacy configs, use name-based detection
+            name_lower = config_name.lower()
+            category = "other"
+            if any(x in name_lower for x in ["react", "vue", "django", "laravel", "fastapi", "astro", "hono"]):
+                category = "web-frameworks"
+            elif any(x in name_lower for x in ["godot", "unity", "unreal"]):
+                category = "game-engines"
+            elif any(x in name_lower for x in ["kubernetes", "ansible", "docker"]):
+                category = "devops"
+            elif any(x in name_lower for x in ["tailwind", "bootstrap", "bulma"]):
+                category = "css-frameworks"
+
+        # Collect validation warnings
+        warnings = []
+        if not is_unified:
+            # Legacy config warnings
+            if 'max_pages' not in config_data:
+                warnings.append("⚠️ No max_pages set - will use default (100)")
+            elif config_data.get('max_pages') in (None, -1):
+                warnings.append("⚠️ Unlimited scraping enabled - may scrape thousands of pages and take hours")
+        else:
+            # Unified config warnings
+            for src in config_data.get('sources', []):
+                if src.get('type') == 'documentation' and 'max_pages' not in src:
+                    warnings.append(f"⚠️ No max_pages set for documentation source - will use default (100)")
+                elif src.get('type') == 'documentation' and src.get('max_pages') in (None, -1):
+                    warnings.append(f"⚠️ Unlimited scraping enabled for documentation source")
 
         # Check for GitHub token
         if not github_token:
@@ -1292,6 +1352,9 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
 ### Category
 {category}
 
+### Config Format
+{"Unified (multi-source)" if is_unified else "Legacy (single-source)"}
+
 ### Configuration JSON
 ```json
 {config_json_str}
@@ -1301,12 +1364,15 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
 {testing_notes if testing_notes else "Not provided"}
 
 ### Documentation URL
-{config_data.get('base_url', 'N/A')}
+{config_data.get('base_url') if not is_unified else 'See sources in config'}
+
+{"### Validation Warnings" if warnings else ""}
+{chr(10).join(f"- {w}" for w in warnings) if warnings else ""}
 
 ---
 
 ### Checklist
-- [ ] Config validated
+- [x] Config validated with ConfigValidator
 - [ ] Test scraping completed
 - [ ] Added to appropriate category
 - [ ] API updated

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **submit_config MCP tool** - Comprehensive validation and format support ([#11](https://github.com/yusufkaraaslan/Skill_Seekers/issues/11))
+  - Now uses ConfigValidator for comprehensive validation (previously only checked 3 fields)
+  - Validates name format (alphanumeric, hyphens, underscores only)
+  - Validates URL formats (must start with http:// or https://)
+  - Validates selectors, patterns, rate limits, and max_pages
+  - **Supports both legacy and unified config formats**
+  - Provides detailed error messages with validation failures and examples
+  - Adds warnings for unlimited scraping configurations
+  - Enhanced category detection for multi-source configs
+  - 8 comprehensive test cases added to test_mcp_server.py
+  - Updated GitHub issue template with format type and validation warnings
+
 ---
 
 ## [2.1.1] - 2025-11-30
