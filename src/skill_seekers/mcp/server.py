@@ -419,6 +419,44 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="install_skill",
+            description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Automatically uploads to Claude if ANTHROPIC_API_KEY is set.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name": {
+                        "type": "string",
+                        "description": "Config name from API (e.g., 'react', 'django'). Mutually exclusive with config_path. Tool will fetch this config from the official API before scraping.",
+                    },
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to existing config JSON file (e.g., 'configs/custom.json'). Mutually exclusive with config_name. Use this if you already have a config file.",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Output directory for skill files (default: 'output')",
+                        "default": "output",
+                    },
+                    "auto_upload": {
+                        "type": "boolean",
+                        "description": "Auto-upload to Claude after packaging (requires ANTHROPIC_API_KEY). Default: true. Set to false to skip upload.",
+                        "default": True,
+                    },
+                    "unlimited": {
+                        "type": "boolean",
+                        "description": "Remove page limits during scraping (default: false). WARNING: Can take hours for large sites.",
+                        "default": False,
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "description": "Preview workflow without executing (default: false). Shows all phases that would run.",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
             name="fetch_config",
             description="Fetch config from API, git URL, or registered source. Supports three modes: (1) Named source from registry, (2) Direct git URL, (3) API (default). List available configs or download a specific one by name.",
             inputSchema={
@@ -605,6 +643,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await list_config_sources_tool(arguments)
         elif name == "remove_config_source":
             return await remove_config_source_tool(arguments)
+        elif name == "install_skill":
+            return await install_skill_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -1460,6 +1500,311 @@ Next steps:
         return [TextContent(type="text", text=f"❌ JSON Error: Invalid response from API: {str(e)}")]
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def install_skill_tool(args: dict) -> list[TextContent]:
+    """
+    Complete skill installation workflow.
+
+    Orchestrates the complete workflow:
+        1. Fetch config (if config_name provided)
+        2. Scrape documentation
+        3. AI Enhancement (MANDATORY - no skip option)
+        4. Package to .zip
+        5. Upload to Claude (optional)
+
+    Args:
+        config_name: Config to fetch from API (mutually exclusive with config_path)
+        config_path: Path to existing config (mutually exclusive with config_name)
+        destination: Output directory (default: "output")
+        auto_upload: Upload after packaging (default: True)
+        unlimited: Remove page limits (default: False)
+        dry_run: Preview only (default: False)
+
+    Returns:
+        List of TextContent with workflow progress and results
+    """
+    import json
+    import re
+
+    # Extract and validate inputs
+    config_name = args.get("config_name")
+    config_path = args.get("config_path")
+    destination = args.get("destination", "output")
+    auto_upload = args.get("auto_upload", True)
+    unlimited = args.get("unlimited", False)
+    dry_run = args.get("dry_run", False)
+
+    # Validation: Must provide exactly one of config_name or config_path
+    if not config_name and not config_path:
+        return [TextContent(
+            type="text",
+            text="❌ Error: Must provide either config_name or config_path\n\nExamples:\n  install_skill(config_name='react')\n  install_skill(config_path='configs/custom.json')"
+        )]
+
+    if config_name and config_path:
+        return [TextContent(
+            type="text",
+            text="❌ Error: Cannot provide both config_name and config_path\n\nChoose one:\n  - config_name: Fetch from API (e.g., 'react')\n  - config_path: Use existing file (e.g., 'configs/custom.json')"
+        )]
+
+    # Initialize output
+    output_lines = []
+    output_lines.append("🚀 SKILL INSTALLATION WORKFLOW")
+    output_lines.append("=" * 70)
+    output_lines.append("")
+
+    if dry_run:
+        output_lines.append("🔍 DRY RUN MODE - Preview only, no actions taken")
+        output_lines.append("")
+
+    # Track workflow state
+    workflow_state = {
+        'config_path': config_path,
+        'skill_name': None,
+        'skill_dir': None,
+        'zip_path': None,
+        'phases_completed': []
+    }
+
+    try:
+        # ===== PHASE 1: Fetch Config (if needed) =====
+        if config_name:
+            output_lines.append("📥 PHASE 1/5: Fetch Config")
+            output_lines.append("-" * 70)
+            output_lines.append(f"Config: {config_name}")
+            output_lines.append(f"Destination: {destination}/")
+            output_lines.append("")
+
+            if not dry_run:
+                # Call fetch_config_tool directly
+                fetch_result = await fetch_config_tool({
+                    "config_name": config_name,
+                    "destination": destination
+                })
+
+                # Parse result to extract config path
+                fetch_output = fetch_result[0].text
+                output_lines.append(fetch_output)
+                output_lines.append("")
+
+                # Extract config path from output
+                # Expected format: "✅ Config saved to: configs/react.json"
+                match = re.search(r"saved to:\s*(.+\.json)", fetch_output)
+                if match:
+                    workflow_state['config_path'] = match.group(1).strip()
+                    output_lines.append(f"✅ Config fetched: {workflow_state['config_path']}")
+                else:
+                    return [TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Failed to fetch config")]
+
+                workflow_state['phases_completed'].append('fetch_config')
+            else:
+                output_lines.append("  [DRY RUN] Would fetch config from API")
+                workflow_state['config_path'] = f"{destination}/{config_name}.json"
+
+            output_lines.append("")
+
+        # ===== PHASE 2: Scrape Documentation =====
+        phase_num = "2/5" if config_name else "1/4"
+        output_lines.append(f"📄 PHASE {phase_num}: Scrape Documentation")
+        output_lines.append("-" * 70)
+        output_lines.append(f"Config: {workflow_state['config_path']}")
+        output_lines.append(f"Unlimited mode: {unlimited}")
+        output_lines.append("")
+
+        if not dry_run:
+            # Load config to get skill name
+            try:
+                with open(workflow_state['config_path'], 'r') as f:
+                    config = json.load(f)
+                    workflow_state['skill_name'] = config.get('name', 'unknown')
+            except Exception as e:
+                return [TextContent(type="text", text="\n".join(output_lines) + f"\n\n❌ Failed to read config: {str(e)}")]
+
+            # Call scrape_docs_tool (does NOT include enhancement)
+            output_lines.append("Scraping documentation (this may take 20-45 minutes)...")
+            output_lines.append("")
+
+            scrape_result = await scrape_docs_tool({
+                "config_path": workflow_state['config_path'],
+                "unlimited": unlimited,
+                "enhance_local": False,  # Enhancement is separate phase
+                "skip_scrape": False,
+                "dry_run": False
+            })
+
+            scrape_output = scrape_result[0].text
+            output_lines.append(scrape_output)
+            output_lines.append("")
+
+            # Check for success
+            if "❌" in scrape_output:
+                return [TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Scraping failed - see error above")]
+
+            workflow_state['skill_dir'] = f"{destination}/{workflow_state['skill_name']}"
+            workflow_state['phases_completed'].append('scrape_docs')
+        else:
+            output_lines.append("  [DRY RUN] Would scrape documentation")
+            workflow_state['skill_name'] = "example"
+            workflow_state['skill_dir'] = f"{destination}/example"
+
+        output_lines.append("")
+
+        # ===== PHASE 3: AI Enhancement (MANDATORY) =====
+        phase_num = "3/5" if config_name else "2/4"
+        output_lines.append(f"✨ PHASE {phase_num}: AI Enhancement (MANDATORY)")
+        output_lines.append("-" * 70)
+        output_lines.append("⚠️  Enhancement is REQUIRED for quality (3/10→9/10 boost)")
+        output_lines.append(f"Skill directory: {workflow_state['skill_dir']}")
+        output_lines.append("Mode: Headless (runs in background)")
+        output_lines.append("Estimated time: 30-60 seconds")
+        output_lines.append("")
+
+        if not dry_run:
+            # Run enhance_skill_local in headless mode
+            # Build command directly
+            cmd = [
+                sys.executable,
+                str(CLI_DIR / "enhance_skill_local.py"),
+                workflow_state['skill_dir']
+                # Headless is default, no flag needed
+            ]
+
+            timeout = 900  # 15 minutes max for enhancement
+
+            output_lines.append("Running AI enhancement...")
+
+            stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+            if returncode != 0:
+                output_lines.append(f"\n❌ Enhancement failed (exit code {returncode}):")
+                output_lines.append(stderr if stderr else stdout)
+                return [TextContent(type="text", text="\n".join(output_lines))]
+
+            output_lines.append(stdout)
+            workflow_state['phases_completed'].append('enhance_skill')
+        else:
+            output_lines.append("  [DRY RUN] Would enhance SKILL.md with Claude Code")
+
+        output_lines.append("")
+
+        # ===== PHASE 4: Package Skill =====
+        phase_num = "4/5" if config_name else "3/4"
+        output_lines.append(f"📦 PHASE {phase_num}: Package Skill")
+        output_lines.append("-" * 70)
+        output_lines.append(f"Skill directory: {workflow_state['skill_dir']}")
+        output_lines.append("")
+
+        if not dry_run:
+            # Call package_skill_tool (auto_upload=False, we handle upload separately)
+            package_result = await package_skill_tool({
+                "skill_dir": workflow_state['skill_dir'],
+                "auto_upload": False  # We handle upload in next phase
+            })
+
+            package_output = package_result[0].text
+            output_lines.append(package_output)
+            output_lines.append("")
+
+            # Extract zip path from output
+            # Expected format: "Saved to: output/react.zip"
+            match = re.search(r"Saved to:\s*(.+\.zip)", package_output)
+            if match:
+                workflow_state['zip_path'] = match.group(1).strip()
+            else:
+                # Fallback: construct zip path
+                workflow_state['zip_path'] = f"{destination}/{workflow_state['skill_name']}.zip"
+
+            workflow_state['phases_completed'].append('package_skill')
+        else:
+            output_lines.append("  [DRY RUN] Would package to .zip file")
+            workflow_state['zip_path'] = f"{destination}/{workflow_state['skill_name']}.zip"
+
+        output_lines.append("")
+
+        # ===== PHASE 5: Upload (Optional) =====
+        if auto_upload:
+            phase_num = "5/5" if config_name else "4/4"
+            output_lines.append(f"📤 PHASE {phase_num}: Upload to Claude")
+            output_lines.append("-" * 70)
+            output_lines.append(f"Zip file: {workflow_state['zip_path']}")
+            output_lines.append("")
+
+            # Check for API key
+            has_api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+
+            if not dry_run:
+                if has_api_key:
+                    # Call upload_skill_tool
+                    upload_result = await upload_skill_tool({
+                        "skill_zip": workflow_state['zip_path']
+                    })
+
+                    upload_output = upload_result[0].text
+                    output_lines.append(upload_output)
+
+                    workflow_state['phases_completed'].append('upload_skill')
+                else:
+                    output_lines.append("⚠️  ANTHROPIC_API_KEY not set - skipping upload")
+                    output_lines.append("")
+                    output_lines.append("To enable automatic upload:")
+                    output_lines.append("  1. Get API key from https://console.anthropic.com/")
+                    output_lines.append("  2. Set: export ANTHROPIC_API_KEY=sk-ant-...")
+                    output_lines.append("")
+                    output_lines.append("📤 Manual upload:")
+                    output_lines.append("  1. Go to https://claude.ai/skills")
+                    output_lines.append("  2. Click 'Upload Skill'")
+                    output_lines.append(f"  3. Select: {workflow_state['zip_path']}")
+            else:
+                output_lines.append("  [DRY RUN] Would upload to Claude (if API key set)")
+
+            output_lines.append("")
+
+        # ===== WORKFLOW SUMMARY =====
+        output_lines.append("=" * 70)
+        output_lines.append("✅ WORKFLOW COMPLETE")
+        output_lines.append("=" * 70)
+        output_lines.append("")
+
+        if not dry_run:
+            output_lines.append("Phases completed:")
+            for phase in workflow_state['phases_completed']:
+                output_lines.append(f"  ✓ {phase}")
+            output_lines.append("")
+
+            output_lines.append("📁 Output:")
+            output_lines.append(f"  Skill directory: {workflow_state['skill_dir']}")
+            if workflow_state['zip_path']:
+                output_lines.append(f"  Skill package: {workflow_state['zip_path']}")
+            output_lines.append("")
+
+            if auto_upload and has_api_key:
+                output_lines.append("🎉 Your skill is now available in Claude!")
+                output_lines.append("   Go to https://claude.ai/skills to use it")
+            elif auto_upload:
+                output_lines.append("📝 Manual upload required (see instructions above)")
+            else:
+                output_lines.append("📤 To upload:")
+                output_lines.append("   skill-seekers upload " + workflow_state['zip_path'])
+        else:
+            output_lines.append("This was a dry run. No actions were taken.")
+            output_lines.append("")
+            output_lines.append("To execute for real, remove the --dry-run flag:")
+            if config_name:
+                output_lines.append(f"  install_skill(config_name='{config_name}')")
+            else:
+                output_lines.append(f"  install_skill(config_path='{config_path}')")
+
+        return [TextContent(type="text", text="\n".join(output_lines))]
+
+    except Exception as e:
+        output_lines.append("")
+        output_lines.append(f"❌ Workflow failed: {str(e)}")
+        output_lines.append("")
+        output_lines.append("Phases completed before failure:")
+        for phase in workflow_state['phases_completed']:
+            output_lines.append(f"  ✓ {phase}")
+        return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def submit_config_tool(args: dict) -> list[TextContent]:

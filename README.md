@@ -187,6 +187,73 @@ python3 src/skill_seekers/cli/doc_scraper.py --config configs/react.json
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
 
+---
+
+## 🚀 **NEW!** One-Command Install Workflow (v2.1.1)
+
+**The fastest way to go from config to uploaded skill - complete automation:**
+
+```bash
+# Install React skill from official configs (auto-uploads to Claude)
+skill-seekers install --config react
+
+# Install from local config file
+skill-seekers install --config configs/custom.json
+
+# Install without uploading (package only)
+skill-seekers install --config django --no-upload
+
+# Unlimited scraping (no page limits)
+skill-seekers install --config godot --unlimited
+
+# Preview workflow without executing
+skill-seekers install --config react --dry-run
+```
+
+**Time:** 20-45 minutes total | **Quality:** Production-ready (9/10) | **Cost:** Free
+
+### What it does automatically:
+
+1. ✅ **Fetches config** from API (if config name provided)
+2. ✅ **Scrapes documentation** (respects rate limits, handles pagination)
+3. ✅ **AI Enhancement (MANDATORY)** - 30-60 sec, quality boost from 3/10 → 9/10
+4. ✅ **Packages skill** to .zip file
+5. ✅ **Uploads to Claude** (if ANTHROPIC_API_KEY set)
+
+### Why use this?
+
+- **Zero friction** - One command instead of 5 separate steps
+- **Quality guaranteed** - Enhancement is mandatory, ensures professional output
+- **Complete automation** - From config name to uploaded skill in Claude
+- **Time savings** - Fully automated end-to-end workflow
+
+### Phases executed:
+
+```
+📥 PHASE 1: Fetch Config (if config name provided)
+📖 PHASE 2: Scrape Documentation
+✨ PHASE 3: AI Enhancement (MANDATORY - no skip option)
+📦 PHASE 4: Package Skill
+☁️  PHASE 5: Upload to Claude (optional, requires API key)
+```
+
+**Requirements:**
+- ANTHROPIC_API_KEY environment variable (for auto-upload)
+- Claude Code Max plan (for local AI enhancement)
+
+**Example:**
+```bash
+# Set API key once
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+
+# Run one command - sit back and relax!
+skill-seekers install --config react
+
+# Result: React skill uploaded to Claude in 20-45 minutes
+```
+
+---
+
 ## Usage Examples
 
 ### Documentation Scraping

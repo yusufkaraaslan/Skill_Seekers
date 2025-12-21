@@ -107,6 +107,7 @@ skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
+skill-seekers-install = "skill_seekers.cli.install_skill:main"
 
 [tool.setuptools]
 packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]
