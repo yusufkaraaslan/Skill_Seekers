@@ -438,6 +438,32 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="submit_config",
+            description="Submit a custom config file to the community. Creates a GitHub issue in skill-seekers-configs repo for review.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to config JSON file to submit (e.g., 'configs/myframework.json')",
+                    },
+                    "config_json": {
+                        "type": "string",
+                        "description": "Config JSON as string (alternative to config_path)",
+                    },
+                    "testing_notes": {
+                        "type": "string",
+                        "description": "Notes about testing (e.g., 'Tested with 20 pages, works well')",
+                    },
+                    "github_token": {
+                        "type": "string",
+                        "description": "GitHub personal access token (or use GITHUB_TOKEN env var)",
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -470,6 +496,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await scrape_github_tool(arguments)
         elif name == "fetch_config":
             return await fetch_config_tool(arguments)
+        elif name == "submit_config":
+            return await submit_config_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -1189,6 +1217,131 @@ Next steps:
         return [TextContent(type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later.")]
     except json.JSONDecodeError as e:
         return [TextContent(type="text", text=f"❌ JSON Error: Invalid response from API: {str(e)}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def submit_config_tool(args: dict) -> list[TextContent]:
+    """Submit a custom config to skill-seekers-configs repository via GitHub issue"""
+    try:
+        from github import Github, GithubException
+    except ImportError:
+        return [TextContent(type="text", text="❌ Error: PyGithub not installed.\n\nInstall with: pip install PyGithub")]
+
+    config_path = args.get("config_path")
+    config_json_str = args.get("config_json")
+    testing_notes = args.get("testing_notes", "")
+    github_token = args.get("github_token") or os.environ.get("GITHUB_TOKEN")
+
+    try:
+        # Load config data
+        if config_path:
+            config_file = Path(config_path)
+            if not config_file.exists():
+                return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
+
+            with open(config_file, 'r') as f:
+                config_data = json.load(f)
+                config_json_str = json.dumps(config_data, indent=2)
+                config_name = config_data.get("name", config_file.stem)
+
+        elif config_json_str:
+            try:
+                config_data = json.loads(config_json_str)
+                config_name = config_data.get("name", "unnamed")
+            except json.JSONDecodeError as e:
+                return [TextContent(type="text", text=f"❌ Error: Invalid JSON: {str(e)}")]
+
+        else:
+            return [TextContent(type="text", text="❌ Error: Must provide either config_path or config_json")]
+
+        # Validate required fields
+        required_fields = ["name", "description", "base_url"]
+        missing_fields = [field for field in required_fields if field not in config_data]
+
+        if missing_fields:
+            return [TextContent(type="text", text=f"❌ Error: Missing required fields: {', '.join(missing_fields)}\n\nRequired: name, description, base_url")]
+
+        # Detect category
+        name_lower = config_name.lower()
+        category = "other"
+        if any(x in name_lower for x in ["react", "vue", "django", "laravel", "fastapi", "astro", "hono"]):
+            category = "web-frameworks"
+        elif any(x in name_lower for x in ["godot", "unity", "unreal"]):
+            category = "game-engines"
+        elif any(x in name_lower for x in ["kubernetes", "ansible", "docker"]):
+            category = "devops"
+        elif any(x in name_lower for x in ["tailwind", "bootstrap", "bulma"]):
+            category = "css-frameworks"
+
+        # Check for GitHub token
+        if not github_token:
+            return [TextContent(type="text", text="❌ Error: GitHub token required.\n\nProvide github_token parameter or set GITHUB_TOKEN environment variable.\n\nCreate token at: https://github.com/settings/tokens")]
+
+        # Create GitHub issue
+        try:
+            gh = Github(github_token)
+            repo = gh.get_repo("yusufkaraaslan/skill-seekers-configs")
+
+            # Build issue body
+            issue_body = f"""## Config Submission
+
+### Framework/Tool Name
+{config_name}
+
+### Category
+{category}
+
+### Configuration JSON
+```json
+{config_json_str}
+```
+
+### Testing Results
+{testing_notes if testing_notes else "Not provided"}
+
+### Documentation URL
+{config_data.get('base_url', 'N/A')}
+
+---
+
+### Checklist
+- [ ] Config validated
+- [ ] Test scraping completed
+- [ ] Added to appropriate category
+- [ ] API updated
+"""
+
+            # Create issue
+            issue = repo.create_issue(
+                title=f"[CONFIG] {config_name}",
+                body=issue_body,
+                labels=["config-submission", "needs-review"]
+            )
+
+            result = f"""✅ Config submitted successfully!
+
+📝 Issue created: {issue.html_url}
+🏷️  Issue #{issue.number}
+📦 Config: {config_name}
+📊 Category: {category}
+🏷️  Labels: config-submission, needs-review
+
+What happens next:
+  1. Maintainers will review your config
+  2. They'll test it with the actual documentation
+  3. If approved, it will be added to official/{category}/
+  4. The API will auto-update and your config becomes available!
+
+💡 Track your submission: {issue.html_url}
+📚 All configs: https://github.com/yusufkaraaslan/skill-seekers-configs
+"""
+
+            return [TextContent(type="text", text=result)]
+
+        except GithubException as e:
+            return [TextContent(type="text", text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).")]
+
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
