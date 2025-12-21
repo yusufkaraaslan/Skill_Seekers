@@ -61,6 +61,7 @@ dependencies = [
 # Development dependencies
 dev = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
 ]
@@ -78,6 +79,7 @@ mcp = [
 # All optional dependencies combined
 all = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
     "mcp>=1.18.0",
@@ -124,6 +126,12 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short --strict-markers"
+markers = [
+    "asyncio: mark test as an async test",
+    "slow: mark test as slow running",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["src/skill_seekers"]
@@ -143,6 +151,7 @@ exclude_lines = [
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
 ]
