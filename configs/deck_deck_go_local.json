@@ -1,0 +1,33 @@
+{
+  "name": "deck_deck_go_local_test",
+  "description": "Local repository skill extraction test for deck_deck_go Unity project. Demonstrates unlimited file analysis, deep code structure extraction, and AI enhancement workflow for Unity C# codebase.",
+
+  "sources": [
+    {
+      "type": "github",
+      "repo": "yusufkaraaslan/deck_deck_go",
+      "local_repo_path": "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/github/deck_deck_go",
+      "include_code": true,
+      "code_analysis_depth": "deep",
+      "include_issues": false,
+      "include_changelog": false,
+      "include_releases": false,
+      "exclude_dirs_additional": [
+        "Library",
+        "Temp",
+        "Obj",
+        "Build",
+        "Builds",
+        "Logs",
+        "UserSettings",
+        "TextMesh Pro/Examples & Extras"
+      ],
+      "file_patterns": [
+        "Assets/**/*.cs"
+      ]
+    }
+  ],
+
+  "merge_mode": "rule-based",
+  "auto_upload": false
+}

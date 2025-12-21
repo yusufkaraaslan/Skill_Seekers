@@ -203,7 +203,8 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         return references
 
     total_chars = 0
-    for ref_file in sorted(references_dir.glob("*.md")):
+    # Search recursively for all .md files (including subdirectories like github/README.md)
+    for ref_file in sorted(references_dir.rglob("*.md")):
         if ref_file.name == "index.md":
             continue
 
@@ -213,7 +214,9 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         if len(content) > preview_limit:
             content = content[:preview_limit] + "\n\n[Content truncated...]"
 
-        references[ref_file.name] = content
+        # Use relative path from references_dir as key for nested files
+        relative_path = ref_file.relative_to(references_dir)
+        references[str(relative_path)] = content
         total_chars += len(content)
 
         # Stop if we've read enough
