@@ -47,12 +47,20 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
-from mcp.types import TextContent
+
+# Defensive import for MCP package (may not be installed in all environments)
+try:
+    from mcp.types import TextContent
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    TextContent = None  # Placeholder
 
 # Import the MCP tool to test
 from skill_seekers.mcp.server import install_skill_tool
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillE2E:
     """End-to-end tests for install_skill MCP tool"""
 
@@ -303,6 +311,7 @@ class TestInstallSkillE2E:
             assert "exit code 1" in output
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillCLI_E2E:
     """End-to-end tests for skill-seekers install CLI"""
 
@@ -449,6 +458,7 @@ class TestInstallSkillCLI_E2E:
             f"Unified CLI failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillE2E_RealFiles:
     """E2E tests with real file operations (no mocking except upload)"""
 

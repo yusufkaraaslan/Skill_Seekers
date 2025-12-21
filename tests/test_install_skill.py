@@ -13,12 +13,20 @@ Tests the complete workflow orchestration for A1.7:
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from mcp.types import TextContent
+
+# Defensive import for MCP package (may not be installed in all environments)
+try:
+    from mcp.types import TextContent
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    TextContent = None  # Placeholder
 
 # Import the function to test
 from skill_seekers.mcp.server import install_skill_tool
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillValidation:
     """Test input validation"""
 
@@ -46,6 +54,7 @@ class TestInstallSkillValidation:
         assert "Choose one:" in result[0].text
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillDryRun:
     """Test dry-run mode"""
 
@@ -100,6 +109,7 @@ class TestInstallSkillDryRun:
         assert "Fetch Config" not in output
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillEnhancementMandatory:
     """Test that enhancement is always included"""
 
@@ -123,6 +133,7 @@ class TestInstallSkillEnhancementMandatory:
         assert "no skip option" in output.lower() or "MANDATORY" in output
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillPhaseOrchestration:
     """Test phase orchestration and data flow"""
 
@@ -267,6 +278,7 @@ class TestInstallSkillPhaseOrchestration:
         assert "Manual upload:" in output
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillErrorHandling:
     """Test error handling at each phase"""
 
@@ -351,6 +363,7 @@ class TestInstallSkillErrorHandling:
         assert "exit code 1" in output
 
 
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 class TestInstallSkillOptions:
     """Test various option combinations"""
 
