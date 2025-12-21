@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+- CLI version string updated to 2.2.0 (was showing 2.1.1)
+
+### Removed
+
 ---
 
 ## [2.2.0] - 2025-12-21
