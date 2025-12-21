@@ -7,11 +7,13 @@ Model Context Protocol server for generating Claude AI skills from documentation
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any
+import httpx
 
 # Import external MCP package
 # NOTE: Directory renamed from 'mcp/' to 'skill_seeker_mcp/' to avoid shadowing the external mcp package
@@ -37,6 +39,13 @@ app = Server("skill-seeker") if MCP_AVAILABLE and Server is not None else None
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent / "cli"
+
+# Import config validator for submit_config validation
+sys.path.insert(0, str(CLI_DIR))
+try:
+    from config_validator import ConfigValidator
+except ImportError:
+    ConfigValidator = None  # Graceful degradation if not available
 
 # Helper decorator that works even when app is None
 def safe_decorator(decorator_func):
@@ -409,6 +418,191 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="install_skill",
+            description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Automatically uploads to Claude if ANTHROPIC_API_KEY is set.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name": {
+                        "type": "string",
+                        "description": "Config name from API (e.g., 'react', 'django'). Mutually exclusive with config_path. Tool will fetch this config from the official API before scraping.",
+                    },
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to existing config JSON file (e.g., 'configs/custom.json'). Mutually exclusive with config_name. Use this if you already have a config file.",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Output directory for skill files (default: 'output')",
+                        "default": "output",
+                    },
+                    "auto_upload": {
+                        "type": "boolean",
+                        "description": "Auto-upload to Claude after packaging (requires ANTHROPIC_API_KEY). Default: true. Set to false to skip upload.",
+                        "default": True,
+                    },
+                    "unlimited": {
+                        "type": "boolean",
+                        "description": "Remove page limits during scraping (default: false). WARNING: Can take hours for large sites.",
+                        "default": False,
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "description": "Preview workflow without executing (default: false). Shows all phases that would run.",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="fetch_config",
+            description="Fetch config from API, git URL, or registered source. Supports three modes: (1) Named source from registry, (2) Direct git URL, (3) API (default). List available configs or download a specific one by name.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name": {
+                        "type": "string",
+                        "description": "Name of the config to download (e.g., 'react', 'django', 'godot'). Required for git modes. Omit to list all available configs in API mode.",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Directory to save the config file (default: 'configs/')",
+                        "default": "configs",
+                    },
+                    "list_available": {
+                        "type": "boolean",
+                        "description": "List all available configs from the API (only works in API mode, default: false)",
+                        "default": False,
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "Filter configs by category when listing in API mode (e.g., 'web-frameworks', 'game-engines', 'devops')",
+                    },
+                    "git_url": {
+                        "type": "string",
+                        "description": "Git repository URL containing configs. If provided, fetches from git instead of API. Supports HTTPS and SSH URLs. Example: 'https://github.com/myorg/configs.git'",
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Named source from registry (highest priority). Use add_config_source to register sources first. Example: 'team', 'company'",
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Git branch to use (default: 'main'). Only used with git_url or source.",
+                        "default": "main",
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "Authentication token for private repos (optional). Prefer using environment variables (GITHUB_TOKEN, GITLAB_TOKEN, etc.).",
+                    },
+                    "refresh": {
+                        "type": "boolean",
+                        "description": "Force refresh cached git repository (default: false). Deletes cache and re-clones. Only used with git modes.",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="submit_config",
+            description="Submit a custom config file to the community. Validates config (legacy or unified format) and creates a GitHub issue in skill-seekers-configs repo for review.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to config JSON file to submit (e.g., 'configs/myframework.json')",
+                    },
+                    "config_json": {
+                        "type": "string",
+                        "description": "Config JSON as string (alternative to config_path)",
+                    },
+                    "testing_notes": {
+                        "type": "string",
+                        "description": "Notes about testing (e.g., 'Tested with 20 pages, works well')",
+                    },
+                    "github_token": {
+                        "type": "string",
+                        "description": "GitHub personal access token (or use GITHUB_TOKEN env var)",
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="add_config_source",
+            description="Register a git repository as a config source. Allows fetching configs from private/team repos. Use this to set up named sources that can be referenced by fetch_config. Supports GitHub, GitLab, Gitea, Bitbucket, and custom git servers.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Source identifier (lowercase, alphanumeric, hyphens/underscores allowed). Example: 'team', 'company-internal', 'my_configs'",
+                    },
+                    "git_url": {
+                        "type": "string",
+                        "description": "Git repository URL (HTTPS or SSH). Example: 'https://github.com/myorg/configs.git' or 'git@github.com:myorg/configs.git'",
+                    },
+                    "source_type": {
+                        "type": "string",
+                        "description": "Source type (default: 'github'). Options: 'github', 'gitlab', 'gitea', 'bitbucket', 'custom'",
+                        "default": "github",
+                    },
+                    "token_env": {
+                        "type": "string",
+                        "description": "Environment variable name for auth token (optional). Auto-detected if not provided. Example: 'GITHUB_TOKEN', 'GITLAB_TOKEN', 'MY_CUSTOM_TOKEN'",
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Git branch to use (default: 'main'). Example: 'main', 'master', 'develop'",
+                        "default": "main",
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "description": "Source priority (lower = higher priority, default: 100). Used for conflict resolution when same config exists in multiple sources.",
+                        "default": 100,
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Whether source is enabled (default: true)",
+                        "default": True,
+                    },
+                },
+                "required": ["name", "git_url"],
+            },
+        ),
+        Tool(
+            name="list_config_sources",
+            description="List all registered config sources. Shows git repositories that have been registered with add_config_source. Use this to see available sources for fetch_config.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enabled_only": {
+                        "type": "boolean",
+                        "description": "Only show enabled sources (default: false)",
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="remove_config_source",
+            description="Remove a registered config source. Deletes the source from the registry. Does not delete cached git repository data.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Source identifier to remove. Example: 'team', 'company-internal'",
+                    },
+                },
+                "required": ["name"],
+            },
+        ),
     ]
 
 
@@ -439,6 +633,18 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await scrape_pdf_tool(arguments)
         elif name == "scrape_github":
             return await scrape_github_tool(arguments)
+        elif name == "fetch_config":
+            return await fetch_config_tool(arguments)
+        elif name == "submit_config":
+            return await submit_config_tool(arguments)
+        elif name == "add_config_source":
+            return await add_config_source_tool(arguments)
+        elif name == "list_config_sources":
+            return await list_config_sources_tool(arguments)
+        elif name == "remove_config_source":
+            return await remove_config_source_tool(arguments)
+        elif name == "install_skill":
+            return await install_skill_tool(arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -1042,6 +1248,936 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=output)]
     else:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def fetch_config_tool(args: dict) -> list[TextContent]:
+    """Fetch config from API, git URL, or named source"""
+    from skill_seekers.mcp.git_repo import GitConfigRepo
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    config_name = args.get("config_name")
+    destination = args.get("destination", "configs")
+    list_available = args.get("list_available", False)
+    category = args.get("category")
+
+    # Git mode parameters
+    source_name = args.get("source")
+    git_url = args.get("git_url")
+    branch = args.get("branch", "main")
+    token = args.get("token")
+    force_refresh = args.get("refresh", False)
+
+    try:
+        # MODE 1: Named Source (highest priority)
+        if source_name:
+            if not config_name:
+                return [TextContent(type="text", text="❌ Error: config_name is required when using source parameter")]
+
+            # Get source from registry
+            source_manager = SourceManager()
+            try:
+                source = source_manager.get_source(source_name)
+            except KeyError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+
+            git_url = source["git_url"]
+            branch = source.get("branch", branch)
+            token_env = source.get("token_env")
+
+            # Get token from environment if not provided
+            if not token and token_env:
+                token = os.environ.get(token_env)
+
+            # Clone/pull repository
+            git_repo = GitConfigRepo()
+            try:
+                repo_path = git_repo.clone_or_pull(
+                    source_name=source_name,
+                    git_url=git_url,
+                    branch=branch,
+                    token=token,
+                    force_refresh=force_refresh
+                )
+            except Exception as e:
+                return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
+
+            # Load config from repository
+            try:
+                config_data = git_repo.get_config(repo_path, config_name)
+            except FileNotFoundError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+
+            # Save to destination
+            dest_path = Path(destination)
+            dest_path.mkdir(parents=True, exist_ok=True)
+            config_file = dest_path / f"{config_name}.json"
+
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+
+            result = f"""✅ Config fetched from git source successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+🔗 Source: {source_name}
+🌿 Branch: {branch}
+📁 Repository: {git_url}
+🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 Manage sources: Use add_config_source, list_config_sources, remove_config_source tools
+"""
+            return [TextContent(type="text", text=result)]
+
+        # MODE 2: Direct Git URL
+        elif git_url:
+            if not config_name:
+                return [TextContent(type="text", text="❌ Error: config_name is required when using git_url parameter")]
+
+            # Clone/pull repository
+            git_repo = GitConfigRepo()
+            source_name_temp = f"temp_{config_name}"
+
+            try:
+                repo_path = git_repo.clone_or_pull(
+                    source_name=source_name_temp,
+                    git_url=git_url,
+                    branch=branch,
+                    token=token,
+                    force_refresh=force_refresh
+                )
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ Invalid git URL: {str(e)}")]
+            except Exception as e:
+                return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
+
+            # Load config from repository
+            try:
+                config_data = git_repo.get_config(repo_path, config_name)
+            except FileNotFoundError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
+
+            # Save to destination
+            dest_path = Path(destination)
+            dest_path.mkdir(parents=True, exist_ok=True)
+            config_file = dest_path / f"{config_name}.json"
+
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+
+            result = f"""✅ Config fetched from git URL successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+📁 Repository: {git_url}
+🌿 Branch: {branch}
+🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 Register this source: Use add_config_source to save for future use
+"""
+            return [TextContent(type="text", text=result)]
+
+        # MODE 3: API (existing, backward compatible)
+        else:
+            API_BASE_URL = "https://api.skillseekersweb.com"
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # List available configs if requested or no config_name provided
+                if list_available or not config_name:
+                    # Build API URL with optional category filter
+                    list_url = f"{API_BASE_URL}/api/configs"
+                    params = {}
+                    if category:
+                        params["category"] = category
+
+                    response = await client.get(list_url, params=params)
+                    response.raise_for_status()
+                    data = response.json()
+
+                    configs = data.get("configs", [])
+                    total = data.get("total", 0)
+                    filters = data.get("filters")
+
+                    # Format list output
+                    result = f"📋 Available Configs ({total} total)\n"
+                    if filters:
+                        result += f"🔍 Filters: {filters}\n"
+                    result += "\n"
+
+                    # Group by category
+                    by_category = {}
+                    for config in configs:
+                        cat = config.get("category", "uncategorized")
+                        if cat not in by_category:
+                            by_category[cat] = []
+                        by_category[cat].append(config)
+
+                    for cat, cat_configs in sorted(by_category.items()):
+                        result += f"\n**{cat.upper()}** ({len(cat_configs)} configs):\n"
+                        for cfg in cat_configs:
+                            name = cfg.get("name")
+                            desc = cfg.get("description", "")[:60]
+                            config_type = cfg.get("type", "unknown")
+                            tags = ", ".join(cfg.get("tags", [])[:3])
+                            result += f"  • {name} [{config_type}] - {desc}{'...' if len(cfg.get('description', '')) > 60 else ''}\n"
+                            if tags:
+                                result += f"    Tags: {tags}\n"
+
+                    result += f"\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
+                    result += f"📚 API Docs: {API_BASE_URL}/docs\n"
+
+                    return [TextContent(type="text", text=result)]
+
+                # Download specific config
+                if not config_name:
+                    return [TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")]
+
+                # Get config details first
+                detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
+                detail_response = await client.get(detail_url)
+
+                if detail_response.status_code == 404:
+                    return [TextContent(type="text", text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.")]
+
+                detail_response.raise_for_status()
+                config_info = detail_response.json()
+
+                # Download the actual config file
+                download_url = f"{API_BASE_URL}/api/download/{config_name}.json"
+                download_response = await client.get(download_url)
+                download_response.raise_for_status()
+                config_data = download_response.json()
+
+                # Save to destination
+                dest_path = Path(destination)
+                dest_path.mkdir(parents=True, exist_ok=True)
+                config_file = dest_path / f"{config_name}.json"
+
+                with open(config_file, 'w') as f:
+                    json.dump(config_data, f, indent=2)
+
+                # Build result message
+                result = f"""✅ Config downloaded successfully!
+
+📦 Config: {config_name}
+📂 Saved to: {config_file}
+📊 Category: {config_info.get('category', 'uncategorized')}
+🏷️  Tags: {', '.join(config_info.get('tags', []))}
+📄 Type: {config_info.get('type', 'unknown')}
+📝 Description: {config_info.get('description', 'No description')}
+
+🔗 Source: {config_info.get('primary_source', 'N/A')}
+📏 Max pages: {config_info.get('max_pages', 'N/A')}
+📦 File size: {config_info.get('file_size', 'N/A')} bytes
+🕒 Last updated: {config_info.get('last_updated', 'N/A')}
+
+Next steps:
+  1. Review config: cat {config_file}
+  2. Estimate pages: Use estimate_pages tool
+  3. Scrape docs: Use scrape_docs tool
+
+💡 More configs: Use list_available=true to see all available configs
+"""
+
+                return [TextContent(type="text", text=result)]
+
+    except httpx.HTTPError as e:
+        return [TextContent(type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later.")]
+    except json.JSONDecodeError as e:
+        return [TextContent(type="text", text=f"❌ JSON Error: Invalid response from API: {str(e)}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def install_skill_tool(args: dict) -> list[TextContent]:
+    """
+    Complete skill installation workflow.
+
+    Orchestrates the complete workflow:
+        1. Fetch config (if config_name provided)
+        2. Scrape documentation
+        3. AI Enhancement (MANDATORY - no skip option)
+        4. Package to .zip
+        5. Upload to Claude (optional)
+
+    Args:
+        config_name: Config to fetch from API (mutually exclusive with config_path)
+        config_path: Path to existing config (mutually exclusive with config_name)
+        destination: Output directory (default: "output")
+        auto_upload: Upload after packaging (default: True)
+        unlimited: Remove page limits (default: False)
+        dry_run: Preview only (default: False)
+
+    Returns:
+        List of TextContent with workflow progress and results
+    """
+    import json
+    import re
+
+    # Extract and validate inputs
+    config_name = args.get("config_name")
+    config_path = args.get("config_path")
+    destination = args.get("destination", "output")
+    auto_upload = args.get("auto_upload", True)
+    unlimited = args.get("unlimited", False)
+    dry_run = args.get("dry_run", False)
+
+    # Validation: Must provide exactly one of config_name or config_path
+    if not config_name and not config_path:
+        return [TextContent(
+            type="text",
+            text="❌ Error: Must provide either config_name or config_path\n\nExamples:\n  install_skill(config_name='react')\n  install_skill(config_path='configs/custom.json')"
+        )]
+
+    if config_name and config_path:
+        return [TextContent(
+            type="text",
+            text="❌ Error: Cannot provide both config_name and config_path\n\nChoose one:\n  - config_name: Fetch from API (e.g., 'react')\n  - config_path: Use existing file (e.g., 'configs/custom.json')"
+        )]
+
+    # Initialize output
+    output_lines = []
+    output_lines.append("🚀 SKILL INSTALLATION WORKFLOW")
+    output_lines.append("=" * 70)
+    output_lines.append("")
+
+    if dry_run:
+        output_lines.append("🔍 DRY RUN MODE - Preview only, no actions taken")
+        output_lines.append("")
+
+    # Track workflow state
+    workflow_state = {
+        'config_path': config_path,
+        'skill_name': None,
+        'skill_dir': None,
+        'zip_path': None,
+        'phases_completed': []
+    }
+
+    try:
+        # ===== PHASE 1: Fetch Config (if needed) =====
+        if config_name:
+            output_lines.append("📥 PHASE 1/5: Fetch Config")
+            output_lines.append("-" * 70)
+            output_lines.append(f"Config: {config_name}")
+            output_lines.append(f"Destination: {destination}/")
+            output_lines.append("")
+
+            if not dry_run:
+                # Call fetch_config_tool directly
+                fetch_result = await fetch_config_tool({
+                    "config_name": config_name,
+                    "destination": destination
+                })
+
+                # Parse result to extract config path
+                fetch_output = fetch_result[0].text
+                output_lines.append(fetch_output)
+                output_lines.append("")
+
+                # Extract config path from output
+                # Expected format: "✅ Config saved to: configs/react.json"
+                match = re.search(r"saved to:\s*(.+\.json)", fetch_output)
+                if match:
+                    workflow_state['config_path'] = match.group(1).strip()
+                    output_lines.append(f"✅ Config fetched: {workflow_state['config_path']}")
+                else:
+                    return [TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Failed to fetch config")]
+
+                workflow_state['phases_completed'].append('fetch_config')
+            else:
+                output_lines.append("  [DRY RUN] Would fetch config from API")
+                workflow_state['config_path'] = f"{destination}/{config_name}.json"
+
+            output_lines.append("")
+
+        # ===== PHASE 2: Scrape Documentation =====
+        phase_num = "2/5" if config_name else "1/4"
+        output_lines.append(f"📄 PHASE {phase_num}: Scrape Documentation")
+        output_lines.append("-" * 70)
+        output_lines.append(f"Config: {workflow_state['config_path']}")
+        output_lines.append(f"Unlimited mode: {unlimited}")
+        output_lines.append("")
+
+        if not dry_run:
+            # Load config to get skill name
+            try:
+                with open(workflow_state['config_path'], 'r') as f:
+                    config = json.load(f)
+                    workflow_state['skill_name'] = config.get('name', 'unknown')
+            except Exception as e:
+                return [TextContent(type="text", text="\n".join(output_lines) + f"\n\n❌ Failed to read config: {str(e)}")]
+
+            # Call scrape_docs_tool (does NOT include enhancement)
+            output_lines.append("Scraping documentation (this may take 20-45 minutes)...")
+            output_lines.append("")
+
+            scrape_result = await scrape_docs_tool({
+                "config_path": workflow_state['config_path'],
+                "unlimited": unlimited,
+                "enhance_local": False,  # Enhancement is separate phase
+                "skip_scrape": False,
+                "dry_run": False
+            })
+
+            scrape_output = scrape_result[0].text
+            output_lines.append(scrape_output)
+            output_lines.append("")
+
+            # Check for success
+            if "❌" in scrape_output:
+                return [TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Scraping failed - see error above")]
+
+            workflow_state['skill_dir'] = f"{destination}/{workflow_state['skill_name']}"
+            workflow_state['phases_completed'].append('scrape_docs')
+        else:
+            output_lines.append("  [DRY RUN] Would scrape documentation")
+            workflow_state['skill_name'] = "example"
+            workflow_state['skill_dir'] = f"{destination}/example"
+
+        output_lines.append("")
+
+        # ===== PHASE 3: AI Enhancement (MANDATORY) =====
+        phase_num = "3/5" if config_name else "2/4"
+        output_lines.append(f"✨ PHASE {phase_num}: AI Enhancement (MANDATORY)")
+        output_lines.append("-" * 70)
+        output_lines.append("⚠️  Enhancement is REQUIRED for quality (3/10→9/10 boost)")
+        output_lines.append(f"Skill directory: {workflow_state['skill_dir']}")
+        output_lines.append("Mode: Headless (runs in background)")
+        output_lines.append("Estimated time: 30-60 seconds")
+        output_lines.append("")
+
+        if not dry_run:
+            # Run enhance_skill_local in headless mode
+            # Build command directly
+            cmd = [
+                sys.executable,
+                str(CLI_DIR / "enhance_skill_local.py"),
+                workflow_state['skill_dir']
+                # Headless is default, no flag needed
+            ]
+
+            timeout = 900  # 15 minutes max for enhancement
+
+            output_lines.append("Running AI enhancement...")
+
+            stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+            if returncode != 0:
+                output_lines.append(f"\n❌ Enhancement failed (exit code {returncode}):")
+                output_lines.append(stderr if stderr else stdout)
+                return [TextContent(type="text", text="\n".join(output_lines))]
+
+            output_lines.append(stdout)
+            workflow_state['phases_completed'].append('enhance_skill')
+        else:
+            output_lines.append("  [DRY RUN] Would enhance SKILL.md with Claude Code")
+
+        output_lines.append("")
+
+        # ===== PHASE 4: Package Skill =====
+        phase_num = "4/5" if config_name else "3/4"
+        output_lines.append(f"📦 PHASE {phase_num}: Package Skill")
+        output_lines.append("-" * 70)
+        output_lines.append(f"Skill directory: {workflow_state['skill_dir']}")
+        output_lines.append("")
+
+        if not dry_run:
+            # Call package_skill_tool (auto_upload=False, we handle upload separately)
+            package_result = await package_skill_tool({
+                "skill_dir": workflow_state['skill_dir'],
+                "auto_upload": False  # We handle upload in next phase
+            })
+
+            package_output = package_result[0].text
+            output_lines.append(package_output)
+            output_lines.append("")
+
+            # Extract zip path from output
+            # Expected format: "Saved to: output/react.zip"
+            match = re.search(r"Saved to:\s*(.+\.zip)", package_output)
+            if match:
+                workflow_state['zip_path'] = match.group(1).strip()
+            else:
+                # Fallback: construct zip path
+                workflow_state['zip_path'] = f"{destination}/{workflow_state['skill_name']}.zip"
+
+            workflow_state['phases_completed'].append('package_skill')
+        else:
+            output_lines.append("  [DRY RUN] Would package to .zip file")
+            workflow_state['zip_path'] = f"{destination}/{workflow_state['skill_name']}.zip"
+
+        output_lines.append("")
+
+        # ===== PHASE 5: Upload (Optional) =====
+        if auto_upload:
+            phase_num = "5/5" if config_name else "4/4"
+            output_lines.append(f"📤 PHASE {phase_num}: Upload to Claude")
+            output_lines.append("-" * 70)
+            output_lines.append(f"Zip file: {workflow_state['zip_path']}")
+            output_lines.append("")
+
+            # Check for API key
+            has_api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+
+            if not dry_run:
+                if has_api_key:
+                    # Call upload_skill_tool
+                    upload_result = await upload_skill_tool({
+                        "skill_zip": workflow_state['zip_path']
+                    })
+
+                    upload_output = upload_result[0].text
+                    output_lines.append(upload_output)
+
+                    workflow_state['phases_completed'].append('upload_skill')
+                else:
+                    output_lines.append("⚠️  ANTHROPIC_API_KEY not set - skipping upload")
+                    output_lines.append("")
+                    output_lines.append("To enable automatic upload:")
+                    output_lines.append("  1. Get API key from https://console.anthropic.com/")
+                    output_lines.append("  2. Set: export ANTHROPIC_API_KEY=sk-ant-...")
+                    output_lines.append("")
+                    output_lines.append("📤 Manual upload:")
+                    output_lines.append("  1. Go to https://claude.ai/skills")
+                    output_lines.append("  2. Click 'Upload Skill'")
+                    output_lines.append(f"  3. Select: {workflow_state['zip_path']}")
+            else:
+                output_lines.append("  [DRY RUN] Would upload to Claude (if API key set)")
+
+            output_lines.append("")
+
+        # ===== WORKFLOW SUMMARY =====
+        output_lines.append("=" * 70)
+        output_lines.append("✅ WORKFLOW COMPLETE")
+        output_lines.append("=" * 70)
+        output_lines.append("")
+
+        if not dry_run:
+            output_lines.append("Phases completed:")
+            for phase in workflow_state['phases_completed']:
+                output_lines.append(f"  ✓ {phase}")
+            output_lines.append("")
+
+            output_lines.append("📁 Output:")
+            output_lines.append(f"  Skill directory: {workflow_state['skill_dir']}")
+            if workflow_state['zip_path']:
+                output_lines.append(f"  Skill package: {workflow_state['zip_path']}")
+            output_lines.append("")
+
+            if auto_upload and has_api_key:
+                output_lines.append("🎉 Your skill is now available in Claude!")
+                output_lines.append("   Go to https://claude.ai/skills to use it")
+            elif auto_upload:
+                output_lines.append("📝 Manual upload required (see instructions above)")
+            else:
+                output_lines.append("📤 To upload:")
+                output_lines.append("   skill-seekers upload " + workflow_state['zip_path'])
+        else:
+            output_lines.append("This was a dry run. No actions were taken.")
+            output_lines.append("")
+            output_lines.append("To execute for real, remove the --dry-run flag:")
+            if config_name:
+                output_lines.append(f"  install_skill(config_name='{config_name}')")
+            else:
+                output_lines.append(f"  install_skill(config_path='{config_path}')")
+
+        return [TextContent(type="text", text="\n".join(output_lines))]
+
+    except Exception as e:
+        output_lines.append("")
+        output_lines.append(f"❌ Workflow failed: {str(e)}")
+        output_lines.append("")
+        output_lines.append("Phases completed before failure:")
+        for phase in workflow_state['phases_completed']:
+            output_lines.append(f"  ✓ {phase}")
+        return [TextContent(type="text", text="\n".join(output_lines))]
+
+
+async def submit_config_tool(args: dict) -> list[TextContent]:
+    """Submit a custom config to skill-seekers-configs repository via GitHub issue"""
+    try:
+        from github import Github, GithubException
+    except ImportError:
+        return [TextContent(type="text", text="❌ Error: PyGithub not installed.\n\nInstall with: pip install PyGithub")]
+
+    config_path = args.get("config_path")
+    config_json_str = args.get("config_json")
+    testing_notes = args.get("testing_notes", "")
+    github_token = args.get("github_token") or os.environ.get("GITHUB_TOKEN")
+
+    try:
+        # Load config data
+        if config_path:
+            config_file = Path(config_path)
+            if not config_file.exists():
+                return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
+
+            with open(config_file, 'r') as f:
+                config_data = json.load(f)
+                config_json_str = json.dumps(config_data, indent=2)
+                config_name = config_data.get("name", config_file.stem)
+
+        elif config_json_str:
+            try:
+                config_data = json.loads(config_json_str)
+                config_name = config_data.get("name", "unnamed")
+            except json.JSONDecodeError as e:
+                return [TextContent(type="text", text=f"❌ Error: Invalid JSON: {str(e)}")]
+
+        else:
+            return [TextContent(type="text", text="❌ Error: Must provide either config_path or config_json")]
+
+        # Use ConfigValidator for comprehensive validation
+        if ConfigValidator is None:
+            return [TextContent(type="text", text="❌ Error: ConfigValidator not available. Please ensure config_validator.py is in the CLI directory.")]
+
+        try:
+            validator = ConfigValidator(config_data)
+            validator.validate()
+
+            # Get format info
+            is_unified = validator.is_unified
+            config_name = config_data.get("name", "unnamed")
+
+            # Additional format validation (ConfigValidator only checks structure)
+            # Validate name format (alphanumeric, hyphens, underscores only)
+            if not re.match(r'^[a-zA-Z0-9_-]+$', config_name):
+                raise ValueError(f"Invalid name format: '{config_name}'\nNames must contain only alphanumeric characters, hyphens, and underscores")
+
+            # Validate URL formats
+            if not is_unified:
+                # Legacy config - check base_url
+                base_url = config_data.get('base_url', '')
+                if base_url and not (base_url.startswith('http://') or base_url.startswith('https://')):
+                    raise ValueError(f"Invalid base_url format: '{base_url}'\nURLs must start with http:// or https://")
+            else:
+                # Unified config - check URLs in sources
+                for idx, source in enumerate(config_data.get('sources', [])):
+                    if source.get('type') == 'documentation':
+                        source_url = source.get('base_url', '')
+                        if source_url and not (source_url.startswith('http://') or source_url.startswith('https://')):
+                            raise ValueError(f"Source {idx} (documentation): Invalid base_url format: '{source_url}'\nURLs must start with http:// or https://")
+
+        except ValueError as validation_error:
+            # Provide detailed validation feedback
+            error_msg = f"""❌ Config validation failed:
+
+{str(validation_error)}
+
+Please fix these issues and try again.
+
+💡 Validation help:
+- Names: alphanumeric, hyphens, underscores only (e.g., "my-framework", "react_docs")
+- URLs: must start with http:// or https://
+- Selectors: should be a dict with keys like 'main_content', 'title', 'code_blocks'
+- Rate limit: non-negative number (default: 0.5)
+- Max pages: positive integer or -1 for unlimited
+
+📚 Example configs: https://github.com/yusufkaraaslan/skill-seekers-configs/tree/main/official
+"""
+            return [TextContent(type="text", text=error_msg)]
+
+        # Detect category based on config format and content
+        if is_unified:
+            # For unified configs, look at source types
+            source_types = [src.get('type') for src in config_data.get('sources', [])]
+            if 'documentation' in source_types and 'github' in source_types:
+                category = "multi-source"
+            elif 'documentation' in source_types and 'pdf' in source_types:
+                category = "multi-source"
+            elif len(source_types) > 1:
+                category = "multi-source"
+            else:
+                category = "unified"
+        else:
+            # For legacy configs, use name-based detection
+            name_lower = config_name.lower()
+            category = "other"
+            if any(x in name_lower for x in ["react", "vue", "django", "laravel", "fastapi", "astro", "hono"]):
+                category = "web-frameworks"
+            elif any(x in name_lower for x in ["godot", "unity", "unreal"]):
+                category = "game-engines"
+            elif any(x in name_lower for x in ["kubernetes", "ansible", "docker"]):
+                category = "devops"
+            elif any(x in name_lower for x in ["tailwind", "bootstrap", "bulma"]):
+                category = "css-frameworks"
+
+        # Collect validation warnings
+        warnings = []
+        if not is_unified:
+            # Legacy config warnings
+            if 'max_pages' not in config_data:
+                warnings.append("⚠️ No max_pages set - will use default (100)")
+            elif config_data.get('max_pages') in (None, -1):
+                warnings.append("⚠️ Unlimited scraping enabled - may scrape thousands of pages and take hours")
+        else:
+            # Unified config warnings
+            for src in config_data.get('sources', []):
+                if src.get('type') == 'documentation' and 'max_pages' not in src:
+                    warnings.append(f"⚠️ No max_pages set for documentation source - will use default (100)")
+                elif src.get('type') == 'documentation' and src.get('max_pages') in (None, -1):
+                    warnings.append(f"⚠️ Unlimited scraping enabled for documentation source")
+
+        # Check for GitHub token
+        if not github_token:
+            return [TextContent(type="text", text="❌ Error: GitHub token required.\n\nProvide github_token parameter or set GITHUB_TOKEN environment variable.\n\nCreate token at: https://github.com/settings/tokens")]
+
+        # Create GitHub issue
+        try:
+            gh = Github(github_token)
+            repo = gh.get_repo("yusufkaraaslan/skill-seekers-configs")
+
+            # Build issue body
+            issue_body = f"""## Config Submission
+
+### Framework/Tool Name
+{config_name}
+
+### Category
+{category}
+
+### Config Format
+{"Unified (multi-source)" if is_unified else "Legacy (single-source)"}
+
+### Configuration JSON
+```json
+{config_json_str}
+```
+
+### Testing Results
+{testing_notes if testing_notes else "Not provided"}
+
+### Documentation URL
+{config_data.get('base_url') if not is_unified else 'See sources in config'}
+
+{"### Validation Warnings" if warnings else ""}
+{chr(10).join(f"- {w}" for w in warnings) if warnings else ""}
+
+---
+
+### Checklist
+- [x] Config validated with ConfigValidator
+- [ ] Test scraping completed
+- [ ] Added to appropriate category
+- [ ] API updated
+"""
+
+            # Create issue
+            issue = repo.create_issue(
+                title=f"[CONFIG] {config_name}",
+                body=issue_body,
+                labels=["config-submission", "needs-review"]
+            )
+
+            result = f"""✅ Config submitted successfully!
+
+📝 Issue created: {issue.html_url}
+🏷️  Issue #{issue.number}
+📦 Config: {config_name}
+📊 Category: {category}
+🏷️  Labels: config-submission, needs-review
+
+What happens next:
+  1. Maintainers will review your config
+  2. They'll test it with the actual documentation
+  3. If approved, it will be added to official/{category}/
+  4. The API will auto-update and your config becomes available!
+
+💡 Track your submission: {issue.html_url}
+📚 All configs: https://github.com/yusufkaraaslan/skill-seekers-configs
+"""
+
+            return [TextContent(type="text", text=result)]
+
+        except GithubException as e:
+            return [TextContent(type="text", text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def add_config_source_tool(args: dict) -> list[TextContent]:
+    """Register a git repository as a config source"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    name = args.get("name")
+    git_url = args.get("git_url")
+    source_type = args.get("source_type", "github")
+    token_env = args.get("token_env")
+    branch = args.get("branch", "main")
+    priority = args.get("priority", 100)
+    enabled = args.get("enabled", True)
+
+    try:
+        # Validate required parameters
+        if not name:
+            return [TextContent(type="text", text="❌ Error: 'name' parameter is required")]
+        if not git_url:
+            return [TextContent(type="text", text="❌ Error: 'git_url' parameter is required")]
+
+        # Add source
+        source_manager = SourceManager()
+        source = source_manager.add_source(
+            name=name,
+            git_url=git_url,
+            source_type=source_type,
+            token_env=token_env,
+            branch=branch,
+            priority=priority,
+            enabled=enabled
+        )
+
+        # Check if this is an update
+        is_update = "updated_at" in source and source["added_at"] != source["updated_at"]
+
+        result = f"""✅ Config source {'updated' if is_update else 'registered'} successfully!
+
+📛 Name: {source['name']}
+📁 Repository: {source['git_url']}
+🔖 Type: {source['type']}
+🌿 Branch: {source['branch']}
+🔑 Token env: {source.get('token_env', 'None')}
+⚡ Priority: {source['priority']} (lower = higher priority)
+✓ Enabled: {source['enabled']}
+🕒 Added: {source['added_at'][:19]}
+
+Usage:
+  # Fetch config from this source
+  fetch_config(source="{source['name']}", config_name="your-config")
+
+  # List all sources
+  list_config_sources()
+
+  # Remove this source
+  remove_config_source(name="{source['name']}")
+
+💡 Make sure to set {source.get('token_env', 'GIT_TOKEN')} environment variable for private repos
+"""
+
+        return [TextContent(type="text", text=result)]
+
+    except ValueError as e:
+        return [TextContent(type="text", text=f"❌ Validation Error: {str(e)}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def list_config_sources_tool(args: dict) -> list[TextContent]:
+    """List all registered config sources"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    enabled_only = args.get("enabled_only", False)
+
+    try:
+        source_manager = SourceManager()
+        sources = source_manager.list_sources(enabled_only=enabled_only)
+
+        if not sources:
+            result = """📋 No config sources registered
+
+To add a source:
+  add_config_source(
+    name="team",
+    git_url="https://github.com/myorg/configs.git"
+  )
+
+💡 Once added, use: fetch_config(source="team", config_name="...")
+"""
+            return [TextContent(type="text", text=result)]
+
+        # Format sources list
+        result = f"📋 Config Sources ({len(sources)} total"
+        if enabled_only:
+            result += ", enabled only"
+        result += ")\n\n"
+
+        for source in sources:
+            status_icon = "✓" if source.get("enabled", True) else "✗"
+            result += f"{status_icon} **{source['name']}**\n"
+            result += f"  📁 {source['git_url']}\n"
+            result += f"  🔖 Type: {source['type']} | 🌿 Branch: {source['branch']}\n"
+            result += f"  🔑 Token: {source.get('token_env', 'None')} | ⚡ Priority: {source['priority']}\n"
+            result += f"  🕒 Added: {source['added_at'][:19]}\n"
+            result += "\n"
+
+        result += """Usage:
+  # Fetch config from a source
+  fetch_config(source="SOURCE_NAME", config_name="CONFIG_NAME")
+
+  # Add new source
+  add_config_source(name="...", git_url="...")
+
+  # Remove source
+  remove_config_source(name="SOURCE_NAME")
+"""
+
+        return [TextContent(type="text", text=result)]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+
+
+async def remove_config_source_tool(args: dict) -> list[TextContent]:
+    """Remove a registered config source"""
+    from skill_seekers.mcp.source_manager import SourceManager
+
+    name = args.get("name")
+
+    try:
+        # Validate required parameter
+        if not name:
+            return [TextContent(type="text", text="❌ Error: 'name' parameter is required")]
+
+        # Remove source
+        source_manager = SourceManager()
+        removed = source_manager.remove_source(name)
+
+        if removed:
+            result = f"""✅ Config source removed successfully!
+
+📛 Removed: {name}
+
+⚠️  Note: Cached git repository data is NOT deleted
+To free up disk space, manually delete: ~/.skill-seekers/cache/{name}/
+
+Next steps:
+  # List remaining sources
+  list_config_sources()
+
+  # Add a different source
+  add_config_source(name="...", git_url="...")
+"""
+            return [TextContent(type="text", text=result)]
+        else:
+            # Not found - show available sources
+            sources = source_manager.list_sources()
+            available = [s["name"] for s in sources]
+
+            result = f"""❌ Source '{name}' not found
+
+Available sources: {', '.join(available) if available else 'none'}
+
+To see all sources:
+  list_config_sources()
+"""
+            return [TextContent(type="text", text=result)]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
 async def main():

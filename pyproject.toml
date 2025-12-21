@@ -42,6 +42,7 @@ dependencies = [
     "requests>=2.32.5",
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
+    "GitPython>=3.1.40",
     "mcp>=1.18.0",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
@@ -106,6 +107,7 @@ skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
+skill-seekers-install = "skill_seekers.cli.install_skill:main"
 
 [tool.setuptools]
 packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]

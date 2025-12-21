@@ -72,6 +72,16 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 - ✅ **Single Source of Truth** - One skill showing both intent (docs) and reality (code)
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
+### 🔐 Private Config Repositories (**NEW - v2.2.0**)
+- ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
+- ✅ **Multi-Source Management** - Register unlimited GitHub, GitLab, Bitbucket repos
+- ✅ **Team Collaboration** - Share custom configs across 3-5 person teams
+- ✅ **Enterprise Support** - Scale to 500+ developers with priority-based resolution
+- ✅ **Secure Authentication** - Environment variable tokens (GITHUB_TOKEN, GITLAB_TOKEN)
+- ✅ **Intelligent Caching** - Clone once, pull updates automatically
+- ✅ **Offline Mode** - Work with cached configs when offline
+- ✅ **Backward Compatible** - Existing API-based configs still work
+
 ### 🤖 AI & Enhancement
 - ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
 - ✅ **No API Costs** - FREE local enhancement using Claude Code Max
@@ -176,6 +186,73 @@ python3 src/skill_seekers/cli/doc_scraper.py --config configs/react.json
 ```
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+
+---
+
+## 🚀 **NEW!** One-Command Install Workflow (v2.1.1)
+
+**The fastest way to go from config to uploaded skill - complete automation:**
+
+```bash
+# Install React skill from official configs (auto-uploads to Claude)
+skill-seekers install --config react
+
+# Install from local config file
+skill-seekers install --config configs/custom.json
+
+# Install without uploading (package only)
+skill-seekers install --config django --no-upload
+
+# Unlimited scraping (no page limits)
+skill-seekers install --config godot --unlimited
+
+# Preview workflow without executing
+skill-seekers install --config react --dry-run
+```
+
+**Time:** 20-45 minutes total | **Quality:** Production-ready (9/10) | **Cost:** Free
+
+### What it does automatically:
+
+1. ✅ **Fetches config** from API (if config name provided)
+2. ✅ **Scrapes documentation** (respects rate limits, handles pagination)
+3. ✅ **AI Enhancement (MANDATORY)** - 30-60 sec, quality boost from 3/10 → 9/10
+4. ✅ **Packages skill** to .zip file
+5. ✅ **Uploads to Claude** (if ANTHROPIC_API_KEY set)
+
+### Why use this?
+
+- **Zero friction** - One command instead of 5 separate steps
+- **Quality guaranteed** - Enhancement is mandatory, ensures professional output
+- **Complete automation** - From config name to uploaded skill in Claude
+- **Time savings** - Fully automated end-to-end workflow
+
+### Phases executed:
+
+```
+📥 PHASE 1: Fetch Config (if config name provided)
+📖 PHASE 2: Scrape Documentation
+✨ PHASE 3: AI Enhancement (MANDATORY - no skip option)
+📦 PHASE 4: Package Skill
+☁️  PHASE 5: Upload to Claude (optional, requires API key)
+```
+
+**Requirements:**
+- ANTHROPIC_API_KEY environment variable (for auto-upload)
+- Claude Code Max plan (for local AI enhancement)
+
+**Example:**
+```bash
+# Set API key once
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+
+# Run one command - sit back and relax!
+skill-seekers install --config react
+
+# Result: React skill uploaded to Claude in 20-45 minutes
+```
+
+---
 
 ## Usage Examples
 
@@ -318,6 +395,116 @@ def move_local_x(delta: float, snap: bool = False) -> None
 - `configs/fastapi_unified.json` - FastAPI docs + GitHub repo
 
 **Full Guide:** See [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) for complete documentation.
+
+### Private Config Repositories (**NEW - v2.2.0**)
+
+**The Problem:** Teams need to share custom configs for internal documentation, but don't want to publish them publicly.
+
+**The Solution:** Register private git repositories as config sources. Fetch configs from team repos just like the public API, with full authentication support.
+
+```bash
+# Setup: Set your GitHub token (one-time)
+export GITHUB_TOKEN=ghp_your_token_here
+
+# Option 1: Using MCP tools (recommended)
+# Register your team's private repo
+add_config_source(
+    name="team",
+    git_url="https://github.com/mycompany/skill-configs.git",
+    token_env="GITHUB_TOKEN"
+)
+
+# Fetch config from team repo
+fetch_config(source="team", config_name="internal-api")
+
+# List all registered sources
+list_config_sources()
+
+# Remove source when no longer needed
+remove_config_source(name="team")
+```
+
+**Direct Git URL mode** (no registration):
+```bash
+# Fetch directly from git URL
+fetch_config(
+    git_url="https://github.com/mycompany/configs.git",
+    config_name="react-custom",
+    token="ghp_your_token_here"
+)
+```
+
+**Supported Platforms:**
+- GitHub (token env: `GITHUB_TOKEN`)
+- GitLab (token env: `GITLAB_TOKEN`)
+- Gitea (token env: `GITEA_TOKEN`)
+- Bitbucket (token env: `BITBUCKET_TOKEN`)
+- Any git server (token env: `GIT_TOKEN`)
+
+**Use Cases:**
+
+📋 **Small Teams (3-5 people)**
+```bash
+# Team lead creates repo
+gh repo create myteam/skill-configs --private
+
+# Add configs to repo
+cd myteam-skill-configs
+cp ../Skill_Seekers/configs/react.json ./react-custom.json
+# Edit selectors, categories for your internal docs...
+git add . && git commit -m "Add custom React config" && git push
+
+# Team members register (one-time)
+add_config_source(name="team", git_url="https://github.com/myteam/skill-configs.git")
+
+# Everyone can now fetch
+fetch_config(source="team", config_name="react-custom")
+```
+
+🏢 **Enterprise (500+ developers)**
+```bash
+# IT pre-configures sources for everyone
+add_config_source(name="platform", git_url="gitlab.company.com/platform/configs", priority=1)
+add_config_source(name="mobile", git_url="gitlab.company.com/mobile/configs", priority=2)
+add_config_source(name="official", git_url="api.skillseekersweb.com", priority=3)
+
+# Developers use transparently
+fetch_config(config_name="internal-platform")  # Finds in platform source
+fetch_config(config_name="react")              # Falls back to official API
+```
+
+**Storage Locations:**
+- Registry: `~/.skill-seekers/sources.json`
+- Cache: `$SKILL_SEEKERS_CACHE_DIR` (default: `~/.skill-seekers/cache/`)
+
+**Features:**
+- ✅ **Shallow clone** - 10-50x faster, minimal disk space
+- ✅ **Auto-pull** - Fetches latest changes automatically
+- ✅ **Offline mode** - Works with cached repos when offline
+- ✅ **Priority resolution** - Multiple sources with conflict resolution
+- ✅ **Secure** - Tokens via environment variables only
+
+**Example Team Repository:**
+
+Try the included example:
+```bash
+# Test with file:// URL (no auth needed)
+cd /path/to/Skill_Seekers
+
+# Run the E2E test
+python3 configs/example-team/test_e2e.py
+
+# Or test manually
+add_config_source(
+    name="example",
+    git_url="file://$(pwd)/configs/example-team",
+    branch="master"
+)
+
+fetch_config(source="example", config_name="react-custom")
+```
+
+**Full Guide:** See [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) for complete documentation.
 
 ## How It Works
 

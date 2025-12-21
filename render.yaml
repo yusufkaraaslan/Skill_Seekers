@@ -1,0 +1,17 @@
+services:
+  # Config API Service
+  - type: web
+    name: skill-seekers-api
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r api/requirements.txt &&
+      git clone https://github.com/yusufkaraaslan/skill-seekers-configs.git api/configs_repo
+    startCommand: cd api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
+      - key: PORT
+        generateValue: true
+    healthCheckPath: /health
+    autoDeploy: true

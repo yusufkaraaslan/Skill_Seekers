@@ -67,14 +67,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🔌 MCP Integration Available
 
-**This repository includes a fully tested MCP server with 9 tools:**
+**This repository includes a fully tested MCP server with 10 tools:**
 - `mcp__skill-seeker__list_configs` - List all available preset configurations
 - `mcp__skill-seeker__generate_config` - Generate a new config file for any docs site
 - `mcp__skill-seeker__validate_config` - Validate a config file structure
 - `mcp__skill-seeker__estimate_pages` - Estimate page count before scraping
 - `mcp__skill-seeker__scrape_docs` - Scrape and build a skill
 - `mcp__skill-seeker__package_skill` - Package skill into .zip file (with auto-upload)
-- `mcp__skill-seeker__upload_skill` - Upload .zip to Claude (NEW)
+- `mcp__skill-seeker__upload_skill` - Upload .zip to Claude
+- `mcp__skill-seeker__install_skill` - **NEW!** Complete one-command workflow (fetch → scrape → enhance → package → upload)
 - `mcp__skill-seeker__split_config` - Split large documentation configs
 - `mcp__skill-seeker__generate_router` - Generate router/hub skills
 
@@ -186,6 +187,53 @@ skill-seekers scrape --config configs/godot.json --enhance-local
 skill-seekers package output/godot/
 
 # Result: godot.zip ready to upload to Claude
+```
+
+### **NEW!** One-Command Install Workflow (v2.1.1)
+
+The fastest way to install a skill - complete automation from config to uploaded skill:
+
+```bash
+# Install React skill from official configs (auto-uploads to Claude)
+skill-seekers install --config react
+# Time: 20-45 minutes total (scraping 20-40 min + enhancement 60 sec + upload 5 sec)
+
+# Install from local config file
+skill-seekers install --config configs/custom.json
+
+# Install without uploading (package only)
+skill-seekers install --config django --no-upload
+
+# Unlimited scraping (no page limits - WARNING: can take hours)
+skill-seekers install --config godot --unlimited
+
+# Preview workflow without executing
+skill-seekers install --config react --dry-run
+
+# Custom output directory
+skill-seekers install --config vue --destination /tmp/skills
+```
+
+**What it does automatically:**
+1. ✅ Fetches config from API (if config name provided)
+2. ✅ Scrapes documentation
+3. ✅ **AI Enhancement (MANDATORY)** - 30-60 sec, quality boost from 3/10 → 9/10
+4. ✅ Packages skill to .zip
+5. ✅ Uploads to Claude (if ANTHROPIC_API_KEY set)
+
+**Why use this:**
+- **Zero friction** - One command instead of 5 separate steps
+- **Quality guaranteed** - Enhancement is mandatory, ensures professional output
+- **Complete automation** - From config name to uploaded skill
+- **Time savings** - Fully automated workflow
+
+**Phases executed:**
+```
+📥 PHASE 1: Fetch Config (if config name provided)
+📖 PHASE 2: Scrape Documentation
+✨ PHASE 3: AI Enhancement (MANDATORY - no skip option)
+📦 PHASE 4: Package Skill
+☁️  PHASE 5: Upload to Claude (optional)
 ```
 
 ### Interactive Mode
@@ -847,14 +895,40 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 - **Modern packaging**: PEP 621 compliant with proper dependency management
 - **MCP Integration**: 9 tools for Claude Code Max integration
 
+**CLI Architecture (Git-style subcommands):**
+- **Entry point**: `src/skill_seekers/cli/main.py` - Unified CLI dispatcher
+- **Subcommands**: scrape, github, pdf, unified, enhance, package, upload, estimate
+- **Design pattern**: Main CLI routes to individual tool entry points (delegates to existing main() functions)
+- **Backward compatibility**: Individual tools (`skill-seekers-scrape`, etc.) still work directly
+- **Key insight**: The unified CLI modifies sys.argv and calls existing main() functions to maintain compatibility
+
 **Development Workflow:**
 1. **Install**: `pip install -e .` (editable mode for development)
-2. **Run tests**: `pytest tests/` (391 tests)
+2. **Run tests**:
+   - All tests: `pytest tests/ -v`
+   - Specific test file: `pytest tests/test_scraper_features.py -v`
+   - With coverage: `pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html`
+   - Single test: `pytest tests/test_scraper_features.py::test_detect_language -v`
 3. **Build package**: `uv build` or `python -m build`
 4. **Publish**: `uv publish` (PyPI)
+5. **Run single config test**: `skill-seekers scrape --config configs/react.json --dry-run`
+
+**Test Architecture:**
+- **Test files**: 27 test files covering all features (see `tests/` directory)
+- **CI Matrix**: Tests run on Ubuntu + macOS with Python 3.10, 3.11, 3.12
+- **Coverage**: 39% code coverage (427 tests passing)
+- **Key test categories**:
+  - `test_scraper_features.py` - Core scraping functionality
+  - `test_mcp_server.py` - MCP integration (9 tools)
+  - `test_unified.py` - Multi-source scraping (18 tests)
+  - `test_github_scraper.py` - GitHub repository analysis
+  - `test_pdf_scraper.py` - PDF extraction
+  - `test_integration.py` - End-to-end workflows
+- **IMPORTANT**: Must run `pip install -e .` before tests (src/ layout requirement)
 
 **Key Points:**
 - Output is cached and reusable in `output/` (git-ignored)
 - Enhancement is optional but highly recommended
 - All 24 configs are working and tested
 - CI workflow requires `pip install -e .` to install package before running tests
+- Never skip tests - all tests must pass before commits (per user instructions)

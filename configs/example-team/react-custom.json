@@ -1,0 +1,35 @@
+{
+  "name": "react-custom",
+  "description": "Custom React config for team with modified selectors",
+  "base_url": "https://react.dev/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": [
+      "/learn",
+      "/reference"
+    ],
+    "exclude": [
+      "/blog",
+      "/community",
+      "/_next/"
+    ]
+  },
+  "categories": {
+    "getting_started": ["learn/start", "learn/installation"],
+    "hooks": ["reference/react/hooks", "learn/state"],
+    "components": ["reference/react/components"],
+    "api": ["reference/react-dom"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300,
+  "metadata": {
+    "team": "frontend",
+    "last_updated": "2025-12-21",
+    "maintainer": "team-lead@example.com",
+    "notes": "Excludes blog and community pages to focus on technical docs"
+  }
+}
