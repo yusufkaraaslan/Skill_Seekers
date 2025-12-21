@@ -1,0 +1,36 @@
+{
+  "name": "vue-internal",
+  "description": "Vue.js config for internal team documentation",
+  "base_url": "https://vuejs.org/",
+  "selectors": {
+    "main_content": "main",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [
+      "/guide",
+      "/api"
+    ],
+    "exclude": [
+      "/examples",
+      "/sponsor"
+    ]
+  },
+  "categories": {
+    "essentials": ["guide/essentials", "guide/introduction"],
+    "components": ["guide/components"],
+    "reactivity": ["guide/extras/reactivity"],
+    "composition_api": ["api/composition-api"],
+    "options_api": ["api/options-api"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 200,
+  "metadata": {
+    "team": "frontend",
+    "version": "Vue 3",
+    "last_updated": "2025-12-21",
+    "maintainer": "vue-team@example.com",
+    "notes": "Focuses on Vue 3 Composition API for our projects"
+  }
+}

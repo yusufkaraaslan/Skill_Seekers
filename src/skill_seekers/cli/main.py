@@ -156,6 +156,38 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     estimate_parser.add_argument("config", help="Config JSON file")
     estimate_parser.add_argument("--max-discovery", type=int, help="Max pages to discover")
 
+    # === install subcommand ===
+    install_parser = subparsers.add_parser(
+        "install",
+        help="Complete workflow: fetch → scrape → enhance → package → upload",
+        description="One-command skill installation (AI enhancement MANDATORY)"
+    )
+    install_parser.add_argument(
+        "--config",
+        required=True,
+        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')"
+    )
+    install_parser.add_argument(
+        "--destination",
+        default="output",
+        help="Output directory (default: output/)"
+    )
+    install_parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        help="Skip automatic upload to Claude"
+    )
+    install_parser.add_argument(
+        "--unlimited",
+        action="store_true",
+        help="Remove page limits during scraping"
+    )
+    install_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview workflow without executing"
+    )
+
     return parser
 
 
@@ -267,6 +299,21 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.max_discovery:
                 sys.argv.extend(["--max-discovery", str(args.max_discovery)])
             return estimate_main() or 0
+
+        elif args.command == "install":
+            from skill_seekers.cli.install_skill import main as install_main
+            sys.argv = ["install_skill.py"]
+            if args.config:
+                sys.argv.extend(["--config", args.config])
+            if args.destination:
+                sys.argv.extend(["--destination", args.destination])
+            if args.no_upload:
+                sys.argv.append("--no-upload")
+            if args.unlimited:
+                sys.argv.append("--unlimited")
+            if args.dry_run:
+                sys.argv.append("--dry-run")
+            return install_main() or 0
 
         else:
             print(f"Error: Unknown command '{args.command}'", file=sys.stderr)

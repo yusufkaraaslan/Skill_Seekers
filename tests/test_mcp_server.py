@@ -614,5 +614,161 @@ class TestMCPServerIntegration(unittest.IsolatedAsyncioTestCase):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+@unittest.skipUnless(MCP_AVAILABLE, "MCP package not installed")
+class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
+    """Test submit_config MCP tool"""
+
+    async def test_submit_config_requires_token(self):
+        """Should error without GitHub token"""
+        args = {
+            "config_json": '{"name": "test", "description": "Test", "base_url": "https://example.com"}'
+        }
+        result = await skill_seeker_server.submit_config_tool(args)
+        self.assertIn("GitHub token required", result[0].text)
+
+    async def test_submit_config_validates_required_fields(self):
+        """Should reject config missing required fields"""
+        args = {
+            "config_json": '{"name": "test"}',  # Missing description, base_url
+            "github_token": "fake_token"
+        }
+        result = await skill_seeker_server.submit_config_tool(args)
+        self.assertIn("validation failed", result[0].text.lower())
+        # ConfigValidator detects missing config type (base_url/repo/pdf)
+        self.assertTrue("cannot detect" in result[0].text.lower() or "missing" in result[0].text.lower())
+
+    async def test_submit_config_validates_name_format(self):
+        """Should reject invalid name characters"""
+        args = {
+            "config_json": '{"name": "React@2024!", "description": "Test", "base_url": "https://example.com"}',
+            "github_token": "fake_token"
+        }
+        result = await skill_seeker_server.submit_config_tool(args)
+        self.assertIn("validation failed", result[0].text.lower())
+
+    async def test_submit_config_validates_url_format(self):
+        """Should reject invalid URL format"""
+        args = {
+            "config_json": '{"name": "test", "description": "Test", "base_url": "not-a-url"}',
+            "github_token": "fake_token"
+        }
+        result = await skill_seeker_server.submit_config_tool(args)
+        self.assertIn("validation failed", result[0].text.lower())
+
+    async def test_submit_config_accepts_legacy_format(self):
+        """Should accept valid legacy config"""
+        valid_config = {
+            "name": "testframework",
+            "description": "Test framework docs",
+            "base_url": "https://docs.test.com/",
+            "selectors": {
+                "main_content": "article",
+                "title": "h1",
+                "code_blocks": "pre code"
+            },
+            "max_pages": 100
+        }
+        args = {
+            "config_json": json.dumps(valid_config),
+            "github_token": "fake_token"
+        }
+
+        # Mock GitHub API call
+        with patch('github.Github') as mock_gh:
+            mock_repo = MagicMock()
+            mock_issue = MagicMock()
+            mock_issue.html_url = "https://github.com/test/issue/1"
+            mock_issue.number = 1
+            mock_repo.create_issue.return_value = mock_issue
+            mock_gh.return_value.get_repo.return_value = mock_repo
+
+            result = await skill_seeker_server.submit_config_tool(args)
+            self.assertIn("Config submitted successfully", result[0].text)
+            self.assertIn("https://github.com", result[0].text)
+
+    async def test_submit_config_accepts_unified_format(self):
+        """Should accept valid unified config"""
+        unified_config = {
+            "name": "testunified",
+            "description": "Test unified config",
+            "merge_mode": "rule-based",
+            "sources": [
+                {
+                    "type": "documentation",
+                    "base_url": "https://docs.test.com/",
+                    "max_pages": 100
+                },
+                {
+                    "type": "github",
+                    "repo": "testorg/testrepo"
+                }
+            ]
+        }
+        args = {
+            "config_json": json.dumps(unified_config),
+            "github_token": "fake_token"
+        }
+
+        with patch('github.Github') as mock_gh:
+            mock_repo = MagicMock()
+            mock_issue = MagicMock()
+            mock_issue.html_url = "https://github.com/test/issue/2"
+            mock_issue.number = 2
+            mock_repo.create_issue.return_value = mock_issue
+            mock_gh.return_value.get_repo.return_value = mock_repo
+
+            result = await skill_seeker_server.submit_config_tool(args)
+            self.assertIn("Config submitted successfully", result[0].text)
+            self.assertTrue("Unified" in result[0].text or "multi-source" in result[0].text)
+
+    async def test_submit_config_from_file_path(self):
+        """Should accept config_path parameter"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump({
+                "name": "testfile",
+                "description": "From file",
+                "base_url": "https://test.com/"
+            }, f)
+            temp_path = f.name
+
+        try:
+            args = {
+                "config_path": temp_path,
+                "github_token": "fake_token"
+            }
+
+            with patch('github.Github') as mock_gh:
+                mock_repo = MagicMock()
+                mock_issue = MagicMock()
+                mock_issue.html_url = "https://github.com/test/issue/3"
+                mock_issue.number = 3
+                mock_repo.create_issue.return_value = mock_issue
+                mock_gh.return_value.get_repo.return_value = mock_repo
+
+                result = await skill_seeker_server.submit_config_tool(args)
+                self.assertIn("Config submitted successfully", result[0].text)
+        finally:
+            os.unlink(temp_path)
+
+    async def test_submit_config_detects_category(self):
+        """Should auto-detect category from config name"""
+        args = {
+            "config_json": '{"name": "react-test", "description": "React", "base_url": "https://react.dev/"}',
+            "github_token": "fake_token"
+        }
+
+        with patch('github.Github') as mock_gh:
+            mock_repo = MagicMock()
+            mock_issue = MagicMock()
+            mock_issue.html_url = "https://github.com/test/issue/4"
+            mock_issue.number = 4
+            mock_repo.create_issue.return_value = mock_issue
+            mock_gh.return_value.get_repo.return_value = mock_repo
+
+            result = await skill_seeker_server.submit_config_tool(args)
+            # Verify category appears in result
+            self.assertTrue("web-frameworks" in result[0].text or "Category" in result[0].text)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.1.1"
+version = "2.2.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,6 +42,7 @@ dependencies = [
     "requests>=2.32.5",
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
+    "GitPython>=3.1.40",
     "mcp>=1.18.0",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
@@ -60,6 +61,7 @@ dependencies = [
 # Development dependencies
 dev = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
 ]
@@ -77,6 +79,7 @@ mcp = [
 # All optional dependencies combined
 all = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
     "mcp>=1.18.0",
@@ -106,6 +109,7 @@ skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
+skill-seekers-install = "skill_seekers.cli.install_skill:main"
 
 [tool.setuptools]
 packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]
@@ -122,6 +126,12 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short --strict-markers"
+markers = [
+    "asyncio: mark test as an async test",
+    "slow: mark test as slow running",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["src/skill_seekers"]
@@ -141,6 +151,7 @@ exclude_lines = [
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
 ]

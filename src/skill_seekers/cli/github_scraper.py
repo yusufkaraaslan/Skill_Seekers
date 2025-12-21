@@ -301,9 +301,29 @@ class GitHubScraper:
         except GithubException as e:
             logger.warning(f"Could not fetch languages: {e}")
 
-    def should_exclude_dir(self, dir_name: str) -> bool:
-        """Check if directory should be excluded from analysis."""
-        return dir_name in self.excluded_dirs or dir_name.startswith('.')
+    def should_exclude_dir(self, dir_name: str, dir_path: str = None) -> bool:
+        """
+        Check if directory should be excluded from analysis.
+
+        Args:
+            dir_name: Directory name (e.g., "Examples & Extras")
+            dir_path: Full relative path (e.g., "TextMesh Pro/Examples & Extras")
+
+        Returns:
+            True if directory should be excluded
+        """
+        # Check directory name
+        if dir_name in self.excluded_dirs or dir_name.startswith('.'):
+            return True
+
+        # Check full path if provided (for nested exclusions like "TextMesh Pro/Examples & Extras")
+        if dir_path:
+            for excluded in self.excluded_dirs:
+                # Match if path contains the exclusion pattern
+                if excluded in dir_path or dir_path.startswith(excluded):
+                    return True
+
+        return False
 
     def _extract_file_tree(self):
         """Extract repository file tree structure (dual-mode: GitHub API or local filesystem)."""
@@ -322,15 +342,28 @@ class GitHubScraper:
             logger.error(f"Local repository path not found: {self.local_repo_path}")
             return
 
-        file_tree = []
-        for root, dirs, files in os.walk(self.local_repo_path):
-            # Exclude directories in-place to prevent os.walk from descending into them
-            dirs[:] = [d for d in dirs if not self.should_exclude_dir(d)]
+        # Log exclusions for debugging
+        logger.info(f"Directory exclusions ({len(self.excluded_dirs)} total): {sorted(list(self.excluded_dirs)[:10])}")
 
-            # Calculate relative path from repo root
+        file_tree = []
+        excluded_count = 0
+        for root, dirs, files in os.walk(self.local_repo_path):
+            # Calculate relative path from repo root first (needed for exclusion checks)
             rel_root = os.path.relpath(root, self.local_repo_path)
             if rel_root == '.':
                 rel_root = ''
+
+            # Exclude directories in-place to prevent os.walk from descending into them
+            # Pass both dir name and full path for path-based exclusions
+            filtered_dirs = []
+            for d in dirs:
+                dir_path = os.path.join(rel_root, d) if rel_root else d
+                if self.should_exclude_dir(d, dir_path):
+                    excluded_count += 1
+                    logger.debug(f"Excluding directory: {dir_path}")
+                else:
+                    filtered_dirs.append(d)
+            dirs[:] = filtered_dirs
 
             # Add directories
             for dir_name in dirs:
@@ -357,7 +390,7 @@ class GitHubScraper:
                 })
 
         self.extracted_data['file_tree'] = file_tree
-        logger.info(f"File tree built (local mode): {len(file_tree)} items")
+        logger.info(f"File tree built (local mode): {len(file_tree)} items ({excluded_count} directories excluded)")
 
     def _extract_file_tree_github(self):
         """Extract file tree from GitHub API (rate-limited)."""

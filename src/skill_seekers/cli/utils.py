@@ -7,8 +7,14 @@ import os
 import sys
 import subprocess
 import platform
+import time
+import logging
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Union
+from typing import Optional, Tuple, Dict, Union, TypeVar, Callable
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 def open_folder(folder_path: Union[str, Path]) -> bool:
@@ -203,7 +209,8 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         return references
 
     total_chars = 0
-    for ref_file in sorted(references_dir.glob("*.md")):
+    # Search recursively for all .md files (including subdirectories like github/README.md)
+    for ref_file in sorted(references_dir.rglob("*.md")):
         if ref_file.name == "index.md":
             continue
 
@@ -213,7 +220,9 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         if len(content) > preview_limit:
             content = content[:preview_limit] + "\n\n[Content truncated...]"
 
-        references[ref_file.name] = content
+        # Use relative path from references_dir as key for nested files
+        relative_path = ref_file.relative_to(references_dir)
+        references[str(relative_path)] = content
         total_chars += len(content)
 
         # Stop if we've read enough
@@ -222,3 +231,113 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
             break
 
     return references
+
+
+def retry_with_backoff(
+    operation: Callable[[], T],
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+    operation_name: str = "operation"
+) -> T:
+    """Retry an operation with exponential backoff.
+
+    Useful for network operations that may fail due to transient errors.
+    Waits progressively longer between retries (exponential backoff).
+
+    Args:
+        operation: Function to retry (takes no arguments, returns result)
+        max_attempts: Maximum number of attempts (default: 3)
+        base_delay: Base delay in seconds, doubles each retry (default: 1.0)
+        operation_name: Name for logging purposes (default: "operation")
+
+    Returns:
+        Result of successful operation
+
+    Raises:
+        Exception: Last exception if all retries fail
+
+    Example:
+        >>> def fetch_page():
+        ...     response = requests.get(url, timeout=30)
+        ...     response.raise_for_status()
+        ...     return response.text
+        >>> content = retry_with_backoff(fetch_page, max_attempts=3, operation_name=f"fetch {url}")
+    """
+    last_exception: Optional[Exception] = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return operation()
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts:
+                delay = base_delay * (2 ** (attempt - 1))
+                logger.warning(
+                    "%s failed (attempt %d/%d), retrying in %.1fs: %s",
+                    operation_name, attempt, max_attempts, delay, e
+                )
+                time.sleep(delay)
+            else:
+                logger.error(
+                    "%s failed after %d attempts: %s",
+                    operation_name, max_attempts, e
+                )
+
+    # This should always have a value, but mypy doesn't know that
+    if last_exception is not None:
+        raise last_exception
+    raise RuntimeError(f"{operation_name} failed with no exception captured")
+
+
+async def retry_with_backoff_async(
+    operation: Callable[[], T],
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+    operation_name: str = "operation"
+) -> T:
+    """Async version of retry_with_backoff for async operations.
+
+    Args:
+        operation: Async function to retry (takes no arguments, returns awaitable)
+        max_attempts: Maximum number of attempts (default: 3)
+        base_delay: Base delay in seconds, doubles each retry (default: 1.0)
+        operation_name: Name for logging purposes (default: "operation")
+
+    Returns:
+        Result of successful operation
+
+    Raises:
+        Exception: Last exception if all retries fail
+
+    Example:
+        >>> async def fetch_page():
+        ...     response = await client.get(url, timeout=30.0)
+        ...     response.raise_for_status()
+        ...     return response.text
+        >>> content = await retry_with_backoff_async(fetch_page, operation_name=f"fetch {url}")
+    """
+    import asyncio
+
+    last_exception: Optional[Exception] = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return await operation()
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts:
+                delay = base_delay * (2 ** (attempt - 1))
+                logger.warning(
+                    "%s failed (attempt %d/%d), retrying in %.1fs: %s",
+                    operation_name, attempt, max_attempts, delay, e
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.error(
+                    "%s failed after %d attempts: %s",
+                    operation_name, max_attempts, e
+                )
+
+    if last_exception is not None:
+        raise last_exception
+    raise RuntimeError(f"{operation_name} failed with no exception captured")

@@ -23,10 +23,10 @@ from typing import Dict, List, Any, Optional
 
 # Import validators and scrapers
 try:
-    from config_validator import ConfigValidator, validate_config
-    from conflict_detector import ConflictDetector
-    from merge_sources import RuleBasedMerger, ClaudeEnhancedMerger
-    from unified_skill_builder import UnifiedSkillBuilder
+    from skill_seekers.cli.config_validator import ConfigValidator, validate_config
+    from skill_seekers.cli.conflict_detector import ConflictDetector
+    from skill_seekers.cli.merge_sources import RuleBasedMerger, ClaudeEnhancedMerger
+    from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running from the project root directory")
@@ -168,10 +168,8 @@ class UnifiedScraper:
 
     def _scrape_github(self, source: Dict[str, Any]):
         """Scrape GitHub repository."""
-        sys.path.insert(0, str(Path(__file__).parent))
-
         try:
-            from github_scraper import GitHubScraper
+            from skill_seekers.cli.github_scraper import GitHubScraper
         except ImportError:
             logger.error("github_scraper.py not found")
             return
@@ -190,6 +188,12 @@ class UnifiedScraper:
             'file_patterns': source.get('file_patterns', []),
             'local_repo_path': source.get('local_repo_path')  # Pass local_repo_path from config
         }
+
+        # Pass directory exclusions if specified (optional)
+        if 'exclude_dirs' in source:
+            github_config['exclude_dirs'] = source['exclude_dirs']
+        if 'exclude_dirs_additional' in source:
+            github_config['exclude_dirs_additional'] = source['exclude_dirs_additional']
 
         # Scrape
         logger.info(f"Scraping GitHub repository: {source['repo']}")
@@ -210,10 +214,8 @@ class UnifiedScraper:
 
     def _scrape_pdf(self, source: Dict[str, Any]):
         """Scrape PDF document."""
-        sys.path.insert(0, str(Path(__file__).parent))
-
         try:
-            from pdf_scraper import PDFToSkillConverter
+            from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
         except ImportError:
             logger.error("pdf_scraper.py not found")
             return

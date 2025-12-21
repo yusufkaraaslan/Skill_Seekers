@@ -55,6 +55,9 @@ import re
 import argparse
 from pathlib import Path
 
+# Import unified language detector
+from skill_seekers.cli.language_detector import LanguageDetector
+
 # Check if PyMuPDF is installed
 try:
     import fitz  # PyMuPDF
@@ -106,6 +109,9 @@ class PDFExtractor:
         self.chapters = []  # Detected chapters/sections
         self.extracted_images = []  # List of extracted image info (NEW in B1.5)
         self._cache = {}  # Cache for expensive operations (Priority 3)
+
+        # Language detection
+        self.language_detector = LanguageDetector(min_confidence=0.15)
 
     def log(self, message):
         """Print message if verbose mode enabled"""
@@ -213,141 +219,11 @@ class PDFExtractor:
         Detect programming language from code content using patterns.
         Enhanced in B1.4 with confidence scoring.
 
+        UPDATED: Now uses shared LanguageDetector with 20+ languages
+
         Returns (language, confidence) tuple
         """
-        code_lower = code.lower()
-
-        # Language detection patterns with weights
-        patterns = {
-            'python': [
-                (r'\bdef\s+\w+\s*\(', 3),
-                (r'\bimport\s+\w+', 2),
-                (r'\bclass\s+\w+:', 3),
-                (r'\bfrom\s+\w+\s+import', 2),
-                (r':\s*$', 1),  # Lines ending with :
-                (r'^\s{4}|\t', 1),  # Indentation
-            ],
-            'javascript': [
-                (r'\bfunction\s+\w+\s*\(', 3),
-                (r'\bconst\s+\w+\s*=', 2),
-                (r'\blet\s+\w+\s*=', 2),
-                (r'=>', 2),
-                (r'\bconsole\.log', 2),
-                (r'\bvar\s+\w+\s*=', 1),
-            ],
-            'java': [
-                (r'\bpublic\s+class\s+\w+', 4),
-                (r'\bprivate\s+\w+\s+\w+', 2),
-                (r'\bSystem\.out\.println', 3),
-                (r'\bpublic\s+static\s+void', 3),
-            ],
-            'cpp': [
-                (r'#include\s*<', 3),
-                (r'\bstd::', 3),
-                (r'\bnamespace\s+\w+', 2),
-                (r'cout\s*<<', 3),
-                (r'\bvoid\s+\w+\s*\(', 1),
-            ],
-            'c': [
-                (r'#include\s+<\w+\.h>', 4),
-                (r'\bprintf\s*\(', 3),
-                (r'\bmain\s*\(', 2),
-                (r'\bstruct\s+\w+', 2),
-            ],
-            'csharp': [
-                (r'\bnamespace\s+\w+', 3),
-                (r'\bpublic\s+class\s+\w+', 3),
-                (r'\busing\s+System', 3),
-            ],
-            'go': [
-                (r'\bfunc\s+\w+\s*\(', 3),
-                (r'\bpackage\s+\w+', 4),
-                (r':=', 2),
-                (r'\bfmt\.Print', 2),
-            ],
-            'rust': [
-                (r'\bfn\s+\w+\s*\(', 4),
-                (r'\blet\s+mut\s+\w+', 3),
-                (r'\bprintln!', 3),
-                (r'\bimpl\s+\w+', 2),
-            ],
-            'php': [
-                (r'<\?php', 5),
-                (r'\$\w+\s*=', 2),
-                (r'\bfunction\s+\w+\s*\(', 1),
-            ],
-            'ruby': [
-                (r'\bdef\s+\w+', 3),
-                (r'\bend\b', 2),
-                (r'\brequire\s+[\'"]', 2),
-            ],
-            'swift': [
-                (r'\bfunc\s+\w+\s*\(', 3),
-                (r'\bvar\s+\w+:', 2),
-                (r'\blet\s+\w+:', 2),
-            ],
-            'kotlin': [
-                (r'\bfun\s+\w+\s*\(', 4),
-                (r'\bval\s+\w+\s*=', 2),
-                (r'\bvar\s+\w+\s*=', 2),
-            ],
-            'shell': [
-                (r'#!/bin/bash', 5),
-                (r'#!/bin/sh', 5),
-                (r'\becho\s+', 1),
-                (r'\$\{?\w+\}?', 1),
-            ],
-            'sql': [
-                (r'\bSELECT\s+', 4),
-                (r'\bFROM\s+', 3),
-                (r'\bWHERE\s+', 2),
-                (r'\bINSERT\s+INTO', 4),
-                (r'\bCREATE\s+TABLE', 4),
-            ],
-            'html': [
-                (r'<html', 4),
-                (r'<div', 2),
-                (r'<span', 2),
-                (r'<script', 2),
-            ],
-            'css': [
-                (r'\{\s*[\w-]+\s*:', 3),
-                (r'@media', 3),
-                (r'\.[\w-]+\s*\{', 2),
-            ],
-            'json': [
-                (r'^\s*\{', 2),
-                (r'^\s*\[', 2),
-                (r'"\w+"\s*:', 3),
-            ],
-            'yaml': [
-                (r'^\w+:', 2),
-                (r'^\s+-\s+\w+', 2),
-            ],
-            'xml': [
-                (r'<\?xml', 5),
-                (r'<\w+>', 1),
-            ],
-        }
-
-        # Calculate confidence scores for each language
-        scores = {}
-        for lang, lang_patterns in patterns.items():
-            score = 0
-            for pattern, weight in lang_patterns:
-                if re.search(pattern, code, re.IGNORECASE | re.MULTILINE):
-                    score += weight
-            if score > 0:
-                scores[lang] = score
-
-        if not scores:
-            return 'unknown', 0
-
-        # Get language with highest score
-        best_lang = max(scores, key=scores.get)
-        confidence = min(scores[best_lang] / 10.0, 1.0)  # Normalize to 0-1
-
-        return best_lang, confidence
+        return self.language_detector.detect_from_code(code)
 
     def validate_code_syntax(self, code, language):
         """
