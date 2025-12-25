@@ -36,6 +36,7 @@ try:
         scrape_docs_tool,
         scrape_github_tool,
         scrape_pdf_tool,
+        run_subprocess_with_streaming,
     )
     from skill_seekers.mcp.tools.packaging_tools import (
         package_skill_tool,
@@ -59,23 +60,91 @@ try:
         """Mock list_tools for backward compatibility with tests."""
         from mcp.types import Tool
         tools = [
-            Tool(name="generate_config", description="Generate config file", inputSchema={"type": "object"}),
-            Tool(name="list_configs", description="List available configs", inputSchema={"type": "object"}),
-            Tool(name="validate_config", description="Validate config file", inputSchema={"type": "object"}),
-            Tool(name="estimate_pages", description="Estimate page count", inputSchema={"type": "object"}),
-            Tool(name="scrape_docs", description="Scrape documentation", inputSchema={"type": "object"}),
-            Tool(name="scrape_github", description="Scrape GitHub repository", inputSchema={"type": "object"}),
-            Tool(name="scrape_pdf", description="Scrape PDF file", inputSchema={"type": "object"}),
-            Tool(name="package_skill", description="Package skill into .zip", inputSchema={"type": "object"}),
-            Tool(name="upload_skill", description="Upload skill to Claude", inputSchema={"type": "object"}),
-            Tool(name="install_skill", description="Install skill", inputSchema={"type": "object"}),
-            Tool(name="split_config", description="Split large config", inputSchema={"type": "object"}),
-            Tool(name="generate_router", description="Generate router skill", inputSchema={"type": "object"}),
-            Tool(name="fetch_config", description="Fetch config from source", inputSchema={"type": "object"}),
-            Tool(name="submit_config", description="Submit config to community", inputSchema={"type": "object"}),
-            Tool(name="add_config_source", description="Add config source", inputSchema={"type": "object"}),
-            Tool(name="list_config_sources", description="List config sources", inputSchema={"type": "object"}),
-            Tool(name="remove_config_source", description="Remove config source", inputSchema={"type": "object"}),
+            Tool(
+                name="generate_config",
+                description="Generate config file",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="list_configs",
+                description="List available configs",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="validate_config",
+                description="Validate config file",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="estimate_pages",
+                description="Estimate page count",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="scrape_docs",
+                description="Scrape documentation",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="scrape_github",
+                description="Scrape GitHub repository",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="scrape_pdf",
+                description="Scrape PDF file",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="package_skill",
+                description="Package skill into .zip",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="upload_skill",
+                description="Upload skill to Claude",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="install_skill",
+                description="Install skill",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="split_config",
+                description="Split large config",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="generate_router",
+                description="Generate router skill",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="fetch_config",
+                description="Fetch config from source",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="submit_config",
+                description="Submit config to community",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="add_config_source",
+                description="Add config source",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="list_config_sources",
+                description="List config sources",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="remove_config_source",
+                description="Remove config source",
+                inputSchema={"type": "object", "properties": {}}
+            ),
         ]
         return tools
 
