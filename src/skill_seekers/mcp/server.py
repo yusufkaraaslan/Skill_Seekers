@@ -55,6 +55,51 @@ try:
         remove_config_source_tool,
     )
 
+    # For test compatibility - create call_tool router function
+    async def call_tool(name: str, arguments: dict):
+        """Route tool calls to appropriate handlers (backward compatibility)."""
+        from mcp.types import TextContent
+
+        try:
+            if name == "generate_config":
+                return await generate_config_tool(arguments)
+            elif name == "estimate_pages":
+                return await estimate_pages_tool(arguments)
+            elif name == "scrape_docs":
+                return await scrape_docs_tool(arguments)
+            elif name == "package_skill":
+                return await package_skill_tool(arguments)
+            elif name == "upload_skill":
+                return await upload_skill_tool(arguments)
+            elif name == "list_configs":
+                return await list_configs_tool(arguments)
+            elif name == "validate_config":
+                return await validate_config_tool(arguments)
+            elif name == "split_config":
+                return await split_config_tool(arguments)
+            elif name == "generate_router":
+                return await generate_router_tool(arguments)
+            elif name == "scrape_pdf":
+                return await scrape_pdf_tool(arguments)
+            elif name == "scrape_github":
+                return await scrape_github_tool(arguments)
+            elif name == "fetch_config":
+                return await fetch_config_tool(arguments)
+            elif name == "submit_config":
+                return await submit_config_tool(arguments)
+            elif name == "add_config_source":
+                return await add_config_source_tool(arguments)
+            elif name == "list_config_sources":
+                return await list_config_sources_tool(arguments)
+            elif name == "remove_config_source":
+                return await remove_config_source_tool(arguments)
+            elif name == "install_skill":
+                return await install_skill_tool(arguments)
+            else:
+                return [TextContent(type="text", text=f"Unknown tool: {name}")]
+        except Exception as e:
+            return [TextContent(type="text", text=f"Error: {str(e)}")]
+
     # For test compatibility - create a mock list_tools function
     async def list_tools():
         """Mock list_tools for backward compatibility with tests."""
