@@ -321,6 +321,28 @@ skill-seekers upload output/godot.zip
 skill-seekers package output/godot/ --no-open
 ```
 
+### Install to AI Agents
+
+```bash
+# Single agent installation
+skill-seekers install-agent output/godot/ --agent cursor
+
+# Install to all agents
+skill-seekers install-agent output/godot/ --agent all
+
+# Force overwrite
+skill-seekers install-agent output/godot/ --agent claude --force
+
+# Dry run (preview only)
+skill-seekers install-agent output/godot/ --agent cursor --dry-run
+```
+
+**Supported agents:** claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, all
+
+**Installation paths:**
+- Global agents (claude, amp, goose, etc.): Install to `~/.{agent}/skills/`
+- Project agents (cursor, vscode): Install to `.{agent}/skills/` in current directory
+
 ### Force Re-scrape
 
 ```bash

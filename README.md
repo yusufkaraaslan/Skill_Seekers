@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.1.1)
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.4.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
@@ -160,18 +160,20 @@ pip install -e .
 skill-seekers scrape --config configs/react.json
 ```
 
-### Option 4: Use from Claude Code (MCP Integration)
+### Option 4: Use from Claude Code & 4 Other AI Agents (MCP Integration)
 
 ```bash
-# One-time setup (5 minutes)
+# One-time setup (5 minutes) - Auto-configures 5 AI agents!
 ./setup_mcp.sh
 
-# Then in Claude Code, just ask:
+# Then in Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA, just ask:
 "Generate a React skill from https://react.dev/"
 "Scrape PDF at docs/manual.pdf and create skill"
 ```
 
 **Time:** Automated | **Quality:** Production-ready | **Cost:** Free
+
+**NEW in v2.4.0:** MCP server now supports 5 AI coding agents with automatic configuration!
 
 ### Option 5: Legacy CLI (Backwards Compatible)
 
@@ -543,22 +545,22 @@ This guide walks you through EVERYTHING step-by-step (Python install, git clone,
 
 ## 🚀 Quick Start
 
-### Method 1: MCP Server for Claude Code (Easiest)
+### Method 1: MCP Server for 5 AI Agents (Easiest - **NEW v2.4.0!**)
 
-Use Skill Seeker directly from Claude Code with natural language!
+Use Skill Seeker directly from **Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA** with natural language!
 
 ```bash
 # Clone repository
 git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
 cd Skill_Seekers
 
-# One-time setup (5 minutes)
+# One-time setup (5 minutes) - Auto-configures ALL 5 agents!
 ./setup_mcp.sh
 
-# Restart Claude Code, then just ask:
+# Restart your AI agent, then just ask:
 ```
 
-**In Claude Code:**
+**In Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA:**
 ```
 List all available configs
 Generate config for Tailwind at https://tailwindcss.com/docs
@@ -570,12 +572,20 @@ Package skill at output/react/
 - ✅ No manual CLI commands
 - ✅ Natural language interface
 - ✅ Integrated with your workflow
-- ✅ 9 tools available instantly (includes automatic upload!)
+- ✅ **17 tools** available instantly (up from 9!)
+- ✅ **5 AI agents supported** - auto-configured with one command
 - ✅ **Tested and working** in production
+
+**NEW in v2.4.0:**
+- ✅ **Upgraded to MCP SDK v1.25.0** - Latest features and performance
+- ✅ **FastMCP Framework** - Modern, maintainable MCP implementation
+- ✅ **HTTP + stdio transport** - Works with more AI agents
+- ✅ **17 tools** (up from 9) - More capabilities
+- ✅ **Multi-agent auto-configuration** - Setup all agents with one command
 
 **Full guides:**
 - 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 9 tools
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 17 tools
 - 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
 - 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
 
@@ -717,6 +727,358 @@ In Claude Code, just ask:
 
 ---
 
+## 🤖 Installing to AI Agents
+
+Skill Seekers can automatically install skills to 10+ AI coding agents.
+
+### Quick Start
+
+```bash
+# Install to specific agent
+skill-seekers install-agent output/react/ --agent cursor
+
+# Install to all agents at once
+skill-seekers install-agent output/react/ --agent all
+
+# Overwrite existing installation
+skill-seekers install-agent output/react/ --agent claude --force
+
+# Preview without installing
+skill-seekers install-agent output/react/ --agent cursor --dry-run
+```
+
+### Supported Agents
+
+| Agent | Path | Type |
+|-------|------|------|
+| **Claude Code** | `~/.claude/skills/` | Global |
+| **Cursor** | `.cursor/skills/` | Project |
+| **VS Code / Copilot** | `.github/skills/` | Project |
+| **Amp** | `~/.amp/skills/` | Global |
+| **Goose** | `~/.config/goose/skills/` | Global |
+| **OpenCode** | `~/.opencode/skills/` | Global |
+| **Letta** | `~/.letta/skills/` | Global |
+| **Aide** | `~/.aide/skills/` | Global |
+| **Windsurf** | `~/.windsurf/skills/` | Global |
+
+**Global paths** install to user's home directory (~/).
+**Project paths** install to current project's root directory.
+
+### Complete Workflow
+
+```bash
+# 1. Scrape documentation
+skill-seekers scrape --config configs/react.json --enhance-local
+
+# 2. Package skill
+skill-seekers package output/react/
+
+# 3. Install to your agent
+skill-seekers install-agent output/react/ --agent cursor
+
+# 4. Restart Cursor to load the skill
+```
+
+---
+
+## 🤖 Multi-Agent MCP Support (NEW in v2.4.0)
+
+**Skill Seekers MCP server now works with 5 leading AI coding agents!**
+
+### Supported AI Agents
+
+| Agent | Transport | Setup Difficulty | Auto-Configured |
+|-------|-----------|------------------|-----------------|
+| **Claude Code** | stdio | Easy | ✅ Yes |
+| **VS Code + Cline** | stdio | Easy | ✅ Yes |
+| **Cursor** | HTTP | Medium | ✅ Yes |
+| **Windsurf** | HTTP | Medium | ✅ Yes |
+| **IntelliJ IDEA** | HTTP | Medium | ✅ Yes |
+
+### Quick Setup - All Agents at Once
+
+```bash
+# Clone repository
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+
+# Run one command - auto-configures ALL 5 agents!
+./setup_mcp.sh
+
+# Restart your AI agent and start using natural language:
+"List all available configs"
+"Generate a React skill from https://react.dev/"
+"Package the skill at output/react/"
+```
+
+**What `setup_mcp.sh` does:**
+1. ✅ Installs MCP server dependencies
+2. ✅ Configures Claude Code (stdio transport)
+3. ✅ Configures VS Code + Cline (stdio transport)
+4. ✅ Configures Cursor (HTTP transport)
+5. ✅ Configures Windsurf (HTTP transport)
+6. ✅ Configures IntelliJ IDEA (HTTP transport)
+7. ✅ Shows next steps for each agent
+
+**Time:** 5 minutes | **Result:** All agents configured and ready to use
+
+### Transport Modes
+
+Skill Seekers MCP server supports 2 transport modes:
+
+#### stdio Transport (Claude Code, VS Code + Cline)
+
+**How it works:** Agent launches MCP server as subprocess and communicates via stdin/stdout
+
+**Benefits:**
+- ✅ More secure (no network ports)
+- ✅ Automatic lifecycle management
+- ✅ Simpler configuration
+- ✅ Better for single-user development
+
+**Configuration example (Claude Code):**
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "command": "python3",
+      "args": ["-m", "skill_seekers.mcp.server"],
+      "cwd": "/path/to/Skill_Seekers"
+    }
+  }
+}
+```
+
+#### HTTP Transport (Cursor, Windsurf, IntelliJ IDEA)
+
+**How it works:** MCP server runs as HTTP service, agents connect as clients
+
+**Benefits:**
+- ✅ Multi-agent support (one server, multiple clients)
+- ✅ Server can run independently
+- ✅ Better for team collaboration
+- ✅ Easier debugging and monitoring
+
+**Configuration example (Cursor):**
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "url": "http://localhost:8765/sse"
+    }
+  }
+}
+```
+
+**Starting HTTP server:**
+```bash
+# Start server manually (runs in background)
+cd /path/to/Skill_Seekers
+python3 -m skill_seekers.mcp.server --transport http --port 8765
+
+# Or use auto-start script
+./scripts/start_mcp_server.sh
+```
+
+### Agent-Specific Instructions
+
+#### Claude Code (stdio)
+
+```bash
+# Already configured by setup_mcp.sh!
+# Just restart Claude Code
+
+# Config location: ~/.claude/claude_code_config.json
+```
+
+**Usage:**
+```
+In Claude Code:
+"List all available configs"
+"Scrape React docs at https://react.dev/"
+```
+
+#### VS Code + Cline Extension (stdio)
+
+```bash
+# Already configured by setup_mcp.sh!
+# Just restart VS Code
+
+# Config location: ~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+```
+
+**Usage:**
+```
+In Cline:
+"Generate config for Tailwind"
+"Package skill at output/tailwind/"
+```
+
+#### Cursor (HTTP)
+
+```bash
+# 1. Setup already configured HTTP settings
+# Config location: ~/.cursor/mcp_settings.json
+
+# 2. Start HTTP server (one-time per session)
+./scripts/start_mcp_server.sh
+
+# 3. Restart Cursor
+```
+
+**Usage:**
+```
+In Cursor:
+"Show me all skill-seeker configs"
+"Create Django skill from docs"
+```
+
+#### Windsurf (HTTP)
+
+```bash
+# 1. Setup already configured HTTP settings
+# Config location: ~/.windsurf/mcp_settings.json
+
+# 2. Start HTTP server (one-time per session)
+./scripts/start_mcp_server.sh
+
+# 3. Restart Windsurf
+```
+
+**Usage:**
+```
+In Windsurf:
+"Estimate pages for Godot config"
+"Build unified skill for FastAPI"
+```
+
+#### IntelliJ IDEA (HTTP)
+
+```bash
+# 1. Setup already configured HTTP settings
+# Config location: ~/.intellij/mcp_settings.json
+
+# 2. Start HTTP server (one-time per session)
+./scripts/start_mcp_server.sh
+
+# 3. Restart IntelliJ IDEA
+```
+
+**Usage:**
+```
+In IntelliJ IDEA:
+"Validate my config file"
+"Split large Godot config"
+```
+
+### Available MCP Tools (17 Total)
+
+All agents have access to these 17 tools:
+
+**Core Tools (9):**
+1. `list_configs` - List all available preset configurations
+2. `generate_config` - Generate new config for any docs site
+3. `validate_config` - Validate config structure
+4. `estimate_pages` - Estimate page count before scraping
+5. `scrape_docs` - Scrape and build skill
+6. `package_skill` - Package skill into .zip
+7. `upload_skill` - Upload .zip to Claude
+8. `split_config` - Split large documentation configs
+9. `generate_router` - Generate router/hub skills
+
+**Extended Tools (8 - NEW!):**
+10. `scrape_github` - Scrape GitHub repositories
+11. `scrape_pdf` - Extract content from PDFs
+12. `unified_scrape` - Combine multiple sources
+13. `merge_sources` - Merge documentation + code
+14. `detect_conflicts` - Find doc/code discrepancies
+15. `add_config_source` - Register private git repos
+16. `fetch_config` - Fetch configs from git
+17. `list_config_sources` - List registered sources
+
+### What's New in v2.4.0
+
+**MCP Infrastructure:**
+- ✅ **Upgraded to MCP SDK v1.25.0** - Latest stable version
+- ✅ **FastMCP Framework** - Modern, maintainable implementation
+- ✅ **Dual Transport** - stdio + HTTP support
+- ✅ **17 Tools** - Up from 9 (almost 2x!)
+- ✅ **Auto-Configuration** - One script configures all agents
+
+**Agent Support:**
+- ✅ **5 Agents Supported** - Claude Code, VS Code + Cline, Cursor, Windsurf, IntelliJ IDEA
+- ✅ **Automatic Setup** - `./setup_mcp.sh` configures everything
+- ✅ **Transport Detection** - Auto-selects stdio vs HTTP per agent
+- ✅ **Config Management** - Handles all agent-specific config formats
+
+**Developer Experience:**
+- ✅ **One Setup Command** - Works for all agents
+- ✅ **Natural Language** - Use plain English in any agent
+- ✅ **No CLI Required** - All features via MCP tools
+- ✅ **Full Testing** - All 17 tools tested and working
+
+### Troubleshooting Multi-Agent Setup
+
+**HTTP server not starting?**
+```bash
+# Check if port 8765 is in use
+lsof -i :8765
+
+# Use different port
+python3 -m skill_seekers.mcp.server --transport http --port 9000
+
+# Update agent config with new port
+```
+
+**Agent not finding MCP server?**
+```bash
+# Verify config file exists
+cat ~/.claude/claude_code_config.json
+cat ~/.cursor/mcp_settings.json
+
+# Re-run setup
+./setup_mcp.sh
+
+# Check server logs
+tail -f logs/mcp_server.log
+```
+
+**Tools not appearing in agent?**
+```bash
+# Restart agent completely (quit and relaunch)
+# For HTTP transport, ensure server is running:
+ps aux | grep "skill_seekers.mcp.server"
+
+# Test server directly
+curl http://localhost:8765/health
+```
+
+### Complete Multi-Agent Workflow
+
+```bash
+# 1. One-time setup (5 minutes)
+git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
+cd Skill_Seekers
+./setup_mcp.sh
+
+# 2. For HTTP agents (Cursor/Windsurf/IntelliJ), start server
+./scripts/start_mcp_server.sh
+
+# 3. Restart your AI agent
+
+# 4. Use natural language in ANY agent:
+"List all available configs"
+"Generate React skill from https://react.dev/"
+"Estimate pages for Godot config"
+"Package and upload skill at output/react/"
+
+# 5. Result: Skills created without touching CLI!
+```
+
+**Full Guide:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) for detailed multi-agent setup instructions.
+
+---
+
 ## 📁 Simple Structure
 
 ```
@@ -726,8 +1088,8 @@ doc-to-skill/
 │   ├── package_skill.py    # Package to .zip
 │   ├── upload_skill.py     # Auto-upload (API)
 │   └── enhance_skill.py    # AI enhancement
-├── mcp/                    # MCP server for Claude Code
-│   └── server.py           # 9 MCP tools
+├── mcp/                    # MCP server for 5 AI agents
+│   └── server.py           # 17 MCP tools (v2.4.0)
 ├── configs/                # Preset configurations
 │   ├── godot.json         # Godot Engine
 │   ├── react.json         # React
