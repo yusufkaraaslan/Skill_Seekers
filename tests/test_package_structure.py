@@ -77,7 +77,7 @@ class TestMcpPackage:
         """Test that skill_seekers.mcp package has __version__."""
         import skill_seekers.mcp
         assert hasattr(skill_seekers.mcp, '__version__')
-        assert skill_seekers.mcp.__version__ == '2.0.0'
+        assert skill_seekers.mcp.__version__ == '2.4.0'
 
     def test_mcp_has_all(self):
         """Test that skill_seekers.mcp package has __all__ export list."""
@@ -94,7 +94,7 @@ class TestMcpPackage:
         """Test that skill_seekers.mcp.tools has __version__."""
         import skill_seekers.mcp.tools
         assert hasattr(skill_seekers.mcp.tools, '__version__')
-        assert skill_seekers.mcp.tools.__version__ == '2.0.0'
+        assert skill_seekers.mcp.tools.__version__ == '2.4.0'
 
 
 class TestPackageStructure:

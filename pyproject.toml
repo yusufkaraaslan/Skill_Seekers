@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.3.0"
+version = "2.4.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "PyMuPDF>=1.24.14",
@@ -68,7 +68,7 @@ dev = [
 
 # MCP server dependencies (included by default, but optional)
 mcp = [
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "uvicorn>=0.38.0",
@@ -82,7 +82,7 @@ all = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "uvicorn>=0.38.0",

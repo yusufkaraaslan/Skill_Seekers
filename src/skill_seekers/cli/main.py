@@ -62,7 +62,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 2.3.0"
+        version="%(prog)s 2.4.0"
     )
 
     subparsers = parser.add_subparsers(
