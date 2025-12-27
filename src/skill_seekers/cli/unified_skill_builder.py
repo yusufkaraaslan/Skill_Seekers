@@ -14,6 +14,7 @@ discrepancies transparently.
 
 import os
 import json
+import shutil
 import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -286,11 +287,41 @@ This skill combines knowledge from multiple sources:
         docs_dir = os.path.join(self.skill_dir, 'references', 'documentation')
         os.makedirs(docs_dir, exist_ok=True)
 
+        # Best-effort: copy docs-only reference files into unified docs references.
+        # UnifiedScraper runs doc_scraper using name "{name}_docs", which creates
+        # output/{name}_docs/references/*.md. Those are the most useful documentation
+        # references for the unified skill.
+        source_refs_dir = os.path.join('output', f"{self.name}_docs", 'references')
+        copied_files: List[str] = []
+
+        if os.path.isdir(source_refs_dir):
+            for entry in sorted(os.listdir(source_refs_dir)):
+                src_path = os.path.join(source_refs_dir, entry)
+                dst_path = os.path.join(docs_dir, entry)
+                if not os.path.isfile(src_path):
+                    continue
+                shutil.copy2(src_path, dst_path)
+                copied_files.append(entry)
+
         # Create index
         index_path = os.path.join(docs_dir, 'index.md')
-        with open(index_path, 'w') as f:
+        with open(index_path, 'w', encoding='utf-8') as f:
             f.write("# Documentation\n\n")
             f.write("Reference from official documentation.\n\n")
+
+            if copied_files:
+                files_no_index = [p for p in copied_files if p.lower() != 'index.md']
+                files_index = [p for p in copied_files if p.lower() == 'index.md']
+
+                f.write("## Files\n\n")
+                for filename in files_no_index + files_index:
+                    f.write(f"- [{filename}]({filename})\n")
+            else:
+                f.write("## Notes\n\n")
+                f.write(
+                    "No documentation reference files were copied into this unified skill. "
+                    "This usually means the docs-only build did not produce reference files.\n"
+                )
 
         logger.info("Created documentation references")
 

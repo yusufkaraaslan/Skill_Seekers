@@ -1,0 +1,68 @@
+{
+  "name": "svelte-cli",
+  "description": "Svelte CLI: docs (llms.txt) + GitHub repository (commands, project scaffolding, dev/build workflows).",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://svelte.dev/docs/cli",
+      "llms_txt_url": "https://svelte.dev/docs/cli/llms.txt",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "#main, main",
+        "title": "h1",
+        "code_blocks": "pre code, pre"
+      },
+      "url_patterns": {
+        "include": ["/docs/cli"],
+        "exclude": [
+          "/docs/kit",
+          "/docs/svelte",
+          "/docs/mcp",
+          "/tutorial",
+          "/packages",
+          "/playground",
+          "/blog"
+        ]
+      },
+      "categories": {
+        "overview": ["overview"],
+        "faq": ["frequently asked questions"],
+        "sv_create": ["sv create"],
+        "sv_add": ["sv add"],
+        "sv_check": ["sv check"],
+        "sv_migrate": ["sv migrate"],
+        "devtools_json": ["devtools-json"],
+        "drizzle": ["drizzle"],
+        "eslint": ["eslint"],
+        "lucia": ["lucia"],
+        "mcp": ["mcp"],
+        "mdsvex": ["mdsvex"],
+        "paraglide": ["paraglide"],
+        "playwright": ["playwright"],
+        "prettier": ["prettier"],
+        "storybook": ["storybook"],
+        "sveltekit_adapter": ["sveltekit-adapter"],
+        "tailwindcss": ["tailwindcss"],
+        "vitest": ["vitest"]
+      },
+      "rate_limit": 0.5,
+      "max_pages": 200
+    },
+    {
+      "type": "github",
+      "repo": "sveltejs/cli",
+      "include_issues": true,
+      "max_issues": 150,
+      "include_changelog": true,
+      "include_releases": true,
+      "include_code": true,
+      "code_analysis_depth": "deep",
+      "file_patterns": [
+        "src/**/*.ts",
+        "src/**/*.js"
+      ],
+      "local_repo_path": "local_paths/sveltekit/cli"
+    }
+  ]
+}
