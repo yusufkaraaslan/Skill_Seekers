@@ -94,17 +94,22 @@ def run_subprocess_with_streaming(cmd, timeout=None):
 
 async def split_config(args: dict) -> List[TextContent]:
     """
-    Split large documentation config into multiple focused skills.
+    Split large configs into multiple focused skills.
+
+    Supports both documentation and unified (multi-source) configs:
+    - Documentation configs: Split by categories, size, or create router skills
+    - Unified configs: Split by source type (documentation, github, pdf)
 
     For large documentation sites (10K+ pages), this tool splits the config into
-    multiple smaller configs based on categories, size, or custom strategy. This
-    improves performance and makes individual skills more focused.
+    multiple smaller configs. For unified configs with multiple sources, splits
+    into separate configs per source type.
 
     Args:
         args: Dictionary containing:
-            - config_path (str): Path to config JSON file (e.g., configs/godot.json)
-            - strategy (str, optional): Split strategy: auto, none, category, router, size (default: auto)
-            - target_pages (int, optional): Target pages per skill (default: 5000)
+            - config_path (str): Path to config JSON file (e.g., configs/godot.json or configs/react_unified.json)
+            - strategy (str, optional): Split strategy: auto, none, source, category, router, size (default: auto)
+                                       'source' strategy is for unified configs only
+            - target_pages (int, optional): Target pages per skill for doc configs (default: 5000)
             - dry_run (bool, optional): Preview without saving files (default: False)
 
     Returns:

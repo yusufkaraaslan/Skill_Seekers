@@ -36,15 +36,37 @@ class ConfigSplitter:
             print(f"❌ Error: Invalid JSON in config file: {e}")
             sys.exit(1)
 
+    def is_unified_config(self) -> bool:
+        """Check if this is a unified multi-source config"""
+        return 'sources' in self.config
+
     def get_split_strategy(self) -> str:
         """Determine split strategy"""
-        # Check if strategy is defined in config
+        # For unified configs, default to source-based splitting
+        if self.is_unified_config():
+            if self.strategy == "auto":
+                num_sources = len(self.config.get('sources', []))
+                if num_sources <= 1:
+                    print(f"ℹ️  Single source unified config - no splitting needed")
+                    return "none"
+                else:
+                    print(f"ℹ️  Multi-source unified config ({num_sources} sources) - source split recommended")
+                    return "source"
+            # For unified configs, only 'source' and 'none' strategies are valid
+            elif self.strategy in ['source', 'none']:
+                return self.strategy
+            else:
+                print(f"⚠️  Warning: Strategy '{self.strategy}' not supported for unified configs")
+                print(f"ℹ️  Using 'source' strategy instead")
+                return "source"
+
+        # Check if strategy is defined in config (documentation configs)
         if 'split_strategy' in self.config:
             config_strategy = self.config['split_strategy']
             if config_strategy != "none":
                 return config_strategy
 
-        # Use provided strategy or auto-detect
+        # Use provided strategy or auto-detect (documentation configs)
         if self.strategy == "auto":
             max_pages = self.config.get('max_pages', 500)
 
@@ -147,6 +169,46 @@ class ConfigSplitter:
         print(f"✅ Created {len(configs)} size-based configs ({self.target_pages} pages each)")
         return configs
 
+    def split_by_source(self) -> List[Dict[str, Any]]:
+        """Split unified config by source type"""
+        if not self.is_unified_config():
+            print("❌ Error: Config is not a unified config (missing 'sources' key)")
+            sys.exit(1)
+
+        sources = self.config.get('sources', [])
+        if not sources:
+            print("❌ Error: No sources defined in unified config")
+            sys.exit(1)
+
+        configs = []
+        source_type_counts = defaultdict(int)
+
+        for source in sources:
+            source_type = source.get('type', 'unknown')
+            source_type_counts[source_type] += 1
+            count = source_type_counts[source_type]
+
+            # Create new config for this source
+            new_config = {
+                'name': f"{self.base_name}-{source_type}" + (f"-{count}" if count > 1 else ""),
+                'description': f"{self.base_name.capitalize()} - {source_type.title()} source. {self.config.get('description', '')}",
+                'sources': [source]  # Single source per config
+            }
+
+            # Copy merge_mode if it exists
+            if 'merge_mode' in self.config:
+                new_config['merge_mode'] = self.config['merge_mode']
+
+            configs.append(new_config)
+
+        print(f"✅ Created {len(configs)} source-based configs")
+
+        # Show breakdown by source type
+        for source_type, count in source_type_counts.items():
+            print(f"   📄 {count}x {source_type}")
+
+        return configs
+
     def create_router_config(self, sub_configs: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Create a router config that references sub-skills"""
         router_name = self.config.get('split_config', {}).get('router_name', self.base_name)
@@ -173,16 +235,21 @@ class ConfigSplitter:
         """Execute split based on strategy"""
         strategy = self.get_split_strategy()
 
+        config_type = "UNIFIED" if self.is_unified_config() else "DOCUMENTATION"
         print(f"\n{'='*60}")
-        print(f"CONFIG SPLITTER: {self.base_name}")
+        print(f"CONFIG SPLITTER: {self.base_name} ({config_type})")
         print(f"{'='*60}")
         print(f"Strategy: {strategy}")
-        print(f"Target pages per skill: {self.target_pages}")
+        if not self.is_unified_config():
+            print(f"Target pages per skill: {self.target_pages}")
         print("")
 
         if strategy == "none":
             print("ℹ️  No splitting required")
             return [self.config]
+
+        elif strategy == "source":
+            return self.split_by_source()
 
         elif strategy == "category":
             return self.split_by_category(create_router=False)
@@ -245,9 +312,14 @@ Examples:
 Split Strategies:
   none     - No splitting (single skill)
   auto     - Automatically choose best strategy
+  source   - Split unified configs by source type (docs, github, pdf)
   category - Split by categories defined in config
   router   - Create router + category-based sub-skills
   size     - Split by page count
+
+Config Types:
+  Documentation - Single base_url config (supports: category, router, size)
+  Unified       - Multi-source config (supports: source)
         """
     )
 
@@ -258,7 +330,7 @@ Split Strategies:
 
     parser.add_argument(
         '--strategy',
-        choices=['auto', 'none', 'category', 'router', 'size'],
+        choices=['auto', 'none', 'source', 'category', 'router', 'size'],
         default='auto',
         help='Splitting strategy (default: auto)'
     )

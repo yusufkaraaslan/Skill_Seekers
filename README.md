@@ -303,6 +303,39 @@ skill-seekers install --config react
 
 ---
 
+## 📊 Feature Matrix
+
+Skill Seekers supports **4 platforms** and **5 skill modes** with full feature parity.
+
+**Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+**Skill Modes:** Documentation, GitHub, PDF, Unified Multi-Source, Local Repository
+
+See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
+
+### Quick Platform Comparison
+
+| Feature | Claude | Gemini | OpenAI | Markdown |
+|---------|--------|--------|--------|----------|
+| Format | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
+| Upload | ✅ API | ✅ API | ✅ API | ❌ Manual |
+| Enhancement | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ None |
+| All Skill Modes | ✅ | ✅ | ✅ | ✅ |
+
+**Examples:**
+```bash
+# Package for all platforms (same skill)
+skill-seekers package output/react/ --target claude
+skill-seekers package output/react/ --target gemini
+skill-seekers package output/react/ --target openai
+skill-seekers package output/react/ --target markdown
+
+# Install for specific platform
+skill-seekers install --config django --target gemini
+skill-seekers install --config fastapi --target openai
+```
+
+---
+
 ## Usage Examples
 
 ### Documentation Scraping

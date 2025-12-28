@@ -29,6 +29,7 @@ from .scraping_tools import (
 from .packaging_tools import (
     package_skill_tool as package_skill_impl,
     upload_skill_tool as upload_skill_impl,
+    enhance_skill_tool as enhance_skill_impl,
     install_skill_tool as install_skill_impl,
 )
 
@@ -58,6 +59,7 @@ __all__ = [
     # Packaging tools
     "package_skill_impl",
     "upload_skill_impl",
+    "enhance_skill_impl",
     "install_skill_impl",
     # Splitting tools
     "split_config_impl",

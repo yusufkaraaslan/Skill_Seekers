@@ -84,6 +84,7 @@ try:
         # Packaging tools
         package_skill_impl,
         upload_skill_impl,
+        enhance_skill_impl,
         install_skill_impl,
         # Splitting tools
         split_config_impl,
@@ -109,6 +110,7 @@ except ImportError:
         scrape_pdf_impl,
         package_skill_impl,
         upload_skill_impl,
+        enhance_skill_impl,
         install_skill_impl,
         split_config_impl,
         generate_router_impl,
@@ -397,24 +399,27 @@ async def scrape_pdf(
 
 
 @safe_tool_decorator(
-    description="Package a skill directory into a .zip file ready for Claude upload. Automatically uploads if ANTHROPIC_API_KEY is set."
+    description="Package skill directory into platform-specific format (ZIP for Claude/OpenAI/Markdown, tar.gz for Gemini). Supports all platforms: claude, gemini, openai, markdown. Automatically uploads if platform API key is set."
 )
 async def package_skill(
     skill_dir: str,
+    target: str = "claude",
     auto_upload: bool = True,
 ) -> str:
     """
-    Package a skill directory into a .zip file.
+    Package skill directory for target LLM platform.
 
     Args:
-        skill_dir: Path to skill directory (e.g., output/react/)
-        auto_upload: Try to upload automatically if API key is available (default: true). If false, only package without upload attempt.
+        skill_dir: Path to skill directory to package (e.g., output/react/)
+        target: Target platform (default: 'claude'). Options: claude, gemini, openai, markdown
+        auto_upload: Auto-upload after packaging if API key is available (default: true). Requires platform-specific API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
-        Packaging results with .zip file path and upload status.
+        Packaging results with file path and platform info.
     """
     args = {
         "skill_dir": skill_dir,
+        "target": target,
         "auto_upload": auto_upload,
     }
     result = await package_skill_impl(args)
@@ -424,26 +429,74 @@ async def package_skill(
 
 
 @safe_tool_decorator(
-    description="Upload a skill .zip file to Claude automatically (requires ANTHROPIC_API_KEY)"
+    description="Upload skill package to target LLM platform API. Requires platform-specific API key. Supports: claude (Anthropic Skills API), gemini (Google Files API), openai (Assistants API). Does NOT support markdown."
 )
-async def upload_skill(skill_zip: str) -> str:
+async def upload_skill(
+    skill_zip: str,
+    target: str = "claude",
+    api_key: str | None = None,
+) -> str:
     """
-    Upload a skill .zip file to Claude.
+    Upload skill package to target platform.
 
     Args:
-        skill_zip: Path to skill .zip file (e.g., output/react.zip)
+        skill_zip: Path to skill package (.zip or .tar.gz, e.g., output/react.zip)
+        target: Target platform (default: 'claude'). Options: claude, gemini, openai
+        api_key: Optional API key (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
     Returns:
-        Upload results with success/error message.
+        Upload results with skill ID and platform URL.
     """
-    result = await upload_skill_impl({"skill_zip": skill_zip})
+    args = {
+        "skill_zip": skill_zip,
+        "target": target,
+    }
+    if api_key:
+        args["api_key"] = api_key
+
+    result = await upload_skill_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
 
 
 @safe_tool_decorator(
-    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Automatically uploads to Claude if ANTHROPIC_API_KEY is set."
+    description="Enhance SKILL.md with AI using target platform's model. Local mode uses Claude Code Max (no API key). API mode uses platform API (requires key). Transforms basic templates into comprehensive 500+ line guides with examples."
+)
+async def enhance_skill(
+    skill_dir: str,
+    target: str = "claude",
+    mode: str = "local",
+    api_key: str | None = None,
+) -> str:
+    """
+    Enhance SKILL.md with AI.
+
+    Args:
+        skill_dir: Path to skill directory containing SKILL.md (e.g., output/react/)
+        target: Target platform (default: 'claude'). Options: claude, gemini, openai
+        mode: Enhancement mode (default: 'local'). Options: local (Claude Code, no API), api (uses platform API)
+        api_key: Optional API key for 'api' mode (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
+
+    Returns:
+        Enhancement results with backup location.
+    """
+    args = {
+        "skill_dir": skill_dir,
+        "target": target,
+        "mode": mode,
+    }
+    if api_key:
+        args["api_key"] = api_key
+
+    result = await enhance_skill_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Supports multiple LLM platforms: claude (default), gemini, openai, markdown. Auto-uploads if platform API key is set."
 )
 async def install_skill(
     config_name: str | None = None,
@@ -452,6 +505,7 @@ async def install_skill(
     auto_upload: bool = True,
     unlimited: bool = False,
     dry_run: bool = False,
+    target: str = "claude",
 ) -> str:
     """
     Complete one-command workflow to install a skill.
@@ -460,9 +514,10 @@ async def install_skill(
         config_name: Config name from API (e.g., 'react', 'django'). Mutually exclusive with config_path. Tool will fetch this config from the official API before scraping.
         config_path: Path to existing config JSON file (e.g., 'configs/custom.json'). Mutually exclusive with config_name. Use this if you already have a config file.
         destination: Output directory for skill files (default: 'output')
-        auto_upload: Auto-upload to Claude after packaging (requires ANTHROPIC_API_KEY). Default: true. Set to false to skip upload.
+        auto_upload: Auto-upload after packaging (requires platform API key). Default: true. Set to false to skip upload.
         unlimited: Remove page limits during scraping (default: false). WARNING: Can take hours for large sites.
         dry_run: Preview workflow without executing (default: false). Shows all phases that would run.
+        target: Target LLM platform (default: 'claude'). Options: claude, gemini, openai, markdown. Requires corresponding API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
         Workflow results with all phase statuses.
@@ -472,6 +527,7 @@ async def install_skill(
         "auto_upload": auto_upload,
         "unlimited": unlimited,
         "dry_run": dry_run,
+        "target": target,
     }
     if config_name:
         args["config_name"] = config_name
@@ -490,7 +546,7 @@ async def install_skill(
 
 
 @safe_tool_decorator(
-    description="Split large documentation config into multiple focused skills. For 10K+ page documentation."
+    description="Split large configs into multiple focused skills. Supports documentation (10K+ pages) and unified multi-source configs. Auto-detects config type and recommends best strategy."
 )
 async def split_config(
     config_path: str,
@@ -499,12 +555,16 @@ async def split_config(
     dry_run: bool = False,
 ) -> str:
     """
-    Split large documentation config into multiple skills.
+    Split large configs into multiple skills.
+
+    Supports:
+    - Documentation configs: Split by categories, size, or create router skills
+    - Unified configs: Split by source type (documentation, github, pdf)
 
     Args:
-        config_path: Path to config JSON file (e.g., configs/godot.json)
-        strategy: Split strategy: auto, none, category, router, size (default: auto)
-        target_pages: Target pages per skill (default: 5000)
+        config_path: Path to config JSON file (e.g., configs/godot.json or configs/react_unified.json)
+        strategy: Split strategy: auto, none, source, category, router, size (default: auto). 'source' is for unified configs.
+        target_pages: Target pages per skill for doc configs (default: 5000)
         dry_run: Preview without saving files (default: false)
 
     Returns:
