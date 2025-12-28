@@ -76,6 +76,23 @@ mcp = [
     "sse-starlette>=3.0.2",
 ]
 
+# LLM platform-specific dependencies
+# Google Gemini support
+gemini = [
+    "google-generativeai>=0.8.0",
+]
+
+# OpenAI ChatGPT support
+openai = [
+    "openai>=1.0.0",
+]
+
+# All LLM platforms combined
+all-llms = [
+    "google-generativeai>=0.8.0",
+    "openai>=1.0.0",
+]
+
 # All optional dependencies combined
 all = [
     "pytest>=8.4.2",
@@ -88,6 +105,8 @@ all = [
     "uvicorn>=0.38.0",
     "starlette>=0.48.0",
     "sse-starlette>=3.0.2",
+    "google-generativeai>=0.8.0",
+    "openai>=1.0.0",
 ]
 
 [project.urls]
