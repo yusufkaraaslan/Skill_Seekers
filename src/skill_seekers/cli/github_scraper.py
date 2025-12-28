@@ -58,6 +58,87 @@ EXCLUDED_DIRS = {
 }
 
 
+def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
+    """
+    Extract a meaningful description from README content for skill description.
+
+    Parses README to find the first meaningful paragraph that describes
+    what the project does, suitable for "Use when..." format.
+
+    Args:
+        readme_content: README.md content
+        repo_name: Repository name (e.g., 'facebook/react')
+
+    Returns:
+        Description string, or improved fallback if extraction fails
+    """
+    if not readme_content:
+        return f'Use when working with {repo_name.split("/")[-1]}'
+
+    try:
+        lines = readme_content.split('\n')
+
+        # Skip badges, images, title - find first meaningful text paragraph
+        meaningful_paragraph = None
+        in_code_block = False
+
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Track code blocks
+            if stripped.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+
+            # Skip if in code block
+            if in_code_block:
+                continue
+
+            # Skip empty lines, badges, images, HTML
+            if not stripped or stripped.startswith(('#', '!', '<', '[![', '[![')):
+                continue
+
+            # Skip lines that are just links or badges
+            if stripped.startswith('[') and '](' in stripped and len(stripped) < 100:
+                continue
+
+            # Found a meaningful paragraph - take up to 200 chars
+            if len(stripped) > 20:  # Meaningful length
+                meaningful_paragraph = stripped
+                break
+
+        if meaningful_paragraph:
+            # Clean up and extract purpose
+            # Remove markdown formatting
+            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', meaningful_paragraph)  # Links
+            clean = re.sub(r'[*_`]', '', clean)  # Bold, italic, code
+            clean = re.sub(r'<[^>]+>', '', clean)  # HTML tags
+
+            # Truncate if too long (keep first sentence or ~150 chars)
+            if '. ' in clean:
+                first_sentence = clean.split('. ')[0] + '.'
+                if len(first_sentence) < 200:
+                    clean = first_sentence
+
+            if len(clean) > 150:
+                clean = clean[:147] + '...'
+
+            # Format as "Use when..." description
+            # If it already starts with action words, use as-is
+            action_words = ['build', 'create', 'develop', 'work', 'use', 'implement', 'manage']
+            if any(clean.lower().startswith(word) for word in action_words):
+                return f'Use when {clean.lower()}'
+            else:
+                return f'Use when working with {clean.lower()}'
+
+    except Exception as e:
+        logger.debug(f"Could not extract description from README: {e}")
+
+    # Improved fallback
+    project_name = repo_name.split('/')[-1]
+    return f'Use when working with {project_name}'
+
+
 class GitHubScraper:
     """
     GitHub Repository Scraper (C1.1-C1.9)
@@ -79,7 +160,8 @@ class GitHubScraper:
         self.config = config
         self.repo_name = config['repo']
         self.name = config.get('name', self.repo_name.split('/')[-1])
-        self.description = config.get('description', f'Skill for {self.repo_name}')
+        # Set initial description (will be improved after README extraction if not in config)
+        self.description = config.get('description', f'Use when working with {self.repo_name.split("/")[-1]}')
 
         # Local repository path (optional - enables unlimited analysis)
         self.local_repo_path = local_repo_path or config.get('local_repo_path')
@@ -257,6 +339,16 @@ class GitHubScraper:
                 if content:
                     self.extracted_data['readme'] = content.decoded_content.decode('utf-8')
                     logger.info(f"README found: {readme_path}")
+
+                    # Update description if not explicitly set in config
+                    if 'description' not in self.config:
+                        smart_description = extract_description_from_readme(
+                            self.extracted_data['readme'],
+                            self.repo_name
+                        )
+                        self.description = smart_description
+                        logger.debug(f"Generated description: {self.description}")
+
                     return
             except GithubException:
                 continue
@@ -654,7 +746,6 @@ class GitHubToSkillConverter:
         """Initialize converter with configuration."""
         self.config = config
         self.name = config.get('name', config['repo'].split('/')[-1])
-        self.description = config.get('description', f'Skill for {config["repo"]}')
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -662,6 +753,18 @@ class GitHubToSkillConverter:
 
         # Load extracted data
         self.data = self._load_data()
+
+        # Set description (smart extraction from README if available)
+        if 'description' in config:
+            self.description = config['description']
+        else:
+            # Try to extract from README in loaded data
+            readme_content = self.data.get('readme', '')
+            repo_name = config['repo']
+            if readme_content:
+                self.description = extract_description_from_readme(readme_content, repo_name)
+            else:
+                self.description = f'Use when working with {repo_name.split("/")[-1]}'
 
     def _load_data(self) -> Dict[str, Any]:
         """Load extracted GitHub data from JSON."""
@@ -925,7 +1028,7 @@ Examples:
         config = {
             'repo': args.repo,
             'name': args.name or args.repo.split('/')[-1],
-            'description': args.description or f'GitHub repository skill for {args.repo}',
+            'description': args.description or f'Use when working with {args.repo.split("/")[-1]}',
             'github_token': args.token,
             'include_issues': not args.no_issues,
             'include_changelog': not args.no_changelog,
