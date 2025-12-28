@@ -20,7 +20,12 @@ try:
     from mcp.types import TextContent
     MCP_AVAILABLE = True
 except ImportError:
-    TextContent = None
+    # Graceful degradation: Create a simple fallback class for testing
+    class TextContent:
+        """Fallback TextContent for when MCP is not installed"""
+        def __init__(self, type: str, text: str):
+            self.type = type
+            self.text = text
     MCP_AVAILABLE = False
 
 import httpx

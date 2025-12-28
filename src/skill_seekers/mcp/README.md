@@ -73,7 +73,7 @@ You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-The MCP server exposes 10 tools:
+The MCP server exposes 18 tools:
 
 ### 1. `generate_config`
 Create a new configuration file for any documentation website.
@@ -117,29 +117,66 @@ Scrape docs using configs/react.json
 ```
 
 ### 4. `package_skill`
-Package a skill directory into a `.zip` file ready for Claude upload. Automatically uploads if ANTHROPIC_API_KEY is set.
+Package skill directory into platform-specific format. Automatically uploads if platform API key is set.
 
 **Parameters:**
 - `skill_dir` (required): Path to skill directory (e.g., "output/react/")
+- `target` (optional): Target platform - "claude", "gemini", "openai", "markdown" (default: "claude")
 - `auto_upload` (optional): Try to upload automatically if API key is available (default: true)
 
-**Example:**
+**Platform-specific outputs:**
+- Claude/OpenAI/Markdown: `.zip` file
+- Gemini: `.tar.gz` file
+
+**Examples:**
 ```
-Package skill at output/react/
+Package skill for Claude (default): output/react/
+Package skill for Gemini: output/react/ with target gemini
+Package skill for OpenAI: output/react/ with target openai
+Package skill for Markdown: output/react/ with target markdown
 ```
 
 ### 5. `upload_skill`
-Upload a skill .zip file to Claude automatically (requires ANTHROPIC_API_KEY).
+Upload skill package to target LLM platform (requires platform-specific API key).
 
 **Parameters:**
-- `skill_zip` (required): Path to skill .zip file (e.g., "output/react.zip")
+- `skill_zip` (required): Path to skill package (`.zip` or `.tar.gz`)
+- `target` (optional): Target platform - "claude", "gemini", "openai" (default: "claude")
 
-**Example:**
+**Examples:**
 ```
-Upload output/react.zip using upload_skill
+Upload to Claude: output/react.zip
+Upload to Gemini: output/react-gemini.tar.gz with target gemini
+Upload to OpenAI: output/react-openai.zip with target openai
 ```
 
-### 6. `list_configs`
+**Note:** Requires platform-specific API key (ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
+
+### 6. `enhance_skill`
+Enhance SKILL.md with AI using target platform's model. Transforms basic templates into comprehensive guides.
+
+**Parameters:**
+- `skill_dir` (required): Path to skill directory (e.g., "output/react/")
+- `target` (optional): Target platform - "claude", "gemini", "openai" (default: "claude")
+- `mode` (optional): "local" (Claude Code Max, no API key) or "api" (requires API key) (default: "local")
+- `api_key` (optional): Platform API key (uses env var if not provided)
+
+**What it does:**
+- Transforms basic SKILL.md templates into comprehensive 500+ line guides
+- Uses platform-specific AI models (Claude Sonnet 4, Gemini 2.0 Flash, GPT-4o)
+- Extracts best examples from references
+- Adds platform-specific formatting
+
+**Examples:**
+```
+Enhance with Claude locally (no API key): output/react/
+Enhance with Gemini API: output/react/ with target gemini and mode api
+Enhance with OpenAI API: output/react/ with target openai and mode api
+```
+
+**Note:** Local mode uses Claude Code Max (requires Claude Code but no API key). API mode requires platform-specific API key.
+
+### 7. `list_configs`
 List all available preset configurations.
 
 **Parameters:** None
@@ -149,7 +186,7 @@ List all available preset configurations.
 List all available configs
 ```
 
-### 7. `validate_config`
+### 8. `validate_config`
 Validate a config file for errors.
 
 **Parameters:**
@@ -160,7 +197,7 @@ Validate a config file for errors.
 Validate configs/godot.json
 ```
 
-### 8. `split_config`
+### 9. `split_config`
 Split large documentation config into multiple focused skills. For 10K+ page documentation.
 
 **Parameters:**
@@ -180,7 +217,7 @@ Split configs/godot.json using router strategy with 5000 pages per skill
 - **router** - Create router/hub skill + specialized sub-skills (RECOMMENDED for 10K+ pages)
 - **size** - Split every N pages (for docs without clear categories)
 
-### 9. `generate_router`
+### 10. `generate_router`
 Generate router/hub skill for split documentation. Creates intelligent routing to sub-skills.
 
 **Parameters:**
@@ -198,7 +235,7 @@ Generate router for configs/godot-*.json
 - Creates router SKILL.md with intelligent routing logic
 - Users can ask questions naturally, router directs to appropriate sub-skill
 
-### 10. `scrape_pdf`
+### 11. `scrape_pdf`
 Scrape PDF documentation and build Claude skill. Extracts text, code blocks, images, and tables from PDF files with advanced features.
 
 **Parameters:**

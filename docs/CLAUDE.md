@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🎯 Current Status (December 28, 2025)
+
+**Version:** v2.5.0 (Production Ready - Multi-Platform Feature Parity!)
+**Active Development:** Multi-platform support complete
+
+### Recent Updates (December 2025):
+
+**🎉 MAJOR RELEASE: Multi-Platform Feature Parity! (v2.5.0)**
+- **🌐 Multi-LLM Support**: Full support for 4 platforms - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- **🔄 Complete Feature Parity**: All skill modes work with all platforms
+- **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
+- **✨ 18 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)
+- **📚 Comprehensive Documentation**: Complete guides for all platforms
+- **🧪 Test Coverage**: 700 tests passing, extensive platform compatibility testing
+
 ## Overview
 
 This is a Python-based documentation scraper that converts ANY documentation website into a Claude skill. It's a single-file tool (`doc_scraper.py`) that scrapes documentation, extracts code patterns, detects programming languages, and generates structured skill files ready for use with Claude.
@@ -94,10 +109,46 @@ The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) ope
 "Package skill at output/react/"
 ```
 
-9 MCP tools available: list_configs, generate_config, validate_config, estimate_pages, scrape_docs, package_skill, upload_skill, split_config, generate_router
+18 MCP tools available with multi-platform support: list_configs, generate_config, validate_config, fetch_config, estimate_pages, scrape_docs, scrape_github, scrape_pdf, package_skill, upload_skill, enhance_skill (NEW), install_skill, split_config, generate_router, add_config_source, list_config_sources, remove_config_source, submit_config
 
 ### Test with limited pages (edit config first)
 Set `"max_pages": 20` in the config file to test with fewer pages.
+
+## Multi-Platform Support (v2.5.0+)
+
+**4 Platforms Fully Supported:**
+- **Claude AI** (default) - ZIP format, Skills API, MCP integration
+- **Google Gemini** - tar.gz format, Files API, 1M token context
+- **OpenAI ChatGPT** - ZIP format, Assistants API, Vector Store
+- **Generic Markdown** - ZIP format, universal compatibility
+
+**All skill modes work with all platforms:**
+- Documentation scraping
+- GitHub repository analysis
+- PDF extraction
+- Unified multi-source
+- Local repository analysis
+
+**Use the `--target` parameter for packaging, upload, and enhancement:**
+```bash
+# Package for different platforms
+skill-seekers package output/react/ --target claude     # Default
+skill-seekers package output/react/ --target gemini
+skill-seekers package output/react/ --target openai
+skill-seekers package output/react/ --target markdown
+
+# Upload to platforms (requires API keys)
+skill-seekers upload output/react.zip --target claude
+skill-seekers upload output/react-gemini.tar.gz --target gemini
+skill-seekers upload output/react-openai.zip --target openai
+
+# Enhance with platform-specific AI
+skill-seekers enhance output/react/ --target claude     # Sonnet 4
+skill-seekers enhance output/react/ --target gemini --mode api    # Gemini 2.0
+skill-seekers enhance output/react/ --target openai --mode api    # GPT-4o
+```
+
+See [Multi-Platform Guide](UPLOAD_GUIDE.md) and [Feature Matrix](FEATURE_MATRIX.md) for complete details.
 
 ## Architecture
 
