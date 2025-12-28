@@ -577,10 +577,31 @@ class GitHubScraper:
             try:
                 content = self.repo.get_contents(changelog_path)
                 if content:
-                    self.extracted_data['changelog'] = content.decoded_content.decode('utf-8')
+                    # decoded_content is already bytes, decode to string
+                    # Handle potential encoding issues gracefully
+                    try:
+                        if isinstance(content.decoded_content, bytes):
+                            changelog_text = content.decoded_content.decode('utf-8')
+                        else:
+                            # Already a string
+                            changelog_text = str(content.decoded_content)
+                    except (UnicodeDecodeError, AttributeError, LookupError) as e:
+                        # Try alternative encodings or skip this file
+                        logger.warning(f"Encoding issue with {changelog_path}: {e}, trying latin-1")
+                        try:
+                            changelog_text = content.decoded_content.decode('latin-1')
+                        except Exception:
+                            logger.warning(f"Could not decode {changelog_path}, skipping")
+                            continue
+
+                    self.extracted_data['changelog'] = changelog_text
                     logger.info(f"CHANGELOG found: {changelog_path}")
                     return
             except GithubException:
+                continue
+            except Exception as e:
+                # Catch any other errors (like "unsupported encoding: none")
+                logger.warning(f"Error reading {changelog_path}: {e}")
                 continue
 
         logger.warning("No CHANGELOG found in repository")
@@ -887,6 +908,12 @@ Examples:
     parser.add_argument('--no-releases', action='store_true', help='Skip releases')
     parser.add_argument('--max-issues', type=int, default=100, help='Max issues to fetch')
     parser.add_argument('--scrape-only', action='store_true', help='Only scrape, don\'t build skill')
+    parser.add_argument('--enhance', action='store_true',
+                       help='Enhance SKILL.md using Claude API after building (requires API key)')
+    parser.add_argument('--enhance-local', action='store_true',
+                       help='Enhance SKILL.md using Claude Code (no API key needed)')
+    parser.add_argument('--api-key', type=str,
+                       help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
 
     args = parser.parse_args()
 
@@ -921,8 +948,47 @@ Examples:
         converter = GitHubToSkillConverter(config)
         converter.build_skill()
 
-        logger.info(f"\n✅ Success! Skill created at: output/{config.get('name', config['repo'].split('/')[-1])}/")
-        logger.info(f"Next step: skill-seekers-package output/{config.get('name', config['repo'].split('/')[-1])}/")
+        skill_name = config.get('name', config['repo'].split('/')[-1])
+        skill_dir = f"output/{skill_name}"
+
+        # Phase 3: Optional enhancement
+        if args.enhance or args.enhance_local:
+            logger.info("\n📝 Enhancing SKILL.md with Claude...")
+
+            if args.enhance_local:
+                # Local enhancement using Claude Code
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+                from pathlib import Path
+
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                enhancer.run(headless=True)
+                logger.info("✅ Local enhancement complete!")
+
+            elif args.enhance:
+                # API-based enhancement
+                import os
+                api_key = args.api_key or os.environ.get('ANTHROPIC_API_KEY')
+                if not api_key:
+                    logger.error("❌ ANTHROPIC_API_KEY not set. Use --api-key or set environment variable.")
+                    logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+                else:
+                    # Import and run API enhancement
+                    try:
+                        from skill_seekers.cli.enhance_skill import enhance_skill_md
+                        enhance_skill_md(skill_dir, api_key)
+                        logger.info("✅ API enhancement complete!")
+                    except ImportError:
+                        logger.error("❌ API enhancement not available. Install: pip install anthropic")
+                        logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+
+        logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
+
+        if not (args.enhance or args.enhance_local):
+            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+            logger.info(f"  Local (recommended):  skill-seekers enhance {skill_dir}/")
+            logger.info(f"                        or re-run with: --enhance-local")
+
+        logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
 
     except Exception as e:
         logger.error(f"Error: {e}")
