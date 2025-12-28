@@ -170,7 +170,7 @@ class DocToSkillConverter:
         }
 
         try:
-            with open(self.checkpoint_file, 'w') as f:
+            with open(self.checkpoint_file, 'w', encoding='utf-8') as f:
                 json.dump(checkpoint_data, f, indent=2)
             logger.info("  💾 Checkpoint saved (%d pages)", self.pages_scraped)
         except Exception as e:
@@ -183,7 +183,7 @@ class DocToSkillConverter:
             return
 
         try:
-            with open(self.checkpoint_file, 'r') as f:
+            with open(self.checkpoint_file, 'r', encoding='utf-8') as f:
                 checkpoint_data = json.load(f)
 
             self.visited_urls = set(checkpoint_data["visited_urls"])
@@ -1307,7 +1307,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         'react'
     """
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
         logger.error("❌ Error: Invalid JSON in config file: %s", config_path)
@@ -1413,7 +1413,7 @@ def check_existing_data(name: str) -> Tuple[bool, int]:
     """
     data_dir = f"output/{name}_data"
     if os.path.exists(data_dir) and os.path.exists(f"{data_dir}/summary.json"):
-        with open(f"{data_dir}/summary.json", 'r') as f:
+        with open(f"{data_dir}/summary.json", 'r', encoding='utf-8') as f:
             summary = json.load(f)
         return True, summary.get('total_pages', 0)
     return False, 0

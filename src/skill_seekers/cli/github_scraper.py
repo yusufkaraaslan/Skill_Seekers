@@ -919,7 +919,7 @@ Examples:
 
     # Build config from args or file
     if args.config:
-        with open(args.config, 'r') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config = json.load(f)
     elif args.repo:
         config = {
