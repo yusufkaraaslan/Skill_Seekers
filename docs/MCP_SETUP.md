@@ -64,10 +64,11 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 - `scrape_github` - Scrape GitHub repositories
 - `scrape_pdf` - Extract content from PDF files
 
-**Packaging Tools (3):**
-- `package_skill` - Package skill into .zip file
-- `upload_skill` - Upload .zip to Claude AI (NEW)
-- `install_skill` - Install skill to AI coding agents (NEW)
+**Packaging Tools (4):**
+- `package_skill` - Package skill (supports multi-platform via `target` parameter)
+- `upload_skill` - Upload to LLM platform (claude, gemini, openai)
+- `enhance_skill` - AI-enhance SKILL.md (NEW - local or API mode)
+- `install_skill` - Complete install workflow
 
 **Splitting Tools (2):**
 - `split_config` - Split large documentation configs
@@ -603,9 +604,10 @@ You should see **17 Skill Seeker tools**:
 - `scrape_pdf` - Extract PDF content
 
 **Packaging Tools:**
-- `package_skill` - Package skill into .zip
-- `upload_skill` - Upload to Claude AI
-- `install_skill` - Install to AI agents
+- `package_skill` - Package skill (multi-platform support)
+- `upload_skill` - Upload to LLM platform
+- `enhance_skill` - AI-enhance SKILL.md
+- `install_skill` - Complete install workflow
 
 **Splitting Tools:**
 - `split_config` - Split large configs
@@ -742,6 +744,46 @@ User: Scrape docs using configs/internal-api.json
 
 Agent: [Scraping internal documentation...]
 ```
+
+### Example 4: Multi-Platform Support
+
+Skill Seekers supports packaging and uploading to 4 LLM platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
+
+```
+User: Scrape docs using configs/react.json
+
+Agent: ✅ Skill created at output/react/
+
+User: Package skill at output/react/ with target gemini
+
+Agent: ✅ Packaged for Google Gemini
+       Saved to: output/react-gemini.tar.gz
+       Format: tar.gz (Gemini-specific format)
+
+User: Package skill at output/react/ with target openai
+
+Agent: ✅ Packaged for OpenAI ChatGPT
+       Saved to: output/react-openai.zip
+       Format: ZIP with vector store
+
+User: Enhance skill at output/react/ with target gemini and mode api
+
+Agent: ✅ Enhanced with Gemini 2.0 Flash
+       Backup: output/react/SKILL.md.backup
+       Enhanced: output/react/SKILL.md
+
+User: Upload output/react-gemini.tar.gz with target gemini
+
+Agent: ✅ Uploaded to Google Gemini
+       Skill ID: gemini_12345
+       Access at: https://aistudio.google.com/
+```
+
+**Available platforms:**
+- `claude` (default) - ZIP format, Anthropic Skills API
+- `gemini` - tar.gz format, Google Files API
+- `openai` - ZIP format, OpenAI Assistants API + Vector Store
+- `markdown` - ZIP format, generic export (no upload)
 
 ---
 
