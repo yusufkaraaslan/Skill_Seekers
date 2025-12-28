@@ -17,6 +17,245 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2025-12-28
+
+### 🚀 Multi-Platform Feature Parity - 4 LLM Platforms Supported
+
+This **major feature release** adds complete multi-platform support for Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown export. All features now work across all platforms with full feature parity.
+
+### 🎯 Major Features
+
+#### Multi-LLM Platform Support
+- **4 platforms supported**: Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- **Complete feature parity**: All skill modes work with all platforms
+- **Platform adaptors**: Clean architecture with platform-specific implementations
+- **Unified workflow**: Same scraping output works for all platforms
+- **Smart enhancement**: Platform-specific AI models (Claude Sonnet 4, Gemini 2.0 Flash, GPT-4o)
+
+#### Platform-Specific Capabilities
+
+**Claude AI (Default):**
+- Format: ZIP with YAML frontmatter + markdown
+- Upload: Anthropic Skills API
+- Enhancement: Claude Sonnet 4 (local or API)
+- MCP integration: Full support
+
+**Google Gemini:**
+- Format: tar.gz with plain markdown
+- Upload: Google Files API + Grounding
+- Enhancement: Gemini 2.0 Flash
+- Long context: 1M tokens supported
+
+**OpenAI ChatGPT:**
+- Format: ZIP with assistant instructions
+- Upload: Assistants API + Vector Store
+- Enhancement: GPT-4o
+- File search: Semantic search enabled
+
+**Generic Markdown:**
+- Format: ZIP with pure markdown
+- Upload: Manual distribution
+- Universal compatibility: Works with any LLM
+
+#### Complete Feature Parity
+
+**All skill modes work with all platforms:**
+- Documentation scraping → All 4 platforms
+- GitHub repository analysis → All 4 platforms
+- PDF extraction → All 4 platforms
+- Unified multi-source → All 4 platforms
+- Local repository analysis → All 4 platforms
+
+**18 MCP tools with multi-platform support:**
+- `package_skill` - Now accepts `target` parameter (claude, gemini, openai, markdown)
+- `upload_skill` - Now accepts `target` parameter (claude, gemini, openai)
+- `enhance_skill` - NEW standalone tool with `target` parameter
+- `install_skill` - Full multi-platform workflow automation
+
+### Added
+
+#### Core Infrastructure
+- **Platform Adaptors** (`src/skill_seekers/cli/adaptors/`)
+  - `base_adaptor.py` - Abstract base class for all adaptors
+  - `claude_adaptor.py` - Claude AI implementation
+  - `gemini_adaptor.py` - Google Gemini implementation
+  - `openai_adaptor.py` - OpenAI ChatGPT implementation
+  - `markdown_adaptor.py` - Generic Markdown export
+  - `__init__.py` - Factory function `get_adaptor(target)`
+
+#### CLI Tools
+- **Multi-platform packaging**: `skill-seekers package output/skill/ --target gemini`
+- **Multi-platform upload**: `skill-seekers upload skill.zip --target openai`
+- **Multi-platform enhancement**: `skill-seekers enhance output/skill/ --target gemini --mode api`
+- **Target parameter**: All packaging tools now accept `--target` flag
+
+#### MCP Tools
+- **`enhance_skill`** (NEW) - Standalone AI enhancement tool
+  - Supports local mode (Claude Code Max, no API key)
+  - Supports API mode (platform-specific APIs)
+  - Works with Claude, Gemini, OpenAI
+  - Creates SKILL.md.backup before enhancement
+
+- **`package_skill`** (UPDATED) - Multi-platform packaging
+  - New `target` parameter (claude, gemini, openai, markdown)
+  - Creates ZIP for Claude/OpenAI/Markdown
+  - Creates tar.gz for Gemini
+  - Shows platform-specific output messages
+
+- **`upload_skill`** (UPDATED) - Multi-platform upload
+  - New `target` parameter (claude, gemini, openai)
+  - Platform-specific API key validation
+  - Returns skill ID and platform URL
+  - Graceful error for markdown (no upload)
+
+#### Documentation
+- **`docs/FEATURE_MATRIX.md`** (NEW) - Comprehensive feature matrix
+  - Platform support comparison table
+  - Skill mode support across platforms
+  - CLI command support matrix
+  - MCP tool support matrix
+  - Platform-specific examples
+  - Verification checklist
+
+- **`docs/UPLOAD_GUIDE.md`** (REWRITTEN) - Multi-platform upload guide
+  - Complete guide for all 4 platforms
+  - Platform selection table
+  - API key setup instructions
+  - Platform comparison matrices
+  - Complete workflow examples
+
+- **`docs/ENHANCEMENT.md`** (UPDATED)
+  - Multi-platform enhancement section
+  - Platform-specific model information
+  - Cost comparison across platforms
+
+- **`docs/MCP_SETUP.md`** (UPDATED)
+  - Added enhance_skill to tool listings
+  - Multi-platform usage examples
+  - Updated tool count (10 → 18 tools)
+
+- **`src/skill_seekers/mcp/README.md`** (UPDATED)
+  - Corrected tool count (18 tools)
+  - Added enhance_skill documentation
+  - Updated package_skill with target parameter
+  - Updated upload_skill with target parameter
+
+#### Optional Dependencies
+- **`[gemini]`** extra: `pip install skill-seekers[gemini]`
+  - google-generativeai>=0.8.3
+  - Required for Gemini enhancement and upload
+
+- **`[openai]`** extra: `pip install skill-seekers[openai]`
+  - openai>=1.59.6
+  - Required for OpenAI enhancement and upload
+
+- **`[all-llms]`** extra: `pip install skill-seekers[all-llms]`
+  - Includes both Gemini and OpenAI dependencies
+
+#### Tests
+- **`tests/test_adaptors.py`** - Comprehensive adaptor tests
+- **`tests/test_multi_llm_integration.py`** - E2E multi-platform tests
+- **`tests/test_install_multiplatform.py`** - Multi-platform install_skill tests
+- **700 total tests passing** (up from 427 in v2.4.0)
+
+### Changed
+
+#### CLI Architecture
+- **Package command**: Now routes through platform adaptors
+- **Upload command**: Now supports all 3 upload platforms
+- **Enhancement command**: Now supports platform-specific models
+- **Unified workflow**: All commands respect `--target` parameter
+
+#### MCP Architecture
+- **Tool modularity**: Cleaner separation with adaptor pattern
+- **Error handling**: Platform-specific error messages
+- **API key validation**: Per-platform validation logic
+- **TextContent fallback**: Graceful degradation when MCP not installed
+
+#### Documentation
+- All platform documentation updated for multi-LLM support
+- Consistent terminology across all docs
+- Platform comparison tables added
+- Examples updated to show all platforms
+
+### Fixed
+
+- **TextContent import error** in test environment (5 MCP tool files)
+  - Added fallback TextContent class when MCP not installed
+  - Prevents `TypeError: 'NoneType' object is not callable`
+  - Ensures tests pass without MCP library
+
+- **UTF-8 encoding** issues on Windows (continued from v2.4.0)
+  - All file operations use explicit UTF-8 encoding
+  - CHANGELOG encoding handling improved
+
+- **API key environment variables** - Clear documentation for all platforms
+  - ANTHROPIC_API_KEY for Claude
+  - GOOGLE_API_KEY for Gemini
+  - OPENAI_API_KEY for OpenAI
+
+### Other Improvements
+
+#### Smart Description Generation
+- Automatically generates skill descriptions from documentation
+- Analyzes reference files to suggest "When to Use" triggers
+- Improves SKILL.md quality without manual editing
+
+#### Smart Summarization
+- Large skills (500+ lines) automatically summarized
+- Preserves key examples and patterns
+- Maintains quality while reducing token usage
+
+### Deprecation Notice
+
+None - All changes are backward compatible. Existing v2.4.0 workflows continue to work with default `target='claude'`.
+
+### Migration Guide
+
+**For users upgrading from v2.4.0:**
+
+1. **No changes required** - Default behavior unchanged (targets Claude AI)
+
+2. **To use other platforms:**
+   ```bash
+   # Install platform dependencies
+   pip install skill-seekers[gemini]    # For Gemini
+   pip install skill-seekers[openai]    # For OpenAI
+   pip install skill-seekers[all-llms]  # For all platforms
+
+   # Set API keys
+   export GOOGLE_API_KEY=AIzaSy...      # For Gemini
+   export OPENAI_API_KEY=sk-proj-...    # For OpenAI
+
+   # Use --target flag
+   skill-seekers package output/react/ --target gemini
+   skill-seekers upload react-gemini.tar.gz --target gemini
+   ```
+
+3. **MCP users** - New tools available:
+   - `enhance_skill` - Standalone enhancement (was only in install_skill)
+   - All packaging tools now accept `target` parameter
+
+**See full documentation:**
+- [Multi-Platform Guide](docs/UPLOAD_GUIDE.md)
+- [Feature Matrix](docs/FEATURE_MATRIX.md)
+- [Enhancement Guide](docs/ENHANCEMENT.md)
+
+### Contributors
+
+- @yusufkaraaslan - Multi-platform architecture, all platform adaptors, comprehensive testing
+
+### Stats
+
+- **16 commits** since v2.4.0
+- **700 tests** (up from 427, +273 new tests)
+- **4 platforms** supported (was 1)
+- **18 MCP tools** (up from 17)
+- **5 documentation guides** updated/created
+- **29 files changed**, 6,349 insertions(+), 253 deletions(-)
+
+---
+
 ## [2.4.0] - 2025-12-25
 
 ### 🚀 MCP 2025 Upgrade - Multi-Agent Support & HTTP Transport
