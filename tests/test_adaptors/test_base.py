@@ -37,14 +37,14 @@ class TestSkillMetadata(unittest.TestCase):
         metadata = SkillMetadata(
             name="react",
             description="React documentation",
-            version="2.0.0",
+            version="2.5.0",
             author="Test Author",
             tags=["react", "javascript", "web"]
         )
 
         self.assertEqual(metadata.name, "react")
         self.assertEqual(metadata.description, "React documentation")
-        self.assertEqual(metadata.version, "2.0.0")
+        self.assertEqual(metadata.version, "2.5.0")
         self.assertEqual(metadata.author, "Test Author")
         self.assertEqual(metadata.tags, ["react", "javascript", "web"])
 
