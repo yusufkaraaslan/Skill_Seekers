@@ -36,17 +36,18 @@ except ImportError:
     from quality_checker import SkillQualityChecker, print_report
 
 
-def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False):
+def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, target='claude'):
     """
-    Package a skill directory into a .zip file
+    Package a skill directory into platform-specific format
 
     Args:
         skill_dir: Path to skill directory
         open_folder_after: Whether to open the output folder after packaging
         skip_quality_check: Skip quality checks before packaging
+        target: Target LLM platform ('claude', 'gemini', 'openai', 'markdown')
 
     Returns:
-        tuple: (success, zip_path) where success is bool and zip_path is Path or None
+        tuple: (success, package_path) where success is bool and package_path is Path or None
     """
     skill_path = Path(skill_dir)
 
@@ -80,40 +81,43 @@ def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False):
             print("=" * 60)
             print()
 
-    # Create zip filename
+    # Get platform-specific adaptor
+    try:
+        from skill_seekers.cli.adaptors import get_adaptor
+        adaptor = get_adaptor(target)
+    except (ImportError, ValueError) as e:
+        print(f"❌ Error: {e}")
+        return False, None
+
+    # Create package using adaptor
     skill_name = skill_path.name
-    zip_path = skill_path.parent / f"{skill_name}.zip"
+    output_dir = skill_path.parent
 
     print(f"📦 Packaging skill: {skill_name}")
+    print(f"   Target: {adaptor.PLATFORM_NAME}")
     print(f"   Source: {skill_path}")
-    print(f"   Output: {zip_path}")
 
-    # Create zip file
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(skill_path):
-            # Skip backup files
-            files = [f for f in files if not f.endswith('.backup')]
+    try:
+        package_path = adaptor.package(skill_path, output_dir)
+        print(f"   Output: {package_path}")
+    except Exception as e:
+        print(f"❌ Error creating package: {e}")
+        return False, None
 
-            for file in files:
-                file_path = Path(root) / file
-                arcname = file_path.relative_to(skill_path)
-                zf.write(file_path, arcname)
-                print(f"   + {arcname}")
-
-    # Get zip size
-    zip_size = zip_path.stat().st_size
-    print(f"\n✅ Package created: {zip_path}")
-    print(f"   Size: {zip_size:,} bytes ({format_file_size(zip_size)})")
+    # Get package size
+    package_size = package_path.stat().st_size
+    print(f"\n✅ Package created: {package_path}")
+    print(f"   Size: {package_size:,} bytes ({format_file_size(package_size)})")
 
     # Open folder in file browser
     if open_folder_after:
-        print(f"\n📂 Opening folder: {zip_path.parent}")
-        open_folder(zip_path.parent)
+        print(f"\n📂 Opening folder: {package_path.parent}")
+        open_folder(package_path.parent)
 
     # Print upload instructions
-    print_upload_instructions(zip_path)
+    print_upload_instructions(package_path)
 
-    return True, zip_path
+    return True, package_path
 
 
 def main():
@@ -157,17 +161,25 @@ Examples:
     )
 
     parser.add_argument(
+        '--target',
+        choices=['claude', 'gemini', 'openai', 'markdown'],
+        default='claude',
+        help='Target LLM platform (default: claude)'
+    )
+
+    parser.add_argument(
         '--upload',
         action='store_true',
-        help='Automatically upload to Claude after packaging (requires ANTHROPIC_API_KEY)'
+        help='Automatically upload after packaging (requires platform API key)'
     )
 
     args = parser.parse_args()
 
-    success, zip_path = package_skill(
+    success, package_path = package_skill(
         args.skill_dir,
         open_folder_after=not args.no_open,
-        skip_quality_check=args.skip_quality_check
+        skip_quality_check=args.skip_quality_check,
+        target=args.target
     )
 
     if not success:
@@ -175,42 +187,58 @@ Examples:
 
     # Auto-upload if requested
     if args.upload:
-        # Check if API key is set BEFORE attempting upload
-        api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
-
-        if not api_key:
-            # No API key - show helpful message but DON'T fail
-            print("\n" + "="*60)
-            print("💡 Automatic Upload")
-            print("="*60)
-            print()
-            print("To enable automatic upload:")
-            print("  1. Get API key from https://console.anthropic.com/")
-            print("  2. Set: export ANTHROPIC_API_KEY=sk-ant-...")
-            print("  3. Run package_skill.py with --upload flag")
-            print()
-            print("For now, use manual upload (instructions above) ☝️")
-            print("="*60)
-            # Exit successfully - packaging worked!
-            sys.exit(0)
-
-        # API key exists - try upload
         try:
-            from upload_skill import upload_skill_api
+            from skill_seekers.cli.adaptors import get_adaptor
+
+            # Get adaptor for target platform
+            adaptor = get_adaptor(args.target)
+
+            # Get API key from environment
+            api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
+
+            if not api_key:
+                # No API key - show helpful message but DON'T fail
+                print("\n" + "="*60)
+                print("💡 Automatic Upload")
+                print("="*60)
+                print()
+                print(f"To enable automatic upload to {adaptor.PLATFORM_NAME}:")
+                print(f"  1. Get API key from the platform")
+                print(f"  2. Set: export {adaptor.get_env_var_name()}=...")
+                print(f"  3. Run package command with --upload flag")
+                print()
+                print("For now, use manual upload (instructions above) ☝️")
+                print("="*60)
+                # Exit successfully - packaging worked!
+                sys.exit(0)
+
+            # API key exists - try upload
             print("\n" + "="*60)
-            upload_success, message = upload_skill_api(zip_path)
-            if not upload_success:
-                print(f"❌ Upload failed: {message}")
+            print(f"📤 Uploading to {adaptor.PLATFORM_NAME}...")
+            print("="*60)
+
+            result = adaptor.upload(package_path, api_key)
+
+            if result['success']:
+                print(f"\n✅ {result['message']}")
+                if result['url']:
+                    print(f"   View at: {result['url']}")
+                print("="*60)
+                sys.exit(0)
+            else:
+                print(f"\n❌ Upload failed: {result['message']}")
                 print()
                 print("💡 Try manual upload instead (instructions above) ☝️")
                 print("="*60)
                 # Exit successfully - packaging worked even if upload failed
                 sys.exit(0)
-            else:
-                print("="*60)
-                sys.exit(0)
-        except ImportError:
-            print("\n❌ Error: upload_skill.py not found")
+
+        except ImportError as e:
+            print(f"\n❌ Error: {e}")
+            print("Install required dependencies for this platform")
+            sys.exit(1)
+        except Exception as e:
+            print(f"\n❌ Upload error: {e}")
             sys.exit(1)
 
     sys.exit(0)
