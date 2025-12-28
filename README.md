@@ -72,6 +72,53 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 - ✅ **Single Source of Truth** - One skill showing both intent (docs) and reality (code)
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
+### 🤖 Multi-LLM Platform Support (**NEW - v2.5.0**)
+- ✅ **4 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- ✅ **Universal Scraping** - Same documentation works for all platforms
+- ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
+- ✅ **One-Command Export** - `--target` flag selects platform
+- ✅ **Optional Dependencies** - Install only what you need
+- ✅ **100% Backward Compatible** - Existing Claude workflows unchanged
+
+| Platform | Format | Upload | Enhancement | API Key |
+|----------|--------|--------|-------------|---------|
+| **Claude AI** | ZIP + YAML | ✅ Auto | ✅ Yes | ANTHROPIC_API_KEY |
+| **Google Gemini** | tar.gz | ✅ Auto | ✅ Yes | GOOGLE_API_KEY |
+| **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Auto | ✅ Yes | OPENAI_API_KEY |
+| **Generic Markdown** | ZIP | ❌ Manual | ❌ No | None |
+
+```bash
+# Claude (default - no changes needed!)
+skill-seekers package output/react/
+skill-seekers upload react.zip
+
+# Google Gemini
+pip install skill-seekers[gemini]
+skill-seekers package output/react/ --target gemini
+skill-seekers upload react-gemini.tar.gz --target gemini
+
+# OpenAI ChatGPT
+pip install skill-seekers[openai]
+skill-seekers package output/react/ --target openai
+skill-seekers upload react-openai.zip --target openai
+
+# Generic Markdown (universal export)
+skill-seekers package output/react/ --target markdown
+# Use the markdown files directly in any LLM
+```
+
+**Installation:**
+```bash
+# Install with Gemini support
+pip install skill-seekers[gemini]
+
+# Install with OpenAI support
+pip install skill-seekers[openai]
+
+# Install with all LLM platforms
+pip install skill-seekers[all-llms]
+```
+
 ### 🔐 Private Config Repositories (**NEW - v2.2.0**)
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
 - ✅ **Multi-Source Management** - Register unlimited GitHub, GitLab, Bitbucket repos
