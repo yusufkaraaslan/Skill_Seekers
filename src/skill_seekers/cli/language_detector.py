@@ -9,7 +9,28 @@ Author: Skill Seekers Project
 """
 
 import re
+import logging
 from typing import Optional, Tuple, Dict, List
+
+logger = logging.getLogger(__name__)
+
+# Import Swift patterns from separate module (fork-friendly architecture)
+try:
+    from skill_seekers.cli.swift_patterns import SWIFT_PATTERNS
+except ImportError as e:
+    logger.warning(
+        "Swift language detection patterns unavailable. "
+        "Swift code detection will be disabled. Error: %s",
+        e
+    )
+    SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {}
+except Exception as e:
+    logger.error(
+        "Failed to load Swift patterns due to unexpected error: %s. "
+        "Swift detection disabled.",
+        e
+    )
+    SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {}
 
 
 # Comprehensive language patterns with weighted confidence scoring
@@ -371,6 +392,9 @@ LANGUAGE_PATTERNS: Dict[str, List[Tuple[str, int]]] = {
     ],
 }
 
+# Merge Swift patterns (fork-friendly: patterns defined in swift_patterns.py)
+LANGUAGE_PATTERNS.update(SWIFT_PATTERNS)
+
 
 # Known language list for CSS class detection
 KNOWN_LANGUAGES = [
@@ -418,10 +442,32 @@ class LanguageDetector:
     def _compile_patterns(self) -> None:
         """Compile regex patterns and cache them for performance"""
         for lang, patterns in LANGUAGE_PATTERNS.items():
-            self._pattern_cache[lang] = [
-                (re.compile(pattern, re.IGNORECASE | re.MULTILINE), weight)
-                for pattern, weight in patterns
-            ]
+            compiled_patterns = []
+            for i, (pattern, weight) in enumerate(patterns):
+                try:
+                    compiled = re.compile(pattern, re.IGNORECASE | re.MULTILINE)
+                    compiled_patterns.append((compiled, weight))
+                except re.error as e:
+                    logger.error(
+                        "Invalid regex pattern for language '%s' at index %d: '%s'. "
+                        "Error: %s. Pattern skipped.",
+                        lang, i, pattern[:50], e
+                    )
+                except TypeError as e:
+                    logger.error(
+                        "Pattern for language '%s' at index %d is not a string: %s. "
+                        "Pattern skipped.",
+                        lang, i, type(pattern).__name__
+                    )
+
+            if compiled_patterns:
+                self._pattern_cache[lang] = compiled_patterns
+            else:
+                logger.warning(
+                    "No valid patterns compiled for language '%s'. "
+                    "Detection for this language is disabled.",
+                    lang
+                )
 
     def detect_from_html(self, elem, code: str) -> Tuple[str, float]:
         """
