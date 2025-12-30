@@ -17,6 +17,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.1] - 2025-12-30
+
+### 🐛 Critical Bug Fix - PyPI Package Broken
+
+This **patch release** fixes a critical packaging bug that made v2.5.0 completely unusable for PyPI users.
+
+### Fixed
+
+- **CRITICAL**: Added missing `skill_seekers.cli.adaptors` module to packages list in pyproject.toml ([#221](https://github.com/yusufkaraaslan/Skill_Seekers/pull/221))
+  - **Issue**: v2.5.0 on PyPI throws `ModuleNotFoundError: No module named 'skill_seekers.cli.adaptors'`
+  - **Impact**: Broke 100% of multi-platform features (Claude, Gemini, OpenAI, Markdown)
+  - **Cause**: The adaptors module was missing from the explicit packages list
+  - **Fix**: Added `skill_seekers.cli.adaptors` to packages in pyproject.toml
+  - **Credit**: Thanks to [@MiaoDX](https://github.com/MiaoDX) for finding and fixing this issue!
+
+### Package Structure
+
+The `skill_seekers.cli.adaptors` module contains the platform adaptor architecture:
+- `base.py` - Abstract base class for all adaptors
+- `claude.py` - Claude AI platform implementation
+- `gemini.py` - Google Gemini platform implementation
+- `openai.py` - OpenAI ChatGPT platform implementation
+- `markdown.py` - Generic markdown export
+
+**Note**: v2.5.0 is broken on PyPI. All users should upgrade to v2.5.1 immediately.
+
+---
+
 ## [2.5.0] - 2025-12-28
 
 ### 🚀 Multi-Platform Feature Parity - 4 LLM Platforms Supported

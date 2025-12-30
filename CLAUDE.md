@@ -2,21 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🎯 Current Status (November 30, 2025)
+## 🎯 Current Status (December 30, 2025)
 
-**Version:** v2.1.1 (Production Ready - GitHub Analysis Enhanced!)
+**Version:** v2.5.0 (Production Ready - Multi-Platform Feature Parity!)
 **Active Development:** Flexible, incremental task-based approach
 
-### Recent Updates (November 2025):
+### Recent Updates (December 2025):
 
-**🎉 MAJOR MILESTONE: Published on PyPI! (v2.0.0)**
-- **📦 PyPI Publication**: Install with `pip install skill-seekers` - https://pypi.org/project/skill-seekers/
-- **🔧 Modern Python Packaging**: pyproject.toml, src/ layout, entry points
-- **✅ CI/CD Fixed**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
-- **📚 Documentation Complete**: README, CHANGELOG, FUTURE_RELEASES.md all updated
-- **🚀 Unified CLI**: Single `skill-seekers` command with Git-style subcommands
-- **🧪 Test Coverage**: 427 tests passing (up from 391), 39% coverage
-- **🌐 Community**: GitHub Discussion, Release notes, announcements published
+**🎉 MAJOR RELEASE: Multi-Platform Feature Parity (v2.5.0)**
+- **🌐 4 LLM Platforms**: Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- **✅ Complete Feature Parity**: All skill modes work with all platforms
+- **🔧 Platform Adaptors**: Clean architecture with platform-specific implementations
+- **📦 Smart Enhancement**: Platform-specific AI models (Sonnet 4, Gemini 2.0, GPT-4o)
+- **🧪 Test Coverage**: 700+ tests passing across all platforms
+- **📚 Unified Workflow**: Same scraping output works for all platforms
 
 **🚀 Unified Multi-Source Scraping (v2.0.0)**
 - **NEW**: Combine documentation + GitHub + PDF in one skill
@@ -40,23 +39,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 📝 Multi-source configs: django_unified, fastapi_unified, fastapi_unified_test, godot_unified, react_unified
 - 📝 Test/Example configs: godot_github, react_github, python-tutorial-test, example_pdf, test-manual
 
-**📋 Completed (November 29, 2025):**
-- **✅ DONE**: PyPI publication complete (v2.0.0)
-- **✅ DONE**: CI/CD fixed - all checks passing
-- **✅ DONE**: Documentation updated (README, CHANGELOG, FUTURE_RELEASES.md)
-- **✅ DONE**: Quality Assurance + Race Condition Fixes (v2.1.0)
-- **✅ DONE**: All critical bugs fixed (Issues #190, #192, #193)
-- **✅ DONE**: Test suite stabilized (427 tests passing)
-- **✅ DONE**: Unified tests fixed (all 22 passing)
-- **✅ DONE**: PR #195 merged - Unlimited local repository analysis
-- **✅ DONE**: PR #198 merged - Skip llms.txt config option
-- **✅ DONE**: Issue #203 - Configurable EXCLUDED_DIRS (19 tests, 2 commits)
-
-**📋 Next Up (Post-v2.1.0):**
-- **Priority 1**: Review open PRs (#187, #186)
-- **Priority 2**: Issue #202 - Add warning for missing local_repo_path
-- **Priority 3**: Task H1.3 - Create example project folder
-- **Priority 4**: Task A3.1 - GitHub Pages site (skillseekersweb.com)
+**📋 Recent Completions (December 2025):**
+- **✅ DONE**: Multi-platform support (v2.5.0) - 4 LLM platforms
+- **✅ DONE**: Platform adaptor architecture with clean separation
+- **✅ DONE**: Enhanced MCP tools with platform support (18 tools)
+- **✅ DONE**: Multi-platform CLI commands (package, upload, enhance)
+- **✅ DONE**: Test suite expanded to 700+ tests
+- **✅ DONE**: Complete feature parity across all platforms
 
 **📊 Roadmap Progress:**
 - 134 tasks organized into 22 feature groups
@@ -67,21 +56,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🔌 MCP Integration Available
 
-**This repository includes a fully tested MCP server with 10 tools:**
-- `mcp__skill-seeker__list_configs` - List all available preset configurations
-- `mcp__skill-seeker__generate_config` - Generate a new config file for any docs site
-- `mcp__skill-seeker__validate_config` - Validate a config file structure
-- `mcp__skill-seeker__estimate_pages` - Estimate page count before scraping
-- `mcp__skill-seeker__scrape_docs` - Scrape and build a skill
-- `mcp__skill-seeker__package_skill` - Package skill into .zip file (with auto-upload)
-- `mcp__skill-seeker__upload_skill` - Upload .zip to Claude
-- `mcp__skill-seeker__install_skill` - **NEW!** Complete one-command workflow (fetch → scrape → enhance → package → upload)
-- `mcp__skill-seeker__split_config` - Split large documentation configs
-- `mcp__skill-seeker__generate_router` - Generate router/hub skills
+**This repository includes a fully tested MCP server with 18 tools supporting 4 LLM platforms:**
+
+**Core Tools (9):**
+- `list_configs` - List all available preset configurations
+- `generate_config` - Generate new config for any docs site
+- `validate_config` - Validate config file structure
+- `estimate_pages` - Estimate page count before scraping
+- `scrape_docs` - Scrape and build a skill
+- `package_skill` - Package skill (supports --target: claude, gemini, openai, markdown)
+- `upload_skill` - Upload to LLM platform (supports --target: claude, gemini, openai)
+- `enhance_skill` - **NEW!** AI enhancement with platform support
+- `install_skill` - Complete workflow (fetch → scrape → enhance → package → upload)
+
+**Extended Tools (9):**
+- `scrape_github` - Scrape GitHub repositories
+- `scrape_pdf` - Extract from PDFs
+- `unified_scrape` - Multi-source scraping
+- `merge_sources` - Merge docs + code
+- `detect_conflicts` - Find discrepancies
+- `split_config` - Split large configs
+- `generate_router` - Generate router skills
+- `add_config_source` - Register git repos
+- `fetch_config` - Fetch from git
 
 **Setup:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) or run `./setup_mcp.sh`
 
-**Status:** ✅ Tested and working in production with Claude Code
+**Status:** ✅ Tested with 5 AI agents (Claude Code, Cursor, Windsurf, VS Code + Cline, IntelliJ IDEA)
 
 ## Overview
 
@@ -133,6 +134,24 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ## Core Commands
+
+### Multi-Platform Support (NEW in v2.5.0)
+
+```bash
+# Package for different LLM platforms
+skill-seekers package output/react/ --target claude    # Default
+skill-seekers package output/react/ --target gemini
+skill-seekers package output/react/ --target openai
+skill-seekers package output/react/ --target markdown
+
+# Upload to platform
+skill-seekers upload react-gemini.tar.gz --target gemini
+skill-seekers upload react-openai.zip --target openai
+
+# AI enhancement with platform-specific models
+skill-seekers enhance output/react/ --target gemini --mode api
+skill-seekers enhance output/react/ --target openai --mode api
+```
 
 ### Quick Start - Use a Preset
 
@@ -382,7 +401,7 @@ skill-seekers estimate configs/vue.json --max-discovery 2000
 
 ## Repository Architecture
 
-### File Structure (v2.0.0 - Modern Python Packaging)
+### File Structure (v2.5.0 - Multi-Platform Architecture)
 
 ```
 Skill_Seekers/
@@ -391,25 +410,38 @@ Skill_Seekers/
 │   └── skill_seekers/
 │       ├── __init__.py
 │       ├── cli/                # CLI tools (entry points)
+│       │   ├── main.py             # Unified CLI dispatcher (Git-style)
 │       │   ├── doc_scraper.py      # Main scraper (~790 lines)
 │       │   ├── estimate_pages.py   # Page count estimator
-│       │   ├── enhance_skill.py    # AI enhancement (API-based)
+│       │   ├── enhance_skill_local.py  # AI enhancement (local)
 │       │   ├── package_skill.py    # Skill packager
+│       │   ├── upload_skill.py     # Upload to platforms
+│       │   ├── install_skill.py    # Complete workflow automation
+│       │   ├── install_agent.py    # Install to AI agent directories
 │       │   ├── github_scraper.py   # GitHub scraper
 │       │   ├── pdf_scraper.py      # PDF scraper
 │       │   ├── unified_scraper.py  # Unified multi-source scraper
 │       │   ├── merge_sources.py    # Source merger
-│       │   └── conflict_detector.py # Conflict detection
+│       │   ├── conflict_detector.py # Conflict detection
+│       │   └── adaptors/           # Platform adaptor architecture
+│       │       ├── __init__.py         # Factory: get_adaptor(target)
+│       │       ├── base_adaptor.py     # Abstract base class
+│       │       ├── claude_adaptor.py   # Claude AI implementation
+│       │       ├── gemini_adaptor.py   # Google Gemini implementation
+│       │       ├── openai_adaptor.py   # OpenAI ChatGPT implementation
+│       │       └── markdown_adaptor.py # Generic Markdown export
 │       └── mcp/                # MCP server integration
-│           └── server.py
-├── tests/                      # Test suite (391 tests passing)
+│           ├── server.py           # FastMCP-based server (stdio + HTTP)
+│           └── tools/              # MCP tool implementations
+├── tests/                      # Test suite (700+ tests passing)
 │   ├── test_scraper_features.py
 │   ├── test_config_validation.py
 │   ├── test_integration.py
 │   ├── test_mcp_server.py
-│   ├── test_unified.py         # Unified scraping tests (18 tests)
-│   ├── test_unified_mcp_integration.py  # (4 tests)
-│   └── ...
+│   ├── test_mcp_fastmcp.py     # FastMCP framework tests
+│   ├── test_unified.py         # Unified scraping tests
+│   ├── test_install_multiplatform.py  # Multi-platform tests
+│   └── ... (40+ test files)
 ├── configs/                    # Preset configurations (24 configs)
 │   ├── godot.json
 │   ├── react.json
@@ -439,11 +471,57 @@ Skill_Seekers/
         └── assets/             # Empty (user assets)
 ```
 
-**Key Changes in v2.0.0:**
+**Key Changes in v2.5.0:**
+- **Platform Adaptor Architecture**: Clean separation for Claude, Gemini, OpenAI, Markdown
+- **Multi-platform CLI**: `--target` flag on package/upload/enhance commands
+- **18 MCP Tools**: Extended from 9 to 18 tools with platform support
 - **src/ layout**: Modern Python packaging structure
-- **pyproject.toml**: PEP 621 compliant configuration
-- **Entry points**: `skill-seekers` CLI with subcommands
-- **Published to PyPI**: `pip install skill-seekers`
+- **pyproject.toml**: PEP 621 compliant with optional platform dependencies
+- **Entry points**: `skill-seekers` CLI with Git-style subcommands
+- **Published to PyPI**: `pip install skill-seekers` + platform extras
+
+### Platform Adaptor Architecture (NEW in v2.5.0)
+
+**Design Pattern:** Strategy pattern with factory method for platform-specific implementations
+
+**Key Components:**
+- **BaseAdaptor** (`src/skill_seekers/cli/adaptors/base_adaptor.py`): Abstract base class defining interface
+  - `package(skill_dir, output_path)` - Package skill in platform-specific format
+  - `upload(package_path, api_key)` - Upload to platform API
+  - `enhance(skill_dir, mode)` - AI enhancement using platform-specific model
+
+- **Factory Function** (`src/skill_seekers/cli/adaptors/__init__.py`):
+  - `get_adaptor(target: str) -> BaseAdaptor` - Returns appropriate adaptor instance
+  - Validates target and returns ClaudeAdaptor, GeminiAdaptor, OpenAIAdaptor, or MarkdownAdaptor
+
+- **Platform-Specific Implementations:**
+  - **ClaudeAdaptor**: ZIP + YAML frontmatter, Anthropic Skills API, Sonnet 4 enhancement
+  - **GeminiAdaptor**: tar.gz, Google Files API + Grounding, Gemini 2.0 Flash enhancement
+  - **OpenAIAdaptor**: ZIP + Assistant instructions, Assistants API + Vector Store, GPT-4o enhancement
+  - **MarkdownAdaptor**: ZIP with pure markdown, manual upload, no enhancement
+
+**Usage Pattern:**
+```python
+from skill_seekers.cli.adaptors import get_adaptor
+
+# Get platform-specific adaptor
+adaptor = get_adaptor('gemini')  # or 'claude', 'openai', 'markdown'
+
+# Package skill in platform format
+adaptor.package(skill_dir='output/react/', output_path='output/')
+
+# Upload to platform (if supported)
+adaptor.upload(package_path='output/react-gemini.tar.gz', api_key=os.getenv('GOOGLE_API_KEY'))
+
+# AI enhancement with platform-specific model
+adaptor.enhance(skill_dir='output/react/', mode='api')
+```
+
+**Benefits:**
+- ✅ Single codebase supports 4 platforms
+- ✅ Platform-specific optimizations (format, APIs, models)
+- ✅ Easy to add new platforms (implement BaseAdaptor)
+- ✅ Clean separation of concerns
 
 ### Data Flow
 
@@ -457,20 +535,21 @@ Skill_Seekers/
    - Process: Load pages → Smart categorize → Extract patterns → Generate references
    - Output: `output/{name}/SKILL.md` + `output/{name}/references/*.md`
 
-3. **Enhancement Phase** (optional via enhance_skill.py or enhance_skill_local.py):
+3. **Enhancement Phase** (optional, platform-aware via adaptors):
    - Input: Built skill directory with references
-   - Process: Claude analyzes references and rewrites SKILL.md
+   - Process: Platform-specific LLM analyzes references and rewrites SKILL.md
    - Output: Enhanced SKILL.md with real examples and guidance
+   - Models: Claude Sonnet 4, Gemini 2.0 Flash, or GPT-4o (depending on target)
 
-4. **Package Phase** (via package_skill.py):
-   - Input: Skill directory
-   - Process: Zip all files (excluding .backup)
-   - Output: `{name}.zip`
+4. **Package Phase** (platform-aware via adaptors):
+   - Input: Skill directory + target platform
+   - Process: Platform adaptor packages in appropriate format
+   - Output: `{name}.zip`, `{name}-gemini.tar.gz`, `{name}-openai.zip`, or `{name}-markdown.zip`
 
-5. **Upload Phase** (optional via upload_skill.py):
-   - Input: Skill .zip file
-   - Process: Upload to Claude AI via API
-   - Output: Skill available in Claude
+5. **Upload Phase** (optional, platform-aware via adaptors):
+   - Input: Platform-specific package + API key
+   - Process: Upload via platform API (Anthropic Skills, Google Files, OpenAI Assistants)
+   - Output: Skill available in target LLM platform
 
 ### Configuration File Structure
 
@@ -926,27 +1005,106 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 
 **Development Workflow:**
 1. **Install**: `pip install -e .` (editable mode for development)
+   ```bash
+   # Install with all platform dependencies
+   pip install -e ".[all-llms]"
+
+   # Or install specific platforms
+   pip install -e ".[gemini]"  # Google Gemini support
+   pip install -e ".[openai]"  # OpenAI ChatGPT support
+   ```
+
 2. **Run tests**:
-   - All tests: `pytest tests/ -v`
-   - Specific test file: `pytest tests/test_scraper_features.py -v`
-   - With coverage: `pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html`
-   - Single test: `pytest tests/test_scraper_features.py::test_detect_language -v`
-3. **Build package**: `uv build` or `python -m build`
-4. **Publish**: `uv publish` (PyPI)
-5. **Run single config test**: `skill-seekers scrape --config configs/react.json --dry-run`
+   ```bash
+   # All tests
+   pytest tests/ -v
+
+   # Specific test file
+   pytest tests/test_scraper_features.py -v
+
+   # Multi-platform tests
+   pytest tests/test_install_multiplatform.py -v
+
+   # With coverage
+   pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html
+
+   # Single test
+   pytest tests/test_scraper_features.py::test_detect_language -v
+
+   # MCP server tests
+   pytest tests/test_mcp_fastmcp.py -v
+   ```
+
+3. **Build package**:
+   ```bash
+   # Using uv (recommended)
+   uv build
+
+   # Or using build
+   python -m build
+   ```
+
+4. **Publish**:
+   ```bash
+   # To PyPI
+   uv publish
+
+   # Or using twine
+   python -m twine upload dist/*
+   ```
+
+5. **Test CLI commands**:
+   ```bash
+   # Test scraping (dry run)
+   skill-seekers scrape --config configs/react.json --dry-run
+
+   # Test multi-platform packaging
+   skill-seekers package output/react/ --target gemini --dry-run
+
+   # Test MCP server (stdio mode)
+   python -m skill_seekers.mcp.server
+
+   # Test MCP server (HTTP mode)
+   python -m skill_seekers.mcp.server --transport http --port 8765
+   ```
 
 **Test Architecture:**
-- **Test files**: 27 test files covering all features (see `tests/` directory)
-- **CI Matrix**: Tests run on Ubuntu + macOS with Python 3.10, 3.11, 3.12
-- **Coverage**: 39% code coverage (427 tests passing)
+- **Test files**: 40+ test files covering all features (see `tests/` directory)
+- **CI Matrix**: Tests run on Ubuntu + macOS with Python 3.10, 3.11, 3.12, 3.13
+- **Coverage**: 700+ tests passing across all platforms
 - **Key test categories**:
   - `test_scraper_features.py` - Core scraping functionality
-  - `test_mcp_server.py` - MCP integration (9 tools)
-  - `test_unified.py` - Multi-source scraping (18 tests)
+  - `test_mcp_server.py` - MCP integration (18 tools)
+  - `test_mcp_fastmcp.py` - FastMCP framework and HTTP transport
+  - `test_unified.py` - Multi-source scraping
   - `test_github_scraper.py` - GitHub repository analysis
   - `test_pdf_scraper.py` - PDF extraction
+  - `test_install_multiplatform.py` - **NEW** Multi-platform packaging and upload
   - `test_integration.py` - End-to-end workflows
+  - `test_install_skill.py` - One-command install workflow
+  - `test_install_agent.py` - AI agent installation
 - **IMPORTANT**: Must run `pip install -e .` before tests (src/ layout requirement)
+- **Platform Tests**: Each platform adaptor has dedicated test coverage
+
+**Environment Variables & API Keys:**
+```bash
+# Claude AI (default platform)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Google Gemini (optional)
+export GOOGLE_API_KEY=AIza...
+
+# OpenAI ChatGPT (optional)
+export OPENAI_API_KEY=sk-...
+
+# GitHub (for higher rate limits in repo scraping)
+export GITHUB_TOKEN=ghp_...
+
+# Private config repositories (optional)
+export GITLAB_TOKEN=glpat-...
+export GITEA_TOKEN=...
+export BITBUCKET_TOKEN=...
+```
 
 **Key Points:**
 - Output is cached and reusable in `output/` (git-ignored)
@@ -954,3 +1112,4 @@ The correct command uses the local `cli/package_skill.py` in the repository root
 - All 24 configs are working and tested
 - CI workflow requires `pip install -e .` to install package before running tests
 - Never skip tests - all tests must pass before commits (per user instructions)
+- Platform-specific dependencies are optional: use `pip install skill-seekers[gemini]` or `pip install skill-seekers[openai]` as needed
