@@ -132,7 +132,7 @@ skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 
 [tool.setuptools]
-packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]
+packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.cli.adaptors", "skill_seekers.mcp", "skill_seekers.mcp.tools"]
 
 [tool.setuptools.package-dir]
 "" = "src"
