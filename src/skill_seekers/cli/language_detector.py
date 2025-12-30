@@ -32,6 +32,22 @@ except Exception as e:
     )
     SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {}
 
+# Verify Swift patterns were loaded correctly
+if not SWIFT_PATTERNS:
+    logger.warning(
+        "Swift pattern dictionary is empty. Swift detection is disabled. "
+        "This may indicate swift_patterns.py has no patterns defined."
+    )
+elif 'swift' not in SWIFT_PATTERNS:
+    logger.error(
+        "Swift patterns loaded but 'swift' key is missing. "
+        "Swift detection is broken. Please file a bug report."
+    )
+else:
+    logger.info(
+        "Swift patterns loaded successfully: %d patterns for language detection",
+        len(SWIFT_PATTERNS.get('swift', []))
+    )
 
 # Comprehensive language patterns with weighted confidence scoring
 # Weight 5: Unique identifiers (highly specific)

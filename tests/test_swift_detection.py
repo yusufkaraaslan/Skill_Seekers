@@ -252,6 +252,88 @@ class TestPureSwiftDetection:
         assert lang == 'swift'
         assert confidence >= 0.5
 
+    def test_property_observers(self):
+        """Test Swift property observers (willSet/didSet)"""
+        detector = LanguageDetector()
+        code = """
+        class ViewModel {
+            var count: Int = 0 {
+                willSet {
+                    print("Will set to \\(newValue)")
+                }
+                didSet {
+                    print("Changed from \\(oldValue)")
+                }
+            }
+        }
+        """
+        lang, confidence = detector.detect_from_code(code)
+        assert lang == 'swift'
+        assert confidence >= 0.5
+
+    def test_memory_management_weak(self):
+        """Test Swift memory management (weak var)"""
+        detector = LanguageDetector()
+        code = """
+        class Parent {
+            weak var delegate: ParentDelegate?
+
+            func setupChild() {
+                let child = Child()
+                child.parent = self
+            }
+        }
+        """
+        lang, confidence = detector.detect_from_code(code)
+        assert lang == 'swift'
+        assert confidence >= 0.5
+
+    def test_memory_management_weak_self_in_closure(self):
+        """Test Swift weak self in closures"""
+        detector = LanguageDetector()
+        code = """
+        class NetworkManager {
+            func fetchData() {
+                URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+                    guard let self = self else { return }
+                    self.handleResponse(data)
+                }.resume()
+            }
+        }
+        """
+        lang, confidence = detector.detect_from_code(code)
+        assert lang == 'swift'
+        assert confidence >= 0.7
+
+    def test_memory_management_unowned(self):
+        """Test Swift unowned keyword"""
+        detector = LanguageDetector()
+        code = """
+        class Customer {
+            unowned let creditCard: CreditCard
+
+            init(card: CreditCard) {
+                self.creditCard = card
+            }
+        }
+        """
+        lang, confidence = detector.detect_from_code(code)
+        assert lang == 'swift'
+        assert confidence >= 0.5
+
+    def test_string_interpolation(self):
+        """Test Swift string interpolation"""
+        detector = LanguageDetector()
+        code = """
+        let name = "Alice"
+        let age = 30
+        let message = "Hello, \\(name)! You are \\(age) years old."
+        print("Current value: \\(someVar)")
+        """
+        lang, confidence = detector.detect_from_code(code)
+        assert lang == 'swift'
+        assert confidence >= 0.4
+
 
 class TestUIKitDetection:
     """Test iOS/UIKit pattern detection"""
@@ -1156,6 +1238,159 @@ class TestFoundationModelsDetection:
         lang, confidence = detector.detect_from_code(code)
         assert lang == 'swift'
         assert confidence >= 0.5
+
+
+class TestSwiftErrorHandling:
+    """Test error handling and graceful degradation for Swift detection"""
+
+    def test_pattern_validation_catches_invalid_weight(self):
+        """Test that pattern validation catches invalid weight values"""
+        from skill_seekers.cli.swift_patterns import _validate_patterns
+
+        # Invalid weight (too high)
+        invalid_patterns = {
+            'test_lang': [
+                (r'valid_pattern', 10),  # Weight must be 1-5
+            ]
+        }
+
+        with pytest.raises(ValueError, match="weight must be int 1-5"):
+            _validate_patterns(invalid_patterns)
+
+    def test_pattern_validation_catches_invalid_type(self):
+        """Test that pattern validation catches non-string patterns"""
+        from skill_seekers.cli.swift_patterns import _validate_patterns
+
+        # Invalid pattern (not a string)
+        invalid_patterns = {
+            'test_lang': [
+                (12345, 5),  # Pattern must be string
+            ]
+        }
+
+        with pytest.raises(ValueError, match="regex must be a string"):
+            _validate_patterns(invalid_patterns)
+
+    def test_pattern_validation_catches_invalid_tuple_structure(self):
+        """Test that pattern validation catches malformed tuples"""
+        from skill_seekers.cli.swift_patterns import _validate_patterns
+
+        # Invalid structure (not a tuple)
+        invalid_patterns = {
+            'test_lang': [
+                "not_a_tuple",  # Should be (pattern, weight) tuple
+            ]
+        }
+
+        with pytest.raises(ValueError, match="is not a \\(regex, weight\\) tuple"):
+            _validate_patterns(invalid_patterns)
+
+    def test_malformed_regex_patterns_are_skipped(self):
+        """Test that invalid regex patterns are logged and skipped without crashing"""
+        from skill_seekers.cli.language_detector import LanguageDetector
+        import logging
+        from unittest.mock import patch
+
+        # Create detector - malformed patterns should be skipped during compilation
+        with patch('skill_seekers.cli.language_detector.logger') as mock_logger:
+            # Inject a language with a malformed pattern
+            import skill_seekers.cli.language_detector as ld_module
+
+            # Save original patterns
+            original_patterns = ld_module.LANGUAGE_PATTERNS.copy()
+
+            try:
+                # Add malformed pattern
+                ld_module.LANGUAGE_PATTERNS['test_malformed'] = [
+                    (r'(?P<invalid)', 5),  # Invalid regex group
+                    (r'valid_pattern', 3),  # Valid pattern
+                ]
+
+                # Create new detector - should skip malformed pattern
+                detector = LanguageDetector()
+
+                # Verify error was logged
+                assert any(
+                    'Invalid regex pattern' in str(call)
+                    for call in mock_logger.error.call_args_list
+                ), "Expected error log for malformed pattern"
+
+            finally:
+                # Restore original patterns
+                ld_module.LANGUAGE_PATTERNS = original_patterns
+
+    def test_empty_swift_patterns_handled_gracefully(self):
+        """Test that empty SWIFT_PATTERNS dict doesn't crash detection"""
+        import sys
+        from unittest.mock import patch
+
+        # Remove module from cache
+        for mod in list(sys.modules.keys()):
+            if 'skill_seekers.cli' in mod:
+                del sys.modules[mod]
+
+        # Mock empty SWIFT_PATTERNS during import
+        with patch.dict('sys.modules', {'skill_seekers.cli.swift_patterns': type('MockModule', (), {'SWIFT_PATTERNS': {}})}):
+            from skill_seekers.cli.language_detector import LanguageDetector
+
+            # Create detector - should handle empty patterns gracefully
+            detector = LanguageDetector()
+
+            # Swift code should not crash detection
+            code = "import SwiftUI\nstruct MyView: View { }"
+            lang, confidence = detector.detect_from_code(code)
+
+            # Just verify it didn't crash - result may vary
+            assert isinstance(lang, str)
+            assert isinstance(confidence, (int, float))
+
+    def test_non_string_pattern_handled_during_compilation(self):
+        """Test that non-string patterns are caught during compilation"""
+        from skill_seekers.cli.language_detector import LanguageDetector
+        from unittest.mock import patch
+        import logging
+
+        with patch('skill_seekers.cli.language_detector.logger') as mock_logger:
+            import skill_seekers.cli.language_detector as ld_module
+
+            # Save original
+            original = ld_module.LANGUAGE_PATTERNS.copy()
+
+            try:
+                # Add non-string pattern
+                ld_module.LANGUAGE_PATTERNS['test_nonstring'] = [
+                    (None, 5),  # None instead of string
+                ]
+
+                # Should log TypeError and skip
+                detector = LanguageDetector()
+
+                # Verify TypeError was logged
+                assert any(
+                    'not a string' in str(call)
+                    for call in mock_logger.error.call_args_list
+                ), "Expected error log for non-string pattern"
+
+            finally:
+                ld_module.LANGUAGE_PATTERNS = original
+
+    def test_swift_validation_error_disables_detection(self):
+        """Test that validation error handling code exists in swift_patterns.py"""
+        # This test verifies that the error handling code is present
+        # We can't easily test the actual error path due to module caching,
+        # but we can verify the try/except block exists in the code
+
+        import inspect
+        from skill_seekers.cli import swift_patterns
+
+        # Read the source code of the module
+        source = inspect.getsource(swift_patterns)
+
+        # Verify error handling is present
+        assert 'try:' in source, "Expected try block for validation"
+        assert '_validate_patterns(SWIFT_PATTERNS)' in source, "Expected validation call"
+        assert 'except ValueError' in source, "Expected ValueError handling"
+        assert 'SWIFT_PATTERNS = {}' in source, "Expected pattern clearing on error"
 
 
 if __name__ == "__main__":

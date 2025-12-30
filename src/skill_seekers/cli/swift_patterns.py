@@ -21,7 +21,10 @@ Weight Scale:
 Author: iLearn Project (Swift Support Extension)
 """
 
+import logging
 from typing import Dict, List, Tuple
+
+logger = logging.getLogger(__name__)
 
 SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {
     'swift': [
@@ -101,11 +104,12 @@ SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {
         # Generics (weight 3-4)
         (r'<\w+:\s*\w+>', 4),                         # <T: Protocol>
         (r'\bwhere\s+\w+\s*:', 4),                    # where T: Protocol
-        # NOTE: 'some' and 'any' patterns may match English prose like "some example"
-        # or "any variable". Detection relies on other Swift patterns for disambiguation.
-        # These are weighted appropriately to avoid false positives on their own.
-        (r'\bsome\s+\w+', 5),                         # some Protocol (opaque type - Swift 5.1+)
-        (r'\bany\s+\w+', 4),                          # any Protocol (existential type - Swift 5.6+)
+        # NOTE: 'some' and 'any' require capitalized type names to avoid matching
+        # English prose ("some example", "any variable"). Swift types are capitalized
+        # by convention (View, Protocol, etc.). The (?-i:[A-Z]) syntax enforces
+        # case-sensitive matching for the first letter despite global IGNORECASE flag.
+        (r'\bsome\s+(?-i:[A-Z])\w+', 5),              # some Protocol (opaque type - Swift 5.1+)
+        (r'\bany\s+(?-i:[A-Z])\w+', 4),               # any Protocol (existential type - Swift 5.6+)
 
         # Actors and concurrency (weight 5 - Swift 5.5+)
         (r'\bactor\s+\w+', 5),                        # actor MyActor
@@ -238,8 +242,8 @@ SWIFT_PATTERNS: Dict[str, List[Tuple[str, int]]] = {
         (r'\bNSStatusItem\b', 5),                     # NSStatusItem
 
         # macOS Lifecycle methods (weight 5)
-        # Note: viewDidLoad is already covered in UIKit section (line 161) with a more
-        # permissive pattern that handles both iOS and macOS cases
+        # Note: viewDidLoad() is defined in the UIKit section above since it's shared
+        # between iOS (UIViewController) and macOS (NSViewController)
         (r'\bviewWillAppear\s*\(\)', 5),              # NSViewController viewWillAppear
         (r'\bviewDidAppear\s*\(\)', 5),               # NSViewController viewDidAppear
         (r'\bawakeFromNib\s*\(\)', 5),                # awakeFromNib()
@@ -605,4 +609,13 @@ def _validate_patterns(patterns: Dict[str, List[Tuple[str, int]]]) -> None:
 
 
 # Validate patterns at module load time
-_validate_patterns(SWIFT_PATTERNS)
+try:
+    _validate_patterns(SWIFT_PATTERNS)
+except ValueError as e:
+    logger.error(
+        "Swift pattern validation failed: %s. Swift detection will be disabled. "
+        "This indicates a bug in swift_patterns.py - please file an issue.",
+        e
+    )
+    # Clear patterns to prevent broken detection with invalid data
+    SWIFT_PATTERNS = {}
