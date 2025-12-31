@@ -840,6 +840,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Letta** | `~/.letta/skills/` | Global |
 | **Aide** | `~/.aide/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Neovate Code** | `~/.neovate/skills/` | Global |
 
 **Global paths** install to user's home directory (~/).
 **Project paths** install to current project's root directory.
