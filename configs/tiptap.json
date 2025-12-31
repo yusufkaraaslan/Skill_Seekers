@@ -1,0 +1,47 @@
+{
+  "name": "tiptap",
+  "description": "Tiptap is a headless, framework-agnostic rich text editor based on ProseMirror. Use for building custom editors, handling nodes/marks/extensions, and implementing rich text editing features.",
+  "base_url": "https://tiptap.dev/docs/",
+  "start_urls": [
+    "https://tiptap.dev/docs/editor/getting-started/overview",
+    "https://tiptap.dev/docs/editor/getting-started/install",
+    "https://tiptap.dev/docs/editor/getting-started/configure",
+    "https://tiptap.dev/docs/editor/core-concepts/introduction",
+    "https://tiptap.dev/docs/editor/core-concepts/extensions",
+    "https://tiptap.dev/docs/editor/core-concepts/schema",
+    "https://tiptap.dev/docs/editor/api/editor",
+    "https://tiptap.dev/docs/editor/api/commands",
+    "https://tiptap.dev/docs/editor/api/events",
+    "https://tiptap.dev/docs/editor/extensions/nodes/document",
+    "https://tiptap.dev/docs/editor/extensions/nodes/paragraph",
+    "https://tiptap.dev/docs/editor/extensions/nodes/heading",
+    "https://tiptap.dev/docs/editor/extensions/nodes/code-block",
+    "https://tiptap.dev/docs/editor/extensions/marks/bold",
+    "https://tiptap.dev/docs/editor/extensions/marks/italic",
+    "https://tiptap.dev/docs/editor/extensions/marks/link",
+    "https://tiptap.dev/docs/editor/extensions/custom-extensions/create-new/extension",
+    "https://tiptap.dev/docs/editor/extensions/custom-extensions/create-new/node",
+    "https://tiptap.dev/docs/editor/extensions/custom-extensions/create-new/mark"
+  ],
+  "selectors": {
+    "main_content": "main, article, .prose, [role='main'], .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/editor", "/docs/collaboration", "/docs/conversion"],
+    "exclude": ["/pricing", "/blog", "/changelog", "/login", "/signup", "/api-reference"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "install", "setup", "quickstart", "overview", "configure"],
+    "core_concepts": ["core-concepts", "schema", "extensions", "introduction", "architecture"],
+    "api": ["api", "editor", "commands", "events", "methods", "options"],
+    "nodes": ["nodes", "document", "paragraph", "heading", "code-block", "blockquote", "list", "table", "image"],
+    "marks": ["marks", "bold", "italic", "link", "code", "strike", "underline", "highlight"],
+    "extensions": ["extension", "custom-extensions", "create-new", "functionality"],
+    "collaboration": ["collaboration", "collab", "yjs", "real-time"],
+    "examples": ["examples", "demos", "recipes"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 200
+}
