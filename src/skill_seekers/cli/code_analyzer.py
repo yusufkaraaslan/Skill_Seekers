@@ -131,9 +131,13 @@ class CodeAnalyzer:
                     func_sig = self._extract_python_function(node)
                     functions.append(asdict(func_sig))
 
+        # Extract comments
+        comments = self._extract_python_comments(content)
+
         return {
             'classes': classes,
-            'functions': functions
+            'functions': functions,
+            'comments': comments
         }
 
     def _extract_python_class(self, node: ast.ClassDef) -> ClassSignature:
@@ -298,9 +302,13 @@ class CodeAnalyzer:
                 'decorators': []
             })
 
+        # Extract comments
+        comments = self._extract_js_comments(content)
+
         return {
             'classes': classes,
-            'functions': functions
+            'functions': functions,
+            'comments': comments
         }
 
     def _extract_js_methods(self, class_body: str) -> List[Dict]:
@@ -419,9 +427,13 @@ class CodeAnalyzer:
                 'decorators': []
             })
 
+        # Extract comments
+        comments = self._extract_cpp_comments(content)
+
         return {
             'classes': classes,
-            'functions': functions
+            'functions': functions,
+            'comments': comments
         }
 
     def _parse_cpp_parameters(self, params_str: str) -> List[Dict]:
@@ -462,6 +474,73 @@ class CodeAnalyzer:
             })
 
         return params
+
+    def _extract_python_comments(self, content: str) -> List[Dict]:
+        """
+        Extract Python comments (# style).
+
+        Returns list of comment dictionaries with line number, text, and type.
+        """
+        comments = []
+
+        for i, line in enumerate(content.splitlines(), 1):
+            stripped = line.strip()
+
+            # Skip shebang and encoding declarations
+            if stripped.startswith('#!') or stripped.startswith('#') and 'coding' in stripped:
+                continue
+
+            # Extract regular comments
+            if stripped.startswith('#'):
+                comment_text = stripped[1:].strip()
+                comments.append({
+                    'line': i,
+                    'text': comment_text,
+                    'type': 'inline'
+                })
+
+        return comments
+
+    def _extract_js_comments(self, content: str) -> List[Dict]:
+        """
+        Extract JavaScript/TypeScript comments (// and /* */ styles).
+
+        Returns list of comment dictionaries with line number, text, and type.
+        """
+        comments = []
+
+        # Extract single-line comments (//)
+        for match in re.finditer(r'//(.+)$', content, re.MULTILINE):
+            line_num = content[:match.start()].count('\n') + 1
+            comment_text = match.group(1).strip()
+
+            comments.append({
+                'line': line_num,
+                'text': comment_text,
+                'type': 'inline'
+            })
+
+        # Extract multi-line comments (/* */)
+        for match in re.finditer(r'/\*(.+?)\*/', content, re.DOTALL):
+            start_line = content[:match.start()].count('\n') + 1
+            comment_text = match.group(1).strip()
+
+            comments.append({
+                'line': start_line,
+                'text': comment_text,
+                'type': 'block'
+            })
+
+        return comments
+
+    def _extract_cpp_comments(self, content: str) -> List[Dict]:
+        """
+        Extract C++ comments (// and /* */ styles, same as JavaScript).
+
+        Returns list of comment dictionaries with line number, text, and type.
+        """
+        # C++ uses the same comment syntax as JavaScript
+        return self._extract_js_comments(content)
 
 
 if __name__ == '__main__':

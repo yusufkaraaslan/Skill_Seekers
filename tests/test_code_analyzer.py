@@ -549,6 +549,198 @@ def main_func():
         self.assertIn('ClassB', class_names)
 
 
+class TestCommentExtraction(unittest.TestCase):
+    """Tests for comment extraction"""
+
+    def setUp(self):
+        """Set up test analyzer with deep analysis"""
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_python_comment_extraction(self):
+        """Test Python # comment extraction."""
+        code = '''
+# This is a comment
+def test_func():
+    # Inside function comment
+    x = 5  # Inline comment (not extracted due to code on same line)
+    return x
+
+# Another top-level comment
+class TestClass:
+    # Class-level comment
+    pass
+'''
+        result = self.analyzer.analyze_file('test.py', code, 'Python')
+
+        self.assertIn('comments', result)
+        comments = result['comments']
+
+        # Should have extracted standalone comments
+        self.assertGreaterEqual(len(comments), 3)
+
+        # Check comment content
+        comment_texts = [c['text'] for c in comments]
+        self.assertIn('This is a comment', comment_texts)
+        self.assertIn('Inside function comment', comment_texts)
+        self.assertIn('Another top-level comment', comment_texts)
+
+        # Check all are inline type
+        for comment in comments:
+            self.assertEqual(comment['type'], 'inline')
+
+    def test_python_comment_line_numbers(self):
+        """Test Python comment line number tracking."""
+        code = '''# Line 1 comment
+def func():
+    # Line 3 comment
+    pass
+# Line 5 comment
+'''
+        result = self.analyzer.analyze_file('test.py', code, 'Python')
+
+        comments = result['comments']
+        self.assertEqual(len(comments), 3)
+
+        # Check line numbers
+        line_nums = [c['line'] for c in comments]
+        self.assertIn(1, line_nums)
+        self.assertIn(3, line_nums)
+        self.assertIn(5, line_nums)
+
+    def test_python_skip_shebang_and_encoding(self):
+        """Test that shebang and encoding declarations are skipped."""
+        code = '''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# This is a real comment
+def func():
+    pass
+'''
+        result = self.analyzer.analyze_file('test.py', code, 'Python')
+
+        comments = result['comments']
+
+        # Should only have the real comment
+        self.assertEqual(len(comments), 1)
+        self.assertEqual(comments[0]['text'], 'This is a real comment')
+
+    def test_javascript_inline_comments(self):
+        """Test JavaScript // comment extraction."""
+        code = '''
+// Top-level comment
+function test() {
+    // Inside function
+    const x = 5; // Inline (not extracted)
+    return x;
+}
+
+// Another comment
+const y = 10;
+'''
+        result = self.analyzer.analyze_file('test.js', code, 'JavaScript')
+
+        self.assertIn('comments', result)
+        comments = result['comments']
+
+        # Should have extracted standalone comments
+        self.assertGreaterEqual(len(comments), 3)
+
+        # Check comment types
+        inline_comments = [c for c in comments if c['type'] == 'inline']
+        self.assertGreaterEqual(len(inline_comments), 3)
+
+    def test_javascript_block_comments(self):
+        """Test JavaScript /* */ block comment extraction."""
+        code = '''
+/* This is a
+   multi-line
+   block comment */
+function test() {
+    /* Another block comment */
+    return 42;
+}
+'''
+        result = self.analyzer.analyze_file('test.js', code, 'JavaScript')
+
+        comments = result['comments']
+
+        # Should have extracted block comments
+        block_comments = [c for c in comments if c['type'] == 'block']
+        self.assertGreaterEqual(len(block_comments), 2)
+
+        # Check multi-line content is preserved
+        first_block = next(c for c in comments if 'multi-line' in c['text'])
+        self.assertIn('multi-line', first_block['text'])
+
+    def test_javascript_mixed_comments(self):
+        """Test JavaScript mixed inline and block comments."""
+        code = '''
+// Inline comment
+/* Block comment */
+function test() {
+    // Another inline
+    /* Another block */
+    return true;
+}
+'''
+        result = self.analyzer.analyze_file('test.js', code, 'JavaScript')
+
+        comments = result['comments']
+
+        # Should have both types
+        inline_comments = [c for c in comments if c['type'] == 'inline']
+        block_comments = [c for c in comments if c['type'] == 'block']
+
+        self.assertGreaterEqual(len(inline_comments), 2)
+        self.assertGreaterEqual(len(block_comments), 2)
+
+    def test_cpp_comment_extraction(self):
+        """Test C++ comment extraction (uses same logic as JavaScript)."""
+        code = '''
+// Header comment
+class Node {
+public:
+    // Method comment
+    void update();
+
+    /* Block comment for data member */
+    int value;
+};
+'''
+        result = self.analyzer.analyze_file('test.h', code, 'C++')
+
+        self.assertIn('comments', result)
+        comments = result['comments']
+
+        # Should have extracted comments
+        self.assertGreaterEqual(len(comments), 3)
+
+        # Check both inline and block
+        inline_comments = [c for c in comments if c['type'] == 'inline']
+        block_comments = [c for c in comments if c['type'] == 'block']
+
+        self.assertGreaterEqual(len(inline_comments), 2)
+        self.assertGreaterEqual(len(block_comments), 1)
+
+    def test_todo_fixme_comment_detection(self):
+        """Test that TODO/FIXME comments are extracted."""
+        code = '''
+# TODO: Implement this feature
+def incomplete_func():
+    # FIXME: Handle edge case
+    pass
+
+# NOTE: Important information
+'''
+        result = self.analyzer.analyze_file('test.py', code, 'Python')
+
+        comments = result['comments']
+
+        comment_texts = [c['text'] for c in comments]
+        self.assertTrue(any('TODO' in text for text in comment_texts))
+        self.assertTrue(any('FIXME' in text for text in comment_texts))
+        self.assertTrue(any('NOTE' in text for text in comment_texts))
+
+
 if __name__ == '__main__':
     # Run tests with verbose output
     unittest.main(verbosity=2)
