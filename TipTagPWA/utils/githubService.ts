@@ -1,13 +1,32 @@
 import { Note } from './db'
 
-interface GitHubConfig {
+export interface GitHubConfig {
   token: string
   owner: string
   repo: string
   branch: string
+  autoSync: boolean
+  lastSyncAt: number | null
+}
+
+export interface SyncResult {
+  pushed: number
+  pulled: number
+  skipped: number
+  conflicts: SyncConflict[]
+  timestamp: number
+}
+
+export interface SyncConflict {
+  noteId: string
+  noteTitle: string
+  localUpdatedAt: number
+  remoteUpdatedAt: number
+  resolution: 'local' | 'remote' | 'pending'
 }
 
 const CONFIG_KEY = 'tiptag_github_config'
+const SYNC_HISTORY_KEY = 'tiptag_sync_history'
 
 export function saveGithubConfig(config: GitHubConfig): void {
   if (typeof window !== 'undefined') {
@@ -20,7 +39,13 @@ export function getGithubConfig(): GitHubConfig | null {
   const stored = localStorage.getItem(CONFIG_KEY)
   if (!stored) return null
   try {
-    return JSON.parse(stored)
+    const config = JSON.parse(stored)
+    // Ensure autoSync field exists for backward compatibility
+    return {
+      ...config,
+      autoSync: config.autoSync ?? false,
+      lastSyncAt: config.lastSyncAt ?? null,
+    }
   } catch {
     return null
   }
@@ -29,6 +54,27 @@ export function getGithubConfig(): GitHubConfig | null {
 export function clearGithubConfig(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CONFIG_KEY)
+    localStorage.removeItem(SYNC_HISTORY_KEY)
+  }
+}
+
+export function getSyncHistory(): SyncResult[] {
+  if (typeof window === 'undefined') return []
+  const stored = localStorage.getItem(SYNC_HISTORY_KEY)
+  if (!stored) return []
+  try {
+    return JSON.parse(stored)
+  } catch {
+    return []
+  }
+}
+
+export function saveSyncHistory(result: SyncResult): void {
+  if (typeof window !== 'undefined') {
+    const history = getSyncHistory()
+    history.unshift(result)
+    // Keep only last 10 sync records
+    localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, 10)))
   }
 }
 
@@ -62,12 +108,63 @@ export async function validateConfig(config: GitHubConfig): Promise<boolean> {
   }
 }
 
+export async function createRepository(config: GitHubConfig): Promise<boolean> {
+  try {
+    const response = await githubRequest('/user/repos', config, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: config.repo,
+        description: 'TipTag Knowledge Base Notes',
+        private: true,
+        auto_init: true,
+      }),
+    })
+    return response.ok || response.status === 422 // 422 = already exists
+  } catch {
+    return false
+  }
+}
+
+export async function ensureNotesDirectory(config: GitHubConfig): Promise<boolean> {
+  try {
+    // Check if notes directory exists
+    const response = await githubRequest(
+      `/repos/${config.owner}/${config.repo}/contents/notes?ref=${config.branch}`,
+      config
+    )
+
+    if (response.ok) return true
+
+    // Create notes directory with a .gitkeep file
+    const createResponse = await githubRequest(
+      `/repos/${config.owner}/${config.repo}/contents/notes/.gitkeep`,
+      config,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          message: 'Initialize notes directory',
+          content: btoa(''),
+          branch: config.branch,
+        }),
+      }
+    )
+
+    return createResponse.ok
+  } catch {
+    return false
+  }
+}
+
 export async function pushNotes(
   notes: Note[],
   config: GitHubConfig
-): Promise<{ pushed: number; skipped: number }> {
+): Promise<{ pushed: number; skipped: number; failed: number }> {
   let pushed = 0
   let skipped = 0
+  let failed = 0
+
+  // Ensure notes directory exists
+  await ensureNotesDirectory(config)
 
   for (const note of notes) {
     try {
@@ -87,10 +184,14 @@ export async function pushNotes(
         sha = existing.sha
 
         // Check if content is the same
-        const existingContent = atob(existing.content.replace(/\n/g, ''))
-        if (existingContent === content) {
-          skipped++
-          continue
+        try {
+          const existingContent = decodeURIComponent(escape(atob(existing.content.replace(/\n/g, ''))))
+          if (existingContent === content) {
+            skipped++
+            continue
+          }
+        } catch {
+          // Content comparison failed, proceed with update
         }
       }
 
@@ -113,15 +214,21 @@ export async function pushNotes(
         pushed++
       } else {
         console.error('Failed to push note:', note.id, await response.text())
-        skipped++
+        failed++
       }
     } catch (error) {
       console.error('Error pushing note:', note.id, error)
-      skipped++
+      failed++
     }
   }
 
-  return { pushed, skipped }
+  // Update last sync time
+  const currentConfig = getGithubConfig()
+  if (currentConfig) {
+    saveGithubConfig({ ...currentConfig, lastSyncAt: Date.now() })
+  }
+
+  return { pushed, skipped, failed }
 }
 
 export async function pullNotes(config: GitHubConfig): Promise<Note[]> {
@@ -168,7 +275,99 @@ export async function pullNotes(config: GitHubConfig): Promise<Note[]> {
     throw error
   }
 
+  // Update last sync time
+  const currentConfig = getGithubConfig()
+  if (currentConfig) {
+    saveGithubConfig({ ...currentConfig, lastSyncAt: Date.now() })
+  }
+
   return notes.sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+export async function syncNotes(
+  localNotes: Note[],
+  config: GitHubConfig,
+  conflictResolution: 'local' | 'remote' | 'newer' = 'newer'
+): Promise<SyncResult> {
+  const conflicts: SyncConflict[] = []
+  let pushed = 0
+  let pulled = 0
+  let skipped = 0
+
+  try {
+    // Pull remote notes first
+    const remoteNotes = await pullNotes(config)
+    const remoteNotesMap = new Map(remoteNotes.map(n => [n.id, n]))
+    const localNotesMap = new Map(localNotes.map(n => [n.id, n]))
+
+    // Find notes to push (local only or local newer)
+    const notesToPush: Note[] = []
+    for (const localNote of localNotes) {
+      const remoteNote = remoteNotesMap.get(localNote.id)
+      if (!remoteNote) {
+        // New local note
+        notesToPush.push(localNote)
+      } else if (localNote.updatedAt > remoteNote.updatedAt) {
+        // Local is newer
+        if (conflictResolution === 'local' || conflictResolution === 'newer') {
+          notesToPush.push(localNote)
+        } else {
+          conflicts.push({
+            noteId: localNote.id,
+            noteTitle: localNote.title,
+            localUpdatedAt: localNote.updatedAt,
+            remoteUpdatedAt: remoteNote.updatedAt,
+            resolution: 'pending',
+          })
+        }
+      } else if (localNote.updatedAt < remoteNote.updatedAt) {
+        // Remote is newer
+        if (conflictResolution === 'remote' || conflictResolution === 'newer') {
+          pulled++
+        } else {
+          conflicts.push({
+            noteId: localNote.id,
+            noteTitle: localNote.title,
+            localUpdatedAt: localNote.updatedAt,
+            remoteUpdatedAt: remoteNote.updatedAt,
+            resolution: 'pending',
+          })
+        }
+      } else {
+        skipped++
+      }
+    }
+
+    // Find notes to pull (remote only)
+    const notesToPull: Note[] = []
+    for (const remoteNote of remoteNotes) {
+      if (!localNotesMap.has(remoteNote.id)) {
+        notesToPull.push(remoteNote)
+        pulled++
+      }
+    }
+
+    // Push notes
+    if (notesToPush.length > 0) {
+      const pushResult = await pushNotes(notesToPush, config)
+      pushed = pushResult.pushed
+    }
+
+    const result: SyncResult = {
+      pushed,
+      pulled,
+      skipped,
+      conflicts,
+      timestamp: Date.now(),
+    }
+
+    saveSyncHistory(result)
+
+    return result
+  } catch (error) {
+    console.error('Sync error:', error)
+    throw error
+  }
 }
 
 export async function deleteNoteFromGitHub(
@@ -208,5 +407,39 @@ export async function deleteNoteFromGitHub(
   } catch (error) {
     console.error('Error deleting note from GitHub:', error)
     return false
+  }
+}
+
+// Auto-sync handler
+let autoSyncInterval: NodeJS.Timeout | null = null
+
+export function startAutoSync(
+  getNotes: () => Promise<Note[]>,
+  onSyncComplete: (result: SyncResult) => void,
+  intervalMs: number = 5 * 60 * 1000 // 5 minutes
+): void {
+  stopAutoSync()
+
+  autoSyncInterval = setInterval(async () => {
+    const config = getGithubConfig()
+    if (!config || !config.autoSync) {
+      stopAutoSync()
+      return
+    }
+
+    try {
+      const notes = await getNotes()
+      const result = await syncNotes(notes, config)
+      onSyncComplete(result)
+    } catch (error) {
+      console.error('Auto-sync failed:', error)
+    }
+  }, intervalMs)
+}
+
+export function stopAutoSync(): void {
+  if (autoSyncInterval) {
+    clearInterval(autoSyncInterval)
+    autoSyncInterval = null
   }
 }

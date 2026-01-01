@@ -14,6 +14,7 @@ import {
   Category
 } from '@/utils/db'
 import { Template } from '@/utils/templates'
+import { getGithubConfig, startAutoSync, stopAutoSync, SyncResult } from '@/utils/githubService'
 import TemplateModal from '@/components/TemplateModal'
 import GitHubSyncModal from '@/components/GitHubSyncModal'
 import AISettingsModal from '@/components/AISettingsModal'
@@ -38,6 +39,11 @@ export default function Home() {
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false)
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false)
 
+  // Sync states
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
+  const [isGitHubConfigured, setIsGitHubConfigured] = useState(false)
+
   // Load data on mount
   useEffect(() => {
     loadData()
@@ -47,6 +53,28 @@ export default function Home() {
         window.matchMedia('(prefers-color-scheme: dark)').matches
       setIsDarkMode(darkMode)
       document.documentElement.classList.toggle('dark', darkMode)
+
+      // Check GitHub config
+      const config = getGithubConfig()
+      if (config) {
+        setIsGitHubConfigured(true)
+        setLastSyncAt(config.lastSyncAt)
+
+        // Start auto-sync if enabled
+        if (config.autoSync) {
+          startAutoSync(
+            getAllNotes,
+            (result: SyncResult) => {
+              setLastSyncAt(result.timestamp)
+              loadData()
+            }
+          )
+        }
+      }
+    }
+
+    return () => {
+      stopAutoSync()
     }
   }, [])
 
@@ -131,7 +159,15 @@ export default function Home() {
       setIsEditing(true)
     }
 
+    // Update sync state
+    setLastSyncAt(Date.now())
+    setIsGitHubConfigured(true)
     setIsGitHubModalOpen(false)
+  }
+
+  const handleSyncComplete = async (result: SyncResult, pulledNotes: Note[]) => {
+    await handlePullComplete(pulledNotes)
+    setLastSyncAt(result.timestamp)
   }
 
   const handleUpdateNote = async (json: object, html: string) => {
@@ -279,9 +315,28 @@ export default function Home() {
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
             <button
               onClick={() => setIsGitHubModalOpen(true)}
-              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              🔗 GitHub 同步
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  {isSyncing ? (
+                    <span className="animate-spin">🔄</span>
+                  ) : isGitHubConfigured ? (
+                    <span className="text-green-500">✓</span>
+                  ) : (
+                    <span>🔗</span>
+                  )}
+                  GitHub 同步
+                </span>
+                {isGitHubConfigured && lastSyncAt && (
+                  <span className="text-xs text-gray-400">
+                    {new Date(lastSyncAt).toLocaleTimeString('zh-TW', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                )}
+              </div>
             </button>
             <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
               共 {notes.length} 個筆記
@@ -447,6 +502,7 @@ export default function Home() {
         onClose={() => setIsGitHubModalOpen(false)}
         notes={notes}
         onPullComplete={handlePullComplete}
+        onSyncComplete={handleSyncComplete}
       />
 
       <AISettingsModal
