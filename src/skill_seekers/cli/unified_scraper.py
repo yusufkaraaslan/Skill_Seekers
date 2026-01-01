@@ -129,6 +129,17 @@ class UnifiedScraper:
             'max_pages': source.get('max_pages', 100)
         }
 
+        # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
+        if 'llms_txt_url' in source:
+            doc_config['llms_txt_url'] = source.get('llms_txt_url')
+
+        if 'skip_llms_txt' in source:
+            doc_config['skip_llms_txt'] = source.get('skip_llms_txt')
+
+        # Optional: support overriding start URLs
+        if 'start_urls' in source:
+            doc_config['start_urls'] = source.get('start_urls')
+
         # Write temporary config
         temp_config_path = os.path.join(self.data_dir, 'temp_docs_config.json')
         with open(temp_config_path, 'w', encoding='utf-8') as f:

@@ -146,7 +146,7 @@ class SkillQualityChecker:
                 'references/ directory not found - skill may be incomplete',
                 str(self.references_dir)
             )
-        elif not list(self.references_dir.glob('*.md')):
+        elif not list(self.references_dir.rglob('*.md')):
             self.report.add_warning(
                 'structure',
                 'references/ directory is empty - no reference documentation found',
@@ -298,7 +298,7 @@ class SkillQualityChecker:
 
         # Check reference files
         if self.references_dir.exists():
-            ref_files = list(self.references_dir.glob('*.md'))
+            ref_files = list(self.references_dir.rglob('*.md'))
             if ref_files:
                 self.report.add_info(
                     'content',
