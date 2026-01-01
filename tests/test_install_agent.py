@@ -66,9 +66,9 @@ class TestAgentPathMapping:
             get_agent_path('invalid_agent')
 
     def test_get_available_agents(self):
-        """Test that all 10 agents are listed."""
+        """Test that all 11 agents are listed."""
         agents = get_available_agents()
-        assert len(agents) == 10
+        assert len(agents) == 11
         assert 'claude' in agents
         assert 'cursor' in agents
         assert 'vscode' in agents
@@ -321,7 +321,7 @@ class TestInstallToAllAgents:
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_install_to_all_success(self):
-        """Test that install_to_all_agents attempts all 10 agents."""
+        """Test that install_to_all_agents attempts all 11 agents."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
@@ -329,7 +329,7 @@ class TestInstallToAllAgents:
             with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
                 results = install_to_all_agents(self.skill_dir, force=True)
 
-                assert len(results) == 10
+                assert len(results) == 11
                 assert 'claude' in results
                 assert 'cursor' in results
 
@@ -339,7 +339,7 @@ class TestInstallToAllAgents:
         results = install_to_all_agents(self.skill_dir, dry_run=True)
 
         # All should succeed in dry-run mode
-        assert len(results) == 10
+        assert len(results) == 11
         for agent_name, (success, message) in results.items():
             assert success is True
             assert "DRY RUN" in message
@@ -373,7 +373,7 @@ class TestInstallToAllAgents:
         results = install_to_all_agents(self.skill_dir, dry_run=True)
 
         assert isinstance(results, dict)
-        assert len(results) == 10
+        assert len(results) == 11
 
         for agent_name, (success, message) in results.items():
             assert isinstance(success, bool)
