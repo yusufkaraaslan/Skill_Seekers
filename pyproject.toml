@@ -55,6 +55,7 @@ dependencies = [
     "jsonschema>=4.25.1",
     "click>=8.3.0",
     "Pygments>=2.19.2",
+    "pathspec>=0.12.1",
 ]
 
 [project.optional-dependencies]
@@ -130,6 +131,7 @@ skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
+skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
