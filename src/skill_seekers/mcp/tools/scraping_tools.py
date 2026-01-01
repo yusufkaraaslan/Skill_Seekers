@@ -438,7 +438,8 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
     Analyze local codebase and extract code knowledge.
 
     Walks directory tree, analyzes code files, extracts signatures,
-    docstrings, and optionally generates API reference documentation.
+    docstrings, and optionally generates API reference documentation
+    and dependency graphs.
 
     Args:
         args: Dictionary containing:
@@ -448,6 +449,7 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
             - languages (str, optional): Comma-separated languages (e.g., "Python,JavaScript,C++")
             - file_patterns (str, optional): Comma-separated file patterns (e.g., "*.py,src/**/*.js")
             - build_api_reference (bool, optional): Generate API reference markdown (default: False)
+            - build_dependency_graph (bool, optional): Generate dependency graph and detect circular dependencies (default: False)
 
     Returns:
         List[TextContent]: Tool execution results
@@ -456,7 +458,8 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
         scrape_codebase(
             directory="/path/to/repo",
             depth="deep",
-            build_api_reference=True
+            build_api_reference=True,
+            build_dependency_graph=True
         )
     """
     directory = args.get("directory")
@@ -468,6 +471,7 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
     languages = args.get("languages", "")
     file_patterns = args.get("file_patterns", "")
     build_api_reference = args.get("build_api_reference", False)
+    build_dependency_graph = args.get("build_dependency_graph", False)
 
     # Build command
     cmd = [sys.executable, "-m", "skill_seekers.cli.codebase_scraper"]
@@ -483,6 +487,8 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
         cmd.extend(["--file-patterns", file_patterns])
     if build_api_reference:
         cmd.append("--build-api-reference")
+    if build_dependency_graph:
+        cmd.append("--build-dependency-graph")
 
     timeout = 600  # 10 minutes for codebase analysis
 

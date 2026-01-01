@@ -396,7 +396,7 @@ async def scrape_pdf(
 
 
 @safe_tool_decorator(
-    description="Analyze local codebase and extract code knowledge. Walks directory tree, analyzes code files, extracts signatures, docstrings, and optionally generates API reference documentation."
+    description="Analyze local codebase and extract code knowledge. Walks directory tree, analyzes code files, extracts signatures, docstrings, and optionally generates API reference documentation and dependency graphs."
 )
 async def scrape_codebase(
     directory: str,
@@ -405,6 +405,7 @@ async def scrape_codebase(
     languages: str = "",
     file_patterns: str = "",
     build_api_reference: bool = False,
+    build_dependency_graph: bool = False,
 ) -> str:
     """
     Analyze local codebase and extract code knowledge.
@@ -416,6 +417,7 @@ async def scrape_codebase(
         languages: Comma-separated languages to analyze (e.g., "Python,JavaScript,C++")
         file_patterns: Comma-separated file patterns (e.g., "*.py,src/**/*.js")
         build_api_reference: Generate API reference markdown (default: false)
+        build_dependency_graph: Generate dependency graph and detect circular dependencies (default: false)
 
     Returns:
         Codebase analysis results with file paths.
@@ -427,6 +429,7 @@ async def scrape_codebase(
         "languages": languages,
         "file_patterns": file_patterns,
         "build_api_reference": build_api_reference,
+        "build_dependency_graph": build_dependency_graph,
     }
 
     result = await scrape_codebase_impl(args)
