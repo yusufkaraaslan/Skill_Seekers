@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
+from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
 
 # Try to import pathspec for .gitignore support
 try:
@@ -194,7 +195,8 @@ def analyze_codebase(
     languages: Optional[List[str]] = None,
     file_patterns: Optional[List[str]] = None,
     build_api_reference: bool = False,
-    extract_comments: bool = True
+    extract_comments: bool = True,
+    build_dependency_graph: bool = False
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -207,6 +209,7 @@ def analyze_codebase(
         file_patterns: Optional file patterns to include
         build_api_reference: Generate API reference markdown
         extract_comments: Extract inline comments
+        build_dependency_graph: Generate dependency graph and detect circular dependencies
 
     Returns:
         Analysis results dictionary
@@ -289,6 +292,71 @@ def analyze_codebase(
         logger.info(f"✅ Generated {len(generated_files)} API reference files")
         logger.info(f"📁 API reference: {api_output_dir}")
 
+    # Build dependency graph if requested (C2.6)
+    if build_dependency_graph:
+        logger.info("Building dependency graph...")
+        dep_analyzer = DependencyAnalyzer()
+
+        # Analyze dependencies for all files
+        for file_path in files:
+            try:
+                content = file_path.read_text(encoding='utf-8', errors='ignore')
+                language = detect_language(file_path)
+
+                if language != 'Unknown':
+                    # Use relative path from directory for better graph readability
+                    rel_path = str(file_path.relative_to(directory))
+                    dep_analyzer.analyze_file(rel_path, content, language)
+            except Exception as e:
+                logger.warning(f"Error analyzing dependencies for {file_path}: {e}")
+                continue
+
+        # Build the graph
+        graph = dep_analyzer.build_graph()
+
+        # Detect circular dependencies
+        cycles = dep_analyzer.detect_cycles()
+        if cycles:
+            logger.warning(f"⚠️  Found {len(cycles)} circular dependencies:")
+            for i, cycle in enumerate(cycles[:5], 1):  # Show first 5
+                cycle_str = ' → '.join(cycle) + f" → {cycle[0]}"
+                logger.warning(f"  {i}. {cycle_str}")
+            if len(cycles) > 5:
+                logger.warning(f"  ... and {len(cycles) - 5} more")
+        else:
+            logger.info("✅ No circular dependencies found")
+
+        # Save dependency graph data
+        dep_output_dir = output_dir / 'dependencies'
+        dep_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Export as JSON
+        dep_json = dep_output_dir / 'dependency_graph.json'
+        with open(dep_json, 'w', encoding='utf-8') as f:
+            json.dump(dep_analyzer.export_json(), f, indent=2)
+        logger.info(f"📁 Saved dependency graph: {dep_json}")
+
+        # Export as Mermaid diagram
+        mermaid_file = dep_output_dir / 'dependency_graph.mmd'
+        mermaid_file.write_text(dep_analyzer.export_mermaid())
+        logger.info(f"📁 Saved Mermaid diagram: {mermaid_file}")
+
+        # Save statistics
+        stats = dep_analyzer.get_statistics()
+        stats_file = dep_output_dir / 'statistics.json'
+        with open(stats_file, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, indent=2)
+        logger.info(f"📊 Statistics: {stats['total_files']} files, "
+                   f"{stats['total_dependencies']} dependencies, "
+                   f"{stats['circular_dependencies']} cycles")
+
+        # Try to export as DOT (requires pydot)
+        try:
+            dot_file = dep_output_dir / 'dependency_graph.dot'
+            dep_analyzer.export_dot(str(dot_file))
+        except:
+            pass  # pydot not installed, skip DOT export
+
     return results
 
 
@@ -302,14 +370,17 @@ Examples:
   # Analyze current directory
   codebase-scraper --directory . --output output/codebase/
 
-  # Deep analysis with API reference
-  codebase-scraper --directory /path/to/repo --depth deep --build-api-reference
+  # Deep analysis with API reference and dependency graph
+  codebase-scraper --directory /path/to/repo --depth deep --build-api-reference --build-dependency-graph
 
   # Analyze only Python and JavaScript
   codebase-scraper --directory . --languages Python,JavaScript
 
   # Use file patterns
   codebase-scraper --directory . --file-patterns "*.py,src/**/*.js"
+
+  # Full analysis with all features
+  codebase-scraper --directory . --depth deep --build-api-reference --build-dependency-graph
 
   # Surface analysis (fast, no details)
   codebase-scraper --directory . --depth surface
@@ -344,6 +415,11 @@ Examples:
         '--build-api-reference',
         action='store_true',
         help='Generate API reference markdown documentation'
+    )
+    parser.add_argument(
+        '--build-dependency-graph',
+        action='store_true',
+        help='Generate dependency graph and detect circular dependencies'
     )
     parser.add_argument(
         '--no-comments',
@@ -391,7 +467,8 @@ Examples:
             languages=languages,
             file_patterns=file_patterns,
             build_api_reference=args.build_api_reference,
-            extract_comments=not args.no_comments
+            extract_comments=not args.no_comments,
+            build_dependency_graph=args.build_dependency_graph
         )
 
         # Print summary
