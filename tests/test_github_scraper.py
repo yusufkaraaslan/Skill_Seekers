@@ -680,6 +680,219 @@ class TestGitHubToSkillConverter(unittest.TestCase):
             self.assertTrue((skill_dir / 'references').exists())
 
 
+class TestSymlinkHandling(unittest.TestCase):
+    """Test symlink handling (Issue #225)"""
+
+    def setUp(self):
+        if not PYGITHUB_AVAILABLE:
+            self.skipTest("PyGithub not installed")
+        from skill_seekers.cli.github_scraper import GitHubScraper
+        self.GitHubScraper = GitHubScraper
+
+    def test_get_file_content_regular_file(self):
+        """Test _get_file_content with regular file"""
+        config = {
+            'repo': 'facebook/react',
+            'name': 'react',
+            'github_token': None
+        }
+
+        # Create mock regular file
+        mock_content = Mock()
+        mock_content.type = 'file'
+        mock_content.encoding = 'base64'
+        mock_content.decoded_content = b'# React\n\nA JavaScript library'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.return_value = mock_content
+
+            result = scraper._get_file_content('README.md')
+
+            self.assertEqual(result, '# React\n\nA JavaScript library')
+            scraper.repo.get_contents.assert_called_once_with('README.md')
+
+    def test_get_file_content_symlink(self):
+        """Test _get_file_content with symlink file"""
+        config = {
+            'repo': 'vercel/ai',
+            'name': 'ai',
+            'github_token': None
+        }
+
+        # Create mock symlink
+        mock_symlink = Mock()
+        mock_symlink.type = 'symlink'
+        mock_symlink.encoding = None
+        mock_symlink.target = 'packages/ai/README.md'
+
+        # Create mock target file
+        mock_target = Mock()
+        mock_target.type = 'file'
+        mock_target.encoding = 'base64'
+        mock_target.decoded_content = b'# AI SDK\n\nReal content from symlink target'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+
+            # First call returns symlink, second call returns target
+            scraper.repo.get_contents.side_effect = [mock_symlink, mock_target]
+
+            result = scraper._get_file_content('README.md')
+
+            self.assertEqual(result, '# AI SDK\n\nReal content from symlink target')
+            # Should have called get_contents twice: once for symlink, once for target
+            self.assertEqual(scraper.repo.get_contents.call_count, 2)
+            scraper.repo.get_contents.assert_any_call('README.md')
+            scraper.repo.get_contents.assert_any_call('packages/ai/README.md')
+
+    def test_get_file_content_broken_symlink(self):
+        """Test _get_file_content with broken symlink"""
+        config = {
+            'repo': 'test/repo',
+            'name': 'test',
+            'github_token': None
+        }
+
+        # Create mock symlink with broken target
+        mock_symlink = Mock()
+        mock_symlink.type = 'symlink'
+        mock_symlink.encoding = None
+        mock_symlink.target = 'nonexistent/file.md'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+
+            # First call returns symlink, second call raises 404
+            scraper.repo.get_contents.side_effect = [
+                mock_symlink,
+                GithubException(404, 'Not found')
+            ]
+
+            result = scraper._get_file_content('README.md')
+
+            # Should return None gracefully
+            self.assertIsNone(result)
+
+    def test_get_file_content_symlink_no_target(self):
+        """Test _get_file_content with symlink that has no target attribute"""
+        config = {
+            'repo': 'test/repo',
+            'name': 'test',
+            'github_token': None
+        }
+
+        # Create mock symlink without target
+        mock_symlink = Mock()
+        mock_symlink.type = 'symlink'
+        mock_symlink.encoding = None
+        mock_symlink.target = None
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.return_value = mock_symlink
+
+            result = scraper._get_file_content('README.md')
+
+            # Should return None gracefully
+            self.assertIsNone(result)
+
+    def test_extract_readme_with_symlink(self):
+        """Test README extraction with symlinked README.md (Integration test for Issue #225)"""
+        config = {
+            'repo': 'vercel/ai',
+            'name': 'ai',
+            'github_token': None
+        }
+
+        # Create mock symlink
+        mock_symlink = Mock()
+        mock_symlink.type = 'symlink'
+        mock_symlink.encoding = None
+        mock_symlink.target = 'packages/ai/README.md'
+
+        # Create mock target file
+        mock_target = Mock()
+        mock_target.type = 'file'
+        mock_target.encoding = 'base64'
+        mock_target.decoded_content = b'# AI SDK\n\nThe AI SDK is a TypeScript toolkit'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.side_effect = [mock_symlink, mock_target]
+
+            scraper._extract_readme()
+
+            # Should successfully extract README content
+            self.assertIn('readme', scraper.extracted_data)
+            self.assertEqual(
+                scraper.extracted_data['readme'],
+                '# AI SDK\n\nThe AI SDK is a TypeScript toolkit'
+            )
+
+    def test_extract_changelog_with_symlink(self):
+        """Test CHANGELOG extraction with symlinked CHANGELOG.md"""
+        config = {
+            'repo': 'test/repo',
+            'name': 'test',
+            'github_token': None
+        }
+
+        # Create mock symlink
+        mock_symlink = Mock()
+        mock_symlink.type = 'symlink'
+        mock_symlink.encoding = None
+        mock_symlink.target = 'docs/CHANGELOG.md'
+
+        # Create mock target file
+        mock_target = Mock()
+        mock_target.type = 'file'
+        mock_target.encoding = 'base64'
+        mock_target.decoded_content = b'# Changelog\n\n## v1.0.0\n- Initial release'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.side_effect = [mock_symlink, mock_target]
+
+            scraper._extract_changelog()
+
+            # Should successfully extract CHANGELOG content
+            self.assertIn('changelog', scraper.extracted_data)
+            self.assertIn('Initial release', scraper.extracted_data['changelog'])
+
+    def test_get_file_content_encoding_error(self):
+        """Test _get_file_content handles encoding errors gracefully"""
+        config = {
+            'repo': 'test/repo',
+            'name': 'test',
+            'github_token': None
+        }
+
+        # Create mock file with invalid UTF-8 content
+        mock_content = Mock()
+        mock_content.type = 'file'
+        mock_content.encoding = 'base64'
+        # Mock decoded_content that can't be decoded as UTF-8
+        mock_content.decoded_content = b'\xff\xfe Invalid UTF-8'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.return_value = mock_content
+
+            # Should try latin-1 fallback
+            result = scraper._get_file_content('README.md')
+
+            # Should not crash (will try latin-1 fallback)
+            self.assertIsNotNone(result)
+
+
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and edge cases"""
 
