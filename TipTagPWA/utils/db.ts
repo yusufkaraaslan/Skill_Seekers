@@ -211,3 +211,11 @@ export async function importData(data: { notes: Note[]; categories: Category[] }
     await db.put('notes', note)
   }
 }
+
+// Batch save notes (for GitHub sync)
+export async function saveNotes(notes: Note[]): Promise<void> {
+  const db = await getDB()
+  for (const note of notes) {
+    await db.put('notes', note)
+  }
+}
