@@ -58,6 +58,87 @@ EXCLUDED_DIRS = {
 }
 
 
+def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
+    """
+    Extract a meaningful description from README content for skill description.
+
+    Parses README to find the first meaningful paragraph that describes
+    what the project does, suitable for "Use when..." format.
+
+    Args:
+        readme_content: README.md content
+        repo_name: Repository name (e.g., 'facebook/react')
+
+    Returns:
+        Description string, or improved fallback if extraction fails
+    """
+    if not readme_content:
+        return f'Use when working with {repo_name.split("/")[-1]}'
+
+    try:
+        lines = readme_content.split('\n')
+
+        # Skip badges, images, title - find first meaningful text paragraph
+        meaningful_paragraph = None
+        in_code_block = False
+
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Track code blocks
+            if stripped.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+
+            # Skip if in code block
+            if in_code_block:
+                continue
+
+            # Skip empty lines, badges, images, HTML
+            if not stripped or stripped.startswith(('#', '!', '<', '[![', '[![')):
+                continue
+
+            # Skip lines that are just links or badges
+            if stripped.startswith('[') and '](' in stripped and len(stripped) < 100:
+                continue
+
+            # Found a meaningful paragraph - take up to 200 chars
+            if len(stripped) > 20:  # Meaningful length
+                meaningful_paragraph = stripped
+                break
+
+        if meaningful_paragraph:
+            # Clean up and extract purpose
+            # Remove markdown formatting
+            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', meaningful_paragraph)  # Links
+            clean = re.sub(r'[*_`]', '', clean)  # Bold, italic, code
+            clean = re.sub(r'<[^>]+>', '', clean)  # HTML tags
+
+            # Truncate if too long (keep first sentence or ~150 chars)
+            if '. ' in clean:
+                first_sentence = clean.split('. ')[0] + '.'
+                if len(first_sentence) < 200:
+                    clean = first_sentence
+
+            if len(clean) > 150:
+                clean = clean[:147] + '...'
+
+            # Format as "Use when..." description
+            # If it already starts with action words, use as-is
+            action_words = ['build', 'create', 'develop', 'work', 'use', 'implement', 'manage']
+            if any(clean.lower().startswith(word) for word in action_words):
+                return f'Use when {clean.lower()}'
+            else:
+                return f'Use when working with {clean.lower()}'
+
+    except Exception as e:
+        logger.debug(f"Could not extract description from README: {e}")
+
+    # Improved fallback
+    project_name = repo_name.split('/')[-1]
+    return f'Use when working with {project_name}'
+
+
 class GitHubScraper:
     """
     GitHub Repository Scraper (C1.1-C1.9)
@@ -79,7 +160,8 @@ class GitHubScraper:
         self.config = config
         self.repo_name = config['repo']
         self.name = config.get('name', self.repo_name.split('/')[-1])
-        self.description = config.get('description', f'Skill for {self.repo_name}')
+        # Set initial description (will be improved after README extraction if not in config)
+        self.description = config.get('description', f'Use when working with {self.repo_name.split("/")[-1]}')
 
         # Local repository path (optional - enables unlimited analysis)
         self.local_repo_path = local_repo_path or config.get('local_repo_path')
@@ -257,6 +339,16 @@ class GitHubScraper:
                 if content:
                     self.extracted_data['readme'] = content.decoded_content.decode('utf-8')
                     logger.info(f"README found: {readme_path}")
+
+                    # Update description if not explicitly set in config
+                    if 'description' not in self.config:
+                        smart_description = extract_description_from_readme(
+                            self.extracted_data['readme'],
+                            self.repo_name
+                        )
+                        self.description = smart_description
+                        logger.debug(f"Generated description: {self.description}")
+
                     return
             except GithubException:
                 continue
@@ -577,10 +669,31 @@ class GitHubScraper:
             try:
                 content = self.repo.get_contents(changelog_path)
                 if content:
-                    self.extracted_data['changelog'] = content.decoded_content.decode('utf-8')
+                    # decoded_content is already bytes, decode to string
+                    # Handle potential encoding issues gracefully
+                    try:
+                        if isinstance(content.decoded_content, bytes):
+                            changelog_text = content.decoded_content.decode('utf-8')
+                        else:
+                            # Already a string
+                            changelog_text = str(content.decoded_content)
+                    except (UnicodeDecodeError, AttributeError, LookupError) as e:
+                        # Try alternative encodings or skip this file
+                        logger.warning(f"Encoding issue with {changelog_path}: {e}, trying latin-1")
+                        try:
+                            changelog_text = content.decoded_content.decode('latin-1')
+                        except Exception:
+                            logger.warning(f"Could not decode {changelog_path}, skipping")
+                            continue
+
+                    self.extracted_data['changelog'] = changelog_text
                     logger.info(f"CHANGELOG found: {changelog_path}")
                     return
             except GithubException:
+                continue
+            except Exception as e:
+                # Catch any other errors (like "unsupported encoding: none")
+                logger.warning(f"Error reading {changelog_path}: {e}")
                 continue
 
         logger.warning("No CHANGELOG found in repository")
@@ -633,7 +746,6 @@ class GitHubToSkillConverter:
         """Initialize converter with configuration."""
         self.config = config
         self.name = config.get('name', config['repo'].split('/')[-1])
-        self.description = config.get('description', f'Skill for {config["repo"]}')
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -641,6 +753,18 @@ class GitHubToSkillConverter:
 
         # Load extracted data
         self.data = self._load_data()
+
+        # Set description (smart extraction from README if available)
+        if 'description' in config:
+            self.description = config['description']
+        else:
+            # Try to extract from README in loaded data
+            readme_content = self.data.get('readme', '')
+            repo_name = config['repo']
+            if readme_content:
+                self.description = extract_description_from_readme(readme_content, repo_name)
+            else:
+                self.description = f'Use when working with {repo_name.split("/")[-1]}'
 
     def _load_data(self) -> Dict[str, Any]:
         """Load extracted GitHub data from JSON."""
@@ -887,18 +1011,24 @@ Examples:
     parser.add_argument('--no-releases', action='store_true', help='Skip releases')
     parser.add_argument('--max-issues', type=int, default=100, help='Max issues to fetch')
     parser.add_argument('--scrape-only', action='store_true', help='Only scrape, don\'t build skill')
+    parser.add_argument('--enhance', action='store_true',
+                       help='Enhance SKILL.md using Claude API after building (requires API key)')
+    parser.add_argument('--enhance-local', action='store_true',
+                       help='Enhance SKILL.md using Claude Code (no API key needed)')
+    parser.add_argument('--api-key', type=str,
+                       help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
 
     args = parser.parse_args()
 
     # Build config from args or file
     if args.config:
-        with open(args.config, 'r') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config = json.load(f)
     elif args.repo:
         config = {
             'repo': args.repo,
             'name': args.name or args.repo.split('/')[-1],
-            'description': args.description or f'GitHub repository skill for {args.repo}',
+            'description': args.description or f'Use when working with {args.repo.split("/")[-1]}',
             'github_token': args.token,
             'include_issues': not args.no_issues,
             'include_changelog': not args.no_changelog,
@@ -921,8 +1051,47 @@ Examples:
         converter = GitHubToSkillConverter(config)
         converter.build_skill()
 
-        logger.info(f"\n✅ Success! Skill created at: output/{config.get('name', config['repo'].split('/')[-1])}/")
-        logger.info(f"Next step: skill-seekers-package output/{config.get('name', config['repo'].split('/')[-1])}/")
+        skill_name = config.get('name', config['repo'].split('/')[-1])
+        skill_dir = f"output/{skill_name}"
+
+        # Phase 3: Optional enhancement
+        if args.enhance or args.enhance_local:
+            logger.info("\n📝 Enhancing SKILL.md with Claude...")
+
+            if args.enhance_local:
+                # Local enhancement using Claude Code
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+                from pathlib import Path
+
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                enhancer.run(headless=True)
+                logger.info("✅ Local enhancement complete!")
+
+            elif args.enhance:
+                # API-based enhancement
+                import os
+                api_key = args.api_key or os.environ.get('ANTHROPIC_API_KEY')
+                if not api_key:
+                    logger.error("❌ ANTHROPIC_API_KEY not set. Use --api-key or set environment variable.")
+                    logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+                else:
+                    # Import and run API enhancement
+                    try:
+                        from skill_seekers.cli.enhance_skill import enhance_skill_md
+                        enhance_skill_md(skill_dir, api_key)
+                        logger.info("✅ API enhancement complete!")
+                    except ImportError:
+                        logger.error("❌ API enhancement not available. Install: pip install anthropic")
+                        logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+
+        logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
+
+        if not (args.enhance or args.enhance_local):
+            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+            logger.info(f"  Local (recommended):  skill-seekers enhance {skill_dir}/")
+            logger.info(f"                        or re-run with: --enhance-local")
+
+        logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
 
     except Exception as e:
         logger.error(f"Error: {e}")

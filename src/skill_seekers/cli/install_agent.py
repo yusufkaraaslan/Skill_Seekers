@@ -45,6 +45,7 @@ AGENT_PATHS = {
     'letta': '~/.letta/skills/',             # Global
     'aide': '~/.aide/skills/',               # Global
     'windsurf': '~/.windsurf/skills/',       # Global
+    'neovate': '~/.neovate/skills/',         # Global
 }
 
 
@@ -363,7 +364,7 @@ Examples:
   skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 Supported agents:
-  claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, all
+  claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, neovate, all
         """
     )
 

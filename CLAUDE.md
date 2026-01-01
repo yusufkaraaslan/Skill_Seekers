@@ -2,955 +2,524 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🎯 Current Status (November 30, 2025)
+## 🎯 Project Overview
 
-**Version:** v2.1.1 (Production Ready - GitHub Analysis Enhanced!)
-**Active Development:** Flexible, incremental task-based approach
+**Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-### Recent Updates (November 2025):
+**Current Version:** v2.5.1
+**Python Version:** 3.10+ required
+**Status:** Production-ready, published on PyPI
 
-**🎉 MAJOR MILESTONE: Published on PyPI! (v2.0.0)**
-- **📦 PyPI Publication**: Install with `pip install skill-seekers` - https://pypi.org/project/skill-seekers/
-- **🔧 Modern Python Packaging**: pyproject.toml, src/ layout, entry points
-- **✅ CI/CD Fixed**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
-- **📚 Documentation Complete**: README, CHANGELOG, FUTURE_RELEASES.md all updated
-- **🚀 Unified CLI**: Single `skill-seekers` command with Git-style subcommands
-- **🧪 Test Coverage**: 427 tests passing (up from 391), 39% coverage
-- **🌐 Community**: GitHub Discussion, Release notes, announcements published
+## 🏗️ Architecture
 
-**🚀 Unified Multi-Source Scraping (v2.0.0)**
-- **NEW**: Combine documentation + GitHub + PDF in one skill
-- **NEW**: Automatic conflict detection between docs and code
-- **NEW**: Rule-based and AI-powered merging
-- **NEW**: 5 example unified configs (React, Django, FastAPI, Godot, FastAPI-test)
-- **Status**: ✅ All 22 unified tests passing (18 core + 4 MCP integration)
+### Core Design Pattern: Platform Adaptors
 
-**✅ Community Response (H1 Group):**
-- **Issue #8 Fixed** - Added BULLETPROOF_QUICKSTART.md and TROUBLESHOOTING.md for beginners
-- **Issue #7 Fixed** - Fixed all 11 configs (Django, Laravel, Astro, Tailwind) - 100% working
-- **Issue #4 Linked** - Connected to roadmap Tasks A2/A3 (knowledge sharing + website)
-- **PR #5 Reviewed** - Approved anchor stripping feature (security verified, 32/32 tests pass)
-- **MCP Setup Fixed** - Path expansion bug resolved in setup_mcp.sh
+The codebase uses the **Strategy Pattern** with a factory method to support multiple LLM platforms:
 
-**📦 Configs Status:**
-- ✅ **24 total configs available** (including unified configs)
-- ✅ 5 unified configs added (React, Django, FastAPI, Godot, FastAPI-test)
-- ✅ Core selectors tested and validated
-- 📝 Single-source configs: ansible-core, astro, claude-code, django, fastapi, godot, godot-large-example, hono, kubernetes, laravel, react, steam-economy-complete, tailwind, vue
-- 📝 Multi-source configs: django_unified, fastapi_unified, fastapi_unified_test, godot_unified, react_unified
-- 📝 Test/Example configs: godot_github, react_github, python-tutorial-test, example_pdf, test-manual
-
-**📋 Completed (November 29, 2025):**
-- **✅ DONE**: PyPI publication complete (v2.0.0)
-- **✅ DONE**: CI/CD fixed - all checks passing
-- **✅ DONE**: Documentation updated (README, CHANGELOG, FUTURE_RELEASES.md)
-- **✅ DONE**: Quality Assurance + Race Condition Fixes (v2.1.0)
-- **✅ DONE**: All critical bugs fixed (Issues #190, #192, #193)
-- **✅ DONE**: Test suite stabilized (427 tests passing)
-- **✅ DONE**: Unified tests fixed (all 22 passing)
-- **✅ DONE**: PR #195 merged - Unlimited local repository analysis
-- **✅ DONE**: PR #198 merged - Skip llms.txt config option
-- **✅ DONE**: Issue #203 - Configurable EXCLUDED_DIRS (19 tests, 2 commits)
-
-**📋 Next Up (Post-v2.1.0):**
-- **Priority 1**: Review open PRs (#187, #186)
-- **Priority 2**: Issue #202 - Add warning for missing local_repo_path
-- **Priority 3**: Task H1.3 - Create example project folder
-- **Priority 4**: Task A3.1 - GitHub Pages site (skillseekersweb.com)
-
-**📊 Roadmap Progress:**
-- 134 tasks organized into 22 feature groups
-- Project board: https://github.com/users/yusufkaraaslan/projects/2
-- See [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) for complete task list
-
----
-
-## 🔌 MCP Integration Available
-
-**This repository includes a fully tested MCP server with 10 tools:**
-- `mcp__skill-seeker__list_configs` - List all available preset configurations
-- `mcp__skill-seeker__generate_config` - Generate a new config file for any docs site
-- `mcp__skill-seeker__validate_config` - Validate a config file structure
-- `mcp__skill-seeker__estimate_pages` - Estimate page count before scraping
-- `mcp__skill-seeker__scrape_docs` - Scrape and build a skill
-- `mcp__skill-seeker__package_skill` - Package skill into .zip file (with auto-upload)
-- `mcp__skill-seeker__upload_skill` - Upload .zip to Claude
-- `mcp__skill-seeker__install_skill` - **NEW!** Complete one-command workflow (fetch → scrape → enhance → package → upload)
-- `mcp__skill-seeker__split_config` - Split large documentation configs
-- `mcp__skill-seeker__generate_router` - Generate router/hub skills
-
-**Setup:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) or run `./setup_mcp.sh`
-
-**Status:** ✅ Tested and working in production with Claude Code
-
-## Overview
-
-Skill Seeker automatically converts any documentation website into a Claude AI skill. It scrapes documentation, organizes content, extracts code patterns, and packages everything into an uploadable `.zip` file for Claude.
-
-## Prerequisites
-
-**Python Version:** Python 3.10 or higher (required for MCP integration)
-
-**Installation:**
-
-### Option 1: Install from PyPI (Recommended - Easiest!)
-```bash
-# Install globally or in virtual environment
-pip install skill-seekers
-
-# Use the unified CLI immediately
-skill-seekers scrape --config configs/react.json
-skill-seekers --help
+```
+src/skill_seekers/cli/adaptors/
+├── __init__.py          # Factory: get_adaptor(target)
+├── base_adaptor.py      # Abstract base class
+├── claude_adaptor.py    # Claude AI (ZIP + YAML)
+├── gemini_adaptor.py    # Google Gemini (tar.gz)
+├── openai_adaptor.py    # OpenAI ChatGPT (ZIP + Vector Store)
+└── markdown_adaptor.py  # Generic Markdown (ZIP)
 ```
 
-### Option 2: Install from Source (For Development)
+**Key Methods:**
+- `package(skill_dir, output_path)` - Platform-specific packaging
+- `upload(package_path, api_key)` - Platform-specific upload
+- `enhance(skill_dir, mode)` - AI enhancement with platform-specific models
+
+### Data Flow (5 Phases)
+
+1. **Scrape Phase** (`doc_scraper.py:scrape_all()`)
+   - BFS traversal from base_url
+   - Output: `output/{name}_data/pages/*.json`
+
+2. **Build Phase** (`doc_scraper.py:build_skill()`)
+   - Load pages → Categorize → Extract patterns
+   - Output: `output/{name}/SKILL.md` + `references/*.md`
+
+3. **Enhancement Phase** (optional, `enhance_skill_local.py`)
+   - LLM analyzes references → Rewrites SKILL.md
+   - Platform-specific models (Sonnet 4, Gemini 2.0, GPT-4o)
+
+4. **Package Phase** (`package_skill.py` → adaptor)
+   - Platform adaptor packages in appropriate format
+   - Output: `.zip` or `.tar.gz`
+
+5. **Upload Phase** (optional, `upload_skill.py` → adaptor)
+   - Upload via platform API
+
+### File Structure (src/ layout)
+
+```
+src/skill_seekers/
+├── cli/                        # CLI tools
+│   ├── main.py                 # Git-style CLI dispatcher
+│   ├── doc_scraper.py          # Main scraper (~790 lines)
+│   ├── github_scraper.py       # GitHub repo analysis
+│   ├── pdf_scraper.py          # PDF extraction
+│   ├── unified_scraper.py      # Multi-source scraping
+│   ├── enhance_skill_local.py  # AI enhancement (local)
+│   ├── package_skill.py        # Skill packager
+│   ├── upload_skill.py         # Upload to platforms
+│   ├── install_skill.py        # Complete workflow automation
+│   ├── install_agent.py        # Install to AI agent directories
+│   └── adaptors/               # Platform adaptor architecture
+│       ├── __init__.py
+│       ├── base_adaptor.py
+│       ├── claude_adaptor.py
+│       ├── gemini_adaptor.py
+│       ├── openai_adaptor.py
+│       └── markdown_adaptor.py
+└── mcp/                        # MCP server integration
+    ├── server.py               # FastMCP server (stdio + HTTP)
+    └── tools/                  # 18 MCP tool implementations
+```
+
+## 🛠️ Development Commands
+
+### Setup
+
 ```bash
-# Clone the repository
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # macOS/Linux (Windows: venv\Scripts\activate)
-
-# Install in editable mode
+# Install in editable mode (required before tests due to src/ layout)
 pip install -e .
 
-# Or install dependencies manually
-pip install -r requirements.txt
+# Install with all platform dependencies
+pip install -e ".[all-llms]"
+
+# Install specific platforms
+pip install -e ".[gemini]"   # Google Gemini
+pip install -e ".[openai]"   # OpenAI ChatGPT
 ```
 
-**Why use a virtual environment?**
-- Keeps dependencies isolated from system Python
-- Prevents package version conflicts
-- Standard Python development practice
-- Required for running tests with pytest
+### Running Tests
 
-**Optional (for API-based enhancement):**
-```bash
-pip install anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-```
-
-## Core Commands
-
-### Quick Start - Use a Preset
+**CRITICAL: Never skip tests** - User requires all tests to pass before commits.
 
 ```bash
-# Single-source scraping (documentation only)
-skill-seekers scrape --config configs/godot.json
-skill-seekers scrape --config configs/react.json
-skill-seekers scrape --config configs/vue.json
-skill-seekers scrape --config configs/django.json
-skill-seekers scrape --config configs/laravel.json
-skill-seekers scrape --config configs/fastapi.json
+# All tests (must run pip install -e . first!)
+pytest tests/ -v
+
+# Specific test file
+pytest tests/test_scraper_features.py -v
+
+# Multi-platform tests
+pytest tests/test_install_multiplatform.py -v
+
+# With coverage
+pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html
+
+# Single test
+pytest tests/test_scraper_features.py::test_detect_language -v
+
+# MCP server tests
+pytest tests/test_mcp_fastmcp.py -v
 ```
 
-### Unified Multi-Source Scraping (**NEW - v2.0.0**)
+**Test Architecture:**
+- 46 test files covering all features
+- CI Matrix: Ubuntu + macOS, Python 3.10-3.13
+- 700+ tests passing
+- Must run `pip install -e .` before tests (src/ layout requirement)
+
+### Building & Publishing
 
 ```bash
-# Combine documentation + GitHub + PDF in one skill
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
-skill-seekers unified --config configs/fastapi_unified.json
-skill-seekers unified --config configs/godot_unified.json
+# Build package (using uv - recommended)
+uv build
 
-# Override merge mode
-skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
+# Or using build
+python -m build
 
-# Result: One comprehensive skill with conflict detection
+# Publish to PyPI
+uv publish
+
+# Or using twine
+python -m twine upload dist/*
 ```
 
-**What makes it special:**
-- ✅ Detects discrepancies between documentation and code
-- ✅ Shows both versions side-by-side with ⚠️ warnings
-- ✅ Identifies outdated docs and undocumented features
-- ✅ Single source of truth showing intent (docs) AND reality (code)
-
-**See full guide:** [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)
-
-### First-Time User Workflow (Recommended)
+### Testing CLI Commands
 
 ```bash
-# 1. Install from PyPI (one-time, easiest!)
-pip install skill-seekers
+# Test scraping (dry run)
+skill-seekers scrape --config configs/react.json --dry-run
 
-# 2. Estimate page count BEFORE scraping (fast, no data download)
-skill-seekers estimate configs/godot.json
-# Time: ~1-2 minutes, shows estimated total pages and recommended max_pages
+# Test multi-platform packaging
+skill-seekers package output/react/ --target gemini --dry-run
 
-# 3. Scrape with local enhancement (uses Claude Code Max, no API key)
-skill-seekers scrape --config configs/godot.json --enhance-local
-# Time: 20-40 minutes scraping + 60 seconds enhancement
+# Test MCP server (stdio mode)
+python -m skill_seekers.mcp.server
 
-# 4. Package the skill
-skill-seekers package output/godot/
-
-# Result: godot.zip ready to upload to Claude
+# Test MCP server (HTTP mode)
+python -m skill_seekers.mcp.server --transport http --port 8765
 ```
 
-### **NEW!** One-Command Install Workflow (v2.1.1)
+## 🔧 Key Implementation Details
 
-The fastest way to install a skill - complete automation from config to uploaded skill:
+### CLI Architecture (Git-style)
 
-```bash
-# Install React skill from official configs (auto-uploads to Claude)
-skill-seekers install --config react
-# Time: 20-45 minutes total (scraping 20-40 min + enhancement 60 sec + upload 5 sec)
+**Entry point:** `src/skill_seekers/cli/main.py`
 
-# Install from local config file
-skill-seekers install --config configs/custom.json
+The unified CLI modifies `sys.argv` and calls existing `main()` functions to maintain backward compatibility:
 
-# Install without uploading (package only)
-skill-seekers install --config django --no-upload
-
-# Unlimited scraping (no page limits - WARNING: can take hours)
-skill-seekers install --config godot --unlimited
-
-# Preview workflow without executing
-skill-seekers install --config react --dry-run
-
-# Custom output directory
-skill-seekers install --config vue --destination /tmp/skills
+```python
+# Example: skill-seekers scrape --config react.json
+# Transforms to: doc_scraper.main() with modified sys.argv
 ```
 
-**What it does automatically:**
-1. ✅ Fetches config from API (if config name provided)
-2. ✅ Scrapes documentation
-3. ✅ **AI Enhancement (MANDATORY)** - 30-60 sec, quality boost from 3/10 → 9/10
-4. ✅ Packages skill to .zip
-5. ✅ Uploads to Claude (if ANTHROPIC_API_KEY set)
+**Subcommands:** scrape, github, pdf, unified, enhance, package, upload, estimate, install
 
-**Why use this:**
-- **Zero friction** - One command instead of 5 separate steps
-- **Quality guaranteed** - Enhancement is mandatory, ensures professional output
-- **Complete automation** - From config name to uploaded skill
-- **Time savings** - Fully automated workflow
+### Platform Adaptor Usage
 
-**Phases executed:**
-```
-📥 PHASE 1: Fetch Config (if config name provided)
-📖 PHASE 2: Scrape Documentation
-✨ PHASE 3: AI Enhancement (MANDATORY - no skip option)
-📦 PHASE 4: Package Skill
-☁️  PHASE 5: Upload to Claude (optional)
-```
+```python
+from skill_seekers.cli.adaptors import get_adaptor
 
-### Interactive Mode
+# Get platform-specific adaptor
+adaptor = get_adaptor('gemini')  # or 'claude', 'openai', 'markdown'
 
-```bash
-# Step-by-step configuration wizard
-skill-seekers scrape --interactive
+# Package skill
+adaptor.package(skill_dir='output/react/', output_path='output/')
+
+# Upload to platform
+adaptor.upload(
+    package_path='output/react-gemini.tar.gz',
+    api_key=os.getenv('GOOGLE_API_KEY')
+)
+
+# AI enhancement
+adaptor.enhance(skill_dir='output/react/', mode='api')
 ```
 
-### Quick Mode (Minimal Config)
+### Smart Categorization Algorithm
 
-```bash
-# Create skill from any documentation URL
-skill-seekers scrape --name react --url https://react.dev/ --description "React framework for UIs"
-```
+Located in `doc_scraper.py:smart_categorize()`:
+- Scores pages against category keywords
+- 3 points for URL match, 2 for title, 1 for content
+- Threshold of 2+ for categorization
+- Auto-infers categories from URL segments if none provided
+- Falls back to "other" category
 
-### Skip Scraping (Use Cached Data)
+### Language Detection
 
-```bash
-# Fast rebuild using previously scraped data
-skill-seekers scrape --config configs/godot.json --skip-scrape
-# Time: 1-3 minutes (instant rebuild)
-```
-
-### Async Mode (2-3x Faster Scraping)
-
-```bash
-# Enable async mode with 8 workers for best performance
-skill-seekers scrape --config configs/react.json --async --workers 8
-
-# Quick mode with async
-skill-seekers scrape --name react --url https://react.dev/ --async --workers 8
-
-# Dry run with async to test
-skill-seekers scrape --config configs/godot.json --async --workers 4 --dry-run
-```
-
-**Recommended Settings:**
-- Small docs (~100-500 pages): `--async --workers 4`
-- Medium docs (~500-2000 pages): `--async --workers 8`
-- Large docs (2000+ pages): `--async --workers 8 --no-rate-limit`
-
-**Performance:**
-- Sync: ~18 pages/sec, 120 MB memory
-- Async: ~55 pages/sec, 40 MB memory (3x faster!)
-
-**See full guide:** [ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
-
-### Enhancement Options
-
-**LOCAL Enhancement (Recommended - No API Key Required):**
-```bash
-# During scraping
-skill-seekers scrape --config configs/react.json --enhance-local
-
-# Standalone after scraping
-skill-seekers enhance output/react/
-```
-
-**API Enhancement (Alternative - Requires API Key):**
-```bash
-# During scraping
-skill-seekers scrape --config configs/react.json --enhance
-
-# Standalone after scraping
-skill-seekers-enhance output/react/
-skill-seekers-enhance output/react/ --api-key sk-ant-...
-```
-
-### Package and Upload the Skill
-
-```bash
-# Package skill (opens folder, shows upload instructions)
-skill-seekers package output/godot/
-# Result: output/godot.zip
-
-# Package and auto-upload (requires ANTHROPIC_API_KEY)
-export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers package output/godot/ --upload
-
-# Upload existing .zip
-skill-seekers upload output/godot.zip
-
-# Package without opening folder
-skill-seekers package output/godot/ --no-open
-```
-
-### Install to AI Agents
-
-```bash
-# Single agent installation
-skill-seekers install-agent output/godot/ --agent cursor
-
-# Install to all agents
-skill-seekers install-agent output/godot/ --agent all
-
-# Force overwrite
-skill-seekers install-agent output/godot/ --agent claude --force
-
-# Dry run (preview only)
-skill-seekers install-agent output/godot/ --agent cursor --dry-run
-```
-
-**Supported agents:** claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, all
-
-**Installation paths:**
-- Global agents (claude, amp, goose, etc.): Install to `~/.{agent}/skills/`
-- Project agents (cursor, vscode): Install to `.{agent}/skills/` in current directory
-
-### Force Re-scrape
-
-```bash
-# Delete cached data and re-scrape from scratch
-rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
-```
-
-### Estimate Page Count (Before Scraping)
-
-```bash
-# Quick estimation - discover up to 100 pages
-skill-seekers estimate configs/react.json --max-discovery 100
-# Time: ~30-60 seconds
-
-# Full estimation - discover up to 1000 pages (default)
-skill-seekers estimate configs/godot.json
-# Time: ~1-2 minutes
-
-# Deep estimation - discover up to 2000 pages
-skill-seekers estimate configs/vue.json --max-discovery 2000
-# Time: ~3-5 minutes
-
-# What it shows:
-# - Estimated total pages
-# - Recommended max_pages value
-# - Estimated scraping time
-# - Discovery rate (pages/sec)
-```
-
-**Why use estimation:**
-- Validates config URL patterns before full scrape
-- Helps set optimal `max_pages` value
-- Estimates total scraping time
-- Fast (only HEAD requests + minimal parsing)
-- No data downloaded or stored
-
-## Repository Architecture
-
-### File Structure (v2.0.0 - Modern Python Packaging)
-
-```
-Skill_Seekers/
-├── pyproject.toml              # Modern Python package configuration (PEP 621)
-├── src/                        # Source code (src/ layout best practice)
-│   └── skill_seekers/
-│       ├── __init__.py
-│       ├── cli/                # CLI tools (entry points)
-│       │   ├── doc_scraper.py      # Main scraper (~790 lines)
-│       │   ├── estimate_pages.py   # Page count estimator
-│       │   ├── enhance_skill.py    # AI enhancement (API-based)
-│       │   ├── package_skill.py    # Skill packager
-│       │   ├── github_scraper.py   # GitHub scraper
-│       │   ├── pdf_scraper.py      # PDF scraper
-│       │   ├── unified_scraper.py  # Unified multi-source scraper
-│       │   ├── merge_sources.py    # Source merger
-│       │   └── conflict_detector.py # Conflict detection
-│       └── mcp/                # MCP server integration
-│           └── server.py
-├── tests/                      # Test suite (391 tests passing)
-│   ├── test_scraper_features.py
-│   ├── test_config_validation.py
-│   ├── test_integration.py
-│   ├── test_mcp_server.py
-│   ├── test_unified.py         # Unified scraping tests (18 tests)
-│   ├── test_unified_mcp_integration.py  # (4 tests)
-│   └── ...
-├── configs/                    # Preset configurations (24 configs)
-│   ├── godot.json
-│   ├── react.json
-│   ├── django_unified.json     # Multi-source configs
-│   └── ...
-├── docs/                       # Documentation
-│   ├── CLAUDE.md               # This file
-│   ├── ENHANCEMENT.md          # Enhancement guide
-│   ├── UPLOAD_GUIDE.md         # Upload instructions
-│   └── UNIFIED_SCRAPING.md     # Unified scraping guide
-├── README.md                   # User documentation
-├── CHANGELOG.md                # Release history
-├── FUTURE_RELEASES.md          # Roadmap
-└── output/                     # Generated output (git-ignored)
-    ├── {name}_data/            # Scraped raw data (cached)
-    │   ├── pages/*.json        # Individual page data
-    │   └── summary.json        # Scraping summary
-    └── {name}/                 # Built skill directory
-        ├── SKILL.md            # Main skill file
-        ├── SKILL.md.backup     # Backup (if enhanced)
-        ├── references/         # Categorized documentation
-        │   ├── index.md
-        │   ├── getting_started.md
-        │   ├── api.md
-        │   └── ...
-        ├── scripts/            # Empty (user scripts)
-        └── assets/             # Empty (user assets)
-```
-
-**Key Changes in v2.0.0:**
-- **src/ layout**: Modern Python packaging structure
-- **pyproject.toml**: PEP 621 compliant configuration
-- **Entry points**: `skill-seekers` CLI with subcommands
-- **Published to PyPI**: `pip install skill-seekers`
-
-### Data Flow
-
-1. **Scrape Phase** (`scrape_all()` in src/skill_seekers/cli/doc_scraper.py):
-   - Input: Config JSON (name, base_url, selectors, url_patterns, categories)
-   - Process: BFS traversal from base_url, respecting include/exclude patterns
-   - Output: `output/{name}_data/pages/*.json` + `summary.json`
-
-2. **Build Phase** (`build_skill()` in src/skill_seekers/cli/doc_scraper.py):
-   - Input: Scraped JSON data from `output/{name}_data/`
-   - Process: Load pages → Smart categorize → Extract patterns → Generate references
-   - Output: `output/{name}/SKILL.md` + `output/{name}/references/*.md`
-
-3. **Enhancement Phase** (optional via enhance_skill.py or enhance_skill_local.py):
-   - Input: Built skill directory with references
-   - Process: Claude analyzes references and rewrites SKILL.md
-   - Output: Enhanced SKILL.md with real examples and guidance
-
-4. **Package Phase** (via package_skill.py):
-   - Input: Skill directory
-   - Process: Zip all files (excluding .backup)
-   - Output: `{name}.zip`
-
-5. **Upload Phase** (optional via upload_skill.py):
-   - Input: Skill .zip file
-   - Process: Upload to Claude AI via API
-   - Output: Skill available in Claude
+Located in `doc_scraper.py:detect_language()`:
+1. CSS class attributes (`language-*`, `lang-*`)
+2. Heuristics (keywords like `def`, `const`, `func`)
 
 ### Configuration File Structure
 
-Config files (`configs/*.json`) define scraping behavior:
+Configs (`configs/*.json`) define scraping behavior:
 
 ```json
 {
-  "name": "godot",
+  "name": "framework-name",
   "description": "When to use this skill",
-  "base_url": "https://docs.godotengine.org/en/stable/",
+  "base_url": "https://docs.example.com/",
   "selectors": {
-    "main_content": "div[role='main']",
-    "title": "title",
-    "code_blocks": "pre"
+    "main_content": "article",  // CSS selector
+    "title": "h1",
+    "code_blocks": "pre code"
   },
   "url_patterns": {
-    "include": [],
-    "exclude": ["/search.html", "/_static/"]
+    "include": ["/docs"],
+    "exclude": ["/blog"]
   },
   "categories": {
-    "getting_started": ["introduction", "getting_started"],
-    "scripting": ["scripting", "gdscript"],
-    "api": ["api", "reference", "class"]
+    "getting_started": ["intro", "quickstart"],
+    "api": ["api", "reference"]
   },
   "rate_limit": 0.5,
   "max_pages": 500
 }
 ```
 
-**Config Parameters:**
-- `name`: Skill identifier (output directory name)
-- `description`: When Claude should use this skill
-- `base_url`: Starting URL for scraping
-- `selectors.main_content`: CSS selector for main content (common: `article`, `main`, `div[role="main"]`)
-- `selectors.title`: CSS selector for page title
-- `selectors.code_blocks`: CSS selector for code samples
-- `url_patterns.include`: Only scrape URLs containing these patterns
-- `url_patterns.exclude`: Skip URLs containing these patterns
-- `categories`: Keyword mapping for categorization
-- `rate_limit`: Delay between requests (seconds)
-- `max_pages`: Maximum pages to scrape
-- `skip_llms_txt`: Skip llms.txt detection, force HTML scraping (default: false)
-- `exclude_dirs_additional`: Add custom directories to default exclusions (for local repo analysis)
-- `exclude_dirs`: Replace default directory exclusions entirely (advanced, for local repo analysis)
+## 🧪 Testing Guidelines
 
-## Key Features & Implementation
+### Test Coverage Requirements
 
-### Auto-Detect Existing Data
-Tool checks for `output/{name}_data/` and prompts to reuse, avoiding re-scraping (check_existing_data() in doc_scraper.py:653-660).
+- Core features: 100% coverage required
+- Platform adaptors: Each platform has dedicated tests
+- MCP tools: All 18 tools must be tested
+- Integration tests: End-to-end workflows
 
-### Configurable Directory Exclusions (Local Repository Analysis)
+### Key Test Files
 
-When using `local_repo_path` for unlimited local repository analysis, you can customize which directories to exclude from analysis.
+- `test_scraper_features.py` - Core scraping functionality
+- `test_mcp_server.py` - MCP integration (18 tools)
+- `test_mcp_fastmcp.py` - FastMCP framework
+- `test_unified.py` - Multi-source scraping
+- `test_github_scraper.py` - GitHub analysis
+- `test_pdf_scraper.py` - PDF extraction
+- `test_install_multiplatform.py` - Multi-platform packaging
+- `test_integration.py` - End-to-end workflows
+- `test_install_skill.py` - One-command install
+- `test_install_agent.py` - AI agent installation
 
-**Smart Defaults:**
-Automatically excludes common directories: `venv`, `node_modules`, `__pycache__`, `.git`, `build`, `dist`, `.pytest_cache`, `htmlcov`, `.tox`, `.mypy_cache`, etc.
-
-**Extend Mode** (`exclude_dirs_additional`): Add custom exclusions to defaults
-```json
-{
-  "sources": [{
-    "type": "github",
-    "local_repo_path": "/path/to/repo",
-    "exclude_dirs_additional": ["proprietary", "legacy", "third_party"]
-  }]
-}
-```
-
-**Replace Mode** (`exclude_dirs`): Override defaults entirely (advanced)
-```json
-{
-  "sources": [{
-    "type": "github",
-    "local_repo_path": "/path/to/repo",
-    "exclude_dirs": ["node_modules", ".git", "custom_vendor"]
-  }]
-}
-```
-
-**Use Cases:**
-- Monorepos with custom directory structures
-- Enterprise projects with non-standard naming
-- Including unusual directories (e.g., analyzing venv code)
-- Minimal exclusions for small/simple projects
-
-See: `should_exclude_dir()` in github_scraper.py:304-306
-
-### Language Detection
-Detects code languages from:
-1. CSS class attributes (`language-*`, `lang-*`)
-2. Heuristics (keywords like `def`, `const`, `func`, etc.)
-
-See: `detect_language()` in doc_scraper.py:135-165
-
-### Pattern Extraction
-Looks for "Example:", "Pattern:", "Usage:" markers in content and extracts following code blocks (up to 5 per page).
-
-See: `extract_patterns()` in doc_scraper.py:167-183
-
-### Smart Categorization
-- Scores pages against category keywords (3 points for URL match, 2 for title, 1 for content)
-- Threshold of 2+ for categorization
-- Auto-infers categories from URL segments if none provided
-- Falls back to "other" category
-
-See: `smart_categorize()` and `infer_categories()` in doc_scraper.py:282-351
-
-### Enhanced SKILL.md Generation
-Generated with:
-- Real code examples from documentation (language-annotated)
-- Quick reference patterns extracted from docs
-- Common pattern section
-- Category file listings
-
-See: `create_enhanced_skill_md()` in doc_scraper.py:426-542
-
-## Common Workflows
-
-### First Time (With Scraping + Enhancement)
+## 🌐 Environment Variables
 
 ```bash
-# 1. Scrape + Build + AI Enhancement (LOCAL, no API key)
-skill-seekers scrape --config configs/godot.json --enhance-local
+# Claude AI (default platform)
+export ANTHROPIC_API_KEY=sk-ant-...
 
-# 2. Wait for enhancement terminal to close (~60 seconds)
+# Google Gemini (optional)
+export GOOGLE_API_KEY=AIza...
 
-# 3. Verify quality
-cat output/godot/SKILL.md
+# OpenAI ChatGPT (optional)
+export OPENAI_API_KEY=sk-...
 
-# 4. Package
-skill-seekers package output/godot/
+# GitHub (for higher rate limits)
+export GITHUB_TOKEN=ghp_...
 
-# Result: godot.zip ready for Claude
-# Time: 20-40 minutes (scraping) + 60 seconds (enhancement)
+# Private config repositories (optional)
+export GITLAB_TOKEN=glpat-...
+export GITEA_TOKEN=...
+export BITBUCKET_TOKEN=...
 ```
 
-### Using Cached Data (Fast Iteration)
+## 📦 Package Structure (pyproject.toml)
+
+### Entry Points
+
+```toml
+[project.scripts]
+skill-seekers = "skill_seekers.cli.main:main"
+skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
+skill-seekers-github = "skill_seekers.cli.github_scraper:main"
+skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
+skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
+skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
+skill-seekers-package = "skill_seekers.cli.package_skill:main"
+skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
+skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
+skill-seekers-install = "skill_seekers.cli.install_skill:main"
+skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
+```
+
+### Optional Dependencies
+
+```toml
+[project.optional-dependencies]
+gemini = ["google-generativeai>=0.8.0"]
+openai = ["openai>=1.0.0"]
+all-llms = ["google-generativeai>=0.8.0", "openai>=1.0.0"]
+dev = ["pytest>=8.4.2", "pytest-asyncio>=0.24.0", "pytest-cov>=7.0.0"]
+```
+
+## 🚨 Critical Development Notes
+
+### Must Run Before Tests
 
 ```bash
-# 1. Use existing data + Local Enhancement
-skill-seekers scrape --config configs/godot.json --skip-scrape
-skill-seekers enhance output/godot/
+# REQUIRED: Install package before running tests
+pip install -e .
 
-# 2. Package
-skill-seekers package output/godot/
-
-# Time: 1-3 minutes (build) + 60 seconds (enhancement)
+# Why: src/ layout requires package installation
+# Without this, imports will fail
 ```
 
-### Without Enhancement (Basic)
+### Never Skip Tests
+
+Per user instructions in `~/.claude/CLAUDE.md`:
+- "never skipp any test. always make sure all test pass"
+- All 700+ tests must pass before commits
+- Run full test suite: `pytest tests/ -v`
+
+### Platform-Specific Dependencies
+
+Platform dependencies are optional:
+```bash
+# Install only what you need
+pip install skill-seekers[gemini]  # Gemini support
+pip install skill-seekers[openai]  # OpenAI support
+pip install skill-seekers[all-llms]  # All platforms
+```
+
+### Git Workflow
+
+- Main branch: `main`
+- Current branch: `development`
+- Always create feature branches from `development`
+- Clean status currently (no uncommitted changes)
+
+## 🔌 MCP Integration
+
+### MCP Server (18 Tools)
+
+**Transport modes:**
+- stdio: Claude Code, VS Code + Cline
+- HTTP: Cursor, Windsurf, IntelliJ IDEA
+
+**Core Tools (9):**
+1. `list_configs` - List preset configurations
+2. `generate_config` - Generate config from docs URL
+3. `validate_config` - Validate config structure
+4. `estimate_pages` - Estimate page count
+5. `scrape_docs` - Scrape documentation
+6. `package_skill` - Package to .zip (supports `--target`)
+7. `upload_skill` - Upload to platform (supports `--target`)
+8. `enhance_skill` - AI enhancement with platform support
+9. `install_skill` - Complete workflow automation
+
+**Extended Tools (9):**
+10. `scrape_github` - GitHub repository analysis
+11. `scrape_pdf` - PDF extraction
+12. `unified_scrape` - Multi-source scraping
+13. `merge_sources` - Merge docs + code
+14. `detect_conflicts` - Find discrepancies
+15. `split_config` - Split large configs
+16. `generate_router` - Generate router skills
+17. `add_config_source` - Register git repos
+18. `fetch_config` - Fetch configs from git
+
+### Starting MCP Server
 
 ```bash
-# 1. Scrape + Build (no enhancement)
-skill-seekers scrape --config configs/godot.json
+# stdio mode (Claude Code, VS Code + Cline)
+python -m skill_seekers.mcp.server
 
-# 2. Package
-skill-seekers package output/godot/
-
-# Note: SKILL.md will be basic template - enhancement recommended
-# Time: 20-40 minutes
+# HTTP mode (Cursor, Windsurf, IntelliJ)
+python -m skill_seekers.mcp.server --transport http --port 8765
 ```
 
-### Creating a New Framework Config
+## 📋 Common Workflows
 
-**Option 1: Interactive**
-```bash
-skill-seekers scrape --interactive
-# Follow prompts, it creates the config for you
-```
+### Adding a New Platform
 
-**Option 2: Copy and Modify**
-```bash
-# Copy a preset
-cp configs/react.json configs/myframework.json
+1. Create adaptor in `src/skill_seekers/cli/adaptors/{platform}_adaptor.py`
+2. Inherit from `BaseAdaptor`
+3. Implement `package()`, `upload()`, `enhance()` methods
+4. Add to factory in `adaptors/__init__.py`
+5. Add optional dependency to `pyproject.toml`
+6. Add tests in `tests/test_install_multiplatform.py`
 
-# Edit it
-nano configs/myframework.json
+### Adding a New Feature
 
-# Test with limited pages first
-# Set "max_pages": 20 in config
+1. Implement in appropriate CLI module
+2. Add entry point to `pyproject.toml` if needed
+3. Add tests in `tests/test_{feature}.py`
+4. Run full test suite: `pytest tests/ -v`
+5. Update CHANGELOG.md
+6. Commit only when all tests pass
 
-# Use it
-skill-seekers scrape --config configs/myframework.json
-```
-
-## Testing & Verification
-
-### Finding the Right CSS Selectors
-
-Before creating a config, test selectors with BeautifulSoup:
-
-```python
-from bs4 import BeautifulSoup
-import requests
-
-url = "https://docs.example.com/page"
-soup = BeautifulSoup(requests.get(url).content, 'html.parser')
-
-# Try different selectors
-print(soup.select_one('article'))
-print(soup.select_one('main'))
-print(soup.select_one('div[role="main"]'))
-print(soup.select_one('div.content'))
-
-# Test code block selector
-print(soup.select('pre code'))
-print(soup.select('pre'))
-```
-
-### Verify Output Quality
-
-After building, verify the skill quality:
+### Debugging Test Failures
 
 ```bash
-# Check SKILL.md has real examples
-cat output/godot/SKILL.md
+# Run specific failing test with verbose output
+pytest tests/test_file.py::test_name -vv
 
-# Check category structure
-cat output/godot/references/index.md
+# Run with print statements visible
+pytest tests/test_file.py -s
 
-# List all reference files
-ls output/godot/references/
-
-# Check specific category content
-cat output/godot/references/getting_started.md
-
-# Verify code samples have language detection
-grep -A 3 "```" output/godot/references/*.md | head -20
+# Run with coverage to see what's not tested
+pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 ```
 
-### Test with Limited Pages
-
-For faster testing, edit config to limit pages:
-
-```json
-{
-  "max_pages": 20  // Test with just 20 pages
-}
-```
-
-## Troubleshooting
-
-### No Content Extracted
-**Problem:** Pages scraped but content is empty
-
-**Solution:** Check `main_content` selector in config. Try:
-- `article`
-- `main`
-- `div[role="main"]`
-- `div.content`
-
-Use the BeautifulSoup testing approach above to find the right selector.
-
-### Poor Categorization
-**Problem:** Pages not categorized well
-
-**Solution:** Edit `categories` section in config with better keywords specific to the documentation structure. Check URL patterns in scraped data:
-
-```bash
-# See what URLs were scraped
-cat output/godot_data/summary.json | grep url | head -20
-```
-
-### Data Exists But Won't Use It
-**Problem:** Tool won't reuse existing data
-
-**Solution:** Force re-scrape:
-```bash
-rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
-```
-
-### Rate Limiting Issues
-**Problem:** Getting rate limited or blocked by documentation server
-
-**Solution:** Increase `rate_limit` value in config:
-```json
-{
-  "rate_limit": 1.0  // Change from 0.5 to 1.0 seconds
-}
-```
-
-### Package Path Error
-**Problem:** doc_scraper.py shows wrong cli/package_skill.py path
-
-**Expected output:**
-```bash
-skill-seekers package output/godot/
-```
-
-**Not:**
-```bash
-python3 /mnt/skills/examples/skill-creator/scripts/cli/package_skill.py output/godot/
-```
-
-The correct command uses the local `cli/package_skill.py` in the repository root.
-
-## Key Code Locations (v2.0.0)
+## 📚 Key Code Locations
 
 **Documentation Scraper** (`src/skill_seekers/cli/doc_scraper.py`):
-- **URL validation**: `is_valid_url()`
-- **Content extraction**: `extract_content()`
-- **Language detection**: `detect_language()`
-- **Pattern extraction**: `extract_patterns()`
-- **Smart categorization**: `smart_categorize()`
-- **Category inference**: `infer_categories()`
-- **Quick reference generation**: `generate_quick_reference()`
-- **SKILL.md generation**: `create_enhanced_skill_md()`
-- **Scraping loop**: `scrape_all()`
-- **Main workflow**: `main()`
+- `is_valid_url()` - URL validation
+- `extract_content()` - Content extraction
+- `detect_language()` - Code language detection
+- `extract_patterns()` - Pattern extraction
+- `smart_categorize()` - Smart categorization
+- `infer_categories()` - Category inference
+- `generate_quick_reference()` - Quick reference generation
+- `create_enhanced_skill_md()` - SKILL.md generation
+- `scrape_all()` - Main scraping loop
+- `main()` - Entry point
 
-**Other Key Files**:
-- **GitHub scraper**: `src/skill_seekers/cli/github_scraper.py`
-- **PDF scraper**: `src/skill_seekers/cli/pdf_scraper.py`
-- **Unified scraper**: `src/skill_seekers/cli/unified_scraper.py`
-- **Conflict detection**: `src/skill_seekers/cli/conflict_detector.py`
-- **Source merger**: `src/skill_seekers/cli/merge_sources.py`
-- **Package tool**: `src/skill_seekers/cli/package_skill.py`
-- **Upload tool**: `src/skill_seekers/cli/upload_skill.py`
-- **MCP server**: `src/skill_seekers/mcp/server.py`
-- **Entry points**: `pyproject.toml` (project.scripts section)
+**Platform Adaptors** (`src/skill_seekers/cli/adaptors/`):
+- `__init__.py` - Factory function
+- `base_adaptor.py` - Abstract base class
+- `claude_adaptor.py` - Claude AI implementation
+- `gemini_adaptor.py` - Google Gemini implementation
+- `openai_adaptor.py` - OpenAI ChatGPT implementation
+- `markdown_adaptor.py` - Generic Markdown implementation
 
-## Enhancement Details
+**MCP Server** (`src/skill_seekers/mcp/`):
+- `server.py` - FastMCP-based server
+- `tools/` - MCP tool implementations
 
-### LOCAL Enhancement (Recommended)
-- Uses your Claude Code Max plan (no API costs)
-- Opens new terminal with Claude Code
-- Analyzes reference files automatically
-- Takes 30-60 seconds
-- Quality: 9/10 (comparable to API version)
-- Backs up original SKILL.md to SKILL.md.backup
+## 🎯 Project-Specific Best Practices
 
-### API Enhancement (Alternative)
-- Uses Anthropic API (~$0.15-$0.30 per skill)
-- Requires ANTHROPIC_API_KEY
-- Same quality as LOCAL
-- Faster (no terminal launch)
-- Better for automation/CI
+1. **Always use platform adaptors** - Never hardcode platform-specific logic
+2. **Test all platforms** - Changes must work for all 4 platforms
+3. **Maintain backward compatibility** - Legacy configs must still work
+4. **Document API changes** - Update CHANGELOG.md for every release
+5. **Keep dependencies optional** - Platform-specific deps are optional
+6. **Use src/ layout** - Proper package structure with `pip install -e .`
+7. **Run tests before commits** - Per user instructions, never skip tests
 
-**What Enhancement Does:**
-1. Reads reference documentation files
-2. Analyzes content with Claude
-3. Extracts 5-10 best code examples
-4. Creates comprehensive quick reference
-5. Adds domain-specific key concepts
-6. Provides navigation guidance for different skill levels
-7. Transforms 75-line templates into 500+ line comprehensive guides
+## 📖 Additional Documentation
 
-## Performance
+**For Users:**
+- [README.md](README.md) - Complete user documentation
+- [BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md) - Beginner guide
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
 
-| Task | Time | Notes |
-|------|------|-------|
-| Scraping | 15-45 min | First time only |
-| Building | 1-3 min | Fast! |
-| Re-building | <1 min | With --skip-scrape |
+**For Developers:**
+- [CHANGELOG.md](CHANGELOG.md) - Release history
+- [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) - 134 tasks across 22 feature groups
+- [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) - Multi-source scraping
+- [docs/MCP_SETUP.md](docs/MCP_SETUP.md) - MCP server setup
+
+## 🎓 Understanding the Codebase
+
+### Why src/ Layout?
+
+Modern Python best practice (PEP 517/518):
+- Prevents accidental imports from repo root
+- Forces proper package installation
+- Better isolation between package and tests
+- Required: `pip install -e .` before running tests
+
+### Why Platform Adaptors?
+
+Strategy pattern benefits:
+- Single codebase supports 4 platforms
+- Platform-specific optimizations (format, APIs, models)
+- Easy to add new platforms (implement BaseAdaptor)
+- Clean separation of concerns
+- Testable in isolation
+
+### Why Git-style CLI?
+
+User experience benefits:
+- Familiar to developers (like `git`)
+- Single entry point: `skill-seekers`
+- Backward compatible: individual tools still work
+- Cleaner than multiple separate commands
+- Easier to document and teach
+
+## 🔍 Performance Characteristics
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| Scraping (sync) | 15-45 min | First time, thread-based |
+| Scraping (async) | 5-15 min | 2-3x faster with `--async` |
+| Building | 1-3 min | Fast rebuild from cache |
+| Re-building | <1 min | With `--skip-scrape` |
 | Enhancement (LOCAL) | 30-60 sec | Uses Claude Code Max |
 | Enhancement (API) | 20-40 sec | Requires API key |
-| Packaging | 5-10 sec | Final zip |
+| Packaging | 5-10 sec | Final .zip creation |
 
-## Available Configs (24 Total)
+## 🎉 Recent Achievements
 
-### Single-Source Documentation Configs (14 configs)
+**v2.5.1 (Latest):**
+- Fixed critical PyPI packaging bug (missing adaptors module)
+- 100% of multi-platform features working
 
-**Web Frameworks:**
-- ✅ `react.json` - React (article selector, 7,102 chars)
-- ✅ `vue.json` - Vue.js (main selector, 1,029 chars)
-- ✅ `astro.json` - Astro (article selector, 145 chars)
-- ✅ `django.json` - Django (article selector, 6,468 chars)
-- ✅ `laravel.json` - Laravel 9.x (#main-content selector, 16,131 chars)
-- ✅ `fastapi.json` - FastAPI (article selector, 11,906 chars)
-- ✅ `hono.json` - Hono web framework **NEW!**
+**v2.5.0:**
+- Multi-platform support (4 LLM platforms)
+- Platform adaptor architecture
+- 18 MCP tools (up from 9)
+- Complete feature parity across platforms
+- 700+ tests passing
 
-**DevOps & Automation:**
-- ✅ `ansible-core.json` - Ansible Core 2.19 (div[role='main'] selector, ~32K chars)
-- ✅ `kubernetes.json` - Kubernetes (main selector, 2,100 chars)
-
-**Game Engines:**
-- ✅ `godot.json` - Godot (div[role='main'] selector, 1,688 chars)
-- ✅ `godot-large-example.json` - Godot large docs example
-
-**CSS & Utilities:**
-- ✅ `tailwind.json` - Tailwind CSS (div.prose selector, 195 chars)
-
-**Gaming:**
-- ✅ `steam-economy-complete.json` - Steam Economy (div.documentation_bbcode, 588 chars)
-
-**Development Tools:**
-- ✅ `claude-code.json` - Claude Code documentation **NEW!**
-
-### Unified Multi-Source Configs (5 configs - **NEW v2.0!**)
-- ✅ `react_unified.json` - React (docs + GitHub + code analysis)
-- ✅ `django_unified.json` - Django (docs + GitHub + code analysis)
-- ✅ `fastapi_unified.json` - FastAPI (docs + GitHub + code analysis)
-- ✅ `fastapi_unified_test.json` - FastAPI test config
-- ✅ `godot_unified.json` - Godot (docs + GitHub + code analysis)
-
-### Test/Example Configs (5 configs)
-- 📝 `godot_github.json` - GitHub-only scraping example
-- 📝 `react_github.json` - GitHub-only scraping example
-- 📝 `python-tutorial-test.json` - Python tutorial test
-- 📝 `example_pdf.json` - PDF extraction example
-- 📝 `test-manual.json` - Manual testing config
-
-**Note:** All configs verified and working! Unified configs fully tested with 22 passing tests.
-**Last verified:** November 29, 2025 (Post-v2.1.0 bug fixes)
-
-## Additional Documentation
-
-**User Guides:**
-- **[README.md](README.md)** - Complete user documentation
-- **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - Complete beginner guide
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 3 steps
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Comprehensive troubleshooting
-
-**Technical Documentation:**
-- **[docs/CLAUDE.md](docs/CLAUDE.md)** - Detailed technical architecture
-- **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
-- **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Multi-source scraping guide
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP server setup
-
-**Project Planning:**
-- **[CHANGELOG.md](CHANGELOG.md)** - Release history and v2.0.0 details **UPDATED!**
-- **[FUTURE_RELEASES.md](FUTURE_RELEASES.md)** - Roadmap for v2.1.0+  **NEW!**
-- **[FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md)** - Complete task catalog (134 tasks)
-- **[NEXT_TASKS.md](NEXT_TASKS.md)** - What to work on next
-- **[TODO.md](TODO.md)** - Current focus
-- **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
-
-## Notes for Claude Code
-
-**Project Status (v2.0.0):**
-- ✅ **Published on PyPI**: Install with `pip install skill-seekers`
-- ✅ **Modern Python Packaging**: pyproject.toml, src/ layout, entry points
-- ✅ **Unified CLI**: Single `skill-seekers` command with Git-style subcommands
-- ✅ **CI/CD Working**: All 5 test matrix jobs passing (Ubuntu + macOS, Python 3.10-3.12)
-- ✅ **Test Coverage**: 391 tests passing, 39% coverage
-- ✅ **Documentation**: Complete user and technical documentation
-
-**Architecture:**
-- **Python-based documentation scraper** with multi-source support
-- **Main scraper**: `src/skill_seekers/cli/doc_scraper.py` (~790 lines)
-- **Unified scraping**: Combines docs + GitHub + PDF with conflict detection
-- **Modern packaging**: PEP 621 compliant with proper dependency management
-- **MCP Integration**: 9 tools for Claude Code Max integration
-
-**CLI Architecture (Git-style subcommands):**
-- **Entry point**: `src/skill_seekers/cli/main.py` - Unified CLI dispatcher
-- **Subcommands**: scrape, github, pdf, unified, enhance, package, upload, estimate
-- **Design pattern**: Main CLI routes to individual tool entry points (delegates to existing main() functions)
-- **Backward compatibility**: Individual tools (`skill-seekers-scrape`, etc.) still work directly
-- **Key insight**: The unified CLI modifies sys.argv and calls existing main() functions to maintain compatibility
-
-**Development Workflow:**
-1. **Install**: `pip install -e .` (editable mode for development)
-2. **Run tests**:
-   - All tests: `pytest tests/ -v`
-   - Specific test file: `pytest tests/test_scraper_features.py -v`
-   - With coverage: `pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html`
-   - Single test: `pytest tests/test_scraper_features.py::test_detect_language -v`
-3. **Build package**: `uv build` or `python -m build`
-4. **Publish**: `uv publish` (PyPI)
-5. **Run single config test**: `skill-seekers scrape --config configs/react.json --dry-run`
-
-**Test Architecture:**
-- **Test files**: 27 test files covering all features (see `tests/` directory)
-- **CI Matrix**: Tests run on Ubuntu + macOS with Python 3.10, 3.11, 3.12
-- **Coverage**: 39% code coverage (427 tests passing)
-- **Key test categories**:
-  - `test_scraper_features.py` - Core scraping functionality
-  - `test_mcp_server.py` - MCP integration (9 tools)
-  - `test_unified.py` - Multi-source scraping (18 tests)
-  - `test_github_scraper.py` - GitHub repository analysis
-  - `test_pdf_scraper.py` - PDF extraction
-  - `test_integration.py` - End-to-end workflows
-- **IMPORTANT**: Must run `pip install -e .` before tests (src/ layout requirement)
-
-**Key Points:**
-- Output is cached and reusable in `output/` (git-ignored)
-- Enhancement is optional but highly recommended
-- All 24 configs are working and tested
-- CI workflow requires `pip install -e .` to install package before running tests
-- Never skip tests - all tests must pass before commits (per user instructions)
+**v2.0.0:**
+- Unified multi-source scraping
+- Conflict detection between docs and code
+- 5 unified configs (React, Django, FastAPI, Godot)
+- 22 unified tests passing

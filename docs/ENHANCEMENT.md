@@ -243,8 +243,86 @@ ADDITIONAL REQUIREMENTS:
 """
 ```
 
+## Multi-Platform Enhancement
+
+Skill Seekers supports enhancement for Claude AI, Google Gemini, and OpenAI ChatGPT using platform-specific AI models.
+
+### Claude AI (Default)
+
+**Local Mode (Recommended - No API Key):**
+```bash
+# Uses Claude Code Max (no API costs)
+skill-seekers enhance output/react/
+```
+
+**API Mode:**
+```bash
+# Requires ANTHROPIC_API_KEY
+export ANTHROPIC_API_KEY=sk-ant-...
+skill-seekers enhance output/react/ --mode api
+```
+
+**Model:** Claude Sonnet 4
+**Format:** Maintains YAML frontmatter
+
+---
+
+### Google Gemini
+
+```bash
+# Install Gemini support
+pip install skill-seekers[gemini]
+
+# Set API key
+export GOOGLE_API_KEY=AIzaSy...
+
+# Enhance with Gemini
+skill-seekers enhance output/react/ --target gemini --mode api
+```
+
+**Model:** Gemini 2.0 Flash
+**Format:** Converts to plain markdown (no frontmatter)
+**Output:** Updates `system_instructions.md` for Gemini compatibility
+
+---
+
+### OpenAI ChatGPT
+
+```bash
+# Install OpenAI support
+pip install skill-seekers[openai]
+
+# Set API key
+export OPENAI_API_KEY=sk-proj-...
+
+# Enhance with GPT-4o
+skill-seekers enhance output/react/ --target openai --mode api
+```
+
+**Model:** GPT-4o
+**Format:** Converts to plain text assistant instructions
+**Output:** Updates `assistant_instructions.txt` for OpenAI Assistants API
+
+---
+
+### Platform Comparison
+
+| Feature | Claude | Gemini | OpenAI |
+|---------|--------|--------|--------|
+| **Local Mode** | ✅ Yes (Claude Code Max) | ❌ No | ❌ No |
+| **API Mode** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Model** | Sonnet 4 | Gemini 2.0 Flash | GPT-4o |
+| **Format** | YAML + MD | Plain MD | Plain Text |
+| **Cost (API)** | ~$0.15-0.30 | ~$0.10-0.25 | ~$0.20-0.35 |
+
+**Note:** Local mode (Claude Code Max) is FREE and only available for Claude AI platform.
+
+---
+
 ## See Also
 
 - [README.md](../README.md) - Main documentation
+- [FEATURE_MATRIX.md](FEATURE_MATRIX.md) - Complete platform feature matrix
+- [MULTI_LLM_SUPPORT.md](MULTI_LLM_SUPPORT.md) - Multi-platform guide
 - [CLAUDE.md](CLAUDE.md) - Architecture guide
 - [doc_scraper.py](../doc_scraper.py) - Main scraping tool

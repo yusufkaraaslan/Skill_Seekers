@@ -68,6 +68,73 @@ def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     )
 
 
+def infer_description_from_docs(base_url: str, first_page_content: Optional[str] = None, name: str = '') -> str:
+    """
+    Infer skill description from documentation metadata or first page content.
+
+    Tries multiple strategies:
+    1. Extract meta description tag from first page
+    2. Extract first meaningful paragraph from content
+    3. Fall back to improved template
+
+    Args:
+        base_url: Documentation base URL
+        first_page_content: HTML content of first page (optional)
+        name: Skill name
+
+    Returns:
+        Description string suitable for "Use when..." format
+    """
+    # If we have first page content, try to extract description
+    if first_page_content:
+        try:
+            soup = BeautifulSoup(first_page_content, 'html.parser')
+
+            # Strategy 1: Try meta description tag
+            meta_desc = soup.find('meta', {'name': 'description'})
+            if meta_desc and meta_desc.get('content'):
+                desc = meta_desc['content'].strip()
+                if len(desc) > 20:  # Meaningful length
+                    # Clean and format
+                    if len(desc) > 150:
+                        desc = desc[:147] + '...'
+                    return f'Use when {desc.lower()}'
+
+            # Strategy 2: Try OpenGraph description
+            og_desc = soup.find('meta', {'property': 'og:description'})
+            if og_desc and og_desc.get('content'):
+                desc = og_desc['content'].strip()
+                if len(desc) > 20:
+                    if len(desc) > 150:
+                        desc = desc[:147] + '...'
+                    return f'Use when {desc.lower()}'
+
+            # Strategy 3: Extract first meaningful paragraph from main content
+            # Look for common documentation main content areas
+            main_content = None
+            for selector in ['article', 'main', 'div[role="main"]', 'div.content', 'div.doc-content']:
+                main_content = soup.select_one(selector)
+                if main_content:
+                    break
+
+            if main_content:
+                # Find first paragraph
+                for p in main_content.find_all('p', limit=5):
+                    text = p.get_text().strip()
+                    # Skip empty, very short, or navigation-like paragraphs
+                    if len(text) > 30 and not any(skip in text.lower() for skip in ['table of contents', 'on this page', 'navigation']):
+                        # Clean and format
+                        if len(text) > 150:
+                            text = text[:147] + '...'
+                        return f'Use when working with {text.lower()}'
+
+        except Exception as e:
+            logger.debug(f"Could not infer description from page content: {e}")
+
+    # Improved fallback template
+    return f'Use when working with {name}' if name else f'Use when working with documentation at {urlparse(base_url).netloc}'
+
+
 class DocToSkillConverter:
     def __init__(self, config: Dict[str, Any], dry_run: bool = False, resume: bool = False) -> None:
         self.config = config
@@ -170,7 +237,7 @@ class DocToSkillConverter:
         }
 
         try:
-            with open(self.checkpoint_file, 'w') as f:
+            with open(self.checkpoint_file, 'w', encoding='utf-8') as f:
                 json.dump(checkpoint_data, f, indent=2)
             logger.info("  💾 Checkpoint saved (%d pages)", self.pages_scraped)
         except Exception as e:
@@ -183,7 +250,7 @@ class DocToSkillConverter:
             return
 
         try:
-            with open(self.checkpoint_file, 'r') as f:
+            with open(self.checkpoint_file, 'r', encoding='utf-8') as f:
                 checkpoint_data = json.load(f)
 
             self.visited_urls = set(checkpoint_data["visited_urls"])
@@ -999,7 +1066,17 @@ class DocToSkillConverter:
     
     def create_enhanced_skill_md(self, categories: Dict[str, List[Dict[str, Any]]], quick_ref: List[Dict[str, str]]) -> None:
         """Create SKILL.md with actual examples (IMPROVED)"""
-        description = self.config.get('description', f'Comprehensive assistance with {self.name}')
+        # Try to infer description if not in config
+        if 'description' not in self.config:
+            # Get first page HTML content to infer description
+            first_page_html = None
+            for pages in categories.values():
+                if pages:
+                    first_page_html = pages[0].get('raw_html', '')
+                    break
+            description = infer_description_from_docs(self.base_url, first_page_html, self.name)
+        else:
+            description = self.config['description']
         
         # Extract actual code examples from docs
         example_codes = []
@@ -1024,7 +1101,7 @@ description: {description}
 
 # {self.name.title()} Skill
 
-Comprehensive assistance with {self.name} development, generated from official documentation.
+{description.capitalize()}, generated from official documentation.
 
 ## When to Use This Skill
 
@@ -1307,7 +1384,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         'react'
     """
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
         logger.error("❌ Error: Invalid JSON in config file: %s", config_path)
@@ -1413,7 +1490,7 @@ def check_existing_data(name: str) -> Tuple[bool, int]:
     """
     data_dir = f"output/{name}_data"
     if os.path.exists(data_dir) and os.path.exists(f"{data_dir}/summary.json"):
-        with open(f"{data_dir}/summary.json", 'r') as f:
+        with open(f"{data_dir}/summary.json", 'r', encoding='utf-8') as f:
             summary = json.load(f)
         return True, summary.get('total_pages', 0)
     return False, 0
@@ -1511,7 +1588,7 @@ def get_configuration(args: argparse.Namespace) -> Dict[str, Any]:
     else:
         config = {
             'name': args.name,
-            'description': args.description or f'Comprehensive assistance with {args.name}',
+            'description': args.description or f'Use when working with {args.name}',
             'base_url': args.url,
             'selectors': {
                 'main_content': "div[role='main']",

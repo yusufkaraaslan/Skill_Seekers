@@ -22,6 +22,41 @@ from pathlib import Path
 from .pdf_extractor_poc import PDFExtractor
 
 
+def infer_description_from_pdf(pdf_metadata: dict = None, name: str = '') -> str:
+    """
+    Infer skill description from PDF metadata or document properties.
+
+    Tries to extract meaningful description from:
+    1. PDF metadata fields (title, subject, keywords)
+    2. Falls back to improved template
+
+    Args:
+        pdf_metadata: PDF metadata dictionary with title, subject, etc.
+        name: Skill name for fallback
+
+    Returns:
+        Description string suitable for "Use when..." format
+    """
+    if pdf_metadata:
+        # Try to use subject field (often contains description)
+        if 'subject' in pdf_metadata and pdf_metadata['subject']:
+            desc = str(pdf_metadata['subject']).strip()
+            if len(desc) > 20:
+                if len(desc) > 150:
+                    desc = desc[:147] + '...'
+                return f'Use when {desc.lower()}'
+
+        # Try title field if meaningful
+        if 'title' in pdf_metadata and pdf_metadata['title']:
+            title = str(pdf_metadata['title']).strip()
+            # Skip if it's just the filename
+            if len(title) > 10 and not title.endswith('.pdf'):
+                return f'Use when working with {title.lower()}'
+
+    # Improved fallback
+    return f'Use when referencing {name} documentation' if name else 'Use when referencing this documentation'
+
+
 class PDFToSkillConverter:
     """Convert PDF documentation to Claude skill"""
 
@@ -29,7 +64,8 @@ class PDFToSkillConverter:
         self.config = config
         self.name = config['name']
         self.pdf_path = config.get('pdf_path', '')
-        self.description = config.get('description', f'Documentation skill for {self.name}')
+        # Set initial description (will be improved after extraction if metadata available)
+        self.description = config.get('description', f'Use when referencing {self.name} documentation')
 
         # Paths
         self.skill_dir = f"output/{self.name}"
@@ -363,7 +399,7 @@ def main():
         name = Path(args.from_json).stem.replace('_extracted', '')
         config = {
             'name': name,
-            'description': args.description or f'Documentation skill for {name}'
+            'description': args.description or f'Use when referencing {name} documentation'
         }
         converter = PDFToSkillConverter(config)
         converter.load_extracted_data(args.from_json)
@@ -376,7 +412,7 @@ def main():
         config = {
             'name': args.name,
             'pdf_path': args.pdf,
-            'description': args.description or f'Documentation skill for {args.name}',
+            'description': args.description or f'Use when referencing {args.name} documentation',
             'extract_options': {
                 'chunk_size': 10,
                 'min_quality': 5.0,

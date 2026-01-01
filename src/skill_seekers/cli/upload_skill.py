@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
 Automatic Skill Uploader
-Uploads a skill .zip file to Claude using the Anthropic API
+Uploads a skill package to LLM platforms (Claude, Gemini, OpenAI, etc.)
 
 Usage:
-    # Set API key (one-time)
+    # Claude (default)
     export ANTHROPIC_API_KEY=sk-ant-...
+    skill-seekers upload output/react.zip
 
-    # Upload skill
-    python3 upload_skill.py output/react.zip
-    python3 upload_skill.py output/godot.zip
+    # Gemini
+    export GOOGLE_API_KEY=AIzaSy...
+    skill-seekers upload output/react-gemini.tar.gz --target gemini
+
+    # OpenAI
+    export OPENAI_API_KEY=sk-proj-...
+    skill-seekers upload output/react-openai.zip --target openai
 """
 
 import os
@@ -21,108 +26,84 @@ from pathlib import Path
 # Import utilities
 try:
     from utils import (
-        get_api_key,
-        get_upload_url,
         print_upload_instructions,
         validate_zip_file
     )
 except ImportError:
     sys.path.insert(0, str(Path(__file__).parent))
     from utils import (
-        get_api_key,
-        get_upload_url,
         print_upload_instructions,
         validate_zip_file
     )
 
 
-def upload_skill_api(zip_path):
+def upload_skill_api(package_path, target='claude', api_key=None):
     """
-    Upload skill to Claude via Anthropic API
+    Upload skill package to LLM platform
 
     Args:
-        zip_path: Path to skill .zip file
+        package_path: Path to skill package file
+        target: Target platform ('claude', 'gemini', 'openai')
+        api_key: Optional API key (otherwise read from environment)
 
     Returns:
         tuple: (success, message)
     """
-    # Check for requests library
     try:
-        import requests
+        from skill_seekers.cli.adaptors import get_adaptor
     except ImportError:
-        return False, "requests library not installed. Run: pip install requests"
+        return False, "Adaptor system not available. Reinstall skill-seekers."
 
-    # Validate zip file
-    is_valid, error_msg = validate_zip_file(zip_path)
-    if not is_valid:
-        return False, error_msg
+    # Get platform-specific adaptor
+    try:
+        adaptor = get_adaptor(target)
+    except ValueError as e:
+        return False, str(e)
 
     # Get API key
-    api_key = get_api_key()
     if not api_key:
-        return False, "ANTHROPIC_API_KEY not set. Run: export ANTHROPIC_API_KEY=sk-ant-..."
+        api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
 
-    zip_path = Path(zip_path)
-    skill_name = zip_path.stem
+    if not api_key:
+        return False, f"{adaptor.get_env_var_name()} not set. Export your API key first."
+
+    # Validate API key format
+    if not adaptor.validate_api_key(api_key):
+        return False, f"Invalid API key format for {adaptor.PLATFORM_NAME}"
+
+    package_path = Path(package_path)
+
+    # Basic file validation
+    if not package_path.exists():
+        return False, f"File not found: {package_path}"
+
+    skill_name = package_path.stem
 
     print(f"📤 Uploading skill: {skill_name}")
-    print(f"   Source: {zip_path}")
-    print(f"   Size: {zip_path.stat().st_size:,} bytes")
+    print(f"   Target: {adaptor.PLATFORM_NAME}")
+    print(f"   Source: {package_path}")
+    print(f"   Size: {package_path.stat().st_size:,} bytes")
     print()
 
-    # Prepare API request
-    api_url = "https://api.anthropic.com/v1/skills"
-    headers = {
-        "x-api-key": api_key,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "skills-2025-10-02"
-    }
+    # Upload using adaptor
+    print(f"⏳ Uploading to {adaptor.PLATFORM_NAME}...")
 
     try:
-        # Read zip file
-        with open(zip_path, 'rb') as f:
-            zip_data = f.read()
+        result = adaptor.upload(package_path, api_key)
 
-        # Upload skill
-        print("⏳ Uploading to Anthropic API...")
-
-        files = {
-            'files[]': (zip_path.name, zip_data, 'application/zip')
-        }
-
-        response = requests.post(
-            api_url,
-            headers=headers,
-            files=files,
-            timeout=60
-        )
-
-        # Check response
-        if response.status_code == 200:
+        if result['success']:
             print()
-            print("✅ Skill uploaded successfully!")
+            print(f"✅ {result['message']}")
             print()
-            print("Your skill is now available in Claude at:")
-            print(f"   {get_upload_url()}")
+            if result['url']:
+                print("Your skill is now available at:")
+                print(f"   {result['url']}")
+            if result['skill_id']:
+                print(f"   Skill ID: {result['skill_id']}")
             print()
             return True, "Upload successful"
-
-        elif response.status_code == 401:
-            return False, "Authentication failed. Check your ANTHROPIC_API_KEY"
-
-        elif response.status_code == 400:
-            error_msg = response.json().get('error', {}).get('message', 'Unknown error')
-            return False, f"Invalid skill format: {error_msg}"
-
         else:
-            error_msg = response.json().get('error', {}).get('message', 'Unknown error')
-            return False, f"Upload failed ({response.status_code}): {error_msg}"
-
-    except requests.exceptions.Timeout:
-        return False, "Upload timed out. Try again or use manual upload"
-
-    except requests.exceptions.ConnectionError:
-        return False, "Connection error. Check your internet connection"
+            return False, result['message']
 
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
@@ -130,36 +111,55 @@ def upload_skill_api(zip_path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Upload a skill .zip file to Claude via Anthropic API",
+        description="Upload a skill package to LLM platforms",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Setup:
-  1. Get your Anthropic API key from https://console.anthropic.com/
-  2. Set the API key:
-     export ANTHROPIC_API_KEY=sk-ant-...
+  Claude:
+    export ANTHROPIC_API_KEY=sk-ant-...
+
+  Gemini:
+    export GOOGLE_API_KEY=AIzaSy...
+
+  OpenAI:
+    export OPENAI_API_KEY=sk-proj-...
 
 Examples:
-  # Upload skill
-  python3 upload_skill.py output/react.zip
+  # Upload to Claude (default)
+  skill-seekers upload output/react.zip
 
-  # Upload with explicit path
-  python3 upload_skill.py /path/to/skill.zip
+  # Upload to Gemini
+  skill-seekers upload output/react-gemini.tar.gz --target gemini
 
-Requirements:
-  - ANTHROPIC_API_KEY environment variable must be set
-  - requests library (pip install requests)
+  # Upload to OpenAI
+  skill-seekers upload output/react-openai.zip --target openai
+
+  # Upload with explicit API key
+  skill-seekers upload output/react.zip --api-key sk-ant-...
         """
     )
 
     parser.add_argument(
-        'zip_file',
-        help='Path to skill .zip file (e.g., output/react.zip)'
+        'package_file',
+        help='Path to skill package file (e.g., output/react.zip)'
+    )
+
+    parser.add_argument(
+        '--target',
+        choices=['claude', 'gemini', 'openai'],
+        default='claude',
+        help='Target LLM platform (default: claude)'
+    )
+
+    parser.add_argument(
+        '--api-key',
+        help='Platform API key (or set environment variable)'
     )
 
     args = parser.parse_args()
 
     # Upload skill
-    success, message = upload_skill_api(args.zip_file)
+    success, message = upload_skill_api(args.package_file, args.target, args.api_key)
 
     if success:
         sys.exit(0)
@@ -167,7 +167,7 @@ Requirements:
         print(f"\n❌ Upload failed: {message}")
         print()
         print("📝 Manual upload instructions:")
-        print_upload_instructions(args.zip_file)
+        print_upload_instructions(args.package_file)
         sys.exit(1)
 
 
