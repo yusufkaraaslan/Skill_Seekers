@@ -962,6 +962,100 @@ class TestSymlinkHandling(unittest.TestCase):
                 self.assertIn('Major update', scraper.extracted_data['changelog'])
 
 
+class TestGitignoreSupport(unittest.TestCase):
+    """Test .gitignore support in github_scraper (C2.1)"""
+
+    def setUp(self):
+        """Set up test environment"""
+        if not PYGITHUB_AVAILABLE:
+            self.skipTest("PyGithub not installed")
+        from skill_seekers.cli.github_scraper import GitHubScraper
+        self.GitHubScraper = GitHubScraper
+
+        self.temp_dir = tempfile.mkdtemp()
+        self.repo_path = Path(self.temp_dir)
+
+    def tearDown(self):
+        """Clean up test environment"""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_load_gitignore_exists(self):
+        """Test loading existing .gitignore file."""
+        # Create .gitignore
+        gitignore_path = self.repo_path / '.gitignore'
+        gitignore_path.write_text('*.log\ntemp/\n__pycache__/')
+
+        config = {
+            'repo': 'test/repo',
+            'local_repo_path': str(self.repo_path)
+        }
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+
+            # Should load .gitignore if pathspec available
+            if hasattr(scraper, 'gitignore_spec'):
+                # pathspec is installed
+                self.assertIsNotNone(scraper.gitignore_spec)
+            else:
+                # pathspec not installed
+                self.assertIsNone(scraper.gitignore_spec)
+
+    def test_load_gitignore_missing(self):
+        """Test behavior when no .gitignore exists."""
+        config = {
+            'repo': 'test/repo',
+            'local_repo_path': str(self.repo_path)
+        }
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+
+            # Should be None when no .gitignore found
+            self.assertIsNone(scraper.gitignore_spec)
+
+    def test_should_exclude_dir_with_gitignore(self):
+        """Test directory exclusion with .gitignore rules."""
+        # Create .gitignore
+        gitignore_path = self.repo_path / '.gitignore'
+        gitignore_path.write_text('temp/\nbuild/\n*.egg-info')
+
+        config = {
+            'repo': 'test/repo',
+            'local_repo_path': str(self.repo_path)
+        }
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+
+            # Test .gitignore exclusion (if pathspec available)
+            if scraper.gitignore_spec:
+                self.assertTrue(scraper.should_exclude_dir('temp', 'temp'))
+                self.assertTrue(scraper.should_exclude_dir('build', 'build'))
+
+                # Non-excluded dir should pass
+                self.assertFalse(scraper.should_exclude_dir('src', 'src'))
+
+    def test_should_exclude_dir_default_exclusions(self):
+        """Test that default exclusions still work."""
+        config = {
+            'repo': 'test/repo',
+            'local_repo_path': str(self.repo_path)
+        }
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+
+            # Default exclusions should still work
+            self.assertTrue(scraper.should_exclude_dir('node_modules'))
+            self.assertTrue(scraper.should_exclude_dir('venv'))
+            self.assertTrue(scraper.should_exclude_dir('__pycache__'))
+
+            # Normal directories should not be excluded
+            self.assertFalse(scraper.should_exclude_dir('src'))
+            self.assertFalse(scraper.should_exclude_dir('tests'))
+
+
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and edge cases"""
 

@@ -31,6 +31,13 @@ except ImportError:
     print("Error: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
+# Try to import pathspec for .gitignore support
+try:
+    import pathspec
+    PATHSPEC_AVAILABLE = True
+except ImportError:
+    PATHSPEC_AVAILABLE = False
+
 # Configure logging FIRST (before using logger)
 logging.basicConfig(
     level=logging.INFO,
@@ -190,6 +197,11 @@ class GitHubScraper:
                 f"(total: {len(self.excluded_dirs)})"
             )
             logger.debug(f"Additional exclusions: {sorted(additional)}")
+
+        # Load .gitignore for additional exclusions (C2.1)
+        self.gitignore_spec = None
+        if self.local_repo_path:
+            self.gitignore_spec = self._load_gitignore()
 
         # GitHub client setup (C1.1)
         token = self._get_token()
@@ -484,7 +496,45 @@ class GitHubScraper:
                 if excluded in dir_path or dir_path.startswith(excluded):
                     return True
 
+        # Check .gitignore rules if available (C2.1)
+        if self.gitignore_spec and dir_path:
+            # For directories, we need to check both with and without trailing slash
+            # as .gitignore patterns can match either way
+            dir_path_with_slash = dir_path if dir_path.endswith('/') else dir_path + '/'
+            if self.gitignore_spec.match_file(dir_path) or self.gitignore_spec.match_file(dir_path_with_slash):
+                logger.debug(f"Directory excluded by .gitignore: {dir_path}")
+                return True
+
         return False
+
+    def _load_gitignore(self) -> Optional['pathspec.PathSpec']:
+        """
+        Load .gitignore file and create pathspec matcher (C2.1).
+
+        Returns:
+            PathSpec object if .gitignore found, None otherwise
+        """
+        if not PATHSPEC_AVAILABLE:
+            logger.warning("pathspec not installed - .gitignore support disabled")
+            logger.warning("Install with: pip install pathspec")
+            return None
+
+        if not self.local_repo_path:
+            return None
+
+        gitignore_path = Path(self.local_repo_path) / '.gitignore'
+        if not gitignore_path.exists():
+            logger.debug(f"No .gitignore found in {self.local_repo_path}")
+            return None
+
+        try:
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                spec = pathspec.PathSpec.from_lines('gitwildmatch', f)
+            logger.info(f"Loaded .gitignore from {gitignore_path}")
+            return spec
+        except Exception as e:
+            logger.warning(f"Failed to load .gitignore: {e}")
+            return None
 
     def _extract_file_tree(self):
         """Extract repository file tree structure (dual-mode: GitHub API or local filesystem)."""
