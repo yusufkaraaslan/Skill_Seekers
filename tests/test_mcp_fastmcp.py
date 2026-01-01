@@ -429,6 +429,38 @@ class TestScrapingTools:
 
         assert isinstance(result, str)
 
+    async def test_scrape_codebase_basic(self, temp_dirs):
+        """Test basic codebase scraping."""
+        # Create a dummy source directory
+        src_dir = temp_dirs["output"] / "test_codebase"
+        src_dir.mkdir()
+        (src_dir / "test.py").write_text("def hello(): pass")
+
+        result = await server_fastmcp.scrape_codebase(
+            directory=str(src_dir),
+            output=str(temp_dirs["output"] / "codebase_analysis")
+        )
+
+        assert isinstance(result, str)
+
+    async def test_scrape_codebase_with_options(self, temp_dirs):
+        """Test codebase scraping with various options."""
+        # Create a dummy source directory
+        src_dir = temp_dirs["output"] / "test_codebase2"
+        src_dir.mkdir()
+        (src_dir / "main.py").write_text("class Foo: pass")
+        (src_dir / "utils.js").write_text("function bar() {}")
+
+        result = await server_fastmcp.scrape_codebase(
+            directory=str(src_dir),
+            depth="deep",
+            languages="Python,JavaScript",
+            file_patterns="*.py,*.js",
+            build_api_reference=True
+        )
+
+        assert isinstance(result, str)
+
 
 # ============================================================================
 # PACKAGING TOOLS TESTS (3 tools)

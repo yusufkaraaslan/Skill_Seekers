@@ -3,16 +3,16 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 17 tools for generating Claude AI skills from documentation.
+Provides 18 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 17 tools organized into 5 categories:
+- 18 tools organized into 5 categories:
   * Config tools (3): generate_config, list_configs, validate_config
-  * Scraping tools (4): estimate_pages, scrape_docs, scrape_github, scrape_pdf
+  * Scraping tools (5): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase
   * Packaging tools (3): package_skill, upload_skill, install_skill
   * Splitting tools (2): split_config, generate_router
   * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
@@ -81,6 +81,7 @@ try:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_codebase_impl,
         # Packaging tools
         package_skill_impl,
         upload_skill_impl,
@@ -108,6 +109,7 @@ except ImportError:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_codebase_impl,
         package_skill_impl,
         upload_skill_impl,
         enhance_skill_impl,
@@ -388,6 +390,46 @@ async def scrape_pdf(
         args["from_json"] = from_json
 
     result = await scrape_pdf_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Analyze local codebase and extract code knowledge. Walks directory tree, analyzes code files, extracts signatures, docstrings, and optionally generates API reference documentation."
+)
+async def scrape_codebase(
+    directory: str,
+    output: str = "output/codebase/",
+    depth: str = "deep",
+    languages: str = "",
+    file_patterns: str = "",
+    build_api_reference: bool = False,
+) -> str:
+    """
+    Analyze local codebase and extract code knowledge.
+
+    Args:
+        directory: Directory to analyze (required)
+        output: Output directory for results (default: output/codebase/)
+        depth: Analysis depth - surface, deep, full (default: deep)
+        languages: Comma-separated languages to analyze (e.g., "Python,JavaScript,C++")
+        file_patterns: Comma-separated file patterns (e.g., "*.py,src/**/*.js")
+        build_api_reference: Generate API reference markdown (default: false)
+
+    Returns:
+        Codebase analysis results with file paths.
+    """
+    args = {
+        "directory": directory,
+        "output": output,
+        "depth": depth,
+        "languages": languages,
+        "file_patterns": file_patterns,
+        "build_api_reference": build_api_reference,
+    }
+
+    result = await scrape_codebase_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

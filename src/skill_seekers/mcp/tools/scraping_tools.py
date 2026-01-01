@@ -6,6 +6,7 @@ This module contains all scraping-related MCP tool implementations:
 - scrape_docs_tool: Scrape documentation (legacy or unified)
 - scrape_github_tool: Scrape GitHub repositories
 - scrape_pdf_tool: Scrape PDF documentation
+- scrape_codebase_tool: Analyze local codebase and extract code knowledge
 
 Extracted from server.py for better modularity and organization.
 """
@@ -430,3 +431,70 @@ async def scrape_github_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=output)]
     else:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
+async def scrape_codebase_tool(args: dict) -> List[TextContent]:
+    """
+    Analyze local codebase and extract code knowledge.
+
+    Walks directory tree, analyzes code files, extracts signatures,
+    docstrings, and optionally generates API reference documentation.
+
+    Args:
+        args: Dictionary containing:
+            - directory (str): Directory to analyze
+            - output (str, optional): Output directory for results (default: output/codebase/)
+            - depth (str, optional): Analysis depth - surface, deep, full (default: deep)
+            - languages (str, optional): Comma-separated languages (e.g., "Python,JavaScript,C++")
+            - file_patterns (str, optional): Comma-separated file patterns (e.g., "*.py,src/**/*.js")
+            - build_api_reference (bool, optional): Generate API reference markdown (default: False)
+
+    Returns:
+        List[TextContent]: Tool execution results
+
+    Example:
+        scrape_codebase(
+            directory="/path/to/repo",
+            depth="deep",
+            build_api_reference=True
+        )
+    """
+    directory = args.get("directory")
+    if not directory:
+        return [TextContent(type="text", text="❌ Error: directory parameter is required")]
+
+    output = args.get("output", "output/codebase/")
+    depth = args.get("depth", "deep")
+    languages = args.get("languages", "")
+    file_patterns = args.get("file_patterns", "")
+    build_api_reference = args.get("build_api_reference", False)
+
+    # Build command
+    cmd = [sys.executable, "-m", "skill_seekers.cli.codebase_scraper"]
+    cmd.extend(["--directory", directory])
+
+    if output:
+        cmd.extend(["--output", output])
+    if depth:
+        cmd.extend(["--depth", depth])
+    if languages:
+        cmd.extend(["--languages", languages])
+    if file_patterns:
+        cmd.extend(["--file-patterns", file_patterns])
+    if build_api_reference:
+        cmd.append("--build-api-reference")
+
+    timeout = 600  # 10 minutes for codebase analysis
+
+    progress_msg = "🔍 Analyzing local codebase...\n"
+    progress_msg += f"📁 Directory: {directory}\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output_text = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output_text)]
+    else:
+        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]

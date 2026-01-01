@@ -24,6 +24,7 @@ from .scraping_tools import (
     scrape_docs_tool as scrape_docs_impl,
     scrape_github_tool as scrape_github_impl,
     scrape_pdf_tool as scrape_pdf_impl,
+    scrape_codebase_tool as scrape_codebase_impl,
 )
 
 from .packaging_tools import (
@@ -56,6 +57,7 @@ __all__ = [
     "scrape_docs_impl",
     "scrape_github_impl",
     "scrape_pdf_impl",
+    "scrape_codebase_impl",
     # Packaging tools
     "package_skill_impl",
     "upload_skill_impl",
