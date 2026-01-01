@@ -17,6 +17,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.2] - 2025-12-31
+
+### 🔧 Package Configuration Improvement
+
+This **patch release** improves the packaging configuration by switching from manual package listing to automatic package discovery, preventing similar issues in the future.
+
+### Changed
+
+- **Package Discovery**: Switched from manual package listing to automatic discovery in pyproject.toml ([#227](https://github.com/yusufkaraaslan/Skill_Seekers/pull/227))
+  - **Before**: Manually listed 5 packages (error-prone when adding new modules)
+  - **After**: Automatic discovery using `[tool.setuptools.packages.find]`
+  - **Benefits**: Future-proof, prevents missing module bugs, follows Python packaging best practices
+  - **Impact**: No functional changes, same packages included
+  - **Credit**: Thanks to [@iamKhan79690](https://github.com/iamKhan79690) for the improvement!
+
+### Package Structure
+
+No changes to package contents - all modules from v2.5.1 are still included:
+- ✅ `skill_seekers` (core)
+- ✅ `skill_seekers.cli` (CLI tools)
+- ✅ `skill_seekers.cli.adaptors` (platform adaptors)
+- ✅ `skill_seekers.mcp` (MCP server)
+- ✅ `skill_seekers.mcp.tools` (MCP tools)
+
+### Related Issues
+
+- Closes #226 - MCP server package_skill tool fails (already fixed in v2.5.1, improved by this release)
+- Merges #227 - Update setuptools configuration to include adaptors module
+
+### Contributors
+
+- [@iamKhan79690](https://github.com/iamKhan79690) - Automatic package discovery implementation
+
+---
+
 ## [2.5.1] - 2025-12-30
 
 ### 🐛 Critical Bug Fix - PyPI Package Broken
