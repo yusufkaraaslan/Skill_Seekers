@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #171717;
+  --background: #ffffff;
+}
+
+.dark {
+  --foreground: #ededed;
+  --background: #0a0a0a;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Tiptap Editor Styles */
+.tiptap {
+  @apply outline-none min-h-[200px];
+}
+
+.tiptap:focus {
+  @apply outline-none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  @apply text-gray-400 pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}
+
+.tiptap h1 {
+  @apply text-3xl font-bold my-4;
+}
+
+.tiptap h2 {
+  @apply text-2xl font-semibold my-3;
+}
+
+.tiptap h3 {
+  @apply text-xl font-semibold my-2;
+}
+
+.tiptap p {
+  @apply my-2;
+}
+
+.tiptap ul {
+  @apply list-disc pl-6 my-2;
+}
+
+.tiptap ol {
+  @apply list-decimal pl-6 my-2;
+}
+
+.tiptap li {
+  @apply my-1;
+}
+
+.tiptap li p {
+  @apply my-0;
+}
+
+.tiptap blockquote {
+  @apply border-l-4 border-primary-500 pl-4 my-4 italic text-gray-600 dark:text-gray-400;
+}
+
+.tiptap pre {
+  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto;
+}
+
+.tiptap pre code {
+  @apply bg-transparent p-0 text-sm;
+}
+
+.tiptap code {
+  @apply bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm;
+}
+
+.tiptap a {
+  @apply text-primary-600 dark:text-primary-400 underline cursor-pointer;
+}
+
+.tiptap mark {
+  @apply bg-yellow-200 dark:bg-yellow-500/30 px-0.5 rounded;
+}
+
+.tiptap hr {
+  @apply border-gray-300 dark:border-gray-700 my-6;
+}
+
+/* Task List */
+.tiptap ul[data-type="taskList"] {
+  @apply list-none pl-0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  @apply flex items-start gap-2;
+}
+
+.tiptap ul[data-type="taskList"] li > label {
+  @apply flex-shrink-0 mt-1;
+}
+
+.tiptap ul[data-type="taskList"] li > div {
+  @apply flex-1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
