@@ -41,15 +41,24 @@ class SkillEnhancer:
         self.references_dir = self.skill_dir / "references"
         self.skill_md_path = self.skill_dir / "SKILL.md"
 
-        # Get API key
-        self.api_key = api_key or os.environ.get('ANTHROPIC_API_KEY')
+        # Get API key - support both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN
+        self.api_key = (api_key or
+                       os.environ.get('ANTHROPIC_API_KEY') or
+                       os.environ.get('ANTHROPIC_AUTH_TOKEN'))
         if not self.api_key:
             raise ValueError(
-                "No API key provided. Set ANTHROPIC_API_KEY environment variable "
-                "or use --api-key argument"
+                "No API key provided. Set ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN "
+                "environment variable or use --api-key argument"
             )
 
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+        # Support custom base URL for alternative API endpoints
+        base_url = os.environ.get('ANTHROPIC_BASE_URL')
+        client_kwargs = {'api_key': self.api_key}
+        if base_url:
+            client_kwargs['base_url'] = base_url
+            print(f"ℹ️  Using custom API base URL: {base_url}")
+
+        self.client = anthropic.Anthropic(**client_kwargs)
 
     def read_current_skill_md(self):
         """Read existing SKILL.md"""
@@ -77,7 +86,18 @@ class SkillEnhancer:
                 }]
             )
 
-            enhanced_content = message.content[0].text
+            # Handle response content - newer SDK versions may include ThinkingBlock
+            # Find the TextBlock containing the actual response
+            enhanced_content = None
+            for block in message.content:
+                if hasattr(block, 'text'):
+                    enhanced_content = block.text
+                    break
+
+            if not enhanced_content:
+                print("❌ Error: No text content found in API response")
+                return None
+
             return enhanced_content
 
         except Exception as e:

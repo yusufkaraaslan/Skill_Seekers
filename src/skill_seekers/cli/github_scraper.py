@@ -325,6 +325,78 @@ class GitHubScraper:
                 raise ValueError(f"Repository not found: {self.repo_name}")
             raise
 
+    def _get_file_content(self, file_path: str) -> Optional[str]:
+        """
+        Safely get file content, handling symlinks and encoding issues.
+
+        Args:
+            file_path: Path to file in repository
+
+        Returns:
+            File content as string, or None if file not found/error
+        """
+        try:
+            content = self.repo.get_contents(file_path)
+            if not content:
+                return None
+
+            # Handle symlinks - follow the target to get actual file
+            if hasattr(content, 'type') and content.type == 'symlink':
+                target = getattr(content, 'target', None)
+                if target:
+                    target = target.strip()
+                    logger.debug(f"File {file_path} is a symlink to {target}, following...")
+                    try:
+                        content = self.repo.get_contents(target)
+                    except GithubException as e:
+                        logger.warning(f"Failed to follow symlink {file_path} -> {target}: {e}")
+                        return None
+                else:
+                    logger.warning(f"Symlink {file_path} has no target")
+                    return None
+
+            # Handle large files (encoding="none") - download via URL
+            # GitHub API doesn't base64-encode files >1MB
+            if hasattr(content, 'encoding') and content.encoding in [None, "none"]:
+                download_url = getattr(content, 'download_url', None)
+                file_size = getattr(content, 'size', 0)
+
+                if download_url:
+                    logger.info(f"File {file_path} is large ({file_size:,} bytes), downloading via URL...")
+                    try:
+                        import requests
+                        response = requests.get(download_url, timeout=30)
+                        response.raise_for_status()
+                        return response.text
+                    except Exception as e:
+                        logger.warning(f"Failed to download {file_path} from {download_url}: {e}")
+                        return None
+                else:
+                    logger.warning(f"File {file_path} has no download URL (encoding={content.encoding})")
+                    return None
+
+            # Handle regular files - decode content
+            try:
+                if isinstance(content.decoded_content, bytes):
+                    return content.decoded_content.decode('utf-8')
+                else:
+                    return str(content.decoded_content)
+            except (UnicodeDecodeError, AttributeError, LookupError, AssertionError) as e:
+                logger.warning(f"Encoding issue with {file_path}: {e}")
+                # Try alternative encoding
+                try:
+                    if isinstance(content.decoded_content, bytes):
+                        return content.decoded_content.decode('latin-1')
+                except Exception:
+                    return None
+                return None
+
+        except GithubException:
+            return None
+        except Exception as e:
+            logger.warning(f"Error reading {file_path}: {e}")
+            return None
+
     def _extract_readme(self):
         """C1.2: Extract README.md files."""
         logger.info("Extracting README...")
@@ -334,24 +406,21 @@ class GitHubScraper:
                        'docs/README.md', '.github/README.md']
 
         for readme_path in readme_files:
-            try:
-                content = self.repo.get_contents(readme_path)
-                if content:
-                    self.extracted_data['readme'] = content.decoded_content.decode('utf-8')
-                    logger.info(f"README found: {readme_path}")
+            readme_content = self._get_file_content(readme_path)
+            if readme_content:
+                self.extracted_data['readme'] = readme_content
+                logger.info(f"README found: {readme_path}")
 
-                    # Update description if not explicitly set in config
-                    if 'description' not in self.config:
-                        smart_description = extract_description_from_readme(
-                            self.extracted_data['readme'],
-                            self.repo_name
-                        )
-                        self.description = smart_description
-                        logger.debug(f"Generated description: {self.description}")
+                # Update description if not explicitly set in config
+                if 'description' not in self.config:
+                    smart_description = extract_description_from_readme(
+                        self.extracted_data['readme'],
+                        self.repo_name
+                    )
+                    self.description = smart_description
+                    logger.debug(f"Generated description: {self.description}")
 
-                    return
-            except GithubException:
-                continue
+                return
 
         logger.warning("No README found in repository")
 
@@ -666,35 +735,11 @@ class GitHubScraper:
                           'docs/CHANGELOG.md', '.github/CHANGELOG.md']
 
         for changelog_path in changelog_files:
-            try:
-                content = self.repo.get_contents(changelog_path)
-                if content:
-                    # decoded_content is already bytes, decode to string
-                    # Handle potential encoding issues gracefully
-                    try:
-                        if isinstance(content.decoded_content, bytes):
-                            changelog_text = content.decoded_content.decode('utf-8')
-                        else:
-                            # Already a string
-                            changelog_text = str(content.decoded_content)
-                    except (UnicodeDecodeError, AttributeError, LookupError) as e:
-                        # Try alternative encodings or skip this file
-                        logger.warning(f"Encoding issue with {changelog_path}: {e}, trying latin-1")
-                        try:
-                            changelog_text = content.decoded_content.decode('latin-1')
-                        except Exception:
-                            logger.warning(f"Could not decode {changelog_path}, skipping")
-                            continue
-
-                    self.extracted_data['changelog'] = changelog_text
-                    logger.info(f"CHANGELOG found: {changelog_path}")
-                    return
-            except GithubException:
-                continue
-            except Exception as e:
-                # Catch any other errors (like "unsupported encoding: none")
-                logger.warning(f"Error reading {changelog_path}: {e}")
-                continue
+            changelog_content = self._get_file_content(changelog_path)
+            if changelog_content:
+                self.extracted_data['changelog'] = changelog_content
+                logger.info(f"CHANGELOG found: {changelog_path}")
+                return
 
         logger.warning("No CHANGELOG found in repository")
 

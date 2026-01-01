@@ -99,6 +99,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     github_parser.add_argument("--repo", help="GitHub repo (owner/repo)")
     github_parser.add_argument("--name", help="Skill name")
     github_parser.add_argument("--description", help="Skill description")
+    github_parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
+    github_parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
+    github_parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance")
 
     # === pdf subcommand ===
     pdf_parser = subparsers.add_parser(
@@ -274,6 +277,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                 sys.argv.extend(["--name", args.name])
             if args.description:
                 sys.argv.extend(["--description", args.description])
+            if args.enhance:
+                sys.argv.append("--enhance")
+            if args.enhance_local:
+                sys.argv.append("--enhance-local")
+            if args.api_key:
+                sys.argv.extend(["--api-key", args.api_key])
             return github_main() or 0
 
         elif args.command == "pdf":
