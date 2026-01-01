@@ -1363,7 +1363,760 @@ const ImageUpload = Extension.create({
 
 ---
 
-## 13. 資源
+## 13. 實戰應用指南
+
+### 13.1 快速選擇：依需求選擇擴充套件
+
+```
+需求分析決策樹：
+
+基本文字編輯 (部落格、留言)
+├── StarterKit ✓ (已包含基本功能)
+├── + Placeholder (輸入提示)
+├── + CharacterCount (字數限制)
+└── + Link (超連結)
+
+進階文件編輯 (Wiki、文件系統)
+├── StarterKit ✓
+├── + Table (表格)
+├── + Image (圖片)
+├── + TaskList (待辦清單)
+├── + TextAlign (對齊)
+└── + Typography (排版優化)
+
+程式碼編輯器 (技術文件)
+├── StarterKit ✓
+├── + CodeBlockLowlight (語法高亮)
+├── + Mathematics (數學公式)
+└── + Mention (@ 提及)
+
+協作編輯 (團隊文件)
+├── StarterKit.configure({ history: false })
+├── + Collaboration
+├── + CollaborationCursor
+└── + UniqueId (節點追蹤)
+
+Notion-like 區塊編輯器
+├── StarterKit ✓
+├── + DragHandle
+├── + FloatingMenu
+├── + BubbleMenu
+├── + Placeholder (每區塊)
+└── + UniqueId
+```
+
+### 13.2 完整範例：部落格編輯器
+
+```tsx
+// components/BlogEditor.tsx
+'use client'
+
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import Placeholder from '@tiptap/extension-placeholder'
+import CharacterCount from '@tiptap/extension-character-count'
+import { useCallback, useState } from 'react'
+
+interface BlogEditorProps {
+  content?: string
+  onChange?: (html: string, json: object) => void
+  maxLength?: number
+}
+
+export default function BlogEditor({
+  content = '',
+  onChange,
+  maxLength = 10000,
+}: BlogEditorProps) {
+  const [linkUrl, setLinkUrl] = useState('')
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+      }),
+      Placeholder.configure({
+        placeholder: '開始撰寫你的文章...',
+      }),
+      CharacterCount.configure({
+        limit: maxLength,
+      }),
+    ],
+    content,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      onChange?.(editor.getHTML(), editor.getJSON())
+    },
+  })
+
+  const setLink = useCallback(() => {
+    if (!editor) return
+    if (linkUrl) {
+      editor.chain().focus().setLink({ href: linkUrl }).run()
+    } else {
+      editor.chain().focus().unsetLink().run()
+    }
+    setLinkUrl('')
+  }, [editor, linkUrl])
+
+  const addImage = useCallback(() => {
+    const url = window.prompt('輸入圖片網址')
+    if (url && editor) {
+      editor.chain().focus().setImage({ src: url }).run()
+    }
+  }, [editor])
+
+  if (!editor) return null
+
+  const { characters, words } = editor.storage.characterCount
+
+  return (
+    <div className="blog-editor">
+      {/* 工具列 */}
+      <div className="toolbar">
+        <button
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={editor.isActive('bold') ? 'active' : ''}
+        >
+          B
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={editor.isActive('italic') ? 'active' : ''}
+        >
+          I
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={editor.isActive('heading', { level: 1 }) ? 'active' : ''}
+        >
+          H1
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={editor.isActive('heading', { level: 2 }) ? 'active' : ''}
+        >
+          H2
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={editor.isActive('bulletList') ? 'active' : ''}
+        >
+          • List
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={editor.isActive('orderedList') ? 'active' : ''}
+        >
+          1. List
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={editor.isActive('blockquote') ? 'active' : ''}
+        >
+          Quote
+        </button>
+        <button
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={editor.isActive('codeBlock') ? 'active' : ''}
+        >
+          Code
+        </button>
+        <button onClick={addImage}>Image</button>
+        <button
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+        >
+          Undo
+        </button>
+        <button
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+        >
+          Redo
+        </button>
+      </div>
+
+      {/* Bubble Menu (選取文字時顯示) */}
+      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+        <div className="bubble-menu">
+          <button
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={editor.isActive('bold') ? 'active' : ''}
+          >
+            Bold
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={editor.isActive('italic') ? 'active' : ''}
+          >
+            Italic
+          </button>
+          <input
+            type="text"
+            placeholder="https://..."
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && setLink()}
+          />
+          <button onClick={setLink}>Link</button>
+        </div>
+      </BubbleMenu>
+
+      {/* 編輯器 */}
+      <EditorContent editor={editor} className="editor-content" />
+
+      {/* 字數統計 */}
+      <div className="character-count">
+        {characters} / {maxLength} 字元 | {words} 字
+      </div>
+    </div>
+  )
+}
+```
+
+### 13.3 完整範例：留言輸入框
+
+```tsx
+// components/CommentInput.tsx
+'use client'
+
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
+import Mention from '@tiptap/extension-mention'
+import CharacterCount from '@tiptap/extension-character-count'
+import { forwardRef, useImperativeHandle } from 'react'
+
+interface User {
+  id: string
+  name: string
+  avatar: string
+}
+
+interface CommentInputProps {
+  onSubmit: (html: string, mentions: string[]) => void
+  users: User[]
+  maxLength?: number
+  placeholder?: string
+}
+
+export interface CommentInputRef {
+  clear: () => void
+  focus: () => void
+  getContent: () => string
+}
+
+const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
+  ({ onSubmit, users, maxLength = 500, placeholder = '輸入留言...' }, ref) => {
+    const editor = useEditor({
+      extensions: [
+        StarterKit.configure({
+          heading: false,
+          codeBlock: false,
+          blockquote: false,
+          horizontalRule: false,
+        }),
+        Placeholder.configure({ placeholder }),
+        CharacterCount.configure({ limit: maxLength }),
+        Mention.configure({
+          HTMLAttributes: { class: 'mention' },
+          suggestion: {
+            items: ({ query }) => {
+              return users
+                .filter((user) =>
+                  user.name.toLowerCase().includes(query.toLowerCase())
+                )
+                .slice(0, 5)
+            },
+            render: () => {
+              let popup: HTMLElement | null = null
+
+              return {
+                onStart: (props) => {
+                  popup = document.createElement('div')
+                  popup.className = 'mention-popup'
+                  document.body.appendChild(popup)
+                  updatePopup(props)
+                },
+                onUpdate: updatePopup,
+                onKeyDown: (props) => {
+                  if (props.event.key === 'Escape') {
+                    popup?.remove()
+                    return true
+                  }
+                  return false
+                },
+                onExit: () => popup?.remove(),
+              }
+
+              function updatePopup(props: any) {
+                if (!popup) return
+                const items = props.items as User[]
+                popup.innerHTML = items
+                  .map(
+                    (user, i) =>
+                      `<div class="mention-item" data-index="${i}">
+                        <img src="${user.avatar}" />
+                        <span>${user.name}</span>
+                      </div>`
+                  )
+                  .join('')
+
+                popup.querySelectorAll('.mention-item').forEach((el, i) => {
+                  el.addEventListener('click', () => {
+                    props.command({ id: items[i].id, label: items[i].name })
+                  })
+                })
+
+                const rect = props.clientRect?.()
+                if (rect) {
+                  popup.style.cssText = `
+                    position: fixed;
+                    left: ${rect.left}px;
+                    top: ${rect.bottom + 5}px;
+                  `
+                }
+              }
+            },
+          },
+        }),
+      ],
+      immediatelyRender: false,
+    })
+
+    useImperativeHandle(ref, () => ({
+      clear: () => editor?.commands.clearContent(),
+      focus: () => editor?.commands.focus(),
+      getContent: () => editor?.getHTML() || '',
+    }))
+
+    const handleSubmit = () => {
+      if (!editor || editor.isEmpty) return
+
+      // 提取所有 mention
+      const mentions: string[] = []
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'mention') {
+          mentions.push(node.attrs.id)
+        }
+      })
+
+      onSubmit(editor.getHTML(), mentions)
+      editor.commands.clearContent()
+    }
+
+    if (!editor) return null
+
+    const remaining = maxLength - editor.storage.characterCount.characters
+
+    return (
+      <div className="comment-input">
+        <EditorContent editor={editor} />
+        <div className="comment-footer">
+          <span className={remaining < 50 ? 'warning' : ''}>
+            剩餘 {remaining} 字
+          </span>
+          <button onClick={handleSubmit} disabled={editor.isEmpty}>
+            送出
+          </button>
+        </div>
+      </div>
+    )
+  }
+)
+
+CommentInput.displayName = 'CommentInput'
+export default CommentInput
+```
+
+### 13.4 表單整合模式
+
+```tsx
+// React Hook Form 整合
+import { useForm, Controller } from 'react-hook-form'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+
+interface FormData {
+  title: string
+  content: string
+}
+
+function ArticleForm() {
+  const { control, handleSubmit, setValue, watch } = useForm<FormData>()
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: '',
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      setValue('content', editor.getHTML(), { shouldValidate: true })
+    },
+  })
+
+  // 監聽外部變更
+  const content = watch('content')
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '')
+    }
+  }, [content, editor])
+
+  const onSubmit = (data: FormData) => {
+    console.log(data)
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Controller
+        name="title"
+        control={control}
+        rules={{ required: '標題必填' }}
+        render={({ field, fieldState }) => (
+          <div>
+            <input {...field} placeholder="標題" />
+            {fieldState.error && <span>{fieldState.error.message}</span>}
+          </div>
+        )}
+      />
+
+      <Controller
+        name="content"
+        control={control}
+        rules={{
+          required: '內容必填',
+          validate: (value) =>
+            value.replace(/<[^>]*>/g, '').length >= 10 || '至少 10 個字',
+        }}
+        render={({ fieldState }) => (
+          <div>
+            <EditorContent editor={editor} />
+            {fieldState.error && <span>{fieldState.error.message}</span>}
+          </div>
+        )}
+      />
+
+      <button type="submit">送出</button>
+    </form>
+  )
+}
+```
+
+### 13.5 Toolbar 元件封裝
+
+```tsx
+// components/EditorToolbar.tsx
+import { Editor } from '@tiptap/react'
+import { useCallback } from 'react'
+
+interface ToolbarProps {
+  editor: Editor | null
+}
+
+interface ToolbarButton {
+  icon: string
+  title: string
+  action: () => boolean
+  isActive?: () => boolean
+  canExecute?: () => boolean
+}
+
+export default function EditorToolbar({ editor }: ToolbarProps) {
+  if (!editor) return null
+
+  const buttons: ToolbarButton[] = [
+    // 文字格式
+    {
+      icon: 'B',
+      title: '粗體 (Ctrl+B)',
+      action: () => editor.chain().focus().toggleBold().run(),
+      isActive: () => editor.isActive('bold'),
+    },
+    {
+      icon: 'I',
+      title: '斜體 (Ctrl+I)',
+      action: () => editor.chain().focus().toggleItalic().run(),
+      isActive: () => editor.isActive('italic'),
+    },
+    {
+      icon: 'S',
+      title: '刪除線',
+      action: () => editor.chain().focus().toggleStrike().run(),
+      isActive: () => editor.isActive('strike'),
+    },
+    {
+      icon: '</>',
+      title: '行內程式碼',
+      action: () => editor.chain().focus().toggleCode().run(),
+      isActive: () => editor.isActive('code'),
+    },
+    // 分隔符
+    { icon: '|', title: '', action: () => false },
+    // 標題
+    {
+      icon: 'H1',
+      title: '標題 1',
+      action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      isActive: () => editor.isActive('heading', { level: 1 }),
+    },
+    {
+      icon: 'H2',
+      title: '標題 2',
+      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      isActive: () => editor.isActive('heading', { level: 2 }),
+    },
+    {
+      icon: 'H3',
+      title: '標題 3',
+      action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      isActive: () => editor.isActive('heading', { level: 3 }),
+    },
+    // 分隔符
+    { icon: '|', title: '', action: () => false },
+    // 列表
+    {
+      icon: '•',
+      title: '無序列表',
+      action: () => editor.chain().focus().toggleBulletList().run(),
+      isActive: () => editor.isActive('bulletList'),
+    },
+    {
+      icon: '1.',
+      title: '有序列表',
+      action: () => editor.chain().focus().toggleOrderedList().run(),
+      isActive: () => editor.isActive('orderedList'),
+    },
+    // 區塊
+    {
+      icon: '"',
+      title: '引用',
+      action: () => editor.chain().focus().toggleBlockquote().run(),
+      isActive: () => editor.isActive('blockquote'),
+    },
+    {
+      icon: '{ }',
+      title: '程式碼區塊',
+      action: () => editor.chain().focus().toggleCodeBlock().run(),
+      isActive: () => editor.isActive('codeBlock'),
+    },
+    {
+      icon: '—',
+      title: '分隔線',
+      action: () => editor.chain().focus().setHorizontalRule().run(),
+    },
+    // 分隔符
+    { icon: '|', title: '', action: () => false },
+    // 歷史
+    {
+      icon: '↶',
+      title: '復原 (Ctrl+Z)',
+      action: () => editor.chain().focus().undo().run(),
+      canExecute: () => editor.can().undo(),
+    },
+    {
+      icon: '↷',
+      title: '重做 (Ctrl+Y)',
+      action: () => editor.chain().focus().redo().run(),
+      canExecute: () => editor.can().redo(),
+    },
+  ]
+
+  return (
+    <div className="editor-toolbar">
+      {buttons.map((btn, i) =>
+        btn.icon === '|' ? (
+          <span key={i} className="toolbar-divider" />
+        ) : (
+          <button
+            key={i}
+            type="button"
+            title={btn.title}
+            onClick={btn.action}
+            disabled={btn.canExecute ? !btn.canExecute() : false}
+            className={btn.isActive?.() ? 'active' : ''}
+          >
+            {btn.icon}
+          </button>
+        )
+      )}
+    </div>
+  )
+}
+```
+
+### 13.6 效能優化技巧
+
+```tsx
+// 1. 避免不必要的重新渲染
+const editor = useEditor({
+  extensions: [StarterKit],
+  // 預設 false，避免每次 transaction 觸發重渲染
+  shouldRerenderOnTransaction: false,
+})
+
+// 2. 使用 useMemo 緩存擴充套件
+const extensions = useMemo(() => [
+  StarterKit.configure({ history: { depth: 50 } }),
+  Link,
+  Image,
+], [])
+
+const editor = useEditor({ extensions })
+
+// 3. Debounce 儲存操作
+import { useDebouncedCallback } from 'use-debounce'
+
+const debouncedSave = useDebouncedCallback((content: string) => {
+  saveToServer(content)
+}, 1000)
+
+const editor = useEditor({
+  extensions: [StarterKit],
+  onUpdate: ({ editor }) => {
+    debouncedSave(editor.getHTML())
+  },
+})
+
+// 4. 大文件優化 - 使用虛擬化
+// 對於非常長的文件，考慮分頁或懶載入
+
+// 5. 圖片懶載入
+const LazyImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      loading: { default: 'lazy' },
+    }
+  },
+})
+
+// 6. 減少擴充套件 - 只載入需要的
+// ❌ 不要這樣
+import StarterKit from '@tiptap/starter-kit' // 載入所有 24 個擴充
+
+// ✅ 只載入需要的
+import Document from '@tiptap/extension-document'
+import Paragraph from '@tiptap/extension-paragraph'
+import Text from '@tiptap/extension-text'
+import Bold from '@tiptap/extension-bold'
+import Italic from '@tiptap/extension-italic'
+import History from '@tiptap/extension-history'
+
+const MinimalEditor = () => {
+  const editor = useEditor({
+    extensions: [Document, Paragraph, Text, Bold, Italic, History],
+  })
+  return <EditorContent editor={editor} />
+}
+```
+
+### 13.7 伺服器端渲染 (SSR) 完整方案
+
+```tsx
+// components/Editor.tsx
+'use client'
+
+import dynamic from 'next/dynamic'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// 動態載入，禁用 SSR
+const TiptapEditor = dynamic(() => import('./TiptapEditor'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-64 w-full" />,
+})
+
+export default function Editor(props: EditorProps) {
+  return <TiptapEditor {...props} />
+}
+
+// components/TiptapEditor.tsx
+'use client'
+
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+
+export default function TiptapEditor({ content, onChange }) {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content,
+    immediatelyRender: false, // 關鍵！
+    onUpdate: ({ editor }) => onChange?.(editor.getJSON()),
+  })
+
+  // 必須處理 null 狀態
+  if (!editor) {
+    return <div className="h-64 animate-pulse bg-gray-100" />
+  }
+
+  return <EditorContent editor={editor} />
+}
+```
+
+---
+
+## 14. 疑難排解決策樹
+
+```
+問題診斷流程：
+
+編輯器不顯示
+├── 檢查 editor 是否為 null
+│   ├── SSR 環境？→ 設定 immediatelyRender: false
+│   └── 確認 if (!editor) return null
+├── 檢查 DOM 掛載點
+│   └── 確認 element 存在
+└── 檢查 Console 錯誤
+
+內容無法編輯
+├── 檢查 editable 設定
+│   └── editor.setEditable(true)
+├── 檢查 CSS pointer-events
+└── 檢查是否被父元素覆蓋
+
+格式按鈕無效
+├── 確認使用 chain().focus()
+├── 檢查 isActive 狀態
+└── 確認擴充套件已安裝
+
+協作同步失敗
+├── 檢查 WebSocket 連線
+├── 確認禁用內建 history
+│   └── StarterKit.configure({ history: false })
+├── 檢查 Y.js 版本相容性
+└── 確認房間名稱一致
+
+效能問題
+├── 大文件卡頓
+│   ├── 減少 history depth
+│   ├── 使用 shouldRerenderOnTransaction: false
+│   └── Debounce onUpdate
+├── 記憶體洩漏
+│   └── 確認 editor.destroy() 清理
+└── 渲染緩慢
+    └── 減少不必要的擴充套件
+
+Hydration 錯誤 (Next.js)
+├── 確認 'use client' 指令
+├── 設定 immediatelyRender: false
+├── 使用 dynamic import + ssr: false
+└── 確保初始內容一致
+```
+
+---
+
+## 15. 資源
 
 ### 官方資源
 - [官方文件](https://tiptap.dev/docs)
