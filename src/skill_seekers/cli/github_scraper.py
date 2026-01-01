@@ -355,6 +355,26 @@ class GitHubScraper:
                     logger.warning(f"Symlink {file_path} has no target")
                     return None
 
+            # Handle large files (encoding="none") - download via URL
+            # GitHub API doesn't base64-encode files >1MB
+            if hasattr(content, 'encoding') and content.encoding in [None, "none"]:
+                download_url = getattr(content, 'download_url', None)
+                file_size = getattr(content, 'size', 0)
+
+                if download_url:
+                    logger.info(f"File {file_path} is large ({file_size:,} bytes), downloading via URL...")
+                    try:
+                        import requests
+                        response = requests.get(download_url, timeout=30)
+                        response.raise_for_status()
+                        return response.text
+                    except Exception as e:
+                        logger.warning(f"Failed to download {file_path} from {download_url}: {e}")
+                        return None
+                else:
+                    logger.warning(f"File {file_path} has no download URL (encoding={content.encoding})")
+                    return None
+
             # Handle regular files - decode content
             try:
                 if isinstance(content.decoded_content, bytes):

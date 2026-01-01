@@ -892,6 +892,75 @@ class TestSymlinkHandling(unittest.TestCase):
             # Should not crash (will try latin-1 fallback)
             self.assertIsNotNone(result)
 
+    def test_get_file_content_large_file(self):
+        """Test _get_file_content handles large files with encoding='none' (Issue #219)"""
+        config = {
+            'repo': 'ccxt/ccxt',
+            'name': 'ccxt',
+            'github_token': None
+        }
+
+        # Create mock large file (encoding="none")
+        mock_content = Mock()
+        mock_content.type = 'file'
+        mock_content.encoding = 'none'  # Large files have encoding="none"
+        mock_content.size = 1388271  # 1.4MB CHANGELOG
+        mock_content.download_url = 'https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.return_value = mock_content
+
+            # Mock requests.get
+            with patch('requests.get') as mock_requests:
+                mock_response = Mock()
+                mock_response.text = '# Changelog\n\n## v1.0.0\n- Initial release'
+                mock_response.raise_for_status = Mock()
+                mock_requests.return_value = mock_response
+
+                result = scraper._get_file_content('CHANGELOG.md')
+
+                # Should download via download_url
+                self.assertEqual(result, '# Changelog\n\n## v1.0.0\n- Initial release')
+                mock_requests.assert_called_once_with(
+                    'https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md',
+                    timeout=30
+                )
+
+    def test_extract_changelog_large_file(self):
+        """Test CHANGELOG extraction with large file (Integration test for Issue #219)"""
+        config = {
+            'repo': 'ccxt/ccxt',
+            'name': 'ccxt',
+            'github_token': None
+        }
+
+        # Create mock large CHANGELOG
+        mock_content = Mock()
+        mock_content.type = 'file'
+        mock_content.encoding = 'none'
+        mock_content.size = 1388271
+        mock_content.download_url = 'https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md'
+
+        with patch('skill_seekers.cli.github_scraper.Github'):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_contents.return_value = mock_content
+
+            # Mock requests.get
+            with patch('requests.get') as mock_requests:
+                mock_response = Mock()
+                mock_response.text = '# CCXT Changelog\n\n## v4.0.0\n- Major update'
+                mock_response.raise_for_status = Mock()
+                mock_requests.return_value = mock_response
+
+                scraper._extract_changelog()
+
+                # Should successfully extract CHANGELOG content
+                self.assertIn('changelog', scraper.extracted_data)
+                self.assertIn('Major update', scraper.extracted_data['changelog'])
+
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and edge cases"""
