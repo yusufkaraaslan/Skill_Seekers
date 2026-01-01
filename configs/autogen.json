@@ -1,0 +1,41 @@
+{
+  "name": "autogen",
+  "description": "AutoGen is Microsoft's multi-agent AI framework for building autonomous AI applications. Use this skill when working with AutoGen agents, multi-agent teams, tool integration, or orchestration patterns.",
+  "base_url": "https://microsoft.github.io/autogen/stable/",
+  "start_urls": [
+    "https://microsoft.github.io/autogen/stable/index.html",
+    "https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/quickstart.html",
+    "https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/agents.html",
+    "https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/teams.html",
+    "https://microsoft.github.io/autogen/stable/user-guide/core-user-guide/core-concepts/agent-and-multi-agent-application.html"
+  ],
+  "selectors": {
+    "main_content": "article.bd-article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [
+      "/user-guide/",
+      "/reference/",
+      "/tutorial/"
+    ],
+    "exclude": [
+      "/_static/",
+      "/_sources/",
+      "/search.html",
+      "/genindex.html"
+    ]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "installation", "getting-started"],
+    "agents": ["agents", "assistant", "agent"],
+    "teams": ["teams", "group-chat", "round-robin", "selector", "swarm"],
+    "core": ["core", "runtime", "message"],
+    "extensions": ["ext", "extension", "openai", "azure"],
+    "tools": ["tools", "function", "callable"],
+    "magentic": ["magentic", "magentic-one"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 300
+}
