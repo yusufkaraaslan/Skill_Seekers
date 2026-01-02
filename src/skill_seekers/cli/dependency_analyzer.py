@@ -2,22 +2,39 @@
 """
 Dependency Graph Analyzer (C2.6)
 
-Analyzes import/require/include statements to build dependency graphs.
-Supports Python, JavaScript/TypeScript, and C++.
+Analyzes import/require/include/use statements to build dependency graphs.
+Supports 9 programming languages with language-specific extraction.
 
 Features:
-- Multi-language import extraction
+- Multi-language import extraction (Python AST, others regex-based)
 - Dependency graph construction with NetworkX
 - Circular dependency detection
 - Graph export (JSON, DOT/GraphViz, Mermaid)
+- Strongly connected component analysis
+
+Supported Languages:
+- Python: import, from...import, relative imports (AST-based)
+- JavaScript/TypeScript: ES6 import, CommonJS require (regex-based)
+- C/C++: #include directives (regex-based)
+- C#: using statements (regex, based on MS C# spec)
+- Go: import statements (regex, based on Go language spec)
+- Rust: use statements (regex, based on Rust reference)
+- Java: import statements (regex, based on Oracle Java spec)
+- Ruby: require/require_relative/load (regex, based on Ruby docs)
+- PHP: require/include/use (regex, based on PHP reference)
 
 Usage:
     from dependency_analyzer import DependencyAnalyzer
 
     analyzer = DependencyAnalyzer()
     analyzer.analyze_file('src/main.py', content, 'Python')
+    analyzer.analyze_file('src/utils.go', go_content, 'Go')
     graph = analyzer.build_graph()
     cycles = analyzer.detect_cycles()
+
+Credits:
+- Regex patterns inspired by official language specifications
+- NetworkX for graph algorithms: https://networkx.org/
 """
 
 import re
@@ -82,7 +99,7 @@ class DependencyAnalyzer:
         Args:
             file_path: Path to source file
             content: File content
-            language: Programming language (Python, JavaScript, TypeScript, C++)
+            language: Programming language (Python, JavaScript, TypeScript, C, C++, C#, Go, Rust, Java, Ruby, PHP)
 
         Returns:
             List of DependencyInfo objects
@@ -91,8 +108,20 @@ class DependencyAnalyzer:
             deps = self._extract_python_imports(content, file_path)
         elif language in ('JavaScript', 'TypeScript'):
             deps = self._extract_js_imports(content, file_path)
-        elif language == 'C++':
+        elif language in ('C++', 'C'):
             deps = self._extract_cpp_includes(content, file_path)
+        elif language == 'C#':
+            deps = self._extract_csharp_imports(content, file_path)
+        elif language == 'Go':
+            deps = self._extract_go_imports(content, file_path)
+        elif language == 'Rust':
+            deps = self._extract_rust_imports(content, file_path)
+        elif language == 'Java':
+            deps = self._extract_java_imports(content, file_path)
+        elif language == 'Ruby':
+            deps = self._extract_ruby_imports(content, file_path)
+        elif language == 'PHP':
+            deps = self._extract_php_imports(content, file_path)
         else:
             logger.warning(f"Unsupported language: {language}")
             deps = []
@@ -225,6 +254,292 @@ class DependencyAnalyzer:
                 imported_module=header,
                 import_type='include',
                 is_relative=is_relative,
+                line_number=line_num
+            ))
+
+        return deps
+
+    def _extract_csharp_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract C# using statements.
+
+        Handles:
+        - using System;
+        - using MyNamespace;
+        - using static MyClass;
+        - using alias = Namespace;
+
+        Regex patterns based on C# language specification:
+        https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive
+        """
+        deps = []
+
+        # Match using statements: using [static] Namespace[.Type];
+        using_pattern = r'using\s+(?:static\s+)?(?:(\w+)\s*=\s*)?([A-Za-z_][\w.]*)\s*;'
+        for match in re.finditer(using_pattern, content):
+            alias = match.group(1)  # Optional alias
+            namespace = match.group(2)
+            line_num = content[:match.start()].count('\n') + 1
+
+            # Skip 'using' statements for IDisposable (using var x = ...)
+            if '=' in match.group(0) and not alias:
+                continue
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=namespace,
+                import_type='using',
+                is_relative=False,  # C# uses absolute namespaces
+                line_number=line_num
+            ))
+
+        return deps
+
+    def _extract_go_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract Go import statements.
+
+        Handles:
+        - import "package"
+        - import alias "package"
+        - import ( "pkg1" "pkg2" )
+
+        Regex patterns based on Go language specification:
+        https://go.dev/ref/spec#Import_declarations
+        """
+        deps = []
+
+        # Single import: import [alias] "package"
+        single_import_pattern = r'import\s+(?:(\w+)\s+)?"([^"]+)"'
+        for match in re.finditer(single_import_pattern, content):
+            alias = match.group(1)  # Optional alias
+            package = match.group(2)
+            line_num = content[:match.start()].count('\n') + 1
+
+            # Check if relative (starts with ./ or ../)
+            is_relative = package.startswith('./')
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=package,
+                import_type='import',
+                is_relative=is_relative,
+                line_number=line_num
+            ))
+
+        # Multi-import block: import ( ... )
+        multi_import_pattern = r'import\s*\((.*?)\)'
+        for match in re.finditer(multi_import_pattern, content, re.DOTALL):
+            block = match.group(1)
+            block_start = match.start()
+
+            # Extract individual imports from block
+            import_line_pattern = r'(?:(\w+)\s+)?"([^"]+)"'
+            for line_match in re.finditer(import_line_pattern, block):
+                alias = line_match.group(1)
+                package = line_match.group(2)
+                line_num = content[:block_start + line_match.start()].count('\n') + 1
+
+                is_relative = package.startswith('./')
+
+                deps.append(DependencyInfo(
+                    source_file=file_path,
+                    imported_module=package,
+                    import_type='import',
+                    is_relative=is_relative,
+                    line_number=line_num
+                ))
+
+        return deps
+
+    def _extract_rust_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract Rust use statements.
+
+        Handles:
+        - use std::collections::HashMap;
+        - use crate::module;
+        - use super::sibling;
+        - use self::child;
+
+        Regex patterns based on Rust reference:
+        https://doc.rust-lang.org/reference/items/use-declarations.html
+        """
+        deps = []
+
+        # Match use statements: use path::to::item; (including curly braces with spaces)
+        # This pattern matches: use word::word; or use word::{item, item};
+        use_pattern = r'use\s+([\w:{}]+(?:\s*,\s*[\w:{}]+)*|[\w:]+::\{[^}]+\})\s*;'
+        for match in re.finditer(use_pattern, content):
+            module_path = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            # Determine if relative
+            is_relative = module_path.startswith(('self::', 'super::'))
+
+            # Handle curly brace imports (use std::{io, fs})
+            if '{' in module_path:
+                # Extract base path
+                base_path = module_path.split('{')[0].rstrip(':')
+                # Extract items inside braces
+                items_match = re.search(r'\{([^}]+)\}', module_path)
+                if items_match:
+                    items = [item.strip() for item in items_match.group(1).split(',')]
+                    for item in items:
+                        full_path = f"{base_path}::{item}" if base_path else item
+                        deps.append(DependencyInfo(
+                            source_file=file_path,
+                            imported_module=full_path,
+                            import_type='use',
+                            is_relative=is_relative,
+                            line_number=line_num
+                        ))
+            else:
+                deps.append(DependencyInfo(
+                    source_file=file_path,
+                    imported_module=module_path,
+                    import_type='use',
+                    is_relative=is_relative,
+                    line_number=line_num
+                ))
+
+        return deps
+
+    def _extract_java_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract Java import statements.
+
+        Handles:
+        - import java.util.List;
+        - import java.util.*;
+        - import static java.lang.Math.PI;
+
+        Regex patterns based on Java language specification:
+        https://docs.oracle.com/javase/specs/jls/se17/html/jls-7.html#jls-7.5
+        """
+        deps = []
+
+        # Match import statements: import [static] package.Class;
+        import_pattern = r'import\s+(?:static\s+)?([A-Za-z_][\w.]*(?:\.\*)?)\s*;'
+        for match in re.finditer(import_pattern, content):
+            import_path = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=import_path,
+                import_type='import',
+                is_relative=False,  # Java uses absolute package names
+                line_number=line_num
+            ))
+
+        return deps
+
+    def _extract_ruby_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract Ruby require/require_relative/load statements.
+
+        Handles:
+        - require 'gem_name'
+        - require_relative 'file'
+        - load 'script.rb'
+
+        Regex patterns based on Ruby documentation:
+        https://ruby-doc.org/core/Kernel.html#method-i-require
+        """
+        deps = []
+
+        # Match require: require 'module' or require "module"
+        require_pattern = r"require\s+['\"]([^'\"]+)['\"]"
+        for match in re.finditer(require_pattern, content):
+            module = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=module,
+                import_type='require',
+                is_relative=False,  # require looks in load path
+                line_number=line_num
+            ))
+
+        # Match require_relative: require_relative 'file'
+        require_relative_pattern = r"require_relative\s+['\"]([^'\"]+)['\"]"
+        for match in re.finditer(require_relative_pattern, content):
+            module = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=module,
+                import_type='require_relative',
+                is_relative=True,
+                line_number=line_num
+            ))
+
+        # Match load: load 'script.rb'
+        load_pattern = r"load\s+['\"]([^'\"]+)['\"]"
+        for match in re.finditer(load_pattern, content):
+            module = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=module,
+                import_type='load',
+                is_relative=True,  # load is usually relative
+                line_number=line_num
+            ))
+
+        return deps
+
+    def _extract_php_imports(self, content: str, file_path: str) -> List[DependencyInfo]:
+        """
+        Extract PHP require/include/use statements.
+
+        Handles:
+        - require 'file.php';
+        - require_once 'file.php';
+        - include 'file.php';
+        - include_once 'file.php';
+        - use Namespace\\Class;
+
+        Regex patterns based on PHP language reference:
+        https://www.php.net/manual/en/function.require.php
+        """
+        deps = []
+
+        # Match require/include: require[_once] 'file' or require[_once] "file"
+        require_pattern = r"(?:require|include)(?:_once)?\s+['\"]([^'\"]+)['\"]"
+        for match in re.finditer(require_pattern, content):
+            module = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            # Determine import type
+            import_type = 'require' if 'require' in match.group(0) else 'include'
+
+            # PHP file paths are relative by default
+            is_relative = not module.startswith(('/', 'http://', 'https://'))
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=module,
+                import_type=import_type,
+                is_relative=is_relative,
+                line_number=line_num
+            ))
+
+        # Match namespace use: use Namespace\Class;
+        use_pattern = r'use\s+([A-Za-z_][\w\\]*)\s*(?:as\s+\w+)?\s*;'
+        for match in re.finditer(use_pattern, content):
+            namespace = match.group(1)
+            line_num = content[:match.start()].count('\n') + 1
+
+            deps.append(DependencyInfo(
+                source_file=file_path,
+                imported_module=namespace,
+                import_type='use',
+                is_relative=False,  # Namespaces are absolute
                 line_number=line_num
             ))
 

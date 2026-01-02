@@ -51,9 +51,33 @@ class TestLanguageDetection(unittest.TestCase):
         self.assertEqual(detect_language(Path('test.h')), 'C++')
         self.assertEqual(detect_language(Path('test.hpp')), 'C++')
 
+    def test_csharp_detection(self):
+        """Test C# file detection."""
+        self.assertEqual(detect_language(Path('test.cs')), 'C#')
+
+    def test_go_detection(self):
+        """Test Go file detection."""
+        self.assertEqual(detect_language(Path('test.go')), 'Go')
+
+    def test_rust_detection(self):
+        """Test Rust file detection."""
+        self.assertEqual(detect_language(Path('test.rs')), 'Rust')
+
+    def test_java_detection(self):
+        """Test Java file detection."""
+        self.assertEqual(detect_language(Path('test.java')), 'Java')
+
+    def test_ruby_detection(self):
+        """Test Ruby file detection."""
+        self.assertEqual(detect_language(Path('test.rb')), 'Ruby')
+
+    def test_php_detection(self):
+        """Test PHP file detection."""
+        self.assertEqual(detect_language(Path('test.php')), 'PHP')
+
     def test_unknown_language(self):
         """Test unknown file extension."""
-        self.assertEqual(detect_language(Path('test.go')), 'Unknown')
+        self.assertEqual(detect_language(Path('test.swift')), 'Unknown')
         self.assertEqual(detect_language(Path('test.txt')), 'Unknown')
 
 

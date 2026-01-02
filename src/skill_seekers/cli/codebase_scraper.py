@@ -12,10 +12,16 @@ Usage:
 
 Features:
     - File tree walking with .gitignore support
-    - Multi-language code analysis (Python, JavaScript, C++)
+    - Multi-language code analysis (9 languages: Python, JavaScript/TypeScript, C/C++, C#, Go, Rust, Java, Ruby, PHP)
     - API reference generation
     - Comment extraction
+    - Dependency graph analysis
     - Configurable depth levels
+
+Credits:
+    - Language parsing patterns inspired by official language specifications
+    - NetworkX for dependency graph analysis: https://networkx.org/
+    - pathspec for .gitignore support: https://pypi.org/project/pathspec/
 """
 
 import os
@@ -61,6 +67,13 @@ LANGUAGE_EXTENSIONS = {
     '.h': 'C++',
     '.hpp': 'C++',
     '.hxx': 'C++',
+    '.c': 'C',
+    '.cs': 'C#',
+    '.go': 'Go',
+    '.rs': 'Rust',
+    '.java': 'Java',
+    '.rb': 'Ruby',
+    '.php': 'PHP',
 }
 
 # Default directories to exclude

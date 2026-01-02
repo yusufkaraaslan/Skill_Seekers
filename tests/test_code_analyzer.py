@@ -477,11 +477,12 @@ def calculate(x: int, y: int) -> int:
         """Test that unknown language returns empty dict."""
         analyzer = CodeAnalyzer(depth='deep')
         code = '''
-func main() {
-    fmt.Println("Hello, Go!")
+import Foundation
+func greet(name: String) {
+    print("Hello, \\(name)!")
 }
 '''
-        result = analyzer.analyze_file('test.go', code, 'Go')
+        result = analyzer.analyze_file('test.swift', code, 'Swift')
 
         # Unknown language should return empty dict
         self.assertEqual(result, {})
@@ -739,6 +740,459 @@ def incomplete_func():
         self.assertTrue(any('TODO' in text for text in comment_texts))
         self.assertTrue(any('FIXME' in text for text in comment_texts))
         self.assertTrue(any('NOTE' in text for text in comment_texts))
+
+
+class TestCSharpParsing(unittest.TestCase):
+    """Tests for C# code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_csharp_class_extraction(self):
+        """Test C# class extraction with inheritance."""
+        code = '''
+using System;
+
+public class PlayerController : MonoBehaviour
+{
+    private float speed = 5f;
+}
+'''
+        result = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'PlayerController')
+        self.assertIn('MonoBehaviour', cls['base_classes'])
+
+    def test_csharp_method_extraction(self):
+        """Test C# method extraction with parameters."""
+        code = '''
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+'''
+        result = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        method = result['functions'][0]
+        self.assertEqual(method['name'], 'Add')
+        self.assertEqual(len(method['parameters']), 2)
+        self.assertEqual(method['return_type'], 'int')
+
+    def test_csharp_property_extraction(self):
+        """Test C# property extraction."""
+        code = '''
+public class Player
+{
+    public int Health { get; set; } = 100;
+    private string Name { get; }
+}
+'''
+        result = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        # Properties are extracted as part of class analysis
+        self.assertIn('classes', result)
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'Player')
+
+    def test_csharp_async_method(self):
+        """Test C# async method detection."""
+        code = '''
+public class DataLoader
+{
+    public async Task<string> LoadDataAsync()
+    {
+        await Task.Delay(100);
+        return "data";
+    }
+}
+'''
+        result = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertIn('functions', result)
+        method = result['functions'][0]
+        self.assertEqual(method['name'], 'LoadDataAsync')
+        self.assertTrue(method['is_async'])
+
+
+class TestGoParsing(unittest.TestCase):
+    """Tests for Go code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_go_function_extraction(self):
+        """Test Go function extraction."""
+        code = '''
+package main
+
+func Add(a int, b int) int {
+    return a + b
+}
+'''
+        result = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        func = result['functions'][0]
+        self.assertEqual(func['name'], 'Add')
+        self.assertEqual(func['return_type'], 'int')
+
+    def test_go_method_with_receiver(self):
+        """Test Go method with receiver."""
+        code = '''
+package main
+
+type Person struct {
+    Name string
+}
+
+func (p *Person) Greet() string {
+    return "Hello " + p.Name
+}
+'''
+        result = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertIn('functions', result)
+        # Should extract method
+        method = next((f for f in result['functions'] if f['name'] == 'Greet'), None)
+        self.assertIsNotNone(method)
+        self.assertEqual(method['return_type'], 'string')
+
+    def test_go_struct_extraction(self):
+        """Test Go struct extraction."""
+        code = '''
+package main
+
+type Rectangle struct {
+    Width  float64
+    Height float64
+}
+'''
+        result = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        struct = result['classes'][0]
+        self.assertEqual(struct['name'], 'Rectangle')
+
+    def test_go_multiple_return_values(self):
+        """Test Go function with multiple return values."""
+        code = '''
+func Divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+'''
+        result = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertIn('functions', result)
+        func = result['functions'][0]
+        self.assertEqual(func['name'], 'Divide')
+
+
+class TestRustParsing(unittest.TestCase):
+    """Tests for Rust code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_rust_function_extraction(self):
+        """Test Rust function extraction."""
+        code = '''
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+'''
+        result = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        func = result['functions'][0]
+        self.assertEqual(func['name'], 'add')
+        self.assertEqual(func['return_type'], 'i32')
+
+    def test_rust_struct_extraction(self):
+        """Test Rust struct extraction."""
+        code = '''
+pub struct Point {
+    x: f64,
+    y: f64,
+}
+'''
+        result = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        struct = result['classes'][0]
+        self.assertEqual(struct['name'], 'Point')
+
+    def test_rust_async_function(self):
+        """Test Rust async function detection."""
+        code = '''
+pub async fn fetch_data() -> Result<String, Error> {
+    Ok("data".to_string())
+}
+'''
+        result = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertIn('functions', result)
+        func = result['functions'][0]
+        self.assertEqual(func['name'], 'fetch_data')
+        self.assertTrue(func['is_async'])
+
+    def test_rust_impl_block(self):
+        """Test Rust impl block method extraction."""
+        code = '''
+struct Circle {
+    radius: f64,
+}
+
+impl Circle {
+    pub fn area(&self) -> f64 {
+        std::f64::consts::PI * self.radius * self.radius
+    }
+}
+'''
+        result = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertIn('classes', result)
+        self.assertIn('functions', result)
+
+
+class TestJavaParsing(unittest.TestCase):
+    """Tests for Java code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_java_class_extraction(self):
+        """Test Java class extraction with inheritance."""
+        code = '''
+public class ArrayList extends AbstractList implements List {
+    private int size;
+}
+'''
+        result = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'ArrayList')
+        self.assertIn('AbstractList', cls['base_classes'])
+
+    def test_java_method_extraction(self):
+        """Test Java method extraction."""
+        code = '''
+public class Calculator {
+    public static int multiply(int a, int b) {
+        return a * b;
+    }
+}
+'''
+        result = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        method = result['functions'][0]
+        self.assertEqual(method['name'], 'multiply')
+        self.assertEqual(method['return_type'], 'int')
+
+    def test_java_interface_implementation(self):
+        """Test Java interface implementation."""
+        code = '''
+public class MyHandler implements EventHandler, Runnable {
+    public void run() {}
+}
+'''
+        result = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertIn('classes', result)
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'MyHandler')
+
+    def test_java_generic_class(self):
+        """Test Java generic class."""
+        code = '''
+public class Box<T> {
+    private T value;
+
+    public T getValue() {
+        return value;
+    }
+}
+'''
+        result = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertIn('classes', result)
+        self.assertIn('functions', result)
+
+
+class TestRubyParsing(unittest.TestCase):
+    """Tests for Ruby code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_ruby_class_extraction(self):
+        """Test Ruby class extraction."""
+        code = '''
+class Person
+  def initialize(name)
+    @name = name
+  end
+end
+'''
+        result = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'Person')
+
+    def test_ruby_method_extraction(self):
+        """Test Ruby method extraction."""
+        code = '''
+def greet(name)
+  puts "Hello, #{name}!"
+end
+'''
+        result = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        method = result['functions'][0]
+        self.assertEqual(method['name'], 'greet')
+
+    def test_ruby_class_inheritance(self):
+        """Test Ruby class inheritance."""
+        code = '''
+class Dog < Animal
+  def bark
+    puts "Woof!"
+  end
+end
+'''
+        result = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertIn('classes', result)
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'Dog')
+        self.assertIn('Animal', cls['base_classes'])
+
+    def test_ruby_predicate_methods(self):
+        """Test Ruby predicate methods (ending with ?)."""
+        code = '''
+def empty?
+  @items.length == 0
+end
+'''
+        result = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertIn('functions', result)
+        method = result['functions'][0]
+        self.assertEqual(method['name'], 'empty?')
+
+
+class TestPHPParsing(unittest.TestCase):
+    """Tests for PHP code analysis"""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth='deep')
+
+    def test_php_class_extraction(self):
+        """Test PHP class extraction."""
+        code = '''
+<?php
+class User {
+    private $name;
+
+    public function getName() {
+        return $this->name;
+    }
+}
+?>
+'''
+        result = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertIn('classes', result)
+        self.assertEqual(len(result['classes']), 1)
+
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'User')
+
+    def test_php_method_extraction(self):
+        """Test PHP method extraction."""
+        code = '''
+<?php
+function calculate($a, $b) {
+    return $a + $b;
+}
+?>
+'''
+        result = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertIn('functions', result)
+        self.assertEqual(len(result['functions']), 1)
+
+        func = result['functions'][0]
+        self.assertEqual(func['name'], 'calculate')
+
+    def test_php_class_inheritance(self):
+        """Test PHP class inheritance and interfaces."""
+        code = '''
+<?php
+class Rectangle extends Shape implements Drawable {
+    public function draw() {
+        // Implementation
+    }
+}
+?>
+'''
+        result = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertIn('classes', result)
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'Rectangle')
+        self.assertIn('Shape', cls['base_classes'])
+
+    def test_php_namespace(self):
+        """Test PHP namespace handling."""
+        code = '''
+<?php
+namespace App\\Models;
+
+class Product {
+    public function getPrice() {
+        return 99.99;
+    }
+}
+?>
+'''
+        result = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertIn('classes', result)
+        cls = result['classes'][0]
+        self.assertEqual(cls['name'], 'Product')
 
 
 if __name__ == '__main__':

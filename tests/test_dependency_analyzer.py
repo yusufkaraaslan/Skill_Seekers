@@ -320,6 +320,239 @@ class TestGraphExport(unittest.TestCase):
         self.assertEqual(stats['total_files'], 4)
 
 
+class TestCSharpImportExtraction(unittest.TestCase):
+    """Tests for C# using statement extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_simple_using(self):
+        """Test simple using statement."""
+        code = "using System;\nusing System.Collections.Generic;"
+        deps = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'System')
+        self.assertEqual(deps[0].import_type, 'using')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_using_alias(self):
+        """Test using statement with alias."""
+        code = "using Project = PC.MyCompany.Project;"
+        deps = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'PC.MyCompany.Project')
+
+    def test_using_static(self):
+        """Test static using."""
+        code = "using static System.Math;"
+        deps = self.analyzer.analyze_file('test.cs', code, 'C#')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'System.Math')
+
+
+class TestGoImportExtraction(unittest.TestCase):
+    """Tests for Go import statement extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_simple_import(self):
+        """Test simple import statement."""
+        code = 'import "fmt"\nimport "os"'
+        deps = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'fmt')
+        self.assertEqual(deps[0].import_type, 'import')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_import_with_alias(self):
+        """Test import with alias."""
+        code = 'import f "fmt"'
+        deps = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'fmt')
+
+    def test_multi_import_block(self):
+        """Test multi-import block."""
+        code = '''import (
+    "fmt"
+    "os"
+    "io"
+)'''
+        deps = self.analyzer.analyze_file('test.go', code, 'Go')
+
+        self.assertEqual(len(deps), 3)
+        modules = [dep.imported_module for dep in deps]
+        self.assertIn('fmt', modules)
+        self.assertIn('os', modules)
+        self.assertIn('io', modules)
+
+
+class TestRustImportExtraction(unittest.TestCase):
+    """Tests for Rust use statement extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_simple_use(self):
+        """Test simple use statement."""
+        code = "use std::collections::HashMap;\nuse std::io;"
+        deps = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'std::collections::HashMap')
+        self.assertEqual(deps[0].import_type, 'use')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_use_crate(self):
+        """Test use with crate keyword."""
+        code = "use crate::module::Item;"
+        deps = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'crate::module::Item')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_use_super(self):
+        """Test use with super keyword."""
+        code = "use super::sibling;"
+        deps = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertEqual(len(deps), 1)
+        self.assertTrue(deps[0].is_relative)
+
+    def test_use_curly_braces(self):
+        """Test use with curly braces."""
+        code = "use std::{io, fs};"
+        deps = self.analyzer.analyze_file('test.rs', code, 'Rust')
+
+        self.assertEqual(len(deps), 2)
+        modules = [dep.imported_module for dep in deps]
+        self.assertIn('std::io', modules)
+        self.assertIn('std::fs', modules)
+
+
+class TestJavaImportExtraction(unittest.TestCase):
+    """Tests for Java import statement extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_simple_import(self):
+        """Test simple import statement."""
+        code = "import java.util.List;\nimport java.io.File;"
+        deps = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'java.util.List')
+        self.assertEqual(deps[0].import_type, 'import')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_wildcard_import(self):
+        """Test wildcard import."""
+        code = "import java.util.*;"
+        deps = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'java.util.*')
+
+    def test_static_import(self):
+        """Test static import."""
+        code = "import static java.lang.Math.PI;"
+        deps = self.analyzer.analyze_file('test.java', code, 'Java')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].imported_module, 'java.lang.Math.PI')
+
+
+class TestRubyImportExtraction(unittest.TestCase):
+    """Tests for Ruby require statement extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_simple_require(self):
+        """Test simple require statement."""
+        code = "require 'json'\nrequire 'net/http'"
+        deps = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'json')
+        self.assertEqual(deps[0].import_type, 'require')
+        self.assertFalse(deps[0].is_relative)
+
+    def test_require_relative(self):
+        """Test require_relative statement."""
+        code = "require_relative 'helper'\nrequire_relative '../utils'"
+        deps = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'helper')
+        self.assertEqual(deps[0].import_type, 'require_relative')
+        self.assertTrue(deps[0].is_relative)
+
+    def test_load_statement(self):
+        """Test load statement."""
+        code = "load 'script.rb'"
+        deps = self.analyzer.analyze_file('test.rb', code, 'Ruby')
+
+        self.assertEqual(len(deps), 1)
+        self.assertEqual(deps[0].import_type, 'load')
+        self.assertTrue(deps[0].is_relative)
+
+
+class TestPHPImportExtraction(unittest.TestCase):
+    """Tests for PHP require/include/use extraction."""
+
+    def setUp(self):
+        if not ANALYZER_AVAILABLE:
+            self.skipTest("dependency_analyzer not available")
+        self.analyzer = DependencyAnalyzer()
+
+    def test_require_statement(self):
+        """Test require statement."""
+        code = "<?php\nrequire 'config.php';\nrequire_once 'database.php';"
+        deps = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'config.php')
+        self.assertEqual(deps[0].import_type, 'require')
+        self.assertTrue(deps[0].is_relative)
+
+    def test_include_statement(self):
+        """Test include statement."""
+        code = "<?php\ninclude 'header.php';\ninclude_once 'footer.php';"
+        deps = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].import_type, 'include')
+
+    def test_namespace_use(self):
+        """Test namespace use statement."""
+        code = "<?php\nuse App\\Models\\User;\nuse Illuminate\\Support\\Facades\\DB;"
+        deps = self.analyzer.analyze_file('test.php', code, 'PHP')
+
+        self.assertEqual(len(deps), 2)
+        self.assertEqual(deps[0].imported_module, 'App\\Models\\User')
+        self.assertEqual(deps[0].import_type, 'use')
+        self.assertFalse(deps[0].is_relative)
+
+
 class TestEdgeCases(unittest.TestCase):
     """Tests for edge cases and error handling."""
 
@@ -336,8 +569,8 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_unsupported_language(self):
         """Test handling of unsupported language."""
-        code = "package main"
-        deps = self.analyzer.analyze_file('test.go', code, 'Go')
+        code = "BEGIN { print $0 }"
+        deps = self.analyzer.analyze_file('test.awk', code, 'AWK')
 
         self.assertEqual(len(deps), 0)
 
