@@ -139,7 +139,7 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             ['skill-seekers', 'github', '--repo', 'test/test', '--enhance-local'],
             capture_output=True,
             text=True,
-            timeout=15  # Increased timeout for macOS CI environment
+            timeout=30  # Increased timeout for slower macOS CI runners
         )
 
         # VERIFY: No "unrecognized arguments" error
