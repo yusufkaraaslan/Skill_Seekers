@@ -42,10 +42,11 @@ class PatternInstance:
     line_number: Optional[int] = None
     evidence: List[str] = field(default_factory=list)  # Evidence for detection
     related_classes: List[str] = field(default_factory=list)  # Related pattern classes
+    ai_analysis: Optional[Dict] = None  # AI-generated analysis (C3.6)
 
     def to_dict(self) -> Dict:
         """Export to dictionary"""
-        return {
+        result = {
             'pattern_type': self.pattern_type,
             'category': self.category,
             'confidence': self.confidence,
@@ -56,6 +57,9 @@ class PatternInstance:
             'evidence': self.evidence,
             'related_classes': self.related_classes
         }
+        if self.ai_analysis:
+            result['ai_analysis'] = self.ai_analysis
+        return result
 
 
 @dataclass
@@ -204,16 +208,28 @@ class PatternRecognizer:
     Coordinates multiple pattern detectors to analyze code.
     """
 
-    def __init__(self, depth: str = 'deep'):
+    def __init__(self, depth: str = 'deep', enhance_with_ai: bool = True):
         """
         Initialize pattern recognizer.
 
         Args:
             depth: Detection depth ('surface', 'deep', 'full')
+            enhance_with_ai: Enable AI enhancement of detected patterns (default: True, C3.6)
         """
         self.depth = depth
+        self.enhance_with_ai = enhance_with_ai
         self.detectors: List[BasePatternDetector] = []
         self._register_detectors()
+
+        # Initialize AI enhancer if enabled (C3.6)
+        self.ai_enhancer = None
+        if self.enhance_with_ai:
+            try:
+                from skill_seekers.cli.ai_enhancer import PatternEnhancer
+                self.ai_enhancer = PatternEnhancer()
+            except Exception as e:
+                logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
+                self.enhance_with_ai = False
 
     def _register_detectors(self):
         """Register all available pattern detectors"""
@@ -291,6 +307,20 @@ class PatternRecognizer:
                     pattern = LanguageAdapter.adapt_for_language(pattern, language)
 
                     detected_patterns.append(pattern)
+
+        # Step 3: Enhance patterns with AI analysis (C3.6)
+        if self.enhance_with_ai and self.ai_enhancer and detected_patterns:
+            # Convert patterns to dict format for AI processing
+            pattern_dicts = [p.to_dict() for p in detected_patterns]
+            enhanced_dicts = self.ai_enhancer.enhance_patterns(pattern_dicts)
+
+            # Update patterns with AI analysis
+            for i, pattern in enumerate(detected_patterns):
+                if i < len(enhanced_dicts) and 'ai_analysis' in enhanced_dicts[i]:
+                    pattern.ai_analysis = enhanced_dicts[i]['ai_analysis']
+                    # Apply confidence boost if provided
+                    if 'confidence' in enhanced_dicts[i]:
+                        pattern.confidence = enhanced_dicts[i]['confidence']
 
         return PatternReport(
             file_path=file_path,

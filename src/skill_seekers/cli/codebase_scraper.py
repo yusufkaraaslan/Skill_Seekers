@@ -211,7 +211,8 @@ def analyze_codebase(
     extract_comments: bool = True,
     build_dependency_graph: bool = True,
     detect_patterns: bool = True,
-    extract_test_examples: bool = True
+    extract_test_examples: bool = True,
+    enhance_with_ai: bool = True
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -227,6 +228,7 @@ def analyze_codebase(
         build_dependency_graph: Generate dependency graph and detect circular dependencies
         detect_patterns: Detect design patterns (Singleton, Factory, Observer, etc.)
         extract_test_examples: Extract usage examples from test files
+        enhance_with_ai: Enhance patterns and examples with AI analysis (C3.6)
 
     Returns:
         Analysis results dictionary
@@ -379,7 +381,7 @@ def analyze_codebase(
         logger.info("Detecting design patterns...")
         from skill_seekers.cli.pattern_recognizer import PatternRecognizer
 
-        pattern_recognizer = PatternRecognizer(depth=depth)
+        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_with_ai)
         pattern_results = []
 
         for file_path in files:
@@ -422,7 +424,8 @@ def analyze_codebase(
         test_extractor = TestExampleExtractor(
             min_confidence=0.5,
             max_per_file=10,
-            languages=languages
+            languages=languages,
+            enhance_with_ai=enhance_with_ai
         )
 
         # Extract examples from directory
@@ -454,6 +457,30 @@ def analyze_codebase(
 
         except Exception as e:
             logger.warning(f"Test example extraction failed: {e}")
+
+    # Detect architectural patterns (C3.7)
+    # Always run this - it provides high-level overview
+    logger.info("Analyzing architectural patterns...")
+    from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
+
+    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_with_ai)
+    arch_report = arch_detector.analyze(directory, results['files'])
+
+    if arch_report.patterns:
+        arch_output = output_dir / 'architecture'
+        arch_output.mkdir(parents=True, exist_ok=True)
+
+        # Save as JSON
+        arch_json = arch_output / 'architectural_patterns.json'
+        with open(arch_json, 'w', encoding='utf-8') as f:
+            json.dump(arch_report.to_dict(), f, indent=2)
+
+        logger.info(f"🏗️  Detected {len(arch_report.patterns)} architectural patterns")
+        for pattern in arch_report.patterns:
+            logger.info(f"   - {pattern.pattern_name} (confidence: {pattern.confidence:.2f})")
+        logger.info(f"📁 Saved to: {arch_json}")
+    else:
+        logger.info("No clear architectural patterns detected")
 
     return results
 
@@ -537,6 +564,12 @@ Examples:
         help='Skip test example extraction (instantiation, method calls, configs, etc.) (default: enabled)'
     )
     parser.add_argument(
+        '--skip-ai-enhancement',
+        action='store_true',
+        default=False,
+        help='Skip AI enhancement of patterns and test examples (default: enabled, C3.6)'
+    )
+    parser.add_argument(
         '--no-comments',
         action='store_true',
         help='Skip comment extraction'
@@ -599,7 +632,8 @@ Examples:
             extract_comments=not args.no_comments,
             build_dependency_graph=not args.skip_dependency_graph,
             detect_patterns=not args.skip_patterns,
-            extract_test_examples=not args.skip_test_examples
+            extract_test_examples=not args.skip_test_examples,
+            enhance_with_ai=not args.skip_ai_enhancement
         )
 
         # Print summary

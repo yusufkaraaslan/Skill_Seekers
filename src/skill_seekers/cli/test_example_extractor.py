@@ -77,6 +77,7 @@ class TestExample:
     setup_code: Optional[str] = None  # Required setup code
     tags: List[str] = field(default_factory=list)  # ["pytest", "mock", "async"]
     dependencies: List[str] = field(default_factory=list)  # Imported modules
+    ai_analysis: Optional[Dict] = None  # AI-generated analysis (C3.6)
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization"""
@@ -92,6 +93,17 @@ class TestExample:
         md += f"**Confidence**: {self.confidence:.2f}  \n"
         if self.tags:
             md += f"**Tags**: {', '.join(self.tags)}  \n"
+
+        # Add AI analysis if available (C3.6)
+        if self.ai_analysis:
+            md += f"\n**🤖 AI Analysis:**  \n"
+            if self.ai_analysis.get('explanation'):
+                md += f"*{self.ai_analysis['explanation']}*  \n"
+            if self.ai_analysis.get('best_practices'):
+                md += f"**Best Practices:** {', '.join(self.ai_analysis['best_practices'])}  \n"
+            if self.ai_analysis.get('tutorial_group'):
+                md += f"**Tutorial Group:** {self.ai_analysis['tutorial_group']}  \n"
+
         md += f"\n```{self.language.lower()}\n"
         if self.setup_code:
             md += f"# Setup\n{self.setup_code}\n\n"
@@ -825,13 +837,25 @@ class TestExampleExtractor:
         self,
         min_confidence: float = 0.5,
         max_per_file: int = 10,
-        languages: Optional[List[str]] = None
+        languages: Optional[List[str]] = None,
+        enhance_with_ai: bool = True
     ):
         self.python_analyzer = PythonTestAnalyzer()
         self.generic_analyzer = GenericTestAnalyzer()
         self.quality_filter = ExampleQualityFilter(min_confidence=min_confidence)
         self.max_per_file = max_per_file
         self.languages = [lang.lower() for lang in languages] if languages else None
+        self.enhance_with_ai = enhance_with_ai
+
+        # Initialize AI enhancer if enabled (C3.6)
+        self.ai_enhancer = None
+        if self.enhance_with_ai:
+            try:
+                from skill_seekers.cli.ai_enhancer import TestExampleEnhancer
+                self.ai_enhancer = TestExampleEnhancer()
+            except Exception as e:
+                logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
+                self.enhance_with_ai = False
 
     def extract_from_directory(
         self,
@@ -925,6 +949,17 @@ class TestExampleExtractor:
         directory: Optional[str] = None
     ) -> ExampleReport:
         """Create summary report from examples"""
+        # Enhance examples with AI analysis (C3.6)
+        if self.enhance_with_ai and self.ai_enhancer and examples:
+            # Convert examples to dict format for AI processing
+            example_dicts = [ex.to_dict() for ex in examples]
+            enhanced_dicts = self.ai_enhancer.enhance_examples(example_dicts)
+
+            # Update examples with AI analysis
+            for i, example in enumerate(examples):
+                if i < len(enhanced_dicts) and 'ai_analysis' in enhanced_dicts[i]:
+                    example.ai_analysis = enhanced_dicts[i]['ai_analysis']
+
         # Count by category
         examples_by_category = {}
         for example in examples:

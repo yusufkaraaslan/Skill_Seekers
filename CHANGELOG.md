@@ -32,6 +32,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - JSON and Markdown output formats
   - Documentation: `docs/TEST_EXAMPLE_EXTRACTION.md`
 
+- **C3.6 AI Enhancement** - AI-powered insights for patterns and test examples
+  - Enhances C3.1 (Pattern Detection) and C3.2 (Test Examples) with AI analysis
+  - **Pattern Enhancement**: Explains why patterns detected, suggests improvements, identifies issues
+  - **Test Example Enhancement**: Adds context, groups examples into tutorials, identifies best practices
+  - Uses Claude AI (Anthropic) for analysis
+  - Graceful degradation if API unavailable
+  - Enabled by default, disable with `--skip-ai-enhancement`
+  - Batch processing to minimize API calls
+  - Confidence boost/reduction based on AI analysis
+  - Zero-cost if no ANTHROPIC_API_KEY (works offline)
+
+- **C3.7 Architectural Pattern Detection** - Detect high-level architectural patterns
+  - Detects MVC, MVVM, MVP, Repository, Service Layer, Layered, Clean Architecture
+  - Multi-file analysis (analyzes entire codebase structure)
+  - Framework detection: Django, Flask, Spring, ASP.NET, Rails, Laravel, Angular, React, Vue.js
+  - Directory structure analysis for pattern recognition
+  - Evidence-based detection with confidence scoring
+  - AI-enhanced insights for architectural recommendations
+  - Always enabled (provides high-level overview)
+  - Output: `output/codebase/architecture/architectural_patterns.json`
+  - Integration with C3.6 for AI-powered architectural insights
+
 ### Changed
 - **BREAKING: Analysis Features Now Default ON** - Improved UX for codebase analysis
   - All analysis features (API reference, dependency graph, patterns, test examples) are now **enabled by default**
