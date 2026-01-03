@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documentation: `docs/TEST_EXAMPLE_EXTRACTION.md`
 
 ### Changed
+- **BREAKING: Analysis Features Now Default ON** - Improved UX for codebase analysis
+  - All analysis features (API reference, dependency graph, patterns, test examples) are now **enabled by default**
+  - Changed flag pattern from `--build-*` to `--skip-*` for better discoverability
+  - **Old flags (DEPRECATED)**: `--build-api-reference`, `--build-dependency-graph`, `--detect-patterns`, `--extract-test-examples`
+  - **New flags**: `--skip-api-reference`, `--skip-dependency-graph`, `--skip-patterns`, `--skip-test-examples`
+  - **Migration**: Remove old `--build-*` flags from your scripts (features are now ON by default)
+  - **Backward compatibility**: Deprecated flags show warnings but still work (will be removed in v3.0.0)
+  - **Rationale**: Users should get maximum value by default; explicitly opt-out if needed
+  - **Impact**: `codebase-scraper --directory .` now runs all analysis features automatically
 
 ### Fixed
 

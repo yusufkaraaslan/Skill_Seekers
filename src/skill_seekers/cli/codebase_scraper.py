@@ -207,11 +207,11 @@ def analyze_codebase(
     depth: str = 'deep',
     languages: Optional[List[str]] = None,
     file_patterns: Optional[List[str]] = None,
-    build_api_reference: bool = False,
+    build_api_reference: bool = True,
     extract_comments: bool = True,
-    build_dependency_graph: bool = False,
-    detect_patterns: bool = False,
-    extract_test_examples: bool = False
+    build_dependency_graph: bool = True,
+    detect_patterns: bool = True,
+    extract_test_examples: bool = True
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -477,11 +477,14 @@ Examples:
   # Use file patterns
   codebase-scraper --directory . --file-patterns "*.py,src/**/*.js"
 
-  # Full analysis with all features
-  codebase-scraper --directory . --depth deep --build-api-reference --build-dependency-graph
+  # Full analysis with all features (default)
+  codebase-scraper --directory . --depth deep
 
-  # Surface analysis (fast, no details)
-  codebase-scraper --directory . --depth surface
+  # Surface analysis (fast, skip all analysis features)
+  codebase-scraper --directory . --depth surface --skip-api-reference --skip-dependency-graph --skip-patterns --skip-test-examples
+
+  # Skip specific features
+  codebase-scraper --directory . --skip-patterns --skip-test-examples
 """
     )
 
@@ -510,24 +513,28 @@ Examples:
         help='Comma-separated file patterns (e.g., *.py,src/**/*.js)'
     )
     parser.add_argument(
-        '--build-api-reference',
+        '--skip-api-reference',
         action='store_true',
-        help='Generate API reference markdown documentation'
+        default=False,
+        help='Skip API reference markdown documentation generation (default: enabled)'
     )
     parser.add_argument(
-        '--build-dependency-graph',
+        '--skip-dependency-graph',
         action='store_true',
-        help='Generate dependency graph and detect circular dependencies'
+        default=False,
+        help='Skip dependency graph and circular dependency detection (default: enabled)'
     )
     parser.add_argument(
-        '--detect-patterns',
+        '--skip-patterns',
         action='store_true',
-        help='Detect design patterns in code (Singleton, Factory, Observer, etc.)'
+        default=False,
+        help='Skip design pattern detection (Singleton, Factory, Observer, etc.) (default: enabled)'
     )
     parser.add_argument(
-        '--extract-test-examples',
+        '--skip-test-examples',
         action='store_true',
-        help='Extract usage examples from test files (instantiation, method calls, configs, etc.)'
+        default=False,
+        help='Skip test example extraction (instantiation, method calls, configs, etc.) (default: enabled)'
     )
     parser.add_argument(
         '--no-comments',
@@ -539,6 +546,20 @@ Examples:
         action='store_true',
         help='Enable verbose logging'
     )
+
+    # Check for deprecated flags
+    deprecated_flags = {
+        '--build-api-reference': '--skip-api-reference',
+        '--build-dependency-graph': '--skip-dependency-graph',
+        '--detect-patterns': '--skip-patterns',
+        '--extract-test-examples': '--skip-test-examples'
+    }
+
+    for old_flag, new_flag in deprecated_flags.items():
+        if old_flag in sys.argv:
+            logger.warning(f"⚠️  DEPRECATED: {old_flag} is deprecated. "
+                          f"All features are now enabled by default. "
+                          f"Use {new_flag} to disable this feature.")
 
     args = parser.parse_args()
 
@@ -574,11 +595,11 @@ Examples:
             depth=args.depth,
             languages=languages,
             file_patterns=file_patterns,
-            build_api_reference=args.build_api_reference,
+            build_api_reference=not args.skip_api_reference,
             extract_comments=not args.no_comments,
-            build_dependency_graph=args.build_dependency_graph,
-            detect_patterns=args.detect_patterns,
-            extract_test_examples=args.extract_test_examples
+            build_dependency_graph=not args.skip_dependency_graph,
+            detect_patterns=not args.skip_patterns,
+            extract_test_examples=not args.skip_test_examples
         )
 
         # Print summary
