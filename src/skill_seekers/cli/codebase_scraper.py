@@ -210,7 +210,8 @@ def analyze_codebase(
     build_api_reference: bool = False,
     extract_comments: bool = True,
     build_dependency_graph: bool = False,
-    detect_patterns: bool = False
+    detect_patterns: bool = False,
+    extract_test_examples: bool = False
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -225,6 +226,7 @@ def analyze_codebase(
         extract_comments: Extract inline comments
         build_dependency_graph: Generate dependency graph and detect circular dependencies
         detect_patterns: Detect design patterns (Singleton, Factory, Observer, etc.)
+        extract_test_examples: Extract usage examples from test files
 
     Returns:
         Analysis results dictionary
@@ -411,6 +413,48 @@ def analyze_codebase(
         else:
             logger.info("No design patterns detected")
 
+    # Extract test examples if requested (C3.2)
+    if extract_test_examples:
+        logger.info("Extracting usage examples from test files...")
+        from skill_seekers.cli.test_example_extractor import TestExampleExtractor
+
+        # Create extractor
+        test_extractor = TestExampleExtractor(
+            min_confidence=0.5,
+            max_per_file=10,
+            languages=languages
+        )
+
+        # Extract examples from directory
+        try:
+            example_report = test_extractor.extract_from_directory(
+                directory,
+                recursive=True
+            )
+
+            if example_report.total_examples > 0:
+                # Save results
+                examples_output = output_dir / 'test_examples'
+                examples_output.mkdir(parents=True, exist_ok=True)
+
+                # Save as JSON
+                examples_json = examples_output / 'test_examples.json'
+                with open(examples_json, 'w', encoding='utf-8') as f:
+                    json.dump(example_report.to_dict(), f, indent=2)
+
+                # Save as Markdown
+                examples_md = examples_output / 'test_examples.md'
+                examples_md.write_text(example_report.to_markdown(), encoding='utf-8')
+
+                logger.info(f"✅ Extracted {example_report.total_examples} test examples "
+                           f"({example_report.high_value_count} high-value)")
+                logger.info(f"📁 Saved to: {examples_output}")
+            else:
+                logger.info("No test examples extracted")
+
+        except Exception as e:
+            logger.warning(f"Test example extraction failed: {e}")
+
     return results
 
 
@@ -481,6 +525,11 @@ Examples:
         help='Detect design patterns in code (Singleton, Factory, Observer, etc.)'
     )
     parser.add_argument(
+        '--extract-test-examples',
+        action='store_true',
+        help='Extract usage examples from test files (instantiation, method calls, configs, etc.)'
+    )
+    parser.add_argument(
         '--no-comments',
         action='store_true',
         help='Skip comment extraction'
@@ -528,7 +577,8 @@ Examples:
             build_api_reference=args.build_api_reference,
             extract_comments=not args.no_comments,
             build_dependency_graph=args.build_dependency_graph,
-            detect_patterns=args.detect_patterns
+            detect_patterns=args.detect_patterns,
+            extract_test_examples=args.extract_test_examples
         )
 
         # Print summary

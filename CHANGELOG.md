@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 87% precision, 80% recall (tested on 100 real-world projects)
   - Documentation: `docs/PATTERN_DETECTION.md`
 
+- **C3.2 Test Example Extraction** - Extract real usage examples from test files
+  - Analyzes test files to extract real API usage patterns
+  - Categories: instantiation, method_call, config, setup, workflow
+  - Supports 9 languages: Python (AST-based deep analysis), JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby (regex-based)
+  - Quality filtering with confidence scoring (removes trivial patterns)
+  - CLI tool: `skill-seekers extract-test-examples tests/ --language python`
+  - Codebase scraper integration: `--extract-test-examples` flag
+  - MCP tool: `extract_test_examples` for Claude Code integration
+  - 19 comprehensive tests, 100% passing
+  - JSON and Markdown output formats
+  - Documentation: `docs/TEST_EXAMPLE_EXTRACTION.md`
+
 ### Changed
 
 ### Fixed

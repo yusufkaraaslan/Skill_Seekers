@@ -574,3 +574,87 @@ async def detect_patterns_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=output_text)]
     else:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+
+
+async def extract_test_examples_tool(args: dict) -> List[TextContent]:
+    """
+    Extract usage examples from test files.
+
+    Analyzes test files to extract real API usage patterns including:
+    - Object instantiation with real parameters
+    - Method calls with expected behaviors
+    - Configuration examples
+    - Setup patterns from fixtures/setUp()
+    - Multi-step workflows from integration tests
+
+    Supports 9 languages: Python (AST-based deep analysis), JavaScript,
+    TypeScript, Go, Rust, Java, C#, PHP, Ruby (regex-based).
+
+    Args:
+        args: Dictionary containing:
+            - file (str, optional): Single test file to analyze
+            - directory (str, optional): Directory containing test files
+            - language (str, optional): Filter by language (python, javascript, etc.)
+            - min_confidence (float, optional): Minimum confidence threshold 0.0-1.0 (default: 0.5)
+            - max_per_file (int, optional): Maximum examples per file (default: 10)
+            - json (bool, optional): Output JSON format (default: False)
+            - markdown (bool, optional): Output Markdown format (default: False)
+
+    Returns:
+        List[TextContent]: Extracted test examples
+
+    Example:
+        extract_test_examples(directory="tests/", language="python")
+        extract_test_examples(file="tests/test_scraper.py", json=True)
+    """
+    file_path = args.get("file")
+    directory = args.get("directory")
+
+    if not file_path and not directory:
+        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+
+    language = args.get("language", "")
+    min_confidence = args.get("min_confidence", 0.5)
+    max_per_file = args.get("max_per_file", 10)
+    json_output = args.get("json", False)
+    markdown_output = args.get("markdown", False)
+
+    # Build command
+    cmd = [sys.executable, "-m", "skill_seekers.cli.test_example_extractor"]
+
+    if directory:
+        cmd.append(directory)
+    if file_path:
+        cmd.extend(["--file", file_path])
+    if language:
+        cmd.extend(["--language", language])
+    if min_confidence:
+        cmd.extend(["--min-confidence", str(min_confidence)])
+    if max_per_file:
+        cmd.extend(["--max-per-file", str(max_per_file)])
+    if json_output:
+        cmd.append("--json")
+    if markdown_output:
+        cmd.append("--markdown")
+
+    timeout = 180  # 3 minutes for test example extraction
+
+    progress_msg = "🧪 Extracting usage examples from test files...\n"
+    if file_path:
+        progress_msg += f"📄 File: {file_path}\n"
+    if directory:
+        progress_msg += f"📁 Directory: {directory}\n"
+    if language:
+        progress_msg += f"🔤 Language: {language}\n"
+    progress_msg += f"🎯 Min confidence: {min_confidence}\n"
+    progress_msg += f"📊 Max per file: {max_per_file}\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output_text = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output_text)]
+    else:
+        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]

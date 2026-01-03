@@ -3,19 +3,19 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 18 tools for generating Claude AI skills from documentation.
+Provides 19 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 18 tools organized into 5 categories:
+- 19 tools organized into 5 categories:
   * Config tools (3): generate_config, list_configs, validate_config
-  * Scraping tools (5): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase
-  * Packaging tools (3): package_skill, upload_skill, install_skill
+  * Scraping tools (6): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples
+  * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
-  * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Source tools (4): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
 
 **Usage:**
   # Stdio transport (default, backward compatible)
@@ -83,6 +83,7 @@ try:
         scrape_pdf_impl,
         scrape_codebase_impl,
         detect_patterns_impl,
+        extract_test_examples_impl,
         # Packaging tools
         package_skill_impl,
         upload_skill_impl,
@@ -112,6 +113,7 @@ except ImportError:
         scrape_pdf_impl,
         scrape_codebase_impl,
         detect_patterns_impl,
+        extract_test_examples_impl,
         package_skill_impl,
         upload_skill_impl,
         enhance_skill_impl,
@@ -484,8 +486,61 @@ async def detect_patterns(
     return str(result)
 
 
+@safe_tool_decorator(
+    description="Extract usage examples from test files. Analyzes test files to extract real API usage patterns including instantiation, method calls, configs, setup patterns, and workflows. Supports 9 languages (Python AST-based, others regex-based)."
+)
+async def extract_test_examples(
+    file: str = "",
+    directory: str = "",
+    language: str = "",
+    min_confidence: float = 0.5,
+    max_per_file: int = 10,
+    json: bool = False,
+    markdown: bool = False,
+) -> str:
+    """
+    Extract usage examples from test files.
+
+    Analyzes test files to extract real API usage patterns including:
+    - Object instantiation with real parameters
+    - Method calls with expected behaviors
+    - Configuration examples
+    - Setup patterns from fixtures/setUp()
+    - Multi-step workflows from integration tests
+
+    Supports 9 languages: Python (AST-based), JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby.
+
+    Args:
+        file: Single test file to analyze (optional)
+        directory: Directory containing test files (optional)
+        language: Filter by language (python, javascript, etc.)
+        min_confidence: Minimum confidence threshold 0.0-1.0 (default: 0.5)
+        max_per_file: Maximum examples per file (default: 10)
+        json: Output JSON format (default: false)
+        markdown: Output Markdown format (default: false)
+
+    Examples:
+        extract_test_examples(directory="tests/", language="python")
+        extract_test_examples(file="tests/test_scraper.py", json=true)
+    """
+    args = {
+        "file": file,
+        "directory": directory,
+        "language": language,
+        "min_confidence": min_confidence,
+        "max_per_file": max_per_file,
+        "json": json,
+        "markdown": markdown,
+    }
+
+    result = await extract_test_examples_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
 # ============================================================================
-# PACKAGING TOOLS (3 tools)
+# PACKAGING TOOLS (4 tools)
 # ============================================================================
 
 

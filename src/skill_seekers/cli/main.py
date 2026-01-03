@@ -8,20 +8,22 @@ Usage:
     skill-seekers <command> [options]
 
 Commands:
-    scrape        Scrape documentation website
-    github        Scrape GitHub repository
-    pdf           Extract from PDF file
-    unified       Multi-source scraping (docs + GitHub + PDF)
-    enhance       AI-powered enhancement (local, no API key)
-    package       Package skill into .zip file
-    upload        Upload skill to Claude
-    estimate      Estimate page count before scraping
-    install-agent Install skill to AI agent directories
+    scrape               Scrape documentation website
+    github               Scrape GitHub repository
+    pdf                  Extract from PDF file
+    unified              Multi-source scraping (docs + GitHub + PDF)
+    enhance              AI-powered enhancement (local, no API key)
+    package              Package skill into .zip file
+    upload               Upload skill to Claude
+    estimate             Estimate page count before scraping
+    extract-test-examples Extract usage examples from test files
+    install-agent        Install skill to AI agent directories
 
 Examples:
     skill-seekers scrape --config configs/react.json
     skill-seekers github --repo microsoft/TypeScript
     skill-seekers unified --config configs/react_unified.json
+    skill-seekers extract-test-examples tests/ --language python
     skill-seekers package output/react/
     skill-seekers install-agent output/react/ --agent cursor
 """
@@ -160,6 +162,48 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     estimate_parser.add_argument("config", help="Config JSON file")
     estimate_parser.add_argument("--max-discovery", type=int, help="Max pages to discover")
+
+    # === extract-test-examples subcommand ===
+    test_examples_parser = subparsers.add_parser(
+        "extract-test-examples",
+        help="Extract usage examples from test files",
+        description="Analyze test files to extract real API usage patterns"
+    )
+    test_examples_parser.add_argument(
+        "directory",
+        nargs="?",
+        help="Directory containing test files"
+    )
+    test_examples_parser.add_argument(
+        "--file",
+        help="Single test file to analyze"
+    )
+    test_examples_parser.add_argument(
+        "--language",
+        help="Filter by programming language (python, javascript, etc.)"
+    )
+    test_examples_parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.5,
+        help="Minimum confidence threshold (0.0-1.0, default: 0.5)"
+    )
+    test_examples_parser.add_argument(
+        "--max-per-file",
+        type=int,
+        default=10,
+        help="Maximum examples per file (default: 10)"
+    )
+    test_examples_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output JSON format"
+    )
+    test_examples_parser.add_argument(
+        "--markdown",
+        action="store_true",
+        help="Output Markdown format"
+    )
 
     # === install-agent subcommand ===
     install_agent_parser = subparsers.add_parser(
@@ -336,6 +380,25 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.max_discovery:
                 sys.argv.extend(["--max-discovery", str(args.max_discovery)])
             return estimate_main() or 0
+
+        elif args.command == "extract-test-examples":
+            from skill_seekers.cli.test_example_extractor import main as test_examples_main
+            sys.argv = ["test_example_extractor.py"]
+            if args.directory:
+                sys.argv.append(args.directory)
+            if args.file:
+                sys.argv.extend(["--file", args.file])
+            if args.language:
+                sys.argv.extend(["--language", args.language])
+            if args.min_confidence:
+                sys.argv.extend(["--min-confidence", str(args.min_confidence)])
+            if args.max_per_file:
+                sys.argv.extend(["--max-per-file", str(args.max_per_file)])
+            if args.json:
+                sys.argv.append("--json")
+            if args.markdown:
+                sys.argv.append("--markdown")
+            return test_examples_main() or 0
 
         elif args.command == "install-agent":
             from skill_seekers.cli.install_agent import main as install_agent_main
