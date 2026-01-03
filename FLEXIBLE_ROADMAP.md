@@ -187,10 +187,24 @@ Generate skills from actual code repositories
   - 9 languages: Python (AST-based), JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby
   - Quality filtering with confidence scoring (removes trivial patterns)
   - CLI tool, MCP integration, 19 tests, 80%+ high-confidence examples
-  - See: `docs/TEST_EXAMPLE_EXTRACTION.md`
+  - See: `docs/TEST_EXAMPLE_EXTRACTION.md`, Issue #72
 - [ ] **Task C3.3:** Build "how to" guides from code
 - [ ] **Task C3.4:** Extract configuration patterns
 - [ ] **Task C3.5:** Create architectural overview
+- [x] **Task C3.6:** AI Enhancement for Pattern Detection and Test Examples ✅ **v2.6.0** - Completed Jan 2026
+  - Enhances C3.1 and C3.2 with AI-powered insights using Claude API
+  - Pattern enhancement: Explains detection, suggests improvements, identifies issues
+  - Test example enhancement: Adds context, groups tutorials, identifies best practices
+  - Auto-activation when ANTHROPIC_API_KEY is set, graceful offline degradation
+  - Batch processing (5 items/call) to minimize API costs
+  - See: `src/skill_seekers/cli/ai_enhancer.py`, Issue #234
+- [x] **Task C3.7:** Architectural Pattern Detection ✅ **v2.6.0** - Completed Jan 2026
+  - Detects 8 architectural patterns: MVC, MVVM, MVP, Repository, Service Layer, Layered, Clean Architecture
+  - Framework detection: Django, Flask, Spring, ASP.NET, Rails, Laravel, Angular, React, Vue.js
+  - Multi-file analysis with directory structure pattern matching
+  - Evidence-based detection with confidence scoring
+  - AI-enhanced architectural insights (integrates with C3.6)
+  - See: `src/skill_seekers/cli/architectural_pattern_detector.py`, Issue #235
 
 **Start Small:** Pick C3.3 next (build "how to" guides from workflow examples)
 
