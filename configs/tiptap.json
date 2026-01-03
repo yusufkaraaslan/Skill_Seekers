@@ -42,6 +42,7 @@
     "collaboration": ["collaboration", "collab", "yjs", "real-time"],
     "examples": ["examples", "demos", "recipes"]
   },
-  "rate_limit": 1.0,
-  "max_pages": 200
+  "rate_limit": 0.5,
+  "max_pages": 250,
+  "skip_llms_txt": true
 }

@@ -1,0 +1,53 @@
+{
+  "name": "mistral",
+  "description": "Mistral AI API and SDK documentation. Use for chat completions, vision, audio transcription, function calling, embeddings, fine-tuning, agents, and deploying Mistral models.",
+  "base_url": "https://docs.mistral.ai/",
+  "start_urls": [
+    "https://docs.mistral.ai/getting-started/quickstart/",
+    "https://docs.mistral.ai/getting-started/models/",
+    "https://docs.mistral.ai/capabilities/completion/",
+    "https://docs.mistral.ai/capabilities/vision/",
+    "https://docs.mistral.ai/capabilities/audio/",
+    "https://docs.mistral.ai/capabilities/function_calling/",
+    "https://docs.mistral.ai/capabilities/embeddings/",
+    "https://docs.mistral.ai/capabilities/finetuning/",
+    "https://docs.mistral.ai/agents/introduction/",
+    "https://docs.mistral.ai/api/"
+  ],
+  "selectors": {
+    "main_content": "article.prose, article, main, div.prose",
+    "title": "h1",
+    "code_blocks": "pre code, pre, [language]"
+  },
+  "url_patterns": {
+    "include": [
+      "/getting-started/",
+      "/capabilities/",
+      "/agents/",
+      "/deployment/",
+      "/api/"
+    ],
+    "exclude": [
+      "/changelog",
+      "/glossary",
+      "/_next/",
+      "/static/",
+      "#"
+    ]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "introduction", "models", "sdk", "getting-started"],
+    "chat_completion": ["completion", "chat", "streaming", "conversation"],
+    "vision": ["vision", "image", "multimodal"],
+    "audio": ["audio", "transcription", "speech"],
+    "function_calling": ["function", "calling", "tools", "tool_use"],
+    "embeddings": ["embedding", "vector", "similarity"],
+    "fine_tuning": ["finetuning", "fine-tuning", "training", "customization"],
+    "agents": ["agent", "handoff", "conversation"],
+    "moderation": ["moderation", "safety", "classification"],
+    "deployment": ["deployment", "cloud", "self-deploy", "studio"],
+    "api_reference": ["api", "endpoint", "reference"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}
