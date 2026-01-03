@@ -36,12 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhances C3.1 (Pattern Detection) and C3.2 (Test Examples) with AI analysis
   - **Pattern Enhancement**: Explains why patterns detected, suggests improvements, identifies issues
   - **Test Example Enhancement**: Adds context, groups examples into tutorials, identifies best practices
-  - Uses Claude AI (Anthropic) for analysis
-  - Graceful degradation if API unavailable
-  - Enabled by default, disable with `--skip-ai-enhancement`
-  - Batch processing to minimize API calls
-  - Confidence boost/reduction based on AI analysis
-  - Zero-cost if no ANTHROPIC_API_KEY (works offline)
+  - **API Mode** (for pattern/example enhancement):
+    - Uses Anthropic API with ANTHROPIC_API_KEY
+    - Batch processing (5 items per call) for efficiency
+    - Automatic activation when key is set
+    - Graceful degradation if no key (works offline)
+  - **LOCAL Mode** (for SKILL.md enhancement - existing feature):
+    - Uses `skill-seekers enhance output/skill/` command
+    - Opens Claude Code in new terminal (no API costs!)
+    - Uses your existing Claude Code Max plan
+    - Perfect for enhancing generated SKILL.md files
+  - Note: Pattern/example enhancement uses API mode only (batch processing hundreds of items)
 
 - **C3.7 Architectural Pattern Detection** - Detect high-level architectural patterns
   - Detects MVC, MVVM, MVP, Repository, Service Layer, Layered, Clean Architecture

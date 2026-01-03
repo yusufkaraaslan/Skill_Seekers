@@ -39,19 +39,37 @@ class AIAnalysis:
 class AIEnhancer:
     """Base class for AI enhancement"""
 
-    def __init__(self, api_key: Optional[str] = None, enabled: bool = True):
+    def __init__(self, api_key: Optional[str] = None, enabled: bool = True, mode: str = "auto"):
         """
         Initialize AI enhancer.
 
         Args:
             api_key: Anthropic API key (uses ANTHROPIC_API_KEY env if None)
             enabled: Enable AI enhancement (default: True)
+            mode: Enhancement mode - "auto" (default), "api", or "local"
+                  - "auto": Use API if key available, otherwise disable
+                  - "api": Force API mode (fails if no key)
+                  - "local": Use Claude Code local mode (opens terminal)
         """
         self.enabled = enabled
+        self.mode = mode
         self.api_key = api_key or os.environ.get('ANTHROPIC_API_KEY')
         self.client = None
 
-        if self.enabled and self.api_key:
+        # Determine actual mode
+        if mode == "auto":
+            if self.api_key:
+                self.mode = "api"
+            else:
+                # For now, disable if no API key
+                # LOCAL mode for batch processing is complex
+                self.mode = "disabled"
+                self.enabled = False
+                logger.info("ℹ️  AI enhancement disabled (no API key found)")
+                logger.info("   Set ANTHROPIC_API_KEY to enable, or use 'skill-seekers enhance' for SKILL.md")
+                return
+
+        if self.mode == "api" and self.enabled:
             try:
                 import anthropic
                 self.client = anthropic.Anthropic(api_key=self.api_key)
@@ -63,9 +81,11 @@ class AIEnhancer:
             except Exception as e:
                 logger.warning(f"⚠️  Failed to initialize AI client: {e}")
                 self.enabled = False
-        elif self.enabled:
-            logger.info("ℹ️  AI enhancement disabled (no API key found)")
-            logger.info("   Set ANTHROPIC_API_KEY environment variable to enable")
+        elif self.mode == "local":
+            # LOCAL mode requires Claude Code to be available
+            # For patterns/examples, this is less practical than API mode
+            logger.info("ℹ️  LOCAL mode not yet supported for pattern/example enhancement")
+            logger.info("   Use API mode (set ANTHROPIC_API_KEY) or 'skill-seekers enhance' for SKILL.md")
             self.enabled = False
 
     def _call_claude(self, prompt: str, max_tokens: int = 1000) -> Optional[str]:
