@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Enhanced LOCAL Enhancement Modes** - Advanced enhancement execution options
+  - **4 Execution Modes** for different use cases:
+    - **Headless** (default): Runs in foreground, waits for completion (perfect for CI/CD)
+    - **Background** (`--background`): Runs in background thread, returns immediately
+    - **Daemon** (`--daemon`): Fully detached process with `nohup`, survives parent exit
+    - **Terminal** (`--interactive-enhancement`): Opens new terminal window (macOS)
+  - **Force Mode** (`--force` / `-f`): Skip all confirmations for automation ("dangerously skip mode")
+  - **Status Monitoring**: New `enhance-status` command for background/daemon processes
+    - Check status once: `skill-seekers enhance-status output/react/`
+    - Watch in real-time: `skill-seekers enhance-status output/react/ --watch`
+    - JSON output for scripts: `skill-seekers enhance-status output/react/ --json`
+  - **Status File**: `.enhancement_status.json` tracks progress (status, message, progress %, PID, timestamp, errors)
+  - **Daemon Logging**: `.enhancement_daemon.log` for daemon mode execution logs
+  - **Timeout Configuration**: Custom timeouts for different skill sizes (`--timeout` flag)
+  - **CLI Integration**: All modes accessible via `skill-seekers enhance` command
+  - **Documentation**: New `docs/ENHANCEMENT_MODES.md` guide with examples
+  - **Use Cases**:
+    - CI/CD pipelines: `--force` for unattended execution
+    - Long-running tasks: `--daemon` for tasks that survive logout
+    - Parallel processing: `--background` for batch enhancement
+    - Debugging: `--interactive-enhancement` to watch Claude Code work
+
 - **C3.1 Design Pattern Detection** - Detect 10 common design patterns in code
   - Detects: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
   - Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#, Go, Rust, Java (plus Ruby, PHP)

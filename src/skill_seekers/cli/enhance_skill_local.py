@@ -5,8 +5,26 @@ Opens a new terminal with Claude Code to enhance SKILL.md, then reports back.
 No API key needed - uses your existing Claude Code Max plan!
 
 Usage:
-    skill-seekers enhance output/steam-inventory/
+    # Headless mode (default - runs in foreground, waits for completion)
     skill-seekers enhance output/react/
+
+    # Background mode (runs in background, returns immediately)
+    skill-seekers enhance output/react/ --background
+
+    # Force mode (no confirmations, auto-yes to everything)
+    skill-seekers enhance output/react/ --force
+
+    # Daemon mode (persistent background process)
+    skill-seekers enhance output/react/ --daemon
+
+    # Interactive terminal mode
+    skill-seekers enhance output/react/ --interactive-enhancement
+
+Modes:
+    - headless: Runs claude CLI directly, BLOCKS until done (default)
+    - background: Runs claude CLI in background, returns immediately
+    - daemon: Runs as persistent background process with monitoring
+    - terminal: Opens new terminal window (interactive)
 
 Terminal Selection:
     The script automatically detects which terminal app to use:
@@ -23,7 +41,10 @@ import sys
 import time
 import subprocess
 import tempfile
+import json
+import threading
 from pathlib import Path
+from datetime import datetime
 
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -82,10 +103,18 @@ def detect_terminal_app():
 
 
 class LocalSkillEnhancer:
-    def __init__(self, skill_dir):
+    def __init__(self, skill_dir, force=False):
+        """Initialize enhancer.
+
+        Args:
+            skill_dir: Path to skill directory
+            force: If True, skip all confirmations (dangerously skip mode)
+        """
         self.skill_dir = Path(skill_dir)
         self.references_dir = self.skill_dir / "references"
         self.skill_md_path = self.skill_dir / "SKILL.md"
+        self.force = force
+        self.status_file = self.skill_dir / ".enhancement_status.json"
 
     def summarize_reference(self, content: str, target_ratio: float = 0.3) -> str:
         """Intelligently summarize reference content to reduce size.
@@ -268,7 +297,41 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
 
         return prompt
 
-    def run(self, headless=True, timeout=600):
+    def write_status(self, status, message="", progress=0.0, error=None):
+        """Write enhancement status to file for monitoring.
+
+        Args:
+            status: One of: pending, running, completed, failed
+            message: Status message
+            progress: Progress percentage (0.0-1.0)
+            error: Error message if failed
+        """
+        status_data = {
+            "status": status,
+            "message": message,
+            "progress": progress,
+            "timestamp": datetime.now().isoformat(),
+            "skill_dir": str(self.skill_dir),
+            "error": error
+        }
+
+        self.status_file.write_text(json.dumps(status_data, indent=2), encoding='utf-8')
+
+    def read_status(self):
+        """Read enhancement status from file.
+
+        Returns:
+            dict: Status data or None if not found
+        """
+        if not self.status_file.exists():
+            return None
+
+        try:
+            return json.loads(self.status_file.read_text(encoding='utf-8'))
+        except:
+            return None
+
+    def run(self, headless=True, timeout=600, background=False, daemon=False):
         """Main enhancement workflow with automatic smart summarization for large skills.
 
         Automatically detects large skills (>30K chars) and applies smart summarization
@@ -283,10 +346,19 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
         Args:
             headless: If True, run claude directly without opening terminal (default: True)
             timeout: Maximum time to wait for enhancement in seconds (default: 600 = 10 minutes)
+            background: If True, run in background and return immediately (default: False)
+            daemon: If True, run as persistent daemon with monitoring (default: False)
 
         Returns:
             bool: True if enhancement process started successfully, False otherwise
         """
+        # Background mode: Run in background thread, return immediately
+        if background:
+            return self._run_background(headless, timeout)
+
+        # Daemon mode: Run as persistent process with monitoring
+        if daemon:
+            return self._run_daemon(timeout)
         print(f"\n{'='*60}")
         print(f"LOCAL ENHANCEMENT: {self.skill_dir.name}")
         print(f"{'='*60}\n")
@@ -533,6 +605,262 @@ rm {prompt_file}
             print(f"❌ Unexpected error: {e}")
             return False
 
+    def _run_background(self, headless, timeout):
+        """Run enhancement in background thread, return immediately.
+
+        Args:
+            headless: Run headless mode
+            timeout: Timeout in seconds
+
+        Returns:
+            bool: True if background task started successfully
+        """
+        print(f"\n{'='*60}")
+        print(f"BACKGROUND ENHANCEMENT: {self.skill_dir.name}")
+        print(f"{'='*60}\n")
+
+        # Write initial status
+        self.write_status("pending", "Starting background enhancement...")
+
+        def background_worker():
+            """Worker function for background thread"""
+            try:
+                self.write_status("running", "Enhancement in progress...", progress=0.1)
+
+                # Read reference files
+                references = read_reference_files(
+                    self.skill_dir,
+                    max_chars=LOCAL_CONTENT_LIMIT,
+                    preview_limit=LOCAL_PREVIEW_LIMIT
+                )
+
+                if not references:
+                    self.write_status("failed", error="No reference files found")
+                    return
+
+                total_size = sum(len(c) for c in references.values())
+                use_summarization = total_size > 30000
+
+                self.write_status("running", "Creating enhancement prompt...", progress=0.3)
+
+                # Create prompt
+                prompt = self.create_enhancement_prompt(use_summarization=use_summarization)
+                if not prompt:
+                    self.write_status("failed", error="Failed to create prompt")
+                    return
+
+                # Save prompt to temp file
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+                    prompt_file = f.name
+                    f.write(prompt)
+
+                self.write_status("running", "Running Claude Code enhancement...", progress=0.5)
+
+                # Run enhancement
+                if headless:
+                    # Run headless (subprocess.run - blocking in thread)
+                    result = subprocess.run(
+                        ['claude', prompt_file],
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout
+                    )
+
+                    # Clean up
+                    try:
+                        os.unlink(prompt_file)
+                    except:
+                        pass
+
+                    if result.returncode == 0:
+                        self.write_status("completed", "Enhancement completed successfully!", progress=1.0)
+                    else:
+                        self.write_status("failed", error=f"Claude returned error: {result.returncode}")
+                else:
+                    # Terminal mode in background doesn't make sense
+                    self.write_status("failed", error="Terminal mode not supported in background")
+
+            except subprocess.TimeoutExpired:
+                self.write_status("failed", error=f"Enhancement timed out after {timeout} seconds")
+            except Exception as e:
+                self.write_status("failed", error=str(e))
+
+        # Start background thread
+        thread = threading.Thread(target=background_worker, daemon=True)
+        thread.start()
+
+        print("✅ Background enhancement started!")
+        print()
+        print("📊 Monitoring:")
+        print(f"  - Status file: {self.status_file}")
+        print(f"  - Check status: cat {self.status_file}")
+        print(f"  - Or use: skill-seekers enhance-status {self.skill_dir}")
+        print()
+        print("💡 The enhancement will continue in the background.")
+        print("   You can close this terminal - the process will keep running.")
+        print()
+
+        return True
+
+    def _run_daemon(self, timeout):
+        """Run as persistent daemon process with monitoring.
+
+        Creates a detached background process that continues running even if parent exits.
+
+        Args:
+            timeout: Timeout in seconds
+
+        Returns:
+            bool: True if daemon started successfully
+        """
+        print(f"\n{'='*60}")
+        print(f"DAEMON MODE: {self.skill_dir.name}")
+        print(f"{'='*60}\n")
+
+        # Write initial status
+        self.write_status("pending", "Starting daemon process...")
+
+        print("🔧 Creating daemon process...")
+
+        # Create Python script for daemon
+        daemon_script = f'''#!/usr/bin/env python3
+import os
+import sys
+import time
+import subprocess
+import tempfile
+import json
+from pathlib import Path
+from datetime import datetime
+
+skill_dir = Path("{self.skill_dir}")
+status_file = skill_dir / ".enhancement_status.json"
+skill_md_path = skill_dir / "SKILL.md"
+
+def write_status(status, message="", progress=0.0, error=None):
+    status_data = {{
+        "status": status,
+        "message": message,
+        "progress": progress,
+        "timestamp": datetime.now().isoformat(),
+        "skill_dir": str(skill_dir),
+        "error": error,
+        "pid": os.getpid()
+    }}
+    status_file.write_text(json.dumps(status_data, indent=2), encoding='utf-8')
+
+try:
+    write_status("running", "Daemon started, loading references...", progress=0.1)
+
+    # Import enhancement logic
+    sys.path.insert(0, "{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
+    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+    enhancer = LocalSkillEnhancer("{self.skill_dir}")
+
+    # Create prompt
+    write_status("running", "Creating enhancement prompt...", progress=0.3)
+    prompt = enhancer.create_enhancement_prompt(use_summarization=True)
+
+    if not prompt:
+        write_status("failed", error="Failed to create prompt")
+        sys.exit(1)
+
+    # Save prompt
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+        prompt_file = f.name
+        f.write(prompt)
+
+    write_status("running", "Running Claude Code...", progress=0.5)
+
+    # Run Claude
+    result = subprocess.run(
+        ['claude', prompt_file],
+        capture_output=True,
+        text=True,
+        timeout={timeout}
+    )
+
+    # Clean up
+    try:
+        os.unlink(prompt_file)
+    except:
+        pass
+
+    if result.returncode == 0:
+        write_status("completed", "Enhancement completed successfully!", progress=1.0)
+        sys.exit(0)
+    else:
+        write_status("failed", error=f"Claude returned error: {{result.returncode}}")
+        sys.exit(1)
+
+except subprocess.TimeoutExpired:
+    write_status("failed", error=f"Enhancement timed out after {timeout} seconds")
+    sys.exit(1)
+except Exception as e:
+    write_status("failed", error=str(e))
+    sys.exit(1)
+'''
+
+        # Save daemon script
+        daemon_script_path = self.skill_dir / ".enhancement_daemon.py"
+        daemon_script_path.write_text(daemon_script, encoding='utf-8')
+        daemon_script_path.chmod(0o755)
+
+        # Start daemon process (fully detached)
+        try:
+            # Use nohup to detach from terminal
+            log_file = self.skill_dir / ".enhancement_daemon.log"
+
+            if self.force:
+                # Force mode: No output, fully silent
+                subprocess.Popen(
+                    ['nohup', 'python3', str(daemon_script_path)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+            else:
+                # Normal mode: Log to file
+                with open(log_file, 'w') as log:
+                    subprocess.Popen(
+                        ['nohup', 'python3', str(daemon_script_path)],
+                        stdout=log,
+                        stderr=log,
+                        start_new_session=True
+                    )
+
+            # Give daemon time to start
+            time.sleep(1)
+
+            # Read status to verify it started
+            status = self.read_status()
+
+            if status and status.get('status') in ['pending', 'running']:
+                print("✅ Daemon process started successfully!")
+                print()
+                print("📊 Monitoring:")
+                print(f"  - Status file: {self.status_file}")
+                print(f"  - Log file: {log_file}")
+                print(f"  - PID: {status.get('pid', 'unknown')}")
+                print()
+                print("💡 Commands:")
+                print(f"  - Check status: cat {self.status_file}")
+                print(f"  - View logs: tail -f {log_file}")
+                print(f"  - Or use: skill-seekers enhance-status {self.skill_dir}")
+                print()
+                print("🔥 The daemon will continue running even if you close this terminal!")
+                print()
+
+                return True
+            else:
+                print("❌ Daemon failed to start")
+                return False
+
+        except Exception as e:
+            print(f"❌ Failed to start daemon: {e}")
+            return False
+
 
 def main():
     import argparse
@@ -542,14 +870,32 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Headless mode (default - runs in background)
+  # Headless mode (default - runs in foreground, waits for completion)
   skill-seekers enhance output/react/
+
+  # Background mode (runs in background, returns immediately)
+  skill-seekers enhance output/react/ --background
+
+  # Daemon mode (persistent background process, fully detached)
+  skill-seekers enhance output/react/ --daemon
+
+  # Force mode (no confirmations, auto-yes to everything)
+  skill-seekers enhance output/react/ --force
 
   # Interactive mode (opens terminal window)
   skill-seekers enhance output/react/ --interactive-enhancement
 
+  # Background with force (silent background processing)
+  skill-seekers enhance output/react/ --background --force
+
   # Custom timeout
   skill-seekers enhance output/react/ --timeout 1200
+
+Mode Comparison:
+  - headless:    Runs claude CLI directly, BLOCKS until done (default)
+  - background:  Runs in background thread, returns immediately
+  - daemon:      Fully detached process, continues after parent exits
+  - terminal:    Opens new terminal window (interactive)
 """
     )
 
@@ -565,6 +911,24 @@ Examples:
     )
 
     parser.add_argument(
+        '--background',
+        action='store_true',
+        help='Run in background and return immediately (non-blocking)'
+    )
+
+    parser.add_argument(
+        '--daemon',
+        action='store_true',
+        help='Run as persistent daemon process (fully detached)'
+    )
+
+    parser.add_argument(
+        '--force', '-f',
+        action='store_true',
+        help='Force mode: skip all confirmations (dangerously skip mode)'
+    )
+
+    parser.add_argument(
         '--timeout',
         type=int,
         default=600,
@@ -573,10 +937,22 @@ Examples:
 
     args = parser.parse_args()
 
+    # Validate mutually exclusive options
+    mode_count = sum([args.interactive_enhancement, args.background, args.daemon])
+    if mode_count > 1:
+        print("❌ Error: --interactive-enhancement, --background, and --daemon are mutually exclusive")
+        print("   Choose only one mode")
+        sys.exit(1)
+
     # Run enhancement
-    enhancer = LocalSkillEnhancer(args.skill_directory)
+    enhancer = LocalSkillEnhancer(args.skill_directory, force=args.force)
     headless = not args.interactive_enhancement  # Invert: default is headless
-    success = enhancer.run(headless=headless, timeout=args.timeout)
+    success = enhancer.run(
+        headless=headless,
+        timeout=args.timeout,
+        background=args.background,
+        daemon=args.daemon
+    )
 
     sys.exit(0 if success else 1)
 

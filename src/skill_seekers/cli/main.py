@@ -13,6 +13,7 @@ Commands:
     pdf                  Extract from PDF file
     unified              Multi-source scraping (docs + GitHub + PDF)
     enhance              AI-powered enhancement (local, no API key)
+    enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
     upload               Upload skill to Claude
     estimate             Estimate page count before scraping
@@ -134,6 +135,21 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         description="Enhance SKILL.md using Claude Code (local)"
     )
     enhance_parser.add_argument("skill_directory", help="Skill directory path")
+    enhance_parser.add_argument("--background", action="store_true", help="Run in background")
+    enhance_parser.add_argument("--daemon", action="store_true", help="Run as daemon")
+    enhance_parser.add_argument("--force", "-f", action="store_true", help="Force mode (skip confirmations)")
+    enhance_parser.add_argument("--timeout", type=int, default=600, help="Timeout in seconds")
+
+    # === enhance-status subcommand ===
+    enhance_status_parser = subparsers.add_parser(
+        "enhance-status",
+        help="Check enhancement status (for background/daemon modes)",
+        description="Monitor background enhancement processes"
+    )
+    enhance_status_parser.add_argument("skill_directory", help="Skill directory path")
+    enhance_status_parser.add_argument("--watch", "-w", action="store_true", help="Watch in real-time")
+    enhance_status_parser.add_argument("--json", action="store_true", help="JSON output")
+    enhance_status_parser.add_argument("--interval", type=int, default=2, help="Watch interval in seconds")
 
     # === package subcommand ===
     package_parser = subparsers.add_parser(
@@ -356,7 +372,26 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.command == "enhance":
             from skill_seekers.cli.enhance_skill_local import main as enhance_main
             sys.argv = ["enhance_skill_local.py", args.skill_directory]
+            if args.background:
+                sys.argv.append("--background")
+            if args.daemon:
+                sys.argv.append("--daemon")
+            if args.force:
+                sys.argv.append("--force")
+            if args.timeout:
+                sys.argv.extend(["--timeout", str(args.timeout)])
             return enhance_main() or 0
+
+        elif args.command == "enhance-status":
+            from skill_seekers.cli.enhance_status import main as enhance_status_main
+            sys.argv = ["enhance_status.py", args.skill_directory]
+            if args.watch:
+                sys.argv.append("--watch")
+            if args.json:
+                sys.argv.append("--json")
+            if args.interval:
+                sys.argv.extend(["--interval", str(args.interval)])
+            return enhance_status_main() or 0
 
         elif args.command == "package":
             from skill_seekers.cli.package_skill import main as package_main
