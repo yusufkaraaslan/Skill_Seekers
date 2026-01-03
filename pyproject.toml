@@ -60,14 +60,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Development dependencies
-dev = [
-    "pytest>=8.4.2",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=7.0.0",
-    "coverage>=7.11.0",
-]
-
 # MCP server dependencies (included by default, but optional)
 mcp = [
     "mcp>=1.25,<2",
@@ -95,12 +87,8 @@ all-llms = [
     "openai>=1.0.0",
 ]
 
-# All optional dependencies combined
+# All optional dependencies combined (dev dependencies now in [dependency-groups])
 all = [
-    "pytest>=8.4.2",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=7.0.0",
-    "coverage>=7.11.0",
     "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
@@ -133,6 +121,7 @@ skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
+skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

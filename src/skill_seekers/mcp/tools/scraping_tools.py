@@ -504,3 +504,73 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=output_text)]
     else:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+
+
+async def detect_patterns_tool(args: dict) -> List[TextContent]:
+    """
+    Detect design patterns in source code.
+
+    Analyzes source files or directories to detect common design patterns
+    (Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter,
+    Command, Template Method, Chain of Responsibility).
+
+    Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#,
+    Go, Rust, Java, Ruby, PHP.
+
+    Args:
+        args: Dictionary containing:
+            - file (str, optional): Single file to analyze
+            - directory (str, optional): Directory to analyze (analyzes all source files)
+            - output (str, optional): Output directory for JSON results
+            - depth (str, optional): Detection depth - surface, deep, full (default: deep)
+            - json (bool, optional): Output JSON format (default: False)
+
+    Returns:
+        List[TextContent]: Pattern detection results
+
+    Example:
+        detect_patterns(file="src/database.py", depth="deep")
+        detect_patterns(directory="src/", output="patterns/", json=True)
+    """
+    file_path = args.get("file")
+    directory = args.get("directory")
+
+    if not file_path and not directory:
+        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+
+    output = args.get("output", "")
+    depth = args.get("depth", "deep")
+    json_output = args.get("json", False)
+
+    # Build command
+    cmd = [sys.executable, "-m", "skill_seekers.cli.pattern_recognizer"]
+
+    if file_path:
+        cmd.extend(["--file", file_path])
+    if directory:
+        cmd.extend(["--directory", directory])
+    if output:
+        cmd.extend(["--output", output])
+    if depth:
+        cmd.extend(["--depth", depth])
+    if json_output:
+        cmd.append("--json")
+
+    timeout = 300  # 5 minutes for pattern detection
+
+    progress_msg = "🔍 Detecting design patterns...\n"
+    if file_path:
+        progress_msg += f"📄 File: {file_path}\n"
+    if directory:
+        progress_msg += f"📁 Directory: {directory}\n"
+    progress_msg += f"🎯 Detection depth: {depth}\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output_text = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output_text)]
+    else:
+        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]

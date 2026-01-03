@@ -25,6 +25,7 @@ from .scraping_tools import (
     scrape_github_tool as scrape_github_impl,
     scrape_pdf_tool as scrape_pdf_impl,
     scrape_codebase_tool as scrape_codebase_impl,
+    detect_patterns_tool as detect_patterns_impl,
 )
 
 from .packaging_tools import (
@@ -58,6 +59,7 @@ __all__ = [
     "scrape_github_impl",
     "scrape_pdf_impl",
     "scrape_codebase_impl",
+    "detect_patterns_impl",
     # Packaging tools
     "package_skill_impl",
     "upload_skill_impl",
