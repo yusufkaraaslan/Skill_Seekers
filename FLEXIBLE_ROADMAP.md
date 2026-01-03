@@ -176,13 +176,18 @@ Generate skills from actual code repositories
 **Start Small:** Pick C2.1 first (simple file walker)
 
 #### C3: Code Pattern Recognition
-- [ ] **Task C3.1:** Detect common patterns (singleton, factory, etc.)
+- [x] **Task C3.1:** Detect common patterns (singleton, factory, etc.) ✅ **v2.6.0** - Completed Jan 2026
+  - 10 GoF patterns: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
+  - 9 languages: Python (AST), JavaScript, TypeScript, C++, C, C#, Go, Rust, Java
+  - 3 detection levels: Surface (naming), Deep (structure), Full (behavior)
+  - CLI tool, MCP integration, 24 tests, 87% precision
+  - See: `docs/PATTERN_DETECTION.md`, Issue #71
 - [ ] **Task C3.2:** Extract usage examples from test files
 - [ ] **Task C3.3:** Build "how to" guides from code
 - [ ] **Task C3.4:** Extract configuration patterns
 - [ ] **Task C3.5:** Create architectural overview
 
-**Start Small:** Pick C3.1 first (pattern detection research)
+**Start Small:** Pick C3.2 next (extract usage examples from tests)
 
 ---
 
