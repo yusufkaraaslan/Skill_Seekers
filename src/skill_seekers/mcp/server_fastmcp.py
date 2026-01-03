@@ -82,6 +82,7 @@ try:
         scrape_github_impl,
         scrape_pdf_impl,
         scrape_codebase_impl,
+        detect_patterns_impl,
         # Packaging tools
         package_skill_impl,
         upload_skill_impl,
@@ -110,6 +111,7 @@ except ImportError:
         scrape_github_impl,
         scrape_pdf_impl,
         scrape_codebase_impl,
+        detect_patterns_impl,
         package_skill_impl,
         upload_skill_impl,
         enhance_skill_impl,
@@ -433,6 +435,50 @@ async def scrape_codebase(
     }
 
     result = await scrape_codebase_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Detect design patterns in source code (Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility). Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#, Go, Rust, Java, Ruby, PHP."
+)
+async def detect_patterns(
+    file: str = "",
+    directory: str = "",
+    output: str = "",
+    depth: str = "deep",
+    json: bool = False,
+) -> str:
+    """
+    Detect design patterns in source code.
+
+    Analyzes source files or directories to identify common design patterns.
+    Provides confidence scores and evidence for each detected pattern.
+
+    Args:
+        file: Single file to analyze (optional)
+        directory: Directory to analyze all source files (optional)
+        output: Output directory for JSON results (optional)
+        depth: Detection depth - surface (fast), deep (balanced), full (thorough). Default: deep
+        json: Output JSON format instead of human-readable (default: false)
+
+    Returns:
+        Pattern detection results with confidence scores and evidence.
+
+    Example:
+        detect_patterns(file="src/database.py", depth="deep")
+        detect_patterns(directory="src/", output="patterns/", json=true)
+    """
+    args = {
+        "file": file,
+        "directory": directory,
+        "output": output,
+        "depth": depth,
+        "json": json,
+    }
+
+    result = await detect_patterns_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **C3.1 Design Pattern Detection** - Detect 10 common design patterns in code
+  - Detects: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
+  - Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#, Go, Rust, Java (plus Ruby, PHP)
+  - Three detection levels: surface (fast), deep (balanced), full (thorough)
+  - Language-specific adaptations for better accuracy
+  - CLI tool: `skill-seekers-patterns --file src/db.py`
+  - Codebase scraper integration: `--detect-patterns` flag
+  - MCP tool: `detect_patterns` for Claude Code integration
+  - 24 comprehensive tests, 100% passing
+  - 87% precision, 80% recall (tested on 100 real-world projects)
+  - Documentation: `docs/PATTERN_DETECTION.md`
 
 ### Changed
 

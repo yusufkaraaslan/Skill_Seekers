@@ -209,7 +209,8 @@ def analyze_codebase(
     file_patterns: Optional[List[str]] = None,
     build_api_reference: bool = False,
     extract_comments: bool = True,
-    build_dependency_graph: bool = False
+    build_dependency_graph: bool = False,
+    detect_patterns: bool = False
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -223,6 +224,7 @@ def analyze_codebase(
         build_api_reference: Generate API reference markdown
         extract_comments: Extract inline comments
         build_dependency_graph: Generate dependency graph and detect circular dependencies
+        detect_patterns: Detect design patterns (Singleton, Factory, Observer, etc.)
 
     Returns:
         Analysis results dictionary
@@ -370,6 +372,45 @@ def analyze_codebase(
         except:
             pass  # pydot not installed, skip DOT export
 
+    # Detect design patterns if requested (C3.1)
+    if detect_patterns:
+        logger.info("Detecting design patterns...")
+        from skill_seekers.cli.pattern_recognizer import PatternRecognizer
+
+        pattern_recognizer = PatternRecognizer(depth=depth)
+        pattern_results = []
+
+        for file_path in files:
+            try:
+                content = file_path.read_text(encoding='utf-8', errors='ignore')
+                language = detect_language(file_path)
+
+                if language != 'Unknown':
+                    report = pattern_recognizer.analyze_file(
+                        str(file_path), content, language
+                    )
+
+                    if report.patterns:
+                        pattern_results.append(report.to_dict())
+            except Exception as e:
+                logger.warning(f"Pattern detection failed for {file_path}: {e}")
+                continue
+
+        # Save pattern results
+        if pattern_results:
+            pattern_output = output_dir / 'patterns'
+            pattern_output.mkdir(parents=True, exist_ok=True)
+
+            pattern_json = pattern_output / 'detected_patterns.json'
+            with open(pattern_json, 'w', encoding='utf-8') as f:
+                json.dump(pattern_results, f, indent=2)
+
+            total_patterns = sum(len(r['patterns']) for r in pattern_results)
+            logger.info(f"✅ Detected {total_patterns} patterns in {len(pattern_results)} files")
+            logger.info(f"📁 Saved to: {pattern_json}")
+        else:
+            logger.info("No design patterns detected")
+
     return results
 
 
@@ -435,6 +476,11 @@ Examples:
         help='Generate dependency graph and detect circular dependencies'
     )
     parser.add_argument(
+        '--detect-patterns',
+        action='store_true',
+        help='Detect design patterns in code (Singleton, Factory, Observer, etc.)'
+    )
+    parser.add_argument(
         '--no-comments',
         action='store_true',
         help='Skip comment extraction'
@@ -481,7 +527,8 @@ Examples:
             file_patterns=file_patterns,
             build_api_reference=args.build_api_reference,
             extract_comments=not args.no_comments,
-            build_dependency_graph=args.build_dependency_graph
+            build_dependency_graph=args.build_dependency_graph,
+            detect_patterns=args.detect_patterns
         )
 
         # Print summary
