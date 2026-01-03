@@ -182,12 +182,17 @@ Generate skills from actual code repositories
   - 3 detection levels: Surface (naming), Deep (structure), Full (behavior)
   - CLI tool, MCP integration, 24 tests, 87% precision
   - See: `docs/PATTERN_DETECTION.md`, Issue #71
-- [ ] **Task C3.2:** Extract usage examples from test files
+- [x] **Task C3.2:** Extract usage examples from test files ✅ **v2.6.0** - Completed Jan 2026
+  - 5 categories: instantiation, method_call, config, setup, workflow
+  - 9 languages: Python (AST-based), JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby
+  - Quality filtering with confidence scoring (removes trivial patterns)
+  - CLI tool, MCP integration, 19 tests, 80%+ high-confidence examples
+  - See: `docs/TEST_EXAMPLE_EXTRACTION.md`
 - [ ] **Task C3.3:** Build "how to" guides from code
 - [ ] **Task C3.4:** Extract configuration patterns
 - [ ] **Task C3.5:** Create architectural overview
 
-**Start Small:** Pick C3.2 next (extract usage examples from tests)
+**Start Small:** Pick C3.3 next (build "how to" guides from workflow examples)
 
 ---
 
