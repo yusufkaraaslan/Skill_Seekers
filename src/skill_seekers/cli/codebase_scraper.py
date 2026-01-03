@@ -564,12 +564,6 @@ Examples:
         help='Skip test example extraction (instantiation, method calls, configs, etc.) (default: enabled)'
     )
     parser.add_argument(
-        '--skip-ai-enhancement',
-        action='store_true',
-        default=False,
-        help='Skip AI enhancement of patterns and test examples (default: enabled, C3.6)'
-    )
-    parser.add_argument(
         '--no-comments',
         action='store_true',
         help='Skip comment extraction'
@@ -633,7 +627,7 @@ Examples:
             build_dependency_graph=not args.skip_dependency_graph,
             detect_patterns=not args.skip_patterns,
             extract_test_examples=not args.skip_test_examples,
-            enhance_with_ai=not args.skip_ai_enhancement
+            enhance_with_ai=True  # Auto-disables if no API key present
         )
 
         # Print summary
