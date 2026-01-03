@@ -103,12 +103,12 @@ def detect_terminal_app():
 
 
 class LocalSkillEnhancer:
-    def __init__(self, skill_dir, force=False):
+    def __init__(self, skill_dir, force=True):
         """Initialize enhancer.
 
         Args:
             skill_dir: Path to skill directory
-            force: If True, skip all confirmations (dangerously skip mode)
+            force: If True, skip all confirmations (default: True, use --no-force to disable)
         """
         self.skill_dir = Path(skill_dir)
         self.references_dir = self.skill_dir / "references"
@@ -870,7 +870,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Headless mode (default - runs in foreground, waits for completion)
+  # Headless mode (default - runs in foreground, waits for completion, auto-force)
   skill-seekers enhance output/react/
 
   # Background mode (runs in background, returns immediately)
@@ -879,14 +879,11 @@ Examples:
   # Daemon mode (persistent background process, fully detached)
   skill-seekers enhance output/react/ --daemon
 
-  # Force mode (no confirmations, auto-yes to everything)
-  skill-seekers enhance output/react/ --force
+  # Disable force mode (ask for confirmations)
+  skill-seekers enhance output/react/ --no-force
 
   # Interactive mode (opens terminal window)
   skill-seekers enhance output/react/ --interactive-enhancement
-
-  # Background with force (silent background processing)
-  skill-seekers enhance output/react/ --background --force
 
   # Custom timeout
   skill-seekers enhance output/react/ --timeout 1200
@@ -896,6 +893,10 @@ Mode Comparison:
   - background:  Runs in background thread, returns immediately
   - daemon:      Fully detached process, continues after parent exits
   - terminal:    Opens new terminal window (interactive)
+
+Force Mode (Default ON):
+  By default, all modes skip confirmations (auto-yes).
+  Use --no-force to enable confirmation prompts.
 """
     )
 
@@ -923,9 +924,9 @@ Mode Comparison:
     )
 
     parser.add_argument(
-        '--force', '-f',
+        '--no-force',
         action='store_true',
-        help='Force mode: skip all confirmations (dangerously skip mode)'
+        help='Disable force mode: enable confirmation prompts (default: force mode ON)'
     )
 
     parser.add_argument(
@@ -945,7 +946,8 @@ Mode Comparison:
         sys.exit(1)
 
     # Run enhancement
-    enhancer = LocalSkillEnhancer(args.skill_directory, force=args.force)
+    # Force mode is ON by default, use --no-force to disable
+    enhancer = LocalSkillEnhancer(args.skill_directory, force=not args.no_force)
     headless = not args.interactive_enhancement  # Invert: default is headless
     success = enhancer.run(
         headless=headless,

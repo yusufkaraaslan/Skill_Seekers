@@ -123,26 +123,25 @@ skill-seekers enhance output/react/ --interactive-enhancement
 - Terminal auto-closes when done
 - Useful for debugging
 
-## Force Mode (Dangerously Skip)
+## Force Mode (Default ON)
 
 **What it does**: Skips ALL confirmations, auto-answers "yes" to everything
 
+**Default behavior**: Force mode is **ON by default** for maximum automation
+
 ```bash
-# Headless with force
-skill-seekers enhance output/react/ --force
+# Force mode is ON by default (no flag needed)
+skill-seekers enhance output/react/
 
-# Background with force (silent processing)
-skill-seekers enhance output/react/ --background --force
-
-# Daemon with force (silent + detached)
-skill-seekers enhance output/react/ --daemon --force
+# Disable force mode if you want confirmations
+skill-seekers enhance output/react/ --no-force
 ```
 
 **Use cases**:
-- ✅ CI/CD automation
-- ✅ Batch processing multiple skills
-- ✅ Unattended execution
-- ⚠️ **WARNING**: Only use if you trust the input!
+- ✅ CI/CD automation (default ON)
+- ✅ Batch processing multiple skills (default ON)
+- ✅ Unattended execution (default ON)
+- ⚠️ Use `--no-force` if you need manual confirmation prompts
 
 ## Status File Format
 
@@ -219,12 +218,13 @@ fi
 ```bash
 #!/bin/bash
 # Enhance multiple skills in parallel
+# Note: Force mode is ON by default (no --force flag needed)
 
 skills=("react" "vue" "django" "fastapi")
 
 for skill in "${skills[@]}"; do
     echo "Starting enhancement: $skill"
-    skill-seekers enhance output/$skill/ --background --force
+    skill-seekers enhance output/$skill/ --background
 done
 
 echo "All enhancements started in background!"
@@ -241,8 +241,8 @@ done
 # GitHub Actions example
 - name: Enhance skill
   run: |
-    # Headless mode with force (blocks until done)
-    skill-seekers enhance output/react/ --force --timeout 1200
+    # Headless mode (blocks until done, force is ON by default)
+    skill-seekers enhance output/react/ --timeout 1200
 
     # Check if enhancement succeeded
     if [ $? -eq 0 ]; then

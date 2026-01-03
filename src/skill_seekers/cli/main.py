@@ -137,7 +137,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     enhance_parser.add_argument("skill_directory", help="Skill directory path")
     enhance_parser.add_argument("--background", action="store_true", help="Run in background")
     enhance_parser.add_argument("--daemon", action="store_true", help="Run as daemon")
-    enhance_parser.add_argument("--force", "-f", action="store_true", help="Force mode (skip confirmations)")
+    enhance_parser.add_argument("--no-force", action="store_true", help="Disable force mode (enable confirmations)")
     enhance_parser.add_argument("--timeout", type=int, default=600, help="Timeout in seconds")
 
     # === enhance-status subcommand ===
@@ -376,8 +376,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 sys.argv.append("--background")
             if args.daemon:
                 sys.argv.append("--daemon")
-            if args.force:
-                sys.argv.append("--force")
+            if args.no_force:
+                sys.argv.append("--no-force")
             if args.timeout:
                 sys.argv.extend(["--timeout", str(args.timeout)])
             return enhance_main() or 0

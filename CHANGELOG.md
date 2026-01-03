@@ -14,7 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Background** (`--background`): Runs in background thread, returns immediately
     - **Daemon** (`--daemon`): Fully detached process with `nohup`, survives parent exit
     - **Terminal** (`--interactive-enhancement`): Opens new terminal window (macOS)
-  - **Force Mode** (`--force` / `-f`): Skip all confirmations for automation ("dangerously skip mode")
+  - **Force Mode (Default ON)**: Skip all confirmations by default for maximum automation
+    - **No flag needed** - force mode is ON by default
+    - Use `--no-force` to enable confirmation prompts if needed
+    - Perfect for CI/CD, batch processing, unattended execution
+    - "Dangerously skip mode" as requested - auto-yes to everything
   - **Status Monitoring**: New `enhance-status` command for background/daemon processes
     - Check status once: `skill-seekers enhance-status output/react/`
     - Watch in real-time: `skill-seekers enhance-status output/react/ --watch`
@@ -25,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **CLI Integration**: All modes accessible via `skill-seekers enhance` command
   - **Documentation**: New `docs/ENHANCEMENT_MODES.md` guide with examples
   - **Use Cases**:
-    - CI/CD pipelines: `--force` for unattended execution
+    - CI/CD pipelines: Force ON by default (no extra flags!)
     - Long-running tasks: `--daemon` for tasks that survive logout
     - Parallel processing: `--background` for batch enhancement
     - Debugging: `--interactive-enhancement` to watch Claude Code work
