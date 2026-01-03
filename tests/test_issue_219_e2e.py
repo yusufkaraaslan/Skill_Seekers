@@ -134,19 +134,23 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
 
     def test_github_command_accepts_enhance_local_flag(self):
         """E2E: Verify --enhance-local flag doesn't cause 'unrecognized arguments' error"""
-        # Use dry-run with minimal args to test flag parsing
+        # Strategy: Use invalid repo to make it fail fast, but check stderr for arg parsing errors
+        # This avoids network hangs on slow CI runners while still testing E2E CLI behavior
         result = subprocess.run(
-            ['skill-seekers', 'github', '--repo', 'test/test', '--enhance-local'],
+            ['skill-seekers', 'github', '--repo', 'nonexistent-user-12345/nonexistent-repo-67890', '--enhance-local'],
             capture_output=True,
             text=True,
-            timeout=30  # Increased timeout for slower macOS CI runners
+            timeout=60  # Generous timeout for slow macOS CI runners with network delays
         )
 
-        # VERIFY: No "unrecognized arguments" error
+        # VERIFY: No "unrecognized arguments" error (argument parsing succeeded)
         self.assertNotIn('unrecognized arguments', result.stderr,
                         "Flag should be recognized by CLI parser")
         self.assertNotIn('--enhance-local', result.stderr,
-                        "Flag should not appear in error message")
+                        "Flag should not appear in error message as unrecognized")
+
+        # The command should fail (repo doesn't exist), but that's expected and OK
+        # We only care that the argument was recognized, not that scraping succeeded
 
     def test_cli_dispatcher_forwards_flags_to_github_scraper(self):
         """E2E: Verify main.py dispatcher forwards flags to github_scraper.py"""
