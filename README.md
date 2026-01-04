@@ -129,10 +129,37 @@ pip install skill-seekers[all-llms]
 - ✅ **Offline Mode** - Work with cached configs when offline
 - ✅ **Backward Compatible** - Existing API-based configs still work
 
-### 🤖 AI & Enhancement
-- ✅ **AI-Powered Enhancement** - Transforms basic templates into comprehensive guides
-- ✅ **No API Costs** - FREE local enhancement using Claude Code Max
+### 🤖 AI & Enhancement (**C3.3 - NEW!**)
+- ✅ **Comprehensive AI Enhancement** - Transforms basic guides (⭐⭐) into professional tutorials (⭐⭐⭐⭐⭐)
+- ✅ **5 Automatic Improvements** - Step descriptions, troubleshooting, prerequisites, next steps, use cases
+- ✅ **Dual-Mode Support** - API mode (Claude API) or LOCAL mode (Claude Code CLI)
+- ✅ **No API Costs with LOCAL Mode** - FREE enhancement using your Claude Code Max plan
+- ✅ **Quality Transformation** - 75-line templates → 500+ line comprehensive guides
 - ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
+
+**What Gets Enhanced:**
+- 🔍 **Step Descriptions** - Natural language explanations (not just syntax!)
+- 🔧 **Troubleshooting** - Diagnostic flows + solutions for common errors
+- 📋 **Prerequisites** - Why needed + setup instructions
+- 🔗 **Next Steps** - Related guides, variations, learning paths
+- 💡 **Use Cases** - Real-world scenarios showing when to use guide
+
+**Usage:**
+```bash
+# AUTO mode (default) - automatically detects best option
+skill-seekers-codebase tests/ --build-how-to-guides --ai-mode auto
+
+# API mode - fast, efficient (requires ANTHROPIC_API_KEY)
+skill-seekers-codebase tests/ --build-how-to-guides --ai-mode api
+
+# LOCAL mode - FREE using Claude Code Max (no API key needed)
+skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
+
+# Disable enhancement - basic guides only
+skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
+```
+
+**Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### ⚡ Performance & Scale
 - ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)

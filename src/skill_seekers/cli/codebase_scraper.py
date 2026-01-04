@@ -212,7 +212,9 @@ def analyze_codebase(
     build_dependency_graph: bool = True,
     detect_patterns: bool = True,
     extract_test_examples: bool = True,
-    enhance_with_ai: bool = True
+    build_how_to_guides: bool = True,
+    enhance_with_ai: bool = True,
+    ai_mode: str = "auto"
 ) -> Dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -228,7 +230,9 @@ def analyze_codebase(
         build_dependency_graph: Generate dependency graph and detect circular dependencies
         detect_patterns: Detect design patterns (Singleton, Factory, Observer, etc.)
         extract_test_examples: Extract usage examples from test files
+        build_how_to_guides: Build how-to guides from workflow examples (C3.3)
         enhance_with_ai: Enhance patterns and examples with AI analysis (C3.6)
+        ai_mode: AI enhancement mode for how-to guides (auto, api, local, none)
 
     Returns:
         Analysis results dictionary
@@ -457,6 +461,48 @@ def analyze_codebase(
 
         except Exception as e:
             logger.warning(f"Test example extraction failed: {e}")
+            example_report = None
+
+    # Build how-to guides from workflow examples (C3.3)
+    if build_how_to_guides and extract_test_examples:
+        logger.info("Building how-to guides from workflow examples...")
+        try:
+            from skill_seekers.cli.how_to_guide_builder import HowToGuideBuilder
+
+            # Create guide builder
+            guide_builder = HowToGuideBuilder(enhance_with_ai=enhance_with_ai)
+
+            # Build guides from workflow examples
+            tutorials_dir = output_dir / 'tutorials'
+
+            # Get workflow examples from the example_report if available
+            if 'example_report' in locals() and example_report and example_report.total_examples > 0:
+                # Convert example_report to list of dicts for processing
+                examples_list = example_report.to_dict().get('examples', [])
+
+                guide_collection = guide_builder.build_guides_from_examples(
+                    examples_list,
+                    grouping_strategy='ai-tutorial-group',
+                    output_dir=tutorials_dir,
+                    enhance_with_ai=enhance_with_ai,
+                    ai_mode=ai_mode
+                )
+
+                if guide_collection.total_guides > 0:
+                    # Save collection summary
+                    collection_json = tutorials_dir / 'guide_collection.json'
+                    with open(collection_json, 'w', encoding='utf-8') as f:
+                        json.dump(guide_collection.to_dict(), f, indent=2)
+
+                    logger.info(f"✅ Built {guide_collection.total_guides} how-to guides")
+                    logger.info(f"📁 Saved to: {tutorials_dir}")
+                else:
+                    logger.info("No how-to guides generated (insufficient workflow examples)")
+            else:
+                logger.info("No workflow examples available for guide generation")
+
+        except Exception as e:
+            logger.warning(f"How-to guide building failed: {e}")
 
     # Detect architectural patterns (C3.7)
     # Always run this - it provides high-level overview
@@ -564,6 +610,18 @@ Examples:
         help='Skip test example extraction (instantiation, method calls, configs, etc.) (default: enabled)'
     )
     parser.add_argument(
+        '--skip-how-to-guides',
+        action='store_true',
+        default=False,
+        help='Skip how-to guide generation from workflow examples (default: enabled)'
+    )
+    parser.add_argument(
+        '--ai-mode',
+        choices=['auto', 'api', 'local', 'none'],
+        default='auto',
+        help='AI enhancement mode for how-to guides: auto (detect best), api (Claude API), local (Claude Code CLI), none (disable) (default: auto)'
+    )
+    parser.add_argument(
         '--no-comments',
         action='store_true',
         help='Skip comment extraction'
@@ -579,7 +637,8 @@ Examples:
         '--build-api-reference': '--skip-api-reference',
         '--build-dependency-graph': '--skip-dependency-graph',
         '--detect-patterns': '--skip-patterns',
-        '--extract-test-examples': '--skip-test-examples'
+        '--extract-test-examples': '--skip-test-examples',
+        '--build-how-to-guides': '--skip-how-to-guides'
     }
 
     for old_flag, new_flag in deprecated_flags.items():
@@ -627,7 +686,9 @@ Examples:
             build_dependency_graph=not args.skip_dependency_graph,
             detect_patterns=not args.skip_patterns,
             extract_test_examples=not args.skip_test_examples,
-            enhance_with_ai=True  # Auto-disables if no API key present
+            build_how_to_guides=not args.skip_how_to_guides,
+            enhance_with_ai=True,  # Auto-disables if no API key present
+            ai_mode=args.ai_mode  # NEW: AI enhancement mode for how-to guides
         )
 
         # Print summary
