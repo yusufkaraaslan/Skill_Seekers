@@ -529,7 +529,7 @@ This skill combines knowledge from multiple sources:
                 if config_files:
                     f.write(f"**{len(config_files)} configuration file(s) detected**:\n\n")
                     for cf in config_files[:10]:  # Top 10
-                        f.write(f"- **`{cf['relative_path']}`**: {cf['config_type']}\n")
+                        f.write(f"- **`{cf['relative_path']}`**: {cf['type']}\n")
                         if cf.get('purpose'):
                             f.write(f"  - Purpose: {cf['purpose']}\n")
 
