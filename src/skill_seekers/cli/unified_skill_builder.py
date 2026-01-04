@@ -757,7 +757,7 @@ This skill combines knowledge from multiple sources:
                 f.write("## Configuration Files\n\n")
                 for cf in config_files:
                     f.write(f"### `{cf['relative_path']}`\n\n")
-                    f.write(f"- **Type**: {cf['config_type']}\n")
+                    f.write(f"- **Type**: {cf['type']}\n")
                     f.write(f"- **Purpose**: {cf.get('purpose', 'N/A')}\n")
                     f.write(f"- **Settings**: {len(cf.get('settings', []))}\n")
 
