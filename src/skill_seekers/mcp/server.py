@@ -37,6 +37,7 @@ try:
         scrape_github_tool,
         scrape_pdf_tool,
         detect_patterns_tool,
+        extract_config_patterns_tool,
         run_subprocess_with_streaming,
     )
     from skill_seekers.mcp.tools.packaging_tools import (
@@ -98,6 +99,8 @@ try:
                 return await install_skill_tool(arguments)
             elif name == "detect_patterns":
                 return await detect_patterns_tool(arguments)
+            elif name == "extract_config_patterns":
+                return await extract_config_patterns_tool(arguments)
             else:
                 return [TextContent(type="text", text=f"Unknown tool: {name}")]
         except Exception as e:
@@ -191,6 +194,11 @@ try:
             Tool(
                 name="remove_config_source",
                 description="Remove config source",
+                inputSchema={"type": "object", "properties": {}}
+            ),
+            Tool(
+                name="extract_config_patterns",
+                description="Extract configuration patterns from config files",
                 inputSchema={"type": "object", "properties": {}}
             ),
         ]

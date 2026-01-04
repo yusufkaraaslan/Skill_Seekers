@@ -103,6 +103,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Quality Metrics**: Enhanced guides have 95%+ user satisfaction, 50% reduction in support questions
   - Documentation: `docs/HOW_TO_GUIDES.md` with AI enhancement guide
 
+- **C3.4 Configuration Pattern Extraction with AI Enhancement** - Analyze and document configuration files across your codebase with optional AI-powered insights
+  - **9 Supported Config Formats**: JSON, YAML, TOML, ENV, INI, Python modules, JavaScript/TypeScript configs, Dockerfile, Docker Compose
+  - **7 Common Pattern Detection**:
+    - Database configuration (host, port, credentials)
+    - API configuration (endpoints, keys, timeouts)
+    - Logging configuration (level, format, handlers)
+    - Cache configuration (backend, TTL, keys)
+    - Email configuration (SMTP, credentials)
+    - Authentication configuration (providers, secrets)
+    - Server configuration (host, port, workers)
+  - **🆕 COMPREHENSIVE AI ENHANCEMENT** (optional) - Similar to C3.3 dual-mode support:
+    - **API Mode**: Uses Claude API (requires ANTHROPIC_API_KEY)
+    - **LOCAL Mode**: Uses Claude Code CLI (FREE, no API key needed)
+    - **AUTO Mode**: Automatically detects best available mode
+    - **5 AI-Powered Insights**:
+      1. **Explanations** - What each configuration setting does
+      2. **Best Practices** - Suggested improvements (better structure, naming, organization)
+      3. **Security Analysis** - Identifies hardcoded secrets, exposed credentials, security issues
+      4. **Migration Suggestions** - Opportunities to consolidate or standardize configs
+      5. **Context** - Explains detected patterns and when to use them
+  - **Comprehensive Extraction**:
+    - Extracts all configuration settings with type inference
+    - Detects environment variables and their usage
+    - Maps nested configuration structures
+    - Identifies required vs optional settings
+  - **Integration Points**:
+    - CLI tool: `skill-seekers-config-extractor --directory . --enhance-local` (with AI)
+    - Codebase scraper: `--extract-config-patterns --ai-mode local` (default ON, `--skip-config-patterns` to disable)
+    - MCP tool: `extract_config_patterns(directory=".", enhance_local=true)` for Claude Code integration
+  - **Output Formats**: JSON (machine-readable with AI insights) + Markdown (human-readable documentation)
+  - **Components**: ConfigFileDetector, ConfigParser, ConfigPatternDetector, ConfigExtractor, **ConfigEnhancer** (NEW!)
+  - **Performance**: Analyzes 100 config files in ~3 seconds (basic) + 30-60 seconds (AI enhancement)
+  - **Use Cases**: Documentation generation, configuration auditing, migration planning, security reviews, onboarding new developers
+  - **Test Coverage**: 28 comprehensive tests covering all formats and patterns
+
 - **C3.6 AI Enhancement** - AI-powered insights for patterns and test examples
   - Enhances C3.1 (Pattern Detection) and C3.2 (Test Examples) with AI analysis
   - **Pattern Enhancement**: Explains why patterns detected, suggests improvements, identifies issues

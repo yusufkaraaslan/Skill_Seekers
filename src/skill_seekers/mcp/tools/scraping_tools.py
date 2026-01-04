@@ -658,3 +658,169 @@ async def extract_test_examples_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=output_text)]
     else:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+
+
+async def build_how_to_guides_tool(args: dict) -> List[TextContent]:
+    """
+    Build how-to guides from workflow test examples.
+
+    Transforms workflow examples extracted from test files into step-by-step
+    educational guides. Automatically groups related workflows, extracts steps,
+    and generates comprehensive markdown guides.
+
+    Features:
+    - Python AST-based step extraction (heuristic for other languages)
+    - 4 grouping strategies: ai-tutorial-group, file-path, test-name, complexity
+    - Detects prerequisites, setup code, and verification points
+    - Generates troubleshooting tips and next steps
+    - Creates index with difficulty levels
+
+    Args:
+        args: Dictionary containing:
+            - input (str): Path to test_examples.json from extract_test_examples
+            - output (str, optional): Output directory for guides (default: output/codebase/tutorials)
+            - group_by (str, optional): Grouping strategy - ai-tutorial-group, file-path, test-name, complexity
+            - no_ai (bool, optional): Disable AI enhancement for grouping (default: False)
+            - json_output (bool, optional): Output JSON format alongside markdown (default: False)
+
+    Returns:
+        List[TextContent]: Guide building results
+
+    Example:
+        build_how_to_guides(
+            input="output/codebase/test_examples/test_examples.json",
+            group_by="ai-tutorial-group",
+            output="output/codebase/tutorials"
+        )
+    """
+    input_file = args.get("input")
+    if not input_file:
+        return [TextContent(type="text", text="❌ Error: input parameter is required (path to test_examples.json)")]
+
+    output = args.get("output", "output/codebase/tutorials")
+    group_by = args.get("group_by", "ai-tutorial-group")
+    no_ai = args.get("no_ai", False)
+    json_output = args.get("json_output", False)
+
+    # Build command
+    cmd = [sys.executable, "-m", "skill_seekers.cli.how_to_guide_builder"]
+    cmd.append(input_file)
+
+    if output:
+        cmd.extend(["--output", output])
+    if group_by:
+        cmd.extend(["--group-by", group_by])
+    if no_ai:
+        cmd.append("--no-ai")
+    if json_output:
+        cmd.append("--json-output")
+
+    timeout = 180  # 3 minutes for guide building
+
+    progress_msg = "📚 Building how-to guides from workflow examples...\n"
+    progress_msg += f"📄 Input: {input_file}\n"
+    progress_msg += f"📁 Output: {output}\n"
+    progress_msg += f"🔀 Grouping: {group_by}\n"
+    if no_ai:
+        progress_msg += "🚫 AI enhancement disabled\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output_text = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output_text)]
+    else:
+        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+
+
+async def extract_config_patterns_tool(args: dict) -> List[TextContent]:
+    """
+    Extract configuration patterns from config files (C3.4).
+
+    Analyzes configuration files in the codebase to extract settings,
+    detect common patterns (database, API, logging, cache, etc.), and
+    generate comprehensive documentation.
+
+    Supports 9 config formats: JSON, YAML, TOML, ENV, INI, Python modules,
+    JavaScript/TypeScript configs, Dockerfile, Docker Compose.
+
+    Detects 7 common patterns:
+    - Database configuration (host, port, credentials)
+    - API configuration (endpoints, keys, timeouts)
+    - Logging configuration (level, format, handlers)
+    - Cache configuration (backend, TTL, keys)
+    - Email configuration (SMTP, credentials)
+    - Authentication configuration (providers, secrets)
+    - Server configuration (host, port, workers)
+
+    Args:
+        args: Dictionary containing:
+            - directory (str): Directory to analyze
+            - output (str, optional): Output directory (default: output/codebase/config_patterns)
+            - max_files (int, optional): Maximum config files to process (default: 100)
+            - enhance (bool, optional): Enable AI enhancement - API mode (default: False, requires ANTHROPIC_API_KEY)
+            - enhance_local (bool, optional): Enable AI enhancement - LOCAL mode (default: False, uses Claude Code CLI)
+            - ai_mode (str, optional): AI mode - auto, api, local, none (default: none)
+            - json (bool, optional): Output JSON format (default: True)
+            - markdown (bool, optional): Output Markdown format (default: True)
+
+    Returns:
+        List[TextContent]: Config extraction results with optional AI enhancements
+
+    Example:
+        extract_config_patterns(directory=".", output="output/configs")
+        extract_config_patterns(directory="/path/to/repo", max_files=50, enhance_local=True)
+    """
+    directory = args.get("directory")
+    if not directory:
+        return [TextContent(type="text", text="❌ Error: directory parameter is required")]
+
+    output = args.get("output", "output/codebase/config_patterns")
+    max_files = args.get("max_files", 100)
+    enhance = args.get("enhance", False)
+    enhance_local = args.get("enhance_local", False)
+    ai_mode = args.get("ai_mode", "none")
+    json_output = args.get("json", True)
+    markdown_output = args.get("markdown", True)
+
+    # Build command
+    cmd = [sys.executable, "-m", "skill_seekers.cli.config_extractor"]
+    cmd.extend(["--directory", directory])
+
+    if output:
+        cmd.extend(["--output", output])
+    if max_files:
+        cmd.extend(["--max-files", str(max_files)])
+    if enhance:
+        cmd.append("--enhance")
+    if enhance_local:
+        cmd.append("--enhance-local")
+    if ai_mode and ai_mode != "none":
+        cmd.extend(["--ai-mode", ai_mode])
+    if json_output:
+        cmd.append("--json")
+    if markdown_output:
+        cmd.append("--markdown")
+
+    # Adjust timeout for AI enhancement
+    timeout = 180  # 3 minutes base
+    if enhance or enhance_local or ai_mode != "none":
+        timeout = 360  # 6 minutes with AI enhancement
+
+    progress_msg = "⚙️ Extracting configuration patterns...\n"
+    progress_msg += f"📁 Directory: {directory}\n"
+    progress_msg += f"📄 Max files: {max_files}\n"
+    if enhance or enhance_local or (ai_mode and ai_mode != "none"):
+        progress_msg += f"🤖 AI enhancement: {ai_mode if ai_mode != 'none' else ('api' if enhance else 'local')}\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output_text = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output_text)]
+    else:
+        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]

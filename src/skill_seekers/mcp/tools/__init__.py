@@ -27,6 +27,8 @@ from .scraping_tools import (
     scrape_codebase_tool as scrape_codebase_impl,
     detect_patterns_tool as detect_patterns_impl,
     extract_test_examples_tool as extract_test_examples_impl,
+    build_how_to_guides_tool as build_how_to_guides_impl,
+    extract_config_patterns_tool as extract_config_patterns_impl,
 )
 
 from .packaging_tools import (
@@ -62,6 +64,8 @@ __all__ = [
     "scrape_codebase_impl",
     "detect_patterns_impl",
     "extract_test_examples_impl",
+    "build_how_to_guides_impl",
+    "extract_config_patterns_impl",
     # Packaging tools
     "package_skill_impl",
     "upload_skill_impl",

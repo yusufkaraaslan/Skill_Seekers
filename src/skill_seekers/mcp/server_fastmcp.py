@@ -3,16 +3,16 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 19 tools for generating Claude AI skills from documentation.
+Provides 21 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 19 tools organized into 5 categories:
+- 21 tools organized into 5 categories:
   * Config tools (3): generate_config, list_configs, validate_config
-  * Scraping tools (6): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples
+  * Scraping tools (8): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
   * Source tools (4): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
@@ -84,6 +84,8 @@ try:
         scrape_codebase_impl,
         detect_patterns_impl,
         extract_test_examples_impl,
+        build_how_to_guides_impl,
+        extract_config_patterns_impl,
         # Packaging tools
         package_skill_impl,
         upload_skill_impl,
@@ -114,6 +116,8 @@ except ImportError:
         scrape_codebase_impl,
         detect_patterns_impl,
         extract_test_examples_impl,
+        build_how_to_guides_impl,
+        extract_config_patterns_impl,
         package_skill_impl,
         upload_skill_impl,
         enhance_skill_impl,
@@ -534,6 +538,128 @@ async def extract_test_examples(
     }
 
     result = await extract_test_examples_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Build how-to guides from workflow test examples. Transforms workflow examples extracted from test files into step-by-step educational guides with prerequisites, verification points, and troubleshooting tips."
+)
+async def build_how_to_guides(
+    input: str,
+    output: str = "output/codebase/tutorials",
+    group_by: str = "ai-tutorial-group",
+    no_ai: bool = False,
+    json_output: bool = False,
+) -> str:
+    """
+    Build how-to guides from workflow test examples.
+
+    Transforms workflow examples extracted from test files into step-by-step
+    educational guides. Automatically groups related workflows, extracts steps,
+    and generates comprehensive markdown guides.
+
+    Features:
+    - Python AST-based step extraction (heuristic for other languages)
+    - 4 grouping strategies: ai-tutorial-group, file-path, test-name, complexity
+    - Detects prerequisites, setup code, and verification points
+    - Generates troubleshooting tips and next steps
+
+    Args:
+        input: Path to test_examples.json from extract_test_examples
+        output: Output directory for guides (default: output/codebase/tutorials)
+        group_by: Grouping strategy - ai-tutorial-group, file-path, test-name, complexity (default: ai-tutorial-group)
+        no_ai: Disable AI enhancement for grouping (default: false)
+        json_output: Output JSON format alongside markdown (default: false)
+
+    Examples:
+        build_how_to_guides(input="output/codebase/test_examples/test_examples.json")
+        build_how_to_guides(input="examples.json", group_by="file-path", no_ai=true)
+    """
+    args = {
+        "input": input,
+        "output": output,
+        "group_by": group_by,
+        "no_ai": no_ai,
+        "json_output": json_output,
+    }
+
+    result = await build_how_to_guides_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Extract configuration patterns from config files (C3.4) with optional AI enhancement. Analyzes config files, detects patterns (database, API, logging, etc.), generates documentation, and optionally enhances with AI insights (security analysis, best practices, migration suggestions). Supports 9 formats."
+)
+async def extract_config_patterns(
+    directory: str,
+    output: str = "output/codebase/config_patterns",
+    max_files: int = 100,
+    enhance: bool = False,
+    enhance_local: bool = False,
+    ai_mode: str = "none",
+    json: bool = True,
+    markdown: bool = True,
+) -> str:
+    """
+    Extract configuration patterns from config files with optional AI enhancement.
+
+    Analyzes configuration files in the codebase to extract settings,
+    detect common patterns, and generate comprehensive documentation.
+
+    **AI Enhancement (NEW)**: Optional AI-powered insights including:
+    - Explanations of what each config does
+    - Best practice suggestions
+    - Security analysis (hardcoded secrets, exposed credentials)
+    - Migration suggestions (consolidation opportunities)
+    - Context-aware documentation
+
+    Supports 9 config formats: JSON, YAML, TOML, ENV, INI, Python modules,
+    JavaScript/TypeScript configs, Dockerfile, Docker Compose.
+
+    Detects 7 common patterns:
+    - Database configuration (host, port, credentials)
+    - API configuration (endpoints, keys, timeouts)
+    - Logging configuration (level, format, handlers)
+    - Cache configuration (backend, TTL, keys)
+    - Email configuration (SMTP, credentials)
+    - Authentication configuration (providers, secrets)
+    - Server configuration (host, port, workers)
+
+    Args:
+        directory: Directory to analyze (required)
+        output: Output directory for results (default: output/codebase/config_patterns)
+        max_files: Maximum config files to process (default: 100)
+        enhance: Enable AI enhancement - API mode (default: false, requires ANTHROPIC_API_KEY)
+        enhance_local: Enable AI enhancement - LOCAL mode (default: false, uses Claude Code CLI)
+        ai_mode: AI enhancement mode - auto, api, local, none (default: none)
+        json: Output JSON format (default: true)
+        markdown: Output Markdown format (default: true)
+
+    Returns:
+        Config extraction results with patterns, settings, and optional AI insights.
+
+    Examples:
+        extract_config_patterns(directory=".")
+        extract_config_patterns(directory="/path/to/repo", max_files=50)
+        extract_config_patterns(directory=".", enhance_local=true)  # With AI enhancement (LOCAL mode)
+        extract_config_patterns(directory=".", ai_mode="api")  # With AI enhancement (API mode)
+    """
+    args = {
+        "directory": directory,
+        "output": output,
+        "max_files": max_files,
+        "enhance": enhance,
+        "enhance_local": enhance_local,
+        "ai_mode": ai_mode,
+        "json": json,
+        "markdown": markdown,
+    }
+
+    result = await extract_config_patterns_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

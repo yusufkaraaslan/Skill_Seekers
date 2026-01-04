@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
 from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
+from skill_seekers.cli.config_extractor import ConfigExtractor
 
 # Try to import pathspec for .gitignore support
 try:
@@ -213,6 +214,7 @@ def analyze_codebase(
     detect_patterns: bool = True,
     extract_test_examples: bool = True,
     build_how_to_guides: bool = True,
+    extract_config_patterns: bool = True,
     enhance_with_ai: bool = True,
     ai_mode: str = "auto"
 ) -> Dict[str, Any]:
@@ -231,6 +233,7 @@ def analyze_codebase(
         detect_patterns: Detect design patterns (Singleton, Factory, Observer, etc.)
         extract_test_examples: Extract usage examples from test files
         build_how_to_guides: Build how-to guides from workflow examples (C3.3)
+        extract_config_patterns: Extract configuration patterns from config files (C3.4)
         enhance_with_ai: Enhance patterns and examples with AI analysis (C3.6)
         ai_mode: AI enhancement mode for how-to guides (auto, api, local, none)
 
@@ -504,6 +507,65 @@ def analyze_codebase(
         except Exception as e:
             logger.warning(f"How-to guide building failed: {e}")
 
+    # Extract configuration patterns (C3.4)
+    if extract_config_patterns:
+        logger.info("Extracting configuration patterns...")
+        try:
+            config_extractor = ConfigExtractor(
+                max_files=100,
+                include_optional_deps=True
+            )
+
+            # Extract config patterns from directory
+            extraction_result = config_extractor.extract_from_directory(directory)
+
+            if extraction_result.config_files:
+                # Convert to dict for enhancement
+                result_dict = config_extractor.to_dict(extraction_result)
+
+                # AI Enhancement (if enabled)
+                if enhance_with_ai and ai_mode != 'none':
+                    try:
+                        from skill_seekers.cli.config_enhancer import ConfigEnhancer
+                        logger.info(f"🤖 Enhancing config analysis with AI (mode: {ai_mode})...")
+                        enhancer = ConfigEnhancer(mode=ai_mode)
+                        result_dict = enhancer.enhance_config_result(result_dict)
+                        logger.info("✅ AI enhancement complete")
+                    except Exception as e:
+                        logger.warning(f"⚠️  Config AI enhancement failed: {e}")
+
+                # Save results
+                config_output = output_dir / 'config_patterns'
+                config_output.mkdir(parents=True, exist_ok=True)
+
+                # Save as JSON
+                config_json = config_output / 'config_patterns.json'
+                with open(config_json, 'w', encoding='utf-8') as f:
+                    json.dump(result_dict, f, indent=2)
+
+                # Save as Markdown (basic - AI enhancements in JSON only for now)
+                config_md = config_output / 'config_patterns.md'
+                config_md.write_text(extraction_result.to_markdown(), encoding='utf-8')
+
+                # Count total settings across all files
+                total_settings = sum(len(cf.settings) for cf in extraction_result.config_files)
+                total_patterns = sum(len(cf.patterns) for cf in extraction_result.config_files)
+
+                logger.info(f"✅ Extracted {len(extraction_result.config_files)} config files "
+                           f"with {total_settings} settings and {total_patterns} detected patterns")
+
+                if 'ai_enhancements' in result_dict:
+                    insights = result_dict['ai_enhancements'].get('overall_insights', {})
+                    if insights.get('security_issues_found'):
+                        logger.info(f"🔐 Security issues found: {insights['security_issues_found']}")
+
+                logger.info(f"📁 Saved to: {config_output}")
+            else:
+                logger.info("No configuration files found")
+
+        except Exception as e:
+            logger.warning(f"Config pattern extraction failed: {e}")
+
     # Detect architectural patterns (C3.7)
     # Always run this - it provides high-level overview
     logger.info("Analyzing architectural patterns...")
@@ -616,6 +678,12 @@ Examples:
         help='Skip how-to guide generation from workflow examples (default: enabled)'
     )
     parser.add_argument(
+        '--skip-config-patterns',
+        action='store_true',
+        default=False,
+        help='Skip configuration pattern extraction from config files (JSON, YAML, TOML, ENV, etc.) (default: enabled)'
+    )
+    parser.add_argument(
         '--ai-mode',
         choices=['auto', 'api', 'local', 'none'],
         default='auto',
@@ -638,7 +706,8 @@ Examples:
         '--build-dependency-graph': '--skip-dependency-graph',
         '--detect-patterns': '--skip-patterns',
         '--extract-test-examples': '--skip-test-examples',
-        '--build-how-to-guides': '--skip-how-to-guides'
+        '--build-how-to-guides': '--skip-how-to-guides',
+        '--extract-config-patterns': '--skip-config-patterns'
     }
 
     for old_flag, new_flag in deprecated_flags.items():
@@ -687,6 +756,7 @@ Examples:
             detect_patterns=not args.skip_patterns,
             extract_test_examples=not args.skip_test_examples,
             build_how_to_guides=not args.skip_how_to_guides,
+            extract_config_patterns=not args.skip_config_patterns,
             enhance_with_ai=True,  # Auto-disables if no API key present
             ai_mode=args.ai_mode  # NEW: AI enhancement mode for how-to guides
         )

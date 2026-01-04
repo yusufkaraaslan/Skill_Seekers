@@ -129,13 +129,27 @@ pip install skill-seekers[all-llms]
 - ✅ **Offline Mode** - Work with cached configs when offline
 - ✅ **Backward Compatible** - Existing API-based configs still work
 
-### 🤖 AI & Enhancement (**C3.3 - NEW!**)
+### 🤖 Codebase Analysis & AI Enhancement (**C3.x - NEW!**)
+
+**C3.4: Configuration Pattern Extraction with AI Enhancement**
+- ✅ **9 Config Formats** - JSON, YAML, TOML, ENV, INI, Python, JavaScript, Dockerfile, Docker Compose
+- ✅ **7 Pattern Types** - Database, API, logging, cache, email, auth, server configurations
+- ✅ **AI Enhancement (NEW!)** - Optional dual-mode AI analysis (API + LOCAL, like C3.3)
+  - Explains what each config does
+  - Suggests best practices and improvements
+  - **Security analysis** - Finds hardcoded secrets, exposed credentials
+  - Migration suggestions - Consolidation opportunities
+  - Context-aware documentation
+- ✅ **Auto-Documentation** - Generates JSON + Markdown documentation of all configs
+- ✅ **Type Inference** - Automatically detects setting types and environment variables
+- ✅ **MCP Integration** - `extract_config_patterns` tool with enhancement support
+
+**C3.3: AI-Enhanced How-To Guides**
 - ✅ **Comprehensive AI Enhancement** - Transforms basic guides (⭐⭐) into professional tutorials (⭐⭐⭐⭐⭐)
 - ✅ **5 Automatic Improvements** - Step descriptions, troubleshooting, prerequisites, next steps, use cases
 - ✅ **Dual-Mode Support** - API mode (Claude API) or LOCAL mode (Claude Code CLI)
 - ✅ **No API Costs with LOCAL Mode** - FREE enhancement using your Claude Code Max plan
 - ✅ **Quality Transformation** - 75-line templates → 500+ line comprehensive guides
-- ✅ **MCP Server for Claude Code** - Use directly from Claude Code with natural language
 
 **What Gets Enhanced:**
 - 🔍 **Step Descriptions** - Natural language explanations (not just syntax!)
