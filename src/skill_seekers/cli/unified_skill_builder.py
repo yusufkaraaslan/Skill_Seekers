@@ -466,8 +466,31 @@ This skill combines knowledge from multiple sources:
                         f.write("\n")
 
             # Section 3: Technology Stack
+            f.write("## 3. Technology Stack\n\n")
+
+            # Try to get languages from C3.7 architecture analysis first
+            languages = {}
             if c3_data.get('architecture'):
-                f.write("## 3. Technology Stack\n\n")
+                languages = c3_data['architecture'].get('languages', {})
+
+            # If no languages from C3.7, try to get from GitHub data
+            if not languages:
+                github_data = self.scraped_data.get('github', {}).get('data', {})
+                if github_data.get('languages'):
+                    # GitHub data has languages as list, convert to dict with count 1
+                    languages = {lang: 1 for lang in github_data['languages']}
+
+            if languages:
+                f.write("**Languages Detected**:\n")
+                for lang, count in sorted(languages.items(), key=lambda x: x[1], reverse=True)[:5]:
+                    if isinstance(count, int):
+                        f.write(f"- {lang}: {count} files\n")
+                    else:
+                        f.write(f"- {lang}\n")
+                f.write("\n")
+
+            # Add frameworks if available
+            if c3_data.get('architecture'):
                 frameworks = c3_data['architecture'].get('frameworks_detected', [])
                 if frameworks:
                     f.write("**Frameworks & Libraries**:\n")
@@ -475,13 +498,8 @@ This skill combines knowledge from multiple sources:
                         f.write(f"- {fw}\n")
                     f.write("\n")
 
-                # Add language info if available
-                languages = c3_data['architecture'].get('languages', {})
-                if languages:
-                    f.write("**Languages Detected**:\n")
-                    for lang, count in sorted(languages.items(), key=lambda x: x[1], reverse=True)[:5]:
-                        f.write(f"- {lang}: {count} files\n")
-                    f.write("\n")
+            if not languages and not (c3_data.get('architecture') and c3_data['architecture'].get('frameworks_detected')):
+                f.write("*Technology stack analysis not available*\n\n")
 
             # Section 4: Design Patterns (C3.1)
             if c3_data.get('patterns'):

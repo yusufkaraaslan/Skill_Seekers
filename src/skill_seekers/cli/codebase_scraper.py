@@ -491,7 +491,7 @@ def analyze_codebase(
                     ai_mode=ai_mode
                 )
 
-                if guide_collection.total_guides > 0:
+                if guide_collection and guide_collection.total_guides > 0:
                     # Save collection summary
                     collection_json = tutorials_dir / 'guide_collection.json'
                     with open(collection_json, 'w', encoding='utf-8') as f:
@@ -511,10 +511,7 @@ def analyze_codebase(
     if extract_config_patterns:
         logger.info("Extracting configuration patterns...")
         try:
-            config_extractor = ConfigExtractor(
-                max_files=100,
-                include_optional_deps=True
-            )
+            config_extractor = ConfigExtractor()
 
             # Extract config patterns from directory
             extraction_result = config_extractor.extract_from_directory(directory)
