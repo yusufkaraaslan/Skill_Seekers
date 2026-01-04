@@ -33,6 +33,9 @@ class ConfigValidator:
     # Valid code analysis depth levels
     VALID_DEPTH_LEVELS = {'surface', 'deep', 'full'}
 
+    # Valid AI modes for C3.x enhancement
+    VALID_AI_MODES = {'auto', 'api', 'local', 'none'}
+
     def __init__(self, config_or_path: Union[Dict[str, Any], str]):
         """
         Initialize validator with config dict or file path.
@@ -177,6 +180,19 @@ class ConfigValidator:
         # Validate max_issues if specified
         if 'max_issues' in source and not isinstance(source['max_issues'], int):
             raise ValueError(f"Source {index} (github): 'max_issues' must be an integer")
+
+        # Validate enable_codebase_analysis if specified (C3.5)
+        if 'enable_codebase_analysis' in source and not isinstance(source['enable_codebase_analysis'], bool):
+            raise ValueError(f"Source {index} (github): 'enable_codebase_analysis' must be a boolean")
+
+        # Validate ai_mode if specified (C3.5)
+        if 'ai_mode' in source:
+            ai_mode = source['ai_mode']
+            if ai_mode not in self.VALID_AI_MODES:
+                raise ValueError(
+                    f"Source {index} (github): Invalid ai_mode '{ai_mode}'. "
+                    f"Must be one of {self.VALID_AI_MODES}"
+                )
 
     def _validate_pdf_source(self, source: Dict[str, Any], index: int):
         """Validate PDF source configuration."""

@@ -38,7 +38,10 @@
       "file_patterns": [
         "packages/react/src/**/*.js",
         "packages/react-dom/src/**/*.js"
-      ]
+      ],
+      "local_repo_path": null,
+      "enable_codebase_analysis": true,
+      "ai_mode": "auto"
     }
   ]
 }

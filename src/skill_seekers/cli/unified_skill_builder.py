@@ -108,6 +108,11 @@ This skill combines knowledge from multiple sources:
             elif source_type == 'pdf':
                 content += f"- ✅ **PDF Document**: {source.get('path', 'N/A')}\n"
 
+        # C3.x Architecture & Code Analysis section (if available)
+        github_data = self.scraped_data.get('github', {}).get('data', {})
+        if github_data.get('c3_analysis'):
+            content += self._format_c3_summary_section(github_data['c3_analysis'])
+
         # Data quality section
         if self.conflicts:
             content += f"\n## ⚠️ Data Quality\n\n"
@@ -282,6 +287,11 @@ This skill combines knowledge from multiple sources:
         if self.merged_data:
             self._generate_merged_api_reference()
 
+        # Generate C3.x codebase analysis references if available
+        github_data = self.scraped_data.get('github', {}).get('data', {})
+        if github_data.get('c3_analysis'):
+            self._generate_c3_analysis_references()
+
     def _generate_docs_references(self):
         """Generate references from documentation source."""
         docs_dir = os.path.join(self.skill_dir, 'references', 'documentation')
@@ -400,6 +410,463 @@ This skill combines knowledge from multiple sources:
                 f.write(entry)
 
         logger.info(f"Created merged API reference ({len(apis)} APIs)")
+
+    def _generate_c3_analysis_references(self):
+        """Generate codebase analysis references (C3.5)."""
+        github_data = self.scraped_data.get('github', {}).get('data', {})
+        c3_data = github_data.get('c3_analysis')
+
+        if not c3_data:
+            return
+
+        # Create main directory
+        c3_dir = os.path.join(self.skill_dir, 'references', 'codebase_analysis')
+        os.makedirs(c3_dir, exist_ok=True)
+
+        logger.info("Generating C3.x codebase analysis references...")
+
+        # Generate ARCHITECTURE.md (main deliverable)
+        self._generate_architecture_overview(c3_dir, c3_data)
+
+        # Generate subdirectories for each C3.x component
+        self._generate_pattern_references(c3_dir, c3_data.get('patterns'))
+        self._generate_example_references(c3_dir, c3_data.get('test_examples'))
+        self._generate_guide_references(c3_dir, c3_data.get('how_to_guides'))
+        self._generate_config_references(c3_dir, c3_data.get('config_patterns'))
+        self._copy_architecture_details(c3_dir, c3_data.get('architecture'))
+
+        logger.info("✅ Created codebase analysis references")
+
+    def _generate_architecture_overview(self, c3_dir: str, c3_data: Dict):
+        """Generate comprehensive ARCHITECTURE.md (C3.5 main deliverable)."""
+        arch_path = os.path.join(c3_dir, 'ARCHITECTURE.md')
+
+        with open(arch_path, 'w', encoding='utf-8') as f:
+            f.write(f"# {self.name.title()} Architecture Overview\n\n")
+            f.write("*Generated from C3.x automated codebase analysis*\n\n")
+
+            # Section 1: Overview
+            f.write("## 1. Overview\n\n")
+            f.write(f"{self.description}\n\n")
+
+            # Section 2: Architectural Patterns (C3.7)
+            if c3_data.get('architecture'):
+                arch = c3_data['architecture']
+                patterns = arch.get('patterns', [])
+                if patterns:
+                    f.write("## 2. Architectural Patterns\n\n")
+                    f.write("*Detected architectural patterns from codebase structure*\n\n")
+                    for pattern in patterns[:5]:  # Top 5 patterns
+                        f.write(f"### {pattern['pattern_name']}\n\n")
+                        f.write(f"- **Confidence**: {pattern['confidence']:.2f}\n")
+                        if pattern.get('framework'):
+                            f.write(f"- **Framework**: {pattern['framework']}\n")
+                        if pattern.get('evidence'):
+                            f.write(f"- **Evidence**: {', '.join(pattern['evidence'][:3])}\n")
+                        f.write("\n")
+
+            # Section 3: Technology Stack
+            if c3_data.get('architecture'):
+                f.write("## 3. Technology Stack\n\n")
+                frameworks = c3_data['architecture'].get('frameworks_detected', [])
+                if frameworks:
+                    f.write("**Frameworks & Libraries**:\n")
+                    for fw in frameworks[:10]:
+                        f.write(f"- {fw}\n")
+                    f.write("\n")
+
+                # Add language info if available
+                languages = c3_data['architecture'].get('languages', {})
+                if languages:
+                    f.write("**Languages Detected**:\n")
+                    for lang, count in sorted(languages.items(), key=lambda x: x[1], reverse=True)[:5]:
+                        f.write(f"- {lang}: {count} files\n")
+                    f.write("\n")
+
+            # Section 4: Design Patterns (C3.1)
+            if c3_data.get('patterns'):
+                f.write("## 4. Design Patterns\n\n")
+                f.write("*Classic design patterns identified in the codebase*\n\n")
+
+                # Summarize pattern types
+                pattern_summary = {}
+                for file_data in c3_data['patterns']:
+                    for pattern in file_data.get('patterns', []):
+                        ptype = pattern['pattern_type']
+                        pattern_summary[ptype] = pattern_summary.get(ptype, 0) + 1
+
+                if pattern_summary:
+                    for ptype, count in sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True):
+                        f.write(f"- **{ptype}**: {count} instance(s)\n")
+                    f.write(f"\n📁 See `references/codebase_analysis/patterns/` for detailed analysis.\n\n")
+                else:
+                    f.write("*No design patterns detected.*\n\n")
+
+            # Section 5: Configuration Overview (C3.4)
+            if c3_data.get('config_patterns'):
+                f.write("## 5. Configuration Overview\n\n")
+                config = c3_data['config_patterns']
+                config_files = config.get('config_files', [])
+
+                if config_files:
+                    f.write(f"**{len(config_files)} configuration file(s) detected**:\n\n")
+                    for cf in config_files[:10]:  # Top 10
+                        f.write(f"- **`{cf['relative_path']}`**: {cf['config_type']}\n")
+                        if cf.get('purpose'):
+                            f.write(f"  - Purpose: {cf['purpose']}\n")
+
+                    # Add security warnings if available
+                    if config.get('ai_enhancements'):
+                        insights = config['ai_enhancements'].get('overall_insights', {})
+                        security_issues = insights.get('security_issues_found', 0)
+                        if security_issues > 0:
+                            f.write(f"\n🔐 **Security Alert**: {security_issues} potential security issue(s) found in configurations.\n")
+                            if insights.get('recommended_actions'):
+                                f.write("\n**Recommended Actions**:\n")
+                                for action in insights['recommended_actions'][:5]:
+                                    f.write(f"- {action}\n")
+                    f.write(f"\n📁 See `references/codebase_analysis/configuration/` for details.\n\n")
+                else:
+                    f.write("*No configuration files detected.*\n\n")
+
+            # Section 6: Common Workflows (C3.3)
+            if c3_data.get('how_to_guides'):
+                f.write("## 6. Common Workflows\n\n")
+                guides = c3_data['how_to_guides'].get('guides', [])
+
+                if guides:
+                    f.write(f"**{len(guides)} how-to guide(s) extracted from codebase**:\n\n")
+                    for guide in guides[:10]:  # Top 10
+                        f.write(f"- {guide.get('title', 'Untitled Guide')}\n")
+                    f.write(f"\n📁 See `references/codebase_analysis/guides/` for detailed tutorials.\n\n")
+                else:
+                    f.write("*No workflow guides extracted.*\n\n")
+
+            # Section 7: Usage Examples (C3.2)
+            if c3_data.get('test_examples'):
+                f.write("## 7. Usage Examples\n\n")
+                examples = c3_data['test_examples']
+                total = examples.get('total_examples', 0)
+                high_value = examples.get('high_value_count', 0)
+
+                if total > 0:
+                    f.write(f"**{total} usage example(s) extracted from tests**:\n")
+                    f.write(f"- High-value examples: {high_value}\n")
+
+                    # Category breakdown
+                    if examples.get('examples_by_category'):
+                        f.write("\n**By Category**:\n")
+                        for cat, count in sorted(examples['examples_by_category'].items(), key=lambda x: x[1], reverse=True):
+                            f.write(f"- {cat}: {count}\n")
+
+                    f.write(f"\n📁 See `references/codebase_analysis/examples/` for code samples.\n\n")
+                else:
+                    f.write("*No test examples extracted.*\n\n")
+
+            # Section 8: Entry Points & Directory Structure
+            f.write("## 8. Entry Points & Directory Structure\n\n")
+            f.write("*Analysis based on codebase organization*\n\n")
+
+            if c3_data.get('architecture'):
+                dir_struct = c3_data['architecture'].get('directory_structure', {})
+                if dir_struct:
+                    f.write("**Main Directories**:\n")
+                    for dir_name, file_count in sorted(dir_struct.items(), key=lambda x: x[1], reverse=True)[:15]:
+                        f.write(f"- `{dir_name}/`: {file_count} file(s)\n")
+                    f.write("\n")
+
+            # Footer
+            f.write("---\n\n")
+            f.write("*This architecture overview was automatically generated by C3.x codebase analysis.*\n")
+            f.write("*Last updated: skill build time*\n")
+
+        logger.info(f"📐 Created ARCHITECTURE.md")
+
+    def _generate_pattern_references(self, c3_dir: str, patterns_data: Dict):
+        """Generate design pattern references (C3.1)."""
+        if not patterns_data:
+            return
+
+        patterns_dir = os.path.join(c3_dir, 'patterns')
+        os.makedirs(patterns_dir, exist_ok=True)
+
+        # Save JSON data
+        json_path = os.path.join(patterns_dir, 'detected_patterns.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(patterns_data, f, indent=2, ensure_ascii=False)
+
+        # Create summary markdown
+        md_path = os.path.join(patterns_dir, 'index.md')
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write("# Design Patterns\n\n")
+            f.write("*Detected patterns from C3.1 analysis*\n\n")
+
+            for file_data in patterns_data:
+                patterns = file_data.get('patterns', [])
+                if patterns:
+                    f.write(f"## {file_data['file_path']}\n\n")
+                    for p in patterns:
+                        f.write(f"### {p['pattern_type']}\n\n")
+                        if p.get('class_name'):
+                            f.write(f"- **Class**: `{p['class_name']}`\n")
+                        if p.get('confidence'):
+                            f.write(f"- **Confidence**: {p['confidence']:.2f}\n")
+                        if p.get('indicators'):
+                            f.write(f"- **Indicators**: {', '.join(p['indicators'][:3])}\n")
+                        f.write("\n")
+
+        logger.info(f"   ✓ Design patterns: {len(patterns_data)} files")
+
+    def _generate_example_references(self, c3_dir: str, examples_data: Dict):
+        """Generate test example references (C3.2)."""
+        if not examples_data:
+            return
+
+        examples_dir = os.path.join(c3_dir, 'examples')
+        os.makedirs(examples_dir, exist_ok=True)
+
+        # Save JSON data
+        json_path = os.path.join(examples_dir, 'test_examples.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(examples_data, f, indent=2, ensure_ascii=False)
+
+        # Create summary markdown
+        md_path = os.path.join(examples_dir, 'index.md')
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write("# Usage Examples\n\n")
+            f.write("*Extracted from test files (C3.2)*\n\n")
+
+            total = examples_data.get('total_examples', 0)
+            high_value = examples_data.get('high_value_count', 0)
+
+            f.write(f"**Total Examples**: {total}\n")
+            f.write(f"**High-Value Examples**: {high_value}\n\n")
+
+            # List high-value examples
+            examples = examples_data.get('examples', [])
+            high_value_examples = [e for e in examples if e.get('confidence', 0) > 0.7]
+
+            if high_value_examples:
+                f.write("## High-Value Examples\n\n")
+                for ex in high_value_examples[:20]:  # Top 20
+                    f.write(f"### {ex.get('description', 'Example')}\n\n")
+                    f.write(f"- **Category**: {ex.get('category', 'unknown')}\n")
+                    f.write(f"- **Confidence**: {ex.get('confidence', 0):.2f}\n")
+                    f.write(f"- **File**: `{ex.get('file_path', 'N/A')}`\n")
+                    if ex.get('code_snippet'):
+                        f.write(f"\n```python\n{ex['code_snippet'][:300]}\n```\n")
+                    f.write("\n")
+
+        logger.info(f"   ✓ Test examples: {total} total, {high_value} high-value")
+
+    def _generate_guide_references(self, c3_dir: str, guides_data: Dict):
+        """Generate how-to guide references (C3.3)."""
+        if not guides_data:
+            return
+
+        guides_dir = os.path.join(c3_dir, 'guides')
+        os.makedirs(guides_dir, exist_ok=True)
+
+        # Save JSON collection data
+        json_path = os.path.join(guides_dir, 'guide_collection.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(guides_data, f, indent=2, ensure_ascii=False)
+
+        guides = guides_data.get('guides', [])
+
+        # Create index
+        md_path = os.path.join(guides_dir, 'index.md')
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write("# How-To Guides\n\n")
+            f.write("*Workflow tutorials extracted from codebase (C3.3)*\n\n")
+
+            f.write(f"**Total Guides**: {len(guides)}\n\n")
+
+            if guides:
+                f.write("## Available Guides\n\n")
+                for guide in guides:
+                    f.write(f"- [{guide.get('title', 'Untitled')}](guide_{guide.get('id', 'unknown')}.md)\n")
+                f.write("\n")
+
+        # Save individual guide markdown files
+        for guide in guides:
+            guide_id = guide.get('id', 'unknown')
+            guide_path = os.path.join(guides_dir, f"guide_{guide_id}.md")
+
+            with open(guide_path, 'w', encoding='utf-8') as f:
+                f.write(f"# {guide.get('title', 'Untitled Guide')}\n\n")
+
+                if guide.get('description'):
+                    f.write(f"{guide['description']}\n\n")
+
+                steps = guide.get('steps', [])
+                if steps:
+                    f.write("## Steps\n\n")
+                    for i, step in enumerate(steps, 1):
+                        f.write(f"### {i}. {step.get('action', 'Step')}\n\n")
+                        if step.get('code_example'):
+                            lang = step.get('language', 'python')
+                            f.write(f"```{lang}\n{step['code_example']}\n```\n\n")
+                        if step.get('explanation'):
+                            f.write(f"{step['explanation']}\n\n")
+
+        logger.info(f"   ✓ How-to guides: {len(guides)}")
+
+    def _generate_config_references(self, c3_dir: str, config_data: Dict):
+        """Generate configuration pattern references (C3.4)."""
+        if not config_data:
+            return
+
+        config_dir = os.path.join(c3_dir, 'configuration')
+        os.makedirs(config_dir, exist_ok=True)
+
+        # Save JSON data
+        json_path = os.path.join(config_dir, 'config_patterns.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+        # Create summary markdown
+        md_path = os.path.join(config_dir, 'index.md')
+        config_files = config_data.get('config_files', [])
+
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write("# Configuration Patterns\n\n")
+            f.write("*Detected configuration files (C3.4)*\n\n")
+
+            f.write(f"**Total Config Files**: {len(config_files)}\n\n")
+
+            if config_files:
+                f.write("## Configuration Files\n\n")
+                for cf in config_files:
+                    f.write(f"### `{cf['relative_path']}`\n\n")
+                    f.write(f"- **Type**: {cf['config_type']}\n")
+                    f.write(f"- **Purpose**: {cf.get('purpose', 'N/A')}\n")
+                    f.write(f"- **Settings**: {len(cf.get('settings', []))}\n")
+
+                    # Show AI enhancements if available
+                    if cf.get('ai_enhancement'):
+                        enh = cf['ai_enhancement']
+                        if enh.get('security_concern'):
+                            f.write(f"- **Security**: {enh['security_concern']}\n")
+                        if enh.get('best_practice'):
+                            f.write(f"- **Best Practice**: {enh['best_practice']}\n")
+
+                    f.write("\n")
+
+                # Overall insights
+                if config_data.get('ai_enhancements'):
+                    insights = config_data['ai_enhancements'].get('overall_insights', {})
+                    if insights:
+                        f.write("## Overall Insights\n\n")
+                        if insights.get('security_issues_found'):
+                            f.write(f"🔐 **Security Issues**: {insights['security_issues_found']}\n\n")
+                        if insights.get('recommended_actions'):
+                            f.write("**Recommended Actions**:\n")
+                            for action in insights['recommended_actions']:
+                                f.write(f"- {action}\n")
+                            f.write("\n")
+
+        logger.info(f"   ✓ Configuration files: {len(config_files)}")
+
+    def _copy_architecture_details(self, c3_dir: str, arch_data: Dict):
+        """Copy architectural pattern JSON details (C3.7)."""
+        if not arch_data:
+            return
+
+        arch_dir = os.path.join(c3_dir, 'architecture_details')
+        os.makedirs(arch_dir, exist_ok=True)
+
+        # Save full JSON data
+        json_path = os.path.join(arch_dir, 'architectural_patterns.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(arch_data, f, indent=2, ensure_ascii=False)
+
+        # Create summary markdown
+        md_path = os.path.join(arch_dir, 'index.md')
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write("# Architectural Patterns (Detailed)\n\n")
+            f.write("*Comprehensive architectural analysis (C3.7)*\n\n")
+
+            patterns = arch_data.get('patterns', [])
+            if patterns:
+                f.write("## Detected Patterns\n\n")
+                for p in patterns:
+                    f.write(f"### {p['pattern_name']}\n\n")
+                    f.write(f"- **Confidence**: {p['confidence']:.2f}\n")
+                    if p.get('framework'):
+                        f.write(f"- **Framework**: {p['framework']}\n")
+                    if p.get('evidence'):
+                        f.write(f"- **Evidence**:\n")
+                        for e in p['evidence'][:5]:
+                            f.write(f"  - {e}\n")
+                    f.write("\n")
+
+        logger.info(f"   ✓ Architectural details: {len(patterns)} patterns")
+
+    def _format_c3_summary_section(self, c3_data: Dict) -> str:
+        """Format C3.x analysis summary for SKILL.md."""
+        content = "\n## 🏗️ Architecture & Code Analysis\n\n"
+        content += "*This skill includes comprehensive codebase analysis*\n\n"
+
+        # Add architectural pattern summary
+        if c3_data.get('architecture'):
+            patterns = c3_data['architecture'].get('patterns', [])
+            if patterns:
+                top_pattern = patterns[0]
+                content += f"**Primary Architecture**: {top_pattern['pattern_name']}"
+                if top_pattern.get('framework'):
+                    content += f" ({top_pattern['framework']})"
+                content += f" - Confidence: {top_pattern['confidence']:.0%}\n\n"
+
+        # Add design patterns summary
+        if c3_data.get('patterns'):
+            total_patterns = sum(len(f.get('patterns', [])) for f in c3_data['patterns'])
+            if total_patterns > 0:
+                content += f"**Design Patterns**: {total_patterns} detected\n"
+
+                # Show top 3 pattern types
+                pattern_summary = {}
+                for file_data in c3_data['patterns']:
+                    for pattern in file_data.get('patterns', []):
+                        ptype = pattern['pattern_type']
+                        pattern_summary[ptype] = pattern_summary.get(ptype, 0) + 1
+
+                top_patterns = sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True)[:3]
+                if top_patterns:
+                    content += f"- Top patterns: {', '.join([f'{p[0]} ({p[1]})' for p in top_patterns])}\n"
+                content += "\n"
+
+        # Add test examples summary
+        if c3_data.get('test_examples'):
+            total = c3_data['test_examples'].get('total_examples', 0)
+            high_value = c3_data['test_examples'].get('high_value_count', 0)
+            if total > 0:
+                content += f"**Usage Examples**: {total} extracted from tests ({high_value} high-value)\n\n"
+
+        # Add how-to guides summary
+        if c3_data.get('how_to_guides'):
+            guide_count = len(c3_data['how_to_guides'].get('guides', []))
+            if guide_count > 0:
+                content += f"**How-To Guides**: {guide_count} workflow tutorials\n\n"
+
+        # Add configuration summary
+        if c3_data.get('config_patterns'):
+            config_files = c3_data['config_patterns'].get('config_files', [])
+            if config_files:
+                content += f"**Configuration Files**: {len(config_files)} analyzed\n"
+
+                # Add security warning if present
+                if c3_data['config_patterns'].get('ai_enhancements'):
+                    insights = c3_data['config_patterns']['ai_enhancements'].get('overall_insights', {})
+                    security_issues = insights.get('security_issues_found', 0)
+                    if security_issues > 0:
+                        content += f"- 🔐 **Security Alert**: {security_issues} issue(s) detected\n"
+                content += "\n"
+
+        # Add link to ARCHITECTURE.md
+        content += "📖 **See** `references/codebase_analysis/ARCHITECTURE.md` for complete architectural overview.\n\n"
+
+        return content
 
     def _generate_conflicts_report(self):
         """Generate detailed conflicts report."""

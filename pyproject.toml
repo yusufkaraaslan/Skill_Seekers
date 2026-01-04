@@ -123,6 +123,7 @@ skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
+skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

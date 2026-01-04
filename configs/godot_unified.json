@@ -44,7 +44,10 @@
         "scene/**/*.cpp",
         "servers/**/*.h",
         "servers/**/*.cpp"
-      ]
+      ],
+      "local_repo_path": null,
+      "enable_codebase_analysis": true,
+      "ai_mode": "auto"
     }
   ]
 }

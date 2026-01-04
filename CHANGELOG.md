@@ -138,6 +138,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Use Cases**: Documentation generation, configuration auditing, migration planning, security reviews, onboarding new developers
   - **Test Coverage**: 28 comprehensive tests covering all formats and patterns
 
+- **C3.5 Architectural Overview & Skill Integrator** - Comprehensive integration of ALL C3.x codebase analysis into unified skills
+  - **ARCHITECTURE.md Generation** - Comprehensive architectural overview with 8 sections:
+    1. **Overview** - Project description and purpose
+    2. **Architectural Patterns** - Detected patterns (MVC, MVVM, etc.) from C3.7 analysis
+    3. **Technology Stack** - Frameworks, libraries, and languages detected
+    4. **Design Patterns** - Summary of C3.1 design patterns (Factory, Singleton, etc.)
+    5. **Configuration Overview** - C3.4 config files with security warnings
+    6. **Common Workflows** - C3.3 how-to guides summary
+    7. **Usage Examples** - C3.2 test examples statistics
+    8. **Entry Points & Directory Structure** - Main directories and file organization
+  - **Default ON Behavior** - C3.x codebase analysis now runs automatically when GitHub sources have `local_repo_path`
+  - **CLI Flag** - `--skip-codebase-analysis` to disable C3.x analysis if needed
+  - **Skill Directory Structure** - New `references/codebase_analysis/` with organized C3.x outputs:
+    - `ARCHITECTURE.md` - Master architectural overview (main deliverable)
+    - `patterns/` - C3.1 design pattern analysis
+    - `examples/` - C3.2 test examples
+    - `guides/` - C3.3 how-to tutorials
+    - `configuration/` - C3.4 config patterns
+    - `architecture_details/` - C3.7 architectural pattern details
+  - **Enhanced SKILL.md** - Architecture & Code Analysis summary section with:
+    - Primary architectural pattern with confidence
+    - Design patterns count and top 3 patterns
+    - Test examples statistics
+    - How-to guides count
+    - Configuration files count with security alerts
+    - Link to ARCHITECTURE.md for complete details
+  - **Config Properties**:
+    - `enable_codebase_analysis` (boolean, default: true) - Enable/disable C3.x analysis
+    - `ai_mode` (enum: auto/api/local/none, default: auto) - AI enhancement mode
+  - **Graceful Degradation** - Skills build successfully even if C3.x analysis fails
+  - **Integration Points**:
+    - Unified scraper: Automatic C3.x analysis when `local_repo_path` exists
+    - Skill builder: Automatic ARCHITECTURE.md + references generation
+    - Config validator: Validates new C3.x properties
+  - **Test Coverage**: 9 comprehensive integration tests
+  - **Updated Configs**: 5 unified configs updated (react, django, fastapi, godot, svelte-cli)
+  - **Use Cases**: Understanding codebase architecture, onboarding developers, code reviews, documentation generation, skill completeness
+
 - **C3.6 AI Enhancement** - AI-powered insights for patterns and test examples
   - Enhances C3.1 (Pattern Detection) and C3.2 (Test Examples) with AI analysis
   - **Pattern Enhancement**: Explains why patterns detected, suggests improvements, identifies issues

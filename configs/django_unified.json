@@ -43,7 +43,10 @@
         "django/views/**/*.py",
         "django/forms/**/*.py",
         "django/contrib/admin/**/*.py"
-      ]
+      ],
+      "local_repo_path": null,
+      "enable_codebase_analysis": true,
+      "ai_mode": "auto"
     }
   ]
 }

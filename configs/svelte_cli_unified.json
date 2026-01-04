@@ -62,7 +62,9 @@
         "src/**/*.ts",
         "src/**/*.js"
       ],
-      "local_repo_path": "local_paths/sveltekit/cli"
+      "local_repo_path": "local_paths/sveltekit/cli",
+      "enable_codebase_analysis": true,
+      "ai_mode": "auto"
     }
   ]
 }

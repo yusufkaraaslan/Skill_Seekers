@@ -39,7 +39,10 @@
       "code_analysis_depth": "surface",
       "file_patterns": [
         "fastapi/**/*.py"
-      ]
+      ],
+      "local_repo_path": null,
+      "enable_codebase_analysis": true,
+      "ai_mode": "auto"
     }
   ]
 }

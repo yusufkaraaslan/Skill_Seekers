@@ -18,6 +18,7 @@ import json
 import logging
 import argparse
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -211,6 +212,23 @@ class UnifiedScraper:
         scraper = GitHubScraper(github_config)
         github_data = scraper.scrape()
 
+        # Run C3.x codebase analysis if enabled and local_repo_path available
+        enable_codebase_analysis = source.get('enable_codebase_analysis', True)
+        local_repo_path = source.get('local_repo_path')
+
+        if enable_codebase_analysis and local_repo_path:
+            logger.info("🔬 Running C3.x codebase analysis...")
+            try:
+                c3_data = self._run_c3_analysis(local_repo_path, source)
+                if c3_data:
+                    github_data['c3_analysis'] = c3_data
+                    logger.info("✅ C3.x analysis complete")
+                else:
+                    logger.warning("⚠️  C3.x analysis returned no data")
+            except Exception as e:
+                logger.warning(f"⚠️  C3.x analysis failed: {e}")
+                # Continue without C3.x data - graceful degradation
+
         # Save data
         github_data_file = os.path.join(self.data_dir, 'github_data.json')
         with open(github_data_file, 'w', encoding='utf-8') as f:
@@ -256,6 +274,138 @@ class UnifiedScraper:
         }
 
         logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
+
+    def _load_json(self, file_path: Path) -> Dict:
+        """
+        Load JSON file safely.
+
+        Args:
+            file_path: Path to JSON file
+
+        Returns:
+            Dict with JSON data, or empty dict if file doesn't exist or is invalid
+        """
+        if not file_path.exists():
+            logger.warning(f"JSON file not found: {file_path}")
+            return {}
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Failed to load JSON {file_path}: {e}")
+            return {}
+
+    def _load_guide_collection(self, tutorials_dir: Path) -> Dict:
+        """
+        Load how-to guide collection from tutorials directory.
+
+        Args:
+            tutorials_dir: Path to tutorials directory
+
+        Returns:
+            Dict with guide collection data
+        """
+        if not tutorials_dir.exists():
+            logger.warning(f"Tutorials directory not found: {tutorials_dir}")
+            return {'guides': []}
+
+        collection_file = tutorials_dir / 'guide_collection.json'
+        if collection_file.exists():
+            return self._load_json(collection_file)
+
+        # Fallback: scan for individual guide JSON files
+        guides = []
+        for guide_file in tutorials_dir.glob('guide_*.json'):
+            guide_data = self._load_json(guide_file)
+            if guide_data:
+                guides.append(guide_data)
+
+        return {'guides': guides, 'total_count': len(guides)}
+
+    def _run_c3_analysis(self, local_repo_path: str, source: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run comprehensive C3.x codebase analysis.
+
+        Calls codebase_scraper.analyze_codebase() with all C3.x features enabled,
+        loads the results into memory, and cleans up temporary files.
+
+        Args:
+            local_repo_path: Path to local repository
+            source: GitHub source configuration dict
+
+        Returns:
+            Dict with keys: patterns, test_examples, how_to_guides,
+            config_patterns, architecture
+        """
+        try:
+            from skill_seekers.cli.codebase_scraper import analyze_codebase
+        except ImportError:
+            logger.error("codebase_scraper.py not found")
+            return {}
+
+        # Create temp output dir for C3.x analysis
+        temp_output = Path(self.data_dir) / 'c3_analysis_temp'
+        temp_output.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"   Analyzing codebase: {local_repo_path}")
+
+        try:
+            # Run full C3.x analysis
+            results = analyze_codebase(
+                directory=Path(local_repo_path),
+                output_dir=temp_output,
+                depth='deep',
+                languages=None,  # Analyze all languages
+                file_patterns=source.get('file_patterns'),
+                build_api_reference=False,  # Not needed in skill
+                extract_comments=False,     # Not needed
+                build_dependency_graph=False,  # Can add later if needed
+                detect_patterns=True,       # C3.1: Design patterns
+                extract_test_examples=True, # C3.2: Test examples
+                build_how_to_guides=True,   # C3.3: How-to guides
+                extract_config_patterns=True,  # C3.4: Config patterns
+                enhance_with_ai=source.get('ai_mode', 'auto') != 'none',
+                ai_mode=source.get('ai_mode', 'auto')
+            )
+
+            # Load C3.x outputs into memory
+            c3_data = {
+                'patterns': self._load_json(temp_output / 'patterns' / 'detected_patterns.json'),
+                'test_examples': self._load_json(temp_output / 'test_examples' / 'test_examples.json'),
+                'how_to_guides': self._load_guide_collection(temp_output / 'tutorials'),
+                'config_patterns': self._load_json(temp_output / 'config_patterns' / 'config_patterns.json'),
+                'architecture': self._load_json(temp_output / 'architecture' / 'architectural_patterns.json')
+            }
+
+            # Log summary
+            total_patterns = sum(len(f.get('patterns', [])) for f in c3_data.get('patterns', []))
+            total_examples = c3_data.get('test_examples', {}).get('total_examples', 0)
+            total_guides = len(c3_data.get('how_to_guides', {}).get('guides', []))
+            total_configs = len(c3_data.get('config_patterns', {}).get('config_files', []))
+            arch_patterns = len(c3_data.get('architecture', {}).get('patterns', []))
+
+            logger.info(f"   ✓ Design Patterns: {total_patterns}")
+            logger.info(f"   ✓ Test Examples: {total_examples}")
+            logger.info(f"   ✓ How-To Guides: {total_guides}")
+            logger.info(f"   ✓ Config Files: {total_configs}")
+            logger.info(f"   ✓ Architecture Patterns: {arch_patterns}")
+
+            return c3_data
+
+        except Exception as e:
+            logger.error(f"C3.x analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
+        finally:
+            # Clean up temp directory
+            if temp_output.exists():
+                try:
+                    shutil.rmtree(temp_output)
+                except Exception as e:
+                    logger.warning(f"Failed to clean up temp directory: {e}")
 
     def detect_conflicts(self) -> List:
         """
@@ -451,11 +601,23 @@ Examples:
     parser.add_argument('--merge-mode', '-m',
                        choices=['rule-based', 'claude-enhanced'],
                        help='Override config merge mode')
+    parser.add_argument('--skip-codebase-analysis',
+                       action='store_true',
+                       help='Skip C3.x codebase analysis for GitHub sources (default: enabled)')
 
     args = parser.parse_args()
 
-    # Create and run scraper
+    # Create scraper
     scraper = UnifiedScraper(args.config, args.merge_mode)
+
+    # Disable codebase analysis if requested
+    if args.skip_codebase_analysis:
+        for source in scraper.config.get('sources', []):
+            if source['type'] == 'github':
+                source['enable_codebase_analysis'] = False
+                logger.info(f"⏭️  Skipping codebase analysis for GitHub source: {source.get('repo', 'unknown')}")
+
+    # Run scraper
     scraper.run()
 
 
