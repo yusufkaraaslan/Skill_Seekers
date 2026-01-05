@@ -70,8 +70,12 @@ class UnifiedScraper:
         self.merge_mode = merge_mode or self.config.get('merge_mode', 'rule-based')
         logger.info(f"Merge mode: {self.merge_mode}")
 
-        # Storage for scraped data
-        self.scraped_data = {}
+        # Storage for scraped data - use lists to support multiple sources of same type
+        self.scraped_data = {
+            'documentation': [],  # List of doc sources
+            'github': [],         # List of github sources
+            'pdf': []             # List of pdf sources
+        }
 
         # Output paths
         self.name = self.config['name']
@@ -80,6 +84,9 @@ class UnifiedScraper:
 
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(self.data_dir, exist_ok=True)
+
+        # Track source index for unique naming
+        self._source_counters = {'documentation': 0, 'github': 0, 'pdf': 0}
 
     def scrape_all_sources(self):
         """
@@ -114,13 +121,22 @@ class UnifiedScraper:
                 logger.error(f"Error scraping {source_type}: {e}")
                 logger.info("Continuing with other sources...")
 
-        logger.info(f"\n✅ Scraped {len(self.scraped_data)} sources successfully")
+        logger.info(f"\n✅ Scraped {sum(len(v) for v in self.scraped_data.values())} sources successfully")
 
     def _scrape_documentation(self, source: Dict[str, Any]):
         """Scrape documentation website."""
-        # Create temporary config for doc scraper
+        # Get unique index for this documentation source
+        idx = self._source_counters['documentation']
+        self._source_counters['documentation'] += 1
+
+        # Extract source identifier from URL for unique naming
+        from urllib.parse import urlparse
+        parsed = urlparse(source['base_url'])
+        source_id = parsed.netloc.replace('.', '_').replace(':', '_')
+
+        # Create temporary config for doc scraper with unique name
         doc_config = {
-            'name': f"{self.name}_docs",
+            'name': f"{self.name}_docs_{idx}_{source_id}",
             'base_url': source['base_url'],
             'selectors': source.get('selectors', {}),
             'url_patterns': source.get('url_patterns', {}),
@@ -164,10 +180,15 @@ class UnifiedScraper:
             with open(docs_data_file, 'r', encoding='utf-8') as f:
                 summary = json.load(f)
 
-            self.scraped_data['documentation'] = {
+            # Append to list instead of overwriting
+            self.scraped_data['documentation'].append({
+                'source_id': source_id,
+                'base_url': source['base_url'],
                 'pages': summary.get('pages', []),
-                'data_file': docs_data_file
-            }
+                'total_pages': summary.get('total_pages', 0),
+                'data_file': docs_data_file,
+                'refs_dir': f"output/{doc_config['name']}/references"
+            })
 
             logger.info(f"✅ Documentation: {summary.get('total_pages', 0)} pages scraped")
         else:
@@ -185,10 +206,18 @@ class UnifiedScraper:
             logger.error("github_scraper.py not found")
             return
 
+        # Get unique index for this GitHub source
+        idx = self._source_counters['github']
+        self._source_counters['github'] += 1
+
+        # Extract repo identifier for unique naming
+        repo = source['repo']
+        repo_id = repo.replace('/', '_')
+
         # Create config for GitHub scraper
         github_config = {
-            'repo': source['repo'],
-            'name': f"{self.name}_github",
+            'repo': repo,
+            'name': f"{self.name}_github_{idx}_{repo_id}",
             'github_token': source.get('github_token'),
             'include_issues': source.get('include_issues', True),
             'max_issues': source.get('max_issues', 100),
@@ -197,7 +226,7 @@ class UnifiedScraper:
             'include_code': source.get('include_code', True),
             'code_analysis_depth': source.get('code_analysis_depth', 'surface'),
             'file_patterns': source.get('file_patterns', []),
-            'local_repo_path': source.get('local_repo_path')  # Pass local_repo_path from config
+            'local_repo_path': source.get('local_repo_path')
         }
 
         # Pass directory exclusions if specified (optional)
@@ -207,19 +236,22 @@ class UnifiedScraper:
             github_config['exclude_dirs_additional'] = source['exclude_dirs_additional']
 
         # Scrape
-        logger.info(f"Scraping GitHub repository: {source['repo']}")
+        logger.info(f"Scraping GitHub repository: {repo}")
         scraper = GitHubScraper(github_config)
         github_data = scraper.scrape()
 
-        # Save data
-        github_data_file = os.path.join(self.data_dir, 'github_data.json')
+        # Save data with unique filename
+        github_data_file = os.path.join(self.data_dir, f'github_data_{idx}_{repo_id}.json')
         with open(github_data_file, 'w', encoding='utf-8') as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
-        self.scraped_data['github'] = {
+        # Append to list instead of overwriting
+        self.scraped_data['github'].append({
+            'repo': repo,
+            'repo_id': repo_id,
             'data': github_data,
             'data_file': github_data_file
-        }
+        })
 
         logger.info(f"✅ GitHub: Repository scraped successfully")
 
@@ -274,12 +306,21 @@ class UnifiedScraper:
             logger.info("No API merge needed (only one API source)")
             return []
 
-        # Get documentation and GitHub data
-        docs_data = self.scraped_data.get('documentation', {})
-        github_data = self.scraped_data.get('github', {})
+        # Get documentation and GitHub data (now lists)
+        docs_list = self.scraped_data.get('documentation', [])
+        github_list = self.scraped_data.get('github', [])
 
-        if not docs_data or not github_data:
+        if not docs_list or not github_list:
             logger.warning("Missing documentation or GitHub data for conflict detection")
+            return []
+
+        # For conflict detection, combine all docs and all github data
+        # Use the first of each for now (conflict detection is optional)
+        docs_data = docs_list[0] if docs_list else {}
+        github_data = github_list[0] if github_list else {}
+
+        if not docs_data.get('data_file') or not github_data.get('data_file'):
+            logger.warning("Missing data files for conflict detection")
             return []
 
         # Load data files
@@ -328,9 +369,17 @@ class UnifiedScraper:
             logger.info("No conflicts to merge")
             return None
 
-        # Get data files
-        docs_data = self.scraped_data.get('documentation', {})
-        github_data = self.scraped_data.get('github', {})
+        # Get data files (now lists)
+        docs_list = self.scraped_data.get('documentation', [])
+        github_list = self.scraped_data.get('github', [])
+
+        if not docs_list or not github_list:
+            logger.warning("Missing data for merge")
+            return None
+
+        # Use first source of each type for merge
+        docs_data = docs_list[0]
+        github_data = github_list[0]
 
         # Load data
         with open(docs_data['data_file'], 'r', encoding='utf-8') as f:

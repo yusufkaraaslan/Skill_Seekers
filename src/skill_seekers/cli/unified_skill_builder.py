@@ -268,118 +268,177 @@ This skill combines knowledge from multiple sources:
         """Generate reference files organized by source."""
         logger.info("Generating reference files...")
 
-        # Generate references for each source type
-        if 'documentation' in self.scraped_data:
-            self._generate_docs_references()
+        # Generate references for each source type (now lists)
+        docs_list = self.scraped_data.get('documentation', [])
+        if docs_list:
+            self._generate_docs_references(docs_list)
 
-        if 'github' in self.scraped_data:
-            self._generate_github_references()
+        github_list = self.scraped_data.get('github', [])
+        if github_list:
+            self._generate_github_references(github_list)
 
-        if 'pdf' in self.scraped_data:
-            self._generate_pdf_references()
+        pdf_list = self.scraped_data.get('pdf', [])
+        if pdf_list:
+            self._generate_pdf_references(pdf_list)
 
         # Generate merged API reference if available
         if self.merged_data:
             self._generate_merged_api_reference()
 
-    def _generate_docs_references(self):
-        """Generate references from documentation source."""
+    def _generate_docs_references(self, docs_list: List[Dict]):
+        """Generate references from multiple documentation sources."""
         docs_dir = os.path.join(self.skill_dir, 'references', 'documentation')
         os.makedirs(docs_dir, exist_ok=True)
 
-        # Best-effort: copy docs-only reference files into unified docs references.
-        # UnifiedScraper runs doc_scraper using name "{name}_docs", which creates
-        # output/{name}_docs/references/*.md. Those are the most useful documentation
-        # references for the unified skill.
-        source_refs_dir = os.path.join('output', f"{self.name}_docs", 'references')
-        copied_files: List[str] = []
+        all_copied_files: List[str] = []
 
-        if os.path.isdir(source_refs_dir):
-            for entry in sorted(os.listdir(source_refs_dir)):
-                src_path = os.path.join(source_refs_dir, entry)
-                dst_path = os.path.join(docs_dir, entry)
-                if not os.path.isfile(src_path):
-                    continue
-                shutil.copy2(src_path, dst_path)
-                copied_files.append(entry)
+        # Process each documentation source
+        for i, doc_source in enumerate(docs_list):
+            source_id = doc_source.get('source_id', f'source_{i}')
+            base_url = doc_source.get('base_url', 'Unknown')
+            refs_dir = doc_source.get('refs_dir', '')
 
-        # Create index
+            # Create subdirectory for this source
+            source_dir = os.path.join(docs_dir, source_id)
+            os.makedirs(source_dir, exist_ok=True)
+
+            copied_files: List[str] = []
+
+            if refs_dir and os.path.isdir(refs_dir):
+                for entry in sorted(os.listdir(refs_dir)):
+                    src_path = os.path.join(refs_dir, entry)
+                    dst_path = os.path.join(source_dir, entry)
+                    if not os.path.isfile(src_path):
+                        continue
+                    shutil.copy2(src_path, dst_path)
+                    copied_files.append(entry)
+
+            # Create index for this source
+            source_index_path = os.path.join(source_dir, 'index.md')
+            with open(source_index_path, 'w', encoding='utf-8') as f:
+                f.write(f"# Documentation: {source_id}\n\n")
+                f.write(f"**Source**: {base_url}\n\n")
+                f.write(f"**Pages**: {doc_source.get('total_pages', 'N/A')}\n\n")
+
+                if copied_files:
+                    files_no_index = [p for p in copied_files if p.lower() != 'index.md']
+                    f.write("## Files\n\n")
+                    for filename in files_no_index:
+                        f.write(f"- [{filename}]({filename})\n")
+                else:
+                    f.write("No reference files available.\n")
+
+            all_copied_files.extend(copied_files)
+
+        # Create main index
         index_path = os.path.join(docs_dir, 'index.md')
         with open(index_path, 'w', encoding='utf-8') as f:
-            f.write("# Documentation\n\n")
-            f.write("Reference from official documentation.\n\n")
+            f.write("# Documentation References\n\n")
+            f.write(f"Combined from {len(docs_list)} documentation sources.\n\n")
 
-            if copied_files:
-                files_no_index = [p for p in copied_files if p.lower() != 'index.md']
-                files_index = [p for p in copied_files if p.lower() == 'index.md']
+            f.write("## Sources\n\n")
+            for doc_source in docs_list:
+                source_id = doc_source.get('source_id', 'unknown')
+                base_url = doc_source.get('base_url', 'Unknown')
+                total_pages = doc_source.get('total_pages', 'N/A')
+                f.write(f"- [{source_id}]({source_id}/index.md) - {base_url} ({total_pages} pages)\n")
 
-                f.write("## Files\n\n")
-                for filename in files_no_index + files_index:
-                    f.write(f"- [{filename}]({filename})\n")
-            else:
-                f.write("## Notes\n\n")
-                f.write(
-                    "No documentation reference files were copied into this unified skill. "
-                    "This usually means the docs-only build did not produce reference files.\n"
-                )
+        logger.info(f"Created documentation references ({len(docs_list)} sources)")
 
-        logger.info("Created documentation references")
-
-    def _generate_github_references(self):
-        """Generate references from GitHub source."""
+    def _generate_github_references(self, github_list: List[Dict]):
+        """Generate references from multiple GitHub sources."""
         github_dir = os.path.join(self.skill_dir, 'references', 'github')
         os.makedirs(github_dir, exist_ok=True)
 
-        github_data = self.scraped_data['github']['data']
+        # Process each GitHub source
+        for i, github_source in enumerate(github_list):
+            repo = github_source.get('repo', f'repo_{i}')
+            repo_id = github_source.get('repo_id', repo.replace('/', '_'))
+            github_data = github_source.get('data', {})
 
-        # Create README reference
-        if github_data.get('readme'):
-            readme_path = os.path.join(github_dir, 'README.md')
-            with open(readme_path, 'w') as f:
-                f.write("# Repository README\n\n")
-                f.write(github_data['readme'])
+            # Create subdirectory for this repo
+            repo_dir = os.path.join(github_dir, repo_id)
+            os.makedirs(repo_dir, exist_ok=True)
 
-        # Create issues reference
-        if github_data.get('issues'):
-            issues_path = os.path.join(github_dir, 'issues.md')
-            with open(issues_path, 'w') as f:
-                f.write("# GitHub Issues\n\n")
-                f.write(f"{len(github_data['issues'])} recent issues.\n\n")
+            # Create README reference
+            if github_data.get('readme'):
+                readme_path = os.path.join(repo_dir, 'README.md')
+                with open(readme_path, 'w', encoding='utf-8') as f:
+                    f.write(f"# Repository README: {repo}\n\n")
+                    f.write(github_data['readme'])
 
-                for issue in github_data['issues'][:20]:
-                    f.write(f"## #{issue['number']}: {issue['title']}\n\n")
-                    f.write(f"**State**: {issue['state']}\n")
-                    if issue.get('labels'):
-                        f.write(f"**Labels**: {', '.join(issue['labels'])}\n")
-                    f.write(f"**URL**: {issue.get('url', 'N/A')}\n\n")
+            # Create issues reference
+            if github_data.get('issues'):
+                issues_path = os.path.join(repo_dir, 'issues.md')
+                with open(issues_path, 'w', encoding='utf-8') as f:
+                    f.write(f"# GitHub Issues: {repo}\n\n")
+                    f.write(f"{len(github_data['issues'])} recent issues.\n\n")
 
-        # Create releases reference
-        if github_data.get('releases'):
-            releases_path = os.path.join(github_dir, 'releases.md')
-            with open(releases_path, 'w') as f:
-                f.write("# Releases\n\n")
+                    for issue in github_data['issues'][:20]:
+                        f.write(f"## #{issue['number']}: {issue['title']}\n\n")
+                        f.write(f"**State**: {issue['state']}\n")
+                        if issue.get('labels'):
+                            f.write(f"**Labels**: {', '.join(issue['labels'])}\n")
+                        f.write(f"**URL**: {issue.get('url', 'N/A')}\n\n")
 
-                for release in github_data['releases'][:10]:
-                    f.write(f"## {release['tag_name']}: {release.get('name', 'N/A')}\n\n")
-                    f.write(f"**Published**: {release.get('published_at', 'N/A')[:10]}\n\n")
-                    if release.get('body'):
-                        f.write(release['body'][:500])
-                        f.write("\n\n")
+            # Create releases reference
+            if github_data.get('releases'):
+                releases_path = os.path.join(repo_dir, 'releases.md')
+                with open(releases_path, 'w', encoding='utf-8') as f:
+                    f.write(f"# Releases: {repo}\n\n")
 
-        logger.info("Created GitHub references")
+                    for release in github_data['releases'][:10]:
+                        f.write(f"## {release['tag_name']}: {release.get('name', 'N/A')}\n\n")
+                        f.write(f"**Published**: {release.get('published_at', 'N/A')[:10]}\n\n")
+                        if release.get('body'):
+                            f.write(release['body'][:500])
+                            f.write("\n\n")
 
-    def _generate_pdf_references(self):
-        """Generate references from PDF source."""
+            # Create index for this repo
+            repo_index_path = os.path.join(repo_dir, 'index.md')
+            repo_info = github_data.get('repo_info', {})
+            with open(repo_index_path, 'w', encoding='utf-8') as f:
+                f.write(f"# GitHub: {repo}\n\n")
+                f.write(f"**Stars**: {repo_info.get('stars', 'N/A')}\n")
+                f.write(f"**Language**: {repo_info.get('language', 'N/A')}\n")
+                f.write(f"**Issues**: {len(github_data.get('issues', []))}\n")
+                f.write(f"**Releases**: {len(github_data.get('releases', []))}\n\n")
+                f.write("## Files\n\n")
+                f.write("- [README.md](README.md)\n")
+                if github_data.get('issues'):
+                    f.write("- [issues.md](issues.md)\n")
+                if github_data.get('releases'):
+                    f.write("- [releases.md](releases.md)\n")
+
+        # Create main index
+        index_path = os.path.join(github_dir, 'index.md')
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write("# GitHub References\n\n")
+            f.write(f"Combined from {len(github_list)} GitHub repositories.\n\n")
+
+            f.write("## Repositories\n\n")
+            for github_source in github_list:
+                repo = github_source.get('repo', 'unknown')
+                repo_id = github_source.get('repo_id', repo.replace('/', '_'))
+                github_data = github_source.get('data', {})
+                repo_info = github_data.get('repo_info', {})
+                stars = repo_info.get('stars', 'N/A')
+                f.write(f"- [{repo}]({repo_id}/index.md) - {stars} stars\n")
+
+        logger.info(f"Created GitHub references ({len(github_list)} repos)")
+
+    def _generate_pdf_references(self, pdf_list: List[Dict]):
+        """Generate references from PDF sources."""
         pdf_dir = os.path.join(self.skill_dir, 'references', 'pdf')
         os.makedirs(pdf_dir, exist_ok=True)
 
         # Create index
         index_path = os.path.join(pdf_dir, 'index.md')
-        with open(index_path, 'w') as f:
+        with open(index_path, 'w', encoding='utf-8') as f:
             f.write("# PDF Documentation\n\n")
-            f.write("Reference from PDF document.\n\n")
+            f.write(f"Reference from {len(pdf_list)} PDF document(s).\n\n")
 
-        logger.info("Created PDF references")
+        logger.info(f"Created PDF references ({len(pdf_list)} sources)")
 
     def _generate_merged_api_reference(self):
         """Generate merged API reference file."""
