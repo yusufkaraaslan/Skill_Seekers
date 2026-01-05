@@ -1,0 +1,52 @@
+{
+  "name": "groq",
+  "description": "Groq API documentation for ultra-fast LLM inference. Use for chat completions, speech-to-text (Whisper), text-to-speech, vision, tool use, and agentic AI with Groq Compound.",
+  "base_url": "https://console.groq.com/docs/",
+  "start_urls": [
+    "https://console.groq.com/docs/overview",
+    "https://console.groq.com/docs/quickstart",
+    "https://console.groq.com/docs/models",
+    "https://console.groq.com/docs/text-chat",
+    "https://console.groq.com/docs/speech-text",
+    "https://console.groq.com/docs/text-speech",
+    "https://console.groq.com/docs/vision",
+    "https://console.groq.com/docs/reasoning",
+    "https://console.groq.com/docs/tool-use",
+    "https://console.groq.com/docs/agentic",
+    "https://console.groq.com/docs/rate-limits",
+    "https://console.groq.com/docs/api-reference"
+  ],
+  "selectors": {
+    "main_content": "main, article, div.prose, div[class*='content']",
+    "title": "h1",
+    "code_blocks": "pre code, pre, code"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": [
+      "/playground",
+      "/keys",
+      "/dashboard",
+      "/settings",
+      "/login",
+      "/signup",
+      "/_next/",
+      "/static/"
+    ]
+  },
+  "categories": {
+    "getting_started": ["overview", "quickstart", "introduction"],
+    "models": ["models", "model", "llama", "whisper", "compound"],
+    "text_generation": ["text-chat", "chat", "completion", "streaming"],
+    "speech": ["speech-text", "text-speech", "whisper", "audio", "transcription"],
+    "vision": ["vision", "image", "multimodal"],
+    "reasoning": ["reasoning", "thinking", "chain-of-thought"],
+    "tool_use": ["tool-use", "function", "tools", "web-search", "browser"],
+    "agents": ["agentic", "agent", "compound", "autonomous"],
+    "api_reference": ["api-reference", "api", "endpoint", "reference"],
+    "rate_limits": ["rate-limits", "limits", "quotas", "tiers"],
+    "production": ["production", "monitoring", "errors", "best-practices"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}
