@@ -1,0 +1,83 @@
+{
+  "name": "langchain",
+  "description": "LangChain is an open-source framework for building AI agents and LLM applications. Use this skill when working with: agents (ReAct, tool-calling), chains and LCEL pipelines, RAG and retrieval systems, chat models and structured output, memory and state management, streaming, human-in-the-loop workflows, multi-agent orchestration, MCP integration, or deploying with LangSmith observability.",
+  "base_url": "https://docs.langchain.com/oss/python/langchain/overview",
+  "start_urls": [
+    "https://docs.langchain.com/oss/python/langchain/overview",
+    "https://docs.langchain.com/oss/python/langchain/get-started/install",
+    "https://docs.langchain.com/oss/python/langchain/get-started/quickstart",
+    "https://docs.langchain.com/oss/python/langchain/get-started/philosophy",
+    "https://docs.langchain.com/oss/python/langchain/core-components/agents",
+    "https://docs.langchain.com/oss/python/langchain/core-components/models",
+    "https://docs.langchain.com/oss/python/langchain/core-components/messages",
+    "https://docs.langchain.com/oss/python/langchain/core-components/tools",
+    "https://docs.langchain.com/oss/python/langchain/core-components/memory",
+    "https://docs.langchain.com/oss/python/langchain/core-components/streaming",
+    "https://docs.langchain.com/oss/python/langchain/core-components/structured-output",
+    "https://docs.langchain.com/oss/python/langchain/core-components/retrieval",
+    "https://docs.langchain.com/oss/python/langchain/middleware/overview",
+    "https://docs.langchain.com/oss/python/langchain/middleware/built-in",
+    "https://docs.langchain.com/oss/python/langchain/middleware/custom",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/guardrails",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/runtime",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/context-engineering",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/mcp",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/human-in-the-loop",
+    "https://docs.langchain.com/oss/python/langchain/advanced-usage/multi-agent",
+    "https://docs.langchain.com/oss/python/langchain/agent-development/studio",
+    "https://docs.langchain.com/oss/python/langchain/agent-development/test",
+    "https://docs.langchain.com/oss/python/langchain/agent-development/ui",
+    "https://docs.langchain.com/oss/python/langchain/deployment/overview",
+    "https://docs.langchain.com/oss/python/langchain/deployment/observability",
+    "https://docs.langchain.com/oss/python/langgraph/overview",
+    "https://docs.langchain.com/oss/python/langgraph/get-started/quickstart",
+    "https://docs.langchain.com/oss/python/langgraph/concepts/agents",
+    "https://docs.langchain.com/oss/python/langgraph/concepts/state",
+    "https://docs.langchain.com/oss/python/langgraph/concepts/memory",
+    "https://docs.langchain.com/oss/python/langgraph/how-tos/",
+    "https://docs.langchain.com/oss/python/integrations/providers"
+  ],
+  "selectors": {
+    "main_content": "article, main, [class*='content']",
+    "title": "title",
+    "code_blocks": "pre, .highlight, code"
+  },
+  "url_patterns": {
+    "include": [
+      "/oss/python/langchain/",
+      "/oss/python/langgraph/",
+      "/oss/python/integrations/"
+    ],
+    "exclude": [
+      "/api/",
+      "/changelog",
+      "/_next/",
+      "/static/",
+      ".json",
+      ".xml",
+      "/search",
+      "/javascript/",
+      "/dotnet/",
+      "github.com"
+    ]
+  },
+  "categories": {
+    "getting_started": ["overview", "install", "quickstart", "get-started", "introduction", "philosophy"],
+    "agents": ["agents", "agent", "react-agent", "prebuilt", "tool-calling", "reasoning"],
+    "models": ["models", "chat-model", "llm", "embedding", "openai", "anthropic", "azure"],
+    "tools": ["tools", "tool", "function", "calling", "bind-tools"],
+    "memory": ["memory", "history", "state", "checkpointing", "persistence", "long-term"],
+    "chains": ["chains", "chain", "lcel", "runnable", "pipeline", "compose"],
+    "prompts": ["prompts", "prompt", "template", "few-shot", "chat-prompt"],
+    "retrieval": ["retriever", "rag", "vector", "search", "document", "embedding", "vectorstore"],
+    "streaming": ["streaming", "stream", "async", "structured-output", "callback"],
+    "middleware": ["middleware", "custom", "built-in", "interceptor"],
+    "mcp": ["mcp", "model-context-protocol", "server", "client"],
+    "advanced": ["guardrails", "runtime", "context", "human-in-the-loop", "multi-agent", "orchestration"],
+    "langgraph": ["langgraph", "graph", "node", "edge", "state-machine", "workflow", "cycle"],
+    "deployment": ["deployment", "deploy", "observability", "langsmith", "studio", "test", "ui", "tracing"],
+    "integrations": ["integrations", "provider", "openai", "anthropic", "google", "azure", "aws"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 400
+}

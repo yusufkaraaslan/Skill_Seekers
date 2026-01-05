@@ -1,0 +1,36 @@
+{
+  "name": "vllm",
+  "description": "vLLM is a fast and easy-to-use library for LLM inference and serving. Use this skill when working with vLLM deployment, model serving, inference optimization, PagedAttention, continuous batching, tensor parallelism, or high-throughput LLM serving.",
+  "base_url": "https://docs.vllm.ai/en/latest/",
+  "selectors": {
+    "main_content": "article, main, div.md-content__inner, div.md-content",
+    "title": "title",
+    "code_blocks": "pre code, .highlight pre, pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": [
+      "/search.html",
+      "/_static/",
+      "/_sources/",
+      "/genindex",
+      "/py-modindex",
+      ".pdf",
+      "#"
+    ]
+  },
+  "categories": {
+    "getting_started": ["getting_started", "quickstart", "installation", "introduction"],
+    "deployment": ["deployment", "serving", "docker", "kubernetes", "nginx", "production"],
+    "models": ["models", "supported", "adding_model", "registry", "pooling"],
+    "features": ["features", "spec_decode", "quantization", "lora", "multimodal", "structured_outputs"],
+    "performance": ["performance", "optimization", "benchmark", "profiling", "throughput"],
+    "api": ["api", "reference", "openai", "offline", "engine"],
+    "configuration": ["configuration", "engine_args", "model_args", "sampling"],
+    "integrations": ["integrations", "langchain", "llamaindex", "frameworks"],
+    "examples": ["examples", "offline_inference", "online_serving", "vision_language"],
+    "developer": ["developer", "contributing", "dockerfile", "input_processing"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 500
+}

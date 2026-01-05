@@ -1,0 +1,28 @@
+langchain
+配置檔位置
+configs/langchain.json
+如需重新生成或更新，執行：
+skill-seekers scrape --config configs/langchain.json
+
+DSPy (斯坦福提示詞優化框架)
+
+# 預估頁面數量
+skill-seekers estimate configs/dspy.json
+
+# 抓取文檔
+skill-seekers scrape --config configs/dspy.json --enhance-local
+配置特點：
+涵蓋 Signatures、Modules、Evaluation、Optimization 等核心概念
+包含 RAG、Classification、Agents 等教程
+API 參考文檔
+最多 300 頁
+Unsloth (高效 LLM 微調庫)
+
+# 預估頁面數量
+skill-seekers estimate configs/unsloth.json
+
+# 抓取文檔
+skill-seekers scrape --config configs/unsloth.json --enhance-local
+
+ AutoGen Skill
+configs/autogen.json
