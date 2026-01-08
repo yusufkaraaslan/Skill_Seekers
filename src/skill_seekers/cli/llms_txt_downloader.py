@@ -38,11 +38,24 @@ class LlmsTxtDownloader:
 
     def _is_markdown(self, content: str) -> bool:
         """
-        Check if content looks like markdown.
+        Check if content looks like markdown (not HTML).
 
         Returns:
-            True if content contains markdown patterns
+            True if content contains markdown patterns and is NOT HTML
         """
+        # First, reject HTML content (common redirect trap)
+        content_start = content.strip()[:500].lower()
+        html_indicators = [
+            '<!doctype html',
+            '<html',
+            '<!doctype',
+            '<head>',
+            '<meta charset',
+        ]
+        if any(indicator in content_start for indicator in html_indicators):
+            return False
+
+        # Then check for markdown patterns
         markdown_patterns = ['# ', '## ', '```', '- ', '* ', '`']
         return any(pattern in content for pattern in markdown_patterns)
 
