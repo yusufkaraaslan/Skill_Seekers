@@ -1,0 +1,25 @@
+{
+  "name": "skill-seekers",
+  "repo": "yusufkaraaslan/Skill_Seekers",
+  "description": "Skill Seekers documentation tool - Use this skill when you need to create skills from documentation websites, scrape GitHub repositories, configure skill parameters, or learn how to build custom Claude AI skills",
+  "github_token": null,
+  "include_issues": false,
+  "max_issues": 0,
+  "include_changelog": true,
+  "include_releases": true,
+  "include_code": true,
+  "file_patterns": [
+    "*.md",
+    "README.md",
+    "CLAUDE.md",
+    "QUICKSTART.md",
+    "BULLETPROOF_QUICKSTART.md",
+    "TROUBLESHOOTING.md",
+    "docs/*.md",
+    "docs/**/*.md",
+    "configs/*.json",
+    "src/skill_seekers/cli/*.py",
+    "pyproject.toml"
+  ],
+  "max_file_size": 500000
+}
