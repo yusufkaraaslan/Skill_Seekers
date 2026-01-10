@@ -1,0 +1,23 @@
+{
+  "name": "rloop",
+  "repo": "frankbria/ralph-claude-code",
+  "description": "Ralph autonomous development loop tool - Use this skill when working with Ralph for Claude Code, autonomous AI development loops, continuous iteration, intelligent exit detection, or automating software development workflows",
+  "github_token": null,
+  "include_issues": false,
+  "max_issues": 0,
+  "include_changelog": true,
+  "include_releases": true,
+  "include_code": true,
+  "file_patterns": [
+    "*.sh",
+    "*.md",
+    "src/**/*.sh",
+    "src/**/*.py",
+    "lib/**/*.sh",
+    "specs/**/*.md",
+    "templates/**/*",
+    "tests/**/*.sh",
+    "tests/**/*.bats"
+  ],
+  "max_file_size": 500000
+}
