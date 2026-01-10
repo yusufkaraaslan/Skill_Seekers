@@ -1,0 +1,31 @@
+{
+  "name": "osaka-travel",
+  "description": "Osaka Japan travel guide - Use this skill when planning trips to Osaka, looking for tourist attractions, restaurants, transportation info, accommodations, itinerary planning, or travel tips for Osaka and Kansai region",
+  "base_url": "https://www.japan-guide.com/e/e2157.html",
+  "start_urls": [
+    "https://www.japan-guide.com/e/e2157.html",
+    "https://www.japan-guide.com/e/e2158.html",
+    "https://www.japan-guide.com/e/e2159.html",
+    "https://www.japan-guide.com/e/e2164.html",
+    "https://www.japan-guide.com/e/e2165.html"
+  ],
+  "selectors": {
+    "main_content": "div.main_box",
+    "title": "h1, h2",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/e/e2"],
+    "exclude": ["/ad/", "/forum/"]
+  },
+  "categories": {
+    "attractions": ["attraction", "castle", "temple", "shrine", "park", "museum", "aquarium"],
+    "food": ["food", "restaurant", "dining", "cuisine", "street food", "market"],
+    "transport": ["train", "subway", "bus", "station", "pass", "ticket", "access"],
+    "accommodation": ["hotel", "hostel", "ryokan", "accommodation", "stay"],
+    "shopping": ["shopping", "market", "store", "souvenir"],
+    "itinerary": ["itinerary", "day trip", "tour", "route", "plan"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 50
+}
