@@ -29,6 +29,10 @@ env/
 output/
 *.zip
 
+# Exception: Allow skills directory for sharing
+!skills/
+!skills/*.zip
+
 # IDE
 .vscode/
 .idea/
