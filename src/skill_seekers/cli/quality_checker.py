@@ -126,6 +126,9 @@ class SkillQualityChecker:
         # Link validation
         self._check_links()
 
+        # Completeness checks
+        self._check_skill_completeness()
+
         return self.report
 
     def _check_skill_structure(self):
@@ -146,7 +149,7 @@ class SkillQualityChecker:
                 'references/ directory not found - skill may be incomplete',
                 str(self.references_dir)
             )
-        elif not list(self.references_dir.glob('*.md')):
+        elif not list(self.references_dir.rglob('*.md')):
             self.report.add_warning(
                 'structure',
                 'references/ directory is empty - no reference documentation found',
@@ -298,7 +301,7 @@ class SkillQualityChecker:
 
         # Check reference files
         if self.references_dir.exists():
-            ref_files = list(self.references_dir.glob('*.md'))
+            ref_files = list(self.references_dir.rglob('*.md'))
             if ref_files:
                 self.report.add_info(
                     'content',
@@ -362,6 +365,94 @@ class SkillQualityChecker:
                         f'✓ All {len(internal_links)} internal links are valid',
                         'SKILL.md'
                     )
+
+    def _check_skill_completeness(self):
+        """Check skill completeness based on best practices.
+
+        Validates that skills include verification/prerequisites sections,
+        error handling guidance, and clear workflow steps.
+        """
+        if not self.skill_md_path.exists():
+            return
+
+        content = self.skill_md_path.read_text(encoding='utf-8')
+
+        # Check for grounding/verification section (prerequisites)
+        grounding_patterns = [
+            r'before\s+(executing|running|proceeding|you\s+start)',
+            r'verify\s+that',
+            r'prerequisites?',
+            r'requirements?:',
+            r'make\s+sure\s+you\s+have',
+        ]
+        has_grounding = any(
+            re.search(pattern, content, re.IGNORECASE)
+            for pattern in grounding_patterns
+        )
+        if has_grounding:
+            self.report.add_info(
+                'completeness',
+                '✓ Found verification/prerequisites section',
+                'SKILL.md'
+            )
+        else:
+            self.report.add_info(
+                'completeness',
+                'Consider adding prerequisites section - helps Claude verify conditions first',
+                'SKILL.md'
+            )
+
+        # Check for error handling/troubleshooting guidance
+        error_patterns = [
+            r'if\s+.*\s+(fails?|errors?)',
+            r'troubleshoot',
+            r'common\s+(issues?|problems?)',
+            r'error\s+handling',
+            r'when\s+things\s+go\s+wrong',
+        ]
+        has_error_handling = any(
+            re.search(pattern, content, re.IGNORECASE)
+            for pattern in error_patterns
+        )
+        if has_error_handling:
+            self.report.add_info(
+                'completeness',
+                '✓ Found error handling/troubleshooting guidance',
+                'SKILL.md'
+            )
+        else:
+            self.report.add_info(
+                'completeness',
+                'Consider adding troubleshooting section for common issues',
+                'SKILL.md'
+            )
+
+        # Check for workflow steps (numbered or sequential indicators)
+        step_patterns = [
+            r'step\s+\d',
+            r'##\s+\d\.',
+            r'first,?\s+',
+            r'then,?\s+',
+            r'finally,?\s+',
+            r'next,?\s+',
+        ]
+        steps_found = sum(
+            1 for pattern in step_patterns
+            if re.search(pattern, content, re.IGNORECASE)
+        )
+        if steps_found >= 3:
+            self.report.add_info(
+                'completeness',
+                f'✓ Found clear workflow indicators ({steps_found} step markers)',
+                'SKILL.md'
+            )
+        elif steps_found > 0:
+            self.report.add_info(
+                'completeness',
+                f'Some workflow guidance found ({steps_found} markers) - '
+                'consider adding numbered steps for clarity',
+                'SKILL.md'
+            )
 
 
 def print_report(report: QualityReport, verbose: bool = False):

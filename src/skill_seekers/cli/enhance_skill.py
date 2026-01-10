@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
 SKILL.md Enhancement Script
-Uses Claude API to improve SKILL.md by analyzing reference documentation.
+Uses platform AI APIs to improve SKILL.md by analyzing reference documentation.
 
 Usage:
-    skill-seekers enhance output/steam-inventory/
+    # Claude (default)
     skill-seekers enhance output/react/
-    skill-seekers enhance output/godot/ --api-key YOUR_API_KEY
+    skill-seekers enhance output/react/ --api-key sk-ant-...
+
+    # Gemini
+    skill-seekers enhance output/react/ --target gemini --api-key AIzaSy...
+
+    # OpenAI
+    skill-seekers enhance output/react/ --target openai --api-key sk-proj-...
 """
 
 import os
@@ -35,15 +41,24 @@ class SkillEnhancer:
         self.references_dir = self.skill_dir / "references"
         self.skill_md_path = self.skill_dir / "SKILL.md"
 
-        # Get API key
-        self.api_key = api_key or os.environ.get('ANTHROPIC_API_KEY')
+        # Get API key - support both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN
+        self.api_key = (api_key or
+                       os.environ.get('ANTHROPIC_API_KEY') or
+                       os.environ.get('ANTHROPIC_AUTH_TOKEN'))
         if not self.api_key:
             raise ValueError(
-                "No API key provided. Set ANTHROPIC_API_KEY environment variable "
-                "or use --api-key argument"
+                "No API key provided. Set ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN "
+                "environment variable or use --api-key argument"
             )
 
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+        # Support custom base URL for alternative API endpoints
+        base_url = os.environ.get('ANTHROPIC_BASE_URL')
+        client_kwargs = {'api_key': self.api_key}
+        if base_url:
+            client_kwargs['base_url'] = base_url
+            print(f"ℹ️  Using custom API base URL: {base_url}")
+
+        self.client = anthropic.Anthropic(**client_kwargs)
 
     def read_current_skill_md(self):
         """Read existing SKILL.md"""
@@ -71,7 +86,18 @@ class SkillEnhancer:
                 }]
             )
 
-            enhanced_content = message.content[0].text
+            # Handle response content - newer SDK versions may include ThinkingBlock
+            # Find the TextBlock containing the actual response
+            enhanced_content = None
+            for block in message.content:
+                if hasattr(block, 'text'):
+                    enhanced_content = block.text
+                    break
+
+            if not enhanced_content:
+                print("❌ Error: No text content found in API response")
+                return None
+
             return enhanced_content
 
         except Exception as e:
@@ -195,18 +221,26 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Enhance SKILL.md using Claude API',
+        description='Enhance SKILL.md using platform AI APIs',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Using ANTHROPIC_API_KEY environment variable
+  # Claude (default)
   export ANTHROPIC_API_KEY=sk-ant-...
-  skill-seekers enhance output/steam-inventory/
+  skill-seekers enhance output/react/
 
-  # Providing API key directly
+  # Gemini
+  export GOOGLE_API_KEY=AIzaSy...
+  skill-seekers enhance output/react/ --target gemini
+
+  # OpenAI
+  export OPENAI_API_KEY=sk-proj-...
+  skill-seekers enhance output/react/ --target openai
+
+  # With explicit API key
   skill-seekers enhance output/react/ --api-key sk-ant-...
 
-  # Show what would be done (dry run)
+  # Dry run
   skill-seekers enhance output/godot/ --dry-run
 """
     )
@@ -214,7 +248,11 @@ Examples:
     parser.add_argument('skill_dir', type=str,
                        help='Path to skill directory (e.g., output/steam-inventory/)')
     parser.add_argument('--api-key', type=str,
-                       help='Anthropic API key (or set ANTHROPIC_API_KEY env var)')
+                       help='Platform API key (or set environment variable)')
+    parser.add_argument('--target',
+                       choices=['claude', 'gemini', 'openai'],
+                       default='claude',
+                       help='Target LLM platform (default: claude)')
     parser.add_argument('--dry-run', action='store_true',
                        help='Show what would be done without calling API')
 
@@ -249,18 +287,57 @@ Examples:
         print(f"  skill-seekers enhance {skill_dir}")
         return
 
-    # Create enhancer and run
+    # Check if platform supports enhancement
     try:
-        enhancer = SkillEnhancer(skill_dir, api_key=args.api_key)
-        success = enhancer.run()
+        from skill_seekers.cli.adaptors import get_adaptor
+
+        adaptor = get_adaptor(args.target)
+
+        if not adaptor.supports_enhancement():
+            print(f"❌ Error: {adaptor.PLATFORM_NAME} does not support AI enhancement")
+            print(f"\nSupported platforms for enhancement:")
+            print("  - Claude AI (Anthropic)")
+            print("  - Google Gemini")
+            print("  - OpenAI ChatGPT")
+            sys.exit(1)
+
+        # Get API key
+        api_key = args.api_key
+        if not api_key:
+            api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
+
+        if not api_key:
+            print(f"❌ Error: {adaptor.get_env_var_name()} not set")
+            print(f"\nSet your API key for {adaptor.PLATFORM_NAME}:")
+            print(f"  export {adaptor.get_env_var_name()}=...")
+            print("Or provide it directly:")
+            print(f"  skill-seekers enhance {skill_dir} --target {args.target} --api-key ...")
+            sys.exit(1)
+
+        # Run enhancement using adaptor
+        print(f"\n{'='*60}")
+        print(f"ENHANCING SKILL: {skill_dir}")
+        print(f"Platform: {adaptor.PLATFORM_NAME}")
+        print(f"{'='*60}\n")
+
+        success = adaptor.enhance(Path(skill_dir), api_key)
+
+        if success:
+            print(f"\n✅ Enhancement complete!")
+            print(f"\nNext steps:")
+            print(f"  1. Review: {Path(skill_dir) / 'SKILL.md'}")
+            print(f"  2. If you don't like it, restore backup: {Path(skill_dir) / 'SKILL.md.backup'}")
+            print(f"  3. Package your skill:")
+            print(f"     skill-seekers package {skill_dir}/ --target {args.target}")
+
         sys.exit(0 if success else 1)
 
+    except ImportError as e:
+        print(f"❌ Error: {e}")
+        print("\nAdaptor system not available. Reinstall skill-seekers.")
+        sys.exit(1)
     except ValueError as e:
         print(f"❌ Error: {e}")
-        print("\nSet your API key:")
-        print("  export ANTHROPIC_API_KEY=sk-ant-...")
-        print("Or provide it directly:")
-        print(f"  skill-seekers enhance {skill_dir} --api-key sk-ant-...")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

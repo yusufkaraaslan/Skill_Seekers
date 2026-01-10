@@ -1,4 +1,5 @@
 annotated-types==0.7.0
+anthropic==0.40.0
 anyio==4.11.0
 attrs==25.4.0
 beautifulsoup4==4.14.2

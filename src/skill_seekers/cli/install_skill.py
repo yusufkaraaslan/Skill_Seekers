@@ -60,17 +60,24 @@ Examples:
   # Preview workflow (dry run)
   skill-seekers install --config react --dry-run
 
+  # Install for Gemini instead of Claude
+  skill-seekers install --config react --target gemini
+
+  # Install for OpenAI ChatGPT
+  skill-seekers install --config fastapi --target openai
+
 Important:
   - Enhancement is MANDATORY (30-60 sec) for quality (3/10→9/10)
   - Total time: 20-45 minutes (mostly scraping)
-  - Auto-uploads to Claude if ANTHROPIC_API_KEY is set
+  - Multi-platform support: claude (default), gemini, openai, markdown
+  - Auto-uploads if API key is set (ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
 Phases:
   1. Fetch config (if config name provided)
   2. Scrape documentation
   3. AI Enhancement (MANDATORY - no skip option)
-  4. Package to .zip
-  5. Upload to Claude (optional)
+  4. Package for target platform (ZIP or tar.gz)
+  5. Upload to target platform (optional)
 """
     )
 
@@ -104,6 +111,13 @@ Phases:
         help="Preview workflow without executing"
     )
 
+    parser.add_argument(
+        "--target",
+        choices=['claude', 'gemini', 'openai', 'markdown'],
+        default='claude',
+        help="Target LLM platform (default: claude)"
+    )
+
     args = parser.parse_args()
 
     # Determine if config is a name or path
@@ -124,7 +138,8 @@ Phases:
         "destination": args.destination,
         "auto_upload": not args.no_upload,
         "unlimited": args.unlimited,
-        "dry_run": args.dry_run
+        "dry_run": args.dry_run,
+        "target": args.target
     }
 
     # Run async tool

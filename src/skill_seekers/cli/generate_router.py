@@ -73,7 +73,7 @@ class RouterGenerator:
 
 ## When to Use This Skill
 
-{self.base_config.get('description', f'Use for {self.router_name} development and programming.')}
+{self.base_config.get('description', f'Use when working with {self.router_name} development and programming')}
 
 This is a router skill that directs your questions to specialized sub-skills for efficient, focused assistance.
 
@@ -156,7 +156,7 @@ Simply ask your question and mention the topic. The router will find the right s
 
         router_config = {
             "name": self.router_name,
-            "description": self.base_config.get('description', f'{self.router_name.title()} documentation router'),
+            "description": self.base_config.get('description', f'Use when working with {self.router_name} documentation (router for multiple sub-skills)'),
             "base_url": self.base_config['base_url'],
             "selectors": self.base_config.get('selectors', {}),
             "url_patterns": self.base_config.get('url_patterns', {}),

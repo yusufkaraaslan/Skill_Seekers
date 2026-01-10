@@ -129,9 +129,20 @@ class UnifiedScraper:
             'max_pages': source.get('max_pages', 100)
         }
 
+        # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
+        if 'llms_txt_url' in source:
+            doc_config['llms_txt_url'] = source.get('llms_txt_url')
+
+        if 'skip_llms_txt' in source:
+            doc_config['skip_llms_txt'] = source.get('skip_llms_txt')
+
+        # Optional: support overriding start URLs
+        if 'start_urls' in source:
+            doc_config['start_urls'] = source.get('start_urls')
+
         # Write temporary config
         temp_config_path = os.path.join(self.data_dir, 'temp_docs_config.json')
-        with open(temp_config_path, 'w') as f:
+        with open(temp_config_path, 'w', encoding='utf-8') as f:
             json.dump(doc_config, f, indent=2)
 
         # Run doc_scraper as subprocess
@@ -150,7 +161,7 @@ class UnifiedScraper:
         docs_data_file = f"output/{doc_config['name']}_data/summary.json"
 
         if os.path.exists(docs_data_file):
-            with open(docs_data_file, 'r') as f:
+            with open(docs_data_file, 'r', encoding='utf-8') as f:
                 summary = json.load(f)
 
             self.scraped_data['documentation'] = {
@@ -202,7 +213,7 @@ class UnifiedScraper:
 
         # Save data
         github_data_file = os.path.join(self.data_dir, 'github_data.json')
-        with open(github_data_file, 'w') as f:
+        with open(github_data_file, 'w', encoding='utf-8') as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
         self.scraped_data['github'] = {
@@ -236,7 +247,7 @@ class UnifiedScraper:
 
         # Save data
         pdf_data_file = os.path.join(self.data_dir, 'pdf_data.json')
-        with open(pdf_data_file, 'w') as f:
+        with open(pdf_data_file, 'w', encoding='utf-8') as f:
             json.dump(pdf_data, f, indent=2, ensure_ascii=False)
 
         self.scraped_data['pdf'] = {
@@ -272,10 +283,10 @@ class UnifiedScraper:
             return []
 
         # Load data files
-        with open(docs_data['data_file'], 'r') as f:
+        with open(docs_data['data_file'], 'r', encoding='utf-8') as f:
             docs_json = json.load(f)
 
-        with open(github_data['data_file'], 'r') as f:
+        with open(github_data['data_file'], 'r', encoding='utf-8') as f:
             github_json = json.load(f)
 
         # Detect conflicts
@@ -322,10 +333,10 @@ class UnifiedScraper:
         github_data = self.scraped_data.get('github', {})
 
         # Load data
-        with open(docs_data['data_file'], 'r') as f:
+        with open(docs_data['data_file'], 'r', encoding='utf-8') as f:
             docs_json = json.load(f)
 
-        with open(github_data['data_file'], 'r') as f:
+        with open(github_data['data_file'], 'r', encoding='utf-8') as f:
             github_json = json.load(f)
 
         # Choose merger
@@ -339,7 +350,7 @@ class UnifiedScraper:
 
         # Save merged data
         merged_file = os.path.join(self.data_dir, 'merged_data.json')
-        with open(merged_file, 'w') as f:
+        with open(merged_file, 'w', encoding='utf-8') as f:
             json.dump(merged_data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"✅ Merged data saved: {merged_file}")
@@ -361,7 +372,7 @@ class UnifiedScraper:
         conflicts = []
         conflicts_file = os.path.join(self.data_dir, 'conflicts.json')
         if os.path.exists(conflicts_file):
-            with open(conflicts_file, 'r') as f:
+            with open(conflicts_file, 'r', encoding='utf-8') as f:
                 conflicts_data = json.load(f)
                 conflicts = conflicts_data.get('conflicts', [])
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.3.0"
+version = "2.5.2"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "PyMuPDF>=1.24.14",
@@ -55,20 +55,14 @@ dependencies = [
     "jsonschema>=4.25.1",
     "click>=8.3.0",
     "Pygments>=2.19.2",
+    "pathspec>=0.12.1",
+    "networkx>=3.0",
 ]
 
 [project.optional-dependencies]
-# Development dependencies
-dev = [
-    "pytest>=8.4.2",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=7.0.0",
-    "coverage>=7.11.0",
-]
-
 # MCP server dependencies (included by default, but optional)
 mcp = [
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "uvicorn>=0.38.0",
@@ -76,18 +70,33 @@ mcp = [
     "sse-starlette>=3.0.2",
 ]
 
-# All optional dependencies combined
+# LLM platform-specific dependencies
+# Google Gemini support
+gemini = [
+    "google-generativeai>=0.8.0",
+]
+
+# OpenAI ChatGPT support
+openai = [
+    "openai>=1.0.0",
+]
+
+# All LLM platforms combined
+all-llms = [
+    "google-generativeai>=0.8.0",
+    "openai>=1.0.0",
+]
+
+# All optional dependencies combined (dev dependencies now in [dependency-groups])
 all = [
-    "pytest>=8.4.2",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=7.0.0",
-    "coverage>=7.11.0",
-    "mcp>=1.18.0",
+    "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
     "uvicorn>=0.38.0",
     "starlette>=0.48.0",
     "sse-starlette>=3.0.2",
+    "google-generativeai>=0.8.0",
+    "openai>=1.0.0",
 ]
 
 [project.urls]
@@ -111,12 +120,16 @@ skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
+skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
+skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
 
 [tool.setuptools]
-packages = ["skill_seekers", "skill_seekers.cli", "skill_seekers.mcp", "skill_seekers.mcp.tools"]
+package-dir = {"" = "src"}
 
-[tool.setuptools.package-dir]
-"" = "src"
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["skill_seekers*"]
+namespaces = false
 
 [tool.setuptools.package-data]
 skill_seekers = ["py.typed"]
@@ -149,13 +162,10 @@ exclude_lines = [
     "@abstractmethod",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
 ]
-
-[tool.uv.sources]
-# Use PyPI for all dependencies

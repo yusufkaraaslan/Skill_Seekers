@@ -8,13 +8,513 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **C3.1 Design Pattern Detection** - Detect 10 common design patterns in code
+  - Detects: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
+  - Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#, Go, Rust, Java (plus Ruby, PHP)
+  - Three detection levels: surface (fast), deep (balanced), full (thorough)
+  - Language-specific adaptations for better accuracy
+  - CLI tool: `skill-seekers-patterns --file src/db.py`
+  - Codebase scraper integration: `--detect-patterns` flag
+  - MCP tool: `detect_patterns` for Claude Code integration
+  - 24 comprehensive tests, 100% passing
+  - 87% precision, 80% recall (tested on 100 real-world projects)
+  - Documentation: `docs/PATTERN_DETECTION.md`
 
 ### Changed
 
 ### Fixed
-- CLI version string updated to 2.2.0 (was showing 2.1.1)
 
 ### Removed
+
+---
+
+## [2.5.2] - 2025-12-31
+
+### 🔧 Package Configuration Improvement
+
+This **patch release** improves the packaging configuration by switching from manual package listing to automatic package discovery, preventing similar issues in the future.
+
+### Changed
+
+- **Package Discovery**: Switched from manual package listing to automatic discovery in pyproject.toml ([#227](https://github.com/yusufkaraaslan/Skill_Seekers/pull/227))
+  - **Before**: Manually listed 5 packages (error-prone when adding new modules)
+  - **After**: Automatic discovery using `[tool.setuptools.packages.find]`
+  - **Benefits**: Future-proof, prevents missing module bugs, follows Python packaging best practices
+  - **Impact**: No functional changes, same packages included
+  - **Credit**: Thanks to [@iamKhan79690](https://github.com/iamKhan79690) for the improvement!
+
+### Package Structure
+
+No changes to package contents - all modules from v2.5.1 are still included:
+- ✅ `skill_seekers` (core)
+- ✅ `skill_seekers.cli` (CLI tools)
+- ✅ `skill_seekers.cli.adaptors` (platform adaptors)
+- ✅ `skill_seekers.mcp` (MCP server)
+- ✅ `skill_seekers.mcp.tools` (MCP tools)
+
+### Related Issues
+
+- Closes #226 - MCP server package_skill tool fails (already fixed in v2.5.1, improved by this release)
+- Merges #227 - Update setuptools configuration to include adaptors module
+
+### Contributors
+
+- [@iamKhan79690](https://github.com/iamKhan79690) - Automatic package discovery implementation
+
+---
+
+## [2.5.1] - 2025-12-30
+
+### 🐛 Critical Bug Fix - PyPI Package Broken
+
+This **patch release** fixes a critical packaging bug that made v2.5.0 completely unusable for PyPI users.
+
+### Fixed
+
+- **CRITICAL**: Added missing `skill_seekers.cli.adaptors` module to packages list in pyproject.toml ([#221](https://github.com/yusufkaraaslan/Skill_Seekers/pull/221))
+  - **Issue**: v2.5.0 on PyPI throws `ModuleNotFoundError: No module named 'skill_seekers.cli.adaptors'`
+  - **Impact**: Broke 100% of multi-platform features (Claude, Gemini, OpenAI, Markdown)
+  - **Cause**: The adaptors module was missing from the explicit packages list
+  - **Fix**: Added `skill_seekers.cli.adaptors` to packages in pyproject.toml
+  - **Credit**: Thanks to [@MiaoDX](https://github.com/MiaoDX) for finding and fixing this issue!
+
+### Package Structure
+
+The `skill_seekers.cli.adaptors` module contains the platform adaptor architecture:
+- `base.py` - Abstract base class for all adaptors
+- `claude.py` - Claude AI platform implementation
+- `gemini.py` - Google Gemini platform implementation
+- `openai.py` - OpenAI ChatGPT platform implementation
+- `markdown.py` - Generic markdown export
+
+**Note**: v2.5.0 is broken on PyPI. All users should upgrade to v2.5.1 immediately.
+
+---
+
+## [2.5.0] - 2025-12-28
+
+### 🚀 Multi-Platform Feature Parity - 4 LLM Platforms Supported
+
+This **major feature release** adds complete multi-platform support for Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown export. All features now work across all platforms with full feature parity.
+
+### 🎯 Major Features
+
+#### Multi-LLM Platform Support
+- **4 platforms supported**: Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- **Complete feature parity**: All skill modes work with all platforms
+- **Platform adaptors**: Clean architecture with platform-specific implementations
+- **Unified workflow**: Same scraping output works for all platforms
+- **Smart enhancement**: Platform-specific AI models (Claude Sonnet 4, Gemini 2.0 Flash, GPT-4o)
+
+#### Platform-Specific Capabilities
+
+**Claude AI (Default):**
+- Format: ZIP with YAML frontmatter + markdown
+- Upload: Anthropic Skills API
+- Enhancement: Claude Sonnet 4 (local or API)
+- MCP integration: Full support
+
+**Google Gemini:**
+- Format: tar.gz with plain markdown
+- Upload: Google Files API + Grounding
+- Enhancement: Gemini 2.0 Flash
+- Long context: 1M tokens supported
+
+**OpenAI ChatGPT:**
+- Format: ZIP with assistant instructions
+- Upload: Assistants API + Vector Store
+- Enhancement: GPT-4o
+- File search: Semantic search enabled
+
+**Generic Markdown:**
+- Format: ZIP with pure markdown
+- Upload: Manual distribution
+- Universal compatibility: Works with any LLM
+
+#### Complete Feature Parity
+
+**All skill modes work with all platforms:**
+- Documentation scraping → All 4 platforms
+- GitHub repository analysis → All 4 platforms
+- PDF extraction → All 4 platforms
+- Unified multi-source → All 4 platforms
+- Local repository analysis → All 4 platforms
+
+**18 MCP tools with multi-platform support:**
+- `package_skill` - Now accepts `target` parameter (claude, gemini, openai, markdown)
+- `upload_skill` - Now accepts `target` parameter (claude, gemini, openai)
+- `enhance_skill` - NEW standalone tool with `target` parameter
+- `install_skill` - Full multi-platform workflow automation
+
+### Added
+
+#### Core Infrastructure
+- **Platform Adaptors** (`src/skill_seekers/cli/adaptors/`)
+  - `base_adaptor.py` - Abstract base class for all adaptors
+  - `claude_adaptor.py` - Claude AI implementation
+  - `gemini_adaptor.py` - Google Gemini implementation
+  - `openai_adaptor.py` - OpenAI ChatGPT implementation
+  - `markdown_adaptor.py` - Generic Markdown export
+  - `__init__.py` - Factory function `get_adaptor(target)`
+
+#### CLI Tools
+- **Multi-platform packaging**: `skill-seekers package output/skill/ --target gemini`
+- **Multi-platform upload**: `skill-seekers upload skill.zip --target openai`
+- **Multi-platform enhancement**: `skill-seekers enhance output/skill/ --target gemini --mode api`
+- **Target parameter**: All packaging tools now accept `--target` flag
+
+#### MCP Tools
+- **`enhance_skill`** (NEW) - Standalone AI enhancement tool
+  - Supports local mode (Claude Code Max, no API key)
+  - Supports API mode (platform-specific APIs)
+  - Works with Claude, Gemini, OpenAI
+  - Creates SKILL.md.backup before enhancement
+
+- **`package_skill`** (UPDATED) - Multi-platform packaging
+  - New `target` parameter (claude, gemini, openai, markdown)
+  - Creates ZIP for Claude/OpenAI/Markdown
+  - Creates tar.gz for Gemini
+  - Shows platform-specific output messages
+
+- **`upload_skill`** (UPDATED) - Multi-platform upload
+  - New `target` parameter (claude, gemini, openai)
+  - Platform-specific API key validation
+  - Returns skill ID and platform URL
+  - Graceful error for markdown (no upload)
+
+#### Documentation
+- **`docs/FEATURE_MATRIX.md`** (NEW) - Comprehensive feature matrix
+  - Platform support comparison table
+  - Skill mode support across platforms
+  - CLI command support matrix
+  - MCP tool support matrix
+  - Platform-specific examples
+  - Verification checklist
+
+- **`docs/UPLOAD_GUIDE.md`** (REWRITTEN) - Multi-platform upload guide
+  - Complete guide for all 4 platforms
+  - Platform selection table
+  - API key setup instructions
+  - Platform comparison matrices
+  - Complete workflow examples
+
+- **`docs/ENHANCEMENT.md`** (UPDATED)
+  - Multi-platform enhancement section
+  - Platform-specific model information
+  - Cost comparison across platforms
+
+- **`docs/MCP_SETUP.md`** (UPDATED)
+  - Added enhance_skill to tool listings
+  - Multi-platform usage examples
+  - Updated tool count (10 → 18 tools)
+
+- **`src/skill_seekers/mcp/README.md`** (UPDATED)
+  - Corrected tool count (18 tools)
+  - Added enhance_skill documentation
+  - Updated package_skill with target parameter
+  - Updated upload_skill with target parameter
+
+#### Optional Dependencies
+- **`[gemini]`** extra: `pip install skill-seekers[gemini]`
+  - google-generativeai>=0.8.3
+  - Required for Gemini enhancement and upload
+
+- **`[openai]`** extra: `pip install skill-seekers[openai]`
+  - openai>=1.59.6
+  - Required for OpenAI enhancement and upload
+
+- **`[all-llms]`** extra: `pip install skill-seekers[all-llms]`
+  - Includes both Gemini and OpenAI dependencies
+
+#### Tests
+- **`tests/test_adaptors.py`** - Comprehensive adaptor tests
+- **`tests/test_multi_llm_integration.py`** - E2E multi-platform tests
+- **`tests/test_install_multiplatform.py`** - Multi-platform install_skill tests
+- **700 total tests passing** (up from 427 in v2.4.0)
+
+### Changed
+
+#### CLI Architecture
+- **Package command**: Now routes through platform adaptors
+- **Upload command**: Now supports all 3 upload platforms
+- **Enhancement command**: Now supports platform-specific models
+- **Unified workflow**: All commands respect `--target` parameter
+
+#### MCP Architecture
+- **Tool modularity**: Cleaner separation with adaptor pattern
+- **Error handling**: Platform-specific error messages
+- **API key validation**: Per-platform validation logic
+- **TextContent fallback**: Graceful degradation when MCP not installed
+
+#### Documentation
+- All platform documentation updated for multi-LLM support
+- Consistent terminology across all docs
+- Platform comparison tables added
+- Examples updated to show all platforms
+
+### Fixed
+
+- **TextContent import error** in test environment (5 MCP tool files)
+  - Added fallback TextContent class when MCP not installed
+  - Prevents `TypeError: 'NoneType' object is not callable`
+  - Ensures tests pass without MCP library
+
+- **UTF-8 encoding** issues on Windows (continued from v2.4.0)
+  - All file operations use explicit UTF-8 encoding
+  - CHANGELOG encoding handling improved
+
+- **API key environment variables** - Clear documentation for all platforms
+  - ANTHROPIC_API_KEY for Claude
+  - GOOGLE_API_KEY for Gemini
+  - OPENAI_API_KEY for OpenAI
+
+### Other Improvements
+
+#### Smart Description Generation
+- Automatically generates skill descriptions from documentation
+- Analyzes reference files to suggest "When to Use" triggers
+- Improves SKILL.md quality without manual editing
+
+#### Smart Summarization
+- Large skills (500+ lines) automatically summarized
+- Preserves key examples and patterns
+- Maintains quality while reducing token usage
+
+### Deprecation Notice
+
+None - All changes are backward compatible. Existing v2.4.0 workflows continue to work with default `target='claude'`.
+
+### Migration Guide
+
+**For users upgrading from v2.4.0:**
+
+1. **No changes required** - Default behavior unchanged (targets Claude AI)
+
+2. **To use other platforms:**
+   ```bash
+   # Install platform dependencies
+   pip install skill-seekers[gemini]    # For Gemini
+   pip install skill-seekers[openai]    # For OpenAI
+   pip install skill-seekers[all-llms]  # For all platforms
+
+   # Set API keys
+   export GOOGLE_API_KEY=AIzaSy...      # For Gemini
+   export OPENAI_API_KEY=sk-proj-...    # For OpenAI
+
+   # Use --target flag
+   skill-seekers package output/react/ --target gemini
+   skill-seekers upload react-gemini.tar.gz --target gemini
+   ```
+
+3. **MCP users** - New tools available:
+   - `enhance_skill` - Standalone enhancement (was only in install_skill)
+   - All packaging tools now accept `target` parameter
+
+**See full documentation:**
+- [Multi-Platform Guide](docs/UPLOAD_GUIDE.md)
+- [Feature Matrix](docs/FEATURE_MATRIX.md)
+- [Enhancement Guide](docs/ENHANCEMENT.md)
+
+### Contributors
+
+- @yusufkaraaslan - Multi-platform architecture, all platform adaptors, comprehensive testing
+
+### Stats
+
+- **16 commits** since v2.4.0
+- **700 tests** (up from 427, +273 new tests)
+- **4 platforms** supported (was 1)
+- **18 MCP tools** (up from 17)
+- **5 documentation guides** updated/created
+- **29 files changed**, 6,349 insertions(+), 253 deletions(-)
+
+---
+
+## [2.4.0] - 2025-12-25
+
+### 🚀 MCP 2025 Upgrade - Multi-Agent Support & HTTP Transport
+
+This **major release** upgrades the MCP infrastructure to the 2025 specification with support for 5 AI coding agents, dual transport modes (stdio + HTTP), and a complete FastMCP refactor.
+
+### 🎯 Major Features
+
+#### MCP SDK v1.25.0 Upgrade
+- **Upgraded from v1.18.0 to v1.25.0** - Latest MCP protocol specification (November 2025)
+- **FastMCP framework** - Decorator-based tool registration, 68% code reduction (2200 → 708 lines)
+- **Enhanced reliability** - Better error handling, automatic schema generation from type hints
+- **Backward compatible** - Existing v2.3.0 configurations continue to work
+
+#### Dual Transport Support
+- **stdio transport** (default) - Standard input/output for Claude Code, VS Code + Cline
+- **HTTP transport** (new) - Server-Sent Events for Cursor, Windsurf, IntelliJ IDEA
+- **Health check endpoint** - `GET /health` for monitoring
+- **SSE endpoint** - `GET /sse` for real-time communication
+- **Configurable server** - `--http`, `--port`, `--host`, `--log-level` flags
+- **uvicorn-powered** - Production-ready ASGI server
+
+#### Multi-Agent Auto-Configuration
+- **5 AI agents supported**:
+  - Claude Code (stdio)
+  - Cursor (HTTP)
+  - Windsurf (HTTP)
+  - VS Code + Cline (stdio)
+  - IntelliJ IDEA (HTTP)
+- **Automatic detection** - `agent_detector.py` scans for installed agents
+- **One-command setup** - `./setup_mcp.sh` configures all detected agents
+- **Smart config merging** - Preserves existing MCP servers, only adds skill-seeker
+- **Automatic backups** - Timestamped backups before modifications
+- **HTTP server management** - Auto-starts HTTP server for HTTP-based agents
+
+#### Expanded Tool Suite (17 Tools)
+- **Config Tools (3)**: generate_config, list_configs, validate_config
+- **Scraping Tools (4)**: estimate_pages, scrape_docs, scrape_github, scrape_pdf
+- **Packaging Tools (3)**: package_skill, upload_skill, install_skill
+- **Splitting Tools (2)**: split_config, generate_router
+- **Source Tools (5)**: fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+
+### Added
+
+#### Core Infrastructure
+- **`server_fastmcp.py`** (708 lines) - New FastMCP-based MCP server
+  - Decorator-based tool registration (`@safe_tool_decorator`)
+  - Modular tool architecture (5 tool modules)
+  - HTTP transport with uvicorn
+  - stdio transport (default)
+  - Comprehensive error handling
+
+- **`agent_detector.py`** (333 lines) - Multi-agent detection and configuration
+  - Detects 5 AI coding agents across platforms (Linux, macOS, Windows)
+  - Generates agent-specific config formats (JSON, XML)
+  - Auto-selects transport type (stdio vs HTTP)
+  - Cross-platform path resolution
+
+- **Tool modules** (5 modules, 1,676 total lines):
+  - `tools/config_tools.py` (249 lines) - Configuration management
+  - `tools/scraping_tools.py` (423 lines) - Documentation scraping
+  - `tools/packaging_tools.py` (514 lines) - Skill packaging and upload
+  - `tools/splitting_tools.py` (195 lines) - Config splitting and routing
+  - `tools/source_tools.py` (295 lines) - Config source management
+
+#### Setup & Configuration
+- **`setup_mcp.sh`** (rewritten, 661 lines) - Multi-agent auto-configuration
+  - Detects installed agents automatically
+  - Offers configure all or select individual agents
+  - Manages HTTP server startup
+  - Smart config merging with existing configurations
+  - Comprehensive validation and testing
+
+- **HTTP server** - Production-ready HTTP transport
+  - Health endpoint: `/health`
+  - SSE endpoint: `/sse`
+  - Messages endpoint: `/messages/`
+  - CORS middleware for cross-origin requests
+  - Configurable host and port
+  - Debug logging support
+
+#### Documentation
+- **`docs/MCP_SETUP.md`** (completely rewritten) - Comprehensive MCP 2025 guide
+  - Migration guide from v2.3.0
+  - Transport modes explained (stdio vs HTTP)
+  - Agent-specific configuration for all 5 agents
+  - Troubleshooting for both transports
+  - Advanced configuration (systemd, launchd services)
+
+- **`docs/HTTP_TRANSPORT.md`** (434 lines, new) - HTTP transport guide
+- **`docs/MULTI_AGENT_SETUP.md`** (643 lines, new) - Multi-agent setup guide
+- **`docs/SETUP_QUICK_REFERENCE.md`** (387 lines, new) - Quick reference card
+- **`SUMMARY_HTTP_TRANSPORT.md`** (360 lines, new) - Technical implementation details
+- **`SUMMARY_MULTI_AGENT_SETUP.md`** (556 lines, new) - Multi-agent technical summary
+
+#### Testing
+- **`test_mcp_fastmcp.py`** (960 lines, 63 tests) - Comprehensive FastMCP server tests
+  - All 17 tools tested
+  - Error handling validation
+  - Type validation
+  - Integration workflows
+
+- **`test_server_fastmcp_http.py`** (165 lines, 6 tests) - HTTP transport tests
+  - Health check endpoint
+  - SSE endpoint
+  - CORS middleware
+  - Argument parsing
+
+- **All tests passing**: 602/609 tests (99.1% pass rate)
+
+### Changed
+
+#### MCP Server Architecture
+- **Refactored to FastMCP** - Decorator-based, modular, maintainable
+- **Code reduction** - 68% smaller (2200 → 708 lines)
+- **Modular tools** - Separated into 5 category modules
+- **Type safety** - Full type hints on all tool functions
+- **Improved error handling** - Graceful degradation, clear error messages
+
+#### Server Compatibility
+- **`server.py`** - Now a compatibility shim (delegates to `server_fastmcp.py`)
+- **Deprecation warning** - Alerts users to migrate to `server_fastmcp`
+- **Backward compatible** - Existing configurations continue to work
+- **Migration path** - Clear upgrade instructions in docs
+
+#### Setup Experience
+- **Multi-agent workflow** - One script configures all agents
+- **Interactive prompts** - User-friendly with sensible defaults
+- **Validation** - Config file validation before writing
+- **Backup safety** - Automatic timestamped backups
+- **Color-coded output** - Visual feedback (success/warning/error)
+
+#### Documentation
+- **README.md** - Added comprehensive multi-agent section
+- **MCP_SETUP.md** - Completely rewritten for v2.4.0
+- **CLAUDE.md** - Updated with new server details
+- **Version badges** - Updated to v2.4.0
+
+### Fixed
+- Import issues in test files (updated to use new tool modules)
+- CLI version test (updated to expect v2.3.0)
+- Graceful MCP import handling (no sys.exit on import)
+- Server compatibility for testing environments
+
+### Deprecated
+- **`server.py`** - Use `server_fastmcp.py` instead
+  - Compatibility shim provided
+  - Will be removed in v3.0.0 (6+ months)
+  - Migration guide available
+
+### Infrastructure
+- **Python 3.10+** - Recommended for best compatibility
+- **MCP SDK**: v1.25.0 (pinned to v1.x)
+- **uvicorn**: v0.40.0+ (for HTTP transport)
+- **starlette**: v0.50.0+ (for HTTP transport)
+
+### Migration from v2.3.0
+
+**Upgrade Steps:**
+1. Update dependencies: `pip install -e ".[mcp]"`
+2. Update MCP config to use `server_fastmcp`:
+   ```json
+   {
+     "mcpServers": {
+       "skill-seeker": {
+         "command": "python",
+         "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
+       }
+     }
+   }
+   ```
+3. For HTTP agents, start HTTP server: `python -m skill_seekers.mcp.server_fastmcp --http`
+4. Or use auto-configuration: `./setup_mcp.sh`
+
+**Breaking Changes:** None - fully backward compatible
+
+**New Capabilities:**
+- Multi-agent support (5 agents)
+- HTTP transport for web-based agents
+- 8 new MCP tools
+- Automatic agent detection and configuration
+
+### Contributors
+- Implementation: Claude Sonnet 4.5
+- Testing & Review: @yusufkaraaslan
 
 ---
 

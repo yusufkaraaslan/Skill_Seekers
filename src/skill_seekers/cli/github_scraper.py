@@ -31,6 +31,13 @@ except ImportError:
     print("Error: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
+# Try to import pathspec for .gitignore support
+try:
+    import pathspec
+    PATHSPEC_AVAILABLE = True
+except ImportError:
+    PATHSPEC_AVAILABLE = False
+
 # Configure logging FIRST (before using logger)
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +65,87 @@ EXCLUDED_DIRS = {
 }
 
 
+def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
+    """
+    Extract a meaningful description from README content for skill description.
+
+    Parses README to find the first meaningful paragraph that describes
+    what the project does, suitable for "Use when..." format.
+
+    Args:
+        readme_content: README.md content
+        repo_name: Repository name (e.g., 'facebook/react')
+
+    Returns:
+        Description string, or improved fallback if extraction fails
+    """
+    if not readme_content:
+        return f'Use when working with {repo_name.split("/")[-1]}'
+
+    try:
+        lines = readme_content.split('\n')
+
+        # Skip badges, images, title - find first meaningful text paragraph
+        meaningful_paragraph = None
+        in_code_block = False
+
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Track code blocks
+            if stripped.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+
+            # Skip if in code block
+            if in_code_block:
+                continue
+
+            # Skip empty lines, badges, images, HTML
+            if not stripped or stripped.startswith(('#', '!', '<', '[![', '[![')):
+                continue
+
+            # Skip lines that are just links or badges
+            if stripped.startswith('[') and '](' in stripped and len(stripped) < 100:
+                continue
+
+            # Found a meaningful paragraph - take up to 200 chars
+            if len(stripped) > 20:  # Meaningful length
+                meaningful_paragraph = stripped
+                break
+
+        if meaningful_paragraph:
+            # Clean up and extract purpose
+            # Remove markdown formatting
+            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', meaningful_paragraph)  # Links
+            clean = re.sub(r'[*_`]', '', clean)  # Bold, italic, code
+            clean = re.sub(r'<[^>]+>', '', clean)  # HTML tags
+
+            # Truncate if too long (keep first sentence or ~150 chars)
+            if '. ' in clean:
+                first_sentence = clean.split('. ')[0] + '.'
+                if len(first_sentence) < 200:
+                    clean = first_sentence
+
+            if len(clean) > 150:
+                clean = clean[:147] + '...'
+
+            # Format as "Use when..." description
+            # If it already starts with action words, use as-is
+            action_words = ['build', 'create', 'develop', 'work', 'use', 'implement', 'manage']
+            if any(clean.lower().startswith(word) for word in action_words):
+                return f'Use when {clean.lower()}'
+            else:
+                return f'Use when working with {clean.lower()}'
+
+    except Exception as e:
+        logger.debug(f"Could not extract description from README: {e}")
+
+    # Improved fallback
+    project_name = repo_name.split('/')[-1]
+    return f'Use when working with {project_name}'
+
+
 class GitHubScraper:
     """
     GitHub Repository Scraper (C1.1-C1.9)
@@ -79,7 +167,8 @@ class GitHubScraper:
         self.config = config
         self.repo_name = config['repo']
         self.name = config.get('name', self.repo_name.split('/')[-1])
-        self.description = config.get('description', f'Skill for {self.repo_name}')
+        # Set initial description (will be improved after README extraction if not in config)
+        self.description = config.get('description', f'Use when working with {self.repo_name.split("/")[-1]}')
 
         # Local repository path (optional - enables unlimited analysis)
         self.local_repo_path = local_repo_path or config.get('local_repo_path')
@@ -108,6 +197,11 @@ class GitHubScraper:
                 f"(total: {len(self.excluded_dirs)})"
             )
             logger.debug(f"Additional exclusions: {sorted(additional)}")
+
+        # Load .gitignore for additional exclusions (C2.1)
+        self.gitignore_spec = None
+        if self.local_repo_path:
+            self.gitignore_spec = self._load_gitignore()
 
         # GitHub client setup (C1.1)
         token = self._get_token()
@@ -243,6 +337,78 @@ class GitHubScraper:
                 raise ValueError(f"Repository not found: {self.repo_name}")
             raise
 
+    def _get_file_content(self, file_path: str) -> Optional[str]:
+        """
+        Safely get file content, handling symlinks and encoding issues.
+
+        Args:
+            file_path: Path to file in repository
+
+        Returns:
+            File content as string, or None if file not found/error
+        """
+        try:
+            content = self.repo.get_contents(file_path)
+            if not content:
+                return None
+
+            # Handle symlinks - follow the target to get actual file
+            if hasattr(content, 'type') and content.type == 'symlink':
+                target = getattr(content, 'target', None)
+                if target:
+                    target = target.strip()
+                    logger.debug(f"File {file_path} is a symlink to {target}, following...")
+                    try:
+                        content = self.repo.get_contents(target)
+                    except GithubException as e:
+                        logger.warning(f"Failed to follow symlink {file_path} -> {target}: {e}")
+                        return None
+                else:
+                    logger.warning(f"Symlink {file_path} has no target")
+                    return None
+
+            # Handle large files (encoding="none") - download via URL
+            # GitHub API doesn't base64-encode files >1MB
+            if hasattr(content, 'encoding') and content.encoding in [None, "none"]:
+                download_url = getattr(content, 'download_url', None)
+                file_size = getattr(content, 'size', 0)
+
+                if download_url:
+                    logger.info(f"File {file_path} is large ({file_size:,} bytes), downloading via URL...")
+                    try:
+                        import requests
+                        response = requests.get(download_url, timeout=30)
+                        response.raise_for_status()
+                        return response.text
+                    except Exception as e:
+                        logger.warning(f"Failed to download {file_path} from {download_url}: {e}")
+                        return None
+                else:
+                    logger.warning(f"File {file_path} has no download URL (encoding={content.encoding})")
+                    return None
+
+            # Handle regular files - decode content
+            try:
+                if isinstance(content.decoded_content, bytes):
+                    return content.decoded_content.decode('utf-8')
+                else:
+                    return str(content.decoded_content)
+            except (UnicodeDecodeError, AttributeError, LookupError, AssertionError) as e:
+                logger.warning(f"Encoding issue with {file_path}: {e}")
+                # Try alternative encoding
+                try:
+                    if isinstance(content.decoded_content, bytes):
+                        return content.decoded_content.decode('latin-1')
+                except Exception:
+                    return None
+                return None
+
+        except GithubException:
+            return None
+        except Exception as e:
+            logger.warning(f"Error reading {file_path}: {e}")
+            return None
+
     def _extract_readme(self):
         """C1.2: Extract README.md files."""
         logger.info("Extracting README...")
@@ -252,14 +418,21 @@ class GitHubScraper:
                        'docs/README.md', '.github/README.md']
 
         for readme_path in readme_files:
-            try:
-                content = self.repo.get_contents(readme_path)
-                if content:
-                    self.extracted_data['readme'] = content.decoded_content.decode('utf-8')
-                    logger.info(f"README found: {readme_path}")
-                    return
-            except GithubException:
-                continue
+            readme_content = self._get_file_content(readme_path)
+            if readme_content:
+                self.extracted_data['readme'] = readme_content
+                logger.info(f"README found: {readme_path}")
+
+                # Update description if not explicitly set in config
+                if 'description' not in self.config:
+                    smart_description = extract_description_from_readme(
+                        self.extracted_data['readme'],
+                        self.repo_name
+                    )
+                    self.description = smart_description
+                    logger.debug(f"Generated description: {self.description}")
+
+                return
 
         logger.warning("No README found in repository")
 
@@ -323,7 +496,45 @@ class GitHubScraper:
                 if excluded in dir_path or dir_path.startswith(excluded):
                     return True
 
+        # Check .gitignore rules if available (C2.1)
+        if self.gitignore_spec and dir_path:
+            # For directories, we need to check both with and without trailing slash
+            # as .gitignore patterns can match either way
+            dir_path_with_slash = dir_path if dir_path.endswith('/') else dir_path + '/'
+            if self.gitignore_spec.match_file(dir_path) or self.gitignore_spec.match_file(dir_path_with_slash):
+                logger.debug(f"Directory excluded by .gitignore: {dir_path}")
+                return True
+
         return False
+
+    def _load_gitignore(self) -> Optional['pathspec.PathSpec']:
+        """
+        Load .gitignore file and create pathspec matcher (C2.1).
+
+        Returns:
+            PathSpec object if .gitignore found, None otherwise
+        """
+        if not PATHSPEC_AVAILABLE:
+            logger.warning("pathspec not installed - .gitignore support disabled")
+            logger.warning("Install with: pip install pathspec")
+            return None
+
+        if not self.local_repo_path:
+            return None
+
+        gitignore_path = Path(self.local_repo_path) / '.gitignore'
+        if not gitignore_path.exists():
+            logger.debug(f"No .gitignore found in {self.local_repo_path}")
+            return None
+
+        try:
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                spec = pathspec.PathSpec.from_lines('gitwildmatch', f)
+            logger.info(f"Loaded .gitignore from {gitignore_path}")
+            return spec
+        except Exception as e:
+            logger.warning(f"Failed to load .gitignore: {e}")
+            return None
 
     def _extract_file_tree(self):
         """Extract repository file tree structure (dual-mode: GitHub API or local filesystem)."""
@@ -574,14 +785,11 @@ class GitHubScraper:
                           'docs/CHANGELOG.md', '.github/CHANGELOG.md']
 
         for changelog_path in changelog_files:
-            try:
-                content = self.repo.get_contents(changelog_path)
-                if content:
-                    self.extracted_data['changelog'] = content.decoded_content.decode('utf-8')
-                    logger.info(f"CHANGELOG found: {changelog_path}")
-                    return
-            except GithubException:
-                continue
+            changelog_content = self._get_file_content(changelog_path)
+            if changelog_content:
+                self.extracted_data['changelog'] = changelog_content
+                logger.info(f"CHANGELOG found: {changelog_path}")
+                return
 
         logger.warning("No CHANGELOG found in repository")
 
@@ -633,7 +841,6 @@ class GitHubToSkillConverter:
         """Initialize converter with configuration."""
         self.config = config
         self.name = config.get('name', config['repo'].split('/')[-1])
-        self.description = config.get('description', f'Skill for {config["repo"]}')
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -641,6 +848,18 @@ class GitHubToSkillConverter:
 
         # Load extracted data
         self.data = self._load_data()
+
+        # Set description (smart extraction from README if available)
+        if 'description' in config:
+            self.description = config['description']
+        else:
+            # Try to extract from README in loaded data
+            readme_content = self.data.get('readme', '')
+            repo_name = config['repo']
+            if readme_content:
+                self.description = extract_description_from_readme(readme_content, repo_name)
+            else:
+                self.description = f'Use when working with {repo_name.split("/")[-1]}'
 
     def _load_data(self) -> Dict[str, Any]:
         """Load extracted GitHub data from JSON."""
@@ -887,18 +1106,24 @@ Examples:
     parser.add_argument('--no-releases', action='store_true', help='Skip releases')
     parser.add_argument('--max-issues', type=int, default=100, help='Max issues to fetch')
     parser.add_argument('--scrape-only', action='store_true', help='Only scrape, don\'t build skill')
+    parser.add_argument('--enhance', action='store_true',
+                       help='Enhance SKILL.md using Claude API after building (requires API key)')
+    parser.add_argument('--enhance-local', action='store_true',
+                       help='Enhance SKILL.md using Claude Code (no API key needed)')
+    parser.add_argument('--api-key', type=str,
+                       help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
 
     args = parser.parse_args()
 
     # Build config from args or file
     if args.config:
-        with open(args.config, 'r') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config = json.load(f)
     elif args.repo:
         config = {
             'repo': args.repo,
             'name': args.name or args.repo.split('/')[-1],
-            'description': args.description or f'GitHub repository skill for {args.repo}',
+            'description': args.description or f'Use when working with {args.repo.split("/")[-1]}',
             'github_token': args.token,
             'include_issues': not args.no_issues,
             'include_changelog': not args.no_changelog,
@@ -921,8 +1146,47 @@ Examples:
         converter = GitHubToSkillConverter(config)
         converter.build_skill()
 
-        logger.info(f"\n✅ Success! Skill created at: output/{config.get('name', config['repo'].split('/')[-1])}/")
-        logger.info(f"Next step: skill-seekers-package output/{config.get('name', config['repo'].split('/')[-1])}/")
+        skill_name = config.get('name', config['repo'].split('/')[-1])
+        skill_dir = f"output/{skill_name}"
+
+        # Phase 3: Optional enhancement
+        if args.enhance or args.enhance_local:
+            logger.info("\n📝 Enhancing SKILL.md with Claude...")
+
+            if args.enhance_local:
+                # Local enhancement using Claude Code
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+                from pathlib import Path
+
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                enhancer.run(headless=True)
+                logger.info("✅ Local enhancement complete!")
+
+            elif args.enhance:
+                # API-based enhancement
+                import os
+                api_key = args.api_key or os.environ.get('ANTHROPIC_API_KEY')
+                if not api_key:
+                    logger.error("❌ ANTHROPIC_API_KEY not set. Use --api-key or set environment variable.")
+                    logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+                else:
+                    # Import and run API enhancement
+                    try:
+                        from skill_seekers.cli.enhance_skill import enhance_skill_md
+                        enhance_skill_md(skill_dir, api_key)
+                        logger.info("✅ API enhancement complete!")
+                    except ImportError:
+                        logger.error("❌ API enhancement not available. Install: pip install anthropic")
+                        logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
+
+        logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
+
+        if not (args.enhance or args.enhance_local):
+            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+            logger.info(f"  Local (recommended):  skill-seekers enhance {skill_dir}/")
+            logger.info(f"                        or re-run with: --enhance-local")
+
+        logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
 
     except Exception as e:
         logger.error(f"Error: {e}")
