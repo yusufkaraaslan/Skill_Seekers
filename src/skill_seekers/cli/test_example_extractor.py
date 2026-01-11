@@ -758,7 +758,7 @@ class GenericTestAnalyzer:
 class ExampleQualityFilter:
     """Filter out trivial or low-quality examples"""
 
-    def __init__(self, min_confidence: float = 0.5, min_code_length: int = 20):
+    def __init__(self, min_confidence: float = 0.7, min_code_length: int = 20):
         self.min_confidence = min_confidence
         self.min_code_length = min_code_length
 
@@ -835,7 +835,7 @@ class TestExampleExtractor:
 
     def __init__(
         self,
-        min_confidence: float = 0.5,
+        min_confidence: float = 0.7,
         max_per_file: int = 10,
         languages: Optional[List[str]] = None,
         enhance_with_ai: bool = True

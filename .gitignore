@@ -29,6 +29,9 @@ env/
 output/
 *.zip
 
+# Skill Seekers cache (intermediate files)
+.skillseeker-cache/
+
 # IDE
 .vscode/
 .idea/

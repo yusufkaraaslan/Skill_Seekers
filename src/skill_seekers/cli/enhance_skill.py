@@ -105,44 +105,129 @@ class SkillEnhancer:
             return None
 
     def _build_enhancement_prompt(self, references, current_skill_md):
-        """Build the prompt for Claude"""
+        """Build the prompt for Claude with multi-source awareness"""
 
         # Extract skill name and description
         skill_name = self.skill_dir.name
 
+        # Analyze sources
+        sources_found = set()
+        for metadata in references.values():
+            sources_found.add(metadata['source'])
+
+        # Analyze conflicts if present
+        has_conflicts = any('conflicts' in meta['path'] for meta in references.values())
+
         prompt = f"""You are enhancing a Claude skill's SKILL.md file. This skill is about: {skill_name}
 
-I've scraped documentation and organized it into reference files. Your job is to create an EXCELLENT SKILL.md that will help Claude use this documentation effectively.
+I've scraped documentation from multiple sources and organized it into reference files. Your job is to create an EXCELLENT SKILL.md that synthesizes knowledge from these sources.
+
+SKILL OVERVIEW:
+- Name: {skill_name}
+- Source Types: {', '.join(sorted(sources_found))}
+- Multi-Source: {'Yes' if len(sources_found) > 1 else 'No'}
+- Conflicts Detected: {'Yes - see conflicts.md in references' if has_conflicts else 'No'}
 
 CURRENT SKILL.MD:
 {'```markdown' if current_skill_md else '(none - create from scratch)'}
 {current_skill_md or 'No existing SKILL.md'}
 {'```' if current_skill_md else ''}
 
-REFERENCE DOCUMENTATION:
+SOURCE ANALYSIS:
+This skill combines knowledge from {len(sources_found)} source type(s):
+
 """
 
-        for filename, content in references.items():
-            prompt += f"\n\n## {filename}\n```markdown\n{content[:30000]}\n```\n"
+        # Group references by source type
+        by_source = {}
+        for filename, metadata in references.items():
+            source = metadata['source']
+            if source not in by_source:
+                by_source[source] = []
+            by_source[source].append((filename, metadata))
+
+        # Add source breakdown
+        for source in sorted(by_source.keys()):
+            files = by_source[source]
+            prompt += f"\n**{source.upper()} ({len(files)} file(s))**\n"
+            for filename, metadata in files[:5]:  # Top 5 per source
+                prompt += f"- {filename} (confidence: {metadata['confidence']}, {metadata['size']:,} chars)\n"
+            if len(files) > 5:
+                prompt += f"- ... and {len(files) - 5} more\n"
+
+        prompt += "\n\nREFERENCE DOCUMENTATION:\n"
+
+        # Add references grouped by source with metadata
+        for source in sorted(by_source.keys()):
+            prompt += f"\n### {source.upper()} SOURCES\n\n"
+            for filename, metadata in by_source[source]:
+                content = metadata['content']
+                # Limit per-file to 30K
+                if len(content) > 30000:
+                    content = content[:30000] + "\n\n[Content truncated for size...]"
+
+                prompt += f"\n#### {filename}\n"
+                prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                prompt += f"```markdown\n{content}\n```\n"
 
         prompt += """
 
-YOUR TASK:
-Create an enhanced SKILL.md that includes:
+REFERENCE PRIORITY (when sources differ):
+1. **Code patterns (codebase_analysis)**: Ground truth - what the code actually does
+2. **Official documentation**: Intended API and usage patterns
+3. **GitHub issues**: Real-world usage and known problems
+4. **PDF documentation**: Additional context and tutorials
 
-1. **Clear "When to Use This Skill" section** - Be specific about trigger conditions
-2. **Excellent Quick Reference section** - Extract 5-10 of the BEST, most practical code examples from the reference docs
-   - Choose SHORT, clear examples that demonstrate common tasks
-   - Include both simple and intermediate examples
-   - Annotate examples with clear descriptions
+YOUR TASK:
+Create an enhanced SKILL.md that synthesizes knowledge from multiple sources:
+
+1. **Multi-Source Synthesis**
+   - Acknowledge that this skill combines multiple sources
+   - Highlight agreements between sources (builds confidence)
+   - Note discrepancies transparently (if present)
+   - Use source priority when synthesizing conflicting information
+
+2. **Clear "When to Use This Skill" section**
+   - Be SPECIFIC about trigger conditions
+   - List concrete use cases
+   - Include perspective from both docs AND real-world usage (if GitHub/codebase data available)
+
+3. **Excellent Quick Reference section**
+   - Extract 5-10 of the BEST, most practical code examples
+   - Prefer examples from HIGH CONFIDENCE sources first
+   - If code examples exist from codebase analysis, prioritize those (real usage)
+   - If docs examples exist, include those too (official patterns)
+   - Choose SHORT, clear examples (5-20 lines max)
    - Use proper language tags (cpp, python, javascript, json, etc.)
-3. **Detailed Reference Files description** - Explain what's in each reference file
-4. **Practical "Working with This Skill" section** - Give users clear guidance on how to navigate the skill
-5. **Key Concepts section** (if applicable) - Explain core concepts
-6. **Keep the frontmatter** (---\nname: ...\n---) intact
+   - Add clear descriptions noting the source (e.g., "From official docs" or "From codebase")
+
+4. **Detailed Reference Files description**
+   - Explain what's in each reference file
+   - Note the source type and confidence level
+   - Help users navigate multi-source documentation
+
+5. **Practical "Working with This Skill" section**
+   - Clear guidance for beginners, intermediate, and advanced users
+   - Navigation tips for multi-source references
+   - How to resolve conflicts if present
+
+6. **Key Concepts section** (if applicable)
+   - Explain core concepts
+   - Define important terminology
+   - Reconcile differences between sources if needed
+
+7. **Conflict Handling** (if conflicts detected)
+   - Add a "Known Discrepancies" section
+   - Explain major conflicts transparently
+   - Provide guidance on which source to trust in each case
+
+8. **Keep the frontmatter** (---\nname: ...\n---) intact
 
 IMPORTANT:
 - Extract REAL examples from the reference docs, don't make them up
+- Prioritize HIGH CONFIDENCE sources when synthesizing
+- Note source attribution when helpful (e.g., "Official docs say X, but codebase shows Y")
+- Make discrepancies transparent, not hidden
 - Prioritize SHORT, clear examples (5-20 lines max)
 - Make it actionable and practical
 - Don't be too verbose - be concise but useful
@@ -185,8 +270,14 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
             print("❌ No reference files found to analyze")
             return False
 
+        # Analyze sources
+        sources_found = set()
+        for metadata in references.values():
+            sources_found.add(metadata['source'])
+
         print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
+        print(f"  ✓ Sources: {', '.join(sorted(sources_found))}")
+        total_size = sum(meta['size'] for meta in references.values())
         print(f"  ✓ Total size: {total_size:,} characters\n")
 
         # Read current SKILL.md

@@ -305,7 +305,7 @@ class PDFToSkillConverter:
         print(f"   Generated: {filename}")
 
     def _generate_skill_md(self, categorized):
-        """Generate main SKILL.md file"""
+        """Generate main SKILL.md file (enhanced with rich content)"""
         filename = f"{self.skill_dir}/SKILL.md"
 
         # Generate skill name (lowercase, hyphens only, max 64 chars)
@@ -324,45 +324,202 @@ class PDFToSkillConverter:
             f.write(f"# {self.name.title()} Documentation Skill\n\n")
             f.write(f"{self.description}\n\n")
 
-            f.write("## When to use this skill\n\n")
-            f.write(f"Use this skill when the user asks about {self.name} documentation, ")
-            f.write("including API references, tutorials, examples, and best practices.\n\n")
+            # Enhanced "When to Use" section
+            f.write("## 💡 When to Use This Skill\n\n")
+            f.write(f"Use this skill when you need to:\n")
+            f.write(f"- Understand {self.name} concepts and fundamentals\n")
+            f.write(f"- Look up API references and technical specifications\n")
+            f.write(f"- Find code examples and implementation patterns\n")
+            f.write(f"- Review tutorials, guides, and best practices\n")
+            f.write(f"- Explore the complete documentation structure\n\n")
 
-            f.write("## What's included\n\n")
-            f.write("This skill contains:\n\n")
+            # Chapter Overview (PDF structure)
+            f.write("## 📖 Chapter Overview\n\n")
+            total_pages = self.extracted_data.get('total_pages', 0)
+            f.write(f"**Total Pages:** {total_pages}\n\n")
+            f.write("**Content Breakdown:**\n\n")
             for cat_key, cat_data in categorized.items():
-                f.write(f"- **{cat_data['title']}**: {len(cat_data['pages'])} pages\n")
+                page_count = len(cat_data['pages'])
+                f.write(f"- **{cat_data['title']}**: {page_count} pages\n")
+            f.write("\n")
 
-            f.write("\n## Quick Reference\n\n")
+            # Extract key concepts from headings
+            f.write(self._format_key_concepts())
 
-            # Get high-quality code samples
+            # Quick Reference with patterns
+            f.write("## ⚡ Quick Reference\n\n")
+            f.write(self._format_patterns_from_content())
+
+            # Enhanced code examples section (top 15, grouped by language)
             all_code = []
             for page in self.extracted_data['pages']:
                 all_code.extend(page.get('code_samples', []))
 
-            # Sort by quality and get top 5
+            # Sort by quality and get top 15
             all_code.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
-            top_code = all_code[:5]
+            top_code = all_code[:15]
 
             if top_code:
-                f.write("### Top Code Examples\n\n")
-                for i, code in enumerate(top_code, 1):
-                    lang = code['language']
-                    quality = code.get('quality_score', 0)
-                    f.write(f"**Example {i}** (Quality: {quality:.1f}/10):\n\n")
-                    f.write(f"```{lang}\n{code['code'][:300]}...\n```\n\n")
+                f.write("## 📝 Code Examples\n\n")
+                f.write("*High-quality examples extracted from documentation*\n\n")
 
-            f.write("## Navigation\n\n")
-            f.write("See `references/index.md` for complete documentation structure.\n\n")
+                # Group by language
+                by_lang = {}
+                for code in top_code:
+                    lang = code.get('language', 'unknown')
+                    if lang not in by_lang:
+                        by_lang[lang] = []
+                    by_lang[lang].append(code)
 
-            # Add language statistics
+                # Display grouped by language
+                for lang in sorted(by_lang.keys()):
+                    examples = by_lang[lang]
+                    f.write(f"### {lang.title()} Examples ({len(examples)})\n\n")
+
+                    for i, code in enumerate(examples[:5], 1):  # Top 5 per language
+                        quality = code.get('quality_score', 0)
+                        code_text = code.get('code', '')
+
+                        f.write(f"**Example {i}** (Quality: {quality:.1f}/10):\n\n")
+                        f.write(f"```{lang}\n")
+
+                        # Show full code if short, truncate if long
+                        if len(code_text) <= 500:
+                            f.write(code_text)
+                        else:
+                            f.write(code_text[:500] + "\n...")
+
+                        f.write("\n```\n\n")
+
+            # Statistics
+            f.write("## 📊 Documentation Statistics\n\n")
+            f.write(f"- **Total Pages**: {total_pages}\n")
+            total_code_blocks = self.extracted_data.get('total_code_blocks', 0)
+            f.write(f"- **Code Blocks**: {total_code_blocks}\n")
+            total_images = self.extracted_data.get('total_images', 0)
+            f.write(f"- **Images/Diagrams**: {total_images}\n")
+
+            # Language statistics
             langs = self.extracted_data.get('languages_detected', {})
             if langs:
-                f.write("## Languages Covered\n\n")
+                f.write(f"- **Programming Languages**: {len(langs)}\n\n")
+                f.write("**Language Breakdown:**\n\n")
                 for lang, count in sorted(langs.items(), key=lambda x: x[1], reverse=True):
                     f.write(f"- {lang}: {count} examples\n")
+                f.write("\n")
 
-        print(f"   Generated: {filename}")
+            # Quality metrics
+            quality_stats = self.extracted_data.get('quality_statistics', {})
+            if quality_stats:
+                avg_quality = quality_stats.get('average_quality', 0)
+                valid_blocks = quality_stats.get('valid_code_blocks', 0)
+                f.write(f"**Code Quality:**\n\n")
+                f.write(f"- Average Quality Score: {avg_quality:.1f}/10\n")
+                f.write(f"- Valid Code Blocks: {valid_blocks}\n\n")
+
+            # Navigation
+            f.write("## 🗺️ Navigation\n\n")
+            f.write("**Reference Files:**\n\n")
+            for cat_key, cat_data in categorized.items():
+                cat_file = self._sanitize_filename(cat_data['title'])
+                f.write(f"- `references/{cat_file}.md` - {cat_data['title']}\n")
+            f.write("\n")
+            f.write("See `references/index.md` for complete documentation structure.\n\n")
+
+            # Footer
+            f.write("---\n\n")
+            f.write("**Generated by Skill Seeker** | PDF Documentation Scraper\n")
+
+        line_count = len(open(filename, 'r', encoding='utf-8').read().split('\n'))
+        print(f"   Generated: {filename} ({line_count} lines)")
+
+    def _format_key_concepts(self) -> str:
+        """Extract key concepts from headings across all pages."""
+        all_headings = []
+
+        for page in self.extracted_data.get('pages', []):
+            headings = page.get('headings', [])
+            for heading in headings:
+                text = heading.get('text', '').strip()
+                level = heading.get('level', 'h1')
+                if text and len(text) > 3:  # Skip very short headings
+                    all_headings.append((level, text))
+
+        if not all_headings:
+            return ""
+
+        content = "## 🔑 Key Concepts\n\n"
+        content += "*Main topics covered in this documentation*\n\n"
+
+        # Group by level and show top concepts
+        h1_headings = [text for level, text in all_headings if level == 'h1']
+        h2_headings = [text for level, text in all_headings if level == 'h2']
+
+        if h1_headings:
+            content += "**Major Topics:**\n\n"
+            for heading in h1_headings[:10]:  # Top 10
+                content += f"- {heading}\n"
+            content += "\n"
+
+        if h2_headings:
+            content += "**Subtopics:**\n\n"
+            for heading in h2_headings[:15]:  # Top 15
+                content += f"- {heading}\n"
+            content += "\n"
+
+        return content
+
+    def _format_patterns_from_content(self) -> str:
+        """Extract common patterns from text content."""
+        # Look for common technical patterns in text
+        patterns = []
+
+        # Simple pattern extraction from headings and emphasized text
+        for page in self.extracted_data.get('pages', []):
+            text = page.get('text', '')
+            headings = page.get('headings', [])
+
+            # Look for common pattern keywords in headings
+            pattern_keywords = [
+                'getting started', 'installation', 'configuration',
+                'usage', 'api', 'examples', 'tutorial', 'guide',
+                'best practices', 'troubleshooting', 'faq'
+            ]
+
+            for heading in headings:
+                heading_text = heading.get('text', '').lower()
+                for keyword in pattern_keywords:
+                    if keyword in heading_text:
+                        page_num = page.get('page_number', 0)
+                        patterns.append({
+                            'type': keyword.title(),
+                            'heading': heading.get('text', ''),
+                            'page': page_num
+                        })
+                        break  # Only add once per heading
+
+        if not patterns:
+            return "*See reference files for detailed content*\n\n"
+
+        content = "*Common documentation patterns found:*\n\n"
+
+        # Group by type
+        by_type = {}
+        for pattern in patterns:
+            ptype = pattern['type']
+            if ptype not in by_type:
+                by_type[ptype] = []
+            by_type[ptype].append(pattern)
+
+        # Display grouped patterns
+        for ptype in sorted(by_type.keys()):
+            items = by_type[ptype]
+            content += f"**{ptype}** ({len(items)} sections):\n"
+            for item in items[:3]:  # Top 3 per type
+                content += f"- {item['heading']} (page {item['page']})\n"
+            content += "\n"
+
+        return content
 
     def _sanitize_filename(self, name):
         """Convert string to safe filename"""

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.5.1
+**Current Version:** v2.5.2
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 
@@ -56,27 +56,38 @@ src/skill_seekers/cli/adaptors/
 
 ```
 src/skill_seekers/
-├── cli/                        # CLI tools
-│   ├── main.py                 # Git-style CLI dispatcher
-│   ├── doc_scraper.py          # Main scraper (~790 lines)
-│   ├── github_scraper.py       # GitHub repo analysis
-│   ├── pdf_scraper.py          # PDF extraction
-│   ├── unified_scraper.py      # Multi-source scraping
-│   ├── enhance_skill_local.py  # AI enhancement (local)
-│   ├── package_skill.py        # Skill packager
-│   ├── upload_skill.py         # Upload to platforms
-│   ├── install_skill.py        # Complete workflow automation
-│   ├── install_agent.py        # Install to AI agent directories
-│   └── adaptors/               # Platform adaptor architecture
+├── cli/                              # CLI tools
+│   ├── main.py                       # Git-style CLI dispatcher
+│   ├── doc_scraper.py                # Main scraper (~790 lines)
+│   ├── github_scraper.py             # GitHub repo analysis
+│   ├── pdf_scraper.py                # PDF extraction
+│   ├── unified_scraper.py            # Multi-source scraping
+│   ├── codebase_scraper.py           # Local codebase analysis (C2.x)
+│   ├── unified_codebase_analyzer.py  # Three-stream GitHub+local analyzer
+│   ├── enhance_skill_local.py        # AI enhancement (LOCAL mode)
+│   ├── enhance_status.py             # Enhancement status monitoring
+│   ├── package_skill.py              # Skill packager
+│   ├── upload_skill.py               # Upload to platforms
+│   ├── install_skill.py              # Complete workflow automation
+│   ├── install_agent.py              # Install to AI agent directories
+│   ├── pattern_recognizer.py         # C3.1 Design pattern detection
+│   ├── test_example_extractor.py     # C3.2 Test example extraction
+│   ├── how_to_guide_builder.py       # C3.3 How-to guide generation
+│   ├── config_extractor.py           # C3.4 Configuration extraction
+│   ├── generate_router.py            # C3.5 Router skill generation
+│   ├── code_analyzer.py              # Multi-language code analysis
+│   ├── api_reference_builder.py      # API documentation builder
+│   ├── dependency_analyzer.py        # Dependency graph analysis
+│   └── adaptors/                     # Platform adaptor architecture
 │       ├── __init__.py
 │       ├── base_adaptor.py
 │       ├── claude_adaptor.py
 │       ├── gemini_adaptor.py
 │       ├── openai_adaptor.py
 │       └── markdown_adaptor.py
-└── mcp/                        # MCP server integration
-    ├── server.py               # FastMCP server (stdio + HTTP)
-    └── tools/                  # 18 MCP tool implementations
+└── mcp/                              # MCP server integration
+    ├── server.py                     # FastMCP server (stdio + HTTP)
+    └── tools/                        # 18 MCP tool implementations
 ```
 
 ## 🛠️ Development Commands
@@ -147,6 +158,18 @@ python -m twine upload dist/*
 # Test scraping (dry run)
 skill-seekers scrape --config configs/react.json --dry-run
 
+# Test codebase analysis (C2.x features)
+skill-seekers codebase --directory . --output output/codebase/
+
+# Test pattern detection (C3.1)
+skill-seekers patterns --file src/skill_seekers/cli/code_analyzer.py
+
+# Test how-to guide generation (C3.3)
+skill-seekers how-to-guides output/test_examples.json --output output/guides/
+
+# Test enhancement status monitoring
+skill-seekers enhance-status output/react/ --watch
+
 # Test multi-platform packaging
 skill-seekers package output/react/ --target gemini --dry-run
 
@@ -170,7 +193,13 @@ The unified CLI modifies `sys.argv` and calls existing `main()` functions to mai
 # Transforms to: doc_scraper.main() with modified sys.argv
 ```
 
-**Subcommands:** scrape, github, pdf, unified, enhance, package, upload, estimate, install
+**Subcommands:** scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
+
+**New in v2.5.2:**
+- `codebase` - Local codebase analysis without GitHub API (C2.x features)
+- `enhance-status` - Monitor background/daemon enhancement processes
+- `patterns` - Detect design patterns in code (C3.1)
+- `how-to-guides` - Generate educational guides from tests (C3.3)
 
 ### Platform Adaptor Usage
 
@@ -192,6 +221,55 @@ adaptor.upload(
 # AI enhancement
 adaptor.enhance(skill_dir='output/react/', mode='api')
 ```
+
+### C3.x Codebase Analysis Features
+
+The project has comprehensive codebase analysis capabilities (C3.1-C3.7):
+
+**C3.1 Design Pattern Detection** (`pattern_recognizer.py`):
+- Detects 10 common patterns: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
+- Supports 9 languages: Python, JavaScript, TypeScript, C++, C, C#, Go, Rust, Java
+- Three detection levels: surface (fast), deep (balanced), full (thorough)
+- 87% precision, 80% recall on real-world projects
+
+**C3.2 Test Example Extraction** (`test_example_extractor.py`):
+- Extracts real usage examples from test files
+- Categories: instantiation, method_call, config, setup, workflow
+- AST-based for Python, regex-based for 8 other languages
+- Quality filtering with confidence scoring
+
+**C3.3 How-To Guide Generation** (`how_to_guide_builder.py`):
+- Transforms test workflows into educational guides
+- 5 AI enhancements: step descriptions, troubleshooting, prerequisites, next steps, use cases
+- Dual-mode AI: API (fast) or LOCAL (free with Claude Code Max)
+- 4 grouping strategies: AI tutorial group, file path, test name, complexity
+
+**C3.4 Configuration Pattern Extraction** (`config_extractor.py`):
+- Extracts configuration patterns from codebases
+- Identifies config files, env vars, CLI arguments
+- AI enhancement for better organization
+
+**C3.5 Router Skill Generation** (`generate_router.py`):
+- Creates meta-skills that route to specialized skills
+- Quality improvements: 6.5/10 → 8.5/10 (+31%)
+- Integrates GitHub metadata, issues, labels
+
+**Codebase Scraper Integration** (`codebase_scraper.py`):
+```bash
+# All C3.x features enabled by default, use --skip-* to disable
+skill-seekers codebase --directory /path/to/repo
+
+# Disable specific features
+skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
+
+# Legacy flags (deprecated but still work)
+skill-seekers codebase --directory . --build-api-reference --build-dependency-graph
+```
+
+**Key Architecture Decision (v2.5.2):**
+- Changed from opt-in (`--build-*`) to opt-out (`--skip-*`) flags
+- All analysis features now ON by default for maximum value
+- Backward compatibility warnings for deprecated flags
 
 ### Smart Categorization Algorithm
 
@@ -284,17 +362,24 @@ export BITBUCKET_TOKEN=...
 
 ```toml
 [project.scripts]
+# Main unified CLI
 skill-seekers = "skill_seekers.cli.main:main"
+
+# Individual tool entry points
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
+skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"           # NEW: C2.x
 skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
+skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"       # NEW: Status monitoring
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
+skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"         # NEW: C3.1
+skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main" # NEW: C3.3
 ```
 
 ### Optional Dependencies
@@ -304,8 +389,17 @@ skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 gemini = ["google-generativeai>=0.8.0"]
 openai = ["openai>=1.0.0"]
 all-llms = ["google-generativeai>=0.8.0", "openai>=1.0.0"]
-dev = ["pytest>=8.4.2", "pytest-asyncio>=0.24.0", "pytest-cov>=7.0.0"]
+
+[dependency-groups]  # PEP 735 (replaces tool.uv.dev-dependencies)
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=7.0.0",
+    "coverage>=7.11.0",
+]
 ```
+
+**Note:** Project uses PEP 735 `dependency-groups` instead of deprecated `tool.uv.dev-dependencies`.
 
 ## 🚨 Critical Development Notes
 
@@ -336,12 +430,55 @@ pip install skill-seekers[openai]  # OpenAI support
 pip install skill-seekers[all-llms]  # All platforms
 ```
 
+### AI Enhancement Modes
+
+AI enhancement transforms basic skills (2-3/10) into production-ready skills (8-9/10). Two modes available:
+
+**API Mode** (default if ANTHROPIC_API_KEY is set):
+- Direct Claude API calls (fast, efficient)
+- Cost: ~$0.15-$0.30 per skill
+- Perfect for CI/CD automation
+- Requires: `export ANTHROPIC_API_KEY=sk-ant-...`
+
+**LOCAL Mode** (fallback if no API key):
+- Uses Claude Code CLI (your existing Max plan)
+- Free! No API charges
+- 4 execution modes:
+  - Headless (default): Foreground, waits for completion
+  - Background (`--background`): Returns immediately
+  - Daemon (`--daemon`): Fully detached with nohup
+  - Terminal (`--interactive-enhancement`): Opens new terminal (macOS)
+- Status monitoring: `skill-seekers enhance-status output/react/ --watch`
+- Timeout configuration: `--timeout 300` (seconds)
+
+**Force Mode** (default ON since v2.5.2):
+- Skip all confirmations automatically
+- Perfect for CI/CD, batch processing
+- Use `--no-force` to enable prompts if needed
+
+```bash
+# API mode (if ANTHROPIC_API_KEY is set)
+skill-seekers enhance output/react/
+
+# LOCAL mode (no API key needed)
+skill-seekers enhance output/react/ --mode LOCAL
+
+# Background with status monitoring
+skill-seekers enhance output/react/ --background
+skill-seekers enhance-status output/react/ --watch
+
+# Force mode OFF (enable prompts)
+skill-seekers enhance output/react/ --no-force
+```
+
+See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
+
 ### Git Workflow
 
 - Main branch: `main`
 - Current branch: `development`
 - Always create feature branches from `development`
-- Clean status currently (no uncommitted changes)
+- Feature branch naming: `feature/{task-id}-{description}` or `feature/{category}`
 
 ## 🔌 MCP Integration
 
@@ -430,6 +567,26 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 - `scrape_all()` - Main scraping loop
 - `main()` - Entry point
 
+**Codebase Analysis** (`src/skill_seekers/cli/`):
+- `codebase_scraper.py` - Main CLI for local codebase analysis
+- `code_analyzer.py` - Multi-language AST parsing (9 languages)
+- `api_reference_builder.py` - API documentation generation
+- `dependency_analyzer.py` - NetworkX-based dependency graphs
+- `pattern_recognizer.py` - C3.1 design pattern detection
+- `test_example_extractor.py` - C3.2 test example extraction
+- `how_to_guide_builder.py` - C3.3 guide generation
+- `config_extractor.py` - C3.4 configuration extraction
+- `generate_router.py` - C3.5 router skill generation
+- `unified_codebase_analyzer.py` - Three-stream GitHub+local analyzer
+
+**AI Enhancement** (`src/skill_seekers/cli/`):
+- `enhance_skill_local.py` - LOCAL mode enhancement (4 execution modes)
+- `enhance_skill.py` - API mode enhancement
+- `enhance_status.py` - Status monitoring for background processes
+- `ai_enhancer.py` - Shared AI enhancement logic
+- `guide_enhancer.py` - C3.3 guide AI enhancement
+- `config_enhancer.py` - C3.4 config AI enhancement
+
 **Platform Adaptors** (`src/skill_seekers/cli/adaptors/`):
 - `__init__.py` - Factory function
 - `base_adaptor.py` - Abstract base class
@@ -440,7 +597,7 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 
 **MCP Server** (`src/skill_seekers/mcp/`):
 - `server.py` - FastMCP-based server
-- `tools/` - MCP tool implementations
+- `tools/` - 18 MCP tool implementations
 
 ## 🎯 Project-Specific Best Practices
 
@@ -464,6 +621,10 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 - [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) - 134 tasks across 22 feature groups
 - [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) - Multi-source scraping
 - [docs/MCP_SETUP.md](docs/MCP_SETUP.md) - MCP server setup
+- [docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md) - AI enhancement modes
+- [docs/PATTERN_DETECTION.md](docs/PATTERN_DETECTION.md) - C3.1 pattern detection
+- [docs/THREE_STREAM_STATUS_REPORT.md](docs/THREE_STREAM_STATUS_REPORT.md) - Three-stream architecture
+- [docs/MULTI_LLM_SUPPORT.md](docs/MULTI_LLM_SUPPORT.md) - Multi-platform support
 
 ## 🎓 Understanding the Codebase
 
@@ -493,6 +654,39 @@ User experience benefits:
 - Cleaner than multiple separate commands
 - Easier to document and teach
 
+### Three-Stream GitHub Architecture
+
+The `unified_codebase_analyzer.py` splits GitHub repositories into three independent streams:
+
+**Stream 1: Code Analysis** (C3.x features)
+- Deep AST parsing (9 languages)
+- Design pattern detection (C3.1)
+- Test example extraction (C3.2)
+- How-to guide generation (C3.3)
+- Configuration extraction (C3.4)
+- Architectural overview (C3.5)
+- API reference + dependency graphs
+
+**Stream 2: Documentation**
+- README, CONTRIBUTING, LICENSE
+- docs/ directory markdown files
+- Wiki pages (if available)
+- CHANGELOG and version history
+
+**Stream 3: Community Insights**
+- GitHub metadata (stars, forks, watchers)
+- Issue analysis (top problems and solutions)
+- PR trends and contributor stats
+- Release history
+- Label-based topic detection
+
+**Key Benefits:**
+- Unified interface for GitHub URLs and local paths
+- Analysis depth control: 'basic' (1-2 min) or 'c3x' (20-60 min)
+- Enhanced router generation with GitHub context
+- Smart keyword extraction weighted by GitHub labels (2x weight)
+- 81 E2E tests passing (0.44 seconds)
+
 ## 🔍 Performance Characteristics
 
 | Operation | Time | Notes |
@@ -507,7 +701,14 @@ User experience benefits:
 
 ## 🎉 Recent Achievements
 
-**v2.5.1 (Latest):**
+**v2.5.2 (Latest):**
+- UX Improvement: Analysis features now default ON with --skip-* flags (BREAKING)
+- Changed from opt-in (--build-*) to opt-out (--skip-*) for better discoverability
+- Router quality improvements: 6.5/10 → 8.5/10 (+31%)
+- C3.5 Architectural Overview & Skill Integrator
+- All 107 codebase analysis tests passing
+
+**v2.5.1:**
 - Fixed critical PyPI packaging bug (missing adaptors module)
 - 100% of multi-platform features working
 
@@ -517,6 +718,15 @@ User experience benefits:
 - 18 MCP tools (up from 9)
 - Complete feature parity across platforms
 - 700+ tests passing
+
+**C3.x Series (Code Analysis Features):**
+- C3.1: Design pattern detection (10 patterns, 9 languages, 87% precision)
+- C3.2: Test example extraction (AST-based, 19 tests)
+- C3.3: How-to guide generation with AI enhancement (5 improvements)
+- C3.4: Configuration pattern extraction
+- C3.5: Router skill generation
+- C3.6: AI enhancement (dual-mode: API + LOCAL)
+- C3.7: Architectural pattern detection
 
 **v2.0.0:**
 - Unified multi-source scraping

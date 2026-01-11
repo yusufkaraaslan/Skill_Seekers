@@ -74,13 +74,51 @@ class UnifiedScraper:
         # Storage for scraped data
         self.scraped_data = {}
 
-        # Output paths
+        # Output paths - cleaner organization
         self.name = self.config['name']
-        self.output_dir = f"output/{self.name}"
-        self.data_dir = f"output/{self.name}_unified_data"
+        self.output_dir = f"output/{self.name}"  # Final skill only
 
+        # Use hidden cache directory for intermediate files
+        self.cache_dir = f".skillseeker-cache/{self.name}"
+        self.sources_dir = f"{self.cache_dir}/sources"
+        self.data_dir = f"{self.cache_dir}/data"
+        self.repos_dir = f"{self.cache_dir}/repos"
+        self.logs_dir = f"{self.cache_dir}/logs"
+
+        # Create directories
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.sources_dir, exist_ok=True)
         os.makedirs(self.data_dir, exist_ok=True)
+        os.makedirs(self.repos_dir, exist_ok=True)
+        os.makedirs(self.logs_dir, exist_ok=True)
+
+        # Setup file logging
+        self._setup_logging()
+
+    def _setup_logging(self):
+        """Setup file logging for this scraping session."""
+        from datetime import datetime
+
+        # Create log filename with timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        log_file = f"{self.logs_dir}/unified_{timestamp}.log"
+
+        # Add file handler to root logger
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler.setLevel(logging.DEBUG)
+
+        # Create formatter
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(formatter)
+
+        # Add to root logger
+        logging.getLogger().addHandler(file_handler)
+
+        logger.info(f"📝 Logging to: {log_file}")
+        logger.info(f"🗂️  Cache directory: {self.cache_dir}")
 
     def scrape_all_sources(self):
         """
@@ -150,13 +188,19 @@ class UnifiedScraper:
         logger.info(f"Scraping documentation from {source['base_url']}")
 
         doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
-        cmd = [sys.executable, str(doc_scraper_path), '--config', temp_config_path]
+        cmd = [sys.executable, str(doc_scraper_path), '--config', temp_config_path, '--fresh']
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
         if result.returncode != 0:
-            logger.error(f"Documentation scraping failed: {result.stderr}")
+            logger.error(f"Documentation scraping failed with return code {result.returncode}")
+            logger.error(f"STDERR: {result.stderr}")
+            logger.error(f"STDOUT: {result.stdout}")
             return
+
+        # Log subprocess output for debugging
+        if result.stdout:
+            logger.info(f"Doc scraper output: {result.stdout[-500:]}")  # Last 500 chars
 
         # Load scraped data
         docs_data_file = f"output/{doc_config['name']}_data/summary.json"
@@ -178,6 +222,83 @@ class UnifiedScraper:
         if os.path.exists(temp_config_path):
             os.remove(temp_config_path)
 
+        # Move intermediate files to cache to keep output/ clean
+        docs_output_dir = f"output/{doc_config['name']}"
+        docs_data_dir = f"output/{doc_config['name']}_data"
+
+        if os.path.exists(docs_output_dir):
+            cache_docs_dir = os.path.join(self.sources_dir, f"{doc_config['name']}")
+            if os.path.exists(cache_docs_dir):
+                shutil.rmtree(cache_docs_dir)
+            shutil.move(docs_output_dir, cache_docs_dir)
+            logger.info(f"📦 Moved docs output to cache: {cache_docs_dir}")
+
+        if os.path.exists(docs_data_dir):
+            cache_data_dir = os.path.join(self.data_dir, f"{doc_config['name']}_data")
+            if os.path.exists(cache_data_dir):
+                shutil.rmtree(cache_data_dir)
+            shutil.move(docs_data_dir, cache_data_dir)
+            logger.info(f"📦 Moved docs data to cache: {cache_data_dir}")
+
+    def _clone_github_repo(self, repo_name: str) -> Optional[str]:
+        """
+        Clone GitHub repository to cache directory for C3.x analysis.
+        Reuses existing clone if already present.
+
+        Args:
+            repo_name: GitHub repo in format "owner/repo"
+
+        Returns:
+            Path to cloned repo, or None if clone failed
+        """
+        # Clone to cache repos folder for future reuse
+        repo_dir_name = repo_name.replace('/', '_')  # e.g., encode_httpx
+        clone_path = os.path.join(self.repos_dir, repo_dir_name)
+
+        # Check if already cloned
+        if os.path.exists(clone_path) and os.path.isdir(os.path.join(clone_path, '.git')):
+            logger.info(f"♻️  Found existing repository clone: {clone_path}")
+            logger.info(f"   Reusing for C3.x analysis (skip re-cloning)")
+            return clone_path
+
+        # repos_dir already created in __init__
+
+        # Clone repo (full clone, not shallow - for complete analysis)
+        repo_url = f"https://github.com/{repo_name}.git"
+        logger.info(f"🔄 Cloning repository for C3.x analysis: {repo_url}")
+        logger.info(f"   → {clone_path}")
+        logger.info(f"   💾 Clone will be saved for future reuse")
+
+        try:
+            result = subprocess.run(
+                ['git', 'clone', repo_url, clone_path],
+                capture_output=True,
+                text=True,
+                timeout=600  # 10 minute timeout for full clone
+            )
+
+            if result.returncode == 0:
+                logger.info(f"✅ Repository cloned successfully")
+                logger.info(f"   📁 Saved to: {clone_path}")
+                return clone_path
+            else:
+                logger.error(f"❌ Git clone failed: {result.stderr}")
+                # Clean up failed clone
+                if os.path.exists(clone_path):
+                    shutil.rmtree(clone_path)
+                return None
+
+        except subprocess.TimeoutExpired:
+            logger.error(f"❌ Git clone timed out after 10 minutes")
+            if os.path.exists(clone_path):
+                shutil.rmtree(clone_path)
+            return None
+        except Exception as e:
+            logger.error(f"❌ Git clone failed: {e}")
+            if os.path.exists(clone_path):
+                shutil.rmtree(clone_path)
+            return None
+
     def _scrape_github(self, source: Dict[str, Any]):
         """Scrape GitHub repository."""
         try:
@@ -185,6 +306,22 @@ class UnifiedScraper:
         except ImportError:
             logger.error("github_scraper.py not found")
             return
+
+        # Check if we need to clone for C3.x analysis
+        enable_codebase_analysis = source.get('enable_codebase_analysis', True)
+        local_repo_path = source.get('local_repo_path')
+        cloned_repo_path = None
+
+        # Auto-clone if C3.x analysis is enabled but no local path provided
+        if enable_codebase_analysis and not local_repo_path:
+            logger.info("🔬 C3.x codebase analysis enabled - cloning repository...")
+            cloned_repo_path = self._clone_github_repo(source['repo'])
+            if cloned_repo_path:
+                local_repo_path = cloned_repo_path
+                logger.info(f"✅ Using cloned repo for C3.x analysis: {local_repo_path}")
+            else:
+                logger.warning("⚠️  Failed to clone repo - C3.x analysis will be skipped")
+                enable_codebase_analysis = False
 
         # Create config for GitHub scraper
         github_config = {
@@ -198,7 +335,7 @@ class UnifiedScraper:
             'include_code': source.get('include_code', True),
             'code_analysis_depth': source.get('code_analysis_depth', 'surface'),
             'file_patterns': source.get('file_patterns', []),
-            'local_repo_path': source.get('local_repo_path')  # Pass local_repo_path from config
+            'local_repo_path': local_repo_path  # Use cloned path if available
         }
 
         # Pass directory exclusions if specified (optional)
@@ -213,9 +350,6 @@ class UnifiedScraper:
         github_data = scraper.scrape()
 
         # Run C3.x codebase analysis if enabled and local_repo_path available
-        enable_codebase_analysis = source.get('enable_codebase_analysis', True)
-        local_repo_path = source.get('local_repo_path')
-
         if enable_codebase_analysis and local_repo_path:
             logger.info("🔬 Running C3.x codebase analysis...")
             try:
@@ -227,17 +361,57 @@ class UnifiedScraper:
                     logger.warning("⚠️  C3.x analysis returned no data")
             except Exception as e:
                 logger.warning(f"⚠️  C3.x analysis failed: {e}")
+                import traceback
+                logger.debug(f"Traceback: {traceback.format_exc()}")
                 # Continue without C3.x data - graceful degradation
 
-        # Save data
+        # Note: We keep the cloned repo in output/ for future reuse
+        if cloned_repo_path:
+            logger.info(f"📁 Repository clone saved for future use: {cloned_repo_path}")
+
+        # Save data to unified location
         github_data_file = os.path.join(self.data_dir, 'github_data.json')
         with open(github_data_file, 'w', encoding='utf-8') as f:
+            json.dump(github_data, f, indent=2, ensure_ascii=False)
+
+        # ALSO save to the location GitHubToSkillConverter expects (with C3.x data!)
+        converter_data_file = f"output/{github_config['name']}_github_data.json"
+        with open(converter_data_file, 'w', encoding='utf-8') as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
         self.scraped_data['github'] = {
             'data': github_data,
             'data_file': github_data_file
         }
+
+        # Build standalone SKILL.md for synthesis using GitHubToSkillConverter
+        try:
+            from skill_seekers.cli.github_scraper import GitHubToSkillConverter
+            # Use github_config which has the correct name field
+            # Converter will load from output/{name}_github_data.json which now has C3.x data
+            converter = GitHubToSkillConverter(config=github_config)
+            converter.build_skill()
+            logger.info(f"✅ GitHub: Standalone SKILL.md created")
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to build standalone GitHub SKILL.md: {e}")
+
+        # Move intermediate files to cache to keep output/ clean
+        github_output_dir = f"output/{github_config['name']}"
+        github_data_file_path = f"output/{github_config['name']}_github_data.json"
+
+        if os.path.exists(github_output_dir):
+            cache_github_dir = os.path.join(self.sources_dir, github_config['name'])
+            if os.path.exists(cache_github_dir):
+                shutil.rmtree(cache_github_dir)
+            shutil.move(github_output_dir, cache_github_dir)
+            logger.info(f"📦 Moved GitHub output to cache: {cache_github_dir}")
+
+        if os.path.exists(github_data_file_path):
+            cache_github_data = os.path.join(self.data_dir, f"{github_config['name']}_github_data.json")
+            if os.path.exists(cache_github_data):
+                os.remove(cache_github_data)
+            shutil.move(github_data_file_path, cache_github_data)
+            logger.info(f"📦 Moved GitHub data to cache: {cache_github_data}")
 
         logger.info(f"✅ GitHub: Repository scraped successfully")
 
@@ -272,6 +446,13 @@ class UnifiedScraper:
             'data': pdf_data,
             'data_file': pdf_data_file
         }
+
+        # Build standalone SKILL.md for synthesis
+        try:
+            converter.build_skill()
+            logger.info(f"✅ PDF: Standalone SKILL.md created")
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to build standalone PDF SKILL.md: {e}")
 
         logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
 
@@ -323,6 +504,30 @@ class UnifiedScraper:
 
         return {'guides': guides, 'total_count': len(guides)}
 
+    def _load_api_reference(self, api_dir: Path) -> Dict[str, Any]:
+        """
+        Load API reference markdown files from api_reference directory.
+
+        Args:
+            api_dir: Path to api_reference directory
+
+        Returns:
+            Dict mapping module names to markdown content, or empty dict if not found
+        """
+        if not api_dir.exists():
+            logger.debug(f"API reference directory not found: {api_dir}")
+            return {}
+
+        api_refs = {}
+        for md_file in api_dir.glob('*.md'):
+            try:
+                module_name = md_file.stem
+                api_refs[module_name] = md_file.read_text(encoding='utf-8')
+            except IOError as e:
+                logger.warning(f"Failed to read API reference {md_file}: {e}")
+
+        return api_refs
+
     def _run_c3_analysis(self, local_repo_path: str, source: Dict[str, Any]) -> Dict[str, Any]:
         """
         Run comprehensive C3.x codebase analysis.
@@ -358,9 +563,9 @@ class UnifiedScraper:
                 depth='deep',
                 languages=None,  # Analyze all languages
                 file_patterns=source.get('file_patterns'),
-                build_api_reference=False,  # Not needed in skill
+                build_api_reference=True,   # C2.5: API Reference
                 extract_comments=False,     # Not needed
-                build_dependency_graph=False,  # Can add later if needed
+                build_dependency_graph=True,  # C2.6: Dependency Graph
                 detect_patterns=True,       # C3.1: Design patterns
                 extract_test_examples=True, # C3.2: Test examples
                 build_how_to_guides=True,   # C3.3: How-to guides
@@ -375,7 +580,9 @@ class UnifiedScraper:
                 'test_examples': self._load_json(temp_output / 'test_examples' / 'test_examples.json'),
                 'how_to_guides': self._load_guide_collection(temp_output / 'tutorials'),
                 'config_patterns': self._load_json(temp_output / 'config_patterns' / 'config_patterns.json'),
-                'architecture': self._load_json(temp_output / 'architecture' / 'architectural_patterns.json')
+                'architecture': self._load_json(temp_output / 'architecture' / 'architectural_patterns.json'),
+                'api_reference': self._load_api_reference(temp_output / 'api_reference'),  # C2.5
+                'dependency_graph': self._load_json(temp_output / 'dependencies' / 'dependency_graph.json')  # C2.6
             }
 
             # Log summary
@@ -531,7 +738,8 @@ class UnifiedScraper:
             self.config,
             self.scraped_data,
             merged_data,
-            conflicts
+            conflicts,
+            cache_dir=self.cache_dir
         )
 
         builder.build()

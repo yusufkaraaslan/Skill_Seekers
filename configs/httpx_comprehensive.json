@@ -1,0 +1,114 @@
+{
+  "name": "httpx",
+  "description": "Use this skill when working with HTTPX, a fully featured HTTP client for Python 3 with sync and async APIs. HTTPX provides a familiar requests-like interface with support for HTTP/2, connection pooling, and comprehensive middleware capabilities.",
+  "version": "1.0.0",
+  "base_url": "https://www.python-httpx.org/",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://www.python-httpx.org/",
+      "selectors": {
+        "main_content": "article.md-content__inner",
+        "title": "h1",
+        "code_blocks": "pre code"
+      }
+    },
+    {
+      "type": "github",
+      "repo": "encode/httpx",
+      "code_analysis_depth": "deep",
+      "enable_codebase_analysis": true,
+      "fetch_issues": true,
+      "fetch_changelog": true,
+      "fetch_releases": true,
+      "max_issues": 50
+    }
+  ],
+  "selectors": {
+    "main_content": "article.md-content__inner",
+    "title": "h1",
+    "code_blocks": "pre code",
+    "navigation": "nav.md-tabs",
+    "sidebar": "nav.md-nav--primary"
+  },
+  "url_patterns": {
+    "include": [
+      "/quickstart/",
+      "/advanced/",
+      "/api/",
+      "/async/",
+      "/http2/",
+      "/compatibility/"
+    ],
+    "exclude": [
+      "/changelog/",
+      "/contributing/",
+      "/exceptions/"
+    ]
+  },
+  "categories": {
+    "getting_started": [
+      "quickstart",
+      "install",
+      "introduction",
+      "overview"
+    ],
+    "core_concepts": [
+      "client",
+      "request",
+      "response",
+      "timeout",
+      "pool"
+    ],
+    "async": [
+      "async",
+      "asyncio",
+      "trio",
+      "concurrent"
+    ],
+    "http2": [
+      "http2",
+      "http/2",
+      "multiplexing"
+    ],
+    "advanced": [
+      "authentication",
+      "middleware",
+      "transport",
+      "proxy",
+      "ssl",
+      "streaming"
+    ],
+    "api_reference": [
+      "api",
+      "reference",
+      "client",
+      "request",
+      "response"
+    ],
+    "compatibility": [
+      "requests",
+      "migration",
+      "compatibility"
+    ]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100,
+  "metadata": {
+    "author": "Encode",
+    "language": "Python",
+    "framework_type": "HTTP Client",
+    "use_cases": [
+      "Making HTTP requests",
+      "REST API clients",
+      "Async HTTP operations",
+      "HTTP/2 support",
+      "Connection pooling"
+    ],
+    "related_skills": [
+      "requests",
+      "aiohttp",
+      "urllib3"
+    ]
+  }
+}

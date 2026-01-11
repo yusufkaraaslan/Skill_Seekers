@@ -240,6 +240,9 @@ def analyze_codebase(
     Returns:
         Analysis results dictionary
     """
+    # Resolve directory to absolute path to avoid relative_to() errors
+    directory = Path(directory).resolve()
+
     logger.info(f"Analyzing codebase: {directory}")
     logger.info(f"Depth: {depth}")
 

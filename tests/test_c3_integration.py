@@ -108,7 +108,7 @@ class TestC3Integration:
                 'config_files': [
                     {
                         'relative_path': 'config.json',
-                        'config_type': 'json',
+                        'type': 'json',
                         'purpose': 'Application configuration',
                         'settings': [
                             {'key': 'debug', 'value': 'true', 'value_type': 'boolean'}
