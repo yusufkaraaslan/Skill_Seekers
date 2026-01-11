@@ -36,7 +36,7 @@
       "include_changelog": true,
       "include_releases": true,
       "include_code": true,
-      "code_analysis_depth": "surface",
+      "code_analysis_depth": "full",
       "file_patterns": [
         "fastapi/**/*.py"
       ],

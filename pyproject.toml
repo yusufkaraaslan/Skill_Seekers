@@ -145,6 +145,7 @@ addopts = "-v --tb=short --strict-markers"
 markers = [
     "asyncio: mark test as an async test",
     "slow: mark test as slow running",
+    "integration: mark test as integration test (requires external services)",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

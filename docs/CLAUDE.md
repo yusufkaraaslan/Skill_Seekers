@@ -2,10 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🎯 Current Status (December 28, 2025)
+## 🎯 Current Status (January 8, 2026)
 
-**Version:** v2.5.0 (Production Ready - Multi-Platform Feature Parity!)
-**Active Development:** Multi-platform support complete
+**Version:** v2.6.0 (Three-Stream GitHub Architecture - Phases 1-5 Complete!)
+**Active Development:** Phase 6 pending (Documentation & Examples)
+
+### Recent Updates (January 2026):
+
+**🚀 MAJOR RELEASE: Three-Stream GitHub Architecture (v2.6.0)**
+- **✅ Phases 1-5 Complete** (26 hours implementation, 81 tests passing)
+- **NEW: GitHub Three-Stream Fetcher** - Split repos into Code, Docs, Insights streams
+- **NEW: Unified Codebase Analyzer** - Works with GitHub URLs + local paths, C3.x as analysis depth
+- **ENHANCED: Source Merging** - Multi-layer merge with GitHub docs and insights
+- **ENHANCED: Router Generation** - GitHub metadata, README quick start, common issues
+- **CRITICAL FIX: Actual C3.x Integration** - Real pattern detection (not placeholders)
+- **Quality Metrics**: GitHub overhead 20-60 lines, router size 60-250 lines
+- **Documentation**: Complete implementation summary and E2E tests
 
 ### Recent Updates (December 2025):
 
@@ -15,7 +27,80 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
 - **✨ 18 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)
 - **📚 Comprehensive Documentation**: Complete guides for all platforms
-- **🧪 Test Coverage**: 700 tests passing, extensive platform compatibility testing
+- **🧪 Test Coverage**: 700+ tests passing, extensive platform compatibility testing
+
+**🚀 NEW: Three-Stream GitHub Architecture (v2.6.0)**
+- **📊 Three-Stream Fetcher**: Split GitHub repos into Code, Docs, and Insights streams
+- **🔬 Unified Codebase Analyzer**: Works with GitHub URLs and local paths
+- **🎯 Enhanced Router Generation**: GitHub insights + C3.x patterns for better routing
+- **📝 GitHub Issue Integration**: Common problems and solutions in sub-skills
+- **✅ 81 Tests Passing**: Comprehensive E2E validation (0.43 seconds)
+
+## Three-Stream GitHub Architecture
+
+**New in v2.6.0**: GitHub repositories are now analyzed using a three-stream architecture:
+
+**STREAM 1: Code** (for C3.x analysis)
+- Files: `*.py, *.js, *.ts, *.go, *.rs, *.java, etc.`
+- Purpose: Deep code analysis with C3.x components
+- Time: 20-60 minutes
+- Components: Patterns (C3.1), Examples (C3.2), Guides (C3.3), Configs (C3.4), Architecture (C3.7)
+
+**STREAM 2: Documentation** (from repository)
+- Files: `README.md, CONTRIBUTING.md, docs/*.md`
+- Purpose: Quick start guides and official documentation
+- Time: 1-2 minutes
+
+**STREAM 3: GitHub Insights** (metadata & community)
+- Data: Open issues, closed issues, labels, stars, forks
+- Purpose: Real user problems and known solutions
+- Time: 1-2 minutes
+
+### Usage Example
+
+```python
+from skill_seekers.cli.unified_codebase_analyzer import UnifiedCodebaseAnalyzer
+
+# Analyze GitHub repo with three streams
+analyzer = UnifiedCodebaseAnalyzer()
+result = analyzer.analyze(
+    source="https://github.com/facebook/react",
+    depth="c3x",  # or "basic"
+    fetch_github_metadata=True
+)
+
+# Access all three streams
+print(f"Files: {len(result.code_analysis['files'])}")
+print(f"README: {result.github_docs['readme'][:100]}")
+print(f"Stars: {result.github_insights['metadata']['stars']}")
+print(f"C3.x Patterns: {len(result.code_analysis['c3_1_patterns'])}")
+```
+
+### Router Generation with GitHub
+
+```python
+from skill_seekers.cli.generate_router import RouterGenerator
+from skill_seekers.cli.github_fetcher import GitHubThreeStreamFetcher
+
+# Fetch GitHub repo with three streams
+fetcher = GitHubThreeStreamFetcher("https://github.com/jlowin/fastmcp")
+three_streams = fetcher.fetch()
+
+# Generate router with GitHub integration
+generator = RouterGenerator(
+    ['configs/fastmcp-oauth.json', 'configs/fastmcp-async.json'],
+    github_streams=three_streams
+)
+
+# Result includes:
+# - Repository stats (stars, language)
+# - README quick start
+# - Common issues from GitHub
+# - Enhanced routing keywords (GitHub labels with 2x weight)
+skill_md = generator.generate_skill_md()
+```
+
+**See full documentation**: [Three-Stream Implementation Summary](IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ## Overview
 

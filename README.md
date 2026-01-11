@@ -2,11 +2,11 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.5.0)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.6.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-700%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-700+%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -118,6 +118,45 @@ pip install skill-seekers[openai]
 # Install with all LLM platforms
 pip install skill-seekers[all-llms]
 ```
+
+### 🌊 Three-Stream GitHub Architecture (**NEW - v2.6.0**)
+- ✅ **Triple-Stream Analysis** - Split GitHub repos into Code, Docs, and Insights streams
+- ✅ **Unified Codebase Analyzer** - Works with GitHub URLs AND local paths
+- ✅ **C3.x as Analysis Depth** - Choose 'basic' (1-2 min) or 'c3x' (20-60 min) analysis
+- ✅ **Enhanced Router Generation** - GitHub metadata, README quick start, common issues
+- ✅ **Issue Integration** - Top problems and solutions from GitHub issues
+- ✅ **Smart Routing Keywords** - GitHub labels weighted 2x for better topic detection
+- ✅ **81 Tests Passing** - Comprehensive E2E validation (0.44 seconds)
+
+**Three Streams Explained:**
+- **Stream 1: Code** - Deep C3.x analysis (patterns, examples, guides, configs, architecture)
+- **Stream 2: Docs** - Repository documentation (README, CONTRIBUTING, docs/*.md)
+- **Stream 3: Insights** - Community knowledge (issues, labels, stars, forks)
+
+```python
+from skill_seekers.cli.unified_codebase_analyzer import UnifiedCodebaseAnalyzer
+
+# Analyze GitHub repo with all three streams
+analyzer = UnifiedCodebaseAnalyzer()
+result = analyzer.analyze(
+    source="https://github.com/facebook/react",
+    depth="c3x",  # or "basic" for fast analysis
+    fetch_github_metadata=True
+)
+
+# Access code stream (C3.x analysis)
+print(f"Design patterns: {len(result.code_analysis['c3_1_patterns'])}")
+print(f"Test examples: {result.code_analysis['c3_2_examples_count']}")
+
+# Access docs stream (repository docs)
+print(f"README: {result.github_docs['readme'][:100]}")
+
+# Access insights stream (GitHub metadata)
+print(f"Stars: {result.github_insights['metadata']['stars']}")
+print(f"Common issues: {len(result.github_insights['common_problems'])}")
+```
+
+**See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Private Config Repositories (**NEW - v2.2.0**)
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories

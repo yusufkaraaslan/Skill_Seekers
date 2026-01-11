@@ -75,6 +75,73 @@ class ConfigExtractionResult:
     detected_patterns: Dict[str, List[str]] = field(default_factory=dict)  # pattern -> files
     errors: List[str] = field(default_factory=list)
 
+    def to_dict(self) -> Dict:
+        """Convert result to dictionary for JSON output"""
+        return {
+            'total_files': self.total_files,
+            'total_settings': self.total_settings,
+            'detected_patterns': self.detected_patterns,
+            'config_files': [
+                {
+                    'file_path': cf.file_path,
+                    'relative_path': cf.relative_path,
+                    'type': cf.config_type,
+                    'purpose': cf.purpose,
+                    'patterns': cf.patterns,
+                    'settings_count': len(cf.settings),
+                    'settings': [
+                        {
+                            'key': s.key,
+                            'value': s.value,
+                            'type': s.value_type,
+                            'env_var': s.env_var,
+                            'description': s.description,
+                        }
+                        for s in cf.settings
+                    ],
+                    'parse_errors': cf.parse_errors,
+                }
+                for cf in self.config_files
+            ],
+            'errors': self.errors,
+        }
+
+    def to_markdown(self) -> str:
+        """Generate markdown report of extraction results"""
+        md = "# Configuration Extraction Report\n\n"
+        md += f"**Total Files:** {self.total_files}\n"
+        md += f"**Total Settings:** {self.total_settings}\n"
+
+        # Handle both dict and list formats for detected_patterns
+        if self.detected_patterns:
+            if isinstance(self.detected_patterns, dict):
+                patterns_str = ', '.join(self.detected_patterns.keys())
+            else:
+                patterns_str = ', '.join(self.detected_patterns)
+        else:
+            patterns_str = 'None'
+        md += f"**Detected Patterns:** {patterns_str}\n\n"
+
+        if self.config_files:
+            md += "## Configuration Files\n\n"
+            for cf in self.config_files:
+                md += f"### {cf.relative_path}\n\n"
+                md += f"- **Type:** {cf.config_type}\n"
+                md += f"- **Purpose:** {cf.purpose}\n"
+                md += f"- **Settings:** {len(cf.settings)}\n"
+                if cf.patterns:
+                    md += f"- **Patterns:** {', '.join(cf.patterns)}\n"
+                if cf.parse_errors:
+                    md += f"- **Errors:** {len(cf.parse_errors)}\n"
+                md += "\n"
+
+        if self.errors:
+            md += "## Errors\n\n"
+            for error in self.errors:
+                md += f"- {error}\n"
+
+        return md
+
 
 class ConfigFileDetector:
     """Detect configuration files in codebase"""

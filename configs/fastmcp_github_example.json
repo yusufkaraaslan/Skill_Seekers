@@ -1,0 +1,59 @@
+{
+  "name": "fastmcp",
+  "description": "Use when working with FastMCP - Python framework for building MCP servers with GitHub insights",
+  "github_url": "https://github.com/jlowin/fastmcp",
+  "github_token_env": "GITHUB_TOKEN",
+  "analysis_depth": "c3x",
+  "fetch_github_metadata": true,
+  "categories": {
+    "getting_started": ["quickstart", "installation", "setup", "getting started"],
+    "oauth": ["oauth", "authentication", "auth", "token"],
+    "async": ["async", "asyncio", "await", "concurrent"],
+    "testing": ["test", "testing", "pytest", "unittest"],
+    "api": ["api", "endpoint", "route", "decorator"]
+  },
+  "_comment": "This config demonstrates three-stream GitHub architecture:",
+  "_streams": {
+    "code": "Deep C3.x analysis (20-60 min) - patterns, examples, guides, configs, architecture",
+    "docs": "Repository documentation (1-2 min) - README, CONTRIBUTING, docs/*.md",
+    "insights": "GitHub metadata (1-2 min) - issues, labels, stars, forks"
+  },
+  "_router_generation": {
+    "enabled": true,
+    "sub_skills": [
+      "fastmcp-oauth",
+      "fastmcp-async",
+      "fastmcp-testing",
+      "fastmcp-api"
+    ],
+    "github_integration": {
+      "metadata": "Shows stars, language, description in router SKILL.md",
+      "readme_quickstart": "Extracts first 500 chars of README as quick start",
+      "common_issues": "Lists top 5 GitHub issues in router",
+      "issue_categorization": "Matches issues to sub-skills by keywords",
+      "label_weighting": "GitHub labels weighted 2x in routing keywords"
+    }
+  },
+  "_usage_examples": {
+    "basic_analysis": "python -m skill_seekers.cli.unified_codebase_analyzer https://github.com/jlowin/fastmcp --depth basic",
+    "c3x_analysis": "python -m skill_seekers.cli.unified_codebase_analyzer https://github.com/jlowin/fastmcp --depth c3x",
+    "router_generation": "python -m skill_seekers.cli.generate_router configs/fastmcp-*.json --github-streams"
+  },
+  "_expected_output": {
+    "router_skillmd_sections": [
+      "When to Use This Skill",
+      "Repository Info (stars, language, description)",
+      "Quick Start (from README)",
+      "How It Works",
+      "Routing Logic",
+      "Quick Reference",
+      "Common Issues (from GitHub)"
+    ],
+    "sub_skill_enhancements": [
+      "Common OAuth Issues (from GitHub)",
+      "Issue #42: OAuth setup fails",
+      "Status: Open/Closed",
+      "Direct links to GitHub issues"
+    ]
+  }
+}

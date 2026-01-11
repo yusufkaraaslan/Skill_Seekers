@@ -2,11 +2,17 @@
 """
 Source Merger for Multi-Source Skills
 
-Merges documentation and code data intelligently:
+Merges documentation and code data intelligently with GitHub insights:
 - Rule-based merge: Fast, deterministic rules
 - Claude-enhanced merge: AI-powered reconciliation
 
-Handles conflicts and creates unified API reference.
+Handles conflicts and creates unified API reference with GitHub metadata.
+
+Multi-layer architecture (Phase 3):
+- Layer 1: C3.x code (ground truth)
+- Layer 2: HTML docs (official intent)
+- Layer 3: GitHub docs (README/CONTRIBUTING)
+- Layer 4: GitHub insights (issues)
 """
 
 import json
@@ -18,13 +24,206 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from .conflict_detector import Conflict, ConflictDetector
 
+# Import three-stream data classes (Phase 1)
+try:
+    from .github_fetcher import ThreeStreamData, CodeStream, DocsStream, InsightsStream
+except ImportError:
+    # Fallback if github_fetcher not available
+    ThreeStreamData = None
+    CodeStream = None
+    DocsStream = None
+    InsightsStream = None
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def categorize_issues_by_topic(
+    problems: List[Dict],
+    solutions: List[Dict],
+    topics: List[str]
+) -> Dict[str, List[Dict]]:
+    """
+    Categorize GitHub issues by topic keywords.
+
+    Args:
+        problems: List of common problems (open issues with 5+ comments)
+        solutions: List of known solutions (closed issues with comments)
+        topics: List of topic keywords to match against
+
+    Returns:
+        Dict mapping topic to relevant issues
+    """
+    categorized = {topic: [] for topic in topics}
+    categorized['other'] = []
+
+    all_issues = problems + solutions
+
+    for issue in all_issues:
+        # Get searchable text
+        title = issue.get('title', '').lower()
+        labels = [label.lower() for label in issue.get('labels', [])]
+        text = f"{title} {' '.join(labels)}"
+
+        # Find best matching topic
+        matched_topic = None
+        max_matches = 0
+
+        for topic in topics:
+            # Count keyword matches
+            topic_keywords = topic.lower().split()
+            matches = sum(1 for keyword in topic_keywords if keyword in text)
+
+            if matches > max_matches:
+                max_matches = matches
+                matched_topic = topic
+
+        # Categorize by best match or 'other'
+        if matched_topic and max_matches > 0:
+            categorized[matched_topic].append(issue)
+        else:
+            categorized['other'].append(issue)
+
+    # Remove empty categories
+    return {k: v for k, v in categorized.items() if v}
+
+
+def generate_hybrid_content(
+    api_data: Dict,
+    github_docs: Optional[Dict],
+    github_insights: Optional[Dict],
+    conflicts: List[Conflict]
+) -> Dict[str, Any]:
+    """
+    Generate hybrid content combining API data with GitHub context.
+
+    Args:
+        api_data: Merged API data
+        github_docs: GitHub docs stream (README, CONTRIBUTING, docs/*.md)
+        github_insights: GitHub insights stream (metadata, issues, labels)
+        conflicts: List of detected conflicts
+
+    Returns:
+        Hybrid content dict with enriched API reference
+    """
+    hybrid = {
+        'api_reference': api_data,
+        'github_context': {}
+    }
+
+    # Add GitHub documentation layer
+    if github_docs:
+        hybrid['github_context']['docs'] = {
+            'readme': github_docs.get('readme'),
+            'contributing': github_docs.get('contributing'),
+            'docs_files_count': len(github_docs.get('docs_files', []))
+        }
+
+    # Add GitHub insights layer
+    if github_insights:
+        metadata = github_insights.get('metadata', {})
+        hybrid['github_context']['metadata'] = {
+            'stars': metadata.get('stars', 0),
+            'forks': metadata.get('forks', 0),
+            'language': metadata.get('language', 'Unknown'),
+            'description': metadata.get('description', '')
+        }
+
+        # Add issue insights
+        common_problems = github_insights.get('common_problems', [])
+        known_solutions = github_insights.get('known_solutions', [])
+
+        hybrid['github_context']['issues'] = {
+            'common_problems_count': len(common_problems),
+            'known_solutions_count': len(known_solutions),
+            'top_problems': common_problems[:5],  # Top 5 most-discussed
+            'top_solutions': known_solutions[:5]
+        }
+
+        hybrid['github_context']['top_labels'] = github_insights.get('top_labels', [])
+
+    # Add conflict summary
+    hybrid['conflict_summary'] = {
+        'total_conflicts': len(conflicts),
+        'by_type': {},
+        'by_severity': {}
+    }
+
+    for conflict in conflicts:
+        # Count by type
+        conflict_type = conflict.type
+        hybrid['conflict_summary']['by_type'][conflict_type] = \
+            hybrid['conflict_summary']['by_type'].get(conflict_type, 0) + 1
+
+        # Count by severity
+        severity = conflict.severity
+        hybrid['conflict_summary']['by_severity'][severity] = \
+            hybrid['conflict_summary']['by_severity'].get(severity, 0) + 1
+
+    # Add GitHub issue links for relevant APIs
+    if github_insights:
+        hybrid['issue_links'] = _match_issues_to_apis(
+            api_data.get('apis', {}),
+            github_insights.get('common_problems', []),
+            github_insights.get('known_solutions', [])
+        )
+
+    return hybrid
+
+
+def _match_issues_to_apis(
+    apis: Dict[str, Dict],
+    problems: List[Dict],
+    solutions: List[Dict]
+) -> Dict[str, List[Dict]]:
+    """
+    Match GitHub issues to specific APIs by keyword matching.
+
+    Args:
+        apis: Dict of API data keyed by name
+        problems: List of common problems
+        solutions: List of known solutions
+
+    Returns:
+        Dict mapping API names to relevant issues
+    """
+    issue_links = {}
+    all_issues = problems + solutions
+
+    for api_name in apis.keys():
+        # Extract searchable keywords from API name
+        api_keywords = api_name.lower().replace('_', ' ').split('.')
+
+        matched_issues = []
+        for issue in all_issues:
+            title = issue.get('title', '').lower()
+            labels = [label.lower() for label in issue.get('labels', [])]
+            text = f"{title} {' '.join(labels)}"
+
+            # Check if any API keyword appears in issue
+            if any(keyword in text for keyword in api_keywords):
+                matched_issues.append({
+                    'number': issue.get('number'),
+                    'title': issue.get('title'),
+                    'state': issue.get('state'),
+                    'comments': issue.get('comments')
+                })
+
+        if matched_issues:
+            issue_links[api_name] = matched_issues
+
+    return issue_links
+
+
 class RuleBasedMerger:
     """
-    Rule-based API merger using deterministic rules.
+    Rule-based API merger using deterministic rules with GitHub insights.
+
+    Multi-layer architecture (Phase 3):
+    - Layer 1: C3.x code (ground truth)
+    - Layer 2: HTML docs (official intent)
+    - Layer 3: GitHub docs (README/CONTRIBUTING)
+    - Layer 4: GitHub insights (issues)
 
     Rules:
     1. If API only in docs → Include with [DOCS_ONLY] tag
@@ -33,18 +232,24 @@ class RuleBasedMerger:
     4. If conflict → Include both versions with [CONFLICT] tag, prefer code signature
     """
 
-    def __init__(self, docs_data: Dict, github_data: Dict, conflicts: List[Conflict]):
+    def __init__(self,
+                 docs_data: Dict,
+                 github_data: Dict,
+                 conflicts: List[Conflict],
+                 github_streams: Optional['ThreeStreamData'] = None):
         """
-        Initialize rule-based merger.
+        Initialize rule-based merger with GitHub streams support.
 
         Args:
-            docs_data: Documentation scraper data
-            github_data: GitHub scraper data
+            docs_data: Documentation scraper data (Layer 2: HTML docs)
+            github_data: GitHub scraper data (Layer 1: C3.x code)
             conflicts: List of detected conflicts
+            github_streams: Optional ThreeStreamData with docs and insights (Layers 3-4)
         """
         self.docs_data = docs_data
         self.github_data = github_data
         self.conflicts = conflicts
+        self.github_streams = github_streams
 
         # Build conflict index for fast lookup
         self.conflict_index = {c.api_name: c for c in conflicts}
@@ -54,14 +259,35 @@ class RuleBasedMerger:
         self.docs_apis = detector.docs_apis
         self.code_apis = detector.code_apis
 
+        # Extract GitHub streams if available
+        self.github_docs = None
+        self.github_insights = None
+        if github_streams:
+            # Layer 3: GitHub docs
+            if github_streams.docs_stream:
+                self.github_docs = {
+                    'readme': github_streams.docs_stream.readme,
+                    'contributing': github_streams.docs_stream.contributing,
+                    'docs_files': github_streams.docs_stream.docs_files
+                }
+
+            # Layer 4: GitHub insights
+            if github_streams.insights_stream:
+                self.github_insights = {
+                    'metadata': github_streams.insights_stream.metadata,
+                    'common_problems': github_streams.insights_stream.common_problems,
+                    'known_solutions': github_streams.insights_stream.known_solutions,
+                    'top_labels': github_streams.insights_stream.top_labels
+                }
+
     def merge_all(self) -> Dict[str, Any]:
         """
-        Merge all APIs using rule-based logic.
+        Merge all APIs using rule-based logic with GitHub insights (Phase 3).
 
         Returns:
-            Dict containing merged API data
+            Dict containing merged API data with hybrid content
         """
-        logger.info("Starting rule-based merge...")
+        logger.info("Starting rule-based merge with GitHub streams...")
 
         merged_apis = {}
 
@@ -74,7 +300,8 @@ class RuleBasedMerger:
 
         logger.info(f"Merged {len(merged_apis)} APIs")
 
-        return {
+        # Build base result
+        merged_data = {
             'merge_mode': 'rule-based',
             'apis': merged_apis,
             'summary': {
@@ -85,6 +312,26 @@ class RuleBasedMerger:
                 'conflict': sum(1 for api in merged_apis.values() if api['status'] == 'conflict')
             }
         }
+
+        # Generate hybrid content if GitHub streams available (Phase 3)
+        if self.github_streams:
+            logger.info("Generating hybrid content with GitHub insights...")
+            hybrid_content = generate_hybrid_content(
+                api_data=merged_data,
+                github_docs=self.github_docs,
+                github_insights=self.github_insights,
+                conflicts=self.conflicts
+            )
+
+            # Merge hybrid content into result
+            merged_data['github_context'] = hybrid_content.get('github_context', {})
+            merged_data['conflict_summary'] = hybrid_content.get('conflict_summary', {})
+            merged_data['issue_links'] = hybrid_content.get('issue_links', {})
+
+            logger.info(f"Added GitHub context: {len(self.github_insights.get('common_problems', []))} problems, "
+                       f"{len(self.github_insights.get('known_solutions', []))} solutions")
+
+        return merged_data
 
     def _merge_single_api(self, api_name: str) -> Dict[str, Any]:
         """
@@ -192,27 +439,39 @@ class RuleBasedMerger:
 
 class ClaudeEnhancedMerger:
     """
-    Claude-enhanced API merger using local Claude Code.
+    Claude-enhanced API merger using local Claude Code with GitHub insights.
 
     Opens Claude Code in a new terminal to intelligently reconcile conflicts.
     Uses the same approach as enhance_skill_local.py.
+
+    Multi-layer architecture (Phase 3):
+    - Layer 1: C3.x code (ground truth)
+    - Layer 2: HTML docs (official intent)
+    - Layer 3: GitHub docs (README/CONTRIBUTING)
+    - Layer 4: GitHub insights (issues)
     """
 
-    def __init__(self, docs_data: Dict, github_data: Dict, conflicts: List[Conflict]):
+    def __init__(self,
+                 docs_data: Dict,
+                 github_data: Dict,
+                 conflicts: List[Conflict],
+                 github_streams: Optional['ThreeStreamData'] = None):
         """
-        Initialize Claude-enhanced merger.
+        Initialize Claude-enhanced merger with GitHub streams support.
 
         Args:
-            docs_data: Documentation scraper data
-            github_data: GitHub scraper data
+            docs_data: Documentation scraper data (Layer 2: HTML docs)
+            github_data: GitHub scraper data (Layer 1: C3.x code)
             conflicts: List of detected conflicts
+            github_streams: Optional ThreeStreamData with docs and insights (Layers 3-4)
         """
         self.docs_data = docs_data
         self.github_data = github_data
         self.conflicts = conflicts
+        self.github_streams = github_streams
 
         # First do rule-based merge as baseline
-        self.rule_merger = RuleBasedMerger(docs_data, github_data, conflicts)
+        self.rule_merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
 
     def merge_all(self) -> Dict[str, Any]:
         """
@@ -445,18 +704,26 @@ read -p "Press Enter when merge is complete..."
 def merge_sources(docs_data_path: str,
                   github_data_path: str,
                   output_path: str,
-                  mode: str = 'rule-based') -> Dict[str, Any]:
+                  mode: str = 'rule-based',
+                  github_streams: Optional['ThreeStreamData'] = None) -> Dict[str, Any]:
     """
-    Merge documentation and GitHub data.
+    Merge documentation and GitHub data with optional GitHub streams (Phase 3).
+
+    Multi-layer architecture:
+    - Layer 1: C3.x code (ground truth)
+    - Layer 2: HTML docs (official intent)
+    - Layer 3: GitHub docs (README/CONTRIBUTING) - from github_streams
+    - Layer 4: GitHub insights (issues) - from github_streams
 
     Args:
         docs_data_path: Path to documentation data JSON
         github_data_path: Path to GitHub data JSON
         output_path: Path to save merged output
         mode: 'rule-based' or 'claude-enhanced'
+        github_streams: Optional ThreeStreamData with docs and insights
 
     Returns:
-        Merged data dict
+        Merged data dict with hybrid content
     """
     # Load data
     with open(docs_data_path, 'r') as f:
@@ -471,11 +738,21 @@ def merge_sources(docs_data_path: str,
 
     logger.info(f"Detected {len(conflicts)} conflicts")
 
+    # Log GitHub streams availability
+    if github_streams:
+        logger.info("GitHub streams available for multi-layer merge")
+        if github_streams.docs_stream:
+            logger.info(f"  - Docs stream: README, {len(github_streams.docs_stream.docs_files)} docs files")
+        if github_streams.insights_stream:
+            problems = len(github_streams.insights_stream.common_problems)
+            solutions = len(github_streams.insights_stream.known_solutions)
+            logger.info(f"  - Insights stream: {problems} problems, {solutions} solutions")
+
     # Merge based on mode
     if mode == 'claude-enhanced':
-        merger = ClaudeEnhancedMerger(docs_data, github_data, conflicts)
+        merger = ClaudeEnhancedMerger(docs_data, github_data, conflicts, github_streams)
     else:
-        merger = RuleBasedMerger(docs_data, github_data, conflicts)
+        merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
 
     merged_data = merger.merge_all()
 
