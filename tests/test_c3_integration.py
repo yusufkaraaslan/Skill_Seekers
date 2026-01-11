@@ -189,14 +189,18 @@ class TestC3Integration:
 
     def test_architecture_md_generation(self, mock_config, mock_c3_data, temp_dir):
         """Test ARCHITECTURE.md is generated with all 8 sections."""
-        # Create skill builder with C3.x data
+        # Create skill builder with C3.x data (multi-source list format)
+        github_data = {
+            'readme': 'Test README',
+            'c3_analysis': mock_c3_data
+        }
         scraped_data = {
-            'github': {
-                'data': {
-                    'readme': 'Test README',
-                    'c3_analysis': mock_c3_data
-                }
-            }
+            'github': [{
+                'repo': 'test/repo',
+                'repo_id': 'test_repo',
+                'idx': 0,
+                'data': github_data
+            }]
         }
 
         builder = UnifiedSkillBuilder(mock_config, scraped_data)
@@ -205,7 +209,7 @@ class TestC3Integration:
         # Generate C3.x references
         c3_dir = os.path.join(temp_dir, 'references', 'codebase_analysis')
         os.makedirs(c3_dir, exist_ok=True)
-        builder._generate_architecture_overview(c3_dir, mock_c3_data)
+        builder._generate_architecture_overview(c3_dir, mock_c3_data, github_data)
 
         # Verify ARCHITECTURE.md exists
         arch_file = os.path.join(c3_dir, 'ARCHITECTURE.md')
@@ -234,13 +238,18 @@ class TestC3Integration:
 
     def test_c3_reference_directory_structure(self, mock_config, mock_c3_data, temp_dir):
         """Test correct C3.x reference directory structure is created."""
+        # Create skill builder with C3.x data (multi-source list format)
+        github_data = {
+            'readme': 'Test README',
+            'c3_analysis': mock_c3_data
+        }
         scraped_data = {
-            'github': {
-                'data': {
-                    'readme': 'Test README',
-                    'c3_analysis': mock_c3_data
-                }
-            }
+            'github': [{
+                'repo': 'test/repo',
+                'repo_id': 'test_repo',
+                'idx': 0,
+                'data': github_data
+            }]
         }
 
         builder = UnifiedSkillBuilder(mock_config, scraped_data)
@@ -250,7 +259,7 @@ class TestC3Integration:
         c3_dir = os.path.join(temp_dir, 'references', 'codebase_analysis')
         os.makedirs(c3_dir, exist_ok=True)
 
-        builder._generate_architecture_overview(c3_dir, mock_c3_data)
+        builder._generate_architecture_overview(c3_dir, mock_c3_data, github_data)
         builder._generate_pattern_references(c3_dir, mock_c3_data.get('patterns'))
         builder._generate_example_references(c3_dir, mock_c3_data.get('test_examples'))
         builder._generate_guide_references(c3_dir, mock_c3_data.get('how_to_guides'))
@@ -288,8 +297,8 @@ class TestC3Integration:
             with open(config_path, 'w') as f:
                 json.dump(mock_config, f)
 
-            # Mock GitHubScraper
-            with patch('skill_seekers.cli.unified_scraper.GitHubScraper') as mock_github:
+            # Mock GitHubScraper (correct module path for import)
+            with patch('skill_seekers.cli.github_scraper.GitHubScraper') as mock_github:
                 mock_github.return_value.scrape.return_value = {
                     'readme': 'Test README',
                     'issues': [],

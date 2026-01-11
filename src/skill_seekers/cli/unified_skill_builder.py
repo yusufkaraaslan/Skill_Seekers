@@ -990,7 +990,7 @@ This skill combines knowledge from multiple sources:
         logger.info("Generating C3.x codebase analysis references...")
 
         # Generate ARCHITECTURE.md (main deliverable)
-        self._generate_architecture_overview(c3_dir, c3_data)
+        self._generate_architecture_overview(c3_dir, c3_data, github_data)
 
         # Generate subdirectories for each C3.x component
         self._generate_pattern_references(c3_dir, c3_data.get('patterns'))
@@ -1001,7 +1001,7 @@ This skill combines knowledge from multiple sources:
 
         logger.info("✅ Created codebase analysis references")
 
-    def _generate_architecture_overview(self, c3_dir: str, c3_data: Dict):
+    def _generate_architecture_overview(self, c3_dir: str, c3_data: Dict, github_data: Dict):
         """Generate comprehensive ARCHITECTURE.md (C3.5 main deliverable)."""
         arch_path = os.path.join(c3_dir, 'ARCHITECTURE.md')
 
