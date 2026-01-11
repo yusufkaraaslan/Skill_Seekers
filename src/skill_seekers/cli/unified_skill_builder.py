@@ -29,7 +29,8 @@ class UnifiedSkillBuilder:
     """
 
     def __init__(self, config: Dict, scraped_data: Dict,
-                 merged_data: Optional[Dict] = None, conflicts: Optional[List] = None):
+                 merged_data: Optional[Dict] = None, conflicts: Optional[List] = None,
+                 cache_dir: Optional[str] = None):
         """
         Initialize skill builder.
 
@@ -38,11 +39,13 @@ class UnifiedSkillBuilder:
             scraped_data: Dict of scraped data by source type
             merged_data: Merged API data (if conflicts were resolved)
             conflicts: List of detected conflicts
+            cache_dir: Optional cache directory for intermediate files
         """
         self.config = config
         self.scraped_data = scraped_data
         self.merged_data = merged_data
         self.conflicts = conflicts or []
+        self.cache_dir = cache_dir
 
         self.name = config['name']
         self.description = config['description']
@@ -70,14 +73,472 @@ class UnifiedSkillBuilder:
 
         logger.info(f"✅ Unified skill built: {self.skill_dir}/")
 
+    def _load_source_skill_mds(self) -> Dict[str, str]:
+        """Load standalone SKILL.md files from each source.
+
+        Returns:
+            Dict mapping source type to SKILL.md content
+            e.g., {'documentation': '...', 'github': '...', 'pdf': '...'}
+        """
+        skill_mds = {}
+
+        # Determine base directory for source SKILL.md files
+        if self.cache_dir:
+            sources_dir = Path(self.cache_dir) / "sources"
+        else:
+            sources_dir = Path("output")
+
+        # Load documentation SKILL.md
+        docs_skill_path = sources_dir / f"{self.name}_docs" / "SKILL.md"
+        if docs_skill_path.exists():
+            try:
+                skill_mds['documentation'] = docs_skill_path.read_text(encoding='utf-8')
+                logger.debug(f"Loaded documentation SKILL.md ({len(skill_mds['documentation'])} chars)")
+            except IOError as e:
+                logger.warning(f"Failed to read documentation SKILL.md: {e}")
+
+        # Load GitHub SKILL.md
+        github_skill_path = sources_dir / f"{self.name}_github" / "SKILL.md"
+        if github_skill_path.exists():
+            try:
+                skill_mds['github'] = github_skill_path.read_text(encoding='utf-8')
+                logger.debug(f"Loaded GitHub SKILL.md ({len(skill_mds['github'])} chars)")
+            except IOError as e:
+                logger.warning(f"Failed to read GitHub SKILL.md: {e}")
+
+        # Load PDF SKILL.md
+        pdf_skill_path = sources_dir / f"{self.name}_pdf" / "SKILL.md"
+        if pdf_skill_path.exists():
+            try:
+                skill_mds['pdf'] = pdf_skill_path.read_text(encoding='utf-8')
+                logger.debug(f"Loaded PDF SKILL.md ({len(skill_mds['pdf'])} chars)")
+            except IOError as e:
+                logger.warning(f"Failed to read PDF SKILL.md: {e}")
+
+        logger.info(f"Loaded {len(skill_mds)} source SKILL.md files")
+        return skill_mds
+
+    def _parse_skill_md_sections(self, skill_md: str) -> Dict[str, str]:
+        """Parse SKILL.md into sections by ## headers.
+
+        Args:
+            skill_md: Full SKILL.md content
+
+        Returns:
+            Dict mapping section name to content
+            e.g., {'When to Use': '...', 'Quick Reference': '...'}
+        """
+        sections = {}
+        current_section = None
+        current_content = []
+
+        lines = skill_md.split('\n')
+
+        for line in lines:
+            # Detect section header (## Header)
+            if line.startswith('## '):
+                # Save previous section
+                if current_section:
+                    sections[current_section] = '\n'.join(current_content).strip()
+
+                # Start new section
+                current_section = line[3:].strip()
+                # Remove emoji and markdown formatting
+                current_section = current_section.split('](')[0]  # Remove links
+                for emoji in ['📚', '🏗️', '⚠️', '🔧', '📖', '💡', '🎯', '📊', '🔍', '⚙️', '🧪', '📝', '🗂️', '📐', '⚡']:
+                    current_section = current_section.replace(emoji, '').strip()
+                current_content = []
+            elif current_section:
+                # Accumulate content for current section
+                current_content.append(line)
+
+        # Save last section
+        if current_section and current_content:
+            sections[current_section] = '\n'.join(current_content).strip()
+
+        logger.debug(f"Parsed {len(sections)} sections from SKILL.md")
+        return sections
+
+    def _synthesize_docs_github(self, skill_mds: Dict[str, str]) -> str:
+        """Synthesize documentation + GitHub sources with weighted merge.
+
+        Strategy:
+        - Start with docs frontmatter and intro
+        - Add GitHub metadata (stars, topics, language stats)
+        - Merge "When to Use" from both sources
+        - Merge "Quick Reference" from both sources
+        - Include GitHub-specific sections (patterns, architecture)
+        - Merge code examples (prioritize GitHub real usage)
+        - Include Known Issues from GitHub
+        - Fix placeholder text (httpx_docs → httpx)
+
+        Args:
+            skill_mds: Dict with 'documentation' and 'github' keys
+
+        Returns:
+            Synthesized SKILL.md content
+        """
+        docs_sections = self._parse_skill_md_sections(skill_mds.get('documentation', ''))
+        github_sections = self._parse_skill_md_sections(skill_mds.get('github', ''))
+
+        # Extract GitHub metadata from full content
+        github_full = skill_mds.get('github', '')
+
+        # Start with YAML frontmatter
+        skill_name = self.name.lower().replace('_', '-').replace(' ', '-')[:64]
+        desc = self.description[:1024] if len(self.description) > 1024 else self.description
+
+        content = f"""---
+name: {skill_name}
+description: {desc}
+---
+
+# {self.name.title()}
+
+{self.description}
+
+## 📚 Sources
+
+This skill synthesizes knowledge from multiple sources:
+
+- ✅ **Official Documentation**: {self.config.get('sources', [{}])[0].get('base_url', 'N/A')}
+- ✅ **GitHub Repository**: {[s for s in self.config.get('sources', []) if s.get('type') == 'github'][0].get('repo', 'N/A') if [s for s in self.config.get('sources', []) if s.get('type') == 'github'] else 'N/A'}
+
+"""
+
+        # Add GitHub Description and Metadata if present
+        if 'Description' in github_sections:
+            content += "## 📦 About\n\n"
+            content += github_sections['Description'] + "\n\n"
+
+        # Add Repository Info from GitHub
+        if 'Repository Info' in github_sections:
+            content += "### Repository Info\n\n"
+            content += github_sections['Repository Info'] + "\n\n"
+
+        # Add Language stats from GitHub
+        if 'Languages' in github_sections:
+            content += "### Languages\n\n"
+            content += github_sections['Languages'] + "\n\n"
+
+        content += "## 💡 When to Use This Skill\n\n"
+
+        # Merge "When to Use" sections - Fix placeholder text
+        when_to_use_added = False
+        for key in ['When to Use This Skill', 'When to Use']:
+            if key in docs_sections:
+                # Fix placeholder text: httpx_docs → httpx
+                when_content = docs_sections[key].replace('httpx_docs', self.name)
+                when_content = when_content.replace('httpx_github', self.name)
+                content += when_content + "\n\n"
+                when_to_use_added = True
+                break
+
+        if 'When to Use This Skill' in github_sections:
+            if when_to_use_added:
+                content += "**From repository analysis:**\n\n"
+            content += github_sections['When to Use This Skill'] + "\n\n"
+
+        # Quick Reference: Merge from both sources
+        content += "## 🎯 Quick Reference\n\n"
+
+        if 'Quick Reference' in docs_sections:
+            content += "**From Documentation:**\n\n"
+            content += docs_sections['Quick Reference'] + "\n\n"
+
+        if 'Quick Reference' in github_sections:
+            # Include GitHub's Quick Reference (contains design patterns summary)
+            logger.info(f"DEBUG: Including GitHub Quick Reference ({len(github_sections['Quick Reference'])} chars)")
+            content += github_sections['Quick Reference'] + "\n\n"
+        else:
+            logger.warning("DEBUG: GitHub Quick Reference section NOT FOUND!")
+
+        # Design Patterns (GitHub only - C3.1 analysis)
+        if 'Design Patterns Detected' in github_sections:
+            content += "### Design Patterns Detected\n\n"
+            content += "*From C3.1 codebase analysis (confidence > 0.7)*\n\n"
+            content += github_sections['Design Patterns Detected'] + "\n\n"
+
+        # Code Examples: Prefer GitHub (real usage)
+        content += "## 🧪 Code Examples\n\n"
+
+        if 'Code Examples' in github_sections:
+            content += "**From Repository Tests:**\n\n"
+            # Note: GitHub section already includes "*High-quality examples from codebase (C3.2)*" label
+            content += github_sections['Code Examples'] + "\n\n"
+        elif 'Usage Examples' in github_sections:
+            content += "**From Repository:**\n\n"
+            content += github_sections['Usage Examples'] + "\n\n"
+
+        if 'Example Code Patterns' in docs_sections:
+            content += "**From Documentation:**\n\n"
+            content += docs_sections['Example Code Patterns'] + "\n\n"
+
+        # API Reference: Include from both sources
+        if 'API Reference' in docs_sections or 'API Reference' in github_sections:
+            content += "## 🔧 API Reference\n\n"
+
+            if 'API Reference' in github_sections:
+                # Note: GitHub section already includes "*Extracted from codebase analysis (C2.5)*" label
+                content += github_sections['API Reference'] + "\n\n"
+
+            if 'API Reference' in docs_sections:
+                content += "**Official API Documentation:**\n\n"
+                content += docs_sections['API Reference'] + "\n\n"
+
+        # Known Issues: GitHub only
+        if 'Known Issues' in github_sections:
+            content += "## ⚠️ Known Issues\n\n"
+            content += "*Recent issues from GitHub*\n\n"
+            content += github_sections['Known Issues'] + "\n\n"
+
+        # Recent Releases: GitHub only (include subsection if present)
+        if 'Recent Releases' in github_sections:
+            # Recent Releases might be a subsection within Known Issues
+            # Check if it's standalone
+            releases_content = github_sections['Recent Releases']
+            if releases_content.strip() and not releases_content.startswith('###'):
+                content += "### Recent Releases\n"
+            content += releases_content + "\n\n"
+
+        # Reference documentation
+        content += "## 📖 Reference Documentation\n\n"
+        content += "Organized by source:\n\n"
+        content += "- [Documentation](references/documentation/)\n"
+        content += "- [GitHub](references/github/)\n"
+        content += "- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n\n"
+
+        # Footer
+        content += "---\n\n"
+        content += "*Synthesized from official documentation and codebase analysis by Skill Seekers*\n"
+
+        return content
+
+    def _synthesize_docs_github_pdf(self, skill_mds: Dict[str, str]) -> str:
+        """Synthesize all three sources: documentation + GitHub + PDF.
+
+        Strategy:
+        - Start with docs+github synthesis
+        - Insert PDF chapters after Quick Reference
+        - Add PDF key concepts as supplementary section
+
+        Args:
+            skill_mds: Dict with 'documentation', 'github', and 'pdf' keys
+
+        Returns:
+            Synthesized SKILL.md content
+        """
+        # Start with docs+github synthesis
+        base_content = self._synthesize_docs_github(skill_mds)
+        pdf_sections = self._parse_skill_md_sections(skill_mds.get('pdf', ''))
+
+        # Find insertion point after Quick Reference
+        lines = base_content.split('\n')
+        insertion_index = -1
+
+        for i, line in enumerate(lines):
+            if line.startswith('## 🧪 Code Examples') or line.startswith('## 🔧 API Reference'):
+                insertion_index = i
+                break
+
+        if insertion_index == -1:
+            # Fallback: insert before Reference Documentation
+            for i, line in enumerate(lines):
+                if line.startswith('## 📖 Reference Documentation'):
+                    insertion_index = i
+                    break
+
+        # Build PDF section
+        pdf_content_lines = []
+
+        # Add Chapter Overview
+        if 'Chapter Overview' in pdf_sections:
+            pdf_content_lines.append("## 📚 PDF Documentation Structure\n")
+            pdf_content_lines.append("*From PDF analysis*\n")
+            pdf_content_lines.append(pdf_sections['Chapter Overview'])
+            pdf_content_lines.append("\n")
+
+        # Add Key Concepts
+        if 'Key Concepts' in pdf_sections:
+            pdf_content_lines.append("## 🔍 Key Concepts\n")
+            pdf_content_lines.append("*Extracted from PDF headings*\n")
+            pdf_content_lines.append(pdf_sections['Key Concepts'])
+            pdf_content_lines.append("\n")
+
+        # Insert PDF content
+        if pdf_content_lines and insertion_index != -1:
+            lines[insertion_index:insertion_index] = pdf_content_lines
+        elif pdf_content_lines:
+            # Append at end before footer
+            footer_index = -1
+            for i, line in enumerate(lines):
+                if line.startswith('---') and i > len(lines) - 5:
+                    footer_index = i
+                    break
+            if footer_index != -1:
+                lines[footer_index:footer_index] = pdf_content_lines
+
+        # Update reference documentation to include PDF
+        final_content = '\n'.join(lines)
+        final_content = final_content.replace(
+            '- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n',
+            '- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n- [PDF Documentation](references/pdf/)\n'
+        )
+
+        return final_content
+
     def _generate_skill_md(self):
-        """Generate main SKILL.md file."""
+        """Generate main SKILL.md file using synthesis formulas.
+
+        Strategy:
+        1. Try to load standalone SKILL.md from each source
+        2. If found, use synthesis formulas for rich content
+        3. If not found, fall back to legacy minimal generation
+        """
         skill_path = os.path.join(self.skill_dir, 'SKILL.md')
 
-        # Generate skill name (lowercase, hyphens only, max 64 chars)
-        skill_name = self.name.lower().replace('_', '-').replace(' ', '-')[:64]
+        # Try to load source SKILL.md files
+        skill_mds = self._load_source_skill_mds()
 
-        # Truncate description to 1024 chars if needed
+        # Determine synthesis strategy based on available sources
+        has_docs = 'documentation' in skill_mds
+        has_github = 'github' in skill_mds
+        has_pdf = 'pdf' in skill_mds
+
+        content = None
+
+        # Apply appropriate synthesis formula
+        if has_docs and has_github and has_pdf:
+            logger.info("Synthesizing: documentation + GitHub + PDF")
+            content = self._synthesize_docs_github_pdf(skill_mds)
+
+        elif has_docs and has_github:
+            logger.info("Synthesizing: documentation + GitHub")
+            content = self._synthesize_docs_github(skill_mds)
+
+        elif has_docs and has_pdf:
+            logger.info("Synthesizing: documentation + PDF")
+            content = self._synthesize_docs_pdf(skill_mds)
+
+        elif has_github and has_pdf:
+            logger.info("Synthesizing: GitHub + PDF")
+            content = self._synthesize_github_pdf(skill_mds)
+
+        elif has_docs:
+            logger.info("Using documentation SKILL.md as-is")
+            content = skill_mds['documentation']
+
+        elif has_github:
+            logger.info("Using GitHub SKILL.md as-is")
+            content = skill_mds['github']
+
+        elif has_pdf:
+            logger.info("Using PDF SKILL.md as-is")
+            content = skill_mds['pdf']
+
+        # Fallback: generate minimal SKILL.md (legacy behavior)
+        if not content:
+            logger.warning("No source SKILL.md files found, generating minimal SKILL.md (legacy)")
+            content = self._generate_minimal_skill_md()
+
+        # Write final content
+        with open(skill_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        logger.info(f"Created SKILL.md ({len(content)} chars, ~{len(content.split())} words)")
+
+    def _synthesize_docs_pdf(self, skill_mds: Dict[str, str]) -> str:
+        """Synthesize documentation + PDF sources.
+
+        Strategy:
+        - Start with docs SKILL.md
+        - Insert PDF chapters and key concepts as supplementary sections
+
+        Args:
+            skill_mds: Dict with 'documentation' and 'pdf' keys
+
+        Returns:
+            Synthesized SKILL.md content
+        """
+        docs_content = skill_mds['documentation']
+        pdf_sections = self._parse_skill_md_sections(skill_mds['pdf'])
+
+        lines = docs_content.split('\n')
+        insertion_index = -1
+
+        # Find insertion point before Reference Documentation
+        for i, line in enumerate(lines):
+            if line.startswith('## 📖 Reference') or line.startswith('## Reference'):
+                insertion_index = i
+                break
+
+        # Build PDF sections
+        pdf_content_lines = []
+
+        if 'Chapter Overview' in pdf_sections:
+            pdf_content_lines.append("## 📚 PDF Documentation Structure\n")
+            pdf_content_lines.append("*From PDF analysis*\n")
+            pdf_content_lines.append(pdf_sections['Chapter Overview'])
+            pdf_content_lines.append("\n")
+
+        if 'Key Concepts' in pdf_sections:
+            pdf_content_lines.append("## 🔍 Key Concepts\n")
+            pdf_content_lines.append("*Extracted from PDF headings*\n")
+            pdf_content_lines.append(pdf_sections['Key Concepts'])
+            pdf_content_lines.append("\n")
+
+        # Insert PDF content
+        if pdf_content_lines and insertion_index != -1:
+            lines[insertion_index:insertion_index] = pdf_content_lines
+
+        return '\n'.join(lines)
+
+    def _synthesize_github_pdf(self, skill_mds: Dict[str, str]) -> str:
+        """Synthesize GitHub + PDF sources.
+
+        Strategy:
+        - Start with GitHub SKILL.md (has C3.x analysis)
+        - Add PDF documentation structure as supplementary section
+
+        Args:
+            skill_mds: Dict with 'github' and 'pdf' keys
+
+        Returns:
+            Synthesized SKILL.md content
+        """
+        github_content = skill_mds['github']
+        pdf_sections = self._parse_skill_md_sections(skill_mds['pdf'])
+
+        lines = github_content.split('\n')
+        insertion_index = -1
+
+        # Find insertion point before Reference Documentation
+        for i, line in enumerate(lines):
+            if line.startswith('## 📖 Reference') or line.startswith('## Reference'):
+                insertion_index = i
+                break
+
+        # Build PDF sections
+        pdf_content_lines = []
+
+        if 'Chapter Overview' in pdf_sections:
+            pdf_content_lines.append("## 📚 PDF Documentation Structure\n")
+            pdf_content_lines.append("*From PDF analysis*\n")
+            pdf_content_lines.append(pdf_sections['Chapter Overview'])
+            pdf_content_lines.append("\n")
+
+        # Insert PDF content
+        if pdf_content_lines and insertion_index != -1:
+            lines[insertion_index:insertion_index] = pdf_content_lines
+
+        return '\n'.join(lines)
+
+    def _generate_minimal_skill_md(self) -> str:
+        """Generate minimal SKILL.md (legacy fallback behavior).
+
+        Used when no source SKILL.md files are available.
+        """
+        skill_name = self.name.lower().replace('_', '-').replace(' ', '-')[:64]
         desc = self.description[:1024] if len(self.description) > 1024 else self.description
 
         content = f"""---
@@ -156,10 +617,7 @@ This skill combines knowledge from multiple sources:
         content += "\n---\n\n"
         content += "*Generated by Skill Seeker's unified multi-source scraper*\n"
 
-        with open(skill_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-
-        logger.info(f"Created SKILL.md")
+        return content
 
     def _format_merged_apis(self) -> str:
         """Format merged APIs section with inline conflict warnings."""

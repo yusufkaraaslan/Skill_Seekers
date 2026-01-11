@@ -195,7 +195,7 @@ class LocalSkillEnhancer:
             summarization_ratio: Target size ratio when summarizing (0.3 = 30%)
         """
 
-        # Read reference files
+        # Read reference files (with enriched metadata)
         references = read_reference_files(
             self.skill_dir,
             max_chars=LOCAL_CONTENT_LIMIT,
@@ -206,8 +206,13 @@ class LocalSkillEnhancer:
             print("❌ No reference files found")
             return None
 
+        # Analyze sources
+        sources_found = set()
+        for metadata in references.values():
+            sources_found.add(metadata['source'])
+
         # Calculate total size
-        total_ref_size = sum(len(c) for c in references.values())
+        total_ref_size = sum(meta['size'] for meta in references.values())
 
         # Apply summarization if requested or if content is too large
         if use_summarization or total_ref_size > 30000:
@@ -217,13 +222,12 @@ class LocalSkillEnhancer:
                 print()
 
             # Summarize each reference
-            summarized_refs = {}
-            for filename, content in references.items():
-                summarized = self.summarize_reference(content, summarization_ratio)
-                summarized_refs[filename] = summarized
+            for filename, metadata in references.items():
+                summarized = self.summarize_reference(metadata['content'], summarization_ratio)
+                metadata['content'] = summarized
+                metadata['size'] = len(summarized)
 
-            references = summarized_refs
-            new_size = sum(len(c) for c in references.values())
+            new_size = sum(meta['size'] for meta in references.values())
             print(f"  ✓ Reduced from {total_ref_size:,} to {new_size:,} chars ({int(new_size/total_ref_size*100)}%)")
             print()
 
@@ -232,67 +236,134 @@ class LocalSkillEnhancer:
         if self.skill_md_path.exists():
             current_skill_md = self.skill_md_path.read_text(encoding='utf-8')
 
-        # Build prompt
+        # Analyze conflicts if present
+        has_conflicts = any('conflicts' in meta['path'] for meta in references.values())
+
+        # Build prompt with multi-source awareness
         prompt = f"""I need you to enhance the SKILL.md file for the {self.skill_dir.name} skill.
+
+SKILL OVERVIEW:
+- Name: {self.skill_dir.name}
+- Source Types: {', '.join(sorted(sources_found))}
+- Multi-Source: {'Yes' if len(sources_found) > 1 else 'No'}
+- Conflicts Detected: {'Yes - see conflicts.md in references' if has_conflicts else 'No'}
 
 CURRENT SKILL.MD:
 {'-'*60}
 {current_skill_md if current_skill_md else '(No existing SKILL.md - create from scratch)'}
 {'-'*60}
 
-REFERENCE DOCUMENTATION:
+SOURCE ANALYSIS:
 {'-'*60}
+This skill combines knowledge from {len(sources_found)} source type(s):
+
 """
 
-        # Add references (already summarized if needed)
-        for filename, content in references.items():
-            # Further limit per-file to 12K to be safe
-            max_per_file = 12000
-            if len(content) > max_per_file:
-                content = content[:max_per_file] + "\n\n[Content truncated for size...]"
-            prompt += f"\n## {filename}\n{content}\n"
+        # Group references by source type
+        by_source = {}
+        for filename, metadata in references.items():
+            source = metadata['source']
+            if source not in by_source:
+                by_source[source] = []
+            by_source[source].append((filename, metadata))
+
+        # Add source breakdown
+        for source in sorted(by_source.keys()):
+            files = by_source[source]
+            prompt += f"\n**{source.upper()} ({len(files)} file(s))**\n"
+            for filename, metadata in files[:5]:  # Top 5 per source
+                prompt += f"- {filename} (confidence: {metadata['confidence']}, {metadata['size']:,} chars)\n"
+            if len(files) > 5:
+                prompt += f"- ... and {len(files) - 5} more\n"
 
         prompt += f"""
 {'-'*60}
 
+REFERENCE DOCUMENTATION:
+{'-'*60}
+"""
+
+        # Add references grouped by source with metadata
+        for source in sorted(by_source.keys()):
+            prompt += f"\n### {source.upper()} SOURCES\n\n"
+            for filename, metadata in by_source[source]:
+                # Further limit per-file to 12K to be safe
+                content = metadata['content']
+                max_per_file = 12000
+                if len(content) > max_per_file:
+                    content = content[:max_per_file] + "\n\n[Content truncated for size...]"
+
+                prompt += f"\n#### {filename}\n"
+                prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                prompt += f"{content}\n"
+
+        prompt += f"""
+{'-'*60}
+
+REFERENCE PRIORITY (when sources differ):
+1. **Code patterns (codebase_analysis)**: Ground truth - what the code actually does
+2. **Official documentation**: Intended API and usage patterns
+3. **GitHub issues**: Real-world usage and known problems
+4. **PDF documentation**: Additional context and tutorials
+
 YOUR TASK:
-Create an EXCELLENT SKILL.md file that will help Claude use this documentation effectively.
+Create an EXCELLENT SKILL.md file that synthesizes knowledge from multiple sources.
 
 Requirements:
-1. **Clear "When to Use This Skill" section**
+1. **Multi-Source Synthesis**
+   - Acknowledge that this skill combines multiple sources
+   - Highlight agreements between sources (builds confidence)
+   - Note discrepancies transparently (if present)
+   - Use source priority when synthesizing conflicting information
+
+2. **Clear "When to Use This Skill" section**
    - Be SPECIFIC about trigger conditions
    - List concrete use cases
+   - Include perspective from both docs AND real-world usage (if GitHub/codebase data available)
 
-2. **Excellent Quick Reference section**
-   - Extract 5-10 of the BEST, most practical code examples from the reference docs
+3. **Excellent Quick Reference section**
+   - Extract 5-10 of the BEST, most practical code examples
+   - Prefer examples from HIGH CONFIDENCE sources first
+   - If code examples exist from codebase analysis, prioritize those (real usage)
+   - If docs examples exist, include those too (official patterns)
    - Choose SHORT, clear examples (5-20 lines max)
-   - Include both simple and intermediate examples
    - Use proper language tags (cpp, python, javascript, json, etc.)
-   - Add clear descriptions for each example
+   - Add clear descriptions noting the source (e.g., "From official docs" or "From codebase")
 
-3. **Detailed Reference Files description**
+4. **Detailed Reference Files description**
    - Explain what's in each reference file
-   - Help users navigate the documentation
+   - Note the source type and confidence level
+   - Help users navigate multi-source documentation
 
-4. **Practical "Working with This Skill" section**
+5. **Practical "Working with This Skill" section**
    - Clear guidance for beginners, intermediate, and advanced users
-   - Navigation tips
+   - Navigation tips for multi-source references
+   - How to resolve conflicts if present
 
-5. **Key Concepts section** (if applicable)
+6. **Key Concepts section** (if applicable)
    - Explain core concepts
    - Define important terminology
+   - Reconcile differences between sources if needed
+
+7. **Conflict Handling** (if conflicts detected)
+   - Add a "Known Discrepancies" section
+   - Explain major conflicts transparently
+   - Provide guidance on which source to trust in each case
 
 IMPORTANT:
 - Extract REAL examples from the reference docs above
+- Prioritize HIGH CONFIDENCE sources when synthesizing
+- Note source attribution when helpful (e.g., "Official docs say X, but codebase shows Y")
+- Make discrepancies transparent, not hidden
 - Prioritize SHORT, clear examples
 - Make it actionable and practical
 - Keep the frontmatter (---\\nname: ...\\n---) intact
 - Use proper markdown formatting
 
 SAVE THE RESULT:
-Save the complete enhanced SKILL.md to: {self.skill_md_path.absolute()}
+Save the complete enhanced SKILL.md to: SKILL.md
 
-First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').absolute()}
+First, backup the original to: SKILL.md.backup
 """
 
         return prompt
@@ -381,7 +452,7 @@ First, backup the original to: {self.skill_md_path.with_suffix('.md.backup').abs
             return False
 
         print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
+        total_size = sum(ref['size'] for ref in references.values())
         print(f"  ✓ Total size: {total_size:,} characters\n")
 
         # Check if we need smart summarization
@@ -530,7 +601,8 @@ rm {prompt_file}
                 ['claude', prompt_file],
                 capture_output=True,
                 text=True,
-                timeout=timeout
+                timeout=timeout,
+                cwd=str(self.skill_dir)  # Run from skill directory
             )
 
             elapsed = time.time() - start_time

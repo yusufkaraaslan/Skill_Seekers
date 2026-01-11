@@ -1121,7 +1121,13 @@ This skill should be triggered when:
         # Add actual quick reference patterns
         if quick_ref:
             for i, pattern in enumerate(quick_ref[:8], 1):
-                content += f"**Pattern {i}:** {pattern.get('description', 'Example pattern')}\n\n"
+                desc = pattern.get('description', 'Example pattern')
+                # Format description: extract first sentence, truncate if too long
+                first_sentence = desc.split('.')[0] if '.' in desc else desc
+                if len(first_sentence) > 150:
+                    first_sentence = first_sentence[:147] + '...'
+
+                content += f"**Pattern {i}:** {first_sentence}\n\n"
                 content += "```\n"
                 content += pattern.get('code', '')[:300]
                 content += "\n```\n\n"

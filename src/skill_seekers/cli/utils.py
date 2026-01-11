@@ -179,11 +179,12 @@ def validate_zip_file(zip_path: Union[str, Path]) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
-def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, preview_limit: int = 40000) -> Dict[str, str]:
-    """Read reference files from a skill directory with size limits.
+def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, preview_limit: int = 40000) -> Dict[str, Dict]:
+    """Read reference files from a skill directory with enriched metadata.
 
     This function reads markdown files from the references/ subdirectory
     of a skill, applying both per-file and total content limits.
+    Returns enriched metadata including source type, confidence, and path.
 
     Args:
         skill_dir (str or Path): Path to skill directory
@@ -191,38 +192,110 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         preview_limit (int): Maximum characters per file (default: 40000)
 
     Returns:
-        dict: Dictionary mapping filename to content
+        dict: Dictionary mapping filename to metadata dict with keys:
+            - 'content': File content
+            - 'source': Source type (documentation/github/pdf/api/codebase_analysis)
+            - 'confidence': Confidence level (high/medium/low)
+            - 'path': Relative path from references directory
 
     Example:
         >>> refs = read_reference_files('output/react/', max_chars=50000)
-        >>> len(refs)
-        5
+        >>> refs['documentation/api.md']['source']
+        'documentation'
+        >>> refs['documentation/api.md']['confidence']
+        'high'
     """
     from pathlib import Path
 
     skill_path = Path(skill_dir)
     references_dir = skill_path / "references"
-    references: Dict[str, str] = {}
+    references: Dict[str, Dict] = {}
 
     if not references_dir.exists():
         print(f"⚠ No references directory found at {references_dir}")
         return references
 
+    def _determine_source_metadata(relative_path: Path) -> Tuple[str, str]:
+        """Determine source type and confidence level from path.
+
+        Returns:
+            tuple: (source_type, confidence_level)
+        """
+        path_str = str(relative_path)
+
+        # Documentation sources (official docs)
+        if path_str.startswith('documentation/'):
+            return 'documentation', 'high'
+
+        # GitHub sources
+        elif path_str.startswith('github/'):
+            # README and releases are medium confidence
+            if 'README' in path_str or 'releases' in path_str:
+                return 'github', 'medium'
+            # Issues are low confidence (user reports)
+            elif 'issues' in path_str:
+                return 'github', 'low'
+            else:
+                return 'github', 'medium'
+
+        # PDF sources (books, manuals)
+        elif path_str.startswith('pdf/'):
+            return 'pdf', 'high'
+
+        # Merged API (synthesized from multiple sources)
+        elif path_str.startswith('api/'):
+            return 'api', 'high'
+
+        # Codebase analysis (C3.x automated analysis)
+        elif path_str.startswith('codebase_analysis/'):
+            # ARCHITECTURE.md is high confidence (comprehensive)
+            if 'ARCHITECTURE' in path_str:
+                return 'codebase_analysis', 'high'
+            # Patterns and examples are medium (heuristic-based)
+            elif 'patterns' in path_str or 'examples' in path_str:
+                return 'codebase_analysis', 'medium'
+            # Configuration is high (direct extraction)
+            elif 'configuration' in path_str:
+                return 'codebase_analysis', 'high'
+            else:
+                return 'codebase_analysis', 'medium'
+
+        # Conflicts report (discrepancy detection)
+        elif 'conflicts' in path_str:
+            return 'conflicts', 'medium'
+
+        # Fallback
+        else:
+            return 'unknown', 'medium'
+
     total_chars = 0
     # Search recursively for all .md files (including subdirectories like github/README.md)
     for ref_file in sorted(references_dir.rglob("*.md")):
-        if ref_file.name == "index.md":
-            continue
+        # Note: We now include index.md files as they contain important content
+        # (patterns, examples, configuration analysis)
 
         content = ref_file.read_text(encoding='utf-8')
 
         # Limit size per file
+        truncated = False
         if len(content) > preview_limit:
             content = content[:preview_limit] + "\n\n[Content truncated...]"
+            truncated = True
 
         # Use relative path from references_dir as key for nested files
         relative_path = ref_file.relative_to(references_dir)
-        references[str(relative_path)] = content
+        source_type, confidence = _determine_source_metadata(relative_path)
+
+        # Build enriched metadata
+        references[str(relative_path)] = {
+            'content': content,
+            'source': source_type,
+            'confidence': confidence,
+            'path': str(relative_path),
+            'truncated': truncated,
+            'size': len(content)
+        }
+
         total_chars += len(content)
 
         # Stop if we've read enough
