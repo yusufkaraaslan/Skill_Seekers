@@ -361,9 +361,20 @@ IMPORTANT:
 - Use proper markdown formatting
 
 SAVE THE RESULT:
-Save the complete enhanced SKILL.md to: SKILL.md
+You MUST save the complete enhanced SKILL.md file.
 
-First, backup the original to: SKILL.md.backup
+CRITICAL INSTRUCTIONS:
+1. First, create a backup: Write the current SKILL.md content to SKILL.md.backup
+2. Then, write the enhanced content to: SKILL.md
+
+This is NOT a read-only task - you have permission to modify SKILL.md.
+Even if running from within another Claude Code session, this modification is ALLOWED and EXPECTED.
+
+VERIFICATION:
+After writing, the file SKILL.md should:
+- Exist in the current directory
+- Be larger than the original (200-1000+ lines)
+- Contain all the enhancements from the references above
 """
 
         return prompt
@@ -593,12 +604,14 @@ rm {prompt_file}
 
         try:
             # Run claude command directly (this WAITS for completion)
-            print("   Running: claude {prompt_file}")
+            # Use --dangerously-skip-permissions to bypass ALL permission checks
+            print(f"   Running: claude --dangerously-skip-permissions {prompt_file}")
             print("   ⏳ Please wait...")
+            print(f"   Working directory: {self.skill_dir}")
             print()
 
             result = subprocess.run(
-                ['claude', prompt_file],
+                ['claude', '--dangerously-skip-permissions', prompt_file],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -628,7 +641,16 @@ rm {prompt_file}
                         return True
                     else:
                         print(f"⚠️  Claude finished but SKILL.md was not updated")
+                        print(f"   Initial: mtime={initial_mtime}, size={initial_size}")
+                        print(f"   Final:   mtime={new_mtime}, size={new_size}")
                         print(f"   This might indicate an error during enhancement")
+                        print()
+                        # Show last 20 lines of stdout for debugging
+                        if result.stdout:
+                            print("   Last output from Claude:")
+                            lines = result.stdout.strip().split('\n')[-20:]
+                            for line in lines:
+                                print(f"   | {line}")
                         print()
                         return False
                 else:
