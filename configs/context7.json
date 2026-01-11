@@ -1,0 +1,35 @@
+{
+  "name": "context7",
+  "description": "Context7 MCP server documentation - Use this skill when working with Context7, implementing real-time library documentation features, understanding MCP protocol integration, or building AI coding assistants with up-to-date documentation.",
+  "repo": "upstash/context7",
+  "github_token": null,
+  "include_issues": false,
+  "max_issues": 0,
+  "include_changelog": true,
+  "include_releases": true,
+  "include_code": true,
+  "file_patterns": [
+    "*.md",
+    "*.json",
+    "*.ts",
+    "*.js",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "package.json",
+    "tsconfig.json",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "docs/**/*.md"
+  ],
+  "exclude_patterns": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    "*.test.ts",
+    "*.test.js",
+    "*.spec.ts",
+    "*.spec.js"
+  ]
+}
