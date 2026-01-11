@@ -16,8 +16,19 @@ class LlmsTxtParser:
         """
         Extract all URLs from the llms.txt content.
 
+        Supports both markdown-style links [text](url) and bare URLs.
+        Resolves relative URLs using base_url if provided.
+        Filters out malformed URLs with invalid anchor patterns.
+
         Returns:
-            List of unique URLs found in the content
+            List of unique, cleaned URLs found in the content.
+            Returns empty list if no valid URLs found.
+
+        Note:
+            - Markdown links: [Getting Started](./docs/guide.md)
+            - Bare URLs: https://example.com/api.md
+            - Relative paths resolved with base_url
+            - Invalid anchors (#section/path.md) are stripped
         """
         urls = set()
 
@@ -48,11 +59,23 @@ class LlmsTxtParser:
         """
         Clean and validate URL, removing invalid anchor patterns.
 
+        Detects and strips malformed anchors that contain path separators.
+        Valid: https://example.com/page.md#section
+        Invalid: https://example.com/page#section/index.html.md
+
         Args:
-            url: URL to clean
+            url: URL to clean (absolute or relative)
 
         Returns:
-            Cleaned URL or empty string if invalid
+            Cleaned URL with malformed anchors stripped.
+            Returns base URL if anchor contains '/' (malformed).
+            Returns original URL if anchor is valid or no anchor present.
+
+        Example:
+            >>> parser._clean_url("https://ex.com/page#sec/path.md")
+            "https://ex.com/page"
+            >>> parser._clean_url("https://ex.com/page.md#section")
+            "https://ex.com/page.md#section"
         """
         # Skip URLs with path after anchor (e.g., #section/index.html.md)
         # These are malformed and return duplicate HTML content

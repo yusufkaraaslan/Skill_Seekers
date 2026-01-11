@@ -287,6 +287,10 @@ This skill combines knowledge from multiple sources:
 
     def _generate_docs_references(self, docs_list: List[Dict]):
         """Generate references from multiple documentation sources."""
+        # Skip if no documentation sources
+        if not docs_list:
+            return
+
         docs_dir = os.path.join(self.skill_dir, 'references', 'documentation')
         os.makedirs(docs_dir, exist_ok=True)
 
@@ -347,6 +351,10 @@ This skill combines knowledge from multiple sources:
 
     def _generate_github_references(self, github_list: List[Dict]):
         """Generate references from multiple GitHub sources."""
+        # Skip if no GitHub sources
+        if not github_list:
+            return
+
         github_dir = os.path.join(self.skill_dir, 'references', 'github')
         os.makedirs(github_dir, exist_ok=True)
 
@@ -429,6 +437,10 @@ This skill combines knowledge from multiple sources:
 
     def _generate_pdf_references(self, pdf_list: List[Dict]):
         """Generate references from PDF sources."""
+        # Skip if no PDF sources
+        if not pdf_list:
+            return
+
         pdf_dir = os.path.join(self.skill_dir, 'references', 'pdf')
         os.makedirs(pdf_dir, exist_ok=True)
 

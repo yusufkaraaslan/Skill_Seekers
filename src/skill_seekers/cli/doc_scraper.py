@@ -350,14 +350,34 @@ class DocToSkillConverter:
         return page
 
     def _extract_markdown_content(self, content: str, url: str) -> Dict[str, Any]:
-        """Extract content from a Markdown file.
+        """Extract structured content from a Markdown file.
+
+        Parses markdown files from llms.txt URLs to extract:
+        - Title from first h1 heading
+        - Headings (h2-h6, excluding h1)
+        - Code blocks with language detection
+        - Internal .md links for BFS crawling
+        - Content paragraphs (>20 chars)
+
+        Auto-detects HTML content and falls back to _extract_html_as_markdown.
 
         Args:
-            content: Raw markdown content (or HTML if server returned HTML)
-            url: Source URL
+            content: Raw markdown content string (or HTML if server returned HTML)
+            url: Source URL for resolving relative links
 
         Returns:
-            Page dict with title, content, code_samples, headings, links
+            Dict with keys:
+                - url: str - Source URL
+                - title: str - Extracted from first # heading
+                - content: str - Paragraphs joined with double newlines
+                - headings: List[Dict] - {'level': 'h2', 'text': str, 'id': str}
+                - code_samples: List[Dict] - {'code': str, 'language': str}
+                - links: List[str] - Absolute URLs to other .md files
+                - patterns: List - Empty (reserved for future use)
+
+        Note:
+            Only .md links are extracted to avoid client-side rendered HTML pages.
+            Anchor fragments (#section) are stripped from links.
         """
         import re
 
@@ -434,12 +454,34 @@ class DocToSkillConverter:
     def _extract_html_as_markdown(self, html_content: str, url: str) -> Dict[str, Any]:
         """Extract content from HTML and convert to markdown-like structure.
 
+        Fallback method when .md URL returns HTML content instead of markdown.
+        Uses BeautifulSoup to extract structured data from HTML elements.
+
+        Extraction strategy:
+        1. Title from <title> tag
+        2. Main content from <main>, <article>, [role="main"], or <body>
+        3. Headings (h1-h6) with text and id attributes
+        4. Code blocks from <pre><code> or <pre> tags
+        5. Text content from paragraphs
+
         Args:
-            html_content: Raw HTML content
-            url: Source URL
+            html_content: Raw HTML content string
+            url: Source URL (for reference in result dict)
 
         Returns:
-            Page dict with title, content, code_samples, headings, links
+            Dict with keys:
+                - url: str - Source URL
+                - title: str - From <title> tag, cleaned
+                - content: str - Text content from main area
+                - headings: List[Dict] - {'level': 'h2', 'text': str, 'id': str}
+                - code_samples: List[Dict] - {'code': str, 'language': str}
+                - links: List - Empty (HTML links not extracted to avoid client-side routes)
+                - patterns: List - Empty (reserved for future use)
+
+        Note:
+            Prefers <main> or <article> tags for content area.
+            Falls back to <body> if no semantic content container found.
+            Language detection uses detect_language() method.
         """
         page = {
             'url': url,
