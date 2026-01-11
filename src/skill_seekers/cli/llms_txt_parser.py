@@ -3,12 +3,90 @@
 
 import re
 from typing import List, Dict
+from urllib.parse import urljoin
 
 class LlmsTxtParser:
     """Parse llms.txt markdown content into page structures"""
 
-    def __init__(self, content: str):
+    def __init__(self, content: str, base_url: str = None):
         self.content = content
+        self.base_url = base_url
+
+    def extract_urls(self) -> List[str]:
+        """
+        Extract all URLs from the llms.txt content.
+
+        Supports both markdown-style links [text](url) and bare URLs.
+        Resolves relative URLs using base_url if provided.
+        Filters out malformed URLs with invalid anchor patterns.
+
+        Returns:
+            List of unique, cleaned URLs found in the content.
+            Returns empty list if no valid URLs found.
+
+        Note:
+            - Markdown links: [Getting Started](./docs/guide.md)
+            - Bare URLs: https://example.com/api.md
+            - Relative paths resolved with base_url
+            - Invalid anchors (#section/path.md) are stripped
+        """
+        urls = set()
+
+        # Match markdown links: [text](url)
+        md_links = re.findall(r'\[([^\]]*)\]\(([^)]+)\)', self.content)
+        for _, url in md_links:
+            if url.startswith('http'):
+                clean_url = self._clean_url(url)
+                if clean_url:
+                    urls.add(clean_url)
+            elif self.base_url and not url.startswith('#'):
+                clean_url = self._clean_url(urljoin(self.base_url, url))
+                if clean_url:
+                    urls.add(clean_url)
+
+        # Match bare URLs
+        bare_urls = re.findall(r'https?://[^\s\)\]<>"\']+', self.content)
+        for url in bare_urls:
+            # Clean trailing punctuation
+            url = url.rstrip('.,;:')
+            clean_url = self._clean_url(url)
+            if clean_url:
+                urls.add(clean_url)
+
+        return list(urls)
+
+    def _clean_url(self, url: str) -> str:
+        """
+        Clean and validate URL, removing invalid anchor patterns.
+
+        Detects and strips malformed anchors that contain path separators.
+        Valid: https://example.com/page.md#section
+        Invalid: https://example.com/page#section/index.html.md
+
+        Args:
+            url: URL to clean (absolute or relative)
+
+        Returns:
+            Cleaned URL with malformed anchors stripped.
+            Returns base URL if anchor contains '/' (malformed).
+            Returns original URL if anchor is valid or no anchor present.
+
+        Example:
+            >>> parser._clean_url("https://ex.com/page#sec/path.md")
+            "https://ex.com/page"
+            >>> parser._clean_url("https://ex.com/page.md#section")
+            "https://ex.com/page.md#section"
+        """
+        # Skip URLs with path after anchor (e.g., #section/index.html.md)
+        # These are malformed and return duplicate HTML content
+        if '#' in url:
+            anchor_pos = url.index('#')
+            after_anchor = url[anchor_pos + 1:]
+            # If there's a path separator after anchor, it's invalid
+            if '/' in after_anchor:
+                # Extract the base URL without the malformed anchor
+                return url[:anchor_pos]
+        return url
 
     def parse(self) -> List[Dict]:
         """

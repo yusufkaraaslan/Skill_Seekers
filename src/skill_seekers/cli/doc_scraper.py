@@ -349,6 +349,193 @@ class DocToSkillConverter:
 
         return page
 
+    def _extract_markdown_content(self, content: str, url: str) -> Dict[str, Any]:
+        """Extract structured content from a Markdown file.
+
+        Parses markdown files from llms.txt URLs to extract:
+        - Title from first h1 heading
+        - Headings (h2-h6, excluding h1)
+        - Code blocks with language detection
+        - Internal .md links for BFS crawling
+        - Content paragraphs (>20 chars)
+
+        Auto-detects HTML content and falls back to _extract_html_as_markdown.
+
+        Args:
+            content: Raw markdown content string (or HTML if server returned HTML)
+            url: Source URL for resolving relative links
+
+        Returns:
+            Dict with keys:
+                - url: str - Source URL
+                - title: str - Extracted from first # heading
+                - content: str - Paragraphs joined with double newlines
+                - headings: List[Dict] - {'level': 'h2', 'text': str, 'id': str}
+                - code_samples: List[Dict] - {'code': str, 'language': str}
+                - links: List[str] - Absolute URLs to other .md files
+                - patterns: List - Empty (reserved for future use)
+
+        Note:
+            Only .md links are extracted to avoid client-side rendered HTML pages.
+            Anchor fragments (#section) are stripped from links.
+        """
+        import re
+
+        # Detect if content is actually HTML (some .md URLs return HTML)
+        if content.strip().startswith('<!DOCTYPE') or content.strip().startswith('<html'):
+            return self._extract_html_as_markdown(content, url)
+
+        page = {
+            'url': url,
+            'title': '',
+            'content': '',
+            'headings': [],
+            'code_samples': [],
+            'patterns': [],
+            'links': []
+        }
+
+        lines = content.split('\n')
+
+        # Extract title from first h1
+        for line in lines:
+            if line.startswith('# '):
+                page['title'] = line[2:].strip()
+                break
+
+        # Extract headings (h2-h6)
+        for line in lines:
+            match = re.match(r'^(#{2,6})\s+(.+)$', line)
+            if match:
+                level = len(match.group(1))
+                text = match.group(2).strip()
+                page['headings'].append({
+                    'level': f'h{level}',
+                    'text': text,
+                    'id': text.lower().replace(' ', '-')
+                })
+
+        # Extract code blocks with language
+        code_blocks = re.findall(r'```(\w+)?\n(.*?)```', content, re.DOTALL)
+        for lang, code in code_blocks:
+            if len(code.strip()) > 10:
+                page['code_samples'].append({
+                    'code': code.strip(),
+                    'language': lang or 'unknown'
+                })
+
+        # Extract content (paragraphs)
+        content_no_code = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+        paragraphs = []
+        for para in content_no_code.split('\n\n'):
+            text = para.strip()
+            # Skip headings and short text
+            if text and len(text) > 20 and not text.startswith('#'):
+                paragraphs.append(text)
+        page['content'] = '\n\n'.join(paragraphs)
+
+        # Extract links from markdown (only .md files to avoid client-side rendered HTML pages)
+        md_links = re.findall(r'\[([^\]]*)\]\(([^)]+)\)', content)
+        for _, href in md_links:
+            if href.startswith('http'):
+                full_url = href
+            elif not href.startswith('#'):
+                full_url = urljoin(url, href)
+            else:
+                continue
+            # Strip anchor fragments
+            full_url = full_url.split('#')[0]
+            # Only include .md URLs to avoid client-side rendered HTML pages
+            if '.md' in full_url and self.is_valid_url(full_url) and full_url not in page['links']:
+                page['links'].append(full_url)
+
+        return page
+
+    def _extract_html_as_markdown(self, html_content: str, url: str) -> Dict[str, Any]:
+        """Extract content from HTML and convert to markdown-like structure.
+
+        Fallback method when .md URL returns HTML content instead of markdown.
+        Uses BeautifulSoup to extract structured data from HTML elements.
+
+        Extraction strategy:
+        1. Title from <title> tag
+        2. Main content from <main>, <article>, [role="main"], or <body>
+        3. Headings (h1-h6) with text and id attributes
+        4. Code blocks from <pre><code> or <pre> tags
+        5. Text content from paragraphs
+
+        Args:
+            html_content: Raw HTML content string
+            url: Source URL (for reference in result dict)
+
+        Returns:
+            Dict with keys:
+                - url: str - Source URL
+                - title: str - From <title> tag, cleaned
+                - content: str - Text content from main area
+                - headings: List[Dict] - {'level': 'h2', 'text': str, 'id': str}
+                - code_samples: List[Dict] - {'code': str, 'language': str}
+                - links: List - Empty (HTML links not extracted to avoid client-side routes)
+                - patterns: List - Empty (reserved for future use)
+
+        Note:
+            Prefers <main> or <article> tags for content area.
+            Falls back to <body> if no semantic content container found.
+            Language detection uses detect_language() method.
+        """
+        page = {
+            'url': url,
+            'title': '',
+            'content': '',
+            'headings': [],
+            'code_samples': [],
+            'patterns': [],
+            'links': []
+        }
+
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Try to extract title
+        title_elem = soup.select_one('title')
+        if title_elem:
+            page['title'] = self.clean_text(title_elem.get_text())
+
+        # Try to find main content area
+        main = soup.select_one('main, article, [role="main"], .content')
+        if not main:
+            main = soup.body if soup.body else soup
+
+        if main:
+            # Extract headings
+            for h in main.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                text = self.clean_text(h.get_text())
+                if text:
+                    page['headings'].append({
+                        'level': h.name,
+                        'text': text,
+                        'id': h.get('id', '')
+                    })
+
+            # Extract code blocks
+            for code_elem in main.select('pre code, pre'):
+                code = code_elem.get_text()
+                if len(code.strip()) > 10:
+                    lang = self.detect_language(code_elem, code)
+                    page['code_samples'].append({
+                        'code': code.strip(),
+                        'language': lang
+                    })
+
+            # Extract paragraphs
+            paragraphs = []
+            for p in main.find_all('p'):
+                text = self.clean_text(p.get_text())
+                if text and len(text) > 20:
+                    paragraphs.append(text)
+            page['content'] = '\n\n'.join(paragraphs)
+
+        return page
+
     def detect_language(self, elem, code):
         """Detect programming language from code block
 
@@ -386,14 +573,19 @@ class DocToSkillConverter:
         return text.strip()
     
     def save_page(self, page: Dict[str, Any]) -> None:
-        """Save page data"""
+        """Save page data (skip pages with empty content)"""
+        # Skip pages with empty or very short content
+        if not page.get('content') or len(page.get('content', '')) < 50:
+            logger.debug("Skipping page with empty/short content: %s", page.get('url', 'unknown'))
+            return
+
         url_hash = hashlib.md5(page['url'].encode()).hexdigest()[:10]
         safe_title = re.sub(r'[^\w\s-]', '', page['title'])[:50]
         safe_title = re.sub(r'[-\s]+', '_', safe_title)
-        
+
         filename = f"{safe_title}_{url_hash}.json"
         filepath = os.path.join(self.data_dir, "pages", filename)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(page, f, indent=2, ensure_ascii=False)
     
@@ -408,6 +600,7 @@ class DocToSkillConverter:
 
         Note:
             Uses threading locks when workers > 1 for thread safety
+            Supports both HTML pages and Markdown (.md) files
         """
         try:
             # Scraping part (no lock needed - independent)
@@ -415,8 +608,12 @@ class DocToSkillConverter:
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
 
-            soup = BeautifulSoup(response.content, 'html.parser')
-            page = self.extract_content(soup, url)
+            # Check if this is a Markdown file
+            if url.endswith('.md') or '.md' in url:
+                page = self._extract_markdown_content(response.text, url)
+            else:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required)
             if self.workers > 1:
@@ -463,6 +660,7 @@ class DocToSkillConverter:
 
         Note:
             Uses asyncio.Lock for async-safe operations instead of threading.Lock
+            Supports both HTML pages and Markdown (.md) files
         """
         async with semaphore:  # Limit concurrent requests
             try:
@@ -471,9 +669,13 @@ class DocToSkillConverter:
                 response = await client.get(url, headers=headers, timeout=30.0)
                 response.raise_for_status()
 
-                # BeautifulSoup parsing (still synchronous, but fast)
-                soup = BeautifulSoup(response.content, 'html.parser')
-                page = self.extract_content(soup, url)
+                # Check if this is a Markdown file
+                if url.endswith('.md') or '.md' in url:
+                    page = self._extract_markdown_content(response.text, url)
+                else:
+                    # BeautifulSoup parsing (still synchronous, but fast)
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
                 logger.info("  %s", url)
@@ -492,6 +694,56 @@ class DocToSkillConverter:
 
             except Exception as e:
                 logger.error("  ✗ Error scraping %s: %s: %s", url, type(e).__name__, e)
+
+    def _convert_to_md_urls(self, urls: List[str]) -> List[str]:
+        """
+        Convert URLs to .md format, trying /index.html.md suffix for non-.md URLs.
+        不预先检查 URL 是否存在，直接加入队列，在爬取时再验证。
+
+        Args:
+            urls: List of URLs to process
+
+        Returns:
+            List of .md URLs (未验证)
+        """
+        md_urls = []
+
+        for url in urls:
+            if '.md' in url:
+                md_urls.append(url)
+            else:
+                # 直接转换为 .md 格式，不发送 HEAD 请求检查
+                url = url.rstrip('/')
+                md_url = f"{url}/index.html.md"
+                md_urls.append(md_url)
+
+        logger.info("  ✓ Converted %d URLs to .md format (will validate during crawl)", len(md_urls))
+        return md_urls
+
+    # ORIGINAL _convert_to_md_urls (with HEAD request validation):
+    # def _convert_to_md_urls(self, urls: List[str]) -> List[str]:
+    #     md_urls = []
+    #     non_md_urls = []
+    #     for url in urls:
+    #         if '.md' in url:
+    #             md_urls.append(url)
+    #         else:
+    #             non_md_urls.append(url)
+    #     if non_md_urls:
+    #         logger.info("  🔄 Trying to convert %d non-.md URLs to .md format...", len(non_md_urls))
+    #         converted = 0
+    #         for url in non_md_urls:
+    #             url = url.rstrip('/')
+    #             md_url = f"{url}/index.html.md"
+    #             try:
+    #                 resp = requests.head(md_url, timeout=5, allow_redirects=True)
+    #                 if resp.status_code == 200:
+    #                     md_urls.append(md_url)
+    #                     converted += 1
+    #             except Exception:
+    #                 pass
+    #         logger.info("  ✓ Converted %d URLs to .md format", converted)
+    #     return md_urls
 
     def _try_llms_txt(self) -> bool:
         """
@@ -548,7 +800,29 @@ class DocToSkillConverter:
                             logger.info("     ✓ %s (%d chars)", extra_filename, len(extra_content))
 
                 # Parse explicit file for skill building
-                parser = LlmsTxtParser(content)
+                parser = LlmsTxtParser(content, self.base_url)
+
+                # Extract URLs from llms.txt and add to pending_urls for BFS crawling
+                extracted_urls = parser.extract_urls()
+                if extracted_urls:
+                    # Convert non-.md URLs to .md format by trying /index.html.md suffix
+                    md_urls = self._convert_to_md_urls(extracted_urls)
+                    logger.info("\n🔗 Found %d URLs in llms.txt (%d .md files), starting BFS crawl...",
+                               len(extracted_urls), len(md_urls))
+
+                    # Filter URLs based on url_patterns config
+                    for url in md_urls:
+                        if self.is_valid_url(url) and url not in self.visited_urls:
+                            self.pending_urls.append(url)
+
+                    logger.info("  📋 %d URLs added to crawl queue after filtering", len(self.pending_urls))
+
+                    # Return False to trigger HTML scraping with the populated pending_urls
+                    self.llms_txt_detected = True
+                    self.llms_txt_variant = 'explicit'
+                    return False  # Continue with BFS crawling
+
+                # Fallback: if no URLs found, use section-based parsing
                 pages = parser.parse()
 
                 if pages:
@@ -606,7 +880,29 @@ class DocToSkillConverter:
         largest = max(downloaded.items(), key=lambda x: x[1]['size'])
         logger.info("\n📄 Parsing %s for skill building...", largest[1]['filename'])
 
-        parser = LlmsTxtParser(largest[1]['content'])
+        parser = LlmsTxtParser(largest[1]['content'], self.base_url)
+
+        # Extract URLs from llms.txt and add to pending_urls for BFS crawling
+        extracted_urls = parser.extract_urls()
+        if extracted_urls:
+            # Convert non-.md URLs to .md format by trying /index.html.md suffix
+            md_urls = self._convert_to_md_urls(extracted_urls)
+            logger.info("\n🔗 Found %d URLs in llms.txt (%d .md files), starting BFS crawl...",
+                       len(extracted_urls), len(md_urls))
+
+            # Filter URLs based on url_patterns config
+            for url in md_urls:
+                if self.is_valid_url(url) and url not in self.visited_urls:
+                    self.pending_urls.append(url)
+
+            logger.info("  📋 %d URLs added to crawl queue after filtering", len(self.pending_urls))
+
+            # Return False to trigger HTML scraping with the populated pending_urls
+            self.llms_txt_detected = True
+            self.llms_txt_variants = list(downloaded.keys())
+            return False  # Continue with BFS crawling
+
+        # Fallback: if no URLs found, use section-based parsing
         pages = parser.parse()
 
         if not pages:

@@ -71,8 +71,15 @@ class UnifiedScraper:
         self.merge_mode = merge_mode or self.config.get('merge_mode', 'rule-based')
         logger.info(f"Merge mode: {self.merge_mode}")
 
-        # Storage for scraped data
-        self.scraped_data = {}
+        # Storage for scraped data - use lists to support multiple sources of same type
+        self.scraped_data = {
+            'documentation': [],  # List of doc sources
+            'github': [],         # List of github sources
+            'pdf': []             # List of pdf sources
+        }
+
+        # Track source index for unique naming (multi-source support)
+        self._source_counters = {'documentation': 0, 'github': 0, 'pdf': 0}
 
         # Output paths - cleaner organization
         self.name = self.config['name']
@@ -240,19 +247,20 @@ class UnifiedScraper:
             shutil.move(docs_data_dir, cache_data_dir)
             logger.info(f"📦 Moved docs data to cache: {cache_data_dir}")
 
-    def _clone_github_repo(self, repo_name: str) -> Optional[str]:
+    def _clone_github_repo(self, repo_name: str, idx: int = 0) -> Optional[str]:
         """
         Clone GitHub repository to cache directory for C3.x analysis.
         Reuses existing clone if already present.
 
         Args:
             repo_name: GitHub repo in format "owner/repo"
+            idx: Source index for unique naming when multiple repos
 
         Returns:
             Path to cloned repo, or None if clone failed
         """
         # Clone to cache repos folder for future reuse
-        repo_dir_name = repo_name.replace('/', '_')  # e.g., encode_httpx
+        repo_dir_name = f"{idx}_{repo_name.replace('/', '_')}"  # e.g., 0_encode_httpx
         clone_path = os.path.join(self.repos_dir, repo_dir_name)
 
         # Check if already cloned
@@ -307,6 +315,14 @@ class UnifiedScraper:
             logger.error("github_scraper.py not found")
             return
 
+        # Multi-source support: Get unique index for this GitHub source
+        idx = self._source_counters['github']
+        self._source_counters['github'] += 1
+
+        # Extract repo identifier for unique naming
+        repo = source['repo']
+        repo_id = repo.replace('/', '_')
+
         # Check if we need to clone for C3.x analysis
         enable_codebase_analysis = source.get('enable_codebase_analysis', True)
         local_repo_path = source.get('local_repo_path')
@@ -315,7 +331,7 @@ class UnifiedScraper:
         # Auto-clone if C3.x analysis is enabled but no local path provided
         if enable_codebase_analysis and not local_repo_path:
             logger.info("🔬 C3.x codebase analysis enabled - cloning repository...")
-            cloned_repo_path = self._clone_github_repo(source['repo'])
+            cloned_repo_path = self._clone_github_repo(repo, idx=idx)
             if cloned_repo_path:
                 local_repo_path = cloned_repo_path
                 logger.info(f"✅ Using cloned repo for C3.x analysis: {local_repo_path}")
@@ -325,8 +341,8 @@ class UnifiedScraper:
 
         # Create config for GitHub scraper
         github_config = {
-            'repo': source['repo'],
-            'name': f"{self.name}_github",
+            'repo': repo,
+            'name': f"{self.name}_github_{idx}_{repo_id}",
             'github_token': source.get('github_token'),
             'include_issues': source.get('include_issues', True),
             'max_issues': source.get('max_issues', 100),
@@ -369,8 +385,8 @@ class UnifiedScraper:
         if cloned_repo_path:
             logger.info(f"📁 Repository clone saved for future use: {cloned_repo_path}")
 
-        # Save data to unified location
-        github_data_file = os.path.join(self.data_dir, 'github_data.json')
+        # Save data to unified location with unique filename
+        github_data_file = os.path.join(self.data_dir, f'github_data_{idx}_{repo_id}.json')
         with open(github_data_file, 'w', encoding='utf-8') as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
@@ -379,10 +395,14 @@ class UnifiedScraper:
         with open(converter_data_file, 'w', encoding='utf-8') as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
-        self.scraped_data['github'] = {
+        # Append to list instead of overwriting (multi-source support)
+        self.scraped_data['github'].append({
+            'repo': repo,
+            'repo_id': repo_id,
+            'idx': idx,
             'data': github_data,
             'data_file': github_data_file
-        }
+        })
 
         # Build standalone SKILL.md for synthesis using GitHubToSkillConverter
         try:
@@ -423,9 +443,17 @@ class UnifiedScraper:
             logger.error("pdf_scraper.py not found")
             return
 
+        # Multi-source support: Get unique index for this PDF source
+        idx = self._source_counters['pdf']
+        self._source_counters['pdf'] += 1
+
+        # Extract PDF identifier for unique naming (filename without extension)
+        pdf_path = source['path']
+        pdf_id = os.path.splitext(os.path.basename(pdf_path))[0]
+
         # Create config for PDF scraper
         pdf_config = {
-            'name': f"{self.name}_pdf",
+            'name': f"{self.name}_pdf_{idx}_{pdf_id}",
             'pdf': source['path'],
             'extract_tables': source.get('extract_tables', False),
             'ocr': source.get('ocr', False),
@@ -438,14 +466,18 @@ class UnifiedScraper:
         pdf_data = converter.extract_all()
 
         # Save data
-        pdf_data_file = os.path.join(self.data_dir, 'pdf_data.json')
+        pdf_data_file = os.path.join(self.data_dir, f'pdf_data_{idx}_{pdf_id}.json')
         with open(pdf_data_file, 'w', encoding='utf-8') as f:
             json.dump(pdf_data, f, indent=2, ensure_ascii=False)
 
-        self.scraped_data['pdf'] = {
+        # Append to list instead of overwriting
+        self.scraped_data['pdf'].append({
+            'pdf_path': pdf_path,
+            'pdf_id': pdf_id,
+            'idx': idx,
             'data': pdf_data,
             'data_file': pdf_data_file
-        }
+        })
 
         # Build standalone SKILL.md for synthesis
         try:

@@ -1,0 +1,71 @@
+{
+  "name": "medusa-mercurjs",
+  "description": "Complete Medusa v2 + MercurJS multi-vendor e-commerce framework knowledge. Use when building headless commerce applications, implementing multi-vendor marketplaces, or understanding Medusa modules/workflows.",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.medusajs.com",
+      "llms_txt_url": "https://docs.medusajs.com/llms-full.txt",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "main, article, .content",
+        "title": "h1",
+        "code_blocks": "pre"
+      },
+      "url_patterns": {
+        "include": [
+          "/learn",
+          "/resources"
+        ],
+        "exclude": []
+      },
+      "categories": {
+        "installation": ["installation", "install", "docker", "update"],
+        "fundamentals": ["fundamentals", "api-routes", "data-models", "modules", "module-links", "workflows", "events-and-subscribers", "scheduled-jobs", "custom-cli-scripts", "admin", "environment-variables"],
+        "customization": ["customization", "custom-features", "extend-features", "integrate-systems", "customize-admin"],
+        "debugging_testing": ["debugging-and-testing", "logging", "testing", "test-tools", "instrumentation", "feature-flags", "debug-workflows"],
+        "deployment": ["deployment", "production", "deploy", "general"],
+        "commerce_modules": ["commerce-modules", "product", "cart", "order", "payment", "pricing", "tax", "inventory", "fulfillment", "customer", "promotion", "auth", "region", "currency", "sales-channel", "stock-location", "api-key", "user"],
+        "infrastructure_modules": ["infrastructure-modules", "caching", "event", "file", "locking", "notification", "workflow-engine", "analytics"],
+        "storefront": ["storefront-development", "publishable-api-keys", "checkout", "products", "customers", "regions"],
+        "integrations": ["integrations", "sanity", "contentful", "stripe", "paypal", "shipstation", "sentry"],
+        "cli_tools": ["medusa-cli", "commands", "build", "develop", "plugin", "db"],
+        "references": ["references", "medusa-workflows", "helper-steps", "service-factory-reference", "data-model-repository-reference", "test-tools-reference", "fulfillment", "auth", "notification-provider", "file-provider", "locking-service", "caching-service"],
+        "recipes": ["recipes", "erp", "marketplace", "b2b", "subscriptions", "digital-products", "bundled-products"],
+        "admin_components": ["admin-components", "widgets", "ui-routes"],
+        "examples": ["examples", "guides", "how-to-tutorials", "tutorials"]
+      },
+      "rate_limit": 0.3,
+      "max_pages": 500
+    },
+    {
+      "type": "documentation",
+      "base_url": "https://docs.mercurjs.com/",
+      "llms_txt_url": "https://docs.mercurjs.com/llms-full.txt",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "main, article",
+        "title": "h1",
+        "code_blocks": "pre"
+      },
+      "url_patterns": {
+        "include": ["/"],
+        "exclude": []
+      },
+      "categories": {
+        "quick_start": ["introduction", "get-started"],
+        "components": ["components", "backend", "admin-panel", "vendor-panel", "storefront"],
+        "core_concepts": ["core-concepts", "seller", "commission", "payouts", "order-splitting", "reviews", "requests", "notifications", "marketplace-settings"],
+        "product": ["product", "core-commerce-modules", "core-infrastructure-modules", "framework"],
+        "integrations": ["integrations", "algolia", "resend", "stripe"],
+        "api_admin": ["api-reference/admin", "admin-algolia", "admin-api-keys", "admin-attributes", "admin-auth", "admin-campaigns", "admin-claims", "admin-collections", "admin-commission", "admin-currencies", "admin-customers", "admin-draft-orders", "admin-exchanges", "admin-fulfillment", "admin-inventory", "admin-invites", "admin-notifications", "admin-orders", "admin-payments", "admin-price-lists", "admin-products", "admin-promotions", "admin-regions", "admin-reservations", "admin-returns", "admin-sales-channels", "admin-sellers", "admin-shipping", "admin-stock-locations", "admin-stores", "admin-tax", "admin-uploads", "admin-users"],
+        "api_store": ["api-reference/store", "store-auth", "store-carts", "store-collections", "store-currencies", "store-customers", "store-fulfillment", "store-orders", "store-payment", "store-products", "store-regions", "store-returns"],
+        "api_vendor": ["api-reference/vendor", "vendor-auth", "vendor-fulfillment", "vendor-inventory", "vendor-orders", "vendor-payouts", "vendor-products", "vendor-returns", "vendor-sellers", "vendor-shipping", "vendor-stock-locations", "vendor-uploads"],
+        "help": ["help", "llm", "mcp", "support"]
+      },
+      "rate_limit": 0.3,
+      "max_pages": 300
+    }
+  ]
+}
