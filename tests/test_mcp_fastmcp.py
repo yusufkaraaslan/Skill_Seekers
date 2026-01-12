@@ -534,7 +534,7 @@ class TestPackagingTools:
     async def test_install_skill_with_config_name(self):
         """Test complete install workflow with config name."""
         # Mock the fetch_config_tool import that install_skill_tool uses
-        with patch('skill_seekers.mcp.tools.packaging_tools.fetch_config_tool') as mock_fetch:
+        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
             result = await server_fastmcp.install_skill(
@@ -547,7 +547,7 @@ class TestPackagingTools:
 
     async def test_install_skill_with_config_path(self, sample_config):
         """Test complete install workflow with config path."""
-        with patch('skill_seekers.mcp.tools.packaging_tools.fetch_config_tool') as mock_fetch:
+        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config ready")]
 
             result = await server_fastmcp.install_skill(
@@ -560,7 +560,7 @@ class TestPackagingTools:
 
     async def test_install_skill_unlimited(self):
         """Test install workflow with unlimited pages."""
-        with patch('skill_seekers.mcp.tools.packaging_tools.fetch_config_tool') as mock_fetch:
+        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
             result = await server_fastmcp.install_skill(
@@ -573,7 +573,7 @@ class TestPackagingTools:
 
     async def test_install_skill_no_upload(self):
         """Test install workflow without auto-upload."""
-        with patch('skill_seekers.mcp.tools.packaging_tools.fetch_config_tool') as mock_fetch:
+        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
             result = await server_fastmcp.install_skill(
