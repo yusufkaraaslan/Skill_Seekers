@@ -158,11 +158,13 @@ logging:
         file_path.write_text(yaml_content)
 
         # This will skip if PyYAML not available
-        try:
-            self.parser.parse_config_file(config_file)
-            self.assertGreater(len(config_file.settings), 0)
-        except ImportError:
+        self.parser.parse_config_file(config_file)
+
+        # Check if parsing failed due to missing PyYAML
+        if config_file.parse_errors and "PyYAML not installed" in str(config_file.parse_errors):
             self.skipTest("PyYAML not installed")
+
+        self.assertGreater(len(config_file.settings), 0)
 
     def test_parse_env_file(self):
         """Test parsing .env file"""
@@ -314,11 +316,13 @@ endpoint = "https://api.example.com"
         file_path.write_text(toml_content)
 
         # This will skip if toml/tomli not available
-        try:
-            self.parser.parse_config_file(config_file)
-            self.assertGreater(len(config_file.settings), 0)
-        except ImportError:
+        self.parser.parse_config_file(config_file)
+
+        # Check if parsing failed due to missing toml/tomli
+        if config_file.parse_errors and ("toml" in str(config_file.parse_errors).lower() and "not installed" in str(config_file.parse_errors)):
             self.skipTest("toml/tomli not installed")
+
+        self.assertGreater(len(config_file.settings), 0)
 
 
 class TestConfigPatternDetector(unittest.TestCase):
