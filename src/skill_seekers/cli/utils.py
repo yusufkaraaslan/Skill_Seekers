@@ -197,6 +197,7 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
             - 'source': Source type (documentation/github/pdf/api/codebase_analysis)
             - 'confidence': Confidence level (high/medium/low)
             - 'path': Relative path from references directory
+            - 'repo_id': Repository identifier for multi-source (e.g., 'encode_httpx'), None for single-source
 
     Example:
         >>> refs = read_reference_files('output/react/', max_chars=50000)
@@ -215,58 +216,68 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         print(f"⚠ No references directory found at {references_dir}")
         return references
 
-    def _determine_source_metadata(relative_path: Path) -> Tuple[str, str]:
-        """Determine source type and confidence level from path.
+    def _determine_source_metadata(relative_path: Path) -> Tuple[str, str, Optional[str]]:
+        """Determine source type, confidence level, and repo_id from path.
+
+        For multi-source support, extracts repo_id from paths like:
+        - codebase_analysis/encode_httpx/ARCHITECTURE.md -> repo_id='encode_httpx'
+        - github/README.md -> repo_id=None (single source)
 
         Returns:
-            tuple: (source_type, confidence_level)
+            tuple: (source_type, confidence_level, repo_id)
         """
         path_str = str(relative_path)
+        repo_id = None  # Default: no repo identity
 
         # Documentation sources (official docs)
         if path_str.startswith('documentation/'):
-            return 'documentation', 'high'
+            return 'documentation', 'high', None
 
         # GitHub sources
         elif path_str.startswith('github/'):
             # README and releases are medium confidence
             if 'README' in path_str or 'releases' in path_str:
-                return 'github', 'medium'
+                return 'github', 'medium', None
             # Issues are low confidence (user reports)
             elif 'issues' in path_str:
-                return 'github', 'low'
+                return 'github', 'low', None
             else:
-                return 'github', 'medium'
+                return 'github', 'medium', None
 
         # PDF sources (books, manuals)
         elif path_str.startswith('pdf/'):
-            return 'pdf', 'high'
+            return 'pdf', 'high', None
 
         # Merged API (synthesized from multiple sources)
         elif path_str.startswith('api/'):
-            return 'api', 'high'
+            return 'api', 'high', None
 
         # Codebase analysis (C3.x automated analysis)
         elif path_str.startswith('codebase_analysis/'):
+            # Extract repo_id from path: codebase_analysis/{repo_id}/...
+            parts = Path(path_str).parts
+            if len(parts) >= 2:
+                repo_id = parts[1]  # e.g., 'encode_httpx', 'encode_httpcore'
+
             # ARCHITECTURE.md is high confidence (comprehensive)
             if 'ARCHITECTURE' in path_str:
-                return 'codebase_analysis', 'high'
+                return 'codebase_analysis', 'high', repo_id
             # Patterns and examples are medium (heuristic-based)
             elif 'patterns' in path_str or 'examples' in path_str:
-                return 'codebase_analysis', 'medium'
+                return 'codebase_analysis', 'medium', repo_id
             # Configuration is high (direct extraction)
             elif 'configuration' in path_str:
-                return 'codebase_analysis', 'high'
+                return 'codebase_analysis', 'high', repo_id
             else:
-                return 'codebase_analysis', 'medium'
+                return 'codebase_analysis', 'medium', repo_id
 
         # Conflicts report (discrepancy detection)
         elif 'conflicts' in path_str:
-            return 'conflicts', 'medium'
+            return 'conflicts', 'medium', None
 
         # Fallback
         else:
-            return 'unknown', 'medium'
+            return 'unknown', 'medium', None
 
     total_chars = 0
     # Search recursively for all .md files (including subdirectories like github/README.md)
@@ -284,16 +295,17 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
 
         # Use relative path from references_dir as key for nested files
         relative_path = ref_file.relative_to(references_dir)
-        source_type, confidence = _determine_source_metadata(relative_path)
+        source_type, confidence, repo_id = _determine_source_metadata(relative_path)
 
-        # Build enriched metadata
+        # Build enriched metadata (with repo_id for multi-source support)
         references[str(relative_path)] = {
             'content': content,
             'source': source_type,
             'confidence': confidence,
             'path': str(relative_path),
             'truncated': truncated,
-            'size': len(content)
+            'size': len(content),
+            'repo_id': repo_id  # None for single-source, repo identifier for multi-source
         }
 
         total_chars += len(content)

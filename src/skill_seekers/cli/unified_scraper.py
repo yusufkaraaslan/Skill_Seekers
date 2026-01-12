@@ -216,10 +216,15 @@ class UnifiedScraper:
             with open(docs_data_file, 'r', encoding='utf-8') as f:
                 summary = json.load(f)
 
-            self.scraped_data['documentation'] = {
+            # Append to documentation list (multi-source support)
+            self.scraped_data['documentation'].append({
+                'source_id': doc_config['name'],
+                'base_url': source['base_url'],
                 'pages': summary.get('pages', []),
-                'data_file': docs_data_file
-            }
+                'total_pages': summary.get('total_pages', 0),
+                'data_file': docs_data_file,
+                'refs_dir': ''  # Will be set after moving to cache
+            })
 
             logger.info(f"✅ Documentation: {summary.get('total_pages', 0)} pages scraped")
         else:
@@ -239,6 +244,11 @@ class UnifiedScraper:
                 shutil.rmtree(cache_docs_dir)
             shutil.move(docs_output_dir, cache_docs_dir)
             logger.info(f"📦 Moved docs output to cache: {cache_docs_dir}")
+
+            # Update refs_dir in scraped_data with cache location
+            refs_dir_path = os.path.join(cache_docs_dir, 'references')
+            if self.scraped_data['documentation']:
+                self.scraped_data['documentation'][-1]['refs_dir'] = refs_dir_path
 
         if os.path.exists(docs_data_dir):
             cache_data_dir = os.path.join(self.data_dir, f"{doc_config['name']}_data")

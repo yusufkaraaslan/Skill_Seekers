@@ -138,18 +138,24 @@ This skill combines knowledge from {len(sources_found)} source type(s):
 
 """
 
-        # Group references by source type
+        # Group references by (source_type, repo_id) for multi-source support
         by_source = {}
         for filename, metadata in references.items():
             source = metadata['source']
-            if source not in by_source:
-                by_source[source] = []
-            by_source[source].append((filename, metadata))
+            repo_id = metadata.get('repo_id')  # None for single-source
+            key = (source, repo_id) if repo_id else (source, None)
 
-        # Add source breakdown
-        for source in sorted(by_source.keys()):
-            files = by_source[source]
-            prompt += f"\n**{source.upper()} ({len(files)} file(s))**\n"
+            if key not in by_source:
+                by_source[key] = []
+            by_source[key].append((filename, metadata))
+
+        # Add source breakdown with repo identity
+        for (source, repo_id) in sorted(by_source.keys()):
+            files = by_source[(source, repo_id)]
+            if repo_id:
+                prompt += f"\n**{source.upper()} - {repo_id} ({len(files)} file(s))**\n"
+            else:
+                prompt += f"\n**{source.upper()} ({len(files)} file(s))**\n"
             for filename, metadata in files[:5]:  # Top 5 per source
                 prompt += f"- {filename} (confidence: {metadata['confidence']}, {metadata['size']:,} chars)\n"
             if len(files) > 5:
@@ -157,17 +163,24 @@ This skill combines knowledge from {len(sources_found)} source type(s):
 
         prompt += "\n\nREFERENCE DOCUMENTATION:\n"
 
-        # Add references grouped by source with metadata
-        for source in sorted(by_source.keys()):
-            prompt += f"\n### {source.upper()} SOURCES\n\n"
-            for filename, metadata in by_source[source]:
+        # Add references grouped by (source, repo_id) with metadata
+        for (source, repo_id) in sorted(by_source.keys()):
+            if repo_id:
+                prompt += f"\n### {source.upper()} SOURCES - {repo_id}\n\n"
+            else:
+                prompt += f"\n### {source.upper()} SOURCES\n\n"
+
+            for filename, metadata in by_source[(source, repo_id)]:
                 content = metadata['content']
                 # Limit per-file to 30K
                 if len(content) > 30000:
                     content = content[:30000] + "\n\n[Content truncated for size...]"
 
                 prompt += f"\n#### {filename}\n"
-                prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                if repo_id:
+                    prompt += f"*Source: {metadata['source']} ({repo_id}), Confidence: {metadata['confidence']}*\n\n"
+                else:
+                    prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
                 prompt += f"```markdown\n{content}\n```\n"
 
         prompt += """
@@ -177,6 +190,34 @@ REFERENCE PRIORITY (when sources differ):
 2. **Official documentation**: Intended API and usage patterns
 3. **GitHub issues**: Real-world usage and known problems
 4. **PDF documentation**: Additional context and tutorials
+
+MULTI-REPOSITORY HANDLING:
+"""
+
+        # Detect multiple repos from same source type
+        repo_ids = set()
+        for metadata in references.values():
+            if metadata.get('repo_id'):
+                repo_ids.add(metadata['repo_id'])
+
+        if len(repo_ids) > 1:
+            prompt += f"""
+⚠️ MULTIPLE REPOSITORIES DETECTED: {', '.join(sorted(repo_ids))}
+
+This skill combines codebase analysis from {len(repo_ids)} different repositories.
+Each repo has its own ARCHITECTURE.md, patterns, examples, and configuration.
+
+When synthesizing:
+- Clearly identify which content comes from which repo
+- Compare and contrast patterns across repos (e.g., "httpx uses Strategy pattern 50 times, httpcore uses it 32 times")
+- Highlight relationships (e.g., "httpx is a client library built on top of httpcore")
+- Present examples from BOTH repos to show different use cases
+- If repos serve different purposes, explain when to use each
+"""
+        else:
+            prompt += "\nSingle repository - standard synthesis applies.\n"
+
+        prompt += """
 
 YOUR TASK:
 Create an enhanced SKILL.md that synthesizes knowledge from multiple sources:
