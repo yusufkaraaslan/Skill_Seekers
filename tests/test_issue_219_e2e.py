@@ -288,9 +288,17 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
                 mock_client = mock_anthropic.return_value
                 mock_client.messages.create.return_value = mock_message
 
-                # Read references
+                # Read references (with proper metadata structure)
                 references = {
-                    'index.md': '# Index\nTest content'
+                    'index.md': {
+                        'content': '# Index\nTest content',
+                        'source': 'documentation',
+                        'confidence': 'high',
+                        'path': 'index.md',
+                        'truncated': False,
+                        'size': 23,
+                        'repo_id': None
+                    }
                 }
 
                 # Call enhance_skill_md (should handle ThinkingBlock gracefully)
