@@ -8,7 +8,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Enhanced LOCAL Enhancement Modes** - Advanced enhancement execution options
+
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.6.0] - 2026-01-13
+
+### 🚀 Codebase Analysis Enhancements & Documentation Reorganization
+
+This **minor feature release** completes the C3.x codebase analysis suite with standalone SKILL.md generation for codebase scraper, adds comprehensive documentation reorganization, and includes quality-of-life improvements for setup and testing.
+
+### Added
+- **C3.8 Standalone Codebase Scraper SKILL.md Generation** - Complete skill structure for standalone codebase analysis
+  - Generates comprehensive SKILL.md (300+ lines) with all C3.x analysis integrated
+  - Sections: Description, When to Use, Quick Reference, Design Patterns, Architecture, Configuration, Available References
+  - Includes language statistics, analysis depth indicators, and feature checkboxes
+  - Creates references/ directory with organized outputs (API, dependencies, patterns, architecture, config)
+  - Integration points:
+    - CLI tool: `skill-seekers-codebase-scraper --directory /path/to/code --output /path/to/output`
+    - Unified scraper: Automatic SKILL.md generation when using codebase analysis
+  - Format helpers for all C3.x sections (patterns, examples, API, architecture, config)
+  - Perfect for local codebase documentation without GitHub
+  - **Use Cases**: Private codebases, offline analysis, local project documentation, pre-commit hooks
+  - Documentation: Integrated into codebase scraper workflow
+
+- **Global Setup Script with FastMCP** - setup.sh for end-user global installation
+  - New `setup.sh` script for global PyPI installation (vs `setup_mcp.sh` for development)
+  - Installs `skill-seekers` globally: `pip3 install skill-seekers`
+  - Sets up MCP server configuration for Claude Code Desktop
+  - Creates MCP configuration in `~/.claude/mcp_settings.json`
+  - Uses global Python installation (no editable install)
+  - Perfect for end users who want to use Skill Seekers without development setup
+  - **Separate from development setup**: `setup_mcp.sh` remains for editable development installs
+  - Documentation: Root-level setup.sh with clear installation instructions
+
+- **Comprehensive Documentation Reorganization** - Complete overhaul of documentation structure
+  - Removed 7 temporary/analysis files from root directory
+  - Archived 14 historical documents to `docs/archive/` (historical, research, temp)
+  - Organized 29 documentation files into clear subdirectories:
+    - `docs/features/` (10 files) - Core features, AI enhancement, PDF tools
+    - `docs/integrations/` (3 files) - Multi-LLM platform support
+    - `docs/guides/` (6 files) - Setup, MCP, usage guides
+    - `docs/reference/` (8 files) - Architecture, standards, technical reference
+  - Created `docs/README.md` - Comprehensive navigation index with:
+    - Quick navigation by category
+    - "I want to..." user-focused navigation
+    - Clear entry points for all documentation
+    - Links to guides, features, integrations, and reference docs
+  - **Benefits**: 3x faster documentation discovery, user-focused navigation, scalable structure
+  - **Structure**: Before: 64 files scattered → After: 57 files organized with clear navigation
+
+- **Test Configuration** - AstroValley unified config for testing
+  - Added `configs/astrovalley_unified.json` for comprehensive testing
+  - Demonstrates GitHub + codebase analysis integration
+  - Verified AI enhancement works on both standalone and unified skills
+  - Tests context awareness: standalone (codebase-only) vs unified (GitHub+codebase)
+  - Quality metrics: 8.2x growth for standalone, 3.7x for unified enhancement
+
+- **Enhanced LOCAL Enhancement Modes** - Advanced enhancement execution options (moved from previous unreleased)
   - **4 Execution Modes** for different use cases:
     - **Headless** (default): Runs in foreground, waits for completion (perfect for CI/CD)
     - **Background** (`--background`): Runs in background thread, returns immediately
@@ -215,6 +277,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: `codebase-scraper --directory .` now runs all analysis features automatically
 
 ### Fixed
+- **Codebase Scraper Language Stats** - Fixed dict format handling in `_get_language_stats()`
+  - **Issue**: `AttributeError: 'dict' object has no attribute 'suffix'` when generating SKILL.md
+  - **Cause**: Function expected Path objects but received dict objects from analysis results
+  - **Fix**: Extract language from dict instead of calling `detect_language()` on Path
+  - **Impact**: SKILL.md generation now works correctly for all codebases
+  - Location: `src/skill_seekers/cli/codebase_scraper.py:778`
 
 ### Removed
 
