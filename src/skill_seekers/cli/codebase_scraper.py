@@ -590,7 +590,429 @@ def analyze_codebase(
     else:
         logger.info("No clear architectural patterns detected")
 
+    # Generate SKILL.md and references/ directory
+    logger.info("Generating SKILL.md and references...")
+    _generate_skill_md(
+        output_dir=output_dir,
+        directory=directory,
+        results=results,
+        depth=depth,
+        build_api_reference=build_api_reference,
+        build_dependency_graph=build_dependency_graph,
+        detect_patterns=detect_patterns,
+        extract_test_examples=extract_test_examples,
+        extract_config_patterns=extract_config_patterns
+    )
+
     return results
+
+
+def _generate_skill_md(
+    output_dir: Path,
+    directory: Path,
+    results: Dict[str, Any],
+    depth: str,
+    build_api_reference: bool,
+    build_dependency_graph: bool,
+    detect_patterns: bool,
+    extract_test_examples: bool,
+    extract_config_patterns: bool
+):
+    """
+    Generate rich SKILL.md from codebase analysis results.
+
+    Creates a 300+ line skill file with:
+    - Front matter (name, description)
+    - Repository info (path, languages, file count)
+    - When to Use section
+    - Quick Reference (patterns, languages, stats)
+    - Code Examples (from test files)
+    - API Reference (from code analysis)
+    - Architecture Overview
+    - Configuration Patterns
+    - Available References
+    """
+    repo_name = directory.name
+
+    # Generate skill name (lowercase, hyphens only, max 64 chars)
+    skill_name = repo_name.lower().replace('_', '-').replace(' ', '-')[:64]
+
+    # Generate description
+    description = f"Local codebase analysis for {repo_name}"
+
+    # Count files by language
+    language_stats = _get_language_stats(results.get('files', []))
+    total_files = len(results.get('files', []))
+
+    # Start building content
+    skill_content = f"""---
+name: {skill_name}
+description: {description}
+---
+
+# {repo_name} Codebase
+
+## Description
+
+Local codebase analysis and documentation generated from code analysis.
+
+**Path:** `{directory}`
+**Files Analyzed:** {total_files}
+**Languages:** {', '.join(language_stats.keys())}
+**Analysis Depth:** {depth}
+
+## When to Use This Skill
+
+Use this skill when you need to:
+- Understand the codebase architecture and design patterns
+- Find implementation examples and usage patterns
+- Review API documentation extracted from code
+- Check configuration patterns and best practices
+- Explore test examples and real-world usage
+- Navigate the codebase structure efficiently
+
+## ⚡ Quick Reference
+
+### Codebase Statistics
+
+"""
+
+    # Language breakdown
+    skill_content += "**Languages:**\n"
+    for lang, count in sorted(language_stats.items(), key=lambda x: x[1], reverse=True):
+        percentage = (count / total_files * 100) if total_files > 0 else 0
+        skill_content += f"- **{lang}**: {count} files ({percentage:.1f}%)\n"
+    skill_content += "\n"
+
+    # Analysis features performed
+    skill_content += "**Analysis Performed:**\n"
+    if build_api_reference:
+        skill_content += "- ✅ API Reference (C2.5)\n"
+    if build_dependency_graph:
+        skill_content += "- ✅ Dependency Graph (C2.6)\n"
+    if detect_patterns:
+        skill_content += "- ✅ Design Patterns (C3.1)\n"
+    if extract_test_examples:
+        skill_content += "- ✅ Test Examples (C3.2)\n"
+    if extract_config_patterns:
+        skill_content += "- ✅ Configuration Patterns (C3.4)\n"
+    skill_content += "- ✅ Architectural Analysis (C3.7)\n\n"
+
+    # Add design patterns if available
+    if detect_patterns:
+        patterns_content = _format_patterns_section(output_dir)
+        if patterns_content:
+            skill_content += patterns_content
+
+    # Add code examples if available
+    if extract_test_examples:
+        examples_content = _format_examples_section(output_dir)
+        if examples_content:
+            skill_content += examples_content
+
+    # Add API reference if available
+    if build_api_reference:
+        api_content = _format_api_section(output_dir)
+        if api_content:
+            skill_content += api_content
+
+    # Add architecture if available
+    arch_content = _format_architecture_section(output_dir)
+    if arch_content:
+        skill_content += arch_content
+
+    # Add configuration patterns if available
+    if extract_config_patterns:
+        config_content = _format_config_section(output_dir)
+        if config_content:
+            skill_content += config_content
+
+    # Available references
+    skill_content += "## 📚 Available References\n\n"
+    skill_content += "This skill includes detailed reference documentation:\n\n"
+
+    refs_added = False
+    if build_api_reference and (output_dir / 'api_reference').exists():
+        skill_content += "- **API Reference**: `references/api_reference/` - Complete API documentation\n"
+        refs_added = True
+    if build_dependency_graph and (output_dir / 'dependencies').exists():
+        skill_content += "- **Dependencies**: `references/dependencies/` - Dependency graph and analysis\n"
+        refs_added = True
+    if detect_patterns and (output_dir / 'patterns').exists():
+        skill_content += "- **Patterns**: `references/patterns/` - Detected design patterns\n"
+        refs_added = True
+    if extract_test_examples and (output_dir / 'test_examples').exists():
+        skill_content += "- **Examples**: `references/test_examples/` - Usage examples from tests\n"
+        refs_added = True
+    if extract_config_patterns and (output_dir / 'config_patterns').exists():
+        skill_content += "- **Configuration**: `references/config_patterns/` - Configuration patterns\n"
+        refs_added = True
+    if (output_dir / 'architecture').exists():
+        skill_content += "- **Architecture**: `references/architecture/` - Architectural patterns\n"
+        refs_added = True
+
+    if not refs_added:
+        skill_content += "No additional references generated (analysis features disabled).\n"
+
+    skill_content += "\n"
+
+    # Footer
+    skill_content += "---\n\n"
+    skill_content += "**Generated by Skill Seeker** | Codebase Analyzer with C3.x Analysis\n"
+
+    # Write SKILL.md
+    skill_path = output_dir / "SKILL.md"
+    skill_path.write_text(skill_content, encoding='utf-8')
+
+    line_count = len(skill_content.split('\n'))
+    logger.info(f"✅ Generated SKILL.md: {skill_path} ({line_count} lines)")
+
+    # Generate references/ directory structure
+    _generate_references(output_dir)
+
+
+def _get_language_stats(files: List[Path]) -> Dict[str, int]:
+    """Count files by language."""
+    stats = {}
+    for file_path in files:
+        lang = detect_language(file_path)
+        if lang != 'Unknown':
+            stats[lang] = stats.get(lang, 0) + 1
+    return stats
+
+
+def _format_patterns_section(output_dir: Path) -> str:
+    """Format design patterns section from patterns/detected_patterns.json."""
+    patterns_file = output_dir / 'patterns' / 'detected_patterns.json'
+    if not patterns_file.exists():
+        return ""
+
+    try:
+        with open(patterns_file, 'r', encoding='utf-8') as f:
+            patterns_data = json.load(f)
+    except Exception:
+        return ""
+
+    if not patterns_data:
+        return ""
+
+    # Count patterns by type (deduplicate by class, keep highest confidence)
+    pattern_counts = {}
+    by_class = {}
+
+    for pattern_file in patterns_data:
+        for pattern in pattern_file.get('patterns', []):
+            ptype = pattern.get('pattern_type', 'Unknown')
+            cls = pattern.get('class_name', '')
+            confidence = pattern.get('confidence', 0)
+
+            # Skip low confidence
+            if confidence < 0.7:
+                continue
+
+            # Deduplicate by class
+            key = f"{cls}:{ptype}"
+            if key not in by_class or by_class[key]['confidence'] < confidence:
+                by_class[key] = pattern
+
+            # Count by type
+            pattern_counts[ptype] = pattern_counts.get(ptype, 0) + 1
+
+    if not pattern_counts:
+        return ""
+
+    content = "### 🎨 Design Patterns Detected\n\n"
+    content += "*From C3.1 codebase analysis (confidence > 0.7)*\n\n"
+
+    # Top 5 pattern types
+    for ptype, count in sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+        content += f"- **{ptype}**: {count} instances\n"
+
+    content += f"\n*Total: {len(by_class)} high-confidence patterns*\n\n"
+    content += "*See `references/patterns/` for complete pattern analysis*\n\n"
+    return content
+
+
+def _format_examples_section(output_dir: Path) -> str:
+    """Format code examples section from test_examples/test_examples.json."""
+    examples_file = output_dir / 'test_examples' / 'test_examples.json'
+    if not examples_file.exists():
+        return ""
+
+    try:
+        with open(examples_file, 'r', encoding='utf-8') as f:
+            examples_data = json.load(f)
+    except Exception:
+        return ""
+
+    examples = examples_data.get('examples', [])
+    if not examples:
+        return ""
+
+    # Filter high-value examples (complexity > 0.7)
+    high_value = [ex for ex in examples if ex.get('complexity_score', 0) > 0.7]
+
+    if not high_value:
+        # If no high complexity, take any examples
+        high_value = examples[:10]
+
+    if not high_value:
+        return ""
+
+    content = "## 📝 Code Examples\n\n"
+    content += "*High-quality examples extracted from test files (C3.2)*\n\n"
+
+    # Top 10 examples
+    for ex in sorted(high_value, key=lambda x: x.get('complexity_score', 0), reverse=True)[:10]:
+        desc = ex.get('description', 'Example')
+        lang = ex.get('language', 'python').lower()
+        code = ex.get('code', '')
+        complexity = ex.get('complexity_score', 0)
+
+        content += f"**{desc}** (complexity: {complexity:.2f})\n\n"
+        content += f"```{lang}\n{code}\n```\n\n"
+
+    content += "*See `references/test_examples/` for all extracted examples*\n\n"
+    return content
+
+
+def _format_api_section(output_dir: Path) -> str:
+    """Format API reference section."""
+    api_dir = output_dir / 'api_reference'
+    if not api_dir.exists():
+        return ""
+
+    api_md = api_dir / 'api_reference.md'
+    if not api_md.exists():
+        return ""
+
+    try:
+        api_content = api_md.read_text(encoding='utf-8')
+    except Exception:
+        return ""
+
+    # Extract first section (up to 500 chars)
+    preview = api_content[:500]
+    if len(api_content) > 500:
+        preview += "..."
+
+    content = "## 🔧 API Reference\n\n"
+    content += "*Extracted from codebase analysis (C2.5)*\n\n"
+    content += preview + "\n\n"
+    content += "*See `references/api_reference/` for complete API documentation*\n\n"
+    return content
+
+
+def _format_architecture_section(output_dir: Path) -> str:
+    """Format architecture section from architecture/architectural_patterns.json."""
+    arch_file = output_dir / 'architecture' / 'architectural_patterns.json'
+    if not arch_file.exists():
+        return ""
+
+    try:
+        with open(arch_file, 'r', encoding='utf-8') as f:
+            arch_data = json.load(f)
+    except Exception:
+        return ""
+
+    patterns = arch_data.get('patterns', [])
+    if not patterns:
+        return ""
+
+    content = "## 🏗️ Architecture Overview\n\n"
+    content += "*From C3.7 architectural analysis*\n\n"
+
+    content += "**Detected Architectural Patterns:**\n\n"
+    for pattern in patterns[:5]:
+        name = pattern.get('pattern_name', 'Unknown')
+        confidence = pattern.get('confidence', 0)
+        indicators = pattern.get('indicators', [])
+
+        content += f"- **{name}** (confidence: {confidence:.2f})\n"
+        if indicators:
+            content += f"  - Indicators: {', '.join(indicators[:3])}\n"
+
+    content += f"\n*Total: {len(patterns)} architectural patterns detected*\n\n"
+    content += "*See `references/architecture/` for complete architectural analysis*\n\n"
+    return content
+
+
+def _format_config_section(output_dir: Path) -> str:
+    """Format configuration patterns section."""
+    config_file = output_dir / 'config_patterns' / 'config_patterns.json'
+    if not config_file.exists():
+        return ""
+
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+    except Exception:
+        return ""
+
+    config_files = config_data.get('config_files', [])
+    if not config_files:
+        return ""
+
+    total_settings = sum(len(cf.get('settings', [])) for cf in config_files)
+    total_patterns = sum(len(cf.get('patterns', [])) for cf in config_files)
+
+    content = "## ⚙️ Configuration Patterns\n\n"
+    content += "*From C3.4 configuration analysis*\n\n"
+    content += f"**Configuration Files Analyzed:** {len(config_files)}\n"
+    content += f"**Total Settings:** {total_settings}\n"
+    content += f"**Patterns Detected:** {total_patterns}\n\n"
+
+    # List config file types found
+    file_types = {}
+    for cf in config_files:
+        ctype = cf.get('config_type', 'unknown')
+        file_types[ctype] = file_types.get(ctype, 0) + 1
+
+    if file_types:
+        content += "**Configuration Types:**\n"
+        for ctype, count in sorted(file_types.items(), key=lambda x: x[1], reverse=True):
+            content += f"- {ctype}: {count} files\n"
+        content += "\n"
+
+    content += "*See `references/config_patterns/` for detailed configuration analysis*\n\n"
+    return content
+
+
+def _generate_references(output_dir: Path):
+    """
+    Generate references/ directory structure by symlinking analysis output.
+
+    Creates a clean references/ directory that links to all analysis outputs.
+    """
+    references_dir = output_dir / 'references'
+    references_dir.mkdir(exist_ok=True)
+
+    # Map analysis directories to reference names
+    mappings = {
+        'api_reference': 'api_reference',
+        'dependencies': 'dependencies',
+        'patterns': 'patterns',
+        'test_examples': 'test_examples',
+        'tutorials': 'tutorials',
+        'config_patterns': 'config_patterns',
+        'architecture': 'architecture'
+    }
+
+    for source, target in mappings.items():
+        source_dir = output_dir / source
+        target_dir = references_dir / target
+
+        if source_dir.exists() and source_dir.is_dir():
+            # Copy directory to references/ (not symlink, for portability)
+            if target_dir.exists():
+                import shutil
+                shutil.rmtree(target_dir)
+
+            import shutil
+            shutil.copytree(source_dir, target_dir)
+            logger.debug(f"Copied {source} → references/{target}")
+
+    logger.info(f"✅ Generated references directory: {references_dir}")
 
 
 def main():
