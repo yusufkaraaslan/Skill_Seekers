@@ -771,11 +771,12 @@ Use this skill when you need to:
     _generate_references(output_dir)
 
 
-def _get_language_stats(files: List[Path]) -> Dict[str, int]:
-    """Count files by language."""
+def _get_language_stats(files: List[Dict]) -> Dict[str, int]:
+    """Count files by language from analysis results."""
     stats = {}
-    for file_path in files:
-        lang = detect_language(file_path)
+    for file_data in files:
+        # files is a list of dicts with 'language' key
+        lang = file_data.get('language', 'Unknown')
         if lang != 'Unknown':
             stats[lang] = stats.get(lang, 0) + 1
     return stats
