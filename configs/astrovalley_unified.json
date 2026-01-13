@@ -1,0 +1,32 @@
+{
+  "name": "astrovalley",
+  "description": "Space farming/automation game with combat and exploration - GitHub repo with deep codebase analysis",
+  "version": "1.0.0",
+  "target": "claude",
+  "sources": [
+    {
+      "type": "github",
+      "repo": "yusufkaraaslan/AstroValley",
+      "clone_path": "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/AstroValley",
+      "enable_codebase_analysis": true,
+      "analysis_depth": "deep",
+      "include_issues": true,
+      "include_pull_requests": true,
+      "include_discussions": false,
+      "max_issues": 100,
+      "codebase_options": {
+        "build_api_reference": true,
+        "build_dependency_graph": true,
+        "detect_patterns": true,
+        "extract_test_examples": true,
+        "extract_config_patterns": true,
+        "detect_architecture": true
+      }
+    }
+  ],
+  "synthesis_strategy": "comprehensive",
+  "ai_enhancement": {
+    "mode": "auto",
+    "enable": true
+  }
+}
