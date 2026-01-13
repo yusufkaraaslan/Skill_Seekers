@@ -444,8 +444,13 @@ class WorkflowGrouper:
         ungrouped = []
 
         for workflow in workflows:
+<<<<<<< HEAD
             ai_analysis = workflow.get("ai_analysis", {})
             tutorial_group = ai_analysis.get("tutorial_group")
+=======
+            ai_analysis = workflow.get('ai_analysis') or {}
+            tutorial_group = ai_analysis.get('tutorial_group')
+>>>>>>> 4004bf5 (Fix how-to guide builder edge case)
 
             if tutorial_group:
                 groups[tutorial_group].append(workflow)
@@ -891,7 +896,11 @@ class HowToGuideBuilder:
 
     def _extract_workflow_examples(self, examples: list[dict]) -> list[dict]:
         """Filter to workflow category only"""
+<<<<<<< HEAD
         return [ex for ex in examples if ex.get("category") == "workflow"]
+=======
+        return [ex for ex in examples if isinstance(ex, dict) and ex.get('category') == 'workflow']
+>>>>>>> 4004bf5 (Fix how-to guide builder edge case)
 
     def _create_guide(self, title: str, workflows: list[dict], enhancer=None) -> HowToGuide:
         """
@@ -916,8 +925,14 @@ class HowToGuideBuilder:
 
         # Extract use case from AI analysis or title
         use_case = title
+<<<<<<< HEAD
         if primary_workflow.get("ai_analysis"):
             use_case = primary_workflow["ai_analysis"].get("tutorial_group", title)
+=======
+        ai_analysis = primary_workflow.get('ai_analysis') or {}
+        if ai_analysis:
+            use_case = ai_analysis.get('tutorial_group', title)
+>>>>>>> 4004bf5 (Fix how-to guide builder edge case)
 
         # Determine overview
         overview = self._generate_overview(primary_workflow, workflows)
@@ -949,19 +964,33 @@ class HowToGuideBuilder:
         )
 
         # Add AI enhancements if enhancer is available
+        ai_analysis_for_enhancement = primary_workflow.get('ai_analysis') or {}
         if enhancer:
+<<<<<<< HEAD
             self._enhance_guide_with_ai(guide, primary_workflow.get("ai_analysis", {}), enhancer)
         elif self.enhance_with_ai and primary_workflow.get("ai_analysis"):
             # Fallback to old enhancement method (basic)
             self._enhance_guide_with_ai_basic(guide, primary_workflow["ai_analysis"])
+=======
+            self._enhance_guide_with_ai(guide, ai_analysis_for_enhancement, enhancer)
+        elif self.enhance_with_ai and ai_analysis_for_enhancement:
+            # Fallback to old enhancement method (basic)
+            self._enhance_guide_with_ai_basic(guide, ai_analysis_for_enhancement)
+>>>>>>> 4004bf5 (Fix how-to guide builder edge case)
 
         return guide
 
     def _generate_overview(self, primary_workflow: dict, all_workflows: list[dict]) -> str:
         """Generate guide overview"""
         # Try to get explanation from AI analysis
+<<<<<<< HEAD
         if primary_workflow.get("ai_analysis"):
             explanation = primary_workflow["ai_analysis"].get("explanation")
+=======
+        ai_analysis = primary_workflow.get('ai_analysis') or {}
+        if ai_analysis:
+            explanation = ai_analysis.get('explanation')
+>>>>>>> 4004bf5 (Fix how-to guide builder edge case)
             if explanation:
                 return explanation
 
