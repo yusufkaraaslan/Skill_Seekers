@@ -78,6 +78,10 @@ class ConfigAnalyzer:
 
         # Find all JSON files recursively in configs directory and subdirectories
         for config_file in sorted(self.config_dir.rglob("*.json")):
+            # Skip test/example configs in test-examples directory
+            if "test-examples" in config_file.parts:
+                continue
+
             try:
                 metadata = self.analyze_config(config_file)
                 if metadata:  # Skip invalid configs
