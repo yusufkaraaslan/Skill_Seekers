@@ -618,7 +618,7 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 
 **For Developers:**
 - [CHANGELOG.md](CHANGELOG.md) - Release history
-- [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) - 134 tasks across 22 feature groups
+- [ROADMAP.md](ROADMAP.md) - 136 tasks across 10 categories
 - [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) - Multi-source scraping
 - [docs/MCP_SETUP.md](docs/MCP_SETUP.md) - MCP server setup
 - [docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md) - AI enhancement modes

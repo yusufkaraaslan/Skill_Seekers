@@ -1246,7 +1246,7 @@ This is a major milestone release featuring complete restructuring for modern Py
 
 #### Documentation
 - **Updated README.md** - PyPI badges, reordered installation options
-- **FUTURE_RELEASES.md** - Roadmap for upcoming features
+- **ROADMAP.md** - Comprehensive roadmap with task-based approach
 - **Installation guides** - Simplified with PyPI as primary method
 - **Testing documentation** - How to run full test suite
 

@@ -80,9 +80,7 @@ Historical documentation and completed features:
 
 Want to contribute? See:
 - [Contributing Guide](../CONTRIBUTING.md) - Contribution guidelines
-- [Roadmap](../ROADMAP.md) - Project roadmap
-- [Flexible Roadmap](../FLEXIBLE_ROADMAP.md) - Detailed task list (134 tasks)
-- [Future Releases](../FUTURE_RELEASES.md) - Planned features
+- [Roadmap](../ROADMAP.md) - Comprehensive roadmap with 136 tasks
 
 ## 📝 Changelog
 
