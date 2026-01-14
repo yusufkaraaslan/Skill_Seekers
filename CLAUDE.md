@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.5.2
+**Current Version:** v2.6.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 
@@ -195,8 +195,8 @@ The unified CLI modifies `sys.argv` and calls existing `main()` functions to mai
 
 **Subcommands:** scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
 
-**New in v2.5.2:**
-- `codebase` - Local codebase analysis without GitHub API (C2.x features)
+**Recent Additions:**
+- `codebase` - Local codebase analysis without GitHub API (C2.x + C3.x features)
 - `enhance-status` - Monitor background/daemon enhancement processes
 - `patterns` - Detect design patterns in code (C3.1)
 - `how-to-guides` - Generate educational guides from tests (C3.3)
@@ -224,7 +224,7 @@ adaptor.enhance(skill_dir='output/react/', mode='api')
 
 ### C3.x Codebase Analysis Features
 
-The project has comprehensive codebase analysis capabilities (C3.1-C3.7):
+The project has comprehensive codebase analysis capabilities (C3.1-C3.8):
 
 **C3.1 Design Pattern Detection** (`pattern_recognizer.py`):
 - Detects 10 common patterns: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
@@ -249,12 +249,25 @@ The project has comprehensive codebase analysis capabilities (C3.1-C3.7):
 - Identifies config files, env vars, CLI arguments
 - AI enhancement for better organization
 
-**C3.5 Router Skill Generation** (`generate_router.py`):
-- Creates meta-skills that route to specialized skills
+**C3.5 Architectural Overview** (`generate_router.py`):
+- Generates comprehensive ARCHITECTURE.md files
+- Router skill generation for large documentation
 - Quality improvements: 6.5/10 → 8.5/10 (+31%)
 - Integrates GitHub metadata, issues, labels
 
-**Codebase Scraper Integration** (`codebase_scraper.py`):
+**C3.6 AI Enhancement** (Claude API integration):
+- Enhances C3.1-C3.5 with AI-powered insights
+- Pattern explanations and improvement suggestions
+- Test example context and best practices
+- Guide enhancement with troubleshooting and prerequisites
+
+**C3.7 Architectural Pattern Detection** (`architectural_pattern_detector.py`):
+- Detects 8 architectural patterns (MVC, MVVM, MVP, Repository, etc.)
+- Framework detection (Django, Flask, Spring, React, Angular, etc.)
+- Multi-file analysis with directory structure patterns
+- Evidence-based detection with confidence scoring
+
+**C3.8 Standalone Codebase Scraper** (`codebase_scraper.py`):
 ```bash
 # All C3.x features enabled by default, use --skip-* to disable
 skill-seekers codebase --directory /path/to/repo
@@ -266,7 +279,11 @@ skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
 skill-seekers codebase --directory . --build-api-reference --build-dependency-graph
 ```
 
-**Key Architecture Decision (v2.5.2):**
+- Generates 300+ line standalone SKILL.md files from codebases
+- All C3.x features integrated (patterns, tests, guides, config, architecture)
+- Complete codebase analysis without documentation scraping
+
+**Key Architecture Decision (BREAKING in v2.5.2):**
 - Changed from opt-in (`--build-*`) to opt-out (`--skip-*`) flags
 - All analysis features now ON by default for maximum value
 - Backward compatibility warnings for deprecated flags
@@ -701,35 +718,40 @@ The `unified_codebase_analyzer.py` splits GitHub repositories into three indepen
 
 ## 🎉 Recent Achievements
 
-**v2.5.2 (Latest):**
+**v2.6.0 (Latest - January 14, 2026):**
+- **C3.x Codebase Analysis Suite Complete** (C3.1-C3.8)
+- Multi-platform support with platform adaptor architecture
+- 18 MCP tools fully functional
+- 700+ tests passing
+- Unified multi-source scraping maturity
+
+**C3.x Series (Complete - Code Analysis Features):**
+- **C3.1:** Design pattern detection (10 GoF patterns, 9 languages, 87% precision)
+- **C3.2:** Test example extraction (5 categories, AST-based for Python)
+- **C3.3:** How-to guide generation with AI enhancement (5 improvements)
+- **C3.4:** Configuration pattern extraction (env vars, config files, CLI args)
+- **C3.5:** Architectural overview & router skill generation
+- **C3.6:** AI enhancement for patterns and test examples (Claude API integration)
+- **C3.7:** Architectural pattern detection (8 patterns, framework-aware)
+- **C3.8:** Standalone codebase scraper (300+ line SKILL.md from code alone)
+
+**v2.5.2:**
 - UX Improvement: Analysis features now default ON with --skip-* flags (BREAKING)
-- Changed from opt-in (--build-*) to opt-out (--skip-*) for better discoverability
 - Router quality improvements: 6.5/10 → 8.5/10 (+31%)
-- C3.5 Architectural Overview & Skill Integrator
 - All 107 codebase analysis tests passing
 
-**v2.5.1:**
-- Fixed critical PyPI packaging bug (missing adaptors module)
-- 100% of multi-platform features working
-
 **v2.5.0:**
-- Multi-platform support (4 LLM platforms)
+- Multi-platform support (Claude, Gemini, OpenAI, Markdown)
 - Platform adaptor architecture
 - 18 MCP tools (up from 9)
 - Complete feature parity across platforms
-- 700+ tests passing
 
-**C3.x Series (Code Analysis Features):**
-- C3.1: Design pattern detection (10 patterns, 9 languages, 87% precision)
-- C3.2: Test example extraction (AST-based, 19 tests)
-- C3.3: How-to guide generation with AI enhancement (5 improvements)
-- C3.4: Configuration pattern extraction
-- C3.5: Router skill generation
-- C3.6: AI enhancement (dual-mode: API + LOCAL)
-- C3.7: Architectural pattern detection
+**v2.1.0:**
+- Unified multi-source scraping (docs + GitHub + PDF)
+- Conflict detection between sources
+- 427 tests passing
 
-**v2.0.0:**
-- Unified multi-source scraping
-- Conflict detection between docs and code
-- 5 unified configs (React, Django, FastAPI, Godot)
-- 22 unified tests passing
+**v1.0.0:**
+- Production release with MCP integration
+- Documentation scraping with smart categorization
+- 12 preset configurations
