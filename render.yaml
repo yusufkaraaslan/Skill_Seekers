@@ -5,8 +5,8 @@ services:
     runtime: python
     plan: free
     buildCommand: |
-      pip install -r api/requirements.txt &&
-      git clone https://github.com/yusufkaraaslan/skill-seekers-configs.git api/configs_repo
+      git submodule update --init --recursive &&
+      pip install -r api/requirements.txt
     startCommand: cd api && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
