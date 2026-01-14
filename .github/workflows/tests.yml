@@ -21,6 +21,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive  # Initialize api/configs_repo submodule
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
