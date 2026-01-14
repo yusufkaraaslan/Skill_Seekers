@@ -176,7 +176,8 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         help="Estimate page count before scraping",
         description="Estimate total pages for documentation scraping"
     )
-    estimate_parser.add_argument("config", help="Config JSON file")
+    estimate_parser.add_argument("config", nargs="?", help="Config JSON file")
+    estimate_parser.add_argument("--all", action="store_true", help="List all available configs")
     estimate_parser.add_argument("--max-discovery", type=int, help="Max pages to discover")
 
     # === extract-test-examples subcommand ===
@@ -411,7 +412,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         elif args.command == "estimate":
             from skill_seekers.cli.estimate_pages import main as estimate_main
-            sys.argv = ["estimate_pages.py", args.config]
+            sys.argv = ["estimate_pages.py"]
+            if args.all:
+                sys.argv.append("--all")
+            elif args.config:
+                sys.argv.append(args.config)
             if args.max_discovery:
                 sys.argv.extend(["--max-discovery", str(args.max_discovery)])
             return estimate_main() or 0

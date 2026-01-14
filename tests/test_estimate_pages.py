@@ -134,6 +134,60 @@ class TestEstimatePagesCLI(unittest.TestCase):
         except FileNotFoundError:
             self.skipTest("skill-seekers command not installed")
 
+    def test_cli_all_flag_lists_configs(self):
+        """Test that --all flag lists all available configs"""
+        import subprocess
+
+        try:
+            # Run with --all flag
+            result = subprocess.run(
+                ['skill-seekers', 'estimate', '--all'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            # Should succeed
+            self.assertEqual(result.returncode, 0)
+
+            # Should contain expected output
+            output = result.stdout
+            self.assertIn('AVAILABLE CONFIGS', output)
+            self.assertIn('Total:', output)
+            self.assertIn('configs found', output)
+
+            # Should list some known configs
+            # (these should exist in api/configs_repo/official/)
+            self.assertTrue(
+                'react' in output.lower() or
+                'django' in output.lower() or
+                'godot' in output.lower(),
+                "Expected at least one known config name in output"
+            )
+        except FileNotFoundError:
+            self.skipTest("skill-seekers command not installed")
+
+    def test_cli_all_flag_with_direct_entry_point(self):
+        """Test --all flag works with skill-seekers-estimate entry point"""
+        import subprocess
+
+        try:
+            result = subprocess.run(
+                ['skill-seekers-estimate', '--all'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            # Should succeed
+            self.assertEqual(result.returncode, 0)
+
+            # Should show available configs
+            output = result.stdout
+            self.assertIn('AVAILABLE CONFIGS', output)
+        except FileNotFoundError:
+            self.skipTest("skill-seekers-estimate command not installed")
+
 
 class TestEstimatePagesWithRealConfig(unittest.TestCase):
     """Test estimation with real config files (if available)"""

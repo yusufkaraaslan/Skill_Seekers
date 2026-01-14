@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import time
 import json
+from pathlib import Path
 
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -230,6 +231,121 @@ def load_config(config_path):
         sys.exit(1)
 
 
+def find_configs_directory():
+    """
+    Find the configs directory using the same logic as the API.
+
+    Returns:
+        Path to configs directory or None if not found
+    """
+    # Get the package root (src/skill_seekers/)
+    package_root = Path(__file__).parent.parent
+
+    # Try API configs_repo first (production)
+    api_config_dir = package_root.parent.parent / "api" / "configs_repo" / "official"
+    if api_config_dir.exists():
+        return api_config_dir
+
+    # Fallback to configs (local development)
+    local_config_dir = package_root.parent.parent / "configs"
+    if local_config_dir.exists():
+        return local_config_dir
+
+    return None
+
+
+def list_all_configs():
+    """
+    List all available configuration files.
+    Uses the same directory logic as the API.
+    """
+    config_dir = find_configs_directory()
+
+    if not config_dir:
+        print("❌ Error: No config directory found")
+        print("   Tried: api/configs_repo/official/ and configs/")
+        return 1
+
+    print()
+    print("=" * 70)
+    print("📋 AVAILABLE CONFIGS")
+    print("=" * 70)
+    print()
+    print(f"📁 Config directory: {config_dir}")
+    print()
+
+    # Find all JSON files recursively
+    config_files = sorted(config_dir.rglob("*.json"))
+
+    if not config_files:
+        print("⚠️  No config files found")
+        return 1
+
+    # Group by category (subdirectory)
+    by_category = {}
+    for config_file in config_files:
+        # Get relative path from config_dir
+        rel_path = config_file.relative_to(config_dir)
+
+        # Category is the first directory in the path, or "root" if in root
+        if len(rel_path.parts) > 1:
+            category = rel_path.parts[0]
+        else:
+            category = "root"
+
+        if category not in by_category:
+            by_category[category] = []
+
+        # Try to load the config to get name and description
+        try:
+            with open(config_file, 'r') as f:
+                config_data = json.load(f)
+
+            name = config_data.get("name", config_file.stem)
+            description = config_data.get("description", "No description")
+
+            # Truncate description if too long
+            if len(description) > 60:
+                description = description[:57] + "..."
+
+            by_category[category].append({
+                "file": config_file.name,
+                "path": str(rel_path),
+                "name": name,
+                "description": description
+            })
+        except Exception as e:
+            # If we can't parse the config, just use the filename
+            by_category[category].append({
+                "file": config_file.name,
+                "path": str(rel_path),
+                "name": config_file.stem,
+                "description": f"⚠️  Error loading config: {e}"
+            })
+
+    # Print configs by category
+    total = 0
+    for category in sorted(by_category.keys()):
+        configs = by_category[category]
+        total += len(configs)
+
+        print(f"📦 {category.upper()}")
+        print("-" * 70)
+
+        for config in configs:
+            print(f"  • {config['name']}")
+            print(f"    File: {config['path']}")
+            print(f"    Description: {config['description']}")
+            print()
+
+    print("=" * 70)
+    print(f"📊 Total: {total} configs found")
+    print("=" * 70)
+    print()
+
+    return 0
+
+
 def main():
     """Main entry point"""
     import argparse
@@ -239,6 +355,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # List all available configs
+  skill-seekers estimate --all
+
   # Estimate pages for a config
   skill-seekers estimate configs/react.json
 
@@ -250,7 +369,9 @@ Examples:
         """
     )
 
-    parser.add_argument('config', help='Path to config JSON file')
+    parser.add_argument('config', nargs='?', help='Path to config JSON file')
+    parser.add_argument('--all', action='store_true',
+                       help='List all available configs from api/configs_repo/official/')
     parser.add_argument('--max-discovery', '-m', type=int, default=DEFAULT_MAX_DISCOVERY,
                        help=f'Maximum pages to discover (default: {DEFAULT_MAX_DISCOVERY}, use -1 for unlimited)')
     parser.add_argument('--unlimited', '-u', action='store_true',
@@ -259,6 +380,14 @@ Examples:
                        help='HTTP request timeout in seconds (default: 30)')
 
     args = parser.parse_args()
+
+    # Handle --all flag
+    if args.all:
+        return list_all_configs()
+
+    # If not --all, config is required
+    if not args.config:
+        parser.error("the following arguments are required: config (or use --all to list configs)")
 
     # Handle unlimited flag
     max_discovery = -1 if args.unlimited else args.max_discovery
