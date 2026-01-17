@@ -1177,7 +1177,7 @@ Examples:
         print(f"{'=' * 60}")
         print(f"Files analyzed: {len(results['files'])}")
         print(f"Output directory: {args.output}")
-        if args.build_api_reference:
+        if not args.skip_api_reference:
             print(f"API reference: {Path(args.output) / 'api_reference'}")
         print(f"{'=' * 60}\n")
 

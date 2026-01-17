@@ -220,6 +220,37 @@ skill-seekers resume github_react_20260117_143022
 
 **See complete documentation**: [Configuration Guide](docs/guides/CONFIGURATION.md) (coming soon)
 
+### 🎯 Bootstrap Skill - Self-Hosting (**NEW - v2.7.0**)
+
+Generate skill-seekers as a Claude Code skill to use within Claude:
+
+```bash
+# Generate the skill
+./scripts/bootstrap_skill.sh
+
+# Install to Claude Code
+cp -r output/skill-seekers ~/.claude/skills/
+
+# Verify
+ls ~/.claude/skills/skill-seekers/SKILL.md
+```
+
+**What you get:**
+- ✅ **Complete skill documentation** - All CLI commands and usage patterns
+- ✅ **CLI command reference** - Every tool and its options documented
+- ✅ **Quick start examples** - Common workflows and best practices
+- ✅ **Auto-generated API docs** - Code analysis, patterns, and examples
+- ✅ **Robust validation** - YAML frontmatter and required fields checked
+- ✅ **One-command bootstrap** - Combines manual header with auto-generated analysis
+
+**How it works:**
+1. Runs codebase analysis on skill-seekers itself (dogfooding!)
+2. Combines handcrafted header (prerequisites, commands) with auto-generated content
+3. Validates SKILL.md structure (frontmatter, required fields)
+4. Outputs ready-to-use skill directory
+
+**Result:** Use skill-seekers to create skills, from within Claude Code!
+
 ### 🔐 Private Config Repositories (**NEW - v2.2.0**)
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
 - ✅ **Multi-Source Management** - Register unlimited GitHub, GitLab, Bitbucket repos
@@ -296,6 +327,53 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 ```bash
 pip install skill-seekers
 ```
+
+### Installation Options
+
+Choose your installation profile based on which features you need:
+
+```bash
+# 1️⃣ CLI Only (Skill Generation)
+pip install skill-seekers
+
+# Features:
+# • Scrape documentation websites
+# • Analyze GitHub repositories
+# • Extract from PDFs
+# • Package skills for all platforms
+
+# 2️⃣ MCP Integration (Claude Code, Cursor, Windsurf)
+pip install skill-seekers[mcp]
+
+# Features:
+# • Everything from CLI Only
+# • MCP server for Claude Code
+# • One-command skill installation
+# • HTTP/stdio transport modes
+
+# 3️⃣ Multi-LLM Support (Gemini, OpenAI)
+pip install skill-seekers[all-llms]
+
+# Features:
+# • Everything from CLI Only
+# • Google Gemini support
+# • OpenAI ChatGPT support
+# • Enhanced AI features
+
+# 4️⃣ Everything
+pip install skill-seekers[all]
+
+# Features:
+# • All features enabled
+# • Maximum flexibility
+```
+
+**Need help choosing?** Run the setup wizard:
+```bash
+skill-seekers-setup
+```
+
+The wizard shows all options with detailed feature lists and guides you through configuration.
 
 Get started in seconds. No cloning, no setup - just install and run. See installation options below.
 
