@@ -97,7 +97,7 @@ plain code without language
             content, "https://example.com/docs/test.md"
         )
         # Should only include .md links
-        md_links = [l for line in result["links"] if ".md" in l]
+        md_links = [link for link in result["links"] if ".md" in link]
         self.assertEqual(len(md_links), len(result["links"]))
 
     def test_extract_content_paragraphs(self):

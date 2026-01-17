@@ -1156,7 +1156,7 @@ async def run_http_server(host: str, port: int):
         from starlette.responses import JSONResponse
         from starlette.routing import Route
 
-        async def health_check(request):
+        async def health_check(_request):
             """Health check endpoint."""
             return JSONResponse(
                 {

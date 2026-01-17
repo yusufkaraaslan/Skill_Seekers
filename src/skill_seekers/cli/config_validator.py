@@ -56,8 +56,8 @@ class ConfigValidator:
         try:
             with open(self.config_path, encoding="utf-8") as f:
                 return json.load(f)
-        except FileNotFoundError:
-            raise ValueError(f"Config file not found: {self.config_path}")
+        except FileNotFoundError as e:
+            raise ValueError(f"Config file not found: {self.config_path}") from e
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in config file: {e}")
 

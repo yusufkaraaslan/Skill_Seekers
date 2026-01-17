@@ -350,7 +350,7 @@ class GitHubScraper:
 
         except GithubException as e:
             if e.status == 404:
-                raise ValueError(f"Repository not found: {self.repo_name}")
+                raise ValueError(f"Repository not found: {self.repo_name}") from e
             raise
 
     def _get_file_content(self, file_path: str) -> str | None:

@@ -291,7 +291,7 @@ class ConfigFileDetector:
 
         return None
 
-    def _infer_purpose(self, file_path: Path, config_type: str) -> str:
+    def _infer_purpose(self, file_path: Path, _config_type: str) -> str:
         """Infer configuration purpose from file path and name"""
         path_lower = str(file_path).lower()
         filename = file_path.name.lower()
@@ -582,7 +582,7 @@ class ConfigParser:
                 return prev_line[1:].strip()
         return ""
 
-    def _extract_python_docstring(self, node: ast.AST) -> str:
+    def _extract_python_docstring(self, _node: ast.AST) -> str:
         """Extract docstring/comment for Python node"""
         # This is simplified - real implementation would need more context
         return ""

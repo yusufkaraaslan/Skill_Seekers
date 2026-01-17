@@ -299,7 +299,7 @@ class PDFExtractor:
         comment_lines = sum(
             1 for line in code.split("\n") if line.strip().startswith(("#", "//", "/*", "*", "--"))
         )
-        total_lines = len([l for line in code.split("\n") if line.strip()])
+        total_lines = len([line for line in code.split("\n") if line.strip()])
         if total_lines > 0 and comment_lines / total_lines > 0.7:
             issues.append("Mostly comments")
 
@@ -327,7 +327,7 @@ class PDFExtractor:
             score -= 2.0
 
         # Factor 3: Number of lines
-        lines = [l for line in code.split("\n") if line.strip()]
+        lines = [line for line in code.split("\n") if line.strip()]
         if 2 <= len(lines) <= 50:
             score += 1.0
         elif len(lines) > 100:

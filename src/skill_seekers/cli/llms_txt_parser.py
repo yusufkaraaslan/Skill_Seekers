@@ -1,6 +1,5 @@
 """ABOUTME: Parses llms.txt markdown content into structured page data"""
 
-"""ABOUTME: Extracts titles, content, code samples, and headings from markdown"""
 
 import re
 from urllib.parse import urljoin

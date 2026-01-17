@@ -315,7 +315,7 @@ class SkillQualityChecker:
                 self.report.add_warning("links", f"Broken link: [{text}]({link})", "SKILL.md")
         else:
             if links:
-                internal_links = [l for t, l in links if not l.startswith("http")]
+                internal_links = [link for t, link in links if not link.startswith("http")]
                 if internal_links:
                     self.report.add_info(
                         "links", f"✓ All {len(internal_links)} internal links are valid", "SKILL.md"

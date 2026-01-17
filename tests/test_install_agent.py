@@ -371,7 +371,7 @@ class TestInstallToAllAgents:
 
                 # With force - should succeed
                 results_with_force = install_to_all_agents(self.skill_dir, force=True)
-                for _agent_name, (success, message) in results_with_force.items():
+                for _agent_name, (success, _message) in results_with_force.items():
                     assert success is True
 
     def test_install_to_all_returns_results(self):

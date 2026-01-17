@@ -1,6 +1,5 @@
 """ABOUTME: Downloads llms.txt files from documentation URLs with retry logic"""
 
-"""ABOUTME: Validates markdown content and handles timeouts with exponential backoff"""
 
 import time
 
