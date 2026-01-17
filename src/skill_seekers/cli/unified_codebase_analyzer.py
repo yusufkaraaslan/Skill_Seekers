@@ -95,13 +95,20 @@ class UnifiedCodebaseAnalyzer:
         # Step 1: Acquire source
         if self.is_github_url(source):
             print("📦 Source type: GitHub repository")
-            return self._analyze_github(source, depth, fetch_github_metadata, output_dir, interactive)
+            return self._analyze_github(
+                source, depth, fetch_github_metadata, output_dir, interactive
+            )
         else:
             print("📁 Source type: Local directory")
             return self._analyze_local(source, depth)
 
     def _analyze_github(
-        self, repo_url: str, depth: str, fetch_metadata: bool, output_dir: Path | None, interactive: bool = True
+        self,
+        repo_url: str,
+        depth: str,
+        fetch_metadata: bool,
+        output_dir: Path | None,
+        interactive: bool = True,
     ) -> AnalysisResult:
         """
         Analyze GitHub repository with three-stream fetcher.
@@ -117,7 +124,9 @@ class UnifiedCodebaseAnalyzer:
             AnalysisResult with all 3 streams
         """
         # Use three-stream fetcher
-        fetcher = GitHubThreeStreamFetcher(repo_url, self.github_token, interactive=interactive)
+        fetcher = GitHubThreeStreamFetcher(
+            repo_url, self.github_token, interactive=interactive
+        )
         three_streams = fetcher.fetch(output_dir)
 
         # Analyze code with specified depth
@@ -236,7 +245,9 @@ class UnifiedCodebaseAnalyzer:
         basic = self.basic_analysis(directory)
 
         # Run full C3.x analysis using existing codebase_scraper
-        print("🔍 Running C3.x components (patterns, examples, guides, configs, architecture)...")
+        print(
+            "🔍 Running C3.x components (patterns, examples, guides, configs, architecture)..."
+        )
 
         try:
             # Import codebase analyzer
@@ -271,11 +282,19 @@ class UnifiedCodebaseAnalyzer:
             c3x = {**basic, "analysis_type": "c3x", **c3x_data}
 
             print("✅ C3.x analysis complete!")
-            print(f"   - {len(c3x_data.get('c3_1_patterns', []))} design patterns detected")
-            print(f"   - {c3x_data.get('c3_2_examples_count', 0)} test examples extracted")
-            print(f"   - {len(c3x_data.get('c3_3_guides', []))} how-to guides generated")
+            print(
+                f"   - {len(c3x_data.get('c3_1_patterns', []))} design patterns detected"
+            )
+            print(
+                f"   - {c3x_data.get('c3_2_examples_count', 0)} test examples extracted"
+            )
+            print(
+                f"   - {len(c3x_data.get('c3_3_guides', []))} how-to guides generated"
+            )
             print(f"   - {len(c3x_data.get('c3_4_configs', []))} config files analyzed")
-            print(f"   - {len(c3x_data.get('c3_7_architecture', []))} architectural patterns found")
+            print(
+                f"   - {len(c3x_data.get('c3_7_architecture', []))} architectural patterns found"
+            )
 
             return c3x
 
@@ -432,7 +451,9 @@ class UnifiedCodebaseAnalyzer:
 
                 if item.is_dir():
                     # Only include immediate subdirectories
-                    structure["children"].append({"name": item.name, "type": "directory"})
+                    structure["children"].append(
+                        {"name": item.name, "type": "directory"}
+                    )
                 elif item.is_file():
                     structure["children"].append(
                         {"name": item.name, "type": "file", "extension": item.suffix}
@@ -526,7 +547,12 @@ class UnifiedCodebaseAnalyzer:
         Returns:
             Dict with statistics
         """
-        stats = {"total_files": 0, "total_size_bytes": 0, "file_types": {}, "languages": {}}
+        stats = {
+            "total_files": 0,
+            "total_size_bytes": 0,
+            "file_types": {},
+            "languages": {},
+        }
 
         for file_path in directory.rglob("*"):
             if not file_path.is_file():

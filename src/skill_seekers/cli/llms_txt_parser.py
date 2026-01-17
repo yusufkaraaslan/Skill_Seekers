@@ -1,6 +1,5 @@
 """ABOUTME: Parses llms.txt markdown content into structured page data"""
 
-
 import re
 from urllib.parse import urljoin
 
@@ -128,7 +127,9 @@ class LlmsTxtParser:
         # Extract code blocks
         code_blocks = re.findall(r"```(\w+)?\n(.*?)```", content, re.DOTALL)
         for lang, code in code_blocks:
-            page["code_samples"].append({"code": code.strip(), "language": lang or "unknown"})
+            page["code_samples"].append(
+                {"code": code.strip(), "language": lang or "unknown"}
+            )
 
         # Extract h2/h3 headings
         headings = re.findall(r"^(#{2,3})\s+(.+)$", content, re.MULTILINE)
@@ -145,7 +146,9 @@ class LlmsTxtParser:
         content_no_code = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
 
         # Extract paragraphs
-        paragraphs = [p.strip() for p in content_no_code.split("\n\n") if len(p.strip()) > 20]
+        paragraphs = [
+            p.strip() for p in content_no_code.split("\n\n") if len(p.strip()) > 20
+        ]
         page["content"] = "\n\n".join(paragraphs)
 
         return page

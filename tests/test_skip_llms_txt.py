@@ -72,7 +72,13 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try, patch.object(converter, "scrape_page"), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(
+                        converter, "_try_llms_txt", return_value=False
+                    ) as mock_try,
+                    patch.object(converter, "scrape_page"),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     mock_try.assert_called_once()
             finally:
@@ -93,7 +99,11 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "scrape_page"), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(converter, "_try_llms_txt") as mock_try,
+                    patch.object(converter, "scrape_page"),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     mock_try.assert_not_called()
             finally:
@@ -114,7 +124,10 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "save_summary"):
+                with (
+                    patch.object(converter, "_try_llms_txt") as mock_try,
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     mock_try.assert_not_called()
             finally:
@@ -140,7 +153,13 @@ class TestSkipLlmsTxtAsyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try, patch.object(converter, "scrape_page_async", return_value=None), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(
+                        converter, "_try_llms_txt", return_value=False
+                    ) as mock_try,
+                    patch.object(converter, "scrape_page_async", return_value=None),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     mock_try.assert_called_once()
             finally:
@@ -162,7 +181,11 @@ class TestSkipLlmsTxtAsyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "scrape_page_async", return_value=None), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(converter, "_try_llms_txt") as mock_try,
+                    patch.object(converter, "scrape_page_async", return_value=None),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     mock_try.assert_not_called()
             finally:
@@ -179,7 +202,10 @@ class TestSkipLlmsTxtWithRealConfig(unittest.TestCase):
             "description": "Telegram bot documentation",
             "base_url": "https://core.telegram.org/bots",
             "skip_llms_txt": True,  # Telegram doesn't have useful llms.txt
-            "start_urls": ["https://core.telegram.org/bots", "https://core.telegram.org/bots/api"],
+            "start_urls": [
+                "https://core.telegram.org/bots",
+                "https://core.telegram.org/bots/api",
+            ],
             "selectors": {
                 "main_content": "#dev_page_content, main, article",
                 "title": "h1, title",
@@ -226,7 +252,9 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
         with self.assertLogs("skill_seekers.cli.doc_scraper", level="WARNING") as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
-            self.assertTrue(any("Invalid value" in log and "0" in log for log in cm.output))
+            self.assertTrue(
+                any("Invalid value" in log and "0" in log for log in cm.output)
+            )
 
     def test_skip_llms_txt_with_int_one_logs_warning(self):
         """Test that integer 1 logs warning and defaults to False."""
@@ -240,7 +268,9 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
         with self.assertLogs("skill_seekers.cli.doc_scraper", level="WARNING") as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
-            self.assertTrue(any("Invalid value" in log and "1" in log for log in cm.output))
+            self.assertTrue(
+                any("Invalid value" in log and "1" in log for log in cm.output)
+            )
 
     def test_skip_llms_txt_with_string_logs_warning(self):
         """Test that string values log warning and default to False."""
@@ -254,7 +284,9 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
         with self.assertLogs("skill_seekers.cli.doc_scraper", level="WARNING") as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
-            self.assertTrue(any("Invalid value" in log and "true" in log for log in cm.output))
+            self.assertTrue(
+                any("Invalid value" in log and "true" in log for log in cm.output)
+            )
 
     def test_skip_llms_txt_with_none_logs_warning(self):
         """Test that None logs warning and defaults to False."""
@@ -268,7 +300,9 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
         with self.assertLogs("skill_seekers.cli.doc_scraper", level="WARNING") as cm:
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertFalse(converter.skip_llms_txt)
-            self.assertTrue(any("Invalid value" in log and "None" in log for log in cm.output))
+            self.assertTrue(
+                any("Invalid value" in log and "None" in log for log in cm.output)
+            )
 
     def test_scraping_proceeds_when_llms_txt_skipped(self):
         """Test that HTML scraping proceeds normally when llms.txt is skipped."""
@@ -292,7 +326,10 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
                     scrape_called.append(url)
                     return None
 
-                with patch.object(converter, "scrape_page", side_effect=mock_scrape), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(converter, "scrape_page", side_effect=mock_scrape),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     # Should have attempted to scrape the base URL
                     self.assertTrue(len(scrape_called) > 0)

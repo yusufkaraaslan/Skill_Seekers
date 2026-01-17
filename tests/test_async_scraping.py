@@ -103,7 +103,9 @@ class TestAsyncScrapeMethods(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
                 self.assertTrue(hasattr(converter, "scrape_page_async"))
-                self.assertTrue(asyncio.iscoroutinefunction(converter.scrape_page_async))
+                self.assertTrue(
+                    asyncio.iscoroutinefunction(converter.scrape_page_async)
+                )
             finally:
                 os.chdir(self.original_cwd)
 
@@ -177,9 +179,12 @@ class TestAsyncRouting(unittest.TestCase):
                 converter = DocToSkillConverter(config, dry_run=True)
 
                 # Mock scrape_all_async to verify it does NOT get called
-                with patch.object(
-                    converter, "scrape_all_async", new_callable=AsyncMock
-                ) as mock_async, patch.object(converter, "_try_llms_txt", return_value=False):
+                with (
+                    patch.object(
+                        converter, "scrape_all_async", new_callable=AsyncMock
+                    ) as mock_async,
+                    patch.object(converter, "_try_llms_txt", return_value=False),
+                ):
                     converter.scrape_all()
                     # Verify async version was NOT called
                     mock_async.assert_not_called()
@@ -258,7 +263,9 @@ class TestAsyncErrorHandling(unittest.TestCase):
 
                     async with httpx.AsyncClient() as client:
                         # Mock client.get to raise exception
-                        with patch.object(client, "get", side_effect=httpx.HTTPError("Test error")):
+                        with patch.object(
+                            client, "get", side_effect=httpx.HTTPError("Test error")
+                        ):
                             # Should not raise exception, just log error
                             await converter.scrape_page_async(
                                 "https://example.com/test", semaphore, client
@@ -316,7 +323,10 @@ class TestAsyncLlmsTxtIntegration(unittest.TestCase):
                 converter = DocToSkillConverter(config, dry_run=False)
 
                 # Mock _try_llms_txt to return True (llms.txt found)
-                with patch.object(converter, "_try_llms_txt", return_value=True), patch.object(converter, "save_summary"):
+                with (
+                    patch.object(converter, "_try_llms_txt", return_value=True),
+                    patch.object(converter, "save_summary"),
+                ):
                     converter.scrape_all()
                     # If llms.txt succeeded, async scraping should be skipped
                     # Verify by checking that pages were not scraped

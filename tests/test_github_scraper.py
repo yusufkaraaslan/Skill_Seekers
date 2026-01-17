@@ -62,7 +62,11 @@ class TestGitHubScraperInitialization(unittest.TestCase):
 
     def test_init_with_token_from_config(self):
         """Test initialization with token from config"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": "test_token_123"}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": "test_token_123",
+        }
 
         with patch("skill_seekers.cli.github_scraper.Github") as mock_github:
             _scraper = self.GitHubScraper(config)
@@ -72,7 +76,10 @@ class TestGitHubScraperInitialization(unittest.TestCase):
         """Test initialization with token from environment variable"""
         config = {"repo": "facebook/react", "name": "react", "github_token": None}
 
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token_456"}), patch("skill_seekers.cli.github_scraper.Github") as mock_github:
+        with (
+            patch.dict(os.environ, {"GITHUB_TOKEN": "env_token_456"}),
+            patch("skill_seekers.cli.github_scraper.Github") as mock_github,
+        ):
             _scraper = self.GitHubScraper(config)
             mock_github.assert_called_once_with("env_token_456")
 
@@ -80,14 +87,21 @@ class TestGitHubScraperInitialization(unittest.TestCase):
         """Test initialization without authentication"""
         config = {"repo": "facebook/react", "name": "react", "github_token": None}
 
-        with patch("skill_seekers.cli.github_scraper.Github"), patch.dict(os.environ, {}, clear=True):
+        with (
+            patch("skill_seekers.cli.github_scraper.Github"),
+            patch.dict(os.environ, {}, clear=True),
+        ):
             scraper = self.GitHubScraper(config)
             # Should create unauthenticated client
             self.assertIsNotNone(scraper.github)
 
     def test_token_priority_env_over_config(self):
         """Test that GITHUB_TOKEN env var takes priority over config"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": "config_token"}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": "config_token",
+        }
 
         with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"}):
             scraper = self.GitHubScraper(config)
@@ -120,7 +134,9 @@ class TestREADMEExtraction(unittest.TestCase):
             scraper._extract_readme()
 
             self.assertIn("readme", scraper.extracted_data)
-            self.assertEqual(scraper.extracted_data["readme"], "# React\n\nA JavaScript library")
+            self.assertEqual(
+                scraper.extracted_data["readme"], "# React\n\nA JavaScript library"
+            )
 
     def test_extract_readme_tries_multiple_locations(self):
         """Test that README extraction tries multiple file locations"""
@@ -177,7 +193,10 @@ class TestLanguageDetection(unittest.TestCase):
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = Mock()
-            scraper.repo.get_languages.return_value = {"JavaScript": 8000, "TypeScript": 2000}
+            scraper.repo.get_languages.return_value = {
+                "JavaScript": 8000,
+                "TypeScript": 2000,
+            }
 
             scraper._extract_languages()
 
@@ -221,7 +240,12 @@ class TestIssuesExtraction(unittest.TestCase):
 
     def test_extract_issues_success(self):
         """Test successful issues extraction"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": None, "max_issues": 10}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+        }
 
         # Create mock issues
         mock_label1 = Mock()
@@ -286,7 +310,12 @@ class TestIssuesExtraction(unittest.TestCase):
 
     def test_extract_issues_filters_pull_requests(self):
         """Test that pull requests are filtered out from issues"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": None, "max_issues": 10}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+        }
 
         # Create mock issue (need all required attributes)
         mock_issue = Mock()
@@ -321,7 +350,12 @@ class TestIssuesExtraction(unittest.TestCase):
 
     def test_extract_issues_respects_max_limit(self):
         """Test that max_issues limit is respected"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": None, "max_issues": 2}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 2,
+        }
 
         # Create 5 mock issues
         mock_issues = []
@@ -443,9 +477,15 @@ class TestReleasesExtraction(unittest.TestCase):
         mock_release1.prerelease = False
         mock_release1.created_at = datetime(2023, 3, 1)
         mock_release1.published_at = datetime(2023, 3, 1)
-        mock_release1.html_url = "https://github.com/facebook/react/releases/tag/v18.0.0"
-        mock_release1.tarball_url = "https://github.com/facebook/react/archive/v18.0.0.tar.gz"
-        mock_release1.zipball_url = "https://github.com/facebook/react/archive/v18.0.0.zip"
+        mock_release1.html_url = (
+            "https://github.com/facebook/react/releases/tag/v18.0.0"
+        )
+        mock_release1.tarball_url = (
+            "https://github.com/facebook/react/archive/v18.0.0.tar.gz"
+        )
+        mock_release1.zipball_url = (
+            "https://github.com/facebook/react/archive/v18.0.0.zip"
+        )
 
         mock_release2 = Mock()
         mock_release2.tag_name = "v18.0.0-rc.0"
@@ -455,9 +495,15 @@ class TestReleasesExtraction(unittest.TestCase):
         mock_release2.prerelease = True
         mock_release2.created_at = datetime(2023, 2, 1)
         mock_release2.published_at = datetime(2023, 2, 1)
-        mock_release2.html_url = "https://github.com/facebook/react/releases/tag/v18.0.0-rc.0"
-        mock_release2.tarball_url = "https://github.com/facebook/react/archive/v18.0.0-rc.0.tar.gz"
-        mock_release2.zipball_url = "https://github.com/facebook/react/archive/v18.0.0-rc.0.zip"
+        mock_release2.html_url = (
+            "https://github.com/facebook/react/releases/tag/v18.0.0-rc.0"
+        )
+        mock_release2.tarball_url = (
+            "https://github.com/facebook/react/archive/v18.0.0-rc.0.tar.gz"
+        )
+        mock_release2.zipball_url = (
+            "https://github.com/facebook/react/archive/v18.0.0-rc.0.zip"
+        )
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
@@ -566,7 +612,9 @@ class TestGitHubToSkillConverter(unittest.TestCase):
         config = {"repo": "facebook/react", "name": "test", "description": "Test skill"}
 
         # Override data file path
-        with patch("skill_seekers.cli.github_scraper.GitHubToSkillConverter.__init__") as mock_init:
+        with patch(
+            "skill_seekers.cli.github_scraper.GitHubToSkillConverter.__init__"
+        ) as mock_init:
             mock_init.return_value = None
             converter = self.GitHubToSkillConverter(config)
             converter.data_file = str(self.data_file)
@@ -733,7 +781,8 @@ class TestSymlinkHandling(unittest.TestCase):
             # Should successfully extract README content
             self.assertIn("readme", scraper.extracted_data)
             self.assertEqual(
-                scraper.extracted_data["readme"], "# AI SDK\n\nThe AI SDK is a TypeScript toolkit"
+                scraper.extracted_data["readme"],
+                "# AI SDK\n\nThe AI SDK is a TypeScript toolkit",
             )
 
     def test_extract_changelog_with_symlink(self):
@@ -815,7 +864,8 @@ class TestSymlinkHandling(unittest.TestCase):
                 # Should download via download_url
                 self.assertEqual(result, "# Changelog\n\n## v1.0.0\n- Initial release")
                 mock_requests.assert_called_once_with(
-                    "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md", timeout=30
+                    "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md",
+                    timeout=30,
                 )
 
     def test_extract_changelog_large_file(self):
@@ -950,7 +1000,9 @@ class TestErrorHandling(unittest.TestCase):
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = None
-            scraper.github.get_repo = Mock(side_effect=GithubException(404, "Not found"))
+            scraper.github.get_repo = Mock(
+                side_effect=GithubException(404, "Not found")
+            )
 
             # Should raise ValueError with helpful message
             with self.assertRaises(ValueError) as context:
@@ -960,12 +1012,19 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_rate_limit_error(self):
         """Test handling of rate limit errors"""
-        config = {"repo": "facebook/react", "name": "react", "github_token": None, "max_issues": 10}
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+        }
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = Mock()
-            scraper.repo.get_issues.side_effect = GithubException(403, "Rate limit exceeded")
+            scraper.repo.get_issues.side_effect = GithubException(
+                403, "Rate limit exceeded"
+            )
 
             # Should handle gracefully and log warning
             scraper._extract_issues()

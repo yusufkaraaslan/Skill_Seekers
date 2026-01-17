@@ -50,7 +50,9 @@ class TestIssue219Problem1LargeFiles(unittest.TestCase):
         # Mock large CHANGELOG (1.4MB, encoding="none")
         mock_content = Mock()
         mock_content.type = "file"
-        mock_content.encoding = "none"  # This is what GitHub API returns for large files
+        mock_content.encoding = (
+            "none"  # This is what GitHub API returns for large files
+        )
         mock_content.size = 1388271
         mock_content.download_url = (
             "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
@@ -73,13 +75,16 @@ class TestIssue219Problem1LargeFiles(unittest.TestCase):
 
                 # VERIFY: download_url was called
                 mock_requests.assert_called_once_with(
-                    "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md", timeout=30
+                    "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md",
+                    timeout=30,
                 )
 
                 # VERIFY: CHANGELOG was extracted successfully
                 self.assertIn("changelog", scraper.extracted_data)
                 self.assertIn("Bug fixes", scraper.extracted_data["changelog"])
-                self.assertEqual(scraper.extracted_data["changelog"], mock_response.text)
+                self.assertEqual(
+                    scraper.extracted_data["changelog"], mock_response.text
+                )
 
     def test_large_file_fallback_on_error(self):
         """E2E: Verify graceful handling if download_url fails"""
@@ -179,7 +184,8 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             # VERIFY: sys.argv contains --enhance-local flag
             # (main.py should have added it before calling github_scraper)
             called_with_enhance = any(
-                "--enhance-local" in str(call) for call in mock_github_main.call_args_list
+                "--enhance-local" in str(call)
+                for call in mock_github_main.call_args_list
             )
             self.assertTrue(
                 called_with_enhance or "--enhance-local" in sys.argv,
@@ -220,9 +226,12 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
 
         with (
             patch.dict(
-                os.environ, {"ANTHROPIC_API_KEY": "test-key-123", "ANTHROPIC_BASE_URL": custom_url}
+                os.environ,
+                {"ANTHROPIC_API_KEY": "test-key-123", "ANTHROPIC_BASE_URL": custom_url},
             ),
-            patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
+            patch(
+                "skill_seekers.cli.enhance_skill.anthropic.Anthropic"
+            ) as mock_anthropic,
         ):
             # Create enhancer
             _enhancer = SkillEnhancer(self.skill_dir)
@@ -249,7 +258,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         # Use ANTHROPIC_AUTH_TOKEN instead of ANTHROPIC_API_KEY
         with (
             patch.dict(os.environ, {"ANTHROPIC_AUTH_TOKEN": custom_token}, clear=True),
-            patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
+            patch(
+                "skill_seekers.cli.enhance_skill.anthropic.Anthropic"
+            ) as mock_anthropic,
         ):
             # Create enhancer (should accept ANTHROPIC_AUTH_TOKEN)
             enhancer = SkillEnhancer(self.skill_dir)
@@ -265,7 +276,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
             mock_anthropic.assert_called_once()
             call_kwargs = mock_anthropic.call_args[1]
             self.assertEqual(
-                call_kwargs["api_key"], custom_token, "api_key should match ANTHROPIC_AUTH_TOKEN"
+                call_kwargs["api_key"],
+                custom_token,
+                "api_key should match ANTHROPIC_AUTH_TOKEN",
             )
 
     def test_thinking_block_handling(self):
@@ -275,7 +288,12 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         except ImportError:
             self.skipTest("anthropic package not installed")
 
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}), patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic:
+        with (
+            patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
+            patch(
+                "skill_seekers.cli.enhance_skill.anthropic.Anthropic"
+            ) as mock_anthropic,
+        ):
             enhancer = SkillEnhancer(self.skill_dir)
 
             # Mock response with ThinkingBlock (newer SDK)
@@ -283,7 +301,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
             mock_thinking_block = SimpleNamespace(type="thinking")
 
             # TextBlock has .text attribute
-            mock_text_block = SimpleNamespace(text="# Enhanced SKILL.md\n\nContent here")
+            mock_text_block = SimpleNamespace(
+                text="# Enhanced SKILL.md\n\nContent here"
+            )
 
             mock_message = Mock()
             mock_message.content = [mock_thinking_block, mock_text_block]

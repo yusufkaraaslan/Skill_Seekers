@@ -65,7 +65,15 @@ class ConfigFile:
     file_path: str
     relative_path: str
     config_type: Literal[
-        "json", "yaml", "toml", "env", "ini", "python", "javascript", "dockerfile", "docker-compose"
+        "json",
+        "yaml",
+        "toml",
+        "env",
+        "ini",
+        "python",
+        "javascript",
+        "dockerfile",
+        "docker-compose",
     ]
     purpose: str  # Inferred purpose: database, api, logging, etc.
     settings: list[ConfigSetting] = field(default_factory=list)
@@ -81,7 +89,9 @@ class ConfigExtractionResult:
     config_files: list[ConfigFile] = field(default_factory=list)
     total_files: int = 0
     total_settings: int = 0
-    detected_patterns: dict[str, list[str]] = field(default_factory=dict)  # pattern -> files
+    detected_patterns: dict[str, list[str]] = field(
+        default_factory=dict
+    )  # pattern -> files
     errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -195,7 +205,12 @@ class ConfigFileDetector:
         },
         "javascript": {
             "patterns": ["*.config.js", "*.config.ts"],
-            "names": ["config.js", "next.config.js", "vue.config.js", "webpack.config.js"],
+            "names": [
+                "config.js",
+                "next.config.js",
+                "vue.config.js",
+                "webpack.config.js",
+            ],
         },
         "dockerfile": {
             "patterns": ["Dockerfile*"],
@@ -226,7 +241,9 @@ class ConfigFileDetector:
         "*.egg-info",
     }
 
-    def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
+    def find_config_files(
+        self, directory: Path, max_files: int = 100
+    ) -> list[ConfigFile]:
         """
         Find all configuration files in directory.
 
@@ -297,7 +314,10 @@ class ConfigFileDetector:
         filename = file_path.name.lower()
 
         # Database configs
-        if any(word in path_lower for word in ["database", "db", "postgres", "mysql", "mongo"]):
+        if any(
+            word in path_lower
+            for word in ["database", "db", "postgres", "mysql", "mongo"]
+        ):
             return "database_configuration"
 
         # API configs
@@ -313,7 +333,9 @@ class ConfigFileDetector:
             return "docker_configuration"
 
         # CI/CD configs
-        if any(word in path_lower for word in [".travis", ".gitlab", ".github", "ci", "cd"]):
+        if any(
+            word in path_lower for word in [".travis", ".gitlab", ".github", "ci", "cd"]
+        ):
             return "ci_cd_configuration"
 
         # Package configs
@@ -325,7 +347,11 @@ class ConfigFileDetector:
             return "typescript_configuration"
 
         # Framework configs
-        if "next.config" in filename or "vue.config" in filename or "webpack.config" in filename:
+        if (
+            "next.config" in filename
+            or "vue.config" in filename
+            or "webpack.config" in filename
+        ):
             return "framework_configuration"
 
         # Environment configs
@@ -467,7 +493,12 @@ class ConfigParser:
 
             for node in ast.walk(tree):
                 # Get variable name and skip private variables
-                if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and not node.targets[0].id.startswith("_"):
+                if (
+                    isinstance(node, ast.Assign)
+                    and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and not node.targets[0].id.startswith("_")
+                ):
                     key = node.targets[0].id
 
                     # Extract value
@@ -500,7 +531,9 @@ class ConfigParser:
             for match in re.finditer(pattern, config_file.raw_content):
                 if len(match.groups()) >= 2:
                     key = match.group(1)
-                    value = match.group(3) if len(match.groups()) > 2 else match.group(2)
+                    value = (
+                        match.group(3) if len(match.groups()) > 2 else match.group(2)
+                    )
 
                     setting = ConfigSetting(
                         key=key, value=value, value_type=self._infer_type(value)
@@ -546,7 +579,9 @@ class ConfigParser:
         for key, value in data.items():
             if isinstance(value, dict):
                 # Recurse into nested dicts
-                self._extract_settings_from_dict(value, config_file, parent_path + [key])
+                self._extract_settings_from_dict(
+                    value, config_file, parent_path + [key]
+                )
             else:
                 setting = ConfigSetting(
                     key=".".join(parent_path + [key]) if parent_path else key,
@@ -593,11 +628,26 @@ class ConfigPatternDetector:
     # Known configuration patterns
     KNOWN_PATTERNS = {
         "database_config": {
-            "keys": ["host", "port", "database", "user", "username", "password", "db_name"],
+            "keys": [
+                "host",
+                "port",
+                "database",
+                "user",
+                "username",
+                "password",
+                "db_name",
+            ],
             "min_match": 3,
         },
         "api_config": {
-            "keys": ["base_url", "api_key", "api_secret", "timeout", "retry", "endpoint"],
+            "keys": [
+                "base_url",
+                "api_key",
+                "api_secret",
+                "timeout",
+                "retry",
+                "endpoint",
+            ],
             "min_match": 2,
         },
         "logging_config": {
@@ -822,7 +872,9 @@ def main():
     print("\n📊 Summary:")
     print(f"  Config files found: {result.total_files}")
     print(f"  Total settings: {result.total_settings}")
-    print(f"  Detected patterns: {', '.join(result.detected_patterns.keys()) or 'None'}")
+    print(
+        f"  Detected patterns: {', '.join(result.detected_patterns.keys()) or 'None'}"
+    )
 
     if "ai_enhancements" in output_dict:
         print(f"  ✨ AI enhancements: Yes ({enhance_mode} mode)")
