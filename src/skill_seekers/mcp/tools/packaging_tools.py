@@ -525,8 +525,8 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 output_lines.append("")
 
                 # Extract config path from output
-                # Expected format: "✅ Config saved to: configs/react.json"
-                match = re.search(r"saved to:\s*(.+\.json)", fetch_output)
+                # Expected format: "📂 Saved to: configs/react.json"
+                match = re.search(r"(?i)saved to:\s*(.+\.json)", fetch_output)
                 if match:
                     workflow_state["config_path"] = match.group(1).strip()
                     output_lines.append(f"✅ Config fetched: {workflow_state['config_path']}")
@@ -665,7 +665,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
 
             # Extract package path from output (supports .zip and .tar.gz)
             # Expected format: "Saved to: output/react.zip" or "Saved to: output/react-gemini.tar.gz"
-            match = re.search(r"Saved to:\s*(.+\.(?:zip|tar\.gz))", package_output)
+            match = re.search(r"(?i)saved to:\s*(.+\.(?:zip|tar\.gz))", package_output)
             if match:
                 workflow_state["zip_path"] = match.group(1).strip()
             else:
