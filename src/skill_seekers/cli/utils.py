@@ -173,7 +173,7 @@ def validate_zip_file(zip_path: str | Path) -> tuple[bool, str | None]:
     if not zip_path.is_file():
         return False, f"Not a file: {zip_path}"
 
-    if not zip_path.suffix == ".zip":
+    if zip_path.suffix != ".zip":
         return False, f"Not a .zip file: {zip_path}"
 
     return True, None

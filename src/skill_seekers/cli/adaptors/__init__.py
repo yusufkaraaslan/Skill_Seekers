@@ -6,8 +6,6 @@ Provides factory function to get platform-specific adaptors for skill generation
 Supports Claude AI, Google Gemini, OpenAI ChatGPT, and generic Markdown export.
 """
 
-from typing import Dict, Type
-
 from .base import SkillAdaptor, SkillMetadata
 
 # Import adaptors (some may not be implemented yet)

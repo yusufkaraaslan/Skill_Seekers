@@ -13,7 +13,7 @@ import pytest
 def pytest_configure(config):
     """Check if package is installed before running tests."""
     try:
-        import skill_seekers
+        import skill_seekers  # noqa: F401
     except ModuleNotFoundError:
         print("\n" + "=" * 70)
         print("ERROR: skill_seekers package not installed")

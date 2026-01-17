@@ -21,8 +21,8 @@ from unittest.mock import MagicMock, patch
 _original_dir = os.getcwd()
 try:
     os.chdir("/tmp")  # Change away from project directory
-    from mcp.server import Server
-    from mcp.types import TextContent, Tool
+    from mcp.server import Server  # noqa: F401
+    from mcp.types import TextContent, Tool  # noqa: F401
 
     MCP_AVAILABLE = True
 except ImportError:

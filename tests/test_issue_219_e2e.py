@@ -28,7 +28,7 @@ class TestIssue219Problem1LargeFiles(unittest.TestCase):
     def setUp(self):
         """Set up test environment"""
         try:
-            from github import Github, GithubException
+            from github import Github, GithubException  # noqa: F401
 
             self.PYGITHUB_AVAILABLE = True
         except ImportError:
@@ -340,9 +340,9 @@ class TestIssue219IntegrationAll(unittest.TestCase):
 
         # Verify we can import all fixed modules
         try:
-            from skill_seekers.cli import main
-            from skill_seekers.cli.enhance_skill import SkillEnhancer
-            from skill_seekers.cli.github_scraper import GitHubScraper
+            from skill_seekers.cli import main  # noqa: F401
+            from skill_seekers.cli.enhance_skill import SkillEnhancer  # noqa: F401
+            from skill_seekers.cli.github_scraper import GitHubScraper  # noqa: F401
 
             # All imports successful
             self.assertTrue(True, "All modules import successfully")

@@ -174,7 +174,7 @@ version: {metadata.version}
                 "message": f"File not found: {package_path}",
             }
 
-        if not package_path.suffix == ".zip":
+        if package_path.suffix != ".zip":
             return {
                 "success": False,
                 "skill_id": None,
@@ -208,7 +208,7 @@ version: {metadata.version}
                 try:
                     response_data = response.json()
                     skill_id = response_data.get("id")
-                except:
+                except Exception:
                     skill_id = None
 
                 return {
@@ -229,7 +229,7 @@ version: {metadata.version}
             elif response.status_code == 400:
                 try:
                     error_msg = response.json().get("error", {}).get("message", "Unknown error")
-                except:
+                except Exception:
                     error_msg = "Invalid skill format"
 
                 return {
@@ -242,7 +242,7 @@ version: {metadata.version}
             else:
                 try:
                     error_msg = response.json().get("error", {}).get("message", "Unknown error")
-                except:
+                except Exception:
                     error_msg = f"HTTP {response.status_code}"
 
                 return {

@@ -24,7 +24,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 try:
-    from github import Github, GithubException
+    from github import Github, GithubException  # noqa: F401
 
     PYGITHUB_AVAILABLE = True
 except ImportError:

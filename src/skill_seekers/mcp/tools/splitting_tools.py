@@ -79,7 +79,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
                     line = process.stderr.readline()
                     if line:
                         stderr_lines.append(line)
-            except:
+            except Exception:
                 # Fallback for Windows (no select)
                 time.sleep(0.1)
 

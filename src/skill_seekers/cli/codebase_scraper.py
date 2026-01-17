@@ -398,7 +398,7 @@ def analyze_codebase(
         try:
             dot_file = dep_output_dir / "dependency_graph.dot"
             dep_analyzer.export_dot(str(dot_file))
-        except:
+        except Exception:
             pass  # pydot not installed, skip DOT export
 
     # Detect design patterns if requested (C3.1)

@@ -455,7 +455,7 @@ After writing, the file SKILL.md should:
 
         try:
             return json.loads(self.status_file.read_text(encoding="utf-8"))
-        except:
+        except Exception:
             return None
 
     def run(self, headless=True, timeout=600, background=False, daemon=False):
@@ -683,7 +683,7 @@ rm {prompt_file}
                         # Clean up prompt file
                         try:
                             os.unlink(prompt_file)
-                        except:
+                        except Exception:
                             pass
 
                         return True
@@ -728,7 +728,7 @@ rm {prompt_file}
             # Clean up
             try:
                 os.unlink(prompt_file)
-            except:
+            except Exception:
                 pass
 
             return False
@@ -808,7 +808,7 @@ rm {prompt_file}
                     # Clean up
                     try:
                         os.unlink(prompt_file)
-                    except:
+                    except Exception:
                         pass
 
                     if result.returncode == 0:
@@ -927,7 +927,7 @@ try:
     # Clean up
     try:
         os.unlink(prompt_file)
-    except:
+    except Exception:
         pass
 
     if result.returncode == 0:

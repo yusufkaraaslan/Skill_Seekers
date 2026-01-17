@@ -11,7 +11,7 @@ import pytest
 
 # Test if MCP is available
 try:
-    import mcp
+    import mcp  # noqa: F401
     from mcp.types import TextContent
 
     MCP_AVAILABLE = True

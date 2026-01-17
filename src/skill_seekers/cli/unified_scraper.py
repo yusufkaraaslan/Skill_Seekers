@@ -24,7 +24,7 @@ from typing import Any
 
 # Import validators and scrapers
 try:
-    from skill_seekers.cli.config_validator import ConfigValidator, validate_config
+    from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
     from skill_seekers.cli.merge_sources import ClaudeEnhancedMerger, RuleBasedMerger
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder

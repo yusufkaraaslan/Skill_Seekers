@@ -220,7 +220,7 @@ class CodeAnalyzer:
                         params[param_idx].default = (
                             ast.unparse(default) if hasattr(ast, "unparse") else str(default)
                         )
-                    except:
+                    except Exception:
                         params[param_idx].default = "..."
 
         # Extract return type
@@ -228,7 +228,7 @@ class CodeAnalyzer:
         if node.returns:
             try:
                 return_type = ast.unparse(node.returns) if hasattr(ast, "unparse") else None
-            except:
+            except Exception:
                 pass
 
         # Extract decorators
@@ -239,7 +239,7 @@ class CodeAnalyzer:
                     decorators.append(ast.unparse(decorator))
                 elif isinstance(decorator, ast.Name):
                     decorators.append(decorator.id)
-            except:
+            except Exception:
                 pass
 
         # Extract docstring

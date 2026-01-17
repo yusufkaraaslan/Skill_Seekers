@@ -4,7 +4,6 @@ Interactive Setup Wizard for Skill Seekers
 Guides users through installation options on first run.
 """
 
-import sys
 from pathlib import Path
 
 

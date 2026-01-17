@@ -26,8 +26,8 @@ from skill_seekers.mcp.source_manager import SourceManager
 
 # Check if MCP is available
 try:
-    import mcp
-    from mcp.types import TextContent
+    import mcp  # noqa: F401
+    from mcp.types import TextContent  # noqa: F401
 
     MCP_AVAILABLE = True
 except ImportError:

@@ -29,8 +29,8 @@ except ImportError:
     PYMUPDF_AVAILABLE = False
 
 try:
-    import pytesseract
-    from PIL import Image
+    import pytesseract  # noqa: F401
+    from PIL import Image  # noqa: F401
 
     TESSERACT_AVAILABLE = True
 except ImportError:

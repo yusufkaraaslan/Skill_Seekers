@@ -112,7 +112,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
                     line = process.stderr.readline()
                     if line:
                         stderr_lines.append(line)
-            except:
+            except Exception:
                 # Fallback for Windows (no select)
                 time.sleep(0.1)
 
@@ -834,7 +834,7 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
 
             # Estimate: 30s per page + buffer
             timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
-        except:
+        except Exception:
             timeout = 14400  # Default: 4 hours
 
     # Add progress message

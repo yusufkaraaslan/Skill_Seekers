@@ -235,7 +235,7 @@ class TestWorkflowGrouper(unittest.TestCase):
         # Should create 2 groups (test_user.py and test_database.py)
         self.assertEqual(len(grouped), 2)
         # Check that groups were created (titles are auto-generated from file names)
-        self.assertTrue(all(isinstance(k, str) for k in grouped.keys()))
+        self.assertTrue(all(isinstance(k, str) for k in grouped))
 
     def test_group_by_test_name(self):
         """Test grouping workflows by test name patterns"""

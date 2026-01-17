@@ -20,7 +20,7 @@ _original_dir = os.getcwd()
 MCP_AVAILABLE = False
 try:
     os.chdir("/tmp")  # Change away from project directory
-    from mcp.types import TextContent
+    from mcp.types import TextContent  # noqa: F401
 
     MCP_AVAILABLE = True
 except ImportError:

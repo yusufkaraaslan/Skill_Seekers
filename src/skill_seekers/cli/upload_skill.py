@@ -24,7 +24,7 @@ from pathlib import Path
 
 # Import utilities
 try:
-    from utils import print_upload_instructions, validate_zip_file
+    from utils import print_upload_instructions
 except ImportError:
     sys.path.insert(0, str(Path(__file__).parent))
     from utils import print_upload_instructions

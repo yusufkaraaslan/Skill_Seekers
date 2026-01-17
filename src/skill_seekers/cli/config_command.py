@@ -364,7 +364,7 @@ def set_api_key(provider: str, url: str):
         try:
             webbrowser.open(url)
             print("✅ Opened in browser\n")
-        except:
+        except Exception:
             pass
 
     key = input(f"Enter {provider.capitalize()} API key (or leave empty to skip): ").strip()

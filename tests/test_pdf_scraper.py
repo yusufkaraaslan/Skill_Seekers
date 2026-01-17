@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 
 try:
-    import fitz  # PyMuPDF
+    import fitz  # noqa: F401 PyMuPDF
 
     PYMUPDF_AVAILABLE = True
 except ImportError:

@@ -176,7 +176,7 @@ See the references directory for complete documentation with examples and best p
                 "message": f"File not found: {package_path}",
             }
 
-        if not package_path.suffix == ".gz":
+        if package_path.suffix != ".gz":
             return {
                 "success": False,
                 "skill_id": None,

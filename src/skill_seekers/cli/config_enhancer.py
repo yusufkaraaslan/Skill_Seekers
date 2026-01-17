@@ -267,9 +267,9 @@ Focus on actionable insights that help developers understand and improve their c
 
             if result_data:
                 # Merge LOCAL enhancements
-                original_result["ai_enhancements"] = result_data
+                result["ai_enhancements"] = result_data
                 logger.info("✅ LOCAL enhancement complete")
-                return original_result
+                return result
             else:
                 logger.warning("⚠️  LOCAL enhancement produced no results")
                 return result
@@ -370,7 +370,7 @@ Focus on actionable insights:
                         if "file_enhancements" in data or "overall_insights" in data:
                             logger.info(f"✅ Found enhancement data in {json_file.name}")
                             return data
-                except:
+                except Exception:
                     continue
 
             logger.warning("⚠️  Could not find enhancement output file")

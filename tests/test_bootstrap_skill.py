@@ -1,8 +1,9 @@
 """Tests for the bootstrap skill script."""
 
 import subprocess
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

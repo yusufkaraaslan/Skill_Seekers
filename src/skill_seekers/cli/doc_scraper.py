@@ -1260,7 +1260,7 @@ class DocToSkillConverter:
         if not category_defs:
             category_defs = self.infer_categories(pages)
 
-        categories: dict[str, list[dict[str, Any]]] = {cat: [] for cat in category_defs.keys()}
+        categories: dict[str, list[dict[str, Any]]] = {cat: [] for cat in category_defs}
         categories["other"] = []
 
         for page in pages:

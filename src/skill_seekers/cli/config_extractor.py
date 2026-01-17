@@ -29,15 +29,16 @@ except ImportError:
     logger.debug("PyYAML not available - YAML parsing will be limited")
 
 try:
-    import tomli
+    import tomli as toml_lib
 
     TOML_AVAILABLE = True
 except ImportError:
     try:
-        import toml
+        import toml as toml_lib  # noqa: F401
 
         TOML_AVAILABLE = True
     except ImportError:
+        toml_lib = None
         TOML_AVAILABLE = False
         logger.debug("toml/tomli not available - TOML parsing disabled")
 
@@ -408,13 +409,7 @@ class ConfigParser:
             return
 
         try:
-            if "tomli" in globals():
-                data = tomli.loads(config_file.raw_content)
-            else:
-                import toml
-
-                data = toml.loads(config_file.raw_content)
-
+            data = toml_lib.loads(config_file.raw_content)
             self._extract_settings_from_dict(data, config_file)
         except Exception as e:
             config_file.parse_errors.append(f"TOML parse error: {str(e)}")

@@ -44,7 +44,6 @@ try:
         detect_patterns_tool,
         estimate_pages_tool,
         extract_config_patterns_tool,
-        run_subprocess_with_streaming,
         scrape_docs_tool,
         scrape_github_tool,
         scrape_pdf_tool,

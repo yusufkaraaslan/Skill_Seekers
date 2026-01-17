@@ -53,11 +53,9 @@ import sys
 # Import FastMCP
 MCP_AVAILABLE = False
 FastMCP = None
-TextContent = None
 
 try:
     from mcp.server import FastMCP
-    from mcp.types import TextContent
 
     MCP_AVAILABLE = True
 except ImportError as e:

@@ -192,7 +192,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 "message": f"File not found: {package_path}",
             }
 
-        if not package_path.suffix == ".zip":
+        if package_path.suffix != ".zip":
             return {
                 "success": False,
                 "skill_id": None,
