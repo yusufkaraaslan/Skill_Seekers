@@ -31,9 +31,7 @@ def test_timeout_with_retry():
     downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=2)
 
     with (
-        patch(
-            "requests.get", side_effect=requests.Timeout("Connection timeout")
-        ) as mock_get,
+        patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get,
         patch("time.sleep") as mock_sleep,
     ):  # Mock sleep to speed up test
         content = downloader.download()
@@ -143,9 +141,7 @@ def test_custom_max_retries():
     downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=5)
 
     with (
-        patch(
-            "requests.get", side_effect=requests.Timeout("Connection timeout")
-        ) as mock_get,
+        patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get,
         patch("time.sleep"),
     ):
         content = downloader.download()
@@ -203,7 +199,9 @@ def test_is_markdown_rejects_html_doctype():
     """Test that HTML with DOCTYPE is rejected (prevents redirect trap)"""
     downloader = LlmsTxtDownloader("https://example.com/llms.txt")
 
-    html = "<!DOCTYPE html><html><head><title>Product Page</title></head><body>Content</body></html>"
+    html = (
+        "<!DOCTYPE html><html><head><title>Product Page</title></head><body>Content</body></html>"
+    )
     assert not downloader._is_markdown(html)
 
     # Test case-insensitive
@@ -230,9 +228,7 @@ def test_is_markdown_rejects_html_meta():
     html_with_head = "<head><title>Page</title></head><body>Content</body>"
     assert not downloader._is_markdown(html_with_head)
 
-    html_with_meta = (
-        '<meta charset="utf-8"><meta name="viewport" content="width=device-width">'
-    )
+    html_with_meta = '<meta charset="utf-8"><meta name="viewport" content="width=device-width">'
     assert not downloader._is_markdown(html_with_meta)
 
 
@@ -244,9 +240,7 @@ def test_is_markdown_accepts_markdown_with_html_words():
     assert downloader._is_markdown(markdown)
 
     # Test with actual markdown patterns
-    markdown_with_code = (
-        "# HTML Tutorial\n\n```html\n<div>example</div>\n```\n\n## More content"
-    )
+    markdown_with_code = "# HTML Tutorial\n\n```html\n<div>example</div>\n```\n\n## More content"
     assert downloader._is_markdown(markdown_with_code)
 
 
@@ -255,9 +249,7 @@ def test_html_detection_only_scans_first_500_chars():
     downloader = LlmsTxtDownloader("https://example.com/llms.txt")
 
     # HTML tag after 500 chars should not be detected
-    safe_markdown = (
-        "# Header\n\n" + ("Valid markdown content. " * 50) + "\n\n<!DOCTYPE html>"
-    )
+    safe_markdown = "# Header\n\n" + ("Valid markdown content. " * 50) + "\n\n<!DOCTYPE html>"
     # This should pass because <!DOCTYPE html> is beyond first 500 chars
     if len(safe_markdown[:500]) < len("<!DOCTYPE html>"):
         # If the HTML is within 500 chars, adjust test
@@ -294,9 +286,7 @@ def test_download_rejects_html_redirect():
 
     mock_response = Mock()
     # Simulate server returning HTML instead of markdown
-    mock_response.text = (
-        "<!DOCTYPE html><html><body><h1>Product Page</h1></body></html>"
-    )
+    mock_response.text = "<!DOCTYPE html><html><body><h1>Product Page</h1></body></html>"
     mock_response.raise_for_status = Mock()
 
     with patch("requests.get", return_value=mock_response):

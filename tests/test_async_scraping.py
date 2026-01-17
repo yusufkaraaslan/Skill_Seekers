@@ -103,9 +103,7 @@ class TestAsyncScrapeMethods(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
                 self.assertTrue(hasattr(converter, "scrape_page_async"))
-                self.assertTrue(
-                    asyncio.iscoroutinefunction(converter.scrape_page_async)
-                )
+                self.assertTrue(asyncio.iscoroutinefunction(converter.scrape_page_async))
             finally:
                 os.chdir(self.original_cwd)
 
@@ -263,9 +261,7 @@ class TestAsyncErrorHandling(unittest.TestCase):
 
                     async with httpx.AsyncClient() as client:
                         # Mock client.get to raise exception
-                        with patch.object(
-                            client, "get", side_effect=httpx.HTTPError("Test error")
-                        ):
+                        with patch.object(client, "get", side_effect=httpx.HTTPError("Test error")):
                             # Should not raise exception, just log error
                             await converter.scrape_page_async(
                                 "https://example.com/test", semaphore, client

@@ -134,9 +134,7 @@ class TestREADMEExtraction(unittest.TestCase):
             scraper._extract_readme()
 
             self.assertIn("readme", scraper.extracted_data)
-            self.assertEqual(
-                scraper.extracted_data["readme"], "# React\n\nA JavaScript library"
-            )
+            self.assertEqual(scraper.extracted_data["readme"], "# React\n\nA JavaScript library")
 
     def test_extract_readme_tries_multiple_locations(self):
         """Test that README extraction tries multiple file locations"""
@@ -477,15 +475,9 @@ class TestReleasesExtraction(unittest.TestCase):
         mock_release1.prerelease = False
         mock_release1.created_at = datetime(2023, 3, 1)
         mock_release1.published_at = datetime(2023, 3, 1)
-        mock_release1.html_url = (
-            "https://github.com/facebook/react/releases/tag/v18.0.0"
-        )
-        mock_release1.tarball_url = (
-            "https://github.com/facebook/react/archive/v18.0.0.tar.gz"
-        )
-        mock_release1.zipball_url = (
-            "https://github.com/facebook/react/archive/v18.0.0.zip"
-        )
+        mock_release1.html_url = "https://github.com/facebook/react/releases/tag/v18.0.0"
+        mock_release1.tarball_url = "https://github.com/facebook/react/archive/v18.0.0.tar.gz"
+        mock_release1.zipball_url = "https://github.com/facebook/react/archive/v18.0.0.zip"
 
         mock_release2 = Mock()
         mock_release2.tag_name = "v18.0.0-rc.0"
@@ -495,15 +487,9 @@ class TestReleasesExtraction(unittest.TestCase):
         mock_release2.prerelease = True
         mock_release2.created_at = datetime(2023, 2, 1)
         mock_release2.published_at = datetime(2023, 2, 1)
-        mock_release2.html_url = (
-            "https://github.com/facebook/react/releases/tag/v18.0.0-rc.0"
-        )
-        mock_release2.tarball_url = (
-            "https://github.com/facebook/react/archive/v18.0.0-rc.0.tar.gz"
-        )
-        mock_release2.zipball_url = (
-            "https://github.com/facebook/react/archive/v18.0.0-rc.0.zip"
-        )
+        mock_release2.html_url = "https://github.com/facebook/react/releases/tag/v18.0.0-rc.0"
+        mock_release2.tarball_url = "https://github.com/facebook/react/archive/v18.0.0-rc.0.tar.gz"
+        mock_release2.zipball_url = "https://github.com/facebook/react/archive/v18.0.0-rc.0.zip"
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
@@ -612,9 +598,7 @@ class TestGitHubToSkillConverter(unittest.TestCase):
         config = {"repo": "facebook/react", "name": "test", "description": "Test skill"}
 
         # Override data file path
-        with patch(
-            "skill_seekers.cli.github_scraper.GitHubToSkillConverter.__init__"
-        ) as mock_init:
+        with patch("skill_seekers.cli.github_scraper.GitHubToSkillConverter.__init__") as mock_init:
             mock_init.return_value = None
             converter = self.GitHubToSkillConverter(config)
             converter.data_file = str(self.data_file)
@@ -1000,9 +984,7 @@ class TestErrorHandling(unittest.TestCase):
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = None
-            scraper.github.get_repo = Mock(
-                side_effect=GithubException(404, "Not found")
-            )
+            scraper.github.get_repo = Mock(side_effect=GithubException(404, "Not found"))
 
             # Should raise ValueError with helpful message
             with self.assertRaises(ValueError) as context:
@@ -1022,9 +1004,7 @@ class TestErrorHandling(unittest.TestCase):
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = Mock()
-            scraper.repo.get_issues.side_effect = GithubException(
-                403, "Rate limit exceeded"
-            )
+            scraper.repo.get_issues.side_effect = GithubException(403, "Rate limit exceeded")
 
             # Should handle gracefully and log warning
             scraper._extract_issues()

@@ -31,9 +31,7 @@ class TestGuideEnhancerModeDetection:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="auto")
@@ -111,9 +109,7 @@ class TestGuideEnhancerStepDescriptions:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -179,9 +175,7 @@ class TestGuideEnhancerTroubleshooting:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -192,9 +186,7 @@ class TestGuideEnhancerTroubleshooting:
 
             guide_data = {
                 "title": "Test Guide",
-                "steps": [
-                    {"description": "import requests", "code": "import requests"}
-                ],
+                "steps": [{"description": "import requests", "code": "import requests"}],
                 "language": "python",
             }
             result = enhancer.enhance_troubleshooting(guide_data)
@@ -246,9 +238,7 @@ class TestGuideEnhancerPrerequisites:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -293,9 +283,7 @@ class TestGuideEnhancerNextSteps:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -340,9 +328,7 @@ class TestGuideEnhancerUseCases:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -426,9 +412,7 @@ class TestGuideEnhancerFullWorkflow:
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}),
             patch("skill_seekers.cli.guide_enhancer.ANTHROPIC_AVAILABLE", True),
-            patch(
-                "skill_seekers.cli.guide_enhancer.anthropic", create=True
-            ) as mock_anthropic,
+            patch("skill_seekers.cli.guide_enhancer.anthropic", create=True) as mock_anthropic,
         ):
             mock_anthropic.Anthropic = Mock()
             enhancer = GuideEnhancer(mode="api")
@@ -461,9 +445,7 @@ class TestGuideEnhancerFullWorkflow:
         """Test graceful fallback on enhancement error"""
         enhancer = GuideEnhancer(mode="none")
 
-        with patch.object(
-            enhancer, "enhance_guide", side_effect=Exception("API error")
-        ):
+        with patch.object(enhancer, "enhance_guide", side_effect=Exception("API error")):
             guide_data = {
                 "title": "Test",
                 "steps": [],
@@ -533,9 +515,7 @@ class TestGuideEnhancerPromptGeneration:
 
         guide_data = {
             "title": "How to Test",
-            "steps": [
-                {"description": "Write test", "code": "def test_example(): pass"}
-            ],
+            "steps": [{"description": "Write test", "code": "def test_example(): pass"}],
             "language": "python",
             "prerequisites": ["pytest"],
         }
@@ -583,9 +563,7 @@ class TestGuideEnhancerResponseParsing:
 
         response = json.dumps(
             {
-                "step_descriptions": [
-                    {"step_index": 0, "explanation": "Test", "variations": []}
-                ],
+                "step_descriptions": [{"step_index": 0, "explanation": "Test", "variations": []}],
                 "troubleshooting": [],
                 "prerequisites_detailed": [],
                 "next_steps": [],

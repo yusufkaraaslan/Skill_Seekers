@@ -174,9 +174,7 @@ class TestInstallToAgent:
         self.skill_dir.mkdir()
 
         # Create SKILL.md
-        (self.skill_dir / "SKILL.md").write_text(
-            "# Test Skill\n\nThis is a test skill."
-        )
+        (self.skill_dir / "SKILL.md").write_text("# Test Skill\n\nThis is a test skill.")
 
         # Create references directory with files
         refs_dir = self.skill_dir / "references"
@@ -201,9 +199,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", force=True
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -219,9 +215,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", force=True
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -246,9 +240,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", force=True
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -269,9 +261,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", force=False
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", force=False)
 
                 assert success is False
                 assert "already installed" in message.lower()
@@ -289,9 +279,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", force=True
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 # Old file should be gone
@@ -328,9 +316,7 @@ class TestInstallToAgent:
                 "skill_seekers.cli.install_agent.get_agent_path",
                 return_value=agent_path,
             ):
-                success, message = install_to_agent(
-                    self.skill_dir, "claude", dry_run=True
-                )
+                success, message = install_to_agent(self.skill_dir, "claude", dry_run=True)
 
                 assert success is True
                 assert "DRY RUN" in message
@@ -485,9 +471,7 @@ class TestInstallAgentCLI:
 
                 assert exit_code == 0
                 # Directory should NOT be created
-                assert not (
-                    Path(agent_tmpdir) / ".claude" / "skills" / "test-skill"
-                ).exists()
+                assert not (Path(agent_tmpdir) / ".claude" / "skills" / "test-skill").exists()
 
     def test_cli_integration(self):
         """Test end-to-end CLI execution."""

@@ -79,9 +79,7 @@ class WorkflowStep:
     setup_required: str | None = None
     explanation: str | None = None  # Why this step matters
     common_pitfall: str | None = None  # Warning for this step
-    common_variations: list[str] = field(
-        default_factory=list
-    )  # AI: Alternative approaches
+    common_variations: list[str] = field(default_factory=list)  # AI: Alternative approaches
 
 
 @dataclass
@@ -223,9 +221,7 @@ class WorkflowAnalyzer:
                 # Check if next statement is assertion (verification)
                 idx = statements.index(stmt)
                 verification = None
-                if idx + 1 < len(statements) and isinstance(
-                    statements[idx + 1], ast.Assert
-                ):
+                if idx + 1 < len(statements) and isinstance(statements[idx + 1], ast.Assert):
                     verification = ast.get_source_segment(code, statements[idx + 1])
 
                 steps.append(
@@ -244,9 +240,7 @@ class WorkflowAnalyzer:
 
         return steps
 
-    def _extract_steps_heuristic(
-        self, code: str, _workflow: dict
-    ) -> list[WorkflowStep]:
+    def _extract_steps_heuristic(self, code: str, _workflow: dict) -> list[WorkflowStep]:
         """Extract steps using heuristics (for non-Python or invalid syntax)"""
         steps = []
         lines = code.split("\n")
@@ -282,9 +276,7 @@ class WorkflowAnalyzer:
             step_code = "\n".join(current_step)
             description = self._infer_description_from_code(step_code)
             steps.append(
-                WorkflowStep(
-                    step_number=step_num, code=step_code, description=description
-                )
+                WorkflowStep(step_number=step_num, code=step_code, description=description)
             )
 
         return steps
@@ -454,9 +446,7 @@ class WorkflowGrouper:
                 groups = self._group_by_file_path(workflows)
             return groups
 
-    def _group_by_ai_tutorial_group(
-        self, workflows: list[dict]
-    ) -> dict[str, list[dict]]:
+    def _group_by_ai_tutorial_group(self, workflows: list[dict]) -> dict[str, list[dict]]:
         """Group by AI-generated tutorial_group (from C3.6 enhancement)"""
         groups = defaultdict(list)
         ungrouped = []
@@ -914,9 +904,7 @@ class HowToGuideBuilder:
         """Filter to workflow category only"""
         return [ex for ex in examples if ex.get("category") == "workflow"]
 
-    def _create_guide(
-        self, title: str, workflows: list[dict], enhancer=None
-    ) -> HowToGuide:
+    def _create_guide(self, title: str, workflows: list[dict], enhancer=None) -> HowToGuide:
         """
         Generate single guide from workflow(s).
 
@@ -974,18 +962,14 @@ class HowToGuideBuilder:
 
         # Add AI enhancements if enhancer is available
         if enhancer:
-            self._enhance_guide_with_ai(
-                guide, primary_workflow.get("ai_analysis", {}), enhancer
-            )
+            self._enhance_guide_with_ai(guide, primary_workflow.get("ai_analysis", {}), enhancer)
         elif self.enhance_with_ai and primary_workflow.get("ai_analysis"):
             # Fallback to old enhancement method (basic)
             self._enhance_guide_with_ai_basic(guide, primary_workflow["ai_analysis"])
 
         return guide
 
-    def _generate_overview(
-        self, primary_workflow: dict, _all_workflows: list[dict]
-    ) -> str:
+    def _generate_overview(self, primary_workflow: dict, _all_workflows: list[dict]) -> str:
         """Generate guide overview"""
         # Try to get explanation from AI analysis
         if primary_workflow.get("ai_analysis"):
@@ -1019,10 +1003,7 @@ class HowToGuideBuilder:
         # Prepare guide data for enhancer
         guide_data = {
             "title": guide.title,
-            "steps": [
-                {"description": step.description, "code": step.code}
-                for step in guide.steps
-            ],
+            "steps": [{"description": step.description, "code": step.code} for step in guide.steps],
             "language": "python",  # TODO: Detect from code
             "prerequisites": guide.prerequisites,
             "description": guide.overview,
@@ -1055,9 +1036,7 @@ class HowToGuideBuilder:
         if "use_cases" in enhanced_data:
             guide.use_cases = enhanced_data["use_cases"]
 
-        logger.info(
-            f"✨ Enhanced guide '{guide.title}' with comprehensive AI improvements"
-        )
+        logger.info(f"✨ Enhanced guide '{guide.title}' with comprehensive AI improvements")
 
     def _enhance_guide_with_ai_basic(self, guide: HowToGuide, ai_analysis: dict):
         """
@@ -1122,9 +1101,7 @@ class HowToGuideBuilder:
 
             for guide in guides:
                 # Generate filename from title
-                filename = (
-                    guide.title.lower().replace(" ", "-").replace(":", "") + ".md"
-                )
+                filename = guide.title.lower().replace(" ", "-").replace(":", "") + ".md"
                 file_path = use_case_dir / filename
 
                 # Generate and save markdown
@@ -1135,9 +1112,7 @@ class HowToGuideBuilder:
         index_markdown = self.generator.generate_index(collection.guides)
         (output_dir / "index.md").write_text(index_markdown, encoding="utf-8")
 
-        logger.info(
-            f"✅ Saved {collection.total_guides} guides + index to {output_dir}"
-        )
+        logger.info(f"✅ Saved {collection.total_guides} guides + index to {output_dir}")
 
 
 # ============================================================================
@@ -1244,9 +1219,7 @@ Grouping Strategies:
         # Extract from directory using test example extractor
         print("⚠️  Directory input requires test example extractor")
         print("   Please use test_examples.json output from C3.2")
-        print(
-            f"   Or run: skill-seekers extract-test-examples {input_path} --json > examples.json"
-        )
+        print(f"   Or run: skill-seekers extract-test-examples {input_path} --json > examples.json")
         sys.exit(1)
 
     else:

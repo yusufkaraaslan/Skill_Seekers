@@ -237,9 +237,7 @@ class PatternRecognizer:
         self.detectors.append(TemplateMethodDetector(self.depth))
         self.detectors.append(ChainOfResponsibilityDetector(self.depth))
 
-    def analyze_file(
-        self, file_path: str, content: str, language: str
-    ) -> PatternReport:
+    def analyze_file(self, file_path: str, content: str, language: str) -> PatternReport:
         """
         Analyze a single file for design patterns.
 
@@ -581,9 +579,7 @@ class FactoryDetector(BasePatternDetector):
 
         # Check if multiple factory methods exist (Abstract Factory pattern)
         if len(factory_methods) >= 2:
-            evidence.append(
-                f"Multiple factory methods: {', '.join(factory_methods[:3])}"
-            )
+            evidence.append(f"Multiple factory methods: {', '.join(factory_methods[:3])}")
             confidence += 0.2
 
         # Check for inheritance (factory hierarchy)
@@ -800,35 +796,25 @@ class StrategyDetector(BasePatternDetector):
             ]
 
             if siblings:
-                evidence.append(
-                    f"Part of strategy family with: {', '.join(siblings[:3])}"
-                )
+                evidence.append(f"Part of strategy family with: {', '.join(siblings[:3])}")
                 confidence += 0.5
 
-            if base_class and (
-                "strategy" in base_class.lower() or "policy" in base_class.lower()
-            ):
+            if base_class and ("strategy" in base_class.lower() or "policy" in base_class.lower()):
                 evidence.append(f"Inherits from strategy base: {base_class}")
                 confidence += 0.3
 
         # Check if this is a strategy base class
         # (has subclasses in same file)
-        subclasses = [
-            cls.name for cls in all_classes if class_sig.name in cls.base_classes
-        ]
+        subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
 
         if len(subclasses) >= 2:
-            evidence.append(
-                f"Strategy base with implementations: {', '.join(subclasses[:3])}"
-            )
+            evidence.append(f"Strategy base with implementations: {', '.join(subclasses[:3])}")
             confidence += 0.6
 
         # Check for single dominant method (strategy interface)
         if len(class_sig.methods) == 1 or len(class_sig.methods) == 2:
             # Single method or method + __init__
-            main_method = [
-                m for m in class_sig.methods if m.name not in ["__init__", "__new__"]
-            ]
+            main_method = [m for m in class_sig.methods if m.name not in ["__init__", "__new__"]]
             if main_method:
                 evidence.append(f"Strategy interface method: {main_method[0].name}")
                 confidence += 0.2
@@ -939,8 +925,7 @@ class DecoratorDetector(BasePatternDetector):
         if init_method and len(init_method.parameters) > 1:  # More than just 'self'
             param_names = [p.name for p in init_method.parameters if p.name != "self"]
             if any(
-                name in ["wrapped", "component", "inner", "obj", "target"]
-                for name in param_names
+                name in ["wrapped", "component", "inner", "obj", "target"] for name in param_names
             ):
                 evidence.append(f"Takes wrapped object in constructor: {param_names}")
                 confidence += 0.4
@@ -1298,9 +1283,7 @@ class TemplateMethodDetector(BasePatternDetector):
         class_lower = class_sig.name.lower()
         if any(keyword in class_lower for keyword in template_keywords):
             # Check if has subclasses
-            subclasses = [
-                cls.name for cls in all_classes if class_sig.name in cls.base_classes
-            ]
+            subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
 
             if subclasses:
                 return PatternInstance(
@@ -1310,9 +1293,7 @@ class TemplateMethodDetector(BasePatternDetector):
                     location="",
                     class_name=class_sig.name,
                     line_number=class_sig.line_number,
-                    evidence=[
-                        f"Abstract base with subclasses: {', '.join(subclasses[:2])}"
-                    ],
+                    evidence=[f"Abstract base with subclasses: {', '.join(subclasses[:2])}"],
                     related_classes=subclasses,
                 )
 
@@ -1329,9 +1310,7 @@ class TemplateMethodDetector(BasePatternDetector):
         # 3. Has template method that orchestrates
 
         # Check for subclasses
-        subclasses = [
-            cls.name for cls in all_classes if class_sig.name in cls.base_classes
-        ]
+        subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
 
         if len(subclasses) >= 1:
             evidence.append(f"Base class with {len(subclasses)} implementations")
@@ -1467,8 +1446,7 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
 
         # Check for set_next() method
         has_set_next = any(
-            "next" in m.name.lower()
-            and ("set" in m.name.lower() or "add" in m.name.lower())
+            "next" in m.name.lower() and ("set" in m.name.lower() or "add" in m.name.lower())
             for m in class_sig.methods
         )
 
@@ -1489,9 +1467,7 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
             ]
 
             if siblings and has_next_ref:
-                evidence.append(
-                    f"Part of handler chain with: {', '.join(siblings[:2])}"
-                )
+                evidence.append(f"Part of handler chain with: {', '.join(siblings[:2])}")
                 confidence += 0.2
 
         if confidence >= 0.5:
@@ -1590,9 +1566,7 @@ class LanguageAdapter:
                     pattern.evidence.append("Abstract Factory pattern")
 
             # Template Method: Abstract classes common
-            elif (
-                pattern.pattern_type == "TemplateMethod" and "abstract" in evidence_str
-            ):
+            elif pattern.pattern_type == "TemplateMethod" and "abstract" in evidence_str:
                 pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
         # Go adaptations
@@ -1645,9 +1619,7 @@ class LanguageAdapter:
                     pattern.evidence.append("Ruby Singleton module")
 
             # Builder: Method chaining is idiomatic
-            elif (
-                pattern.pattern_type == "Builder" and "method chaining" in evidence_str
-            ):
+            elif pattern.pattern_type == "Builder" and "method chaining" in evidence_str:
                 pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         # PHP adaptations
@@ -1702,9 +1674,7 @@ Supported Languages:
         action="append",
         help="Source file to analyze (can be specified multiple times)",
     )
-    parser.add_argument(
-        "--directory", help="Directory to analyze (analyzes all source files)"
-    )
+    parser.add_argument("--directory", help="Directory to analyze (analyzes all source files)")
     parser.add_argument(
         "--output", help="Output directory for results (default: current directory)"
     )

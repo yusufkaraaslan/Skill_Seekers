@@ -194,15 +194,11 @@ class PythonTestAnalyzer:
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
                 if self._is_test_class(node):
-                    examples.extend(
-                        self._extract_from_test_class(node, file_path, imports)
-                    )
+                    examples.extend(self._extract_from_test_class(node, file_path, imports))
 
             # Find test functions (pytest)
             elif isinstance(node, ast.FunctionDef) and self._is_test_function(node):
-                examples.extend(
-                    self._extract_from_test_function(node, file_path, imports)
-                )
+                examples.extend(self._extract_from_test_function(node, file_path, imports))
 
         return examples
 
@@ -236,9 +232,7 @@ class PythonTestAnalyzer:
             return True
         # Has @pytest.mark decorator
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Attribute) and "pytest" in ast.unparse(
-                decorator
-            ):
+            if isinstance(decorator, ast.Attribute) and "pytest" in ast.unparse(decorator):
                 return True
         return False
 
@@ -255,9 +249,7 @@ class PythonTestAnalyzer:
         for node in class_node.body:
             if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
                 examples.extend(
-                    self._analyze_test_body(
-                        node, file_path, imports, setup_code=setup_code
-                    )
+                    self._analyze_test_body(node, file_path, imports, setup_code=setup_code)
                 )
 
         return examples
@@ -269,9 +261,7 @@ class PythonTestAnalyzer:
         # Check for fixture parameters
         fixture_setup = self._extract_fixtures(func_node)
 
-        return self._analyze_test_body(
-            func_node, file_path, imports, setup_code=fixture_setup
-        )
+        return self._analyze_test_body(func_node, file_path, imports, setup_code=fixture_setup)
 
     def _extract_setup_method(self, class_node: ast.ClassDef) -> str | None:
         """Extract setUp method code"""
@@ -328,9 +318,7 @@ class PythonTestAnalyzer:
         examples.extend(configs)
 
         # 4. Multi-step workflows (integration tests)
-        workflows = self._find_workflows(
-            func_node, file_path, docstring, setup_code, tags, imports
-        )
+        workflows = self._find_workflows(func_node, file_path, docstring, setup_code, tags, imports)
         examples.extend(workflows)
 
         return examples
@@ -491,9 +479,7 @@ class PythonTestAnalyzer:
                         code=code,
                         language="Python",
                         description=f"Configuration example: {description}",
-                        expected_behavior=self._extract_assertion_after(
-                            func_node, node
-                        ),
+                        expected_behavior=self._extract_assertion_after(func_node, node),
                         setup_code=setup_code,
                         file_path=file_path,
                         line_start=node.lineno,
@@ -594,9 +580,7 @@ class PythonTestAnalyzer:
         integration_keywords = ["workflow", "integration", "end_to_end", "e2e", "full"]
         return any(keyword in test_name for keyword in integration_keywords)
 
-    def _extract_assertion_after(
-        self, func_node: ast.FunctionDef, target_node: ast.AST
-    ) -> str:
+    def _extract_assertion_after(self, func_node: ast.FunctionDef, target_node: ast.AST) -> str:
         """Find assertion that follows the target node"""
         found_target = False
         for stmt in func_node.body:
@@ -727,8 +711,7 @@ class GenericTestAnalyzer:
                         code=config_match.group(0),
                         language=language,
                         file_path=file_path,
-                        line_number=code[: start_pos + config_match.start()].count("\n")
-                        + 1,
+                        line_number=code[: start_pos + config_match.start()].count("\n") + 1,
                     )
                     examples.append(example)
 
@@ -871,9 +854,7 @@ class TestExampleExtractor:
                 logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
                 self.enhance_with_ai = False
 
-    def extract_from_directory(
-        self, directory: Path, recursive: bool = True
-    ) -> ExampleReport:
+    def extract_from_directory(self, directory: Path, recursive: bool = True) -> ExampleReport:
         """Extract examples from all test files in directory"""
         directory = Path(directory)
 
@@ -927,13 +908,11 @@ class TestExampleExtractor:
         # Limit per file
         if len(filtered_examples) > self.max_per_file:
             # Sort by confidence and take top N
-            filtered_examples = sorted(
-                filtered_examples, key=lambda x: x.confidence, reverse=True
-            )[: self.max_per_file]
+            filtered_examples = sorted(filtered_examples, key=lambda x: x.confidence, reverse=True)[
+                : self.max_per_file
+            ]
 
-        logger.info(
-            f"Extracted {len(filtered_examples)} examples from {file_path.name}"
-        )
+        logger.info(f"Extracted {len(filtered_examples)} examples from {file_path.name}")
 
         return filtered_examples
 
@@ -988,9 +967,7 @@ class TestExampleExtractor:
 
         # Calculate averages
         avg_complexity = (
-            sum(ex.complexity_score for ex in examples) / len(examples)
-            if examples
-            else 0.0
+            sum(ex.complexity_score for ex in examples) / len(examples) if examples else 0.0
         )
         high_value_count = sum(1 for ex in examples if ex.confidence > 0.7)
 
@@ -1050,9 +1027,7 @@ Examples:
         help="Maximum examples per file (default: 10)",
     )
     parser.add_argument("--json", action="store_true", help="Output JSON format")
-    parser.add_argument(
-        "--markdown", action="store_true", help="Output Markdown format"
-    )
+    parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
     parser.add_argument(
         "--recursive",
         action="store_true",
@@ -1079,9 +1054,7 @@ Examples:
         examples = extractor.extract_from_file(Path(args.file))
         report = extractor._create_report(examples, file_path=args.file)
     else:
-        report = extractor.extract_from_directory(
-            Path(args.directory), recursive=args.recursive
-        )
+        report = extractor.extract_from_directory(Path(args.directory), recursive=args.recursive)
 
     # Output results
     if args.json:

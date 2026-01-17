@@ -203,15 +203,11 @@ How to use async tools.
             ],
         }
 
-    def test_scenario_1_github_three_stream_fetcher(
-        self, mock_github_repo, mock_github_api_data
-    ):
+    def test_scenario_1_github_three_stream_fetcher(self, mock_github_repo, mock_github_api_data):
         """Test GitHub three-stream fetcher with mock data."""
         # Create fetcher with mock
         with (
-            patch.object(
-                GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo
-            ),
+            patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
             patch.object(
                 GitHubThreeStreamFetcher,
                 "fetch_github_metadata",
@@ -251,14 +247,10 @@ How to use async tools.
             assert len(three_streams.insights_stream.known_solutions) >= 1
             assert len(three_streams.insights_stream.top_labels) >= 2
 
-    def test_scenario_1_unified_analyzer_github(
-        self, mock_github_repo, mock_github_api_data
-    ):
+    def test_scenario_1_unified_analyzer_github(self, mock_github_repo, mock_github_api_data):
         """Test unified analyzer with GitHub source."""
         with (
-            patch.object(
-                GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo
-            ),
+            patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
             patch.object(
                 GitHubThreeStreamFetcher,
                 "fetch_github_metadata",
@@ -286,9 +278,7 @@ How to use async tools.
                     {"name": "test_azure_provider", "file": "test_auth.py"},
                 ],
                 "c3_2_examples_count": 2,
-                "c3_3_guides": [
-                    {"title": "OAuth Setup Guide", "file": "docs/oauth.md"}
-                ],
+                "c3_3_guides": [{"title": "OAuth Setup Guide", "file": "docs/oauth.md"}],
                 "c3_4_configs": [],
                 "c3_7_architecture": [
                     {
@@ -335,9 +325,7 @@ How to use async tools.
                 {
                     "name": "fastmcp-oauth",
                     "description": "OAuth authentication for FastMCP",
-                    "categories": {
-                        "oauth": ["oauth", "auth", "provider", "google", "azure"]
-                    },
+                    "categories": {"oauth": ["oauth", "auth", "provider", "google", "azure"]},
                 }
             )
         )
@@ -491,9 +479,7 @@ pip install fastmcp
         # Check content quality (Architecture Section 8.2)
         assert "Issue #42" in router_md, "Missing issue references"
         assert "⭐" in router_md or "Stars:" in router_md, "Missing GitHub metadata"
-        assert (
-            "Quick Start" in router_md or "README" in router_md
-        ), "Missing README content"
+        assert "Quick Start" in router_md or "README" in router_md, "Missing README content"
 
 
 class TestScenario2MultiSource:
@@ -617,15 +603,11 @@ class TestScenario2MultiSource:
         # Layer 4: GitHub insights (community knowledge)
 
         # Mock source 1 (HTML docs)
-        source1_data = {
-            "api": [{"name": "GoogleProvider", "params": ["app_id", "app_secret"]}]
-        }
+        source1_data = {"api": [{"name": "GoogleProvider", "params": ["app_id", "app_secret"]}]}
 
         # Mock source 2 (GitHub C3.x)
         source2_data = {
-            "api": [
-                {"name": "GoogleProvider", "params": ["client_id", "client_secret"]}
-            ]
+            "api": [{"name": "GoogleProvider", "params": ["client_id", "client_secret"]}]
         }
 
         # Mock GitHub streams
@@ -651,9 +633,7 @@ class TestScenario2MultiSource:
         )
 
         # Create merger with required arguments
-        merger = RuleBasedMerger(
-            docs_data=source1_data, github_data=source2_data, conflicts=[]
-        )
+        merger = RuleBasedMerger(docs_data=source1_data, github_data=source2_data, conflicts=[])
 
         # Merge using merge_all() method
         merged = merger.merge_all()
@@ -770,12 +750,8 @@ def test_connection():
             mock_c3x.return_value = {
                 "files": ["database.py", "api.py"],
                 "analysis_type": "c3x",
-                "c3_1_patterns": [
-                    {"name": "Singleton", "count": 1, "file": "database.py"}
-                ],
-                "c3_2_examples": [
-                    {"name": "test_connection", "file": "test_database.py"}
-                ],
+                "c3_1_patterns": [{"name": "Singleton", "count": 1, "file": "database.py"}],
+                "c3_2_examples": [{"name": "test_connection", "file": "test_database.py"}],
                 "c3_2_examples_count": 1,
                 "c3_3_guides": [],
                 "c3_4_configs": [],
@@ -967,9 +943,7 @@ Based on analysis of GitHub issues:
         print(f"\nGitHub overhead: {github_overhead} lines")
 
         # Architecture target: 20-60 lines
-        assert (
-            20 <= github_overhead <= 60
-        ), f"GitHub overhead {github_overhead} not in range 20-60"
+        assert 20 <= github_overhead <= 60, f"GitHub overhead {github_overhead} not in range 20-60"
 
     def test_router_size_within_limits(self):
         """Test router size is 150±20 lines (Architecture Section 8.1, Line 1970)."""
@@ -977,9 +951,7 @@ Based on analysis of GitHub issues:
         router_lines = 150  # Simulated count
 
         # Architecture target: 150 lines (±20)
-        assert (
-            130 <= router_lines <= 170
-        ), f"Router size {router_lines} not in range 130-170"
+        assert 130 <= router_lines <= 170, f"Router size {router_lines} not in range 130-170"
 
     def test_content_quality_requirements(self):
         """Test content quality (Architecture Section 8.2, Lines 1977-2014)."""
@@ -1021,9 +993,9 @@ provider = GitHubProvider(client_id="...", client_secret="...")
 
         # Check minimum 3 code examples
         code_blocks = sub_skill_md.count("```")
-        assert (
-            code_blocks >= 6
-        ), f"Need at least 3 code examples (6 markers), found {code_blocks // 2}"
+        assert code_blocks >= 6, (
+            f"Need at least 3 code examples (6 markers), found {code_blocks // 2}"
+        )
 
         # Check language tags
         assert "```python" in sub_skill_md, "Code blocks must have language tags"
@@ -1038,9 +1010,9 @@ provider = GitHubProvider(client_id="...", client_secret="...")
 
         # Check solution indicators for closed issues
         if "closed" in sub_skill_md.lower():
-            assert (
-                "✅" in sub_skill_md or "Solution" in sub_skill_md
-            ), "Closed issues should indicate solution found"
+            assert "✅" in sub_skill_md or "Solution" in sub_skill_md, (
+                "Closed issues should indicate solution found"
+            )
 
 
 class TestTokenEfficiencyCalculation:
@@ -1077,9 +1049,9 @@ class TestTokenEfficiencyCalculation:
 
         # With selective loading and caching, achieve 35-40%
         # Even conservative estimate shows 29.5%, actual usage patterns show 35-40%
-        assert (
-            reduction_percent >= 29
-        ), f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
+        assert reduction_percent >= 29, (
+            f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
+        )
 
 
 if __name__ == "__main__":
