@@ -34,12 +34,29 @@ from pathlib import Path
 # Add parent directory to path to import MCP server
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import the MCP tool function
-from skill_seekers.mcp.server import install_skill_tool
+# Import the MCP tool function (with lazy loading)
+try:
+    from skill_seekers.mcp.server import install_skill_tool
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    install_skill_tool = None
 
 
 def main():
     """Main entry point for CLI"""
+    # Check MCP availability first
+    if not MCP_AVAILABLE:
+        print("\n❌ Error: MCP package not installed")
+        print("\nThe 'install' command requires MCP support.")
+        print("Install with:")
+        print("  pip install skill-seekers[mcp]")
+        print("\nOr use these alternatives:")
+        print("  skill-seekers scrape --config react")
+        print("  skill-seekers package output/react/")
+        print()
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         description="Complete skill installation workflow (fetch → scrape → enhance → package → upload)",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -43,9 +43,8 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
-    "mcp>=1.25,<2",
-    "httpx>=0.28.1",
-    "httpx-sse>=0.4.3",
+    "httpx>=0.28.1",  # Required for async scraping (core feature)
+    "anthropic>=0.76.0",  # Required for AI enhancement (core feature)
     "PyMuPDF>=1.24.14",
     "Pillow>=11.0.0",
     "pytesseract>=0.3.13",
@@ -60,7 +59,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# MCP server dependencies (included by default, but optional)
+# MCP server dependencies (NOW TRULY OPTIONAL)
 mcp = [
     "mcp>=1.25,<2",
     "httpx>=0.28.1",
@@ -126,6 +125,7 @@ skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
 skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main"
+skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -146,8 +146,11 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short --strict-markers"
 markers = [
     "asyncio: mark test as an async test",
-    "slow: mark test as slow running",
+    "slow: mark test as slow running (>5 seconds)",
     "integration: mark test as integration test (requires external services)",
+    "e2e: mark test as end-to-end (resource-intensive, may create files)",
+    "venv: mark test as requiring virtual environment setup",
+    "bootstrap: mark test as bootstrap feature specific",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
