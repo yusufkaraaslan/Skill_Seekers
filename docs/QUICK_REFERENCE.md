@@ -368,7 +368,7 @@ wait
 - Packages: `output/{name}-{platform}.{zip|tar.gz}`
 
 **MCP:**
-- Server: `src/skill_seekers/mcp/server.py`
+- Server: `src/skill_seekers/mcp/server_fastmcp.py`
 - Tools: `src/skill_seekers/mcp/tools/*.py`
 
 **Tests:**
