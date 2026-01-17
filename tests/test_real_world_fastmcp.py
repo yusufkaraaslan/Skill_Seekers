@@ -93,6 +93,7 @@ class TestRealWorldFastMCP:
                 source="https://github.com/jlowin/fastmcp",
                 depth=depth_mode,
                 fetch_github_metadata=True,
+                interactive=False,
                 output_dir=output_dir,
             )
 
