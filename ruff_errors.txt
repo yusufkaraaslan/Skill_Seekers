@@ -1,0 +1,439 @@
+ARG002 Unused method argument: `config_type`
+   --> src/skill_seekers/cli/config_extractor.py:294:47
+    |
+292 |         return None
+293 |
+294 |     def _infer_purpose(self, file_path: Path, config_type: str) -> str:
+    |                                               ^^^^^^^^^^^
+295 |         """Infer configuration purpose from file path and name"""
+296 |         path_lower = str(file_path).lower()
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/config_extractor.py:469:17
+    |
+468 |               for node in ast.walk(tree):
+469 | /                 if isinstance(node, ast.Assign):
+470 | |                     # Get variable name and skip private variables
+471 | |                     if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and not node.targets[0].id.startswith("_"):
+    | |___________________________________________________________________________________________________________________________________^
+472 |                           key = node.targets[0].id
+    |
+help: Combine `if` statements using `and`
+
+ARG002 Unused method argument: `node`
+   --> src/skill_seekers/cli/config_extractor.py:585:41
+    |
+583 |         return ""
+584 |
+585 |     def _extract_python_docstring(self, node: ast.AST) -> str:
+    |                                         ^^^^
+586 |         """Extract docstring/comment for Python node"""
+587 |         # This is simplified - real implementation would need more context
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+  --> src/skill_seekers/cli/config_validator.py:60:13
+   |
+58 |                 return json.load(f)
+59 |         except FileNotFoundError:
+60 |             raise ValueError(f"Config file not found: {self.config_path}")
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |         except json.JSONDecodeError as e:
+62 |             raise ValueError(f"Invalid JSON in config file: {e}")
+   |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+  --> src/skill_seekers/cli/config_validator.py:62:13
+   |
+60 |             raise ValueError(f"Config file not found: {self.config_path}")
+61 |         except json.JSONDecodeError as e:
+62 |             raise ValueError(f"Invalid JSON in config file: {e}")
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+63 |
+64 |     def _detect_format(self) -> bool:
+   |
+
+SIM113 Use `enumerate()` for index variable `completed` in `for` loop
+    --> src/skill_seekers/cli/doc_scraper.py:1068:25
+     |
+1066 |                                 logger.warning("  ⚠️  Worker exception: %s", e)
+1067 |
+1068 |                         completed += 1
+     |                         ^^^^^^^^^^^^^^
+1069 |
+1070 |                         with self.lock:
+     |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> src/skill_seekers/cli/github_scraper.py:353:17
+    |
+351 |         except GithubException as e:
+352 |             if e.status == 404:
+353 |                 raise ValueError(f"Repository not found: {self.repo_name}")
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+354 |             raise
+    |
+
+E402 Module level import not at top of file
+ --> src/skill_seekers/cli/llms_txt_downloader.py:5:1
+  |
+3 | """ABOUTME: Validates markdown content and handles timeouts with exponential backoff"""
+4 |
+5 | import time
+  | ^^^^^^^^^^^
+6 |
+7 | import requests
+  |
+
+E402 Module level import not at top of file
+ --> src/skill_seekers/cli/llms_txt_downloader.py:7:1
+  |
+5 | import time
+6 |
+7 | import requests
+  | ^^^^^^^^^^^^^^^
+  |
+
+E402 Module level import not at top of file
+ --> src/skill_seekers/cli/llms_txt_parser.py:5:1
+  |
+3 | """ABOUTME: Extracts titles, content, code samples, and headings from markdown"""
+4 |
+5 | import re
+  | ^^^^^^^^^
+6 | from urllib.parse import urljoin
+  |
+
+E402 Module level import not at top of file
+ --> src/skill_seekers/cli/llms_txt_parser.py:6:1
+  |
+5 | import re
+6 | from urllib.parse import urljoin
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/pattern_recognizer.py:430:13
+    |
+428 |               # Python: __init__ or __new__
+429 |               # Java/C#: private constructor (detected by naming)
+430 | /             if method.name in ["__new__", "__init__", "constructor"]:
+431 | |                 # Check if it has logic (not just pass)
+432 | |                 if method.docstring or len(method.parameters) > 1:
+    | |__________________________________________________________________^
+433 |                       evidence.append(f"Controlled initialization: {method.name}")
+434 |                       confidence += 0.3
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/pattern_recognizer.py:538:13
+    |
+536 |           for method in class_sig.methods:
+537 |               method_lower = method.name.lower()
+538 | /             if any(name in method_lower for name in factory_method_names):
+539 | |                 # Check if method returns something (has return type or is not void)
+540 | |                 if method.return_type or "create" in method_lower:
+    | |__________________________________________________________________^
+541 |                       return PatternInstance(
+542 |                           pattern_type=self.pattern_type,
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/pattern_recognizer.py:916:9
+    |
+914 |           # Check __init__ for composition (takes object parameter)
+915 |           init_method = next((m for m in class_sig.methods if m.name == "__init__"), None)
+916 | /         if init_method:
+917 | |             # Check if takes object parameter (not just self)
+918 | |             if len(init_method.parameters) > 1:  # More than just 'self'
+    | |_______________________________________________^
+919 |                   param_names = [p.name for p in init_method.parameters if p.name != "self"]
+920 |                   if any(
+    |
+help: Combine `if` statements using `and`
+
+F821 Undefined name `l`
+   --> src/skill_seekers/cli/pdf_extractor_poc.py:302:28
+    |
+300 |             1 for line in code.split("\n") if line.strip().startswith(("#", "//", "/*", "*", "--"))
+301 |         )
+302 |         total_lines = len([l for line in code.split("\n") if line.strip()])
+    |                            ^
+303 |         if total_lines > 0 and comment_lines / total_lines > 0.7:
+304 |             issues.append("Mostly comments")
+    |
+
+F821 Undefined name `l`
+   --> src/skill_seekers/cli/pdf_extractor_poc.py:330:18
+    |
+329 |         # Factor 3: Number of lines
+330 |         lines = [l for line in code.split("\n") if line.strip()]
+    |                  ^
+331 |         if 2 <= len(lines) <= 50:
+332 |             score += 1.0
+    |
+
+B007 Loop control variable `keywords` not used within loop body
+   --> src/skill_seekers/cli/pdf_scraper.py:167:30
+    |
+165 |                 # Keyword-based categorization
+166 |                 # Initialize categories
+167 |                 for cat_key, keywords in self.categories.items():
+    |                              ^^^^^^^^
+168 |                     categorized[cat_key] = {"title": cat_key.replace("_", " ").title(), "pages": []}
+    |
+help: Rename unused `keywords` to `_keywords`
+
+SIM115 Use a context manager for opening files
+   --> src/skill_seekers/cli/pdf_scraper.py:434:26
+    |
+432 |             f.write("**Generated by Skill Seeker** | PDF Documentation Scraper\n")
+433 |
+434 |         line_count = len(open(filename, encoding="utf-8").read().split("\n"))
+    |                          ^^^^
+435 |         print(f"   Generated: {filename} ({line_count} lines)")
+    |
+
+E741 Ambiguous variable name: `l`
+   --> src/skill_seekers/cli/quality_checker.py:318:44
+    |
+316 |         else:
+317 |             if links:
+318 |                 internal_links = [l for t, l in links if not l.startswith("http")]
+    |                                            ^
+319 |                 if internal_links:
+320 |                     self.report.add_info(
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/test_example_extractor.py:364:13
+    |
+363 |           for node in ast.walk(func_node):
+364 | /             if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+365 | |                 # Check if meaningful instantiation
+366 | |                 if self._is_meaningful_instantiation(node):
+    | |___________________________________________________________^
+367 |                       code = ast.unparse(node)
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/test_example_extractor.py:412:13
+    |
+410 |           for i, stmt in enumerate(statements):
+411 |               # Look for method calls
+412 | /             if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+413 | |                 # Check if next statement is an assertion
+414 | |                 if i + 1 < len(statements):
+    | |___________________________________________^
+415 |                       next_stmt = statements[i + 1]
+416 |                       if self._is_assertion(next_stmt):
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src/skill_seekers/cli/test_example_extractor.py:460:13
+    |
+459 |           for node in ast.walk(func_node):
+460 | /             if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict):
+461 | |                 # Must have 2+ keys and be meaningful
+462 | |                 if len(node.value.keys) >= 2:
+    | |_____________________________________________^
+463 |                       code = ast.unparse(node)
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+    --> src/skill_seekers/cli/unified_skill_builder.py:1070:13
+     |
+1069 |               # If no languages from C3.7, try to get from GitHub data
+1070 | /             if not languages:
+1071 | |                 # github_data already available from method scope
+1072 | |                 if github_data.get("languages"):
+     | |________________________________________________^
+1073 |                       # GitHub data has languages as list, convert to dict with count 1
+1074 |                       languages = dict.fromkeys(github_data["languages"], 1)
+     |
+help: Combine `if` statements using `and`
+
+ARG001 Unused function argument: `request`
+    --> src/skill_seekers/mcp/server_fastmcp.py:1159:32
+     |
+1157 |         from starlette.routing import Route
+1158 |
+1159 |         async def health_check(request):
+     |                                ^^^^^^^
+1160 |             """Health check endpoint."""
+1161 |             return JSONResponse(
+     |
+
+ARG002 Unused method argument: `tmp_path`
+  --> tests/test_bootstrap_skill.py:54:56
+   |
+53 |     @pytest.mark.slow
+54 |     def test_bootstrap_script_runs(self, project_root, tmp_path):
+   |                                                        ^^^^^^^^
+55 |         """Test that bootstrap script runs successfully.
+   |
+
+B007 Loop control variable `message` not used within loop body
+   --> tests/test_install_agent.py:374:44
+    |
+372 |                 # With force - should succeed
+373 |                 results_with_force = install_to_all_agents(self.skill_dir, force=True)
+374 |                 for _agent_name, (success, message) in results_with_force.items():
+    |                                            ^^^^^^^
+375 |                     assert success is True
+    |
+help: Rename unused `message` to `_message`
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_install_agent.py:418:9
+    |
+416 |       def test_cli_requires_agent_flag(self):
+417 |           """Test that CLI fails without --agent flag."""
+418 | /         with pytest.raises(SystemExit) as exc_info:
+419 | |             with patch("sys.argv", ["install_agent.py", str(self.skill_dir)]):
+    | |______________________________________________________________________________^
+420 |                   main()
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_issue_219_e2e.py:278:9
+    |
+276 |               self.skipTest("anthropic package not installed")
+277 |
+278 | /         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
+279 | |             with patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic:
+    | |________________________________________________________________________________________________^
+280 |                   enhancer = SkillEnhancer(self.skill_dir)
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> tests/test_llms_txt_downloader.py:33:5
+   |
+31 |       downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=2)
+32 |
+33 | /     with patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get:
+34 | |         with patch("time.sleep") as mock_sleep:  # Mock sleep to speed up test
+   | |_______________________________________________^
+35 |               content = downloader.download()
+   |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> tests/test_llms_txt_downloader.py:88:5
+   |
+86 |       downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=3)
+87 |
+88 | /     with patch("requests.get", side_effect=requests.Timeout("Connection timeout")):
+89 | |         with patch("time.sleep") as mock_sleep:
+   | |_______________________________________________^
+90 |               content = downloader.download()
+   |
+help: Combine `with` statements
+
+F821 Undefined name `l`
+   --> tests/test_markdown_parsing.py:100:21
+    |
+ 98 |         )
+ 99 |         # Should only include .md links
+100 |         md_links = [l for line in result["links"] if ".md" in l]
+    |                     ^
+101 |         self.assertEqual(len(md_links), len(result["links"]))
+    |
+
+F821 Undefined name `l`
+   --> tests/test_markdown_parsing.py:100:63
+    |
+ 98 |         )
+ 99 |         # Should only include .md links
+100 |         md_links = [l for line in result["links"] if ".md" in l]
+    |                                                               ^
+101 |         self.assertEqual(len(md_links), len(result["links"]))
+    |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> tests/test_skip_llms_txt.py:75:17
+   |
+73 |                   converter = DocToSkillConverter(config, dry_run=False)
+74 |
+75 | /                 with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try:
+76 | |                     with patch.object(converter, "scrape_page"):
+   | |________________________________________________________________^
+77 |                           with patch.object(converter, "save_summary"):
+78 |                               converter.scrape_all()
+   |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_skip_llms_txt.py:98:17
+    |
+ 96 |                   converter = DocToSkillConverter(config, dry_run=False)
+ 97 |
+ 98 | /                 with patch.object(converter, "_try_llms_txt") as mock_try:
+ 99 | |                     with patch.object(converter, "scrape_page"):
+    | |________________________________________________________________^
+100 |                           with patch.object(converter, "save_summary"):
+101 |                               converter.scrape_all()
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_skip_llms_txt.py:121:17
+    |
+119 |                   converter = DocToSkillConverter(config, dry_run=True)
+120 |
+121 | /                 with patch.object(converter, "_try_llms_txt") as mock_try:
+122 | |                     with patch.object(converter, "save_summary"):
+    | |_________________________________________________________________^
+123 |                           converter.scrape_all()
+124 |                           mock_try.assert_not_called()
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_skip_llms_txt.py:148:17
+    |
+146 |                   converter = DocToSkillConverter(config, dry_run=False)
+147 |
+148 | /                 with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try:
+149 | |                     with patch.object(converter, "scrape_page_async", return_value=None):
+    | |_________________________________________________________________________________________^
+150 |                           with patch.object(converter, "save_summary"):
+151 |                               converter.scrape_all()
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_skip_llms_txt.py:172:17
+    |
+170 |                   converter = DocToSkillConverter(config, dry_run=False)
+171 |
+172 | /                 with patch.object(converter, "_try_llms_txt") as mock_try:
+173 | |                     with patch.object(converter, "scrape_page_async", return_value=None):
+    | |_________________________________________________________________________________________^
+174 |                           with patch.object(converter, "save_summary"):
+175 |                               converter.scrape_all()
+    |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_skip_llms_txt.py:304:17
+    |
+302 |                       return None
+303 |
+304 | /                 with patch.object(converter, "scrape_page", side_effect=mock_scrape):
+305 | |                     with patch.object(converter, "save_summary"):
+    | |_________________________________________________________________^
+306 |                           converter.scrape_all()
+307 |                           # Should have attempted to scrape the base URL
+    |
+help: Combine `with` statements
+
+Found 38 errors.

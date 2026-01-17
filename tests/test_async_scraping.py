@@ -179,11 +179,10 @@ class TestAsyncRouting(unittest.TestCase):
                 # Mock scrape_all_async to verify it does NOT get called
                 with patch.object(
                     converter, "scrape_all_async", new_callable=AsyncMock
-                ) as mock_async:
-                    with patch.object(converter, "_try_llms_txt", return_value=False):
-                        converter.scrape_all()
-                        # Verify async version was NOT called
-                        mock_async.assert_not_called()
+                ) as mock_async, patch.object(converter, "_try_llms_txt", return_value=False):
+                    converter.scrape_all()
+                    # Verify async version was NOT called
+                    mock_async.assert_not_called()
             finally:
                 os.chdir(self.original_cwd)
 
@@ -317,12 +316,11 @@ class TestAsyncLlmsTxtIntegration(unittest.TestCase):
                 converter = DocToSkillConverter(config, dry_run=False)
 
                 # Mock _try_llms_txt to return True (llms.txt found)
-                with patch.object(converter, "_try_llms_txt", return_value=True):
-                    with patch.object(converter, "save_summary"):
-                        converter.scrape_all()
-                        # If llms.txt succeeded, async scraping should be skipped
-                        # Verify by checking that pages were not scraped
-                        self.assertEqual(len(converter.visited_urls), 0)
+                with patch.object(converter, "_try_llms_txt", return_value=True), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    # If llms.txt succeeded, async scraping should be skipped
+                    # Verify by checking that pages were not scraped
+                    self.assertEqual(len(converter.visited_urls), 0)
             finally:
                 os.chdir(original_cwd)
 

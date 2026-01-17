@@ -786,10 +786,7 @@ class PDFExtractor:
         page = self.doc.load_page(page_num)
 
         # Extract plain text (with OCR if enabled - Priority 2)
-        if self.use_ocr:
-            text = self.extract_text_with_ocr(page)
-        else:
-            text = page.get_text("text")
+        text = self.extract_text_with_ocr(page) if self.use_ocr else page.get_text("text")
 
         # Extract markdown (better structure preservation)
         markdown = page.get_text("markdown")

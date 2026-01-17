@@ -87,10 +87,7 @@ class UnifiedSkillBuilder:
         skill_mds = {}
 
         # Determine base directory for source SKILL.md files
-        if self.cache_dir:
-            sources_dir = Path(self.cache_dir) / "sources"
-        else:
-            sources_dir = Path("output")
+        sources_dir = Path(self.cache_dir) / "sources" if self.cache_dir else Path("output")
 
         # Load documentation SKILL.md
         docs_skill_path = sources_dir / f"{self.name}_docs" / "SKILL.md"

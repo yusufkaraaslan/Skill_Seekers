@@ -197,9 +197,8 @@ class PythonTestAnalyzer:
                     examples.extend(self._extract_from_test_class(node, file_path, imports))
 
             # Find test functions (pytest)
-            elif isinstance(node, ast.FunctionDef):
-                if self._is_test_function(node):
-                    examples.extend(self._extract_from_test_function(node, file_path, imports))
+            elif isinstance(node, ast.FunctionDef) and self._is_test_function(node):
+                examples.extend(self._extract_from_test_function(node, file_path, imports))
 
         return examples
 
@@ -209,9 +208,8 @@ class PythonTestAnalyzer:
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 imports.extend([alias.name for alias in node.names])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.append(node.module)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imports.append(node.module)
         return imports
 
     def _is_test_class(self, node: ast.ClassDef) -> bool:
@@ -234,9 +232,8 @@ class PythonTestAnalyzer:
             return True
         # Has @pytest.mark decorator
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Attribute):
-                if "pytest" in ast.unparse(decorator):
-                    return True
+            if isinstance(decorator, ast.Attribute) and "pytest" in ast.unparse(decorator):
+                return True
         return False
 
     def _extract_from_test_class(
@@ -364,37 +361,36 @@ class PythonTestAnalyzer:
         examples = []
 
         for node in ast.walk(func_node):
-            if isinstance(node, ast.Assign):
-                if isinstance(node.value, ast.Call):
-                    # Check if meaningful instantiation
-                    if self._is_meaningful_instantiation(node):
-                        code = ast.unparse(node)
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+                # Check if meaningful instantiation
+                if self._is_meaningful_instantiation(node):
+                    code = ast.unparse(node)
 
-                        # Skip trivial or mock-only
-                        if len(code) < 20 or "Mock()" in code:
-                            continue
+                    # Skip trivial or mock-only
+                    if len(code) < 20 or "Mock()" in code:
+                        continue
 
-                        # Get class name
-                        class_name = self._get_class_name(node.value)
+                    # Get class name
+                    class_name = self._get_class_name(node.value)
 
-                        example = TestExample(
-                            example_id=self._generate_id(code),
-                            test_name=func_node.name,
-                            category="instantiation",
-                            code=code,
-                            language="Python",
-                            description=f"Instantiate {class_name}: {description}",
-                            expected_behavior=self._extract_assertion_after(func_node, node),
-                            setup_code=setup_code,
-                            file_path=file_path,
-                            line_start=node.lineno,
-                            line_end=node.end_lineno or node.lineno,
-                            complexity_score=self._calculate_complexity(code),
-                            confidence=0.8,
-                            tags=tags,
-                            dependencies=imports,
-                        )
-                        examples.append(example)
+                    example = TestExample(
+                        example_id=self._generate_id(code),
+                        test_name=func_node.name,
+                        category="instantiation",
+                        code=code,
+                        language="Python",
+                        description=f"Instantiate {class_name}: {description}",
+                        expected_behavior=self._extract_assertion_after(func_node, node),
+                        setup_code=setup_code,
+                        file_path=file_path,
+                        line_start=node.lineno,
+                        line_end=node.end_lineno or node.lineno,
+                        complexity_score=self._calculate_complexity(code),
+                        confidence=0.8,
+                        tags=tags,
+                        dependencies=imports,
+                    )
+                    examples.append(example)
 
         return examples
 
@@ -540,10 +536,7 @@ class PythonTestAnalyzer:
 
         # Must have at least one argument or keyword argument
         call = node.value
-        if call.args or call.keywords:
-            return True
-
-        return False
+        return bool(call.args or call.keywords)
 
     def _get_class_name(self, call_node: ast.Call) -> str:
         """Extract class name from Call node"""

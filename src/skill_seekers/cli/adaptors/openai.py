@@ -124,13 +124,12 @@ Always prioritize accuracy by consulting the attached documentation files before
         # Determine output filename
         if output_path.is_dir() or str(output_path).endswith("/"):
             output_path = Path(output_path) / f"{skill_dir.name}-openai.zip"
-        elif not str(output_path).endswith(".zip"):
+        elif not str(output_path).endswith(".zip") and not str(output_path).endswith("-openai.zip"):
             # Keep .zip extension
-            if not str(output_path).endswith("-openai.zip"):
-                output_str = str(output_path).replace(".zip", "-openai.zip")
-                if not output_str.endswith(".zip"):
-                    output_str += ".zip"
-                output_path = Path(output_str)
+            output_str = str(output_path).replace(".zip", "-openai.zip")
+            if not output_str.endswith(".zip"):
+                output_str += ".zip"
+            output_path = Path(output_str)
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)

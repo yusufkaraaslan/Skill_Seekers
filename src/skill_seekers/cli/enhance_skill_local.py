@@ -49,6 +49,8 @@ from pathlib import Path
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import contextlib
+
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
 
@@ -681,10 +683,8 @@ rm {prompt_file}
                         print()
 
                         # Clean up prompt file
-                        try:
+                        with contextlib.suppress(Exception):
                             os.unlink(prompt_file)
-                        except Exception:
-                            pass
 
                         return True
                     else:
@@ -726,10 +726,8 @@ rm {prompt_file}
             print("   3. Try again later")
 
             # Clean up
-            try:
+            with contextlib.suppress(Exception):
                 os.unlink(prompt_file)
-            except Exception:
-                pass
 
             return False
 
@@ -806,10 +804,8 @@ rm {prompt_file}
                     )
 
                     # Clean up
-                    try:
+                    with contextlib.suppress(Exception):
                         os.unlink(prompt_file)
-                    except Exception:
-                        pass
 
                     if result.returncode == 0:
                         self.write_status(

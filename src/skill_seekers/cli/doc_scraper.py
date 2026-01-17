@@ -230,10 +230,7 @@ class DocToSkillConverter:
 
         # Exclude patterns
         excludes = self.config.get("url_patterns", {}).get("exclude", [])
-        if any(pattern in url for pattern in excludes):
-            return False
-
-        return True
+        return not any(pattern in url for pattern in excludes)
 
     def save_checkpoint(self) -> None:
         """Save progress checkpoint"""
@@ -1197,9 +1194,8 @@ class DocToSkillConverter:
                         logger.info("  [%d pages scraped]", self.pages_scraped)
 
                     # Checkpoint saving
-                    if not self.dry_run and self.checkpoint_enabled:
-                        if self.pages_scraped % self.checkpoint_interval == 0:
-                            self.save_checkpoint()
+                    if not self.dry_run and self.checkpoint_enabled and self.pages_scraped % self.checkpoint_interval == 0:
+                        self.save_checkpoint()
 
             # Wait for any remaining tasks
             if tasks:
@@ -1626,18 +1622,16 @@ def validate_config(config: dict[str, Any]) -> tuple[list[str], list[str]]:
             errors.append(f"Missing required field: '{field}'")
 
     # Validate name (alphanumeric, hyphens, underscores only)
-    if "name" in config:
-        if not re.match(r"^[a-zA-Z0-9_-]+$", config["name"]):
-            errors.append(
-                f"Invalid name: '{config['name']}' (use only letters, numbers, hyphens, underscores)"
-            )
+    if "name" in config and not re.match(r"^[a-zA-Z0-9_-]+$", config["name"]):
+        errors.append(
+            f"Invalid name: '{config['name']}' (use only letters, numbers, hyphens, underscores)"
+        )
 
     # Validate base_url
-    if "base_url" in config:
-        if not config["base_url"].startswith(("http://", "https://")):
-            errors.append(
-                f"Invalid base_url: '{config['base_url']}' (must start with http:// or https://)"
-            )
+    if "base_url" in config and not config["base_url"].startswith(("http://", "https://")):
+        errors.append(
+            f"Invalid base_url: '{config['base_url']}' (must start with http:// or https://)"
+        )
 
     # Validate selectors structure
     if "selectors" in config:
@@ -1657,9 +1651,8 @@ def validate_config(config: dict[str, Any]) -> tuple[list[str], list[str]]:
             errors.append("'url_patterns' must be a dictionary")
         else:
             for key in ["include", "exclude"]:
-                if key in config["url_patterns"]:
-                    if not isinstance(config["url_patterns"][key], list):
-                        errors.append(f"'url_patterns.{key}' must be a list")
+                if key in config["url_patterns"] and not isinstance(config["url_patterns"][key], list):
+                    errors.append(f"'url_patterns.{key}' must be a list")
 
     # Validate categories
     if "categories" in config:

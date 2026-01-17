@@ -72,20 +72,18 @@ class TestGitHubScraperInitialization(unittest.TestCase):
         """Test initialization with token from environment variable"""
         config = {"repo": "facebook/react", "name": "react", "github_token": None}
 
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token_456"}):
-            with patch("skill_seekers.cli.github_scraper.Github") as mock_github:
-                _scraper = self.GitHubScraper(config)
-                mock_github.assert_called_once_with("env_token_456")
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token_456"}), patch("skill_seekers.cli.github_scraper.Github") as mock_github:
+            _scraper = self.GitHubScraper(config)
+            mock_github.assert_called_once_with("env_token_456")
 
     def test_init_without_token(self):
         """Test initialization without authentication"""
         config = {"repo": "facebook/react", "name": "react", "github_token": None}
 
-        with patch("skill_seekers.cli.github_scraper.Github") as mock_github:
-            with patch.dict(os.environ, {}, clear=True):
-                scraper = self.GitHubScraper(config)
-                # Should create unauthenticated client
-                self.assertIsNotNone(scraper.github)
+        with patch("skill_seekers.cli.github_scraper.Github"), patch.dict(os.environ, {}, clear=True):
+            scraper = self.GitHubScraper(config)
+            # Should create unauthenticated client
+            self.assertIsNotNone(scraper.github)
 
     def test_token_priority_env_over_config(self):
         """Test that GITHUB_TOKEN env var takes priority over config"""

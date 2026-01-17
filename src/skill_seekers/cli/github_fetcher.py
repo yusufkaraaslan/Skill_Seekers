@@ -419,9 +419,8 @@ class GitHubThreeStreamFetcher:
             is_in_docs_dir = any(
                 pattern in str(file_path) for pattern in ["docs/", "doc/", "documentation/"]
             )
-            if any(part.startswith(".") for part in file_path.parts):
-                if not is_in_docs_dir:
-                    continue
+            if any(part.startswith(".") for part in file_path.parts) and not is_in_docs_dir:
+                continue
 
             # Check if documentation
             is_doc = any(file_path.match(pattern) for pattern in doc_patterns)

@@ -928,7 +928,7 @@ class HowToGuideBuilder:
         # Extract source files
         source_files = [w.get("file_path", "") for w in workflows]
         source_files = [
-            f"{Path(f).name}:{w.get('line_start', 0)}" for f, w in zip(source_files, workflows)
+            f"{Path(f).name}:{w.get('line_start', 0)}" for f, w in zip(source_files, workflows, strict=False)
         ]
 
         # Create guide

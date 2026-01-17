@@ -78,7 +78,7 @@ def check_first_run():
         flag_file.parent.mkdir(parents=True, exist_ok=True)
         flag_file.touch()
 
-        response = input("\nPress Enter to continue...")
+        input("\nPress Enter to continue...")
         return True
 
     return False

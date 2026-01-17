@@ -143,7 +143,7 @@ def test_config_validation_errors():
         try:
             # validate_config() calls .validate() automatically
             _validator = validate_config(config_path)
-            assert False, "Should have raised error for invalid source type"
+            raise AssertionError("Should have raised error for invalid source type")
         except ValueError as e:
             assert "Invalid" in str(e) or "invalid" in str(e)
             print("  ✓ Invalid source type correctly rejected")

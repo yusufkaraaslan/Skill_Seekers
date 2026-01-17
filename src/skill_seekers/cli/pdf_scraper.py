@@ -593,9 +593,8 @@ def main():
     converter = PDFToSkillConverter(config)
 
     # Extract if needed
-    if config.get("pdf_path"):
-        if not converter.extract_pdf():
-            sys.exit(1)
+    if config.get("pdf_path") and not converter.extract_pdf():
+        sys.exit(1)
 
     # Build skill
     converter.build_skill()

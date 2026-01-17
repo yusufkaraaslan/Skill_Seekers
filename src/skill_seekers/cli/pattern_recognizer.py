@@ -438,17 +438,16 @@ class SingletonDetector(BasePatternDetector):
         # Check for class-level instance storage
         # This would require checking class attributes (future enhancement)
 
-        if has_instance_method or has_init_control:
-            if confidence >= 0.5:
-                return PatternInstance(
-                    pattern_type=self.pattern_type,
-                    category=self.category,
-                    confidence=min(confidence, 0.9),
-                    location="",
-                    class_name=class_sig.name,
-                    line_number=class_sig.line_number,
-                    evidence=evidence,
-                )
+        if has_instance_method or has_init_control and confidence >= 0.5:
+            return PatternInstance(
+                pattern_type=self.pattern_type,
+                category=self.category,
+                confidence=min(confidence, 0.9),
+                location="",
+                class_name=class_sig.name,
+                line_number=class_sig.line_number,
+                evidence=evidence,
+            )
 
         # Fallback to surface detection
         return self.detect_surface(class_sig, all_classes)
@@ -485,10 +484,9 @@ class SingletonDetector(BasePatternDetector):
         ]
 
         for pattern in caching_patterns:
-            if pattern in file_content:
-                if pattern not in " ".join(evidence):
-                    evidence.append(f"Instance caching detected: {pattern}")
-                    confidence += 0.1
+            if pattern in file_content and pattern not in " ".join(evidence):
+                evidence.append(f"Instance caching detected: {pattern}")
+                confidence += 0.1
 
         # Cap confidence at 0.95 (never 100% certain without runtime analysis)
         result.confidence = min(confidence, 0.95)
@@ -1126,13 +1124,12 @@ class AdapterDetector(BasePatternDetector):
 
         # Check __init__ for composition (takes adaptee)
         init_method = next((m for m in class_sig.methods if m.name == "__init__"), None)
-        if init_method:
-            if len(init_method.parameters) > 1:  # More than just 'self'
-                param_names = [p.name for p in init_method.parameters if p.name != "self"]
-                adaptee_names = ["adaptee", "wrapped", "client", "service", "api", "source"]
-                if any(name in param_names for name in adaptee_names):
-                    evidence.append(f"Takes adaptee in constructor: {param_names}")
-                    confidence += 0.4
+        if init_method and len(init_method.parameters) > 1:
+            param_names = [p.name for p in init_method.parameters if p.name != "self"]
+            adaptee_names = ["adaptee", "wrapped", "client", "service", "api", "source"]
+            if any(name in param_names for name in adaptee_names):
+                evidence.append(f"Takes adaptee in constructor: {param_names}")
+                confidence += 0.4
 
         # Check if implements interface (has base class)
         if class_sig.base_classes:
@@ -1521,9 +1518,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
             # Strategy: Duck typing common in Python
-            elif pattern.pattern_type == "Strategy":
-                if "duck typing" in evidence_str or "protocol" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+            elif pattern.pattern_type == "Strategy" and "duck typing" in evidence_str or "protocol" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         # JavaScript/TypeScript adaptations
         elif language in ["JavaScript", "TypeScript"]:
@@ -1539,10 +1535,9 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
             # Observer: Event emitters are built-in
-            elif pattern.pattern_type == "Observer":
-                if "eventemitter" in evidence_str or "event" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
-                    pattern.evidence.append("EventEmitter pattern detected")
+            elif pattern.pattern_type == "Observer" and "eventemitter" in evidence_str or "event" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+                pattern.evidence.append("EventEmitter pattern detected")
 
         # Java/C# adaptations (interface-heavy languages)
         elif language in ["Java", "C#"]:
@@ -1557,9 +1552,8 @@ class LanguageAdapter:
                     pattern.evidence.append("Abstract Factory pattern")
 
             # Template Method: Abstract classes common
-            elif pattern.pattern_type == "TemplateMethod":
-                if "abstract" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+            elif pattern.pattern_type == "TemplateMethod" and "abstract" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
         # Go adaptations
         elif language == "Go":
@@ -1570,9 +1564,8 @@ class LanguageAdapter:
                     pattern.evidence.append("Go sync.Once idiom")
 
             # Strategy: Interfaces are implicit
-            elif pattern.pattern_type == "Strategy":
-                if "interface{}" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+            elif pattern.pattern_type == "Strategy" and "interface{}" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         # Rust adaptations
         elif language == "Rust":
@@ -1588,9 +1581,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
             # Adapter: Trait adapters are common
-            elif pattern.pattern_type == "Adapter":
-                if "trait" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+            elif pattern.pattern_type == "Adapter" and "trait" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
         # C++ adaptations
         elif language == "C++":
@@ -1601,9 +1593,8 @@ class LanguageAdapter:
                     pattern.evidence.append("Meyer's Singleton (static local)")
 
             # Factory: Template-based factories
-            elif pattern.pattern_type == "Factory":
-                if "template" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+            elif pattern.pattern_type == "Factory" and "template" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         # Ruby adaptations
         elif language == "Ruby":
@@ -1614,9 +1605,8 @@ class LanguageAdapter:
                     pattern.evidence.append("Ruby Singleton module")
 
             # Builder: Method chaining is idiomatic
-            elif pattern.pattern_type == "Builder":
-                if "method chaining" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+            elif pattern.pattern_type == "Builder" and "method chaining" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         # PHP adaptations
         elif language == "PHP":
@@ -1626,9 +1616,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
             # Factory: Static factory methods
-            elif pattern.pattern_type == "Factory":
-                if "static" in evidence_str:
-                    pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+            elif pattern.pattern_type == "Factory" and "static" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         return pattern
 

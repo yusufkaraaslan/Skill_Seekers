@@ -8,6 +8,7 @@ Tests verify complete fixes for:
 3. Custom API endpoint support (ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN)
 """
 
+import contextlib
 import os
 import shutil
 import subprocess
@@ -169,11 +170,8 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             mock_github_main.return_value = 0
 
             # Call main dispatcher
-            with patch("sys.exit"):
-                try:
-                    main.main()
-                except SystemExit:
-                    pass
+            with patch("sys.exit"), contextlib.suppress(SystemExit):
+                main.main()
 
             # VERIFY: github_scraper.main was called
             mock_github_main.assert_called_once()

@@ -136,7 +136,7 @@ class TestC3Integration:
             },
         }
 
-    def test_codebase_analysis_enabled_by_default(self, _mock_config, temp_dir):
+    def test_codebase_analysis_enabled_by_default(self, mock_config, temp_dir):  # noqa: ARG002
         """Test that enable_codebase_analysis defaults to True."""
         # Config with GitHub source but no explicit enable_codebase_analysis
         config_without_flag = {
@@ -155,7 +155,7 @@ class TestC3Integration:
 
         # Verify default is True
         github_source = scraper.config["sources"][0]
-        assert github_source.get("enable_codebase_analysis", True) == True
+        assert github_source.get("enable_codebase_analysis", True)
 
     def test_skip_codebase_analysis_flag(self, mock_config, temp_dir):
         """Test --skip-codebase-analysis CLI flag disables analysis."""

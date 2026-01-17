@@ -467,13 +467,9 @@ class ConfigParser:
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
-                    # Get variable name
-                    if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                    # Get variable name and skip private variables
+                    if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and not node.targets[0].id.startswith("_"):
                         key = node.targets[0].id
-
-                        # Skip private variables
-                        if key.startswith("_"):
-                            continue
 
                         # Extract value
                         try:

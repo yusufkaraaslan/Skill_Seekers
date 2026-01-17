@@ -155,10 +155,7 @@ def is_valid_url(url, base_url, include_patterns, exclude_patterns):
 
     # Check include patterns (if specified)
     if include_patterns:
-        for pattern in include_patterns:
-            if pattern in url:
-                return True
-        return False
+        return any(pattern in url for pattern in include_patterns)
 
     # If no include patterns, accept by default
     return True
@@ -289,10 +286,7 @@ def list_all_configs():
         rel_path = config_file.relative_to(config_dir)
 
         # Category is the first directory in the path, or "root" if in root
-        if len(rel_path.parts) > 1:
-            category = rel_path.parts[0]
-        else:
-            category = "root"
+        category = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
 
         if category not in by_category:
             by_category[category] = []

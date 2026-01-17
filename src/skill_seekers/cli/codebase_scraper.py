@@ -208,9 +208,8 @@ def walk_directory(
                 continue
 
             # Check file patterns if provided
-            if patterns:
-                if not any(file_path.match(pattern) for pattern in patterns):
-                    continue
+            if patterns and not any(file_path.match(pattern) for pattern in patterns):
+                continue
 
             files.append(file_path)
 

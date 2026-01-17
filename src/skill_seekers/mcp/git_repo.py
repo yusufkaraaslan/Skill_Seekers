@@ -270,7 +270,4 @@ class GitConfigRepo:
             return ":" in git_url and len(git_url.split(":")) == 2
 
         # Accept file:// URLs (for local testing)
-        if git_url.startswith("file://"):
-            return True
-
-        return False
+        return bool(git_url.startswith("file://"))

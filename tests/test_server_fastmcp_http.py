@@ -69,7 +69,7 @@ class TestFastMCPHTTP:
 
         app = mcp.sse_app()
 
-        with TestClient(app) as client:
+        with TestClient(app):
             # SSE endpoint should exist (even if we can't fully test it without MCP client)
             # Just verify the route is registered
             routes = [route.path for route in app.routes if hasattr(route, "path")]

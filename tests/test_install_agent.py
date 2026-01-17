@@ -431,16 +431,15 @@ class TestInstallAgentCLI:
 
             with patch(
                 "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ), patch(
+                "sys.argv",
+                ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--dry-run"],
             ):
-                with patch(
-                    "sys.argv",
-                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--dry-run"],
-                ):
-                    exit_code = main()
+                exit_code = main()
 
-                    assert exit_code == 0
-                    # Directory should NOT be created
-                    assert not (Path(agent_tmpdir) / ".claude" / "skills" / "test-skill").exists()
+                assert exit_code == 0
+                # Directory should NOT be created
+                assert not (Path(agent_tmpdir) / ".claude" / "skills" / "test-skill").exists()
 
     def test_cli_integration(self):
         """Test end-to-end CLI execution."""
@@ -451,18 +450,17 @@ class TestInstallAgentCLI:
 
             with patch(
                 "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ), patch(
+                "sys.argv",
+                ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--force"],
             ):
-                with patch(
-                    "sys.argv",
-                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--force"],
-                ):
-                    exit_code = main()
+                exit_code = main()
 
-                    assert exit_code == 0
-                    # Directory should be created
-                    target = Path(agent_tmpdir) / ".claude" / "skills" / "test-skill"
-                    assert target.exists()
-                    assert (target / "SKILL.md").exists()
+                assert exit_code == 0
+                # Directory should be created
+                target = Path(agent_tmpdir) / ".claude" / "skills" / "test-skill"
+                assert target.exists()
+                assert (target / "SKILL.md").exists()
 
     def test_cli_install_to_all(self):
         """Test CLI with --agent all."""
@@ -473,19 +471,18 @@ class TestInstallAgentCLI:
 
             with patch(
                 "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ), patch(
+                "sys.argv",
+                ["install_agent.py", str(self.skill_dir), "--agent", "all", "--force"],
             ):
-                with patch(
-                    "sys.argv",
-                    ["install_agent.py", str(self.skill_dir), "--agent", "all", "--force"],
-                ):
-                    exit_code = main()
+                exit_code = main()
 
-                    assert exit_code == 0
+                assert exit_code == 0
 
-                    # All agent directories should be created
-                    for agent in get_available_agents():
-                        target = Path(agent_tmpdir) / f".{agent}" / "skills" / "test-skill"
-                        assert target.exists(), f"Directory not created for {agent}"
+                # All agent directories should be created
+                for agent in get_available_agents():
+                    target = Path(agent_tmpdir) / f".{agent}" / "skills" / "test-skill"
+                    assert target.exists(), f"Directory not created for {agent}"
 
 
 if __name__ == "__main__":

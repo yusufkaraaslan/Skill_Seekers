@@ -325,10 +325,7 @@ def api_keys_menu():
                 "google": "GOOGLE_API_KEY",
                 "openai": "OPENAI_API_KEY",
             }[provider]
-            if os.getenv(env_var):
-                source = " (from environment)"
-            else:
-                source = " (from config)"
+            source = " (from environment)" if os.getenv(env_var) else " (from config)"
         print(f"  • {provider.capitalize()}: {status}{source}")
 
     print("\nOptions:")

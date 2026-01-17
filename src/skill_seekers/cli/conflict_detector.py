@@ -394,7 +394,7 @@ class ConflictDetector:
             }
 
         # Compare parameter names and types
-        for i, (doc_param, code_param) in enumerate(zip(docs_params, code_params)):
+        for i, (doc_param, code_param) in enumerate(zip(docs_params, code_params, strict=False)):
             doc_name = doc_param.get("name", "")
             code_name = code_param.get("name", "")
 
@@ -447,7 +447,7 @@ class ConflictDetector:
             "total": len(conflicts),
             "by_type": {},
             "by_severity": {},
-            "apis_affected": len(set(c.api_name for c in conflicts)),
+            "apis_affected": len({c.api_name for c in conflicts}),
         }
 
         # Count by type

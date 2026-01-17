@@ -324,7 +324,7 @@ class DependencyAnalyzer:
         # Single import: import [alias] "package"
         single_import_pattern = r'import\s+(?:(\w+)\s+)?"([^"]+)"'
         for match in re.finditer(single_import_pattern, content):
-            alias = match.group(1)  # Optional alias
+            match.group(1)  # Optional alias
             package = match.group(2)
             line_num = content[: match.start()].count("\n") + 1
 

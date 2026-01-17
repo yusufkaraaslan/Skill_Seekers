@@ -23,6 +23,7 @@ consider using dedicated parsers (tree-sitter, language-specific AST libraries).
 """
 
 import ast
+import contextlib
 import logging
 import re
 from dataclasses import asdict, dataclass
@@ -142,7 +143,7 @@ class CodeAnalyzer:
             if isinstance(node, ast.ClassDef):
                 class_sig = self._extract_python_class(node)
                 classes.append(asdict(class_sig))
-            elif isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 # Only top-level functions (not methods)
                 # Fix AST parser to check isinstance(parent.body, list) before 'in' operator
                 is_method = False
@@ -226,10 +227,8 @@ class CodeAnalyzer:
         # Extract return type
         return_type = None
         if node.returns:
-            try:
+            with contextlib.suppress(Exception):
                 return_type = ast.unparse(node.returns) if hasattr(ast, "unparse") else None
-            except Exception:
-                pass
 
         # Extract decorators
         decorators = []

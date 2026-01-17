@@ -57,7 +57,7 @@ def test_detect_unified_format():
 
     try:
         validator = ConfigValidator(config_path)
-        assert validator.is_unified == False
+        assert not validator.is_unified
     finally:
         os.unlink(config_path)
 
@@ -115,7 +115,7 @@ def test_needs_api_merge():
     }
 
     validator = ConfigValidator(config_no_merge)
-    assert validator.needs_api_merge() == False
+    assert not validator.needs_api_merge()
 
 
 def test_backward_compatibility():
