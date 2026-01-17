@@ -114,8 +114,18 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
 
         scraped_data = {
             "documentation": [
-                {"source_id": "source_a", "base_url": "https://a.com", "total_pages": 5, "refs_dir": refs_dir1},
-                {"source_id": "source_b", "base_url": "https://b.com", "total_pages": 3, "refs_dir": refs_dir2},
+                {
+                    "source_id": "source_a",
+                    "base_url": "https://a.com",
+                    "total_pages": 5,
+                    "refs_dir": refs_dir1,
+                },
+                {
+                    "source_id": "source_b",
+                    "base_url": "https://b.com",
+                    "total_pages": 3,
+                    "refs_dir": refs_dir2,
+                },
             ],
             "github": [],
             "pdf": [],
@@ -139,7 +149,12 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
 
         scraped_data = {
             "documentation": [
-                {"source_id": "my_source", "base_url": "https://example.com", "total_pages": 10, "refs_dir": refs_dir}
+                {
+                    "source_id": "my_source",
+                    "base_url": "https://example.com",
+                    "total_pages": 10,
+                    "refs_dir": refs_dir,
+                }
             ],
             "github": [],
             "pdf": [],
@@ -148,7 +163,9 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
         builder = UnifiedSkillBuilder(config, scraped_data)
         builder._generate_docs_references(scraped_data["documentation"])
 
-        source_index = os.path.join(builder.skill_dir, "references", "documentation", "my_source", "index.md")
+        source_index = os.path.join(
+            builder.skill_dir, "references", "documentation", "my_source", "index.md"
+        )
         self.assertTrue(os.path.exists(source_index))
 
         with open(source_index) as f:
@@ -169,8 +186,18 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
 
         scraped_data = {
             "documentation": [
-                {"source_id": "docs_one", "base_url": "https://one.com", "total_pages": 10, "refs_dir": refs_dir1},
-                {"source_id": "docs_two", "base_url": "https://two.com", "total_pages": 20, "refs_dir": refs_dir2},
+                {
+                    "source_id": "docs_one",
+                    "base_url": "https://one.com",
+                    "total_pages": 10,
+                    "refs_dir": refs_dir1,
+                },
+                {
+                    "source_id": "docs_two",
+                    "base_url": "https://two.com",
+                    "total_pages": 20,
+                    "refs_dir": refs_dir2,
+                },
             ],
             "github": [],
             "pdf": [],
@@ -205,7 +232,12 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
 
         scraped_data = {
             "documentation": [
-                {"source_id": "test_source", "base_url": "https://test.com", "total_pages": 5, "refs_dir": refs_dir}
+                {
+                    "source_id": "test_source",
+                    "base_url": "https://test.com",
+                    "total_pages": 5,
+                    "refs_dir": refs_dir,
+                }
             ],
             "github": [],
             "pdf": [],
@@ -290,7 +322,9 @@ class TestUnifiedSkillBuilderGitHubReferences(unittest.TestCase):
         builder = UnifiedSkillBuilder(config, scraped_data)
         builder._generate_github_references(scraped_data["github"])
 
-        readme_path = os.path.join(builder.skill_dir, "references", "github", "test_myrepo", "README.md")
+        readme_path = os.path.join(
+            builder.skill_dir, "references", "github", "test_myrepo", "README.md"
+        )
         self.assertTrue(os.path.exists(readme_path))
 
         with open(readme_path) as f:
@@ -338,7 +372,9 @@ class TestUnifiedSkillBuilderGitHubReferences(unittest.TestCase):
         builder = UnifiedSkillBuilder(config, scraped_data)
         builder._generate_github_references(scraped_data["github"])
 
-        issues_path = os.path.join(builder.skill_dir, "references", "github", "test_repo", "issues.md")
+        issues_path = os.path.join(
+            builder.skill_dir, "references", "github", "test_repo", "issues.md"
+        )
         self.assertTrue(os.path.exists(issues_path))
 
         with open(issues_path) as f:
@@ -358,12 +394,22 @@ class TestUnifiedSkillBuilderGitHubReferences(unittest.TestCase):
                 {
                     "repo": "org/first",
                     "repo_id": "org_first",
-                    "data": {"readme": "#", "issues": [], "releases": [], "repo_info": {"stars": 100}},
+                    "data": {
+                        "readme": "#",
+                        "issues": [],
+                        "releases": [],
+                        "repo_info": {"stars": 100},
+                    },
                 },
                 {
                     "repo": "org/second",
                     "repo_id": "org_second",
-                    "data": {"readme": "#", "issues": [], "releases": [], "repo_info": {"stars": 50}},
+                    "data": {
+                        "readme": "#",
+                        "issues": [],
+                        "releases": [],
+                        "repo_info": {"stars": 50},
+                    },
                 },
             ],
             "pdf": [],
@@ -406,7 +452,11 @@ class TestUnifiedSkillBuilderPdfReferences(unittest.TestCase):
         scraped_data = {
             "documentation": [],
             "github": [],
-            "pdf": [{"path": "/path/to/doc1.pdf"}, {"path": "/path/to/doc2.pdf"}, {"path": "/path/to/doc3.pdf"}],
+            "pdf": [
+                {"path": "/path/to/doc1.pdf"},
+                {"path": "/path/to/doc2.pdf"},
+                {"path": "/path/to/doc3.pdf"},
+            ],
         }
 
         builder = UnifiedSkillBuilder(config, scraped_data)

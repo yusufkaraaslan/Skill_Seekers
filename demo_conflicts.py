@@ -46,7 +46,13 @@ print()
 print("**By Type:**")
 for conflict_type, count in summary["by_type"].items():
     if count > 0:
-        emoji = "📖" if conflict_type == "missing_in_docs" else "💻" if conflict_type == "missing_in_code" else "⚠️"
+        emoji = (
+            "📖"
+            if conflict_type == "missing_in_docs"
+            else "💻"
+            if conflict_type == "missing_in_code"
+            else "⚠️"
+        )
         print(f"   {emoji} {conflict_type}: {count}")
 print()
 
@@ -86,10 +92,14 @@ if high:
         if conflict["code_info"]:
             print("\n**Implemented as**:")
             params = conflict["code_info"].get("parameters", [])
-            param_str = ", ".join(f"{p['name']}: {p.get('type_hint', 'Any')}" for p in params if p["name"] != "self")
+            param_str = ", ".join(
+                f"{p['name']}: {p.get('type_hint', 'Any')}" for p in params if p["name"] != "self"
+            )
             print(f"  Signature: {conflict['code_info']['name']}({param_str})")
             print(f"  Return type: {conflict['code_info'].get('return_type', 'None')}")
-            print(f"  Location: {conflict['code_info'].get('source', 'N/A')}:{conflict['code_info'].get('line', '?')}")
+            print(
+                f"  Location: {conflict['code_info'].get('source', 'N/A')}:{conflict['code_info'].get('line', '?')}"
+            )
     print()
 
 # Show medium severity

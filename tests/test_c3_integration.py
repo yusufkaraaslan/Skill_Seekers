@@ -111,7 +111,10 @@ class TestC3Integration:
                     }
                 ],
                 "ai_enhancements": {
-                    "overall_insights": {"security_issues_found": 1, "recommended_actions": ["Move secrets to .env"]}
+                    "overall_insights": {
+                        "security_issues_found": 1,
+                        "recommended_actions": ["Move secrets to .env"],
+                    }
                 },
             },
             "architecture": {
@@ -120,7 +123,11 @@ class TestC3Integration:
                         "pattern_name": "MVC",
                         "confidence": 0.89,
                         "framework": "Flask",
-                        "evidence": ["models/ directory", "views/ directory", "controllers/ directory"],
+                        "evidence": [
+                            "models/ directory",
+                            "views/ directory",
+                            "controllers/ directory",
+                        ],
                     }
                 ],
                 "frameworks_detected": ["Flask", "SQLAlchemy"],
@@ -173,7 +180,9 @@ class TestC3Integration:
         """Test ARCHITECTURE.md is generated with all 8 sections."""
         # Create skill builder with C3.x data (multi-source list format)
         github_data = {"readme": "Test README", "c3_analysis": mock_c3_data}
-        scraped_data = {"github": [{"repo": "test/repo", "repo_id": "test_repo", "idx": 0, "data": github_data}]}
+        scraped_data = {
+            "github": [{"repo": "test/repo", "repo_id": "test_repo", "idx": 0, "data": github_data}]
+        }
 
         builder = UnifiedSkillBuilder(mock_config, scraped_data)
         builder.skill_dir = temp_dir
@@ -212,7 +221,9 @@ class TestC3Integration:
         """Test correct C3.x reference directory structure is created."""
         # Create skill builder with C3.x data (multi-source list format)
         github_data = {"readme": "Test README", "c3_analysis": mock_c3_data}
-        scraped_data = {"github": [{"repo": "test/repo", "repo_id": "test_repo", "idx": 0, "data": github_data}]}
+        scraped_data = {
+            "github": [{"repo": "test/repo", "repo_id": "test_repo", "idx": 0, "data": github_data}]
+        }
 
         builder = UnifiedSkillBuilder(mock_config, scraped_data)
         builder.skill_dir = temp_dir
@@ -261,7 +272,11 @@ class TestC3Integration:
 
             # Mock GitHubScraper (correct module path for import)
             with patch("skill_seekers.cli.github_scraper.GitHubScraper") as mock_github:
-                mock_github.return_value.scrape.return_value = {"readme": "Test README", "issues": [], "releases": []}
+                mock_github.return_value.scrape.return_value = {
+                    "readme": "Test README",
+                    "issues": [],
+                    "releases": [],
+                }
 
                 scraper = UnifiedScraper(config_path)
 
@@ -278,7 +293,14 @@ class TestC3Integration:
         config = {
             "name": "test",
             "description": "Test",
-            "sources": [{"type": "github", "repo": "test/repo", "enable_codebase_analysis": True, "ai_mode": "auto"}],
+            "sources": [
+                {
+                    "type": "github",
+                    "repo": "test/repo",
+                    "enable_codebase_analysis": True,
+                    "ai_mode": "auto",
+                }
+            ],
         }
 
         # Save config

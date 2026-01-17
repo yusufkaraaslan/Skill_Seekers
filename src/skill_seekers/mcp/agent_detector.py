@@ -138,7 +138,9 @@ class AgentDetector:
             return None
         return self.AGENT_CONFIG[agent_id]["transport"]
 
-    def generate_config(self, agent_id: str, server_command: str, http_port: int | None = 3000) -> str | None:
+    def generate_config(
+        self, agent_id: str, server_command: str, http_port: int | None = 3000
+    ) -> str | None:
         """
         Generate MCP configuration for a specific agent.
 
@@ -282,7 +284,9 @@ def detect_agents() -> list[dict[str, str]]:
     return detector.detect_agents()
 
 
-def generate_config(agent_name: str, server_command: str = "skill-seekers mcp", http_port: int = 3000) -> str | None:
+def generate_config(
+    agent_name: str, server_command: str = "skill-seekers mcp", http_port: int = 3000
+) -> str | None:
     """
     Convenience function to generate config for a specific agent.
 

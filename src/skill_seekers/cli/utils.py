@@ -179,7 +179,9 @@ def validate_zip_file(zip_path: str | Path) -> tuple[bool, str | None]:
     return True, None
 
 
-def read_reference_files(skill_dir: str | Path, max_chars: int = 100000, preview_limit: int = 40000) -> dict[str, dict]:
+def read_reference_files(
+    skill_dir: str | Path, max_chars: int = 100000, preview_limit: int = 40000
+) -> dict[str, dict]:
     """Read reference files from a skill directory with enriched metadata.
 
     This function reads markdown files from the references/ subdirectory
@@ -319,7 +321,10 @@ def read_reference_files(skill_dir: str | Path, max_chars: int = 100000, preview
 
 
 def retry_with_backoff(
-    operation: Callable[[], T], max_attempts: int = 3, base_delay: float = 1.0, operation_name: str = "operation"
+    operation: Callable[[], T],
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+    operation_name: str = "operation",
 ) -> T:
     """Retry an operation with exponential backoff.
 
@@ -355,7 +360,12 @@ def retry_with_backoff(
             if attempt < max_attempts:
                 delay = base_delay * (2 ** (attempt - 1))
                 logger.warning(
-                    "%s failed (attempt %d/%d), retrying in %.1fs: %s", operation_name, attempt, max_attempts, delay, e
+                    "%s failed (attempt %d/%d), retrying in %.1fs: %s",
+                    operation_name,
+                    attempt,
+                    max_attempts,
+                    delay,
+                    e,
                 )
                 time.sleep(delay)
             else:
@@ -368,7 +378,10 @@ def retry_with_backoff(
 
 
 async def retry_with_backoff_async(
-    operation: Callable[[], T], max_attempts: int = 3, base_delay: float = 1.0, operation_name: str = "operation"
+    operation: Callable[[], T],
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+    operation_name: str = "operation",
 ) -> T:
     """Async version of retry_with_backoff for async operations.
 
@@ -403,7 +416,12 @@ async def retry_with_backoff_async(
             if attempt < max_attempts:
                 delay = base_delay * (2 ** (attempt - 1))
                 logger.warning(
-                    "%s failed (attempt %d/%d), retrying in %.1fs: %s", operation_name, attempt, max_attempts, delay, e
+                    "%s failed (attempt %d/%d), retrying in %.1fs: %s",
+                    operation_name,
+                    attempt,
+                    max_attempts,
+                    delay,
+                    e,
                 )
                 await asyncio.sleep(delay)
             else:

@@ -92,7 +92,11 @@ class TestAsyncScrapeMethods(unittest.TestCase):
 
     def test_scrape_page_async_exists(self):
         """Test scrape_page_async method exists"""
-        config = {"name": "test", "base_url": "https://example.com/", "selectors": {"main_content": "article"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article"},
+        }
 
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
@@ -105,7 +109,11 @@ class TestAsyncScrapeMethods(unittest.TestCase):
 
     def test_scrape_all_async_exists(self):
         """Test scrape_all_async method exists"""
-        config = {"name": "test", "base_url": "https://example.com/", "selectors": {"main_content": "article"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article"},
+        }
 
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
@@ -144,7 +152,9 @@ class TestAsyncRouting(unittest.TestCase):
                 converter = DocToSkillConverter(config, dry_run=True)
 
                 # Mock scrape_all_async to verify it gets called
-                with patch.object(converter, "scrape_all_async", new_callable=AsyncMock) as mock_async:
+                with patch.object(
+                    converter, "scrape_all_async", new_callable=AsyncMock
+                ) as mock_async:
                     converter.scrape_all()
                     # Verify async version was called
                     mock_async.assert_called_once()
@@ -167,7 +177,9 @@ class TestAsyncRouting(unittest.TestCase):
                 converter = DocToSkillConverter(config, dry_run=True)
 
                 # Mock scrape_all_async to verify it does NOT get called
-                with patch.object(converter, "scrape_all_async", new_callable=AsyncMock) as mock_async:
+                with patch.object(
+                    converter, "scrape_all_async", new_callable=AsyncMock
+                ) as mock_async:
                     with patch.object(converter, "_try_llms_txt", return_value=False):
                         converter.scrape_all()
                         # Verify async version was NOT called
@@ -249,7 +261,9 @@ class TestAsyncErrorHandling(unittest.TestCase):
                         # Mock client.get to raise exception
                         with patch.object(client, "get", side_effect=httpx.HTTPError("Test error")):
                             # Should not raise exception, just log error
-                            await converter.scrape_page_async("https://example.com/test", semaphore, client)
+                            await converter.scrape_page_async(
+                                "https://example.com/test", semaphore, client
+                            )
 
                 # Run async test
                 asyncio.run(run_test())

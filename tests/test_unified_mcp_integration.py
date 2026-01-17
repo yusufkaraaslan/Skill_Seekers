@@ -95,7 +95,14 @@ async def test_mcp_scrape_docs_detection():
         "name": "test_mcp_unified",
         "description": "Test unified via MCP",
         "merge_mode": "rule-based",
-        "sources": [{"type": "documentation", "base_url": "https://example.com", "extract_api": True, "max_pages": 5}],
+        "sources": [
+            {
+                "type": "documentation",
+                "base_url": "https://example.com",
+                "extract_api": True,
+                "max_pages": 5,
+            }
+        ],
     }
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:

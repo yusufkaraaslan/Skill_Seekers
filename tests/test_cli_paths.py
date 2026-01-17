@@ -19,7 +19,9 @@ class TestModernCLICommands(unittest.TestCase):
 
     def test_doc_scraper_uses_modern_commands(self):
         """Test doc_scraper.py uses skill-seekers commands"""
-        script_path = Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "doc_scraper.py"
+        script_path = (
+            Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "doc_scraper.py"
+        )
 
         with open(script_path) as f:
             content = f.read()
@@ -32,7 +34,13 @@ class TestModernCLICommands(unittest.TestCase):
 
     def test_enhance_skill_local_uses_modern_commands(self):
         """Test enhance_skill_local.py uses skill-seekers commands"""
-        script_path = Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "enhance_skill_local.py"
+        script_path = (
+            Path(__file__).parent.parent
+            / "src"
+            / "skill_seekers"
+            / "cli"
+            / "enhance_skill_local.py"
+        )
 
         with open(script_path) as f:
             content = f.read()
@@ -45,7 +53,9 @@ class TestModernCLICommands(unittest.TestCase):
 
     def test_estimate_pages_uses_modern_commands(self):
         """Test estimate_pages.py uses skill-seekers commands"""
-        script_path = Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "estimate_pages.py"
+        script_path = (
+            Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "estimate_pages.py"
+        )
 
         with open(script_path) as f:
             content = f.read()
@@ -58,7 +68,9 @@ class TestModernCLICommands(unittest.TestCase):
 
     def test_package_skill_uses_modern_commands(self):
         """Test package_skill.py uses skill-seekers commands"""
-        script_path = Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "package_skill.py"
+        script_path = (
+            Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "package_skill.py"
+        )
 
         with open(script_path) as f:
             content = f.read()
@@ -71,7 +83,9 @@ class TestModernCLICommands(unittest.TestCase):
 
     def test_github_scraper_uses_modern_commands(self):
         """Test github_scraper.py uses skill-seekers commands"""
-        script_path = Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "github_scraper.py"
+        script_path = (
+            Path(__file__).parent.parent / "src" / "skill_seekers" / "cli" / "github_scraper.py"
+        )
 
         with open(script_path) as f:
             content = f.read()
@@ -89,10 +103,16 @@ class TestUnifiedCLIEntryPoints(unittest.TestCase):
     def test_main_cli_help_output(self):
         """Test skill-seekers --help works"""
         try:
-            result = subprocess.run(["skill-seekers", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # Should return successfully
-            self.assertIn(result.returncode, [0, 2], f"skill-seekers --help failed with code {result.returncode}")
+            self.assertIn(
+                result.returncode,
+                [0, 2],
+                f"skill-seekers --help failed with code {result.returncode}",
+            )
 
             # Should show subcommands
             output = result.stdout + result.stderr
@@ -107,14 +127,18 @@ class TestUnifiedCLIEntryPoints(unittest.TestCase):
     def test_main_cli_version_output(self):
         """Test skill-seekers --version works"""
         try:
-            result = subprocess.run(["skill-seekers", "--version"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "--version"], capture_output=True, text=True, timeout=5
+            )
 
             # Should return successfully
-            self.assertEqual(result.returncode, 0, f"skill-seekers --version failed: {result.stderr}")
+            self.assertEqual(
+                result.returncode, 0, f"skill-seekers --version failed: {result.stderr}"
+            )
 
             # Should show version
             output = result.stdout + result.stderr
-            self.assertIn('2.7.0', output)
+            self.assertIn("2.7.0", output)
 
         except FileNotFoundError:
             # If skill-seekers is not installed, skip this test
@@ -140,7 +164,9 @@ class TestNoHardcodedPaths(unittest.TestCase):
 
             for hardcoded_path in hardcoded_paths:
                 self.assertNotIn(
-                    hardcoded_path, content, f"{script_path.name} contains hardcoded path: {hardcoded_path}"
+                    hardcoded_path,
+                    content,
+                    f"{script_path.name} contains hardcoded path: {hardcoded_path}",
                 )
 
 

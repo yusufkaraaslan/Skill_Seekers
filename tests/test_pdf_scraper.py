@@ -103,7 +103,11 @@ class TestCategorization(unittest.TestCase):
         # Mock extracted data with different content
         converter.extracted_data = {
             "pages": [
-                {"page_number": 1, "text": "Introduction to the API", "chapter": "Chapter 1: Getting Started"},
+                {
+                    "page_number": 1,
+                    "text": "Introduction to the API",
+                    "chapter": "Chapter 1: Getting Started",
+                },
                 {"page_number": 2, "text": "API reference for functions", "chapter": None},
             ]
         }
@@ -140,7 +144,9 @@ class TestCategorization(unittest.TestCase):
         converter = self.PDFToSkillConverter(config)
 
         # Mock data without chapters
-        converter.extracted_data = {"pages": [{"page_number": 1, "text": "Some content", "chapter": None}]}
+        converter.extracted_data = {
+            "pages": [{"page_number": 1, "text": "Some content", "chapter": None}]
+        }
 
         categories = converter.categorize_content()
 
@@ -270,7 +276,13 @@ class TestCodeBlockHandling(unittest.TestCase):
                 {
                     "page_number": 1,
                     "text": "Example code",
-                    "code_blocks": [{"code": "def hello():\n    print('world')", "language": "python", "quality": 8.0}],
+                    "code_blocks": [
+                        {
+                            "code": "def hello():\n    print('world')",
+                            "language": "python",
+                            "quality": 8.0,
+                        }
+                    ],
                     "images": [],
                 }
             ],
@@ -305,7 +317,11 @@ class TestCodeBlockHandling(unittest.TestCase):
                     "text": "Code examples",
                     "code_blocks": [
                         {"code": "x = 1", "language": "python", "quality": 2.0},
-                        {"code": "def process():\n    return result", "language": "python", "quality": 9.0},
+                        {
+                            "code": "def process():\n    return result",
+                            "language": "python",
+                            "quality": 9.0,
+                        },
                     ],
                     "images": [],
                 }
@@ -354,7 +370,15 @@ class TestImageHandling(unittest.TestCase):
                     "page_number": 1,
                     "text": "See diagram",
                     "code_blocks": [],
-                    "images": [{"page": 1, "index": 0, "width": 100, "height": 100, "data": mock_image_bytes}],
+                    "images": [
+                        {
+                            "page": 1,
+                            "index": 0,
+                            "width": 100,
+                            "height": 100,
+                            "data": mock_image_bytes,
+                        }
+                    ],
                 }
             ],
             "total_pages": 1,
@@ -384,7 +408,15 @@ class TestImageHandling(unittest.TestCase):
                     "page_number": 1,
                     "text": "Architecture diagram",
                     "code_blocks": [],
-                    "images": [{"page": 1, "index": 0, "width": 200, "height": 150, "data": mock_image_bytes}],
+                    "images": [
+                        {
+                            "page": 1,
+                            "index": 0,
+                            "width": 200,
+                            "height": 150,
+                            "data": mock_image_bytes,
+                        }
+                    ],
                 }
             ],
             "total_pages": 1,

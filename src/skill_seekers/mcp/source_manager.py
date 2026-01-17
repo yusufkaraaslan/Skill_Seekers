@@ -64,7 +64,9 @@ class SourceManager:
         """
         # Validate name
         if not name or not name.replace("-", "").replace("_", "").isalnum():
-            raise ValueError(f"Invalid source name '{name}'. Must be alphanumeric with optional hyphens/underscores.")
+            raise ValueError(
+                f"Invalid source name '{name}'. Must be alphanumeric with optional hyphens/underscores."
+            )
 
         # Validate git_url
         if not git_url or not git_url.strip():
@@ -136,7 +138,9 @@ class SourceManager:
 
         # Not found - provide helpful error
         available = [s["name"] for s in registry["sources"]]
-        raise KeyError(f"Source '{name}' not found. Available sources: {', '.join(available) if available else 'none'}")
+        raise KeyError(
+            f"Source '{name}' not found. Available sources: {', '.join(available) if available else 'none'}"
+        )
 
     def list_sources(self, enabled_only: bool = False) -> list[dict]:
         """

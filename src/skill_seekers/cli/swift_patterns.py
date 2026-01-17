@@ -538,9 +538,13 @@ def _validate_patterns(patterns: dict[str, list[tuple[str, int]]]) -> None:
                 raise ValueError(f"Pattern {i} for '{lang}' is not a (regex, weight) tuple: {item}")
             pattern, weight = item
             if not isinstance(pattern, str):
-                raise ValueError(f"Pattern {i} for '{lang}': regex must be a string, got {type(pattern).__name__}")
+                raise ValueError(
+                    f"Pattern {i} for '{lang}': regex must be a string, got {type(pattern).__name__}"
+                )
             if not isinstance(weight, int) or weight < 1 or weight > 5:
-                raise ValueError(f"Pattern {i} for '{lang}': weight must be int 1-5, got {weight!r}")
+                raise ValueError(
+                    f"Pattern {i} for '{lang}': weight must be int 1-5, got {weight!r}"
+                )
 
 
 # Validate patterns at module load time

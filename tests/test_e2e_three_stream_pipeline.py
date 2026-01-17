@@ -54,7 +54,9 @@ function greet(name) {
 """)
 
         # Create mock three-stream data
-        code_stream = CodeStream(directory=tmp_path, files=[tmp_path / "main.py", tmp_path / "utils.js"])
+        code_stream = CodeStream(
+            directory=tmp_path, files=[tmp_path / "main.py", tmp_path / "utils.js"]
+        )
         docs_stream = DocsStream(
             readme="""# Test Project
 
@@ -74,10 +76,17 @@ hello()
 ```
 """,
             contributing="# Contributing\n\nPull requests welcome!",
-            docs_files=[{"path": "docs/guide.md", "content": "# User Guide\n\nHow to use this project."}],
+            docs_files=[
+                {"path": "docs/guide.md", "content": "# User Guide\n\nHow to use this project."}
+            ],
         )
         insights_stream = InsightsStream(
-            metadata={"stars": 1234, "forks": 56, "language": "Python", "description": "A test project"},
+            metadata={
+                "stars": 1234,
+                "forks": 56,
+                "language": "Python",
+                "description": "A test project",
+            },
             common_problems=[
                 {
                     "title": "Installation fails on Windows",
@@ -95,7 +104,13 @@ hello()
                 },
             ],
             known_solutions=[
-                {"title": "Fixed: Module not found", "number": 35, "state": "closed", "comments": 8, "labels": ["bug"]}
+                {
+                    "title": "Fixed: Module not found",
+                    "number": 35,
+                    "state": "closed",
+                    "comments": 8,
+                    "labels": ["bug"],
+                }
             ],
             top_labels=[
                 {"label": "bug", "count": 25},
@@ -108,7 +123,9 @@ hello()
 
         # Step 2: Run unified analyzer with basic depth
         analyzer = UnifiedCodebaseAnalyzer()
-        result = analyzer.analyze(source="https://github.com/test/project", depth="basic", fetch_github_metadata=True)
+        result = analyzer.analyze(
+            source="https://github.com/test/project", depth="basic", fetch_github_metadata=True
+        )
 
         # Step 3: Validate all three streams present
         assert result.source_type == "github"
@@ -151,7 +168,13 @@ hello()
                 "comments": 15,
                 "labels": ["oauth", "token"],
             },
-            {"title": "Async deadlock", "number": 40, "state": "open", "comments": 12, "labels": ["async", "bug"]},
+            {
+                "title": "Async deadlock",
+                "number": 40,
+                "state": "open",
+                "comments": 12,
+                "labels": ["async", "bug"],
+            },
             {
                 "title": "Database connection lost",
                 "number": 35,
@@ -162,8 +185,20 @@ hello()
         ]
 
         solutions = [
-            {"title": "Fixed OAuth flow", "number": 30, "state": "closed", "comments": 8, "labels": ["oauth"]},
-            {"title": "Resolved async race", "number": 25, "state": "closed", "comments": 6, "labels": ["async"]},
+            {
+                "title": "Fixed OAuth flow",
+                "number": 30,
+                "state": "closed",
+                "comments": 8,
+                "labels": ["oauth"],
+            },
+            {
+                "title": "Resolved async race",
+                "number": 25,
+                "state": "closed",
+                "comments": 6,
+                "labels": ["async"],
+            },
         ]
 
         topics = ["oauth", "auth", "authentication"]
@@ -174,7 +209,9 @@ hello()
         # Validate categorization
         assert "oauth" in categorized or "auth" in categorized or "authentication" in categorized
         oauth_issues = (
-            categorized.get("oauth", []) + categorized.get("auth", []) + categorized.get("authentication", [])
+            categorized.get("oauth", [])
+            + categorized.get("auth", [])
+            + categorized.get("authentication", [])
         )
 
         # Should have 3 OAuth-related issues (2 problems + 1 solution)
@@ -245,7 +282,12 @@ testproject.run()
             docs_files=[],
         )
         insights_stream = InsightsStream(
-            metadata={"stars": 5000, "forks": 250, "language": "Python", "description": "Fast test framework"},
+            metadata={
+                "stars": 5000,
+                "forks": 250,
+                "language": "Python",
+                "description": "Fast test framework",
+            },
             common_problems=[
                 {
                     "title": "OAuth setup fails",
@@ -254,8 +296,20 @@ testproject.run()
                     "comments": 30,
                     "labels": ["bug", "oauth"],
                 },
-                {"title": "Async deadlock", "number": 142, "state": "open", "comments": 25, "labels": ["async", "bug"]},
-                {"title": "Token refresh issue", "number": 130, "state": "open", "comments": 20, "labels": ["oauth"]},
+                {
+                    "title": "Async deadlock",
+                    "number": 142,
+                    "state": "open",
+                    "comments": 25,
+                    "labels": ["async", "bug"],
+                },
+                {
+                    "title": "Token refresh issue",
+                    "number": 130,
+                    "state": "open",
+                    "comments": 20,
+                    "labels": ["oauth"],
+                },
             ],
             known_solutions=[
                 {
@@ -265,7 +319,13 @@ testproject.run()
                     "comments": 15,
                     "labels": ["oauth"],
                 },
-                {"title": "Resolved async race", "number": 110, "state": "closed", "comments": 12, "labels": ["async"]},
+                {
+                    "title": "Resolved async race",
+                    "number": 110,
+                    "state": "closed",
+                    "comments": 12,
+                    "labels": ["async"],
+                },
             ],
             top_labels=[
                 {"label": "oauth", "count": 45},
@@ -276,7 +336,9 @@ testproject.run()
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Generate router
-        generator = RouterGenerator([str(config_path1), str(config_path2)], github_streams=github_streams)
+        generator = RouterGenerator(
+            [str(config_path1), str(config_path2)], github_streams=github_streams
+        )
 
         # Step 1: Validate GitHub metadata extracted
         assert generator.github_metadata is not None
@@ -308,8 +370,14 @@ testproject.run()
         # Validate examples section with converted questions (Fix 1)
         assert "## Examples" in skill_md
         # Issues converted to natural questions
-        assert "how do i fix oauth setup" in skill_md.lower() or "how do i handle oauth setup" in skill_md.lower()
-        assert "how do i handle async deadlock" in skill_md.lower() or "how do i fix async deadlock" in skill_md.lower()
+        assert (
+            "how do i fix oauth setup" in skill_md.lower()
+            or "how do i handle oauth setup" in skill_md.lower()
+        )
+        assert (
+            "how do i handle async deadlock" in skill_md.lower()
+            or "how do i fix async deadlock" in skill_md.lower()
+        )
         # Common Issues section may still exist with other issues
         # Note: Issue numbers may appear in Common Issues or Common Patterns sections
 
@@ -356,12 +424,26 @@ class TestE2EQualityMetrics:
 
         # Create GitHub streams with realistic data
         code_stream = CodeStream(directory=tmp_path, files=[])
-        docs_stream = DocsStream(readme="# Test\n\nA short README.", contributing=None, docs_files=[])
+        docs_stream = DocsStream(
+            readme="# Test\n\nA short README.", contributing=None, docs_files=[]
+        )
         insights_stream = InsightsStream(
             metadata={"stars": 100, "forks": 10, "language": "Python", "description": "Test"},
             common_problems=[
-                {"title": "Issue 1", "number": 1, "state": "open", "comments": 5, "labels": ["bug"]},
-                {"title": "Issue 2", "number": 2, "state": "open", "comments": 3, "labels": ["bug"]},
+                {
+                    "title": "Issue 1",
+                    "number": 1,
+                    "state": "open",
+                    "comments": 5,
+                    "labels": ["bug"],
+                },
+                {
+                    "title": "Issue 2",
+                    "number": 2,
+                    "state": "open",
+                    "comments": 3,
+                    "labels": ["bug"],
+                },
             ],
             known_solutions=[],
             top_labels=[{"label": "bug", "count": 10}],
@@ -382,7 +464,9 @@ class TestE2EQualityMetrics:
         github_overhead = lines_with_github - lines_no_github
 
         # Validate overhead is within acceptable range (30-50 lines)
-        assert 20 <= github_overhead <= 60, f"GitHub overhead is {github_overhead} lines, expected 20-60"
+        assert 20 <= github_overhead <= 60, (
+            f"GitHub overhead is {github_overhead} lines, expected 20-60"
+        )
 
     def test_router_size_within_limits(self, tmp_path):
         """
@@ -457,7 +541,9 @@ class TestE2EBackwardCompatibility:
 
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme=None, contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 
@@ -490,8 +576,12 @@ class TestE2ETokenEfficiency:
 
         # Create GitHub streams
         code_stream = CodeStream(directory=tmp_path, files=[tmp_path / "main.py"])
-        docs_stream = DocsStream(readme="# Test\n\nQuick start guide.", contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={"stars": 100}, common_problems=[], known_solutions=[], top_labels=[])
+        docs_stream = DocsStream(
+            readme="# Test\n\nQuick start guide.", contributing=None, docs_files=[]
+        )
+        insights_stream = InsightsStream(
+            metadata={"stars": 100}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Verify streams are separate (no duplication)

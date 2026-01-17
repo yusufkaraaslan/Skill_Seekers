@@ -173,7 +173,10 @@ API_KEY=secret123
 PORT=8000
 """
         config_file = ConfigFile(
-            file_path=str(Path(self.temp_dir) / ".env"), relative_path=".env", config_type="env", purpose="unknown"
+            file_path=str(Path(self.temp_dir) / ".env"),
+            relative_path=".env",
+            config_type="env",
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / ".env"
@@ -313,7 +316,8 @@ endpoint = "https://api.example.com"
 
         # Check if parsing failed due to missing toml/tomli
         if config_file.parse_errors and (
-            "toml" in str(config_file.parse_errors).lower() and "not installed" in str(config_file.parse_errors)
+            "toml" in str(config_file.parse_errors).lower()
+            and "not installed" in str(config_file.parse_errors)
         ):
             self.skipTest("toml/tomli not installed")
 
@@ -337,7 +341,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -353,7 +361,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -369,7 +381,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -385,7 +401,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -402,7 +422,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -418,7 +442,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -434,7 +462,11 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
+            file_path="test.json",
+            relative_path="test.json",
+            config_type="json",
+            purpose="unknown",
+            settings=settings,
         )
 
         patterns = self.detector.detect_patterns(config_file)

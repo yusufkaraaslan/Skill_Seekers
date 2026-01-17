@@ -63,7 +63,9 @@ class ConfigFile:
 
     file_path: str
     relative_path: str
-    config_type: Literal["json", "yaml", "toml", "env", "ini", "python", "javascript", "dockerfile", "docker-compose"]
+    config_type: Literal[
+        "json", "yaml", "toml", "env", "ini", "python", "javascript", "dockerfile", "docker-compose"
+    ]
     purpose: str  # Inferred purpose: database, api, logging, etc.
     settings: list[ConfigSetting] = field(default_factory=list)
     patterns: list[str] = field(default_factory=list)
@@ -156,11 +158,23 @@ class ConfigFileDetector:
     CONFIG_PATTERNS = {
         "json": {
             "patterns": ["*.json", "package.json", "tsconfig.json", "jsconfig.json"],
-            "names": ["config.json", "settings.json", "app.json", ".eslintrc.json", ".prettierrc.json"],
+            "names": [
+                "config.json",
+                "settings.json",
+                "app.json",
+                ".eslintrc.json",
+                ".prettierrc.json",
+            ],
         },
         "yaml": {
             "patterns": ["*.yaml", "*.yml"],
-            "names": ["config.yml", "settings.yml", ".travis.yml", ".gitlab-ci.yml", "docker-compose.yml"],
+            "names": [
+                "config.yml",
+                "settings.yml",
+                ".travis.yml",
+                ".gitlab-ci.yml",
+                "docker-compose.yml",
+            ],
         },
         "toml": {
             "patterns": ["*.toml"],
@@ -498,7 +512,9 @@ class ConfigParser:
                     key = match.group(1)
                     value = match.group(3) if len(match.groups()) > 2 else match.group(2)
 
-                    setting = ConfigSetting(key=key, value=value, value_type=self._infer_type(value))
+                    setting = ConfigSetting(
+                        key=key, value=value, value_type=self._infer_type(value)
+                    )
                     config_file.settings.append(setting)
 
     def _parse_dockerfile(self, config_file: ConfigFile):
@@ -514,7 +530,10 @@ class ConfigParser:
                 if len(parts) == 2:
                     key, value = parts
                     setting = ConfigSetting(
-                        key=key.strip(), value=value.strip(), value_type="string", env_var=key.strip()
+                        key=key.strip(),
+                        value=value.strip(),
+                        value_type="string",
+                        env_var=key.strip(),
                     )
                     config_file.settings.append(setting)
 
@@ -527,7 +546,9 @@ class ConfigParser:
                 setting = ConfigSetting(key=key, value=value, value_type="string")
                 config_file.settings.append(setting)
 
-    def _extract_settings_from_dict(self, data: dict, config_file: ConfigFile, parent_path: list[str] = None):
+    def _extract_settings_from_dict(
+        self, data: dict, config_file: ConfigFile, parent_path: list[str] = None
+    ):
         """Recursively extract settings from dictionary"""
         if parent_path is None:
             parent_path = []
@@ -636,7 +657,9 @@ class ConfigPatternDetector:
 
             if matches >= min_match:
                 detected.append(pattern_name)
-                logger.debug(f"Detected {pattern_name} in {config_file.relative_path} ({matches} matches)")
+                logger.debug(
+                    f"Detected {pattern_name} in {config_file.relative_path} ({matches} matches)"
+                )
 
         return detected
 
@@ -649,7 +672,9 @@ class ConfigExtractor:
         self.parser = ConfigParser()
         self.pattern_detector = ConfigPatternDetector()
 
-    def extract_from_directory(self, directory: Path, max_files: int = 100) -> ConfigExtractionResult:
+    def extract_from_directory(
+        self, directory: Path, max_files: int = 100
+    ) -> ConfigExtractionResult:
         """
         Extract configuration patterns from directory.
 
@@ -695,7 +720,9 @@ class ConfigExtractor:
                 logger.error(error_msg)
                 result.errors.append(error_msg)
 
-        logger.info(f"Extracted {result.total_settings} settings from {result.total_files} config files")
+        logger.info(
+            f"Extracted {result.total_settings} settings from {result.total_files} config files"
+        )
         logger.info(f"Detected patterns: {list(result.detected_patterns.keys())}")
 
         return result
@@ -741,12 +768,18 @@ def main():
     )
     parser.add_argument("directory", type=Path, help="Directory to analyze")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
-    parser.add_argument("--max-files", type=int, default=100, help="Maximum config files to process")
     parser.add_argument(
-        "--enhance", action="store_true", help="Enhance with AI analysis (API mode, requires ANTHROPIC_API_KEY)"
+        "--max-files", type=int, default=100, help="Maximum config files to process"
     )
     parser.add_argument(
-        "--enhance-local", action="store_true", help="Enhance with AI analysis (LOCAL mode, uses Claude Code CLI)"
+        "--enhance",
+        action="store_true",
+        help="Enhance with AI analysis (API mode, requires ANTHROPIC_API_KEY)",
+    )
+    parser.add_argument(
+        "--enhance-local",
+        action="store_true",
+        help="Enhance with AI analysis (LOCAL mode, uses Claude Code CLI)",
     )
     parser.add_argument(
         "--ai-mode",

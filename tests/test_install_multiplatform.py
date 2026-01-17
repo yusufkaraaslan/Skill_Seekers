@@ -23,7 +23,9 @@ class TestInstallCLI(unittest.TestCase):
             # Create parser like install_skill.py does
             parser = argparse.ArgumentParser()
             parser.add_argument("--config", required=True)
-            parser.add_argument("--target", choices=["claude", "gemini", "openai", "markdown"], default="claude")
+            parser.add_argument(
+                "--target", choices=["claude", "gemini", "openai", "markdown"], default="claude"
+            )
 
             # Test that each platform is accepted
             for platform in ["claude", "gemini", "openai", "markdown"]:
@@ -43,7 +45,9 @@ class TestInstallCLI(unittest.TestCase):
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--config", required=True)
-        parser.add_argument("--target", choices=["claude", "gemini", "openai", "markdown"], default="claude")
+        parser.add_argument(
+            "--target", choices=["claude", "gemini", "openai", "markdown"], default="claude"
+        )
 
         # Should raise SystemExit for invalid target
         with self.assertRaises(SystemExit):
@@ -62,7 +66,10 @@ class TestInstallToolMultiPlatform(unittest.IsolatedAsyncioTestCase):
         for target in ["claude", "gemini", "openai"]:
             # Use dry_run=True which skips actual execution
             # It will still show us the platform is being recognized
-            with patch("builtins.open", create=True) as mock_open, patch("json.load") as mock_json_load:
+            with (
+                patch("builtins.open", create=True) as mock_open,
+                patch("json.load") as mock_json_load,
+            ):
                 # Mock config file reading
                 mock_json_load.return_value = {"name": "test-skill"}
                 mock_file = MagicMock()

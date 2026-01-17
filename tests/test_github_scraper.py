@@ -587,7 +587,9 @@ class TestGitHubToSkillConverter(unittest.TestCase):
         config = {"repo": "facebook/react", "name": "test", "description": "Test skill"}
 
         # Patch the paths to use our temp directory
-        with patch("skill_seekers.cli.github_scraper.GitHubToSkillConverter._load_data") as mock_load:
+        with patch(
+            "skill_seekers.cli.github_scraper.GitHubToSkillConverter._load_data"
+        ) as mock_load:
             mock_load.return_value = self.mock_data
             converter = self.GitHubToSkillConverter(config)
             converter.skill_dir = str(self.output_dir / "test_skill")
@@ -677,7 +679,10 @@ class TestSymlinkHandling(unittest.TestCase):
             scraper.repo = Mock()
 
             # First call returns symlink, second call raises 404
-            scraper.repo.get_contents.side_effect = [mock_symlink, GithubException(404, "Not found")]
+            scraper.repo.get_contents.side_effect = [
+                mock_symlink,
+                GithubException(404, "Not found"),
+            ]
 
             result = scraper._get_file_content("README.md")
 
@@ -729,7 +734,9 @@ class TestSymlinkHandling(unittest.TestCase):
 
             # Should successfully extract README content
             self.assertIn("readme", scraper.extracted_data)
-            self.assertEqual(scraper.extracted_data["readme"], "# AI SDK\n\nThe AI SDK is a TypeScript toolkit")
+            self.assertEqual(
+                scraper.extracted_data["readme"], "# AI SDK\n\nThe AI SDK is a TypeScript toolkit"
+            )
 
     def test_extract_changelog_with_symlink(self):
         """Test CHANGELOG extraction with symlinked CHANGELOG.md"""
@@ -789,7 +796,9 @@ class TestSymlinkHandling(unittest.TestCase):
         mock_content.type = "file"
         mock_content.encoding = "none"  # Large files have encoding="none"
         mock_content.size = 1388271  # 1.4MB CHANGELOG
-        mock_content.download_url = "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        mock_content.download_url = (
+            "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        )
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
@@ -820,7 +829,9 @@ class TestSymlinkHandling(unittest.TestCase):
         mock_content.type = "file"
         mock_content.encoding = "none"
         mock_content.size = 1388271
-        mock_content.download_url = "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        mock_content.download_url = (
+            "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        )
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)

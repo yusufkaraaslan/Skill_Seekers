@@ -69,7 +69,11 @@ class UnifiedCodebaseAnalyzer:
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
 
     def analyze(
-        self, source: str, depth: str = "c3x", fetch_github_metadata: bool = True, output_dir: Path | None = None
+        self,
+        source: str,
+        depth: str = "c3x",
+        fetch_github_metadata: bool = True,
+        output_dir: Path | None = None,
     ) -> AnalysisResult:
         """
         Analyze codebase with specified depth.
@@ -123,7 +127,9 @@ class UnifiedCodebaseAnalyzer:
             raise ValueError(f"Unknown depth: {depth}. Use 'basic' or 'c3x'")
 
         # Build result with all streams
-        result = AnalysisResult(code_analysis=code_analysis, source_type="github", analysis_depth=depth)
+        result = AnalysisResult(
+            code_analysis=code_analysis, source_type="github", analysis_depth=depth
+        )
 
         # Add GitHub-specific data if available
         if fetch_metadata:
@@ -168,7 +174,9 @@ class UnifiedCodebaseAnalyzer:
         else:
             raise ValueError(f"Unknown depth: {depth}. Use 'basic' or 'c3x'")
 
-        return AnalysisResult(code_analysis=code_analysis, source_type="local", analysis_depth=depth)
+        return AnalysisResult(
+            code_analysis=code_analysis, source_type="local", analysis_depth=depth
+        )
 
     def basic_analysis(self, directory: Path) -> dict:
         """
@@ -423,7 +431,9 @@ class UnifiedCodebaseAnalyzer:
                     # Only include immediate subdirectories
                     structure["children"].append({"name": item.name, "type": "directory"})
                 elif item.is_file():
-                    structure["children"].append({"name": item.name, "type": "file", "extension": item.suffix})
+                    structure["children"].append(
+                        {"name": item.name, "type": "file", "extension": item.suffix}
+                    )
         except Exception:
             pass
 

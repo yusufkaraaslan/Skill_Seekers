@@ -169,7 +169,9 @@ async def validate_config(args: dict) -> list[TextContent]:
     try:
         # Check if file exists
         if not Path(config_path).exists():
-            return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
+            return [
+                TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")
+            ]
 
         # Try unified config validator first
         try:
@@ -193,7 +195,9 @@ async def validate_config(args: dict) -> list[TextContent]:
                         result += f"    Max pages: {source.get('max_pages', 'Not set')}\n"
                     elif source["type"] == "github":
                         result += f"    Repo: {source.get('repo', 'N/A')}\n"
-                        result += f"    Code depth: {source.get('code_analysis_depth', 'surface')}\n"
+                        result += (
+                            f"    Code depth: {source.get('code_analysis_depth', 'surface')}\n"
+                        )
                     elif source["type"] == "pdf":
                         result += f"    Path: {source.get('path', 'N/A')}\n"
 

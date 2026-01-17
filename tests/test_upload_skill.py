@@ -98,7 +98,9 @@ class TestUploadSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers", "upload", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "upload", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
@@ -112,7 +114,9 @@ class TestUploadSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers-upload", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers-upload", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
@@ -126,7 +130,11 @@ class TestUploadSkillCLI(unittest.TestCase):
         result = subprocess.run(["python3", "cli/upload_skill.py"], capture_output=True, text=True)
 
         # Should fail or show usage
-        self.assertTrue(result.returncode != 0 or "usage" in result.stderr.lower() or "usage" in result.stdout.lower())
+        self.assertTrue(
+            result.returncode != 0
+            or "usage" in result.stderr.lower()
+            or "usage" in result.stdout.lower()
+        )
 
 
 if __name__ == "__main__":

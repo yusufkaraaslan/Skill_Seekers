@@ -108,7 +108,11 @@ class TestUnlimitedMode(unittest.TestCase):
 
     def test_limited_mode_default(self):
         """Test default max_pages is limited"""
-        config = {"name": "test", "base_url": "https://example.com/", "selectors": {"main_content": "article"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article"},
+        }
 
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
@@ -145,7 +149,11 @@ class TestRateLimiting(unittest.TestCase):
 
     def test_rate_limit_default(self):
         """Test default rate_limit is 0.5"""
-        config = {"name": "test", "base_url": "https://example.com/", "selectors": {"main_content": "article"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article"},
+        }
 
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)

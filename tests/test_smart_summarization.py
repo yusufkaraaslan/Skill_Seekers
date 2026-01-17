@@ -182,7 +182,10 @@ Another paragraph of content.
         assert "YOUR TASK:" in prompt
         assert "REFERENCE DOCUMENTATION:" in prompt
         # After summarization, content should include the marker
-        assert "[Content intelligently summarized" in prompt or "[Content truncated for size...]" in prompt
+        assert (
+            "[Content intelligently summarized" in prompt
+            or "[Content truncated for size...]" in prompt
+        )
 
     def test_run_detects_large_skill(self, tmp_path, monkeypatch, capsys):
         """Test that run() automatically detects large skills"""

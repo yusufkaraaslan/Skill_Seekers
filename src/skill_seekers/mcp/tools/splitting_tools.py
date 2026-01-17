@@ -183,7 +183,9 @@ async def generate_router(args: dict) -> list[TextContent]:
     config_files = glob.glob(config_pattern)
 
     if not config_files:
-        return [TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")]
+        return [
+            TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")
+        ]
 
     # Run generate_router.py
     cmd = [

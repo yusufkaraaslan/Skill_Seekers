@@ -41,7 +41,9 @@ class TestPackageSkill(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = self.create_test_skill_directory(tmpdir)
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             self.assertIsNotNone(zip_path)
@@ -54,7 +56,9 @@ class TestPackageSkill(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = self.create_test_skill_directory(tmpdir)
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
 
@@ -77,7 +81,9 @@ class TestPackageSkill(unittest.TestCase):
             # Add a backup file
             (skill_dir / "SKILL.md.backup").write_text("# Backup")
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
 
@@ -88,7 +94,9 @@ class TestPackageSkill(unittest.TestCase):
 
     def test_package_nonexistent_directory(self):
         """Test packaging a nonexistent directory"""
-        success, zip_path = package_skill("/nonexistent/path", open_folder_after=False, skip_quality_check=True)
+        success, zip_path = package_skill(
+            "/nonexistent/path", open_folder_after=False, skip_quality_check=True
+        )
 
         self.assertFalse(success)
         self.assertIsNone(zip_path)
@@ -99,7 +107,9 @@ class TestPackageSkill(unittest.TestCase):
             skill_dir = Path(tmpdir) / "invalid-skill"
             skill_dir.mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertFalse(success)
             self.assertIsNone(zip_path)
@@ -118,7 +128,9 @@ class TestPackageSkill(unittest.TestCase):
             (skill_dir / "scripts").mkdir()
             (skill_dir / "assets").mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             # Zip should be in output directory, not inside skill directory
@@ -135,7 +147,9 @@ class TestPackageSkill(unittest.TestCase):
             (skill_dir / "scripts").mkdir()
             (skill_dir / "assets").mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             self.assertEqual(zip_path.name, "my-awesome-skill.zip")
@@ -149,7 +163,9 @@ class TestPackageSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers", "package", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "package", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
@@ -163,7 +179,9 @@ class TestPackageSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers-package", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers-package", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])

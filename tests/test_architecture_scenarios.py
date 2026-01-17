@@ -192,9 +192,15 @@ How to use async tools.
         with (
             patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
             patch.object(
-                GitHubThreeStreamFetcher, "fetch_github_metadata", return_value=mock_github_api_data["metadata"]
+                GitHubThreeStreamFetcher,
+                "fetch_github_metadata",
+                return_value=mock_github_api_data["metadata"],
             ),
-            patch.object(GitHubThreeStreamFetcher, "fetch_issues", return_value=mock_github_api_data["issues"]),
+            patch.object(
+                GitHubThreeStreamFetcher,
+                "fetch_issues",
+                return_value=mock_github_api_data["issues"],
+            ),
         ):
             fetcher = GitHubThreeStreamFetcher("https://github.com/jlowin/fastmcp")
             three_streams = fetcher.fetch()
@@ -227,10 +233,18 @@ How to use async tools.
         with (
             patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
             patch.object(
-                GitHubThreeStreamFetcher, "fetch_github_metadata", return_value=mock_github_api_data["metadata"]
+                GitHubThreeStreamFetcher,
+                "fetch_github_metadata",
+                return_value=mock_github_api_data["metadata"],
             ),
-            patch.object(GitHubThreeStreamFetcher, "fetch_issues", return_value=mock_github_api_data["issues"]),
-            patch("skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis") as mock_c3x,
+            patch.object(
+                GitHubThreeStreamFetcher,
+                "fetch_issues",
+                return_value=mock_github_api_data["issues"],
+            ),
+            patch(
+                "skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis"
+            ) as mock_c3x,
         ):
             # Mock C3.x analysis to return sample data
             mock_c3x.return_value = {
@@ -247,7 +261,9 @@ How to use async tools.
                 "c3_2_examples_count": 2,
                 "c3_3_guides": [{"title": "OAuth Setup Guide", "file": "docs/oauth.md"}],
                 "c3_4_configs": [],
-                "c3_7_architecture": [{"pattern": "Service Layer", "description": "OAuth provider abstraction"}],
+                "c3_7_architecture": [
+                    {"pattern": "Service Layer", "description": "OAuth provider abstraction"}
+                ],
             }
 
             analyzer = UnifiedCodebaseAnalyzer()
@@ -316,7 +332,13 @@ How to use async tools.
                     "description": "Python framework for MCP servers",
                 },
                 common_problems=[
-                    {"number": 42, "title": "OAuth setup fails", "labels": ["oauth"], "comments": 15, "state": "open"},
+                    {
+                        "number": 42,
+                        "title": "OAuth setup fails",
+                        "labels": ["oauth"],
+                        "comments": 15,
+                        "state": "open",
+                    },
                     {
                         "number": 38,
                         "title": "Async tools not working",
@@ -344,7 +366,9 @@ How to use async tools.
 
         # Generate router
         generator = RouterGenerator(
-            config_paths=[str(config1), str(config2)], router_name="fastmcp", github_streams=mock_streams
+            config_paths=[str(config1), str(config2)],
+            router_name="fastmcp",
+            github_streams=mock_streams,
         )
 
         skill_md = generator.generate_skill_md()
@@ -536,15 +560,21 @@ class TestScenario2MultiSource:
         source1_data = {"api": [{"name": "GoogleProvider", "params": ["app_id", "app_secret"]}]}
 
         # Mock source 2 (GitHub C3.x)
-        source2_data = {"api": [{"name": "GoogleProvider", "params": ["client_id", "client_secret"]}]}
+        source2_data = {
+            "api": [{"name": "GoogleProvider", "params": ["client_id", "client_secret"]}]
+        }
 
         # Mock GitHub streams
         github_streams = ThreeStreamData(
             code_stream=CodeStream(directory=Path("/tmp"), files=[]),
-            docs_stream=DocsStream(readme="Use client_id and client_secret", contributing=None, docs_files=[]),
+            docs_stream=DocsStream(
+                readme="Use client_id and client_secret", contributing=None, docs_files=[]
+            ),
             insights_stream=InsightsStream(
                 metadata={"stars": 1000},
-                common_problems=[{"number": 42, "title": "OAuth parameter confusion", "labels": ["oauth"]}],
+                common_problems=[
+                    {"number": 42, "title": "OAuth parameter confusion", "labels": ["oauth"]}
+                ],
                 known_solutions=[],
                 top_labels=[],
             ),
@@ -633,7 +663,9 @@ def test_connection():
         """Test basic analysis of local codebase."""
         analyzer = UnifiedCodebaseAnalyzer()
 
-        result = analyzer.analyze(source=str(local_codebase), depth="basic", fetch_github_metadata=False)
+        result = analyzer.analyze(
+            source=str(local_codebase), depth="basic", fetch_github_metadata=False
+        )
 
         # Verify result
         assert isinstance(result, AnalysisResult)
@@ -653,7 +685,9 @@ def test_connection():
         """Test C3.x analysis of local codebase."""
         analyzer = UnifiedCodebaseAnalyzer()
 
-        with patch("skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis") as mock_c3x:
+        with patch(
+            "skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis"
+        ) as mock_c3x:
             # Mock C3.x to return sample data
             mock_c3x.return_value = {
                 "files": ["database.py", "api.py"],
@@ -666,7 +700,9 @@ def test_connection():
                 "c3_7_architecture": [],
             }
 
-            result = analyzer.analyze(source=str(local_codebase), depth="c3x", fetch_github_metadata=False)
+            result = analyzer.analyze(
+                source=str(local_codebase), depth="c3x", fetch_github_metadata=False
+            )
 
             # Verify result
             assert result.source_type == "local"
@@ -814,7 +850,12 @@ Based on analysis of GitHub issues:
                 github_overhead += 1
                 continue
             if in_repo_info:
-                if line.startswith("**") or "github.com" in line or "⭐" in line or "FastMCP is" in line:
+                if (
+                    line.startswith("**")
+                    or "github.com" in line
+                    or "⭐" in line
+                    or "FastMCP is" in line
+                ):
                     github_overhead += 1
                 if line.startswith("##"):
                     in_repo_info = False
@@ -894,7 +935,9 @@ provider = GitHubProvider(client_id="...", client_secret="...")
 
         # Check minimum 3 code examples
         code_blocks = sub_skill_md.count("```")
-        assert code_blocks >= 6, f"Need at least 3 code examples (6 markers), found {code_blocks // 2}"
+        assert code_blocks >= 6, (
+            f"Need at least 3 code examples (6 markers), found {code_blocks // 2}"
+        )
 
         # Check language tags
         assert "```python" in sub_skill_md, "Code blocks must have language tags"
@@ -909,7 +952,9 @@ provider = GitHubProvider(client_id="...", client_secret="...")
 
         # Check solution indicators for closed issues
         if "closed" in sub_skill_md.lower():
-            assert "✅" in sub_skill_md or "Solution" in sub_skill_md, "Closed issues should indicate solution found"
+            assert "✅" in sub_skill_md or "Solution" in sub_skill_md, (
+                "Closed issues should indicate solution found"
+            )
 
 
 class TestTokenEfficiencyCalculation:
@@ -946,7 +991,9 @@ class TestTokenEfficiencyCalculation:
 
         # With selective loading and caching, achieve 35-40%
         # Even conservative estimate shows 29.5%, actual usage patterns show 35-40%
-        assert reduction_percent >= 29, f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
+        assert reduction_percent >= 29, (
+            f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
+        )
 
 
 if __name__ == "__main__":

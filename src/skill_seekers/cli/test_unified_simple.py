@@ -21,7 +21,12 @@ def test_validate_existing_unified_configs():
     """Test that all existing unified configs are valid"""
     configs_dir = Path(__file__).parent.parent / "configs"
 
-    unified_configs = ["godot_unified.json", "react_unified.json", "django_unified.json", "fastapi_unified.json"]
+    unified_configs = [
+        "godot_unified.json",
+        "react_unified.json",
+        "django_unified.json",
+        "fastapi_unified.json",
+    ]
 
     for config_name in unified_configs:
         config_path = configs_dir / config_name
@@ -56,8 +61,18 @@ def test_create_temp_unified_config():
         "description": "Test unified config",
         "merge_mode": "rule-based",
         "sources": [
-            {"type": "documentation", "base_url": "https://example.com/docs", "extract_api": True, "max_pages": 50},
-            {"type": "github", "repo": "test/repo", "include_code": True, "code_analysis_depth": "surface"},
+            {
+                "type": "documentation",
+                "base_url": "https://example.com/docs",
+                "extract_api": True,
+                "max_pages": 50,
+            },
+            {
+                "type": "github",
+                "repo": "test/repo",
+                "include_code": True,
+                "code_analysis_depth": "surface",
+            },
         ],
     }
 

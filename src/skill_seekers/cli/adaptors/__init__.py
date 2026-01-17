@@ -67,7 +67,9 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
     if platform not in ADAPTORS:
         available = ", ".join(ADAPTORS.keys())
         if not ADAPTORS:
-            raise ValueError(f"No adaptors are currently implemented. Platform '{platform}' is not available.")
+            raise ValueError(
+                f"No adaptors are currently implemented. Platform '{platform}' is not available."
+            )
         raise ValueError(
             f"Platform '{platform}' is not supported or not yet implemented. Available platforms: {available}"
         )

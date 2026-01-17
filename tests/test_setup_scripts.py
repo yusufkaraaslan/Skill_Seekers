@@ -39,11 +39,15 @@ class TestSetupMCPScript:
     def test_references_correct_mcp_directory(self, script_content):
         """Test that script references src/skill_seekers/mcp/ (v2.4.0 MCP 2025 upgrade)"""
         # Should NOT reference old mcp/ or skill_seeker_mcp/ directories
-        old_mcp_refs = re.findall(r"(?:^|[^a-z_])(?<!/)mcp/(?!\.json)", script_content, re.MULTILINE)
+        old_mcp_refs = re.findall(
+            r"(?:^|[^a-z_])(?<!/)mcp/(?!\.json)", script_content, re.MULTILINE
+        )
         old_skill_seeker_refs = re.findall(r"skill_seeker_mcp/", script_content)
 
         # Allow /mcp/ (as in src/skill_seekers/mcp/) but not standalone mcp/
-        assert len(old_mcp_refs) == 0, f"Found {len(old_mcp_refs)} references to old 'mcp/' directory: {old_mcp_refs}"
+        assert len(old_mcp_refs) == 0, (
+            f"Found {len(old_mcp_refs)} references to old 'mcp/' directory: {old_mcp_refs}"
+        )
         assert len(old_skill_seeker_refs) == 0, (
             f"Found {len(old_skill_seeker_refs)} references to old 'skill_seeker_mcp/': {old_skill_seeker_refs}"
         )
@@ -72,7 +76,9 @@ class TestSetupMCPScript:
         assert len(old_skill_seeker_refs) == 0, (
             f"Should NOT reference 'skill_seeker_mcp/requirements.txt' (found {len(old_skill_seeker_refs)})"
         )
-        assert len(old_mcp_refs) == 0, f"Should NOT reference old 'mcp/requirements.txt' (found {len(old_mcp_refs)})"
+        assert len(old_mcp_refs) == 0, (
+            f"Should NOT reference old 'mcp/requirements.txt' (found {len(old_mcp_refs)})"
+        )
 
     def test_server_py_path(self, script_content):
         """Test that server_fastmcp.py module is referenced (v2.4.0 MCP 2025 upgrade)"""
@@ -116,7 +122,9 @@ class TestSetupMCPScript:
         """Test that JSON config examples use correct format (v2.4.0 MCP 2025 upgrade)"""
         # MCP 2025 uses module import: python3 -m skill_seekers.mcp.server_fastmcp
         # Config should show the server_fastmcp.py path for stdio examples
-        assert "server_fastmcp.py" in script_content, "Config should reference server_fastmcp.py (MCP 2025 upgrade)"
+        assert "server_fastmcp.py" in script_content, (
+            "Config should reference server_fastmcp.py (MCP 2025 upgrade)"
+        )
 
     def test_no_hardcoded_paths(self, script_content):
         """Test that script doesn't contain hardcoded absolute paths"""
@@ -128,7 +136,9 @@ class TestSetupMCPScript:
         """Test that pytest commands reference correct test files"""
         # Check for test file references
         if "pytest" in script_content:
-            assert "tests/test_mcp_server.py" in script_content, "Should reference correct test file path"
+            assert "tests/test_mcp_server.py" in script_content, (
+                "Should reference correct test file path"
+            )
 
 
 class TestBashScriptGeneral:
@@ -160,7 +170,9 @@ class TestBashScriptGeneral:
             with open(script) as f:
                 content = f.read()
             # Check for set -e or set -o errexit
-            has_error_handling = re.search(r"set\s+-[a-z]*e", content) or re.search(r"set\s+-o\s+errexit", content)
+            has_error_handling = re.search(r"set\s+-[a-z]*e", content) or re.search(
+                r"set\s+-o\s+errexit", content
+            )
             assert has_error_handling, f"{script} should use 'set -e' for error handling"
 
     def test_no_deprecated_backticks(self, all_bash_scripts):
@@ -172,7 +184,9 @@ class TestBashScriptGeneral:
             lines = [line for line in content.split("\n") if not line.strip().startswith("#")]
             code_content = "\n".join(lines)
             backticks = re.findall(r"`[^`]+`", code_content)
-            assert len(backticks) == 0, f"{script} uses deprecated backticks: {backticks}. Use $() instead"
+            assert len(backticks) == 0, (
+                f"{script} uses deprecated backticks: {backticks}. Use $() instead"
+            )
 
 
 class TestMCPServerPaths:
@@ -185,9 +199,10 @@ class TestMCPServerPaths:
             with open(workflow_file) as f:
                 content = f.read()
             # Should NOT reference old mcp/ directory
-            assert "mcp/requirements.txt" not in content or "skill_seeker_mcp/requirements.txt" in content, (
-                "GitHub workflow should use correct MCP paths"
-            )
+            assert (
+                "mcp/requirements.txt" not in content
+                or "skill_seeker_mcp/requirements.txt" in content
+            ), "GitHub workflow should use correct MCP paths"
 
     def test_readme_references_correct_paths(self):
         """Test that README references correct MCP paths"""
@@ -197,7 +212,9 @@ class TestMCPServerPaths:
                 content = f.read()
             # Check for old mcp/ directory paths (but allow mcp.json and "mcp" package name)
             # Use negative lookbehind to exclude skill_seeker_mcp/
-            old_mcp_refs = re.findall(r"(?<!skill_seeker_)mcp/(server\.py|requirements\.txt)", content)
+            old_mcp_refs = re.findall(
+                r"(?<!skill_seeker_)mcp/(server\.py|requirements\.txt)", content
+            )
             if len(old_mcp_refs) > 0:
                 pytest.fail(f"README references old mcp/ directory: {old_mcp_refs}")
 
@@ -208,7 +225,9 @@ class TestMCPServerPaths:
             with open(doc_file) as f:
                 content = f.read()
             # Check for old mcp/ directory paths (but allow mcp.json and "mcp" package name)
-            old_mcp_refs = re.findall(r"(?<!skill_seeker_)mcp/(server\.py|requirements\.txt)", content)
+            old_mcp_refs = re.findall(
+                r"(?<!skill_seeker_)mcp/(server\.py|requirements\.txt)", content
+            )
             if len(old_mcp_refs) > 0:
                 pytest.fail(f"{doc_file} references old mcp/ directory: {old_mcp_refs}")
 

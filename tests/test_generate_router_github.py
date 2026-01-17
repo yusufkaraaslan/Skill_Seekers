@@ -105,9 +105,16 @@ class TestRouterGeneratorWithGitHub:
 
         # Create GitHub streams
         code_stream = CodeStream(directory=tmp_path, files=[])
-        docs_stream = DocsStream(readme="# Test Project\n\nA test OAuth library.", contributing=None, docs_files=[])
+        docs_stream = DocsStream(
+            readme="# Test Project\n\nA test OAuth library.", contributing=None, docs_files=[]
+        )
         insights_stream = InsightsStream(
-            metadata={"stars": 1234, "forks": 56, "language": "Python", "description": "OAuth helper"},
+            metadata={
+                "stars": 1234,
+                "forks": 56,
+                "language": "Python",
+                "description": "OAuth helper",
+            },
             common_problems=[
                 {
                     "title": "OAuth fails on redirect",
@@ -133,7 +140,11 @@ class TestRouterGeneratorWithGitHub:
 
     def test_extract_keywords_with_github_labels(self, tmp_path):
         """Test keyword extraction with GitHub issue labels (2x weight)."""
-        config = {"name": "test-oauth", "base_url": "https://example.com", "categories": {"oauth": ["oauth", "auth"]}}
+        config = {
+            "name": "test-oauth",
+            "base_url": "https://example.com",
+            "categories": {"oauth": ["oauth", "auth"]},
+        }
 
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
@@ -178,10 +189,17 @@ class TestRouterGeneratorWithGitHub:
         # Create GitHub streams
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(
-            readme="# OAuth Library\n\nQuick start: Install with pip install oauth", contributing=None, docs_files=[]
+            readme="# OAuth Library\n\nQuick start: Install with pip install oauth",
+            contributing=None,
+            docs_files=[],
         )
         insights_stream = InsightsStream(
-            metadata={"stars": 5000, "forks": 200, "language": "Python", "description": "OAuth 2.0 library"},
+            metadata={
+                "stars": 5000,
+                "forks": 200,
+                "language": "Python",
+                "description": "OAuth 2.0 library",
+            },
             common_problems=[
                 {
                     "title": "Redirect URI mismatch",
@@ -190,7 +208,13 @@ class TestRouterGeneratorWithGitHub:
                     "comments": 25,
                     "labels": ["bug", "oauth"],
                 },
-                {"title": "Token refresh fails", "number": 95, "state": "open", "comments": 18, "labels": ["oauth"]},
+                {
+                    "title": "Token refresh fails",
+                    "number": 95,
+                    "state": "open",
+                    "comments": 18,
+                    "labels": ["oauth"],
+                },
             ],
             known_solutions=[],
             top_labels=[],
@@ -250,7 +274,11 @@ class TestSubSkillIssuesSection:
 
     def test_generate_subskill_issues_section(self, tmp_path):
         """Test generation of issues section for sub-skills."""
-        config = {"name": "test-oauth", "base_url": "https://example.com", "categories": {"oauth": ["oauth"]}}
+        config = {
+            "name": "test-oauth",
+            "base_url": "https://example.com",
+            "categories": {"oauth": ["oauth"]},
+        }
 
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
@@ -269,10 +297,22 @@ class TestSubSkillIssuesSection:
                     "comments": 20,
                     "labels": ["oauth", "bug"],
                 },
-                {"title": "Token expiration issue", "number": 45, "state": "open", "comments": 15, "labels": ["oauth"]},
+                {
+                    "title": "Token expiration issue",
+                    "number": 45,
+                    "state": "open",
+                    "comments": 15,
+                    "labels": ["oauth"],
+                },
             ],
             known_solutions=[
-                {"title": "Fixed OAuth flow", "number": 40, "state": "closed", "comments": 10, "labels": ["oauth"]}
+                {
+                    "title": "Fixed OAuth flow",
+                    "number": 40,
+                    "state": "closed",
+                    "comments": 10,
+                    "labels": ["oauth"],
+                }
             ],
             top_labels=[],
         )
@@ -293,7 +333,11 @@ class TestSubSkillIssuesSection:
 
     def test_generate_subskill_issues_no_matches(self, tmp_path):
         """Test issues section when no issues match the topic."""
-        config = {"name": "test-async", "base_url": "https://example.com", "categories": {"async": ["async"]}}
+        config = {
+            "name": "test-async",
+            "base_url": "https://example.com",
+            "categories": {"async": ["async"]},
+        }
 
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
@@ -305,7 +349,13 @@ class TestSubSkillIssuesSection:
         insights_stream = InsightsStream(
             metadata={},
             common_problems=[
-                {"title": "OAuth fails", "number": 1, "state": "open", "comments": 5, "labels": ["oauth"]}
+                {
+                    "title": "OAuth fails",
+                    "number": 1,
+                    "state": "open",
+                    "comments": 5,
+                    "labels": ["oauth"],
+                }
             ],
             known_solutions=[],
             top_labels=[],
@@ -361,7 +411,12 @@ class TestIntegration:
             ],
         )
         insights_stream = InsightsStream(
-            metadata={"stars": 10000, "forks": 500, "language": "Python", "description": "Fast MCP server framework"},
+            metadata={
+                "stars": 10000,
+                "forks": 500,
+                "language": "Python",
+                "description": "Fast MCP server framework",
+            },
             common_problems=[
                 {
                     "title": "OAuth setup fails",
@@ -370,8 +425,20 @@ class TestIntegration:
                     "comments": 30,
                     "labels": ["bug", "oauth"],
                 },
-                {"title": "Async deadlock", "number": 142, "state": "open", "comments": 25, "labels": ["async", "bug"]},
-                {"title": "Token refresh issue", "number": 130, "state": "open", "comments": 20, "labels": ["oauth"]},
+                {
+                    "title": "Async deadlock",
+                    "number": 142,
+                    "state": "open",
+                    "comments": 25,
+                    "labels": ["async", "bug"],
+                },
+                {
+                    "title": "Token refresh issue",
+                    "number": 130,
+                    "state": "open",
+                    "comments": 20,
+                    "labels": ["oauth"],
+                },
             ],
             known_solutions=[
                 {
@@ -381,7 +448,13 @@ class TestIntegration:
                     "comments": 15,
                     "labels": ["oauth"],
                 },
-                {"title": "Resolved async race", "number": 110, "state": "closed", "comments": 12, "labels": ["async"]},
+                {
+                    "title": "Resolved async race",
+                    "number": 110,
+                    "state": "closed",
+                    "comments": 12,
+                    "labels": ["async"],
+                },
             ],
             top_labels=[
                 {"label": "oauth", "count": 45},
@@ -392,7 +465,9 @@ class TestIntegration:
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Create router generator
-        generator = RouterGenerator([str(config_path1), str(config_path2)], github_streams=github_streams)
+        generator = RouterGenerator(
+            [str(config_path1), str(config_path2)], github_streams=github_streams
+        )
 
         # Generate SKILL.md
         skill_md = generator.generate_skill_md()
@@ -414,8 +489,14 @@ class TestIntegration:
         # 4. Examples section with converted questions (Fix 1)
         assert "## Examples" in skill_md
         # Issues converted to natural questions
-        assert "how do i fix oauth setup" in skill_md.lower() or "how do i handle oauth setup" in skill_md.lower()
-        assert "how do i handle async deadlock" in skill_md.lower() or "how do i fix async deadlock" in skill_md.lower()
+        assert (
+            "how do i fix oauth setup" in skill_md.lower()
+            or "how do i handle oauth setup" in skill_md.lower()
+        )
+        assert (
+            "how do i handle async deadlock" in skill_md.lower()
+            or "how do i fix async deadlock" in skill_md.lower()
+        )
         # Common Issues section may still exist with other issues
         # Note: Issue numbers may appear in Common Issues or Common Patterns sections
 

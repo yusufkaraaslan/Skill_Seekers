@@ -17,10 +17,15 @@ logger = logging.getLogger(__name__)
 try:
     from skill_seekers.cli.swift_patterns import SWIFT_PATTERNS
 except ImportError as e:
-    logger.warning("Swift language detection patterns unavailable. Swift code detection will be disabled. Error: %s", e)
+    logger.warning(
+        "Swift language detection patterns unavailable. Swift code detection will be disabled. Error: %s",
+        e,
+    )
     SWIFT_PATTERNS: dict[str, list[tuple[str, int]]] = {}
 except Exception as e:
-    logger.error("Failed to load Swift patterns due to unexpected error: %s. Swift detection disabled.", e)
+    logger.error(
+        "Failed to load Swift patterns due to unexpected error: %s. Swift detection disabled.", e
+    )
     SWIFT_PATTERNS: dict[str, list[tuple[str, int]]] = {}
 
 # Verify Swift patterns were loaded correctly
@@ -35,7 +40,8 @@ elif "swift" not in SWIFT_PATTERNS:
     )
 else:
     logger.info(
-        "Swift patterns loaded successfully: %d patterns for language detection", len(SWIFT_PATTERNS.get("swift", []))
+        "Swift patterns loaded successfully: %d patterns for language detection",
+        len(SWIFT_PATTERNS.get("swift", [])),
     )
 
 # Comprehensive language patterns with weighted confidence scoring
@@ -473,7 +479,8 @@ class LanguageDetector:
                 self._pattern_cache[lang] = compiled_patterns
             else:
                 logger.warning(
-                    "No valid patterns compiled for language '%s'. Detection for this language is disabled.", lang
+                    "No valid patterns compiled for language '%s'. Detection for this language is disabled.",
+                    lang,
                 )
 
     def detect_from_html(self, elem, code: str) -> tuple[str, float]:

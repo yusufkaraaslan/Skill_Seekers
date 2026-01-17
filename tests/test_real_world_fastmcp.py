@@ -80,7 +80,9 @@ class TestRealWorldFastMCP:
         try:
             # Start with basic analysis (fast) to verify three-stream architecture
             # Can be changed to "c3x" for full analysis (20-60 minutes)
-            depth_mode = os.getenv("TEST_DEPTH", "basic")  # Use 'basic' for quick test, 'c3x' for full
+            depth_mode = os.getenv(
+                "TEST_DEPTH", "basic"
+            )  # Use 'basic' for quick test, 'c3x' for full
 
             print(f"📊 Analysis depth: {depth_mode}")
             if depth_mode == "basic":
@@ -112,7 +114,9 @@ class TestRealWorldFastMCP:
 
         # Verify result structure
         assert result is not None, "Analysis result is None"
-        assert result.source_type == "github", f"Expected source_type 'github', got '{result.source_type}'"
+        assert result.source_type == "github", (
+            f"Expected source_type 'github', got '{result.source_type}'"
+        )
         # Depth can be 'basic' or 'c3x' depending on TEST_DEPTH env var
         assert result.analysis_depth in ["basic", "c3x"], f"Invalid depth '{result.analysis_depth}'"
         print(f"\n📊 Analysis depth: {result.analysis_depth}")
@@ -133,7 +137,9 @@ class TestRealWorldFastMCP:
         assert readme is not None, "README missing from GitHub docs"
         print(f"   ✅ README length: {len(readme)} chars")
         assert len(readme) > 100, "README too short (< 100 chars)"
-        assert "fastmcp" in readme.lower() or "mcp" in readme.lower(), "README doesn't mention FastMCP/MCP"
+        assert "fastmcp" in readme.lower() or "mcp" in readme.lower(), (
+            "README doesn't mention FastMCP/MCP"
+        )
 
         contributing = result.github_docs.get("contributing")
         if contributing:
@@ -193,7 +199,9 @@ class TestRealWorldFastMCP:
         print("\n   C3.1 - Design Patterns:")
         print(f"   ✅ Count: {len(c3_1)}")
         if len(c3_1) > 0:
-            print(f"   ✅ Sample: {c3_1[0].get('name', 'N/A')} ({c3_1[0].get('count', 0)} instances)")
+            print(
+                f"   ✅ Sample: {c3_1[0].get('name', 'N/A')} ({c3_1[0].get('count', 0)} instances)"
+            )
             # Verify it's not empty/placeholder
             assert c3_1[0].get("name"), "Pattern has no name"
             assert c3_1[0].get("count", 0) > 0, "Pattern has zero count"
@@ -256,7 +264,12 @@ class TestRealWorldFastMCP:
         print("=" * 80)
 
         from skill_seekers.cli.generate_router import RouterGenerator
-        from skill_seekers.cli.github_fetcher import CodeStream, DocsStream, InsightsStream, ThreeStreamData
+        from skill_seekers.cli.github_fetcher import (
+            CodeStream,
+            DocsStream,
+            InsightsStream,
+            ThreeStreamData,
+        )
 
         result = fastmcp_analysis
 
@@ -302,7 +315,9 @@ class TestRealWorldFastMCP:
         # Generate router
         print("\n🧭 Generating router...")
         generator = RouterGenerator(
-            config_paths=[str(config1), str(config2)], router_name="fastmcp", github_streams=github_streams
+            config_paths=[str(config1), str(config2)],
+            router_name="fastmcp",
+            github_streams=github_streams,
         )
 
         skill_md = generator.generate_skill_md()
@@ -463,7 +478,9 @@ class TestRealWorldFastMCP:
         print(f"   {'✅' if no_todos else '❌'} No TODO placeholders")
 
         # 6. Has GitHub content
-        has_github = any(marker in content for marker in ["Repository:", "⭐", "Issue #", "github.com"])
+        has_github = any(
+            marker in content for marker in ["Repository:", "⭐", "Issue #", "github.com"]
+        )
         print(f"   {'✅' if has_github else '⚠️ '} Has GitHub integration")
 
         # 7. Has routing
@@ -471,7 +488,15 @@ class TestRealWorldFastMCP:
         print(f"   {'✅' if has_routing else '⚠️ '} Has routing guidance")
 
         # Calculate quality score
-        checks = [has_frontmatter, has_heading, section_count >= 3, has_code, no_todos, has_github, has_routing]
+        checks = [
+            has_frontmatter,
+            has_heading,
+            section_count >= 3,
+            has_code,
+            no_todos,
+            has_github,
+            has_routing,
+        ]
         score = sum(checks) / len(checks) * 100
 
         print(f"\n📊 Quality Score: {score:.0f}%")

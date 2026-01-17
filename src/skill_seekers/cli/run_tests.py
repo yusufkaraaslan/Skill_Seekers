@@ -136,7 +136,9 @@ def print_summary(result):
 
     # Category breakdown
     if hasattr(result, "test_results"):
-        print(f"\n{ColoredTextTestResult.BOLD}Test Breakdown by Category:{ColoredTextTestResult.RESET}")
+        print(
+            f"\n{ColoredTextTestResult.BOLD}Test Breakdown by Category:{ColoredTextTestResult.RESET}"
+        )
 
         categories = {}
         for status, test in result.test_results:
@@ -164,11 +166,16 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Run tests for Skill Seeker", formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Run tests for Skill Seeker",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("--suite", "-s", type=str, help="Run specific test suite (config, features, integration)")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output (show each test)")
+    parser.add_argument(
+        "--suite", "-s", type=str, help="Run specific test suite (config, features, integration)"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Verbose output (show each test)"
+    )
     parser.add_argument("--quiet", "-q", action="store_true", help="Quiet output (minimal output)")
     parser.add_argument("--failfast", "-f", action="store_true", help="Stop on first failure")
     parser.add_argument("--list", "-l", action="store_true", help="List all available tests")
@@ -188,7 +195,9 @@ def main():
 
     # Discover or load specific suite
     if args.suite:
-        print(f"Running test suite: {ColoredTextTestResult.BLUE}{args.suite}{ColoredTextTestResult.RESET}\n")
+        print(
+            f"Running test suite: {ColoredTextTestResult.BLUE}{args.suite}{ColoredTextTestResult.RESET}\n"
+        )
         suite = run_specific_suite(args.suite)
         if suite is None:
             return 1

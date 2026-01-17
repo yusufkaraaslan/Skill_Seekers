@@ -138,7 +138,9 @@ class SkillQualityChecker:
         # Check references directory exists
         if not self.references_dir.exists():
             self.report.add_warning(
-                "structure", "references/ directory not found - skill may be incomplete", str(self.references_dir)
+                "structure",
+                "references/ directory not found - skill may be incomplete",
+                str(self.references_dir),
             )
         elif not list(self.references_dir.rglob("*.md")):
             self.report.add_warning(
@@ -197,7 +199,9 @@ class SkillQualityChecker:
 
         if sections < 4:
             self.report.add_warning(
-                "enhancement", f"Only {sections} sections found - SKILL.md may be too basic", "SKILL.md"
+                "enhancement",
+                f"Only {sections} sections found - SKILL.md may be too basic",
+                "SKILL.md",
             )
         else:
             self.report.add_info("enhancement", f"✓ Found {sections} sections", "SKILL.md")
@@ -211,7 +215,9 @@ class SkillQualityChecker:
 
         # Check YAML frontmatter
         if not content.startswith("---"):
-            self.report.add_error("content", "Missing YAML frontmatter - SKILL.md must start with ---", "SKILL.md", 1)
+            self.report.add_error(
+                "content", "Missing YAML frontmatter - SKILL.md must start with ---", "SKILL.md", 1
+            )
         else:
             # Extract frontmatter
             try:
@@ -221,26 +227,38 @@ class SkillQualityChecker:
 
                     # Check for required fields
                     if "name:" not in frontmatter:
-                        self.report.add_error("content", 'Missing "name:" field in YAML frontmatter', "SKILL.md", 2)
+                        self.report.add_error(
+                            "content", 'Missing "name:" field in YAML frontmatter', "SKILL.md", 2
+                        )
 
                     # Check for description
                     if "description:" in frontmatter:
-                        self.report.add_info("content", "✓ YAML frontmatter includes description", "SKILL.md")
+                        self.report.add_info(
+                            "content", "✓ YAML frontmatter includes description", "SKILL.md"
+                        )
                 else:
-                    self.report.add_error("content", "Invalid YAML frontmatter format", "SKILL.md", 1)
+                    self.report.add_error(
+                        "content", "Invalid YAML frontmatter format", "SKILL.md", 1
+                    )
             except Exception as e:
-                self.report.add_error("content", f"Error parsing YAML frontmatter: {e}", "SKILL.md", 1)
+                self.report.add_error(
+                    "content", f"Error parsing YAML frontmatter: {e}", "SKILL.md", 1
+                )
 
         # Check code block language tags
         code_blocks_without_lang = re.findall(r"```\n[^`]", content)
         if code_blocks_without_lang:
             self.report.add_warning(
-                "content", f"Found {len(code_blocks_without_lang)} code blocks without language tags", "SKILL.md"
+                "content",
+                f"Found {len(code_blocks_without_lang)} code blocks without language tags",
+                "SKILL.md",
             )
 
         # Check for "When to Use" section
         if "when to use" not in content.lower():
-            self.report.add_warning("content", 'Missing "When to Use This Skill" section', "SKILL.md")
+            self.report.add_warning(
+                "content", 'Missing "When to Use This Skill" section', "SKILL.md"
+            )
         else:
             self.report.add_info("content", '✓ Found "When to Use" section', "SKILL.md")
 
@@ -248,7 +266,9 @@ class SkillQualityChecker:
         if self.references_dir.exists():
             ref_files = list(self.references_dir.rglob("*.md"))
             if ref_files:
-                self.report.add_info("content", f"✓ Found {len(ref_files)} reference files", "references/")
+                self.report.add_info(
+                    "content", f"✓ Found {len(ref_files)} reference files", "references/"
+                )
 
                 # Check if references are mentioned in SKILL.md
                 mentioned_refs = 0
@@ -258,7 +278,9 @@ class SkillQualityChecker:
 
                 if mentioned_refs == 0:
                     self.report.add_warning(
-                        "content", "Reference files exist but none are mentioned in SKILL.md", "SKILL.md"
+                        "content",
+                        "Reference files exist but none are mentioned in SKILL.md",
+                        "SKILL.md",
                     )
 
     def _check_links(self):
@@ -295,7 +317,9 @@ class SkillQualityChecker:
             if links:
                 internal_links = [l for t, l in links if not l.startswith("http")]
                 if internal_links:
-                    self.report.add_info("links", f"✓ All {len(internal_links)} internal links are valid", "SKILL.md")
+                    self.report.add_info(
+                        "links", f"✓ All {len(internal_links)} internal links are valid", "SKILL.md"
+                    )
 
     def _check_skill_completeness(self):
         """Check skill completeness based on best practices.
@@ -316,9 +340,13 @@ class SkillQualityChecker:
             r"requirements?:",
             r"make\s+sure\s+you\s+have",
         ]
-        has_grounding = any(re.search(pattern, content, re.IGNORECASE) for pattern in grounding_patterns)
+        has_grounding = any(
+            re.search(pattern, content, re.IGNORECASE) for pattern in grounding_patterns
+        )
         if has_grounding:
-            self.report.add_info("completeness", "✓ Found verification/prerequisites section", "SKILL.md")
+            self.report.add_info(
+                "completeness", "✓ Found verification/prerequisites section", "SKILL.md"
+            )
         else:
             self.report.add_info(
                 "completeness",
@@ -334,12 +362,18 @@ class SkillQualityChecker:
             r"error\s+handling",
             r"when\s+things\s+go\s+wrong",
         ]
-        has_error_handling = any(re.search(pattern, content, re.IGNORECASE) for pattern in error_patterns)
+        has_error_handling = any(
+            re.search(pattern, content, re.IGNORECASE) for pattern in error_patterns
+        )
         if has_error_handling:
-            self.report.add_info("completeness", "✓ Found error handling/troubleshooting guidance", "SKILL.md")
+            self.report.add_info(
+                "completeness", "✓ Found error handling/troubleshooting guidance", "SKILL.md"
+            )
         else:
             self.report.add_info(
-                "completeness", "Consider adding troubleshooting section for common issues", "SKILL.md"
+                "completeness",
+                "Consider adding troubleshooting section for common issues",
+                "SKILL.md",
             )
 
         # Check for workflow steps (numbered or sequential indicators)
@@ -351,10 +385,14 @@ class SkillQualityChecker:
             r"finally,?\s+",
             r"next,?\s+",
         ]
-        steps_found = sum(1 for pattern in step_patterns if re.search(pattern, content, re.IGNORECASE))
+        steps_found = sum(
+            1 for pattern in step_patterns if re.search(pattern, content, re.IGNORECASE)
+        )
         if steps_found >= 3:
             self.report.add_info(
-                "completeness", f"✓ Found clear workflow indicators ({steps_found} step markers)", "SKILL.md"
+                "completeness",
+                f"✓ Found clear workflow indicators ({steps_found} step markers)",
+                "SKILL.md",
             )
         elif steps_found > 0:
             self.report.add_info(
@@ -451,7 +489,9 @@ Examples:
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Show all info messages")
 
-    parser.add_argument("--strict", action="store_true", help="Exit with error code if any warnings or errors found")
+    parser.add_argument(
+        "--strict", action="store_true", help="Exit with error code if any warnings or errors found"
+    )
 
     args = parser.parse_args()
 

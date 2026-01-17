@@ -69,7 +69,9 @@ class TestEstimatePagesCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers", "estimate", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "estimate", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # Should return successfully (0 or 2 for argparse)
             self.assertIn(result.returncode, [0, 2])
@@ -83,7 +85,9 @@ class TestEstimatePagesCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers-estimate", "--help"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers-estimate", "--help"], capture_output=True, text=True, timeout=5
+            )
 
             # Should return successfully
             self.assertIn(result.returncode, [0, 2])
@@ -96,11 +100,15 @@ class TestEstimatePagesCLI(unittest.TestCase):
 
         try:
             # Run without config argument
-            result = subprocess.run(["skill-seekers", "estimate"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["skill-seekers", "estimate"], capture_output=True, text=True, timeout=5
+            )
 
             # Should fail (non-zero exit code) or show usage
             self.assertTrue(
-                result.returncode != 0 or "usage" in result.stderr.lower() or "usage" in result.stdout.lower()
+                result.returncode != 0
+                or "usage" in result.stderr.lower()
+                or "usage" in result.stdout.lower()
             )
         except FileNotFoundError:
             self.skipTest("skill-seekers command not installed")
@@ -111,7 +119,9 @@ class TestEstimatePagesCLI(unittest.TestCase):
 
         try:
             # Run with --all flag
-            result = subprocess.run(["skill-seekers", "estimate", "--all"], capture_output=True, text=True, timeout=10)
+            result = subprocess.run(
+                ["skill-seekers", "estimate", "--all"], capture_output=True, text=True, timeout=10
+            )
 
             # Should succeed
             self.assertEqual(result.returncode, 0)
@@ -125,7 +135,9 @@ class TestEstimatePagesCLI(unittest.TestCase):
             # Should list some known configs
             # (these should exist in api/configs_repo/official/)
             self.assertTrue(
-                "react" in output.lower() or "django" in output.lower() or "godot" in output.lower(),
+                "react" in output.lower()
+                or "django" in output.lower()
+                or "godot" in output.lower(),
                 "Expected at least one known config name in output",
             )
         except FileNotFoundError:
@@ -136,7 +148,9 @@ class TestEstimatePagesCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(["skill-seekers-estimate", "--all"], capture_output=True, text=True, timeout=10)
+            result = subprocess.run(
+                ["skill-seekers-estimate", "--all"], capture_output=True, text=True, timeout=10
+            )
 
             # Should succeed
             self.assertEqual(result.returncode, 0)

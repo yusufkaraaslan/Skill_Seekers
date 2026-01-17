@@ -35,7 +35,10 @@ class RouterGenerator:
     """Generates router skills that direct to specialized sub-skills with GitHub integration"""
 
     def __init__(
-        self, config_paths: list[str], router_name: str = None, github_streams: Optional["ThreeStreamData"] = None
+        self,
+        config_paths: list[str],
+        router_name: str = None,
+        github_streams: Optional["ThreeStreamData"] = None,
     ):
         """
         Initialize router generator with optional GitHub streams.
@@ -124,7 +127,10 @@ class RouterGenerator:
                     label = label_info["label"].lower()
 
                     # Check if label relates to any skill keyword
-                    if any(keyword.lower() in label or label in keyword.lower() for keyword in skill_keywords):
+                    if any(
+                        keyword.lower() in label or label in keyword.lower()
+                        for keyword in skill_keywords
+                    ):
                         # Add twice for 2x weight
                         keywords.append(label)
                         keywords.append(label)
@@ -217,9 +223,13 @@ class RouterGenerator:
 
         if unique_topics:
             topics_str = ", ".join(unique_topics)
-            description = f"{self.router_name.title()} framework. Use when working with: {topics_str}"
+            description = (
+                f"{self.router_name.title()} framework. Use when working with: {topics_str}"
+            )
         else:
-            description = f"Use when working with {self.router_name.title()} development and programming"
+            description = (
+                f"Use when working with {self.router_name.title()} development and programming"
+            )
 
         # Truncate to 200 chars for performance (agentskills.io recommendation)
         if len(description) > 200:
@@ -357,7 +367,9 @@ compatibility: {compatibility}
             topic = self._extract_topic_from_skill(first_skill)
             keyword = first_keywords[0] if first_keywords else topic
 
-            examples.append(f'**Q:** "How do I implement {keyword}?"\n**A:** Activates {first_skill} skill')
+            examples.append(
+                f'**Q:** "How do I implement {keyword}?"\n**A:** Activates {first_skill} skill'
+            )
 
         # Example 2: Different skill (second sub-skill if available)
         if len(skill_names) >= 2:
@@ -434,7 +446,9 @@ compatibility: {compatibility}
                     f"**A:** Activates {skill_name} skill"
                 )
 
-        return "\n\n".join(examples) if examples else self._generate_dynamic_examples(routing_keywords)
+        return (
+            "\n\n".join(examples) if examples else self._generate_dynamic_examples(routing_keywords)
+        )
 
     def _convert_issue_to_question(self, issue_title: str) -> str:
         """
@@ -492,7 +506,9 @@ compatibility: {compatibility}
         patterns = []
 
         # Top 5 closed issues with most engagement (comments indicate usefulness)
-        top_solutions = sorted(known_solutions, key=lambda x: x.get("comments", 0), reverse=True)[:5]
+        top_solutions = sorted(known_solutions, key=lambda x: x.get("comments", 0), reverse=True)[
+            :5
+        ]
 
         for issue in top_solutions:
             title = issue.get("title", "")
@@ -1000,8 +1016,12 @@ GitHub issues related to this topic:
         md = "# Common GitHub Issues\n\n"
         md += "Top issues reported by the community:\n\n"
 
-        common_problems = self.github_issues.get("common_problems", [])[:10] if self.github_issues else []
-        known_solutions = self.github_issues.get("known_solutions", [])[:10] if self.github_issues else []
+        common_problems = (
+            self.github_issues.get("common_problems", [])[:10] if self.github_issues else []
+        )
+        known_solutions = (
+            self.github_issues.get("known_solutions", [])[:10] if self.github_issues else []
+        )
 
         if common_problems:
             md += "## Open Issues (Common Problems)\n\n"

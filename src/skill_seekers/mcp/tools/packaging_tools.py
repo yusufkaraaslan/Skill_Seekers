@@ -252,14 +252,18 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
     except ValueError as e:
         return [
             TextContent(
-                type="text", text=f"❌ Invalid platform: {str(e)}\n\nSupported platforms: claude, gemini, openai"
+                type="text",
+                text=f"❌ Invalid platform: {str(e)}\n\nSupported platforms: claude, gemini, openai",
             )
         ]
 
     # Check if upload is supported
     if target == "markdown":
         return [
-            TextContent(type="text", text="❌ Markdown export does not support upload. Use the packaged file manually.")
+            TextContent(
+                type="text",
+                text="❌ Markdown export does not support upload. Use the packaged file manually.",
+            )
         ]
 
     # Run upload_skill.py with target parameter
@@ -323,13 +327,18 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
     except ValueError as e:
         return [
             TextContent(
-                type="text", text=f"❌ Invalid platform: {str(e)}\n\nSupported platforms: claude, gemini, openai"
+                type="text",
+                text=f"❌ Invalid platform: {str(e)}\n\nSupported platforms: claude, gemini, openai",
             )
         ]
 
     # Check if enhancement is supported
     if not adaptor.supports_enhancement():
-        return [TextContent(type="text", text=f"❌ {adaptor.PLATFORM_NAME} does not support AI enhancement")]
+        return [
+            TextContent(
+                type="text", text=f"❌ {adaptor.PLATFORM_NAME} does not support AI enhancement"
+            )
+        ]
 
     output_lines = []
     output_lines.append(f"🚀 Enhancing skill with {adaptor.PLATFORM_NAME}")
@@ -373,12 +382,19 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
 
             if not api_key:
                 return [
-                    TextContent(type="text", text=f"❌ {env_var} not set. Set API key or pass via api_key parameter.")
+                    TextContent(
+                        type="text",
+                        text=f"❌ {env_var} not set. Set API key or pass via api_key parameter.",
+                    )
                 ]
 
         # Validate API key
         if not adaptor.validate_api_key(api_key):
-            return [TextContent(type="text", text=f"❌ Invalid API key format for {adaptor.PLATFORM_NAME}")]
+            return [
+                TextContent(
+                    type="text", text=f"❌ Invalid API key format for {adaptor.PLATFORM_NAME}"
+                )
+            ]
 
         output_lines.append("Calling API for enhancement...")
         output_lines.append("")
@@ -447,7 +463,8 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
     except ValueError as e:
         return [
             TextContent(
-                type="text", text=f"❌ Error: {str(e)}\n\nSupported platforms: claude, gemini, openai, markdown"
+                type="text",
+                text=f"❌ Error: {str(e)}\n\nSupported platforms: claude, gemini, openai, markdown",
             )
         ]
 
@@ -498,7 +515,9 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
 
             if not dry_run:
                 # Call fetch_config_tool directly
-                fetch_result = await fetch_config_tool({"config_name": config_name, "destination": destination})
+                fetch_result = await fetch_config_tool(
+                    {"config_name": config_name, "destination": destination}
+                )
 
                 # Parse result to extract config path
                 fetch_output = fetch_result[0].text
@@ -512,7 +531,12 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     workflow_state["config_path"] = match.group(1).strip()
                     output_lines.append(f"✅ Config fetched: {workflow_state['config_path']}")
                 else:
-                    return [TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Failed to fetch config")]
+                    return [
+                        TextContent(
+                            type="text",
+                            text="\n".join(output_lines) + "\n\n❌ Failed to fetch config",
+                        )
+                    ]
 
                 workflow_state["phases_completed"].append("fetch_config")
             else:
@@ -537,7 +561,10 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     workflow_state["skill_name"] = config.get("name", "unknown")
             except Exception as e:
                 return [
-                    TextContent(type="text", text="\n".join(output_lines) + f"\n\n❌ Failed to read config: {str(e)}")
+                    TextContent(
+                        type="text",
+                        text="\n".join(output_lines) + f"\n\n❌ Failed to read config: {str(e)}",
+                    )
                 ]
 
             # Call scrape_docs_tool (does NOT include enhancement)
@@ -561,7 +588,10 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             # Check for success
             if "❌" in scrape_output:
                 return [
-                    TextContent(type="text", text="\n".join(output_lines) + "\n\n❌ Scraping failed - see error above")
+                    TextContent(
+                        type="text",
+                        text="\n".join(output_lines) + "\n\n❌ Scraping failed - see error above",
+                    )
                 ]
 
             workflow_state["skill_dir"] = f"{destination}/{workflow_state['skill_name']}"
@@ -641,9 +671,13 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             else:
                 # Fallback: construct package path based on platform
                 if target == "gemini":
-                    workflow_state["zip_path"] = f"{destination}/{workflow_state['skill_name']}-gemini.tar.gz"
+                    workflow_state["zip_path"] = (
+                        f"{destination}/{workflow_state['skill_name']}-gemini.tar.gz"
+                    )
                 elif target == "openai":
-                    workflow_state["zip_path"] = f"{destination}/{workflow_state['skill_name']}-openai.zip"
+                    workflow_state["zip_path"] = (
+                        f"{destination}/{workflow_state['skill_name']}-openai.zip"
+                    )
                 else:
                     workflow_state["zip_path"] = f"{destination}/{workflow_state['skill_name']}.zip"
 
@@ -660,7 +694,9 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 pkg_ext = "zip"
                 pkg_file = f"{destination}/{workflow_state['skill_name']}.zip"
 
-            output_lines.append(f"  [DRY RUN] Would package to {pkg_ext} file for {adaptor.PLATFORM_NAME}")
+            output_lines.append(
+                f"  [DRY RUN] Would package to {pkg_ext} file for {adaptor.PLATFORM_NAME}"
+            )
             workflow_state["zip_path"] = pkg_file
 
         output_lines.append("")
@@ -725,7 +761,9 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                         output_lines.append("  (No API key needed - markdown is export only)")
                         output_lines.append(f"  Package created: {workflow_state['zip_path']}")
             else:
-                output_lines.append(f"  [DRY RUN] Would upload to {adaptor.PLATFORM_NAME} (if API key set)")
+                output_lines.append(
+                    f"  [DRY RUN] Would upload to {adaptor.PLATFORM_NAME} (if API key set)"
+                )
 
             output_lines.append("")
 
@@ -757,12 +795,16 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     output_lines.append("   Go to https://aistudio.google.com/ to use it")
                 elif target == "openai":
                     output_lines.append("🎉 Your assistant is now available in OpenAI!")
-                    output_lines.append("   Go to https://platform.openai.com/assistants/ to use it")
+                    output_lines.append(
+                        "   Go to https://platform.openai.com/assistants/ to use it"
+                    )
             elif auto_upload:
                 output_lines.append("📝 Manual upload required (see instructions above)")
             else:
                 output_lines.append("📤 To upload:")
-                output_lines.append(f"   skill-seekers upload {workflow_state['zip_path']} --target {target}")
+                output_lines.append(
+                    f"   skill-seekers upload {workflow_state['zip_path']} --target {target}"
+                )
         else:
             output_lines.append("This was a dry run. No actions were taken.")
             output_lines.append("")

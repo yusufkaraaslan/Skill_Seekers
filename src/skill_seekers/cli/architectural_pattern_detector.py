@@ -197,7 +197,9 @@ class ArchitecturalPatternDetector:
 
         return detected
 
-    def _detect_mvc(self, dirs: dict[str, int], files: list[dict], frameworks: list[str]) -> list[ArchitecturalPattern]:
+    def _detect_mvc(
+        self, dirs: dict[str, int], files: list[dict], frameworks: list[str]
+    ) -> list[ArchitecturalPattern]:
         """Detect MVC pattern"""
         patterns = []
 
@@ -226,7 +228,9 @@ class ArchitecturalPatternDetector:
                 if len(components["Views"]) == 1:
                     evidence.append("Views directory with view files")
 
-            if "controller" in file_path and ("controllers/" in file_path or "/controller/" in file_path):
+            if "controller" in file_path and (
+                "controllers/" in file_path or "/controller/" in file_path
+            ):
                 components["Controllers"].append(file.get("file", ""))
                 if len(components["Controllers"]) == 1:
                     evidence.append("Controllers directory with controller classes")
@@ -288,11 +292,15 @@ class ArchitecturalPatternDetector:
             if "view" in file_path:
                 components["Views"].append(file.get("file", ""))
 
-            if "viewmodel" in file_path or any("viewmodel" in c.get("name", "").lower() for c in classes):
+            if "viewmodel" in file_path or any(
+                "viewmodel" in c.get("name", "").lower() for c in classes
+            ):
                 components["ViewModels"].append(file.get("file", ""))
 
         if len(components["ViewModels"]) >= 2:
-            evidence.append(f"ViewModels directory with {len(components['ViewModels'])} ViewModel classes")
+            evidence.append(
+                f"ViewModels directory with {len(components['ViewModels'])} ViewModel classes"
+            )
 
         if len(components["Views"]) >= 2:
             evidence.append(f"Views directory with {len(components['Views'])} view files")
@@ -329,7 +337,9 @@ class ArchitecturalPatternDetector:
 
         return patterns
 
-    def _detect_repository(self, dirs: dict[str, int], files: list[dict]) -> list[ArchitecturalPattern]:
+    def _detect_repository(
+        self, dirs: dict[str, int], files: list[dict]
+    ) -> list[ArchitecturalPattern]:
         """Detect Repository pattern"""
         patterns = []
 
@@ -352,7 +362,9 @@ class ArchitecturalPatternDetector:
             components["Repositories"].append(file.get("file", ""))
 
         if len(components["Repositories"]) >= 2:
-            evidence.append(f"Repository pattern: {len(components['Repositories'])} repository classes")
+            evidence.append(
+                f"Repository pattern: {len(components['Repositories'])} repository classes"
+            )
             evidence.append("Repositories abstract data access logic")
 
             patterns.append(
@@ -367,7 +379,9 @@ class ArchitecturalPatternDetector:
 
         return patterns
 
-    def _detect_service_layer(self, dirs: dict[str, int], files: list[dict]) -> list[ArchitecturalPattern]:
+    def _detect_service_layer(
+        self, dirs: dict[str, int], files: list[dict]
+    ) -> list[ArchitecturalPattern]:
         """Detect Service Layer pattern"""
         patterns = []
 
@@ -404,7 +418,9 @@ class ArchitecturalPatternDetector:
 
         return patterns
 
-    def _detect_layered_architecture(self, dirs: dict[str, int], files: list[dict]) -> list[ArchitecturalPattern]:
+    def _detect_layered_architecture(
+        self, dirs: dict[str, int], files: list[dict]
+    ) -> list[ArchitecturalPattern]:
         """Detect Layered Architecture (3-tier, N-tier)"""
         patterns = []
 
@@ -444,7 +460,9 @@ class ArchitecturalPatternDetector:
 
         return patterns
 
-    def _detect_clean_architecture(self, dirs: dict[str, int], files: list[dict]) -> list[ArchitecturalPattern]:
+    def _detect_clean_architecture(
+        self, dirs: dict[str, int], files: list[dict]
+    ) -> list[ArchitecturalPattern]:
         """Detect Clean Architecture"""
         patterns = []
 

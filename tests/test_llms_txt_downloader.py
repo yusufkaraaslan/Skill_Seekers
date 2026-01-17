@@ -133,7 +133,10 @@ def test_custom_max_retries():
     """Test custom max_retries parameter"""
     downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=5)
 
-    with patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get, patch("time.sleep"):
+    with (
+        patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get,
+        patch("time.sleep"),
+    ):
         content = downloader.download()
 
     assert content is None
@@ -189,7 +192,9 @@ def test_is_markdown_rejects_html_doctype():
     """Test that HTML with DOCTYPE is rejected (prevents redirect trap)"""
     downloader = LlmsTxtDownloader("https://example.com/llms.txt")
 
-    html = "<!DOCTYPE html><html><head><title>Product Page</title></head><body>Content</body></html>"
+    html = (
+        "<!DOCTYPE html><html><head><title>Product Page</title></head><body>Content</body></html>"
+    )
     assert not downloader._is_markdown(html)
 
     # Test case-insensitive

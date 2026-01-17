@@ -17,7 +17,11 @@ from bs4 import BeautifulSoup
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from skill_seekers.cli.constants import DEFAULT_MAX_DISCOVERY, DEFAULT_RATE_LIMIT, DISCOVERY_THRESHOLD
+from skill_seekers.cli.constants import (
+    DEFAULT_MAX_DISCOVERY,
+    DEFAULT_RATE_LIMIT,
+    DISCOVERY_THRESHOLD,
+)
 
 
 def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
@@ -306,7 +310,12 @@ def list_all_configs():
                 description = description[:57] + "..."
 
             by_category[category].append(
-                {"file": config_file.name, "path": str(rel_path), "name": name, "description": description}
+                {
+                    "file": config_file.name,
+                    "path": str(rel_path),
+                    "name": name,
+                    "description": description,
+                }
             )
         except Exception as e:
             # If we can't parse the config, just use the filename
@@ -366,7 +375,11 @@ Examples:
     )
 
     parser.add_argument("config", nargs="?", help="Path to config JSON file")
-    parser.add_argument("--all", action="store_true", help="List all available configs from api/configs_repo/official/")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="List all available configs from api/configs_repo/official/",
+    )
     parser.add_argument(
         "--max-discovery",
         "-m",
@@ -380,7 +393,13 @@ Examples:
         action="store_true",
         help="Remove discovery limit - discover all pages (same as --max-discovery -1)",
     )
-    parser.add_argument("--timeout", "-t", type=int, default=30, help="HTTP request timeout in seconds (default: 30)")
+    parser.add_argument(
+        "--timeout",
+        "-t",
+        type=int,
+        default=30,
+        help="HTTP request timeout in seconds (default: 30)",
+    )
 
     args = parser.parse_args()
 

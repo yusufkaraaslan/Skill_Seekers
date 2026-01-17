@@ -250,7 +250,10 @@ class TestTableExtraction(unittest.TestCase):
 
         # Create mock table
         mock_table = Mock()
-        mock_table.extract.return_value = [["Header 1", "Header 2", "Header 3"], ["Data 1", "Data 2", "Data 3"]]
+        mock_table.extract.return_value = [
+            ["Header 1", "Header 2", "Header 3"],
+            ["Data 1", "Data 2", "Data 3"],
+        ]
         mock_table.bbox = (0, 0, 100, 100)
 
         # Create mock tables result

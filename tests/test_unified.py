@@ -149,7 +149,11 @@ def test_detect_missing_in_docs():
             {
                 "url": "https://example.com/api",
                 "apis": [
-                    {"name": "documented_func", "parameters": [{"name": "x", "type": "int"}], "return_type": "str"}
+                    {
+                        "name": "documented_func",
+                        "parameters": [{"name": "x", "type": "int"}],
+                        "return_type": "str",
+                    }
                 ],
             }
         ]
@@ -185,7 +189,13 @@ def test_detect_missing_in_code():
         "pages": [
             {
                 "url": "https://example.com/api",
-                "apis": [{"name": "obsolete_func", "parameters": [{"name": "x", "type": "int"}], "return_type": "str"}],
+                "apis": [
+                    {
+                        "name": "obsolete_func",
+                        "parameters": [{"name": "x", "type": "int"}],
+                        "return_type": "str",
+                    }
+                ],
             }
         ]
     }
@@ -206,7 +216,13 @@ def test_detect_signature_mismatch():
         "pages": [
             {
                 "url": "https://example.com/api",
-                "apis": [{"name": "func", "parameters": [{"name": "x", "type": "int"}], "return_type": "str"}],
+                "apis": [
+                    {
+                        "name": "func",
+                        "parameters": [{"name": "x", "type": "int"}],
+                        "return_type": "str",
+                    }
+                ],
             }
         ]
     }
@@ -274,7 +290,13 @@ def test_rule_based_merge_docs_only():
         "pages": [
             {
                 "url": "https://example.com/api",
-                "apis": [{"name": "docs_only_api", "parameters": [{"name": "x", "type": "int"}], "return_type": "str"}],
+                "apis": [
+                    {
+                        "name": "docs_only_api",
+                        "parameters": [{"name": "x", "type": "int"}],
+                        "return_type": "str",
+                    }
+                ],
             }
         ]
     }
@@ -329,7 +351,13 @@ def test_rule_based_merge_matched():
         "pages": [
             {
                 "url": "https://example.com/api",
-                "apis": [{"name": "matched_api", "parameters": [{"name": "x", "type": "int"}], "return_type": "str"}],
+                "apis": [
+                    {
+                        "name": "matched_api",
+                        "parameters": [{"name": "x", "type": "int"}],
+                        "return_type": "str",
+                    }
+                ],
             }
         ]
     }
@@ -339,7 +367,11 @@ def test_rule_based_merge_matched():
             "analyzed_files": [
                 {
                     "functions": [
-                        {"name": "matched_api", "parameters": [{"name": "x", "type_hint": "int"}], "return_type": "str"}
+                        {
+                            "name": "matched_api",
+                            "parameters": [{"name": "x", "type_hint": "int"}],
+                            "return_type": "str",
+                        }
                     ]
                 }
             ]
@@ -373,7 +405,9 @@ def test_merge_summary():
 
     github_data = {
         "code_analysis": {
-            "analyzed_files": [{"functions": [{"name": "api3", "parameters": [], "return_type": "bool"}]}]
+            "analyzed_files": [
+                {"functions": [{"name": "api3", "parameters": [], "return_type": "bool"}]}
+            ]
         }
     }
 
@@ -499,7 +533,12 @@ def test_full_workflow_unified_config():
         "merge_mode": "rule-based",
         "sources": [
             {"type": "documentation", "base_url": "https://example.com", "extract_api": True},
-            {"type": "github", "repo": "user/repo", "include_code": True, "code_analysis_depth": "surface"},
+            {
+                "type": "github",
+                "repo": "user/repo",
+                "include_code": True,
+                "code_analysis_depth": "surface",
+            },
         ],
     }
 

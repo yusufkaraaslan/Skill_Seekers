@@ -136,7 +136,9 @@ class ConfigEnhancer:
             # Call Claude API
             logger.info("📡 Calling Claude API for config analysis...")
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514", max_tokens=8000, messages=[{"role": "user", "content": prompt}]
+                model="claude-sonnet-4-20250514",
+                max_tokens=8000,
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Parse response
@@ -157,7 +159,9 @@ class ConfigEnhancer:
         for cf in config_files[:10]:  # Limit to first 10 files
             settings_summary = []
             for setting in cf.get("settings", [])[:5]:  # First 5 settings per file
-                settings_summary.append(f"  - {setting['key']}: {setting['value']} ({setting['value_type']})")
+                settings_summary.append(
+                    f"  - {setting['key']}: {setting['value']} ({setting['value_type']})"
+                )
 
             config_summary.append(f"""
 File: {cf["relative_path"]} ({cf["config_type"]})
@@ -221,7 +225,9 @@ Focus on actionable insights that help developers understand and improve their c
             original_result["ai_enhancements"] = enhancements
 
             # Add enhancement flags to config files
-            file_enhancements = {e["file_path"]: e for e in enhancements.get("file_enhancements", [])}
+            file_enhancements = {
+                e["file_path"]: e for e in enhancements.get("file_enhancements", [])
+            }
             for cf in original_result.get("config_files", []):
                 file_path = cf.get("relative_path", cf.get("file_path"))
                 if file_path in file_enhancements:
@@ -385,9 +391,14 @@ def main():
     parser = argparse.ArgumentParser(description="AI-enhance configuration extraction results")
     parser.add_argument("result_file", help="Path to config extraction JSON result file")
     parser.add_argument(
-        "--mode", choices=["auto", "api", "local"], default="auto", help="Enhancement mode (default: auto)"
+        "--mode",
+        choices=["auto", "api", "local"],
+        default="auto",
+        help="Enhancement mode (default: auto)",
     )
-    parser.add_argument("--output", help="Output file for enhanced results (default: <input>_enhanced.json)")
+    parser.add_argument(
+        "--output", help="Output file for enhanced results (default: <input>_enhanced.json)"
+    )
 
     args = parser.parse_args()
 

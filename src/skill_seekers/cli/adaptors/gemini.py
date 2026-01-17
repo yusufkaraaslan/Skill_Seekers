@@ -169,10 +169,20 @@ See the references directory for complete documentation with examples and best p
         # Validate package file FIRST
         package_path = Path(package_path)
         if not package_path.exists():
-            return {"success": False, "skill_id": None, "url": None, "message": f"File not found: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"File not found: {package_path}",
+            }
 
         if not package_path.suffix == ".gz":
-            return {"success": False, "skill_id": None, "url": None, "message": f"Not a tar.gz file: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Not a tar.gz file: {package_path}",
+            }
 
         # Check for google-generativeai library
         try:
@@ -210,7 +220,9 @@ See the references directory for complete documentation with examples and best p
                     }
 
                 # Upload to Files API
-                uploaded_file = genai.upload_file(path=str(main_file), display_name=f"{package_path.stem}_instructions")
+                uploaded_file = genai.upload_file(
+                    path=str(main_file), display_name=f"{package_path.stem}_instructions"
+                )
 
                 # Upload reference files (if any)
                 refs_dir = temp_path / "references"
@@ -230,7 +242,12 @@ See the references directory for complete documentation with examples and best p
             }
 
         except Exception as e:
-            return {"success": False, "skill_id": None, "url": None, "message": f"Upload failed: {str(e)}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Upload failed: {str(e)}",
+            }
 
     def validate_api_key(self, api_key: str) -> bool:
         """
@@ -337,7 +354,9 @@ See the references directory for complete documentation with examples and best p
             print(f"❌ Error calling Gemini API: {e}")
             return False
 
-    def _read_reference_files(self, references_dir: Path, max_chars: int = 200000) -> dict[str, str]:
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
         """
         Read reference markdown files from skill directory.
 

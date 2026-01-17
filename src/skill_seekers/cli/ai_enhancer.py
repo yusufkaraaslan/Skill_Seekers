@@ -66,7 +66,9 @@ class AIEnhancer:
                 self.mode = "disabled"
                 self.enabled = False
                 logger.info("ℹ️  AI enhancement disabled (no API key found)")
-                logger.info("   Set ANTHROPIC_API_KEY to enable, or use 'skill-seekers enhance' for SKILL.md")
+                logger.info(
+                    "   Set ANTHROPIC_API_KEY to enable, or use 'skill-seekers enhance' for SKILL.md"
+                )
                 return
 
         if self.mode == "api" and self.enabled:
@@ -86,7 +88,9 @@ class AIEnhancer:
             # LOCAL mode requires Claude Code to be available
             # For patterns/examples, this is less practical than API mode
             logger.info("ℹ️  LOCAL mode not yet supported for pattern/example enhancement")
-            logger.info("   Use API mode (set ANTHROPIC_API_KEY) or 'skill-seekers enhance' for SKILL.md")
+            logger.info(
+                "   Use API mode (set ANTHROPIC_API_KEY) or 'skill-seekers enhance' for SKILL.md"
+            )
             self.enabled = False
 
     def _call_claude(self, prompt: str, max_tokens: int = 1000) -> str | None:
@@ -96,7 +100,9 @@ class AIEnhancer:
 
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514", max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}]
+                model="claude-sonnet-4-20250514",
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text
         except Exception as e:

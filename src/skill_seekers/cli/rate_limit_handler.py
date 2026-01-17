@@ -179,7 +179,12 @@ class RateLimitHandler:
 
         reset_time = datetime.fromtimestamp(reset_timestamp) if reset_timestamp else None
 
-        return {"limit": limit, "remaining": remaining, "reset_timestamp": reset_timestamp, "reset_time": reset_time}
+        return {
+            "limit": limit,
+            "remaining": remaining,
+            "reset_timestamp": reset_timestamp,
+            "reset_time": reset_time,
+        }
 
     def get_rate_limit_info(self) -> dict[str, Any]:
         """

@@ -97,7 +97,9 @@ class UnifiedSkillBuilder:
         if docs_skill_path.exists():
             try:
                 skill_mds["documentation"] = docs_skill_path.read_text(encoding="utf-8")
-                logger.debug(f"Loaded documentation SKILL.md ({len(skill_mds['documentation'])} chars)")
+                logger.debug(
+                    f"Loaded documentation SKILL.md ({len(skill_mds['documentation'])} chars)"
+                )
             except OSError as e:
                 logger.warning(f"Failed to read documentation SKILL.md: {e}")
 
@@ -109,7 +111,9 @@ class UnifiedSkillBuilder:
                 try:
                     content = github_skill_path.read_text(encoding="utf-8")
                     github_sources.append(content)
-                    logger.debug(f"Loaded GitHub SKILL.md from {github_dir.name} ({len(content)} chars)")
+                    logger.debug(
+                        f"Loaded GitHub SKILL.md from {github_dir.name} ({len(content)} chars)"
+                    )
                 except OSError as e:
                     logger.warning(f"Failed to read GitHub SKILL.md from {github_dir.name}: {e}")
 
@@ -165,7 +169,23 @@ class UnifiedSkillBuilder:
                 current_section = line[3:].strip()
                 # Remove emoji and markdown formatting
                 current_section = current_section.split("](")[0]  # Remove links
-                for emoji in ["📚", "🏗️", "⚠️", "🔧", "📖", "💡", "🎯", "📊", "🔍", "⚙️", "🧪", "📝", "🗂️", "📐", "⚡"]:
+                for emoji in [
+                    "📚",
+                    "🏗️",
+                    "⚠️",
+                    "🔧",
+                    "📖",
+                    "💡",
+                    "🎯",
+                    "📊",
+                    "🔍",
+                    "⚙️",
+                    "🧪",
+                    "📝",
+                    "🗂️",
+                    "📐",
+                    "⚡",
+                ]:
                     current_section = current_section.replace(emoji, "").strip()
                 current_content = []
             elif current_section:
@@ -268,7 +288,9 @@ This skill synthesizes knowledge from multiple sources:
 
         if "Quick Reference" in github_sections:
             # Include GitHub's Quick Reference (contains design patterns summary)
-            logger.info(f"DEBUG: Including GitHub Quick Reference ({len(github_sections['Quick Reference'])} chars)")
+            logger.info(
+                f"DEBUG: Including GitHub Quick Reference ({len(github_sections['Quick Reference'])} chars)"
+            )
             content += github_sections["Quick Reference"] + "\n\n"
         else:
             logger.warning("DEBUG: GitHub Quick Reference section NOT FOUND!")
@@ -330,7 +352,9 @@ This skill synthesizes knowledge from multiple sources:
 
         # Footer
         content += "---\n\n"
-        content += "*Synthesized from official documentation and codebase analysis by Skill Seekers*\n"
+        content += (
+            "*Synthesized from official documentation and codebase analysis by Skill Seekers*\n"
+        )
 
         return content
 
@@ -602,7 +626,9 @@ This skill combines knowledge from multiple sources:
             # Count by type
             by_type = {}
             for conflict in self.conflicts:
-                ctype = conflict.type if hasattr(conflict, "type") else conflict.get("type", "unknown")
+                ctype = (
+                    conflict.type if hasattr(conflict, "type") else conflict.get("type", "unknown")
+                )
                 by_type[ctype] = by_type.get(ctype, 0) + 1
 
             content += "**Conflict Breakdown:**\n"
@@ -836,7 +862,9 @@ This skill combines knowledge from multiple sources:
                 source_id = doc_source.get("source_id", "unknown")
                 base_url = doc_source.get("base_url", "Unknown")
                 total_pages = doc_source.get("total_pages", "N/A")
-                f.write(f"- [{source_id}]({source_id}/index.md) - {base_url} ({total_pages} pages)\n")
+                f.write(
+                    f"- [{source_id}]({source_id}/index.md) - {base_url} ({total_pages} pages)\n"
+                )
 
         logger.info(f"Created documentation references ({len(docs_list)} sources)")
 
@@ -1084,9 +1112,13 @@ This skill combines knowledge from multiple sources:
                         pattern_summary[ptype] = pattern_summary.get(ptype, 0) + 1
 
                 if pattern_summary:
-                    for ptype, count in sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True):
+                    for ptype, count in sorted(
+                        pattern_summary.items(), key=lambda x: x[1], reverse=True
+                    ):
                         f.write(f"- **{ptype}**: {count} instance(s)\n")
-                    f.write("\n📁 See `references/codebase_analysis/patterns/` for detailed analysis.\n\n")
+                    f.write(
+                        "\n📁 See `references/codebase_analysis/patterns/` for detailed analysis.\n\n"
+                    )
                 else:
                     f.write("*No design patterns detected.*\n\n")
 
@@ -1115,7 +1147,9 @@ This skill combines knowledge from multiple sources:
                                 f.write("\n**Recommended Actions**:\n")
                                 for action in insights["recommended_actions"][:5]:
                                     f.write(f"- {action}\n")
-                    f.write("\n📁 See `references/codebase_analysis/configuration/` for details.\n\n")
+                    f.write(
+                        "\n📁 See `references/codebase_analysis/configuration/` for details.\n\n"
+                    )
                 else:
                     f.write("*No configuration files detected.*\n\n")
 
@@ -1128,7 +1162,9 @@ This skill combines knowledge from multiple sources:
                     f.write(f"**{len(guides)} how-to guide(s) extracted from codebase**:\n\n")
                     for guide in guides[:10]:  # Top 10
                         f.write(f"- {guide.get('title', 'Untitled Guide')}\n")
-                    f.write("\n📁 See `references/codebase_analysis/guides/` for detailed tutorials.\n\n")
+                    f.write(
+                        "\n📁 See `references/codebase_analysis/guides/` for detailed tutorials.\n\n"
+                    )
                 else:
                     f.write("*No workflow guides extracted.*\n\n")
 
@@ -1147,11 +1183,15 @@ This skill combines knowledge from multiple sources:
                     if examples.get("examples_by_category"):
                         f.write("\n**By Category**:\n")
                         for cat, count in sorted(
-                            examples["examples_by_category"].items(), key=lambda x: x[1], reverse=True
+                            examples["examples_by_category"].items(),
+                            key=lambda x: x[1],
+                            reverse=True,
                         ):
                             f.write(f"- {cat}: {count}\n")
 
-                    f.write("\n📁 See `references/codebase_analysis/examples/` for code samples.\n\n")
+                    f.write(
+                        "\n📁 See `references/codebase_analysis/examples/` for code samples.\n\n"
+                    )
                 else:
                     f.write("*No test examples extracted.*\n\n")
 
@@ -1163,13 +1203,17 @@ This skill combines knowledge from multiple sources:
                 dir_struct = c3_data["architecture"].get("directory_structure", {})
                 if dir_struct:
                     f.write("**Main Directories**:\n")
-                    for dir_name, file_count in sorted(dir_struct.items(), key=lambda x: x[1], reverse=True)[:15]:
+                    for dir_name, file_count in sorted(
+                        dir_struct.items(), key=lambda x: x[1], reverse=True
+                    )[:15]:
                         f.write(f"- `{dir_name}/`: {file_count} file(s)\n")
                     f.write("\n")
 
             # Footer
             f.write("---\n\n")
-            f.write("*This architecture overview was automatically generated by C3.x codebase analysis.*\n")
+            f.write(
+                "*This architecture overview was automatically generated by C3.x codebase analysis.*\n"
+            )
             f.write("*Last updated: skill build time*\n")
 
         logger.info("📐 Created ARCHITECTURE.md")
@@ -1277,7 +1321,9 @@ This skill combines knowledge from multiple sources:
             if guides:
                 f.write("## Available Guides\n\n")
                 for guide in guides:
-                    f.write(f"- [{guide.get('title', 'Untitled')}](guide_{guide.get('id', 'unknown')}.md)\n")
+                    f.write(
+                        f"- [{guide.get('title', 'Untitled')}](guide_{guide.get('id', 'unknown')}.md)\n"
+                    )
                 f.write("\n")
 
         # Save individual guide markdown files
@@ -1351,7 +1397,9 @@ This skill combines knowledge from multiple sources:
                     if insights:
                         f.write("## Overall Insights\n\n")
                         if insights.get("security_issues_found"):
-                            f.write(f"🔐 **Security Issues**: {insights['security_issues_found']}\n\n")
+                            f.write(
+                                f"🔐 **Security Issues**: {insights['security_issues_found']}\n\n"
+                            )
                         if insights.get("recommended_actions"):
                             f.write("**Recommended Actions**:\n")
                             for action in insights["recommended_actions"]:
@@ -1425,7 +1473,9 @@ This skill combines knowledge from multiple sources:
 
                 top_patterns = sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True)[:3]
                 if top_patterns:
-                    content += f"- Top patterns: {', '.join([f'{p[0]} ({p[1]})' for p in top_patterns])}\n"
+                    content += (
+                        f"- Top patterns: {', '.join([f'{p[0]} ({p[1]})' for p in top_patterns])}\n"
+                    )
                 content += "\n"
 
         # Add test examples summary
@@ -1449,7 +1499,9 @@ This skill combines knowledge from multiple sources:
 
                 # Add security warning if present
                 if c3_data["config_patterns"].get("ai_enhancements"):
-                    insights = c3_data["config_patterns"]["ai_enhancements"].get("overall_insights", {})
+                    insights = c3_data["config_patterns"]["ai_enhancements"].get(
+                        "overall_insights", {}
+                    )
                     security_issues = insights.get("security_issues_found", 0)
                     if security_issues > 0:
                         content += f"- 🔐 **Security Alert**: {security_issues} issue(s) detected\n"
@@ -1477,7 +1529,8 @@ This skill combines knowledge from multiple sources:
             medium = [
                 c
                 for c in self.conflicts
-                if (hasattr(c, "severity") and c.severity == "medium") or c.get("severity") == "medium"
+                if (hasattr(c, "severity") and c.severity == "medium")
+                or c.get("severity") == "medium"
             ]
             low = [
                 c
@@ -1497,9 +1550,15 @@ This skill combines knowledge from multiple sources:
 
                 for conflict in high:
                     api_name = (
-                        conflict.api_name if hasattr(conflict, "api_name") else conflict.get("api_name", "Unknown")
+                        conflict.api_name
+                        if hasattr(conflict, "api_name")
+                        else conflict.get("api_name", "Unknown")
                     )
-                    diff = conflict.difference if hasattr(conflict, "difference") else conflict.get("difference", "N/A")
+                    diff = (
+                        conflict.difference
+                        if hasattr(conflict, "difference")
+                        else conflict.get("difference", "N/A")
+                    )
 
                     f.write(f"### {api_name}\n\n")
                     f.write(f"**Issue**: {diff}\n\n")
@@ -1510,9 +1569,15 @@ This skill combines knowledge from multiple sources:
 
                 for conflict in medium[:20]:  # Limit to 20
                     api_name = (
-                        conflict.api_name if hasattr(conflict, "api_name") else conflict.get("api_name", "Unknown")
+                        conflict.api_name
+                        if hasattr(conflict, "api_name")
+                        else conflict.get("api_name", "Unknown")
                     )
-                    diff = conflict.difference if hasattr(conflict, "difference") else conflict.get("difference", "N/A")
+                    diff = (
+                        conflict.difference
+                        if hasattr(conflict, "difference")
+                        else conflict.get("difference", "N/A")
+                    )
 
                     f.write(f"### {api_name}\n\n")
                     f.write(f"{diff}\n\n")
@@ -1534,7 +1599,9 @@ if __name__ == "__main__":
         config = json.load(f)
 
     # Mock scraped data
-    scraped_data = {"github": {"data": {"readme": "# Test Repository", "issues": [], "releases": []}}}
+    scraped_data = {
+        "github": {"data": {"readme": "# Test Repository", "issues": [], "releases": []}}
+    }
 
     builder = UnifiedSkillBuilder(config, scraped_data)
     builder.build()

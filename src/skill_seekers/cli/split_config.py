@@ -50,7 +50,9 @@ class ConfigSplitter:
                     print("ℹ️  Single source unified config - no splitting needed")
                     return "none"
                 else:
-                    print(f"ℹ️  Multi-source unified config ({num_sources} sources) - source split recommended")
+                    print(
+                        f"ℹ️  Multi-source unified config ({num_sources} sources) - source split recommended"
+                    )
                     return "source"
             # For unified configs, only 'source' and 'none' strategies are valid
             elif self.strategy in ["source", "none"]:
@@ -77,7 +79,9 @@ class ConfigSplitter:
                 print(f"ℹ️  Medium documentation ({max_pages} pages) - category split recommended")
                 return "category"
             elif "categories" in self.config and len(self.config["categories"]) >= 3:
-                print(f"ℹ️  Large documentation ({max_pages} pages) - router + categories recommended")
+                print(
+                    f"ℹ️  Large documentation ({max_pages} pages) - router + categories recommended"
+                )
                 return "router"
             else:
                 print(f"ℹ️  Large documentation ({max_pages} pages) - size-based split")
@@ -227,7 +231,9 @@ class ConfigSplitter:
             "max_pages": 500,  # Router only needs overview pages
             "_router": True,
             "_sub_skills": [cfg["name"] for cfg in sub_configs],
-            "_routing_keywords": {cfg["name"]: list(cfg.get("categories", {}).keys()) for cfg in sub_configs},
+            "_routing_keywords": {
+                cfg["name"]: list(cfg.get("categories", {}).keys()) for cfg in sub_configs
+            },
         }
 
         return router_config
@@ -333,11 +339,17 @@ Config Types:
         help="Splitting strategy (default: auto)",
     )
 
-    parser.add_argument("--target-pages", type=int, default=5000, help="Target pages per skill (default: 5000)")
+    parser.add_argument(
+        "--target-pages", type=int, default=5000, help="Target pages per skill (default: 5000)"
+    )
 
-    parser.add_argument("--output-dir", help="Output directory for configs (default: same as input)")
+    parser.add_argument(
+        "--output-dir", help="Output directory for configs (default: same as input)"
+    )
 
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be created without saving files")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would be created without saving files"
+    )
 
     args = parser.parse_args()
 

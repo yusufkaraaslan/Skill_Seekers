@@ -66,52 +66,79 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     parser.add_argument("--version", action="version", version="%(prog)s 2.7.0")
 
     subparsers = parser.add_subparsers(
-        dest="command", title="commands", description="Available Skill Seekers commands", help="Command to run"
+        dest="command",
+        title="commands",
+        description="Available Skill Seekers commands",
+        help="Command to run",
     )
 
     # === config subcommand ===
     config_parser = subparsers.add_parser(
-        "config", help="Configure GitHub tokens, API keys, and settings", description="Interactive configuration wizard"
+        "config",
+        help="Configure GitHub tokens, API keys, and settings",
+        description="Interactive configuration wizard",
     )
-    config_parser.add_argument("--github", action="store_true", help="Go directly to GitHub token setup")
-    config_parser.add_argument("--api-keys", action="store_true", help="Go directly to API keys setup")
-    config_parser.add_argument("--show", action="store_true", help="Show current configuration and exit")
+    config_parser.add_argument(
+        "--github", action="store_true", help="Go directly to GitHub token setup"
+    )
+    config_parser.add_argument(
+        "--api-keys", action="store_true", help="Go directly to API keys setup"
+    )
+    config_parser.add_argument(
+        "--show", action="store_true", help="Show current configuration and exit"
+    )
     config_parser.add_argument("--test", action="store_true", help="Test connections and exit")
 
     # === scrape subcommand ===
     scrape_parser = subparsers.add_parser(
-        "scrape", help="Scrape documentation website", description="Scrape documentation website and generate skill"
+        "scrape",
+        help="Scrape documentation website",
+        description="Scrape documentation website and generate skill",
     )
     scrape_parser.add_argument("--config", help="Config JSON file")
     scrape_parser.add_argument("--name", help="Skill name")
     scrape_parser.add_argument("--url", help="Documentation URL")
     scrape_parser.add_argument("--description", help="Skill description")
-    scrape_parser.add_argument("--skip-scrape", action="store_true", help="Skip scraping, use cached data")
+    scrape_parser.add_argument(
+        "--skip-scrape", action="store_true", help="Skip scraping, use cached data"
+    )
     scrape_parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
-    scrape_parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
+    scrape_parser.add_argument(
+        "--enhance-local", action="store_true", help="AI enhancement (local)"
+    )
     scrape_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
-    scrape_parser.add_argument("--async", dest="async_mode", action="store_true", help="Use async scraping")
+    scrape_parser.add_argument(
+        "--async", dest="async_mode", action="store_true", help="Use async scraping"
+    )
     scrape_parser.add_argument("--workers", type=int, help="Number of async workers")
 
     # === github subcommand ===
     github_parser = subparsers.add_parser(
-        "github", help="Scrape GitHub repository", description="Scrape GitHub repository and generate skill"
+        "github",
+        help="Scrape GitHub repository",
+        description="Scrape GitHub repository and generate skill",
     )
     github_parser.add_argument("--config", help="Config JSON file")
     github_parser.add_argument("--repo", help="GitHub repo (owner/repo)")
     github_parser.add_argument("--name", help="Skill name")
     github_parser.add_argument("--description", help="Skill description")
     github_parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
-    github_parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
+    github_parser.add_argument(
+        "--enhance-local", action="store_true", help="AI enhancement (local)"
+    )
     github_parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance")
     github_parser.add_argument(
-        "--non-interactive", action="store_true", help="Non-interactive mode (fail fast on rate limits)"
+        "--non-interactive",
+        action="store_true",
+        help="Non-interactive mode (fail fast on rate limits)",
     )
     github_parser.add_argument("--profile", type=str, help="GitHub profile name from config")
 
     # === pdf subcommand ===
     pdf_parser = subparsers.add_parser(
-        "pdf", help="Extract from PDF file", description="Extract content from PDF and generate skill"
+        "pdf",
+        help="Extract from PDF file",
+        description="Extract content from PDF and generate skill",
     )
     pdf_parser.add_argument("--config", help="Config JSON file")
     pdf_parser.add_argument("--pdf", help="PDF file path")
@@ -138,7 +165,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     enhance_parser.add_argument("skill_directory", help="Skill directory path")
     enhance_parser.add_argument("--background", action="store_true", help="Run in background")
     enhance_parser.add_argument("--daemon", action="store_true", help="Run as daemon")
-    enhance_parser.add_argument("--no-force", action="store_true", help="Disable force mode (enable confirmations)")
+    enhance_parser.add_argument(
+        "--no-force", action="store_true", help="Disable force mode (enable confirmations)"
+    )
     enhance_parser.add_argument("--timeout", type=int, default=600, help="Timeout in seconds")
 
     # === enhance-status subcommand ===
@@ -148,13 +177,19 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         description="Monitor background enhancement processes",
     )
     enhance_status_parser.add_argument("skill_directory", help="Skill directory path")
-    enhance_status_parser.add_argument("--watch", "-w", action="store_true", help="Watch in real-time")
+    enhance_status_parser.add_argument(
+        "--watch", "-w", action="store_true", help="Watch in real-time"
+    )
     enhance_status_parser.add_argument("--json", action="store_true", help="JSON output")
-    enhance_status_parser.add_argument("--interval", type=int, default=2, help="Watch interval in seconds")
+    enhance_status_parser.add_argument(
+        "--interval", type=int, default=2, help="Watch interval in seconds"
+    )
 
     # === package subcommand ===
     package_parser = subparsers.add_parser(
-        "package", help="Package skill into .zip file", description="Package skill directory into uploadable .zip"
+        "package",
+        help="Package skill into .zip file",
+        description="Package skill directory into uploadable .zip",
     )
     package_parser.add_argument("skill_directory", help="Skill directory path")
     package_parser.add_argument("--no-open", action="store_true", help="Don't open output folder")
@@ -162,7 +197,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
 
     # === upload subcommand ===
     upload_parser = subparsers.add_parser(
-        "upload", help="Upload skill to Claude", description="Upload .zip file to Claude via Anthropic API"
+        "upload",
+        help="Upload skill to Claude",
+        description="Upload .zip file to Claude via Anthropic API",
     )
     upload_parser.add_argument("zip_file", help=".zip file to upload")
     upload_parser.add_argument("--api-key", help="Anthropic API key")
@@ -183,17 +220,26 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         help="Extract usage examples from test files",
         description="Analyze test files to extract real API usage patterns",
     )
-    test_examples_parser.add_argument("directory", nargs="?", help="Directory containing test files")
-    test_examples_parser.add_argument("--file", help="Single test file to analyze")
-    test_examples_parser.add_argument("--language", help="Filter by programming language (python, javascript, etc.)")
     test_examples_parser.add_argument(
-        "--min-confidence", type=float, default=0.5, help="Minimum confidence threshold (0.0-1.0, default: 0.5)"
+        "directory", nargs="?", help="Directory containing test files"
+    )
+    test_examples_parser.add_argument("--file", help="Single test file to analyze")
+    test_examples_parser.add_argument(
+        "--language", help="Filter by programming language (python, javascript, etc.)"
+    )
+    test_examples_parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.5,
+        help="Minimum confidence threshold (0.0-1.0, default: 0.5)",
     )
     test_examples_parser.add_argument(
         "--max-per-file", type=int, default=10, help="Maximum examples per file (default: 10)"
     )
     test_examples_parser.add_argument("--json", action="store_true", help="Output JSON format")
-    test_examples_parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
+    test_examples_parser.add_argument(
+        "--markdown", action="store_true", help="Output Markdown format"
+    )
 
     # === install-agent subcommand ===
     install_agent_parser = subparsers.add_parser(
@@ -201,9 +247,13 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         help="Install skill to AI agent directories",
         description="Copy skill to agent-specific installation directories",
     )
-    install_agent_parser.add_argument("skill_directory", help="Skill directory path (e.g., output/react/)")
     install_agent_parser.add_argument(
-        "--agent", required=True, help="Agent name (claude, cursor, vscode, amp, goose, opencode, all)"
+        "skill_directory", help="Skill directory path (e.g., output/react/)"
+    )
+    install_agent_parser.add_argument(
+        "--agent",
+        required=True,
+        help="Agent name (claude, cursor, vscode, amp, goose, opencode, all)",
     )
     install_agent_parser.add_argument(
         "--force", action="store_true", help="Overwrite existing installation without asking"
@@ -219,18 +269,32 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         description="One-command skill installation (AI enhancement MANDATORY)",
     )
     install_parser.add_argument(
-        "--config", required=True, help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')"
+        "--config",
+        required=True,
+        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')",
     )
-    install_parser.add_argument("--destination", default="output", help="Output directory (default: output/)")
-    install_parser.add_argument("--no-upload", action="store_true", help="Skip automatic upload to Claude")
-    install_parser.add_argument("--unlimited", action="store_true", help="Remove page limits during scraping")
-    install_parser.add_argument("--dry-run", action="store_true", help="Preview workflow without executing")
+    install_parser.add_argument(
+        "--destination", default="output", help="Output directory (default: output/)"
+    )
+    install_parser.add_argument(
+        "--no-upload", action="store_true", help="Skip automatic upload to Claude"
+    )
+    install_parser.add_argument(
+        "--unlimited", action="store_true", help="Remove page limits during scraping"
+    )
+    install_parser.add_argument(
+        "--dry-run", action="store_true", help="Preview workflow without executing"
+    )
 
     # === resume subcommand ===
     resume_parser = subparsers.add_parser(
-        "resume", help="Resume interrupted scraping job", description="Continue from saved progress checkpoint"
+        "resume",
+        help="Resume interrupted scraping job",
+        description="Continue from saved progress checkpoint",
     )
-    resume_parser.add_argument("job_id", nargs="?", help="Job ID to resume (or use --list to see available jobs)")
+    resume_parser.add_argument(
+        "job_id", nargs="?", help="Job ID to resume (or use --list to see available jobs)"
+    )
     resume_parser.add_argument("--list", action="store_true", help="List all resumable jobs")
     resume_parser.add_argument("--clean", action="store_true", help="Clean up old progress files")
 

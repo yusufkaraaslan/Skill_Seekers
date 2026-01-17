@@ -126,7 +126,9 @@ class TestPackageStructure:
 
     def test_mcp_tools_init_file_exists(self):
         """Test that src/skill_seekers/mcp/tools/__init__.py exists."""
-        init_file = Path(__file__).parent.parent / "src" / "skill_seekers" / "mcp" / "tools" / "__init__.py"
+        init_file = (
+            Path(__file__).parent.parent / "src" / "skill_seekers" / "mcp" / "tools" / "__init__.py"
+        )
         assert init_file.exists(), "src/skill_seekers/mcp/tools/__init__.py not found"
 
     def test_cli_init_has_docstring(self):

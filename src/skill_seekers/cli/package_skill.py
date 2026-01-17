@@ -17,12 +17,22 @@ from pathlib import Path
 # Import utilities
 try:
     from quality_checker import SkillQualityChecker, print_report
-    from utils import format_file_size, open_folder, print_upload_instructions, validate_skill_directory
+    from utils import (
+        format_file_size,
+        open_folder,
+        print_upload_instructions,
+        validate_skill_directory,
+    )
 except ImportError:
     # If running from different directory, add cli to path
     sys.path.insert(0, str(Path(__file__).parent))
     from quality_checker import SkillQualityChecker, print_report
-    from utils import format_file_size, open_folder, print_upload_instructions, validate_skill_directory
+    from utils import (
+        format_file_size,
+        open_folder,
+        print_upload_instructions,
+        validate_skill_directory,
+    )
 
 
 def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, target="claude"):
@@ -135,9 +145,13 @@ Examples:
 
     parser.add_argument("skill_dir", help="Path to skill directory (e.g., output/react/)")
 
-    parser.add_argument("--no-open", action="store_true", help="Do not open the output folder after packaging")
+    parser.add_argument(
+        "--no-open", action="store_true", help="Do not open the output folder after packaging"
+    )
 
-    parser.add_argument("--skip-quality-check", action="store_true", help="Skip quality checks before packaging")
+    parser.add_argument(
+        "--skip-quality-check", action="store_true", help="Skip quality checks before packaging"
+    )
 
     parser.add_argument(
         "--target",
@@ -147,7 +161,9 @@ Examples:
     )
 
     parser.add_argument(
-        "--upload", action="store_true", help="Automatically upload after packaging (requires platform API key)"
+        "--upload",
+        action="store_true",
+        help="Automatically upload after packaging (requires platform API key)",
     )
 
     args = parser.parse_args()

@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import the MCP tool function (with lazy loading)
 try:
     from skill_seekers.mcp.server import install_skill_tool
+
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
@@ -99,15 +100,23 @@ Phases:
     )
 
     parser.add_argument(
-        "--config", required=True, help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')"
+        "--config",
+        required=True,
+        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')",
     )
 
-    parser.add_argument("--destination", default="output", help="Output directory for skill files (default: output/)")
+    parser.add_argument(
+        "--destination",
+        default="output",
+        help="Output directory for skill files (default: output/)",
+    )
 
     parser.add_argument("--no-upload", action="store_true", help="Skip automatic upload to Claude")
 
     parser.add_argument(
-        "--unlimited", action="store_true", help="Remove page limits during scraping (WARNING: Can take hours)"
+        "--unlimited",
+        action="store_true",
+        help="Remove page limits during scraping (WARNING: Can take hours)",
     )
 
     parser.add_argument("--dry-run", action="store_true", help="Preview workflow without executing")

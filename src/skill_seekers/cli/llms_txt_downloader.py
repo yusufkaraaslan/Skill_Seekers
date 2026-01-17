@@ -98,7 +98,9 @@ class LlmsTxtDownloader:
                     print(f"   Retrying in {delay}s...")
                     time.sleep(delay)
                 else:
-                    print(f"❌ Failed to download {self.url} after {self.max_retries} attempts: {e}")
+                    print(
+                        f"❌ Failed to download {self.url} after {self.max_retries} attempts: {e}"
+                    )
                     return None
 
         return None

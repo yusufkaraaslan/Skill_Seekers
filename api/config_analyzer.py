@@ -274,19 +274,24 @@ class ConfigAnalyzer:
 
         # Add source type tags
         if "base_url" in config_data or (
-            config_type == "unified" and any(s.get("type") == "documentation" for s in config_data.get("sources", []))
+            config_type == "unified"
+            and any(s.get("type") == "documentation" for s in config_data.get("sources", []))
         ):
             tags.add("documentation")
 
         if "repo" in config_data or (
-            config_type == "unified" and any(s.get("type") == "github" for s in config_data.get("sources", []))
+            config_type == "unified"
+            and any(s.get("type") == "github" for s in config_data.get("sources", []))
         ):
             tags.add("github")
 
         if (
             "pdf" in config_data
             or "pdf_url" in config_data
-            or (config_type == "unified" and any(s.get("type") == "pdf" for s in config_data.get("sources", [])))
+            or (
+                config_type == "unified"
+                and any(s.get("type") == "pdf" for s in config_data.get("sources", []))
+            )
         ):
             tags.add("pdf")
 

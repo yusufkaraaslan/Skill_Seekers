@@ -48,7 +48,9 @@ def test_url_parsing_with_complex_paths():
 
         assert variants is not None
         assert variants["url"] == "https://example.com/llms-full.txt"
-        mock_head.assert_called_with("https://example.com/llms-full.txt", timeout=5, allow_redirects=True)
+        mock_head.assert_called_with(
+            "https://example.com/llms-full.txt", timeout=5, allow_redirects=True
+        )
 
 
 def test_detect_all_variants():

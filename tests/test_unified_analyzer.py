@@ -20,7 +20,8 @@ from skill_seekers.cli.unified_codebase_analyzer import AnalysisResult, UnifiedC
 
 # Skip marker for tests requiring GitHub access
 requires_github = pytest.mark.skipif(
-    not os.environ.get("GITHUB_TOKEN"), reason="GITHUB_TOKEN not set - skipping tests that require GitHub access"
+    not os.environ.get("GITHUB_TOKEN"),
+    reason="GITHUB_TOKEN not set - skipping tests that require GitHub access",
 )
 
 
@@ -29,7 +30,9 @@ class TestAnalysisResult:
 
     def test_analysis_result_basic(self):
         """Test basic AnalysisResult creation."""
-        result = AnalysisResult(code_analysis={"files": []}, source_type="local", analysis_depth="basic")
+        result = AnalysisResult(
+            code_analysis={"files": []}, source_type="local", analysis_depth="basic"
+        )
         assert result.code_analysis == {"files": []}
         assert result.source_type == "local"
         assert result.analysis_depth == "basic"
@@ -262,7 +265,9 @@ class TestGitHubAnalysis:
         (tmp_path / "main.py").write_text("print('hello')")
 
         analyzer = UnifiedCodebaseAnalyzer()
-        result = analyzer.analyze(source="https://github.com/test/repo", depth="basic", fetch_github_metadata=True)
+        result = analyzer.analyze(
+            source="https://github.com/test/repo", depth="basic", fetch_github_metadata=True
+        )
 
         assert result.source_type == "github"
         assert result.analysis_depth == "basic"
@@ -281,7 +286,9 @@ class TestGitHubAnalysis:
 
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme="# README", contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 
@@ -302,14 +309,18 @@ class TestGitHubAnalysis:
 
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme=None, contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 
         (tmp_path / "main.py").write_text("code")
 
         analyzer = UnifiedCodebaseAnalyzer()
-        result = analyzer.analyze(source="https://github.com/test/repo", depth="basic", fetch_github_metadata=False)
+        result = analyzer.analyze(
+            source="https://github.com/test/repo", depth="basic", fetch_github_metadata=False
+        )
 
         # Should not include GitHub docs/insights
         assert result.github_docs is None
@@ -356,7 +367,9 @@ class TestTokenHandling:
 
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme=None, contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 
@@ -379,7 +392,9 @@ class TestTokenHandling:
 
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme=None, contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 

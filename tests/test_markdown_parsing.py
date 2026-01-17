@@ -93,7 +93,9 @@ plain code without language
 - [HTML Page](./page.html)
 - [External](https://google.com)
 """
-        result = self.converter._extract_markdown_content(content, "https://example.com/docs/test.md")
+        result = self.converter._extract_markdown_content(
+            content, "https://example.com/docs/test.md"
+        )
         # Should only include .md links
         md_links = [l for l in result["links"] if ".md" in l]
         self.assertEqual(len(md_links), len(result["links"]))
@@ -115,7 +117,9 @@ Another paragraph that should be included in the final content output.
     def test_detect_html_in_md_url(self):
         """Test that HTML content is detected when .md URL returns HTML."""
         html_content = "<!DOCTYPE html><html><head><title>Page</title></head><body><h1>Hello</h1></body></html>"
-        result = self.converter._extract_markdown_content(html_content, "https://example.com/test.md")
+        result = self.converter._extract_markdown_content(
+            html_content, "https://example.com/test.md"
+        )
         self.assertEqual(result["title"], "Page")
 
 

@@ -92,7 +92,9 @@ class GuideEnhancer:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
                 logger.info("✨ GuideEnhancer initialized in API mode")
             else:
-                logger.warning("⚠️  API mode requested but anthropic library not available or no API key")
+                logger.warning(
+                    "⚠️  API mode requested but anthropic library not available or no API key"
+                )
                 self.mode = "none"
         elif self.mode == "local":
             # Check if claude CLI is available
@@ -133,7 +135,9 @@ class GuideEnhancer:
     def _check_claude_cli(self) -> bool:
         """Check if Claude Code CLI is available."""
         try:
-            result = subprocess.run(["claude", "--version"], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["claude", "--version"], capture_output=True, text=True, timeout=5
+            )
             return result.returncode == 0
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
@@ -251,7 +255,9 @@ class GuideEnhancer:
         try:
             data = json.loads(response)
             return [
-                PrerequisiteItem(name=item.get("name", ""), why=item.get("why", ""), setup=item.get("setup", ""))
+                PrerequisiteItem(
+                    name=item.get("name", ""), why=item.get("why", ""), setup=item.get("setup", "")
+                )
                 for item in data.get("prerequisites_detailed", [])
             ]
         except (json.JSONDecodeError, KeyError) as e:
@@ -345,7 +351,9 @@ class GuideEnhancer:
 
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514", max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}]
+                model="claude-sonnet-4-20250514",
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text
         except Exception as e:
@@ -690,7 +698,11 @@ IMPORTANT: Return ONLY valid JSON.
             # Prerequisites
             if "prerequisites_detailed" in data:
                 enhanced["prerequisites_detailed"] = [
-                    PrerequisiteItem(name=item.get("name", ""), why=item.get("why", ""), setup=item.get("setup", ""))
+                    PrerequisiteItem(
+                        name=item.get("name", ""),
+                        why=item.get("why", ""),
+                        setup=item.get("setup", ""),
+                    )
                     for item in data["prerequisites_detailed"]
                 ]
 

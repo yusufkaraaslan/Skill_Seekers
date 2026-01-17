@@ -121,7 +121,10 @@ def test_workflow():
     def test_calculate_complexity(self):
         """Test complexity level calculation"""
         # Simple workflow - beginner
-        simple_steps = [WorkflowStep(1, "x = 1", "Assign variable"), WorkflowStep(2, "print(x)", "Print variable")]
+        simple_steps = [
+            WorkflowStep(1, "x = 1", "Assign variable"),
+            WorkflowStep(2, "print(x)", "Print variable"),
+        ]
         simple_workflow = {"code": "x = 1\nprint(x)", "category": "workflow"}
         complexity_simple = self.analyzer._calculate_complexity(simple_steps, simple_workflow)
         self.assertEqual(complexity_simple, "beginner")
@@ -129,7 +132,9 @@ def test_workflow():
         # Complex workflow - advanced
         complex_steps = [WorkflowStep(i, f"step{i}", f"Step {i}") for i in range(1, 8)]
         complex_workflow = {
-            "code": "\n".join([f"async def step{i}(): await complex_operation()" for i in range(7)]),
+            "code": "\n".join(
+                [f"async def step{i}(): await complex_operation()" for i in range(7)]
+            ),
             "category": "workflow",
         }
         complexity_complex = self.analyzer._calculate_complexity(complex_steps, complex_workflow)
@@ -466,8 +471,12 @@ class TestHowToGuideBuilder(unittest.TestCase):
     def test_create_collection(self):
         """Test guide collection creation with metadata"""
         guides = [
-            HowToGuide(guide_id="guide-1", title="Guide 1", overview="Test", complexity_level="beginner"),
-            HowToGuide(guide_id="guide-2", title="Guide 2", overview="Test", complexity_level="advanced"),
+            HowToGuide(
+                guide_id="guide-1", title="Guide 1", overview="Test", complexity_level="beginner"
+            ),
+            HowToGuide(
+                guide_id="guide-2", title="Guide 2", overview="Test", complexity_level="advanced"
+            ),
         ]
 
         collection = self.builder._create_collection(guides)
@@ -492,7 +501,10 @@ class TestHowToGuideBuilder(unittest.TestCase):
 
         # Correct attribute names
         collection = GuideCollection(
-            total_guides=1, guides=guides, guides_by_complexity={"beginner": 1}, guides_by_use_case={}
+            total_guides=1,
+            guides=guides,
+            guides_by_complexity={"beginner": 1},
+            guides_by_use_case={},
         )
 
         output_dir = Path(self.temp_dir)
@@ -905,7 +917,10 @@ def test_file_processing():
         output_dir = Path(self.temp_dir) / "guides_fallback"
 
         # Mock GuideEnhancer to raise exception
-        with patch("skill_seekers.cli.guide_enhancer.GuideEnhancer", side_effect=Exception("AI unavailable")):
+        with patch(
+            "skill_seekers.cli.guide_enhancer.GuideEnhancer",
+            side_effect=Exception("AI unavailable"),
+        ):
             # Should NOT crash - graceful fallback
             collection = builder.build_guides_from_examples(
                 examples=examples,

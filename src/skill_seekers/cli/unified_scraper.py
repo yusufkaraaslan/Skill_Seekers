@@ -406,7 +406,13 @@ class UnifiedScraper:
 
         # Append to list instead of overwriting (multi-source support)
         self.scraped_data["github"].append(
-            {"repo": repo, "repo_id": repo_id, "idx": idx, "data": github_data, "data_file": github_data_file}
+            {
+                "repo": repo,
+                "repo_id": repo_id,
+                "idx": idx,
+                "data": github_data,
+                "data_file": github_data_file,
+            }
         )
 
         # Build standalone SKILL.md for synthesis using GitHubToSkillConverter
@@ -433,7 +439,9 @@ class UnifiedScraper:
             logger.info(f"📦 Moved GitHub output to cache: {cache_github_dir}")
 
         if os.path.exists(github_data_file_path):
-            cache_github_data = os.path.join(self.data_dir, f"{github_config['name']}_github_data.json")
+            cache_github_data = os.path.join(
+                self.data_dir, f"{github_config['name']}_github_data.json"
+            )
             if os.path.exists(cache_github_data):
                 os.remove(cache_github_data)
             shutil.move(github_data_file_path, cache_github_data)
@@ -478,7 +486,13 @@ class UnifiedScraper:
 
         # Append to list instead of overwriting
         self.scraped_data["pdf"].append(
-            {"pdf_path": pdf_path, "pdf_id": pdf_id, "idx": idx, "data": pdf_data, "data_file": pdf_data_file}
+            {
+                "pdf_path": pdf_path,
+                "pdf_id": pdf_id,
+                "idx": idx,
+                "data": pdf_data,
+                "data_file": pdf_data_file,
+            }
         )
 
         # Build standalone SKILL.md for synthesis
@@ -611,12 +625,20 @@ class UnifiedScraper:
             # Load C3.x outputs into memory
             c3_data = {
                 "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
-                "test_examples": self._load_json(temp_output / "test_examples" / "test_examples.json"),
+                "test_examples": self._load_json(
+                    temp_output / "test_examples" / "test_examples.json"
+                ),
                 "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
-                "config_patterns": self._load_json(temp_output / "config_patterns" / "config_patterns.json"),
-                "architecture": self._load_json(temp_output / "architecture" / "architectural_patterns.json"),
+                "config_patterns": self._load_json(
+                    temp_output / "config_patterns" / "config_patterns.json"
+                ),
+                "architecture": self._load_json(
+                    temp_output / "architecture" / "architectural_patterns.json"
+                ),
                 "api_reference": self._load_api_reference(temp_output / "api_reference"),  # C2.5
-                "dependency_graph": self._load_json(temp_output / "dependencies" / "dependency_graph.json"),  # C2.6
+                "dependency_graph": self._load_json(
+                    temp_output / "dependencies" / "dependency_graph.json"
+                ),  # C2.6
             }
 
             # Log summary
@@ -769,7 +791,9 @@ class UnifiedScraper:
                 conflicts = conflicts_data.get("conflicts", [])
 
         # Build skill
-        builder = UnifiedSkillBuilder(self.config, self.scraped_data, merged_data, conflicts, cache_dir=self.cache_dir)
+        builder = UnifiedSkillBuilder(
+            self.config, self.scraped_data, merged_data, conflicts, cache_dir=self.cache_dir
+        )
 
         builder.build()
 
@@ -836,7 +860,10 @@ Examples:
 
     parser.add_argument("--config", "-c", required=True, help="Path to unified config JSON file")
     parser.add_argument(
-        "--merge-mode", "-m", choices=["rule-based", "claude-enhanced"], help="Override config merge mode"
+        "--merge-mode",
+        "-m",
+        choices=["rule-based", "claude-enhanced"],
+        help="Override config merge mode",
     )
     parser.add_argument(
         "--skip-codebase-analysis",
@@ -854,7 +881,9 @@ Examples:
         for source in scraper.config.get("sources", []):
             if source["type"] == "github":
                 source["enable_codebase_analysis"] = False
-                logger.info(f"⏭️  Skipping codebase analysis for GitHub source: {source.get('repo', 'unknown')}")
+                logger.info(
+                    f"⏭️  Skipping codebase analysis for GitHub source: {source.get('repo', 'unknown')}"
+                )
 
     # Run scraper
     scraper.run()

@@ -140,7 +140,13 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
         timeout = max(300, max_discovery // 2)  # Minimum 5 minutes
 
     # Run estimate_pages.py
-    cmd = [sys.executable, str(CLI_DIR / "estimate_pages.py"), config_path, "--max-discovery", str(max_discovery)]
+    cmd = [
+        sys.executable,
+        str(CLI_DIR / "estimate_pages.py"),
+        config_path,
+        "--max-discovery",
+        str(max_discovery),
+    ]
 
     progress_msg = "🔄 Estimating page count...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
@@ -328,7 +334,11 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
         cmd.extend(["--from-json", from_json])
 
     else:
-        return [TextContent(type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json"
+            )
+        ]
 
     # Run pdf_scraper.py with streaming (can take a while)
     timeout = 600  # 10 minutes for PDF extraction
@@ -529,7 +539,11 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     directory = args.get("directory")
 
     if not file_path and not directory:
-        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter"
+            )
+        ]
 
     output = args.get("output", "")
     depth = args.get("depth", "deep")
@@ -604,7 +618,11 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
     directory = args.get("directory")
 
     if not file_path and not directory:
-        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter"
+            )
+        ]
 
     language = args.get("language", "")
     min_confidence = args.get("min_confidence", 0.5)
@@ -688,7 +706,12 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     """
     input_file = args.get("input")
     if not input_file:
-        return [TextContent(type="text", text="❌ Error: input parameter is required (path to test_examples.json)")]
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: input parameter is required (path to test_examples.json)",
+            )
+        ]
 
     output = args.get("output", "output/codebase/tutorials")
     group_by = args.get("group_by", "ai-tutorial-group")

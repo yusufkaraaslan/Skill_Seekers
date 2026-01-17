@@ -150,7 +150,9 @@ class CodeAnalyzer:
                     is_method = any(
                         isinstance(parent, ast.ClassDef)
                         for parent in ast.walk(tree)
-                        if hasattr(parent, "body") and isinstance(parent.body, list) and node in parent.body
+                        if hasattr(parent, "body")
+                        and isinstance(parent.body, list)
+                        and node in parent.body
                     )
                 except (TypeError, AttributeError):
                     # If body is not iterable or check fails, assume it's a top-level function
@@ -173,7 +175,9 @@ class CodeAnalyzer:
             if isinstance(base, ast.Name):
                 bases.append(base.id)
             elif isinstance(base, ast.Attribute):
-                bases.append(f"{base.value.id}.{base.attr}" if hasattr(base.value, "id") else base.attr)
+                bases.append(
+                    f"{base.value.id}.{base.attr}" if hasattr(base.value, "id") else base.attr
+                )
 
         # Extract methods
         methods = []
@@ -186,7 +190,11 @@ class CodeAnalyzer:
         docstring = ast.get_docstring(node)
 
         return ClassSignature(
-            name=node.name, base_classes=bases, methods=methods, docstring=docstring, line_number=node.lineno
+            name=node.name,
+            base_classes=bases,
+            methods=methods,
+            docstring=docstring,
+            line_number=node.lineno,
         )
 
     def _extract_python_function(self, node, is_method: bool = False) -> FunctionSignature:
@@ -209,7 +217,9 @@ class CodeAnalyzer:
                 param_idx = num_no_default + i
                 if param_idx < len(params):
                     try:
-                        params[param_idx].default = ast.unparse(default) if hasattr(ast, "unparse") else str(default)
+                        params[param_idx].default = (
+                            ast.unparse(default) if hasattr(ast, "unparse") else str(default)
+                        )
                     except:
                         params[param_idx].default = "..."
 
@@ -719,7 +729,9 @@ class CodeAnalyzer:
             # Distinguish XML doc comments (///)
             comment_type = "doc" if match.group(1).startswith("/") else "inline"
 
-            comments.append({"line": line_num, "text": comment_text.lstrip("/").strip(), "type": comment_type})
+            comments.append(
+                {"line": line_num, "text": comment_text.lstrip("/").strip(), "type": comment_type}
+            )
 
         # Multi-line comments (/* */)
         for match in re.finditer(r"/\*(.+?)\*/", content, re.DOTALL):
@@ -1325,9 +1337,7 @@ class CodeAnalyzer:
         """Extract PHP method signatures from class body."""
         methods = []
 
-        method_pattern = (
-            r"(?:public|private|protected)?\s*(?:static|final)?\s*function\s+(\w+)\s*\(([^)]*)\)(?:\s*:\s*(\??\w+))?"
-        )
+        method_pattern = r"(?:public|private|protected)?\s*(?:static|final)?\s*function\s+(\w+)\s*\(([^)]*)\)(?:\s*:\s*(\??\w+))?"
         for match in re.finditer(method_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
@@ -1445,7 +1455,8 @@ def create_sprite(texture: str) -> Node2D:
         for method in cls["methods"]:
             params = ", ".join(
                 [
-                    f"{p['name']}: {p['type_hint']}" + (f" = {p['default']}" if p.get("default") else "")
+                    f"{p['name']}: {p['type_hint']}"
+                    + (f" = {p['default']}" if p.get("default") else "")
                     for p in method["parameters"]
                 ]
             )

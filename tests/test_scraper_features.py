@@ -321,7 +321,13 @@ class TestCategorization(unittest.TestCase):
 
     def test_categorize_by_url(self):
         """Test categorization based on URL"""
-        pages = [{"url": "https://example.com/api/reference", "title": "Some Title", "content": "Some content"}]
+        pages = [
+            {
+                "url": "https://example.com/api/reference",
+                "title": "Some Title",
+                "content": "Some content",
+            }
+        ]
         categories = self.converter.smart_categorize(pages)
 
         # Should categorize to 'api' based on URL containing 'api'
@@ -331,7 +337,11 @@ class TestCategorization(unittest.TestCase):
     def test_categorize_by_title(self):
         """Test categorization based on title"""
         pages = [
-            {"url": "https://example.com/docs/page", "title": "API Reference Documentation", "content": "Some content"}
+            {
+                "url": "https://example.com/docs/page",
+                "title": "API Reference Documentation",
+                "content": "Some content",
+            }
         ]
         categories = self.converter.smart_categorize(pages)
 
@@ -368,7 +378,13 @@ class TestCategorization(unittest.TestCase):
 
     def test_empty_categories_removed(self):
         """Test empty categories are removed"""
-        pages = [{"url": "https://example.com/api/reference", "title": "API Reference", "content": "API documentation"}]
+        pages = [
+            {
+                "url": "https://example.com/api/reference",
+                "title": "API Reference",
+                "content": "API documentation",
+            }
+        ]
         categories = self.converter.smart_categorize(pages)
 
         # Only 'api' should exist, not empty 'guides' or 'getting_started'

@@ -216,7 +216,9 @@ class LocalSkillEnhancer:
         if use_summarization or total_ref_size > 30000:
             if not use_summarization:
                 print(f"  ⚠️  Large skill detected ({total_ref_size:,} chars)")
-                print(f"  📊 Applying smart summarization (target: {int(summarization_ratio * 100)}% of original)")
+                print(
+                    f"  📊 Applying smart summarization (target: {int(summarization_ratio * 100)}% of original)"
+                )
                 print()
 
             # Summarize each reference
@@ -307,7 +309,9 @@ REFERENCE DOCUMENTATION:
                 if repo_id:
                     prompt += f"*Source: {metadata['source']} ({repo_id}), Confidence: {metadata['confidence']}*\n\n"
                 else:
-                    prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    prompt += (
+                        f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    )
                 prompt += f"{content}\n"
 
         prompt += f"""
@@ -528,7 +532,9 @@ After writing, the file SKILL.md should:
             return False
 
         # Save prompt to temp file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, encoding="utf-8"
+        ) as f:
             prompt_file = f.name
             f.write(prompt)
 
@@ -605,7 +611,9 @@ rm {prompt_file}
         print(f"  - Prompt file: {prompt_file}")
         print(f"  - Skill directory: {self.skill_dir.absolute()}")
         print(f"  - SKILL.md will be saved to: {self.skill_md_path.absolute()}")
-        print(f"  - Original backed up to: {self.skill_md_path.with_suffix('.md.backup').absolute()}")
+        print(
+            f"  - Original backed up to: {self.skill_md_path.with_suffix('.md.backup').absolute()}"
+        )
         print()
         print("⏳ Wait for Claude Code to finish in the other terminal...")
         print("   (Usually takes 30-60 seconds)")
@@ -782,7 +790,9 @@ rm {prompt_file}
                     return
 
                 # Save prompt to temp file
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as f:
                     prompt_file = f.name
                     f.write(prompt)
 
@@ -791,7 +801,9 @@ rm {prompt_file}
                 # Run enhancement
                 if headless:
                     # Run headless (subprocess.run - blocking in thread)
-                    result = subprocess.run(["claude", prompt_file], capture_output=True, text=True, timeout=timeout)
+                    result = subprocess.run(
+                        ["claude", prompt_file], capture_output=True, text=True, timeout=timeout
+                    )
 
                     # Clean up
                     try:
@@ -800,9 +812,13 @@ rm {prompt_file}
                         pass
 
                     if result.returncode == 0:
-                        self.write_status("completed", "Enhancement completed successfully!", progress=1.0)
+                        self.write_status(
+                            "completed", "Enhancement completed successfully!", progress=1.0
+                        )
                     else:
-                        self.write_status("failed", error=f"Claude returned error: {result.returncode}")
+                        self.write_status(
+                            "failed", error=f"Claude returned error: {result.returncode}"
+                        )
                 else:
                     # Terminal mode in background doesn't make sense
                     self.write_status("failed", error="Terminal mode not supported in background")
@@ -951,7 +967,10 @@ except Exception as e:
                 # Normal mode: Log to file
                 with open(log_file, "w") as log:
                     subprocess.Popen(
-                        ["nohup", "python3", str(daemon_script_path)], stdout=log, stderr=log, start_new_session=True
+                        ["nohup", "python3", str(daemon_script_path)],
+                        stdout=log,
+                        stderr=log,
+                        start_new_session=True,
                     )
 
             # Give daemon time to start
@@ -1033,10 +1052,14 @@ Force Mode (Default ON):
     )
 
     parser.add_argument(
-        "--background", action="store_true", help="Run in background and return immediately (non-blocking)"
+        "--background",
+        action="store_true",
+        help="Run in background and return immediately (non-blocking)",
     )
 
-    parser.add_argument("--daemon", action="store_true", help="Run as persistent daemon process (fully detached)")
+    parser.add_argument(
+        "--daemon", action="store_true", help="Run as persistent daemon process (fully detached)"
+    )
 
     parser.add_argument(
         "--no-force",
@@ -1045,7 +1068,10 @@ Force Mode (Default ON):
     )
 
     parser.add_argument(
-        "--timeout", type=int, default=600, help="Timeout in seconds for headless mode (default: 600 = 10 minutes)"
+        "--timeout",
+        type=int,
+        default=600,
+        help="Timeout in seconds for headless mode (default: 600 = 10 minutes)",
     )
 
     args = parser.parse_args()
@@ -1053,7 +1079,9 @@ Force Mode (Default ON):
     # Validate mutually exclusive options
     mode_count = sum([args.interactive_enhancement, args.background, args.daemon])
     if mode_count > 1:
-        print("❌ Error: --interactive-enhancement, --background, and --daemon are mutually exclusive")
+        print(
+            "❌ Error: --interactive-enhancement, --background, and --daemon are mutually exclusive"
+        )
         print("   Choose only one mode")
         sys.exit(1)
 
@@ -1061,7 +1089,9 @@ Force Mode (Default ON):
     # Force mode is ON by default, use --no-force to disable
     enhancer = LocalSkillEnhancer(args.skill_directory, force=not args.no_force)
     headless = not args.interactive_enhancement  # Invert: default is headless
-    success = enhancer.run(headless=headless, timeout=args.timeout, background=args.background, daemon=args.daemon)
+    success = enhancer.run(
+        headless=headless, timeout=args.timeout, background=args.background, daemon=args.daemon
+    )
 
     sys.exit(0 if success else 1)
 

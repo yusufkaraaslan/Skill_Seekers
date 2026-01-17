@@ -167,14 +167,28 @@ version: {metadata.version}
         # Validate ZIP file
         package_path = Path(package_path)
         if not package_path.exists():
-            return {"success": False, "skill_id": None, "url": None, "message": f"File not found: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"File not found: {package_path}",
+            }
 
         if not package_path.suffix == ".zip":
-            return {"success": False, "skill_id": None, "url": None, "message": f"Not a ZIP file: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Not a ZIP file: {package_path}",
+            }
 
         # Prepare API request
         api_url = self.DEFAULT_API_ENDPOINT
-        headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01", "anthropic-beta": "skills-2025-10-02"}
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "anthropic-beta": "skills-2025-10-02",
+        }
 
         timeout = kwargs.get("timeout", 60)
 
@@ -231,7 +245,12 @@ version: {metadata.version}
                 except:
                     error_msg = f"HTTP {response.status_code}"
 
-                return {"success": False, "skill_id": None, "url": None, "message": f"Upload failed: {error_msg}"}
+                return {
+                    "success": False,
+                    "skill_id": None,
+                    "url": None,
+                    "message": f"Upload failed: {error_msg}",
+                }
 
         except requests.exceptions.Timeout:
             return {
@@ -250,7 +269,12 @@ version: {metadata.version}
             }
 
         except Exception as e:
-            return {"success": False, "skill_id": None, "url": None, "message": f"Unexpected error: {str(e)}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Unexpected error: {str(e)}",
+            }
 
     def validate_api_key(self, api_key: str) -> bool:
         """
@@ -363,7 +387,9 @@ version: {metadata.version}
             print(f"❌ Error calling Claude API: {e}")
             return False
 
-    def _read_reference_files(self, references_dir: Path, max_chars: int = 200000) -> dict[str, str]:
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
         """
         Read reference markdown files from skill directory.
 

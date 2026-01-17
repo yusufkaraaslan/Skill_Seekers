@@ -53,7 +53,10 @@ class TestSourceManagerInit:
         registry_file = temp_config_dir / "sources.json"
 
         # Create existing registry
-        existing_data = {"version": "1.0", "sources": [{"name": "test", "git_url": "https://example.com/repo.git"}]}
+        existing_data = {
+            "version": "1.0",
+            "sources": [{"name": "test", "git_url": "https://example.com/repo.git"}],
+        }
         with open(registry_file, "w") as f:
             json.dump(existing_data, f)
 
@@ -78,7 +81,9 @@ class TestAddSource:
 
     def test_add_source_minimal(self, source_manager):
         """Test adding source with minimal parameters."""
-        source = source_manager.add_source(name="team", git_url="https://github.com/myorg/configs.git")
+        source = source_manager.add_source(
+            name="team", git_url="https://github.com/myorg/configs.git"
+        )
 
         assert source["name"] == "team"
         assert source["git_url"] == "https://github.com/myorg/configs.git"
@@ -123,17 +128,23 @@ class TestAddSource:
     def test_add_source_invalid_name_special_chars(self, source_manager):
         """Test that source names with special characters are rejected."""
         with pytest.raises(ValueError, match="Invalid source name"):
-            source_manager.add_source(name="team@company", git_url="https://github.com/org/repo.git")
+            source_manager.add_source(
+                name="team@company", git_url="https://github.com/org/repo.git"
+            )
 
     def test_add_source_valid_name_with_hyphens(self, source_manager):
         """Test that source names with hyphens are allowed."""
-        source = source_manager.add_source(name="team-alpha", git_url="https://github.com/org/repo.git")
+        source = source_manager.add_source(
+            name="team-alpha", git_url="https://github.com/org/repo.git"
+        )
 
         assert source["name"] == "team-alpha"
 
     def test_add_source_valid_name_with_underscores(self, source_manager):
         """Test that source names with underscores are allowed."""
-        source = source_manager.add_source(name="team_alpha", git_url="https://github.com/org/repo.git")
+        source = source_manager.add_source(
+            name="team_alpha", git_url="https://github.com/org/repo.git"
+        )
 
         assert source["name"] == "team_alpha"
 
@@ -144,7 +155,9 @@ class TestAddSource:
 
     def test_add_source_strips_git_url(self, source_manager):
         """Test that git URLs are stripped of whitespace."""
-        source = source_manager.add_source(name="team", git_url="  https://github.com/org/repo.git  ")
+        source = source_manager.add_source(
+            name="team", git_url="  https://github.com/org/repo.git  "
+        )
 
         assert source["git_url"] == "https://github.com/org/repo.git"
 
@@ -258,9 +271,15 @@ class TestListSources:
 
     def test_list_sources_enabled_only(self, source_manager):
         """Test listing only enabled sources."""
-        source_manager.add_source(name="enabled1", git_url="https://example.com/1.git", enabled=True)
-        source_manager.add_source(name="disabled", git_url="https://example.com/2.git", enabled=False)
-        source_manager.add_source(name="enabled2", git_url="https://example.com/3.git", enabled=True)
+        source_manager.add_source(
+            name="enabled1", git_url="https://example.com/1.git", enabled=True
+        )
+        source_manager.add_source(
+            name="disabled", git_url="https://example.com/2.git", enabled=False
+        )
+        source_manager.add_source(
+            name="enabled2", git_url="https://example.com/3.git", enabled=True
+        )
 
         sources = source_manager.list_sources(enabled_only=True)
 
@@ -271,7 +290,9 @@ class TestListSources:
     def test_list_sources_all_when_some_disabled(self, source_manager):
         """Test listing all sources includes disabled ones."""
         source_manager.add_source(name="enabled", git_url="https://example.com/1.git", enabled=True)
-        source_manager.add_source(name="disabled", git_url="https://example.com/2.git", enabled=False)
+        source_manager.add_source(
+            name="disabled", git_url="https://example.com/2.git", enabled=False
+        )
 
         sources = source_manager.list_sources(enabled_only=False)
 
@@ -339,7 +360,9 @@ class TestUpdateSource:
         """Test updating source git URL."""
         source_manager.add_source(name="team", git_url="https://github.com/org/repo1.git")
 
-        updated = source_manager.update_source(name="team", git_url="https://github.com/org/repo2.git")
+        updated = source_manager.update_source(
+            name="team", git_url="https://github.com/org/repo2.git"
+        )
 
         assert updated["git_url"] == "https://github.com/org/repo2.git"
 
@@ -353,7 +376,9 @@ class TestUpdateSource:
 
     def test_update_source_enabled(self, source_manager):
         """Test updating source enabled status."""
-        source_manager.add_source(name="team", git_url="https://github.com/org/repo.git", enabled=True)
+        source_manager.add_source(
+            name="team", git_url="https://github.com/org/repo.git", enabled=True
+        )
 
         updated = source_manager.update_source(name="team", enabled=False)
 
@@ -361,7 +386,9 @@ class TestUpdateSource:
 
     def test_update_source_priority(self, source_manager):
         """Test updating source priority."""
-        source_manager.add_source(name="team", git_url="https://github.com/org/repo.git", priority=100)
+        source_manager.add_source(
+            name="team", git_url="https://github.com/org/repo.git", priority=100
+        )
 
         updated = source_manager.update_source(name="team", priority=1)
 
@@ -372,7 +399,11 @@ class TestUpdateSource:
         source_manager.add_source(name="team", git_url="https://github.com/org/repo.git")
 
         updated = source_manager.update_source(
-            name="team", git_url="https://gitlab.com/org/repo.git", type="gitlab", branch="develop", priority=1
+            name="team",
+            git_url="https://gitlab.com/org/repo.git",
+            type="gitlab",
+            branch="develop",
+            priority=1,
         )
 
         assert updated["git_url"] == "https://gitlab.com/org/repo.git"
@@ -412,13 +443,17 @@ class TestDefaultTokenEnv:
 
     def test_default_token_env_github(self, source_manager):
         """Test GitHub sources get GITHUB_TOKEN."""
-        source = source_manager.add_source(name="team", git_url="https://github.com/org/repo.git", source_type="github")
+        source = source_manager.add_source(
+            name="team", git_url="https://github.com/org/repo.git", source_type="github"
+        )
 
         assert source["token_env"] == "GITHUB_TOKEN"
 
     def test_default_token_env_gitlab(self, source_manager):
         """Test GitLab sources get GITLAB_TOKEN."""
-        source = source_manager.add_source(name="team", git_url="https://gitlab.com/org/repo.git", source_type="gitlab")
+        source = source_manager.add_source(
+            name="team", git_url="https://gitlab.com/org/repo.git", source_type="gitlab"
+        )
 
         assert source["token_env"] == "GITLAB_TOKEN"
 
@@ -449,7 +484,10 @@ class TestDefaultTokenEnv:
     def test_override_token_env(self, source_manager):
         """Test that custom token_env overrides default."""
         source = source_manager.add_source(
-            name="team", git_url="https://github.com/org/repo.git", source_type="github", token_env="MY_CUSTOM_TOKEN"
+            name="team",
+            git_url="https://github.com/org/repo.git",
+            source_type="github",
+            token_env="MY_CUSTOM_TOKEN",
         )
 
         assert source["token_env"] == "MY_CUSTOM_TOKEN"

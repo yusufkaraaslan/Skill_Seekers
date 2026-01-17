@@ -139,14 +139,20 @@ try:
                 inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
-                name="scrape_docs", description="Scrape documentation", inputSchema={"type": "object", "properties": {}}
+                name="scrape_docs",
+                description="Scrape documentation",
+                inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
                 name="scrape_github",
                 description="Scrape GitHub repository",
                 inputSchema={"type": "object", "properties": {}},
             ),
-            Tool(name="scrape_pdf", description="Scrape PDF file", inputSchema={"type": "object", "properties": {}}),
+            Tool(
+                name="scrape_pdf",
+                description="Scrape PDF file",
+                inputSchema={"type": "object", "properties": {}},
+            ),
             Tool(
                 name="package_skill",
                 description="Package skill into .zip",
@@ -157,9 +163,15 @@ try:
                 description="Upload skill to Claude",
                 inputSchema={"type": "object", "properties": {}},
             ),
-            Tool(name="install_skill", description="Install skill", inputSchema={"type": "object", "properties": {}}),
             Tool(
-                name="split_config", description="Split large config", inputSchema={"type": "object", "properties": {}}
+                name="install_skill",
+                description="Install skill",
+                inputSchema={"type": "object", "properties": {}},
+            ),
+            Tool(
+                name="split_config",
+                description="Split large config",
+                inputSchema={"type": "object", "properties": {}},
             ),
             Tool(
                 name="generate_router",

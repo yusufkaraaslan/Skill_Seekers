@@ -178,7 +178,9 @@ class GitHubScraper:
         self.repo_name = config["repo"]
         self.name = config.get("name", self.repo_name.split("/")[-1])
         # Set initial description (will be improved after README extraction if not in config)
-        self.description = config.get("description", f"Use when working with {self.repo_name.split('/')[-1]}")
+        self.description = config.get(
+            "description", f"Use when working with {self.repo_name.split('/')[-1]}"
+        )
 
         # Local repository path (optional - enables unlimited analysis)
         self.local_repo_path = local_repo_path or config.get("local_repo_path")
@@ -192,14 +194,18 @@ class GitHubScraper:
         # Option 1: Replace mode - Use only specified exclusions
         if "exclude_dirs" in config:
             self.excluded_dirs = set(config["exclude_dirs"])
-            logger.warning(f"Using custom directory exclusions ({len(self.excluded_dirs)} dirs) - defaults overridden")
+            logger.warning(
+                f"Using custom directory exclusions ({len(self.excluded_dirs)} dirs) - defaults overridden"
+            )
             logger.debug(f"Custom exclusions: {sorted(self.excluded_dirs)}")
 
         # Option 2: Extend mode - Add to default exclusions
         elif "exclude_dirs_additional" in config:
             additional = set(config["exclude_dirs_additional"])
             self.excluded_dirs = self.excluded_dirs.union(additional)
-            logger.info(f"Added {len(additional)} custom directory exclusions (total: {len(self.excluded_dirs)})")
+            logger.info(
+                f"Added {len(additional)} custom directory exclusions (total: {len(self.excluded_dirs)})"
+            )
             logger.debug(f"Additional exclusions: {sorted(additional)}")
 
         # Load .gitignore for additional exclusions (C2.1)
@@ -218,7 +224,9 @@ class GitHubScraper:
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
         self.include_code = config.get("include_code", False)
-        self.code_analysis_depth = config.get("code_analysis_depth", "surface")  # 'surface', 'deep', 'full'
+        self.code_analysis_depth = config.get(
+            "code_analysis_depth", "surface"
+        )  # 'surface', 'deep', 'full'
         self.file_patterns = config.get("file_patterns", [])
 
         # Initialize code analyzer if deep analysis requested
@@ -261,7 +269,9 @@ class GitHubScraper:
             logger.warning("Using GitHub token from config file (less secure)")
             return token
 
-        logger.warning("No GitHub token provided - using unauthenticated access (lower rate limits)")
+        logger.warning(
+            "No GitHub token provided - using unauthenticated access (lower rate limits)"
+        )
         return None
 
     def scrape(self) -> dict[str, Any]:
@@ -334,7 +344,9 @@ class GitHubScraper:
                 "topics": self.repo.get_topics(),
             }
 
-            logger.info(f"Repository fetched: {self.repo.full_name} ({self.repo.stargazers_count} stars)")
+            logger.info(
+                f"Repository fetched: {self.repo.full_name} ({self.repo.stargazers_count} stars)"
+            )
 
         except GithubException as e:
             if e.status == 404:
@@ -378,7 +390,9 @@ class GitHubScraper:
                 file_size = getattr(content, "size", 0)
 
                 if download_url:
-                    logger.info(f"File {file_path} is large ({file_size:,} bytes), downloading via URL...")
+                    logger.info(
+                        f"File {file_path} is large ({file_size:,} bytes), downloading via URL..."
+                    )
                     try:
                         import requests
 
@@ -389,7 +403,9 @@ class GitHubScraper:
                         logger.warning(f"Failed to download {file_path} from {download_url}: {e}")
                         return None
                 else:
-                    logger.warning(f"File {file_path} has no download URL (encoding={content.encoding})")
+                    logger.warning(
+                        f"File {file_path} has no download URL (encoding={content.encoding})"
+                    )
                     return None
 
             # Handle regular files - decode content
@@ -419,7 +435,14 @@ class GitHubScraper:
         logger.info("Extracting README...")
 
         # Try common README locations
-        readme_files = ["README.md", "README.rst", "README.txt", "README", "docs/README.md", ".github/README.md"]
+        readme_files = [
+            "README.md",
+            "README.rst",
+            "README.txt",
+            "README",
+            "docs/README.md",
+            ".github/README.md",
+        ]
 
         for readme_path in readme_files:
             readme_content = self._get_file_content(readme_path)
@@ -429,7 +452,9 @@ class GitHubScraper:
 
                 # Update description if not explicitly set in config
                 if "description" not in self.config:
-                    smart_description = extract_description_from_readme(self.extracted_data["readme"], self.repo_name)
+                    smart_description = extract_description_from_readme(
+                        self.extracted_data["readme"], self.repo_name
+                    )
                     self.description = smart_description
                     logger.debug(f"Generated description: {self.description}")
 
@@ -465,7 +490,9 @@ class GitHubScraper:
             self.extracted_data["languages"] = {
                 lang: {
                     "bytes": bytes_count,
-                    "percentage": round((bytes_count / total_bytes) * 100, 2) if total_bytes > 0 else 0,
+                    "percentage": round((bytes_count / total_bytes) * 100, 2)
+                    if total_bytes > 0
+                    else 0,
                 }
                 for lang, bytes_count in languages.items()
             }
@@ -502,7 +529,9 @@ class GitHubScraper:
             # For directories, we need to check both with and without trailing slash
             # as .gitignore patterns can match either way
             dir_path_with_slash = dir_path if dir_path.endswith("/") else dir_path + "/"
-            if self.gitignore_spec.match_file(dir_path) or self.gitignore_spec.match_file(dir_path_with_slash):
+            if self.gitignore_spec.match_file(dir_path) or self.gitignore_spec.match_file(
+                dir_path_with_slash
+            ):
                 logger.debug(f"Directory excluded by .gitignore: {dir_path}")
                 return True
 
@@ -555,7 +584,9 @@ class GitHubScraper:
             return
 
         # Log exclusions for debugging
-        logger.info(f"Directory exclusions ({len(self.excluded_dirs)} total): {sorted(list(self.excluded_dirs)[:10])}")
+        logger.info(
+            f"Directory exclusions ({len(self.excluded_dirs)} total): {sorted(list(self.excluded_dirs)[:10])}"
+        )
 
         file_tree = []
         excluded_count = 0
@@ -594,7 +625,9 @@ class GitHubScraper:
                 file_tree.append({"path": file_path, "type": "file", "size": file_size})
 
         self.extracted_data["file_tree"] = file_tree
-        logger.info(f"File tree built (local mode): {len(file_tree)} items ({excluded_count} directories excluded)")
+        logger.info(
+            f"File tree built (local mode): {len(file_tree)} items ({excluded_count} directories excluded)"
+        )
 
     def _extract_file_tree_github(self):
         """Extract file tree from GitHub API (rate-limited)."""
@@ -695,10 +728,16 @@ class GitHubScraper:
                     file_content = self.repo.get_contents(file_path)
                     content = file_content.decoded_content.decode("utf-8")
 
-                analysis_result = self.code_analyzer.analyze_file(file_path, content, primary_language)
+                analysis_result = self.code_analyzer.analyze_file(
+                    file_path, content, primary_language
+                )
 
-                if analysis_result and (analysis_result.get("classes") or analysis_result.get("functions")):
-                    analyzed_files.append({"file": file_path, "language": primary_language, **analysis_result})
+                if analysis_result and (
+                    analysis_result.get("classes") or analysis_result.get("functions")
+                ):
+                    analyzed_files.append(
+                        {"file": file_path, "language": primary_language, **analysis_result}
+                    )
 
                     logger.debug(
                         f"Analyzed {file_path}: "
@@ -805,7 +844,9 @@ class GitHubScraper:
                     "draft": release.draft,
                     "prerelease": release.prerelease,
                     "created_at": release.created_at.isoformat() if release.created_at else None,
-                    "published_at": release.published_at.isoformat() if release.published_at else None,
+                    "published_at": release.published_at.isoformat()
+                    if release.published_at
+                    else None,
                     "url": release.html_url,
                     "tarball_url": release.tarball_url,
                     "zipball_url": release.zipball_url,
@@ -973,13 +1014,21 @@ Use this skill when you need to:
         if has_c3_data:
             skill_content += "\n### Codebase Analysis References\n\n"
             if c3_data.get("patterns"):
-                skill_content += "- `references/codebase_analysis/patterns/` - Design patterns detected\n"
+                skill_content += (
+                    "- `references/codebase_analysis/patterns/` - Design patterns detected\n"
+                )
             if c3_data.get("test_examples"):
-                skill_content += "- `references/codebase_analysis/examples/` - Test examples extracted\n"
+                skill_content += (
+                    "- `references/codebase_analysis/examples/` - Test examples extracted\n"
+                )
             if c3_data.get("config_patterns"):
-                skill_content += "- `references/codebase_analysis/configuration/` - Configuration analysis\n"
+                skill_content += (
+                    "- `references/codebase_analysis/configuration/` - Configuration analysis\n"
+                )
             if c3_data.get("architecture"):
-                skill_content += "- `references/codebase_analysis/ARCHITECTURE.md` - Architecture overview\n"
+                skill_content += (
+                    "- `references/codebase_analysis/ARCHITECTURE.md` - Architecture overview\n"
+                )
 
         # Usage
         skill_content += "\n## 💻 Usage\n\n"
@@ -1020,7 +1069,9 @@ Use this skill when you need to:
 
         lines = []
         for release in releases[:3]:
-            lines.append(f"- **{release['tag_name']}** ({release['published_at'][:10]}): {release['name']}")
+            lines.append(
+                f"- **{release['tag_name']}** ({release['published_at'][:10]}): {release['name']}"
+            )
 
         return "\n".join(lines)
 
@@ -1132,7 +1183,9 @@ Use this skill when you need to:
         if patterns:
             content += "**Architectural Patterns:**\n"
             for pattern in patterns[:5]:
-                content += f"- {pattern.get('name', 'Unknown')}: {pattern.get('description', 'N/A')}\n"
+                content += (
+                    f"- {pattern.get('name', 'Unknown')}: {pattern.get('description', 'N/A')}\n"
+                )
             content += "\n"
 
         # Dependencies (C2.6)
@@ -1233,7 +1286,9 @@ Use this skill when you need to:
         """Generate releases.md reference file."""
         releases = self.data["releases"]
 
-        content = f"# Releases\n\nVersion history for this repository ({len(releases)} releases).\n\n"
+        content = (
+            f"# Releases\n\nVersion history for this repository ({len(releases)} releases).\n\n"
+        )
 
         for release in releases:
             content += f"## {release['tag_name']}: {release['name']}\n"
@@ -1294,14 +1349,22 @@ Examples:
     parser.add_argument("--max-issues", type=int, default=100, help="Max issues to fetch")
     parser.add_argument("--scrape-only", action="store_true", help="Only scrape, don't build skill")
     parser.add_argument(
-        "--enhance", action="store_true", help="Enhance SKILL.md using Claude API after building (requires API key)"
+        "--enhance",
+        action="store_true",
+        help="Enhance SKILL.md using Claude API after building (requires API key)",
     )
     parser.add_argument(
-        "--enhance-local", action="store_true", help="Enhance SKILL.md using Claude Code (no API key needed)"
+        "--enhance-local",
+        action="store_true",
+        help="Enhance SKILL.md using Claude Code (no API key needed)",
     )
-    parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)")
     parser.add_argument(
-        "--non-interactive", action="store_true", help="Non-interactive mode for CI/CD (fail fast on rate limits)"
+        "--api-key", type=str, help="Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)"
+    )
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Non-interactive mode for CI/CD (fail fast on rate limits)",
     )
     parser.add_argument("--profile", type=str, help="GitHub profile name to use from config")
 
@@ -1368,7 +1431,9 @@ Examples:
 
                 api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
                 if not api_key:
-                    logger.error("❌ ANTHROPIC_API_KEY not set. Use --api-key or set environment variable.")
+                    logger.error(
+                        "❌ ANTHROPIC_API_KEY not set. Use --api-key or set environment variable."
+                    )
                     logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
                 else:
                     # Import and run API enhancement
@@ -1378,7 +1443,9 @@ Examples:
                         enhance_skill_md(skill_dir, api_key)
                         logger.info("✅ API enhancement complete!")
                     except ImportError:
-                        logger.error("❌ API enhancement not available. Install: pip install anthropic")
+                        logger.error(
+                            "❌ API enhancement not available. Install: pip install anthropic"
+                        )
                         logger.info("💡 Tip: Use --enhance-local instead (no API key needed)")
 
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")

@@ -58,7 +58,9 @@ async def root():
 
 
 @app.get("/api/configs")
-async def list_configs(category: str | None = None, tag: str | None = None, type: str | None = None) -> dict[str, Any]:
+async def list_configs(
+    category: str | None = None, tag: str | None = None, type: str | None = None
+) -> dict[str, Any]:
     """
     List all available configs with metadata
 

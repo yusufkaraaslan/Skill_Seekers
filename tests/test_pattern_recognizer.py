@@ -218,7 +218,9 @@ class Subject:
         pattern = patterns[0]
         self.assertGreaterEqual(pattern.confidence, 0.8)
         evidence_str = " ".join(pattern.evidence).lower()
-        self.assertTrue("attach" in evidence_str and "detach" in evidence_str and "notify" in evidence_str)
+        self.assertTrue(
+            "attach" in evidence_str and "detach" in evidence_str and "notify" in evidence_str
+        )
 
     def test_pubsub_pattern(self):
         """Test publish/subscribe variant"""

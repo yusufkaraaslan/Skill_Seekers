@@ -112,7 +112,9 @@ class ConfigValidator:
         # Validate merge_mode (optional)
         merge_mode = self.config.get("merge_mode", "rule-based")
         if merge_mode not in self.VALID_MERGE_MODES:
-            raise ValueError(f"Invalid merge_mode: '{merge_mode}'. Must be one of {self.VALID_MERGE_MODES}")
+            raise ValueError(
+                f"Invalid merge_mode: '{merge_mode}'. Must be one of {self.VALID_MERGE_MODES}"
+            )
 
         # Validate each source
         for i, source in enumerate(sources):
@@ -130,7 +132,9 @@ class ConfigValidator:
         source_type = source["type"]
 
         if source_type not in self.VALID_SOURCE_TYPES:
-            raise ValueError(f"Source {index}: Invalid type '{source_type}'. Must be one of {self.VALID_SOURCE_TYPES}")
+            raise ValueError(
+                f"Source {index}: Invalid type '{source_type}'. Must be one of {self.VALID_SOURCE_TYPES}"
+            )
 
         # Type-specific validation
         if source_type == "documentation":
@@ -147,7 +151,9 @@ class ConfigValidator:
 
         # Optional but recommended fields
         if "selectors" not in source:
-            logger.warning(f"Source {index} (documentation): No 'selectors' specified, using defaults")
+            logger.warning(
+                f"Source {index} (documentation): No 'selectors' specified, using defaults"
+            )
 
         if "max_pages" in source and not isinstance(source["max_pages"], int):
             raise ValueError(f"Source {index} (documentation): 'max_pages' must be an integer")
@@ -178,8 +184,12 @@ class ConfigValidator:
             raise ValueError(f"Source {index} (github): 'max_issues' must be an integer")
 
         # Validate enable_codebase_analysis if specified (C3.5)
-        if "enable_codebase_analysis" in source and not isinstance(source["enable_codebase_analysis"], bool):
-            raise ValueError(f"Source {index} (github): 'enable_codebase_analysis' must be a boolean")
+        if "enable_codebase_analysis" in source and not isinstance(
+            source["enable_codebase_analysis"], bool
+        ):
+            raise ValueError(
+                f"Source {index} (github): 'enable_codebase_analysis' must be a boolean"
+            )
 
         # Validate ai_mode if specified (C3.5)
         if "ai_mode" in source:
@@ -249,7 +259,10 @@ class ConfigValidator:
             "description": self.config.get("description", "Documentation skill"),
             "merge_mode": "rule-based",
             "sources": [
-                {"type": "documentation", **{k: v for k, v in self.config.items() if k not in ["name", "description"]}}
+                {
+                    "type": "documentation",
+                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
+                }
             ],
         }
         return unified
@@ -261,7 +274,10 @@ class ConfigValidator:
             "description": self.config.get("description", "GitHub repository skill"),
             "merge_mode": "rule-based",
             "sources": [
-                {"type": "github", **{k: v for k, v in self.config.items() if k not in ["name", "description"]}}
+                {
+                    "type": "github",
+                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
+                }
             ],
         }
         return unified
@@ -272,7 +288,12 @@ class ConfigValidator:
             "name": self.config.get("name", "unnamed"),
             "description": self.config.get("description", "PDF document skill"),
             "merge_mode": "rule-based",
-            "sources": [{"type": "pdf", **{k: v for k, v in self.config.items() if k not in ["name", "description"]}}],
+            "sources": [
+                {
+                    "type": "pdf",
+                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
+                }
+            ],
         }
         return unified
 
@@ -312,11 +333,13 @@ class ConfigValidator:
             return False
 
         has_docs_api = any(
-            s.get("type") == "documentation" and s.get("extract_api", True) for s in self.config["sources"]
+            s.get("type") == "documentation" and s.get("extract_api", True)
+            for s in self.config["sources"]
         )
 
         has_github_code = any(
-            s.get("type") == "github" and s.get("include_code", False) for s in self.config["sources"]
+            s.get("type") == "github" and s.get("include_code", False)
+            for s in self.config["sources"]
         )
 
         return has_docs_api and has_github_code

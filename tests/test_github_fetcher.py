@@ -189,7 +189,13 @@ class TestIssueAnalysis:
     def test_analyze_issues_known_solutions(self):
         """Test extraction of known solutions (closed issues with comments)."""
         issues = [
-            {"title": "Fixed OAuth", "number": 35, "state": "closed", "comments": 5, "labels": [{"name": "bug"}]},
+            {
+                "title": "Fixed OAuth",
+                "number": 35,
+                "state": "closed",
+                "comments": 5,
+                "labels": [{"name": "bug"}],
+            },
             {
                 "title": "Closed without comments",
                 "number": 36,
@@ -239,7 +245,10 @@ class TestIssueAnalysis:
         assert len(insights["common_problems"]) <= 10
         # Should be sorted by comment count (descending)
         if len(insights["common_problems"]) > 1:
-            assert insights["common_problems"][0]["comments"] >= insights["common_problems"][1]["comments"]
+            assert (
+                insights["common_problems"][0]["comments"]
+                >= insights["common_problems"][1]["comments"]
+            )
 
 
 class TestGitHubAPI:
@@ -286,7 +295,13 @@ class TestGitHubAPI:
         """Test fetching issues via GitHub API."""
         mock_response = Mock()
         mock_response.json.return_value = [
-            {"title": "Bug", "number": 42, "state": "open", "comments": 10, "labels": [{"name": "bug"}]}
+            {
+                "title": "Bug",
+                "number": 42,
+                "state": "open",
+                "comments": 10,
+                "labels": [{"name": "bug"}],
+            }
         ]
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -304,7 +319,14 @@ class TestGitHubAPI:
         mock_response = Mock()
         mock_response.json.return_value = [
             {"title": "Issue", "number": 42, "state": "open", "comments": 5, "labels": []},
-            {"title": "PR", "number": 43, "state": "open", "comments": 3, "labels": [], "pull_request": {}},
+            {
+                "title": "PR",
+                "number": 43,
+                "state": "open",
+                "comments": 3,
+                "labels": [],
+                "pull_request": {},
+            },
         ]
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -376,7 +398,13 @@ class TestIntegration:
             else:
                 # Issues call
                 mock_response.json.return_value = [
-                    {"title": "Test Issue", "number": 42, "state": "open", "comments": 10, "labels": [{"name": "bug"}]}
+                    {
+                        "title": "Test Issue",
+                        "number": 42,
+                        "state": "open",
+                        "comments": 10,
+                        "labels": [{"name": "bug"}],
+                    }
                 ]
             return mock_response
 

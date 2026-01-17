@@ -44,7 +44,9 @@ class TestInstallSkillValidation:
     @pytest.mark.asyncio
     async def test_validation_both_configs(self):
         """Test error when both config_name and config_path provided"""
-        result = await install_skill_tool({"config_name": "react", "config_path": "configs/react.json"})
+        result = await install_skill_tool(
+            {"config_name": "react", "config_path": "configs/react.json"}
+        )
 
         assert len(result) == 1
         assert isinstance(result[0], TextContent)
@@ -114,7 +116,10 @@ class TestInstallSkillEnhancementMandatory:
 
         # Verify enhancement phase is present
         assert "AI Enhancement (MANDATORY)" in output
-        assert "Enhancement is REQUIRED for quality (3/10→9/10 boost)" in output or "REQUIRED for quality" in output
+        assert (
+            "Enhancement is REQUIRED for quality (3/10→9/10 boost)" in output
+            or "REQUIRED for quality" in output
+        )
 
         # Verify it's not optional
         assert "MANDATORY" in output
@@ -134,13 +139,23 @@ class TestInstallSkillPhaseOrchestration:
     @patch("builtins.open")
     @patch("os.environ.get")
     async def test_full_workflow_with_fetch(
-        self, mock_env_get, mock_open, mock_upload, mock_package, mock_subprocess, mock_scrape, mock_fetch
+        self,
+        mock_env_get,
+        mock_open,
+        mock_upload,
+        mock_package,
+        mock_subprocess,
+        mock_scrape,
+        mock_fetch,
     ):
         """Test complete workflow when config_name is provided"""
 
         # Mock fetch_config response
         mock_fetch.return_value = [
-            TextContent(type="text", text="✅ Config fetched successfully\n\nConfig saved to: configs/react.json")
+            TextContent(
+                type="text",
+                text="✅ Config fetched successfully\n\nConfig saved to: configs/react.json",
+            )
         ]
 
         # Mock config file read
@@ -159,7 +174,9 @@ class TestInstallSkillPhaseOrchestration:
         mock_subprocess.return_value = ("✅ Enhancement complete", "", 0)
 
         # Mock package response
-        mock_package.return_value = [TextContent(type="text", text="✅ Package complete\n\nSaved to: output/react.zip")]
+        mock_package.return_value = [
+            TextContent(type="text", text="✅ Package complete\n\nSaved to: output/react.zip")
+        ]
 
         # Mock upload response
         mock_upload.return_value = [TextContent(type="text", text="✅ Upload successful")]
@@ -220,7 +237,9 @@ class TestInstallSkillPhaseOrchestration:
         mock_env_get.return_value = ""
 
         # Run the workflow
-        result = await install_skill_tool({"config_path": "configs/custom.json", "auto_upload": True})
+        result = await install_skill_tool(
+            {"config_path": "configs/custom.json", "auto_upload": True}
+        )
 
         output = result[0].text
 
@@ -248,7 +267,9 @@ class TestInstallSkillErrorHandling:
         """Test handling of fetch phase failure"""
 
         # Mock fetch failure
-        mock_fetch.return_value = [TextContent(type="text", text="❌ Failed to fetch config: Network error")]
+        mock_fetch.return_value = [
+            TextContent(type="text", text="❌ Failed to fetch config: Network error")
+        ]
 
         result = await install_skill_tool({"config_name": "react"})
 
@@ -271,7 +292,9 @@ class TestInstallSkillErrorHandling:
         mock_open.return_value = mock_file
 
         # Mock scrape failure
-        mock_scrape.return_value = [TextContent(type="text", text="❌ Scraping failed: Connection timeout")]
+        mock_scrape.return_value = [
+            TextContent(type="text", text="❌ Scraping failed: Connection timeout")
+        ]
 
         result = await install_skill_tool({"config_path": "configs/test.json"})
 
@@ -317,7 +340,9 @@ class TestInstallSkillOptions:
     @pytest.mark.asyncio
     async def test_no_upload_option(self):
         """Test that no_upload option skips upload phase"""
-        result = await install_skill_tool({"config_name": "react", "auto_upload": False, "dry_run": True})
+        result = await install_skill_tool(
+            {"config_name": "react", "auto_upload": False, "dry_run": True}
+        )
 
         output = result[0].text
 
@@ -328,7 +353,9 @@ class TestInstallSkillOptions:
     @pytest.mark.asyncio
     async def test_unlimited_option(self):
         """Test that unlimited option is passed to scraper"""
-        result = await install_skill_tool({"config_path": "configs/react.json", "unlimited": True, "dry_run": True})
+        result = await install_skill_tool(
+            {"config_path": "configs/react.json", "unlimited": True, "dry_run": True}
+        )
 
         output = result[0].text
 
@@ -338,7 +365,9 @@ class TestInstallSkillOptions:
     @pytest.mark.asyncio
     async def test_custom_destination(self):
         """Test custom destination directory"""
-        result = await install_skill_tool({"config_name": "react", "destination": "/tmp/skills", "dry_run": True})
+        result = await install_skill_tool(
+            {"config_name": "react", "destination": "/tmp/skills", "dry_run": True}
+        )
 
         output = result[0].text
 

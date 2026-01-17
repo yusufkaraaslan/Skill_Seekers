@@ -51,7 +51,9 @@ class TestIssue219Problem1LargeFiles(unittest.TestCase):
         mock_content.type = "file"
         mock_content.encoding = "none"  # This is what GitHub API returns for large files
         mock_content.size = 1388271
-        mock_content.download_url = "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        mock_content.download_url = (
+            "https://raw.githubusercontent.com/ccxt/ccxt/master/CHANGELOG.md"
+        )
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
@@ -109,7 +111,9 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
 
     def test_github_command_has_enhancement_flags(self):
         """E2E: Verify --enhance-local flag exists in github command help"""
-        result = subprocess.run(["skill-seekers", "github", "--help"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["skill-seekers", "github", "--help"], capture_output=True, text=True
+        )
 
         # VERIFY: Command succeeds
         self.assertEqual(result.returncode, 0, "github --help should succeed")
@@ -148,9 +152,20 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
         from skill_seekers.cli import main
 
         # Mock sys.argv to simulate CLI call
-        test_args = ["skill-seekers", "github", "--repo", "test/test", "--name", "test", "--enhance-local"]
+        test_args = [
+            "skill-seekers",
+            "github",
+            "--repo",
+            "test/test",
+            "--name",
+            "test",
+            "--enhance-local",
+        ]
 
-        with patch("sys.argv", test_args), patch("skill_seekers.cli.github_scraper.main") as mock_github_main:
+        with (
+            patch("sys.argv", test_args),
+            patch("skill_seekers.cli.github_scraper.main") as mock_github_main,
+        ):
             mock_github_main.return_value = 0
 
             # Call main dispatcher
@@ -165,9 +180,12 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
 
             # VERIFY: sys.argv contains --enhance-local flag
             # (main.py should have added it before calling github_scraper)
-            called_with_enhance = any("--enhance-local" in str(call) for call in mock_github_main.call_args_list)
+            called_with_enhance = any(
+                "--enhance-local" in str(call) for call in mock_github_main.call_args_list
+            )
             self.assertTrue(
-                called_with_enhance or "--enhance-local" in sys.argv, "Flag should be forwarded to github_scraper"
+                called_with_enhance or "--enhance-local" in sys.argv,
+                "Flag should be forwarded to github_scraper",
             )
 
 
@@ -203,7 +221,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         custom_url = "http://localhost:3000"
 
         with (
-            patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key-123", "ANTHROPIC_BASE_URL": custom_url}),
+            patch.dict(
+                os.environ, {"ANTHROPIC_API_KEY": "test-key-123", "ANTHROPIC_BASE_URL": custom_url}
+            ),
             patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
         ):
             # Create enhancer
@@ -213,7 +233,11 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
             mock_anthropic.assert_called_once()
             call_kwargs = mock_anthropic.call_args[1]
             self.assertIn("base_url", call_kwargs, "base_url should be passed")
-            self.assertEqual(call_kwargs["base_url"], custom_url, "base_url should match ANTHROPIC_BASE_URL env var")
+            self.assertEqual(
+                call_kwargs["base_url"],
+                custom_url,
+                "base_url should match ANTHROPIC_BASE_URL env var",
+            )
 
     def test_anthropic_auth_token_support(self):
         """E2E: Verify ANTHROPIC_AUTH_TOKEN is accepted as alternative to ANTHROPIC_API_KEY"""
@@ -234,13 +258,17 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
 
             # VERIFY: api_key set to ANTHROPIC_AUTH_TOKEN value
             self.assertEqual(
-                enhancer.api_key, custom_token, "Should use ANTHROPIC_AUTH_TOKEN when ANTHROPIC_API_KEY not set"
+                enhancer.api_key,
+                custom_token,
+                "Should use ANTHROPIC_AUTH_TOKEN when ANTHROPIC_API_KEY not set",
             )
 
             # VERIFY: Anthropic client initialized with correct key
             mock_anthropic.assert_called_once()
             call_kwargs = mock_anthropic.call_args[1]
-            self.assertEqual(call_kwargs["api_key"], custom_token, "api_key should match ANTHROPIC_AUTH_TOKEN")
+            self.assertEqual(
+                call_kwargs["api_key"], custom_token, "api_key should match ANTHROPIC_AUTH_TOKEN"
+            )
 
     def test_thinking_block_handling(self):
         """E2E: Verify ThinkingBlock doesn't cause .text AttributeError"""
@@ -284,7 +312,11 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
 
                 # VERIFY: Should find text from TextBlock, ignore ThinkingBlock
                 self.assertIsNotNone(result, "Should return enhanced content")
-                self.assertEqual(result, "# Enhanced SKILL.md\n\nContent here", "Should extract text from TextBlock")
+                self.assertEqual(
+                    result,
+                    "# Enhanced SKILL.md\n\nContent here",
+                    "Should extract text from TextBlock",
+                )
 
 
 class TestIssue219IntegrationAll(unittest.TestCase):
@@ -297,7 +329,9 @@ class TestIssue219IntegrationAll(unittest.TestCase):
         # 2. Large files are downloaded
         # 3. Custom API endpoints work
 
-        result = subprocess.run(["skill-seekers", "github", "--help"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["skill-seekers", "github", "--help"], capture_output=True, text=True
+        )
 
         # All flags present
         self.assertIn("--enhance", result.stdout)

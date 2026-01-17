@@ -149,12 +149,17 @@ Examples:
     parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
 
     parser.add_argument(
-        "--watch", "-w", action="store_true", help="Watch status in real-time (updates every 2 seconds)"
+        "--watch",
+        "-w",
+        action="store_true",
+        help="Watch status in real-time (updates every 2 seconds)",
     )
 
     parser.add_argument("--json", action="store_true", help="Output raw JSON (for scripting)")
 
-    parser.add_argument("--interval", type=int, default=2, help="Watch update interval in seconds (default: 2)")
+    parser.add_argument(
+        "--interval", type=int, default=2, help="Watch update interval in seconds (default: 2)"
+    )
 
     args = parser.parse_args()
 

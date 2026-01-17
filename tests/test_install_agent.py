@@ -328,7 +328,9 @@ class TestInstallToAllAgents:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch("skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
                 results = install_to_all_agents(self.skill_dir, force=True)
 
                 assert len(results) == 11
@@ -357,7 +359,9 @@ class TestInstallToAllAgents:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch("skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
                 # Without force - should fail
                 results_no_force = install_to_all_agents(self.skill_dir, force=False)
                 # All should fail because directories exist
@@ -400,7 +404,10 @@ class TestInstallAgentCLI:
 
     def test_cli_help_output(self):
         """Test that --help shows usage information."""
-        with pytest.raises(SystemExit) as exc_info, patch("sys.argv", ["install_agent.py", "--help"]):
+        with (
+            pytest.raises(SystemExit) as exc_info,
+            patch("sys.argv", ["install_agent.py", "--help"]),
+        ):
             main()
 
         # --help exits with code 0
@@ -422,8 +429,13 @@ class TestInstallAgentCLI:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch("skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path):
-                with patch("sys.argv", ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--dry-run"]):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--dry-run"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0
@@ -437,8 +449,13 @@ class TestInstallAgentCLI:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch("skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path):
-                with patch("sys.argv", ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--force"]):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--force"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0
@@ -454,8 +471,13 @@ class TestInstallAgentCLI:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch("skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path):
-                with patch("sys.argv", ["install_agent.py", str(self.skill_dir), "--agent", "all", "--force"]):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "all", "--force"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0

@@ -451,7 +451,12 @@ class ConflictDetector:
         }
 
         # Count by type
-        for conflict_type in ["missing_in_docs", "missing_in_code", "signature_mismatch", "description_mismatch"]:
+        for conflict_type in [
+            "missing_in_docs",
+            "missing_in_code",
+            "signature_mismatch",
+            "description_mismatch",
+        ]:
             count = sum(1 for c in conflicts if c.type == conflict_type)
             summary["by_type"][conflict_type] = count
 
@@ -470,7 +475,10 @@ class ConflictDetector:
             conflicts: List of Conflict objects
             output_path: Path to output JSON file
         """
-        data = {"conflicts": [asdict(c) for c in conflicts], "summary": self.generate_summary(conflicts)}
+        data = {
+            "conflicts": [asdict(c) for c in conflicts],
+            "summary": self.generate_summary(conflicts),
+        }
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)

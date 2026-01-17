@@ -10,7 +10,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from skill_seekers.cli.config_manager import ConfigManager
-from skill_seekers.cli.rate_limit_handler import RateLimitError, RateLimitHandler, create_github_headers
+from skill_seekers.cli.rate_limit_handler import (
+    RateLimitError,
+    RateLimitHandler,
+    create_github_headers,
+)
 
 
 class TestRateLimitHandler:
@@ -45,7 +49,11 @@ class TestRateLimitHandler:
         """Test initialization pulls strategy from config."""
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {"auto_switch_profiles": True, "show_countdown": True, "default_timeout_minutes": 30}
+            "rate_limit": {
+                "auto_switch_profiles": True,
+                "show_countdown": True,
+                "default_timeout_minutes": 30,
+            }
         }
         mock_config.get_rate_limit_strategy.return_value = "wait"
         mock_config.get_timeout_minutes.return_value = 45
@@ -112,7 +120,11 @@ class TestRateLimitHandler:
         # Mock config
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {"auto_switch_profiles": False, "show_countdown": True, "default_timeout_minutes": 30}
+            "rate_limit": {
+                "auto_switch_profiles": False,
+                "show_countdown": True,
+                "default_timeout_minutes": 30,
+            }
         }
         mock_config.get_rate_limit_strategy.return_value = "prompt"
         mock_config.get_timeout_minutes.return_value = 30
@@ -121,7 +133,9 @@ class TestRateLimitHandler:
         # Mock rate limit check
         reset_time = int((datetime.now() + timedelta(minutes=60)).timestamp())
         mock_response = Mock()
-        mock_response.json.return_value = {"rate": {"limit": 5000, "remaining": 4500, "reset": reset_time}}
+        mock_response.json.return_value = {
+            "rate": {"limit": 5000, "remaining": 4500, "reset": reset_time}
+        }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
@@ -158,7 +172,11 @@ class TestRateLimitHandler:
         """Test non-interactive mode with fail strategy raises error."""
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {"auto_switch_profiles": False, "show_countdown": True, "default_timeout_minutes": 30}
+            "rate_limit": {
+                "auto_switch_profiles": False,
+                "show_countdown": True,
+                "default_timeout_minutes": 30,
+            }
         }
         mock_config.get_rate_limit_strategy.return_value = "fail"
         mock_config.get_timeout_minutes.return_value = 30
@@ -208,7 +226,11 @@ class TestConfigManagerIntegration:
         config_dir = tmp_path / ".config" / "skill-seekers"
         monkeypatch.setattr(ConfigManager, "CONFIG_DIR", config_dir)
         monkeypatch.setattr(ConfigManager, "CONFIG_FILE", config_dir / "config.json")
-        monkeypatch.setattr(ConfigManager, "PROGRESS_DIR", tmp_path / ".local" / "share" / "skill-seekers" / "progress")
+        monkeypatch.setattr(
+            ConfigManager,
+            "PROGRESS_DIR",
+            tmp_path / ".local" / "share" / "skill-seekers" / "progress",
+        )
 
         config = ConfigManager()
 
@@ -239,7 +261,11 @@ class TestConfigManagerIntegration:
         config_dir = test_dir / ".config" / "skill-seekers"
         monkeypatch.setattr(ConfigManager, "CONFIG_DIR", config_dir)
         monkeypatch.setattr(ConfigManager, "CONFIG_FILE", config_dir / "config.json")
-        monkeypatch.setattr(ConfigManager, "PROGRESS_DIR", test_dir / ".local" / "share" / "skill-seekers" / "progress")
+        monkeypatch.setattr(
+            ConfigManager,
+            "PROGRESS_DIR",
+            test_dir / ".local" / "share" / "skill-seekers" / "progress",
+        )
         monkeypatch.setattr(ConfigManager, "WELCOME_FLAG", config_dir / ".welcomed")
 
         config = ConfigManager()

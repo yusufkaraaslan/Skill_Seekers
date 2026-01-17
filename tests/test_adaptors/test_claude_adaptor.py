@@ -58,7 +58,9 @@ class TestClaudeAdaptor(unittest.TestCase):
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Test content")
 
-            metadata = SkillMetadata(name="test-skill", description="Test skill description", version="1.0.0")
+            metadata = SkillMetadata(
+                name="test-skill", description="Test skill description", version="1.0.0"
+            )
 
             formatted = self.adaptor.format_skill_md(skill_dir, metadata)
 
@@ -221,7 +223,9 @@ This is existing skill content that should be preserved.
 
             self.assertTrue(package_path.exists())
             # Should respect custom naming if provided
-            self.assertTrue("my-package" in package_path.name or package_path.parent.name == "custom")
+            self.assertTrue(
+                "my-package" in package_path.name or package_path.parent.name == "custom"
+            )
 
     def test_package_to_directory(self):
         """Test packaging to directory (should auto-name)"""

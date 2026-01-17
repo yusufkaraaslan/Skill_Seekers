@@ -153,7 +153,9 @@ class TestConstantsExports(unittest.TestCase):
 
         self.assertTrue(hasattr(constants, "__all__"))
         for name in constants.__all__:
-            self.assertTrue(hasattr(constants, name), f"Constant '{name}' in __all__ but not defined")
+            self.assertTrue(
+                hasattr(constants, name), f"Constant '{name}' in __all__ but not defined"
+            )
 
     def test_all_exports_count(self):
         """Test that __all__ has expected number of exports."""

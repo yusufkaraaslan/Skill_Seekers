@@ -38,7 +38,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def categorize_issues_by_topic(problems: list[dict], solutions: list[dict], topics: list[str]) -> dict[str, list[dict]]:
+def categorize_issues_by_topic(
+    problems: list[dict], solutions: list[dict], topics: list[str]
+) -> dict[str, list[dict]]:
     """
     Categorize GitHub issues by topic keywords.
 
@@ -85,7 +87,10 @@ def categorize_issues_by_topic(problems: list[dict], solutions: list[dict], topi
 
 
 def generate_hybrid_content(
-    api_data: dict, github_docs: dict | None, github_insights: dict | None, conflicts: list[Conflict]
+    api_data: dict,
+    github_docs: dict | None,
+    github_insights: dict | None,
+    conflicts: list[Conflict],
 ) -> dict[str, Any]:
     """
     Generate hybrid content combining API data with GitHub context.
@@ -133,7 +138,11 @@ def generate_hybrid_content(
         hybrid["github_context"]["top_labels"] = github_insights.get("top_labels", [])
 
     # Add conflict summary
-    hybrid["conflict_summary"] = {"total_conflicts": len(conflicts), "by_type": {}, "by_severity": {}}
+    hybrid["conflict_summary"] = {
+        "total_conflicts": len(conflicts),
+        "by_type": {},
+        "by_severity": {},
+    }
 
     for conflict in conflicts:
         # Count by type
@@ -159,7 +168,9 @@ def generate_hybrid_content(
     return hybrid
 
 
-def _match_issues_to_apis(apis: dict[str, dict], problems: list[dict], solutions: list[dict]) -> dict[str, list[dict]]:
+def _match_issues_to_apis(
+    apis: dict[str, dict], problems: list[dict], solutions: list[dict]
+) -> dict[str, list[dict]]:
     """
     Match GitHub issues to specific APIs by keyword matching.
 
@@ -651,7 +662,12 @@ read -p "Press Enter when merge is complete..."
 
         # Open new terminal with Claude Code
         # Try different terminal emulators
-        terminals = [["x-terminal-emulator", "-e"], ["gnome-terminal", "--"], ["xterm", "-e"], ["konsole", "-e"]]
+        terminals = [
+            ["x-terminal-emulator", "-e"],
+            ["gnome-terminal", "--"],
+            ["xterm", "-e"],
+            ["konsole", "-e"],
+        ]
 
         for terminal_cmd in terminals:
             try:
@@ -735,7 +751,9 @@ def merge_sources(
     if github_streams:
         logger.info("GitHub streams available for multi-layer merge")
         if github_streams.docs_stream:
-            logger.info(f"  - Docs stream: README, {len(github_streams.docs_stream.docs_files)} docs files")
+            logger.info(
+                f"  - Docs stream: README, {len(github_streams.docs_stream.docs_files)} docs files"
+            )
         if github_streams.insights_stream:
             problems = len(github_streams.insights_stream.common_problems)
             solutions = len(github_streams.insights_stream.known_solutions)
@@ -766,7 +784,11 @@ if __name__ == "__main__":
     parser.add_argument("github_data", help="Path to GitHub data JSON")
     parser.add_argument("--output", "-o", default="merged_data.json", help="Output file path")
     parser.add_argument(
-        "--mode", "-m", choices=["rule-based", "claude-enhanced"], default="rule-based", help="Merge mode"
+        "--mode",
+        "-m",
+        choices=["rule-based", "claude-enhanced"],
+        default="rule-based",
+        help="Merge mode",
     )
 
     args = parser.parse_args()

@@ -27,7 +27,9 @@ class TestQualityChecker(unittest.TestCase):
             refs_dir = skill_dir / "references"
             refs_dir.mkdir()
             (refs_dir / "index.md").write_text("# Index\n\nTest reference.", encoding="utf-8")
-            (refs_dir / "getting_started.md").write_text("# Getting Started\n\nHow to start.", encoding="utf-8")
+            (refs_dir / "getting_started.md").write_text(
+                "# Getting Started\n\nHow to start.", encoding="utf-8"
+            )
 
         return skill_dir
 
@@ -188,7 +190,9 @@ See [this file](nonexistent.md) for more info.
 
             # Should have warning about broken link
             self.assertTrue(report.has_warnings)
-            self.assertTrue(any("broken link" in issue.message.lower() for issue in report.warnings))
+            self.assertTrue(
+                any("broken link" in issue.message.lower() for issue in report.warnings)
+            )
 
     def test_quality_score_calculation(self):
         """Test that quality score is calculated correctly"""
@@ -369,7 +373,10 @@ Finally, verify the installation.
             # Should have info about found workflow steps
             completeness_infos = [i for i in report.info if i.category == "completeness"]
             self.assertTrue(
-                any("workflow" in i.message.lower() or "step" in i.message.lower() for i in completeness_infos)
+                any(
+                    "workflow" in i.message.lower() or "step" in i.message.lower()
+                    for i in completeness_infos
+                )
             )
 
     def test_checker_suggests_adding_prerequisites(self):
@@ -394,7 +401,8 @@ Just run the command.
             completeness_infos = [i for i in report.info if i.category == "completeness"]
             self.assertTrue(
                 any(
-                    "consider" in i.message.lower() and "prerequisites" in i.message.lower() for i in completeness_infos
+                    "consider" in i.message.lower() and "prerequisites" in i.message.lower()
+                    for i in completeness_infos
                 )
             )
 
@@ -425,7 +433,9 @@ class TestQualityCheckerCLI(unittest.TestCase):
         import subprocess
 
         result = subprocess.run(
-            ["python3", "-m", "skill_seekers.cli.quality_checker", "/nonexistent/path"], capture_output=True, text=True
+            ["python3", "-m", "skill_seekers.cli.quality_checker", "/nonexistent/path"],
+            capture_output=True,
+            text=True,
         )
 
         # Should fail

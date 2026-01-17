@@ -86,7 +86,9 @@ class DependencyAnalyzer:
     def __init__(self):
         """Initialize dependency analyzer."""
         if not NETWORKX_AVAILABLE:
-            raise ImportError("NetworkX is required for dependency analysis. Install with: pip install networkx")
+            raise ImportError(
+                "NetworkX is required for dependency analysis. Install with: pip install networkx"
+            )
 
         self.graph = nx.DiGraph()  # Directed graph for dependencies
         self.file_dependencies: dict[str, list[DependencyInfo]] = {}
@@ -130,7 +132,9 @@ class DependencyAnalyzer:
 
         # Create file node
         imported_modules = [dep.imported_module for dep in deps]
-        self.file_nodes[file_path] = FileNode(file_path=file_path, language=language, dependencies=imported_modules)
+        self.file_nodes[file_path] = FileNode(
+            file_path=file_path, language=language, dependencies=imported_modules
+        )
 
         return deps
 
@@ -594,7 +598,9 @@ class DependencyAnalyzer:
 
                 if target and target in self.file_nodes:
                     # Add edge from source to dependency
-                    self.graph.add_edge(file_path, target, import_type=dep.import_type, line_number=dep.line_number)
+                    self.graph.add_edge(
+                        file_path, target, import_type=dep.import_type, line_number=dep.line_number
+                    )
 
                     # Update imported_by lists
                     if target in self.file_nodes:
@@ -602,7 +608,9 @@ class DependencyAnalyzer:
 
         return self.graph
 
-    def _resolve_import(self, source_file: str, imported_module: str, is_relative: bool) -> str | None:
+    def _resolve_import(
+        self, source_file: str, imported_module: str, is_relative: bool
+    ) -> str | None:
         """
         Resolve import statement to actual file path.
 
@@ -736,10 +744,14 @@ class DependencyAnalyzer:
             "circular_dependencies": len(self.detect_cycles()),
             "strongly_connected_components": len(self.get_strongly_connected_components()),
             "avg_dependencies_per_file": (
-                self.graph.number_of_edges() / self.graph.number_of_nodes() if self.graph.number_of_nodes() > 0 else 0
+                self.graph.number_of_edges() / self.graph.number_of_nodes()
+                if self.graph.number_of_nodes() > 0
+                else 0
             ),
             "files_with_no_dependencies": len(
                 [node for node in self.graph.nodes() if self.graph.out_degree(node) == 0]
             ),
-            "files_not_imported": len([node for node in self.graph.nodes() if self.graph.in_degree(node) == 0]),
+            "files_not_imported": len(
+                [node for node in self.graph.nodes() if self.graph.in_degree(node) == 0]
+            ),
         }

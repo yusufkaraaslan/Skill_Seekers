@@ -282,7 +282,12 @@ Pass data to components:
 
     def test_e2e_package_format_validation(self):
         """Test that each platform creates correct package format"""
-        test_cases = [("claude", ".zip"), ("gemini", ".tar.gz"), ("openai", ".zip"), ("markdown", ".zip")]
+        test_cases = [
+            ("claude", ".zip"),
+            ("gemini", ".tar.gz"),
+            ("openai", ".zip"),
+            ("markdown", ".zip"),
+        ]
 
         for platform, expected_ext in test_cases:
             adaptor = get_adaptor(platform)
@@ -290,9 +295,13 @@ Pass data to components:
 
             # Verify extension
             if expected_ext == ".tar.gz":
-                self.assertTrue(str(package_path).endswith(".tar.gz"), f"{platform} should create .tar.gz file")
+                self.assertTrue(
+                    str(package_path).endswith(".tar.gz"), f"{platform} should create .tar.gz file"
+                )
             else:
-                self.assertTrue(str(package_path).endswith(".zip"), f"{platform} should create .zip file")
+                self.assertTrue(
+                    str(package_path).endswith(".zip"), f"{platform} should create .zip file"
+                )
 
     def test_e2e_package_filename_convention(self):
         """Test that package filenames follow convention"""
@@ -308,7 +317,9 @@ Pass data to components:
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Verify filename
-            self.assertEqual(package_path.name, expected_name, f"{platform} package filename incorrect")
+            self.assertEqual(
+                package_path.name, expected_name, f"{platform} package filename incorrect"
+            )
 
     def test_e2e_all_platforms_preserve_references(self):
         """Test that all platforms preserve reference files"""
@@ -324,7 +335,8 @@ Pass data to components:
                     names = tar.getnames()
                     for ref_file in ref_files:
                         self.assertTrue(
-                            any(ref_file in name for name in names), f"{platform}: {ref_file} not found in package"
+                            any(ref_file in name for name in names),
+                            f"{platform}: {ref_file} not found in package",
                         )
             else:
                 with zipfile.ZipFile(package_path, "r") as zf:
@@ -338,7 +350,8 @@ Pass data to components:
                             )
                         else:
                             self.assertTrue(
-                                any(ref_file in name for name in names), f"{platform}: {ref_file} not found in package"
+                                any(ref_file in name for name in names),
+                                f"{platform}: {ref_file} not found in package",
                             )
 
     def test_e2e_metadata_consistency(self):
@@ -357,7 +370,9 @@ Pass data to components:
                     metadata = json.loads(metadata_file.read().decode("utf-8"))
             else:
                 with zipfile.ZipFile(package_path, "r") as zf:
-                    metadata_filename = f"{platform}_metadata.json" if platform == "openai" else "metadata.json"
+                    metadata_filename = (
+                        f"{platform}_metadata.json" if platform == "openai" else "metadata.json"
+                    )
                     metadata_content = zf.read(metadata_filename).decode("utf-8")
                     metadata = json.loads(metadata_content)
 
@@ -467,7 +482,9 @@ class TestAdaptorsWorkflowIntegration(unittest.TestCase):
 
             # Should respect custom path
             self.assertTrue(package_path.exists())
-            self.assertTrue("my-package" in package_path.name or package_path.parent.name == "custom")
+            self.assertTrue(
+                "my-package" in package_path.name or package_path.parent.name == "custom"
+            )
 
     def test_workflow_api_key_validation(self):
         """Test API key validation for each platform"""
@@ -485,7 +502,9 @@ class TestAdaptorsWorkflowIntegration(unittest.TestCase):
         for platform, api_key, expected in test_cases:
             adaptor = get_adaptor(platform)
             result = adaptor.validate_api_key(api_key)
-            self.assertEqual(result, expected, f"{platform}: validate_api_key('{api_key}') should be {expected}")
+            self.assertEqual(
+                result, expected, f"{platform}: validate_api_key('{api_key}') should be {expected}"
+            )
 
 
 class TestAdaptorsErrorHandling(unittest.TestCase):

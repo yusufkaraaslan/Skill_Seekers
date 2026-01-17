@@ -20,7 +20,11 @@ class TestSkipLlmsTxtConfig(unittest.TestCase):
 
     def test_default_skip_llms_txt_is_false(self):
         """Test that skip_llms_txt defaults to False when not specified."""
-        config = {"name": "test", "base_url": "https://example.com/", "selectors": {"main_content": "article"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article"},
+        }
 
         converter = DocToSkillConverter(config, dry_run=True)
         self.assertFalse(converter.skip_llms_txt)
@@ -203,7 +207,11 @@ class TestSkipLlmsTxtWithRealConfig(unittest.TestCase):
             "base_url": "https://example.com/",
             "selectors": {"main_content": "article"},
             "skip_llms_txt": True,
-            "start_urls": ["https://example.com/docs/", "https://example.com/api/", "https://example.com/guide/"],
+            "start_urls": [
+                "https://example.com/docs/",
+                "https://example.com/api/",
+                "https://example.com/guide/",
+            ],
         }
 
         converter = DocToSkillConverter(config, dry_run=True)

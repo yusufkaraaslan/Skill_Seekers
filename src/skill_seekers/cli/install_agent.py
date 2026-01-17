@@ -366,11 +366,17 @@ Supported agents:
 
     parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
 
-    parser.add_argument("--agent", required=True, help="Agent name (use 'all' to install to all agents)")
+    parser.add_argument(
+        "--agent", required=True, help="Agent name (use 'all' to install to all agents)"
+    )
 
-    parser.add_argument("--force", action="store_true", help="Overwrite existing installation without asking")
+    parser.add_argument(
+        "--force", action="store_true", help="Overwrite existing installation without asking"
+    )
 
-    parser.add_argument("--dry-run", action="store_true", help="Preview installation without making changes")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview installation without making changes"
+    )
 
     args = parser.parse_args()
 
@@ -442,7 +448,9 @@ Supported agents:
     if args.dry_run:
         print("\n🔍 DRY RUN MODE - No changes will be made\n")
 
-    success, message = install_to_agent(skill_dir, agent_name, force=args.force, dry_run=args.dry_run)
+    success, message = install_to_agent(
+        skill_dir, agent_name, force=args.force, dry_run=args.dry_run
+    )
 
     print(message)
 

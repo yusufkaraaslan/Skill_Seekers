@@ -320,9 +320,11 @@ def api_keys_menu():
         if key:
             import os
 
-            env_var = {"anthropic": "ANTHROPIC_API_KEY", "google": "GOOGLE_API_KEY", "openai": "OPENAI_API_KEY"}[
-                provider
-            ]
+            env_var = {
+                "anthropic": "ANTHROPIC_API_KEY",
+                "google": "GOOGLE_API_KEY",
+                "openai": "OPENAI_API_KEY",
+            }[provider]
             if os.getenv(env_var):
                 source = " (from environment)"
             else:
@@ -389,7 +391,9 @@ def rate_limit_settings():
     print(f"  • Show countdown: {current['show_countdown']}\n")
 
     # Timeout
-    timeout_input = input(f"Default timeout in minutes [{current['default_timeout_minutes']}]: ").strip()
+    timeout_input = input(
+        f"Default timeout in minutes [{current['default_timeout_minutes']}]: "
+    ).strip()
     if timeout_input:
         try:
             config.config["rate_limit"]["default_timeout_minutes"] = int(timeout_input)
@@ -398,13 +402,17 @@ def rate_limit_settings():
 
     # Auto-switch
     auto_switch_input = (
-        input(f"Auto-switch to other profiles? [y/n] ({current['auto_switch_profiles']}): ").strip().lower()
+        input(f"Auto-switch to other profiles? [y/n] ({current['auto_switch_profiles']}): ")
+        .strip()
+        .lower()
     )
     if auto_switch_input:
         config.config["rate_limit"]["auto_switch_profiles"] = auto_switch_input in ["y", "yes"]
 
     # Show countdown
-    countdown_input = input(f"Show countdown timer? [y/n] ({current['show_countdown']}): ").strip().lower()
+    countdown_input = (
+        input(f"Show countdown timer? [y/n] ({current['show_countdown']}): ").strip().lower()
+    )
     if countdown_input:
         config.config["rate_limit"]["show_countdown"] = countdown_input in ["y", "yes"]
 
@@ -427,7 +435,9 @@ def resume_settings():
     print(f"  • Keep progress for: {current['keep_progress_days']} days\n")
 
     # Auto-save interval
-    interval_input = input(f"Auto-save interval in seconds [{current['auto_save_interval_seconds']}]: ").strip()
+    interval_input = input(
+        f"Auto-save interval in seconds [{current['auto_save_interval_seconds']}]: "
+    ).strip()
     if interval_input:
         try:
             config.config["resume"]["auto_save_interval_seconds"] = int(interval_input)
@@ -435,7 +445,9 @@ def resume_settings():
             print("⚠️  Invalid input, keeping current value")
 
     # Keep days
-    days_input = input(f"Keep progress for how many days [{current['keep_progress_days']}]: ").strip()
+    days_input = input(
+        f"Keep progress for how many days [{current['keep_progress_days']}]: "
+    ).strip()
     if days_input:
         try:
             config.config["resume"]["keep_progress_days"] = int(days_input)
@@ -467,7 +479,9 @@ def test_connections():
             token = config.config["github"]["profiles"][p["name"]]["token"]
             try:
                 response = requests.get(
-                    "https://api.github.com/rate_limit", headers={"Authorization": f"token {token}"}, timeout=5
+                    "https://api.github.com/rate_limit",
+                    headers={"Authorization": f"token {token}"},
+                    timeout=5,
                 )
                 if response.status_code == 200:
                     data = response.json()

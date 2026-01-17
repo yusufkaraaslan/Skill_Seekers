@@ -185,10 +185,20 @@ Always prioritize accuracy by consulting the attached documentation files before
         # Validate package file FIRST
         package_path = Path(package_path)
         if not package_path.exists():
-            return {"success": False, "skill_id": None, "url": None, "message": f"File not found: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"File not found: {package_path}",
+            }
 
         if not package_path.suffix == ".zip":
-            return {"success": False, "skill_id": None, "url": None, "message": f"Not a ZIP file: {package_path}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Not a ZIP file: {package_path}",
+            }
 
         # Check for openai library
         try:
@@ -254,7 +264,9 @@ Always prioritize accuracy by consulting the attached documentation files before
 
                     # Attach files to vector store
                     if file_ids:
-                        client.beta.vector_stores.files.create_batch(vector_store_id=vector_store.id, file_ids=file_ids)
+                        client.beta.vector_stores.files.create_batch(
+                            vector_store_id=vector_store.id, file_ids=file_ids
+                        )
 
                 # Create assistant
                 assistant = client.beta.assistants.create(
@@ -273,7 +285,12 @@ Always prioritize accuracy by consulting the attached documentation files before
             }
 
         except Exception as e:
-            return {"success": False, "skill_id": None, "url": None, "message": f"Upload failed: {str(e)}"}
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Upload failed: {str(e)}",
+            }
 
     def validate_api_key(self, api_key: str) -> bool:
         """
@@ -389,7 +406,9 @@ Always prioritize accuracy by consulting the attached documentation files before
             print(f"❌ Error calling OpenAI API: {e}")
             return False
 
-    def _read_reference_files(self, references_dir: Path, max_chars: int = 200000) -> dict[str, str]:
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
         """
         Read reference markdown files from skill directory.
 

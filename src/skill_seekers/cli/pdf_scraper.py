@@ -54,7 +54,11 @@ def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str
                 return f"Use when working with {title.lower()}"
 
     # Improved fallback
-    return f"Use when referencing {name} documentation" if name else "Use when referencing this documentation"
+    return (
+        f"Use when referencing {name} documentation"
+        if name
+        else "Use when referencing this documentation"
+    )
 
 
 class PDFToSkillConverter:
@@ -65,7 +69,9 @@ class PDFToSkillConverter:
         self.name = config["name"]
         self.pdf_path = config.get("pdf_path", "")
         # Set initial description (will be improved after extraction if metadata available)
-        self.description = config.get("description", f"Use when referencing {self.name} documentation")
+        self.description = config.get(
+            "description", f"Use when referencing {self.name} documentation"
+        )
 
         # Paths
         self.skill_dir = f"output/{self.name}"
@@ -151,7 +157,10 @@ class PDFToSkillConverter:
             if isinstance(first_value, list) and first_value and isinstance(first_value[0], dict):
                 # Already categorized - convert to expected format
                 for cat_key, pages in self.categories.items():
-                    categorized[cat_key] = {"title": cat_key.replace("_", " ").title(), "pages": pages}
+                    categorized[cat_key] = {
+                        "title": cat_key.replace("_", " ").title(),
+                        "pages": pages,
+                    }
             else:
                 # Keyword-based categorization
                 # Initialize categories
@@ -171,7 +180,8 @@ class PDFToSkillConverter:
                             score = sum(
                                 1
                                 for kw in keywords
-                                if isinstance(kw, str) and (kw.lower() in text or kw.lower() in headings_text)
+                                if isinstance(kw, str)
+                                and (kw.lower() in text or kw.lower() in headings_text)
                             )
                         else:
                             score = 0
@@ -490,7 +500,13 @@ class PDFToSkillConverter:
                 for keyword in pattern_keywords:
                     if keyword in heading_text:
                         page_num = page.get("page_number", 0)
-                        patterns.append({"type": keyword.title(), "heading": heading.get("text", ""), "page": page_num})
+                        patterns.append(
+                            {
+                                "type": keyword.title(),
+                                "heading": heading.get("text", ""),
+                                "page": page_num,
+                            }
+                        )
                         break  # Only add once per heading
 
         if not patterns:
@@ -526,7 +542,8 @@ class PDFToSkillConverter:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert PDF documentation to Claude skill", formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Convert PDF documentation to Claude skill",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument("--config", help="PDF config JSON file")
@@ -548,7 +565,10 @@ def main():
     elif args.from_json:
         # Build from extracted JSON
         name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {"name": name, "description": args.description or f"Use when referencing {name} documentation"}
+        config = {
+            "name": name,
+            "description": args.description or f"Use when referencing {name} documentation",
+        }
         converter = PDFToSkillConverter(config)
         converter.load_extracted_data(args.from_json)
         converter.build_skill()
@@ -561,7 +581,12 @@ def main():
             "name": args.name,
             "pdf_path": args.pdf,
             "description": args.description or f"Use when referencing {args.name} documentation",
-            "extract_options": {"chunk_size": 10, "min_quality": 5.0, "extract_images": True, "min_image_size": 100},
+            "extract_options": {
+                "chunk_size": 10,
+                "min_quality": 5.0,
+                "extract_images": True,
+                "min_image_size": 100,
+            },
         }
 
     # Create converter

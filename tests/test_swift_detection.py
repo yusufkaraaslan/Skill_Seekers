@@ -1311,9 +1311,10 @@ class TestSwiftErrorHandling:
                 detector = LanguageDetector()
 
                 # Verify error was logged
-                assert any("Invalid regex pattern" in str(call) for call in mock_logger.error.call_args_list), (
-                    "Expected error log for malformed pattern"
-                )
+                assert any(
+                    "Invalid regex pattern" in str(call)
+                    for call in mock_logger.error.call_args_list
+                ), "Expected error log for malformed pattern"
 
             finally:
                 # Restore original patterns
@@ -1331,7 +1332,8 @@ class TestSwiftErrorHandling:
 
         # Mock empty SWIFT_PATTERNS during import
         with patch.dict(
-            "sys.modules", {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})}
+            "sys.modules",
+            {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})},
         ):
             from skill_seekers.cli.language_detector import LanguageDetector
 
@@ -1368,9 +1370,9 @@ class TestSwiftErrorHandling:
                 detector = LanguageDetector()
 
                 # Verify TypeError was logged
-                assert any("not a string" in str(call) for call in mock_logger.error.call_args_list), (
-                    "Expected error log for non-string pattern"
-                )
+                assert any(
+                    "not a string" in str(call) for call in mock_logger.error.call_args_list
+                ), "Expected error log for non-string pattern"
 
             finally:
                 ld_module.LANGUAGE_PATTERNS = original

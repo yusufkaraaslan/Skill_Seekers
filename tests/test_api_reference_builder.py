@@ -95,7 +95,9 @@ class TestAPIReferenceBuilder(unittest.TestCase):
                     "functions": [
                         {
                             "name": "calculate_sum",
-                            "parameters": [{"name": "numbers", "type_hint": "list", "default": None}],
+                            "parameters": [
+                                {"name": "numbers", "type_hint": "list", "default": None}
+                            ],
                             "return_type": "int",
                             "docstring": "Calculate sum of numbers.",
                             "is_async": False,
@@ -166,7 +168,14 @@ class TestAPIReferenceBuilder(unittest.TestCase):
                 {
                     "file": "module.py",
                     "language": "Python",
-                    "classes": [{"name": "TestClass", "docstring": "Test class.", "base_classes": [], "methods": []}],
+                    "classes": [
+                        {
+                            "name": "TestClass",
+                            "docstring": "Test class.",
+                            "base_classes": [],
+                            "methods": [],
+                        }
+                    ],
                     "functions": [
                         {
                             "name": "test_func",

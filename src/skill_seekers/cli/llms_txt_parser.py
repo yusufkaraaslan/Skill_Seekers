@@ -135,7 +135,11 @@ class LlmsTxtParser:
         headings = re.findall(r"^(#{2,3})\s+(.+)$", content, re.MULTILINE)
         for level_markers, text in headings:
             page["headings"].append(
-                {"level": f"h{len(level_markers)}", "text": text.strip(), "id": text.lower().replace(" ", "-")}
+                {
+                    "level": f"h{len(level_markers)}",
+                    "text": text.strip(),
+                    "id": text.lower().replace(" ", "-"),
+                }
             )
 
         # Remove code blocks from content for plain text

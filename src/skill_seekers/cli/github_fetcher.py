@@ -77,7 +77,11 @@ class GitHubThreeStreamFetcher:
     """
 
     def __init__(
-        self, repo_url: str, github_token: str | None = None, interactive: bool = True, profile_name: str | None = None
+        self,
+        repo_url: str,
+        github_token: str | None = None,
+        interactive: bool = True,
+        profile_name: str | None = None,
     ):
         """
         Initialize fetcher.
@@ -412,7 +416,9 @@ class GitHubThreeStreamFetcher:
                 continue
 
             # Skip hidden files (but allow docs in docs/ directories)
-            is_in_docs_dir = any(pattern in str(file_path) for pattern in ["docs/", "doc/", "documentation/"])
+            is_in_docs_dir = any(
+                pattern in str(file_path) for pattern in ["docs/", "doc/", "documentation/"]
+            )
             if any(part.startswith(".") for part in file_path.parts):
                 if not is_in_docs_dir:
                     continue
@@ -495,9 +501,15 @@ class GitHubThreeStreamFetcher:
         label_counts = Counter(all_labels)
 
         return {
-            "common_problems": sorted(common_problems, key=lambda x: x["comments"], reverse=True)[:10],
-            "known_solutions": sorted(known_solutions, key=lambda x: x["comments"], reverse=True)[:10],
-            "top_labels": [{"label": label, "count": count} for label, count in label_counts.most_common(10)],
+            "common_problems": sorted(common_problems, key=lambda x: x["comments"], reverse=True)[
+                :10
+            ],
+            "known_solutions": sorted(known_solutions, key=lambda x: x["comments"], reverse=True)[
+                :10
+            ],
+            "top_labels": [
+                {"label": label, "count": count} for label, count in label_counts.most_common(10)
+            ],
         }
 
     def read_file(self, file_path: Path) -> str | None:

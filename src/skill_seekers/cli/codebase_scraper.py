@@ -301,7 +301,11 @@ def analyze_codebase(
             # Only include files with actual analysis results
             if analysis and (analysis.get("classes") or analysis.get("functions")):
                 results["files"].append(
-                    {"file": str(file_path.relative_to(directory)), "language": language, **analysis}
+                    {
+                        "file": str(file_path.relative_to(directory)),
+                        "language": language,
+                        **analysis,
+                    }
                 )
                 analyzed_count += 1
 
@@ -441,7 +445,10 @@ def analyze_codebase(
 
         # Create extractor
         test_extractor = TestExampleExtractor(
-            min_confidence=0.5, max_per_file=10, languages=languages, enhance_with_ai=enhance_with_ai
+            min_confidence=0.5,
+            max_per_file=10,
+            languages=languages,
+            enhance_with_ai=enhance_with_ai,
         )
 
         # Extract examples from directory
@@ -487,7 +494,11 @@ def analyze_codebase(
             tutorials_dir = output_dir / "tutorials"
 
             # Get workflow examples from the example_report if available
-            if "example_report" in locals() and example_report and example_report.total_examples > 0:
+            if (
+                "example_report" in locals()
+                and example_report
+                and example_report.total_examples > 0
+            ):
                 # Convert example_report to list of dicts for processing
                 examples_list = example_report.to_dict().get("examples", [])
 
@@ -565,7 +576,9 @@ def analyze_codebase(
                 if "ai_enhancements" in result_dict:
                     insights = result_dict["ai_enhancements"].get("overall_insights", {})
                     if insights.get("security_issues_found"):
-                        logger.info(f"🔐 Security issues found: {insights['security_issues_found']}")
+                        logger.info(
+                            f"🔐 Security issues found: {insights['security_issues_found']}"
+                        )
 
                 logger.info(f"📁 Saved to: {config_output}")
             else:
@@ -741,10 +754,14 @@ Use this skill when you need to:
 
     refs_added = False
     if build_api_reference and (output_dir / "api_reference").exists():
-        skill_content += "- **API Reference**: `references/api_reference/` - Complete API documentation\n"
+        skill_content += (
+            "- **API Reference**: `references/api_reference/` - Complete API documentation\n"
+        )
         refs_added = True
     if build_dependency_graph and (output_dir / "dependencies").exists():
-        skill_content += "- **Dependencies**: `references/dependencies/` - Dependency graph and analysis\n"
+        skill_content += (
+            "- **Dependencies**: `references/dependencies/` - Dependency graph and analysis\n"
+        )
         refs_added = True
     if detect_patterns and (output_dir / "patterns").exists():
         skill_content += "- **Patterns**: `references/patterns/` - Detected design patterns\n"
@@ -753,7 +770,9 @@ Use this skill when you need to:
         skill_content += "- **Examples**: `references/test_examples/` - Usage examples from tests\n"
         refs_added = True
     if extract_config_patterns and (output_dir / "config_patterns").exists():
-        skill_content += "- **Configuration**: `references/config_patterns/` - Configuration patterns\n"
+        skill_content += (
+            "- **Configuration**: `references/config_patterns/` - Configuration patterns\n"
+        )
         refs_added = True
     if (output_dir / "architecture").exists():
         skill_content += "- **Architecture**: `references/architecture/` - Architectural patterns\n"
@@ -1057,12 +1076,21 @@ Examples:
     )
 
     parser.add_argument("--directory", required=True, help="Directory to analyze")
-    parser.add_argument("--output", default="output/codebase/", help="Output directory (default: output/codebase/)")
     parser.add_argument(
-        "--depth", choices=["surface", "deep", "full"], default="deep", help="Analysis depth (default: deep)"
+        "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
     )
-    parser.add_argument("--languages", help="Comma-separated languages to analyze (e.g., Python,JavaScript,C++)")
-    parser.add_argument("--file-patterns", help="Comma-separated file patterns (e.g., *.py,src/**/*.js)")
+    parser.add_argument(
+        "--depth",
+        choices=["surface", "deep", "full"],
+        default="deep",
+        help="Analysis depth (default: deep)",
+    )
+    parser.add_argument(
+        "--languages", help="Comma-separated languages to analyze (e.g., Python,JavaScript,C++)"
+    )
+    parser.add_argument(
+        "--file-patterns", help="Comma-separated file patterns (e.g., *.py,src/**/*.js)"
+    )
     parser.add_argument(
         "--skip-api-reference",
         action="store_true",

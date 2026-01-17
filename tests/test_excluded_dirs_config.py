@@ -60,7 +60,10 @@ class TestExcludedDirsAdditional(unittest.TestCase):
     @patch("skill_seekers.cli.github_scraper.Github")
     def test_extend_with_additional_dirs(self, mock_github):
         """Test adding custom exclusions to defaults."""
-        config = {"repo": "owner/repo", "exclude_dirs_additional": ["proprietary", "vendor", "third_party"]}
+        config = {
+            "repo": "owner/repo",
+            "exclude_dirs_additional": ["proprietary", "vendor", "third_party"],
+        }
 
         scraper = GitHubScraper(config)
 
@@ -185,7 +188,11 @@ class TestExcludedDirsEdgeCases(unittest.TestCase):
         """Test that duplicates in additional list are handled (set deduplication)."""
         config = {
             "repo": "owner/repo",
-            "exclude_dirs_additional": ["venv", "custom", "venv"],  # venv is duplicate (default + listed)
+            "exclude_dirs_additional": [
+                "venv",
+                "custom",
+                "venv",
+            ],  # venv is duplicate (default + listed)
         }
 
         scraper = GitHubScraper(config)
@@ -240,7 +247,11 @@ class TestExcludedDirsWithLocalRepo(unittest.TestCase):
     @patch("skill_seekers.cli.github_scraper.Github")
     def test_replace_mode_with_local_repo_path(self, mock_github):
         """Test that replace mode works with local_repo_path."""
-        config = {"repo": "owner/repo", "local_repo_path": "/tmp/test/repo", "exclude_dirs": ["only_this"]}
+        config = {
+            "repo": "owner/repo",
+            "local_repo_path": "/tmp/test/repo",
+            "exclude_dirs": ["only_this"],
+        }
 
         scraper = GitHubScraper(config)
 
@@ -277,7 +288,10 @@ class TestExcludedDirsLogging(unittest.TestCase):
         # Should have logged WARNING message
         warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
         self.assertTrue(
-            any("Using custom directory exclusions" in call and "defaults overridden" in call for call in warning_calls)
+            any(
+                "Using custom directory exclusions" in call and "defaults overridden" in call
+                for call in warning_calls
+            )
         )
 
     @patch("skill_seekers.cli.github_scraper.Github")

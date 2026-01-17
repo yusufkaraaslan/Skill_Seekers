@@ -106,7 +106,13 @@ class TestLanguageDetection(unittest.TestCase):
 
         extractor.language_detector = LanguageDetector(min_confidence=0.15)
 
-        test_codes = ["def foo(): pass", "const x = 10;", "#include <stdio.h>", "random text here", ""]
+        test_codes = [
+            "def foo(): pass",
+            "const x = 10;",
+            "#include <stdio.h>",
+            "random text here",
+            "",
+        ]
 
         for code in test_codes:
             _, confidence = extractor.detect_language_from_code(code)
@@ -246,7 +252,10 @@ class TestChapterDetection(unittest.TestCase):
     def test_detect_chapter_with_number(self):
         """Test chapter detection with number"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
-        page_data = {"text": "Chapter 1: Introduction to Python\nThis is the first chapter.", "headings": []}
+        page_data = {
+            "text": "Chapter 1: Introduction to Python\nThis is the first chapter.",
+            "headings": [],
+        }
 
         is_chapter, title = extractor.detect_chapter_start(page_data)
 
@@ -277,7 +286,10 @@ class TestChapterDetection(unittest.TestCase):
     def test_not_chapter(self):
         """Test normal text is not detected as chapter"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
-        page_data = {"text": "This is just normal paragraph text without any chapter markers.", "headings": []}
+        page_data = {
+            "text": "This is just normal paragraph text without any chapter markers.",
+            "headings": [],
+        }
 
         is_chapter, title = extractor.detect_chapter_start(page_data)
 
@@ -302,12 +314,20 @@ class TestCodeBlockMerging(unittest.TestCase):
         pages = [
             {
                 "page_number": 1,
-                "code_samples": [{"code": "def hello():", "language": "python", "detection_method": "pattern"}],
+                "code_samples": [
+                    {"code": "def hello():", "language": "python", "detection_method": "pattern"}
+                ],
                 "code_blocks_count": 1,
             },
             {
                 "page_number": 2,
-                "code_samples": [{"code": '    print("world")', "language": "python", "detection_method": "pattern"}],
+                "code_samples": [
+                    {
+                        "code": '    print("world")',
+                        "language": "python",
+                        "detection_method": "pattern",
+                    }
+                ],
                 "code_blocks_count": 1,
             },
         ]
@@ -325,12 +345,20 @@ class TestCodeBlockMerging(unittest.TestCase):
         pages = [
             {
                 "page_number": 1,
-                "code_samples": [{"code": "def foo():", "language": "python", "detection_method": "pattern"}],
+                "code_samples": [
+                    {"code": "def foo():", "language": "python", "detection_method": "pattern"}
+                ],
                 "code_blocks_count": 1,
             },
             {
                 "page_number": 2,
-                "code_samples": [{"code": "const x = 10;", "language": "javascript", "detection_method": "pattern"}],
+                "code_samples": [
+                    {
+                        "code": "const x = 10;",
+                        "language": "javascript",
+                        "detection_method": "pattern",
+                    }
+                ],
                 "code_blocks_count": 1,
             },
         ]
@@ -392,7 +420,11 @@ class TestQualityFiltering(unittest.TestCase):
         extractor.min_quality = 5.0
 
         # High quality block
-        high_quality = {"code": "def calculate():\n    return 42", "language": "python", "quality": 8.0}
+        high_quality = {
+            "code": "def calculate():\n    return 42",
+            "language": "python",
+            "quality": 8.0,
+        }
 
         # Low quality block
         low_quality = {"code": "x", "language": "unknown", "quality": 2.0}

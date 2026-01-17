@@ -119,7 +119,11 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
 
     async def test_generate_config_basic(self):
         """Test basic config generation"""
-        args = {"name": "test-framework", "url": "https://test-framework.dev/", "description": "Test framework skill"}
+        args = {
+            "name": "test-framework",
+            "url": "https://test-framework.dev/",
+            "description": "Test framework skill",
+        }
 
         result = await skill_seeker_server.generate_config_tool(args)
 
@@ -564,7 +568,9 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
 
     async def test_submit_config_requires_token(self):
         """Should error without GitHub token"""
-        args = {"config_json": '{"name": "test", "description": "Test", "base_url": "https://example.com"}'}
+        args = {
+            "config_json": '{"name": "test", "description": "Test", "base_url": "https://example.com"}'
+        }
         result = await skill_seeker_server.submit_config_tool(args)
         self.assertIn("GitHub token required", result[0].text)
 
@@ -577,7 +583,9 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
         result = await skill_seeker_server.submit_config_tool(args)
         self.assertIn("validation failed", result[0].text.lower())
         # ConfigValidator detects missing config type (base_url/repo/pdf)
-        self.assertTrue("cannot detect" in result[0].text.lower() or "missing" in result[0].text.lower())
+        self.assertTrue(
+            "cannot detect" in result[0].text.lower() or "missing" in result[0].text.lower()
+        )
 
     async def test_submit_config_validates_name_format(self):
         """Should reject invalid name characters"""
@@ -649,7 +657,9 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_from_file_path(self):
         """Should accept config_path parameter"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump({"name": "testfile", "description": "From file", "base_url": "https://test.com/"}, f)
+            json.dump(
+                {"name": "testfile", "description": "From file", "base_url": "https://test.com/"}, f
+            )
             temp_path = f.name
 
         try:

@@ -276,7 +276,9 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(source_name="test-pull", git_url=git_url, branch="master")
+        repo_path = git_repo.clone_or_pull(
+            source_name="test-pull", git_url=git_url, branch="master"
+        )
 
         initial_configs = git_repo.find_configs(repo_path)
         assert len(initial_configs) == 3
@@ -333,7 +335,9 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(source_name="test-refresh", git_url=git_url, branch="master")
+        repo_path = git_repo.clone_or_pull(
+            source_name="test-refresh", git_url=git_url, branch="master"
+        )
 
         # Step 2: Modify local cache manually
         corrupt_file = repo_path / "CORRUPTED.txt"
@@ -371,7 +375,9 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(source_name="test-not-found", git_url=git_url, branch="master")
+        repo_path = git_repo.clone_or_pull(
+            source_name="test-not-found", git_url=git_url, branch="master"
+        )
 
         # Step 2: Try to fetch non-existent config
         with pytest.raises(FileNotFoundError) as exc_info:
@@ -401,7 +407,9 @@ class TestGitSourcesE2E:
 
         for invalid_url in invalid_urls:
             with pytest.raises(ValueError, match="Invalid git URL"):
-                git_repo.clone_or_pull(source_name="test-invalid", git_url=invalid_url, branch="master")
+                git_repo.clone_or_pull(
+                    source_name="test-invalid", git_url=invalid_url, branch="master"
+                )
 
     def test_e2e_source_name_validation(self, temp_dirs):
         """
@@ -496,11 +504,15 @@ class TestGitSourcesE2E:
 
             # Step 1: Clone to cache_dir_1
             git_repo_1 = GitConfigRepo(cache_dir=cache_dir_1)
-            repo_path_1 = git_repo_1.clone_or_pull(source_name="test-source", git_url=git_url, branch="master")
+            repo_path_1 = git_repo_1.clone_or_pull(
+                source_name="test-source", git_url=git_url, branch="master"
+            )
 
             # Step 2: Clone same repo to cache_dir_2
             git_repo_2 = GitConfigRepo(cache_dir=cache_dir_2)
-            repo_path_2 = git_repo_2.clone_or_pull(source_name="test-source", git_url=git_url, branch="master")
+            repo_path_2 = git_repo_2.clone_or_pull(
+                source_name="test-source", git_url=git_url, branch="master"
+            )
 
             # Step 3: Verify both caches are independent
             assert repo_path_1 != repo_path_2
@@ -621,7 +633,9 @@ class TestGitSourcesE2E:
         repo.index.commit("Increase React config max_pages to 500")
 
         # Step 6: Developers pull updates
-        git_repo.clone_or_pull(source_name=source["name"], git_url=source["git_url"], branch=source["branch"])
+        git_repo.clone_or_pull(
+            source_name=source["name"], git_url=source["git_url"], branch=source["branch"]
+        )
 
         updated_config = git_repo.get_config(repo_path, "react")
         assert updated_config["max_pages"] == 500
@@ -631,7 +645,9 @@ class TestGitSourcesE2E:
         repo.index.remove(["react.json"])
         repo.index.commit("Remove react.json")
 
-        git_repo.clone_or_pull(source_name=source["name"], git_url=source["git_url"], branch=source["branch"])
+        git_repo.clone_or_pull(
+            source_name=source["name"], git_url=source["git_url"], branch=source["branch"]
+        )
 
         # Step 8: Error handling works correctly
         with pytest.raises(FileNotFoundError, match="react.json"):
@@ -700,7 +716,11 @@ class TestMCPToolsE2E:
         """
         MCP E2E Test 1: Complete add/list/remove workflow via MCP tools
         """
-        from skill_seekers.mcp.server import add_config_source_tool, list_config_sources_tool, remove_config_source_tool
+        from skill_seekers.mcp.server import (
+            add_config_source_tool,
+            list_config_sources_tool,
+            remove_config_source_tool,
+        )
 
         cache_dir, config_dir = temp_dirs
         repo_dir, repo = temp_git_repo
@@ -708,7 +728,12 @@ class TestMCPToolsE2E:
 
         # Add source
         add_result = await add_config_source_tool(
-            {"name": "mcp-test-source", "git_url": git_url, "source_type": "custom", "branch": "master"}
+            {
+                "name": "mcp-test-source",
+                "git_url": git_url,
+                "source_type": "custom",
+                "branch": "master",
+            }
         )
 
         assert len(add_result) == 1
@@ -744,7 +769,12 @@ class TestMCPToolsE2E:
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         result = await fetch_config_tool(
-            {"config_name": "test-framework", "git_url": git_url, "branch": "master", "destination": str(dest_dir)}
+            {
+                "config_name": "test-framework",
+                "git_url": git_url,
+                "branch": "master",
+                "destination": str(dest_dir),
+            }
         )
 
         assert len(result) == 1
@@ -831,10 +861,16 @@ class TestMCPToolsE2E:
         assert "❌" in result[0].text or "not found" in result[0].text.lower()
 
         # Test 5: Fetch non-existent config from valid source
-        await add_config_source_tool({"name": "valid-source", "git_url": git_url, "branch": "master"})
+        await add_config_source_tool(
+            {"name": "valid-source", "git_url": git_url, "branch": "master"}
+        )
 
         result = await fetch_config_tool(
-            {"config_name": "non-existent-config", "source": "valid-source", "destination": str(dest_dir)}
+            {
+                "config_name": "non-existent-config",
+                "source": "valid-source",
+                "destination": str(dest_dir),
+            }
         )
         assert "❌" in result[0].text or "not found" in result[0].text.lower()
 

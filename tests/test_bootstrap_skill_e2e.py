@@ -38,18 +38,16 @@ def project_root():
 @pytest.fixture
 def run_bootstrap(project_root):
     """Execute bootstrap script and return result"""
+
     def _run(timeout=600):
         script = project_root / "scripts" / "bootstrap_skill.sh"
 
         result = subprocess.run(
-            ["bash", str(script)],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-            timeout=timeout
+            ["bash", str(script)], cwd=project_root, capture_output=True, text=True, timeout=timeout
         )
 
         return result
+
     return _run
 
 
@@ -95,7 +93,7 @@ class TestBootstrapSkillE2E:
         assert content.startswith("---"), "Missing frontmatter start"
 
         # Find closing delimiter
-        lines = content.split('\n')
+        lines = content.split("\n")
         closing_found = False
         for i, line in enumerate(lines[1:], 1):
             if line.strip() == "---":
@@ -129,11 +127,7 @@ class TestBootstrapSkillE2E:
 
         # Create venv
         venv_path = tmp_path / "test_venv"
-        subprocess.run(
-            [sys.executable, "-m", "venv", str(venv_path)],
-            check=True,
-            timeout=60
-        )
+        subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True, timeout=60)
 
         # Install skill in venv
         pip_path = venv_path / "bin" / "pip"
@@ -142,7 +136,7 @@ class TestBootstrapSkillE2E:
             cwd=output_skill_dir.parent.parent,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         # Should install successfully
@@ -156,13 +150,13 @@ class TestBootstrapSkillE2E:
         # Try to package with claude adaptor (simplest)
         from skill_seekers.cli.adaptors import get_adaptor
 
-        adaptor = get_adaptor('claude')
+        adaptor = get_adaptor("claude")
 
         # Should be able to package without errors
         try:
             package_path = adaptor.package(
                 skill_dir=output_skill_dir,  # Path object, not str
-                output_path=tmp_path         # Path object, not str
+                output_path=tmp_path,  # Path object, not str
             )
 
             assert Path(package_path).exists(), "Package not created"

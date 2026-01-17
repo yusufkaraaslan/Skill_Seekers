@@ -94,7 +94,9 @@ class APIReferenceBuilder:
         name_without_ext = basename.rsplit(".", 1)[0] if "." in basename else basename
         return f"{name_without_ext}.md"
 
-    def _generate_file_reference(self, file_data: dict[str, Any], source_file: str, language: str) -> str:
+    def _generate_file_reference(
+        self, file_data: dict[str, Any], source_file: str, language: str
+    ) -> str:
         """
         Generate complete markdown reference for a single file.
 
@@ -334,7 +336,9 @@ def main():
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description="Generate API reference from code analysis results")
+    parser = argparse.ArgumentParser(
+        description="Generate API reference from code analysis results"
+    )
 
     parser.add_argument("input_file", help="Code analysis JSON file")
     parser.add_argument("output_dir", help="Output directory for markdown files")

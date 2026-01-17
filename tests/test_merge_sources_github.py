@@ -24,11 +24,29 @@ class TestIssueCategorization:
     def test_categorize_issues_basic(self):
         """Test basic issue categorization."""
         problems = [
-            {"title": "OAuth setup fails", "labels": ["bug", "oauth"], "number": 1, "state": "open", "comments": 10},
-            {"title": "Testing framework issue", "labels": ["testing"], "number": 2, "state": "open", "comments": 5},
+            {
+                "title": "OAuth setup fails",
+                "labels": ["bug", "oauth"],
+                "number": 1,
+                "state": "open",
+                "comments": 10,
+            },
+            {
+                "title": "Testing framework issue",
+                "labels": ["testing"],
+                "number": 2,
+                "state": "open",
+                "comments": 5,
+            },
         ]
         solutions = [
-            {"title": "Fixed OAuth redirect", "labels": ["oauth"], "number": 3, "state": "closed", "comments": 3}
+            {
+                "title": "Fixed OAuth redirect",
+                "labels": ["oauth"],
+                "number": 3,
+                "state": "closed",
+                "comments": 3,
+            }
         ]
 
         topics = ["oauth", "testing", "async"]
@@ -43,7 +61,13 @@ class TestIssueCategorization:
     def test_categorize_issues_keyword_matching(self):
         """Test keyword matching in titles and labels."""
         problems = [
-            {"title": "Database connection timeout", "labels": ["db"], "number": 1, "state": "open", "comments": 7}
+            {
+                "title": "Database connection timeout",
+                "labels": ["db"],
+                "number": 1,
+                "state": "open",
+                "comments": 7,
+            }
         ]
         solutions = []
 
@@ -57,7 +81,13 @@ class TestIssueCategorization:
     def test_categorize_issues_multi_keyword_topic(self):
         """Test topics with multiple keywords."""
         problems = [
-            {"title": "Async API call fails", "labels": ["async", "api"], "number": 1, "state": "open", "comments": 8}
+            {
+                "title": "Async API call fails",
+                "labels": ["async", "api"],
+                "number": 1,
+                "state": "open",
+                "comments": 8,
+            }
         ]
         solutions = []
 
@@ -71,7 +101,15 @@ class TestIssueCategorization:
 
     def test_categorize_issues_no_match_goes_to_other(self):
         """Test that unmatched issues go to 'other' category."""
-        problems = [{"title": "Random issue", "labels": ["misc"], "number": 1, "state": "open", "comments": 5}]
+        problems = [
+            {
+                "title": "Random issue",
+                "labels": ["misc"],
+                "number": 1,
+                "state": "open",
+                "comments": 5,
+            }
+        ]
         solutions = []
 
         topics = ["oauth", "testing"]
@@ -94,7 +132,10 @@ class TestHybridContent:
 
     def test_generate_hybrid_content_basic(self):
         """Test basic hybrid content generation."""
-        api_data = {"apis": {"oauth_login": {"name": "oauth_login", "status": "matched"}}, "summary": {"total_apis": 1}}
+        api_data = {
+            "apis": {"oauth_login": {"name": "oauth_login", "status": "matched"}},
+            "summary": {"total_apis": 1},
+        }
 
         github_docs = {
             "readme": "# Project README",
@@ -103,12 +144,29 @@ class TestHybridContent:
         }
 
         github_insights = {
-            "metadata": {"stars": 1234, "forks": 56, "language": "Python", "description": "Test project"},
+            "metadata": {
+                "stars": 1234,
+                "forks": 56,
+                "language": "Python",
+                "description": "Test project",
+            },
             "common_problems": [
-                {"title": "OAuth fails", "number": 42, "state": "open", "comments": 10, "labels": ["bug"]}
+                {
+                    "title": "OAuth fails",
+                    "number": 42,
+                    "state": "open",
+                    "comments": 10,
+                    "labels": ["bug"],
+                }
             ],
             "known_solutions": [
-                {"title": "Fixed OAuth", "number": 35, "state": "closed", "comments": 5, "labels": ["bug"]}
+                {
+                    "title": "Fixed OAuth",
+                    "number": 35,
+                    "state": "closed",
+                    "comments": 5,
+                    "labels": ["bug"],
+                }
             ],
             "top_labels": [{"label": "bug", "count": 10}, {"label": "enhancement", "count": 5}],
         }
@@ -190,11 +248,23 @@ class TestIssueToAPIMatching:
         apis = {"oauth_login": {"name": "oauth_login"}, "async_fetch": {"name": "async_fetch"}}
 
         problems = [
-            {"title": "OAuth login fails", "number": 42, "state": "open", "comments": 10, "labels": ["bug", "oauth"]}
+            {
+                "title": "OAuth login fails",
+                "number": 42,
+                "state": "open",
+                "comments": 10,
+                "labels": ["bug", "oauth"],
+            }
         ]
 
         solutions = [
-            {"title": "Fixed async fetch timeout", "number": 35, "state": "closed", "comments": 5, "labels": ["async"]}
+            {
+                "title": "Fixed async fetch timeout",
+                "number": 35,
+                "state": "closed",
+                "comments": 5,
+                "labels": ["async"],
+            }
         ]
 
         issue_links = _match_issues_to_apis(apis, problems, solutions)
@@ -214,7 +284,13 @@ class TestIssueToAPIMatching:
         apis = {"database_connect": {"name": "database_connect"}}
 
         problems = [
-            {"title": "Random unrelated issue", "number": 1, "state": "open", "comments": 5, "labels": ["misc"]}
+            {
+                "title": "Random unrelated issue",
+                "number": 1,
+                "state": "open",
+                "comments": 5,
+                "labels": ["misc"],
+            }
         ]
 
         issue_links = _match_issues_to_apis(apis, problems, [])
@@ -226,7 +302,15 @@ class TestIssueToAPIMatching:
         """Test matching with dotted API names."""
         apis = {"module.oauth.login": {"name": "module.oauth.login"}}
 
-        problems = [{"title": "OAuth module fails", "number": 42, "state": "open", "comments": 10, "labels": ["oauth"]}]
+        problems = [
+            {
+                "title": "OAuth module fails",
+                "number": 42,
+                "state": "open",
+                "comments": 10,
+                "labels": ["oauth"],
+            }
+        ]
 
         issue_links = _match_issues_to_apis(apis, problems, [])
 
@@ -253,8 +337,12 @@ class TestRuleBasedMergerWithGitHubStreams:
         )
         insights_stream = InsightsStream(
             metadata={"stars": 1234, "forks": 56, "language": "Python"},
-            common_problems=[{"title": "Bug 1", "number": 1, "state": "open", "comments": 10, "labels": ["bug"]}],
-            known_solutions=[{"title": "Fix 1", "number": 2, "state": "closed", "comments": 5, "labels": ["bug"]}],
+            common_problems=[
+                {"title": "Bug 1", "number": 1, "state": "open", "comments": 10, "labels": ["bug"]}
+            ],
+            known_solutions=[
+                {"title": "Fix 1", "number": 2, "state": "closed", "comments": 5, "labels": ["bug"]}
+            ],
             top_labels=[{"label": "bug", "count": 10}],
         )
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
@@ -277,7 +365,9 @@ class TestRuleBasedMergerWithGitHubStreams:
         # Create three-stream data
         code_stream = CodeStream(directory=tmp_path, files=[])
         docs_stream = DocsStream(readme="# README", contributing=None, docs_files=[])
-        insights_stream = InsightsStream(metadata={"stars": 500}, common_problems=[], known_solutions=[], top_labels=[])
+        insights_stream = InsightsStream(
+            metadata={"stars": 500}, common_problems=[], known_solutions=[], top_labels=[]
+        )
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Create and run merger
@@ -331,7 +421,12 @@ class TestIntegration:
             ],
         )
         insights_stream = InsightsStream(
-            metadata={"stars": 2500, "forks": 123, "language": "Python", "description": "Test framework"},
+            metadata={
+                "stars": 2500,
+                "forks": 123,
+                "language": "Python",
+                "description": "Test framework",
+            },
             common_problems=[
                 {
                     "title": "Installation fails on Windows",
@@ -349,7 +444,13 @@ class TestIntegration:
                 },
             ],
             known_solutions=[
-                {"title": "Fixed config loading", "number": 130, "state": "closed", "comments": 8, "labels": ["bug"]},
+                {
+                    "title": "Fixed config loading",
+                    "number": 130,
+                    "state": "closed",
+                    "comments": 8,
+                    "labels": ["bug"],
+                },
                 {
                     "title": "Resolved OAuth timeout",
                     "number": 125,

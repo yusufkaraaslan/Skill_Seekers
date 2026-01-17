@@ -135,7 +135,9 @@ class BasePatternDetector:
         # Default: no deep detection
         return None
 
-    def detect_full(self, class_sig, all_classes: list, file_content: str) -> PatternInstance | None:
+    def detect_full(
+        self, class_sig, all_classes: list, file_content: str
+    ) -> PatternInstance | None:
         """
         Full detection using behavioral analysis.
 
@@ -150,7 +152,9 @@ class BasePatternDetector:
         # Default: no full detection
         return None
 
-    def detect(self, class_sig, all_classes: list, file_content: str | None = None) -> PatternInstance | None:
+    def detect(
+        self, class_sig, all_classes: list, file_content: str | None = None
+    ) -> PatternInstance | None:
         """
         Detect pattern based on configured depth.
 
@@ -273,7 +277,9 @@ class PatternRecognizer:
         for class_sig in class_sigs:
             for detector in self.detectors:
                 pattern = detector.detect(
-                    class_sig=class_sig, all_classes=class_sigs, file_content=content if self.depth == "full" else None
+                    class_sig=class_sig,
+                    all_classes=class_sigs,
+                    file_content=content if self.depth == "full" else None,
                 )
 
                 if pattern:
@@ -327,7 +333,9 @@ class PatternRecognizer:
                 params = []
                 for param in method.get("parameters", []):
                     param_obj = SimpleNamespace(
-                        name=param.get("name", ""), type_hint=param.get("type_hint"), default=param.get("default")
+                        name=param.get("name", ""),
+                        type_hint=param.get("type_hint"),
+                        default=param.get("default"),
                     )
                     params.append(param_obj)
 
@@ -397,7 +405,14 @@ class SingletonDetector(BasePatternDetector):
         confidence = 0.0
 
         # Check for instance method (getInstance, instance, get_instance, etc.)
-        instance_methods = ["getInstance", "instance", "get_instance", "Instance", "GetInstance", "INSTANCE"]
+        instance_methods = [
+            "getInstance",
+            "instance",
+            "get_instance",
+            "Instance",
+            "GetInstance",
+            "INSTANCE",
+        ]
 
         has_instance_method = False
         for method in class_sig.methods:
@@ -438,7 +453,9 @@ class SingletonDetector(BasePatternDetector):
         # Fallback to surface detection
         return self.detect_surface(class_sig, all_classes)
 
-    def detect_full(self, class_sig, all_classes: list, file_content: str) -> PatternInstance | None:
+    def detect_full(
+        self, class_sig, all_classes: list, file_content: str
+    ) -> PatternInstance | None:
         """
         Full behavioral analysis for Singleton.
 
@@ -767,7 +784,9 @@ class StrategyDetector(BasePatternDetector):
             siblings = [
                 cls.name
                 for cls in all_classes
-                if cls.base_classes and base_class in cls.base_classes and cls.name != class_sig.name
+                if cls.base_classes
+                and base_class in cls.base_classes
+                and cls.name != class_sig.name
             ]
 
             if siblings:
@@ -885,7 +904,9 @@ class DecoratorDetector(BasePatternDetector):
             siblings = [
                 cls.name
                 for cls in all_classes
-                if cls.base_classes and base_class in cls.base_classes and cls.name != class_sig.name
+                if cls.base_classes
+                and base_class in cls.base_classes
+                and cls.name != class_sig.name
             ]
 
             if siblings:
@@ -898,7 +919,10 @@ class DecoratorDetector(BasePatternDetector):
             # Check if takes object parameter (not just self)
             if len(init_method.parameters) > 1:  # More than just 'self'
                 param_names = [p.name for p in init_method.parameters if p.name != "self"]
-                if any(name in ["wrapped", "component", "inner", "obj", "target"] for name in param_names):
+                if any(
+                    name in ["wrapped", "component", "inner", "obj", "target"]
+                    for name in param_names
+                ):
                     evidence.append(f"Takes wrapped object in constructor: {param_names}")
                     confidence += 0.4
 
@@ -969,7 +993,8 @@ class BuilderDetector(BasePatternDetector):
         # Check for build/create terminal method
         terminal_methods = ["build", "create", "execute", "construct", "make"]
         has_terminal = any(
-            m.name.lower() in terminal_methods or m.name.lower().startswith("build") for m in class_sig.methods
+            m.name.lower() in terminal_methods or m.name.lower().startswith("build")
+            for m in class_sig.methods
         )
 
         if has_terminal:
@@ -979,7 +1004,9 @@ class BuilderDetector(BasePatternDetector):
         # Check for setter methods (with_, set_, add_)
         setter_prefixes = ["with", "set", "add", "configure"]
         setter_count = sum(
-            1 for m in class_sig.methods if any(m.name.lower().startswith(prefix) for prefix in setter_prefixes)
+            1
+            for m in class_sig.methods
+            if any(m.name.lower().startswith(prefix) for prefix in setter_prefixes)
         )
 
         if setter_count >= 3:
@@ -1006,7 +1033,9 @@ class BuilderDetector(BasePatternDetector):
         # Fallback to surface
         return self.detect_surface(class_sig, all_classes)
 
-    def detect_full(self, class_sig, all_classes: list, file_content: str) -> PatternInstance | None:
+    def detect_full(
+        self, class_sig, all_classes: list, file_content: str
+    ) -> PatternInstance | None:
         """Full behavioral analysis for Builder"""
         # Start with deep detection
         pattern = self.detect_deep(class_sig, all_classes)
@@ -1186,7 +1215,9 @@ class CommandDetector(BasePatternDetector):
         has_execute = any(m.name.lower() in execute_methods for m in class_sig.methods)
 
         if has_execute:
-            method_name = next(m.name for m in class_sig.methods if m.name.lower() in execute_methods)
+            method_name = next(
+                m.name for m in class_sig.methods if m.name.lower() in execute_methods
+            )
             evidence.append(f"Has execute method: {method_name}()")
             confidence += 0.5
 
@@ -1299,7 +1330,9 @@ class TemplateMethodDetector(BasePatternDetector):
         ]
 
         hook_methods = [
-            m.name for m in class_sig.methods if any(keyword in m.name.lower() for keyword in hook_keywords)
+            m.name
+            for m in class_sig.methods
+            if any(keyword in m.name.lower() for keyword in hook_keywords)
         ]
 
         if len(hook_methods) >= 2:
@@ -1307,7 +1340,11 @@ class TemplateMethodDetector(BasePatternDetector):
             confidence += 0.3
 
         # Check for abstract methods (no implementation or pass/raise)
-        abstract_methods = [m.name for m in class_sig.methods if m.name.startswith("_") or "abstract" in m.name.lower()]
+        abstract_methods = [
+            m.name
+            for m in class_sig.methods
+            if m.name.startswith("_") or "abstract" in m.name.lower()
+        ]
 
         if abstract_methods:
             evidence.append(f"Has abstract methods: {', '.join(abstract_methods[:2])}")
@@ -1383,7 +1420,8 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
         # Check for handle/process method
         handle_methods = ["handle", "process", "execute", "filter", "middleware"]
         has_handle = any(
-            m.name.lower() in handle_methods or m.name.lower().startswith("handle") for m in class_sig.methods
+            m.name.lower() in handle_methods or m.name.lower().startswith("handle")
+            for m in class_sig.methods
         )
 
         if has_handle:
@@ -1405,7 +1443,8 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
 
         # Check for set_next() method
         has_set_next = any(
-            "next" in m.name.lower() and ("set" in m.name.lower() or "add" in m.name.lower()) for m in class_sig.methods
+            "next" in m.name.lower() and ("set" in m.name.lower() or "add" in m.name.lower())
+            for m in class_sig.methods
         )
 
         if has_set_next:
@@ -1419,7 +1458,9 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
             siblings = [
                 cls.name
                 for cls in all_classes
-                if cls.base_classes and base_class in cls.base_classes and cls.name != class_sig.name
+                if cls.base_classes
+                and base_class in cls.base_classes
+                and cls.name != class_sig.name
             ]
 
             if siblings and has_next_ref:
@@ -1625,16 +1666,22 @@ Supported Languages:
 """,
     )
 
-    parser.add_argument("--file", action="append", help="Source file to analyze (can be specified multiple times)")
+    parser.add_argument(
+        "--file", action="append", help="Source file to analyze (can be specified multiple times)"
+    )
     parser.add_argument("--directory", help="Directory to analyze (analyzes all source files)")
-    parser.add_argument("--output", help="Output directory for results (default: current directory)")
+    parser.add_argument(
+        "--output", help="Output directory for results (default: current directory)"
+    )
     parser.add_argument(
         "--depth",
         choices=["surface", "deep", "full"],
         default="deep",
         help="Detection depth: surface (fast), deep (default), full (thorough)",
     )
-    parser.add_argument("--json", action="store_true", help="Output JSON format instead of human-readable")
+    parser.add_argument(
+        "--json", action="store_true", help="Output JSON format instead of human-readable"
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
@@ -1697,7 +1744,9 @@ Supported Languages:
                 if not args.json and args.verbose:
                     print(f"\n{file_path}:")
                     for pattern in report.patterns:
-                        print(f"  [{pattern.pattern_type}] {pattern.class_name} (confidence: {pattern.confidence:.2f})")
+                        print(
+                            f"  [{pattern.pattern_type}] {pattern.class_name} (confidence: {pattern.confidence:.2f})"
+                        )
 
         except Exception as e:
             if args.verbose:
@@ -1737,11 +1786,15 @@ Supported Languages:
         pattern_counts = {}
         for report in all_reports:
             for pattern in report.patterns:
-                pattern_counts[pattern.pattern_type] = pattern_counts.get(pattern.pattern_type, 0) + 1
+                pattern_counts[pattern.pattern_type] = (
+                    pattern_counts.get(pattern.pattern_type, 0) + 1
+                )
 
         if pattern_counts:
             print("Pattern Summary:")
-            for pattern_type, count in sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True):
+            for pattern_type, count in sorted(
+                pattern_counts.items(), key=lambda x: x[1], reverse=True
+            ):
                 print(f"  {pattern_type}: {count}")
             print()
 

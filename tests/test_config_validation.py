@@ -30,7 +30,11 @@ class TestConfigValidation(unittest.TestCase):
             "name": "godot",
             "base_url": "https://docs.godotengine.org/en/stable/",
             "description": "Godot Engine documentation",
-            "selectors": {"main_content": 'div[role="main"]', "title": "title", "code_blocks": "pre code"},
+            "selectors": {
+                "main_content": 'div[role="main"]',
+                "title": "title",
+                "code_blocks": "pre code",
+            },
             "url_patterns": {"include": ["/guide/", "/api/"], "exclude": ["/blog/"]},
             "categories": {"getting_started": ["intro", "tutorial"], "api": ["api", "reference"]},
             "rate_limit": 0.5,
@@ -84,7 +88,9 @@ class TestConfigValidation(unittest.TestCase):
         """Test invalid selectors (not a dictionary)"""
         config = {"name": "test", "base_url": "https://example.com/", "selectors": "invalid"}
         errors, _ = validate_config(config)
-        self.assertTrue(any("selectors" in error.lower() and "dictionary" in error.lower() for error in errors))
+        self.assertTrue(
+            any("selectors" in error.lower() and "dictionary" in error.lower() for error in errors)
+        )
 
     def test_missing_recommended_selectors(self):
         """Test warning for missing recommended selectors"""
@@ -104,25 +110,44 @@ class TestConfigValidation(unittest.TestCase):
         """Test invalid url_patterns (not a dictionary)"""
         config = {"name": "test", "base_url": "https://example.com/", "url_patterns": []}
         errors, _ = validate_config(config)
-        self.assertTrue(any("url_patterns" in error.lower() and "dictionary" in error.lower() for error in errors))
+        self.assertTrue(
+            any(
+                "url_patterns" in error.lower() and "dictionary" in error.lower()
+                for error in errors
+            )
+        )
 
     def test_invalid_url_patterns_include_not_list(self):
         """Test invalid url_patterns.include (not a list)"""
-        config = {"name": "test", "base_url": "https://example.com/", "url_patterns": {"include": "not-a-list"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "url_patterns": {"include": "not-a-list"},
+        }
         errors, _ = validate_config(config)
-        self.assertTrue(any("include" in error.lower() and "list" in error.lower() for error in errors))
+        self.assertTrue(
+            any("include" in error.lower() and "list" in error.lower() for error in errors)
+        )
 
     def test_invalid_categories_not_dict(self):
         """Test invalid categories (not a dictionary)"""
         config = {"name": "test", "base_url": "https://example.com/", "categories": []}
         errors, _ = validate_config(config)
-        self.assertTrue(any("categories" in error.lower() and "dictionary" in error.lower() for error in errors))
+        self.assertTrue(
+            any("categories" in error.lower() and "dictionary" in error.lower() for error in errors)
+        )
 
     def test_invalid_category_keywords_not_list(self):
         """Test invalid category keywords (not a list)"""
-        config = {"name": "test", "base_url": "https://example.com/", "categories": {"getting_started": "not-a-list"}}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "categories": {"getting_started": "not-a-list"},
+        }
         errors, _ = validate_config(config)
-        self.assertTrue(any("getting_started" in error.lower() and "list" in error.lower() for error in errors))
+        self.assertTrue(
+            any("getting_started" in error.lower() and "list" in error.lower() for error in errors)
+        )
 
     def test_invalid_rate_limit_negative(self):
         """Test invalid rate_limit (negative)"""
@@ -178,13 +203,23 @@ class TestConfigValidation(unittest.TestCase):
 
     def test_invalid_start_urls_not_list(self):
         """Test invalid start_urls (not a list)"""
-        config = {"name": "test", "base_url": "https://example.com/", "start_urls": "https://example.com/page1"}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "start_urls": "https://example.com/page1",
+        }
         errors, _ = validate_config(config)
-        self.assertTrue(any("start_urls" in error.lower() and "list" in error.lower() for error in errors))
+        self.assertTrue(
+            any("start_urls" in error.lower() and "list" in error.lower() for error in errors)
+        )
 
     def test_invalid_start_urls_bad_protocol(self):
         """Test invalid start_urls (bad protocol)"""
-        config = {"name": "test", "base_url": "https://example.com/", "start_urls": ["ftp://example.com/page1"]}
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "start_urls": ["ftp://example.com/page1"],
+        }
         errors, _ = validate_config(config)
         self.assertTrue(any("start_url" in error.lower() for error in errors))
 
@@ -193,7 +228,11 @@ class TestConfigValidation(unittest.TestCase):
         config = {
             "name": "test",
             "base_url": "https://example.com/",
-            "start_urls": ["https://example.com/page1", "http://example.com/page2", "https://example.com/api/docs"],
+            "start_urls": [
+                "https://example.com/page1",
+                "http://example.com/page2",
+                "https://example.com/api/docs",
+            ],
         }
         errors, _ = validate_config(config)
         url_errors = [e for e in errors if "start_url" in e.lower()]

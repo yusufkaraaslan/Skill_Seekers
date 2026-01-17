@@ -118,7 +118,8 @@ class GitConfigRepo:
                 ) from e
             elif "not found" in error_msg.lower() or "404" in error_msg:
                 raise GitCommandError(
-                    f"Repository not found: {git_url}. Verify the URL is correct and you have access.", 128
+                    f"Repository not found: {git_url}. Verify the URL is correct and you have access.",
+                    128,
                 ) from e
             else:
                 raise GitCommandError(f"Failed to clone repository: {error_msg}", 128) from e

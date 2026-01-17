@@ -41,7 +41,9 @@ class SkillEnhancer:
         self.skill_md_path = self.skill_dir / "SKILL.md"
 
         # Get API key - support both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+        self.api_key = (
+            api_key or os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+        )
         if not self.api_key:
             raise ValueError(
                 "No API key provided. Set ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN "
@@ -174,7 +176,9 @@ This skill combines knowledge from {len(sources_found)} source type(s):
                 if repo_id:
                     prompt += f"*Source: {metadata['source']} ({repo_id}), Confidence: {metadata['confidence']}*\n\n"
                 else:
-                    prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    prompt += (
+                        f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    )
                 prompt += f"```markdown\n{content}\n```\n"
 
         prompt += """
@@ -295,7 +299,9 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
 
         # Read reference files
         print("📖 Reading reference documentation...")
-        references = read_reference_files(self.skill_dir, max_chars=API_CONTENT_LIMIT, preview_limit=API_PREVIEW_LIMIT)
+        references = read_reference_files(
+            self.skill_dir, max_chars=API_CONTENT_LIMIT, preview_limit=API_PREVIEW_LIMIT
+        )
 
         if not references:
             print("❌ No reference files found to analyze")
@@ -334,7 +340,9 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         print("\n✅ Enhancement complete!")
         print("\nNext steps:")
         print(f"  1. Review: {self.skill_md_path}")
-        print(f"  2. If you don't like it, restore backup: {self.skill_md_path.with_suffix('.md.backup')}")
+        print(
+            f"  2. If you don't like it, restore backup: {self.skill_md_path.with_suffix('.md.backup')}"
+        )
         print("  3. Package your skill:")
         print(f"     skill-seekers package {self.skill_dir}/")
 
@@ -367,15 +375,21 @@ Examples:
 """,
     )
 
-    parser.add_argument("skill_dir", type=str, help="Path to skill directory (e.g., output/steam-inventory/)")
-    parser.add_argument("--api-key", type=str, help="Platform API key (or set environment variable)")
+    parser.add_argument(
+        "skill_dir", type=str, help="Path to skill directory (e.g., output/steam-inventory/)"
+    )
+    parser.add_argument(
+        "--api-key", type=str, help="Platform API key (or set environment variable)"
+    )
     parser.add_argument(
         "--target",
         choices=["claude", "gemini", "openai"],
         default="claude",
         help="Target LLM platform (default: claude)",
     )
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without calling API")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would be done without calling API"
+    )
 
     args = parser.parse_args()
 
@@ -447,7 +461,9 @@ Examples:
             print("\n✅ Enhancement complete!")
             print("\nNext steps:")
             print(f"  1. Review: {Path(skill_dir) / 'SKILL.md'}")
-            print(f"  2. If you don't like it, restore backup: {Path(skill_dir) / 'SKILL.md.backup'}")
+            print(
+                f"  2. If you don't like it, restore backup: {Path(skill_dir) / 'SKILL.md.backup'}"
+            )
             print("  3. Package your skill:")
             print(f"     skill-seekers package {skill_dir}/ --target {args.target}")
 

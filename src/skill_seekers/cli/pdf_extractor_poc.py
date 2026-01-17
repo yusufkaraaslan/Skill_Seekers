@@ -196,7 +196,9 @@ class PDFExtractor:
                     "col_count": len(tab.extract()[0]) if tab.extract() else 0,
                 }
                 tables.append(table_data)
-                self.log(f"   Found table {idx}: {table_data['row_count']}x{table_data['col_count']}")
+                self.log(
+                    f"   Found table {idx}: {table_data['row_count']}x{table_data['col_count']}"
+                )
 
         except Exception as e:
             self.log(f"   Table extraction failed: {e}")
@@ -294,7 +296,9 @@ class PDFExtractor:
             issues.append("May be natural language, not code")
 
         # Check code/comment ratio
-        comment_lines = sum(1 for line in code.split("\n") if line.strip().startswith(("#", "//", "/*", "*", "--")))
+        comment_lines = sum(
+            1 for line in code.split("\n") if line.strip().startswith(("#", "//", "/*", "*", "--"))
+        )
         total_lines = len([l for l in code.split("\n") if l.strip()])
         if total_lines > 0 and comment_lines / total_lines > 0.7:
             issues.append("Mostly comments")
@@ -501,11 +505,17 @@ class PDFExtractor:
         # Common code patterns that span multiple lines
         patterns = [
             # Function definitions
-            (r"((?:def|function|func|fn|public|private)\s+\w+\s*\([^)]*\)\s*[{:]?[^}]*[}]?)", "function"),
+            (
+                r"((?:def|function|func|fn|public|private)\s+\w+\s*\([^)]*\)\s*[{:]?[^}]*[}]?)",
+                "function",
+            ),
             # Class definitions
             (r"(class\s+\w+[^{]*\{[^}]*\})", "class"),
             # Import statements block
-            (r"((?:import|require|use|include)[^\n]+(?:\n(?:import|require|use|include)[^\n]+)*)", "imports"),
+            (
+                r"((?:import|require|use|include)[^\n]+(?:\n(?:import|require|use|include)[^\n]+)*)",
+                "imports",
+            ),
         ]
 
         for pattern, block_type in patterns:
@@ -628,7 +638,15 @@ class PDFExtractor:
         """
         if self.chunk_size == 0:
             # No chunking - return all pages as one chunk
-            return [{"chunk_number": 1, "start_page": 1, "end_page": len(pages), "pages": pages, "chapter_title": None}]
+            return [
+                {
+                    "chunk_number": 1,
+                    "start_page": 1,
+                    "end_page": len(pages),
+                    "pages": pages,
+                    "chapter_title": None,
+                }
+            ]
 
         chunks = []
         current_chunk = []
@@ -812,7 +830,9 @@ class PDFExtractor:
             code_samples = [c for c in code_samples if c["quality_score"] >= self.min_quality]
             filtered_count = code_samples_before - len(code_samples)
             if filtered_count > 0:
-                self.log(f"  Filtered out {filtered_count} low-quality code blocks (min_quality={self.min_quality})")
+                self.log(
+                    f"  Filtered out {filtered_count} low-quality code blocks (min_quality={self.min_quality})"
+                )
 
         # Sort by quality score (highest first)
         code_samples.sort(key=lambda x: x["quality_score"], reverse=True)
@@ -891,7 +911,9 @@ class PDFExtractor:
 
         # Show feature status
         if self.use_ocr:
-            status = "✅ enabled" if TESSERACT_AVAILABLE else "⚠️  not available (install pytesseract)"
+            status = (
+                "✅ enabled" if TESSERACT_AVAILABLE else "⚠️  not available (install pytesseract)"
+            )
             print(f"   OCR: {status}")
         if self.extract_tables:
             print("   Table extraction: ✅ enabled")
@@ -905,7 +927,9 @@ class PDFExtractor:
 
         # Extract each page (with parallel processing - Priority 3)
         if self.parallel and CONCURRENT_AVAILABLE and len(self.doc) > 5:
-            print(f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)...")
+            print(
+                f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)..."
+            )
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 page_numbers = list(range(len(self.doc)))
                 self.pages = list(executor.map(self.extract_page, page_numbers))
@@ -962,7 +986,11 @@ class PDFExtractor:
         for chunk in chunks:
             if chunk["chapter_title"]:
                 chapters.append(
-                    {"title": chunk["chapter_title"], "start_page": chunk["start_page"], "end_page": chunk["end_page"]}
+                    {
+                        "title": chunk["chapter_title"],
+                        "start_page": chunk["start_page"],
+                        "end_page": chunk["end_page"],
+                    }
                 )
 
         result = {
@@ -1042,12 +1070,21 @@ Examples:
     parser.add_argument("-o", "--output", help="Output JSON file path (default: print to stdout)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
-    parser.add_argument("--chunk-size", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)")
-    parser.add_argument("--no-merge", action="store_true", help="Disable merging code blocks across pages")
     parser.add_argument(
-        "--min-quality", type=float, default=0.0, help="Minimum code quality score (0-10, default: 0 = no filtering)"
+        "--chunk-size", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)"
     )
-    parser.add_argument("--extract-images", action="store_true", help="Extract images to files (NEW in B1.5)")
+    parser.add_argument(
+        "--no-merge", action="store_true", help="Disable merging code blocks across pages"
+    )
+    parser.add_argument(
+        "--min-quality",
+        type=float,
+        default=0.0,
+        help="Minimum code quality score (0-10, default: 0 = no filtering)",
+    )
+    parser.add_argument(
+        "--extract-images", action="store_true", help="Extract images to files (NEW in B1.5)"
+    )
     parser.add_argument(
         "--image-dir",
         type=str,
@@ -1062,12 +1099,22 @@ Examples:
     )
 
     # Advanced features (Priority 2 & 3)
-    parser.add_argument("--ocr", action="store_true", help="Use OCR for scanned PDFs (requires pytesseract)")
+    parser.add_argument(
+        "--ocr", action="store_true", help="Use OCR for scanned PDFs (requires pytesseract)"
+    )
     parser.add_argument("--password", type=str, default=None, help="Password for encrypted PDF")
-    parser.add_argument("--extract-tables", action="store_true", help="Extract tables from PDF (Priority 2)")
-    parser.add_argument("--parallel", action="store_true", help="Process pages in parallel (Priority 3)")
-    parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers (default: CPU count)")
-    parser.add_argument("--no-cache", action="store_true", help="Disable caching of expensive operations")
+    parser.add_argument(
+        "--extract-tables", action="store_true", help="Extract tables from PDF (Priority 2)"
+    )
+    parser.add_argument(
+        "--parallel", action="store_true", help="Process pages in parallel (Priority 3)"
+    )
+    parser.add_argument(
+        "--workers", type=int, default=None, help="Number of parallel workers (default: CPU count)"
+    )
+    parser.add_argument(
+        "--no-cache", action="store_true", help="Disable caching of expensive operations"
+    )
 
     args = parser.parse_args()
 

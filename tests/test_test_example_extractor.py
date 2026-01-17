@@ -154,7 +154,8 @@ def test_query(database):
 
         # Check for pytest markers or tags
         has_pytest_indicator = any(
-            "pytest" in " ".join(ex.tags).lower() or "pytest" in ex.description.lower() for ex in examples
+            "pytest" in " ".join(ex.tags).lower() or "pytest" in ex.description.lower()
+            for ex in examples
         )
         self.assertTrue(has_pytest_indicator or len(examples) > 0)  # At least extracted something
 

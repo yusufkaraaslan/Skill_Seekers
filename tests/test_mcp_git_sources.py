@@ -42,7 +42,11 @@ def mock_git_repo(temp_dirs):
     (repo_path / ".git").mkdir()
 
     # Create sample config files
-    react_config = {"name": "react", "description": "React framework", "base_url": "https://react.dev/"}
+    react_config = {
+        "name": "react",
+        "description": "React framework",
+        "base_url": "https://react.dev/",
+    }
     (repo_path / "react.json").write_text(json.dumps(react_config, indent=2))
 
     vue_config = {"name": "vue", "description": "Vue framework", "base_url": "https://vuejs.org/"}
@@ -65,8 +69,18 @@ class TestFetchConfigModes:
             mock_response = MagicMock()
             mock_response.json.return_value = {
                 "configs": [
-                    {"name": "react", "category": "web-frameworks", "description": "React framework", "type": "single"},
-                    {"name": "vue", "category": "web-frameworks", "description": "Vue framework", "type": "single"},
+                    {
+                        "name": "react",
+                        "category": "web-frameworks",
+                        "description": "React framework",
+                        "type": "single",
+                    },
+                    {
+                        "name": "vue",
+                        "category": "web-frameworks",
+                        "description": "Vue framework",
+                        "type": "single",
+                    },
                 ],
                 "total": 2,
             }
@@ -94,7 +108,10 @@ class TestFetchConfigModes:
             }
 
             mock_download_response = MagicMock()
-            mock_download_response.json.return_value = {"name": "react", "base_url": "https://react.dev/"}
+            mock_download_response.json.return_value = {
+                "name": "react",
+                "base_url": "https://react.dev/",
+            }
 
             mock_client_instance = mock_client.return_value.__aenter__.return_value
             mock_client_instance.get.side_effect = [mock_detail_response, mock_download_response]
@@ -149,7 +166,9 @@ class TestFetchConfigModes:
 
     @patch("skill_seekers.mcp.server.GitConfigRepo")
     @patch("skill_seekers.mcp.server.SourceManager")
-    async def test_fetch_config_source_mode(self, mock_source_manager_class, mock_git_repo_class, temp_dirs):
+    async def test_fetch_config_source_mode(
+        self, mock_source_manager_class, mock_git_repo_class, temp_dirs
+    ):
         """Test Source mode - using named source from registry."""
         from skill_seekers.mcp.server import fetch_config_tool
 
@@ -491,7 +510,9 @@ class TestCompleteWorkflow:
         }
         mock_sm_class.return_value = mock_sm
 
-        add_result = await add_config_source_tool({"name": "team", "git_url": "https://github.com/myorg/configs.git"})
+        add_result = await add_config_source_tool(
+            {"name": "team", "git_url": "https://github.com/myorg/configs.git"}
+        )
         assert "✅" in add_result[0].text
 
         # Step 2: Fetch config from source

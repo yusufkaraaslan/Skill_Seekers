@@ -172,7 +172,9 @@ class TestRealConfigFiles(unittest.TestCase):
         if os.path.exists(config_path):
             config = load_config(config_path)
             errors, _ = validate_config(config)
-            self.assertEqual(len(errors), 0, f"FastAPI config should be valid, got errors: {errors}")
+            self.assertEqual(
+                len(errors), 0, f"FastAPI config should be valid, got errors: {errors}"
+            )
 
     def test_steam_economy_config(self):
         """Test Steam Economy config is valid"""
@@ -180,7 +182,9 @@ class TestRealConfigFiles(unittest.TestCase):
         if os.path.exists(config_path):
             config = load_config(config_path)
             errors, _ = validate_config(config)
-            self.assertEqual(len(errors), 0, f"Steam Economy config should be valid, got errors: {errors}")
+            self.assertEqual(
+                len(errors), 0, f"Steam Economy config should be valid, got errors: {errors}"
+            )
 
 
 class TestURLProcessing(unittest.TestCase):
@@ -221,7 +225,11 @@ class TestURLProcessing(unittest.TestCase):
         config = {
             "name": "test",
             "base_url": "https://example.com/",
-            "start_urls": ["https://example.com/guide/", "https://example.com/api/", "https://example.com/tutorial/"],
+            "start_urls": [
+                "https://example.com/guide/",
+                "https://example.com/api/",
+                "https://example.com/tutorial/",
+            ],
             "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
             "rate_limit": 0.1,
             "max_pages": 10,
@@ -423,14 +431,20 @@ app.use('*', cors())
 
             # Verify llms.txt was detected
             self.assertTrue(scraper.llms_txt_detected, "llms.txt should be detected")
-            self.assertEqual(scraper.llms_txt_variant, "explicit", "Should use explicit variant from config")
+            self.assertEqual(
+                scraper.llms_txt_variant, "explicit", "Should use explicit variant from config"
+            )
 
             # Verify pages were parsed
             self.assertGreater(len(scraper.pages), 0, "Should have parsed pages from llms.txt")
 
             # Verify page structure
-            self.assertTrue(all("title" in page for page in scraper.pages), "All pages should have titles")
-            self.assertTrue(all("content" in page for page in scraper.pages), "All pages should have content")
+            self.assertTrue(
+                all("title" in page for page in scraper.pages), "All pages should have titles"
+            )
+            self.assertTrue(
+                all("content" in page for page in scraper.pages), "All pages should have content"
+            )
             self.assertTrue(
                 any(len(page.get("code_samples", [])) > 0 for page in scraper.pages),
                 "At least one page should have code samples",

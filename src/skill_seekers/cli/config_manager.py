@@ -27,7 +27,11 @@ class ConfigManager:
     DEFAULT_CONFIG = {
         "version": "1.0",
         "github": {"default_profile": None, "profiles": {}},
-        "rate_limit": {"default_timeout_minutes": 30, "auto_switch_profiles": True, "show_countdown": True},
+        "rate_limit": {
+            "default_timeout_minutes": 30,
+            "auto_switch_profiles": True,
+            "show_countdown": True,
+        },
         "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
         "api_keys": {"anthropic": None, "google": None, "openai": None},
         "first_run": {"completed": False, "version": "2.7.0"},
@@ -161,7 +165,9 @@ class ConfigManager:
 
         return profiles
 
-    def get_github_token(self, profile_name: str | None = None, repo_url: str | None = None) -> str | None:
+    def get_github_token(
+        self, profile_name: str | None = None, repo_url: str | None = None
+    ) -> str | None:
         """
         Get GitHub token with smart fallback chain.
 
@@ -269,7 +275,11 @@ class ConfigManager:
         2. Config file
         """
         # Check environment first
-        env_map = {"anthropic": "ANTHROPIC_API_KEY", "google": "GOOGLE_API_KEY", "openai": "OPENAI_API_KEY"}
+        env_map = {
+            "anthropic": "ANTHROPIC_API_KEY",
+            "google": "GOOGLE_API_KEY",
+            "openai": "OPENAI_API_KEY",
+        }
 
         env_var = env_map.get(provider)
         if env_var:

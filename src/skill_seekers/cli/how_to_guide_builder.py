@@ -140,7 +140,9 @@ class GuideCollection:
         return {
             "total_guides": self.total_guides,
             "guides_by_complexity": self.guides_by_complexity,
-            "guides_by_use_case": {k: [g.to_dict() for g in v] for k, v in self.guides_by_use_case.items()},
+            "guides_by_use_case": {
+                k: [g.to_dict() for g in v] for k, v in self.guides_by_use_case.items()
+            },
             "guides": [g.to_dict() for g in self.guides],
         }
 
@@ -224,7 +226,10 @@ class WorkflowAnalyzer:
 
                 steps.append(
                     WorkflowStep(
-                        step_number=step_num, code=step_code, description=description, verification=verification
+                        step_number=step_num,
+                        code=step_code,
+                        description=description,
+                        verification=verification,
                     )
                 )
                 step_num += 1
@@ -253,7 +258,9 @@ class WorkflowAnalyzer:
                     step_code = "\n".join(current_step)
                     description = self._infer_description_from_code(step_code)
 
-                    steps.append(WorkflowStep(step_number=step_num, code=step_code, description=description))
+                    steps.append(
+                        WorkflowStep(step_number=step_num, code=step_code, description=description)
+                    )
                     step_num += 1
                     current_step = []
                 continue
@@ -264,7 +271,9 @@ class WorkflowAnalyzer:
         if current_step:
             step_code = "\n".join(current_step)
             description = self._infer_description_from_code(step_code)
-            steps.append(WorkflowStep(step_number=step_num, code=step_code, description=description))
+            steps.append(
+                WorkflowStep(step_number=step_num, code=step_code, description=description)
+            )
 
         return steps
 
@@ -400,7 +409,9 @@ class WorkflowAnalyzer:
 class WorkflowGrouper:
     """Group related workflows into coherent guides"""
 
-    def group_workflows(self, workflows: list[dict], strategy: str = "ai-tutorial-group") -> dict[str, list[dict]]:
+    def group_workflows(
+        self, workflows: list[dict], strategy: str = "ai-tutorial-group"
+    ) -> dict[str, list[dict]]:
         """
         Group workflows using specified strategy.
 
@@ -854,7 +865,9 @@ class HowToGuideBuilder:
 
         if not workflows:
             logger.warning("No workflow examples found!")
-            return GuideCollection(total_guides=0, guides_by_complexity={}, guides_by_use_case={}, guides=[])
+            return GuideCollection(
+                total_guides=0, guides_by_complexity={}, guides_by_use_case={}, guides=[]
+            )
 
         # Group workflows
         grouped_workflows = self.grouper.group_workflows(workflows, grouping_strategy)
@@ -914,7 +927,9 @@ class HowToGuideBuilder:
 
         # Extract source files
         source_files = [w.get("file_path", "") for w in workflows]
-        source_files = [f"{Path(f).name}:{w.get('line_start', 0)}" for f, w in zip(source_files, workflows)]
+        source_files = [
+            f"{Path(f).name}:{w.get('line_start', 0)}" for f, w in zip(source_files, workflows)
+        ]
 
         # Create guide
         guide = HowToGuide(
@@ -1126,9 +1141,13 @@ Grouping Strategies:
 """,
     )
 
-    parser.add_argument("input", nargs="?", help="Input: directory with test files OR test_examples.json file")
+    parser.add_argument(
+        "input", nargs="?", help="Input: directory with test files OR test_examples.json file"
+    )
 
-    parser.add_argument("--input", dest="input_file", help="Input JSON file with test examples (from C3.2)")
+    parser.add_argument(
+        "--input", dest="input_file", help="Input JSON file with test examples (from C3.2)"
+    )
 
     parser.add_argument(
         "--output",
@@ -1145,7 +1164,9 @@ Grouping Strategies:
 
     parser.add_argument("--no-ai", action="store_true", help="Disable AI enhancement")
 
-    parser.add_argument("--json-output", action="store_true", help="Output JSON summary instead of markdown files")
+    parser.add_argument(
+        "--json-output", action="store_true", help="Output JSON summary instead of markdown files"
+    )
 
     args = parser.parse_args()
 
@@ -1191,7 +1212,9 @@ Grouping Strategies:
     builder = HowToGuideBuilder(enhance_with_ai=not args.no_ai)
     output_dir = Path(args.output) if not args.json_output else None
 
-    collection = builder.build_guides_from_examples(examples, grouping_strategy=args.group_by, output_dir=output_dir)
+    collection = builder.build_guides_from_examples(
+        examples, grouping_strategy=args.group_by, output_dir=output_dir
+    )
 
     # Output results
     if args.json_output:

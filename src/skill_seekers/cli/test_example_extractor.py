@@ -251,7 +251,9 @@ class PythonTestAnalyzer:
         # Process each test method
         for node in class_node.body:
             if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
-                examples.extend(self._analyze_test_body(node, file_path, imports, setup_code=setup_code))
+                examples.extend(
+                    self._analyze_test_body(node, file_path, imports, setup_code=setup_code)
+                )
 
         return examples
 
@@ -283,7 +285,11 @@ class PythonTestAnalyzer:
         return None
 
     def _analyze_test_body(
-        self, func_node: ast.FunctionDef, file_path: str, imports: list[str], setup_code: str | None = None
+        self,
+        func_node: ast.FunctionDef,
+        file_path: str,
+        imports: list[str],
+        setup_code: str | None = None,
     ) -> list[TestExample]:
         """Analyze test function body for extractable patterns"""
         examples = []
@@ -297,7 +303,9 @@ class PythonTestAnalyzer:
         # Extract different pattern categories
 
         # 1. Instantiation patterns
-        instantiations = self._find_instantiations(func_node, file_path, docstring, setup_code, tags, imports)
+        instantiations = self._find_instantiations(
+            func_node, file_path, docstring, setup_code, tags, imports
+        )
         examples.extend(instantiations)
 
         # 2. Method calls with assertions
@@ -307,7 +315,9 @@ class PythonTestAnalyzer:
         examples.extend(method_calls)
 
         # 3. Configuration dictionaries
-        configs = self._find_config_dicts(func_node, file_path, docstring, setup_code, tags, imports)
+        configs = self._find_config_dicts(
+            func_node, file_path, docstring, setup_code, tags, imports
+        )
         examples.extend(configs)
 
         # 4. Multi-step workflows (integration tests)
@@ -707,7 +717,13 @@ class GenericTestAnalyzer:
         return examples
 
     def _create_example(
-        self, test_name: str, category: str, code: str, language: str, file_path: str, line_number: int
+        self,
+        test_name: str,
+        category: str,
+        code: str,
+        language: str,
+        file_path: str,
+        line_number: int,
     ) -> TestExample:
         """Create TestExample from regex match"""
         return TestExample(
@@ -891,7 +907,9 @@ class TestExampleExtractor:
         # Limit per file
         if len(filtered_examples) > self.max_per_file:
             # Sort by confidence and take top N
-            filtered_examples = sorted(filtered_examples, key=lambda x: x.confidence, reverse=True)[: self.max_per_file]
+            filtered_examples = sorted(filtered_examples, key=lambda x: x.confidence, reverse=True)[
+                : self.max_per_file
+            ]
 
         logger.info(f"Extracted {len(filtered_examples)} examples from {file_path.name}")
 
@@ -915,7 +933,10 @@ class TestExampleExtractor:
         return self.LANGUAGE_MAP.get(suffix, "Unknown")
 
     def _create_report(
-        self, examples: list[TestExample], file_path: str | None = None, directory: str | None = None
+        self,
+        examples: list[TestExample],
+        file_path: str | None = None,
+        directory: str | None = None,
     ) -> ExampleReport:
         """Create summary report from examples"""
         # Enhance examples with AI analysis (C3.6)
@@ -932,15 +953,21 @@ class TestExampleExtractor:
         # Count by category
         examples_by_category = {}
         for example in examples:
-            examples_by_category[example.category] = examples_by_category.get(example.category, 0) + 1
+            examples_by_category[example.category] = (
+                examples_by_category.get(example.category, 0) + 1
+            )
 
         # Count by language
         examples_by_language = {}
         for example in examples:
-            examples_by_language[example.language] = examples_by_language.get(example.language, 0) + 1
+            examples_by_language[example.language] = (
+                examples_by_language.get(example.language, 0) + 1
+            )
 
         # Calculate averages
-        avg_complexity = sum(ex.complexity_score for ex in examples) / len(examples) if examples else 0.0
+        avg_complexity = (
+            sum(ex.complexity_score for ex in examples) / len(examples) if examples else 0.0
+        )
         high_value_count = sum(1 for ex in examples if ex.confidence > 0.7)
 
         return ExampleReport(
@@ -983,15 +1010,25 @@ Examples:
 
     parser.add_argument("directory", nargs="?", help="Directory containing test files")
     parser.add_argument("--file", help="Single test file to analyze")
-    parser.add_argument("--language", help="Filter by programming language (python, javascript, etc.)")
     parser.add_argument(
-        "--min-confidence", type=float, default=0.5, help="Minimum confidence threshold (0.0-1.0, default: 0.5)"
+        "--language", help="Filter by programming language (python, javascript, etc.)"
     )
-    parser.add_argument("--max-per-file", type=int, default=10, help="Maximum examples per file (default: 10)")
+    parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.5,
+        help="Minimum confidence threshold (0.0-1.0, default: 0.5)",
+    )
+    parser.add_argument(
+        "--max-per-file", type=int, default=10, help="Maximum examples per file (default: 10)"
+    )
     parser.add_argument("--json", action="store_true", help="Output JSON format")
     parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
     parser.add_argument(
-        "--recursive", action="store_true", default=True, help="Search directory recursively (default: True)"
+        "--recursive",
+        action="store_true",
+        default=True,
+        help="Search directory recursively (default: True)",
     )
 
     args = parser.parse_args()
