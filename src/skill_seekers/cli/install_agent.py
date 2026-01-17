@@ -26,30 +26,28 @@ Examples:
 import argparse
 import shutil
 import sys
-from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
 from difflib import get_close_matches
-
+from pathlib import Path
 
 # Agent installation paths
 # Global paths (install to home directory): Use ~/.{agent}/skills/
 # Project paths (install to current directory): Use .{agent}/skills/
 AGENT_PATHS = {
-    'claude': '~/.claude/skills/',           # Global (home)
-    'cursor': '.cursor/skills/',             # Project-relative
-    'vscode': '.github/skills/',             # Project-relative
-    'copilot': '.github/skills/',            # Same as VSCode
-    'amp': '~/.amp/skills/',                 # Global
-    'goose': '~/.config/goose/skills/',      # Global
-    'opencode': '~/.opencode/skills/',       # Global
-    'letta': '~/.letta/skills/',             # Global
-    'aide': '~/.aide/skills/',               # Global
-    'windsurf': '~/.windsurf/skills/',       # Global
-    'neovate': '~/.neovate/skills/',         # Global
+    "claude": "~/.claude/skills/",  # Global (home)
+    "cursor": ".cursor/skills/",  # Project-relative
+    "vscode": ".github/skills/",  # Project-relative
+    "copilot": ".github/skills/",  # Same as VSCode
+    "amp": "~/.amp/skills/",  # Global
+    "goose": "~/.config/goose/skills/",  # Global
+    "opencode": "~/.opencode/skills/",  # Global
+    "letta": "~/.letta/skills/",  # Global
+    "aide": "~/.aide/skills/",  # Global
+    "windsurf": "~/.windsurf/skills/",  # Global
+    "neovate": "~/.neovate/skills/",  # Global
 }
 
 
-def get_agent_path(agent_name: str, project_root: Optional[Path] = None) -> Path:
+def get_agent_path(agent_name: str, project_root: Path | None = None) -> Path:
     """
     Resolve the installation path for a given agent.
 
@@ -75,7 +73,7 @@ def get_agent_path(agent_name: str, project_root: Optional[Path] = None) -> Path
     path_template = AGENT_PATHS[agent_name]
 
     # Handle home directory expansion (~)
-    if path_template.startswith('~'):
+    if path_template.startswith("~"):
         return Path(path_template).expanduser()
 
     # Handle project-relative paths
@@ -95,7 +93,7 @@ def get_available_agents() -> list:
     return sorted(AGENT_PATHS.keys())
 
 
-def validate_agent_name(agent_name: str) -> Tuple[bool, Optional[str]]:
+def validate_agent_name(agent_name: str) -> tuple[bool, str | None]:
     """
     Validate an agent name and provide suggestions if invalid.
 
@@ -111,7 +109,7 @@ def validate_agent_name(agent_name: str) -> Tuple[bool, Optional[str]]:
         - error_message: None if valid, error message with suggestions if invalid
     """
     # Special case: 'all' is valid for installing to all agents
-    if agent_name.lower() == 'all':
+    if agent_name.lower() == "all":
         return True, None
 
     # Case-insensitive check
@@ -130,13 +128,13 @@ def validate_agent_name(agent_name: str) -> Tuple[bool, Optional[str]]:
         error_msg += f"Did you mean: {suggestions[0]}?\n\n"
 
     error_msg += "Available agents:\n  "
-    error_msg += ", ".join(available + ['all'])
+    error_msg += ", ".join(available + ["all"])
     error_msg += f"\n\nUsage:\n  skill-seekers install-agent <skill_directory> --agent {suggestions[0] if suggestions else 'claude'}"
 
     return False, error_msg
 
 
-def validate_skill_directory(skill_dir: Path) -> Tuple[bool, Optional[str]]:
+def validate_skill_directory(skill_dir: Path) -> tuple[bool, str | None]:
     """
     Validate that a directory is a valid skill directory.
 
@@ -165,11 +163,8 @@ def validate_skill_directory(skill_dir: Path) -> Tuple[bool, Optional[str]]:
 
 
 def install_to_agent(
-    skill_dir: Union[str, Path],
-    agent_name: str,
-    force: bool = False,
-    dry_run: bool = False
-) -> Tuple[bool, str]:
+    skill_dir: str | Path, agent_name: str, force: bool = False, dry_run: bool = False
+) -> tuple[bool, str]:
     """
     Install a skill to a specific agent's directory.
 
@@ -212,7 +207,7 @@ def install_to_agent(
 
     # Check if already exists
     if target_path.exists() and not force:
-        error_msg = f"❌ Skill already installed\n\n"
+        error_msg = "❌ Skill already installed\n\n"
         error_msg += f"Location: {target_path}\n\n"
         error_msg += "Options:\n"
         error_msg += f"  1. Overwrite: skill-seekers install-agent {skill_dir} --agent {agent_name} --force\n"
@@ -222,34 +217,34 @@ def install_to_agent(
 
     # Dry run mode - just preview
     if dry_run:
-        msg = f"🔍 DRY RUN - No changes will be made\n\n"
+        msg = "🔍 DRY RUN - No changes will be made\n\n"
         msg += f"Would install skill: {skill_name}\n"
         msg += f"   Source: {skill_dir}\n"
         msg += f"   Target: {target_path}\n\n"
 
         # Calculate total size
-        total_size = sum(f.stat().st_size for f in skill_dir.rglob('*') if f.is_file())
+        total_size = sum(f.stat().st_size for f in skill_dir.rglob("*") if f.is_file())
 
-        msg += f"Files to copy:\n"
+        msg += "Files to copy:\n"
         msg += f"   SKILL.md ({(skill_dir / 'SKILL.md').stat().st_size / 1024:.1f} KB)\n"
 
-        references_dir = skill_dir / 'references'
+        references_dir = skill_dir / "references"
         if references_dir.exists():
-            ref_files = list(references_dir.rglob('*.md'))
+            ref_files = list(references_dir.rglob("*.md"))
             ref_size = sum(f.stat().st_size for f in ref_files)
             msg += f"   references/ ({len(ref_files)} files, {ref_size / 1024:.1f} KB)\n"
 
-        for subdir in ['scripts', 'assets']:
+        for subdir in ["scripts", "assets"]:
             subdir_path = skill_dir / subdir
             if subdir_path.exists():
-                files = list(subdir_path.rglob('*'))
+                files = list(subdir_path.rglob("*"))
                 if files:
                     msg += f"   {subdir}/ ({len(files)} files)\n"
                 else:
                     msg += f"   {subdir}/ (empty)\n"
 
         msg += f"\nTotal size: {total_size / 1024:.1f} KB\n\n"
-        msg += f"To actually install, run:\n"
+        msg += "To actually install, run:\n"
         msg += f"  skill-seekers install-agent {skill_dir} --agent {agent_name}"
 
         return True, msg
@@ -258,7 +253,10 @@ def install_to_agent(
     try:
         agent_base_path.mkdir(parents=True, exist_ok=True)
     except PermissionError:
-        return False, f"❌ Permission denied: {agent_base_path}\n\nTry: sudo mkdir -p {agent_base_path} && sudo chown -R $USER {agent_base_path}"
+        return (
+            False,
+            f"❌ Permission denied: {agent_base_path}\n\nTry: sudo mkdir -p {agent_base_path} && sudo chown -R $USER {agent_base_path}",
+        )
 
     # Copy skill directory
     def ignore_files(directory, files):
@@ -266,16 +264,13 @@ def install_to_agent(
         ignored = []
         for f in files:
             # Exclude backup files
-            if f.endswith('.backup'):
-                ignored.append(f)
-            # Exclude Python cache
-            elif f == '__pycache__':
-                ignored.append(f)
-            # Exclude macOS metadata
-            elif f == '.DS_Store':
-                ignored.append(f)
-            # Exclude hidden files (except .github for vscode)
-            elif f.startswith('.') and f not in ['.github', '.cursor']:
+            if (
+                f.endswith(".backup")
+                or f == "__pycache__"
+                or f == ".DS_Store"
+                or f.startswith(".")
+                and f not in [".github", ".cursor"]
+            ):
                 ignored.append(f)
         return ignored
 
@@ -288,16 +283,16 @@ def install_to_agent(
         shutil.copytree(skill_dir, target_path, ignore=ignore_files)
 
         # Success message
-        msg = f"✅ Installation complete!\n\n"
+        msg = "✅ Installation complete!\n\n"
         msg += f"Skill '{skill_name}' installed to {agent_name}\n"
         msg += f"Location: {target_path}\n\n"
 
         # Agent-specific restart instructions
-        if agent_name.lower() == 'claude':
+        if agent_name.lower() == "claude":
             msg += "Restart Claude Code to load the new skill."
-        elif agent_name.lower() == 'cursor':
+        elif agent_name.lower() == "cursor":
             msg += "Restart Cursor to load the new skill."
-        elif agent_name.lower() in ['vscode', 'copilot']:
+        elif agent_name.lower() in ["vscode", "copilot"]:
             msg += "Restart VS Code to load the new skill."
         else:
             msg += f"Restart {agent_name.capitalize()} to load the new skill."
@@ -305,16 +300,17 @@ def install_to_agent(
         return True, msg
 
     except PermissionError as e:
-        return False, f"❌ Permission denied: {e}\n\nTry: sudo mkdir -p {agent_base_path} && sudo chown -R $USER {agent_base_path}"
+        return (
+            False,
+            f"❌ Permission denied: {e}\n\nTry: sudo mkdir -p {agent_base_path} && sudo chown -R $USER {agent_base_path}",
+        )
     except Exception as e:
         return False, f"❌ Installation failed: {e}"
 
 
 def install_to_all_agents(
-    skill_dir: Union[str, Path],
-    force: bool = False,
-    dry_run: bool = False
-) -> Dict[str, Tuple[bool, str]]:
+    skill_dir: str | Path, force: bool = False, dry_run: bool = False
+) -> dict[str, tuple[bool, str]]:
     """
     Install a skill to all available agents.
 
@@ -365,30 +361,21 @@ Examples:
 
 Supported agents:
   claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, neovate, all
-        """
+        """,
+    )
+
+    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument(
+        "--agent", required=True, help="Agent name (use 'all' to install to all agents)"
     )
 
     parser.add_argument(
-        "skill_directory",
-        help="Path to skill directory (e.g., output/react/)"
+        "--force", action="store_true", help="Overwrite existing installation without asking"
     )
 
     parser.add_argument(
-        "--agent",
-        required=True,
-        help="Agent name (use 'all' to install to all agents)"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Overwrite existing installation without asking"
-    )
-
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview installation without making changes"
+        "--dry-run", action="store_true", help="Preview installation without making changes"
     )
 
     args = parser.parse_args()
@@ -398,7 +385,7 @@ Supported agents:
     skill_name = skill_dir.name
 
     # Handle 'all' agent
-    if args.agent.lower() == 'all':
+    if args.agent.lower() == "all":
         print(f"\n📋 Installing skill to all agents: {skill_name}\n")
 
         if args.dry_run:
@@ -433,7 +420,7 @@ Supported agents:
                     skipped_count += 1
 
         # Summary
-        print(f"\n📊 Summary:")
+        print("\n📊 Summary:")
         if args.dry_run:
             print(f"   Would install: {installed_count} agents")
         else:
@@ -461,7 +448,9 @@ Supported agents:
     if args.dry_run:
         print("\n🔍 DRY RUN MODE - No changes will be made\n")
 
-    success, message = install_to_agent(skill_dir, agent_name, force=args.force, dry_run=args.dry_run)
+    success, message = install_to_agent(
+        skill_dir, agent_name, force=args.force, dry_run=args.dry_run
+    )
 
     print(message)
 

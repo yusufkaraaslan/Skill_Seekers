@@ -48,11 +48,11 @@ Example:
         --extract-tables --parallel
 """
 
-import os
-import sys
-import json
-import re
 import argparse
+import json
+import os
+import re
+import sys
 from pathlib import Path
 
 # Import unified language detector
@@ -70,12 +70,14 @@ except ImportError:
 try:
     import pytesseract
     from PIL import Image
+
     TESSERACT_AVAILABLE = True
 except ImportError:
     TESSERACT_AVAILABLE = False
 
 try:
     import concurrent.futures
+
     CONCURRENT_AVAILABLE = True
 except ImportError:
     CONCURRENT_AVAILABLE = False
@@ -84,10 +86,22 @@ except ImportError:
 class PDFExtractor:
     """Extract text and code from PDF documentation"""
 
-    def __init__(self, pdf_path, verbose=False, chunk_size=10, min_quality=0.0,
-                 extract_images=False, image_dir=None, min_image_size=100,
-                 use_ocr=False, password=None, extract_tables=False,
-                 parallel=False, max_workers=None, use_cache=True):
+    def __init__(
+        self,
+        pdf_path,
+        verbose=False,
+        chunk_size=10,
+        min_quality=0.0,
+        extract_images=False,
+        image_dir=None,
+        min_image_size=100,
+        use_ocr=False,
+        password=None,
+        extract_tables=False,
+        parallel=False,
+        max_workers=None,
+        use_cache=True,
+    ):
         self.pdf_path = pdf_path
         self.verbose = verbose
         self.chunk_size = chunk_size  # Pages per chunk (0 = no chunking)
@@ -175,14 +189,16 @@ class PDFExtractor:
             tabs = page.find_tables()
             for idx, tab in enumerate(tabs.tables):
                 table_data = {
-                    'table_index': idx,
-                    'rows': tab.extract(),
-                    'bbox': tab.bbox,
-                    'row_count': len(tab.extract()),
-                    'col_count': len(tab.extract()[0]) if tab.extract() else 0
+                    "table_index": idx,
+                    "rows": tab.extract(),
+                    "bbox": tab.bbox,
+                    "row_count": len(tab.extract()),
+                    "col_count": len(tab.extract()[0]) if tab.extract() else 0,
                 }
                 tables.append(table_data)
-                self.log(f"   Found table {idx}: {table_data['row_count']}x{table_data['col_count']}")
+                self.log(
+                    f"   Found table {idx}: {table_data['row_count']}x{table_data['col_count']}"
+                )
 
         except Exception as e:
             self.log(f"   Table extraction failed: {e}")
@@ -236,54 +252,56 @@ class PDFExtractor:
 
         # Common syntax checks
         if not code.strip():
-            return False, ['Empty code block']
+            return False, ["Empty code block"]
 
         # Language-specific validation
-        if language == 'python':
+        if language == "python":
             # Check indentation consistency
-            lines = code.split('\n')
+            lines = code.split("\n")
             indent_chars = set()
             for line in lines:
-                if line.startswith(' '):
-                    indent_chars.add('space')
-                elif line.startswith('\t'):
-                    indent_chars.add('tab')
+                if line.startswith(" "):
+                    indent_chars.add("space")
+                elif line.startswith("\t"):
+                    indent_chars.add("tab")
 
             if len(indent_chars) > 1:
-                issues.append('Mixed tabs and spaces')
+                issues.append("Mixed tabs and spaces")
 
             # Check for unclosed brackets/parens
-            open_count = code.count('(') + code.count('[') + code.count('{')
-            close_count = code.count(')') + code.count(']') + code.count('}')
+            open_count = code.count("(") + code.count("[") + code.count("{")
+            close_count = code.count(")") + code.count("]") + code.count("}")
             if abs(open_count - close_count) > 2:  # Allow small mismatch
-                issues.append('Unbalanced brackets')
+                issues.append("Unbalanced brackets")
 
-        elif language in ['javascript', 'java', 'cpp', 'c', 'csharp', 'go']:
+        elif language in ["javascript", "java", "cpp", "c", "csharp", "go"]:
             # Check for balanced braces
-            open_braces = code.count('{')
-            close_braces = code.count('}')
+            open_braces = code.count("{")
+            close_braces = code.count("}")
             if abs(open_braces - close_braces) > 1:
-                issues.append('Unbalanced braces')
+                issues.append("Unbalanced braces")
 
-        elif language == 'json':
+        elif language == "json":
             # Try to parse JSON
             try:
                 json.loads(code)
             except (json.JSONDecodeError, ValueError) as e:
-                issues.append(f'Invalid JSON syntax: {str(e)[:50]}')
+                issues.append(f"Invalid JSON syntax: {str(e)[:50]}")
 
         # General checks
         # Check if code looks like natural language (too many common words)
-        common_words = ['the', 'and', 'for', 'with', 'this', 'that', 'have', 'from']
+        common_words = ["the", "and", "for", "with", "this", "that", "have", "from"]
         word_count = sum(1 for word in common_words if word in code.lower())
         if word_count > 5 and len(code.split()) < 50:
-            issues.append('May be natural language, not code')
+            issues.append("May be natural language, not code")
 
         # Check code/comment ratio
-        comment_lines = sum(1 for line in code.split('\n') if line.strip().startswith(('#', '//', '/*', '*', '--')))
-        total_lines = len([l for l in code.split('\n') if l.strip()])
+        comment_lines = sum(
+            1 for line in code.split("\n") if line.strip().startswith(("#", "//", "/*", "*", "--"))
+        )
+        total_lines = len([l for l in code.split("\n") if l.strip()])
         if total_lines > 0 and comment_lines / total_lines > 0.7:
-            issues.append('Mostly comments')
+            issues.append("Mostly comments")
 
         return len(issues) == 0, issues
 
@@ -309,18 +327,18 @@ class PDFExtractor:
             score -= 2.0
 
         # Factor 3: Number of lines
-        lines = [l for l in code.split('\n') if l.strip()]
+        lines = [l for l in code.split("\n") if l.strip()]
         if 2 <= len(lines) <= 50:
             score += 1.0
         elif len(lines) > 100:
             score -= 1.0
 
         # Factor 4: Has function/class definitions
-        if re.search(r'\b(def|function|class|func|fn|public class)\b', code):
+        if re.search(r"\b(def|function|class|func|fn|public class)\b", code):
             score += 1.5
 
         # Factor 5: Has meaningful variable names (not just x, y, i)
-        meaningful_vars = re.findall(r'\b[a-z_][a-z0-9_]{3,}\b', code.lower())
+        meaningful_vars = re.findall(r"\b[a-z_][a-z0-9_]{3,}\b", code.lower())
         if len(meaningful_vars) >= 2:
             score += 1.0
 
@@ -344,19 +362,19 @@ class PDFExtractor:
         code_blocks = []
         blocks = page.get_text("dict")["blocks"]
 
-        monospace_fonts = ['courier', 'mono', 'consolas', 'menlo', 'monaco', 'dejavu']
+        monospace_fonts = ["courier", "mono", "consolas", "menlo", "monaco", "dejavu"]
 
         current_code = []
         current_font = None
 
         for block in blocks:
-            if 'lines' not in block:
+            if "lines" not in block:
                 continue
 
-            for line in block['lines']:
-                for span in line['spans']:
-                    font = span['font'].lower()
-                    text = span['text']
+            for line in block["lines"]:
+                for span in line["spans"]:
+                    font = span["font"].lower()
+                    text = span["text"]
 
                     # Check if font is monospace
                     is_monospace = any(mf in font for mf in monospace_fonts)
@@ -364,47 +382,51 @@ class PDFExtractor:
                     if is_monospace:
                         # Accumulate code text
                         current_code.append(text)
-                        current_font = span['font']
+                        current_font = span["font"]
                     else:
                         # End of code block
                         if current_code:
-                            code_text = ''.join(current_code).strip()
+                            code_text = "".join(current_code).strip()
                             if len(code_text) > 10:  # Minimum code length
                                 lang, confidence = self.detect_language_from_code(code_text)
                                 quality = self.score_code_quality(code_text, lang, confidence)
                                 is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                                code_blocks.append({
-                                    'code': code_text,
-                                    'language': lang,
-                                    'confidence': confidence,
-                                    'quality_score': quality,
-                                    'is_valid': is_valid,
-                                    'validation_issues': issues if not is_valid else [],
-                                    'font': current_font,
-                                    'detection_method': 'font'
-                                })
+                                code_blocks.append(
+                                    {
+                                        "code": code_text,
+                                        "language": lang,
+                                        "confidence": confidence,
+                                        "quality_score": quality,
+                                        "is_valid": is_valid,
+                                        "validation_issues": issues if not is_valid else [],
+                                        "font": current_font,
+                                        "detection_method": "font",
+                                    }
+                                )
                             current_code = []
                             current_font = None
 
         # Handle final code block
         if current_code:
-            code_text = ''.join(current_code).strip()
+            code_text = "".join(current_code).strip()
             if len(code_text) > 10:
                 lang, confidence = self.detect_language_from_code(code_text)
                 quality = self.score_code_quality(code_text, lang, confidence)
                 is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                code_blocks.append({
-                    'code': code_text,
-                    'language': lang,
-                    'confidence': confidence,
-                    'quality_score': quality,
-                    'is_valid': is_valid,
-                    'validation_issues': issues if not is_valid else [],
-                    'font': current_font,
-                    'detection_method': 'font'
-                })
+                code_blocks.append(
+                    {
+                        "code": code_text,
+                        "language": lang,
+                        "confidence": confidence,
+                        "quality_score": quality,
+                        "is_valid": is_valid,
+                        "validation_issues": issues if not is_valid else [],
+                        "font": current_font,
+                        "detection_method": "font",
+                    }
+                )
 
         return code_blocks
 
@@ -416,55 +438,59 @@ class PDFExtractor:
         Returns list of detected code blocks.
         """
         code_blocks = []
-        lines = text.split('\n')
+        lines = text.split("\n")
         current_block = []
         indent_pattern = None
 
         for line in lines:
             # Check for indentation (4 spaces or tab)
-            if line.startswith('    ') or line.startswith('\t'):
+            if line.startswith("    ") or line.startswith("\t"):
                 # Start or continue code block
                 if not indent_pattern:
-                    indent_pattern = line[:4] if line.startswith('    ') else '\t'
+                    indent_pattern = line[:4] if line.startswith("    ") else "\t"
                 current_block.append(line)
             else:
                 # End of code block
                 if current_block and len(current_block) >= 2:  # At least 2 lines
-                    code_text = '\n'.join(current_block).strip()
+                    code_text = "\n".join(current_block).strip()
                     if len(code_text) > 20:  # Minimum code length
                         lang, confidence = self.detect_language_from_code(code_text)
                         quality = self.score_code_quality(code_text, lang, confidence)
                         is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                        code_blocks.append({
-                            'code': code_text,
-                            'language': lang,
-                            'confidence': confidence,
-                            'quality_score': quality,
-                            'is_valid': is_valid,
-                            'validation_issues': issues if not is_valid else [],
-                            'detection_method': 'indent'
-                        })
+                        code_blocks.append(
+                            {
+                                "code": code_text,
+                                "language": lang,
+                                "confidence": confidence,
+                                "quality_score": quality,
+                                "is_valid": is_valid,
+                                "validation_issues": issues if not is_valid else [],
+                                "detection_method": "indent",
+                            }
+                        )
                 current_block = []
                 indent_pattern = None
 
         # Handle final block
         if current_block and len(current_block) >= 2:
-            code_text = '\n'.join(current_block).strip()
+            code_text = "\n".join(current_block).strip()
             if len(code_text) > 20:
                 lang, confidence = self.detect_language_from_code(code_text)
                 quality = self.score_code_quality(code_text, lang, confidence)
                 is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                code_blocks.append({
-                    'code': code_text,
-                    'language': lang,
-                    'confidence': confidence,
-                    'quality_score': quality,
-                    'is_valid': is_valid,
-                    'validation_issues': issues if not is_valid else [],
-                    'detection_method': 'indent'
-                })
+                code_blocks.append(
+                    {
+                        "code": code_text,
+                        "language": lang,
+                        "confidence": confidence,
+                        "quality_score": quality,
+                        "is_valid": is_valid,
+                        "validation_issues": issues if not is_valid else [],
+                        "detection_method": "indent",
+                    }
+                )
 
         return code_blocks
 
@@ -479,11 +505,17 @@ class PDFExtractor:
         # Common code patterns that span multiple lines
         patterns = [
             # Function definitions
-            (r'((?:def|function|func|fn|public|private)\s+\w+\s*\([^)]*\)\s*[{:]?[^}]*[}]?)', 'function'),
+            (
+                r"((?:def|function|func|fn|public|private)\s+\w+\s*\([^)]*\)\s*[{:]?[^}]*[}]?)",
+                "function",
+            ),
             # Class definitions
-            (r'(class\s+\w+[^{]*\{[^}]*\})', 'class'),
+            (r"(class\s+\w+[^{]*\{[^}]*\})", "class"),
             # Import statements block
-            (r'((?:import|require|use|include)[^\n]+(?:\n(?:import|require|use|include)[^\n]+)*)', 'imports'),
+            (
+                r"((?:import|require|use|include)[^\n]+(?:\n(?:import|require|use|include)[^\n]+)*)",
+                "imports",
+            ),
         ]
 
         for pattern, block_type in patterns:
@@ -495,16 +527,18 @@ class PDFExtractor:
                     quality = self.score_code_quality(code_text, lang, confidence)
                     is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                    code_blocks.append({
-                        'code': code_text,
-                        'language': lang,
-                        'confidence': confidence,
-                        'quality_score': quality,
-                        'is_valid': is_valid,
-                        'validation_issues': issues if not is_valid else [],
-                        'detection_method': 'pattern',
-                        'pattern_type': block_type
-                    })
+                    code_blocks.append(
+                        {
+                            "code": code_text,
+                            "language": lang,
+                            "confidence": confidence,
+                            "quality_score": quality,
+                            "is_valid": is_valid,
+                            "validation_issues": issues if not is_valid else [],
+                            "detection_method": "pattern",
+                            "pattern_type": block_type,
+                        }
+                    )
 
         return code_blocks
 
@@ -514,24 +548,24 @@ class PDFExtractor:
 
         Returns (is_chapter_start, chapter_title) tuple.
         """
-        headings = page_data.get('headings', [])
+        headings = page_data.get("headings", [])
 
         # Check for h1 or h2 at start of page
         if headings:
             first_heading = headings[0]
             # H1 headings are strong indicators of chapters
-            if first_heading['level'] in ['h1', 'h2']:
-                return True, first_heading['text']
+            if first_heading["level"] in ["h1", "h2"]:
+                return True, first_heading["text"]
 
         # Check for specific chapter markers in text
-        text = page_data.get('text', '')
-        first_line = text.split('\n')[0] if text else ''
+        text = page_data.get("text", "")
+        first_line = text.split("\n")[0] if text else ""
 
         chapter_patterns = [
-            r'^Chapter\s+\d+',
-            r'^Part\s+\d+',
-            r'^Section\s+\d+',
-            r'^\d+\.\s+[A-Z]',  # "1. Introduction"
+            r"^Chapter\s+\d+",
+            r"^Part\s+\d+",
+            r"^Section\s+\d+",
+            r"^\d+\.\s+[A-Z]",  # "1. Introduction"
         ]
 
         for pattern in chapter_patterns:
@@ -552,42 +586,43 @@ class PDFExtractor:
             next_page = pages[i + 1]
 
             # Check if current page has code blocks
-            if not current_page['code_samples']:
+            if not current_page["code_samples"]:
                 continue
 
             # Get last code block of current page
-            last_code = current_page['code_samples'][-1]
+            last_code = current_page["code_samples"][-1]
 
             # Check if next page starts with code
-            if not next_page['code_samples']:
+            if not next_page["code_samples"]:
                 continue
 
-            first_next_code = next_page['code_samples'][0]
+            first_next_code = next_page["code_samples"][0]
 
             # Same language and detection method = likely continuation
-            if (last_code['language'] == first_next_code['language'] and
-                last_code['detection_method'] == first_next_code['detection_method']):
-
+            if (
+                last_code["language"] == first_next_code["language"]
+                and last_code["detection_method"] == first_next_code["detection_method"]
+            ):
                 # Check if last code block looks incomplete (doesn't end with closing brace/etc)
-                last_code_text = last_code['code'].rstrip()
+                last_code_text = last_code["code"].rstrip()
                 continuation_indicators = [
-                    not last_code_text.endswith('}'),
-                    not last_code_text.endswith(';'),
-                    last_code_text.endswith(','),
-                    last_code_text.endswith('\\'),
+                    not last_code_text.endswith("}"),
+                    not last_code_text.endswith(";"),
+                    last_code_text.endswith(","),
+                    last_code_text.endswith("\\"),
                 ]
 
                 if any(continuation_indicators):
                     # Merge the code blocks
-                    merged_code = last_code['code'] + '\n' + first_next_code['code']
-                    last_code['code'] = merged_code
-                    last_code['merged_from_next_page'] = True
+                    merged_code = last_code["code"] + "\n" + first_next_code["code"]
+                    last_code["code"] = merged_code
+                    last_code["merged_from_next_page"] = True
 
                     # Remove the first code block from next page
-                    next_page['code_samples'].pop(0)
-                    next_page['code_blocks_count'] -= 1
+                    next_page["code_samples"].pop(0)
+                    next_page["code_blocks_count"] -= 1
 
-                    self.log(f"  Merged code block from page {i+1} to {i+2}")
+                    self.log(f"  Merged code block from page {i + 1} to {i + 2}")
 
         return pages
 
@@ -603,13 +638,15 @@ class PDFExtractor:
         """
         if self.chunk_size == 0:
             # No chunking - return all pages as one chunk
-            return [{
-                'chunk_number': 1,
-                'start_page': 1,
-                'end_page': len(pages),
-                'pages': pages,
-                'chapter_title': None
-            }]
+            return [
+                {
+                    "chunk_number": 1,
+                    "start_page": 1,
+                    "end_page": len(pages),
+                    "pages": pages,
+                    "chapter_title": None,
+                }
+            ]
 
         chunks = []
         current_chunk = []
@@ -622,13 +659,15 @@ class PDFExtractor:
 
             if is_chapter and current_chunk:
                 # Save current chunk before starting new one
-                chunks.append({
-                    'chunk_number': len(chunks) + 1,
-                    'start_page': chunk_start + 1,
-                    'end_page': i,
-                    'pages': current_chunk,
-                    'chapter_title': current_chapter
-                })
+                chunks.append(
+                    {
+                        "chunk_number": len(chunks) + 1,
+                        "start_page": chunk_start + 1,
+                        "end_page": i,
+                        "pages": current_chunk,
+                        "chapter_title": current_chapter,
+                    }
+                )
                 current_chunk = []
                 chunk_start = i
                 current_chapter = chapter_title
@@ -640,26 +679,30 @@ class PDFExtractor:
 
             # Check if chunk size reached (but don't break chapters)
             if not is_chapter and len(current_chunk) >= self.chunk_size:
-                chunks.append({
-                    'chunk_number': len(chunks) + 1,
-                    'start_page': chunk_start + 1,
-                    'end_page': i + 1,
-                    'pages': current_chunk,
-                    'chapter_title': current_chapter
-                })
+                chunks.append(
+                    {
+                        "chunk_number": len(chunks) + 1,
+                        "start_page": chunk_start + 1,
+                        "end_page": i + 1,
+                        "pages": current_chunk,
+                        "chapter_title": current_chapter,
+                    }
+                )
                 current_chunk = []
                 chunk_start = i + 1
                 current_chapter = None
 
         # Add remaining pages as final chunk
         if current_chunk:
-            chunks.append({
-                'chunk_number': len(chunks) + 1,
-                'start_page': chunk_start + 1,
-                'end_page': len(pages),
-                'pages': current_chunk,
-                'chapter_title': current_chapter
-            })
+            chunks.append(
+                {
+                    "chunk_number": len(chunks) + 1,
+                    "start_page": chunk_start + 1,
+                    "end_page": len(pages),
+                    "pages": current_chunk,
+                    "chapter_title": current_chapter,
+                }
+            )
 
         return chunks
 
@@ -696,7 +739,7 @@ class PDFExtractor:
 
                 # Generate filename
                 pdf_basename = Path(self.pdf_path).stem
-                image_filename = f"{pdf_basename}_page{page_num+1}_img{img_index+1}.{image_ext}"
+                image_filename = f"{pdf_basename}_page{page_num + 1}_img{img_index + 1}.{image_ext}"
 
                 # Save image
                 image_path = Path(self.image_dir) / image_filename
@@ -707,14 +750,14 @@ class PDFExtractor:
 
                 # Store metadata
                 image_info = {
-                    'filename': image_filename,
-                    'path': str(image_path),
-                    'page_number': page_num + 1,
-                    'width': width,
-                    'height': height,
-                    'format': image_ext,
-                    'size_bytes': len(image_bytes),
-                    'xref': xref
+                    "filename": image_filename,
+                    "path": str(image_path),
+                    "page_number": page_num + 1,
+                    "width": width,
+                    "height": height,
+                    "format": image_ext,
+                    "size_bytes": len(image_bytes),
+                    "xref": xref,
                 }
 
                 extracted.append(image_info)
@@ -771,12 +814,12 @@ class PDFExtractor:
         # Simple deduplication by code content
         unique_code = {}
         for block in all_code_blocks:
-            code_hash = hash(block['code'])
+            code_hash = hash(block["code"])
             if code_hash not in unique_code:
                 unique_code[code_hash] = block
             else:
                 # Keep the one with higher quality score
-                if block['quality_score'] > unique_code[code_hash]['quality_score']:
+                if block["quality_score"] > unique_code[code_hash]["quality_score"]:
                     unique_code[code_hash] = block
 
         code_samples = list(unique_code.values())
@@ -784,44 +827,45 @@ class PDFExtractor:
         # Filter by minimum quality (NEW in B1.4)
         if self.min_quality > 0:
             code_samples_before = len(code_samples)
-            code_samples = [c for c in code_samples if c['quality_score'] >= self.min_quality]
+            code_samples = [c for c in code_samples if c["quality_score"] >= self.min_quality]
             filtered_count = code_samples_before - len(code_samples)
             if filtered_count > 0:
-                self.log(f"  Filtered out {filtered_count} low-quality code blocks (min_quality={self.min_quality})")
+                self.log(
+                    f"  Filtered out {filtered_count} low-quality code blocks (min_quality={self.min_quality})"
+                )
 
         # Sort by quality score (highest first)
-        code_samples.sort(key=lambda x: x['quality_score'], reverse=True)
+        code_samples.sort(key=lambda x: x["quality_score"], reverse=True)
 
         # Extract headings from markdown
         headings = []
-        for line in markdown.split('\n'):
-            if line.startswith('#'):
-                level = len(line) - len(line.lstrip('#'))
-                text = line.lstrip('#').strip()
+        for line in markdown.split("\n"):
+            if line.startswith("#"):
+                level = len(line) - len(line.lstrip("#"))
+                text = line.lstrip("#").strip()
                 if text:
-                    headings.append({
-                        'level': f'h{level}',
-                        'text': text
-                    })
+                    headings.append({"level": f"h{level}", "text": text})
 
         page_data = {
-            'page_number': page_num + 1,  # 1-indexed for humans
-            'text': text.strip(),
-            'markdown': markdown.strip(),
-            'headings': headings,
-            'code_samples': code_samples,
-            'images_count': len(images),
-            'extracted_images': extracted_images,  # NEW in B1.5
-            'tables': tables,  # NEW in Priority 2
-            'char_count': len(text),
-            'code_blocks_count': len(code_samples),
-            'tables_count': len(tables)  # NEW in Priority 2
+            "page_number": page_num + 1,  # 1-indexed for humans
+            "text": text.strip(),
+            "markdown": markdown.strip(),
+            "headings": headings,
+            "code_samples": code_samples,
+            "images_count": len(images),
+            "extracted_images": extracted_images,  # NEW in B1.5
+            "tables": tables,  # NEW in Priority 2
+            "char_count": len(text),
+            "code_blocks_count": len(code_samples),
+            "tables_count": len(tables),  # NEW in Priority 2
         }
 
         # Cache the result (Priority 3)
         self.set_cached(cache_key, page_data)
 
-        self.log(f"  Page {page_num + 1}: {len(text)} chars, {len(code_samples)} code blocks, {len(headings)} headings, {len(extracted_images)} images, {len(tables)} tables")
+        self.log(
+            f"  Page {page_num + 1}: {len(text)} chars, {len(code_samples)} code blocks, {len(headings)} headings, {len(extracted_images)} images, {len(tables)} tables"
+        )
 
         return page_data
 
@@ -841,15 +885,15 @@ class PDFExtractor:
             # Handle encrypted PDFs (Priority 2)
             if self.doc.is_encrypted:
                 if self.password:
-                    print(f"   🔐 PDF is encrypted, trying password...")
+                    print("   🔐 PDF is encrypted, trying password...")
                     if self.doc.authenticate(self.password):
-                        print(f"   ✅ Password accepted")
+                        print("   ✅ Password accepted")
                     else:
-                        print(f"   ❌ Invalid password")
+                        print("   ❌ Invalid password")
                         return None
                 else:
-                    print(f"   ❌ PDF is encrypted but no password provided")
-                    print(f"   Use --password option to provide password")
+                    print("   ❌ PDF is encrypted but no password provided")
+                    print("   Use --password option to provide password")
                     return None
 
         except Exception as e:
@@ -867,21 +911,25 @@ class PDFExtractor:
 
         # Show feature status
         if self.use_ocr:
-            status = "✅ enabled" if TESSERACT_AVAILABLE else "⚠️  not available (install pytesseract)"
+            status = (
+                "✅ enabled" if TESSERACT_AVAILABLE else "⚠️  not available (install pytesseract)"
+            )
             print(f"   OCR: {status}")
         if self.extract_tables:
-            print(f"   Table extraction: ✅ enabled")
+            print("   Table extraction: ✅ enabled")
         if self.parallel:
             status = "✅ enabled" if CONCURRENT_AVAILABLE else "⚠️  not available"
             print(f"   Parallel processing: {status} ({self.max_workers} workers)")
         if self.use_cache:
-            print(f"   Caching: ✅ enabled")
+            print("   Caching: ✅ enabled")
 
         print("")
 
         # Extract each page (with parallel processing - Priority 3)
         if self.parallel and CONCURRENT_AVAILABLE and len(self.doc) > 5:
-            print(f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)...")
+            print(
+                f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)..."
+            )
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 page_numbers = list(range(len(self.doc)))
                 self.pages = list(executor.map(self.extract_page, page_numbers))
@@ -900,73 +948,75 @@ class PDFExtractor:
         chunks = self.create_chunks(self.pages)
 
         # Build summary
-        total_chars = sum(p['char_count'] for p in self.pages)
-        total_code_blocks = sum(p['code_blocks_count'] for p in self.pages)
-        total_headings = sum(len(p['headings']) for p in self.pages)
-        total_images = sum(p['images_count'] for p in self.pages)
-        total_tables = sum(p['tables_count'] for p in self.pages)  # NEW in Priority 2
+        total_chars = sum(p["char_count"] for p in self.pages)
+        total_code_blocks = sum(p["code_blocks_count"] for p in self.pages)
+        total_headings = sum(len(p["headings"]) for p in self.pages)
+        total_images = sum(p["images_count"] for p in self.pages)
+        total_tables = sum(p["tables_count"] for p in self.pages)  # NEW in Priority 2
 
         # Detect languages used
         languages = {}
         all_code_blocks_list = []
         for page in self.pages:
-            for code in page['code_samples']:
-                lang = code['language']
+            for code in page["code_samples"]:
+                lang = code["language"]
                 languages[lang] = languages.get(lang, 0) + 1
                 all_code_blocks_list.append(code)
 
         # Calculate quality statistics (NEW in B1.4)
         quality_stats = {}
         if all_code_blocks_list:
-            quality_scores = [c['quality_score'] for c in all_code_blocks_list]
-            confidences = [c['confidence'] for c in all_code_blocks_list]
-            valid_count = sum(1 for c in all_code_blocks_list if c['is_valid'])
+            quality_scores = [c["quality_score"] for c in all_code_blocks_list]
+            confidences = [c["confidence"] for c in all_code_blocks_list]
+            valid_count = sum(1 for c in all_code_blocks_list if c["is_valid"])
 
             quality_stats = {
-                'average_quality': sum(quality_scores) / len(quality_scores),
-                'average_confidence': sum(confidences) / len(confidences),
-                'valid_code_blocks': valid_count,
-                'invalid_code_blocks': total_code_blocks - valid_count,
-                'validation_rate': valid_count / total_code_blocks if total_code_blocks > 0 else 0,
-                'high_quality_blocks': sum(1 for s in quality_scores if s >= 7.0),
-                'medium_quality_blocks': sum(1 for s in quality_scores if 4.0 <= s < 7.0),
-                'low_quality_blocks': sum(1 for s in quality_scores if s < 4.0),
+                "average_quality": sum(quality_scores) / len(quality_scores),
+                "average_confidence": sum(confidences) / len(confidences),
+                "valid_code_blocks": valid_count,
+                "invalid_code_blocks": total_code_blocks - valid_count,
+                "validation_rate": valid_count / total_code_blocks if total_code_blocks > 0 else 0,
+                "high_quality_blocks": sum(1 for s in quality_scores if s >= 7.0),
+                "medium_quality_blocks": sum(1 for s in quality_scores if 4.0 <= s < 7.0),
+                "low_quality_blocks": sum(1 for s in quality_scores if s < 4.0),
             }
 
         # Extract chapter information
         chapters = []
         for chunk in chunks:
-            if chunk['chapter_title']:
-                chapters.append({
-                    'title': chunk['chapter_title'],
-                    'start_page': chunk['start_page'],
-                    'end_page': chunk['end_page']
-                })
+            if chunk["chapter_title"]:
+                chapters.append(
+                    {
+                        "title": chunk["chapter_title"],
+                        "start_page": chunk["start_page"],
+                        "end_page": chunk["end_page"],
+                    }
+                )
 
         result = {
-            'source_file': self.pdf_path,
-            'metadata': self.doc.metadata,
-            'total_pages': len(self.doc),
-            'total_chars': total_chars,
-            'total_code_blocks': total_code_blocks,
-            'total_headings': total_headings,
-            'total_images': total_images,
-            'total_extracted_images': len(self.extracted_images),  # NEW in B1.5
-            'total_tables': total_tables,  # NEW in Priority 2
-            'image_directory': self.image_dir if self.extract_images else None,  # NEW in B1.5
-            'extracted_images': self.extracted_images,  # NEW in B1.5
-            'total_chunks': len(chunks),
-            'chapters': chapters,
-            'languages_detected': languages,
-            'quality_statistics': quality_stats,  # NEW in B1.4
-            'chunks': chunks,
-            'pages': self.pages  # Still include all pages for compatibility
+            "source_file": self.pdf_path,
+            "metadata": self.doc.metadata,
+            "total_pages": len(self.doc),
+            "total_chars": total_chars,
+            "total_code_blocks": total_code_blocks,
+            "total_headings": total_headings,
+            "total_images": total_images,
+            "total_extracted_images": len(self.extracted_images),  # NEW in B1.5
+            "total_tables": total_tables,  # NEW in Priority 2
+            "image_directory": self.image_dir if self.extract_images else None,  # NEW in B1.5
+            "extracted_images": self.extracted_images,  # NEW in B1.5
+            "total_chunks": len(chunks),
+            "chapters": chapters,
+            "languages_detected": languages,
+            "quality_statistics": quality_stats,  # NEW in B1.4
+            "chunks": chunks,
+            "pages": self.pages,  # Still include all pages for compatibility
         }
 
         # Close document
         self.doc.close()
 
-        print(f"\n✅ Extraction complete:")
+        print("\n✅ Extraction complete:")
         print(f"   Total characters: {total_chars:,}")
         print(f"   Code blocks found: {total_code_blocks}")
         print(f"   Headings found: {total_headings}")
@@ -983,10 +1033,12 @@ class PDFExtractor:
 
         # Print quality statistics (NEW in B1.4)
         if quality_stats:
-            print(f"\n📊 Code Quality Statistics:")
+            print("\n📊 Code Quality Statistics:")
             print(f"   Average quality: {quality_stats['average_quality']:.1f}/10")
             print(f"   Average confidence: {quality_stats['average_confidence']:.1%}")
-            print(f"   Valid code blocks: {quality_stats['valid_code_blocks']}/{total_code_blocks} ({quality_stats['validation_rate']:.1%})")
+            print(
+                f"   Valid code blocks: {quality_stats['valid_code_blocks']}/{total_code_blocks} ({quality_stats['validation_rate']:.1%})"
+            )
             print(f"   High quality (7+): {quality_stats['high_quality_blocks']}")
             print(f"   Medium quality (4-7): {quality_stats['medium_quality_blocks']}")
             print(f"   Low quality (<4): {quality_stats['low_quality_blocks']}")
@@ -996,7 +1048,7 @@ class PDFExtractor:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Extract text and code blocks from PDF documentation',
+        description="Extract text and code blocks from PDF documentation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1011,39 +1063,58 @@ Examples:
 
   # Extract and save
   python3 pdf_extractor_poc.py docs/python.pdf -o python_extracted.json -v
-        """
+        """,
     )
 
-    parser.add_argument('pdf_file', help='Path to PDF file to extract')
-    parser.add_argument('-o', '--output', help='Output JSON file path (default: print to stdout)')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
-    parser.add_argument('--pretty', action='store_true', help='Pretty-print JSON output')
-    parser.add_argument('--chunk-size', type=int, default=10,
-                        help='Pages per chunk (0 = no chunking, default: 10)')
-    parser.add_argument('--no-merge', action='store_true',
-                        help='Disable merging code blocks across pages')
-    parser.add_argument('--min-quality', type=float, default=0.0,
-                        help='Minimum code quality score (0-10, default: 0 = no filtering)')
-    parser.add_argument('--extract-images', action='store_true',
-                        help='Extract images to files (NEW in B1.5)')
-    parser.add_argument('--image-dir', type=str, default=None,
-                        help='Directory to save extracted images (default: output/{pdf_name}_images)')
-    parser.add_argument('--min-image-size', type=int, default=100,
-                        help='Minimum image dimension in pixels (filters icons, default: 100)')
+    parser.add_argument("pdf_file", help="Path to PDF file to extract")
+    parser.add_argument("-o", "--output", help="Output JSON file path (default: print to stdout)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
+    parser.add_argument(
+        "--chunk-size", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)"
+    )
+    parser.add_argument(
+        "--no-merge", action="store_true", help="Disable merging code blocks across pages"
+    )
+    parser.add_argument(
+        "--min-quality",
+        type=float,
+        default=0.0,
+        help="Minimum code quality score (0-10, default: 0 = no filtering)",
+    )
+    parser.add_argument(
+        "--extract-images", action="store_true", help="Extract images to files (NEW in B1.5)"
+    )
+    parser.add_argument(
+        "--image-dir",
+        type=str,
+        default=None,
+        help="Directory to save extracted images (default: output/{pdf_name}_images)",
+    )
+    parser.add_argument(
+        "--min-image-size",
+        type=int,
+        default=100,
+        help="Minimum image dimension in pixels (filters icons, default: 100)",
+    )
 
     # Advanced features (Priority 2 & 3)
-    parser.add_argument('--ocr', action='store_true',
-                        help='Use OCR for scanned PDFs (requires pytesseract)')
-    parser.add_argument('--password', type=str, default=None,
-                        help='Password for encrypted PDF')
-    parser.add_argument('--extract-tables', action='store_true',
-                        help='Extract tables from PDF (Priority 2)')
-    parser.add_argument('--parallel', action='store_true',
-                        help='Process pages in parallel (Priority 3)')
-    parser.add_argument('--workers', type=int, default=None,
-                        help='Number of parallel workers (default: CPU count)')
-    parser.add_argument('--no-cache', action='store_true',
-                        help='Disable caching of expensive operations')
+    parser.add_argument(
+        "--ocr", action="store_true", help="Use OCR for scanned PDFs (requires pytesseract)"
+    )
+    parser.add_argument("--password", type=str, default=None, help="Password for encrypted PDF")
+    parser.add_argument(
+        "--extract-tables", action="store_true", help="Extract tables from PDF (Priority 2)"
+    )
+    parser.add_argument(
+        "--parallel", action="store_true", help="Process pages in parallel (Priority 3)"
+    )
+    parser.add_argument(
+        "--workers", type=int, default=None, help="Number of parallel workers (default: CPU count)"
+    )
+    parser.add_argument(
+        "--no-cache", action="store_true", help="Disable caching of expensive operations"
+    )
 
     args = parser.parse_args()
 
@@ -1052,8 +1123,8 @@ Examples:
         print(f"❌ Error: File not found: {args.pdf_file}")
         sys.exit(1)
 
-    if not args.pdf_file.lower().endswith('.pdf'):
-        print(f"⚠️  Warning: File does not have .pdf extension")
+    if not args.pdf_file.lower().endswith(".pdf"):
+        print("⚠️  Warning: File does not have .pdf extension")
 
     # Extract
     extractor = PDFExtractor(
@@ -1070,7 +1141,7 @@ Examples:
         extract_tables=args.extract_tables,
         parallel=args.parallel,
         max_workers=args.workers,
-        use_cache=not args.no_cache
+        use_cache=not args.no_cache,
     )
     result = extractor.extract_all()
 
@@ -1080,7 +1151,7 @@ Examples:
     # Output
     if args.output:
         # Save to file
-        with open(args.output, 'w', encoding='utf-8') as f:
+        with open(args.output, "w", encoding="utf-8") as f:
             if args.pretty:
                 json.dump(result, f, indent=2, ensure_ascii=False)
             else:
@@ -1094,5 +1165,5 @@ Examples:
             print(json.dumps(result, ensure_ascii=False))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

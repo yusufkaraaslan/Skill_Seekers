@@ -6,11 +6,10 @@ Implements platform-specific handling for OpenAI ChatGPT Assistants.
 Uses Assistants API with Vector Store for file search.
 """
 
-import os
-import zipfile
 import json
+import zipfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -123,51 +122,51 @@ Always prioritize accuracy by consulting the attached documentation files before
         skill_dir = Path(skill_dir)
 
         # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith('/'):
+        if output_path.is_dir() or str(output_path).endswith("/"):
             output_path = Path(output_path) / f"{skill_dir.name}-openai.zip"
-        elif not str(output_path).endswith('.zip'):
+        elif not str(output_path).endswith(".zip"):
             # Keep .zip extension
-            if not str(output_path).endswith('-openai.zip'):
-                output_str = str(output_path).replace('.zip', '-openai.zip')
-                if not output_str.endswith('.zip'):
-                    output_str += '.zip'
+            if not str(output_path).endswith("-openai.zip"):
+                output_str = str(output_path).replace(".zip", "-openai.zip")
+                if not output_str.endswith(".zip"):
+                    output_str += ".zip"
                 output_path = Path(output_str)
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Create ZIP file
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add SKILL.md as assistant_instructions.txt
             skill_md = skill_dir / "SKILL.md"
             if skill_md.exists():
-                instructions = skill_md.read_text(encoding='utf-8')
+                instructions = skill_md.read_text(encoding="utf-8")
                 zf.writestr("assistant_instructions.txt", instructions)
 
             # Add references directory as vector_store_files/
             refs_dir = skill_dir / "references"
             if refs_dir.exists():
                 for ref_file in refs_dir.rglob("*.md"):
-                    if ref_file.is_file() and not ref_file.name.startswith('.'):
+                    if ref_file.is_file() and not ref_file.name.startswith("."):
                         # Place all reference files in vector_store_files/
                         arcname = f"vector_store_files/{ref_file.name}"
                         zf.write(ref_file, arcname)
 
             # Create and add metadata file
             metadata = {
-                'platform': 'openai',
-                'name': skill_dir.name,
-                'version': '1.0.0',
-                'created_with': 'skill-seekers',
-                'model': 'gpt-4o',
-                'tools': ['file_search']
+                "platform": "openai",
+                "name": skill_dir.name,
+                "version": "1.0.0",
+                "created_with": "skill-seekers",
+                "model": "gpt-4o",
+                "tools": ["file_search"],
             }
 
             zf.writestr("openai_metadata.json", json.dumps(metadata, indent=2))
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> Dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
         """
         Upload skill ZIP to OpenAI Assistants API.
 
@@ -187,18 +186,18 @@ Always prioritize accuracy by consulting the attached documentation files before
         package_path = Path(package_path)
         if not package_path.exists():
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'File not found: {package_path}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"File not found: {package_path}",
             }
 
-        if not package_path.suffix == '.zip':
+        if not package_path.suffix == ".zip":
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'Not a ZIP file: {package_path}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Not a ZIP file: {package_path}",
             }
 
         # Check for openai library
@@ -206,10 +205,10 @@ Always prioritize accuracy by consulting the attached documentation files before
             from openai import OpenAI
         except ImportError:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': 'openai library not installed. Run: pip install openai'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": "openai library not installed. Run: pip install openai",
             }
 
         # Configure OpenAI client
@@ -218,11 +217,10 @@ Always prioritize accuracy by consulting the attached documentation files before
 
             # Extract package to temp directory
             import tempfile
-            import shutil
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Extract ZIP
-                with zipfile.ZipFile(package_path, 'r') as zf:
+                with zipfile.ZipFile(package_path, "r") as zf:
                     zf.extractall(temp_dir)
 
                 temp_path = Path(temp_dir)
@@ -231,29 +229,27 @@ Always prioritize accuracy by consulting the attached documentation files before
                 instructions_file = temp_path / "assistant_instructions.txt"
                 if not instructions_file.exists():
                     return {
-                        'success': False,
-                        'skill_id': None,
-                        'url': None,
-                        'message': 'Invalid package: assistant_instructions.txt not found'
+                        "success": False,
+                        "skill_id": None,
+                        "url": None,
+                        "message": "Invalid package: assistant_instructions.txt not found",
                     }
 
-                instructions = instructions_file.read_text(encoding='utf-8')
+                instructions = instructions_file.read_text(encoding="utf-8")
 
                 # Read metadata
                 metadata_file = temp_path / "openai_metadata.json"
                 skill_name = package_path.stem
-                model = kwargs.get('model', 'gpt-4o')
+                model = kwargs.get("model", "gpt-4o")
 
                 if metadata_file.exists():
-                    with open(metadata_file, 'r') as f:
+                    with open(metadata_file) as f:
                         metadata = json.load(f)
-                        skill_name = metadata.get('name', skill_name)
-                        model = metadata.get('model', model)
+                        skill_name = metadata.get("name", skill_name)
+                        model = metadata.get("model", model)
 
                 # Create vector store
-                vector_store = client.beta.vector_stores.create(
-                    name=f"{skill_name} Documentation"
-                )
+                vector_store = client.beta.vector_stores.create(name=f"{skill_name} Documentation")
 
                 # Upload reference files to vector store
                 vector_files_dir = temp_path / "vector_store_files"
@@ -262,18 +258,14 @@ Always prioritize accuracy by consulting the attached documentation files before
                 if vector_files_dir.exists():
                     for ref_file in vector_files_dir.glob("*.md"):
                         # Upload file
-                        with open(ref_file, 'rb') as f:
-                            uploaded_file = client.files.create(
-                                file=f,
-                                purpose='assistants'
-                            )
+                        with open(ref_file, "rb") as f:
+                            uploaded_file = client.files.create(file=f, purpose="assistants")
                             file_ids.append(uploaded_file.id)
 
                     # Attach files to vector store
                     if file_ids:
                         client.beta.vector_stores.files.create_batch(
-                            vector_store_id=vector_store.id,
-                            file_ids=file_ids
+                            vector_store_id=vector_store.id, file_ids=file_ids
                         )
 
                 # Create assistant
@@ -282,26 +274,22 @@ Always prioritize accuracy by consulting the attached documentation files before
                     instructions=instructions,
                     model=model,
                     tools=[{"type": "file_search"}],
-                    tool_resources={
-                        "file_search": {
-                            "vector_store_ids": [vector_store.id]
-                        }
-                    }
+                    tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
                 )
 
             return {
-                'success': True,
-                'skill_id': assistant.id,
-                'url': f"https://platform.openai.com/assistants/{assistant.id}",
-                'message': f'Assistant created with {len(file_ids)} knowledge files'
+                "success": True,
+                "skill_id": assistant.id,
+                "url": f"https://platform.openai.com/assistants/{assistant.id}",
+                "message": f"Assistant created with {len(file_ids)} knowledge files",
             }
 
         except Exception as e:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'Upload failed: {str(e)}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Upload failed: {str(e)}",
             }
 
     def validate_api_key(self, api_key: str) -> bool:
@@ -314,7 +302,7 @@ Always prioritize accuracy by consulting the attached documentation files before
         Returns:
             True if key starts with 'sk-'
         """
-        return api_key.strip().startswith('sk-')
+        return api_key.strip().startswith("sk-")
 
     def get_env_var_name(self) -> str:
         """
@@ -372,17 +360,13 @@ Always prioritize accuracy by consulting the attached documentation files before
         # Read current SKILL.md
         current_skill_md = None
         if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding='utf-8')
+            current_skill_md = skill_md_path.read_text(encoding="utf-8")
             print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
         else:
-            print(f"  ℹ No existing SKILL.md, will create new one")
+            print("  ℹ No existing SKILL.md, will create new one")
 
         # Build enhancement prompt
-        prompt = self._build_enhancement_prompt(
-            skill_dir.name,
-            references,
-            current_skill_md
-        )
+        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
 
         print("\n🤖 Asking GPT-4o to enhance SKILL.md...")
         print(f"   Input: {len(prompt):,} characters")
@@ -395,15 +379,12 @@ Always prioritize accuracy by consulting the attached documentation files before
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert technical writer creating Assistant instructions for OpenAI ChatGPT."
+                        "content": "You are an expert technical writer creating Assistant instructions for OpenAI ChatGPT.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=4096
+                max_tokens=4096,
             )
 
             enhanced_content = response.choices[0].message.content
@@ -411,13 +392,13 @@ Always prioritize accuracy by consulting the attached documentation files before
 
             # Backup original
             if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix('.md.backup')
+                backup_path = skill_md_path.with_suffix(".md.backup")
                 skill_md_path.rename(backup_path)
                 print(f"  💾 Backed up original to: {backup_path.name}")
 
             # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding='utf-8')
-            print(f"  ✅ Saved enhanced SKILL.md")
+            skill_md_path.write_text(enhanced_content, encoding="utf-8")
+            print("  ✅ Saved enhanced SKILL.md")
 
             return True
 
@@ -425,7 +406,9 @@ Always prioritize accuracy by consulting the attached documentation files before
             print(f"❌ Error calling OpenAI API: {e}")
             return False
 
-    def _read_reference_files(self, references_dir: Path, max_chars: int = 200000) -> Dict[str, str]:
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
         """
         Read reference markdown files from skill directory.
 
@@ -448,7 +431,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 break
 
             try:
-                content = ref_file.read_text(encoding='utf-8')
+                content = ref_file.read_text(encoding="utf-8")
                 # Limit individual file size
                 if len(content) > 30000:
                     content = content[:30000] + "\n\n...(truncated)"
@@ -462,10 +445,7 @@ Always prioritize accuracy by consulting the attached documentation files before
         return references
 
     def _build_enhancement_prompt(
-        self,
-        skill_name: str,
-        references: Dict[str, str],
-        current_skill_md: str = None
+        self, skill_name: str, references: dict[str, str], current_skill_md: str = None
     ) -> str:
         """
         Build OpenAI API prompt for enhancement.
@@ -483,9 +463,9 @@ Always prioritize accuracy by consulting the attached documentation files before
 I've scraped documentation and organized it into reference files. Your job is to create EXCELLENT Assistant instructions that will help the Assistant use this documentation effectively.
 
 CURRENT INSTRUCTIONS:
-{'```' if current_skill_md else '(none - create from scratch)'}
-{current_skill_md or 'No existing instructions'}
-{'```' if current_skill_md else ''}
+{"```" if current_skill_md else "(none - create from scratch)"}
+{current_skill_md or "No existing instructions"}
+{"```" if current_skill_md else ""}
 
 REFERENCE DOCUMENTATION:
 """

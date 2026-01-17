@@ -9,34 +9,33 @@ Usage:
     skill-seekers package output/react/ --no-open  # Don't open folder
 """
 
+import argparse
 import os
 import sys
-import zipfile
-import argparse
 from pathlib import Path
 
 # Import utilities
 try:
+    from quality_checker import SkillQualityChecker, print_report
     from utils import (
+        format_file_size,
         open_folder,
         print_upload_instructions,
-        format_file_size,
-        validate_skill_directory
+        validate_skill_directory,
     )
-    from quality_checker import SkillQualityChecker, print_report
 except ImportError:
     # If running from different directory, add cli to path
     sys.path.insert(0, str(Path(__file__).parent))
+    from quality_checker import SkillQualityChecker, print_report
     from utils import (
+        format_file_size,
         open_folder,
         print_upload_instructions,
-        format_file_size,
-        validate_skill_directory
+        validate_skill_directory,
     )
-    from quality_checker import SkillQualityChecker, print_report
 
 
-def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, target='claude'):
+def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, target="claude"):
     """
     Package a skill directory into platform-specific format
 
@@ -73,7 +72,7 @@ def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, t
         if report.has_errors or report.has_warnings:
             print("=" * 60)
             response = input("\nContinue with packaging? (y/n): ").strip().lower()
-            if response != 'y':
+            if response != "y":
                 print("\n❌ Packaging cancelled by user")
                 return False, None
             print()
@@ -84,6 +83,7 @@ def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, t
     # Get platform-specific adaptor
     try:
         from skill_seekers.cli.adaptors import get_adaptor
+
         adaptor = get_adaptor(target)
     except (ImportError, ValueError) as e:
         print(f"❌ Error: {e}")
@@ -140,37 +140,30 @@ Examples:
 
   # Get help
   skill-seekers package --help
-        """
+        """,
+    )
+
+    parser.add_argument("skill_dir", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument(
+        "--no-open", action="store_true", help="Do not open the output folder after packaging"
     )
 
     parser.add_argument(
-        'skill_dir',
-        help='Path to skill directory (e.g., output/react/)'
+        "--skip-quality-check", action="store_true", help="Skip quality checks before packaging"
     )
 
     parser.add_argument(
-        '--no-open',
-        action='store_true',
-        help='Do not open the output folder after packaging'
+        "--target",
+        choices=["claude", "gemini", "openai", "markdown"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
     )
 
     parser.add_argument(
-        '--skip-quality-check',
-        action='store_true',
-        help='Skip quality checks before packaging'
-    )
-
-    parser.add_argument(
-        '--target',
-        choices=['claude', 'gemini', 'openai', 'markdown'],
-        default='claude',
-        help='Target LLM platform (default: claude)'
-    )
-
-    parser.add_argument(
-        '--upload',
-        action='store_true',
-        help='Automatically upload after packaging (requires platform API key)'
+        "--upload",
+        action="store_true",
+        help="Automatically upload after packaging (requires platform API key)",
     )
 
     args = parser.parse_args()
@@ -179,7 +172,7 @@ Examples:
         args.skill_dir,
         open_folder_after=not args.no_open,
         skip_quality_check=args.skip_quality_check,
-        target=args.target
+        target=args.target,
     )
 
     if not success:
@@ -194,42 +187,42 @@ Examples:
             adaptor = get_adaptor(args.target)
 
             # Get API key from environment
-            api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
+            api_key = os.environ.get(adaptor.get_env_var_name(), "").strip()
 
             if not api_key:
                 # No API key - show helpful message but DON'T fail
-                print("\n" + "="*60)
+                print("\n" + "=" * 60)
                 print("💡 Automatic Upload")
-                print("="*60)
+                print("=" * 60)
                 print()
                 print(f"To enable automatic upload to {adaptor.PLATFORM_NAME}:")
-                print(f"  1. Get API key from the platform")
+                print("  1. Get API key from the platform")
                 print(f"  2. Set: export {adaptor.get_env_var_name()}=...")
-                print(f"  3. Run package command with --upload flag")
+                print("  3. Run package command with --upload flag")
                 print()
                 print("For now, use manual upload (instructions above) ☝️")
-                print("="*60)
+                print("=" * 60)
                 # Exit successfully - packaging worked!
                 sys.exit(0)
 
             # API key exists - try upload
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print(f"📤 Uploading to {adaptor.PLATFORM_NAME}...")
-            print("="*60)
+            print("=" * 60)
 
             result = adaptor.upload(package_path, api_key)
 
-            if result['success']:
+            if result["success"]:
                 print(f"\n✅ {result['message']}")
-                if result['url']:
+                if result["url"]:
                     print(f"   View at: {result['url']}")
-                print("="*60)
+                print("=" * 60)
                 sys.exit(0)
             else:
                 print(f"\n❌ Upload failed: {result['message']}")
                 print()
                 print("💡 Try manual upload instead (instructions above) ☝️")
-                print("="*60)
+                print("=" * 60)
                 # Exit successfully - packaging worked even if upload failed
                 sys.exit(0)
 

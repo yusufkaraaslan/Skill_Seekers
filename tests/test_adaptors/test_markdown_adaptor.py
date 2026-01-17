@@ -3,10 +3,10 @@
 Tests for Markdown adaptor
 """
 
-import unittest
-from pathlib import Path
 import tempfile
+import unittest
 import zipfile
+from pathlib import Path
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
@@ -17,25 +17,25 @@ class TestMarkdownAdaptor(unittest.TestCase):
 
     def setUp(self):
         """Set up test adaptor"""
-        self.adaptor = get_adaptor('markdown')
+        self.adaptor = get_adaptor("markdown")
 
     def test_platform_info(self):
         """Test platform identifiers"""
-        self.assertEqual(self.adaptor.PLATFORM, 'markdown')
-        self.assertEqual(self.adaptor.PLATFORM_NAME, 'Generic Markdown (Universal)')
+        self.assertEqual(self.adaptor.PLATFORM, "markdown")
+        self.assertEqual(self.adaptor.PLATFORM_NAME, "Generic Markdown (Universal)")
         self.assertIsNone(self.adaptor.DEFAULT_API_ENDPOINT)
 
     def test_validate_api_key(self):
         """Test that markdown export doesn't use API keys"""
         # Any key should return False (no keys needed)
-        self.assertFalse(self.adaptor.validate_api_key('sk-ant-123'))
-        self.assertFalse(self.adaptor.validate_api_key('AIzaSyABC123'))
-        self.assertFalse(self.adaptor.validate_api_key('any-key'))
-        self.assertFalse(self.adaptor.validate_api_key(''))
+        self.assertFalse(self.adaptor.validate_api_key("sk-ant-123"))
+        self.assertFalse(self.adaptor.validate_api_key("AIzaSyABC123"))
+        self.assertFalse(self.adaptor.validate_api_key("any-key"))
+        self.assertFalse(self.adaptor.validate_api_key(""))
 
     def test_get_env_var_name(self):
         """Test environment variable name"""
-        self.assertEqual(self.adaptor.get_env_var_name(), '')
+        self.assertEqual(self.adaptor.get_env_var_name(), "")
 
     def test_supports_enhancement(self):
         """Test enhancement support"""
@@ -49,7 +49,7 @@ class TestMarkdownAdaptor(unittest.TestCase):
             refs_dir.mkdir()
             (refs_dir / "test.md").write_text("Test content")
 
-            success = self.adaptor.enhance(skill_dir, 'not-used')
+            success = self.adaptor.enhance(skill_dir, "not-used")
             self.assertFalse(success)
 
     def test_format_skill_md_no_frontmatter(self):
@@ -61,18 +61,15 @@ class TestMarkdownAdaptor(unittest.TestCase):
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Test content")
 
-            metadata = SkillMetadata(
-                name="test-skill",
-                description="Test skill description"
-            )
+            metadata = SkillMetadata(name="test-skill", description="Test skill description")
 
             formatted = self.adaptor.format_skill_md(skill_dir, metadata)
 
             # Should NOT start with YAML frontmatter
-            self.assertFalse(formatted.startswith('---'))
+            self.assertFalse(formatted.startswith("---"))
             # Should contain the skill name and description
-            self.assertIn('test-skill', formatted.lower())
-            self.assertIn('Test skill description', formatted)
+            self.assertIn("test-skill", formatted.lower())
+            self.assertIn("Test skill description", formatted)
 
     def test_package_creates_zip(self):
         """Test that package creates ZIP file with correct structure"""
@@ -94,25 +91,25 @@ class TestMarkdownAdaptor(unittest.TestCase):
 
             # Verify package was created
             self.assertTrue(package_path.exists())
-            self.assertTrue(str(package_path).endswith('.zip'))
-            self.assertIn('markdown', package_path.name)
+            self.assertTrue(str(package_path).endswith(".zip"))
+            self.assertIn("markdown", package_path.name)
 
             # Verify package contents
-            with zipfile.ZipFile(package_path, 'r') as zf:
+            with zipfile.ZipFile(package_path, "r") as zf:
                 names = zf.namelist()
 
                 # Should have README.md (from SKILL.md)
-                self.assertIn('README.md', names)
+                self.assertIn("README.md", names)
 
                 # Should have metadata.json
-                self.assertIn('metadata.json', names)
+                self.assertIn("metadata.json", names)
 
                 # Should have DOCUMENTATION.md (combined)
-                self.assertIn('DOCUMENTATION.md', names)
+                self.assertIn("DOCUMENTATION.md", names)
 
                 # Should have reference files
-                self.assertIn('references/guide.md', names)
-                self.assertIn('references/api.md', names)
+                self.assertIn("references/guide.md", names)
+                self.assertIn("references/api.md", names)
 
     def test_package_readme_content(self):
         """Test that README.md contains SKILL.md content"""
@@ -130,8 +127,8 @@ class TestMarkdownAdaptor(unittest.TestCase):
             package_path = self.adaptor.package(skill_dir, output_dir)
 
             # Verify README.md content
-            with zipfile.ZipFile(package_path, 'r') as zf:
-                readme_content = zf.read('README.md').decode('utf-8')
+            with zipfile.ZipFile(package_path, "r") as zf:
+                readme_content = zf.read("README.md").decode("utf-8")
                 self.assertEqual(readme_content, skill_md_content)
 
     def test_package_combined_documentation(self):
@@ -155,18 +152,18 @@ class TestMarkdownAdaptor(unittest.TestCase):
             package_path = self.adaptor.package(skill_dir, output_dir)
 
             # Verify DOCUMENTATION.md contains combined content
-            with zipfile.ZipFile(package_path, 'r') as zf:
-                doc_content = zf.read('DOCUMENTATION.md').decode('utf-8')
+            with zipfile.ZipFile(package_path, "r") as zf:
+                doc_content = zf.read("DOCUMENTATION.md").decode("utf-8")
 
                 # Should contain main skill content
-                self.assertIn('Main Skill', doc_content)
+                self.assertIn("Main Skill", doc_content)
 
                 # Should contain reference content
-                self.assertIn('Guide Content', doc_content)
-                self.assertIn('API Content', doc_content)
+                self.assertIn("Guide Content", doc_content)
+                self.assertIn("API Content", doc_content)
 
                 # Should have separators
-                self.assertIn('---', doc_content)
+                self.assertIn("---", doc_content)
 
     def test_package_metadata(self):
         """Test that metadata.json is correct"""
@@ -183,26 +180,27 @@ class TestMarkdownAdaptor(unittest.TestCase):
             package_path = self.adaptor.package(skill_dir, output_dir)
 
             # Verify metadata
-            with zipfile.ZipFile(package_path, 'r') as zf:
+            with zipfile.ZipFile(package_path, "r") as zf:
                 import json
-                metadata_content = zf.read('metadata.json').decode('utf-8')
+
+                metadata_content = zf.read("metadata.json").decode("utf-8")
                 metadata = json.loads(metadata_content)
 
-                self.assertEqual(metadata['platform'], 'markdown')
-                self.assertEqual(metadata['name'], 'test-skill')
-                self.assertEqual(metadata['format'], 'universal_markdown')
-                self.assertIn('created_with', metadata)
+                self.assertEqual(metadata["platform"], "markdown")
+                self.assertEqual(metadata["name"], "test-skill")
+                self.assertEqual(metadata["format"], "universal_markdown")
+                self.assertIn("created_with", metadata)
 
     def test_upload_not_supported(self):
         """Test that upload returns appropriate message"""
-        with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
-            result = self.adaptor.upload(Path(tmp.name), 'not-used')
+        with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
+            result = self.adaptor.upload(Path(tmp.name), "not-used")
 
-            self.assertFalse(result['success'])
-            self.assertIsNone(result['skill_id'])
-            self.assertIn('not support', result['message'].lower())
+            self.assertFalse(result["success"])
+            self.assertIsNone(result["skill_id"])
+            self.assertIn("not support", result["message"].lower())
             # URL should point to local file
-            self.assertIn(tmp.name, result['url'])
+            self.assertIn(tmp.name, result["url"])
 
     def test_package_output_filename(self):
         """Test that package creates correct filename"""
@@ -219,10 +217,10 @@ class TestMarkdownAdaptor(unittest.TestCase):
             package_path = self.adaptor.package(skill_dir, output_dir)
 
             # Should include skill name and 'markdown' suffix
-            self.assertTrue(package_path.name.startswith('my-framework'))
-            self.assertIn('markdown', package_path.name)
-            self.assertTrue(package_path.name.endswith('.zip'))
+            self.assertTrue(package_path.name.startswith("my-framework"))
+            self.assertIn("markdown", package_path.name)
+            self.assertTrue(package_path.name.endswith(".zip"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

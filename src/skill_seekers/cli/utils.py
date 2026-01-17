@@ -3,21 +3,21 @@
 Utility functions for Skill Seeker CLI tools
 """
 
-import os
-import sys
-import subprocess
-import platform
-import time
 import logging
+import os
+import platform
+import subprocess
+import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Union, TypeVar, Callable
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def open_folder(folder_path: Union[str, Path]) -> bool:
+def open_folder(folder_path: str | Path) -> bool:
     """
     Open a folder in the system file browser
 
@@ -50,10 +50,10 @@ def open_folder(folder_path: Union[str, Path]) -> bool:
         return True
 
     except subprocess.CalledProcessError:
-        print(f"⚠️  Could not open folder automatically")
+        print("⚠️  Could not open folder automatically")
         return False
     except FileNotFoundError:
-        print(f"⚠️  File browser not found on system")
+        print("⚠️  File browser not found on system")
         return False
 
 
@@ -64,18 +64,18 @@ def has_api_key() -> bool:
     Returns:
         bool: True if API key is set, False otherwise
     """
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     return len(api_key) > 0
 
 
-def get_api_key() -> Optional[str]:
+def get_api_key() -> str | None:
     """
     Get ANTHROPIC_API_KEY from environment
 
     Returns:
         str: API key or None if not set
     """
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     return api_key if api_key else None
 
 
@@ -89,7 +89,7 @@ def get_upload_url() -> str:
     return "https://claude.ai/skills"
 
 
-def print_upload_instructions(zip_path: Union[str, Path]) -> None:
+def print_upload_instructions(zip_path: str | Path) -> None:
     """
     Print clear upload instructions for manual upload
 
@@ -106,7 +106,7 @@ def print_upload_instructions(zip_path: Union[str, Path]) -> None:
     print(f"📤 Upload to Claude: {get_upload_url()}")
     print()
     print(f"1. Go to {get_upload_url()}")
-    print("2. Click \"Upload Skill\"")
+    print('2. Click "Upload Skill"')
     print(f"3. Select: {zip_path}")
     print("4. Done! ✅")
     print()
@@ -130,7 +130,7 @@ def format_file_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
-def validate_skill_directory(skill_dir: Union[str, Path]) -> Tuple[bool, Optional[str]]:
+def validate_skill_directory(skill_dir: str | Path) -> tuple[bool, str | None]:
     """
     Validate that a directory is a valid skill directory
 
@@ -155,7 +155,7 @@ def validate_skill_directory(skill_dir: Union[str, Path]) -> Tuple[bool, Optiona
     return True, None
 
 
-def validate_zip_file(zip_path: Union[str, Path]) -> Tuple[bool, Optional[str]]:
+def validate_zip_file(zip_path: str | Path) -> tuple[bool, str | None]:
     """
     Validate that a file is a valid skill .zip file
 
@@ -173,13 +173,15 @@ def validate_zip_file(zip_path: Union[str, Path]) -> Tuple[bool, Optional[str]]:
     if not zip_path.is_file():
         return False, f"Not a file: {zip_path}"
 
-    if not zip_path.suffix == '.zip':
+    if not zip_path.suffix == ".zip":
         return False, f"Not a .zip file: {zip_path}"
 
     return True, None
 
 
-def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, preview_limit: int = 40000) -> Dict[str, Dict]:
+def read_reference_files(
+    skill_dir: str | Path, max_chars: int = 100000, preview_limit: int = 40000
+) -> dict[str, dict]:
     """Read reference files from a skill directory with enriched metadata.
 
     This function reads markdown files from the references/ subdirectory
@@ -210,13 +212,13 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
 
     skill_path = Path(skill_dir)
     references_dir = skill_path / "references"
-    references: Dict[str, Dict] = {}
+    references: dict[str, dict] = {}
 
     if not references_dir.exists():
         print(f"⚠ No references directory found at {references_dir}")
         return references
 
-    def _determine_source_metadata(relative_path: Path) -> Tuple[str, str, Optional[str]]:
+    def _determine_source_metadata(relative_path: Path) -> tuple[str, str, str | None]:
         """Determine source type, confidence level, and repo_id from path.
 
         For multi-source support, extracts repo_id from paths like:
@@ -230,54 +232,54 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         repo_id = None  # Default: no repo identity
 
         # Documentation sources (official docs)
-        if path_str.startswith('documentation/'):
-            return 'documentation', 'high', None
+        if path_str.startswith("documentation/"):
+            return "documentation", "high", None
 
         # GitHub sources
-        elif path_str.startswith('github/'):
+        elif path_str.startswith("github/"):
             # README and releases are medium confidence
-            if 'README' in path_str or 'releases' in path_str:
-                return 'github', 'medium', None
+            if "README" in path_str or "releases" in path_str:
+                return "github", "medium", None
             # Issues are low confidence (user reports)
-            elif 'issues' in path_str:
-                return 'github', 'low', None
+            elif "issues" in path_str:
+                return "github", "low", None
             else:
-                return 'github', 'medium', None
+                return "github", "medium", None
 
         # PDF sources (books, manuals)
-        elif path_str.startswith('pdf/'):
-            return 'pdf', 'high', None
+        elif path_str.startswith("pdf/"):
+            return "pdf", "high", None
 
         # Merged API (synthesized from multiple sources)
-        elif path_str.startswith('api/'):
-            return 'api', 'high', None
+        elif path_str.startswith("api/"):
+            return "api", "high", None
 
         # Codebase analysis (C3.x automated analysis)
-        elif path_str.startswith('codebase_analysis/'):
+        elif path_str.startswith("codebase_analysis/"):
             # Extract repo_id from path: codebase_analysis/{repo_id}/...
             parts = Path(path_str).parts
             if len(parts) >= 2:
                 repo_id = parts[1]  # e.g., 'encode_httpx', 'encode_httpcore'
 
             # ARCHITECTURE.md is high confidence (comprehensive)
-            if 'ARCHITECTURE' in path_str:
-                return 'codebase_analysis', 'high', repo_id
+            if "ARCHITECTURE" in path_str:
+                return "codebase_analysis", "high", repo_id
             # Patterns and examples are medium (heuristic-based)
-            elif 'patterns' in path_str or 'examples' in path_str:
-                return 'codebase_analysis', 'medium', repo_id
+            elif "patterns" in path_str or "examples" in path_str:
+                return "codebase_analysis", "medium", repo_id
             # Configuration is high (direct extraction)
-            elif 'configuration' in path_str:
-                return 'codebase_analysis', 'high', repo_id
+            elif "configuration" in path_str:
+                return "codebase_analysis", "high", repo_id
             else:
-                return 'codebase_analysis', 'medium', repo_id
+                return "codebase_analysis", "medium", repo_id
 
         # Conflicts report (discrepancy detection)
-        elif 'conflicts' in path_str:
-            return 'conflicts', 'medium', None
+        elif "conflicts" in path_str:
+            return "conflicts", "medium", None
 
         # Fallback
         else:
-            return 'unknown', 'medium', None
+            return "unknown", "medium", None
 
     total_chars = 0
     # Search recursively for all .md files (including subdirectories like github/README.md)
@@ -285,7 +287,7 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
         # Note: We now include index.md files as they contain important content
         # (patterns, examples, configuration analysis)
 
-        content = ref_file.read_text(encoding='utf-8')
+        content = ref_file.read_text(encoding="utf-8")
 
         # Limit size per file
         truncated = False
@@ -299,13 +301,13 @@ def read_reference_files(skill_dir: Union[str, Path], max_chars: int = 100000, p
 
         # Build enriched metadata (with repo_id for multi-source support)
         references[str(relative_path)] = {
-            'content': content,
-            'source': source_type,
-            'confidence': confidence,
-            'path': str(relative_path),
-            'truncated': truncated,
-            'size': len(content),
-            'repo_id': repo_id  # None for single-source, repo identifier for multi-source
+            "content": content,
+            "source": source_type,
+            "confidence": confidence,
+            "path": str(relative_path),
+            "truncated": truncated,
+            "size": len(content),
+            "repo_id": repo_id,  # None for single-source, repo identifier for multi-source
         }
 
         total_chars += len(content)
@@ -322,7 +324,7 @@ def retry_with_backoff(
     operation: Callable[[], T],
     max_attempts: int = 3,
     base_delay: float = 1.0,
-    operation_name: str = "operation"
+    operation_name: str = "operation",
 ) -> T:
     """Retry an operation with exponential backoff.
 
@@ -348,7 +350,7 @@ def retry_with_backoff(
         ...     return response.text
         >>> content = retry_with_backoff(fetch_page, max_attempts=3, operation_name=f"fetch {url}")
     """
-    last_exception: Optional[Exception] = None
+    last_exception: Exception | None = None
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -359,14 +361,15 @@ def retry_with_backoff(
                 delay = base_delay * (2 ** (attempt - 1))
                 logger.warning(
                     "%s failed (attempt %d/%d), retrying in %.1fs: %s",
-                    operation_name, attempt, max_attempts, delay, e
+                    operation_name,
+                    attempt,
+                    max_attempts,
+                    delay,
+                    e,
                 )
                 time.sleep(delay)
             else:
-                logger.error(
-                    "%s failed after %d attempts: %s",
-                    operation_name, max_attempts, e
-                )
+                logger.error("%s failed after %d attempts: %s", operation_name, max_attempts, e)
 
     # This should always have a value, but mypy doesn't know that
     if last_exception is not None:
@@ -378,7 +381,7 @@ async def retry_with_backoff_async(
     operation: Callable[[], T],
     max_attempts: int = 3,
     base_delay: float = 1.0,
-    operation_name: str = "operation"
+    operation_name: str = "operation",
 ) -> T:
     """Async version of retry_with_backoff for async operations.
 
@@ -403,7 +406,7 @@ async def retry_with_backoff_async(
     """
     import asyncio
 
-    last_exception: Optional[Exception] = None
+    last_exception: Exception | None = None
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -414,14 +417,15 @@ async def retry_with_backoff_async(
                 delay = base_delay * (2 ** (attempt - 1))
                 logger.warning(
                     "%s failed (attempt %d/%d), retrying in %.1fs: %s",
-                    operation_name, attempt, max_attempts, delay, e
+                    operation_name,
+                    attempt,
+                    max_attempts,
+                    delay,
+                    e,
                 )
                 await asyncio.sleep(delay)
             else:
-                logger.error(
-                    "%s failed after %d attempts: %s",
-                    operation_name, max_attempts, e
-                )
+                logger.error("%s failed after %d attempts: %s", operation_name, max_attempts, e)
 
     if last_exception is not None:
         raise last_exception

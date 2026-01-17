@@ -14,7 +14,6 @@ Extracted from server.py for better modularity and organization.
 import json
 import sys
 from pathlib import Path
-from typing import Any, List
 
 # MCP types - with graceful fallback for testing
 try:
@@ -23,15 +22,17 @@ except ImportError:
     # Graceful degradation: Create a simple fallback class for testing
     class TextContent:
         """Fallback TextContent for when MCP is not installed"""
+
         def __init__(self, type: str, text: str):
             self.type = type
             self.text = text
+
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
 
 
-def run_subprocess_with_streaming(cmd: List[str], timeout: int = None) -> tuple:
+def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple:
     """
     Run subprocess with real-time output streaming.
 
@@ -55,7 +56,7 @@ def run_subprocess_with_streaming(cmd: List[str], timeout: int = None) -> tuple:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,  # Line buffered
-            universal_newlines=True
+            universal_newlines=True,
         )
 
         stdout_lines = []
@@ -77,6 +78,7 @@ def run_subprocess_with_streaming(cmd: List[str], timeout: int = None) -> tuple:
             # Read available output (non-blocking)
             try:
                 import select
+
                 readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
 
                 if process.stdout in readable:
@@ -99,8 +101,8 @@ def run_subprocess_with_streaming(cmd: List[str], timeout: int = None) -> tuple:
         if remaining_stderr:
             stderr_lines.append(remaining_stderr)
 
-        stdout = ''.join(stdout_lines)
-        stderr = ''.join(stderr_lines)
+        stdout = "".join(stdout_lines)
+        stderr = "".join(stderr_lines)
         returncode = process.returncode
 
         return stdout, stderr, returncode
@@ -109,7 +111,7 @@ def run_subprocess_with_streaming(cmd: List[str], timeout: int = None) -> tuple:
         return "", f"Error running subprocess: {str(e)}", 1
 
 
-async def estimate_pages_tool(args: dict) -> List[TextContent]:
+async def estimate_pages_tool(args: dict) -> list[TextContent]:
     """
     Estimate page count from a config file.
 
@@ -142,10 +144,11 @@ async def estimate_pages_tool(args: dict) -> List[TextContent]:
         sys.executable,
         str(CLI_DIR / "estimate_pages.py"),
         config_path,
-        "--max-discovery", str(max_discovery)
+        "--max-discovery",
+        str(max_discovery),
     ]
 
-    progress_msg = f"🔄 Estimating page count...\n"
+    progress_msg = "🔄 Estimating page count...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
@@ -158,7 +161,7 @@ async def estimate_pages_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
-async def scrape_docs_tool(args: dict) -> List[TextContent]:
+async def scrape_docs_tool(args: dict) -> list[TextContent]:
     """
     Scrape documentation and build skill.
 
@@ -186,27 +189,27 @@ async def scrape_docs_tool(args: dict) -> List[TextContent]:
     merge_mode = args.get("merge_mode")
 
     # Load config to detect format
-    with open(config_path, 'r') as f:
+    with open(config_path) as f:
         config = json.load(f)
 
     # Detect if unified format (has 'sources' array)
-    is_unified = 'sources' in config and isinstance(config['sources'], list)
+    is_unified = "sources" in config and isinstance(config["sources"], list)
 
     # Handle unlimited mode by modifying config temporarily
     if unlimited:
         # Set max_pages to None (unlimited)
         if is_unified:
             # For unified configs, set max_pages on documentation sources
-            for source in config.get('sources', []):
-                if source.get('type') == 'documentation':
-                    source['max_pages'] = None
+            for source in config.get("sources", []):
+                if source.get("type") == "documentation":
+                    source["max_pages"] = None
         else:
             # For legacy configs
-            config['max_pages'] = None
+            config["max_pages"] = None
 
         # Create temporary config file
-        temp_config_path = config_path.replace('.json', '_unlimited_temp.json')
-        with open(temp_config_path, 'w') as f:
+        temp_config_path = config_path.replace(".json", "_unlimited_temp.json")
+        with open(temp_config_path, "w") as f:
             json.dump(config, f, indent=2)
 
         config_to_use = temp_config_path
@@ -216,19 +219,15 @@ async def scrape_docs_tool(args: dict) -> List[TextContent]:
     # Choose scraper based on format
     if is_unified:
         scraper_script = "unified_scraper.py"
-        progress_msg = f"🔄 Starting unified multi-source scraping...\n"
-        progress_msg += f"📦 Config format: Unified (multiple sources)\n"
+        progress_msg = "🔄 Starting unified multi-source scraping...\n"
+        progress_msg += "📦 Config format: Unified (multiple sources)\n"
     else:
         scraper_script = "doc_scraper.py"
-        progress_msg = f"🔄 Starting scraping process...\n"
-        progress_msg += f"📦 Config format: Legacy (single source)\n"
+        progress_msg = "🔄 Starting scraping process...\n"
+        progress_msg += "📦 Config format: Legacy (single source)\n"
 
     # Build command
-    cmd = [
-        sys.executable,
-        str(CLI_DIR / scraper_script),
-        "--config", config_to_use
-    ]
+    cmd = [sys.executable, str(CLI_DIR / scraper_script), "--config", config_to_use]
 
     # Add merge mode for unified configs
     if is_unified and merge_mode:
@@ -258,12 +257,12 @@ async def scrape_docs_tool(args: dict) -> List[TextContent]:
             if is_unified:
                 # For unified configs, estimate based on all sources
                 total_pages = 0
-                for source in config.get('sources', []):
-                    if source.get('type') == 'documentation':
-                        total_pages += source.get('max_pages', 500)
+                for source in config.get("sources", []):
+                    if source.get("type") == "documentation":
+                        total_pages += source.get("max_pages", 500)
                 max_pages = total_pages or 500
             else:
-                max_pages = config.get('max_pages', 500)
+                max_pages = config.get("max_pages", 500)
 
             # Estimate: 30s per page + buffer
             timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
@@ -274,8 +273,8 @@ async def scrape_docs_tool(args: dict) -> List[TextContent]:
     if timeout:
         progress_msg += f"⏱️ Maximum time allowed: {timeout // 60} minutes\n"
     else:
-        progress_msg += f"⏱️ Unlimited mode - no timeout\n"
-    progress_msg += f"📝 Progress will be shown below:\n\n"
+        progress_msg += "⏱️ Unlimited mode - no timeout\n"
+    progress_msg += "📝 Progress will be shown below:\n\n"
 
     # Run scraper with streaming
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
@@ -293,7 +292,7 @@ async def scrape_docs_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=error_output)]
 
 
-async def scrape_pdf_tool(args: dict) -> List[TextContent]:
+async def scrape_pdf_tool(args: dict) -> list[TextContent]:
     """
     Scrape PDF documentation and build Claude skill.
 
@@ -335,7 +334,11 @@ async def scrape_pdf_tool(args: dict) -> List[TextContent]:
         cmd.extend(["--from-json", from_json])
 
     else:
-        return [TextContent(type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json"
+            )
+        ]
 
     # Run pdf_scraper.py with streaming (can take a while)
     timeout = 600  # 10 minutes for PDF extraction
@@ -353,7 +356,7 @@ async def scrape_pdf_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
-async def scrape_github_tool(args: dict) -> List[TextContent]:
+async def scrape_github_tool(args: dict) -> list[TextContent]:
     """
     Scrape GitHub repository and build Claude skill.
 
@@ -433,7 +436,7 @@ async def scrape_github_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
-async def scrape_codebase_tool(args: dict) -> List[TextContent]:
+async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     """
     Analyze local codebase and extract code knowledge.
 
@@ -506,7 +509,7 @@ async def scrape_codebase_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
 
 
-async def detect_patterns_tool(args: dict) -> List[TextContent]:
+async def detect_patterns_tool(args: dict) -> list[TextContent]:
     """
     Detect design patterns in source code.
 
@@ -536,7 +539,11 @@ async def detect_patterns_tool(args: dict) -> List[TextContent]:
     directory = args.get("directory")
 
     if not file_path and not directory:
-        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter"
+            )
+        ]
 
     output = args.get("output", "")
     depth = args.get("depth", "deep")
@@ -576,7 +583,7 @@ async def detect_patterns_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
 
 
-async def extract_test_examples_tool(args: dict) -> List[TextContent]:
+async def extract_test_examples_tool(args: dict) -> list[TextContent]:
     """
     Extract usage examples from test files.
 
@@ -611,7 +618,11 @@ async def extract_test_examples_tool(args: dict) -> List[TextContent]:
     directory = args.get("directory")
 
     if not file_path and not directory:
-        return [TextContent(type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter")]
+        return [
+            TextContent(
+                type="text", text="❌ Error: Must specify either 'file' or 'directory' parameter"
+            )
+        ]
 
     language = args.get("language", "")
     min_confidence = args.get("min_confidence", 0.5)
@@ -660,7 +671,7 @@ async def extract_test_examples_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
 
 
-async def build_how_to_guides_tool(args: dict) -> List[TextContent]:
+async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     """
     Build how-to guides from workflow test examples.
 
@@ -695,7 +706,12 @@ async def build_how_to_guides_tool(args: dict) -> List[TextContent]:
     """
     input_file = args.get("input")
     if not input_file:
-        return [TextContent(type="text", text="❌ Error: input parameter is required (path to test_examples.json)")]
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: input parameter is required (path to test_examples.json)",
+            )
+        ]
 
     output = args.get("output", "output/codebase/tutorials")
     group_by = args.get("group_by", "ai-tutorial-group")
@@ -735,7 +751,7 @@ async def build_how_to_guides_tool(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
 
 
-async def extract_config_patterns_tool(args: dict) -> List[TextContent]:
+async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
     """
     Extract configuration patterns from config files (C3.4).
 

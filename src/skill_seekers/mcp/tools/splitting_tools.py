@@ -8,7 +8,6 @@ focused skills and generating router/hub skills for managing split documentation
 import glob
 import sys
 from pathlib import Path
-from typing import Any, List
 
 try:
     from mcp.types import TextContent
@@ -16,12 +15,15 @@ except ImportError:
     # Graceful degradation: Create a simple fallback class for testing
     class TextContent:
         """Fallback TextContent for when MCP is not installed"""
+
         def __init__(self, type: str, text: str):
             self.type = type
             self.text = text
 
+
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
+
 
 # Import subprocess helper from parent module
 # We'll use a local import to avoid circular dependencies
@@ -43,7 +45,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,  # Line buffered
-            universal_newlines=True
+            universal_newlines=True,
         )
 
         stdout_lines = []
@@ -65,6 +67,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
             # Read available output (non-blocking)
             try:
                 import select
+
                 readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
 
                 if process.stdout in readable:
@@ -87,8 +90,8 @@ def run_subprocess_with_streaming(cmd, timeout=None):
         if remaining_stderr:
             stderr_lines.append(remaining_stderr)
 
-        stdout = ''.join(stdout_lines)
-        stderr = ''.join(stderr_lines)
+        stdout = "".join(stdout_lines)
+        stderr = "".join(stderr_lines)
         returncode = process.returncode
 
         return stdout, stderr, returncode
@@ -97,7 +100,7 @@ def run_subprocess_with_streaming(cmd, timeout=None):
         return "", f"Error running subprocess: {str(e)}", 1
 
 
-async def split_config(args: dict) -> List[TextContent]:
+async def split_config(args: dict) -> list[TextContent]:
     """
     Split large configs into multiple focused skills.
 
@@ -131,8 +134,10 @@ async def split_config(args: dict) -> List[TextContent]:
         sys.executable,
         str(CLI_DIR / "split_config.py"),
         config_path,
-        "--strategy", strategy,
-        "--target-pages", str(target_pages)
+        "--strategy",
+        strategy,
+        "--target-pages",
+        str(target_pages),
     ]
 
     if dry_run:
@@ -154,7 +159,7 @@ async def split_config(args: dict) -> List[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
-async def generate_router(args: dict) -> List[TextContent]:
+async def generate_router(args: dict) -> list[TextContent]:
     """
     Generate router/hub skill for split documentation.
 
@@ -178,7 +183,9 @@ async def generate_router(args: dict) -> List[TextContent]:
     config_files = glob.glob(config_pattern)
 
     if not config_files:
-        return [TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")]
+        return [
+            TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")
+        ]
 
     # Run generate_router.py
     cmd = [

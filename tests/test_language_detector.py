@@ -10,6 +10,7 @@ Run with: pytest tests/test_language_detector.py -v
 
 import pytest
 from bs4 import BeautifulSoup
+
 from skill_seekers.cli.language_detector import LanguageDetector
 
 
@@ -20,50 +21,50 @@ class TestCSSClassDetection:
         """Test language- prefix pattern"""
         detector = LanguageDetector()
 
-        classes = ['language-python', 'highlight']
-        assert detector.extract_language_from_classes(classes) == 'python'
+        classes = ["language-python", "highlight"]
+        assert detector.extract_language_from_classes(classes) == "python"
 
-        classes = ['language-javascript']
-        assert detector.extract_language_from_classes(classes) == 'javascript'
+        classes = ["language-javascript"]
+        assert detector.extract_language_from_classes(classes) == "javascript"
 
     def test_lang_prefix(self):
         """Test lang- prefix pattern"""
         detector = LanguageDetector()
 
-        classes = ['lang-java', 'code']
-        assert detector.extract_language_from_classes(classes) == 'java'
+        classes = ["lang-java", "code"]
+        assert detector.extract_language_from_classes(classes) == "java"
 
-        classes = ['lang-typescript']
-        assert detector.extract_language_from_classes(classes) == 'typescript'
+        classes = ["lang-typescript"]
+        assert detector.extract_language_from_classes(classes) == "typescript"
 
     def test_brush_pattern(self):
         """Test brush: pattern"""
         detector = LanguageDetector()
 
-        classes = ['brush: php']
-        assert detector.extract_language_from_classes(classes) == 'php'
+        classes = ["brush: php"]
+        assert detector.extract_language_from_classes(classes) == "php"
 
-        classes = ['brush: csharp']
-        assert detector.extract_language_from_classes(classes) == 'csharp'
+        classes = ["brush: csharp"]
+        assert detector.extract_language_from_classes(classes) == "csharp"
 
     def test_bare_class_name(self):
         """Test bare language name as class"""
         detector = LanguageDetector()
 
-        classes = ['python', 'highlight']
-        assert detector.extract_language_from_classes(classes) == 'python'
+        classes = ["python", "highlight"]
+        assert detector.extract_language_from_classes(classes) == "python"
 
-        classes = ['rust']
-        assert detector.extract_language_from_classes(classes) == 'rust'
+        classes = ["rust"]
+        assert detector.extract_language_from_classes(classes) == "rust"
 
     def test_unknown_language(self):
         """Test unknown language class"""
         detector = LanguageDetector()
 
-        classes = ['language-foobar']
+        classes = ["language-foobar"]
         assert detector.extract_language_from_classes(classes) is None
 
-        classes = ['highlight', 'code']
+        classes = ["highlight", "code"]
         assert detector.extract_language_from_classes(classes) is None
 
     def test_empty_classes(self):
@@ -79,11 +80,11 @@ class TestCSSClassDetection:
 
         # Create mock element
         html = '<code class="language-python">print("hello")</code>'
-        soup = BeautifulSoup(html, 'html.parser')
-        elem = soup.find('code')
+        soup = BeautifulSoup(html, "html.parser")
+        elem = soup.find("code")
 
         lang, confidence = detector.detect_from_html(elem, 'print("hello")')
-        assert lang == 'python'
+        assert lang == "python"
         assert confidence == 1.0  # CSS class = high confidence
 
     def test_detect_from_html_with_parent_class(self):
@@ -92,11 +93,11 @@ class TestCSSClassDetection:
 
         # Parent has class, child doesn't
         html = '<pre class="language-java"><code>System.out.println("hello");</code></pre>'
-        soup = BeautifulSoup(html, 'html.parser')
-        elem = soup.find('code')
+        soup = BeautifulSoup(html, "html.parser")
+        elem = soup.find("code")
 
         lang, confidence = detector.detect_from_html(elem, 'System.out.println("hello");')
-        assert lang == 'java'
+        assert lang == "java"
         assert confidence == 1.0
 
 
@@ -121,7 +122,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.9  # High confidence (Unity patterns)
 
     def test_unity_lifecycle_methods(self):
@@ -137,7 +138,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.5
 
     def test_unity_coroutine_detection(self):
@@ -152,7 +153,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.4
 
     def test_unity_serializefield_attribute(self):
@@ -168,7 +169,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.7
 
     def test_unity_types(self):
@@ -183,7 +184,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.3
 
     def test_unity_namespace(self):
@@ -195,7 +196,7 @@ class TestUnityCSharpDetection:
 
         # Short code, but very specific Unity pattern (19 chars)
         # Now detects due to lowered min length threshold (10 chars)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.5
 
         # Longer version
@@ -204,7 +205,7 @@ class TestUnityCSharpDetection:
         using System.Collections;
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.5
 
     def test_generic_csharp_vs_unity(self):
@@ -225,7 +226,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         # Confidence should be high (contains multiple C# patterns)
         # No Unity-specific patterns, but Console.WriteLine is strong indicator
         assert 0.7 <= confidence <= 1.0
@@ -236,7 +237,7 @@ class TestUnityCSharpDetection:
 
         code = "void Update() { Time.deltaTime; }"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.3  # Low but detected
 
     def test_unity_input_system(self):
@@ -249,7 +250,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.4
 
     def test_unity_full_script(self):
@@ -292,7 +293,7 @@ class TestUnityCSharpDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'csharp'
+        assert lang == "csharp"
         assert confidence >= 0.9  # Very high confidence (many Unity patterns)
 
 
@@ -314,7 +315,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'python'
+        assert lang == "python"
         assert confidence >= 0.5
 
     def test_javascript_detection(self):
@@ -332,7 +333,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'javascript'
+        assert lang == "javascript"
         assert confidence >= 0.5
 
     def test_typescript_detection(self):
@@ -353,7 +354,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'typescript'
+        assert lang == "typescript"
         assert confidence >= 0.7
 
     def test_java_detection(self):
@@ -369,7 +370,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'java'
+        assert lang == "java"
         assert confidence >= 0.6
 
     def test_go_detection(self):
@@ -388,7 +389,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'go'
+        assert lang == "go"
         assert confidence >= 0.6
 
     def test_rust_detection(self):
@@ -408,7 +409,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'rust'
+        assert lang == "rust"
         assert confidence >= 0.6
 
     def test_php_detection(self):
@@ -426,7 +427,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'php'
+        assert lang == "php"
         assert confidence >= 0.7
 
     def test_jsx_detection(self):
@@ -446,7 +447,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'jsx'
+        assert lang == "jsx"
         assert confidence >= 0.5
 
     def test_vue_detection(self):
@@ -468,7 +469,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'vue'
+        assert lang == "vue"
         assert confidence >= 0.7
 
     def test_sql_detection(self):
@@ -484,7 +485,7 @@ class TestLanguageDetection:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'sql'
+        assert lang == "sql"
         assert confidence >= 0.6
 
 
@@ -497,7 +498,7 @@ class TestEdgeCases:
 
         code = "x = 5"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'unknown'
+        assert lang == "unknown"
         assert confidence == 0.0
 
     def test_empty_code(self):
@@ -505,7 +506,7 @@ class TestEdgeCases:
         detector = LanguageDetector()
 
         lang, confidence = detector.detect_from_code("")
-        assert lang == 'unknown'
+        assert lang == "unknown"
         assert confidence == 0.0
 
     def test_whitespace_only(self):
@@ -514,7 +515,7 @@ class TestEdgeCases:
 
         code = "    \n    \n    "
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'unknown'
+        assert lang == "unknown"
         assert confidence == 0.0
 
     def test_comments_only(self):
@@ -547,7 +548,7 @@ class TestEdgeCases:
         lang, confidence = detector.detect_from_code(code)
         # Should detect strongest pattern
         # Both html and javascript patterns present
-        assert lang in ['html', 'javascript']
+        assert lang in ["html", "javascript"]
 
     def test_confidence_threshold(self):
         """Test minimum confidence threshold"""
@@ -561,7 +562,7 @@ class TestEdgeCases:
 
         # If confidence < 0.7, should return unknown
         if confidence < 0.7:
-            assert lang == 'unknown'
+            assert lang == "unknown"
 
     def test_html_with_embedded_css(self):
         """Test HTML with embedded CSS"""
@@ -577,7 +578,7 @@ class TestEdgeCases:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang in ['html', 'css']
+        assert lang in ["html", "css"]
 
     def test_case_insensitive_patterns(self):
         """Test that patterns are case-insensitive"""
@@ -591,7 +592,7 @@ class TestEdgeCases:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'sql'
+        assert lang == "sql"
 
     def test_r_language_detection(self):
         """Test R language detection (edge case: single letter)"""
@@ -607,7 +608,7 @@ class TestEdgeCases:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'r'
+        assert lang == "r"
         assert confidence >= 0.5
 
     def test_julia_detection(self):
@@ -624,7 +625,7 @@ class TestEdgeCases:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'julia'
+        assert lang == "julia"
         assert confidence >= 0.3
 
     def test_gdscript_detection(self):
@@ -644,7 +645,7 @@ class TestEdgeCases:
         """
 
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'gdscript'
+        assert lang == "gdscript"
         assert confidence >= 0.5
 
     def test_multiple_confidence_scores(self):
@@ -662,7 +663,7 @@ class TestEdgeCases:
 
         lang, confidence = detector.detect_from_code(code)
         # Should detect the one with highest confidence
-        assert lang in ['csharp', 'java']
+        assert lang in ["csharp", "java"]
         assert confidence > 0.0
 
 
@@ -674,14 +675,14 @@ class TestIntegration:
         detector = LanguageDetector()
 
         # Element without CSS classes
-        html = '<code>def test(): pass</code>'
-        soup = BeautifulSoup(html, 'html.parser')
-        elem = soup.find('code')
+        html = "<code>def test(): pass</code>"
+        soup = BeautifulSoup(html, "html.parser")
+        elem = soup.find("code")
 
-        lang, confidence = detector.detect_from_html(elem, 'def test(): pass')
+        lang, confidence = detector.detect_from_html(elem, "def test(): pass")
         # Should fallback to pattern matching
         # Now detects due to lowered min length threshold (10 chars)
-        assert lang == 'python'
+        assert lang == "python"
         assert confidence >= 0.2
 
     def test_backward_compatibility_with_doc_scraper(self):
@@ -690,8 +691,8 @@ class TestIntegration:
 
         # Simulate doc_scraper.py usage
         html = '<code class="language-python">import os\nprint("hello")</code>'
-        soup = BeautifulSoup(html, 'html.parser')
-        elem = soup.find('code')
+        soup = BeautifulSoup(html, "html.parser")
+        elem = soup.find("code")
         code = elem.get_text()
 
         # This is how doc_scraper.py would call it
@@ -700,7 +701,7 @@ class TestIntegration:
         # Should work exactly as before (returning string)
         assert isinstance(lang, str)
         assert isinstance(confidence, float)
-        assert lang == 'python'
+        assert lang == "python"
         assert 0.0 <= confidence <= 1.0
 
 

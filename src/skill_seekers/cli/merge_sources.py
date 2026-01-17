@@ -17,16 +17,16 @@ Multi-layer architecture (Phase 3):
 
 import json
 import logging
+import os
 import subprocess
 import tempfile
-import os
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
+
 from .conflict_detector import Conflict, ConflictDetector
 
 # Import three-stream data classes (Phase 1)
 try:
-    from .github_fetcher import ThreeStreamData, CodeStream, DocsStream, InsightsStream
+    from .github_fetcher import CodeStream, DocsStream, InsightsStream, ThreeStreamData
 except ImportError:
     # Fallback if github_fetcher not available
     ThreeStreamData = None
@@ -39,10 +39,8 @@ logger = logging.getLogger(__name__)
 
 
 def categorize_issues_by_topic(
-    problems: List[Dict],
-    solutions: List[Dict],
-    topics: List[str]
-) -> Dict[str, List[Dict]]:
+    problems: list[dict], solutions: list[dict], topics: list[str]
+) -> dict[str, list[dict]]:
     """
     Categorize GitHub issues by topic keywords.
 
@@ -55,14 +53,14 @@ def categorize_issues_by_topic(
         Dict mapping topic to relevant issues
     """
     categorized = {topic: [] for topic in topics}
-    categorized['other'] = []
+    categorized["other"] = []
 
     all_issues = problems + solutions
 
     for issue in all_issues:
         # Get searchable text
-        title = issue.get('title', '').lower()
-        labels = [label.lower() for label in issue.get('labels', [])]
+        title = issue.get("title", "").lower()
+        labels = [label.lower() for label in issue.get("labels", [])]
         text = f"{title} {' '.join(labels)}"
 
         # Find best matching topic
@@ -82,18 +80,18 @@ def categorize_issues_by_topic(
         if matched_topic and max_matches > 0:
             categorized[matched_topic].append(issue)
         else:
-            categorized['other'].append(issue)
+            categorized["other"].append(issue)
 
     # Remove empty categories
     return {k: v for k, v in categorized.items() if v}
 
 
 def generate_hybrid_content(
-    api_data: Dict,
-    github_docs: Optional[Dict],
-    github_insights: Optional[Dict],
-    conflicts: List[Conflict]
-) -> Dict[str, Any]:
+    api_data: dict,
+    github_docs: dict | None,
+    github_insights: dict | None,
+    conflicts: list[Conflict],
+) -> dict[str, Any]:
     """
     Generate hybrid content combining API data with GitHub context.
 
@@ -106,76 +104,73 @@ def generate_hybrid_content(
     Returns:
         Hybrid content dict with enriched API reference
     """
-    hybrid = {
-        'api_reference': api_data,
-        'github_context': {}
-    }
+    hybrid = {"api_reference": api_data, "github_context": {}}
 
     # Add GitHub documentation layer
     if github_docs:
-        hybrid['github_context']['docs'] = {
-            'readme': github_docs.get('readme'),
-            'contributing': github_docs.get('contributing'),
-            'docs_files_count': len(github_docs.get('docs_files', []))
+        hybrid["github_context"]["docs"] = {
+            "readme": github_docs.get("readme"),
+            "contributing": github_docs.get("contributing"),
+            "docs_files_count": len(github_docs.get("docs_files", [])),
         }
 
     # Add GitHub insights layer
     if github_insights:
-        metadata = github_insights.get('metadata', {})
-        hybrid['github_context']['metadata'] = {
-            'stars': metadata.get('stars', 0),
-            'forks': metadata.get('forks', 0),
-            'language': metadata.get('language', 'Unknown'),
-            'description': metadata.get('description', '')
+        metadata = github_insights.get("metadata", {})
+        hybrid["github_context"]["metadata"] = {
+            "stars": metadata.get("stars", 0),
+            "forks": metadata.get("forks", 0),
+            "language": metadata.get("language", "Unknown"),
+            "description": metadata.get("description", ""),
         }
 
         # Add issue insights
-        common_problems = github_insights.get('common_problems', [])
-        known_solutions = github_insights.get('known_solutions', [])
+        common_problems = github_insights.get("common_problems", [])
+        known_solutions = github_insights.get("known_solutions", [])
 
-        hybrid['github_context']['issues'] = {
-            'common_problems_count': len(common_problems),
-            'known_solutions_count': len(known_solutions),
-            'top_problems': common_problems[:5],  # Top 5 most-discussed
-            'top_solutions': known_solutions[:5]
+        hybrid["github_context"]["issues"] = {
+            "common_problems_count": len(common_problems),
+            "known_solutions_count": len(known_solutions),
+            "top_problems": common_problems[:5],  # Top 5 most-discussed
+            "top_solutions": known_solutions[:5],
         }
 
-        hybrid['github_context']['top_labels'] = github_insights.get('top_labels', [])
+        hybrid["github_context"]["top_labels"] = github_insights.get("top_labels", [])
 
     # Add conflict summary
-    hybrid['conflict_summary'] = {
-        'total_conflicts': len(conflicts),
-        'by_type': {},
-        'by_severity': {}
+    hybrid["conflict_summary"] = {
+        "total_conflicts": len(conflicts),
+        "by_type": {},
+        "by_severity": {},
     }
 
     for conflict in conflicts:
         # Count by type
         conflict_type = conflict.type
-        hybrid['conflict_summary']['by_type'][conflict_type] = \
-            hybrid['conflict_summary']['by_type'].get(conflict_type, 0) + 1
+        hybrid["conflict_summary"]["by_type"][conflict_type] = (
+            hybrid["conflict_summary"]["by_type"].get(conflict_type, 0) + 1
+        )
 
         # Count by severity
         severity = conflict.severity
-        hybrid['conflict_summary']['by_severity'][severity] = \
-            hybrid['conflict_summary']['by_severity'].get(severity, 0) + 1
+        hybrid["conflict_summary"]["by_severity"][severity] = (
+            hybrid["conflict_summary"]["by_severity"].get(severity, 0) + 1
+        )
 
     # Add GitHub issue links for relevant APIs
     if github_insights:
-        hybrid['issue_links'] = _match_issues_to_apis(
-            api_data.get('apis', {}),
-            github_insights.get('common_problems', []),
-            github_insights.get('known_solutions', [])
+        hybrid["issue_links"] = _match_issues_to_apis(
+            api_data.get("apis", {}),
+            github_insights.get("common_problems", []),
+            github_insights.get("known_solutions", []),
         )
 
     return hybrid
 
 
 def _match_issues_to_apis(
-    apis: Dict[str, Dict],
-    problems: List[Dict],
-    solutions: List[Dict]
-) -> Dict[str, List[Dict]]:
+    apis: dict[str, dict], problems: list[dict], solutions: list[dict]
+) -> dict[str, list[dict]]:
     """
     Match GitHub issues to specific APIs by keyword matching.
 
@@ -190,24 +185,26 @@ def _match_issues_to_apis(
     issue_links = {}
     all_issues = problems + solutions
 
-    for api_name in apis.keys():
+    for api_name in apis:
         # Extract searchable keywords from API name
-        api_keywords = api_name.lower().replace('_', ' ').split('.')
+        api_keywords = api_name.lower().replace("_", " ").split(".")
 
         matched_issues = []
         for issue in all_issues:
-            title = issue.get('title', '').lower()
-            labels = [label.lower() for label in issue.get('labels', [])]
+            title = issue.get("title", "").lower()
+            labels = [label.lower() for label in issue.get("labels", [])]
             text = f"{title} {' '.join(labels)}"
 
             # Check if any API keyword appears in issue
             if any(keyword in text for keyword in api_keywords):
-                matched_issues.append({
-                    'number': issue.get('number'),
-                    'title': issue.get('title'),
-                    'state': issue.get('state'),
-                    'comments': issue.get('comments')
-                })
+                matched_issues.append(
+                    {
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "state": issue.get("state"),
+                        "comments": issue.get("comments"),
+                    }
+                )
 
         if matched_issues:
             issue_links[api_name] = matched_issues
@@ -232,11 +229,13 @@ class RuleBasedMerger:
     4. If conflict → Include both versions with [CONFLICT] tag, prefer code signature
     """
 
-    def __init__(self,
-                 docs_data: Dict,
-                 github_data: Dict,
-                 conflicts: List[Conflict],
-                 github_streams: Optional['ThreeStreamData'] = None):
+    def __init__(
+        self,
+        docs_data: dict,
+        github_data: dict,
+        conflicts: list[Conflict],
+        github_streams: Optional["ThreeStreamData"] = None,
+    ):
         """
         Initialize rule-based merger with GitHub streams support.
 
@@ -266,21 +265,21 @@ class RuleBasedMerger:
             # Layer 3: GitHub docs
             if github_streams.docs_stream:
                 self.github_docs = {
-                    'readme': github_streams.docs_stream.readme,
-                    'contributing': github_streams.docs_stream.contributing,
-                    'docs_files': github_streams.docs_stream.docs_files
+                    "readme": github_streams.docs_stream.readme,
+                    "contributing": github_streams.docs_stream.contributing,
+                    "docs_files": github_streams.docs_stream.docs_files,
                 }
 
             # Layer 4: GitHub insights
             if github_streams.insights_stream:
                 self.github_insights = {
-                    'metadata': github_streams.insights_stream.metadata,
-                    'common_problems': github_streams.insights_stream.common_problems,
-                    'known_solutions': github_streams.insights_stream.known_solutions,
-                    'top_labels': github_streams.insights_stream.top_labels
+                    "metadata": github_streams.insights_stream.metadata,
+                    "common_problems": github_streams.insights_stream.common_problems,
+                    "known_solutions": github_streams.insights_stream.known_solutions,
+                    "top_labels": github_streams.insights_stream.top_labels,
                 }
 
-    def merge_all(self) -> Dict[str, Any]:
+    def merge_all(self) -> dict[str, Any]:
         """
         Merge all APIs using rule-based logic with GitHub insights (Phase 3).
 
@@ -302,15 +301,15 @@ class RuleBasedMerger:
 
         # Build base result
         merged_data = {
-            'merge_mode': 'rule-based',
-            'apis': merged_apis,
-            'summary': {
-                'total_apis': len(merged_apis),
-                'docs_only': sum(1 for api in merged_apis.values() if api['status'] == 'docs_only'),
-                'code_only': sum(1 for api in merged_apis.values() if api['status'] == 'code_only'),
-                'matched': sum(1 for api in merged_apis.values() if api['status'] == 'matched'),
-                'conflict': sum(1 for api in merged_apis.values() if api['status'] == 'conflict')
-            }
+            "merge_mode": "rule-based",
+            "apis": merged_apis,
+            "summary": {
+                "total_apis": len(merged_apis),
+                "docs_only": sum(1 for api in merged_apis.values() if api["status"] == "docs_only"),
+                "code_only": sum(1 for api in merged_apis.values() if api["status"] == "code_only"),
+                "matched": sum(1 for api in merged_apis.values() if api["status"] == "matched"),
+                "conflict": sum(1 for api in merged_apis.values() if api["status"] == "conflict"),
+            },
         }
 
         # Generate hybrid content if GitHub streams available (Phase 3)
@@ -320,20 +319,22 @@ class RuleBasedMerger:
                 api_data=merged_data,
                 github_docs=self.github_docs,
                 github_insights=self.github_insights,
-                conflicts=self.conflicts
+                conflicts=self.conflicts,
             )
 
             # Merge hybrid content into result
-            merged_data['github_context'] = hybrid_content.get('github_context', {})
-            merged_data['conflict_summary'] = hybrid_content.get('conflict_summary', {})
-            merged_data['issue_links'] = hybrid_content.get('issue_links', {})
+            merged_data["github_context"] = hybrid_content.get("github_context", {})
+            merged_data["conflict_summary"] = hybrid_content.get("conflict_summary", {})
+            merged_data["issue_links"] = hybrid_content.get("issue_links", {})
 
-            logger.info(f"Added GitHub context: {len(self.github_insights.get('common_problems', []))} problems, "
-                       f"{len(self.github_insights.get('known_solutions', []))} solutions")
+            logger.info(
+                f"Added GitHub context: {len(self.github_insights.get('common_problems', []))} problems, "
+                f"{len(self.github_insights.get('known_solutions', []))} solutions"
+            )
 
         return merged_data
 
-    def _merge_single_api(self, api_name: str) -> Dict[str, Any]:
+    def _merge_single_api(self, api_name: str) -> dict[str, Any]:
         """
         Merge a single API using rules.
 
@@ -351,25 +352,27 @@ class RuleBasedMerger:
         if in_docs and not in_code:
             conflict = self.conflict_index.get(api_name)
             return {
-                'name': api_name,
-                'status': 'docs_only',
-                'source': 'documentation',
-                'data': self.docs_apis[api_name],
-                'warning': 'This API is documented but not found in codebase',
-                'conflict': conflict.__dict__ if conflict else None
+                "name": api_name,
+                "status": "docs_only",
+                "source": "documentation",
+                "data": self.docs_apis[api_name],
+                "warning": "This API is documented but not found in codebase",
+                "conflict": conflict.__dict__ if conflict else None,
             }
 
         # Rule 2: Only in code
         if in_code and not in_docs:
-            is_private = api_name.startswith('_')
+            is_private = api_name.startswith("_")
             conflict = self.conflict_index.get(api_name)
             return {
-                'name': api_name,
-                'status': 'code_only',
-                'source': 'code',
-                'data': self.code_apis[api_name],
-                'warning': 'This API exists in code but is not documented' if not is_private else 'Internal/private API',
-                'conflict': conflict.__dict__ if conflict else None
+                "name": api_name,
+                "status": "code_only",
+                "source": "code",
+                "data": self.code_apis[api_name],
+                "warning": "This API exists in code but is not documented"
+                if not is_private
+                else "Internal/private API",
+                "conflict": conflict.__dict__ if conflict else None,
             }
 
         # Both exist - check for conflicts
@@ -379,32 +382,32 @@ class RuleBasedMerger:
         # Rule 3: Both match perfectly (no conflict)
         if not has_conflict:
             return {
-                'name': api_name,
-                'status': 'matched',
-                'source': 'both',
-                'docs_data': docs_info,
-                'code_data': code_info,
-                'merged_signature': self._create_merged_signature(code_info, docs_info),
-                'merged_description': docs_info.get('docstring') or code_info.get('docstring')
+                "name": api_name,
+                "status": "matched",
+                "source": "both",
+                "docs_data": docs_info,
+                "code_data": code_info,
+                "merged_signature": self._create_merged_signature(code_info, docs_info),
+                "merged_description": docs_info.get("docstring") or code_info.get("docstring"),
             }
 
         # Rule 4: Conflict exists - prefer code signature, keep docs description
         conflict = self.conflict_index[api_name]
 
         return {
-            'name': api_name,
-            'status': 'conflict',
-            'source': 'both',
-            'docs_data': docs_info,
-            'code_data': code_info,
-            'conflict': conflict.__dict__,
-            'resolution': 'prefer_code_signature',
-            'merged_signature': self._create_merged_signature(code_info, docs_info),
-            'merged_description': docs_info.get('docstring') or code_info.get('docstring'),
-            'warning': conflict.difference
+            "name": api_name,
+            "status": "conflict",
+            "source": "both",
+            "docs_data": docs_info,
+            "code_data": code_info,
+            "conflict": conflict.__dict__,
+            "resolution": "prefer_code_signature",
+            "merged_signature": self._create_merged_signature(code_info, docs_info),
+            "merged_description": docs_info.get("docstring") or code_info.get("docstring"),
+            "warning": conflict.difference,
         }
 
-    def _create_merged_signature(self, code_info: Dict, docs_info: Dict) -> str:
+    def _create_merged_signature(self, code_info: dict, docs_info: dict) -> str:
         """
         Create merged signature preferring code data.
 
@@ -415,17 +418,17 @@ class RuleBasedMerger:
         Returns:
             Merged signature string
         """
-        name = code_info.get('name', docs_info.get('name'))
-        params = code_info.get('parameters', docs_info.get('parameters', []))
-        return_type = code_info.get('return_type', docs_info.get('return_type'))
+        name = code_info.get("name", docs_info.get("name"))
+        params = code_info.get("parameters", docs_info.get("parameters", []))
+        return_type = code_info.get("return_type", docs_info.get("return_type"))
 
         # Build parameter string
         param_strs = []
         for param in params:
-            param_str = param['name']
-            if param.get('type_hint'):
+            param_str = param["name"]
+            if param.get("type_hint"):
                 param_str += f": {param['type_hint']}"
-            if param.get('default'):
+            if param.get("default"):
                 param_str += f" = {param['default']}"
             param_strs.append(param_str)
 
@@ -451,11 +454,13 @@ class ClaudeEnhancedMerger:
     - Layer 4: GitHub insights (issues)
     """
 
-    def __init__(self,
-                 docs_data: Dict,
-                 github_data: Dict,
-                 conflicts: List[Conflict],
-                 github_streams: Optional['ThreeStreamData'] = None):
+    def __init__(
+        self,
+        docs_data: dict,
+        github_data: dict,
+        conflicts: list[Conflict],
+        github_streams: Optional["ThreeStreamData"] = None,
+    ):
         """
         Initialize Claude-enhanced merger with GitHub streams support.
 
@@ -473,7 +478,7 @@ class ClaudeEnhancedMerger:
         # First do rule-based merge as baseline
         self.rule_merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
 
-    def merge_all(self) -> Dict[str, Any]:
+    def merge_all(self) -> dict[str, Any]:
         """
         Merge all APIs using Claude enhancement.
 
@@ -510,7 +515,7 @@ class ClaudeEnhancedMerger:
         Returns:
             Path to workspace directory
         """
-        workspace = tempfile.mkdtemp(prefix='skill_merge_')
+        workspace = tempfile.mkdtemp(prefix="skill_merge_")
         logger.info(f"Created merge workspace: {workspace}")
 
         # Write context files for Claude
@@ -522,26 +527,30 @@ class ClaudeEnhancedMerger:
         """Write context files for Claude to analyze."""
 
         # 1. Write conflicts summary
-        conflicts_file = os.path.join(workspace, 'conflicts.json')
-        with open(conflicts_file, 'w') as f:
-            json.dump({
-                'conflicts': [c.__dict__ for c in self.conflicts],
-                'summary': {
-                    'total': len(self.conflicts),
-                    'by_type': self._count_by_field('type'),
-                    'by_severity': self._count_by_field('severity')
-                }
-            }, f, indent=2)
+        conflicts_file = os.path.join(workspace, "conflicts.json")
+        with open(conflicts_file, "w") as f:
+            json.dump(
+                {
+                    "conflicts": [c.__dict__ for c in self.conflicts],
+                    "summary": {
+                        "total": len(self.conflicts),
+                        "by_type": self._count_by_field("type"),
+                        "by_severity": self._count_by_field("severity"),
+                    },
+                },
+                f,
+                indent=2,
+            )
 
         # 2. Write documentation APIs
-        docs_apis_file = os.path.join(workspace, 'docs_apis.json')
+        docs_apis_file = os.path.join(workspace, "docs_apis.json")
         detector = ConflictDetector(self.docs_data, self.github_data)
-        with open(docs_apis_file, 'w') as f:
+        with open(docs_apis_file, "w") as f:
             json.dump(detector.docs_apis, f, indent=2)
 
         # 3. Write code APIs
-        code_apis_file = os.path.join(workspace, 'code_apis.json')
-        with open(code_apis_file, 'w') as f:
+        code_apis_file = os.path.join(workspace, "code_apis.json")
+        with open(code_apis_file, "w") as f:
             json.dump(detector.code_apis, f, indent=2)
 
         # 4. Write merge instructions for Claude
@@ -602,13 +611,13 @@ Create `merged_apis.json` with this structure:
 Take your time to analyze each conflict carefully. The goal is to create the most accurate and helpful API reference possible.
 """
 
-        instructions_file = os.path.join(workspace, 'MERGE_INSTRUCTIONS.md')
-        with open(instructions_file, 'w') as f:
+        instructions_file = os.path.join(workspace, "MERGE_INSTRUCTIONS.md")
+        with open(instructions_file, "w") as f:
             f.write(instructions)
 
         logger.info(f"Wrote context files to {workspace}")
 
-    def _count_by_field(self, field: str) -> Dict[str, int]:
+    def _count_by_field(self, field: str) -> dict[str, int]:
         """Count conflicts by a specific field."""
         counts = {}
         for conflict in self.conflicts:
@@ -623,7 +632,7 @@ Take your time to analyze each conflict carefully. The goal is to create the mos
         Similar to enhance_skill_local.py approach.
         """
         # Create a script that Claude will execute
-        script_path = os.path.join(workspace, 'merge_script.sh')
+        script_path = os.path.join(workspace, "merge_script.sh")
 
         script_content = f"""#!/bin/bash
 # Automatic merge script for Claude Code
@@ -646,7 +655,7 @@ echo "When done, save merged_apis.json and close this terminal."
 read -p "Press Enter when merge is complete..."
 """
 
-        with open(script_path, 'w') as f:
+        with open(script_path, "w") as f:
             f.write(script_content)
 
         os.chmod(script_path, 0o755)
@@ -654,15 +663,15 @@ read -p "Press Enter when merge is complete..."
         # Open new terminal with Claude Code
         # Try different terminal emulators
         terminals = [
-            ['x-terminal-emulator', '-e'],
-            ['gnome-terminal', '--'],
-            ['xterm', '-e'],
-            ['konsole', '-e']
+            ["x-terminal-emulator", "-e"],
+            ["gnome-terminal", "--"],
+            ["xterm", "-e"],
+            ["konsole", "-e"],
         ]
 
         for terminal_cmd in terminals:
             try:
-                cmd = terminal_cmd + ['bash', script_path]
+                cmd = terminal_cmd + ["bash", script_path]
                 subprocess.Popen(cmd)
                 logger.info(f"Opened terminal with {terminal_cmd[0]}")
                 break
@@ -670,12 +679,13 @@ read -p "Press Enter when merge is complete..."
                 continue
 
         # Wait for merge to complete
-        merged_file = os.path.join(workspace, 'merged_apis.json')
+        merged_file = os.path.join(workspace, "merged_apis.json")
         logger.info(f"Waiting for merged results at: {merged_file}")
         logger.info("Close the terminal when done to continue...")
 
         # Poll for file existence
         import time
+
         timeout = 3600  # 1 hour max
         elapsed = 0
         while not os.path.exists(merged_file) and elapsed < timeout:
@@ -685,27 +695,26 @@ read -p "Press Enter when merge is complete..."
         if not os.path.exists(merged_file):
             raise TimeoutError("Claude merge timed out after 1 hour")
 
-    def _read_merged_results(self, workspace: str) -> Dict[str, Any]:
+    def _read_merged_results(self, workspace: str) -> dict[str, Any]:
         """Read merged results from workspace."""
-        merged_file = os.path.join(workspace, 'merged_apis.json')
+        merged_file = os.path.join(workspace, "merged_apis.json")
 
         if not os.path.exists(merged_file):
             raise FileNotFoundError(f"Merged results not found: {merged_file}")
 
-        with open(merged_file, 'r') as f:
+        with open(merged_file) as f:
             merged_data = json.load(f)
 
-        return {
-            'merge_mode': 'claude-enhanced',
-            **merged_data
-        }
+        return {"merge_mode": "claude-enhanced", **merged_data}
 
 
-def merge_sources(docs_data_path: str,
-                  github_data_path: str,
-                  output_path: str,
-                  mode: str = 'rule-based',
-                  github_streams: Optional['ThreeStreamData'] = None) -> Dict[str, Any]:
+def merge_sources(
+    docs_data_path: str,
+    github_data_path: str,
+    output_path: str,
+    mode: str = "rule-based",
+    github_streams: Optional["ThreeStreamData"] = None,
+) -> dict[str, Any]:
     """
     Merge documentation and GitHub data with optional GitHub streams (Phase 3).
 
@@ -726,10 +735,10 @@ def merge_sources(docs_data_path: str,
         Merged data dict with hybrid content
     """
     # Load data
-    with open(docs_data_path, 'r') as f:
+    with open(docs_data_path) as f:
         docs_data = json.load(f)
 
-    with open(github_data_path, 'r') as f:
+    with open(github_data_path) as f:
         github_data = json.load(f)
 
     # Detect conflicts
@@ -742,14 +751,16 @@ def merge_sources(docs_data_path: str,
     if github_streams:
         logger.info("GitHub streams available for multi-layer merge")
         if github_streams.docs_stream:
-            logger.info(f"  - Docs stream: README, {len(github_streams.docs_stream.docs_files)} docs files")
+            logger.info(
+                f"  - Docs stream: README, {len(github_streams.docs_stream.docs_files)} docs files"
+            )
         if github_streams.insights_stream:
             problems = len(github_streams.insights_stream.common_problems)
             solutions = len(github_streams.insights_stream.known_solutions)
             logger.info(f"  - Insights stream: {problems} problems, {solutions} solutions")
 
     # Merge based on mode
-    if mode == 'claude-enhanced':
+    if mode == "claude-enhanced":
         merger = ClaudeEnhancedMerger(docs_data, github_data, conflicts, github_streams)
     else:
         merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
@@ -757,7 +768,7 @@ def merge_sources(docs_data_path: str,
     merged_data = merger.merge_all()
 
     # Save merged data
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(merged_data, f, indent=2, ensure_ascii=False)
 
     logger.info(f"Merged data saved to: {output_path}")
@@ -765,22 +776,27 @@ def merge_sources(docs_data_path: str,
     return merged_data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Merge documentation and code sources')
-    parser.add_argument('docs_data', help='Path to documentation data JSON')
-    parser.add_argument('github_data', help='Path to GitHub data JSON')
-    parser.add_argument('--output', '-o', default='merged_data.json', help='Output file path')
-    parser.add_argument('--mode', '-m', choices=['rule-based', 'claude-enhanced'],
-                       default='rule-based', help='Merge mode')
+    parser = argparse.ArgumentParser(description="Merge documentation and code sources")
+    parser.add_argument("docs_data", help="Path to documentation data JSON")
+    parser.add_argument("github_data", help="Path to GitHub data JSON")
+    parser.add_argument("--output", "-o", default="merged_data.json", help="Output file path")
+    parser.add_argument(
+        "--mode",
+        "-m",
+        choices=["rule-based", "claude-enhanced"],
+        default="rule-based",
+        help="Merge mode",
+    )
 
     args = parser.parse_args()
 
     merged = merge_sources(args.docs_data, args.github_data, args.output, args.mode)
 
     # Print summary
-    summary = merged.get('summary', {})
+    summary = merged.get("summary", {})
     print(f"\n✅ Merge complete ({merged.get('merge_mode')})")
     print(f"   Total APIs: {summary.get('total_apis', 0)}")
     print(f"   Matched: {summary.get('matched', 0)}")

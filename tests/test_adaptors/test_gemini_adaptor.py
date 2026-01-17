@@ -3,11 +3,10 @@
 Tests for Gemini adaptor
 """
 
-import unittest
-from unittest.mock import patch, MagicMock, mock_open
-from pathlib import Path
-import tempfile
 import tarfile
+import tempfile
+import unittest
+from pathlib import Path
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
@@ -18,28 +17,28 @@ class TestGeminiAdaptor(unittest.TestCase):
 
     def setUp(self):
         """Set up test adaptor"""
-        self.adaptor = get_adaptor('gemini')
+        self.adaptor = get_adaptor("gemini")
 
     def test_platform_info(self):
         """Test platform identifiers"""
-        self.assertEqual(self.adaptor.PLATFORM, 'gemini')
-        self.assertEqual(self.adaptor.PLATFORM_NAME, 'Google Gemini')
+        self.assertEqual(self.adaptor.PLATFORM, "gemini")
+        self.assertEqual(self.adaptor.PLATFORM_NAME, "Google Gemini")
         self.assertIsNotNone(self.adaptor.DEFAULT_API_ENDPOINT)
 
     def test_validate_api_key_valid(self):
         """Test valid Google API key"""
-        self.assertTrue(self.adaptor.validate_api_key('AIzaSyABC123'))
-        self.assertTrue(self.adaptor.validate_api_key('  AIzaSyTest  '))  # with whitespace
+        self.assertTrue(self.adaptor.validate_api_key("AIzaSyABC123"))
+        self.assertTrue(self.adaptor.validate_api_key("  AIzaSyTest  "))  # with whitespace
 
     def test_validate_api_key_invalid(self):
         """Test invalid API keys"""
-        self.assertFalse(self.adaptor.validate_api_key('sk-ant-123'))  # Claude key
-        self.assertFalse(self.adaptor.validate_api_key('invalid'))
-        self.assertFalse(self.adaptor.validate_api_key(''))
+        self.assertFalse(self.adaptor.validate_api_key("sk-ant-123"))  # Claude key
+        self.assertFalse(self.adaptor.validate_api_key("invalid"))
+        self.assertFalse(self.adaptor.validate_api_key(""))
 
     def test_get_env_var_name(self):
         """Test environment variable name"""
-        self.assertEqual(self.adaptor.get_env_var_name(), 'GOOGLE_API_KEY')
+        self.assertEqual(self.adaptor.get_env_var_name(), "GOOGLE_API_KEY")
 
     def test_supports_enhancement(self):
         """Test enhancement support"""
@@ -54,18 +53,15 @@ class TestGeminiAdaptor(unittest.TestCase):
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Test content")
 
-            metadata = SkillMetadata(
-                name="test-skill",
-                description="Test skill description"
-            )
+            metadata = SkillMetadata(name="test-skill", description="Test skill description")
 
             formatted = self.adaptor.format_skill_md(skill_dir, metadata)
 
             # Should NOT start with YAML frontmatter
-            self.assertFalse(formatted.startswith('---'))
+            self.assertFalse(formatted.startswith("---"))
             # Should contain the content
-            self.assertIn('test-skill', formatted.lower())
-            self.assertIn('Test skill description', formatted)
+            self.assertIn("test-skill", formatted.lower())
+            self.assertIn("Test skill description", formatted)
 
     def test_package_creates_targz(self):
         """Test that package creates tar.gz file"""
@@ -86,16 +82,16 @@ class TestGeminiAdaptor(unittest.TestCase):
 
             # Verify package was created
             self.assertTrue(package_path.exists())
-            self.assertTrue(str(package_path).endswith('.tar.gz'))
-            self.assertIn('gemini', package_path.name)
+            self.assertTrue(str(package_path).endswith(".tar.gz"))
+            self.assertIn("gemini", package_path.name)
 
             # Verify package contents
-            with tarfile.open(package_path, 'r:gz') as tar:
+            with tarfile.open(package_path, "r:gz") as tar:
                 names = tar.getnames()
-                self.assertIn('system_instructions.md', names)
-                self.assertIn('gemini_metadata.json', names)
+                self.assertIn("system_instructions.md", names)
+                self.assertIn("gemini_metadata.json", names)
                 # Should have references
-                self.assertTrue(any('references' in name for name in names))
+                self.assertTrue(any("references" in name for name in names))
 
     @unittest.skip("Complex mocking - integration test needed with real API")
     def test_upload_success(self):
@@ -104,28 +100,28 @@ class TestGeminiAdaptor(unittest.TestCase):
 
     def test_upload_missing_library(self):
         """Test upload when google-generativeai is not installed"""
-        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp:
             # Simulate missing library by not mocking it
-            result = self.adaptor.upload(Path(tmp.name), 'AIzaSyTest')
+            result = self.adaptor.upload(Path(tmp.name), "AIzaSyTest")
 
-            self.assertFalse(result['success'])
-            self.assertIn('google-generativeai', result['message'])
-            self.assertIn('not installed', result['message'])
+            self.assertFalse(result["success"])
+            self.assertIn("google-generativeai", result["message"])
+            self.assertIn("not installed", result["message"])
 
     def test_upload_invalid_file(self):
         """Test upload with invalid file"""
-        result = self.adaptor.upload(Path('/nonexistent/file.tar.gz'), 'AIzaSyTest')
+        result = self.adaptor.upload(Path("/nonexistent/file.tar.gz"), "AIzaSyTest")
 
-        self.assertFalse(result['success'])
-        self.assertIn('not found', result['message'].lower())
+        self.assertFalse(result["success"])
+        self.assertIn("not found", result["message"].lower())
 
     def test_upload_wrong_format(self):
         """Test upload with wrong file format"""
-        with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
-            result = self.adaptor.upload(Path(tmp.name), 'AIzaSyTest')
+        with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
+            result = self.adaptor.upload(Path(tmp.name), "AIzaSyTest")
 
-            self.assertFalse(result['success'])
-            self.assertIn('not a tar.gz', result['message'].lower())
+            self.assertFalse(result["success"])
+            self.assertIn("not a tar.gz", result["message"].lower())
 
     @unittest.skip("Complex mocking - integration test needed with real API")
     def test_enhance_success(self):
@@ -141,10 +137,10 @@ class TestGeminiAdaptor(unittest.TestCase):
             (refs_dir / "test.md").write_text("Test")
 
             # Don't mock the module - it won't be available
-            success = self.adaptor.enhance(skill_dir, 'AIzaSyTest')
+            success = self.adaptor.enhance(skill_dir, "AIzaSyTest")
 
             self.assertFalse(success)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

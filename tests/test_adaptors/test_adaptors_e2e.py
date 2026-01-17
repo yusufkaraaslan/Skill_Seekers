@@ -9,14 +9,14 @@ Tests complete workflows without real API uploads:
 - Enhancement workflow (mocked)
 """
 
-import unittest
-import tempfile
-import zipfile
-import tarfile
 import json
+import tarfile
+import tempfile
+import unittest
+import zipfile
 from pathlib import Path
 
-from skill_seekers.cli.adaptors import get_adaptor, list_platforms
+from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
 
 
@@ -128,7 +128,7 @@ Pass data to components:
 
     def test_e2e_all_platforms_from_same_skill(self):
         """Test that all platforms can package the same skill"""
-        platforms = ['claude', 'gemini', 'openai', 'markdown']
+        platforms = ["claude", "gemini", "openai", "markdown"]
         packages = {}
 
         for platform in platforms:
@@ -138,8 +138,7 @@ Pass data to components:
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Verify package was created
-            self.assertTrue(package_path.exists(),
-                          f"Package not created for {platform}")
+            self.assertTrue(package_path.exists(), f"Package not created for {platform}")
 
             # Store for later verification
             packages[platform] = package_path
@@ -148,146 +147,146 @@ Pass data to components:
         self.assertEqual(len(packages), 4)
 
         # Verify correct extensions
-        self.assertTrue(str(packages['claude']).endswith('.zip'))
-        self.assertTrue(str(packages['gemini']).endswith('.tar.gz'))
-        self.assertTrue(str(packages['openai']).endswith('.zip'))
-        self.assertTrue(str(packages['markdown']).endswith('.zip'))
+        self.assertTrue(str(packages["claude"]).endswith(".zip"))
+        self.assertTrue(str(packages["gemini"]).endswith(".tar.gz"))
+        self.assertTrue(str(packages["openai"]).endswith(".zip"))
+        self.assertTrue(str(packages["markdown"]).endswith(".zip"))
 
     def test_e2e_claude_workflow(self):
         """Test complete Claude workflow: package + verify structure"""
-        adaptor = get_adaptor('claude')
+        adaptor = get_adaptor("claude")
 
         # Package
         package_path = adaptor.package(self.skill_dir, self.output_dir)
 
         # Verify package
         self.assertTrue(package_path.exists())
-        self.assertTrue(str(package_path).endswith('.zip'))
+        self.assertTrue(str(package_path).endswith(".zip"))
 
         # Verify contents
-        with zipfile.ZipFile(package_path, 'r') as zf:
+        with zipfile.ZipFile(package_path, "r") as zf:
             names = zf.namelist()
 
             # Should have SKILL.md
-            self.assertIn('SKILL.md', names)
+            self.assertIn("SKILL.md", names)
 
             # Should have references
-            self.assertTrue(any('references/' in name for name in names))
+            self.assertTrue(any("references/" in name for name in names))
 
             # Verify SKILL.md content (should have YAML frontmatter)
-            skill_content = zf.read('SKILL.md').decode('utf-8')
+            skill_content = zf.read("SKILL.md").decode("utf-8")
             # Claude uses YAML frontmatter (but current implementation doesn't add it in package)
             # Just verify content exists
             self.assertGreater(len(skill_content), 0)
 
     def test_e2e_gemini_workflow(self):
         """Test complete Gemini workflow: package + verify structure"""
-        adaptor = get_adaptor('gemini')
+        adaptor = get_adaptor("gemini")
 
         # Package
         package_path = adaptor.package(self.skill_dir, self.output_dir)
 
         # Verify package
         self.assertTrue(package_path.exists())
-        self.assertTrue(str(package_path).endswith('.tar.gz'))
+        self.assertTrue(str(package_path).endswith(".tar.gz"))
 
         # Verify contents
-        with tarfile.open(package_path, 'r:gz') as tar:
+        with tarfile.open(package_path, "r:gz") as tar:
             names = tar.getnames()
 
             # Should have system_instructions.md (not SKILL.md)
-            self.assertIn('system_instructions.md', names)
+            self.assertIn("system_instructions.md", names)
 
             # Should have references
-            self.assertTrue(any('references/' in name for name in names))
+            self.assertTrue(any("references/" in name for name in names))
 
             # Should have metadata
-            self.assertIn('gemini_metadata.json', names)
+            self.assertIn("gemini_metadata.json", names)
 
             # Verify metadata content
-            metadata_member = tar.getmember('gemini_metadata.json')
+            metadata_member = tar.getmember("gemini_metadata.json")
             metadata_file = tar.extractfile(metadata_member)
-            metadata = json.loads(metadata_file.read().decode('utf-8'))
+            metadata = json.loads(metadata_file.read().decode("utf-8"))
 
-            self.assertEqual(metadata['platform'], 'gemini')
-            self.assertEqual(metadata['name'], 'test-skill')
-            self.assertIn('created_with', metadata)
+            self.assertEqual(metadata["platform"], "gemini")
+            self.assertEqual(metadata["name"], "test-skill")
+            self.assertIn("created_with", metadata)
 
     def test_e2e_openai_workflow(self):
         """Test complete OpenAI workflow: package + verify structure"""
-        adaptor = get_adaptor('openai')
+        adaptor = get_adaptor("openai")
 
         # Package
         package_path = adaptor.package(self.skill_dir, self.output_dir)
 
         # Verify package
         self.assertTrue(package_path.exists())
-        self.assertTrue(str(package_path).endswith('.zip'))
+        self.assertTrue(str(package_path).endswith(".zip"))
 
         # Verify contents
-        with zipfile.ZipFile(package_path, 'r') as zf:
+        with zipfile.ZipFile(package_path, "r") as zf:
             names = zf.namelist()
 
             # Should have assistant_instructions.txt
-            self.assertIn('assistant_instructions.txt', names)
+            self.assertIn("assistant_instructions.txt", names)
 
             # Should have vector store files
-            self.assertTrue(any('vector_store_files/' in name for name in names))
+            self.assertTrue(any("vector_store_files/" in name for name in names))
 
             # Should have metadata
-            self.assertIn('openai_metadata.json', names)
+            self.assertIn("openai_metadata.json", names)
 
             # Verify metadata content
-            metadata_content = zf.read('openai_metadata.json').decode('utf-8')
+            metadata_content = zf.read("openai_metadata.json").decode("utf-8")
             metadata = json.loads(metadata_content)
 
-            self.assertEqual(metadata['platform'], 'openai')
-            self.assertEqual(metadata['name'], 'test-skill')
-            self.assertEqual(metadata['model'], 'gpt-4o')
-            self.assertIn('file_search', metadata['tools'])
+            self.assertEqual(metadata["platform"], "openai")
+            self.assertEqual(metadata["name"], "test-skill")
+            self.assertEqual(metadata["model"], "gpt-4o")
+            self.assertIn("file_search", metadata["tools"])
 
     def test_e2e_markdown_workflow(self):
         """Test complete Markdown workflow: package + verify structure"""
-        adaptor = get_adaptor('markdown')
+        adaptor = get_adaptor("markdown")
 
         # Package
         package_path = adaptor.package(self.skill_dir, self.output_dir)
 
         # Verify package
         self.assertTrue(package_path.exists())
-        self.assertTrue(str(package_path).endswith('.zip'))
+        self.assertTrue(str(package_path).endswith(".zip"))
 
         # Verify contents
-        with zipfile.ZipFile(package_path, 'r') as zf:
+        with zipfile.ZipFile(package_path, "r") as zf:
             names = zf.namelist()
 
             # Should have README.md
-            self.assertIn('README.md', names)
+            self.assertIn("README.md", names)
 
             # Should have DOCUMENTATION.md (combined)
-            self.assertIn('DOCUMENTATION.md', names)
+            self.assertIn("DOCUMENTATION.md", names)
 
             # Should have references
-            self.assertTrue(any('references/' in name for name in names))
+            self.assertTrue(any("references/" in name for name in names))
 
             # Should have metadata
-            self.assertIn('metadata.json', names)
+            self.assertIn("metadata.json", names)
 
             # Verify combined documentation
-            doc_content = zf.read('DOCUMENTATION.md').decode('utf-8')
+            doc_content = zf.read("DOCUMENTATION.md").decode("utf-8")
 
             # Should contain content from all references
-            self.assertIn('Getting Started', doc_content)
-            self.assertIn('React Hooks', doc_content)
-            self.assertIn('Components', doc_content)
+            self.assertIn("Getting Started", doc_content)
+            self.assertIn("React Hooks", doc_content)
+            self.assertIn("Components", doc_content)
 
     def test_e2e_package_format_validation(self):
         """Test that each platform creates correct package format"""
         test_cases = [
-            ('claude', '.zip'),
-            ('gemini', '.tar.gz'),
-            ('openai', '.zip'),
-            ('markdown', '.zip')
+            ("claude", ".zip"),
+            ("gemini", ".tar.gz"),
+            ("openai", ".zip"),
+            ("markdown", ".zip"),
         ]
 
         for platform, expected_ext in test_cases:
@@ -295,20 +294,22 @@ Pass data to components:
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Verify extension
-            if expected_ext == '.tar.gz':
-                self.assertTrue(str(package_path).endswith('.tar.gz'),
-                              f"{platform} should create .tar.gz file")
+            if expected_ext == ".tar.gz":
+                self.assertTrue(
+                    str(package_path).endswith(".tar.gz"), f"{platform} should create .tar.gz file"
+                )
             else:
-                self.assertTrue(str(package_path).endswith('.zip'),
-                              f"{platform} should create .zip file")
+                self.assertTrue(
+                    str(package_path).endswith(".zip"), f"{platform} should create .zip file"
+                )
 
     def test_e2e_package_filename_convention(self):
         """Test that package filenames follow convention"""
         test_cases = [
-            ('claude', 'test-skill.zip'),
-            ('gemini', 'test-skill-gemini.tar.gz'),
-            ('openai', 'test-skill-openai.zip'),
-            ('markdown', 'test-skill-markdown.zip')
+            ("claude", "test-skill.zip"),
+            ("gemini", "test-skill-gemini.tar.gz"),
+            ("openai", "test-skill-openai.zip"),
+            ("markdown", "test-skill-markdown.zip"),
         ]
 
         for platform, expected_name in test_cases:
@@ -316,127 +317,124 @@ Pass data to components:
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Verify filename
-            self.assertEqual(package_path.name, expected_name,
-                           f"{platform} package filename incorrect")
+            self.assertEqual(
+                package_path.name, expected_name, f"{platform} package filename incorrect"
+            )
 
     def test_e2e_all_platforms_preserve_references(self):
         """Test that all platforms preserve reference files"""
-        ref_files = ['getting_started.md', 'hooks.md', 'components.md']
+        ref_files = ["getting_started.md", "hooks.md", "components.md"]
 
-        for platform in ['claude', 'gemini', 'openai', 'markdown']:
+        for platform in ["claude", "gemini", "openai", "markdown"]:
             adaptor = get_adaptor(platform)
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Check references are preserved
-            if platform == 'gemini':
-                with tarfile.open(package_path, 'r:gz') as tar:
+            if platform == "gemini":
+                with tarfile.open(package_path, "r:gz") as tar:
                     names = tar.getnames()
                     for ref_file in ref_files:
                         self.assertTrue(
                             any(ref_file in name for name in names),
-                            f"{platform}: {ref_file} not found in package"
+                            f"{platform}: {ref_file} not found in package",
                         )
             else:
-                with zipfile.ZipFile(package_path, 'r') as zf:
+                with zipfile.ZipFile(package_path, "r") as zf:
                     names = zf.namelist()
                     for ref_file in ref_files:
                         # OpenAI moves to vector_store_files/
-                        if platform == 'openai':
+                        if platform == "openai":
                             self.assertTrue(
-                                any(f'vector_store_files/{ref_file}' in name for name in names),
-                                f"{platform}: {ref_file} not found in vector_store_files/"
+                                any(f"vector_store_files/{ref_file}" in name for name in names),
+                                f"{platform}: {ref_file} not found in vector_store_files/",
                             )
                         else:
                             self.assertTrue(
                                 any(ref_file in name for name in names),
-                                f"{platform}: {ref_file} not found in package"
+                                f"{platform}: {ref_file} not found in package",
                             )
 
     def test_e2e_metadata_consistency(self):
         """Test that metadata is consistent across platforms"""
-        platforms_with_metadata = ['gemini', 'openai', 'markdown']
+        platforms_with_metadata = ["gemini", "openai", "markdown"]
 
         for platform in platforms_with_metadata:
             adaptor = get_adaptor(platform)
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Extract and verify metadata
-            if platform == 'gemini':
-                with tarfile.open(package_path, 'r:gz') as tar:
-                    metadata_member = tar.getmember('gemini_metadata.json')
+            if platform == "gemini":
+                with tarfile.open(package_path, "r:gz") as tar:
+                    metadata_member = tar.getmember("gemini_metadata.json")
                     metadata_file = tar.extractfile(metadata_member)
-                    metadata = json.loads(metadata_file.read().decode('utf-8'))
+                    metadata = json.loads(metadata_file.read().decode("utf-8"))
             else:
-                with zipfile.ZipFile(package_path, 'r') as zf:
-                    metadata_filename = f'{platform}_metadata.json' if platform == 'openai' else 'metadata.json'
-                    metadata_content = zf.read(metadata_filename).decode('utf-8')
+                with zipfile.ZipFile(package_path, "r") as zf:
+                    metadata_filename = (
+                        f"{platform}_metadata.json" if platform == "openai" else "metadata.json"
+                    )
+                    metadata_content = zf.read(metadata_filename).decode("utf-8")
                     metadata = json.loads(metadata_content)
 
             # Verify required fields
-            self.assertEqual(metadata['platform'], platform)
-            self.assertEqual(metadata['name'], 'test-skill')
-            self.assertIn('created_with', metadata)
+            self.assertEqual(metadata["platform"], platform)
+            self.assertEqual(metadata["name"], "test-skill")
+            self.assertIn("created_with", metadata)
 
     def test_e2e_format_skill_md_differences(self):
         """Test that each platform formats SKILL.md differently"""
-        metadata = SkillMetadata(
-            name="test-skill",
-            description="Test skill for E2E testing"
-        )
+        metadata = SkillMetadata(name="test-skill", description="Test skill for E2E testing")
 
         formats = {}
-        for platform in ['claude', 'gemini', 'openai', 'markdown']:
+        for platform in ["claude", "gemini", "openai", "markdown"]:
             adaptor = get_adaptor(platform)
             formatted = adaptor.format_skill_md(self.skill_dir, metadata)
             formats[platform] = formatted
 
         # Claude should have YAML frontmatter
-        self.assertTrue(formats['claude'].startswith('---'))
+        self.assertTrue(formats["claude"].startswith("---"))
 
         # Gemini and Markdown should NOT have YAML frontmatter
-        self.assertFalse(formats['gemini'].startswith('---'))
-        self.assertFalse(formats['markdown'].startswith('---'))
+        self.assertFalse(formats["gemini"].startswith("---"))
+        self.assertFalse(formats["markdown"].startswith("---"))
 
         # All should contain content from existing SKILL.md (React Framework)
         for platform, formatted in formats.items():
             # Check for content from existing SKILL.md
-            self.assertIn('react', formatted.lower(),
-                         f"{platform} should contain skill content")
+            self.assertIn("react", formatted.lower(), f"{platform} should contain skill content")
             # All should have non-empty content
-            self.assertGreater(len(formatted), 100,
-                             f"{platform} should have substantial content")
+            self.assertGreater(len(formatted), 100, f"{platform} should have substantial content")
 
     def test_e2e_upload_without_api_key(self):
         """Test upload behavior without API keys (should fail gracefully)"""
-        platforms_with_upload = ['claude', 'gemini', 'openai']
+        platforms_with_upload = ["claude", "gemini", "openai"]
 
         for platform in platforms_with_upload:
             adaptor = get_adaptor(platform)
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Try upload without API key
-            result = adaptor.upload(package_path, '')
+            result = adaptor.upload(package_path, "")
 
             # Should fail
-            self.assertFalse(result['success'],
-                           f"{platform} should fail without API key")
-            self.assertIsNone(result['skill_id'])
-            self.assertIn('message', result)
+            self.assertFalse(result["success"], f"{platform} should fail without API key")
+            self.assertIsNone(result["skill_id"])
+            self.assertIn("message", result)
 
     def test_e2e_markdown_no_upload_support(self):
         """Test that markdown adaptor doesn't support upload"""
-        adaptor = get_adaptor('markdown')
+        adaptor = get_adaptor("markdown")
         package_path = adaptor.package(self.skill_dir, self.output_dir)
 
         # Try upload (should return informative message)
-        result = adaptor.upload(package_path, 'not-used')
+        result = adaptor.upload(package_path, "not-used")
 
         # Should indicate no upload support
-        self.assertFalse(result['success'])
-        self.assertIsNone(result['skill_id'])
-        self.assertIn('not support', result['message'].lower())
+        self.assertFalse(result["success"])
+        self.assertIsNone(result["skill_id"])
+        self.assertIn("not support", result["message"].lower())
         # URL should point to local file
-        self.assertIn(str(package_path.absolute()), result['url'])
+        self.assertIn(str(package_path.absolute()), result["url"])
 
 
 class TestAdaptorsWorkflowIntegration(unittest.TestCase):
@@ -459,7 +457,7 @@ class TestAdaptorsWorkflowIntegration(unittest.TestCase):
 
             # Export to all platforms
             packages = {}
-            for platform in ['claude', 'gemini', 'openai', 'markdown']:
+            for platform in ["claude", "gemini", "openai", "markdown"]:
                 adaptor = get_adaptor(platform)
                 package_path = adaptor.package(skill_dir, output_dir)
                 packages[platform] = package_path
@@ -479,31 +477,34 @@ class TestAdaptorsWorkflowIntegration(unittest.TestCase):
             # Test custom output paths
             custom_output = Path(temp_dir) / "custom" / "my-package.zip"
 
-            adaptor = get_adaptor('claude')
+            adaptor = get_adaptor("claude")
             package_path = adaptor.package(skill_dir, custom_output)
 
             # Should respect custom path
             self.assertTrue(package_path.exists())
-            self.assertTrue('my-package' in package_path.name or package_path.parent.name == 'custom')
+            self.assertTrue(
+                "my-package" in package_path.name or package_path.parent.name == "custom"
+            )
 
     def test_workflow_api_key_validation(self):
         """Test API key validation for each platform"""
         test_cases = [
-            ('claude', 'sk-ant-test123', True),
-            ('claude', 'invalid-key', False),
-            ('gemini', 'AIzaSyTest123', True),
-            ('gemini', 'sk-ant-test', False),
-            ('openai', 'sk-proj-test123', True),
-            ('openai', 'sk-test123', True),
-            ('openai', 'AIzaSy123', False),
-            ('markdown', 'any-key', False),  # Never uses keys
+            ("claude", "sk-ant-test123", True),
+            ("claude", "invalid-key", False),
+            ("gemini", "AIzaSyTest123", True),
+            ("gemini", "sk-ant-test", False),
+            ("openai", "sk-proj-test123", True),
+            ("openai", "sk-test123", True),
+            ("openai", "AIzaSy123", False),
+            ("markdown", "any-key", False),  # Never uses keys
         ]
 
         for platform, api_key, expected in test_cases:
             adaptor = get_adaptor(platform)
             result = adaptor.validate_api_key(api_key)
-            self.assertEqual(result, expected,
-                           f"{platform}: validate_api_key('{api_key}') should be {expected}")
+            self.assertEqual(
+                result, expected, f"{platform}: validate_api_key('{api_key}') should be {expected}"
+            )
 
 
 class TestAdaptorsErrorHandling(unittest.TestCase):
@@ -520,7 +521,7 @@ class TestAdaptorsErrorHandling(unittest.TestCase):
             output_dir.mkdir()
 
             # Should handle gracefully (may create package but with empty content)
-            for platform in ['claude', 'gemini', 'openai', 'markdown']:
+            for platform in ["claude", "gemini", "openai", "markdown"]:
                 adaptor = get_adaptor(platform)
                 # Should not crash
                 try:
@@ -529,27 +530,27 @@ class TestAdaptorsErrorHandling(unittest.TestCase):
                     self.assertTrue(package_path.exists())
                 except Exception as e:
                     # If it raises, should be clear error
-                    self.assertIn('SKILL.md', str(e).lower() or 'reference' in str(e).lower())
+                    self.assertIn("SKILL.md", str(e).lower() or "reference" in str(e).lower())
 
     def test_error_upload_nonexistent_file(self):
         """Test upload with nonexistent file"""
-        for platform in ['claude', 'gemini', 'openai']:
+        for platform in ["claude", "gemini", "openai"]:
             adaptor = get_adaptor(platform)
-            result = adaptor.upload(Path('/nonexistent/file.zip'), 'test-key')
+            result = adaptor.upload(Path("/nonexistent/file.zip"), "test-key")
 
-            self.assertFalse(result['success'])
-            self.assertIn('not found', result['message'].lower())
+            self.assertFalse(result["success"])
+            self.assertIn("not found", result["message"].lower())
 
     def test_error_upload_wrong_format(self):
         """Test upload with wrong file format"""
-        with tempfile.NamedTemporaryFile(suffix='.txt') as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".txt") as tmp:
             # Try uploading .txt file
-            for platform in ['claude', 'gemini', 'openai']:
+            for platform in ["claude", "gemini", "openai"]:
                 adaptor = get_adaptor(platform)
-                result = adaptor.upload(Path(tmp.name), 'test-key')
+                result = adaptor.upload(Path(tmp.name), "test-key")
 
-                self.assertFalse(result['success'])
+                self.assertFalse(result["success"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

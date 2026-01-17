@@ -8,7 +8,6 @@ for documentation scraping.
 import json
 import sys
 from pathlib import Path
-from typing import Any, List
 
 try:
     from mcp.types import TextContent
@@ -16,9 +15,11 @@ except ImportError:
     # Graceful degradation: Create a simple fallback class for testing
     class TextContent:
         """Fallback TextContent for when MCP is not installed"""
+
         def __init__(self, type: str, text: str):
             self.type = type
             self.text = text
+
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
@@ -31,7 +32,7 @@ except ImportError:
     ConfigValidator = None  # Graceful degradation if not available
 
 
-async def generate_config(args: dict) -> List[TextContent]:
+async def generate_config(args: dict) -> list[TextContent]:
     """
     Generate a config file for documentation scraping.
 
@@ -58,10 +59,7 @@ async def generate_config(args: dict) -> List[TextContent]:
     rate_limit = args.get("rate_limit", 0.5)
 
     # Handle unlimited mode
-    if unlimited:
-        max_pages = None
-        limit_msg = "unlimited (no page limit)"
-    elif max_pages == -1:
+    if unlimited or max_pages == -1:
         max_pages = None
         limit_msg = "unlimited (no page limit)"
     else:
@@ -72,25 +70,18 @@ async def generate_config(args: dict) -> List[TextContent]:
         "name": name,
         "description": description,
         "base_url": url,
-        "selectors": {
-            "main_content": "article",
-            "title": "h1",
-            "code_blocks": "pre code"
-        },
-        "url_patterns": {
-            "include": [],
-            "exclude": []
-        },
+        "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+        "url_patterns": {"include": [], "exclude": []},
         "categories": {},
         "rate_limit": rate_limit,
-        "max_pages": max_pages
+        "max_pages": max_pages,
     }
 
     # Save to configs directory
     config_path = Path("configs") / f"{name}.json"
     config_path.parent.mkdir(exist_ok=True)
 
-    with open(config_path, 'w') as f:
+    with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
 
     result = f"""✅ Config created: {config_path}
@@ -112,7 +103,7 @@ Note: Default selectors may need adjustment for your documentation site.
     return [TextContent(type="text", text=result)]
 
 
-async def list_configs(args: dict) -> List[TextContent]:
+async def list_configs(args: dict) -> list[TextContent]:
     """
     List all available preset configurations.
 
@@ -155,7 +146,7 @@ async def list_configs(args: dict) -> List[TextContent]:
     return [TextContent(type="text", text=result)]
 
 
-async def validate_config(args: dict) -> List[TextContent]:
+async def validate_config(args: dict) -> list[TextContent]:
     """
     Validate a config file for errors.
 
@@ -178,41 +169,46 @@ async def validate_config(args: dict) -> List[TextContent]:
     try:
         # Check if file exists
         if not Path(config_path).exists():
-            return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
+            return [
+                TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")
+            ]
 
         # Try unified config validator first
         try:
             from config_validator import validate_config
+
             validator = validate_config(config_path)
 
-            result = f"✅ Config is valid!\n\n"
+            result = "✅ Config is valid!\n\n"
 
             # Show format
             if validator.is_unified:
-                result += f"📦 Format: Unified (multi-source)\n"
+                result += "📦 Format: Unified (multi-source)\n"
                 result += f"  Name: {validator.config['name']}\n"
                 result += f"  Sources: {len(validator.config.get('sources', []))}\n"
 
                 # Show sources
-                for i, source in enumerate(validator.config.get('sources', []), 1):
+                for i, source in enumerate(validator.config.get("sources", []), 1):
                     result += f"\n  Source {i}: {source['type']}\n"
-                    if source['type'] == 'documentation':
+                    if source["type"] == "documentation":
                         result += f"    URL: {source.get('base_url', 'N/A')}\n"
                         result += f"    Max pages: {source.get('max_pages', 'Not set')}\n"
-                    elif source['type'] == 'github':
+                    elif source["type"] == "github":
                         result += f"    Repo: {source.get('repo', 'N/A')}\n"
-                        result += f"    Code depth: {source.get('code_analysis_depth', 'surface')}\n"
-                    elif source['type'] == 'pdf':
+                        result += (
+                            f"    Code depth: {source.get('code_analysis_depth', 'surface')}\n"
+                        )
+                    elif source["type"] == "pdf":
                         result += f"    Path: {source.get('path', 'N/A')}\n"
 
                 # Show merge settings if applicable
                 if validator.needs_api_merge():
-                    merge_mode = validator.config.get('merge_mode', 'rule-based')
+                    merge_mode = validator.config.get("merge_mode", "rule-based")
                     result += f"\n  Merge mode: {merge_mode}\n"
-                    result += f"  API merging: Required (docs + code sources)\n"
+                    result += "  API merging: Required (docs + code sources)\n"
 
             else:
-                result += f"📦 Format: Legacy (single source)\n"
+                result += "📦 Format: Legacy (single source)\n"
                 result += f"  Name: {validator.config['name']}\n"
                 result += f"  Base URL: {validator.config.get('base_url', 'N/A')}\n"
                 result += f"  Max pages: {validator.config.get('max_pages', 'Not set')}\n"
@@ -222,29 +218,30 @@ async def validate_config(args: dict) -> List[TextContent]:
 
         except ImportError:
             # Fall back to legacy validation
-            from doc_scraper import validate_config
             import json
 
-            with open(config_path, 'r') as f:
+            from doc_scraper import validate_config
+
+            with open(config_path) as f:
                 config = json.load(f)
 
             # Validate config - returns (errors, warnings) tuple
             errors, warnings = validate_config(config)
 
             if errors:
-                result = f"❌ Config validation failed:\n\n"
+                result = "❌ Config validation failed:\n\n"
                 for error in errors:
                     result += f"  • {error}\n"
             else:
-                result = f"✅ Config is valid!\n\n"
-                result += f"📦 Format: Legacy (single source)\n"
+                result = "✅ Config is valid!\n\n"
+                result += "📦 Format: Legacy (single source)\n"
                 result += f"  Name: {config['name']}\n"
                 result += f"  Base URL: {config['base_url']}\n"
                 result += f"  Max pages: {config.get('max_pages', 'Not set')}\n"
                 result += f"  Rate limit: {config.get('rate_limit', 'Not set')}s\n"
 
                 if warnings:
-                    result += f"\n⚠️  Warnings:\n"
+                    result += "\n⚠️  Warnings:\n"
                     for warning in warnings:
                         result += f"  • {warning}\n"
 

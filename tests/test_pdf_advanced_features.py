@@ -10,26 +10,28 @@ Tests cover:
 - Caching
 """
 
-import unittest
+import io
+import shutil
 import sys
 import tempfile
-import shutil
-import io
+import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "cli"))
 
 try:
     import fitz  # PyMuPDF
+
     PYMUPDF_AVAILABLE = True
 except ImportError:
     PYMUPDF_AVAILABLE = False
 
 try:
-    from PIL import Image
     import pytesseract
+    from PIL import Image
+
     TESSERACT_AVAILABLE = True
 except ImportError:
     TESSERACT_AVAILABLE = False
@@ -42,11 +44,12 @@ class TestOCRSupport(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_ocr_initialization(self):
@@ -86,7 +89,7 @@ class TestOCRSupport(unittest.TestCase):
         # OCR should not be triggered
         mock_page.get_pixmap.assert_not_called()
 
-    @patch('pdf_extractor_poc.TESSERACT_AVAILABLE', False)
+    @patch("pdf_extractor_poc.TESSERACT_AVAILABLE", False)
     def test_ocr_unavailable_warning(self):
         """Test warning when OCR requested but pytesseract not available"""
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
@@ -97,7 +100,7 @@ class TestOCRSupport(unittest.TestCase):
         mock_page.get_text.return_value = "Short"  # Less than 50 chars
 
         # Capture output
-        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+        with patch("sys.stdout", new=io.StringIO()) as fake_out:
             text = extractor.extract_text_with_ocr(mock_page)
             output = fake_out.getvalue()
 
@@ -119,10 +122,10 @@ class TestOCRSupport(unittest.TestCase):
         mock_pix = Mock()
         mock_pix.width = 100
         mock_pix.height = 100
-        mock_pix.samples = b'\x00' * (100 * 100 * 3)
+        mock_pix.samples = b"\x00" * (100 * 100 * 3)
         mock_page.get_pixmap.return_value = mock_pix
 
-        with patch('pytesseract.image_to_string', return_value="OCR extracted text here"):
+        with patch("pytesseract.image_to_string", return_value="OCR extracted text here"):
             text = extractor.extract_text_with_ocr(mock_page)
 
         # Should use OCR text since it's longer
@@ -137,11 +140,12 @@ class TestPasswordProtection(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_password_initialization(self):
@@ -164,7 +168,7 @@ class TestPasswordProtection(unittest.TestCase):
         mock_doc.metadata = {}
         mock_doc.__len__.return_value = 10
 
-        with patch('fitz.open', return_value=mock_doc):
+        with patch("fitz.open", return_value=mock_doc):
             # This would be called in extract_all()
             doc = fitz.open(extractor.pdf_path)
 
@@ -182,7 +186,7 @@ class TestPasswordProtection(unittest.TestCase):
         mock_doc.is_encrypted = True
         mock_doc.authenticate.return_value = False
 
-        with patch('fitz.open', return_value=mock_doc):
+        with patch("fitz.open", return_value=mock_doc):
             doc = fitz.open(extractor.pdf_path)
             result = doc.authenticate(extractor.password)
 
@@ -197,7 +201,7 @@ class TestPasswordProtection(unittest.TestCase):
         mock_doc = Mock()
         mock_doc.is_encrypted = True
 
-        with patch('fitz.open', return_value=mock_doc):
+        with patch("fitz.open", return_value=mock_doc):
             doc = fitz.open(extractor.pdf_path)
 
             self.assertTrue(doc.is_encrypted)
@@ -211,11 +215,12 @@ class TestTableExtraction(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_table_extraction_initialization(self):
@@ -247,7 +252,7 @@ class TestTableExtraction(unittest.TestCase):
         mock_table = Mock()
         mock_table.extract.return_value = [
             ["Header 1", "Header 2", "Header 3"],
-            ["Data 1", "Data 2", "Data 3"]
+            ["Data 1", "Data 2", "Data 3"],
         ]
         mock_table.bbox = (0, 0, 100, 100)
 
@@ -261,9 +266,9 @@ class TestTableExtraction(unittest.TestCase):
         tables = extractor.extract_tables_from_page(mock_page)
 
         self.assertEqual(len(tables), 1)
-        self.assertEqual(tables[0]['row_count'], 2)
-        self.assertEqual(tables[0]['col_count'], 3)
-        self.assertEqual(tables[0]['table_index'], 0)
+        self.assertEqual(tables[0]["row_count"], 2)
+        self.assertEqual(tables[0]["col_count"], 3)
+        self.assertEqual(tables[0]["table_index"], 0)
 
     def test_multiple_tables_extraction(self):
         """Test extraction of multiple tables from one page"""
@@ -289,8 +294,8 @@ class TestTableExtraction(unittest.TestCase):
         tables = extractor.extract_tables_from_page(mock_page)
 
         self.assertEqual(len(tables), 2)
-        self.assertEqual(tables[0]['table_index'], 0)
-        self.assertEqual(tables[1]['table_index'], 1)
+        self.assertEqual(tables[0]["table_index"], 0)
+        self.assertEqual(tables[1]["table_index"], 1)
 
     def test_table_extraction_error_handling(self):
         """Test error handling during table extraction"""
@@ -314,11 +319,12 @@ class TestCaching(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_cache_initialization(self):
@@ -396,11 +402,12 @@ class TestParallelProcessing(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_parallel_initialization(self):
@@ -422,6 +429,7 @@ class TestParallelProcessing(unittest.TestCase):
     def test_worker_count_auto_detect(self):
         """Test worker count auto-detection"""
         import os
+
         cpu_count = os.cpu_count()
 
         extractor = self.PDFExtractor.__new__(self.PDFExtractor)
@@ -445,11 +453,12 @@ class TestIntegration(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from pdf_extractor_poc import PDFExtractor
+
         self.PDFExtractor = PDFExtractor
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_full_initialization_with_all_features(self):
@@ -479,7 +488,7 @@ class TestIntegration(unittest.TestCase):
             {"use_ocr": True, "extract_tables": True},
             {"password": "test", "parallel": True},
             {"use_cache": True, "extract_tables": True, "parallel": True},
-            {"use_ocr": True, "password": "test", "extract_tables": True, "parallel": True}
+            {"use_ocr": True, "password": "test", "extract_tables": True, "parallel": True},
         ]
 
         for combo in combinations:
@@ -495,30 +504,38 @@ class TestIntegration(unittest.TestCase):
         """Test that page data includes table count"""
         # This tests that the page_data structure includes tables
         expected_keys = [
-            'page_number', 'text', 'markdown', 'headings',
-            'code_samples', 'images_count', 'extracted_images',
-            'tables', 'char_count', 'code_blocks_count', 'tables_count'
+            "page_number",
+            "text",
+            "markdown",
+            "headings",
+            "code_samples",
+            "images_count",
+            "extracted_images",
+            "tables",
+            "char_count",
+            "code_blocks_count",
+            "tables_count",
         ]
 
         # Just verify the structure is correct
         # Actual extraction is tested in other test classes
         page_data = {
-            'page_number': 1,
-            'text': 'test',
-            'markdown': 'test',
-            'headings': [],
-            'code_samples': [],
-            'images_count': 0,
-            'extracted_images': [],
-            'tables': [],
-            'char_count': 4,
-            'code_blocks_count': 0,
-            'tables_count': 0
+            "page_number": 1,
+            "text": "test",
+            "markdown": "test",
+            "headings": [],
+            "code_samples": [],
+            "images_count": 0,
+            "extracted_images": [],
+            "tables": [],
+            "char_count": 4,
+            "code_blocks_count": 0,
+            "tables_count": 0,
         }
 
         for key in expected_keys:
             self.assertIn(key, page_data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

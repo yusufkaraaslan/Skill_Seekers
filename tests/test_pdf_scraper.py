@@ -11,16 +11,15 @@ Tests cover:
 - Error handling
 """
 
-import unittest
-import sys
 import json
-import tempfile
 import shutil
+import tempfile
+import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
 try:
     import fitz  # PyMuPDF
+
     PYMUPDF_AVAILABLE = True
 except ImportError:
     PYMUPDF_AVAILABLE = False
@@ -33,6 +32,7 @@ class TestPDFToSkillConverter(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
 
         # Create temporary directory for test output
@@ -41,15 +41,12 @@ class TestPDFToSkillConverter(unittest.TestCase):
 
     def tearDown(self):
         # Clean up temporary directory
-        if hasattr(self, 'temp_dir'):
+        if hasattr(self, "temp_dir"):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_init_with_name_and_pdf_path(self):
         """Test initialization with name and PDF path"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         self.assertEqual(converter.name, "test_skill")
@@ -62,10 +59,7 @@ class TestPDFToSkillConverter(unittest.TestCase):
             "name": "config_skill",
             "description": "Test skill",
             "pdf_path": "docs/test.pdf",
-            "extract_options": {
-                "chunk_size": 10,
-                "min_quality": 5.0
-            }
+            "extract_options": {"chunk_size": 10, "min_quality": 5.0},
         }
 
         converter = self.PDFToSkillConverter(config)
@@ -86,6 +80,7 @@ class TestCategorization(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -99,8 +94,8 @@ class TestCategorization(unittest.TestCase):
             "pdf_path": "test.pdf",
             "categories": {
                 "getting_started": ["introduction", "getting started"],
-                "api": ["api", "reference", "function"]
-            }
+                "api": ["api", "reference", "function"],
+            },
         }
 
         converter = self.PDFToSkillConverter(config)
@@ -111,13 +106,9 @@ class TestCategorization(unittest.TestCase):
                 {
                     "page_number": 1,
                     "text": "Introduction to the API",
-                    "chapter": "Chapter 1: Getting Started"
+                    "chapter": "Chapter 1: Getting Started",
                 },
-                {
-                    "page_number": 2,
-                    "text": "API reference for functions",
-                    "chapter": None
-                }
+                {"page_number": 2, "text": "API reference for functions", "chapter": None},
             ]
         }
 
@@ -129,30 +120,15 @@ class TestCategorization(unittest.TestCase):
 
     def test_categorize_by_chapters(self):
         """Test categorization using chapter information"""
-        config = {
-            "name": "test",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Mock data with chapters
         converter.extracted_data = {
             "pages": [
-                {
-                    "page_number": 1,
-                    "text": "Content here",
-                    "chapter": "Chapter 1: Introduction"
-                },
-                {
-                    "page_number": 2,
-                    "text": "More content",
-                    "chapter": "Chapter 1: Introduction"
-                },
-                {
-                    "page_number": 3,
-                    "text": "New chapter",
-                    "chapter": "Chapter 2: Advanced Topics"
-                }
+                {"page_number": 1, "text": "Content here", "chapter": "Chapter 1: Introduction"},
+                {"page_number": 2, "text": "More content", "chapter": "Chapter 1: Introduction"},
+                {"page_number": 3, "text": "New chapter", "chapter": "Chapter 2: Advanced Topics"},
             ]
         }
 
@@ -164,21 +140,12 @@ class TestCategorization(unittest.TestCase):
 
     def test_categorize_handles_no_chapters(self):
         """Test categorization when no chapters are detected"""
-        config = {
-            "name": "test",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Mock data without chapters
         converter.extracted_data = {
-            "pages": [
-                {
-                    "page_number": 1,
-                    "text": "Some content",
-                    "chapter": None
-                }
-            ]
+            "pages": [{"page_number": 1, "text": "Some content", "chapter": None}]
         }
 
         categories = converter.categorize_content()
@@ -194,6 +161,7 @@ class TestSkillBuilding(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -202,10 +170,7 @@ class TestSkillBuilding(unittest.TestCase):
 
     def test_build_skill_creates_structure(self):
         """Test that build_skill creates required directory structure"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
@@ -213,21 +178,12 @@ class TestSkillBuilding(unittest.TestCase):
 
         # Mock extracted data
         converter.extracted_data = {
-            "pages": [
-                {
-                    "page_number": 1,
-                    "text": "Test content",
-                    "code_blocks": [],
-                    "images": []
-                }
-            ],
-            "total_pages": 1
+            "pages": [{"page_number": 1, "text": "Test content", "code_blocks": [], "images": []}],
+            "total_pages": 1,
         }
 
         # Mock categorization
-        converter.categories = {
-            "getting_started": [converter.extracted_data["pages"][0]]
-        }
+        converter.categories = {"getting_started": [converter.extracted_data["pages"][0]]}
 
         converter.build_skill()
 
@@ -240,11 +196,7 @@ class TestSkillBuilding(unittest.TestCase):
 
     def test_build_skill_creates_skill_md(self):
         """Test that SKILL.md is created"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf",
-            "description": "Test description"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf", "description": "Test description"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
@@ -252,7 +204,7 @@ class TestSkillBuilding(unittest.TestCase):
 
         converter.extracted_data = {
             "pages": [{"page_number": 1, "text": "Test", "code_blocks": [], "images": []}],
-            "total_pages": 1
+            "total_pages": 1,
         }
         converter.categories = {"test": [converter.extracted_data["pages"][0]]}
 
@@ -268,10 +220,7 @@ class TestSkillBuilding(unittest.TestCase):
 
     def test_build_skill_creates_reference_files(self):
         """Test that reference files are created for categories"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
@@ -280,14 +229,14 @@ class TestSkillBuilding(unittest.TestCase):
         converter.extracted_data = {
             "pages": [
                 {"page_number": 1, "text": "Getting started", "code_blocks": [], "images": []},
-                {"page_number": 2, "text": "API reference", "code_blocks": [], "images": []}
+                {"page_number": 2, "text": "API reference", "code_blocks": [], "images": []},
             ],
-            "total_pages": 2
+            "total_pages": 2,
         }
 
         converter.categories = {
             "getting_started": [converter.extracted_data["pages"][0]],
-            "api": [converter.extracted_data["pages"][1]]
+            "api": [converter.extracted_data["pages"][1]],
         }
 
         converter.build_skill()
@@ -306,6 +255,7 @@ class TestCodeBlockHandling(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -314,10 +264,7 @@ class TestCodeBlockHandling(unittest.TestCase):
 
     def test_code_blocks_included_in_references(self):
         """Test that code blocks are included in reference files"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
@@ -333,18 +280,16 @@ class TestCodeBlockHandling(unittest.TestCase):
                         {
                             "code": "def hello():\n    print('world')",
                             "language": "python",
-                            "quality": 8.0
+                            "quality": 8.0,
                         }
                     ],
-                    "images": []
+                    "images": [],
                 }
             ],
-            "total_pages": 1
+            "total_pages": 1,
         }
 
-        converter.categories = {
-            "examples": [converter.extracted_data["pages"][0]]
-        }
+        converter.categories = {"examples": [converter.extracted_data["pages"][0]]}
 
         converter.build_skill()
 
@@ -358,10 +303,7 @@ class TestCodeBlockHandling(unittest.TestCase):
 
     def test_high_quality_code_preferred(self):
         """Test that high-quality code blocks are prioritized"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
@@ -375,12 +317,16 @@ class TestCodeBlockHandling(unittest.TestCase):
                     "text": "Code examples",
                     "code_blocks": [
                         {"code": "x = 1", "language": "python", "quality": 2.0},
-                        {"code": "def process():\n    return result", "language": "python", "quality": 9.0}
+                        {
+                            "code": "def process():\n    return result",
+                            "language": "python",
+                            "quality": 9.0,
+                        },
                     ],
-                    "images": []
+                    "images": [],
                 }
             ],
-            "total_pages": 1
+            "total_pages": 1,
         }
 
         converter.categories = {"examples": [converter.extracted_data["pages"][0]]}
@@ -400,6 +346,7 @@ class TestImageHandling(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -408,17 +355,14 @@ class TestImageHandling(unittest.TestCase):
 
     def test_images_saved_to_assets(self):
         """Test that images are saved to assets directory"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
         converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
         # Mock image data (1x1 white PNG)
-        mock_image_bytes = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        mock_image_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 
         converter.extracted_data = {
             "pages": [
@@ -432,12 +376,12 @@ class TestImageHandling(unittest.TestCase):
                             "index": 0,
                             "width": 100,
                             "height": 100,
-                            "data": mock_image_bytes
+                            "data": mock_image_bytes,
                         }
-                    ]
+                    ],
                 }
             ],
-            "total_pages": 1
+            "total_pages": 1,
         }
 
         converter.categories = {"diagrams": [converter.extracted_data["pages"][0]]}
@@ -450,16 +394,13 @@ class TestImageHandling(unittest.TestCase):
 
     def test_image_references_in_markdown(self):
         """Test that images are referenced in markdown files"""
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         # Override skill_dir to use temp directory
         converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
-        mock_image_bytes = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        mock_image_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 
         converter.extracted_data = {
             "pages": [
@@ -473,12 +414,12 @@ class TestImageHandling(unittest.TestCase):
                             "index": 0,
                             "width": 200,
                             "height": 150,
-                            "data": mock_image_bytes
+                            "data": mock_image_bytes,
                         }
-                    ]
+                    ],
                 }
             ],
-            "total_pages": 1
+            "total_pages": 1,
         }
 
         converter.categories = {"architecture": [converter.extracted_data["pages"][0]]}
@@ -499,6 +440,7 @@ class TestErrorHandling(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -507,10 +449,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_missing_pdf_file(self):
         """Test error when PDF file doesn't exist"""
-        config = {
-            "name": "test",
-            "pdf_path": "nonexistent.pdf"
-        }
+        config = {"name": "test", "pdf_path": "nonexistent.pdf"}
         converter = self.PDFToSkillConverter(config)
 
         with self.assertRaises((FileNotFoundError, RuntimeError)):
@@ -539,6 +478,7 @@ class TestJSONWorkflow(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -549,27 +489,15 @@ class TestJSONWorkflow(unittest.TestCase):
         """Test loading extracted data from JSON file"""
         # Create mock extracted JSON
         extracted_data = {
-            "pages": [
-                {
-                    "page_number": 1,
-                    "text": "Test content",
-                    "code_blocks": [],
-                    "images": []
-                }
-            ],
+            "pages": [{"page_number": 1, "text": "Test content", "code_blocks": [], "images": []}],
             "total_pages": 1,
-            "metadata": {
-                "title": "Test PDF"
-            }
+            "metadata": {"title": "Test PDF"},
         }
 
         json_path = Path(self.temp_dir) / "extracted.json"
         json_path.write_text(json.dumps(extracted_data, indent=2))
 
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
         converter.load_extracted_data(str(json_path))
 
@@ -580,16 +508,13 @@ class TestJSONWorkflow(unittest.TestCase):
         """Test that from_json workflow skips PDF extraction"""
         extracted_data = {
             "pages": [{"page_number": 1, "text": "Content", "code_blocks": [], "images": []}],
-            "total_pages": 1
+            "total_pages": 1,
         }
 
         json_path = Path(self.temp_dir) / "extracted.json"
         json_path.write_text(json.dumps(extracted_data))
 
-        config = {
-            "name": "test_skill",
-            "pdf_path": "test.pdf"
-        }
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
         converter = self.PDFToSkillConverter(config)
         converter.load_extracted_data(str(json_path))
 
@@ -598,5 +523,5 @@ class TestJSONWorkflow(unittest.TestCase):
         self.assertEqual(converter.extracted_data["total_pages"], 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

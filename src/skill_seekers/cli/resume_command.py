@@ -4,9 +4,9 @@ Resume Command for Skill Seekers
 Allows users to resume interrupted scraping jobs from saved progress.
 """
 
-import sys
 import argparse
-from typing import Optional
+import sys
+
 from .config_manager import get_config_manager
 
 
@@ -132,24 +132,10 @@ def clean_old_jobs():
 
 def main():
     """Main entry point for resume command."""
-    parser = argparse.ArgumentParser(
-        description="Resume interrupted Skill Seekers jobs"
-    )
-    parser.add_argument(
-        "job_id",
-        nargs="?",
-        help="Job ID to resume"
-    )
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List all resumable jobs"
-    )
-    parser.add_argument(
-        "--clean",
-        action="store_true",
-        help="Clean up old progress files"
-    )
+    parser = argparse.ArgumentParser(description="Resume interrupted Skill Seekers jobs")
+    parser.add_argument("job_id", nargs="?", help="Job ID to resume")
+    parser.add_argument("--list", action="store_true", help="List all resumable jobs")
+    parser.add_argument("--clean", action="store_true", help="Clean up old progress files")
 
     args = parser.parse_args()
 

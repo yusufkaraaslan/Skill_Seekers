@@ -3,11 +3,10 @@
 Tests for cli/package_skill.py functionality
 """
 
-import unittest
 import tempfile
+import unittest
 import zipfile
 from pathlib import Path
-import sys
 
 from skill_seekers.cli.package_skill import package_skill
 
@@ -42,12 +41,14 @@ class TestPackageSkill(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = self.create_test_skill_directory(tmpdir)
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             self.assertIsNotNone(zip_path)
             self.assertTrue(zip_path.exists())
-            self.assertEqual(zip_path.suffix, '.zip')
+            self.assertEqual(zip_path.suffix, ".zip")
             self.assertTrue(zipfile.is_zipfile(zip_path))
 
     def test_package_creates_correct_zip_structure(self):
@@ -55,20 +56,22 @@ class TestPackageSkill(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = self.create_test_skill_directory(tmpdir)
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
 
             # Check zip contents
-            with zipfile.ZipFile(zip_path, 'r') as zf:
+            with zipfile.ZipFile(zip_path, "r") as zf:
                 names = zf.namelist()
 
                 # Should contain SKILL.md
-                self.assertTrue(any('SKILL.md' in name for name in names))
+                self.assertTrue(any("SKILL.md" in name for name in names))
 
                 # Should contain references
-                self.assertTrue(any('references/index.md' in name for name in names))
-                self.assertTrue(any('references/getting_started.md' in name for name in names))
+                self.assertTrue(any("references/index.md" in name for name in names))
+                self.assertTrue(any("references/getting_started.md" in name for name in names))
 
     def test_package_excludes_backup_files(self):
         """Test that .backup files are excluded from zip"""
@@ -78,18 +81,22 @@ class TestPackageSkill(unittest.TestCase):
             # Add a backup file
             (skill_dir / "SKILL.md.backup").write_text("# Backup")
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
 
             # Check that backup is NOT in zip
-            with zipfile.ZipFile(zip_path, 'r') as zf:
+            with zipfile.ZipFile(zip_path, "r") as zf:
                 names = zf.namelist()
-                self.assertFalse(any('.backup' in name for name in names))
+                self.assertFalse(any(".backup" in name for name in names))
 
     def test_package_nonexistent_directory(self):
         """Test packaging a nonexistent directory"""
-        success, zip_path = package_skill("/nonexistent/path", open_folder_after=False, skip_quality_check=True)
+        success, zip_path = package_skill(
+            "/nonexistent/path", open_folder_after=False, skip_quality_check=True
+        )
 
         self.assertFalse(success)
         self.assertIsNone(zip_path)
@@ -100,7 +107,9 @@ class TestPackageSkill(unittest.TestCase):
             skill_dir = Path(tmpdir) / "invalid-skill"
             skill_dir.mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertFalse(success)
             self.assertIsNone(zip_path)
@@ -119,7 +128,9 @@ class TestPackageSkill(unittest.TestCase):
             (skill_dir / "scripts").mkdir()
             (skill_dir / "assets").mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             # Zip should be in output directory, not inside skill directory
@@ -136,7 +147,9 @@ class TestPackageSkill(unittest.TestCase):
             (skill_dir / "scripts").mkdir()
             (skill_dir / "assets").mkdir()
 
-            success, zip_path = package_skill(skill_dir, open_folder_after=False, skip_quality_check=True)
+            success, zip_path = package_skill(
+                skill_dir, open_folder_after=False, skip_quality_check=True
+            )
 
             self.assertTrue(success)
             self.assertEqual(zip_path.name, "my-awesome-skill.zip")
@@ -151,16 +164,13 @@ class TestPackageSkillCLI(unittest.TestCase):
 
         try:
             result = subprocess.run(
-                ['skill-seekers', 'package', '--help'],
-                capture_output=True,
-                text=True,
-                timeout=5
+                ["skill-seekers", "package", "--help"], capture_output=True, text=True, timeout=5
             )
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
             output = result.stdout + result.stderr
-            self.assertTrue('usage:' in output.lower() or 'package' in output.lower())
+            self.assertTrue("usage:" in output.lower() or "package" in output.lower())
         except FileNotFoundError:
             self.skipTest("skill-seekers command not installed")
 
@@ -170,10 +180,7 @@ class TestPackageSkillCLI(unittest.TestCase):
 
         try:
             result = subprocess.run(
-                ['skill-seekers-package', '--help'],
-                capture_output=True,
-                text=True,
-                timeout=5
+                ["skill-seekers-package", "--help"], capture_output=True, text=True, timeout=5
             )
 
             # argparse may return 0 or 2 for --help
@@ -182,5 +189,5 @@ class TestPackageSkillCLI(unittest.TestCase):
             self.skipTest("skill-seekers-package command not installed")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

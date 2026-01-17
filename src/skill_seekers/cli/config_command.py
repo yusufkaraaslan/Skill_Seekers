@@ -4,9 +4,8 @@ Interactive Configuration Wizard for Skill Seekers
 Provides user-friendly setup for GitHub tokens, API keys, and settings.
 """
 
-import sys
 import webbrowser
-from typing import Optional
+
 from .config_manager import get_config_manager
 
 
@@ -46,7 +45,7 @@ Documentation: https://github.com/SkillSeekers/skill-seekers
     # Ask if user wants to run setup now
     response = input("Would you like to run the configuration wizard now? [y/N]: ").strip().lower()
 
-    if response in ['y', 'yes']:
+    if response in ["y", "yes"]:
         main_menu()
     else:
         print("\nYou can run the configuration wizard anytime with:")
@@ -158,7 +157,7 @@ def add_github_profile():
         if name in config.config["github"]["profiles"]:
             print(f"❌ Profile '{name}' already exists.")
             overwrite = input("Overwrite? [y/N]: ").strip().lower()
-            if overwrite not in ['y', 'yes']:
+            if overwrite not in ["y", "yes"]:
                 continue
         break
 
@@ -175,7 +174,7 @@ def add_github_profile():
     print("  4. Copy the token (ghp_...)\n")
 
     open_now = input("Open GitHub token page in browser? [Y/n]: ").strip().lower()
-    if open_now not in ['n', 'no']:
+    if open_now not in ["n", "no"]:
         open_github_token_page()
 
     while True:
@@ -186,7 +185,7 @@ def add_github_profile():
         if not (token.startswith("ghp_") or token.startswith("github_pat_")):
             print("⚠️  Warning: Token doesn't match GitHub format")
             proceed = input("Continue anyway? [y/N]: ").strip().lower()
-            if proceed not in ['y', 'yes']:
+            if proceed not in ["y", "yes"]:
                 continue
         break
 
@@ -198,12 +197,7 @@ def add_github_profile():
     print("  4. fail - Fail immediately")
 
     strategy_choice = input("\nSelect strategy [1-4] (default: 1): ").strip() or "1"
-    strategy_map = {
-        "1": "prompt",
-        "2": "wait",
-        "3": "switch",
-        "4": "fail"
-    }
+    strategy_map = {"1": "prompt", "2": "wait", "3": "switch", "4": "fail"}
     strategy = strategy_map.get(strategy_choice, "prompt")
 
     # Timeout
@@ -217,7 +211,7 @@ def add_github_profile():
     # Set as default
     has_profiles = bool(config.config["github"]["profiles"])
     if has_profiles:
-        set_default = input("\nSet as default profile? [y/N]: ").strip().lower() in ['y', 'yes']
+        set_default = input("\nSet as default profile? [y/N]: ").strip().lower() in ["y", "yes"]
     else:
         set_default = True  # First profile is always default
 
@@ -228,7 +222,7 @@ def add_github_profile():
         description=description,
         rate_limit_strategy=strategy,
         timeout_minutes=timeout,
-        set_as_default=set_default
+        set_as_default=set_default,
     )
 
     print(f"\n✅ GitHub profile '{name}' added successfully!")
@@ -258,7 +252,7 @@ def remove_github_profile():
         if 1 <= choice_idx <= len(profiles):
             profile_name = profiles[choice_idx - 1]["name"]
             confirm = input(f"Really remove profile '{profile_name}'? [y/N]: ").strip().lower()
-            if confirm in ['y', 'yes']:
+            if confirm in ["y", "yes"]:
                 config.remove_github_profile(profile_name)
         else:
             print("❌ Invalid choice.")
@@ -325,10 +319,11 @@ def api_keys_menu():
         source = ""
         if key:
             import os
+
             env_var = {
                 "anthropic": "ANTHROPIC_API_KEY",
                 "google": "GOOGLE_API_KEY",
-                "openai": "OPENAI_API_KEY"
+                "openai": "OPENAI_API_KEY",
             }[provider]
             if os.getenv(env_var):
                 source = " (from environment)"
@@ -347,7 +342,7 @@ def api_keys_menu():
     provider_map = {
         "1": ("anthropic", "https://console.anthropic.com/settings/keys"),
         "2": ("google", "https://makersuite.google.com/app/apikey"),
-        "3": ("openai", "https://platform.openai.com/api-keys")
+        "3": ("openai", "https://platform.openai.com/api-keys"),
     }
 
     if choice in provider_map:
@@ -365,7 +360,7 @@ def set_api_key(provider: str, url: str):
     print(f"Get your API key at: {url}\n")
 
     open_now = input("Open in browser? [Y/n]: ").strip().lower()
-    if open_now not in ['n', 'no']:
+    if open_now not in ["n", "no"]:
         try:
             webbrowser.open(url)
             print("✅ Opened in browser\n")
@@ -390,13 +385,15 @@ def rate_limit_settings():
 
     current = config.config["rate_limit"]
 
-    print(f"Current settings:")
+    print("Current settings:")
     print(f"  • Default timeout: {current['default_timeout_minutes']} minutes")
     print(f"  • Auto-switch profiles: {current['auto_switch_profiles']}")
     print(f"  • Show countdown: {current['show_countdown']}\n")
 
     # Timeout
-    timeout_input = input(f"Default timeout in minutes [{current['default_timeout_minutes']}]: ").strip()
+    timeout_input = input(
+        f"Default timeout in minutes [{current['default_timeout_minutes']}]: "
+    ).strip()
     if timeout_input:
         try:
             config.config["rate_limit"]["default_timeout_minutes"] = int(timeout_input)
@@ -404,14 +401,20 @@ def rate_limit_settings():
             print("⚠️  Invalid input, keeping current value")
 
     # Auto-switch
-    auto_switch_input = input(f"Auto-switch to other profiles? [y/n] ({current['auto_switch_profiles']}): ").strip().lower()
+    auto_switch_input = (
+        input(f"Auto-switch to other profiles? [y/n] ({current['auto_switch_profiles']}): ")
+        .strip()
+        .lower()
+    )
     if auto_switch_input:
-        config.config["rate_limit"]["auto_switch_profiles"] = auto_switch_input in ['y', 'yes']
+        config.config["rate_limit"]["auto_switch_profiles"] = auto_switch_input in ["y", "yes"]
 
     # Show countdown
-    countdown_input = input(f"Show countdown timer? [y/n] ({current['show_countdown']}): ").strip().lower()
+    countdown_input = (
+        input(f"Show countdown timer? [y/n] ({current['show_countdown']}): ").strip().lower()
+    )
     if countdown_input:
-        config.config["rate_limit"]["show_countdown"] = countdown_input in ['y', 'yes']
+        config.config["rate_limit"]["show_countdown"] = countdown_input in ["y", "yes"]
 
     config.save_config()
     print("\n✅ Rate limit settings updated")
@@ -427,12 +430,14 @@ def resume_settings():
 
     current = config.config["resume"]
 
-    print(f"Current settings:")
+    print("Current settings:")
     print(f"  • Auto-save interval: {current['auto_save_interval_seconds']} seconds")
     print(f"  • Keep progress for: {current['keep_progress_days']} days\n")
 
     # Auto-save interval
-    interval_input = input(f"Auto-save interval in seconds [{current['auto_save_interval_seconds']}]: ").strip()
+    interval_input = input(
+        f"Auto-save interval in seconds [{current['auto_save_interval_seconds']}]: "
+    ).strip()
     if interval_input:
         try:
             config.config["resume"]["auto_save_interval_seconds"] = int(interval_input)
@@ -440,7 +445,9 @@ def resume_settings():
             print("⚠️  Invalid input, keeping current value")
 
     # Keep days
-    days_input = input(f"Keep progress for how many days [{current['keep_progress_days']}]: ").strip()
+    days_input = input(
+        f"Keep progress for how many days [{current['keep_progress_days']}]: "
+    ).strip()
     if days_input:
         try:
             config.config["resume"]["keep_progress_days"] = int(days_input)
@@ -467,13 +474,14 @@ def test_connections():
         print("  ⚠️  No GitHub profiles configured")
     else:
         import requests
+
         for p in profiles:
             token = config.config["github"]["profiles"][p["name"]]["token"]
             try:
                 response = requests.get(
                     "https://api.github.com/rate_limit",
                     headers={"Authorization": f"token {token}"},
-                    timeout=5
+                    timeout=5,
                 )
                 if response.status_code == 200:
                     data = response.json()
@@ -518,34 +526,12 @@ def main():
     """Main entry point for config command."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Configure Skill Seekers settings"
-    )
-    parser.add_argument(
-        "--github",
-        action="store_true",
-        help="Go directly to GitHub token setup"
-    )
-    parser.add_argument(
-        "--api-keys",
-        action="store_true",
-        help="Go directly to API keys setup"
-    )
-    parser.add_argument(
-        "--show",
-        action="store_true",
-        help="Show current configuration and exit"
-    )
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="Test connections and exit"
-    )
-    parser.add_argument(
-        "--welcome",
-        action="store_true",
-        help="Show welcome message"
-    )
+    parser = argparse.ArgumentParser(description="Configure Skill Seekers settings")
+    parser.add_argument("--github", action="store_true", help="Go directly to GitHub token setup")
+    parser.add_argument("--api-keys", action="store_true", help="Go directly to API keys setup")
+    parser.add_argument("--show", action="store_true", help="Show current configuration and exit")
+    parser.add_argument("--test", action="store_true", help="Test connections and exit")
+    parser.add_argument("--welcome", action="store_true", help="Show welcome message")
 
     args = parser.parse_args()
 

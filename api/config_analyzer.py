@@ -4,11 +4,10 @@ Config Analyzer - Extract metadata from Skill Seekers config files
 """
 
 import json
-import os
 import subprocess
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 
 class ConfigAnalyzer:
@@ -16,27 +15,13 @@ class ConfigAnalyzer:
 
     # Category mapping based on config content
     CATEGORY_MAPPING = {
-        "web-frameworks": [
-            "react", "vue", "django", "fastapi", "laravel", "astro", "hono"
-        ],
-        "game-engines": [
-            "godot", "unity", "unreal"
-        ],
-        "devops": [
-            "kubernetes", "ansible", "docker", "terraform"
-        ],
-        "css-frameworks": [
-            "tailwind", "bootstrap", "bulma"
-        ],
-        "development-tools": [
-            "claude-code", "vscode", "git"
-        ],
-        "gaming": [
-            "steam"
-        ],
-        "testing": [
-            "pytest", "jest", "test"
-        ]
+        "web-frameworks": ["react", "vue", "django", "fastapi", "laravel", "astro", "hono"],
+        "game-engines": ["godot", "unity", "unreal"],
+        "devops": ["kubernetes", "ansible", "docker", "terraform"],
+        "css-frameworks": ["tailwind", "bootstrap", "bulma"],
+        "development-tools": ["claude-code", "vscode", "git"],
+        "gaming": ["steam"],
+        "testing": ["pytest", "jest", "test"],
     }
 
     # Tag extraction keywords
@@ -50,7 +35,7 @@ class ConfigAnalyzer:
         "game-development": ["godot", "unity", "unreal", "game"],
         "devops": ["kubernetes", "ansible", "docker", "k8s", "devops"],
         "documentation": ["docs", "documentation"],
-        "testing": ["test", "testing", "pytest", "jest"]
+        "testing": ["test", "testing", "pytest", "jest"],
     }
 
     def __init__(self, config_dir: Path, base_url: str = "https://api.skillseekersweb.com"):
@@ -67,7 +52,7 @@ class ConfigAnalyzer:
         if not self.config_dir.exists():
             raise ValueError(f"Config directory not found: {self.config_dir}")
 
-    def analyze_all_configs(self) -> List[Dict[str, Any]]:
+    def analyze_all_configs(self) -> list[dict[str, Any]]:
         """
         Analyze all config files and extract metadata
 
@@ -92,7 +77,7 @@ class ConfigAnalyzer:
 
         return configs
 
-    def analyze_config(self, config_path: Path) -> Optional[Dict[str, Any]]:
+    def analyze_config(self, config_path: Path) -> dict[str, Any] | None:
         """
         Analyze a single config file and extract metadata
 
@@ -104,7 +89,7 @@ class ConfigAnalyzer:
         """
         try:
             # Read config file
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 config_data = json.load(f)
 
             # Skip if no name field
@@ -147,7 +132,7 @@ class ConfigAnalyzer:
                 "file_size": file_size,
                 "last_updated": last_updated,
                 "download_url": download_url,
-                "config_file": config_path.name
+                "config_file": config_path.name,
             }
 
         except json.JSONDecodeError as e:
@@ -157,7 +142,7 @@ class ConfigAnalyzer:
             print(f"Error analyzing {config_path.name}: {e}")
             return None
 
-    def get_config_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_config_by_name(self, name: str) -> dict[str, Any] | None:
         """
         Get config metadata by name
 
@@ -173,7 +158,7 @@ class ConfigAnalyzer:
                 return config
         return None
 
-    def _determine_type(self, config_data: Dict[str, Any]) -> str:
+    def _determine_type(self, config_data: dict[str, Any]) -> str:
         """
         Determine if config is single-source or unified
 
@@ -193,7 +178,7 @@ class ConfigAnalyzer:
 
         return "single-source"
 
-    def _get_primary_source(self, config_data: Dict[str, Any], config_type: str) -> str:
+    def _get_primary_source(self, config_data: dict[str, Any], config_type: str) -> str:
         """
         Get primary source URL/repo
 
@@ -227,7 +212,7 @@ class ConfigAnalyzer:
 
         return "Unknown"
 
-    def _categorize_config(self, name: str, description: str, config_data: Dict[str, Any]) -> str:
+    def _categorize_config(self, name: str, description: str, config_data: dict[str, Any]) -> str:
         """
         Auto-categorize config based on name and content
 
@@ -261,7 +246,7 @@ class ConfigAnalyzer:
         # Default to uncategorized
         return "uncategorized"
 
-    def _extract_tags(self, name: str, description: str, config_data: Dict[str, Any]) -> List[str]:
+    def _extract_tags(self, name: str, description: str, config_data: dict[str, Any]) -> list[str]:
         """
         Extract relevant tags from config
 
@@ -288,18 +273,31 @@ class ConfigAnalyzer:
             tags.add("multi-source")
 
         # Add source type tags
-        if "base_url" in config_data or (config_type == "unified" and any(s.get("type") == "documentation" for s in config_data.get("sources", []))):
+        if "base_url" in config_data or (
+            config_type == "unified"
+            and any(s.get("type") == "documentation" for s in config_data.get("sources", []))
+        ):
             tags.add("documentation")
 
-        if "repo" in config_data or (config_type == "unified" and any(s.get("type") == "github" for s in config_data.get("sources", []))):
+        if "repo" in config_data or (
+            config_type == "unified"
+            and any(s.get("type") == "github" for s in config_data.get("sources", []))
+        ):
             tags.add("github")
 
-        if "pdf" in config_data or "pdf_url" in config_data or (config_type == "unified" and any(s.get("type") == "pdf" for s in config_data.get("sources", []))):
+        if (
+            "pdf" in config_data
+            or "pdf_url" in config_data
+            or (
+                config_type == "unified"
+                and any(s.get("type") == "pdf" for s in config_data.get("sources", []))
+            )
+        ):
             tags.add("pdf")
 
         return sorted(list(tags))
 
-    def _get_max_pages(self, config_data: Dict[str, Any]) -> Optional[int]:
+    def _get_max_pages(self, config_data: dict[str, Any]) -> int | None:
         """
         Get max_pages value from config
 
@@ -338,7 +336,7 @@ class ConfigAnalyzer:
                 cwd=config_path.parent.parent,
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
 
             if result.returncode == 0 and result.stdout.strip():

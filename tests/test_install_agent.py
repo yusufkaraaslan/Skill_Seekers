@@ -10,25 +10,25 @@ Tests cover:
 - CLI interface
 """
 
-import pytest
-import tempfile
 import shutil
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from skill_seekers.cli.install_agent import (
-    AGENT_PATHS,
     get_agent_path,
     get_available_agents,
-    validate_agent_name,
-    validate_skill_directory,
     install_to_agent,
     install_to_all_agents,
     main,
+    validate_agent_name,
+    validate_skill_directory,
 )
 
 
@@ -38,50 +38,50 @@ class TestAgentPathMapping:
     def test_get_agent_path_home_expansion(self):
         """Test that ~ expands to home directory for global agents."""
         # Test claude (global agent with ~)
-        path = get_agent_path('claude')
+        path = get_agent_path("claude")
         assert path.is_absolute()
-        assert '.claude' in str(path)
+        assert ".claude" in str(path)
         assert str(path).startswith(str(Path.home()))
 
     def test_get_agent_path_project_relative(self):
         """Test that project-relative paths use current directory."""
         # Test cursor (project-relative agent)
-        path = get_agent_path('cursor')
+        path = get_agent_path("cursor")
         assert path.is_absolute()
-        assert '.cursor' in str(path)
+        assert ".cursor" in str(path)
         # Should be relative to current directory
         assert str(Path.cwd()) in str(path)
 
     def test_get_agent_path_project_relative_with_custom_root(self):
         """Test project-relative paths with custom project root."""
-        custom_root = Path('/tmp/test-project')
-        path = get_agent_path('cursor', project_root=custom_root)
+        custom_root = Path("/tmp/test-project")
+        path = get_agent_path("cursor", project_root=custom_root)
         assert path.is_absolute()
         assert str(custom_root) in str(path)
-        assert '.cursor' in str(path)
+        assert ".cursor" in str(path)
 
     def test_get_agent_path_invalid_agent(self):
         """Test that invalid agent raises ValueError."""
         with pytest.raises(ValueError, match="Unknown agent"):
-            get_agent_path('invalid_agent')
+            get_agent_path("invalid_agent")
 
     def test_get_available_agents(self):
         """Test that all 11 agents are listed."""
         agents = get_available_agents()
         assert len(agents) == 11
-        assert 'claude' in agents
-        assert 'cursor' in agents
-        assert 'vscode' in agents
-        assert 'amp' in agents
-        assert 'goose' in agents
-        assert 'neovate' in agents
+        assert "claude" in agents
+        assert "cursor" in agents
+        assert "vscode" in agents
+        assert "amp" in agents
+        assert "goose" in agents
+        assert "neovate" in agents
         assert sorted(agents) == agents  # Should be sorted
 
     def test_agent_path_case_insensitive(self):
         """Test that agent names are case-insensitive."""
-        path_lower = get_agent_path('claude')
-        path_upper = get_agent_path('CLAUDE')
-        path_mixed = get_agent_path('Claude')
+        path_lower = get_agent_path("claude")
+        path_upper = get_agent_path("CLAUDE")
+        path_mixed = get_agent_path("Claude")
         assert path_lower == path_upper == path_mixed
 
 
@@ -90,36 +90,36 @@ class TestAgentNameValidation:
 
     def test_validate_valid_agent(self):
         """Test that valid agent names pass validation."""
-        is_valid, error = validate_agent_name('claude')
+        is_valid, error = validate_agent_name("claude")
         assert is_valid is True
         assert error is None
 
     def test_validate_invalid_agent_suggests_similar(self):
         """Test that similar agent names are suggested for typos."""
-        is_valid, error = validate_agent_name('courser')
+        is_valid, error = validate_agent_name("courser")
         assert is_valid is False
-        assert 'cursor' in error.lower()  # Should suggest 'cursor'
+        assert "cursor" in error.lower()  # Should suggest 'cursor'
 
     def test_validate_special_all(self):
         """Test that 'all' is a valid special agent name."""
-        is_valid, error = validate_agent_name('all')
+        is_valid, error = validate_agent_name("all")
         assert is_valid is True
         assert error is None
 
     def test_validate_case_insensitive(self):
         """Test that validation is case-insensitive."""
-        for name in ['Claude', 'CLAUDE', 'claude', 'cLaUdE']:
+        for name in ["Claude", "CLAUDE", "claude", "cLaUdE"]:
             is_valid, error = validate_agent_name(name)
             assert is_valid is True
             assert error is None
 
     def test_validate_shows_available_agents(self):
         """Test that error message shows available agents."""
-        is_valid, error = validate_agent_name('invalid')
+        is_valid, error = validate_agent_name("invalid")
         assert is_valid is False
-        assert 'available agents' in error.lower()
-        assert 'claude' in error.lower()
-        assert 'cursor' in error.lower()
+        assert "available agents" in error.lower()
+        assert "claude" in error.lower()
+        assert "cursor" in error.lower()
 
 
 class TestSkillDirectoryValidation:
@@ -195,8 +195,8 @@ class TestInstallToAgent:
         with tempfile.TemporaryDirectory() as agent_tmpdir:
             agent_path = Path(agent_tmpdir) / ".claude" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', force=True)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -208,8 +208,8 @@ class TestInstallToAgent:
         with tempfile.TemporaryDirectory() as agent_tmpdir:
             agent_path = Path(agent_tmpdir) / ".claude" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', force=True)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -230,8 +230,8 @@ class TestInstallToAgent:
         with tempfile.TemporaryDirectory() as agent_tmpdir:
             agent_path = Path(agent_tmpdir) / ".claude" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', force=True)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 target_path = agent_path / "test-skill"
@@ -248,8 +248,8 @@ class TestInstallToAgent:
             target_path = agent_path / "test-skill"
             target_path.mkdir(parents=True)
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', force=False)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", force=False)
 
                 assert success is False
                 assert "already installed" in message.lower()
@@ -263,8 +263,8 @@ class TestInstallToAgent:
             target_path.mkdir(parents=True)
             (target_path / "old_file.txt").write_text("old content")
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', force=True)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", force=True)
 
                 assert success is True
                 # Old file should be gone
@@ -276,7 +276,7 @@ class TestInstallToAgent:
         """Test that installation fails for invalid skill directory."""
         invalid_dir = Path("/nonexistent/directory")
 
-        success, message = install_to_agent(invalid_dir, 'claude')
+        success, message = install_to_agent(invalid_dir, "claude")
 
         assert success is False
         assert "does not exist" in message
@@ -287,7 +287,7 @@ class TestInstallToAgent:
             bad_skill_dir = Path(tmpdir) / "bad-skill"
             bad_skill_dir.mkdir()
 
-            success, message = install_to_agent(bad_skill_dir, 'claude')
+            success, message = install_to_agent(bad_skill_dir, "claude")
 
             assert success is False
             assert "SKILL.md not found" in message
@@ -297,8 +297,8 @@ class TestInstallToAgent:
         with tempfile.TemporaryDirectory() as agent_tmpdir:
             agent_path = Path(agent_tmpdir) / ".claude" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', return_value=agent_path):
-                success, message = install_to_agent(self.skill_dir, 'claude', dry_run=True)
+            with patch("skill_seekers.cli.install_agent.get_agent_path", return_value=agent_path):
+                success, message = install_to_agent(self.skill_dir, "claude", dry_run=True)
 
                 assert success is True
                 assert "DRY RUN" in message
@@ -324,15 +324,18 @@ class TestInstallToAllAgents:
     def test_install_to_all_success(self):
         """Test that install_to_all_agents attempts all 11 agents."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
+
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
                 results = install_to_all_agents(self.skill_dir, force=True)
 
                 assert len(results) == 11
-                assert 'claude' in results
-                assert 'cursor' in results
+                assert "claude" in results
+                assert "cursor" in results
 
     def test_install_to_all_partial_success(self):
         """Test that install_to_all collects both successes and failures."""
@@ -356,7 +359,9 @@ class TestInstallToAllAgents:
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
                 # Without force - should fail
                 results_no_force = install_to_all_agents(self.skill_dir, force=False)
                 # All should fail because directories exist
@@ -399,9 +404,11 @@ class TestInstallAgentCLI:
 
     def test_cli_help_output(self):
         """Test that --help shows usage information."""
-        with pytest.raises(SystemExit) as exc_info:
-            with patch('sys.argv', ['install_agent.py', '--help']):
-                main()
+        with (
+            pytest.raises(SystemExit) as exc_info,
+            patch("sys.argv", ["install_agent.py", "--help"]),
+        ):
+            main()
 
         # --help exits with code 0
         assert exc_info.value.code == 0
@@ -409,7 +416,7 @@ class TestInstallAgentCLI:
     def test_cli_requires_agent_flag(self):
         """Test that CLI fails without --agent flag."""
         with pytest.raises(SystemExit) as exc_info:
-            with patch('sys.argv', ['install_agent.py', str(self.skill_dir)]):
+            with patch("sys.argv", ["install_agent.py", str(self.skill_dir)]):
                 main()
 
         # Missing required argument exits with code 2
@@ -418,11 +425,17 @@ class TestInstallAgentCLI:
     def test_cli_dry_run(self):
         """Test that --dry-run flag works correctly."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
+
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
-                with patch('sys.argv', ['install_agent.py', str(self.skill_dir), '--agent', 'claude', '--dry-run']):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--dry-run"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0
@@ -432,11 +445,17 @@ class TestInstallAgentCLI:
     def test_cli_integration(self):
         """Test end-to-end CLI execution."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
+
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
-                with patch('sys.argv', ['install_agent.py', str(self.skill_dir), '--agent', 'claude', '--force']):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "claude", "--force"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0
@@ -448,11 +467,17 @@ class TestInstallAgentCLI:
     def test_cli_install_to_all(self):
         """Test CLI with --agent all."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
+
             def mock_get_agent_path(agent_name, project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
-            with patch('skill_seekers.cli.install_agent.get_agent_path', side_effect=mock_get_agent_path):
-                with patch('sys.argv', ['install_agent.py', str(self.skill_dir), '--agent', 'all', '--force']):
+            with patch(
+                "skill_seekers.cli.install_agent.get_agent_path", side_effect=mock_get_agent_path
+            ):
+                with patch(
+                    "sys.argv",
+                    ["install_agent.py", str(self.skill_dir), "--agent", "all", "--force"],
+                ):
                     exit_code = main()
 
                     assert exit_code == 0

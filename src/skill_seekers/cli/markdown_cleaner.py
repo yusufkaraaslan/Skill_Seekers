@@ -24,13 +24,13 @@ class MarkdownCleaner:
             Cleaned markdown with HTML tags removed
         """
         # Remove HTML comments
-        text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
+        text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
 
         # Remove HTML tags but keep content
-        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r"<[^>]+>", "", text)
 
         # Remove empty lines created by HTML removal
-        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+        text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text)
 
         return text.strip()
 
@@ -58,7 +58,7 @@ class MarkdownCleaner:
             return text.strip()
 
         # For longer text, extract smartly
-        lines = text.split('\n')
+        lines = text.split("\n")
         content_lines = []
         char_count = 0
         section_count = 0
@@ -66,11 +66,11 @@ class MarkdownCleaner:
 
         for line in lines:
             # Check for code fence (```)
-            if line.strip().startswith('```'):
+            if line.strip().startswith("```"):
                 in_code_block = not in_code_block
 
             # Check for any heading (H1-H6)
-            is_heading = re.match(r'^#{1,6}\s+', line)
+            is_heading = re.match(r"^#{1,6}\s+", line)
 
             if is_heading:
                 section_count += 1
@@ -91,7 +91,7 @@ class MarkdownCleaner:
             if char_count >= max_chars and not in_code_block:
                 break
 
-        result = '\n'.join(content_lines).strip()
+        result = "\n".join(content_lines).strip()
 
         # If we truncated, ensure we don't break markdown (only if not in code block)
         if char_count >= max_chars and not in_code_block:
@@ -119,17 +119,13 @@ class MarkdownCleaner:
         truncated = text[:max_chars]
 
         # Look for last period, exclamation, or question mark
-        last_sentence = max(
-            truncated.rfind('. '),
-            truncated.rfind('! '),
-            truncated.rfind('? ')
-        )
+        last_sentence = max(truncated.rfind(". "), truncated.rfind("! "), truncated.rfind("? "))
 
         if last_sentence > max_chars // 2:  # At least half the content
-            return truncated[:last_sentence + 1]
+            return truncated[: last_sentence + 1]
 
         # Fall back to word boundary
-        last_space = truncated.rfind(' ')
+        last_space = truncated.rfind(" ")
         if last_space > 0:
             return truncated[:last_space] + "..."
 
