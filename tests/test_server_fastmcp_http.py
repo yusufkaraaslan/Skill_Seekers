@@ -3,14 +3,15 @@
 Tests for FastMCP server HTTP transport support.
 """
 
-import pytest
-import asyncio
 import sys
+
+import pytest
 
 # Skip all tests if mcp package is not installed
 pytest.importorskip("mcp.server")
 
 from starlette.testclient import TestClient
+
 from skill_seekers.mcp.server_fastmcp import mcp
 
 
@@ -104,7 +105,6 @@ class TestArgumentParsing:
     def test_parse_args_default(self):
         """Test default argument parsing (stdio mode)."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         # Save original argv
         original_argv = sys.argv
@@ -124,7 +124,6 @@ class TestArgumentParsing:
     def test_parse_args_http_mode(self):
         """Test HTTP mode argument parsing."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         original_argv = sys.argv
 
@@ -141,7 +140,6 @@ class TestArgumentParsing:
     def test_parse_args_log_level(self):
         """Test log level argument parsing."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         original_argv = sys.argv
 

@@ -3,12 +3,11 @@
 Tests for cli/quality_checker.py functionality
 """
 
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
-import os
 
-from skill_seekers.cli.quality_checker import SkillQualityChecker, QualityReport
+from skill_seekers.cli.quality_checker import QualityReport, SkillQualityChecker
 
 
 class TestQualityChecker(unittest.TestCase):
@@ -21,14 +20,14 @@ class TestQualityChecker(unittest.TestCase):
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(skill_md_content, encoding='utf-8')
+        skill_md.write_text(skill_md_content, encoding="utf-8")
 
         # Create references directory
         if create_references:
             refs_dir = skill_dir / "references"
             refs_dir.mkdir()
-            (refs_dir / "index.md").write_text("# Index\n\nTest reference.", encoding='utf-8')
-            (refs_dir / "getting_started.md").write_text("# Getting Started\n\nHow to start.", encoding='utf-8')
+            (refs_dir / "index.md").write_text("# Index\n\nTest reference.", encoding="utf-8")
+            (refs_dir / "getting_started.md").write_text("# Getting Started\n\nHow to start.", encoding="utf-8")
 
         return skill_dir
 
@@ -43,7 +42,7 @@ class TestQualityChecker(unittest.TestCase):
 
             # Should have error about missing SKILL.md
             self.assertTrue(report.has_errors)
-            self.assertTrue(any('SKILL.md' in issue.message for issue in report.errors))
+            self.assertTrue(any("SKILL.md" in issue.message for issue in report.errors))
 
     def test_checker_detects_missing_references(self):
         """Test that checker warns about missing references"""
@@ -63,7 +62,7 @@ This is a test.
 
             # Should have warning about missing references
             self.assertTrue(report.has_warnings)
-            self.assertTrue(any('references' in issue.message.lower() for issue in report.warnings))
+            self.assertTrue(any("references" in issue.message.lower() for issue in report.warnings))
 
     def test_checker_detects_invalid_frontmatter(self):
         """Test that checker detects invalid YAML frontmatter"""
@@ -79,7 +78,7 @@ No frontmatter here!
 
             # Should have error about missing frontmatter
             self.assertTrue(report.has_errors)
-            self.assertTrue(any('frontmatter' in issue.message.lower() for issue in report.errors))
+            self.assertTrue(any("frontmatter" in issue.message.lower() for issue in report.errors))
 
     def test_checker_detects_missing_name_field(self):
         """Test that checker detects missing name field in frontmatter"""
@@ -97,7 +96,7 @@ description: test
 
             # Should have error about missing name field
             self.assertTrue(report.has_errors)
-            self.assertTrue(any('name' in issue.message.lower() for issue in report.errors))
+            self.assertTrue(any("name" in issue.message.lower() for issue in report.errors))
 
     def test_checker_detects_code_without_language(self):
         """Test that checker warns about code blocks without language tags"""
@@ -121,7 +120,7 @@ print("hello")
 
             # Should have warning about code without language
             self.assertTrue(report.has_warnings)
-            self.assertTrue(any('language' in issue.message.lower() for issue in report.warnings))
+            self.assertTrue(any("language" in issue.message.lower() for issue in report.warnings))
 
     def test_checker_approves_good_skill(self):
         """Test that checker gives high score to well-formed skill"""
@@ -189,7 +188,7 @@ See [this file](nonexistent.md) for more info.
 
             # Should have warning about broken link
             self.assertTrue(report.has_warnings)
-            self.assertTrue(any('broken link' in issue.message.lower() for issue in report.warnings))
+            self.assertTrue(any("broken link" in issue.message.lower() for issue in report.warnings))
 
     def test_quality_score_calculation(self):
         """Test that quality score is calculated correctly"""
@@ -200,16 +199,16 @@ See [this file](nonexistent.md) for more info.
             self.assertEqual(report.quality_score, 100.0)
 
             # Add an error (should deduct 15 points)
-            report.add_error('test', 'Test error')
+            report.add_error("test", "Test error")
             self.assertEqual(report.quality_score, 85.0)
 
             # Add a warning (should deduct 5 points)
-            report.add_warning('test', 'Test warning')
+            report.add_warning("test", "Test warning")
             self.assertEqual(report.quality_score, 80.0)
 
             # Add more errors
-            report.add_error('test', 'Another error')
-            report.add_error('test', 'Yet another error')
+            report.add_error("test", "Another error")
+            report.add_error("test", "Yet another error")
             self.assertEqual(report.quality_score, 50.0)
 
     def test_quality_grade_calculation(self):
@@ -218,26 +217,26 @@ See [this file](nonexistent.md) for more info.
             report = QualityReport("test", Path(tmpdir))
 
             # Grade A (90-100)
-            self.assertEqual(report.quality_grade, 'A')
+            self.assertEqual(report.quality_grade, "A")
 
             # Grade B (80-89)
-            report.add_error('test', 'Error 1')
-            self.assertEqual(report.quality_grade, 'B')
+            report.add_error("test", "Error 1")
+            self.assertEqual(report.quality_grade, "B")
 
             # Grade C (70-79)
-            report.add_warning('test', 'Warning 1')
-            report.add_warning('test', 'Warning 2')
-            self.assertEqual(report.quality_grade, 'C')
+            report.add_warning("test", "Warning 1")
+            report.add_warning("test", "Warning 2")
+            self.assertEqual(report.quality_grade, "C")
 
             # Grade D (60-69)
-            report.add_warning('test', 'Warning 3')
-            report.add_warning('test', 'Warning 4')
-            self.assertEqual(report.quality_grade, 'D')
+            report.add_warning("test", "Warning 3")
+            report.add_warning("test", "Warning 4")
+            self.assertEqual(report.quality_grade, "D")
 
             # Grade F (below 60)
-            report.add_error('test', 'Error 2')
-            report.add_error('test', 'Error 3')
-            self.assertEqual(report.quality_grade, 'F')
+            report.add_error("test", "Error 2")
+            report.add_error("test", "Error 3")
+            self.assertEqual(report.quality_grade, "F")
 
     def test_is_excellent_property(self):
         """Test is_excellent property"""
@@ -248,13 +247,13 @@ See [this file](nonexistent.md) for more info.
             self.assertTrue(report.is_excellent)
 
             # Adding an error should make it not excellent
-            report.add_error('test', 'Test error')
+            report.add_error("test", "Test error")
             self.assertFalse(report.is_excellent)
 
             # Clean report
             report2 = QualityReport("test", Path(tmpdir))
             # Adding a warning should also make it not excellent
-            report2.add_warning('test', 'Test warning')
+            report2.add_warning("test", "Test warning")
             self.assertFalse(report2.is_excellent)
 
 
@@ -268,12 +267,12 @@ class TestCompletenessChecks(unittest.TestCase):
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(skill_md_content, encoding='utf-8')
+        skill_md.write_text(skill_md_content, encoding="utf-8")
 
         # Create references directory
         refs_dir = skill_dir / "references"
         refs_dir.mkdir()
-        (refs_dir / "index.md").write_text("# Index\n", encoding='utf-8')
+        (refs_dir / "index.md").write_text("# Index\n", encoding="utf-8")
 
         return skill_dir
 
@@ -302,9 +301,13 @@ Run the command.
             report = checker.check_all()
 
             # Should have info about found prerequisites
-            completeness_infos = [i for i in report.info if i.category == 'completeness']
-            self.assertTrue(any('prerequisites' in i.message.lower() or 'verification' in i.message.lower()
-                               for i in completeness_infos))
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            self.assertTrue(
+                any(
+                    "prerequisites" in i.message.lower() or "verification" in i.message.lower()
+                    for i in completeness_infos
+                )
+            )
 
     def test_checker_detects_troubleshooting_section(self):
         """Test that checker detects troubleshooting section"""
@@ -331,9 +334,13 @@ If the command fails, check your permissions.
             report = checker.check_all()
 
             # Should have info about found troubleshooting
-            completeness_infos = [i for i in report.info if i.category == 'completeness']
-            self.assertTrue(any('troubleshoot' in i.message.lower() or 'error handling' in i.message.lower()
-                               for i in completeness_infos))
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            self.assertTrue(
+                any(
+                    "troubleshoot" in i.message.lower() or "error handling" in i.message.lower()
+                    for i in completeness_infos
+                )
+            )
 
     def test_checker_detects_workflow_steps(self):
         """Test that checker detects workflow steps"""
@@ -360,9 +367,10 @@ Finally, verify the installation.
             report = checker.check_all()
 
             # Should have info about found workflow steps
-            completeness_infos = [i for i in report.info if i.category == 'completeness']
-            self.assertTrue(any('workflow' in i.message.lower() or 'step' in i.message.lower()
-                               for i in completeness_infos))
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            self.assertTrue(
+                any("workflow" in i.message.lower() or "step" in i.message.lower() for i in completeness_infos)
+            )
 
     def test_checker_suggests_adding_prerequisites(self):
         """Test that checker suggests adding prerequisites when missing"""
@@ -383,9 +391,12 @@ Just run the command.
             report = checker.check_all()
 
             # Should have info suggesting prerequisites
-            completeness_infos = [i for i in report.info if i.category == 'completeness']
-            self.assertTrue(any('consider' in i.message.lower() and 'prerequisites' in i.message.lower()
-                               for i in completeness_infos))
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            self.assertTrue(
+                any(
+                    "consider" in i.message.lower() and "prerequisites" in i.message.lower() for i in completeness_infos
+                )
+            )
 
 
 class TestQualityCheckerCLI(unittest.TestCase):
@@ -397,15 +408,15 @@ class TestQualityCheckerCLI(unittest.TestCase):
 
         try:
             result = subprocess.run(
-                ['python3', '-m', 'skill_seekers.cli.quality_checker', '--help'],
+                ["python3", "-m", "skill_seekers.cli.quality_checker", "--help"],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
 
             # Should include usage info
             output = result.stdout + result.stderr
-            self.assertTrue('usage:' in output.lower() or 'quality' in output.lower())
+            self.assertTrue("usage:" in output.lower() or "quality" in output.lower())
         except FileNotFoundError:
             self.skipTest("Module not installed")
 
@@ -414,14 +425,12 @@ class TestQualityCheckerCLI(unittest.TestCase):
         import subprocess
 
         result = subprocess.run(
-            ['python3', '-m', 'skill_seekers.cli.quality_checker', '/nonexistent/path'],
-            capture_output=True,
-            text=True
+            ["python3", "-m", "skill_seekers.cli.quality_checker", "/nonexistent/path"], capture_output=True, text=True
         )
 
         # Should fail
         self.assertNotEqual(result.returncode, 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -12,43 +12,47 @@ This is the foundation of the unified codebase analyzer architecture.
 import os
 import subprocess
 import tempfile
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
-from collections import Counter
+
 import requests
 
-from .rate_limit_handler import RateLimitHandler, RateLimitError, create_github_headers
 from .config_manager import get_config_manager
+from .rate_limit_handler import RateLimitError, RateLimitHandler, create_github_headers
 
 
 @dataclass
 class CodeStream:
     """Code files for C3.x analysis."""
+
     directory: Path
-    files: List[Path]
+    files: list[Path]
 
 
 @dataclass
 class DocsStream:
     """Documentation files from repository."""
-    readme: Optional[str]
-    contributing: Optional[str]
-    docs_files: List[Dict]  # [{"path": "docs/oauth.md", "content": "..."}]
+
+    readme: str | None
+    contributing: str | None
+    docs_files: list[dict]  # [{"path": "docs/oauth.md", "content": "..."}]
 
 
 @dataclass
 class InsightsStream:
     """GitHub metadata and issues."""
-    metadata: Dict  # stars, forks, language, etc.
-    common_problems: List[Dict]
-    known_solutions: List[Dict]
-    top_labels: List[Dict]
+
+    metadata: dict  # stars, forks, language, etc.
+    common_problems: list[dict]
+    known_solutions: list[dict]
+    top_labels: list[dict]
 
 
 @dataclass
 class ThreeStreamData:
     """Complete output from GitHub fetcher."""
+
     code_stream: CodeStream
     docs_stream: DocsStream
     insights_stream: InsightsStream
@@ -73,11 +77,7 @@ class GitHubThreeStreamFetcher:
     """
 
     def __init__(
-        self,
-        repo_url: str,
-        github_token: Optional[str] = None,
-        interactive: bool = True,
-        profile_name: Optional[str] = None
+        self, repo_url: str, github_token: str | None = None, interactive: bool = True, profile_name: str | None = None
     ):
         """
         Initialize fetcher.
@@ -89,7 +89,7 @@ class GitHubThreeStreamFetcher:
             profile_name: Name of the GitHub profile being used
         """
         self.repo_url = repo_url
-        self.github_token = github_token or os.getenv('GITHUB_TOKEN')
+        self.github_token = github_token or os.getenv("GITHUB_TOKEN")
         self.owner, self.repo = self.parse_repo_url(repo_url)
         self.interactive = interactive
 
@@ -99,12 +99,10 @@ class GitHubThreeStreamFetcher:
             profile_name = config.get_profile_for_token(self.github_token)
 
         self.rate_limiter = RateLimitHandler(
-            token=self.github_token,
-            interactive=interactive,
-            profile_name=profile_name
+            token=self.github_token, interactive=interactive, profile_name=profile_name
         )
 
-    def parse_repo_url(self, url: str) -> Tuple[str, str]:
+    def parse_repo_url(self, url: str) -> tuple[str, str]:
         """
         Parse GitHub URL to extract owner and repo.
 
@@ -115,18 +113,18 @@ class GitHubThreeStreamFetcher:
             Tuple of (owner, repo)
         """
         # Remove .git suffix if present
-        if url.endswith('.git'):
+        if url.endswith(".git"):
             url = url[:-4]  # Remove last 4 characters (.git)
 
         # Handle git@ URLs (SSH format)
-        if url.startswith('git@github.com:'):
-            parts = url.replace('git@github.com:', '').split('/')
+        if url.startswith("git@github.com:"):
+            parts = url.replace("git@github.com:", "").split("/")
             if len(parts) >= 2:
                 return parts[0], parts[1]
 
         # Handle HTTPS URLs
-        if 'github.com/' in url:
-            parts = url.split('github.com/')[-1].split('/')
+        if "github.com/" in url:
+            parts = url.split("github.com/")[-1].split("/")
             if len(parts) >= 2:
                 return parts[0], parts[1]
 
@@ -150,18 +148,18 @@ class GitHubThreeStreamFetcher:
             raise RateLimitError("Rate limit check failed during startup")
 
         if output_dir is None:
-            output_dir = Path(tempfile.mkdtemp(prefix='github_fetch_'))
+            output_dir = Path(tempfile.mkdtemp(prefix="github_fetch_"))
 
         print(f"📦 Cloning {self.repo_url}...")
         local_path = self.clone_repo(output_dir)
 
-        print(f"🔍 Fetching GitHub metadata...")
+        print("🔍 Fetching GitHub metadata...")
         metadata = self.fetch_github_metadata()
 
-        print(f"🐛 Fetching issues...")
+        print("🐛 Fetching issues...")
         issues = self.fetch_issues(max_issues=100)
 
-        print(f"📂 Classifying files...")
+        print("📂 Classifying files...")
         code_files, doc_files = self.classify_files(local_path)
         print(f"  - Code: {len(code_files)} files")
         print(f"  - Docs: {len(doc_files)} files")
@@ -171,25 +169,22 @@ class GitHubThreeStreamFetcher:
 
         # Build three streams
         return ThreeStreamData(
-            code_stream=CodeStream(
-                directory=local_path,
-                files=code_files
-            ),
+            code_stream=CodeStream(directory=local_path, files=code_files),
             docs_stream=DocsStream(
-                readme=self.read_file(local_path / 'README.md'),
-                contributing=self.read_file(local_path / 'CONTRIBUTING.md'),
+                readme=self.read_file(local_path / "README.md"),
+                contributing=self.read_file(local_path / "CONTRIBUTING.md"),
                 docs_files=[
-                    {'path': str(f.relative_to(local_path)), 'content': self.read_file(f)}
+                    {"path": str(f.relative_to(local_path)), "content": self.read_file(f)}
                     for f in doc_files
-                    if f.name not in ['README.md', 'CONTRIBUTING.md']
-                ]
+                    if f.name not in ["README.md", "CONTRIBUTING.md"]
+                ],
             ),
             insights_stream=InsightsStream(
                 metadata=metadata,
-                common_problems=issue_insights['common_problems'],
-                known_solutions=issue_insights['known_solutions'],
-                top_labels=issue_insights['top_labels']
-            )
+                common_problems=issue_insights["common_problems"],
+                known_solutions=issue_insights["known_solutions"],
+                top_labels=issue_insights["top_labels"],
+            ),
         )
 
     def clone_repo(self, output_dir: Path) -> Path:
@@ -206,7 +201,7 @@ class GitHubThreeStreamFetcher:
         repo_dir.mkdir(parents=True, exist_ok=True)
 
         # Clone with depth 1 for speed
-        cmd = ['git', 'clone', '--depth', '1', self.repo_url, str(repo_dir)]
+        cmd = ["git", "clone", "--depth", "1", self.repo_url, str(repo_dir)]
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
@@ -214,7 +209,7 @@ class GitHubThreeStreamFetcher:
 
         return repo_dir
 
-    def fetch_github_metadata(self) -> Dict:
+    def fetch_github_metadata(self) -> dict:
         """
         Fetch repo metadata via GitHub API.
 
@@ -238,35 +233,35 @@ class GitHubThreeStreamFetcher:
             data = response.json()
 
             return {
-                'stars': data.get('stargazers_count', 0),
-                'forks': data.get('forks_count', 0),
-                'open_issues': data.get('open_issues_count', 0),
-                'language': data.get('language', 'Unknown'),
-                'description': data.get('description', ''),
-                'homepage': data.get('homepage', ''),
-                'created_at': data.get('created_at', ''),
-                'updated_at': data.get('updated_at', ''),
-                'html_url': data.get('html_url', ''),  # NEW: Repository URL
-                'license': data.get('license', {})  # NEW: License info
+                "stars": data.get("stargazers_count", 0),
+                "forks": data.get("forks_count", 0),
+                "open_issues": data.get("open_issues_count", 0),
+                "language": data.get("language", "Unknown"),
+                "description": data.get("description", ""),
+                "homepage": data.get("homepage", ""),
+                "created_at": data.get("created_at", ""),
+                "updated_at": data.get("updated_at", ""),
+                "html_url": data.get("html_url", ""),  # NEW: Repository URL
+                "license": data.get("license", {}),  # NEW: License info
             }
         except RateLimitError:
             raise
         except Exception as e:
             print(f"⚠️  Failed to fetch metadata: {e}")
             return {
-                'stars': 0,
-                'forks': 0,
-                'open_issues': 0,
-                'language': 'Unknown',
-                'description': '',
-                'homepage': '',
-                'created_at': '',
-                'updated_at': '',
-                'html_url': '',  # NEW: Repository URL
-                'license': {}  # NEW: License info
+                "stars": 0,
+                "forks": 0,
+                "open_issues": 0,
+                "language": "Unknown",
+                "description": "",
+                "homepage": "",
+                "created_at": "",
+                "updated_at": "",
+                "html_url": "",  # NEW: Repository URL
+                "license": {},  # NEW: License info
             }
 
-    def fetch_issues(self, max_issues: int = 100) -> List[Dict]:
+    def fetch_issues(self, max_issues: int = 100) -> list[dict]:
         """
         Fetch GitHub issues (open + closed).
 
@@ -279,14 +274,14 @@ class GitHubThreeStreamFetcher:
         all_issues = []
 
         # Fetch open issues
-        all_issues.extend(self._fetch_issues_page(state='open', max_count=max_issues // 2))
+        all_issues.extend(self._fetch_issues_page(state="open", max_count=max_issues // 2))
 
         # Fetch closed issues
-        all_issues.extend(self._fetch_issues_page(state='closed', max_count=max_issues // 2))
+        all_issues.extend(self._fetch_issues_page(state="closed", max_count=max_issues // 2))
 
         return all_issues
 
-    def _fetch_issues_page(self, state: str, max_count: int) -> List[Dict]:
+    def _fetch_issues_page(self, state: str, max_count: int) -> list[dict]:
         """
         Fetch one page of issues.
 
@@ -304,10 +299,10 @@ class GitHubThreeStreamFetcher:
         headers = create_github_headers(self.github_token)
 
         params = {
-            'state': state,
-            'per_page': min(max_count, 100),  # GitHub API limit
-            'sort': 'comments',
-            'direction': 'desc'
+            "state": state,
+            "per_page": min(max_count, 100),  # GitHub API limit
+            "sort": "comments",
+            "direction": "desc",
         }
 
         try:
@@ -321,7 +316,7 @@ class GitHubThreeStreamFetcher:
             issues = response.json()
 
             # Filter out pull requests (they appear in issues endpoint)
-            issues = [issue for issue in issues if 'pull_request' not in issue]
+            issues = [issue for issue in issues if "pull_request" not in issue]
 
             return issues
         except RateLimitError:
@@ -330,7 +325,7 @@ class GitHubThreeStreamFetcher:
             print(f"⚠️  Failed to fetch {state} issues: {e}")
             return []
 
-    def classify_files(self, repo_path: Path) -> Tuple[List[Path], List[Path]]:
+    def classify_files(self, repo_path: Path) -> tuple[list[Path], list[Path]]:
         """
         Split files into code vs documentation.
 
@@ -354,36 +349,61 @@ class GitHubThreeStreamFetcher:
 
         # Documentation patterns
         doc_patterns = [
-            '**/README.md',
-            '**/CONTRIBUTING.md',
-            '**/CHANGELOG.md',
-            '**/LICENSE.md',
-            'docs/*.md',            # Files directly in docs/
-            'docs/**/*.md',          # Files in subdirectories of docs/
-            'doc/*.md',              # Files directly in doc/
-            'doc/**/*.md',            # Files in subdirectories of doc/
-            'documentation/*.md',     # Files directly in documentation/
-            'documentation/**/*.md',  # Files in subdirectories of documentation/
-            '**/*.rst',
+            "**/README.md",
+            "**/CONTRIBUTING.md",
+            "**/CHANGELOG.md",
+            "**/LICENSE.md",
+            "docs/*.md",  # Files directly in docs/
+            "docs/**/*.md",  # Files in subdirectories of docs/
+            "doc/*.md",  # Files directly in doc/
+            "doc/**/*.md",  # Files in subdirectories of doc/
+            "documentation/*.md",  # Files directly in documentation/
+            "documentation/**/*.md",  # Files in subdirectories of documentation/
+            "**/*.rst",
         ]
 
         # Code extensions
         code_extensions = [
-            '.py', '.js', '.ts', '.jsx', '.tsx',
-            '.go', '.rs', '.java', '.kt',
-            '.c', '.cpp', '.h', '.hpp',
-            '.rb', '.php', '.swift', '.cs',
-            '.scala', '.clj', '.cljs'
+            ".py",
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".go",
+            ".rs",
+            ".java",
+            ".kt",
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".rb",
+            ".php",
+            ".swift",
+            ".cs",
+            ".scala",
+            ".clj",
+            ".cljs",
         ]
 
         # Directories to exclude
         exclude_dirs = [
-            'node_modules', '__pycache__', 'venv', '.venv',
-            '.git', 'build', 'dist', '.tox', '.pytest_cache',
-            'htmlcov', '.mypy_cache', '.eggs', '*.egg-info'
+            "node_modules",
+            "__pycache__",
+            "venv",
+            ".venv",
+            ".git",
+            "build",
+            "dist",
+            ".tox",
+            ".pytest_cache",
+            "htmlcov",
+            ".mypy_cache",
+            ".eggs",
+            "*.egg-info",
         ]
 
-        for file_path in repo_path.rglob('*'):
+        for file_path in repo_path.rglob("*"):
             if not file_path.is_file():
                 continue
 
@@ -392,8 +412,8 @@ class GitHubThreeStreamFetcher:
                 continue
 
             # Skip hidden files (but allow docs in docs/ directories)
-            is_in_docs_dir = any(pattern in str(file_path) for pattern in ['docs/', 'doc/', 'documentation/'])
-            if any(part.startswith('.') for part in file_path.parts):
+            is_in_docs_dir = any(pattern in str(file_path) for pattern in ["docs/", "doc/", "documentation/"])
+            if any(part.startswith(".") for part in file_path.parts):
                 if not is_in_docs_dir:
                     continue
 
@@ -407,7 +427,7 @@ class GitHubThreeStreamFetcher:
 
         return code_files, doc_files
 
-    def analyze_issues(self, issues: List[Dict]) -> Dict:
+    def analyze_issues(self, issues: list[dict]) -> dict:
         """
         Analyze GitHub issues to extract insights.
 
@@ -446,44 +466,41 @@ class GitHubThreeStreamFetcher:
 
         for issue in issues:
             # Handle both string labels and dict labels (GitHub API format)
-            raw_labels = issue.get('labels', [])
+            raw_labels = issue.get("labels", [])
             labels = []
             for label in raw_labels:
                 if isinstance(label, dict):
-                    labels.append(label.get('name', ''))
+                    labels.append(label.get("name", ""))
                 else:
                     labels.append(str(label))
             all_labels.extend(labels)
 
             issue_data = {
-                'title': issue.get('title', ''),
-                'number': issue.get('number', 0),
-                'labels': labels,
-                'comments': issue.get('comments', 0),
-                'state': issue.get('state', 'unknown')
+                "title": issue.get("title", ""),
+                "number": issue.get("number", 0),
+                "labels": labels,
+                "comments": issue.get("comments", 0),
+                "state": issue.get("state", "unknown"),
             }
 
             # Open issues with many comments = common problems
-            if issue['state'] == 'open' and issue.get('comments', 0) >= 5:
+            if issue["state"] == "open" and issue.get("comments", 0) >= 5:
                 common_problems.append(issue_data)
 
             # Closed issues with comments = known solutions
-            elif issue['state'] == 'closed' and issue.get('comments', 0) > 0:
+            elif issue["state"] == "closed" and issue.get("comments", 0) > 0:
                 known_solutions.append(issue_data)
 
         # Count label frequency
         label_counts = Counter(all_labels)
 
         return {
-            'common_problems': sorted(common_problems, key=lambda x: x['comments'], reverse=True)[:10],
-            'known_solutions': sorted(known_solutions, key=lambda x: x['comments'], reverse=True)[:10],
-            'top_labels': [
-                {'label': label, 'count': count}
-                for label, count in label_counts.most_common(10)
-            ]
+            "common_problems": sorted(common_problems, key=lambda x: x["comments"], reverse=True)[:10],
+            "known_solutions": sorted(known_solutions, key=lambda x: x["comments"], reverse=True)[:10],
+            "top_labels": [{"label": label, "count": count} for label, count in label_counts.most_common(10)],
         }
 
-    def read_file(self, file_path: Path) -> Optional[str]:
+    def read_file(self, file_path: Path) -> str | None:
         """
         Read file content safely.
 
@@ -497,10 +514,10 @@ class GitHubThreeStreamFetcher:
             return None
 
         try:
-            return file_path.read_text(encoding='utf-8')
+            return file_path.read_text(encoding="utf-8")
         except Exception:
             # Try with different encoding
             try:
-                return file_path.read_text(encoding='latin-1')
+                return file_path.read_text(encoding="latin-1")
             except Exception:
                 return None

@@ -10,24 +10,24 @@ Test Coverage:
 - Edge Cases (3 tests) - Error handling, empty files, invalid formats
 """
 
-import unittest
-import sys
-import os
 import json
+import os
+import sys
 import tempfile
+import unittest
 from pathlib import Path
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from skill_seekers.cli.config_extractor import (
+    ConfigExtractionResult,
+    ConfigExtractor,
+    ConfigFile,
     ConfigFileDetector,
     ConfigParser,
     ConfigPatternDetector,
-    ConfigExtractor,
     ConfigSetting,
-    ConfigFile,
-    ConfigExtractionResult,
 )
 
 
@@ -41,6 +41,7 @@ class TestConfigFileDetector(unittest.TestCase):
     def tearDown(self):
         # Clean up temp directory
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_detect_json_files(self):
@@ -92,7 +93,7 @@ class TestConfigFileDetector(unittest.TestCase):
         """Test max_files limit is respected"""
         # Create many config files
         for i in range(20):
-            (Path(self.temp_dir) / f"config{i}.json").write_text('{}')
+            (Path(self.temp_dir) / f"config{i}.json").write_text("{}")
 
         detector = ConfigFileDetector()
         files = detector.find_config_files(Path(self.temp_dir), max_files=5)
@@ -109,23 +110,18 @@ class TestConfigParser(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_parse_json_config(self):
         """Test parsing JSON configuration"""
-        json_content = {
-            "database": {
-                "host": "localhost",
-                "port": 5432
-            },
-            "api_key": "secret"
-        }
+        json_content = {"database": {"host": "localhost", "port": 5432}, "api_key": "secret"}
 
         config_file = ConfigFile(
             file_path=str(Path(self.temp_dir) / "config.json"),
             relative_path="config.json",
             config_type="json",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "config.json"
@@ -151,7 +147,7 @@ logging:
             file_path=str(Path(self.temp_dir) / "config.yml"),
             relative_path="config.yml",
             config_type="yaml",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "config.yml"
@@ -177,10 +173,7 @@ API_KEY=secret123
 PORT=8000
 """
         config_file = ConfigFile(
-            file_path=str(Path(self.temp_dir) / ".env"),
-            relative_path=".env",
-            config_type="env",
-            purpose="unknown"
+            file_path=str(Path(self.temp_dir) / ".env"), relative_path=".env", config_type="env", purpose="unknown"
         )
 
         file_path = Path(self.temp_dir) / ".env"
@@ -208,7 +201,7 @@ endpoint = https://api.example.com
             file_path=str(Path(self.temp_dir) / "config.ini"),
             relative_path="config.ini",
             config_type="ini",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "config.ini"
@@ -230,7 +223,7 @@ API_KEYS = ['key1', 'key2']
             file_path=str(Path(self.temp_dir) / "settings.py"),
             relative_path="settings.py",
             config_type="python",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "settings.py"
@@ -255,7 +248,7 @@ WORKDIR /app
             file_path=str(Path(self.temp_dir) / "Dockerfile"),
             relative_path="Dockerfile",
             config_type="dockerfile",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "Dockerfile"
@@ -283,7 +276,7 @@ module.exports = {
             file_path=str(Path(self.temp_dir) / "config.js"),
             relative_path="config.js",
             config_type="javascript",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "config.js"
@@ -309,7 +302,7 @@ endpoint = "https://api.example.com"
             file_path=str(Path(self.temp_dir) / "config.toml"),
             relative_path="config.toml",
             config_type="toml",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "config.toml"
@@ -319,7 +312,9 @@ endpoint = "https://api.example.com"
         self.parser.parse_config_file(config_file)
 
         # Check if parsing failed due to missing toml/tomli
-        if config_file.parse_errors and ("toml" in str(config_file.parse_errors).lower() and "not installed" in str(config_file.parse_errors)):
+        if config_file.parse_errors and (
+            "toml" in str(config_file.parse_errors).lower() and "not installed" in str(config_file.parse_errors)
+        ):
             self.skipTest("toml/tomli not installed")
 
         self.assertGreater(len(config_file.settings), 0)
@@ -342,11 +337,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -362,11 +353,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -382,11 +369,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -402,11 +385,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -423,11 +402,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -443,11 +418,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -463,11 +434,7 @@ class TestConfigPatternDetector(unittest.TestCase):
         ]
 
         config_file = ConfigFile(
-            file_path="test.json",
-            relative_path="test.json",
-            config_type="json",
-            purpose="unknown",
-            settings=settings
+            file_path="test.json", relative_path="test.json", config_type="json", purpose="unknown", settings=settings
         )
 
         patterns = self.detector.detect_patterns(config_file)
@@ -484,6 +451,7 @@ class TestConfigExtractorIntegration(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_extract_from_directory(self):
@@ -506,15 +474,13 @@ class TestConfigExtractorIntegration(unittest.TestCase):
                     relative_path="config.json",
                     config_type="json",
                     purpose="database_config",
-                    settings=[
-                        ConfigSetting(key="host", value="localhost", value_type="string")
-                    ],
-                    patterns=["database_config"]
+                    settings=[ConfigSetting(key="host", value="localhost", value_type="string")],
+                    patterns=["database_config"],
                 )
             ],
             total_files=1,
             total_settings=1,
-            detected_patterns=["database_config"]
+            detected_patterns=["database_config"],
         )
 
         markdown = result.to_markdown()
@@ -532,15 +498,13 @@ class TestConfigExtractorIntegration(unittest.TestCase):
                     relative_path="config.json",
                     config_type="json",
                     purpose="database_config",
-                    settings=[
-                        ConfigSetting(key="host", value="localhost", value_type="string")
-                    ],
-                    patterns=["database_config"]
+                    settings=[ConfigSetting(key="host", value="localhost", value_type="string")],
+                    patterns=["database_config"],
                 )
             ],
             total_files=1,
             total_settings=1,
-            detected_patterns=["database_config"]
+            detected_patterns=["database_config"],
         )
 
         json_data = result.to_dict()
@@ -582,6 +546,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_parse_empty_file(self):
@@ -590,7 +555,7 @@ class TestEdgeCases(unittest.TestCase):
             file_path=str(Path(self.temp_dir) / "empty.json"),
             relative_path="empty.json",
             config_type="json",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "empty.json"
@@ -606,7 +571,7 @@ class TestEdgeCases(unittest.TestCase):
             file_path=str(Path(self.temp_dir) / "invalid.json"),
             relative_path="invalid.json",
             config_type="json",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         file_path = Path(self.temp_dir) / "invalid.json"
@@ -621,12 +586,12 @@ class TestEdgeCases(unittest.TestCase):
             file_path=str(Path(self.temp_dir) / "nonexistent.json"),
             relative_path="nonexistent.json",
             config_type="json",
-            purpose="unknown"
+            purpose="unknown",
         )
 
         # Should not crash
         self.parser.parse_config_file(config_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -27,19 +27,18 @@ Example usage:
     python test_example_extractor.py tests/ --min-confidence 0.7
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Optional, Literal, Set
-from pathlib import Path
-import ast
-import re
-import hashlib
-import logging
 import argparse
+import ast
+import hashlib
 import json
-import sys
+import logging
+import re
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Literal
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -47,22 +46,23 @@ logger = logging.getLogger(__name__)
 # DATA MODELS
 # ============================================================================
 
+
 @dataclass
 class TestExample:
     """Single extracted usage example from test code"""
 
     # Identity
-    example_id: str          # Unique hash of example
-    test_name: str           # Test function/method name
+    example_id: str  # Unique hash of example
+    test_name: str  # Test function/method name
     category: Literal["instantiation", "method_call", "config", "setup", "workflow"]
 
     # Code
-    code: str                # Actual example code
-    language: str            # Programming language
+    code: str  # Actual example code
+    language: str  # Programming language
 
     # Context
-    description: str         # What this demonstrates
-    expected_behavior: str   # Expected outcome from assertions
+    description: str  # What this demonstrates
+    expected_behavior: str  # Expected outcome from assertions
 
     # Source
     file_path: str
@@ -71,13 +71,13 @@ class TestExample:
 
     # Quality
     complexity_score: float  # 0-1 scale (higher = more complex/valuable)
-    confidence: float        # 0-1 scale (higher = more confident extraction)
+    confidence: float  # 0-1 scale (higher = more confident extraction)
 
     # Optional fields (must come after required fields)
-    setup_code: Optional[str] = None  # Required setup code
-    tags: List[str] = field(default_factory=list)  # ["pytest", "mock", "async"]
-    dependencies: List[str] = field(default_factory=list)  # Imported modules
-    ai_analysis: Optional[Dict] = None  # AI-generated analysis (C3.6)
+    setup_code: str | None = None  # Required setup code
+    tags: list[str] = field(default_factory=list)  # ["pytest", "mock", "async"]
+    dependencies: list[str] = field(default_factory=list)  # Imported modules
+    ai_analysis: dict | None = None  # AI-generated analysis (C3.6)
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization"""
@@ -96,12 +96,12 @@ class TestExample:
 
         # Add AI analysis if available (C3.6)
         if self.ai_analysis:
-            md += f"\n**🤖 AI Analysis:**  \n"
-            if self.ai_analysis.get('explanation'):
+            md += "\n**🤖 AI Analysis:**  \n"
+            if self.ai_analysis.get("explanation"):
                 md += f"*{self.ai_analysis['explanation']}*  \n"
-            if self.ai_analysis.get('best_practices'):
+            if self.ai_analysis.get("best_practices"):
                 md += f"**Best Practices:** {', '.join(self.ai_analysis['best_practices'])}  \n"
-            if self.ai_analysis.get('tutorial_group'):
+            if self.ai_analysis.get("tutorial_group"):
                 md += f"**Tutorial Group:** {self.ai_analysis['tutorial_group']}  \n"
 
         md += f"\n```{self.language.lower()}\n"
@@ -117,13 +117,13 @@ class ExampleReport:
     """Summary of test example extraction results"""
 
     total_examples: int
-    examples_by_category: Dict[str, int]
-    examples_by_language: Dict[str, int]
-    examples: List[TestExample]
+    examples_by_category: dict[str, int]
+    examples_by_language: dict[str, int]
+    examples: list[TestExample]
     avg_complexity: float
     high_value_count: int  # confidence > 0.7
-    file_path: Optional[str] = None  # If single file
-    directory: Optional[str] = None  # If directory
+    file_path: str | None = None  # If single file
+    directory: str | None = None  # If directory
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization"""
@@ -135,7 +135,7 @@ class ExampleReport:
             "high_value_count": self.high_value_count,
             "file_path": self.file_path,
             "directory": self.directory,
-            "examples": [ex.to_dict() for ex in self.examples]
+            "examples": [ex.to_dict() for ex in self.examples],
         }
 
     def to_markdown(self) -> str:
@@ -164,19 +164,20 @@ class ExampleReport:
 # PYTHON TEST ANALYZER (AST-based)
 # ============================================================================
 
+
 class PythonTestAnalyzer:
     """Deep AST-based test example extraction for Python"""
 
     def __init__(self):
         self.trivial_patterns = {
-            'assertTrue(True)',
-            'assertFalse(False)',
-            'assertEqual(1, 1)',
-            'assertIsNone(None)',
-            'assertIsNotNone(None)',
+            "assertTrue(True)",
+            "assertFalse(False)",
+            "assertEqual(1, 1)",
+            "assertIsNone(None)",
+            "assertIsNotNone(None)",
         }
 
-    def extract(self, file_path: str, code: str) -> List[TestExample]:
+    def extract(self, file_path: str, code: str) -> list[TestExample]:
         """Extract examples from Python test file"""
         examples = []
 
@@ -193,20 +194,16 @@ class PythonTestAnalyzer:
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
                 if self._is_test_class(node):
-                    examples.extend(self._extract_from_test_class(
-                        node, file_path, imports
-                    ))
+                    examples.extend(self._extract_from_test_class(node, file_path, imports))
 
             # Find test functions (pytest)
             elif isinstance(node, ast.FunctionDef):
                 if self._is_test_function(node):
-                    examples.extend(self._extract_from_test_function(
-                        node, file_path, imports
-                    ))
+                    examples.extend(self._extract_from_test_function(node, file_path, imports))
 
         return examples
 
-    def _extract_imports(self, tree: ast.AST) -> List[str]:
+    def _extract_imports(self, tree: ast.AST) -> list[str]:
         """Extract imported modules"""
         imports = []
         for node in ast.walk(tree):
@@ -221,30 +218,30 @@ class PythonTestAnalyzer:
         """Check if class is a test class"""
         # unittest.TestCase pattern
         for base in node.bases:
-            if isinstance(base, ast.Name) and 'Test' in base.id:
-                return True
-            elif isinstance(base, ast.Attribute) and base.attr == 'TestCase':
+            if (
+                isinstance(base, ast.Name)
+                and "Test" in base.id
+                or isinstance(base, ast.Attribute)
+                and base.attr == "TestCase"
+            ):
                 return True
         return False
 
     def _is_test_function(self, node: ast.FunctionDef) -> bool:
         """Check if function is a test function"""
         # pytest pattern: starts with test_
-        if node.name.startswith('test_'):
+        if node.name.startswith("test_"):
             return True
         # Has @pytest.mark decorator
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Attribute):
-                if 'pytest' in ast.unparse(decorator):
+                if "pytest" in ast.unparse(decorator):
                     return True
         return False
 
     def _extract_from_test_class(
-        self,
-        class_node: ast.ClassDef,
-        file_path: str,
-        imports: List[str]
-    ) -> List[TestExample]:
+        self, class_node: ast.ClassDef, file_path: str, imports: list[str]
+    ) -> list[TestExample]:
         """Extract examples from unittest.TestCase class"""
         examples = []
 
@@ -253,63 +250,46 @@ class PythonTestAnalyzer:
 
         # Process each test method
         for node in class_node.body:
-            if isinstance(node, ast.FunctionDef) and node.name.startswith('test_'):
-                examples.extend(self._analyze_test_body(
-                    node,
-                    file_path,
-                    imports,
-                    setup_code=setup_code
-                ))
+            if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
+                examples.extend(self._analyze_test_body(node, file_path, imports, setup_code=setup_code))
 
         return examples
 
     def _extract_from_test_function(
-        self,
-        func_node: ast.FunctionDef,
-        file_path: str,
-        imports: List[str]
-    ) -> List[TestExample]:
+        self, func_node: ast.FunctionDef, file_path: str, imports: list[str]
+    ) -> list[TestExample]:
         """Extract examples from pytest test function"""
         # Check for fixture parameters
         fixture_setup = self._extract_fixtures(func_node)
 
-        return self._analyze_test_body(
-            func_node,
-            file_path,
-            imports,
-            setup_code=fixture_setup
-        )
+        return self._analyze_test_body(func_node, file_path, imports, setup_code=fixture_setup)
 
-    def _extract_setup_method(self, class_node: ast.ClassDef) -> Optional[str]:
+    def _extract_setup_method(self, class_node: ast.ClassDef) -> str | None:
         """Extract setUp method code"""
         for node in class_node.body:
-            if isinstance(node, ast.FunctionDef) and node.name == 'setUp':
+            if isinstance(node, ast.FunctionDef) and node.name == "setUp":
                 return ast.unparse(node.body)
         return None
 
-    def _extract_fixtures(self, func_node: ast.FunctionDef) -> Optional[str]:
+    def _extract_fixtures(self, func_node: ast.FunctionDef) -> str | None:
         """Extract pytest fixture parameters"""
         if not func_node.args.args:
             return None
 
         # Skip 'self' parameter
-        params = [arg.arg for arg in func_node.args.args if arg.arg != 'self']
+        params = [arg.arg for arg in func_node.args.args if arg.arg != "self"]
         if params:
             return f"# Fixtures: {', '.join(params)}"
         return None
 
     def _analyze_test_body(
-        self,
-        func_node: ast.FunctionDef,
-        file_path: str,
-        imports: List[str],
-        setup_code: Optional[str] = None
-    ) -> List[TestExample]:
+        self, func_node: ast.FunctionDef, file_path: str, imports: list[str], setup_code: str | None = None
+    ) -> list[TestExample]:
         """Analyze test function body for extractable patterns"""
         examples = []
 
         # Get docstring for description
-        docstring = ast.get_docstring(func_node) or func_node.name.replace('_', ' ')
+        docstring = ast.get_docstring(func_node) or func_node.name.replace("_", " ")
 
         # Detect tags
         tags = self._detect_tags(func_node, imports)
@@ -321,7 +301,9 @@ class PythonTestAnalyzer:
         examples.extend(instantiations)
 
         # 2. Method calls with assertions
-        method_calls = self._find_method_calls_with_assertions(func_node, file_path, docstring, setup_code, tags, imports)
+        method_calls = self._find_method_calls_with_assertions(
+            func_node, file_path, docstring, setup_code, tags, imports
+        )
         examples.extend(method_calls)
 
         # 3. Configuration dictionaries
@@ -334,28 +316,28 @@ class PythonTestAnalyzer:
 
         return examples
 
-    def _detect_tags(self, func_node: ast.FunctionDef, imports: List[str]) -> List[str]:
+    def _detect_tags(self, func_node: ast.FunctionDef, imports: list[str]) -> list[str]:
         """Detect test tags (pytest, mock, async, etc.)"""
         tags = []
 
         # Check decorators
         for decorator in func_node.decorator_list:
             decorator_str = ast.unparse(decorator).lower()
-            if 'pytest' in decorator_str:
-                tags.append('pytest')
-            if 'mock' in decorator_str:
-                tags.append('mock')
-            if 'async' in decorator_str or func_node.name.startswith('test_async'):
-                tags.append('async')
+            if "pytest" in decorator_str:
+                tags.append("pytest")
+            if "mock" in decorator_str:
+                tags.append("mock")
+            if "async" in decorator_str or func_node.name.startswith("test_async"):
+                tags.append("async")
 
         # Check if using unittest
-        if 'unittest' in imports:
-            tags.append('unittest')
+        if "unittest" in imports:
+            tags.append("unittest")
 
         # Check function body for mock usage
         func_str = ast.unparse(func_node).lower()
-        if 'mock' in func_str or 'patch' in func_str:
-            tags.append('mock')
+        if "mock" in func_str or "patch" in func_str:
+            tags.append("mock")
 
         return list(set(tags))
 
@@ -364,10 +346,10 @@ class PythonTestAnalyzer:
         func_node: ast.FunctionDef,
         file_path: str,
         description: str,
-        setup_code: Optional[str],
-        tags: List[str],
-        imports: List[str]
-    ) -> List[TestExample]:
+        setup_code: str | None,
+        tags: list[str],
+        imports: list[str],
+    ) -> list[TestExample]:
         """Find object instantiation patterns: obj = ClassName(...)"""
         examples = []
 
@@ -379,7 +361,7 @@ class PythonTestAnalyzer:
                         code = ast.unparse(node)
 
                         # Skip trivial or mock-only
-                        if len(code) < 20 or 'Mock()' in code:
+                        if len(code) < 20 or "Mock()" in code:
                             continue
 
                         # Get class name
@@ -400,7 +382,7 @@ class PythonTestAnalyzer:
                             complexity_score=self._calculate_complexity(code),
                             confidence=0.8,
                             tags=tags,
-                            dependencies=imports
+                            dependencies=imports,
                         )
                         examples.append(example)
 
@@ -411,10 +393,10 @@ class PythonTestAnalyzer:
         func_node: ast.FunctionDef,
         file_path: str,
         description: str,
-        setup_code: Optional[str],
-        tags: List[str],
-        imports: List[str]
-    ) -> List[TestExample]:
+        setup_code: str | None,
+        tags: list[str],
+        imports: list[str],
+    ) -> list[TestExample]:
         """Find method calls followed by assertions"""
         examples = []
 
@@ -450,7 +432,7 @@ class PythonTestAnalyzer:
                             complexity_score=self._calculate_complexity(code),
                             confidence=0.85,
                             tags=tags,
-                            dependencies=imports
+                            dependencies=imports,
                         )
                         examples.append(example)
 
@@ -461,10 +443,10 @@ class PythonTestAnalyzer:
         func_node: ast.FunctionDef,
         file_path: str,
         description: str,
-        setup_code: Optional[str],
-        tags: List[str],
-        imports: List[str]
-    ) -> List[TestExample]:
+        setup_code: str | None,
+        tags: list[str],
+        imports: list[str],
+    ) -> list[TestExample]:
         """Find configuration dictionary patterns"""
         examples = []
 
@@ -491,7 +473,7 @@ class PythonTestAnalyzer:
                             complexity_score=self._calculate_complexity(code),
                             confidence=0.75,
                             tags=tags,
-                            dependencies=imports
+                            dependencies=imports,
                         )
                         examples.append(example)
 
@@ -502,10 +484,10 @@ class PythonTestAnalyzer:
         func_node: ast.FunctionDef,
         file_path: str,
         description: str,
-        setup_code: Optional[str],
-        tags: List[str],
-        imports: List[str]
-    ) -> List[TestExample]:
+        setup_code: str | None,
+        tags: list[str],
+        imports: list[str],
+    ) -> list[TestExample]:
         """Find multi-step workflow patterns (integration tests)"""
         examples = []
 
@@ -515,7 +497,7 @@ class PythonTestAnalyzer:
             code = ast.unparse(func_node.body)
 
             # Skip if too long (> 30 lines)
-            if code.count('\n') > 30:
+            if code.count("\n") > 30:
                 return examples
 
             example = TestExample(
@@ -532,8 +514,8 @@ class PythonTestAnalyzer:
                 line_end=func_node.end_lineno or func_node.lineno,
                 complexity_score=min(1.0, len(func_node.body) / 10),
                 confidence=0.9,
-                tags=tags + ['workflow', 'integration'],
-                dependencies=imports
+                tags=tags + ["workflow", "integration"],
+                dependencies=imports,
             )
             examples.append(example)
 
@@ -568,7 +550,7 @@ class PythonTestAnalyzer:
 
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
             call_str = ast.unparse(node.value).lower()
-            assertion_methods = ['assert', 'expect', 'should']
+            assertion_methods = ["assert", "expect", "should"]
             return any(method in call_str for method in assertion_methods)
 
         return False
@@ -584,7 +566,7 @@ class PythonTestAnalyzer:
     def _is_integration_test(self, func_node: ast.FunctionDef) -> bool:
         """Check if test looks like an integration test"""
         test_name = func_node.name.lower()
-        integration_keywords = ['workflow', 'integration', 'end_to_end', 'e2e', 'full']
+        integration_keywords = ["workflow", "integration", "end_to_end", "e2e", "full"]
         return any(keyword in test_name for keyword in integration_keywords)
 
     def _extract_assertion_after(self, func_node: ast.FunctionDef, target_node: ast.AST) -> str:
@@ -608,8 +590,8 @@ class PythonTestAnalyzer:
     def _calculate_complexity(self, code: str) -> float:
         """Calculate code complexity score (0-1)"""
         # Simple heuristic: more lines + more parameters = more complex
-        lines = code.count('\n') + 1
-        params = code.count(',') + 1
+        lines = code.count("\n") + 1
+        params = code.count(",") + 1
 
         complexity = min(1.0, (lines * 0.1) + (params * 0.05))
         return round(complexity, 2)
@@ -623,57 +605,58 @@ class PythonTestAnalyzer:
 # GENERIC TEST ANALYZER (Regex-based for non-Python languages)
 # ============================================================================
 
+
 class GenericTestAnalyzer:
     """Regex-based test example extraction for non-Python languages"""
 
     # Language-specific regex patterns
     PATTERNS = {
         "javascript": {
-            "instantiation": r'(?:const|let|var)\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)',
-            "assertion": r'expect\(([^)]+)\)\.to(?:Equal|Be|Match)\(([^)]+)\)',
+            "instantiation": r"(?:const|let|var)\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
+            "assertion": r"expect\(([^)]+)\)\.to(?:Equal|Be|Match)\(([^)]+)\)",
             "test_function": r'(?:test|it)\(["\']([^"\']+)["\']',
-            "config": r'(?:const|let)\s+config\s*=\s*\{[\s\S]{20,500}?\}',
+            "config": r"(?:const|let)\s+config\s*=\s*\{[\s\S]{20,500}?\}",
         },
         "typescript": {
-            "instantiation": r'(?:const|let|var)\s+(\w+):\s*\w+\s*=\s*new\s+(\w+)\(([^)]*)\)',
-            "assertion": r'expect\(([^)]+)\)\.to(?:Equal|Be|Match)\(([^)]+)\)',
+            "instantiation": r"(?:const|let|var)\s+(\w+):\s*\w+\s*=\s*new\s+(\w+)\(([^)]*)\)",
+            "assertion": r"expect\(([^)]+)\)\.to(?:Equal|Be|Match)\(([^)]+)\)",
             "test_function": r'(?:test|it)\(["\']([^"\']+)["\']',
-            "config": r'(?:const|let)\s+config:\s*\w+\s*=\s*\{[\s\S]{20,500}?\}',
+            "config": r"(?:const|let)\s+config:\s*\w+\s*=\s*\{[\s\S]{20,500}?\}",
         },
         "go": {
-            "instantiation": r'(\w+)\s*:=\s*(\w+)\{([^}]+)\}',
+            "instantiation": r"(\w+)\s*:=\s*(\w+)\{([^}]+)\}",
             "assertion": r't\.(?:Error|Fatal)(?:f)?\(["\']([^"\']+)["\']',
-            "test_function": r'func\s+(Test\w+)\(t\s+\*testing\.T\)',
-            "table_test": r'tests\s*:=\s*\[\]struct\s*\{[\s\S]{50,1000}?\}',
+            "test_function": r"func\s+(Test\w+)\(t\s+\*testing\.T\)",
+            "table_test": r"tests\s*:=\s*\[\]struct\s*\{[\s\S]{50,1000}?\}",
         },
         "rust": {
-            "instantiation": r'let\s+(\w+)\s*=\s*(\w+)::new\(([^)]*)\)',
-            "assertion": r'assert(?:_eq)?!\(([^)]+)\)',
-            "test_function": r'#\[test\]\s*fn\s+(\w+)\(\)',
+            "instantiation": r"let\s+(\w+)\s*=\s*(\w+)::new\(([^)]*)\)",
+            "assertion": r"assert(?:_eq)?!\(([^)]+)\)",
+            "test_function": r"#\[test\]\s*fn\s+(\w+)\(\)",
         },
         "java": {
-            "instantiation": r'(\w+)\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)',
-            "assertion": r'assert(?:Equals|True|False|NotNull)\(([^)]+)\)',
-            "test_function": r'@Test\s+public\s+void\s+(\w+)\(\)',
+            "instantiation": r"(\w+)\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
+            "assertion": r"assert(?:Equals|True|False|NotNull)\(([^)]+)\)",
+            "test_function": r"@Test\s+public\s+void\s+(\w+)\(\)",
         },
         "csharp": {
-            "instantiation": r'var\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)',
-            "assertion": r'Assert\.(?:AreEqual|IsTrue|IsFalse|IsNotNull)\(([^)]+)\)',
-            "test_function": r'\[Test\]\s+public\s+void\s+(\w+)\(\)',
+            "instantiation": r"var\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
+            "assertion": r"Assert\.(?:AreEqual|IsTrue|IsFalse|IsNotNull)\(([^)]+)\)",
+            "test_function": r"\[Test\]\s+public\s+void\s+(\w+)\(\)",
         },
         "php": {
-            "instantiation": r'\$(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)',
-            "assertion": r'\$this->assert(?:Equals|True|False|NotNull)\(([^)]+)\)',
-            "test_function": r'public\s+function\s+(test\w+)\(\)',
+            "instantiation": r"\$(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
+            "assertion": r"\$this->assert(?:Equals|True|False|NotNull)\(([^)]+)\)",
+            "test_function": r"public\s+function\s+(test\w+)\(\)",
         },
         "ruby": {
-            "instantiation": r'(\w+)\s*=\s*(\w+)\.new\(([^)]*)\)',
-            "assertion": r'expect\(([^)]+)\)\.to\s+(?:eq|be|match)\(([^)]+)\)',
+            "instantiation": r"(\w+)\s*=\s*(\w+)\.new\(([^)]*)\)",
+            "assertion": r"expect\(([^)]+)\)\.to\s+(?:eq|be|match)\(([^)]+)\)",
             "test_function": r'(?:test|it)\s+["\']([^"\']+)["\']',
-        }
+        },
     }
 
-    def extract(self, file_path: str, code: str, language: str) -> List[TestExample]:
+    def extract(self, file_path: str, code: str, language: str) -> list[TestExample]:
         """Extract examples from test file using regex patterns"""
         examples = []
 
@@ -704,7 +687,7 @@ class GenericTestAnalyzer:
                     code=inst_match.group(0),
                     language=language,
                     file_path=file_path,
-                    line_number=code[:start_pos + inst_match.start()].count('\n') + 1
+                    line_number=code[: start_pos + inst_match.start()].count("\n") + 1,
                 )
                 examples.append(example)
 
@@ -717,20 +700,14 @@ class GenericTestAnalyzer:
                         code=config_match.group(0),
                         language=language,
                         file_path=file_path,
-                        line_number=code[:start_pos + config_match.start()].count('\n') + 1
+                        line_number=code[: start_pos + config_match.start()].count("\n") + 1,
                     )
                     examples.append(example)
 
         return examples
 
     def _create_example(
-        self,
-        test_name: str,
-        category: str,
-        code: str,
-        language: str,
-        file_path: str,
-        line_number: int
+        self, test_name: str, category: str, code: str, language: str, file_path: str, line_number: int
     ) -> TestExample:
         """Create TestExample from regex match"""
         return TestExample(
@@ -743,17 +720,18 @@ class GenericTestAnalyzer:
             expected_behavior="",
             file_path=file_path,
             line_start=line_number,
-            line_end=line_number + code.count('\n'),
-            complexity_score=min(1.0, (code.count('\n') + 1) * 0.1),
+            line_end=line_number + code.count("\n"),
+            complexity_score=min(1.0, (code.count("\n") + 1) * 0.1),
             confidence=0.6,  # Lower confidence for regex extraction
             tags=[],
-            dependencies=[]
+            dependencies=[],
         )
 
 
 # ============================================================================
 # EXAMPLE QUALITY FILTER
 # ============================================================================
+
 
 class ExampleQualityFilter:
     """Filter out trivial or low-quality examples"""
@@ -764,16 +742,16 @@ class ExampleQualityFilter:
 
         # Trivial patterns to exclude
         self.trivial_patterns = [
-            'Mock()',
-            'MagicMock()',
-            'assertTrue(True)',
-            'assertFalse(False)',
-            'assertEqual(1, 1)',
-            'pass',
-            '...',
+            "Mock()",
+            "MagicMock()",
+            "assertTrue(True)",
+            "assertFalse(False)",
+            "assertEqual(1, 1)",
+            "pass",
+            "...",
         ]
 
-    def filter(self, examples: List[TestExample]) -> List[TestExample]:
+    def filter(self, examples: list[TestExample]) -> list[TestExample]:
         """Filter examples by quality criteria"""
         filtered = []
 
@@ -803,42 +781,43 @@ class ExampleQualityFilter:
 # TEST EXAMPLE EXTRACTOR (Main Orchestrator)
 # ============================================================================
 
+
 class TestExampleExtractor:
     """Main orchestrator for test example extraction"""
 
     # Test file patterns
     TEST_PATTERNS = [
-        'test_*.py',
-        '*_test.py',
-        'test*.js',
-        '*test.js',
-        '*_test.go',
-        '*_test.rs',
-        'Test*.java',
-        'Test*.cs',
-        '*Test.php',
-        '*_spec.rb',
+        "test_*.py",
+        "*_test.py",
+        "test*.js",
+        "*test.js",
+        "*_test.go",
+        "*_test.rs",
+        "Test*.java",
+        "Test*.cs",
+        "*Test.php",
+        "*_spec.rb",
     ]
 
     # Language detection by extension
     LANGUAGE_MAP = {
-        '.py': 'Python',
-        '.js': 'JavaScript',
-        '.ts': 'TypeScript',
-        '.go': 'Go',
-        '.rs': 'Rust',
-        '.java': 'Java',
-        '.cs': 'C#',
-        '.php': 'PHP',
-        '.rb': 'Ruby',
+        ".py": "Python",
+        ".js": "JavaScript",
+        ".ts": "TypeScript",
+        ".go": "Go",
+        ".rs": "Rust",
+        ".java": "Java",
+        ".cs": "C#",
+        ".php": "PHP",
+        ".rb": "Ruby",
     }
 
     def __init__(
         self,
         min_confidence: float = 0.7,
         max_per_file: int = 10,
-        languages: Optional[List[str]] = None,
-        enhance_with_ai: bool = True
+        languages: list[str] | None = None,
+        enhance_with_ai: bool = True,
     ):
         self.python_analyzer = PythonTestAnalyzer()
         self.generic_analyzer = GenericTestAnalyzer()
@@ -852,16 +831,13 @@ class TestExampleExtractor:
         if self.enhance_with_ai:
             try:
                 from skill_seekers.cli.ai_enhancer import TestExampleEnhancer
+
                 self.ai_enhancer = TestExampleEnhancer()
             except Exception as e:
                 logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
                 self.enhance_with_ai = False
 
-    def extract_from_directory(
-        self,
-        directory: Path,
-        recursive: bool = True
-    ) -> ExampleReport:
+    def extract_from_directory(self, directory: Path, recursive: bool = True) -> ExampleReport:
         """Extract examples from all test files in directory"""
         directory = Path(directory)
 
@@ -882,7 +858,7 @@ class TestExampleExtractor:
         # Generate report
         return self._create_report(all_examples, directory=str(directory))
 
-    def extract_from_file(self, file_path: Path) -> List[TestExample]:
+    def extract_from_file(self, file_path: Path) -> list[TestExample]:
         """Extract examples from single test file"""
         file_path = Path(file_path)
 
@@ -898,13 +874,13 @@ class TestExampleExtractor:
 
         # Read file
         try:
-            code = file_path.read_text(encoding='utf-8')
+            code = file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             logger.warning(f"Failed to read {file_path} (encoding error)")
             return []
 
         # Extract examples based on language
-        if language == 'Python':
+        if language == "Python":
             examples = self.python_analyzer.extract(str(file_path), code)
         else:
             examples = self.generic_analyzer.extract(str(file_path), code, language)
@@ -915,17 +891,13 @@ class TestExampleExtractor:
         # Limit per file
         if len(filtered_examples) > self.max_per_file:
             # Sort by confidence and take top N
-            filtered_examples = sorted(
-                filtered_examples,
-                key=lambda x: x.confidence,
-                reverse=True
-            )[:self.max_per_file]
+            filtered_examples = sorted(filtered_examples, key=lambda x: x.confidence, reverse=True)[: self.max_per_file]
 
         logger.info(f"Extracted {len(filtered_examples)} examples from {file_path.name}")
 
         return filtered_examples
 
-    def _find_test_files(self, directory: Path, recursive: bool) -> List[Path]:
+    def _find_test_files(self, directory: Path, recursive: bool) -> list[Path]:
         """Find test files in directory"""
         test_files = []
 
@@ -940,13 +912,10 @@ class TestExampleExtractor:
     def _detect_language(self, file_path: Path) -> str:
         """Detect programming language from file extension"""
         suffix = file_path.suffix.lower()
-        return self.LANGUAGE_MAP.get(suffix, 'Unknown')
+        return self.LANGUAGE_MAP.get(suffix, "Unknown")
 
     def _create_report(
-        self,
-        examples: List[TestExample],
-        file_path: Optional[str] = None,
-        directory: Optional[str] = None
+        self, examples: list[TestExample], file_path: str | None = None, directory: str | None = None
     ) -> ExampleReport:
         """Create summary report from examples"""
         # Enhance examples with AI analysis (C3.6)
@@ -957,20 +926,18 @@ class TestExampleExtractor:
 
             # Update examples with AI analysis
             for i, example in enumerate(examples):
-                if i < len(enhanced_dicts) and 'ai_analysis' in enhanced_dicts[i]:
-                    example.ai_analysis = enhanced_dicts[i]['ai_analysis']
+                if i < len(enhanced_dicts) and "ai_analysis" in enhanced_dicts[i]:
+                    example.ai_analysis = enhanced_dicts[i]["ai_analysis"]
 
         # Count by category
         examples_by_category = {}
         for example in examples:
-            examples_by_category[example.category] = \
-                examples_by_category.get(example.category, 0) + 1
+            examples_by_category[example.category] = examples_by_category.get(example.category, 0) + 1
 
         # Count by language
         examples_by_language = {}
         for example in examples:
-            examples_by_language[example.language] = \
-                examples_by_language.get(example.language, 0) + 1
+            examples_by_language[example.language] = examples_by_language.get(example.language, 0) + 1
 
         # Calculate averages
         avg_complexity = sum(ex.complexity_score for ex in examples) / len(examples) if examples else 0.0
@@ -984,7 +951,7 @@ class TestExampleExtractor:
             avg_complexity=round(avg_complexity, 2),
             high_value_count=high_value_count,
             file_path=file_path,
-            directory=directory
+            directory=directory,
         )
 
 
@@ -992,10 +959,11 @@ class TestExampleExtractor:
 # COMMAND-LINE INTERFACE
 # ============================================================================
 
+
 def main():
     """Main entry point for CLI"""
     parser = argparse.ArgumentParser(
-        description='Extract usage examples from test files',
+        description="Extract usage examples from test files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1010,49 +978,20 @@ Examples:
 
   # Filter by confidence
   %(prog)s tests/ --min-confidence 0.7
-        """
+        """,
     )
 
+    parser.add_argument("directory", nargs="?", help="Directory containing test files")
+    parser.add_argument("--file", help="Single test file to analyze")
+    parser.add_argument("--language", help="Filter by programming language (python, javascript, etc.)")
     parser.add_argument(
-        'directory',
-        nargs='?',
-        help='Directory containing test files'
+        "--min-confidence", type=float, default=0.5, help="Minimum confidence threshold (0.0-1.0, default: 0.5)"
     )
+    parser.add_argument("--max-per-file", type=int, default=10, help="Maximum examples per file (default: 10)")
+    parser.add_argument("--json", action="store_true", help="Output JSON format")
+    parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
     parser.add_argument(
-        '--file',
-        help='Single test file to analyze'
-    )
-    parser.add_argument(
-        '--language',
-        help='Filter by programming language (python, javascript, etc.)'
-    )
-    parser.add_argument(
-        '--min-confidence',
-        type=float,
-        default=0.5,
-        help='Minimum confidence threshold (0.0-1.0, default: 0.5)'
-    )
-    parser.add_argument(
-        '--max-per-file',
-        type=int,
-        default=10,
-        help='Maximum examples per file (default: 10)'
-    )
-    parser.add_argument(
-        '--json',
-        action='store_true',
-        help='Output JSON format'
-    )
-    parser.add_argument(
-        '--markdown',
-        action='store_true',
-        help='Output Markdown format'
-    )
-    parser.add_argument(
-        '--recursive',
-        action='store_true',
-        default=True,
-        help='Search directory recursively (default: True)'
+        "--recursive", action="store_true", default=True, help="Search directory recursively (default: True)"
     )
 
     args = parser.parse_args()
@@ -1064,9 +1003,7 @@ Examples:
     # Create extractor
     languages = [args.language] if args.language else None
     extractor = TestExampleExtractor(
-        min_confidence=args.min_confidence,
-        max_per_file=args.max_per_file,
-        languages=languages
+        min_confidence=args.min_confidence, max_per_file=args.max_per_file, languages=languages
     )
 
     # Extract examples
@@ -1074,10 +1011,7 @@ Examples:
         examples = extractor.extract_from_file(Path(args.file))
         report = extractor._create_report(examples, file_path=args.file)
     else:
-        report = extractor.extract_from_directory(
-            Path(args.directory),
-            recursive=args.recursive
-        )
+        report = extractor.extract_from_directory(Path(args.directory), recursive=args.recursive)
 
     # Output results
     if args.json:
@@ -1086,19 +1020,19 @@ Examples:
         print(report.to_markdown())
     else:
         # Human-readable summary
-        print(f"\nTest Example Extraction Results")
-        print(f"=" * 50)
+        print("\nTest Example Extraction Results")
+        print("=" * 50)
         print(f"Total Examples: {report.total_examples}")
         print(f"High Value (confidence > 0.7): {report.high_value_count}")
         print(f"Average Complexity: {report.avg_complexity:.2f}")
-        print(f"\nExamples by Category:")
+        print("\nExamples by Category:")
         for category, count in sorted(report.examples_by_category.items()):
             print(f"  {category}: {count}")
-        print(f"\nExamples by Language:")
+        print("\nExamples by Language:")
         for language, count in sorted(report.examples_by_language.items()):
             print(f"  {language}: {count}")
-        print(f"\nUse --json or --markdown for detailed output")
+        print("\nUse --json or --markdown for detailed output")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

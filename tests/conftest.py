@@ -6,6 +6,7 @@ Checks that the skill_seekers package is installed before running tests.
 """
 
 import sys
+
 import pytest
 
 

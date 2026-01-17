@@ -16,6 +16,7 @@ Run with: pytest tests/test_swift_detection.py -v
 
 import pytest
 from bs4 import BeautifulSoup
+
 from skill_seekers.cli.language_detector import LanguageDetector
 
 
@@ -25,30 +26,30 @@ class TestSwiftCSSClassDetection:
     def test_language_swift_class(self):
         """Test language-swift CSS class"""
         detector = LanguageDetector()
-        classes = ['language-swift', 'highlight']
-        assert detector.extract_language_from_classes(classes) == 'swift'
+        classes = ["language-swift", "highlight"]
+        assert detector.extract_language_from_classes(classes) == "swift"
 
     def test_lang_swift_class(self):
         """Test lang-swift CSS class"""
         detector = LanguageDetector()
-        classes = ['lang-swift', 'code']
-        assert detector.extract_language_from_classes(classes) == 'swift'
+        classes = ["lang-swift", "code"]
+        assert detector.extract_language_from_classes(classes) == "swift"
 
     def test_bare_swift_class(self):
         """Test bare 'swift' class name"""
         detector = LanguageDetector()
-        classes = ['swift', 'highlight']
-        assert detector.extract_language_from_classes(classes) == 'swift'
+        classes = ["swift", "highlight"]
+        assert detector.extract_language_from_classes(classes) == "swift"
 
     def test_detect_from_html_swift_class(self):
         """Test HTML element with Swift CSS class"""
         detector = LanguageDetector()
         html = '<code class="language-swift">let x = 5</code>'
-        soup = BeautifulSoup(html, 'html.parser')
-        elem = soup.find('code')
+        soup = BeautifulSoup(html, "html.parser")
+        elem = soup.find("code")
 
-        lang, confidence = detector.detect_from_html(elem, 'let x = 5')
-        assert lang == 'swift'
+        lang, confidence = detector.detect_from_html(elem, "let x = 5")
+        assert lang == "swift"
         assert confidence == 1.0  # CSS class = high confidence
 
 
@@ -64,7 +65,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_struct_declaration(self):
@@ -77,7 +78,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.6
 
     def test_protocol_declaration(self):
@@ -90,7 +91,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_extension_declaration(self):
@@ -104,7 +105,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_guard_let_unwrapping(self):
@@ -119,7 +120,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_if_let_unwrapping(self):
@@ -131,7 +132,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_closure_syntax(self):
@@ -143,7 +144,7 @@ class TestPureSwiftDetection:
         let filtered = numbers.filter { (num) in num > 2 }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_error_handling(self):
@@ -164,7 +165,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_async_await(self):
@@ -183,7 +184,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_actor_declaration(self):
@@ -203,7 +204,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.6
 
     def test_generics_with_constraints(self):
@@ -218,7 +219,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.6
 
     def test_enum_with_associated_values(self):
@@ -237,7 +238,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4  # Enums without strong Swift keywords have lower confidence
 
     def test_opaque_types(self):
@@ -249,7 +250,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_property_observers(self):
@@ -268,7 +269,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_memory_management_weak(self):
@@ -285,7 +286,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_memory_management_weak_self_in_closure(self):
@@ -302,7 +303,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_memory_management_unowned(self):
@@ -318,7 +319,7 @@ class TestPureSwiftDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
     def test_string_interpolation(self):
@@ -331,7 +332,7 @@ class TestPureSwiftDetection:
         print("Current value: \\(someVar)")
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4
 
 
@@ -360,7 +361,7 @@ class TestUIKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_iboutlet_ibaction(self):
@@ -378,7 +379,7 @@ class TestUIKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_tableview_delegate(self):
@@ -398,7 +399,7 @@ class TestUIKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_auto_layout_constraints(self):
@@ -416,7 +417,7 @@ class TestUIKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_dispatch_queue(self):
@@ -434,7 +435,7 @@ class TestUIKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_codable_json(self):
@@ -457,7 +458,7 @@ class TestUIKitDetection:
         let user = try decoder.decode(User.self, from: jsonData)
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
 
@@ -486,7 +487,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_nswindow_controller(self):
@@ -503,7 +504,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_nstableview_delegate(self):
@@ -523,7 +524,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_nsapplication_delegate(self):
@@ -544,7 +545,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_nsmenu_toolbar(self):
@@ -561,7 +562,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_nspanel_dialogs(self):
@@ -590,7 +591,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_nsstatusbar_menubar_extra(self):
@@ -611,7 +612,7 @@ class TestAppKitDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
 
@@ -631,7 +632,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_state_binding(self):
@@ -652,7 +653,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_observable_object(self):
@@ -673,7 +674,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_environment_object(self):
@@ -692,7 +693,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_swiftui_stacks(self):
@@ -716,7 +717,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_swiftui_navigation(self):
@@ -735,7 +736,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_swiftui_modifiers(self):
@@ -754,7 +755,7 @@ class TestSwiftUIDetection:
             }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_swiftui_list_foreach(self):
@@ -774,7 +775,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_swiftui_sheet_alert(self):
@@ -797,7 +798,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_swiftui_macos_window_group(self):
@@ -825,7 +826,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.95
 
     def test_swiftui_navigation_split_view(self):
@@ -854,7 +855,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_swift_observation(self):
@@ -880,7 +881,7 @@ class TestSwiftUIDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
 
@@ -916,7 +917,7 @@ class TestCombineDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
     def test_combine_subjects(self):
@@ -939,7 +940,7 @@ class TestCombineDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.9
 
 
@@ -953,7 +954,7 @@ class TestSwiftConfidenceScoring:
         # Use guard let which is Swift-unique and gets high confidence
         code = "guard let value = optional else { return }"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5  # guard let is very Swift-specific
 
     def test_high_confidence_full_app(self):
@@ -997,7 +998,7 @@ class TestSwiftConfidenceScoring:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.95
 
     def test_swift_vs_similar_languages(self):
@@ -1024,7 +1025,7 @@ class TestSwiftConfidenceScoring:
         }
         """
         lang, _ = detector.detect_from_code(go_code)
-        assert lang == 'go', f"Expected 'go', got '{lang}'"
+        assert lang == "go", f"Expected 'go', got '{lang}'"
 
         # Rust code (also uses 'struct', 'fn')
         rust_code = """
@@ -1034,7 +1035,7 @@ class TestSwiftConfidenceScoring:
         }
         """
         lang, _ = detector.detect_from_code(rust_code)
-        assert lang == 'rust', f"Expected 'rust', got '{lang}'"
+        assert lang == "rust", f"Expected 'rust', got '{lang}'"
 
         # TypeScript code (similar type annotation syntax with ':')
         ts_code = """
@@ -1050,7 +1051,7 @@ class TestSwiftConfidenceScoring:
         export type Status = 'active' | 'inactive';
         """
         lang, _ = detector.detect_from_code(ts_code)
-        assert lang == 'typescript', f"Expected 'typescript', got '{lang}'"
+        assert lang == "typescript", f"Expected 'typescript', got '{lang}'"
 
 
 class TestSwiftEdgeCases:
@@ -1061,7 +1062,7 @@ class TestSwiftEdgeCases:
         detector = LanguageDetector()
         code = "guard let x = optional else { return }"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.3
 
     def test_swift_import_swiftui_only(self):
@@ -1069,7 +1070,7 @@ class TestSwiftEdgeCases:
         detector = LanguageDetector()
         code = "import SwiftUI"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4
 
     def test_swift_import_uikit_only(self):
@@ -1077,7 +1078,7 @@ class TestSwiftEdgeCases:
         detector = LanguageDetector()
         code = "import UIKit"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4
 
     def test_swift_import_appkit_only(self):
@@ -1085,7 +1086,7 @@ class TestSwiftEdgeCases:
         detector = LanguageDetector()
         code = "import AppKit"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4
 
     def test_swift_with_comments(self):
@@ -1103,7 +1104,7 @@ class TestSwiftEdgeCases:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_swift_core_data(self):
@@ -1126,7 +1127,7 @@ class TestSwiftEdgeCases:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
     def test_swift_data(self):
@@ -1150,7 +1151,7 @@ class TestSwiftEdgeCases:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.8
 
 
@@ -1162,7 +1163,7 @@ class TestFoundationModelsDetection:
         detector = LanguageDetector()
         code = "import FoundationModels"
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.4
 
     def test_generable_macro(self):
@@ -1179,7 +1180,7 @@ class TestFoundationModelsDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_language_model_session(self):
@@ -1193,7 +1194,7 @@ class TestFoundationModelsDetection:
         print(response)
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_system_language_model(self):
@@ -1209,7 +1210,7 @@ class TestFoundationModelsDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_streaming_response(self):
@@ -1222,7 +1223,7 @@ class TestFoundationModelsDetection:
         }
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.7
 
     def test_guided_generation(self):
@@ -1236,7 +1237,7 @@ class TestFoundationModelsDetection:
         print(response.title)
         """
         lang, confidence = detector.detect_from_code(code)
-        assert lang == 'swift'
+        assert lang == "swift"
         assert confidence >= 0.5
 
 
@@ -1249,8 +1250,8 @@ class TestSwiftErrorHandling:
 
         # Invalid weight (too high)
         invalid_patterns = {
-            'test_lang': [
-                (r'valid_pattern', 10),  # Weight must be 1-5
+            "test_lang": [
+                (r"valid_pattern", 10),  # Weight must be 1-5
             ]
         }
 
@@ -1263,7 +1264,7 @@ class TestSwiftErrorHandling:
 
         # Invalid pattern (not a string)
         invalid_patterns = {
-            'test_lang': [
+            "test_lang": [
                 (12345, 5),  # Pattern must be string
             ]
         }
@@ -1277,7 +1278,7 @@ class TestSwiftErrorHandling:
 
         # Invalid structure (not a tuple)
         invalid_patterns = {
-            'test_lang': [
+            "test_lang": [
                 "not_a_tuple",  # Should be (pattern, weight) tuple
             ]
         }
@@ -1287,12 +1288,12 @@ class TestSwiftErrorHandling:
 
     def test_malformed_regex_patterns_are_skipped(self):
         """Test that invalid regex patterns are logged and skipped without crashing"""
-        from skill_seekers.cli.language_detector import LanguageDetector
-        import logging
         from unittest.mock import patch
 
+        from skill_seekers.cli.language_detector import LanguageDetector
+
         # Create detector - malformed patterns should be skipped during compilation
-        with patch('skill_seekers.cli.language_detector.logger') as mock_logger:
+        with patch("skill_seekers.cli.language_detector.logger") as mock_logger:
             # Inject a language with a malformed pattern
             import skill_seekers.cli.language_detector as ld_module
 
@@ -1301,19 +1302,18 @@ class TestSwiftErrorHandling:
 
             try:
                 # Add malformed pattern
-                ld_module.LANGUAGE_PATTERNS['test_malformed'] = [
-                    (r'(?P<invalid)', 5),  # Invalid regex group
-                    (r'valid_pattern', 3),  # Valid pattern
+                ld_module.LANGUAGE_PATTERNS["test_malformed"] = [
+                    (r"(?P<invalid)", 5),  # Invalid regex group
+                    (r"valid_pattern", 3),  # Valid pattern
                 ]
 
                 # Create new detector - should skip malformed pattern
                 detector = LanguageDetector()
 
                 # Verify error was logged
-                assert any(
-                    'Invalid regex pattern' in str(call)
-                    for call in mock_logger.error.call_args_list
-                ), "Expected error log for malformed pattern"
+                assert any("Invalid regex pattern" in str(call) for call in mock_logger.error.call_args_list), (
+                    "Expected error log for malformed pattern"
+                )
 
             finally:
                 # Restore original patterns
@@ -1326,11 +1326,13 @@ class TestSwiftErrorHandling:
 
         # Remove module from cache
         for mod in list(sys.modules.keys()):
-            if 'skill_seekers.cli' in mod:
+            if "skill_seekers.cli" in mod:
                 del sys.modules[mod]
 
         # Mock empty SWIFT_PATTERNS during import
-        with patch.dict('sys.modules', {'skill_seekers.cli.swift_patterns': type('MockModule', (), {'SWIFT_PATTERNS': {}})}):
+        with patch.dict(
+            "sys.modules", {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})}
+        ):
             from skill_seekers.cli.language_detector import LanguageDetector
 
             # Create detector - should handle empty patterns gracefully
@@ -1346,11 +1348,11 @@ class TestSwiftErrorHandling:
 
     def test_non_string_pattern_handled_during_compilation(self):
         """Test that non-string patterns are caught during compilation"""
-        from skill_seekers.cli.language_detector import LanguageDetector
         from unittest.mock import patch
-        import logging
 
-        with patch('skill_seekers.cli.language_detector.logger') as mock_logger:
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        with patch("skill_seekers.cli.language_detector.logger") as mock_logger:
             import skill_seekers.cli.language_detector as ld_module
 
             # Save original
@@ -1358,7 +1360,7 @@ class TestSwiftErrorHandling:
 
             try:
                 # Add non-string pattern
-                ld_module.LANGUAGE_PATTERNS['test_nonstring'] = [
+                ld_module.LANGUAGE_PATTERNS["test_nonstring"] = [
                     (None, 5),  # None instead of string
                 ]
 
@@ -1366,10 +1368,9 @@ class TestSwiftErrorHandling:
                 detector = LanguageDetector()
 
                 # Verify TypeError was logged
-                assert any(
-                    'not a string' in str(call)
-                    for call in mock_logger.error.call_args_list
-                ), "Expected error log for non-string pattern"
+                assert any("not a string" in str(call) for call in mock_logger.error.call_args_list), (
+                    "Expected error log for non-string pattern"
+                )
 
             finally:
                 ld_module.LANGUAGE_PATTERNS = original
@@ -1381,16 +1382,17 @@ class TestSwiftErrorHandling:
         # but we can verify the try/except block exists in the code
 
         import inspect
+
         from skill_seekers.cli import swift_patterns
 
         # Read the source code of the module
         source = inspect.getsource(swift_patterns)
 
         # Verify error handling is present
-        assert 'try:' in source, "Expected try block for validation"
-        assert '_validate_patterns(SWIFT_PATTERNS)' in source, "Expected validation call"
-        assert 'except ValueError' in source, "Expected ValueError handling"
-        assert 'SWIFT_PATTERNS = {}' in source, "Expected pattern clearing on error"
+        assert "try:" in source, "Expected try block for validation"
+        assert "_validate_patterns(SWIFT_PATTERNS)" in source, "Expected validation call"
+        assert "except ValueError" in source, "Expected ValueError handling"
+        assert "SWIFT_PATTERNS = {}" in source, "Expected pattern clearing on error"
 
 
 if __name__ == "__main__":

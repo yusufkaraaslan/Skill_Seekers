@@ -10,9 +10,8 @@ Usage:
     skill-seekers enhance-status output/react/ --json
 """
 
-import os
-import sys
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -32,7 +31,7 @@ def read_status(skill_dir):
         return None
 
     try:
-        return json.loads(status_file.read_text(encoding='utf-8'))
+        return json.loads(status_file.read_text(encoding="utf-8"))
     except Exception as e:
         return {"error": f"Failed to read status: {e}"}
 
@@ -53,26 +52,21 @@ def format_status(status):
         return f"❌ {status['error']}"
 
     # Status emoji mapping
-    status_emojis = {
-        "pending": "⏳",
-        "running": "🔄",
-        "completed": "✅",
-        "failed": "❌"
-    }
+    status_emojis = {"pending": "⏳", "running": "🔄", "completed": "✅", "failed": "❌"}
 
-    emoji = status_emojis.get(status.get('status', ''), '❓')
-    status_text = status.get('status', 'unknown').upper()
-    message = status.get('message', '')
-    progress = status.get('progress', 0.0)
-    timestamp = status.get('timestamp', 'unknown')
-    error = status.get('error')
-    pid = status.get('pid')
+    emoji = status_emojis.get(status.get("status", ""), "❓")
+    status_text = status.get("status", "unknown").upper()
+    message = status.get("message", "")
+    progress = status.get("progress", 0.0)
+    timestamp = status.get("timestamp", "unknown")
+    error = status.get("error")
+    pid = status.get("pid")
 
     # Build output
     lines = []
-    lines.append(f"\n{'='*60}")
+    lines.append(f"\n{'=' * 60}")
     lines.append(f"ENHANCEMENT STATUS: {status_text}")
-    lines.append(f"{'='*60}\n")
+    lines.append(f"{'=' * 60}\n")
 
     lines.append(f"{emoji} Status: {status_text}")
 
@@ -81,7 +75,7 @@ def format_status(status):
 
     if progress > 0:
         progress_pct = int(progress * 100)
-        progress_bar = '█' * (progress_pct // 5) + '░' * (20 - progress_pct // 5)
+        progress_bar = "█" * (progress_pct // 5) + "░" * (20 - progress_pct // 5)
         lines.append(f"   Progress: [{progress_bar}] {progress_pct}%")
 
     if pid:
@@ -94,7 +88,7 @@ def format_status(status):
 
     lines.append("")
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def watch_status(skill_dir, interval=2):
@@ -106,7 +100,7 @@ def watch_status(skill_dir, interval=2):
     """
     print(f"👀 Watching enhancement status for: {skill_dir}")
     print(f"   Update interval: {interval} seconds")
-    print(f"   Press Ctrl+C to stop\n")
+    print("   Press Ctrl+C to stop\n")
 
     try:
         last_status = None
@@ -123,7 +117,7 @@ def watch_status(skill_dir, interval=2):
                 last_status = status
 
                 # Exit if completed or failed
-                if status and status.get('status') in ['completed', 'failed']:
+                if status and status.get("status") in ["completed", "failed"]:
                     break
 
             time.sleep(interval)
@@ -149,32 +143,18 @@ Examples:
 
   # Get JSON output (for scripts)
   skill-seekers enhance-status output/react/ --json
-"""
+""",
     )
 
-    parser.add_argument(
-        'skill_directory',
-        help='Path to skill directory (e.g., output/react/)'
-    )
+    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
 
     parser.add_argument(
-        '--watch', '-w',
-        action='store_true',
-        help='Watch status in real-time (updates every 2 seconds)'
+        "--watch", "-w", action="store_true", help="Watch status in real-time (updates every 2 seconds)"
     )
 
-    parser.add_argument(
-        '--json',
-        action='store_true',
-        help='Output raw JSON (for scripting)'
-    )
+    parser.add_argument("--json", action="store_true", help="Output raw JSON (for scripting)")
 
-    parser.add_argument(
-        '--interval',
-        type=int,
-        default=2,
-        help='Watch update interval in seconds (default: 2)'
-    )
+    parser.add_argument("--interval", type=int, default=2, help="Watch update interval in seconds (default: 2)")
 
     args = parser.parse_args()
 
@@ -197,9 +177,9 @@ Examples:
     # Exit code based on status
     if not status:
         sys.exit(2)  # No status found
-    elif status.get('status') == 'completed':
+    elif status.get("status") == "completed":
         sys.exit(0)  # Success
-    elif status.get('status') == 'failed':
+    elif status.get("status") == "failed":
         sys.exit(1)  # Failed
     else:
         sys.exit(0)  # In progress

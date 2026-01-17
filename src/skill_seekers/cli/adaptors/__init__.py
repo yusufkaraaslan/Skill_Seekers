@@ -33,17 +33,17 @@ except ImportError:
 
 
 # Registry of available adaptors
-ADAPTORS: Dict[str, Type[SkillAdaptor]] = {}
+ADAPTORS: dict[str, type[SkillAdaptor]] = {}
 
 # Register adaptors that are implemented
 if ClaudeAdaptor:
-    ADAPTORS['claude'] = ClaudeAdaptor
+    ADAPTORS["claude"] = ClaudeAdaptor
 if GeminiAdaptor:
-    ADAPTORS['gemini'] = GeminiAdaptor
+    ADAPTORS["gemini"] = GeminiAdaptor
 if OpenAIAdaptor:
-    ADAPTORS['openai'] = OpenAIAdaptor
+    ADAPTORS["openai"] = OpenAIAdaptor
 if MarkdownAdaptor:
-    ADAPTORS['markdown'] = MarkdownAdaptor
+    ADAPTORS["markdown"] = MarkdownAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
@@ -65,15 +65,11 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
         >>> adaptor = get_adaptor('gemini', {'api_version': 'v1beta'})
     """
     if platform not in ADAPTORS:
-        available = ', '.join(ADAPTORS.keys())
+        available = ", ".join(ADAPTORS.keys())
         if not ADAPTORS:
-            raise ValueError(
-                f"No adaptors are currently implemented. "
-                f"Platform '{platform}' is not available."
-            )
+            raise ValueError(f"No adaptors are currently implemented. Platform '{platform}' is not available.")
         raise ValueError(
-            f"Platform '{platform}' is not supported or not yet implemented. "
-            f"Available platforms: {available}"
+            f"Platform '{platform}' is not supported or not yet implemented. Available platforms: {available}"
         )
 
     adaptor_class = ADAPTORS[platform]
@@ -115,10 +111,10 @@ def is_platform_available(platform: str) -> bool:
 
 # Export public interface
 __all__ = [
-    'SkillAdaptor',
-    'SkillMetadata',
-    'get_adaptor',
-    'list_platforms',
-    'is_platform_available',
-    'ADAPTORS',
+    "SkillAdaptor",
+    "SkillMetadata",
+    "get_adaptor",
+    "list_platforms",
+    "is_platform_available",
+    "ADAPTORS",
 ]

@@ -13,10 +13,9 @@ Supported agents:
 """
 
 import json
-import os
 import platform
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
 
 
 class AgentDetector:
@@ -30,8 +29,8 @@ class AgentDetector:
             "config_paths": {
                 "Linux": "~/.config/claude-code/mcp.json",
                 "Darwin": "~/Library/Application Support/Claude/mcp.json",
-                "Windows": "~\\AppData\\Roaming\\Claude\\mcp.json"
-            }
+                "Windows": "~\\AppData\\Roaming\\Claude\\mcp.json",
+            },
         },
         "cursor": {
             "name": "Cursor",
@@ -39,8 +38,8 @@ class AgentDetector:
             "config_paths": {
                 "Linux": "~/.cursor/mcp_settings.json",
                 "Darwin": "~/Library/Application Support/Cursor/mcp_settings.json",
-                "Windows": "~\\AppData\\Roaming\\Cursor\\mcp_settings.json"
-            }
+                "Windows": "~\\AppData\\Roaming\\Cursor\\mcp_settings.json",
+            },
         },
         "windsurf": {
             "name": "Windsurf",
@@ -48,8 +47,8 @@ class AgentDetector:
             "config_paths": {
                 "Linux": "~/.windsurf/mcp_config.json",
                 "Darwin": "~/Library/Application Support/Windsurf/mcp_config.json",
-                "Windows": "~\\AppData\\Roaming\\Windsurf\\mcp_config.json"
-            }
+                "Windows": "~\\AppData\\Roaming\\Windsurf\\mcp_config.json",
+            },
         },
         "vscode-cline": {
             "name": "VS Code + Cline",
@@ -57,8 +56,8 @@ class AgentDetector:
             "config_paths": {
                 "Linux": "~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
                 "Darwin": "~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
-                "Windows": "~\\AppData\\Roaming\\Code\\User\\globalStorage\\saoudrizwan.claude-dev\\settings\\cline_mcp_settings.json"
-            }
+                "Windows": "~\\AppData\\Roaming\\Code\\User\\globalStorage\\saoudrizwan.claude-dev\\settings\\cline_mcp_settings.json",
+            },
         },
         "intellij": {
             "name": "IntelliJ IDEA",
@@ -66,16 +65,16 @@ class AgentDetector:
             "config_paths": {
                 "Linux": "~/.config/JetBrains/IntelliJIdea2024.3/mcp.xml",
                 "Darwin": "~/Library/Application Support/JetBrains/IntelliJIdea2024.3/mcp.xml",
-                "Windows": "~\\AppData\\Roaming\\JetBrains\\IntelliJIdea2024.3\\mcp.xml"
-            }
-        }
+                "Windows": "~\\AppData\\Roaming\\JetBrains\\IntelliJIdea2024.3\\mcp.xml",
+            },
+        },
     }
 
     def __init__(self):
         """Initialize the agent detector."""
         self.system = platform.system()
 
-    def detect_agents(self) -> List[Dict[str, str]]:
+    def detect_agents(self) -> list[dict[str, str]]:
         """
         Detect installed AI coding agents on the system.
 
@@ -88,16 +87,18 @@ class AgentDetector:
         for agent_id, config in self.AGENT_CONFIG.items():
             config_path = self._get_config_path(agent_id)
             if config_path:
-                detected.append({
-                    "agent": agent_id,
-                    "name": config["name"],
-                    "config_path": config_path,
-                    "transport": config["transport"]
-                })
+                detected.append(
+                    {
+                        "agent": agent_id,
+                        "name": config["name"],
+                        "config_path": config_path,
+                        "transport": config["transport"],
+                    }
+                )
 
         return detected
 
-    def _get_config_path(self, agent_id: str) -> Optional[str]:
+    def _get_config_path(self, agent_id: str) -> str | None:
         """
         Get the configuration path for a specific agent.
 
@@ -123,7 +124,7 @@ class AgentDetector:
 
         return None
 
-    def get_transport_type(self, agent_id: str) -> Optional[str]:
+    def get_transport_type(self, agent_id: str) -> str | None:
         """
         Get the transport type for a specific agent.
 
@@ -137,12 +138,7 @@ class AgentDetector:
             return None
         return self.AGENT_CONFIG[agent_id]["transport"]
 
-    def generate_config(
-        self,
-        agent_id: str,
-        server_command: str,
-        http_port: Optional[int] = 3000
-    ) -> Optional[str]:
+    def generate_config(self, agent_id: str, server_command: str, http_port: int | None = 3000) -> str | None:
         """
         Generate MCP configuration for a specific agent.
 
@@ -181,14 +177,7 @@ class AgentDetector:
         command = parts[0] if parts else "skill-seekers"
         args = parts[1:] if len(parts) > 1 else ["mcp"]
 
-        config = {
-            "mcpServers": {
-                "skill-seeker": {
-                    "command": command,
-                    "args": args
-                }
-            }
-        }
+        config = {"mcpServers": {"skill-seeker": {"command": command, "args": args}}}
 
         return json.dumps(config, indent=2)
 
@@ -202,13 +191,7 @@ class AgentDetector:
         Returns:
             JSON configuration string
         """
-        config = {
-            "mcpServers": {
-                "skill-seeker": {
-                    "url": f"http://localhost:{http_port}"
-                }
-            }
-        }
+        config = {"mcpServers": {"skill-seeker": {"url": f"http://localhost:{http_port}"}}}
 
         return json.dumps(config, indent=2)
 
@@ -237,7 +220,7 @@ class AgentDetector:
 </application>"""
         return xml
 
-    def get_all_config_paths(self) -> Dict[str, str]:
+    def get_all_config_paths(self) -> dict[str, str]:
         """
         Get all possible configuration paths for the current system.
 
@@ -263,7 +246,7 @@ class AgentDetector:
         """
         return self._get_config_path(agent_id) is not None
 
-    def get_agent_info(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get_agent_info(self, agent_id: str) -> dict[str, Any] | None:
         """
         Get detailed information about a specific agent.
 
@@ -284,11 +267,11 @@ class AgentDetector:
             "name": config["name"],
             "transport": config["transport"],
             "config_path": config_path,
-            "installed": config_path is not None
+            "installed": config_path is not None,
         }
 
 
-def detect_agents() -> List[Dict[str, str]]:
+def detect_agents() -> list[dict[str, str]]:
     """
     Convenience function to detect installed agents.
 
@@ -299,11 +282,7 @@ def detect_agents() -> List[Dict[str, str]]:
     return detector.detect_agents()
 
 
-def generate_config(
-    agent_name: str,
-    server_command: str = "skill-seekers mcp",
-    http_port: int = 3000
-) -> Optional[str]:
+def generate_config(agent_name: str, server_command: str = "skill-seekers mcp", http_port: int = 3000) -> str | None:
     """
     Convenience function to generate config for a specific agent.
 
@@ -319,7 +298,7 @@ def generate_config(
     return detector.generate_config(agent_name, server_command, http_port)
 
 
-def get_transport_type(agent_name: str) -> Optional[str]:
+def get_transport_type(agent_name: str) -> str | None:
     """
     Convenience function to get transport type for an agent.
 

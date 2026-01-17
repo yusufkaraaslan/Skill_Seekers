@@ -36,21 +36,18 @@ Combined with unit tests: 24 total tests (23 passed, 1 skipped)
 Run with: pytest tests/test_install_skill.py tests/test_install_skill_e2e.py -v
 """
 
-import asyncio
 import json
-import os
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 # Defensive import for MCP package (may not be installed in all environments)
 try:
     from mcp.types import TextContent
+
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
@@ -71,25 +68,15 @@ class TestInstallSkillE2E:
             "name": "test-e2e",
             "description": "Test skill for E2E testing",
             "base_url": "https://example.com/docs/",
-            "selectors": {
-                "main_content": "article",
-                "title": "title",
-                "code_blocks": "pre"
-            },
-            "url_patterns": {
-                "include": ["/docs/"],
-                "exclude": ["/search", "/404"]
-            },
-            "categories": {
-                "getting_started": ["intro", "start"],
-                "api": ["api", "reference"]
-            },
+            "selectors": {"main_content": "article", "title": "title", "code_blocks": "pre"},
+            "url_patterns": {"include": ["/docs/"], "exclude": ["/search", "/404"]},
+            "categories": {"getting_started": ["intro", "start"], "api": ["api", "reference"]},
             "rate_limit": 0.1,
-            "max_pages": 5  # Keep it small for fast testing
+            "max_pages": 5,  # Keep it small for fast testing
         }
 
         config_path = tmp_path / "test-e2e.json"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
         return str(config_path)
@@ -112,34 +99,33 @@ class TestInstallSkillE2E:
         """E2E test: config_path mode, no upload"""
 
         # Mock the subprocess calls for scraping and enhancement
-        with patch('skill_seekers.mcp.server.scrape_docs_tool') as mock_scrape, \
-             patch('skill_seekers.mcp.server.run_subprocess_with_streaming') as mock_enhance, \
-             patch('skill_seekers.mcp.server.package_skill_tool') as mock_package:
-
+        with (
+            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.server.package_skill_tool") as mock_package,
+        ):
             # Mock scrape_docs to return success
-            mock_scrape.return_value = [TextContent(
-                type="text",
-                text=f"✅ Scraping complete\n\nSkill built at: {mock_scrape_output}"
-            )]
+            mock_scrape.return_value = [
+                TextContent(type="text", text=f"✅ Scraping complete\n\nSkill built at: {mock_scrape_output}")
+            ]
 
             # Mock enhancement subprocess (success)
             mock_enhance.return_value = ("✅ Enhancement complete", "", 0)
 
             # Mock package_skill to return success
             zip_path = str(tmp_path / "output" / "test-e2e.zip")
-            mock_package.return_value = [TextContent(
-                type="text",
-                text=f"✅ Package complete\n\nSaved to: {zip_path}"
-            )]
+            mock_package.return_value = [TextContent(type="text", text=f"✅ Package complete\n\nSaved to: {zip_path}")]
 
             # Run the tool
-            result = await install_skill_tool({
-                "config_path": test_config_file,
-                "destination": str(tmp_path / "output"),
-                "auto_upload": False,  # Skip upload
-                "unlimited": False,
-                "dry_run": False
-            })
+            result = await install_skill_tool(
+                {
+                    "config_path": test_config_file,
+                    "destination": str(tmp_path / "output"),
+                    "auto_upload": False,  # Skip upload
+                    "unlimited": False,
+                    "dry_run": False,
+                }
+            )
 
             # Verify output
             assert len(result) == 1
@@ -170,19 +156,19 @@ class TestInstallSkillE2E:
     async def test_e2e_with_config_name_fetch(self, tmp_path):
         """E2E test: config_name mode with fetch phase"""
 
-        with patch('skill_seekers.mcp.server.fetch_config_tool') as mock_fetch, \
-             patch('skill_seekers.mcp.server.scrape_docs_tool') as mock_scrape, \
-             patch('skill_seekers.mcp.server.run_subprocess_with_streaming') as mock_enhance, \
-             patch('skill_seekers.mcp.server.package_skill_tool') as mock_package, \
-             patch('builtins.open', create=True) as mock_file_open, \
-             patch('os.environ.get') as mock_env:
-
+        with (
+            patch("skill_seekers.mcp.server.fetch_config_tool") as mock_fetch,
+            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.server.package_skill_tool") as mock_package,
+            patch("builtins.open", create=True) as mock_file_open,
+            patch("os.environ.get") as mock_env,
+        ):
             # Mock fetch_config to return success
             config_path = str(tmp_path / "configs" / "react.json")
-            mock_fetch.return_value = [TextContent(
-                type="text",
-                text=f"✅ Config fetched successfully\n\nConfig saved to: {config_path}"
-            )]
+            mock_fetch.return_value = [
+                TextContent(type="text", text=f"✅ Config fetched successfully\n\nConfig saved to: {config_path}")
+            ]
 
             # Mock config file read
             mock_config = MagicMock()
@@ -191,32 +177,30 @@ class TestInstallSkillE2E:
 
             # Mock scrape_docs
             skill_dir = str(tmp_path / "output" / "react")
-            mock_scrape.return_value = [TextContent(
-                type="text",
-                text=f"✅ Scraping complete\n\nSkill built at: {skill_dir}"
-            )]
+            mock_scrape.return_value = [
+                TextContent(type="text", text=f"✅ Scraping complete\n\nSkill built at: {skill_dir}")
+            ]
 
             # Mock enhancement
             mock_enhance.return_value = ("✅ Enhancement complete", "", 0)
 
             # Mock package
             zip_path = str(tmp_path / "output" / "react.zip")
-            mock_package.return_value = [TextContent(
-                type="text",
-                text=f"✅ Package complete\n\nSaved to: {zip_path}"
-            )]
+            mock_package.return_value = [TextContent(type="text", text=f"✅ Package complete\n\nSaved to: {zip_path}")]
 
             # Mock env (no API key - should skip upload)
             mock_env.return_value = ""
 
             # Run the tool
-            result = await install_skill_tool({
-                "config_name": "react",
-                "destination": str(tmp_path / "output"),
-                "auto_upload": True,  # Would upload if key present
-                "unlimited": False,
-                "dry_run": False
-            })
+            result = await install_skill_tool(
+                {
+                    "config_name": "react",
+                    "destination": str(tmp_path / "output"),
+                    "auto_upload": True,  # Would upload if key present
+                    "unlimited": False,
+                    "dry_run": False,
+                }
+            )
 
             # Verify output
             output = result[0].text
@@ -238,11 +222,7 @@ class TestInstallSkillE2E:
     async def test_e2e_dry_run_mode(self, test_config_file):
         """E2E test: dry-run mode (no actual execution)"""
 
-        result = await install_skill_tool({
-            "config_path": test_config_file,
-            "auto_upload": False,
-            "dry_run": True
-        })
+        result = await install_skill_tool({"config_path": test_config_file, "auto_upload": False, "dry_run": True})
 
         output = result[0].text
 
@@ -263,18 +243,11 @@ class TestInstallSkillE2E:
     async def test_e2e_error_handling_scrape_failure(self, test_config_file):
         """E2E test: error handling when scrape fails"""
 
-        with patch('skill_seekers.mcp.server.scrape_docs_tool') as mock_scrape:
+        with patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape:
             # Mock scrape failure
-            mock_scrape.return_value = [TextContent(
-                type="text",
-                text="❌ Scraping failed: Network timeout"
-            )]
+            mock_scrape.return_value = [TextContent(type="text", text="❌ Scraping failed: Network timeout")]
 
-            result = await install_skill_tool({
-                "config_path": test_config_file,
-                "auto_upload": False,
-                "dry_run": False
-            })
+            result = await install_skill_tool({"config_path": test_config_file, "auto_upload": False, "dry_run": False})
 
             output = result[0].text
 
@@ -286,23 +259,19 @@ class TestInstallSkillE2E:
     async def test_e2e_error_handling_enhancement_failure(self, test_config_file, mock_scrape_output):
         """E2E test: error handling when enhancement fails"""
 
-        with patch('skill_seekers.mcp.server.scrape_docs_tool') as mock_scrape, \
-             patch('skill_seekers.mcp.server.run_subprocess_with_streaming') as mock_enhance:
-
+        with (
+            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
+        ):
             # Mock successful scrape
-            mock_scrape.return_value = [TextContent(
-                type="text",
-                text=f"✅ Scraping complete\n\nSkill built at: {mock_scrape_output}"
-            )]
+            mock_scrape.return_value = [
+                TextContent(type="text", text=f"✅ Scraping complete\n\nSkill built at: {mock_scrape_output}")
+            ]
 
             # Mock enhancement failure
             mock_enhance.return_value = ("", "Enhancement error: Claude not found", 1)
 
-            result = await install_skill_tool({
-                "config_path": test_config_file,
-                "auto_upload": False,
-                "dry_run": False
-            })
+            result = await install_skill_tool({"config_path": test_config_file, "auto_upload": False, "dry_run": False})
 
             output = result[0].text
 
@@ -322,22 +291,15 @@ class TestInstallSkillCLI_E2E:
             "name": "test-cli-e2e",
             "description": "Test skill for CLI E2E testing",
             "base_url": "https://example.com/docs/",
-            "selectors": {
-                "main_content": "article",
-                "title": "title",
-                "code_blocks": "pre"
-            },
-            "url_patterns": {
-                "include": ["/docs/"],
-                "exclude": []
-            },
+            "selectors": {"main_content": "article", "title": "title", "code_blocks": "pre"},
+            "url_patterns": {"include": ["/docs/"], "exclude": []},
             "categories": {},
             "rate_limit": 0.1,
-            "max_pages": 3
+            "max_pages": 3,
         }
 
         config_path = tmp_path / "test-cli-e2e.json"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
         return str(config_path)
@@ -349,11 +311,7 @@ class TestInstallSkillCLI_E2E:
         # Import and call the tool directly (more reliable than subprocess)
         from skill_seekers.mcp.server import install_skill_tool
 
-        result = await install_skill_tool({
-            "config_path": test_config_file,
-            "dry_run": True,
-            "auto_upload": False
-        })
+        result = await install_skill_tool({"config_path": test_config_file, "dry_run": True, "auto_upload": False})
 
         # Verify output
         output = result[0].text
@@ -366,9 +324,7 @@ class TestInstallSkillCLI_E2E:
 
         # Run CLI without config
         result = subprocess.run(
-            [sys.executable, "-m", "skill_seekers.cli.install_skill"],
-            capture_output=True,
-            text=True
+            [sys.executable, "-m", "skill_seekers.cli.install_skill"], capture_output=True, text=True
         )
 
         # Should fail
@@ -381,9 +337,7 @@ class TestInstallSkillCLI_E2E:
         """E2E test: CLI help command"""
 
         result = subprocess.run(
-            [sys.executable, "-m", "skill_seekers.cli.install_skill", "--help"],
-            capture_output=True,
-            text=True
+            [sys.executable, "-m", "skill_seekers.cli.install_skill", "--help"], capture_output=True, text=True
         )
 
         # Should succeed
@@ -397,36 +351,34 @@ class TestInstallSkillCLI_E2E:
         assert "--no-upload" in output
 
     @pytest.mark.asyncio
-    @patch('skill_seekers.mcp.server.scrape_docs_tool')
-    @patch('skill_seekers.mcp.server.run_subprocess_with_streaming')
-    @patch('skill_seekers.mcp.server.package_skill_tool')
+    @patch("skill_seekers.mcp.server.scrape_docs_tool")
+    @patch("skill_seekers.mcp.server.run_subprocess_with_streaming")
+    @patch("skill_seekers.mcp.server.package_skill_tool")
     async def test_cli_full_workflow_mocked(self, mock_package, mock_enhance, mock_scrape, test_config_file, tmp_path):
         """E2E test: Full CLI workflow with mocked phases (via direct call)"""
 
         # Setup mocks
         skill_dir = str(tmp_path / "output" / "test-cli-e2e")
-        mock_scrape.return_value = [TextContent(
-            type="text",
-            text=f"✅ Scraping complete\n\nSkill built at: {skill_dir}"
-        )]
+        mock_scrape.return_value = [
+            TextContent(type="text", text=f"✅ Scraping complete\n\nSkill built at: {skill_dir}")
+        ]
 
         mock_enhance.return_value = ("✅ Enhancement complete", "", 0)
 
         zip_path = str(tmp_path / "output" / "test-cli-e2e.zip")
-        mock_package.return_value = [TextContent(
-            type="text",
-            text=f"✅ Package complete\n\nSaved to: {zip_path}"
-        )]
+        mock_package.return_value = [TextContent(type="text", text=f"✅ Package complete\n\nSaved to: {zip_path}")]
 
         # Call the tool directly
         from skill_seekers.mcp.server import install_skill_tool
 
-        result = await install_skill_tool({
-            "config_path": test_config_file,
-            "destination": str(tmp_path / "output"),
-            "auto_upload": False,
-            "dry_run": False
-        })
+        result = await install_skill_tool(
+            {
+                "config_path": test_config_file,
+                "destination": str(tmp_path / "output"),
+                "auto_upload": False,
+                "dry_run": False,
+            }
+        )
 
         # Verify success
         output = result[0].text
@@ -434,7 +386,9 @@ class TestInstallSkillCLI_E2E:
         assert "Enhancement" in output or "MANDATORY" in output
         assert "WORKFLOW COMPLETE" in output or "✅" in output
 
-    @pytest.mark.skip(reason="Subprocess-based CLI test has asyncio issues; functionality tested in test_cli_full_workflow_mocked")
+    @pytest.mark.skip(
+        reason="Subprocess-based CLI test has asyncio issues; functionality tested in test_cli_full_workflow_mocked"
+    )
     def test_cli_via_unified_command(self, test_config_file):
         """E2E test: Using 'skill-seekers install' unified CLI
 
@@ -445,17 +399,16 @@ class TestInstallSkillCLI_E2E:
 
         # Test the unified CLI entry point
         result = subprocess.run(
-            ["skill-seekers", "install",
-             "--config", test_config_file,
-             "--dry-run"],
+            ["skill-seekers", "install", "--config", test_config_file, "--dry-run"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         # Should work if command is available
-        assert result.returncode == 0 or "DRY RUN" in result.stdout, \
+        assert result.returncode == 0 or "DRY RUN" in result.stdout, (
             f"Unified CLI failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
@@ -475,22 +428,15 @@ class TestInstallSkillE2E_RealFiles:
             "name": "test-real-e2e",
             "description": "Real E2E test",
             "base_url": "https://httpbin.org/html",  # Simple HTML endpoint
-            "selectors": {
-                "main_content": "body",
-                "title": "title",
-                "code_blocks": "code"
-            },
-            "url_patterns": {
-                "include": [],
-                "exclude": []
-            },
+            "selectors": {"main_content": "body", "title": "title", "code_blocks": "code"},
+            "url_patterns": {"include": [], "exclude": []},
             "categories": {},
             "rate_limit": 0.5,
-            "max_pages": 1  # Just one page for speed
+            "max_pages": 1,  # Just one page for speed
         }
 
         config_path = tmp_path / "test-real-e2e.json"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
         return str(config_path)
@@ -501,30 +447,30 @@ class TestInstallSkillE2E_RealFiles:
         """E2E test with real scraping but mocked enhancement/upload"""
 
         # Only mock enhancement and upload (let scraping run for real)
-        with patch('skill_seekers.mcp.server.run_subprocess_with_streaming') as mock_enhance, \
-             patch('skill_seekers.mcp.server.upload_skill_tool') as mock_upload, \
-             patch('os.environ.get') as mock_env:
-
+        with (
+            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.server.upload_skill_tool") as mock_upload,
+            patch("os.environ.get") as mock_env,
+        ):
             # Mock enhancement (avoid needing Claude Code)
             mock_enhance.return_value = ("✅ Enhancement complete", "", 0)
 
             # Mock upload (avoid needing API key)
-            mock_upload.return_value = [TextContent(
-                type="text",
-                text="✅ Upload successful"
-            )]
+            mock_upload.return_value = [TextContent(type="text", text="✅ Upload successful")]
 
             # Mock API key present
             mock_env.return_value = "sk-ant-test-key"
 
             # Run with real scraping
-            result = await install_skill_tool({
-                "config_path": real_test_config,
-                "destination": str(tmp_path / "output"),
-                "auto_upload": False,  # Skip upload even with key
-                "unlimited": False,
-                "dry_run": False
-            })
+            result = await install_skill_tool(
+                {
+                    "config_path": real_test_config,
+                    "destination": str(tmp_path / "output"),
+                    "auto_upload": False,  # Skip upload even with key
+                    "unlimited": False,
+                    "dry_run": False,
+                }
+            )
 
             output = result[0].text
 

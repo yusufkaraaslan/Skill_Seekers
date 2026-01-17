@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """Test suite for cli/constants.py module."""
 
-import unittest
 import sys
+import unittest
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from skill_seekers.cli.constants import (
-    DEFAULT_RATE_LIMIT,
-    DEFAULT_MAX_PAGES,
-    DEFAULT_CHECKPOINT_INTERVAL,
-    CONTENT_PREVIEW_LENGTH,
-    MAX_PAGES_WARNING_THRESHOLD,
-    MIN_CATEGORIZATION_SCORE,
-    URL_MATCH_POINTS,
-    TITLE_MATCH_POINTS,
-    CONTENT_MATCH_POINTS,
     API_CONTENT_LIMIT,
     API_PREVIEW_LIMIT,
+    CONTENT_MATCH_POINTS,
+    CONTENT_PREVIEW_LENGTH,
+    DEFAULT_CHECKPOINT_INTERVAL,
+    DEFAULT_MAX_DISCOVERY,
+    DEFAULT_MAX_PAGES,
+    DEFAULT_RATE_LIMIT,
+    DISCOVERY_THRESHOLD,
     LOCAL_CONTENT_LIMIT,
     LOCAL_PREVIEW_LIMIT,
-    DEFAULT_MAX_DISCOVERY,
-    DISCOVERY_THRESHOLD,
-    MAX_REFERENCE_FILES,
     MAX_CODE_BLOCKS_PER_PAGE,
+    MAX_PAGES_WARNING_THRESHOLD,
+    MAX_REFERENCE_FILES,
+    MIN_CATEGORIZATION_SCORE,
+    TITLE_MATCH_POINTS,
+    URL_MATCH_POINTS,
 )
 
 
@@ -110,25 +110,29 @@ class TestConstantsUsage(unittest.TestCase):
     def test_doc_scraper_imports_constants(self):
         """Test that doc_scraper imports and uses constants."""
         from skill_seekers.cli import doc_scraper
+
         # Check that doc_scraper can access the constants
-        self.assertTrue(hasattr(doc_scraper, 'DEFAULT_RATE_LIMIT'))
-        self.assertTrue(hasattr(doc_scraper, 'DEFAULT_MAX_PAGES'))
+        self.assertTrue(hasattr(doc_scraper, "DEFAULT_RATE_LIMIT"))
+        self.assertTrue(hasattr(doc_scraper, "DEFAULT_MAX_PAGES"))
 
     def test_estimate_pages_imports_constants(self):
         """Test that estimate_pages imports and uses constants."""
-        from skill_seekers.cli import estimate_pages
         # Verify function signature uses constants
         import inspect
+
+        from skill_seekers.cli import estimate_pages
+
         sig = inspect.signature(estimate_pages.estimate_pages)
-        self.assertIn('max_discovery', sig.parameters)
+        self.assertIn("max_discovery", sig.parameters)
 
     def test_enhance_skill_imports_constants(self):
         """Test that enhance_skill imports constants."""
         try:
             from skill_seekers.cli import enhance_skill
+
             # Check module loads without errors
             self.assertIsNotNone(enhance_skill)
-        except (ImportError, SystemExit) as e:
+        except (ImportError, SystemExit):
             # anthropic package may not be installed or module exits on import
             # This is acceptable - we're just checking the constants import works
             pass
@@ -136,6 +140,7 @@ class TestConstantsUsage(unittest.TestCase):
     def test_enhance_skill_local_imports_constants(self):
         """Test that enhance_skill_local imports constants."""
         from skill_seekers.cli import enhance_skill_local
+
         self.assertIsNotNone(enhance_skill_local)
 
 
@@ -145,19 +150,18 @@ class TestConstantsExports(unittest.TestCase):
     def test_all_exports_exist(self):
         """Test that all items in __all__ exist."""
         from skill_seekers.cli import constants
-        self.assertTrue(hasattr(constants, '__all__'))
+
+        self.assertTrue(hasattr(constants, "__all__"))
         for name in constants.__all__:
-            self.assertTrue(
-                hasattr(constants, name),
-                f"Constant '{name}' in __all__ but not defined"
-            )
+            self.assertTrue(hasattr(constants, name), f"Constant '{name}' in __all__ but not defined")
 
     def test_all_exports_count(self):
         """Test that __all__ has expected number of exports."""
         from skill_seekers.cli import constants
+
         # We defined 18 constants (added DEFAULT_ASYNC_MODE)
         self.assertEqual(len(constants.__all__), 18)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

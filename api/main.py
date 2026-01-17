@@ -4,21 +4,20 @@ Skill Seekers Config API
 FastAPI backend for listing available skill configs
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from typing import List, Dict, Any, Optional
-import os
 from pathlib import Path
+from typing import Any
 
 from config_analyzer import ConfigAnalyzer
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 app = FastAPI(
     title="Skill Seekers Config API",
     description="API for discovering and downloading Skill Seekers configuration files",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # CORS middleware - allow all origins for public API
@@ -54,16 +53,12 @@ async def root():
         },
         "repository": "https://github.com/yusufkaraaslan/Skill_Seekers",
         "configs_repository": "https://github.com/yusufkaraaslan/skill-seekers-configs",
-        "website": "https://api.skillseekersweb.com"
+        "website": "https://api.skillseekersweb.com",
     }
 
 
 @app.get("/api/configs")
-async def list_configs(
-    category: Optional[str] = None,
-    tag: Optional[str] = None,
-    type: Optional[str] = None
-) -> Dict[str, Any]:
+async def list_configs(category: str | None = None, tag: str | None = None, type: str | None = None) -> dict[str, Any]:
     """
     List all available configs with metadata
 
@@ -102,7 +97,7 @@ async def list_configs(
             "version": "1.0.0",
             "total": len(configs),
             "filters": filters_applied if filters_applied else None,
-            "configs": configs
+            "configs": configs,
         }
 
     except Exception as e:
@@ -110,7 +105,7 @@ async def list_configs(
 
 
 @app.get("/api/configs/{name}")
-async def get_config(name: str) -> Dict[str, Any]:
+async def get_config(name: str) -> dict[str, Any]:
     """
     Get detailed information about a specific config
 
@@ -124,10 +119,7 @@ async def get_config(name: str) -> Dict[str, Any]:
         config = analyzer.get_config_by_name(name)
 
         if not config:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Config '{name}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Config '{name}' not found")
 
         return config
 
@@ -138,7 +130,7 @@ async def get_config(name: str) -> Dict[str, Any]:
 
 
 @app.get("/api/categories")
-async def list_categories() -> Dict[str, Any]:
+async def list_categories() -> dict[str, Any]:
     """
     List all available categories with config counts
 
@@ -155,10 +147,7 @@ async def list_categories() -> Dict[str, Any]:
             cat = config.get("category", "uncategorized")
             category_counts[cat] = category_counts.get(cat, 0) + 1
 
-        return {
-            "total_categories": len(category_counts),
-            "categories": category_counts
-        }
+        return {"total_categories": len(category_counts), "categories": category_counts}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing categories: {str(e)}")
@@ -191,16 +180,9 @@ async def download_config(config_name: str):
             break
 
         if not config_path or not config_path.exists():
-            raise HTTPException(
-                status_code=404,
-                detail=f"Config file '{config_name}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Config file '{config_name}' not found")
 
-        return FileResponse(
-            path=config_path,
-            media_type="application/json",
-            filename=config_name
-        )
+        return FileResponse(path=config_path, media_type="application/json", filename=config_name)
 
     except HTTPException:
         raise
@@ -216,4 +198,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

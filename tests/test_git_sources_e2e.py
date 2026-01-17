@@ -28,6 +28,7 @@ from skill_seekers.mcp.source_manager import SourceManager
 try:
     import mcp
     from mcp.types import TextContent
+
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
@@ -60,64 +61,42 @@ class TestGitSourcesE2E:
                 "name": "react",
                 "description": "React framework for UIs",
                 "base_url": "https://react.dev/",
-                "selectors": {
-                    "main_content": "article",
-                    "title": "h1",
-                    "code_blocks": "pre code"
-                },
-                "url_patterns": {
-                    "include": [],
-                    "exclude": []
-                },
-                "categories": {
-                    "getting_started": ["learn", "start"],
-                    "api": ["reference", "api"]
-                },
+                "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+                "url_patterns": {"include": [], "exclude": []},
+                "categories": {"getting_started": ["learn", "start"], "api": ["reference", "api"]},
                 "rate_limit": 0.5,
-                "max_pages": 100
+                "max_pages": 100,
             },
             "vue.json": {
                 "name": "vue",
                 "description": "Vue.js progressive framework",
                 "base_url": "https://vuejs.org/",
-                "selectors": {
-                    "main_content": "main",
-                    "title": "h1"
-                },
-                "url_patterns": {
-                    "include": [],
-                    "exclude": []
-                },
+                "selectors": {"main_content": "main", "title": "h1"},
+                "url_patterns": {"include": [], "exclude": []},
                 "categories": {},
                 "rate_limit": 0.5,
-                "max_pages": 50
+                "max_pages": 50,
             },
             "django.json": {
                 "name": "django",
                 "description": "Django web framework",
                 "base_url": "https://docs.djangoproject.com/",
-                "selectors": {
-                    "main_content": "div[role='main']",
-                    "title": "h1"
-                },
-                "url_patterns": {
-                    "include": [],
-                    "exclude": []
-                },
+                "selectors": {"main_content": "div[role='main']", "title": "h1"},
+                "url_patterns": {"include": [], "exclude": []},
                 "categories": {},
                 "rate_limit": 0.5,
-                "max_pages": 200
-            }
+                "max_pages": 200,
+            },
         }
 
         # Write config files
         for filename, config_data in configs.items():
             config_path = Path(repo_dir) / filename
-            with open(config_path, 'w') as f:
+            with open(config_path, "w") as f:
                 json.dump(config_data, f, indent=2)
 
         # Add and commit
-        repo.index.add(['*.json'])
+        repo.index.add(["*.json"])
         repo.index.commit("Initial commit with sample configs")
 
         yield repo_dir, repo
@@ -145,7 +124,7 @@ class TestGitSourcesE2E:
         repo_path = git_repo.clone_or_pull(
             source_name="test-direct",
             git_url=git_url,
-            branch="master"  # git.Repo.init creates 'master' by default
+            branch="master",  # git.Repo.init creates 'master' by default
         )
 
         assert repo_path.exists()
@@ -190,11 +169,7 @@ class TestGitSourcesE2E:
         # Step 1: Add source to registry
         source_manager = SourceManager(config_dir=config_dir)
         source = source_manager.add_source(
-            name="team-configs",
-            git_url=git_url,
-            source_type="custom",
-            branch="master",
-            priority=10
+            name="team-configs", git_url=git_url, source_type="custom", branch="master", priority=10
         )
 
         assert source["name"] == "team-configs"
@@ -216,9 +191,7 @@ class TestGitSourcesE2E:
         # Step 4: Clone via source name
         git_repo = GitConfigRepo(cache_dir=cache_dir)
         repo_path = git_repo.clone_or_pull(
-            source_name=source["name"],
-            git_url=source["git_url"],
-            branch=source["branch"]
+            source_name=source["name"], git_url=source["git_url"], branch=source["branch"]
         )
 
         assert repo_path.exists()
@@ -234,7 +207,7 @@ class TestGitSourcesE2E:
             git_url=git_url,
             source_type="custom",
             branch="master",
-            priority=5  # Changed priority
+            priority=5,  # Changed priority
         )
         assert updated_source["priority"] == 5
 
@@ -266,21 +239,9 @@ class TestGitSourcesE2E:
         source_manager = SourceManager(config_dir=config_dir)
 
         # Step 1: Add multiple sources with different priorities
-        source_manager.add_source(
-            name="low-priority",
-            git_url=git_url,
-            priority=100
-        )
-        source_manager.add_source(
-            name="high-priority",
-            git_url=git_url,
-            priority=1
-        )
-        source_manager.add_source(
-            name="medium-priority",
-            git_url=git_url,
-            priority=50
-        )
+        source_manager.add_source(name="low-priority", git_url=git_url, priority=100)
+        source_manager.add_source(name="high-priority", git_url=git_url, priority=1)
+        source_manager.add_source(name="medium-priority", git_url=git_url, priority=50)
 
         # Step 2: Verify sources are sorted by priority
         sources = source_manager.list_sources()
@@ -290,12 +251,7 @@ class TestGitSourcesE2E:
         assert sources[2]["name"] == "low-priority"
 
         # Step 3: Enable/disable sources
-        source_manager.add_source(
-            name="high-priority",
-            git_url=git_url,
-            priority=1,
-            enabled=False
-        )
+        source_manager.add_source(name="high-priority", git_url=git_url, priority=1, enabled=False)
 
         # Step 4: List enabled sources only
         enabled_sources = source_manager.list_sources(enabled_only=True)
@@ -320,11 +276,7 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(
-            source_name="test-pull",
-            git_url=git_url,
-            branch="master"
-        )
+        repo_path = git_repo.clone_or_pull(source_name="test-pull", git_url=git_url, branch="master")
 
         initial_configs = git_repo.find_configs(repo_path)
         assert len(initial_configs) == 3
@@ -338,14 +290,14 @@ class TestGitSourcesE2E:
             "url_patterns": {"include": [], "exclude": []},
             "categories": {},
             "rate_limit": 0.5,
-            "max_pages": 150
+            "max_pages": 150,
         }
 
         new_config_path = Path(repo_dir) / "fastapi.json"
-        with open(new_config_path, 'w') as f:
+        with open(new_config_path, "w") as f:
             json.dump(new_config, f, indent=2)
 
-        repo.index.add(['fastapi.json'])
+        repo.index.add(["fastapi.json"])
         repo.index.commit("Add FastAPI config")
 
         # Step 3: Pull updates
@@ -353,7 +305,7 @@ class TestGitSourcesE2E:
             source_name="test-pull",
             git_url=git_url,
             branch="master",
-            force_refresh=False  # Should pull, not re-clone
+            force_refresh=False,  # Should pull, not re-clone
         )
 
         # Step 4: Verify new config is available
@@ -381,15 +333,11 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(
-            source_name="test-refresh",
-            git_url=git_url,
-            branch="master"
-        )
+        repo_path = git_repo.clone_or_pull(source_name="test-refresh", git_url=git_url, branch="master")
 
         # Step 2: Modify local cache manually
         corrupt_file = repo_path / "CORRUPTED.txt"
-        with open(corrupt_file, 'w') as f:
+        with open(corrupt_file, "w") as f:
             f.write("This file should not exist after refresh")
 
         assert corrupt_file.exists()
@@ -399,7 +347,7 @@ class TestGitSourcesE2E:
             source_name="test-refresh",
             git_url=git_url,
             branch="master",
-            force_refresh=True  # Delete and re-clone
+            force_refresh=True,  # Delete and re-clone
         )
 
         # Step 4: Verify cache was reset
@@ -423,11 +371,7 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Step 1: Clone repository
-        repo_path = git_repo.clone_or_pull(
-            source_name="test-not-found",
-            git_url=git_url,
-            branch="master"
-        )
+        repo_path = git_repo.clone_or_pull(source_name="test-not-found", git_url=git_url, branch="master")
 
         # Step 2: Try to fetch non-existent config
         with pytest.raises(FileNotFoundError) as exc_info:
@@ -453,20 +397,11 @@ class TestGitSourcesE2E:
         git_repo = GitConfigRepo(cache_dir=cache_dir)
 
         # Invalid URLs
-        invalid_urls = [
-            "",
-            "not-a-url",
-            "ftp://invalid.com/repo.git",
-            "javascript:alert('xss')"
-        ]
+        invalid_urls = ["", "not-a-url", "ftp://invalid.com/repo.git", "javascript:alert('xss')"]
 
         for invalid_url in invalid_urls:
             with pytest.raises(ValueError, match="Invalid git URL"):
-                git_repo.clone_or_pull(
-                    source_name="test-invalid",
-                    git_url=invalid_url,
-                    branch="master"
-                )
+                git_repo.clone_or_pull(source_name="test-invalid", git_url=invalid_url, branch="master")
 
     def test_e2e_source_name_validation(self, temp_dirs):
         """
@@ -487,7 +422,7 @@ class TestGitSourcesE2E:
             "name@with@symbols",
             "name.with.dots",
             "123-only-numbers-start-is-ok",  # This should actually work
-            "name!exclamation"
+            "name!exclamation",
         ]
 
         valid_git_url = "https://github.com/test/repo.git"
@@ -496,10 +431,7 @@ class TestGitSourcesE2E:
             if invalid_name == "123-only-numbers-start-is-ok":
                 continue
             with pytest.raises(ValueError, match="Invalid source name"):
-                source_manager.add_source(
-                    name=invalid_name,
-                    git_url=valid_git_url
-                )
+                source_manager.add_source(name=invalid_name, git_url=valid_git_url)
 
     def test_e2e_registry_persistence(self, temp_dirs, temp_git_repo):
         """
@@ -519,11 +451,7 @@ class TestGitSourcesE2E:
 
         # Step 1: Add source with one instance
         manager1 = SourceManager(config_dir=config_dir)
-        manager1.add_source(
-            name="persistent-source",
-            git_url=git_url,
-            priority=25
-        )
+        manager1.add_source(name="persistent-source", git_url=git_url, priority=25)
 
         # Step 2: Create new instance
         manager2 = SourceManager(config_dir=config_dir)
@@ -538,7 +466,7 @@ class TestGitSourcesE2E:
         manager2.add_source(
             name="persistent-source",
             git_url=git_url,
-            priority=50  # Changed
+            priority=50,  # Changed
         )
 
         # Step 5: Verify changes persist
@@ -568,19 +496,11 @@ class TestGitSourcesE2E:
 
             # Step 1: Clone to cache_dir_1
             git_repo_1 = GitConfigRepo(cache_dir=cache_dir_1)
-            repo_path_1 = git_repo_1.clone_or_pull(
-                source_name="test-source",
-                git_url=git_url,
-                branch="master"
-            )
+            repo_path_1 = git_repo_1.clone_or_pull(source_name="test-source", git_url=git_url, branch="master")
 
             # Step 2: Clone same repo to cache_dir_2
             git_repo_2 = GitConfigRepo(cache_dir=cache_dir_2)
-            repo_path_2 = git_repo_2.clone_or_pull(
-                source_name="test-source",
-                git_url=git_url,
-                branch="master"
-            )
+            repo_path_2 = git_repo_2.clone_or_pull(source_name="test-source", git_url=git_url, branch="master")
 
             # Step 3: Verify both caches are independent
             assert repo_path_1 != repo_path_2
@@ -589,7 +509,7 @@ class TestGitSourcesE2E:
 
             # Step 4: Modify one cache
             marker_file = repo_path_1 / "MARKER.txt"
-            with open(marker_file, 'w') as f:
+            with open(marker_file, "w") as f:
                 f.write("Cache 1 marker")
 
             # Step 5: Verify other cache is unaffected
@@ -621,7 +541,7 @@ class TestGitSourcesE2E:
         github_source = source_manager.add_source(
             name="github-test",
             git_url="https://github.com/test/repo.git",
-            source_type="github"
+            source_type="github",
             # No token_env specified
         )
 
@@ -632,7 +552,7 @@ class TestGitSourcesE2E:
         gitlab_source = source_manager.add_source(
             name="gitlab-test",
             git_url="https://gitlab.com/test/repo.git",
-            source_type="gitlab"
+            source_type="gitlab",
             # No token_env specified
         )
 
@@ -641,9 +561,7 @@ class TestGitSourcesE2E:
 
         # Also test custom type (defaults to GIT_TOKEN)
         custom_source = source_manager.add_source(
-            name="custom-test",
-            git_url="https://custom.com/test/repo.git",
-            source_type="custom"
+            name="custom-test", git_url="https://custom.com/test/repo.git", source_type="custom"
         )
         assert custom_source["token_env"] == "GIT_TOKEN"
 
@@ -671,20 +589,14 @@ class TestGitSourcesE2E:
         # Step 2: Team lead registers source
         source_manager = SourceManager(config_dir=config_dir)
         source_manager.add_source(
-            name="team-configs",
-            git_url=git_url,
-            source_type="custom",
-            branch="master",
-            priority=1
+            name="team-configs", git_url=git_url, source_type="custom", branch="master", priority=1
         )
 
         # Step 3: Developer 1 clones and uses config
         git_repo = GitConfigRepo(cache_dir=cache_dir)
         source = source_manager.get_source("team-configs")
         repo_path = git_repo.clone_or_pull(
-            source_name=source["name"],
-            git_url=source["git_url"],
-            branch=source["branch"]
+            source_name=source["name"], git_url=source["git_url"], branch=source["branch"]
         )
 
         react_config = git_repo.get_config(repo_path, "react")
@@ -693,9 +605,7 @@ class TestGitSourcesE2E:
         # Step 4: Developer 2 uses same source (should use cache, not re-clone)
         # Simulate by checking if pull works (not re-clone)
         repo_path_2 = git_repo.clone_or_pull(
-            source_name=source["name"],
-            git_url=source["git_url"],
-            branch=source["branch"]
+            source_name=source["name"], git_url=source["git_url"], branch=source["branch"]
         )
         assert repo_path == repo_path_2
 
@@ -704,32 +614,24 @@ class TestGitSourcesE2E:
         updated_react_config["max_pages"] = 500  # Increased limit
 
         react_config_path = Path(repo_dir) / "react.json"
-        with open(react_config_path, 'w') as f:
+        with open(react_config_path, "w") as f:
             json.dump(updated_react_config, f, indent=2)
 
-        repo.index.add(['react.json'])
+        repo.index.add(["react.json"])
         repo.index.commit("Increase React config max_pages to 500")
 
         # Step 6: Developers pull updates
-        git_repo.clone_or_pull(
-            source_name=source["name"],
-            git_url=source["git_url"],
-            branch=source["branch"]
-        )
+        git_repo.clone_or_pull(source_name=source["name"], git_url=source["git_url"], branch=source["branch"])
 
         updated_config = git_repo.get_config(repo_path, "react")
         assert updated_config["max_pages"] == 500
 
         # Step 7: Config is removed from repo
         react_config_path.unlink()
-        repo.index.remove(['react.json'])
+        repo.index.remove(["react.json"])
         repo.index.commit("Remove react.json")
 
-        git_repo.clone_or_pull(
-            source_name=source["name"],
-            git_url=source["git_url"],
-            branch=source["branch"]
-        )
+        git_repo.clone_or_pull(source_name=source["name"], git_url=source["git_url"], branch=source["branch"])
 
         # Step 8: Error handling works correctly
         with pytest.raises(FileNotFoundError, match="react.json"):
@@ -775,21 +677,18 @@ class TestMCPToolsE2E:
             "name": "test-framework",
             "description": "Test framework for E2E",
             "base_url": "https://example.com/docs/",
-            "selectors": {
-                "main_content": "article",
-                "title": "h1"
-            },
+            "selectors": {"main_content": "article", "title": "h1"},
             "url_patterns": {"include": [], "exclude": []},
             "categories": {},
             "rate_limit": 0.5,
-            "max_pages": 50
+            "max_pages": 50,
         }
 
         config_path = Path(repo_dir) / "test-framework.json"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
-        repo.index.add(['*.json'])
+        repo.index.add(["*.json"])
         repo.index.commit("Initial commit")
 
         yield repo_dir, repo
@@ -801,23 +700,16 @@ class TestMCPToolsE2E:
         """
         MCP E2E Test 1: Complete add/list/remove workflow via MCP tools
         """
-        from skill_seekers.mcp.server import (
-            add_config_source_tool,
-            list_config_sources_tool,
-            remove_config_source_tool
-        )
+        from skill_seekers.mcp.server import add_config_source_tool, list_config_sources_tool, remove_config_source_tool
 
         cache_dir, config_dir = temp_dirs
         repo_dir, repo = temp_git_repo
         git_url = f"file://{repo_dir}"
 
         # Add source
-        add_result = await add_config_source_tool({
-            "name": "mcp-test-source",
-            "git_url": git_url,
-            "source_type": "custom",
-            "branch": "master"
-        })
+        add_result = await add_config_source_tool(
+            {"name": "mcp-test-source", "git_url": git_url, "source_type": "custom", "branch": "master"}
+        )
 
         assert len(add_result) == 1
         assert "✅" in add_result[0].text
@@ -830,9 +722,7 @@ class TestMCPToolsE2E:
         assert "mcp-test-source" in list_result[0].text
 
         # Remove source
-        remove_result = await remove_config_source_tool({
-            "name": "mcp-test-source"
-        })
+        remove_result = await remove_config_source_tool({"name": "mcp-test-source"})
 
         assert len(remove_result) == 1
         assert "✅" in remove_result[0].text
@@ -853,12 +743,9 @@ class TestMCPToolsE2E:
         dest_dir = Path(config_dir) / "configs"
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        result = await fetch_config_tool({
-            "config_name": "test-framework",
-            "git_url": git_url,
-            "branch": "master",
-            "destination": str(dest_dir)
-        })
+        result = await fetch_config_tool(
+            {"config_name": "test-framework", "git_url": git_url, "branch": "master", "destination": str(dest_dir)}
+        )
 
         assert len(result) == 1
         assert "✅" in result[0].text
@@ -878,32 +765,24 @@ class TestMCPToolsE2E:
         """
         MCP E2E Test 3: fetch_config with registered source
         """
-        from skill_seekers.mcp.server import (
-            add_config_source_tool,
-            fetch_config_tool
-        )
+        from skill_seekers.mcp.server import add_config_source_tool, fetch_config_tool
 
         cache_dir, config_dir = temp_dirs
         repo_dir, repo = temp_git_repo
         git_url = f"file://{repo_dir}"
 
         # Register source first
-        await add_config_source_tool({
-            "name": "test-source",
-            "git_url": git_url,
-            "source_type": "custom",
-            "branch": "master"
-        })
+        await add_config_source_tool(
+            {"name": "test-source", "git_url": git_url, "source_type": "custom", "branch": "master"}
+        )
 
         # Fetch via source name
         dest_dir = Path(config_dir) / "configs"
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        result = await fetch_config_tool({
-            "config_name": "test-framework",
-            "source": "test-source",
-            "destination": str(dest_dir)
-        })
+        result = await fetch_config_tool(
+            {"config_name": "test-framework", "source": "test-source", "destination": str(dest_dir)}
+        )
 
         assert len(result) == 1
         assert "✅" in result[0].text
@@ -920,9 +799,8 @@ class TestMCPToolsE2E:
         """
         from skill_seekers.mcp.server import (
             add_config_source_tool,
-            list_config_sources_tool,
+            fetch_config_tool,
             remove_config_source_tool,
-            fetch_config_tool
         )
 
         cache_dir, config_dir = temp_dirs
@@ -930,48 +808,34 @@ class TestMCPToolsE2E:
         git_url = f"file://{repo_dir}"
 
         # Test 1: Add source without name
-        result = await add_config_source_tool({
-            "git_url": git_url
-        })
+        result = await add_config_source_tool({"git_url": git_url})
         assert "❌" in result[0].text
         assert "name" in result[0].text.lower()
 
         # Test 2: Add source without git_url
-        result = await add_config_source_tool({
-            "name": "test"
-        })
+        result = await add_config_source_tool({"name": "test"})
         assert "❌" in result[0].text
         assert "git_url" in result[0].text.lower()
 
         # Test 3: Remove non-existent source
-        result = await remove_config_source_tool({
-            "name": "non-existent"
-        })
+        result = await remove_config_source_tool({"name": "non-existent"})
         assert "❌" in result[0].text or "not found" in result[0].text.lower()
 
         # Test 4: Fetch config from non-existent source
         dest_dir = Path(config_dir) / "configs"
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        result = await fetch_config_tool({
-            "config_name": "test",
-            "source": "non-existent-source",
-            "destination": str(dest_dir)
-        })
+        result = await fetch_config_tool(
+            {"config_name": "test", "source": "non-existent-source", "destination": str(dest_dir)}
+        )
         assert "❌" in result[0].text or "not found" in result[0].text.lower()
 
         # Test 5: Fetch non-existent config from valid source
-        await add_config_source_tool({
-            "name": "valid-source",
-            "git_url": git_url,
-            "branch": "master"
-        })
+        await add_config_source_tool({"name": "valid-source", "git_url": git_url, "branch": "master"})
 
-        result = await fetch_config_tool({
-            "config_name": "non-existent-config",
-            "source": "valid-source",
-            "destination": str(dest_dir)
-        })
+        result = await fetch_config_tool(
+            {"config_name": "non-existent-config", "source": "valid-source", "destination": str(dest_dir)}
+        )
         assert "❌" in result[0].text or "not found" in result[0].text.lower()
 
 

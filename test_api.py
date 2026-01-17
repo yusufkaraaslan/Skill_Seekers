@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Quick test of the config analyzer"""
+
 import sys
-sys.path.insert(0, 'api')
+
+sys.path.insert(0, "api")
 
 from pathlib import Path
+
 from api.config_analyzer import ConfigAnalyzer
 
 # Initialize analyzer
-config_dir = Path('configs')
+config_dir = Path("configs")
 analyzer = ConfigAnalyzer(config_dir, base_url="https://api.skillseekersweb.com")
 
 # Test analyzing all configs
@@ -31,7 +34,7 @@ for config in configs[:3]:
 print("\n\n📊 Categories:")
 categories = {}
 for config in configs:
-    cat = config['category']
+    cat = config["category"]
     categories[cat] = categories.get(cat, 0) + 1
 
 for cat, count in sorted(categories.items()):

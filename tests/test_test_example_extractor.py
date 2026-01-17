@@ -10,23 +10,23 @@ Test Coverage:
 - End-to-end (1 test) - Full workflow
 """
 
-import unittest
-import sys
 import os
-from pathlib import Path
-import tempfile
 import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from skill_seekers.cli.test_example_extractor import (
-    TestExample,
-    ExampleReport,
-    PythonTestAnalyzer,
-    GenericTestAnalyzer,
     ExampleQualityFilter,
-    TestExampleExtractor
+    ExampleReport,
+    GenericTestAnalyzer,
+    PythonTestAnalyzer,
+    TestExample,
+    TestExampleExtractor,
 )
 
 
@@ -154,9 +154,7 @@ def test_query(database):
 
         # Check for pytest markers or tags
         has_pytest_indicator = any(
-            'pytest' in ' '.join(ex.tags).lower() or
-            'pytest' in ex.description.lower()
-            for ex in examples
+            "pytest" in " ".join(ex.tags).lower() or "pytest" in ex.description.lower() for ex in examples
         )
         self.assertTrue(has_pytest_indicator or len(examples) > 0)  # At least extracted something
 
@@ -209,11 +207,11 @@ def test_complete_workflow():
     def test_confidence_scoring(self):
         """Test confidence scores are calculated correctly"""
         # Simple instantiation
-        simple_code = '''
+        simple_code = """
 def test_simple():
     obj = MyClass()
     assert obj is not None
-'''
+"""
         simple_examples = self.analyzer.extract("test_simple.py", simple_code)
 
         # Complex instantiation
@@ -246,7 +244,7 @@ class TestGenericTestAnalyzer(unittest.TestCase):
 
     def test_extract_javascript_instantiation(self):
         """Test JavaScript object instantiation extraction"""
-        code = '''
+        code = """
 describe("Database", () => {
     test("should connect to database", () => {
         const db = new Database({
@@ -256,7 +254,7 @@ describe("Database", () => {
         expect(db.isConnected()).toBe(true);
     });
 });
-'''
+"""
         examples = self.analyzer.extract("test_db.js", code, "JavaScript")
 
         self.assertGreater(len(examples), 0)
@@ -265,7 +263,7 @@ describe("Database", () => {
 
     def test_extract_go_table_tests(self):
         """Test Go table-driven test extraction"""
-        code = '''
+        code = """
 func TestAdd(t *testing.T) {
     result := Add(1, 2)
     if result != 3 {
@@ -280,7 +278,7 @@ func TestSubtract(t *testing.T) {
         t.Errorf("Subtract(5, 3) = %d; want 2", result)
     }
 }
-'''
+"""
         examples = self.analyzer.extract("add_test.go", code, "Go")
 
         # Should extract at least test function or instantiation
@@ -290,7 +288,7 @@ func TestSubtract(t *testing.T) {
 
     def test_extract_rust_assertions(self):
         """Test Rust test assertion extraction"""
-        code = '''
+        code = """
 #[test]
 fn test_add() {
     let result = add(2, 2);
@@ -302,7 +300,7 @@ fn test_subtract() {
     let calc = Calculator::new();
     assert_eq!(calc.subtract(5, 3), 2);
 }
-'''
+"""
         examples = self.analyzer.extract("lib_test.rs", code, "Rust")
 
         self.assertGreater(len(examples), 0)
@@ -310,12 +308,12 @@ fn test_subtract() {
 
     def test_language_fallback(self):
         """Test handling of unsupported languages"""
-        code = '''
+        code = """
 test("example", () => {
     const x = 1;
     expect(x).toBe(1);
 });
-'''
+"""
         # Unsupported language should return empty list
         examples = self.analyzer.extract("test.unknown", code, "Unknown")
         self.assertEqual(len(examples), 0)
@@ -344,7 +342,7 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.5,
                 confidence=0.8,
                 tags=[],
-                dependencies=[]
+                dependencies=[],
             ),
             TestExample(
                 example_id="2",
@@ -360,8 +358,8 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.5,
                 confidence=0.4,
                 tags=[],
-                dependencies=[]
-            )
+                dependencies=[],
+            ),
         ]
 
         filtered = self.filter.filter(examples)
@@ -387,7 +385,7 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.5,
                 confidence=0.8,
                 tags=[],
-                dependencies=[]
+                dependencies=[],
             ),
             TestExample(
                 example_id="2",
@@ -403,8 +401,8 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.6,
                 confidence=0.8,
                 tags=[],
-                dependencies=[]
-            )
+                dependencies=[],
+            ),
         ]
 
         filtered = self.filter.filter(examples)
@@ -430,7 +428,7 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.1,
                 confidence=0.8,
                 tags=[],
-                dependencies=[]
+                dependencies=[],
             ),
             TestExample(
                 example_id="2",
@@ -446,8 +444,8 @@ class TestExampleQualityFilter(unittest.TestCase):
                 complexity_score=0.6,
                 confidence=0.8,
                 tags=[],
-                dependencies=[]
-            )
+                dependencies=[],
+            ),
         ]
 
         filtered = self.filter.filter(examples)
@@ -489,20 +487,20 @@ def test_addition():
         """Test filtering by programming language"""
         # Create Python test
         py_file = self.temp_dir / "test_py.py"
-        py_file.write_text('''
+        py_file.write_text("""
 def test_python():
     obj = MyClass(param="value")
     assert obj is not None
-''')
+""")
 
         # Create JavaScript test
         js_file = self.temp_dir / "test_js.js"
-        js_file.write_text('''
+        js_file.write_text("""
 test("javascript test", () => {
     const obj = new MyClass();
     expect(obj).toBeDefined();
 });
-''')
+""")
 
         # Extract Python only
         python_extractor = TestExampleExtractor(languages=["python"])
@@ -583,6 +581,6 @@ def test_workflow():
             self.assertLessEqual(example.confidence, 1.0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run tests with verbose output
     unittest.main(verbosity=2)

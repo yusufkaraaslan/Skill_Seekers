@@ -13,25 +13,27 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, List
 
 # MCP types (imported conditionally)
 try:
     from mcp.types import TextContent
+
     MCP_AVAILABLE = True
 except ImportError:
     # Graceful degradation: Create a simple fallback class for testing
     class TextContent:
         """Fallback TextContent for when MCP is not installed"""
+
         def __init__(self, type: str, text: str):
             self.type = type
             self.text = text
+
     MCP_AVAILABLE = False
 
 import httpx
 
 
-async def fetch_config_tool(args: dict) -> List[TextContent]:
+async def fetch_config_tool(args: dict) -> list[TextContent]:
     """
     Fetch config from API, git URL, or named source.
 
@@ -95,11 +97,7 @@ async def fetch_config_tool(args: dict) -> List[TextContent]:
             git_repo = GitConfigRepo()
             try:
                 repo_path = git_repo.clone_or_pull(
-                    source_name=source_name,
-                    git_url=git_url,
-                    branch=branch,
-                    token=token,
-                    force_refresh=force_refresh
+                    source_name=source_name, git_url=git_url, branch=branch, token=token, force_refresh=force_refresh
                 )
             except Exception as e:
                 return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
@@ -117,7 +115,7 @@ async def fetch_config_tool(args: dict) -> List[TextContent]:
             dest_path.mkdir(parents=True, exist_ok=True)
             config_file = dest_path / f"{config_name}.json"
 
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(config_data, f, indent=2)
 
             result = f"""✅ Config fetched from git source successfully!
@@ -127,7 +125,7 @@ async def fetch_config_tool(args: dict) -> List[TextContent]:
 🔗 Source: {source_name}
 🌿 Branch: {branch}
 📁 Repository: {git_url}
-🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+🔄 Refreshed: {"Yes (forced)" if force_refresh else "No (used cache)"}
 
 Next steps:
   1. Review config: cat {config_file}
@@ -153,7 +151,7 @@ Next steps:
                     git_url=git_url,
                     branch=branch,
                     token=token,
-                    force_refresh=force_refresh
+                    force_refresh=force_refresh,
                 )
             except ValueError as e:
                 return [TextContent(type="text", text=f"❌ Invalid git URL: {str(e)}")]
@@ -173,7 +171,7 @@ Next steps:
             dest_path.mkdir(parents=True, exist_ok=True)
             config_file = dest_path / f"{config_name}.json"
 
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(config_data, f, indent=2)
 
             result = f"""✅ Config fetched from git URL successfully!
@@ -182,7 +180,7 @@ Next steps:
 📂 Saved to: {config_file}
 📁 Repository: {git_url}
 🌿 Branch: {branch}
-🔄 Refreshed: {'Yes (forced)' if force_refresh else 'No (used cache)'}
+🔄 Refreshed: {"Yes (forced)" if force_refresh else "No (used cache)"}
 
 Next steps:
   1. Review config: cat {config_file}
@@ -239,21 +237,28 @@ Next steps:
                             if tags:
                                 result += f"    Tags: {tags}\n"
 
-                    result += f"\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
+                    result += "\n💡 To download a config, use: fetch_config with config_name='<name>'\n"
                     result += f"📚 API Docs: {API_BASE_URL}/docs\n"
 
                     return [TextContent(type="text", text=result)]
 
                 # Download specific config
                 if not config_name:
-                    return [TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")]
+                    return [
+                        TextContent(type="text", text="❌ Error: Please provide config_name or set list_available=true")
+                    ]
 
                 # Get config details first
                 detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
                 detail_response = await client.get(detail_url)
 
                 if detail_response.status_code == 404:
-                    return [TextContent(type="text", text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.")]
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"❌ Config '{config_name}' not found. Use list_available=true to see available configs.",
+                        )
+                    ]
 
                 detail_response.raise_for_status()
                 config_info = detail_response.json()
@@ -269,7 +274,7 @@ Next steps:
                 dest_path.mkdir(parents=True, exist_ok=True)
                 config_file = dest_path / f"{config_name}.json"
 
-                with open(config_file, 'w') as f:
+                with open(config_file, "w") as f:
                     json.dump(config_data, f, indent=2)
 
                 # Build result message
@@ -277,15 +282,15 @@ Next steps:
 
 📦 Config: {config_name}
 📂 Saved to: {config_file}
-📊 Category: {config_info.get('category', 'uncategorized')}
-🏷️  Tags: {', '.join(config_info.get('tags', []))}
-📄 Type: {config_info.get('type', 'unknown')}
-📝 Description: {config_info.get('description', 'No description')}
+📊 Category: {config_info.get("category", "uncategorized")}
+🏷️  Tags: {", ".join(config_info.get("tags", []))}
+📄 Type: {config_info.get("type", "unknown")}
+📝 Description: {config_info.get("description", "No description")}
 
-🔗 Source: {config_info.get('primary_source', 'N/A')}
-📏 Max pages: {config_info.get('max_pages', 'N/A')}
-📦 File size: {config_info.get('file_size', 'N/A')} bytes
-🕒 Last updated: {config_info.get('last_updated', 'N/A')}
+🔗 Source: {config_info.get("primary_source", "N/A")}
+📏 Max pages: {config_info.get("max_pages", "N/A")}
+📦 File size: {config_info.get("file_size", "N/A")} bytes
+🕒 Last updated: {config_info.get("last_updated", "N/A")}
 
 Next steps:
   1. Review config: cat {config_file}
@@ -298,14 +303,18 @@ Next steps:
                 return [TextContent(type="text", text=result)]
 
     except httpx.HTTPError as e:
-        return [TextContent(type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later.")]
+        return [
+            TextContent(
+                type="text", text=f"❌ HTTP Error: {str(e)}\n\nCheck your internet connection or try again later."
+            )
+        ]
     except json.JSONDecodeError as e:
         return [TextContent(type="text", text=f"❌ JSON Error: Invalid response from API: {str(e)}")]
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
-async def submit_config_tool(args: dict) -> List[TextContent]:
+async def submit_config_tool(args: dict) -> list[TextContent]:
     """
     Submit a custom config to skill-seekers-configs repository via GitHub issue.
 
@@ -325,12 +334,15 @@ async def submit_config_tool(args: dict) -> List[TextContent]:
     try:
         from github import Github, GithubException
     except ImportError:
-        return [TextContent(type="text", text="❌ Error: PyGithub not installed.\n\nInstall with: pip install PyGithub")]
+        return [
+            TextContent(type="text", text="❌ Error: PyGithub not installed.\n\nInstall with: pip install PyGithub")
+        ]
 
     # Import config validator
     try:
-        from pathlib import Path
         import sys
+        from pathlib import Path
+
         CLI_DIR = Path(__file__).parent.parent.parent / "cli"
         sys.path.insert(0, str(CLI_DIR))
         from config_validator import ConfigValidator
@@ -349,7 +361,7 @@ async def submit_config_tool(args: dict) -> List[TextContent]:
             if not config_file.exists():
                 return [TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")]
 
-            with open(config_file, 'r') as f:
+            with open(config_file) as f:
                 config_data = json.load(f)
                 config_json_str = json.dumps(config_data, indent=2)
                 config_name = config_data.get("name", config_file.stem)
@@ -366,7 +378,12 @@ async def submit_config_tool(args: dict) -> List[TextContent]:
 
         # Use ConfigValidator for comprehensive validation
         if ConfigValidator is None:
-            return [TextContent(type="text", text="❌ Error: ConfigValidator not available. Please ensure config_validator.py is in the CLI directory.")]
+            return [
+                TextContent(
+                    type="text",
+                    text="❌ Error: ConfigValidator not available. Please ensure config_validator.py is in the CLI directory.",
+                )
+            ]
 
         try:
             validator = ConfigValidator(config_data)
@@ -378,22 +395,26 @@ async def submit_config_tool(args: dict) -> List[TextContent]:
 
             # Additional format validation (ConfigValidator only checks structure)
             # Validate name format (alphanumeric, hyphens, underscores only)
-            if not re.match(r'^[a-zA-Z0-9_-]+$', config_name):
-                raise ValueError(f"Invalid name format: '{config_name}'\nNames must contain only alphanumeric characters, hyphens, and underscores")
+            if not re.match(r"^[a-zA-Z0-9_-]+$", config_name):
+                raise ValueError(
+                    f"Invalid name format: '{config_name}'\nNames must contain only alphanumeric characters, hyphens, and underscores"
+                )
 
             # Validate URL formats
             if not is_unified:
                 # Legacy config - check base_url
-                base_url = config_data.get('base_url', '')
-                if base_url and not (base_url.startswith('http://') or base_url.startswith('https://')):
+                base_url = config_data.get("base_url", "")
+                if base_url and not (base_url.startswith("http://") or base_url.startswith("https://")):
                     raise ValueError(f"Invalid base_url format: '{base_url}'\nURLs must start with http:// or https://")
             else:
                 # Unified config - check URLs in sources
-                for idx, source in enumerate(config_data.get('sources', [])):
-                    if source.get('type') == 'documentation':
-                        source_url = source.get('base_url', '')
-                        if source_url and not (source_url.startswith('http://') or source_url.startswith('https://')):
-                            raise ValueError(f"Source {idx} (documentation): Invalid base_url format: '{source_url}'\nURLs must start with http:// or https://")
+                for idx, source in enumerate(config_data.get("sources", [])):
+                    if source.get("type") == "documentation":
+                        source_url = source.get("base_url", "")
+                        if source_url and not (source_url.startswith("http://") or source_url.startswith("https://")):
+                            raise ValueError(
+                                f"Source {idx} (documentation): Invalid base_url format: '{source_url}'\nURLs must start with http:// or https://"
+                            )
 
         except ValueError as validation_error:
             # Provide detailed validation feedback
@@ -417,12 +438,14 @@ Please fix these issues and try again.
         # Detect category based on config format and content
         if is_unified:
             # For unified configs, look at source types
-            source_types = [src.get('type') for src in config_data.get('sources', [])]
-            if 'documentation' in source_types and 'github' in source_types:
-                category = "multi-source"
-            elif 'documentation' in source_types and 'pdf' in source_types:
-                category = "multi-source"
-            elif len(source_types) > 1:
+            source_types = [src.get("type") for src in config_data.get("sources", [])]
+            if (
+                "documentation" in source_types
+                and "github" in source_types
+                or "documentation" in source_types
+                and "pdf" in source_types
+                or len(source_types) > 1
+            ):
                 category = "multi-source"
             else:
                 category = "unified"
@@ -443,21 +466,26 @@ Please fix these issues and try again.
         warnings = []
         if not is_unified:
             # Legacy config warnings
-            if 'max_pages' not in config_data:
+            if "max_pages" not in config_data:
                 warnings.append("⚠️ No max_pages set - will use default (100)")
-            elif config_data.get('max_pages') in (None, -1):
+            elif config_data.get("max_pages") in (None, -1):
                 warnings.append("⚠️ Unlimited scraping enabled - may scrape thousands of pages and take hours")
         else:
             # Unified config warnings
-            for src in config_data.get('sources', []):
-                if src.get('type') == 'documentation' and 'max_pages' not in src:
-                    warnings.append(f"⚠️ No max_pages set for documentation source - will use default (100)")
-                elif src.get('type') == 'documentation' and src.get('max_pages') in (None, -1):
-                    warnings.append(f"⚠️ Unlimited scraping enabled for documentation source")
+            for src in config_data.get("sources", []):
+                if src.get("type") == "documentation" and "max_pages" not in src:
+                    warnings.append("⚠️ No max_pages set for documentation source - will use default (100)")
+                elif src.get("type") == "documentation" and src.get("max_pages") in (None, -1):
+                    warnings.append("⚠️ Unlimited scraping enabled for documentation source")
 
         # Check for GitHub token
         if not github_token:
-            return [TextContent(type="text", text="❌ Error: GitHub token required.\n\nProvide github_token parameter or set GITHUB_TOKEN environment variable.\n\nCreate token at: https://github.com/settings/tokens")]
+            return [
+                TextContent(
+                    type="text",
+                    text="❌ Error: GitHub token required.\n\nProvide github_token parameter or set GITHUB_TOKEN environment variable.\n\nCreate token at: https://github.com/settings/tokens",
+                )
+            ]
 
         # Create GitHub issue
         try:
@@ -485,7 +513,7 @@ Please fix these issues and try again.
 {testing_notes if testing_notes else "Not provided"}
 
 ### Documentation URL
-{config_data.get('base_url') if not is_unified else 'See sources in config'}
+{config_data.get("base_url") if not is_unified else "See sources in config"}
 
 {"### Validation Warnings" if warnings else ""}
 {chr(10).join(f"- {w}" for w in warnings) if warnings else ""}
@@ -501,9 +529,7 @@ Please fix these issues and try again.
 
             # Create issue
             issue = repo.create_issue(
-                title=f"[CONFIG] {config_name}",
-                body=issue_body,
-                labels=["config-submission", "needs-review"]
+                title=f"[CONFIG] {config_name}", body=issue_body, labels=["config-submission", "needs-review"]
             )
 
             result = f"""✅ Config submitted successfully!
@@ -527,13 +553,18 @@ What happens next:
             return [TextContent(type="text", text=result)]
 
         except GithubException as e:
-            return [TextContent(type="text", text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).")]
+            return [
+                TextContent(
+                    type="text",
+                    text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).",
+                )
+            ]
 
     except Exception as e:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
-async def add_config_source_tool(args: dict) -> List[TextContent]:
+async def add_config_source_tool(args: dict) -> list[TextContent]:
     """
     Register a git repository as a config source.
 
@@ -579,34 +610,34 @@ async def add_config_source_tool(args: dict) -> List[TextContent]:
             token_env=token_env,
             branch=branch,
             priority=priority,
-            enabled=enabled
+            enabled=enabled,
         )
 
         # Check if this is an update
         is_update = "updated_at" in source and source["added_at"] != source["updated_at"]
 
-        result = f"""✅ Config source {'updated' if is_update else 'registered'} successfully!
+        result = f"""✅ Config source {"updated" if is_update else "registered"} successfully!
 
-📛 Name: {source['name']}
-📁 Repository: {source['git_url']}
-🔖 Type: {source['type']}
-🌿 Branch: {source['branch']}
-🔑 Token env: {source.get('token_env', 'None')}
-⚡ Priority: {source['priority']} (lower = higher priority)
-✓ Enabled: {source['enabled']}
-🕒 Added: {source['added_at'][:19]}
+📛 Name: {source["name"]}
+📁 Repository: {source["git_url"]}
+🔖 Type: {source["type"]}
+🌿 Branch: {source["branch"]}
+🔑 Token env: {source.get("token_env", "None")}
+⚡ Priority: {source["priority"]} (lower = higher priority)
+✓ Enabled: {source["enabled"]}
+🕒 Added: {source["added_at"][:19]}
 
 Usage:
   # Fetch config from this source
-  fetch_config(source="{source['name']}", config_name="your-config")
+  fetch_config(source="{source["name"]}", config_name="your-config")
 
   # List all sources
   list_config_sources()
 
   # Remove this source
-  remove_config_source(name="{source['name']}")
+  remove_config_source(name="{source["name"]}")
 
-💡 Make sure to set {source.get('token_env', 'GIT_TOKEN')} environment variable for private repos
+💡 Make sure to set {source.get("token_env", "GIT_TOKEN")} environment variable for private repos
 """
 
         return [TextContent(type="text", text=result)]
@@ -617,7 +648,7 @@ Usage:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
-async def list_config_sources_tool(args: dict) -> List[TextContent]:
+async def list_config_sources_tool(args: dict) -> list[TextContent]:
     """
     List all registered config sources.
 
@@ -683,7 +714,7 @@ To add a source:
         return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
 
 
-async def remove_config_source_tool(args: dict) -> List[TextContent]:
+async def remove_config_source_tool(args: dict) -> list[TextContent]:
     """
     Remove a registered config source.
 
@@ -732,7 +763,7 @@ Next steps:
 
             result = f"""❌ Source '{name}' not found
 
-Available sources: {', '.join(available) if available else 'none'}
+Available sources: {", ".join(available) if available else "none"}
 
 To see all sources:
   list_config_sources()

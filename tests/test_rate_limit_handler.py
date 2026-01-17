@@ -4,13 +4,13 @@ Tests for Rate Limit Handler
 Tests the smart rate limit detection and handling system.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
-import requests
+from unittest.mock import Mock, patch
 
-from skill_seekers.cli.rate_limit_handler import RateLimitHandler, RateLimitError, create_github_headers
+import pytest
+
 from skill_seekers.cli.config_manager import ConfigManager
+from skill_seekers.cli.rate_limit_handler import RateLimitError, RateLimitHandler, create_github_headers
 
 
 class TestRateLimitHandler:
@@ -40,16 +40,12 @@ class TestRateLimitHandler:
         assert handler.token == "ghp_test"
         assert handler.interactive is False
 
-    @patch('skill_seekers.cli.rate_limit_handler.get_config_manager')
+    @patch("skill_seekers.cli.rate_limit_handler.get_config_manager")
     def test_init_with_config_strategy(self, mock_get_config):
         """Test initialization pulls strategy from config."""
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {
-                "auto_switch_profiles": True,
-                "show_countdown": True,
-                "default_timeout_minutes": 30
-            }
+            "rate_limit": {"auto_switch_profiles": True, "show_countdown": True, "default_timeout_minutes": 30}
         }
         mock_config.get_rate_limit_strategy.return_value = "wait"
         mock_config.get_timeout_minutes.return_value = 45
@@ -68,19 +64,19 @@ class TestRateLimitHandler:
         mock_response = Mock()
         reset_time = int((datetime.now() + timedelta(minutes=30)).timestamp())
         mock_response.headers = {
-            'X-RateLimit-Limit': '5000',
-            'X-RateLimit-Remaining': '100',
-            'X-RateLimit-Reset': str(reset_time)
+            "X-RateLimit-Limit": "5000",
+            "X-RateLimit-Remaining": "100",
+            "X-RateLimit-Reset": str(reset_time),
         }
 
         info = handler.extract_rate_limit_info(mock_response)
 
-        assert info['limit'] == 5000
-        assert info['remaining'] == 100
-        assert info['reset_timestamp'] == reset_time
-        assert isinstance(info['reset_time'], datetime)
+        assert info["limit"] == 5000
+        assert info["remaining"] == 100
+        assert info["reset_timestamp"] == reset_time
+        assert isinstance(info["reset_time"], datetime)
 
-    @patch('builtins.input', return_value='n')
+    @patch("builtins.input", return_value="n")
     def test_check_upfront_no_token_declined(self, mock_input):
         """Test upfront check with no token, user declines."""
         handler = RateLimitHandler(token=None, interactive=True)
@@ -90,7 +86,7 @@ class TestRateLimitHandler:
         assert result is False
         mock_input.assert_called_once()
 
-    @patch('builtins.input', return_value='y')
+    @patch("builtins.input", return_value="y")
     def test_check_upfront_no_token_accepted(self, mock_input):
         """Test upfront check with no token, user accepts."""
         handler = RateLimitHandler(token=None, interactive=True)
@@ -109,18 +105,14 @@ class TestRateLimitHandler:
         # Should proceed without prompting
         assert result is True
 
-    @patch('requests.get')
-    @patch('skill_seekers.cli.rate_limit_handler.get_config_manager')
+    @patch("requests.get")
+    @patch("skill_seekers.cli.rate_limit_handler.get_config_manager")
     def test_check_upfront_with_token_good_status(self, mock_get_config, mock_get):
         """Test upfront check with token and good rate limit status."""
         # Mock config
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {
-                "auto_switch_profiles": False,
-                "show_countdown": True,
-                "default_timeout_minutes": 30
-            }
+            "rate_limit": {"auto_switch_profiles": False, "show_countdown": True, "default_timeout_minutes": 30}
         }
         mock_config.get_rate_limit_strategy.return_value = "prompt"
         mock_config.get_timeout_minutes.return_value = 30
@@ -129,13 +121,7 @@ class TestRateLimitHandler:
         # Mock rate limit check
         reset_time = int((datetime.now() + timedelta(minutes=60)).timestamp())
         mock_response = Mock()
-        mock_response.json.return_value = {
-            'rate': {
-                'limit': 5000,
-                'remaining': 4500,
-                'reset': reset_time
-            }
-        }
+        mock_response.json.return_value = {"rate": {"limit": 5000, "remaining": 4500, "reset": reset_time}}
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
@@ -161,24 +147,18 @@ class TestRateLimitHandler:
 
         mock_response = Mock()
         mock_response.status_code = 403
-        mock_response.json.return_value = {
-            'message': 'Forbidden - not rate limit'
-        }
+        mock_response.json.return_value = {"message": "Forbidden - not rate limit"}
 
         result = handler.check_response(mock_response)
 
         assert result is True
 
-    @patch('skill_seekers.cli.rate_limit_handler.get_config_manager')
+    @patch("skill_seekers.cli.rate_limit_handler.get_config_manager")
     def test_non_interactive_fail_strategy(self, mock_get_config):
         """Test non-interactive mode with fail strategy raises error."""
         mock_config = Mock()
         mock_config.config = {
-            "rate_limit": {
-                "auto_switch_profiles": False,
-                "show_countdown": True,
-                "default_timeout_minutes": 30
-            }
+            "rate_limit": {"auto_switch_profiles": False, "show_countdown": True, "default_timeout_minutes": 30}
         }
         mock_config.get_rate_limit_strategy.return_value = "fail"
         mock_config.get_timeout_minutes.return_value = 30
@@ -187,11 +167,7 @@ class TestRateLimitHandler:
         handler = RateLimitHandler(token="ghp_test", interactive=False)
 
         reset_time = datetime.now() + timedelta(minutes=30)
-        rate_info = {
-            'limit': 5000,
-            'remaining': 0,
-            'reset_time': reset_time
-        }
+        rate_info = {"limit": 5000, "remaining": 0, "reset_time": reset_time}
 
         with pytest.raises(RateLimitError):
             handler.handle_rate_limit(rate_info)
@@ -243,7 +219,7 @@ class TestConfigManagerIntegration:
             description="Test profile",
             rate_limit_strategy="wait",
             timeout_minutes=45,
-            set_as_default=True
+            set_as_default=True,
         )
 
         # Retrieve token

@@ -12,24 +12,24 @@ Provides dual-mode AI enhancement (API + LOCAL) for configuration analysis:
 Similar to GuideEnhancer (C3.3) but for configuration files.
 """
 
-import os
-import sys
 import json
 import logging
+import os
 import subprocess
+import sys
 import tempfile
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
+from pathlib import Path
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Optional anthropic import
 ANTHROPIC_AVAILABLE = False
 try:
     import anthropic
+
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     pass
@@ -38,6 +38,7 @@ except ImportError:
 @dataclass
 class ConfigEnhancement:
     """AI-generated enhancement for a configuration"""
+
     explanation: str = ""  # What this setting does
     best_practice: str = ""  # Suggested improvement
     security_concern: str = ""  # Security issue (if any)
@@ -48,11 +49,12 @@ class ConfigEnhancement:
 @dataclass
 class EnhancedConfigFile:
     """Configuration file with AI enhancements"""
+
     file_path: str
     config_type: str
     purpose: str
     enhancement: ConfigEnhancement
-    setting_enhancements: Dict[str, ConfigEnhancement] = field(default_factory=dict)
+    setting_enhancements: dict[str, ConfigEnhancement] = field(default_factory=dict)
 
 
 class ConfigEnhancer:
@@ -73,7 +75,7 @@ class ConfigEnhancer:
             mode: Enhancement mode - "api", "local", or "auto" (default)
         """
         self.mode = self._detect_mode(mode)
-        self.api_key = os.environ.get('ANTHROPIC_API_KEY')
+        self.api_key = os.environ.get("ANTHROPIC_API_KEY")
         self.client = None
 
         if self.mode == "api" and ANTHROPIC_AVAILABLE and self.api_key:
@@ -93,14 +95,14 @@ class ConfigEnhancer:
             return requested_mode
 
         # Auto-detect
-        if os.environ.get('ANTHROPIC_API_KEY') and ANTHROPIC_AVAILABLE:
+        if os.environ.get("ANTHROPIC_API_KEY") and ANTHROPIC_AVAILABLE:
             logger.info("🤖 AI enhancement: API mode (Claude API detected)")
             return "api"
         else:
             logger.info("🤖 AI enhancement: LOCAL mode (using Claude Code CLI)")
             return "local"
 
-    def enhance_config_result(self, result: Dict) -> Dict:
+    def enhance_config_result(self, result: dict) -> dict:
         """
         Enhance entire configuration extraction result.
 
@@ -121,7 +123,7 @@ class ConfigEnhancer:
     # API MODE - Direct Claude API calls
     # =========================================================================
 
-    def _enhance_via_api(self, result: Dict) -> Dict:
+    def _enhance_via_api(self, result: dict) -> dict:
         """Enhance configs using Claude API"""
         if not self.client:
             logger.error("❌ API mode requested but no API key available")
@@ -134,12 +136,7 @@ class ConfigEnhancer:
             # Call Claude API
             logger.info("📡 Calling Claude API for config analysis...")
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=8000,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+                model="claude-sonnet-4-20250514", max_tokens=8000, messages=[{"role": "user", "content": prompt}]
             )
 
             # Parse response
@@ -151,23 +148,23 @@ class ConfigEnhancer:
             logger.error(f"❌ API enhancement failed: {e}")
             return result
 
-    def _create_enhancement_prompt(self, result: Dict) -> str:
+    def _create_enhancement_prompt(self, result: dict) -> str:
         """Create prompt for Claude API"""
-        config_files = result.get('config_files', [])
+        config_files = result.get("config_files", [])
 
         # Summarize configs for prompt
         config_summary = []
         for cf in config_files[:10]:  # Limit to first 10 files
             settings_summary = []
-            for setting in cf.get('settings', [])[:5]:  # First 5 settings per file
+            for setting in cf.get("settings", [])[:5]:  # First 5 settings per file
                 settings_summary.append(f"  - {setting['key']}: {setting['value']} ({setting['value_type']})")
 
             config_summary.append(f"""
-File: {cf['relative_path']} ({cf['config_type']})
-Purpose: {cf['purpose']}
+File: {cf["relative_path"]} ({cf["config_type"]})
+Purpose: {cf["purpose"]}
 Settings:
 {chr(10).join(settings_summary)}
-Patterns: {', '.join(cf.get('patterns', []))}
+Patterns: {", ".join(cf.get("patterns", []))}
 """)
 
         prompt = f"""Analyze these configuration files and provide AI-enhanced insights.
@@ -207,12 +204,13 @@ Focus on actionable insights that help developers understand and improve their c
 """
         return prompt
 
-    def _parse_api_response(self, response_text: str, original_result: Dict) -> Dict:
+    def _parse_api_response(self, response_text: str, original_result: dict) -> dict:
         """Parse Claude API response and merge with original result"""
         try:
             # Extract JSON from response
             import re
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if not json_match:
                 logger.warning("⚠️  No JSON found in API response")
                 return original_result
@@ -220,14 +218,14 @@ Focus on actionable insights that help developers understand and improve their c
             enhancements = json.loads(json_match.group())
 
             # Merge enhancements into original result
-            original_result['ai_enhancements'] = enhancements
+            original_result["ai_enhancements"] = enhancements
 
             # Add enhancement flags to config files
-            file_enhancements = {e['file_path']: e for e in enhancements.get('file_enhancements', [])}
-            for cf in original_result.get('config_files', []):
-                file_path = cf.get('relative_path', cf.get('file_path'))
+            file_enhancements = {e["file_path"]: e for e in enhancements.get("file_enhancements", [])}
+            for cf in original_result.get("config_files", []):
+                file_path = cf.get("relative_path", cf.get("file_path"))
                 if file_path in file_enhancements:
-                    cf['ai_enhancement'] = file_enhancements[file_path]
+                    cf["ai_enhancement"] = file_enhancements[file_path]
 
             return original_result
 
@@ -239,11 +237,11 @@ Focus on actionable insights that help developers understand and improve their c
     # LOCAL MODE - Claude Code CLI
     # =========================================================================
 
-    def _enhance_via_local(self, result: Dict) -> Dict:
+    def _enhance_via_local(self, result: dict) -> dict:
         """Enhance configs using Claude Code CLI"""
         try:
             # Create temporary prompt file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
                 prompt_file = Path(f.name)
                 f.write(self._create_local_prompt(result))
 
@@ -263,7 +261,7 @@ Focus on actionable insights that help developers understand and improve their c
 
             if result_data:
                 # Merge LOCAL enhancements
-                original_result['ai_enhancements'] = result_data
+                original_result["ai_enhancements"] = result_data
                 logger.info("✅ LOCAL enhancement complete")
                 return original_result
             else:
@@ -274,18 +272,18 @@ Focus on actionable insights that help developers understand and improve their c
             logger.error(f"❌ LOCAL enhancement failed: {e}")
             return result
 
-    def _create_local_prompt(self, result: Dict) -> str:
+    def _create_local_prompt(self, result: dict) -> str:
         """Create prompt file for Claude Code CLI"""
-        config_files = result.get('config_files', [])
+        config_files = result.get("config_files", [])
 
         # Format config data for Claude
         config_data = []
         for cf in config_files[:10]:
             config_data.append(f"""
-### {cf['relative_path']} ({cf['config_type']})
-- Purpose: {cf['purpose']}
-- Patterns: {', '.join(cf.get('patterns', []))}
-- Settings count: {len(cf.get('settings', []))}
+### {cf["relative_path"]} ({cf["config_type"]})
+- Purpose: {cf["purpose"]}
+- Patterns: {", ".join(cf.get("patterns", []))}
+- Settings count: {len(cf.get("settings", []))}
 """)
 
         prompt = f"""# Configuration Analysis Task
@@ -332,15 +330,15 @@ Focus on actionable insights:
 """
         return prompt
 
-    def _run_claude_cli(self, prompt_file: Path, output_file: Path) -> Optional[Dict]:
+    def _run_claude_cli(self, prompt_file: Path, output_file: Path) -> dict | None:
         """Run Claude Code CLI and wait for completion"""
         try:
             # Run claude command
             result = subprocess.run(
-                ['claude', str(prompt_file)],
+                ["claude", str(prompt_file)],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             if result.returncode != 0:
@@ -350,6 +348,7 @@ Focus on actionable insights:
             # Try to find output file (Claude might save it with different name)
             # Look for JSON files created in the last minute
             import time
+
             current_time = time.time()
             potential_files = []
 
@@ -360,9 +359,9 @@ Focus on actionable insights:
             # Try to load the most recent JSON file
             for json_file in sorted(potential_files, key=lambda f: f.stat().st_mtime, reverse=True):
                 try:
-                    with open(json_file, 'r') as f:
+                    with open(json_file) as f:
                         data = json.load(f)
-                        if 'file_enhancements' in data or 'overall_insights' in data:
+                        if "file_enhancements" in data or "overall_insights" in data:
                             logger.info(f"✅ Found enhancement data in {json_file.name}")
                             return data
                 except:
@@ -383,29 +382,18 @@ def main():
     """Command-line interface for config enhancement"""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='AI-enhance configuration extraction results'
-    )
+    parser = argparse.ArgumentParser(description="AI-enhance configuration extraction results")
+    parser.add_argument("result_file", help="Path to config extraction JSON result file")
     parser.add_argument(
-        'result_file',
-        help='Path to config extraction JSON result file'
+        "--mode", choices=["auto", "api", "local"], default="auto", help="Enhancement mode (default: auto)"
     )
-    parser.add_argument(
-        '--mode',
-        choices=['auto', 'api', 'local'],
-        default='auto',
-        help='Enhancement mode (default: auto)'
-    )
-    parser.add_argument(
-        '--output',
-        help='Output file for enhanced results (default: <input>_enhanced.json)'
-    )
+    parser.add_argument("--output", help="Output file for enhanced results (default: <input>_enhanced.json)")
 
     args = parser.parse_args()
 
     # Load result file
     try:
-        with open(args.result_file, 'r') as f:
+        with open(args.result_file) as f:
             result = json.load(f)
     except Exception as e:
         logger.error(f"❌ Failed to load result file: {e}")
@@ -416,9 +404,9 @@ def main():
     enhanced_result = enhancer.enhance_config_result(result)
 
     # Save
-    output_file = args.output or args.result_file.replace('.json', '_enhanced.json')
+    output_file = args.output or args.result_file.replace(".json", "_enhanced.json")
     try:
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(enhanced_result, f, indent=2)
         logger.info(f"✅ Enhanced results saved to: {output_file}")
     except Exception as e:
@@ -428,5 +416,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

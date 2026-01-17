@@ -3,12 +3,11 @@
 Tests for cli/upload_skill.py functionality
 """
 
-import unittest
-import tempfile
-import zipfile
 import os
+import tempfile
+import unittest
+import zipfile
 from pathlib import Path
-import sys
 
 from skill_seekers.cli.upload_skill import upload_skill_api
 
@@ -18,20 +17,20 @@ class TestUploadSkillAPI(unittest.TestCase):
 
     def setUp(self):
         """Store original API key state"""
-        self.original_api_key = os.environ.get('ANTHROPIC_API_KEY')
+        self.original_api_key = os.environ.get("ANTHROPIC_API_KEY")
 
     def tearDown(self):
         """Restore original API key state"""
         if self.original_api_key:
-            os.environ['ANTHROPIC_API_KEY'] = self.original_api_key
-        elif 'ANTHROPIC_API_KEY' in os.environ:
-            del os.environ['ANTHROPIC_API_KEY']
+            os.environ["ANTHROPIC_API_KEY"] = self.original_api_key
+        elif "ANTHROPIC_API_KEY" in os.environ:
+            del os.environ["ANTHROPIC_API_KEY"]
 
     def create_test_zip(self, tmpdir):
         """Helper to create a test .zip file"""
         zip_path = Path(tmpdir) / "test-skill.zip"
 
-        with zipfile.ZipFile(zip_path, 'w') as zf:
+        with zipfile.ZipFile(zip_path, "w") as zf:
             zf.writestr("SKILL.md", "---\nname: test\n---\n# Test Skill")
             zf.writestr("references/index.md", "# Index")
 
@@ -40,8 +39,8 @@ class TestUploadSkillAPI(unittest.TestCase):
     def test_upload_without_api_key(self):
         """Test that upload fails gracefully without API key"""
         # Remove API key
-        if 'ANTHROPIC_API_KEY' in os.environ:
-            del os.environ['ANTHROPIC_API_KEY']
+        if "ANTHROPIC_API_KEY" in os.environ:
+            del os.environ["ANTHROPIC_API_KEY"]
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = self.create_test_zip(tmpdir)
@@ -50,22 +49,22 @@ class TestUploadSkillAPI(unittest.TestCase):
 
             self.assertFalse(success)
             # Check for api_key (with underscore) in message
-            self.assertTrue('api_key' in message.lower() or 'api key' in message.lower())
+            self.assertTrue("api_key" in message.lower() or "api key" in message.lower())
 
     def test_upload_with_nonexistent_file(self):
         """Test upload with nonexistent file"""
-        os.environ['ANTHROPIC_API_KEY'] = 'sk-ant-test-key'
+        os.environ["ANTHROPIC_API_KEY"] = "sk-ant-test-key"
 
         success, message = upload_skill_api("/nonexistent/file.zip")
 
         self.assertFalse(success)
-        self.assertIn('not found', message.lower())
+        self.assertIn("not found", message.lower())
 
     def test_upload_with_invalid_zip(self):
         """Test upload with invalid zip file (not a zip)"""
-        os.environ['ANTHROPIC_API_KEY'] = 'sk-ant-test-key'
+        os.environ["ANTHROPIC_API_KEY"] = "sk-ant-test-key"
 
-        with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmpfile:
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmpfile:
             tmpfile.write(b"Not a valid zip file")
             tmpfile.flush()
 
@@ -79,7 +78,7 @@ class TestUploadSkillAPI(unittest.TestCase):
 
     def test_upload_accepts_path_object(self):
         """Test that upload_skill_api accepts Path objects"""
-        os.environ['ANTHROPIC_API_KEY'] = 'sk-ant-test-key'
+        os.environ["ANTHROPIC_API_KEY"] = "sk-ant-test-key"
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = self.create_test_zip(tmpdir)
@@ -99,17 +98,12 @@ class TestUploadSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(
-                ['skill-seekers', 'upload', '--help'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run(["skill-seekers", "upload", "--help"], capture_output=True, text=True, timeout=5)
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
             output = result.stdout + result.stderr
-            self.assertTrue('usage:' in output.lower() or 'upload' in output.lower())
+            self.assertTrue("usage:" in output.lower() or "upload" in output.lower())
         except FileNotFoundError:
             self.skipTest("skill-seekers command not installed")
 
@@ -118,12 +112,7 @@ class TestUploadSkillCLI(unittest.TestCase):
         import subprocess
 
         try:
-            result = subprocess.run(
-                ['skill-seekers-upload', '--help'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run(["skill-seekers-upload", "--help"], capture_output=True, text=True, timeout=5)
 
             # argparse may return 0 or 2 for --help
             self.assertIn(result.returncode, [0, 2])
@@ -134,17 +123,11 @@ class TestUploadSkillCLI(unittest.TestCase):
         """Test that CLI requires zip file argument"""
         import subprocess
 
-        result = subprocess.run(
-            ['python3', 'cli/upload_skill.py'],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["python3", "cli/upload_skill.py"], capture_output=True, text=True)
 
         # Should fail or show usage
-        self.assertTrue(
-            result.returncode != 0 or 'usage' in result.stderr.lower() or 'usage' in result.stdout.lower()
-        )
+        self.assertTrue(result.returncode != 0 or "usage" in result.stderr.lower() or "usage" in result.stdout.lower())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

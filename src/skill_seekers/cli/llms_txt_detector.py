@@ -1,23 +1,20 @@
 # ABOUTME: Detects and validates llms.txt file availability at documentation URLs
 # ABOUTME: Supports llms-full.txt, llms.txt, and llms-small.txt variants
 
-import requests
-from typing import Optional, Dict, List
 from urllib.parse import urlparse
+
+import requests
+
 
 class LlmsTxtDetector:
     """Detect llms.txt files at documentation URLs"""
 
-    VARIANTS = [
-        ('llms-full.txt', 'full'),
-        ('llms.txt', 'standard'),
-        ('llms-small.txt', 'small')
-    ]
+    VARIANTS = [("llms-full.txt", "full"), ("llms.txt", "standard"), ("llms-small.txt", "small")]
 
     def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
 
-    def detect(self) -> Optional[Dict[str, str]]:
+    def detect(self) -> dict[str, str] | None:
         """
         Detect available llms.txt variant.
 
@@ -31,11 +28,11 @@ class LlmsTxtDetector:
             url = f"{root_url}/{filename}"
 
             if self._check_url_exists(url):
-                return {'url': url, 'variant': variant}
+                return {"url": url, "variant": variant}
 
         return None
 
-    def detect_all(self) -> List[Dict[str, str]]:
+    def detect_all(self) -> list[dict[str, str]]:
         """
         Detect all available llms.txt variants.
 
@@ -50,10 +47,7 @@ class LlmsTxtDetector:
             url = f"{root_url}/{filename}"
 
             if self._check_url_exists(url):
-                found_variants.append({
-                    'url': url,
-                    'variant': variant
-                })
+                found_variants.append({"url": url, "variant": variant})
 
         return found_variants
 

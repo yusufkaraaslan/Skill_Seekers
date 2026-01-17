@@ -3,11 +3,10 @@
 Tests for OpenAI adaptor
 """
 
-import unittest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import tempfile
+import unittest
 import zipfile
+from pathlib import Path
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
@@ -18,30 +17,30 @@ class TestOpenAIAdaptor(unittest.TestCase):
 
     def setUp(self):
         """Set up test adaptor"""
-        self.adaptor = get_adaptor('openai')
+        self.adaptor = get_adaptor("openai")
 
     def test_platform_info(self):
         """Test platform identifiers"""
-        self.assertEqual(self.adaptor.PLATFORM, 'openai')
-        self.assertEqual(self.adaptor.PLATFORM_NAME, 'OpenAI ChatGPT')
+        self.assertEqual(self.adaptor.PLATFORM, "openai")
+        self.assertEqual(self.adaptor.PLATFORM_NAME, "OpenAI ChatGPT")
         self.assertIsNotNone(self.adaptor.DEFAULT_API_ENDPOINT)
 
     def test_validate_api_key_valid(self):
         """Test valid OpenAI API keys"""
-        self.assertTrue(self.adaptor.validate_api_key('sk-proj-abc123'))
-        self.assertTrue(self.adaptor.validate_api_key('sk-abc123'))
-        self.assertTrue(self.adaptor.validate_api_key('  sk-test  '))  # with whitespace
+        self.assertTrue(self.adaptor.validate_api_key("sk-proj-abc123"))
+        self.assertTrue(self.adaptor.validate_api_key("sk-abc123"))
+        self.assertTrue(self.adaptor.validate_api_key("  sk-test  "))  # with whitespace
 
     def test_validate_api_key_invalid(self):
         """Test invalid API keys"""
-        self.assertFalse(self.adaptor.validate_api_key('AIzaSyABC123'))  # Gemini key
+        self.assertFalse(self.adaptor.validate_api_key("AIzaSyABC123"))  # Gemini key
         # Note: Can't distinguish Claude keys (sk-ant-*) from OpenAI keys (sk-*)
-        self.assertFalse(self.adaptor.validate_api_key('invalid'))
-        self.assertFalse(self.adaptor.validate_api_key(''))
+        self.assertFalse(self.adaptor.validate_api_key("invalid"))
+        self.assertFalse(self.adaptor.validate_api_key(""))
 
     def test_get_env_var_name(self):
         """Test environment variable name"""
-        self.assertEqual(self.adaptor.get_env_var_name(), 'OPENAI_API_KEY')
+        self.assertEqual(self.adaptor.get_env_var_name(), "OPENAI_API_KEY")
 
     def test_supports_enhancement(self):
         """Test enhancement support"""
@@ -56,19 +55,16 @@ class TestOpenAIAdaptor(unittest.TestCase):
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Test content")
 
-            metadata = SkillMetadata(
-                name="test-skill",
-                description="Test skill description"
-            )
+            metadata = SkillMetadata(name="test-skill", description="Test skill description")
 
             formatted = self.adaptor.format_skill_md(skill_dir, metadata)
 
             # Should NOT start with YAML frontmatter
-            self.assertFalse(formatted.startswith('---'))
+            self.assertFalse(formatted.startswith("---"))
             # Should contain assistant-style instructions
-            self.assertIn('You are an expert assistant', formatted)
-            self.assertIn('test-skill', formatted)
-            self.assertIn('Test skill description', formatted)
+            self.assertIn("You are an expert assistant", formatted)
+            self.assertIn("test-skill", formatted)
+            self.assertIn("Test skill description", formatted)
 
     def test_package_creates_zip(self):
         """Test that package creates ZIP file with correct structure"""
@@ -89,41 +85,41 @@ class TestOpenAIAdaptor(unittest.TestCase):
 
             # Verify package was created
             self.assertTrue(package_path.exists())
-            self.assertTrue(str(package_path).endswith('.zip'))
-            self.assertIn('openai', package_path.name)
+            self.assertTrue(str(package_path).endswith(".zip"))
+            self.assertIn("openai", package_path.name)
 
             # Verify package contents
-            with zipfile.ZipFile(package_path, 'r') as zf:
+            with zipfile.ZipFile(package_path, "r") as zf:
                 names = zf.namelist()
-                self.assertIn('assistant_instructions.txt', names)
-                self.assertIn('openai_metadata.json', names)
+                self.assertIn("assistant_instructions.txt", names)
+                self.assertIn("openai_metadata.json", names)
                 # Should have vector store files
-                self.assertTrue(any('vector_store_files' in name for name in names))
+                self.assertTrue(any("vector_store_files" in name for name in names))
 
     def test_upload_missing_library(self):
         """Test upload when openai library is not installed"""
-        with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
             # Simulate missing library by not mocking it
-            result = self.adaptor.upload(Path(tmp.name), 'sk-test123')
+            result = self.adaptor.upload(Path(tmp.name), "sk-test123")
 
-            self.assertFalse(result['success'])
-            self.assertIn('openai', result['message'])
-            self.assertIn('not installed', result['message'])
+            self.assertFalse(result["success"])
+            self.assertIn("openai", result["message"])
+            self.assertIn("not installed", result["message"])
 
     def test_upload_invalid_file(self):
         """Test upload with invalid file"""
-        result = self.adaptor.upload(Path('/nonexistent/file.zip'), 'sk-test123')
+        result = self.adaptor.upload(Path("/nonexistent/file.zip"), "sk-test123")
 
-        self.assertFalse(result['success'])
-        self.assertIn('not found', result['message'].lower())
+        self.assertFalse(result["success"])
+        self.assertIn("not found", result["message"].lower())
 
     def test_upload_wrong_format(self):
         """Test upload with wrong file format"""
-        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as tmp:
-            result = self.adaptor.upload(Path(tmp.name), 'sk-test123')
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp:
+            result = self.adaptor.upload(Path(tmp.name), "sk-test123")
 
-            self.assertFalse(result['success'])
-            self.assertIn('not a zip', result['message'].lower())
+            self.assertFalse(result["success"])
+            self.assertIn("not a zip", result["message"].lower())
 
     @unittest.skip("Complex mocking - integration test needed with real API")
     def test_upload_success(self):
@@ -144,7 +140,7 @@ class TestOpenAIAdaptor(unittest.TestCase):
             (refs_dir / "test.md").write_text("Test")
 
             # Don't mock the module - it won't be available
-            success = self.adaptor.enhance(skill_dir, 'sk-test123')
+            success = self.adaptor.enhance(skill_dir, "sk-test123")
 
             self.assertFalse(success)
 
@@ -170,22 +166,23 @@ class TestOpenAIAdaptor(unittest.TestCase):
             package_path = self.adaptor.package(skill_dir, output_dir)
 
             # Verify contents
-            with zipfile.ZipFile(package_path, 'r') as zf:
+            with zipfile.ZipFile(package_path, "r") as zf:
                 # Read instructions
-                instructions = zf.read('assistant_instructions.txt').decode('utf-8')
+                instructions = zf.read("assistant_instructions.txt").decode("utf-8")
                 self.assertEqual(instructions, skill_md_content)
 
                 # Verify vector store file
-                self.assertIn('vector_store_files/guide.md', zf.namelist())
+                self.assertIn("vector_store_files/guide.md", zf.namelist())
 
                 # Verify metadata
-                metadata_content = zf.read('openai_metadata.json').decode('utf-8')
+                metadata_content = zf.read("openai_metadata.json").decode("utf-8")
                 import json
+
                 metadata = json.loads(metadata_content)
-                self.assertEqual(metadata['platform'], 'openai')
-                self.assertEqual(metadata['name'], 'test-skill')
-                self.assertIn('file_search', metadata['tools'])
+                self.assertEqual(metadata["platform"], "openai")
+                self.assertEqual(metadata["name"], "test-skill")
+                self.assertIn("file_search", metadata["tools"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

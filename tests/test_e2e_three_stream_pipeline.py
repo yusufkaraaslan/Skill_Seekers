@@ -9,34 +9,26 @@ Tests the complete workflow:
 5. Validate output structure and quality
 """
 
-import pytest
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
+
+from skill_seekers.cli.generate_router import RouterGenerator
 from skill_seekers.cli.github_fetcher import (
-    GitHubThreeStreamFetcher,
     CodeStream,
     DocsStream,
     InsightsStream,
-    ThreeStreamData
+    ThreeStreamData,
 )
-from skill_seekers.cli.unified_codebase_analyzer import (
-    UnifiedCodebaseAnalyzer,
-    AnalysisResult
-)
-from skill_seekers.cli.merge_sources import (
-    RuleBasedMerger,
-    categorize_issues_by_topic,
-    generate_hybrid_content
-)
-from skill_seekers.cli.generate_router import RouterGenerator
+from skill_seekers.cli.merge_sources import categorize_issues_by_topic
+from skill_seekers.cli.unified_codebase_analyzer import UnifiedCodebaseAnalyzer
 
 
 class TestE2EBasicWorkflow:
     """Test E2E workflow with basic analysis (fast)."""
 
-    @patch('skill_seekers.cli.unified_codebase_analyzer.GitHubThreeStreamFetcher')
+    @patch("skill_seekers.cli.unified_codebase_analyzer.GitHubThreeStreamFetcher")
     def test_github_url_to_basic_analysis(self, mock_fetcher_class, tmp_path):
         """
         Test complete pipeline: GitHub URL → Basic analysis → Merged output
@@ -62,10 +54,7 @@ function greet(name) {
 """)
 
         # Create mock three-stream data
-        code_stream = CodeStream(
-            directory=tmp_path,
-            files=[tmp_path / "main.py", tmp_path / "utils.js"]
-        )
+        code_stream = CodeStream(directory=tmp_path, files=[tmp_path / "main.py", tmp_path / "utils.js"])
         docs_stream = DocsStream(
             readme="""# Test Project
 
@@ -85,112 +74,115 @@ hello()
 ```
 """,
             contributing="# Contributing\n\nPull requests welcome!",
-            docs_files=[
-                {'path': 'docs/guide.md', 'content': '# User Guide\n\nHow to use this project.'}
-            ]
+            docs_files=[{"path": "docs/guide.md", "content": "# User Guide\n\nHow to use this project."}],
         )
         insights_stream = InsightsStream(
-            metadata={
-                'stars': 1234,
-                'forks': 56,
-                'language': 'Python',
-                'description': 'A test project'
-            },
+            metadata={"stars": 1234, "forks": 56, "language": "Python", "description": "A test project"},
             common_problems=[
                 {
-                    'title': 'Installation fails on Windows',
-                    'number': 42,
-                    'state': 'open',
-                    'comments': 15,
-                    'labels': ['bug', 'windows']
+                    "title": "Installation fails on Windows",
+                    "number": 42,
+                    "state": "open",
+                    "comments": 15,
+                    "labels": ["bug", "windows"],
                 },
                 {
-                    'title': 'Import error with Python 3.6',
-                    'number': 38,
-                    'state': 'open',
-                    'comments': 10,
-                    'labels': ['bug', 'python']
-                }
+                    "title": "Import error with Python 3.6",
+                    "number": 38,
+                    "state": "open",
+                    "comments": 10,
+                    "labels": ["bug", "python"],
+                },
             ],
             known_solutions=[
-                {
-                    'title': 'Fixed: Module not found',
-                    'number': 35,
-                    'state': 'closed',
-                    'comments': 8,
-                    'labels': ['bug']
-                }
+                {"title": "Fixed: Module not found", "number": 35, "state": "closed", "comments": 8, "labels": ["bug"]}
             ],
             top_labels=[
-                {'label': 'bug', 'count': 25},
-                {'label': 'enhancement', 'count': 15},
-                {'label': 'documentation', 'count': 10}
-            ]
+                {"label": "bug", "count": 25},
+                {"label": "enhancement", "count": 15},
+                {"label": "documentation", "count": 10},
+            ],
         )
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
         mock_fetcher.fetch.return_value = three_streams
 
         # Step 2: Run unified analyzer with basic depth
         analyzer = UnifiedCodebaseAnalyzer()
-        result = analyzer.analyze(
-            source="https://github.com/test/project",
-            depth="basic",
-            fetch_github_metadata=True
-        )
+        result = analyzer.analyze(source="https://github.com/test/project", depth="basic", fetch_github_metadata=True)
 
         # Step 3: Validate all three streams present
-        assert result.source_type == 'github'
-        assert result.analysis_depth == 'basic'
+        assert result.source_type == "github"
+        assert result.analysis_depth == "basic"
 
         # Validate code stream results
         assert result.code_analysis is not None
-        assert result.code_analysis['analysis_type'] == 'basic'
-        assert 'files' in result.code_analysis
-        assert 'structure' in result.code_analysis
-        assert 'imports' in result.code_analysis
+        assert result.code_analysis["analysis_type"] == "basic"
+        assert "files" in result.code_analysis
+        assert "structure" in result.code_analysis
+        assert "imports" in result.code_analysis
 
         # Validate docs stream results
         assert result.github_docs is not None
-        assert result.github_docs['readme'].startswith('# Test Project')
-        assert 'pip install test-project' in result.github_docs['readme']
+        assert result.github_docs["readme"].startswith("# Test Project")
+        assert "pip install test-project" in result.github_docs["readme"]
 
         # Validate insights stream results
         assert result.github_insights is not None
-        assert result.github_insights['metadata']['stars'] == 1234
-        assert result.github_insights['metadata']['language'] == 'Python'
-        assert len(result.github_insights['common_problems']) == 2
-        assert len(result.github_insights['known_solutions']) == 1
-        assert len(result.github_insights['top_labels']) == 3
+        assert result.github_insights["metadata"]["stars"] == 1234
+        assert result.github_insights["metadata"]["language"] == "Python"
+        assert len(result.github_insights["common_problems"]) == 2
+        assert len(result.github_insights["known_solutions"]) == 1
+        assert len(result.github_insights["top_labels"]) == 3
 
     def test_issue_categorization_by_topic(self):
         """Test that issues are correctly categorized by topic keywords."""
         problems = [
-            {'title': 'OAuth fails on redirect', 'number': 50, 'state': 'open', 'comments': 20, 'labels': ['oauth', 'bug']},
-            {'title': 'Token refresh issue', 'number': 45, 'state': 'open', 'comments': 15, 'labels': ['oauth', 'token']},
-            {'title': 'Async deadlock', 'number': 40, 'state': 'open', 'comments': 12, 'labels': ['async', 'bug']},
-            {'title': 'Database connection lost', 'number': 35, 'state': 'open', 'comments': 10, 'labels': ['database']}
+            {
+                "title": "OAuth fails on redirect",
+                "number": 50,
+                "state": "open",
+                "comments": 20,
+                "labels": ["oauth", "bug"],
+            },
+            {
+                "title": "Token refresh issue",
+                "number": 45,
+                "state": "open",
+                "comments": 15,
+                "labels": ["oauth", "token"],
+            },
+            {"title": "Async deadlock", "number": 40, "state": "open", "comments": 12, "labels": ["async", "bug"]},
+            {
+                "title": "Database connection lost",
+                "number": 35,
+                "state": "open",
+                "comments": 10,
+                "labels": ["database"],
+            },
         ]
 
         solutions = [
-            {'title': 'Fixed OAuth flow', 'number': 30, 'state': 'closed', 'comments': 8, 'labels': ['oauth']},
-            {'title': 'Resolved async race', 'number': 25, 'state': 'closed', 'comments': 6, 'labels': ['async']}
+            {"title": "Fixed OAuth flow", "number": 30, "state": "closed", "comments": 8, "labels": ["oauth"]},
+            {"title": "Resolved async race", "number": 25, "state": "closed", "comments": 6, "labels": ["async"]},
         ]
 
-        topics = ['oauth', 'auth', 'authentication']
+        topics = ["oauth", "auth", "authentication"]
 
         # Categorize issues
         categorized = categorize_issues_by_topic(problems, solutions, topics)
 
         # Validate categorization
-        assert 'oauth' in categorized or 'auth' in categorized or 'authentication' in categorized
-        oauth_issues = categorized.get('oauth', []) + categorized.get('auth', []) + categorized.get('authentication', [])
+        assert "oauth" in categorized or "auth" in categorized or "authentication" in categorized
+        oauth_issues = (
+            categorized.get("oauth", []) + categorized.get("auth", []) + categorized.get("authentication", [])
+        )
 
         # Should have 3 OAuth-related issues (2 problems + 1 solution)
         assert len(oauth_issues) >= 2  # At least the problems
 
         # OAuth issues should be in the categorized output
-        oauth_titles = [issue['title'] for issue in oauth_issues]
-        assert any('OAuth' in title for title in oauth_titles)
+        oauth_titles = [issue["title"] for issue in oauth_issues]
+        assert any("OAuth" in title for title in oauth_titles)
 
 
 class TestE2ERouterGeneration:
@@ -209,24 +201,24 @@ class TestE2ERouterGeneration:
         """
         # Create sub-skill configs
         config1 = {
-            'name': 'testproject-oauth',
-            'description': 'OAuth authentication in Test Project',
-            'base_url': 'https://github.com/test/project',
-            'categories': {'oauth': ['oauth', 'auth']}
+            "name": "testproject-oauth",
+            "description": "OAuth authentication in Test Project",
+            "base_url": "https://github.com/test/project",
+            "categories": {"oauth": ["oauth", "auth"]},
         }
         config2 = {
-            'name': 'testproject-async',
-            'description': 'Async operations in Test Project',
-            'base_url': 'https://github.com/test/project',
-            'categories': {'async': ['async', 'await']}
+            "name": "testproject-async",
+            "description": "Async operations in Test Project",
+            "base_url": "https://github.com/test/project",
+            "categories": {"async": ["async", "await"]},
         }
 
-        config_path1 = tmp_path / 'config1.json'
-        config_path2 = tmp_path / 'config2.json'
+        config_path1 = tmp_path / "config1.json"
+        config_path2 = tmp_path / "config2.json"
 
-        with open(config_path1, 'w') as f:
+        with open(config_path1, "w") as f:
             json.dump(config1, f)
-        with open(config_path2, 'w') as f:
+        with open(config_path2, "w") as f:
             json.dump(config2, f)
 
         # Create GitHub streams
@@ -249,92 +241,96 @@ import testproject
 testproject.run()
 ```
 """,
-            contributing='# Contributing\n\nWelcome!',
-            docs_files=[]
+            contributing="# Contributing\n\nWelcome!",
+            docs_files=[],
         )
         insights_stream = InsightsStream(
-            metadata={
-                'stars': 5000,
-                'forks': 250,
-                'language': 'Python',
-                'description': 'Fast test framework'
-            },
+            metadata={"stars": 5000, "forks": 250, "language": "Python", "description": "Fast test framework"},
             common_problems=[
-                {'title': 'OAuth setup fails', 'number': 150, 'state': 'open', 'comments': 30, 'labels': ['bug', 'oauth']},
-                {'title': 'Async deadlock', 'number': 142, 'state': 'open', 'comments': 25, 'labels': ['async', 'bug']},
-                {'title': 'Token refresh issue', 'number': 130, 'state': 'open', 'comments': 20, 'labels': ['oauth']}
+                {
+                    "title": "OAuth setup fails",
+                    "number": 150,
+                    "state": "open",
+                    "comments": 30,
+                    "labels": ["bug", "oauth"],
+                },
+                {"title": "Async deadlock", "number": 142, "state": "open", "comments": 25, "labels": ["async", "bug"]},
+                {"title": "Token refresh issue", "number": 130, "state": "open", "comments": 20, "labels": ["oauth"]},
             ],
             known_solutions=[
-                {'title': 'Fixed OAuth redirect', 'number': 120, 'state': 'closed', 'comments': 15, 'labels': ['oauth']},
-                {'title': 'Resolved async race', 'number': 110, 'state': 'closed', 'comments': 12, 'labels': ['async']}
+                {
+                    "title": "Fixed OAuth redirect",
+                    "number": 120,
+                    "state": "closed",
+                    "comments": 15,
+                    "labels": ["oauth"],
+                },
+                {"title": "Resolved async race", "number": 110, "state": "closed", "comments": 12, "labels": ["async"]},
             ],
             top_labels=[
-                {'label': 'oauth', 'count': 45},
-                {'label': 'async', 'count': 38},
-                {'label': 'bug', 'count': 30}
-            ]
+                {"label": "oauth", "count": 45},
+                {"label": "async", "count": 38},
+                {"label": "bug", "count": 30},
+            ],
         )
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Generate router
-        generator = RouterGenerator(
-            [str(config_path1), str(config_path2)],
-            github_streams=github_streams
-        )
+        generator = RouterGenerator([str(config_path1), str(config_path2)], github_streams=github_streams)
 
         # Step 1: Validate GitHub metadata extracted
         assert generator.github_metadata is not None
-        assert generator.github_metadata['stars'] == 5000
-        assert generator.github_metadata['language'] == 'Python'
+        assert generator.github_metadata["stars"] == 5000
+        assert generator.github_metadata["language"] == "Python"
 
         # Step 2: Validate GitHub docs extracted
         assert generator.github_docs is not None
-        assert 'pip install test-project' in generator.github_docs['readme']
+        assert "pip install test-project" in generator.github_docs["readme"]
 
         # Step 3: Validate GitHub issues extracted
         assert generator.github_issues is not None
-        assert len(generator.github_issues['common_problems']) == 3
-        assert len(generator.github_issues['known_solutions']) == 2
-        assert len(generator.github_issues['top_labels']) == 3
+        assert len(generator.github_issues["common_problems"]) == 3
+        assert len(generator.github_issues["known_solutions"]) == 2
+        assert len(generator.github_issues["top_labels"]) == 3
 
         # Step 4: Generate and validate router SKILL.md
         skill_md = generator.generate_skill_md()
 
         # Validate repository metadata section
-        assert '⭐ 5,000' in skill_md
-        assert 'Python' in skill_md
-        assert 'Fast test framework' in skill_md
+        assert "⭐ 5,000" in skill_md
+        assert "Python" in skill_md
+        assert "Fast test framework" in skill_md
 
         # Validate README quick start section
-        assert '## Quick Start' in skill_md
-        assert 'pip install test-project' in skill_md
+        assert "## Quick Start" in skill_md
+        assert "pip install test-project" in skill_md
 
         # Validate examples section with converted questions (Fix 1)
-        assert '## Examples' in skill_md
+        assert "## Examples" in skill_md
         # Issues converted to natural questions
-        assert 'how do i fix oauth setup' in skill_md.lower() or 'how do i handle oauth setup' in skill_md.lower()
-        assert 'how do i handle async deadlock' in skill_md.lower() or 'how do i fix async deadlock' in skill_md.lower()
+        assert "how do i fix oauth setup" in skill_md.lower() or "how do i handle oauth setup" in skill_md.lower()
+        assert "how do i handle async deadlock" in skill_md.lower() or "how do i fix async deadlock" in skill_md.lower()
         # Common Issues section may still exist with other issues
         # Note: Issue numbers may appear in Common Issues or Common Patterns sections
 
         # Step 5: Validate routing keywords include GitHub labels (2x weight)
         routing = generator.extract_routing_keywords()
 
-        oauth_keywords = routing['testproject-oauth']
-        async_keywords = routing['testproject-async']
+        oauth_keywords = routing["testproject-oauth"]
+        async_keywords = routing["testproject-async"]
 
         # Labels should be included with 2x weight
-        assert oauth_keywords.count('oauth') >= 2  # Base + name + 2x from label
-        assert async_keywords.count('async') >= 2  # Base + name + 2x from label
+        assert oauth_keywords.count("oauth") >= 2  # Base + name + 2x from label
+        assert async_keywords.count("async") >= 2  # Base + name + 2x from label
 
         # Step 6: Generate router config
         router_config = generator.create_router_config()
 
-        assert router_config['name'] == 'testproject'
-        assert router_config['_router'] is True
-        assert len(router_config['_sub_skills']) == 2
-        assert 'testproject-oauth' in router_config['_sub_skills']
-        assert 'testproject-async' in router_config['_sub_skills']
+        assert router_config["name"] == "testproject"
+        assert router_config["_router"] is True
+        assert len(router_config["_sub_skills"]) == 2
+        assert "testproject-oauth" in router_config["_sub_skills"]
+        assert "testproject-async" in router_config["_sub_skills"]
 
 
 class TestE2EQualityMetrics:
@@ -348,43 +344,39 @@ class TestE2EQualityMetrics:
         """
         # Create minimal config
         config = {
-            'name': 'test-skill',
-            'description': 'Test skill',
-            'base_url': 'https://github.com/test/repo',
-            'categories': {'api': ['api']}
+            "name": "test-skill",
+            "description": "Test skill",
+            "base_url": "https://github.com/test/repo",
+            "categories": {"api": ["api"]},
         }
 
-        config_path = tmp_path / 'config.json'
-        with open(config_path, 'w') as f:
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w") as f:
             json.dump(config, f)
 
         # Create GitHub streams with realistic data
         code_stream = CodeStream(directory=tmp_path, files=[])
-        docs_stream = DocsStream(
-            readme='# Test\n\nA short README.',
-            contributing=None,
-            docs_files=[]
-        )
+        docs_stream = DocsStream(readme="# Test\n\nA short README.", contributing=None, docs_files=[])
         insights_stream = InsightsStream(
-            metadata={'stars': 100, 'forks': 10, 'language': 'Python', 'description': 'Test'},
+            metadata={"stars": 100, "forks": 10, "language": "Python", "description": "Test"},
             common_problems=[
-                {'title': 'Issue 1', 'number': 1, 'state': 'open', 'comments': 5, 'labels': ['bug']},
-                {'title': 'Issue 2', 'number': 2, 'state': 'open', 'comments': 3, 'labels': ['bug']}
+                {"title": "Issue 1", "number": 1, "state": "open", "comments": 5, "labels": ["bug"]},
+                {"title": "Issue 2", "number": 2, "state": "open", "comments": 3, "labels": ["bug"]},
             ],
             known_solutions=[],
-            top_labels=[{'label': 'bug', 'count': 10}]
+            top_labels=[{"label": "bug", "count": 10}],
         )
         github_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Generate router without GitHub
         generator_no_github = RouterGenerator([str(config_path)])
         skill_md_no_github = generator_no_github.generate_skill_md()
-        lines_no_github = len(skill_md_no_github.split('\n'))
+        lines_no_github = len(skill_md_no_github.split("\n"))
 
         # Generate router with GitHub
         generator_with_github = RouterGenerator([str(config_path)], github_streams=github_streams)
         skill_md_with_github = generator_with_github.generate_skill_md()
-        lines_with_github = len(skill_md_with_github.split('\n'))
+        lines_with_github = len(skill_md_with_github.split("\n"))
 
         # Calculate GitHub overhead
         github_overhead = lines_with_github - lines_no_github
@@ -402,20 +394,20 @@ class TestE2EQualityMetrics:
         configs = []
         for i in range(4):
             config = {
-                'name': f'test-skill-{i}',
-                'description': f'Test skill {i}',
-                'base_url': 'https://github.com/test/repo',
-                'categories': {f'topic{i}': [f'topic{i}']}
+                "name": f"test-skill-{i}",
+                "description": f"Test skill {i}",
+                "base_url": "https://github.com/test/repo",
+                "categories": {f"topic{i}": [f"topic{i}"]},
             }
-            config_path = tmp_path / f'config{i}.json'
-            with open(config_path, 'w') as f:
+            config_path = tmp_path / f"config{i}.json"
+            with open(config_path, "w") as f:
                 json.dump(config, f)
             configs.append(str(config_path))
 
         # Generate router
         generator = RouterGenerator(configs)
         skill_md = generator.generate_skill_md()
-        lines = len(skill_md.split('\n'))
+        lines = len(skill_md.split("\n"))
 
         # Validate router size is reasonable (60-250 lines for 4 sub-skills)
         # Actual size depends on whether GitHub streams included - can be as small as 60 lines
@@ -428,14 +420,14 @@ class TestE2EBackwardCompatibility:
     def test_router_without_github_streams(self, tmp_path):
         """Test that router generation works without GitHub streams (backward compat)."""
         config = {
-            'name': 'test-skill',
-            'description': 'Test skill',
-            'base_url': 'https://example.com',
-            'categories': {'api': ['api']}
+            "name": "test-skill",
+            "description": "Test skill",
+            "base_url": "https://example.com",
+            "categories": {"api": ["api"]},
         }
 
-        config_path = tmp_path / 'config.json'
-        with open(config_path, 'w') as f:
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w") as f:
             json.dump(config, f)
 
         # Generate router WITHOUT GitHub streams
@@ -448,16 +440,16 @@ class TestE2EBackwardCompatibility:
         # Should still generate valid SKILL.md
         skill_md = generator.generate_skill_md()
 
-        assert 'When to Use This Skill' in skill_md
-        assert 'How It Works' in skill_md
+        assert "When to Use This Skill" in skill_md
+        assert "How It Works" in skill_md
 
         # Should NOT have GitHub-specific sections
-        assert '⭐' not in skill_md
-        assert 'Repository Info' not in skill_md
-        assert 'Quick Start (from README)' not in skill_md
-        assert 'Common Issues (from GitHub)' not in skill_md
+        assert "⭐" not in skill_md
+        assert "Repository Info" not in skill_md
+        assert "Quick Start (from README)" not in skill_md
+        assert "Common Issues (from GitHub)" not in skill_md
 
-    @patch('skill_seekers.cli.unified_codebase_analyzer.GitHubThreeStreamFetcher')
+    @patch("skill_seekers.cli.unified_codebase_analyzer.GitHubThreeStreamFetcher")
     def test_analyzer_without_github_metadata(self, mock_fetcher_class, tmp_path):
         """Test analyzer with fetch_github_metadata=False."""
         mock_fetcher = Mock()
@@ -475,7 +467,7 @@ class TestE2EBackwardCompatibility:
         result = analyzer.analyze(
             source="https://github.com/test/repo",
             depth="basic",
-            fetch_github_metadata=False  # Explicitly disable
+            fetch_github_metadata=False,  # Explicitly disable
         )
 
         # Should not include GitHub docs/insights
@@ -498,17 +490,8 @@ class TestE2ETokenEfficiency:
 
         # Create GitHub streams
         code_stream = CodeStream(directory=tmp_path, files=[tmp_path / "main.py"])
-        docs_stream = DocsStream(
-            readme="# Test\n\nQuick start guide.",
-            contributing=None,
-            docs_files=[]
-        )
-        insights_stream = InsightsStream(
-            metadata={'stars': 100},
-            common_problems=[],
-            known_solutions=[],
-            top_labels=[]
-        )
+        docs_stream = DocsStream(readme="# Test\n\nQuick start guide.", contributing=None, docs_files=[])
+        insights_stream = InsightsStream(metadata={"stars": 100}, common_problems=[], known_solutions=[], top_labels=[])
         three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Verify streams are separate (no duplication)
@@ -517,9 +500,9 @@ class TestE2ETokenEfficiency:
         assert insights_stream.metadata is not None
 
         # Verify no cross-contamination
-        assert 'Quick start guide' not in str(code_stream.files)
+        assert "Quick start guide" not in str(code_stream.files)
         assert str(tmp_path) not in docs_stream.readme
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

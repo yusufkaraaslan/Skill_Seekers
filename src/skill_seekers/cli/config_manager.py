@@ -8,10 +8,10 @@ Provides secure storage with file permissions and auto-detection capabilities.
 import json
 import os
 import stat
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-import sys
+from typing import Any
 
 
 class ConfigManager:
@@ -26,28 +26,11 @@ class ConfigManager:
     # Default configuration
     DEFAULT_CONFIG = {
         "version": "1.0",
-        "github": {
-            "default_profile": None,
-            "profiles": {}
-        },
-        "rate_limit": {
-            "default_timeout_minutes": 30,
-            "auto_switch_profiles": True,
-            "show_countdown": True
-        },
-        "resume": {
-            "auto_save_interval_seconds": 60,
-            "keep_progress_days": 7
-        },
-        "api_keys": {
-            "anthropic": None,
-            "google": None,
-            "openai": None
-        },
-        "first_run": {
-            "completed": False,
-            "version": "2.7.0"
-        }
+        "github": {"default_profile": None, "profiles": {}},
+        "rate_limit": {"default_timeout_minutes": 30, "auto_switch_profiles": True, "show_countdown": True},
+        "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
+        "api_keys": {"anthropic": None, "google": None, "openai": None},
+        "first_run": {"completed": False, "version": "2.7.0"},
     }
 
     def __init__(self):
@@ -65,25 +48,26 @@ class ConfigManager:
             # Set directory permissions to 700 (rwx------)
             directory.chmod(stat.S_IRWXU)
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load configuration from file or create default."""
         if not self.config_file.exists():
             return self.DEFAULT_CONFIG.copy()
 
         try:
-            with open(self.config_file, 'r') as f:
+            with open(self.config_file) as f:
                 config = json.load(f)
 
             # Merge with defaults for any missing keys
             config = self._merge_with_defaults(config)
             return config
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             print(f"⚠️  Warning: Could not load config file: {e}")
-            print(f"   Using default configuration.")
+            print("   Using default configuration.")
             return self.DEFAULT_CONFIG.copy()
 
-    def _merge_with_defaults(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _merge_with_defaults(self, config: dict[str, Any]) -> dict[str, Any]:
         """Merge loaded config with defaults to ensure all keys exist."""
+
         def deep_merge(default: dict, custom: dict) -> dict:
             result = default.copy()
             for key, value in custom.items():
@@ -98,13 +82,13 @@ class ConfigManager:
     def save_config(self):
         """Save configuration to file with secure permissions."""
         try:
-            with open(self.config_file, 'w') as f:
+            with open(self.config_file, "w") as f:
                 json.dump(self.config, f, indent=2)
 
             # Set file permissions to 600 (rw-------)
             self.config_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
-        except IOError as e:
+        except OSError as e:
             print(f"❌ Error saving config: {e}")
             sys.exit(1)
 
@@ -117,7 +101,7 @@ class ConfigManager:
         description: str = "",
         rate_limit_strategy: str = "prompt",
         timeout_minutes: int = 30,
-        set_as_default: bool = False
+        set_as_default: bool = False,
     ):
         """Add a new GitHub profile."""
         if not name:
@@ -131,7 +115,7 @@ class ConfigManager:
             "description": description,
             "rate_limit_strategy": rate_limit_strategy,
             "timeout_minutes": timeout_minutes,
-            "added_at": datetime.now().isoformat()
+            "added_at": datetime.now().isoformat(),
         }
 
         self.config["github"]["profiles"][name] = profile
@@ -142,7 +126,7 @@ class ConfigManager:
         self.save_config()
         print(f"✅ Added GitHub profile: {name}")
         if set_as_default:
-            print(f"✅ Set as default profile")
+            print("✅ Set as default profile")
 
     def remove_github_profile(self, name: str):
         """Remove a GitHub profile."""
@@ -159,7 +143,7 @@ class ConfigManager:
         self.save_config()
         print(f"✅ Removed GitHub profile: {name}")
 
-    def list_github_profiles(self) -> List[Dict[str, Any]]:
+    def list_github_profiles(self) -> list[dict[str, Any]]:
         """List all GitHub profiles."""
         profiles = []
         default = self.config["github"]["default_profile"]
@@ -171,17 +155,13 @@ class ConfigManager:
                 "strategy": data.get("rate_limit_strategy", "prompt"),
                 "timeout": data.get("timeout_minutes", 30),
                 "is_default": name == default,
-                "added_at": data.get("added_at", "Unknown")
+                "added_at": data.get("added_at", "Unknown"),
             }
             profiles.append(profile_info)
 
         return profiles
 
-    def get_github_token(
-        self,
-        profile_name: Optional[str] = None,
-        repo_url: Optional[str] = None
-    ) -> Optional[str]:
+    def get_github_token(self, profile_name: str | None = None, repo_url: str | None = None) -> str | None:
         """
         Get GitHub token with smart fallback chain.
 
@@ -214,14 +194,14 @@ class ConfigManager:
         # 4. No token available
         return None
 
-    def get_profile_for_token(self, token: str) -> Optional[str]:
+    def get_profile_for_token(self, token: str) -> str | None:
         """Get profile name for a given token."""
         for name, profile in self.config["github"]["profiles"].items():
             if profile["token"] == token:
                 return name
         return None
 
-    def get_next_profile(self, current_token: str) -> Optional[tuple]:
+    def get_next_profile(self, current_token: str) -> tuple | None:
         """
         Get next available profile for rate limit switching.
 
@@ -248,7 +228,7 @@ class ConfigManager:
         name, profile = profiles[next_idx]
         return (name, profile["token"])
 
-    def get_rate_limit_strategy(self, token: Optional[str] = None) -> str:
+    def get_rate_limit_strategy(self, token: str | None = None) -> str:
         """Get rate limit strategy for a token (or default)."""
         if token:
             profile_name = self.get_profile_for_token(token)
@@ -259,7 +239,7 @@ class ConfigManager:
         # Default strategy
         return "prompt"
 
-    def get_timeout_minutes(self, token: Optional[str] = None) -> int:
+    def get_timeout_minutes(self, token: str | None = None) -> int:
         """Get timeout minutes for a token (or default)."""
         if token:
             profile_name = self.get_profile_for_token(token)
@@ -280,7 +260,7 @@ class ConfigManager:
         self.save_config()
         print(f"✅ Set {provider.capitalize()} API key")
 
-    def get_api_key(self, provider: str) -> Optional[str]:
+    def get_api_key(self, provider: str) -> str | None:
         """
         Get API key with environment variable fallback.
 
@@ -289,11 +269,7 @@ class ConfigManager:
         2. Config file
         """
         # Check environment first
-        env_map = {
-            "anthropic": "ANTHROPIC_API_KEY",
-            "google": "GOOGLE_API_KEY",
-            "openai": "OPENAI_API_KEY"
-        }
+        env_map = {"anthropic": "ANTHROPIC_API_KEY", "google": "GOOGLE_API_KEY", "openai": "OPENAI_API_KEY"}
 
         env_var = env_map.get(provider)
         if env_var:
@@ -306,19 +282,19 @@ class ConfigManager:
 
     # Progress Management
 
-    def save_progress(self, job_id: str, progress_data: Dict[str, Any]):
+    def save_progress(self, job_id: str, progress_data: dict[str, Any]):
         """Save progress for a job."""
         progress_file = self.progress_dir / f"{job_id}.json"
 
         progress_data["last_updated"] = datetime.now().isoformat()
 
-        with open(progress_file, 'w') as f:
+        with open(progress_file, "w") as f:
             json.dump(progress_data, f, indent=2)
 
         # Set file permissions to 600
         progress_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
-    def load_progress(self, job_id: str) -> Optional[Dict[str, Any]]:
+    def load_progress(self, job_id: str) -> dict[str, Any] | None:
         """Load progress for a job."""
         progress_file = self.progress_dir / f"{job_id}.json"
 
@@ -326,29 +302,31 @@ class ConfigManager:
             return None
 
         try:
-            with open(progress_file, 'r') as f:
+            with open(progress_file) as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             return None
 
-    def list_resumable_jobs(self) -> List[Dict[str, Any]]:
+    def list_resumable_jobs(self) -> list[dict[str, Any]]:
         """List all resumable jobs."""
         jobs = []
 
         for progress_file in self.progress_dir.glob("*.json"):
             try:
-                with open(progress_file, 'r') as f:
+                with open(progress_file) as f:
                     data = json.load(f)
 
                 if data.get("can_resume", False):
-                    jobs.append({
-                        "job_id": data.get("job_id", progress_file.stem),
-                        "started_at": data.get("started_at"),
-                        "command": data.get("command"),
-                        "progress": data.get("progress", {}),
-                        "last_updated": data.get("last_updated")
-                    })
-            except (json.JSONDecodeError, IOError):
+                    jobs.append(
+                        {
+                            "job_id": data.get("job_id", progress_file.stem),
+                            "started_at": data.get("started_at"),
+                            "command": data.get("command"),
+                            "progress": data.get("progress", {}),
+                            "last_updated": data.get("last_updated"),
+                        }
+                    )
+            except (OSError, json.JSONDecodeError):
                 continue
 
         # Sort by last updated (newest first)
@@ -447,8 +425,8 @@ class ConfigManager:
             print(f"\n📦 Resumable Jobs: {len(jobs)}")
             for job in jobs[:5]:  # Show max 5
                 print(f"  • {job['job_id']}")
-                if job.get('progress'):
-                    phase = job['progress'].get('phase', 'unknown')
+                if job.get("progress"):
+                    phase = job["progress"].get("phase", "unknown")
                     print(f"    Phase: {phase}, Last: {job['last_updated']}")
 
 

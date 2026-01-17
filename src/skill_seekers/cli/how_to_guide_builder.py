@@ -30,15 +30,15 @@ Example workflow → guide transformation:
 """
 
 import ast
-import re
+import hashlib
 import json
 import logging
-import hashlib
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Optional, Literal, Tuple, Set
-from pathlib import Path
+import re
 from collections import defaultdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from pathlib import Path
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,11 @@ logger = logging.getLogger(__name__)
 # DATA MODELS
 # ============================================================================
 
+
 @dataclass
 class PrerequisiteItem:
     """Enhanced prerequisite with explanation (AI enhancement)"""
+
     name: str
     why: str  # Why this is needed
     setup: str  # How to install/configure
@@ -58,87 +60,88 @@ class PrerequisiteItem:
 @dataclass
 class TroubleshootingItem:
     """Enhanced troubleshooting with solutions (AI enhancement)"""
+
     problem: str
-    symptoms: List[str] = field(default_factory=list)  # How to recognize this issue
+    symptoms: list[str] = field(default_factory=list)  # How to recognize this issue
     solution: str = ""  # Step-by-step fix
-    diagnostic_steps: List[str] = field(default_factory=list)  # How to diagnose
+    diagnostic_steps: list[str] = field(default_factory=list)  # How to diagnose
 
 
 @dataclass
 class WorkflowStep:
     """Single step in a workflow guide"""
+
     step_number: int
     code: str
     description: str
-    expected_result: Optional[str] = None
-    verification: Optional[str] = None  # Assertion or checkpoint
-    setup_required: Optional[str] = None
-    explanation: Optional[str] = None  # Why this step matters
-    common_pitfall: Optional[str] = None  # Warning for this step
-    common_variations: List[str] = field(default_factory=list)  # AI: Alternative approaches
+    expected_result: str | None = None
+    verification: str | None = None  # Assertion or checkpoint
+    setup_required: str | None = None
+    explanation: str | None = None  # Why this step matters
+    common_pitfall: str | None = None  # Warning for this step
+    common_variations: list[str] = field(default_factory=list)  # AI: Alternative approaches
 
 
 @dataclass
 class HowToGuide:
     """Complete how-to guide generated from workflow(s)"""
+
     guide_id: str
     title: str
     overview: str
     complexity_level: Literal["beginner", "intermediate", "advanced"]
 
     # Prerequisites
-    prerequisites: List[str] = field(default_factory=list)
-    required_imports: List[str] = field(default_factory=list)
-    required_fixtures: List[str] = field(default_factory=list)
+    prerequisites: list[str] = field(default_factory=list)
+    required_imports: list[str] = field(default_factory=list)
+    required_fixtures: list[str] = field(default_factory=list)
 
     # Content
-    workflows: List[Dict] = field(default_factory=list)  # Source workflow examples
-    steps: List[WorkflowStep] = field(default_factory=list)
+    workflows: list[dict] = field(default_factory=list)  # Source workflow examples
+    steps: list[WorkflowStep] = field(default_factory=list)
 
     # Metadata
     use_case: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     estimated_time: str = "10 minutes"
-    source_files: List[str] = field(default_factory=list)
+    source_files: list[str] = field(default_factory=list)
 
     # Optional AI enhancement (basic)
-    common_pitfalls: List[str] = field(default_factory=list)
-    troubleshooting: Dict[str, str] = field(default_factory=dict)
-    variations: List[str] = field(default_factory=list)
-    related_guides: List[str] = field(default_factory=list)
+    common_pitfalls: list[str] = field(default_factory=list)
+    troubleshooting: dict[str, str] = field(default_factory=dict)
+    variations: list[str] = field(default_factory=list)
+    related_guides: list[str] = field(default_factory=list)
 
     # AI enhancement (comprehensive - NEW)
-    prerequisites_detailed: List[PrerequisiteItem] = field(default_factory=list)
-    troubleshooting_detailed: List[TroubleshootingItem] = field(default_factory=list)
-    next_steps_detailed: List[str] = field(default_factory=list)
-    use_cases: List[str] = field(default_factory=list)
+    prerequisites_detailed: list[PrerequisiteItem] = field(default_factory=list)
+    troubleshooting_detailed: list[TroubleshootingItem] = field(default_factory=list)
+    next_steps_detailed: list[str] = field(default_factory=list)
+    use_cases: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary"""
         result = asdict(self)
         # Convert WorkflowStep objects to dicts
-        result['steps'] = [asdict(step) for step in self.steps]
+        result["steps"] = [asdict(step) for step in self.steps]
         return result
 
 
 @dataclass
 class GuideCollection:
     """Collection of guides organized by category"""
-    total_guides: int
-    guides_by_complexity: Dict[str, int]
-    guides_by_use_case: Dict[str, List[HowToGuide]]
-    guides: List[HowToGuide]
 
-    def to_dict(self) -> Dict:
+    total_guides: int
+    guides_by_complexity: dict[str, int]
+    guides_by_use_case: dict[str, list[HowToGuide]]
+    guides: list[HowToGuide]
+
+    def to_dict(self) -> dict:
         """Convert to dictionary"""
         return {
-            'total_guides': self.total_guides,
-            'guides_by_complexity': self.guides_by_complexity,
-            'guides_by_use_case': {
-                k: [g.to_dict() for g in v]
-                for k, v in self.guides_by_use_case.items()
-            },
-            'guides': [g.to_dict() for g in self.guides]
+            "total_guides": self.total_guides,
+            "guides_by_complexity": self.guides_by_complexity,
+            "guides_by_use_case": {k: [g.to_dict() for g in v] for k, v in self.guides_by_use_case.items()},
+            "guides": [g.to_dict() for g in self.guides],
         }
 
 
@@ -146,10 +149,11 @@ class GuideCollection:
 # WORKFLOW ANALYZER
 # ============================================================================
 
+
 class WorkflowAnalyzer:
     """Analyze workflow examples to extract steps and metadata"""
 
-    def analyze_workflow(self, workflow: Dict) -> Tuple[List[WorkflowStep], Dict]:
+    def analyze_workflow(self, workflow: dict) -> tuple[list[WorkflowStep], dict]:
         """
         Deep analysis of workflow structure.
 
@@ -159,11 +163,11 @@ class WorkflowAnalyzer:
         Returns:
             (steps, metadata) where metadata includes prerequisites, complexity, etc.
         """
-        code = workflow.get('code', '')
-        language = workflow.get('language', 'python').lower()
+        code = workflow.get("code", "")
+        language = workflow.get("language", "python").lower()
 
         # Extract steps based on language
-        if language == 'python':
+        if language == "python":
             steps = self._extract_steps_python(code, workflow)
         else:
             steps = self._extract_steps_heuristic(code, workflow)
@@ -180,12 +184,12 @@ class WorkflowAnalyzer:
                 step.verification = verifications[i]
 
         # Calculate complexity
-        metadata['complexity_level'] = self._calculate_complexity(steps, workflow)
-        metadata['estimated_time'] = self._estimate_time(steps)
+        metadata["complexity_level"] = self._calculate_complexity(steps, workflow)
+        metadata["estimated_time"] = self._estimate_time(steps)
 
         return steps, metadata
 
-    def _extract_steps_python(self, code: str, workflow: Dict) -> List[WorkflowStep]:
+    def _extract_steps_python(self, code: str, workflow: dict) -> list[WorkflowStep]:
         """Extract steps from Python code using AST"""
         steps = []
 
@@ -218,12 +222,11 @@ class WorkflowAnalyzer:
                 if idx + 1 < len(statements) and isinstance(statements[idx + 1], ast.Assert):
                     verification = ast.get_source_segment(code, statements[idx + 1])
 
-                steps.append(WorkflowStep(
-                    step_number=step_num,
-                    code=step_code,
-                    description=description,
-                    verification=verification
-                ))
+                steps.append(
+                    WorkflowStep(
+                        step_number=step_num, code=step_code, description=description, verification=verification
+                    )
+                )
                 step_num += 1
 
         except SyntaxError:
@@ -232,10 +235,10 @@ class WorkflowAnalyzer:
 
         return steps
 
-    def _extract_steps_heuristic(self, code: str, workflow: Dict) -> List[WorkflowStep]:
+    def _extract_steps_heuristic(self, code: str, workflow: dict) -> list[WorkflowStep]:
         """Extract steps using heuristics (for non-Python or invalid syntax)"""
         steps = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         current_step = []
         step_num = 1
@@ -244,17 +247,13 @@ class WorkflowAnalyzer:
             line_stripped = line.strip()
 
             # Skip empty lines and comments
-            if not line_stripped or line_stripped.startswith('#'):
+            if not line_stripped or line_stripped.startswith("#"):
                 if current_step:
                     # End of current step
-                    step_code = '\n'.join(current_step)
+                    step_code = "\n".join(current_step)
                     description = self._infer_description_from_code(step_code)
 
-                    steps.append(WorkflowStep(
-                        step_number=step_num,
-                        code=step_code,
-                        description=description
-                    ))
+                    steps.append(WorkflowStep(step_number=step_num, code=step_code, description=description))
                     step_num += 1
                     current_step = []
                 continue
@@ -263,13 +262,9 @@ class WorkflowAnalyzer:
 
         # Add final step
         if current_step:
-            step_code = '\n'.join(current_step)
+            step_code = "\n".join(current_step)
             description = self._infer_description_from_code(step_code)
-            steps.append(WorkflowStep(
-                step_number=step_num,
-                code=step_code,
-                description=description
-            ))
+            steps.append(WorkflowStep(step_number=step_num, code=step_code, description=description))
 
         return steps
 
@@ -285,7 +280,7 @@ class WorkflowAnalyzer:
                 func_name = self._get_name(node.value.func)
                 return f"Call {func_name}()"
 
-        return code.split('\n')[0]  # First line as fallback
+        return code.split("\n")[0]  # First line as fallback
 
     def _describe_value(self, node: ast.AST) -> str:
         """Describe AST value node"""
@@ -313,71 +308,67 @@ class WorkflowAnalyzer:
         code = code.strip()
 
         # Method call patterns
-        if '(' in code and ')' in code:
-            match = re.search(r'(\w+)\s*\(', code)
+        if "(" in code and ")" in code:
+            match = re.search(r"(\w+)\s*\(", code)
             if match:
                 return f"Call {match.group(1)}()"
 
         # Assignment patterns
-        if '=' in code and not code.startswith('assert'):
-            parts = code.split('=', 1)
+        if "=" in code and not code.startswith("assert"):
+            parts = code.split("=", 1)
             var_name = parts[0].strip()
             return f"Create {var_name}"
 
         # Assertion patterns
-        if code.startswith('assert'):
+        if code.startswith("assert"):
             return "Verify result"
 
-        return code.split('\n')[0]  # First line
+        return code.split("\n")[0]  # First line
 
-    def _detect_prerequisites(self, workflow: Dict) -> Dict:
+    def _detect_prerequisites(self, workflow: dict) -> dict:
         """Detect prerequisites from workflow"""
-        metadata = {
-            'prerequisites': [],
-            'required_imports': [],
-            'required_fixtures': []
-        }
+        metadata = {"prerequisites": [], "required_imports": [], "required_fixtures": []}
 
         # Get dependencies from workflow
-        dependencies = workflow.get('dependencies', [])
-        metadata['required_imports'] = dependencies
+        dependencies = workflow.get("dependencies", [])
+        metadata["required_imports"] = dependencies
 
         # Get setup code
-        setup_code = workflow.get('setup_code')
+        setup_code = workflow.get("setup_code")
         if setup_code:
-            metadata['prerequisites'].append("Setup code must be executed first")
+            metadata["prerequisites"].append("Setup code must be executed first")
 
         # Check for common fixtures in test name or setup
-        test_name = workflow.get('test_name', '').lower()
-        if 'database' in test_name or (setup_code and 'database' in setup_code.lower()):
-            metadata['required_fixtures'].append('database')
-        if 'api' in test_name or (setup_code and 'api' in setup_code.lower()):
-            metadata['required_fixtures'].append('api_client')
+        test_name = workflow.get("test_name", "").lower()
+        if "database" in test_name or (setup_code and "database" in setup_code.lower()):
+            metadata["required_fixtures"].append("database")
+        if "api" in test_name or (setup_code and "api" in setup_code.lower()):
+            metadata["required_fixtures"].append("api_client")
 
         return metadata
 
-    def _find_verification_points(self, code: str) -> List[str]:
+    def _find_verification_points(self, code: str) -> list[str]:
         """Find assertion statements in code"""
         verifications = []
 
-        for line in code.split('\n'):
+        for line in code.split("\n"):
             line_stripped = line.strip()
-            if line_stripped.startswith('assert'):
+            if line_stripped.startswith("assert"):
                 verifications.append(line_stripped)
 
         return verifications
 
-    def _calculate_complexity(self, steps: List[WorkflowStep], workflow: Dict) -> str:
+    def _calculate_complexity(self, steps: list[WorkflowStep], workflow: dict) -> str:
         """Calculate complexity level"""
         num_steps = len(steps)
 
         # Check for advanced patterns
-        code = workflow.get('code', '')
-        has_async = 'async' in code or 'await' in code
-        has_mock = 'mock' in code.lower() or 'patch' in code.lower()
-        has_error_handling = 'try' in code or 'except' in code
+        code = workflow.get("code", "")
+        has_async = "async" in code or "await" in code
+        has_mock = "mock" in code.lower() or "patch" in code.lower()
+        has_error_handling = "try" in code or "except" in code
 
-        complexity_score = workflow.get('complexity_score', 0.5)
+        complexity_score = workflow.get("complexity_score", 0.5)
 
         # Determine level
         if num_steps <= 3 and not has_async and not has_mock:
@@ -387,7 +378,7 @@ class WorkflowAnalyzer:
         else:
             return "intermediate"
 
-    def _estimate_time(self, steps: List[WorkflowStep]) -> str:
+    def _estimate_time(self, steps: list[WorkflowStep]) -> str:
         """Estimate time to complete guide"""
         num_steps = len(steps)
 
@@ -405,14 +396,11 @@ class WorkflowAnalyzer:
 # WORKFLOW GROUPER
 # ============================================================================
 
+
 class WorkflowGrouper:
     """Group related workflows into coherent guides"""
 
-    def group_workflows(
-        self,
-        workflows: List[Dict],
-        strategy: str = "ai-tutorial-group"
-    ) -> Dict[str, List[Dict]]:
+    def group_workflows(self, workflows: list[dict], strategy: str = "ai-tutorial-group") -> dict[str, list[dict]]:
         """
         Group workflows using specified strategy.
 
@@ -439,14 +427,14 @@ class WorkflowGrouper:
                 groups = self._group_by_file_path(workflows)
             return groups
 
-    def _group_by_ai_tutorial_group(self, workflows: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_ai_tutorial_group(self, workflows: list[dict]) -> dict[str, list[dict]]:
         """Group by AI-generated tutorial_group (from C3.6 enhancement)"""
         groups = defaultdict(list)
         ungrouped = []
 
         for workflow in workflows:
-            ai_analysis = workflow.get('ai_analysis', {})
-            tutorial_group = ai_analysis.get('tutorial_group')
+            ai_analysis = workflow.get("ai_analysis", {})
+            tutorial_group = ai_analysis.get("tutorial_group")
 
             if tutorial_group:
                 groups[tutorial_group].append(workflow)
@@ -455,56 +443,52 @@ class WorkflowGrouper:
 
         # Put ungrouped workflows in individual guides
         for workflow in ungrouped:
-            test_name = workflow.get('test_name', 'Unknown')
+            test_name = workflow.get("test_name", "Unknown")
             # Clean test name for title
             title = self._clean_test_name(test_name)
             groups[title] = [workflow]
 
         return dict(groups)
 
-    def _group_by_file_path(self, workflows: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_file_path(self, workflows: list[dict]) -> dict[str, list[dict]]:
         """Group workflows from same test file"""
         groups = defaultdict(list)
 
         for workflow in workflows:
-            file_path = workflow.get('file_path', '')
+            file_path = workflow.get("file_path", "")
             # Extract meaningful name from file path
-            file_name = Path(file_path).stem if file_path else 'Unknown'
+            file_name = Path(file_path).stem if file_path else "Unknown"
             # Remove test_ prefix
-            group_name = file_name.replace('test_', '').replace('_', ' ').title()
+            group_name = file_name.replace("test_", "").replace("_", " ").title()
             groups[group_name].append(workflow)
 
         return dict(groups)
 
-    def _group_by_test_name(self, workflows: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_test_name(self, workflows: list[dict]) -> dict[str, list[dict]]:
         """Group by common test name prefixes"""
         groups = defaultdict(list)
 
         for workflow in workflows:
-            test_name = workflow.get('test_name', '')
+            test_name = workflow.get("test_name", "")
             # Extract prefix (e.g., test_auth_login → auth)
             prefix = self._extract_prefix(test_name)
             groups[prefix].append(workflow)
 
         return dict(groups)
 
-    def _group_by_complexity(self, workflows: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_complexity(self, workflows: list[dict]) -> dict[str, list[dict]]:
         """Group by complexity level"""
-        groups = {
-            'Beginner': [],
-            'Intermediate': [],
-            'Advanced': []
-        }
+        groups = {"Beginner": [], "Intermediate": [], "Advanced": []}
 
         for workflow in workflows:
-            complexity_score = workflow.get('complexity_score', 0.5)
+            complexity_score = workflow.get("complexity_score", 0.5)
 
             if complexity_score < 0.4:
-                groups['Beginner'].append(workflow)
+                groups["Beginner"].append(workflow)
             elif complexity_score < 0.7:
-                groups['Intermediate'].append(workflow)
+                groups["Intermediate"].append(workflow)
             else:
-                groups['Advanced'].append(workflow)
+                groups["Advanced"].append(workflow)
 
         # Remove empty groups
         return {k: v for k, v in groups.items() if v}
@@ -512,18 +496,18 @@ class WorkflowGrouper:
     def _clean_test_name(self, test_name: str) -> str:
         """Clean test name to readable title"""
         # Remove test_ prefix
-        name = test_name.replace('test_', '')
+        name = test_name.replace("test_", "")
         # Replace underscores with spaces
-        name = name.replace('_', ' ')
+        name = name.replace("_", " ")
         # Title case
         return name.title()
 
     def _extract_prefix(self, test_name: str) -> str:
         """Extract prefix from test name"""
         # Remove test_ prefix
-        name = test_name.replace('test_', '')
+        name = test_name.replace("test_", "")
         # Get first part before underscore
-        parts = name.split('_')
+        parts = name.split("_")
         if len(parts) > 1:
             return parts[0].title()
         return self._clean_test_name(test_name)
@@ -532,6 +516,7 @@ class WorkflowGrouper:
 # ============================================================================
 # GUIDE GENERATOR
 # ============================================================================
+
 
 class GuideGenerator:
     """Generate markdown guides from workflow data"""
@@ -574,7 +559,7 @@ class GuideGenerator:
         # Footer
         sections.append(self._create_footer(guide))
 
-        return '\n\n'.join(sections)
+        return "\n\n".join(sections)
 
     def _create_header(self, guide: HowToGuide) -> str:
         """Create guide header with metadata"""
@@ -586,7 +571,7 @@ class GuideGenerator:
         if guide.tags:
             lines.append(f"**Tags**: {', '.join(guide.tags)}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_overview(self, guide: HowToGuide) -> str:
         """Create overview section"""
@@ -618,16 +603,16 @@ class GuideGenerator:
             lines.append("")
 
         # Setup code if available
-        if guide.workflows and guide.workflows[0].get('setup_code'):
-            setup_code = guide.workflows[0]['setup_code']
+        if guide.workflows and guide.workflows[0].get("setup_code"):
+            setup_code = guide.workflows[0]["setup_code"]
             lines.append("**Setup Required:**")
             lines.append("```python")
             lines.append(setup_code)
             lines.append("```")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def _create_steps_section(self, steps: List[WorkflowStep]) -> str:
+    def _create_steps_section(self, steps: list[WorkflowStep]) -> str:
         """Create step-by-step guide section"""
         lines = ["## Step-by-Step Guide"]
         lines.append("")
@@ -654,7 +639,7 @@ class GuideGenerator:
 
             # Verification checkpoint
             if step.verification:
-                lines.append(f"**Verification:**")
+                lines.append("**Verification:**")
                 lines.append("```python")
                 lines.append(step.verification)
                 lines.append("```")
@@ -665,7 +650,7 @@ class GuideGenerator:
                 lines.append(f"⚠️ **Common Pitfall:** {step.common_pitfall}")
                 lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_complete_example(self, guide: HowToGuide) -> str:
         """Create complete working example"""
@@ -678,14 +663,14 @@ class GuideGenerator:
             workflow = guide.workflows[0]
 
             # Add setup code if present
-            if workflow.get('setup_code'):
+            if workflow.get("setup_code"):
                 lines.append("# Setup")
-                lines.append(workflow['setup_code'])
+                lines.append(workflow["setup_code"])
                 lines.append("")
 
             # Add main workflow code
             lines.append("# Workflow")
-            lines.append(workflow.get('code', ''))
+            lines.append(workflow.get("code", ""))
         else:
             # Combine all steps
             for step in guide.steps:
@@ -696,7 +681,7 @@ class GuideGenerator:
                 lines.append("")
 
         lines.append("```")
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_troubleshooting(self, guide: HowToGuide) -> str:
         """Create troubleshooting section"""
@@ -719,7 +704,7 @@ class GuideGenerator:
                 lines.append(f"**Solution:** {solution}")
                 lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_next_steps(self, guide: HowToGuide) -> str:
         """Create next steps and related guides"""
@@ -741,7 +726,7 @@ class GuideGenerator:
                 lines.append(f"- [{related}]")
             lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_footer(self, guide: HowToGuide) -> str:
         """Create guide footer with metadata"""
@@ -753,7 +738,7 @@ class GuideGenerator:
 
         return f"---\n\n*{' | '.join(source_info)}*"
 
-    def generate_index(self, guides: List[HowToGuide]) -> str:
+    def generate_index(self, guides: list[HowToGuide]) -> str:
         """
         Generate index/TOC markdown.
 
@@ -783,8 +768,10 @@ class GuideGenerator:
             lines.append(f"### {use_case} ({len(case_guides)} guides)")
             for guide in sorted(case_guides, key=lambda g: g.complexity_level):
                 # Create filename from guide title
-                filename = guide.title.lower().replace(' ', '-').replace(':', '')
-                lines.append(f"- [How To: {guide.title}]({use_case.lower()}/{filename}.md) - {guide.complexity_level.title()}")
+                filename = guide.title.lower().replace(" ", "-").replace(":", "")
+                lines.append(
+                    f"- [How To: {guide.title}]({use_case.lower()}/{filename}.md) - {guide.complexity_level.title()}"
+                )
             lines.append("")
 
         # Group by difficulty
@@ -795,7 +782,7 @@ class GuideGenerator:
         lines.append("## By Difficulty Level")
         lines.append("")
 
-        for level in ['beginner', 'intermediate', 'advanced']:
+        for level in ["beginner", "intermediate", "advanced"]:
             if level in by_complexity:
                 level_guides = by_complexity[level]
                 lines.append(f"### {level.title()} ({len(level_guides)} guides)")
@@ -803,12 +790,13 @@ class GuideGenerator:
                     lines.append(f"- {guide.title}")
                 lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
 
 # ============================================================================
 # HOW-TO GUIDE BUILDER (Main Orchestrator)
 # ============================================================================
+
 
 class HowToGuideBuilder:
     """Main orchestrator for building how-to guides from workflow examples"""
@@ -827,11 +815,11 @@ class HowToGuideBuilder:
 
     def build_guides_from_examples(
         self,
-        examples: List[Dict],
+        examples: list[dict],
         grouping_strategy: str = "ai-tutorial-group",
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
         enhance_with_ai: bool = True,
-        ai_mode: str = "auto"
+        ai_mode: str = "auto",
     ) -> GuideCollection:
         """
         Main entry point - build guides from workflow examples.
@@ -853,6 +841,7 @@ class HowToGuideBuilder:
         if enhance_with_ai and ai_mode != "none":
             try:
                 from .guide_enhancer import GuideEnhancer
+
                 enhancer = GuideEnhancer(mode=ai_mode)
                 logger.info(f"✨ AI enhancement enabled (mode: {enhancer.mode})")
             except Exception as e:
@@ -865,12 +854,7 @@ class HowToGuideBuilder:
 
         if not workflows:
             logger.warning("No workflow examples found!")
-            return GuideCollection(
-                total_guides=0,
-                guides_by_complexity={},
-                guides_by_use_case={},
-                guides=[]
-            )
+            return GuideCollection(total_guides=0, guides_by_complexity={}, guides_by_use_case={}, guides=[])
 
         # Group workflows
         grouped_workflows = self.grouper.group_workflows(workflows, grouping_strategy)
@@ -892,11 +876,11 @@ class HowToGuideBuilder:
         logger.info(f"✅ Generated {len(guides)} how-to guides")
         return collection
 
-    def _extract_workflow_examples(self, examples: List[Dict]) -> List[Dict]:
+    def _extract_workflow_examples(self, examples: list[dict]) -> list[dict]:
         """Filter to workflow category only"""
-        return [ex for ex in examples if ex.get('category') == 'workflow']
+        return [ex for ex in examples if ex.get("category") == "workflow"]
 
-    def _create_guide(self, title: str, workflows: List[Dict], enhancer=None) -> HowToGuide:
+    def _create_guide(self, title: str, workflows: list[dict], enhancer=None) -> HowToGuide:
         """
         Generate single guide from workflow(s).
 
@@ -919,17 +903,17 @@ class HowToGuideBuilder:
 
         # Extract use case from AI analysis or title
         use_case = title
-        if primary_workflow.get('ai_analysis'):
-            use_case = primary_workflow['ai_analysis'].get('tutorial_group', title)
+        if primary_workflow.get("ai_analysis"):
+            use_case = primary_workflow["ai_analysis"].get("tutorial_group", title)
 
         # Determine overview
         overview = self._generate_overview(primary_workflow, workflows)
 
         # Extract tags
-        tags = primary_workflow.get('tags', [])
+        tags = primary_workflow.get("tags", [])
 
         # Extract source files
-        source_files = [w.get('file_path', '') for w in workflows]
+        source_files = [w.get("file_path", "") for w in workflows]
         source_files = [f"{Path(f).name}:{w.get('line_start', 0)}" for f, w in zip(source_files, workflows)]
 
         # Create guide
@@ -937,44 +921,44 @@ class HowToGuideBuilder:
             guide_id=guide_id,
             title=title,
             overview=overview,
-            complexity_level=metadata.get('complexity_level', 'intermediate'),
-            prerequisites=metadata.get('prerequisites', []),
-            required_imports=metadata.get('required_imports', []),
-            required_fixtures=metadata.get('required_fixtures', []),
+            complexity_level=metadata.get("complexity_level", "intermediate"),
+            prerequisites=metadata.get("prerequisites", []),
+            required_imports=metadata.get("required_imports", []),
+            required_fixtures=metadata.get("required_fixtures", []),
             workflows=workflows,
             steps=steps,
             use_case=use_case,
             tags=tags,
-            estimated_time=metadata.get('estimated_time', '10 minutes'),
-            source_files=source_files
+            estimated_time=metadata.get("estimated_time", "10 minutes"),
+            source_files=source_files,
         )
 
         # Add AI enhancements if enhancer is available
         if enhancer:
-            self._enhance_guide_with_ai(guide, primary_workflow.get('ai_analysis', {}), enhancer)
-        elif self.enhance_with_ai and primary_workflow.get('ai_analysis'):
+            self._enhance_guide_with_ai(guide, primary_workflow.get("ai_analysis", {}), enhancer)
+        elif self.enhance_with_ai and primary_workflow.get("ai_analysis"):
             # Fallback to old enhancement method (basic)
-            self._enhance_guide_with_ai_basic(guide, primary_workflow['ai_analysis'])
+            self._enhance_guide_with_ai_basic(guide, primary_workflow["ai_analysis"])
 
         return guide
 
-    def _generate_overview(self, primary_workflow: Dict, all_workflows: List[Dict]) -> str:
+    def _generate_overview(self, primary_workflow: dict, all_workflows: list[dict]) -> str:
         """Generate guide overview"""
         # Try to get explanation from AI analysis
-        if primary_workflow.get('ai_analysis'):
-            explanation = primary_workflow['ai_analysis'].get('explanation')
+        if primary_workflow.get("ai_analysis"):
+            explanation = primary_workflow["ai_analysis"].get("explanation")
             if explanation:
                 return explanation
 
         # Fallback to description
-        description = primary_workflow.get('description', '')
+        description = primary_workflow.get("description", "")
         if description:
             return description
 
         # Final fallback
         return f"Learn how to use {primary_workflow.get('test_name', 'this feature')} in your code."
 
-    def _enhance_guide_with_ai(self, guide: HowToGuide, ai_analysis: Dict, enhancer):
+    def _enhance_guide_with_ai(self, guide: HowToGuide, ai_analysis: dict, enhancer):
         """
         Comprehensively enhance guide with AI using GuideEnhancer.
 
@@ -991,49 +975,43 @@ class HowToGuideBuilder:
         """
         # Prepare guide data for enhancer
         guide_data = {
-            'title': guide.title,
-            'steps': [
-                {
-                    'description': step.description,
-                    'code': step.code
-                }
-                for step in guide.steps
-            ],
-            'language': 'python',  # TODO: Detect from code
-            'prerequisites': guide.prerequisites,
-            'description': guide.overview
+            "title": guide.title,
+            "steps": [{"description": step.description, "code": step.code} for step in guide.steps],
+            "language": "python",  # TODO: Detect from code
+            "prerequisites": guide.prerequisites,
+            "description": guide.overview,
         }
 
         # Call enhancer to get all 5 enhancements
         enhanced_data = enhancer.enhance_guide(guide_data)
 
         # Apply step enhancements
-        if 'step_enhancements' in enhanced_data:
-            for enhancement in enhanced_data['step_enhancements']:
+        if "step_enhancements" in enhanced_data:
+            for enhancement in enhanced_data["step_enhancements"]:
                 idx = enhancement.step_index
                 if 0 <= idx < len(guide.steps):
                     guide.steps[idx].explanation = enhancement.explanation
                     guide.steps[idx].common_variations = enhancement.variations
 
         # Apply detailed prerequisites
-        if 'prerequisites_detailed' in enhanced_data:
-            guide.prerequisites_detailed = enhanced_data['prerequisites_detailed']
+        if "prerequisites_detailed" in enhanced_data:
+            guide.prerequisites_detailed = enhanced_data["prerequisites_detailed"]
 
         # Apply troubleshooting
-        if 'troubleshooting_detailed' in enhanced_data:
-            guide.troubleshooting_detailed = enhanced_data['troubleshooting_detailed']
+        if "troubleshooting_detailed" in enhanced_data:
+            guide.troubleshooting_detailed = enhanced_data["troubleshooting_detailed"]
 
         # Apply next steps
-        if 'next_steps_detailed' in enhanced_data:
-            guide.next_steps_detailed = enhanced_data['next_steps_detailed']
+        if "next_steps_detailed" in enhanced_data:
+            guide.next_steps_detailed = enhanced_data["next_steps_detailed"]
 
         # Apply use cases
-        if 'use_cases' in enhanced_data:
-            guide.use_cases = enhanced_data['use_cases']
+        if "use_cases" in enhanced_data:
+            guide.use_cases = enhanced_data["use_cases"]
 
         logger.info(f"✨ Enhanced guide '{guide.title}' with comprehensive AI improvements")
 
-    def _enhance_guide_with_ai_basic(self, guide: HowToGuide, ai_analysis: Dict):
+    def _enhance_guide_with_ai_basic(self, guide: HowToGuide, ai_analysis: dict):
         """
         Basic enhancement using pre-computed AI analysis from C3.6.
 
@@ -1044,15 +1022,15 @@ class HowToGuideBuilder:
             ai_analysis: AI analysis data from C3.6
         """
         # Add best practices as variations
-        best_practices = ai_analysis.get('best_practices', [])
+        best_practices = ai_analysis.get("best_practices", [])
         guide.variations = best_practices
 
         # Add common mistakes as pitfalls
-        common_mistakes = ai_analysis.get('common_mistakes', [])
+        common_mistakes = ai_analysis.get("common_mistakes", [])
         guide.common_pitfalls = common_mistakes
 
         # Add related examples as related guides
-        related_examples = ai_analysis.get('related_examples', [])
+        related_examples = ai_analysis.get("related_examples", [])
         guide.related_guides = [f"How To: {ex}" for ex in related_examples]
 
         # Enhance step explanations
@@ -1061,7 +1039,7 @@ class HowToGuideBuilder:
             if best_practices and step.step_number <= len(best_practices):
                 step.explanation = best_practices[step.step_number - 1]
 
-    def _create_collection(self, guides: List[HowToGuide]) -> GuideCollection:
+    def _create_collection(self, guides: list[HowToGuide]) -> GuideCollection:
         """Create GuideCollection from guides"""
         # Count by complexity
         by_complexity = defaultdict(int)
@@ -1078,7 +1056,7 @@ class HowToGuideBuilder:
             total_guides=len(guides),
             guides_by_complexity=dict(by_complexity),
             guides_by_use_case=dict(by_use_case),
-            guides=guides
+            guides=guides,
         )
 
     def _save_guides_to_files(self, collection: GuideCollection, output_dir: Path):
@@ -1091,21 +1069,21 @@ class HowToGuideBuilder:
         # Save individual guides
         for use_case, guides in collection.guides_by_use_case.items():
             # Create use case directory
-            use_case_dir = output_dir / use_case.lower().replace(' ', '-')
+            use_case_dir = output_dir / use_case.lower().replace(" ", "-")
             use_case_dir.mkdir(parents=True, exist_ok=True)
 
             for guide in guides:
                 # Generate filename from title
-                filename = guide.title.lower().replace(' ', '-').replace(':', '') + '.md'
+                filename = guide.title.lower().replace(" ", "-").replace(":", "") + ".md"
                 file_path = use_case_dir / filename
 
                 # Generate and save markdown
                 markdown = self.generator.generate_guide_markdown(guide)
-                file_path.write_text(markdown, encoding='utf-8')
+                file_path.write_text(markdown, encoding="utf-8")
 
         # Save index
         index_markdown = self.generator.generate_index(collection.guides)
-        (output_dir / 'index.md').write_text(index_markdown, encoding='utf-8')
+        (output_dir / "index.md").write_text(index_markdown, encoding="utf-8")
 
         logger.info(f"✅ Saved {collection.total_guides} guides + index to {output_dir}")
 
@@ -1113,6 +1091,7 @@ class HowToGuideBuilder:
 # ============================================================================
 # CLI INTERFACE
 # ============================================================================
+
 
 def main():
     """CLI entry point for how-to guide builder"""
@@ -1144,45 +1123,29 @@ Grouping Strategies:
   - file-path: Group by source test file
   - test-name: Group by test name patterns
   - complexity: Group by difficulty level
-"""
+""",
+    )
+
+    parser.add_argument("input", nargs="?", help="Input: directory with test files OR test_examples.json file")
+
+    parser.add_argument("--input", dest="input_file", help="Input JSON file with test examples (from C3.2)")
+
+    parser.add_argument(
+        "--output",
+        default="output/codebase/tutorials",
+        help="Output directory for generated guides (default: output/codebase/tutorials)",
     )
 
     parser.add_argument(
-        'input',
-        nargs='?',
-        help='Input: directory with test files OR test_examples.json file'
+        "--group-by",
+        choices=["ai-tutorial-group", "file-path", "test-name", "complexity"],
+        default="ai-tutorial-group",
+        help="Grouping strategy (default: ai-tutorial-group)",
     )
 
-    parser.add_argument(
-        '--input',
-        dest='input_file',
-        help='Input JSON file with test examples (from C3.2)'
-    )
+    parser.add_argument("--no-ai", action="store_true", help="Disable AI enhancement")
 
-    parser.add_argument(
-        '--output',
-        default='output/codebase/tutorials',
-        help='Output directory for generated guides (default: output/codebase/tutorials)'
-    )
-
-    parser.add_argument(
-        '--group-by',
-        choices=['ai-tutorial-group', 'file-path', 'test-name', 'complexity'],
-        default='ai-tutorial-group',
-        help='Grouping strategy (default: ai-tutorial-group)'
-    )
-
-    parser.add_argument(
-        '--no-ai',
-        action='store_true',
-        help='Disable AI enhancement'
-    )
-
-    parser.add_argument(
-        '--json-output',
-        action='store_true',
-        help='Output JSON summary instead of markdown files'
-    )
+    parser.add_argument("--json-output", action="store_true", help="Output JSON summary instead of markdown files")
 
     args = parser.parse_args()
 
@@ -1200,13 +1163,13 @@ Grouping Strategies:
     # Load examples
     examples = []
 
-    if input_path.is_file() and input_path.suffix == '.json':
+    if input_path.is_file() and input_path.suffix == ".json":
         # Load from JSON file
         logger.info(f"Loading examples from {input_path}...")
-        with open(input_path, 'r') as f:
+        with open(input_path) as f:
             data = json.load(f)
-            if isinstance(data, dict) and 'examples' in data:
-                examples = data['examples']
+            if isinstance(data, dict) and "examples" in data:
+                examples = data["examples"]
             elif isinstance(data, list):
                 examples = data
             else:
@@ -1228,11 +1191,7 @@ Grouping Strategies:
     builder = HowToGuideBuilder(enhance_with_ai=not args.no_ai)
     output_dir = Path(args.output) if not args.json_output else None
 
-    collection = builder.build_guides_from_examples(
-        examples,
-        grouping_strategy=args.group_by,
-        output_dir=output_dir
-    )
+    collection = builder.build_guides_from_examples(examples, grouping_strategy=args.group_by, output_dir=output_dir)
 
     # Output results
     if args.json_output:
@@ -1241,9 +1200,9 @@ Grouping Strategies:
     else:
         # Summary
         print()
-        print("="*60)
+        print("=" * 60)
         print("HOW-TO GUIDES GENERATED")
-        print("="*60)
+        print("=" * 60)
         print()
         print(f"Total Guides: {collection.total_guides}")
         print()

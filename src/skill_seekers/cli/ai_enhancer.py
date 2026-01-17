@@ -17,9 +17,8 @@ Credits:
 - Graceful degradation if API unavailable
 """
 
-import os
 import logging
-from typing import List, Dict, Optional, Any
+import os
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -28,18 +27,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AIAnalysis:
     """AI analysis result for patterns or examples"""
+
     explanation: str
-    issues: List[str]
-    recommendations: List[str]
-    related_items: List[str]  # Related patterns or examples
-    best_practices: List[str]
+    issues: list[str]
+    recommendations: list[str]
+    related_items: list[str]  # Related patterns or examples
+    best_practices: list[str]
     confidence_boost: float  # -0.2 to +0.2 adjustment to confidence
 
 
 class AIEnhancer:
     """Base class for AI enhancement"""
 
-    def __init__(self, api_key: Optional[str] = None, enabled: bool = True, mode: str = "auto"):
+    def __init__(self, api_key: str | None = None, enabled: bool = True, mode: str = "auto"):
         """
         Initialize AI enhancer.
 
@@ -53,7 +53,7 @@ class AIEnhancer:
         """
         self.enabled = enabled
         self.mode = mode
-        self.api_key = api_key or os.environ.get('ANTHROPIC_API_KEY')
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.client = None
 
         # Determine actual mode
@@ -72,6 +72,7 @@ class AIEnhancer:
         if self.mode == "api" and self.enabled:
             try:
                 import anthropic
+
                 self.client = anthropic.Anthropic(api_key=self.api_key)
                 logger.info("✅ AI enhancement enabled (using Claude API)")
             except ImportError:
@@ -88,16 +89,14 @@ class AIEnhancer:
             logger.info("   Use API mode (set ANTHROPIC_API_KEY) or 'skill-seekers enhance' for SKILL.md")
             self.enabled = False
 
-    def _call_claude(self, prompt: str, max_tokens: int = 1000) -> Optional[str]:
+    def _call_claude(self, prompt: str, max_tokens: int = 1000) -> str | None:
         """Call Claude API with error handling"""
         if not self.client:
             return None
 
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
+                model="claude-sonnet-4-20250514", max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text
         except Exception as e:
@@ -108,7 +107,7 @@ class AIEnhancer:
 class PatternEnhancer(AIEnhancer):
     """Enhance design pattern detection with AI analysis"""
 
-    def enhance_patterns(self, patterns: List[Dict]) -> List[Dict]:
+    def enhance_patterns(self, patterns: list[dict]) -> list[dict]:
         """
         Enhance detected patterns with AI analysis.
 
@@ -128,19 +127,19 @@ class PatternEnhancer(AIEnhancer):
         enhanced = []
 
         for i in range(0, len(patterns), batch_size):
-            batch = patterns[i:i+batch_size]
+            batch = patterns[i : i + batch_size]
             batch_results = self._enhance_pattern_batch(batch)
             enhanced.extend(batch_results)
 
         logger.info(f"✅ Enhanced {len(enhanced)} patterns")
         return enhanced
 
-    def _enhance_pattern_batch(self, patterns: List[Dict]) -> List[Dict]:
+    def _enhance_pattern_batch(self, patterns: list[dict]) -> list[dict]:
         """Enhance a batch of patterns"""
         # Prepare prompt
         pattern_descriptions = []
         for idx, p in enumerate(patterns):
-            desc = f"{idx+1}. {p['pattern_type']} in {p.get('class_name', 'unknown')}"
+            desc = f"{idx + 1}. {p['pattern_type']} in {p.get('class_name', 'unknown')}"
             desc += f"\n   Evidence: {', '.join(p.get('evidence', []))}"
             pattern_descriptions.append(desc)
 
@@ -166,24 +165,25 @@ Format as JSON array matching input order. Be concise and actionable.
 
         try:
             import json
+
             analyses = json.loads(response)
 
             # Merge AI analysis into patterns
             for idx, pattern in enumerate(patterns):
                 if idx < len(analyses):
                     analysis = analyses[idx]
-                    pattern['ai_analysis'] = {
-                        'explanation': analysis.get('explanation', ''),
-                        'issues': analysis.get('issues', []),
-                        'recommendations': analysis.get('recommendations', []),
-                        'related_patterns': analysis.get('related_patterns', []),
-                        'confidence_boost': analysis.get('confidence_boost', 0.0)
+                    pattern["ai_analysis"] = {
+                        "explanation": analysis.get("explanation", ""),
+                        "issues": analysis.get("issues", []),
+                        "recommendations": analysis.get("recommendations", []),
+                        "related_patterns": analysis.get("related_patterns", []),
+                        "confidence_boost": analysis.get("confidence_boost", 0.0),
                     }
 
                     # Adjust confidence
-                    boost = analysis.get('confidence_boost', 0.0)
+                    boost = analysis.get("confidence_boost", 0.0)
                     if -0.2 <= boost <= 0.2:
-                        pattern['confidence'] = min(1.0, max(0.0, pattern['confidence'] + boost))
+                        pattern["confidence"] = min(1.0, max(0.0, pattern["confidence"] + boost))
 
             return patterns
 
@@ -198,7 +198,7 @@ Format as JSON array matching input order. Be concise and actionable.
 class TestExampleEnhancer(AIEnhancer):
     """Enhance test examples with AI analysis"""
 
-    def enhance_examples(self, examples: List[Dict]) -> List[Dict]:
+    def enhance_examples(self, examples: list[dict]) -> list[dict]:
         """
         Enhance test examples with AI context and explanations.
 
@@ -218,21 +218,21 @@ class TestExampleEnhancer(AIEnhancer):
         enhanced = []
 
         for i in range(0, len(examples), batch_size):
-            batch = examples[i:i+batch_size]
+            batch = examples[i : i + batch_size]
             batch_results = self._enhance_example_batch(batch)
             enhanced.extend(batch_results)
 
         logger.info(f"✅ Enhanced {len(enhanced)} examples")
         return enhanced
 
-    def _enhance_example_batch(self, examples: List[Dict]) -> List[Dict]:
+    def _enhance_example_batch(self, examples: list[dict]) -> list[dict]:
         """Enhance a batch of examples"""
         # Prepare prompt
         example_descriptions = []
         for idx, ex in enumerate(examples):
-            desc = f"{idx+1}. {ex.get('category', 'unknown')} - {ex.get('test_name', 'unknown')}"
+            desc = f"{idx + 1}. {ex.get('category', 'unknown')} - {ex.get('test_name', 'unknown')}"
             desc += f"\n   Code: {ex.get('code', '')[:100]}..."
-            if ex.get('expected_behavior'):
+            if ex.get("expected_behavior"):
                 desc += f"\n   Expected: {ex['expected_behavior']}"
             example_descriptions.append(desc)
 
@@ -257,18 +257,19 @@ Format as JSON array matching input order. Focus on educational value.
 
         try:
             import json
+
             analyses = json.loads(response)
 
             # Merge AI analysis into examples
             for idx, example in enumerate(examples):
                 if idx < len(analyses):
                     analysis = analyses[idx]
-                    example['ai_analysis'] = {
-                        'explanation': analysis.get('explanation', ''),
-                        'best_practices': analysis.get('best_practices', []),
-                        'common_mistakes': analysis.get('common_mistakes', []),
-                        'related_examples': analysis.get('related_examples', []),
-                        'tutorial_group': analysis.get('tutorial_group', '')
+                    example["ai_analysis"] = {
+                        "explanation": analysis.get("explanation", ""),
+                        "best_practices": analysis.get("best_practices", []),
+                        "common_mistakes": analysis.get("common_mistakes", []),
+                        "related_examples": analysis.get("related_examples", []),
+                        "tutorial_group": analysis.get("tutorial_group", ""),
                     }
 
             return examples
@@ -280,7 +281,7 @@ Format as JSON array matching input order. Focus on educational value.
             logger.warning(f"⚠️  Error processing AI analysis: {e}")
             return examples
 
-    def generate_tutorials(self, examples: List[Dict]) -> Dict[str, List[Dict]]:
+    def generate_tutorials(self, examples: list[dict]) -> dict[str, list[dict]]:
         """
         Group enhanced examples into tutorial sections.
 
@@ -293,8 +294,8 @@ Format as JSON array matching input order. Focus on educational value.
         tutorials = {}
 
         for example in examples:
-            ai_analysis = example.get('ai_analysis', {})
-            group = ai_analysis.get('tutorial_group', 'Miscellaneous')
+            ai_analysis = example.get("ai_analysis", {})
+            group = ai_analysis.get("tutorial_group", "Miscellaneous")
 
             if group not in tutorials:
                 tutorials[group] = []

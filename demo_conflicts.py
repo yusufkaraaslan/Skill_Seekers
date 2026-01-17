@@ -6,14 +6,13 @@ This demonstrates the unified scraper's ability to detect and report
 conflicts between documentation and code implementation.
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add CLI to path
-sys.path.insert(0, str(Path(__file__).parent / 'cli'))
+sys.path.insert(0, str(Path(__file__).parent / "cli"))
 
-from conflict_detector import ConflictDetector
 
 print("=" * 70)
 print("UNIFIED SCRAPER - CONFLICT DETECTION DEMO")
@@ -26,11 +25,11 @@ print("   - Documentation APIs from example docs")
 print("   - Code APIs from example repository")
 print()
 
-with open('cli/conflicts.json', 'r') as f:
+with open("cli/conflicts.json") as f:
     conflicts_data = json.load(f)
 
-conflicts = conflicts_data['conflicts']
-summary = conflicts_data['summary']
+conflicts = conflicts_data["conflicts"]
+summary = conflicts_data["summary"]
 
 print(f"✅ Loaded {summary['total']} conflicts")
 print()
@@ -45,14 +44,14 @@ print(f"📊 **Total Conflicts**: {summary['total']}")
 print()
 
 print("**By Type:**")
-for conflict_type, count in summary['by_type'].items():
+for conflict_type, count in summary["by_type"].items():
     if count > 0:
         emoji = "📖" if conflict_type == "missing_in_docs" else "💻" if conflict_type == "missing_in_code" else "⚠️"
         print(f"   {emoji} {conflict_type}: {count}")
 print()
 
 print("**By Severity:**")
-for severity, count in summary['by_severity'].items():
+for severity, count in summary["by_severity"].items():
     if count > 0:
         emoji = "🔴" if severity == "high" else "🟡" if severity == "medium" else "🟢"
         print(f"   {emoji} {severity.upper()}: {count}")
@@ -65,9 +64,9 @@ print("=" * 70)
 print()
 
 # Group by severity
-high = [c for c in conflicts if c['severity'] == 'high']
-medium = [c for c in conflicts if c['severity'] == 'medium']
-low = [c for c in conflicts if c['severity'] == 'low']
+high = [c for c in conflicts if c["severity"] == "high"]
+medium = [c for c in conflicts if c["severity"] == "medium"]
+low = [c for c in conflicts if c["severity"] == "low"]
 
 # Show high severity first
 if high:
@@ -80,14 +79,14 @@ if high:
         print(f"**Issue**: {conflict['difference']}")
         print(f"**Suggestion**: {conflict['suggestion']}")
 
-        if conflict['docs_info']:
-            print(f"\n**Documented as**:")
+        if conflict["docs_info"]:
+            print("\n**Documented as**:")
             print(f"  Signature: {conflict['docs_info'].get('raw_signature', 'N/A')}")
 
-        if conflict['code_info']:
-            print(f"\n**Implemented as**:")
-            params = conflict['code_info'].get('parameters', [])
-            param_str = ', '.join(f"{p['name']}: {p.get('type_hint', 'Any')}" for p in params if p['name'] != 'self')
+        if conflict["code_info"]:
+            print("\n**Implemented as**:")
+            params = conflict["code_info"].get("parameters", [])
+            param_str = ", ".join(f"{p['name']}: {p.get('type_hint', 'Any')}" for p in params if p["name"] != "self")
             print(f"  Signature: {conflict['code_info']['name']}({param_str})")
             print(f"  Return type: {conflict['code_info'].get('return_type', 'None')}")
             print(f"  Location: {conflict['code_info'].get('source', 'N/A')}:{conflict['code_info'].get('line', '?')}")
@@ -103,7 +102,7 @@ if medium:
         print(f"**Type**: {conflict['type']}")
         print(f"**Issue**: {conflict['difference']}")
 
-        if conflict['code_info']:
+        if conflict["code_info"]:
             print(f"**Location**: {conflict['code_info'].get('source', 'N/A')}")
 
     if len(medium) > 3:
@@ -128,30 +127,30 @@ print()
 print(f"⚠️ **Conflict**: {example_conflict['difference']}")
 print()
 
-if example_conflict.get('docs_info'):
+if example_conflict.get("docs_info"):
     print("**Documentation says:**")
     print("```")
-    print(example_conflict['docs_info'].get('raw_signature', 'N/A'))
+    print(example_conflict["docs_info"].get("raw_signature", "N/A"))
     print("```")
     print()
 
-if example_conflict.get('code_info'):
+if example_conflict.get("code_info"):
     print("**Code implementation:**")
     print("```python")
-    params = example_conflict['code_info'].get('parameters', [])
+    params = example_conflict["code_info"].get("parameters", [])
     param_strs = []
     for p in params:
-        if p['name'] == 'self':
+        if p["name"] == "self":
             continue
-        param_str = p['name']
-        if p.get('type_hint'):
+        param_str = p["name"]
+        if p.get("type_hint"):
             param_str += f": {p['type_hint']}"
-        if p.get('default'):
+        if p.get("default"):
             param_str += f" = {p['default']}"
         param_strs.append(param_str)
 
     sig = f"def {example_conflict['code_info']['name']}({', '.join(param_strs)})"
-    if example_conflict['code_info'].get('return_type'):
+    if example_conflict["code_info"].get("return_type"):
         sig += f" -> {example_conflict['code_info']['return_type']}"
 
     print(sig)

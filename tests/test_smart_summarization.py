@@ -6,7 +6,7 @@ compatibility with Claude CLI's character limits.
 """
 
 import pytest
-from pathlib import Path
+
 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
 
@@ -165,7 +165,12 @@ Another paragraph of content.
 
         # Create large reference file (>12K chars to trigger per-file truncation)
         # Note: read_reference_files() skips index.md, so use api.md
-        large_content = "\n".join([f"# Section {i}\n\nContent here with more text to make it substantial.\n\n```python\ndef func_{i}(): pass\n```\n" for i in range(200)])
+        large_content = "\n".join(
+            [
+                f"# Section {i}\n\nContent here with more text to make it substantial.\n\n```python\ndef func_{i}(): pass\n```\n"
+                for i in range(200)
+            ]
+        )
         (refs_dir / "api.md").write_text(large_content)
 
         enhancer = LocalSkillEnhancer(skill_dir)
@@ -193,11 +198,18 @@ Another paragraph of content.
 
         # Create content that exceeds 30K threshold
         # Note: read_reference_files() skips index.md, so use different names
-        large_content = "\n".join([f"# Section {i}\n\n" + "Content with detailed explanations " * 50 + "\n\n```python\ndef func_{i}(): pass\n```\n" for i in range(150)])
+        large_content = "\n".join(
+            [
+                f"# Section {i}\n\n"
+                + "Content with detailed explanations " * 50
+                + "\n\n```python\ndef func_{i}(): pass\n```\n"
+                for i in range(150)
+            ]
+        )
         (refs_dir / "api.md").write_text(large_content)
         # Add more reference files to ensure we exceed 30K
         (refs_dir / "guide.md").write_text(large_content)
-        (refs_dir / "tutorial.md").write_text(large_content[:len(large_content)//2])  # Half size
+        (refs_dir / "tutorial.md").write_text(large_content[: len(large_content) // 2])  # Half size
 
         enhancer = LocalSkillEnhancer(skill_dir)
 
@@ -205,7 +217,7 @@ Another paragraph of content.
         def mock_headless(prompt_file, timeout):
             return True
 
-        monkeypatch.setattr(enhancer, '_run_headless', mock_headless)
+        monkeypatch.setattr(enhancer, "_run_headless", mock_headless)
 
         # Run enhancement
         result = enhancer.run(headless=True)

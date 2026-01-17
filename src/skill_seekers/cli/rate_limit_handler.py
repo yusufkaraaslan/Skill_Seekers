@@ -9,16 +9,19 @@ Handles GitHub API rate limits with smart strategies:
 - Non-interactive mode for CI/CD
 """
 
-import time
 import sys
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+import time
+from datetime import datetime
+from typing import Any
+
 import requests
+
 from .config_manager import get_config_manager
 
 
 class RateLimitError(Exception):
     """Raised when rate limit is exceeded and cannot be handled."""
+
     pass
 
 
@@ -43,10 +46,10 @@ class RateLimitHandler:
 
     def __init__(
         self,
-        token: Optional[str] = None,
+        token: str | None = None,
         interactive: bool = True,
-        profile_name: Optional[str] = None,
-        auto_switch: bool = True
+        profile_name: str | None = None,
+        auto_switch: bool = True,
     ):
         """
         Initialize rate limit handler.
@@ -91,7 +94,7 @@ class RateLimitHandler:
 
             if self.interactive:
                 response = input("Continue without token? [Y/n]: ").strip().lower()
-                if response in ['n', 'no']:
+                if response in ["n", "no"]:
                     print("\n✅ Run 'skill-seekers config --github' to set up a token.\n")
                     return False
 
@@ -100,12 +103,12 @@ class RateLimitHandler:
         # Check current rate limit status
         try:
             rate_info = self.get_rate_limit_info()
-            remaining = rate_info.get('remaining', 0)
-            limit = rate_info.get('limit', 5000)
+            remaining = rate_info.get("remaining", 0)
+            limit = rate_info.get("limit", 5000)
 
             if remaining == 0:
                 print(f"\n⚠️  Warning: GitHub rate limit already exhausted (0/{limit})")
-                reset_time = rate_info.get('reset_time')
+                reset_time = rate_info.get("reset_time")
                 if reset_time:
                     wait_minutes = (reset_time - datetime.now()).total_seconds() / 60
                     print(f"   Resets in {int(wait_minutes)} minutes")
@@ -146,9 +149,9 @@ class RateLimitHandler:
         if response.status_code == 403:
             try:
                 error_data = response.json()
-                message = error_data.get('message', '')
+                message = error_data.get("message", "")
 
-                if 'rate limit' in message.lower() or 'api rate limit exceeded' in message.lower():
+                if "rate limit" in message.lower() or "api rate limit exceeded" in message.lower():
                     # Extract rate limit info from headers
                     rate_info = self.extract_rate_limit_info(response)
                     return self.handle_rate_limit(rate_info)
@@ -158,7 +161,7 @@ class RateLimitHandler:
 
         return True
 
-    def extract_rate_limit_info(self, response: requests.Response) -> Dict[str, Any]:
+    def extract_rate_limit_info(self, response: requests.Response) -> dict[str, Any]:
         """
         Extract rate limit information from response headers.
 
@@ -170,20 +173,15 @@ class RateLimitHandler:
         """
         headers = response.headers
 
-        limit = int(headers.get('X-RateLimit-Limit', 0))
-        remaining = int(headers.get('X-RateLimit-Remaining', 0))
-        reset_timestamp = int(headers.get('X-RateLimit-Reset', 0))
+        limit = int(headers.get("X-RateLimit-Limit", 0))
+        remaining = int(headers.get("X-RateLimit-Remaining", 0))
+        reset_timestamp = int(headers.get("X-RateLimit-Reset", 0))
 
         reset_time = datetime.fromtimestamp(reset_timestamp) if reset_timestamp else None
 
-        return {
-            'limit': limit,
-            'remaining': remaining,
-            'reset_timestamp': reset_timestamp,
-            'reset_time': reset_time
-        }
+        return {"limit": limit, "remaining": remaining, "reset_timestamp": reset_timestamp, "reset_time": reset_time}
 
-    def get_rate_limit_info(self) -> Dict[str, Any]:
+    def get_rate_limit_info(self) -> dict[str, Any]:
         """
         Get current rate limit status from GitHub API.
 
@@ -193,25 +191,25 @@ class RateLimitHandler:
         url = "https://api.github.com/rate_limit"
         headers = {}
         if self.token:
-            headers['Authorization'] = f'token {self.token}'
+            headers["Authorization"] = f"token {self.token}"
 
         response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
 
         data = response.json()
-        core = data.get('rate', {})
+        core = data.get("rate", {})
 
-        reset_timestamp = core.get('reset', 0)
+        reset_timestamp = core.get("reset", 0)
         reset_time = datetime.fromtimestamp(reset_timestamp) if reset_timestamp else None
 
         return {
-            'limit': core.get('limit', 0),
-            'remaining': core.get('remaining', 0),
-            'reset_timestamp': reset_timestamp,
-            'reset_time': reset_time
+            "limit": core.get("limit", 0),
+            "remaining": core.get("remaining", 0),
+            "reset_timestamp": reset_timestamp,
+            "reset_time": reset_time,
         }
 
-    def handle_rate_limit(self, rate_info: Dict[str, Any]) -> bool:
+    def handle_rate_limit(self, rate_info: dict[str, Any]) -> bool:
         """
         Handle rate limit based on strategy.
 
@@ -224,11 +222,11 @@ class RateLimitHandler:
         Raises:
             RateLimitError: If cannot handle in non-interactive mode
         """
-        reset_time = rate_info.get('reset_time')
-        remaining = rate_info.get('remaining', 0)
-        limit = rate_info.get('limit', 0)
+        reset_time = rate_info.get("reset_time")
+        remaining = rate_info.get("remaining", 0)
+        limit = rate_info.get("limit", 0)
 
-        print(f"\n⚠️  GitHub Rate Limit Reached")
+        print("\n⚠️  GitHub Rate Limit Reached")
         print(f"   Profile: {self.profile_name or 'default'}")
         print(f"   Limit: {remaining}/{limit} requests")
 
@@ -294,8 +292,8 @@ class RateLimitHandler:
             self.token = next_token
 
             rate_info = self.get_rate_limit_info()
-            remaining = rate_info.get('remaining', 0)
-            limit = rate_info.get('limit', 0)
+            remaining = rate_info.get("remaining", 0)
+            limit = rate_info.get("limit", 0)
 
             if remaining > 0:
                 print(f"✅ Profile '{next_name}' has {remaining}/{limit} requests available")
@@ -394,24 +392,24 @@ class RateLimitHandler:
         while True:
             choice = input("Select an option [w/s/t/c]: ").strip().lower()
 
-            if choice == 'w':
+            if choice == "w":
                 return self.wait_for_reset(wait_seconds, wait_minutes)
 
-            elif choice == 's':
+            elif choice == "s":
                 if self.try_switch_profile():
                     return True
                 else:
                     print("⚠️  Profile switching failed. Choose another option.")
                     continue
 
-            elif choice == 't':
+            elif choice == "t":
                 print("\n💡 Opening GitHub token setup...")
                 print("   Run this command in another terminal:")
                 print("   $ skill-seekers config --github\n")
                 print("   Then restart your scraping job.\n")
                 return False
 
-            elif choice == 'c':
+            elif choice == "c":
                 print("\n⏸️  Operation cancelled by user\n")
                 return False
 
@@ -419,7 +417,7 @@ class RateLimitHandler:
                 print("❌ Invalid choice. Please enter w, s, t, or c.")
 
 
-def create_github_headers(token: Optional[str] = None) -> Dict[str, str]:
+def create_github_headers(token: str | None = None) -> dict[str, str]:
     """
     Create GitHub API headers with optional token.
 
@@ -431,5 +429,5 @@ def create_github_headers(token: Optional[str] = None) -> Dict[str, str]:
     """
     headers = {}
     if token:
-        headers['Authorization'] = f'token {token}'
+        headers["Authorization"] = f"token {token}"
     return headers

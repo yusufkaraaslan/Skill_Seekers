@@ -15,10 +15,9 @@ Usage:
     skill-seekers enhance output/react/ --target openai --api-key sk-proj-...
 """
 
+import argparse
 import os
 import sys
-import json
-import argparse
 from pathlib import Path
 
 # Add parent directory to path for imports when run as script
@@ -42,9 +41,7 @@ class SkillEnhancer:
         self.skill_md_path = self.skill_dir / "SKILL.md"
 
         # Get API key - support both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN
-        self.api_key = (api_key or
-                       os.environ.get('ANTHROPIC_API_KEY') or
-                       os.environ.get('ANTHROPIC_AUTH_TOKEN'))
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         if not self.api_key:
             raise ValueError(
                 "No API key provided. Set ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN "
@@ -52,10 +49,10 @@ class SkillEnhancer:
             )
 
         # Support custom base URL for alternative API endpoints
-        base_url = os.environ.get('ANTHROPIC_BASE_URL')
-        client_kwargs = {'api_key': self.api_key}
+        base_url = os.environ.get("ANTHROPIC_BASE_URL")
+        client_kwargs = {"api_key": self.api_key}
         if base_url:
-            client_kwargs['base_url'] = base_url
+            client_kwargs["base_url"] = base_url
             print(f"ℹ️  Using custom API base URL: {base_url}")
 
         self.client = anthropic.Anthropic(**client_kwargs)
@@ -64,7 +61,7 @@ class SkillEnhancer:
         """Read existing SKILL.md"""
         if not self.skill_md_path.exists():
             return None
-        return self.skill_md_path.read_text(encoding='utf-8')
+        return self.skill_md_path.read_text(encoding="utf-8")
 
     def enhance_skill_md(self, references, current_skill_md):
         """Use Claude to enhance SKILL.md"""
@@ -80,17 +77,14 @@ class SkillEnhancer:
                 model="claude-sonnet-4-20250514",
                 max_tokens=4096,
                 temperature=0.3,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Handle response content - newer SDK versions may include ThinkingBlock
             # Find the TextBlock containing the actual response
             enhanced_content = None
             for block in message.content:
-                if hasattr(block, 'text'):
+                if hasattr(block, "text"):
                     enhanced_content = block.text
                     break
 
@@ -113,10 +107,10 @@ class SkillEnhancer:
         # Analyze sources
         sources_found = set()
         for metadata in references.values():
-            sources_found.add(metadata['source'])
+            sources_found.add(metadata["source"])
 
         # Analyze conflicts if present
-        has_conflicts = any('conflicts' in meta['path'] for meta in references.values())
+        has_conflicts = any("conflicts" in meta["path"] for meta in references.values())
 
         prompt = f"""You are enhancing a Claude skill's SKILL.md file. This skill is about: {skill_name}
 
@@ -124,14 +118,14 @@ I've scraped documentation from multiple sources and organized it into reference
 
 SKILL OVERVIEW:
 - Name: {skill_name}
-- Source Types: {', '.join(sorted(sources_found))}
-- Multi-Source: {'Yes' if len(sources_found) > 1 else 'No'}
-- Conflicts Detected: {'Yes - see conflicts.md in references' if has_conflicts else 'No'}
+- Source Types: {", ".join(sorted(sources_found))}
+- Multi-Source: {"Yes" if len(sources_found) > 1 else "No"}
+- Conflicts Detected: {"Yes - see conflicts.md in references" if has_conflicts else "No"}
 
 CURRENT SKILL.MD:
-{'```markdown' if current_skill_md else '(none - create from scratch)'}
-{current_skill_md or 'No existing SKILL.md'}
-{'```' if current_skill_md else ''}
+{"```markdown" if current_skill_md else "(none - create from scratch)"}
+{current_skill_md or "No existing SKILL.md"}
+{"```" if current_skill_md else ""}
 
 SOURCE ANALYSIS:
 This skill combines knowledge from {len(sources_found)} source type(s):
@@ -141,8 +135,8 @@ This skill combines knowledge from {len(sources_found)} source type(s):
         # Group references by (source_type, repo_id) for multi-source support
         by_source = {}
         for filename, metadata in references.items():
-            source = metadata['source']
-            repo_id = metadata.get('repo_id')  # None for single-source
+            source = metadata["source"]
+            repo_id = metadata.get("repo_id")  # None for single-source
             key = (source, repo_id) if repo_id else (source, None)
 
             if key not in by_source:
@@ -150,7 +144,7 @@ This skill combines knowledge from {len(sources_found)} source type(s):
             by_source[key].append((filename, metadata))
 
         # Add source breakdown with repo identity
-        for (source, repo_id) in sorted(by_source.keys()):
+        for source, repo_id in sorted(by_source.keys()):
             files = by_source[(source, repo_id)]
             if repo_id:
                 prompt += f"\n**{source.upper()} - {repo_id} ({len(files)} file(s))**\n"
@@ -164,14 +158,14 @@ This skill combines knowledge from {len(sources_found)} source type(s):
         prompt += "\n\nREFERENCE DOCUMENTATION:\n"
 
         # Add references grouped by (source, repo_id) with metadata
-        for (source, repo_id) in sorted(by_source.keys()):
+        for source, repo_id in sorted(by_source.keys()):
             if repo_id:
                 prompt += f"\n### {source.upper()} SOURCES - {repo_id}\n\n"
             else:
                 prompt += f"\n### {source.upper()} SOURCES\n\n"
 
             for filename, metadata in by_source[(source, repo_id)]:
-                content = metadata['content']
+                content = metadata["content"]
                 # Limit per-file to 30K
                 if len(content) > 30000:
                     content = content[:30000] + "\n\n[Content truncated for size...]"
@@ -197,12 +191,12 @@ MULTI-REPOSITORY HANDLING:
         # Detect multiple repos from same source type
         repo_ids = set()
         for metadata in references.values():
-            if metadata.get('repo_id'):
-                repo_ids.add(metadata['repo_id'])
+            if metadata.get("repo_id"):
+                repo_ids.add(metadata["repo_id"])
 
         if len(repo_ids) > 1:
             prompt += f"""
-⚠️ MULTIPLE REPOSITORIES DETECTED: {', '.join(sorted(repo_ids))}
+⚠️ MULTIPLE REPOSITORIES DETECTED: {", ".join(sorted(repo_ids))}
 
 This skill combines codebase analysis from {len(repo_ids)} different repositories.
 Each repo has its own ARCHITECTURE.md, patterns, examples, and configuration.
@@ -285,27 +279,23 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         """Save the enhanced SKILL.md"""
         # Backup original
         if self.skill_md_path.exists():
-            backup_path = self.skill_md_path.with_suffix('.md.backup')
+            backup_path = self.skill_md_path.with_suffix(".md.backup")
             self.skill_md_path.rename(backup_path)
             print(f"  💾 Backed up original to: {backup_path.name}")
 
         # Save enhanced version
-        self.skill_md_path.write_text(content, encoding='utf-8')
-        print(f"  ✅ Saved enhanced SKILL.md")
+        self.skill_md_path.write_text(content, encoding="utf-8")
+        print("  ✅ Saved enhanced SKILL.md")
 
     def run(self):
         """Main enhancement workflow"""
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"ENHANCING SKILL: {self.skill_dir.name}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         # Read reference files
         print("📖 Reading reference documentation...")
-        references = read_reference_files(
-            self.skill_dir,
-            max_chars=API_CONTENT_LIMIT,
-            preview_limit=API_PREVIEW_LIMIT
-        )
+        references = read_reference_files(self.skill_dir, max_chars=API_CONTENT_LIMIT, preview_limit=API_PREVIEW_LIMIT)
 
         if not references:
             print("❌ No reference files found to analyze")
@@ -314,11 +304,11 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         # Analyze sources
         sources_found = set()
         for metadata in references.values():
-            sources_found.add(metadata['source'])
+            sources_found.add(metadata["source"])
 
         print(f"  ✓ Read {len(references)} reference files")
         print(f"  ✓ Sources: {', '.join(sorted(sources_found))}")
-        total_size = sum(meta['size'] for meta in references.values())
+        total_size = sum(meta["size"] for meta in references.values())
         print(f"  ✓ Total size: {total_size:,} characters\n")
 
         # Read current SKILL.md
@@ -326,7 +316,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         if current_skill_md:
             print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
         else:
-            print(f"  ℹ No existing SKILL.md, will create new one")
+            print("  ℹ No existing SKILL.md, will create new one")
 
         # Enhance with Claude
         enhanced = self.enhance_skill_md(references, current_skill_md)
@@ -341,11 +331,11 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         print("💾 Saving enhanced SKILL.md...")
         self.save_enhanced_skill_md(enhanced)
 
-        print(f"\n✅ Enhancement complete!")
-        print(f"\nNext steps:")
+        print("\n✅ Enhancement complete!")
+        print("\nNext steps:")
         print(f"  1. Review: {self.skill_md_path}")
         print(f"  2. If you don't like it, restore backup: {self.skill_md_path.with_suffix('.md.backup')}")
-        print(f"  3. Package your skill:")
+        print("  3. Package your skill:")
         print(f"     skill-seekers package {self.skill_dir}/")
 
         return True
@@ -353,7 +343,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Enhance SKILL.md using platform AI APIs',
+        description="Enhance SKILL.md using platform AI APIs",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -374,19 +364,18 @@ Examples:
 
   # Dry run
   skill-seekers enhance output/godot/ --dry-run
-"""
+""",
     )
 
-    parser.add_argument('skill_dir', type=str,
-                       help='Path to skill directory (e.g., output/steam-inventory/)')
-    parser.add_argument('--api-key', type=str,
-                       help='Platform API key (or set environment variable)')
-    parser.add_argument('--target',
-                       choices=['claude', 'gemini', 'openai'],
-                       default='claude',
-                       help='Target LLM platform (default: claude)')
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Show what would be done without calling API')
+    parser.add_argument("skill_dir", type=str, help="Path to skill directory (e.g., output/steam-inventory/)")
+    parser.add_argument("--api-key", type=str, help="Platform API key (or set environment variable)")
+    parser.add_argument(
+        "--target",
+        choices=["claude", "gemini", "openai"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without calling API")
 
     args = parser.parse_args()
 
@@ -402,7 +391,7 @@ Examples:
 
     # Dry run mode
     if args.dry_run:
-        print(f"🔍 DRY RUN MODE")
+        print("🔍 DRY RUN MODE")
         print(f"   Would enhance: {skill_dir}")
         print(f"   References: {skill_dir / 'references'}")
         print(f"   SKILL.md: {skill_dir / 'SKILL.md'}")
@@ -427,7 +416,7 @@ Examples:
 
         if not adaptor.supports_enhancement():
             print(f"❌ Error: {adaptor.PLATFORM_NAME} does not support AI enhancement")
-            print(f"\nSupported platforms for enhancement:")
+            print("\nSupported platforms for enhancement:")
             print("  - Claude AI (Anthropic)")
             print("  - Google Gemini")
             print("  - OpenAI ChatGPT")
@@ -436,7 +425,7 @@ Examples:
         # Get API key
         api_key = args.api_key
         if not api_key:
-            api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
+            api_key = os.environ.get(adaptor.get_env_var_name(), "").strip()
 
         if not api_key:
             print(f"❌ Error: {adaptor.get_env_var_name()} not set")
@@ -447,19 +436,19 @@ Examples:
             sys.exit(1)
 
         # Run enhancement using adaptor
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"ENHANCING SKILL: {skill_dir}")
         print(f"Platform: {adaptor.PLATFORM_NAME}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         success = adaptor.enhance(Path(skill_dir), api_key)
 
         if success:
-            print(f"\n✅ Enhancement complete!")
-            print(f"\nNext steps:")
+            print("\n✅ Enhancement complete!")
+            print("\nNext steps:")
             print(f"  1. Review: {Path(skill_dir) / 'SKILL.md'}")
             print(f"  2. If you don't like it, restore backup: {Path(skill_dir) / 'SKILL.md.backup'}")
-            print(f"  3. Package your skill:")
+            print("  3. Package your skill:")
             print(f"     skill-seekers package {skill_dir}/ --target {args.target}")
 
         sys.exit(0 if success else 1)
@@ -474,6 +463,7 @@ Examples:
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

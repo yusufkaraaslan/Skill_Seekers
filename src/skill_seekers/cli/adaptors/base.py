@@ -7,18 +7,19 @@ This enables Skill Seekers to generate skills for multiple LLM platforms (Claude
 """
 
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
 class SkillMetadata:
     """Universal skill metadata used across all platforms"""
+
     name: str
     description: str
     version: str = "1.0.0"
-    author: Optional[str] = None
+    author: str | None = None
     tags: list[str] = field(default_factory=list)
 
 
@@ -34,11 +35,11 @@ class SkillAdaptor(ABC):
     """
 
     # Platform identifiers (override in subclasses)
-    PLATFORM: str = "unknown"              # e.g., "claude", "gemini", "openai"
-    PLATFORM_NAME: str = "Unknown"          # e.g., "Claude AI (Anthropic)"
-    DEFAULT_API_ENDPOINT: Optional[str] = None
+    PLATFORM: str = "unknown"  # e.g., "claude", "gemini", "openai"
+    PLATFORM_NAME: str = "Unknown"  # e.g., "Claude AI (Anthropic)"
+    DEFAULT_API_ENDPOINT: str | None = None
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize adaptor with optional configuration.
 
@@ -86,7 +87,7 @@ class SkillAdaptor(ABC):
         pass
 
     @abstractmethod
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> Dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
         """
         Upload packaged skill to platform.
 
@@ -168,11 +169,11 @@ class SkillAdaptor(ABC):
         if not skill_md_path.exists():
             return ""
 
-        content = skill_md_path.read_text(encoding='utf-8')
+        content = skill_md_path.read_text(encoding="utf-8")
 
         # Strip YAML frontmatter if present
-        if content.startswith('---'):
-            parts = content.split('---', 2)
+        if content.startswith("---"):
+            parts = content.split("---", 2)
             if len(parts) >= 3:
                 return parts[2].strip()
 
@@ -193,7 +194,7 @@ class SkillAdaptor(ABC):
             return "See references/ directory for documentation."
 
         # Read index and extract relevant sections
-        content = index_path.read_text(encoding='utf-8')
+        content = index_path.read_text(encoding="utf-8")
         return content[:500] + "..." if len(content) > 500 else content
 
     def _generate_toc(self, skill_dir: Path) -> str:
@@ -214,7 +215,7 @@ class SkillAdaptor(ABC):
         for ref_file in sorted(refs_dir.glob("*.md")):
             if ref_file.name == "index.md":
                 continue
-            title = ref_file.stem.replace('_', ' ').title()
+            title = ref_file.stem.replace("_", " ").title()
             toc_lines.append(f"- [{title}](references/{ref_file.name})")
 
         return "\n".join(toc_lines)

@@ -4,13 +4,11 @@ Comprehensive test suite for FastMCP Server Implementation
 Tests all 17 tools across 5 categories with comprehensive coverage
 """
 
-import sys
-import os
 import json
-import tempfile
+import os
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
 # WORKAROUND for shadowing issue: Temporarily change to /tmp to import external mcp
 # This avoids any local mcp/ directory being in the import path
@@ -19,9 +17,10 @@ MCP_AVAILABLE = False
 FASTMCP_AVAILABLE = False
 
 try:
-    os.chdir('/tmp')  # Change away from project directory
-    from mcp.types import TextContent
+    os.chdir("/tmp")  # Change away from project directory
     from mcp.server import FastMCP
+    from mcp.types import TextContent
+
     MCP_AVAILABLE = True
     FASTMCP_AVAILABLE = True
 except ImportError:
@@ -56,12 +55,7 @@ def temp_dirs(tmp_path):
     output_dir.mkdir()
     cache_dir.mkdir()
 
-    return {
-        "config": config_dir,
-        "output": output_dir,
-        "cache": cache_dir,
-        "base": tmp_path
-    }
+    return {"config": config_dir, "output": output_dir, "cache": cache_dir, "base": tmp_path}
 
 
 @pytest.fixture
@@ -71,21 +65,11 @@ def sample_config(temp_dirs):
         "name": "test-framework",
         "description": "Test framework for testing",
         "base_url": "https://test-framework.dev/",
-        "selectors": {
-            "main_content": "article",
-            "title": "h1",
-            "code_blocks": "pre"
-        },
-        "url_patterns": {
-            "include": ["/docs/"],
-            "exclude": ["/blog/", "/search/"]
-        },
-        "categories": {
-            "getting_started": ["introduction", "getting-started"],
-            "api": ["api", "reference"]
-        },
+        "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
+        "url_patterns": {"include": ["/docs/"], "exclude": ["/blog/", "/search/"]},
+        "categories": {"getting_started": ["introduction", "getting-started"], "api": ["api", "reference"]},
         "rate_limit": 0.5,
-        "max_pages": 100
+        "max_pages": 100,
     }
 
     config_path = temp_dirs["config"] / "test-framework.json"
@@ -101,18 +85,9 @@ def unified_config(temp_dirs):
         "description": "Test unified scraping",
         "merge_mode": "rule-based",
         "sources": [
-            {
-                "type": "documentation",
-                "base_url": "https://example.com/docs/",
-                "extract_api": True,
-                "max_pages": 10
-            },
-            {
-                "type": "github",
-                "repo": "test/repo",
-                "extract_readme": True
-            }
-        ]
+            {"type": "documentation", "base_url": "https://example.com/docs/", "extract_api": True, "max_pages": 10},
+            {"type": "github", "repo": "test/repo", "extract_readme": True},
+        ],
     }
 
     config_path = temp_dirs["config"] / "test-unified.json"
@@ -132,7 +107,7 @@ class TestFastMCPServerInitialization:
     def test_server_import(self):
         """Test that FastMCP server module can be imported."""
         assert server_fastmcp is not None
-        assert hasattr(server_fastmcp, 'mcp')
+        assert hasattr(server_fastmcp, "mcp")
 
     def test_server_has_name(self):
         """Test that server has correct name."""
@@ -169,7 +144,7 @@ class TestFastMCPServerInitialization:
             "submit_config",
             "add_config_source",
             "list_config_sources",
-            "remove_config_source"
+            "remove_config_source",
         ]
 
         # Check that decorators were applied
@@ -191,11 +166,7 @@ class TestConfigTools:
         """Test basic config generation."""
         monkeypatch.chdir(temp_dirs["base"])
 
-        args = {
-            "name": "my-framework",
-            "url": "https://my-framework.dev/",
-            "description": "My framework skill"
-        }
+        args = {"name": "my-framework", "url": "https://my-framework.dev/", "description": "My framework skill"}
 
         result = await server_fastmcp.generate_config(**args)
 
@@ -216,7 +187,7 @@ class TestConfigTools:
             "url": "https://custom.dev/",
             "description": "Custom skill",
             "max_pages": 200,
-            "rate_limit": 1.0
+            "rate_limit": 1.0,
         }
 
         result = await server_fastmcp.generate_config(**args)
@@ -230,7 +201,7 @@ class TestConfigTools:
             "name": "unlimited-framework",
             "url": "https://unlimited.dev/",
             "description": "Unlimited skill",
-            "unlimited": True
+            "unlimited": True,
         }
 
         result = await server_fastmcp.generate_config(**args)
@@ -261,9 +232,7 @@ class TestConfigTools:
 
     async def test_validate_config_missing_file(self, temp_dirs):
         """Test validating a non-existent config file."""
-        result = await server_fastmcp.validate_config(
-            config_path=str(temp_dirs["config"] / "nonexistent.json")
-        )
+        result = await server_fastmcp.validate_config(config_path=str(temp_dirs["config"] / "nonexistent.json"))
 
         assert isinstance(result, str)
         # Should indicate error
@@ -282,110 +251,73 @@ class TestScrapingTools:
 
     async def test_estimate_pages_basic(self, sample_config):
         """Test basic page estimation."""
-        with patch('subprocess.run') as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="Estimated pages: 150\nRecommended max_pages: 200"
-            )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0, stdout="Estimated pages: 150\nRecommended max_pages: 200")
 
-            result = await server_fastmcp.estimate_pages(
-                config_path=str(sample_config)
-            )
+            result = await server_fastmcp.estimate_pages(config_path=str(sample_config))
 
             assert isinstance(result, str)
 
     async def test_estimate_pages_unlimited(self, sample_config):
         """Test estimation with unlimited discovery."""
-        result = await server_fastmcp.estimate_pages(
-            config_path=str(sample_config),
-            unlimited=True
-        )
+        result = await server_fastmcp.estimate_pages(config_path=str(sample_config), unlimited=True)
 
         assert isinstance(result, str)
 
     async def test_estimate_pages_custom_discovery(self, sample_config):
         """Test estimation with custom max_discovery."""
-        result = await server_fastmcp.estimate_pages(
-            config_path=str(sample_config),
-            max_discovery=500
-        )
+        result = await server_fastmcp.estimate_pages(config_path=str(sample_config), max_discovery=500)
 
         assert isinstance(result, str)
 
     async def test_scrape_docs_basic(self, sample_config):
         """Test basic documentation scraping."""
-        with patch('subprocess.run') as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="Scraping completed successfully"
-            )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0, stdout="Scraping completed successfully")
 
-            result = await server_fastmcp.scrape_docs(
-                config_path=str(sample_config),
-                dry_run=True
-            )
+            result = await server_fastmcp.scrape_docs(config_path=str(sample_config), dry_run=True)
 
             assert isinstance(result, str)
 
     async def test_scrape_docs_with_enhancement(self, sample_config):
         """Test scraping with local enhancement."""
-        result = await server_fastmcp.scrape_docs(
-            config_path=str(sample_config),
-            enhance_local=True,
-            dry_run=True
-        )
+        result = await server_fastmcp.scrape_docs(config_path=str(sample_config), enhance_local=True, dry_run=True)
 
         assert isinstance(result, str)
 
     async def test_scrape_docs_skip_scrape(self, sample_config):
         """Test scraping with skip_scrape flag."""
-        result = await server_fastmcp.scrape_docs(
-            config_path=str(sample_config),
-            skip_scrape=True
-        )
+        result = await server_fastmcp.scrape_docs(config_path=str(sample_config), skip_scrape=True)
 
         assert isinstance(result, str)
 
     async def test_scrape_docs_unified(self, unified_config):
         """Test scraping with unified config."""
-        result = await server_fastmcp.scrape_docs(
-            config_path=str(unified_config),
-            dry_run=True
-        )
+        result = await server_fastmcp.scrape_docs(config_path=str(unified_config), dry_run=True)
 
         assert isinstance(result, str)
 
     async def test_scrape_docs_merge_mode_override(self, unified_config):
         """Test scraping with merge mode override."""
         result = await server_fastmcp.scrape_docs(
-            config_path=str(unified_config),
-            merge_mode="claude-enhanced",
-            dry_run=True
+            config_path=str(unified_config), merge_mode="claude-enhanced", dry_run=True
         )
 
         assert isinstance(result, str)
 
     async def test_scrape_github_basic(self):
         """Test basic GitHub scraping."""
-        with patch('subprocess.run') as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="GitHub scraping completed"
-            )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0, stdout="GitHub scraping completed")
 
-            result = await server_fastmcp.scrape_github(
-                repo="facebook/react",
-                name="react-github-test"
-            )
+            result = await server_fastmcp.scrape_github(repo="facebook/react", name="react-github-test")
 
             assert isinstance(result, str)
 
     async def test_scrape_github_with_token(self):
         """Test GitHub scraping with authentication token."""
         result = await server_fastmcp.scrape_github(
-            repo="private/repo",
-            token="fake_token_for_testing",
-            name="private-test"
+            repo="private/repo", token="fake_token_for_testing", name="private-test"
         )
 
         assert isinstance(result, str)
@@ -393,12 +325,7 @@ class TestScrapingTools:
     async def test_scrape_github_options(self):
         """Test GitHub scraping with various options."""
         result = await server_fastmcp.scrape_github(
-            repo="test/repo",
-            no_issues=True,
-            no_changelog=True,
-            no_releases=True,
-            max_issues=50,
-            scrape_only=True
+            repo="test/repo", no_issues=True, no_changelog=True, no_releases=True, max_issues=50, scrape_only=True
         )
 
         assert isinstance(result, str)
@@ -406,26 +333,17 @@ class TestScrapingTools:
     async def test_scrape_pdf_basic(self, temp_dirs):
         """Test basic PDF scraping."""
         # Create a dummy PDF config
-        pdf_config = {
-            "name": "test-pdf",
-            "pdf_path": "/path/to/test.pdf",
-            "description": "Test PDF skill"
-        }
+        pdf_config = {"name": "test-pdf", "pdf_path": "/path/to/test.pdf", "description": "Test PDF skill"}
         config_path = temp_dirs["config"] / "test-pdf.json"
         config_path.write_text(json.dumps(pdf_config))
 
-        result = await server_fastmcp.scrape_pdf(
-            config_path=str(config_path)
-        )
+        result = await server_fastmcp.scrape_pdf(config_path=str(config_path))
 
         assert isinstance(result, str)
 
     async def test_scrape_pdf_direct_path(self):
         """Test PDF scraping with direct path."""
-        result = await server_fastmcp.scrape_pdf(
-            pdf_path="/path/to/manual.pdf",
-            name="manual-skill"
-        )
+        result = await server_fastmcp.scrape_pdf(pdf_path="/path/to/manual.pdf", name="manual-skill")
 
         assert isinstance(result, str)
 
@@ -437,8 +355,7 @@ class TestScrapingTools:
         (src_dir / "test.py").write_text("def hello(): pass")
 
         result = await server_fastmcp.scrape_codebase(
-            directory=str(src_dir),
-            output=str(temp_dirs["output"] / "codebase_analysis")
+            directory=str(src_dir), output=str(temp_dirs["output"] / "codebase_analysis")
         )
 
         assert isinstance(result, str)
@@ -456,7 +373,7 @@ class TestScrapingTools:
             depth="deep",
             languages="Python,JavaScript",
             file_patterns="*.py,*.js",
-            build_api_reference=True
+            build_api_reference=True,
         )
 
         assert isinstance(result, str)
@@ -479,16 +396,10 @@ class TestPackagingTools:
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("# Test Skill")
 
-        with patch('skill_seekers.mcp.tools.packaging_tools.subprocess.run') as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="Packaging completed"
-            )
+        with patch("skill_seekers.mcp.tools.packaging_tools.subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0, stdout="Packaging completed")
 
-            result = await server_fastmcp.package_skill(
-                skill_dir=str(skill_dir),
-                auto_upload=False
-            )
+            result = await server_fastmcp.package_skill(skill_dir=str(skill_dir), auto_upload=False)
 
             assert isinstance(result, str)
 
@@ -498,10 +409,7 @@ class TestPackagingTools:
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("# Test Skill")
 
-        result = await server_fastmcp.package_skill(
-            skill_dir=str(skill_dir),
-            auto_upload=True
-        )
+        result = await server_fastmcp.package_skill(skill_dir=str(skill_dir), auto_upload=True)
 
         assert isinstance(result, str)
 
@@ -511,76 +419,55 @@ class TestPackagingTools:
         zip_path = temp_dirs["output"] / "test-skill.zip"
         zip_path.write_text("fake zip content")
 
-        with patch('skill_seekers.mcp.tools.packaging_tools.subprocess.run') as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="Upload successful"
-            )
+        with patch("skill_seekers.mcp.tools.packaging_tools.subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0, stdout="Upload successful")
 
-            result = await server_fastmcp.upload_skill(
-                skill_zip=str(zip_path)
-            )
+            result = await server_fastmcp.upload_skill(skill_zip=str(zip_path))
 
             assert isinstance(result, str)
 
     async def test_upload_skill_missing_file(self, temp_dirs):
         """Test upload with missing file."""
-        result = await server_fastmcp.upload_skill(
-            skill_zip=str(temp_dirs["output"] / "nonexistent.zip")
-        )
+        result = await server_fastmcp.upload_skill(skill_zip=str(temp_dirs["output"] / "nonexistent.zip"))
 
         assert isinstance(result, str)
 
     async def test_install_skill_with_config_name(self):
         """Test complete install workflow with config name."""
         # Mock the fetch_config_tool import that install_skill_tool uses
-        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
+        with patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
-            result = await server_fastmcp.install_skill(
-                config_name="react",
-                destination="output",
-                dry_run=True
-            )
+            result = await server_fastmcp.install_skill(config_name="react", destination="output", dry_run=True)
 
             assert isinstance(result, str)
 
     async def test_install_skill_with_config_path(self, sample_config):
         """Test complete install workflow with config path."""
-        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
+        with patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config ready")]
 
             result = await server_fastmcp.install_skill(
-                config_path=str(sample_config),
-                destination="output",
-                dry_run=True
+                config_path=str(sample_config), destination="output", dry_run=True
             )
 
             assert isinstance(result, str)
 
     async def test_install_skill_unlimited(self):
         """Test install workflow with unlimited pages."""
-        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
+        with patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
-            result = await server_fastmcp.install_skill(
-                config_name="react",
-                unlimited=True,
-                dry_run=True
-            )
+            result = await server_fastmcp.install_skill(config_name="react", unlimited=True, dry_run=True)
 
             assert isinstance(result, str)
 
     async def test_install_skill_no_upload(self):
         """Test install workflow without auto-upload."""
-        with patch('skill_seekers.mcp.tools.source_tools.fetch_config_tool') as mock_fetch:
+        with patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch:
             mock_fetch.return_value = [Mock(text="Config fetched")]
 
-            result = await server_fastmcp.install_skill(
-                config_name="react",
-                auto_upload=False,
-                dry_run=True
-            )
+            result = await server_fastmcp.install_skill(config_name="react", auto_upload=False, dry_run=True)
 
             assert isinstance(result, str)
 
@@ -597,21 +484,14 @@ class TestSplittingTools:
 
     async def test_split_config_auto_strategy(self, sample_config):
         """Test config splitting with auto strategy."""
-        result = await server_fastmcp.split_config(
-            config_path=str(sample_config),
-            strategy="auto",
-            dry_run=True
-        )
+        result = await server_fastmcp.split_config(config_path=str(sample_config), strategy="auto", dry_run=True)
 
         assert isinstance(result, str)
 
     async def test_split_config_category_strategy(self, sample_config):
         """Test config splitting with category strategy."""
         result = await server_fastmcp.split_config(
-            config_path=str(sample_config),
-            strategy="category",
-            target_pages=5000,
-            dry_run=True
+            config_path=str(sample_config), strategy="category", target_pages=5000, dry_run=True
         )
 
         assert isinstance(result, str)
@@ -619,10 +499,7 @@ class TestSplittingTools:
     async def test_split_config_size_strategy(self, sample_config):
         """Test config splitting with size strategy."""
         result = await server_fastmcp.split_config(
-            config_path=str(sample_config),
-            strategy="size",
-            target_pages=3000,
-            dry_run=True
+            config_path=str(sample_config), strategy="size", target_pages=3000, dry_run=True
         )
 
         assert isinstance(result, str)
@@ -633,17 +510,14 @@ class TestSplittingTools:
         (temp_dirs["config"] / "godot-scripting.json").write_text("{}")
         (temp_dirs["config"] / "godot-physics.json").write_text("{}")
 
-        result = await server_fastmcp.generate_router(
-            config_pattern=str(temp_dirs["config"] / "godot-*.json")
-        )
+        result = await server_fastmcp.generate_router(config_pattern=str(temp_dirs["config"] / "godot-*.json"))
 
         assert isinstance(result, str)
 
     async def test_generate_router_with_name(self, temp_dirs):
         """Test router generation with custom name."""
         result = await server_fastmcp.generate_router(
-            config_pattern=str(temp_dirs["config"] / "godot-*.json"),
-            router_name="godot-hub"
+            config_pattern=str(temp_dirs["config"] / "godot-*.json"), router_name="godot-hub"
         )
 
         assert isinstance(result, str)
@@ -661,47 +535,37 @@ class TestSourceTools:
 
     async def test_fetch_config_list_api(self):
         """Test fetching config list from API."""
-        with patch('skill_seekers.mcp.tools.source_tools.httpx.AsyncClient') as mock_client:
+        with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             mock_response = MagicMock()
             mock_response.json.return_value = {
                 "configs": [
                     {"name": "react", "category": "web-frameworks"},
-                    {"name": "vue", "category": "web-frameworks"}
+                    {"name": "vue", "category": "web-frameworks"},
                 ],
-                "total": 2
+                "total": 2,
             }
             mock_client.return_value.__aenter__.return_value.get.return_value = mock_response
 
-            result = await server_fastmcp.fetch_config(
-                list_available=True
-            )
+            result = await server_fastmcp.fetch_config(list_available=True)
 
             assert isinstance(result, str)
 
     async def test_fetch_config_download_api(self, temp_dirs):
         """Test downloading specific config from API."""
-        result = await server_fastmcp.fetch_config(
-            config_name="react",
-            destination=str(temp_dirs["config"])
-        )
+        result = await server_fastmcp.fetch_config(config_name="react", destination=str(temp_dirs["config"]))
 
         assert isinstance(result, str)
 
     async def test_fetch_config_with_category_filter(self):
         """Test fetching configs with category filter."""
-        result = await server_fastmcp.fetch_config(
-            list_available=True,
-            category="web-frameworks"
-        )
+        result = await server_fastmcp.fetch_config(list_available=True, category="web-frameworks")
 
         assert isinstance(result, str)
 
     async def test_fetch_config_from_git_url(self, temp_dirs):
         """Test fetching config from git URL."""
         result = await server_fastmcp.fetch_config(
-            config_name="react",
-            git_url="https://github.com/myorg/configs.git",
-            destination=str(temp_dirs["config"])
+            config_name="react", git_url="https://github.com/myorg/configs.git", destination=str(temp_dirs["config"])
         )
 
         assert isinstance(result, str)
@@ -709,9 +573,7 @@ class TestSourceTools:
     async def test_fetch_config_from_source(self, temp_dirs):
         """Test fetching config from named source."""
         result = await server_fastmcp.fetch_config(
-            config_name="react",
-            source="team",
-            destination=str(temp_dirs["config"])
+            config_name="react", source="team", destination=str(temp_dirs["config"])
         )
 
         assert isinstance(result, str)
@@ -722,7 +584,7 @@ class TestSourceTools:
             config_name="react",
             git_url="https://github.com/private/configs.git",
             token="fake_token",
-            destination=str(temp_dirs["config"])
+            destination=str(temp_dirs["config"]),
         )
 
         assert isinstance(result, str)
@@ -733,7 +595,7 @@ class TestSourceTools:
             config_name="react",
             git_url="https://github.com/myorg/configs.git",
             refresh=True,
-            destination=str(temp_dirs["config"])
+            destination=str(temp_dirs["config"]),
         )
 
         assert isinstance(result, str)
@@ -741,32 +603,22 @@ class TestSourceTools:
     async def test_submit_config_with_path(self, sample_config):
         """Test submitting config from file path."""
         result = await server_fastmcp.submit_config(
-            config_path=str(sample_config),
-            testing_notes="Tested with 20 pages, works well"
+            config_path=str(sample_config), testing_notes="Tested with 20 pages, works well"
         )
 
         assert isinstance(result, str)
 
     async def test_submit_config_with_json(self):
         """Test submitting config as JSON string."""
-        config_json = json.dumps({
-            "name": "my-framework",
-            "base_url": "https://my-framework.dev/"
-        })
+        config_json = json.dumps({"name": "my-framework", "base_url": "https://my-framework.dev/"})
 
-        result = await server_fastmcp.submit_config(
-            config_json=config_json,
-            testing_notes="Works great!"
-        )
+        result = await server_fastmcp.submit_config(config_json=config_json, testing_notes="Works great!")
 
         assert isinstance(result, str)
 
     async def test_add_config_source_basic(self):
         """Test adding a config source."""
-        result = await server_fastmcp.add_config_source(
-            name="team",
-            git_url="https://github.com/myorg/configs.git"
-        )
+        result = await server_fastmcp.add_config_source(name="team", git_url="https://github.com/myorg/configs.git")
 
         assert isinstance(result, str)
 
@@ -779,7 +631,7 @@ class TestSourceTools:
             token_env="GITLAB_TOKEN",
             branch="develop",
             priority=50,
-            enabled=True
+            enabled=True,
         )
 
         assert isinstance(result, str)
@@ -787,34 +639,26 @@ class TestSourceTools:
     async def test_add_config_source_ssh_url(self):
         """Test adding config source with SSH URL."""
         result = await server_fastmcp.add_config_source(
-            name="private",
-            git_url="git@github.com:myorg/private-configs.git",
-            source_type="github"
+            name="private", git_url="git@github.com:myorg/private-configs.git", source_type="github"
         )
 
         assert isinstance(result, str)
 
     async def test_list_config_sources_all(self):
         """Test listing all config sources."""
-        result = await server_fastmcp.list_config_sources(
-            enabled_only=False
-        )
+        result = await server_fastmcp.list_config_sources(enabled_only=False)
 
         assert isinstance(result, str)
 
     async def test_list_config_sources_enabled_only(self):
         """Test listing only enabled sources."""
-        result = await server_fastmcp.list_config_sources(
-            enabled_only=True
-        )
+        result = await server_fastmcp.list_config_sources(enabled_only=True)
 
         assert isinstance(result, str)
 
     async def test_remove_config_source(self):
         """Test removing a config source."""
-        result = await server_fastmcp.remove_config_source(
-            name="team"
-        )
+        result = await server_fastmcp.remove_config_source(name="team")
 
         assert isinstance(result, str)
 
@@ -835,45 +679,34 @@ class TestFastMCPIntegration:
 
         # Step 1: Generate config
         result1 = await server_fastmcp.generate_config(
-            name="workflow-test",
-            url="https://workflow.dev/",
-            description="Workflow test"
+            name="workflow-test", url="https://workflow.dev/", description="Workflow test"
         )
         assert isinstance(result1, str)
 
         # Step 2: Validate config
         config_path = temp_dirs["base"] / "configs" / "workflow-test.json"
         if config_path.exists():
-            result2 = await server_fastmcp.validate_config(
-                config_path=str(config_path)
-            )
+            result2 = await server_fastmcp.validate_config(config_path=str(config_path))
             assert isinstance(result2, str)
 
     async def test_workflow_source_fetch_scrape(self, temp_dirs):
         """Test workflow: add source → fetch config → scrape."""
         # Step 1: Add source
         result1 = await server_fastmcp.add_config_source(
-            name="test-source",
-            git_url="https://github.com/test/configs.git"
+            name="test-source", git_url="https://github.com/test/configs.git"
         )
         assert isinstance(result1, str)
 
         # Step 2: Fetch config
         result2 = await server_fastmcp.fetch_config(
-            config_name="react",
-            source="test-source",
-            destination=str(temp_dirs["config"])
+            config_name="react", source="test-source", destination=str(temp_dirs["config"])
         )
         assert isinstance(result2, str)
 
     async def test_workflow_split_router(self, sample_config, temp_dirs):
         """Test workflow: split config → generate router."""
         # Step 1: Split config
-        result1 = await server_fastmcp.split_config(
-            config_path=str(sample_config),
-            strategy="category",
-            dry_run=True
-        )
+        result1 = await server_fastmcp.split_config(config_path=str(sample_config), strategy="category", dry_run=True)
         assert isinstance(result1, str)
 
         # Step 2: Generate router
@@ -898,9 +731,7 @@ class TestErrorHandling:
         monkeypatch.chdir(temp_dirs["base"])
 
         result = await server_fastmcp.generate_config(
-            name="invalid-test",
-            url="not-a-valid-url",
-            description="Test invalid URL"
+            name="invalid-test", url="not-a-valid-url", description="Test invalid URL"
         )
 
         assert isinstance(result, str)
@@ -911,9 +742,7 @@ class TestErrorHandling:
         bad_config = temp_dirs["config"] / "bad.json"
         bad_config.write_text("{ invalid json }")
 
-        result = await server_fastmcp.validate_config(
-            config_path=str(bad_config)
-        )
+        result = await server_fastmcp.validate_config(config_path=str(bad_config))
 
         assert isinstance(result, str)
 
@@ -921,9 +750,7 @@ class TestErrorHandling:
         """Test error handling for missing config file."""
         # This should handle the error gracefully and return a string
         try:
-            result = await server_fastmcp.scrape_docs(
-                config_path="/nonexistent/config.json"
-            )
+            result = await server_fastmcp.scrape_docs(config_path="/nonexistent/config.json")
             assert isinstance(result, str)
             # Should contain error message
             assert "error" in result.lower() or "not found" in result.lower() or "❌" in result
@@ -933,9 +760,7 @@ class TestErrorHandling:
 
     async def test_package_skill_missing_directory(self):
         """Test error handling for missing skill directory."""
-        result = await server_fastmcp.package_skill(
-            skill_dir="/nonexistent/skill"
-        )
+        result = await server_fastmcp.package_skill(skill_dir="/nonexistent/skill")
 
         assert isinstance(result, str)
 
@@ -955,9 +780,7 @@ class TestTypeValidation:
         monkeypatch.chdir(temp_dirs["base"])
 
         result = await server_fastmcp.generate_config(
-            name="type-test",
-            url="https://test.dev/",
-            description="Type test"
+            name="type-test", url="https://test.dev/", description="Type test"
         )
 
         assert isinstance(result, str)
@@ -969,9 +792,7 @@ class TestTypeValidation:
 
     async def test_estimate_pages_return_type(self, sample_config):
         """Test that estimate_pages returns string."""
-        result = await server_fastmcp.estimate_pages(
-            config_path=str(sample_config)
-        )
+        result = await server_fastmcp.estimate_pages(config_path=str(sample_config))
         assert isinstance(result, str)
 
     async def test_all_tools_return_strings(self, sample_config, temp_dirs):

@@ -15,16 +15,21 @@ Validates:
 """
 
 import json
-import os
-import tempfile
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from skill_seekers.cli.unified_codebase_analyzer import UnifiedCodebaseAnalyzer, AnalysisResult
-from skill_seekers.cli.github_fetcher import GitHubThreeStreamFetcher, ThreeStreamData, CodeStream, DocsStream, InsightsStream
+import pytest
+
 from skill_seekers.cli.generate_router import RouterGenerator
+from skill_seekers.cli.github_fetcher import (
+    CodeStream,
+    DocsStream,
+    GitHubThreeStreamFetcher,
+    InsightsStream,
+    ThreeStreamData,
+)
 from skill_seekers.cli.merge_sources import RuleBasedMerger, categorize_issues_by_topic
+from skill_seekers.cli.unified_codebase_analyzer import AnalysisResult, UnifiedCodebaseAnalyzer
 
 
 class TestScenario1GitHubThreeStream:
@@ -138,56 +143,59 @@ How to use async tools.
     def mock_github_api_data(self):
         """Mock GitHub API responses."""
         return {
-            'metadata': {
-                'stars': 1234,
-                'forks': 56,
-                'open_issues': 12,
-                'language': 'Python',
-                'description': 'Python framework for building MCP servers'
+            "metadata": {
+                "stars": 1234,
+                "forks": 56,
+                "open_issues": 12,
+                "language": "Python",
+                "description": "Python framework for building MCP servers",
             },
-            'issues': [
+            "issues": [
                 {
-                    'number': 42,
-                    'title': 'OAuth setup fails with Google provider',
-                    'state': 'open',
-                    'labels': ['oauth', 'bug'],
-                    'comments': 15,
-                    'body': 'Redirect URI mismatch'
+                    "number": 42,
+                    "title": "OAuth setup fails with Google provider",
+                    "state": "open",
+                    "labels": ["oauth", "bug"],
+                    "comments": 15,
+                    "body": "Redirect URI mismatch",
                 },
                 {
-                    'number': 38,
-                    'title': 'Async tools not working',
-                    'state': 'open',
-                    'labels': ['async', 'question'],
-                    'comments': 8,
-                    'body': 'Getting timeout errors'
+                    "number": 38,
+                    "title": "Async tools not working",
+                    "state": "open",
+                    "labels": ["async", "question"],
+                    "comments": 8,
+                    "body": "Getting timeout errors",
                 },
                 {
-                    'number': 35,
-                    'title': 'Fixed OAuth redirect',
-                    'state': 'closed',
-                    'labels': ['oauth', 'bug'],
-                    'comments': 5,
-                    'body': 'Solution: Check redirect URI'
+                    "number": 35,
+                    "title": "Fixed OAuth redirect",
+                    "state": "closed",
+                    "labels": ["oauth", "bug"],
+                    "comments": 5,
+                    "body": "Solution: Check redirect URI",
                 },
                 {
-                    'number': 30,
-                    'title': 'Testing async functions',
-                    'state': 'open',
-                    'labels': ['testing', 'question'],
-                    'comments': 6,
-                    'body': 'How to test async tools'
-                }
-            ]
+                    "number": 30,
+                    "title": "Testing async functions",
+                    "state": "open",
+                    "labels": ["testing", "question"],
+                    "comments": 6,
+                    "body": "How to test async tools",
+                },
+            ],
         }
 
     def test_scenario_1_github_three_stream_fetcher(self, mock_github_repo, mock_github_api_data):
         """Test GitHub three-stream fetcher with mock data."""
         # Create fetcher with mock
-        with patch.object(GitHubThreeStreamFetcher, 'clone_repo', return_value=mock_github_repo), \
-             patch.object(GitHubThreeStreamFetcher, 'fetch_github_metadata', return_value=mock_github_api_data['metadata']), \
-             patch.object(GitHubThreeStreamFetcher, 'fetch_issues', return_value=mock_github_api_data['issues']):
-
+        with (
+            patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
+            patch.object(
+                GitHubThreeStreamFetcher, "fetch_github_metadata", return_value=mock_github_api_data["metadata"]
+            ),
+            patch.object(GitHubThreeStreamFetcher, "fetch_issues", return_value=mock_github_api_data["issues"]),
+        ):
             fetcher = GitHubThreeStreamFetcher("https://github.com/jlowin/fastmcp")
             three_streams = fetcher.fetch()
 
@@ -203,132 +211,140 @@ How to use async tools.
 
             # Verify docs stream
             assert three_streams.docs_stream.readme is not None
-            assert 'FastMCP' in three_streams.docs_stream.readme
+            assert "FastMCP" in three_streams.docs_stream.readme
             assert three_streams.docs_stream.contributing is not None
             assert len(three_streams.docs_stream.docs_files) >= 2  # oauth.md, async.md
 
             # Verify insights stream
-            assert three_streams.insights_stream.metadata['stars'] == 1234
-            assert three_streams.insights_stream.metadata['language'] == 'Python'
+            assert three_streams.insights_stream.metadata["stars"] == 1234
+            assert three_streams.insights_stream.metadata["language"] == "Python"
             assert len(three_streams.insights_stream.common_problems) >= 2
             assert len(three_streams.insights_stream.known_solutions) >= 1
             assert len(three_streams.insights_stream.top_labels) >= 2
 
     def test_scenario_1_unified_analyzer_github(self, mock_github_repo, mock_github_api_data):
         """Test unified analyzer with GitHub source."""
-        with patch.object(GitHubThreeStreamFetcher, 'clone_repo', return_value=mock_github_repo), \
-             patch.object(GitHubThreeStreamFetcher, 'fetch_github_metadata', return_value=mock_github_api_data['metadata']), \
-             patch.object(GitHubThreeStreamFetcher, 'fetch_issues', return_value=mock_github_api_data['issues']), \
-             patch('skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis') as mock_c3x:
-
+        with (
+            patch.object(GitHubThreeStreamFetcher, "clone_repo", return_value=mock_github_repo),
+            patch.object(
+                GitHubThreeStreamFetcher, "fetch_github_metadata", return_value=mock_github_api_data["metadata"]
+            ),
+            patch.object(GitHubThreeStreamFetcher, "fetch_issues", return_value=mock_github_api_data["issues"]),
+            patch("skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis") as mock_c3x,
+        ):
             # Mock C3.x analysis to return sample data
             mock_c3x.return_value = {
-                'files': ['auth.py', 'async_tools.py'],
-                'analysis_type': 'c3x',
-                'c3_1_patterns': [
-                    {'name': 'Strategy', 'count': 5, 'file': 'auth.py'},
-                    {'name': 'Factory', 'count': 3, 'file': 'auth.py'}
+                "files": ["auth.py", "async_tools.py"],
+                "analysis_type": "c3x",
+                "c3_1_patterns": [
+                    {"name": "Strategy", "count": 5, "file": "auth.py"},
+                    {"name": "Factory", "count": 3, "file": "auth.py"},
                 ],
-                'c3_2_examples': [
-                    {'name': 'test_google_provider', 'file': 'test_auth.py'},
-                    {'name': 'test_azure_provider', 'file': 'test_auth.py'}
+                "c3_2_examples": [
+                    {"name": "test_google_provider", "file": "test_auth.py"},
+                    {"name": "test_azure_provider", "file": "test_auth.py"},
                 ],
-                'c3_2_examples_count': 2,
-                'c3_3_guides': [
-                    {'title': 'OAuth Setup Guide', 'file': 'docs/oauth.md'}
-                ],
-                'c3_4_configs': [],
-                'c3_7_architecture': [
-                    {'pattern': 'Service Layer', 'description': 'OAuth provider abstraction'}
-                ]
+                "c3_2_examples_count": 2,
+                "c3_3_guides": [{"title": "OAuth Setup Guide", "file": "docs/oauth.md"}],
+                "c3_4_configs": [],
+                "c3_7_architecture": [{"pattern": "Service Layer", "description": "OAuth provider abstraction"}],
             }
 
             analyzer = UnifiedCodebaseAnalyzer()
             result = analyzer.analyze(
-                source="https://github.com/jlowin/fastmcp",
-                depth="c3x",
-                fetch_github_metadata=True
+                source="https://github.com/jlowin/fastmcp", depth="c3x", fetch_github_metadata=True
             )
 
             # Verify result structure
             assert isinstance(result, AnalysisResult)
-            assert result.source_type == 'github'
-            assert result.analysis_depth == 'c3x'
+            assert result.source_type == "github"
+            assert result.analysis_depth == "c3x"
 
             # Verify code analysis (C3.x)
             assert result.code_analysis is not None
-            assert result.code_analysis['analysis_type'] == 'c3x'
-            assert len(result.code_analysis['c3_1_patterns']) >= 2
-            assert result.code_analysis['c3_2_examples_count'] >= 2
+            assert result.code_analysis["analysis_type"] == "c3x"
+            assert len(result.code_analysis["c3_1_patterns"]) >= 2
+            assert result.code_analysis["c3_2_examples_count"] >= 2
 
             # Verify GitHub docs
             assert result.github_docs is not None
-            assert 'FastMCP' in result.github_docs['readme']
+            assert "FastMCP" in result.github_docs["readme"]
 
             # Verify GitHub insights
             assert result.github_insights is not None
-            assert result.github_insights['metadata']['stars'] == 1234
-            assert len(result.github_insights['common_problems']) >= 2
+            assert result.github_insights["metadata"]["stars"] == 1234
+            assert len(result.github_insights["common_problems"]) >= 2
 
     def test_scenario_1_router_generation(self, tmp_path):
         """Test router generation with GitHub streams."""
         # Create mock sub-skill configs
         config1 = tmp_path / "fastmcp-oauth.json"
-        config1.write_text(json.dumps({
-            "name": "fastmcp-oauth",
-            "description": "OAuth authentication for FastMCP",
-            "categories": {
-                "oauth": ["oauth", "auth", "provider", "google", "azure"]
-            }
-        }))
+        config1.write_text(
+            json.dumps(
+                {
+                    "name": "fastmcp-oauth",
+                    "description": "OAuth authentication for FastMCP",
+                    "categories": {"oauth": ["oauth", "auth", "provider", "google", "azure"]},
+                }
+            )
+        )
 
         config2 = tmp_path / "fastmcp-async.json"
-        config2.write_text(json.dumps({
-            "name": "fastmcp-async",
-            "description": "Async patterns for FastMCP",
-            "categories": {
-                "async": ["async", "await", "asyncio"]
-            }
-        }))
+        config2.write_text(
+            json.dumps(
+                {
+                    "name": "fastmcp-async",
+                    "description": "Async patterns for FastMCP",
+                    "categories": {"async": ["async", "await", "asyncio"]},
+                }
+            )
+        )
 
         # Create mock GitHub streams
         mock_streams = ThreeStreamData(
-            code_stream=CodeStream(
-                directory=Path("/tmp/mock"),
-                files=[]
-            ),
+            code_stream=CodeStream(directory=Path("/tmp/mock"), files=[]),
             docs_stream=DocsStream(
                 readme="# FastMCP\n\nFastMCP is a Python framework...",
                 contributing="# Contributing\n\nPlease follow guidelines...",
-                docs_files=[]
+                docs_files=[],
             ),
             insights_stream=InsightsStream(
                 metadata={
-                    'stars': 1234,
-                    'forks': 56,
-                    'language': 'Python',
-                    'description': 'Python framework for MCP servers'
+                    "stars": 1234,
+                    "forks": 56,
+                    "language": "Python",
+                    "description": "Python framework for MCP servers",
                 },
                 common_problems=[
-                    {'number': 42, 'title': 'OAuth setup fails', 'labels': ['oauth'], 'comments': 15, 'state': 'open'},
-                    {'number': 38, 'title': 'Async tools not working', 'labels': ['async'], 'comments': 8, 'state': 'open'}
+                    {"number": 42, "title": "OAuth setup fails", "labels": ["oauth"], "comments": 15, "state": "open"},
+                    {
+                        "number": 38,
+                        "title": "Async tools not working",
+                        "labels": ["async"],
+                        "comments": 8,
+                        "state": "open",
+                    },
                 ],
                 known_solutions=[
-                    {'number': 35, 'title': 'Fixed OAuth redirect', 'labels': ['oauth'], 'comments': 5, 'state': 'closed'}
+                    {
+                        "number": 35,
+                        "title": "Fixed OAuth redirect",
+                        "labels": ["oauth"],
+                        "comments": 5,
+                        "state": "closed",
+                    }
                 ],
                 top_labels=[
-                    {'label': 'oauth', 'count': 15},
-                    {'label': 'async', 'count': 8},
-                    {'label': 'testing', 'count': 6}
-                ]
-            )
+                    {"label": "oauth", "count": 15},
+                    {"label": "async", "count": 8},
+                    {"label": "testing", "count": 6},
+                ],
+            ),
         )
 
         # Generate router
         generator = RouterGenerator(
-            config_paths=[str(config1), str(config2)],
-            router_name="fastmcp",
-            github_streams=mock_streams
+            config_paths=[str(config1), str(config2)], router_name="fastmcp", github_streams=mock_streams
         )
 
         skill_md = generator.generate_skill_md()
@@ -345,14 +361,18 @@ How to use async tools.
         assert "Quick Start" in skill_md or "FastMCP is a Python framework" in skill_md
 
         # Verify examples with converted questions (Fix 1) or Common Patterns section (Fix 4)
-        assert ("Examples" in skill_md and "how do i fix oauth" in skill_md.lower()) or "Common Patterns" in skill_md or "Common Issues" in skill_md
+        assert (
+            ("Examples" in skill_md and "how do i fix oauth" in skill_md.lower())
+            or "Common Patterns" in skill_md
+            or "Common Issues" in skill_md
+        )
 
         # Verify routing keywords include GitHub labels (2x weight)
         routing = generator.extract_routing_keywords()
-        assert 'fastmcp-oauth' in routing
-        oauth_keywords = routing['fastmcp-oauth']
+        assert "fastmcp-oauth" in routing
+        oauth_keywords = routing["fastmcp-oauth"]
         # Check that 'oauth' appears multiple times (2x weight)
-        oauth_count = oauth_keywords.count('oauth')
+        oauth_count = oauth_keywords.count("oauth")
         assert oauth_count >= 2  # Should appear at least twice for 2x weight
 
     def test_scenario_1_quality_metrics(self, tmp_path):
@@ -391,7 +411,7 @@ pip install fastmcp
 
         # Check size constraints (Architecture Section 8.1)
         # Target: Router 150 lines (±20)
-        lines = router_md.strip().split('\n')
+        lines = router_md.strip().split("\n")
         assert len(lines) <= 200, f"Router too large: {len(lines)} lines (max 200)"
 
         # Check GitHub overhead (Architecture Section 8.3)
@@ -450,56 +470,49 @@ class TestScenario2MultiSource:
     def test_scenario_2_issue_categorization(self):
         """Test categorizing GitHub issues by topic."""
         problems = [
-            {'number': 42, 'title': 'OAuth setup fails', 'labels': ['oauth', 'bug']},
-            {'number': 38, 'title': 'Async tools not working', 'labels': ['async', 'question']},
-            {'number': 35, 'title': 'Testing with pytest', 'labels': ['testing', 'question']},
-            {'number': 30, 'title': 'Google OAuth redirect', 'labels': ['oauth', 'question']}
+            {"number": 42, "title": "OAuth setup fails", "labels": ["oauth", "bug"]},
+            {"number": 38, "title": "Async tools not working", "labels": ["async", "question"]},
+            {"number": 35, "title": "Testing with pytest", "labels": ["testing", "question"]},
+            {"number": 30, "title": "Google OAuth redirect", "labels": ["oauth", "question"]},
         ]
 
         solutions = [
-            {'number': 25, 'title': 'Fixed OAuth redirect', 'labels': ['oauth', 'bug']},
-            {'number': 20, 'title': 'Async timeout solution', 'labels': ['async', 'bug']}
+            {"number": 25, "title": "Fixed OAuth redirect", "labels": ["oauth", "bug"]},
+            {"number": 20, "title": "Async timeout solution", "labels": ["async", "bug"]},
         ]
 
-        topics = ['oauth', 'async', 'testing']
+        topics = ["oauth", "async", "testing"]
 
         categorized = categorize_issues_by_topic(problems, solutions, topics)
 
         # Verify categorization
-        assert 'oauth' in categorized
-        assert 'async' in categorized
-        assert 'testing' in categorized
+        assert "oauth" in categorized
+        assert "async" in categorized
+        assert "testing" in categorized
 
         # Check OAuth issues
-        oauth_issues = categorized['oauth']
+        oauth_issues = categorized["oauth"]
         assert len(oauth_issues) >= 2  # #42, #30, #25
-        oauth_numbers = [i['number'] for i in oauth_issues]
+        oauth_numbers = [i["number"] for i in oauth_issues]
         assert 42 in oauth_numbers
 
         # Check async issues
-        async_issues = categorized['async']
+        async_issues = categorized["async"]
         assert len(async_issues) >= 2  # #38, #20
-        async_numbers = [i['number'] for i in async_issues]
+        async_numbers = [i["number"] for i in async_issues]
         assert 38 in async_numbers
 
         # Check testing issues
-        testing_issues = categorized['testing']
+        testing_issues = categorized["testing"]
         assert len(testing_issues) >= 1  # #35
 
     def test_scenario_2_conflict_detection(self):
         """Test conflict detection between docs and code."""
         # Mock API data from docs
-        api_data = {
-            'GoogleProvider': {
-                'params': ['app_id', 'app_secret'],
-                'source': 'html_docs'
-            }
-        }
+        api_data = {"GoogleProvider": {"params": ["app_id", "app_secret"], "source": "html_docs"}}
 
         # Mock GitHub docs
-        github_docs = {
-            'readme': 'Use client_id and client_secret for Google OAuth'
-        }
+        github_docs = {"readme": "Use client_id and client_secret for Google OAuth"}
 
         # In a real implementation, conflict detection would find:
         # - Docs say: app_id, app_secret
@@ -507,8 +520,8 @@ class TestScenario2MultiSource:
         # - This is a conflict!
 
         # For now, just verify the structure exists
-        assert 'GoogleProvider' in api_data
-        assert 'params' in api_data['GoogleProvider']
+        assert "GoogleProvider" in api_data
+        assert "params" in api_data["GoogleProvider"]
         assert github_docs is not None
 
     def test_scenario_2_multi_layer_merge(self):
@@ -520,43 +533,25 @@ class TestScenario2MultiSource:
         # Layer 4: GitHub insights (community knowledge)
 
         # Mock source 1 (HTML docs)
-        source1_data = {
-            'api': [
-                {'name': 'GoogleProvider', 'params': ['app_id', 'app_secret']}
-            ]
-        }
+        source1_data = {"api": [{"name": "GoogleProvider", "params": ["app_id", "app_secret"]}]}
 
         # Mock source 2 (GitHub C3.x)
-        source2_data = {
-            'api': [
-                {'name': 'GoogleProvider', 'params': ['client_id', 'client_secret']}
-            ]
-        }
+        source2_data = {"api": [{"name": "GoogleProvider", "params": ["client_id", "client_secret"]}]}
 
         # Mock GitHub streams
         github_streams = ThreeStreamData(
             code_stream=CodeStream(directory=Path("/tmp"), files=[]),
-            docs_stream=DocsStream(
-                readme="Use client_id and client_secret",
-                contributing=None,
-                docs_files=[]
-            ),
+            docs_stream=DocsStream(readme="Use client_id and client_secret", contributing=None, docs_files=[]),
             insights_stream=InsightsStream(
-                metadata={'stars': 1000},
-                common_problems=[
-                    {'number': 42, 'title': 'OAuth parameter confusion', 'labels': ['oauth']}
-                ],
+                metadata={"stars": 1000},
+                common_problems=[{"number": 42, "title": "OAuth parameter confusion", "labels": ["oauth"]}],
                 known_solutions=[],
-                top_labels=[]
-            )
+                top_labels=[],
+            ),
         )
 
         # Create merger with required arguments
-        merger = RuleBasedMerger(
-            docs_data=source1_data,
-            github_data=source2_data,
-            conflicts=[]
-        )
+        merger = RuleBasedMerger(docs_data=source1_data, github_data=source2_data, conflicts=[])
 
         # Merge using merge_all() method
         merged = merger.merge_all()
@@ -638,21 +633,17 @@ def test_connection():
         """Test basic analysis of local codebase."""
         analyzer = UnifiedCodebaseAnalyzer()
 
-        result = analyzer.analyze(
-            source=str(local_codebase),
-            depth="basic",
-            fetch_github_metadata=False
-        )
+        result = analyzer.analyze(source=str(local_codebase), depth="basic", fetch_github_metadata=False)
 
         # Verify result
         assert isinstance(result, AnalysisResult)
-        assert result.source_type == 'local'
-        assert result.analysis_depth == 'basic'
+        assert result.source_type == "local"
+        assert result.analysis_depth == "basic"
 
         # Verify code analysis
         assert result.code_analysis is not None
-        assert 'files' in result.code_analysis
-        assert len(result.code_analysis['files']) >= 2  # database.py, api.py
+        assert "files" in result.code_analysis
+        assert len(result.code_analysis["files"]) >= 2  # database.py, api.py
 
         # Verify no GitHub data
         assert result.github_docs is None
@@ -662,37 +653,29 @@ def test_connection():
         """Test C3.x analysis of local codebase."""
         analyzer = UnifiedCodebaseAnalyzer()
 
-        with patch('skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis') as mock_c3x:
+        with patch("skill_seekers.cli.unified_codebase_analyzer.UnifiedCodebaseAnalyzer.c3x_analysis") as mock_c3x:
             # Mock C3.x to return sample data
             mock_c3x.return_value = {
-                'files': ['database.py', 'api.py'],
-                'analysis_type': 'c3x',
-                'c3_1_patterns': [
-                    {'name': 'Singleton', 'count': 1, 'file': 'database.py'}
-                ],
-                'c3_2_examples': [
-                    {'name': 'test_connection', 'file': 'test_database.py'}
-                ],
-                'c3_2_examples_count': 1,
-                'c3_3_guides': [],
-                'c3_4_configs': [],
-                'c3_7_architecture': []
+                "files": ["database.py", "api.py"],
+                "analysis_type": "c3x",
+                "c3_1_patterns": [{"name": "Singleton", "count": 1, "file": "database.py"}],
+                "c3_2_examples": [{"name": "test_connection", "file": "test_database.py"}],
+                "c3_2_examples_count": 1,
+                "c3_3_guides": [],
+                "c3_4_configs": [],
+                "c3_7_architecture": [],
             }
 
-            result = analyzer.analyze(
-                source=str(local_codebase),
-                depth="c3x",
-                fetch_github_metadata=False
-            )
+            result = analyzer.analyze(source=str(local_codebase), depth="c3x", fetch_github_metadata=False)
 
             # Verify result
-            assert result.source_type == 'local'
-            assert result.analysis_depth == 'c3x'
+            assert result.source_type == "local"
+            assert result.analysis_depth == "c3x"
 
             # Verify C3.x analysis ran
-            assert result.code_analysis['analysis_type'] == 'c3x'
-            assert 'c3_1_patterns' in result.code_analysis
-            assert 'c3_2_examples' in result.code_analysis
+            assert result.code_analysis["analysis_type"] == "c3x"
+            assert "c3_1_patterns" in result.code_analysis
+            assert "c3_2_examples" in result.code_analysis
 
             # Verify no GitHub data
             assert result.github_docs is None
@@ -702,24 +685,32 @@ def test_connection():
         """Test router generation without GitHub data."""
         # Create mock configs
         config1 = tmp_path / "internal-database.json"
-        config1.write_text(json.dumps({
-            "name": "internal-database",
-            "description": "Database layer",
-            "categories": {"database": ["db", "sql", "connection"]}
-        }))
+        config1.write_text(
+            json.dumps(
+                {
+                    "name": "internal-database",
+                    "description": "Database layer",
+                    "categories": {"database": ["db", "sql", "connection"]},
+                }
+            )
+        )
 
         config2 = tmp_path / "internal-api.json"
-        config2.write_text(json.dumps({
-            "name": "internal-api",
-            "description": "API endpoints",
-            "categories": {"api": ["api", "endpoint", "route"]}
-        }))
+        config2.write_text(
+            json.dumps(
+                {
+                    "name": "internal-api",
+                    "description": "API endpoints",
+                    "categories": {"api": ["api", "endpoint", "route"]},
+                }
+            )
+        )
 
         # Generate router WITHOUT GitHub streams
         generator = RouterGenerator(
             config_paths=[str(config1), str(config2)],
             router_name="internal-tool",
-            github_streams=None  # No GitHub data
+            github_streams=None,  # No GitHub data
         )
 
         skill_md = generator.generate_skill_md()
@@ -816,38 +807,38 @@ Based on analysis of GitHub issues:
         in_quick_start = False
         in_common_issues = False
 
-        for line in router_with_github.split('\n'):
+        for line in router_with_github.split("\n"):
             # Repository Info section (3-5 lines)
-            if '## Repository Info' in line:
+            if "## Repository Info" in line:
                 in_repo_info = True
                 github_overhead += 1
                 continue
             if in_repo_info:
-                if line.startswith('**') or 'github.com' in line or '⭐' in line or 'FastMCP is' in line:
+                if line.startswith("**") or "github.com" in line or "⭐" in line or "FastMCP is" in line:
                     github_overhead += 1
-                if line.startswith('##'):
+                if line.startswith("##"):
                     in_repo_info = False
 
             # Quick Start from README section (8-12 lines)
-            if '## Quick Start' in line and 'README' in line:
+            if "## Quick Start" in line and "README" in line:
                 in_quick_start = True
                 github_overhead += 1
                 continue
             if in_quick_start:
                 if line.strip():  # Non-empty lines in quick start
                     github_overhead += 1
-                if line.startswith('##'):
+                if line.startswith("##"):
                     in_quick_start = False
 
             # Common Issues section (15-25 lines)
-            if '## Common Issues' in line and 'GitHub' in line:
+            if "## Common Issues" in line and "GitHub" in line:
                 in_common_issues = True
                 github_overhead += 1
                 continue
             if in_common_issues:
-                if 'Issue #' in line or 'comments)' in line or 'skill' in line:
+                if "Issue #" in line or "comments)" in line or "skill" in line:
                     github_overhead += 1
-                if line.startswith('##'):
+                if line.startswith("##"):
                     in_common_issues = False
 
         print(f"\nGitHub overhead: {github_overhead} lines")
@@ -902,24 +893,23 @@ provider = GitHubProvider(client_id="...", client_secret="...")
 """
 
         # Check minimum 3 code examples
-        code_blocks = sub_skill_md.count('```')
+        code_blocks = sub_skill_md.count("```")
         assert code_blocks >= 6, f"Need at least 3 code examples (6 markers), found {code_blocks // 2}"
 
         # Check language tags
-        assert '```python' in sub_skill_md, "Code blocks must have language tags"
+        assert "```python" in sub_skill_md, "Code blocks must have language tags"
 
         # Check no placeholders
-        assert 'TODO' not in sub_skill_md, "No TODO placeholders allowed"
-        assert '[Add' not in sub_skill_md, "No [Add...] placeholders allowed"
+        assert "TODO" not in sub_skill_md, "No TODO placeholders allowed"
+        assert "[Add" not in sub_skill_md, "No [Add...] placeholders allowed"
 
         # Check minimum 2 GitHub issues
-        issue_refs = sub_skill_md.count('Issue #')
+        issue_refs = sub_skill_md.count("Issue #")
         assert issue_refs >= 2, f"Need at least 2 GitHub issues, found {issue_refs}"
 
         # Check solution indicators for closed issues
-        if 'closed' in sub_skill_md.lower():
-            assert '✅' in sub_skill_md or 'Solution' in sub_skill_md, \
-                "Closed issues should indicate solution found"
+        if "closed" in sub_skill_md.lower():
+            assert "✅" in sub_skill_md or "Solution" in sub_skill_md, "Closed issues should indicate solution found"
 
 
 class TestTokenEfficiencyCalculation:
@@ -946,19 +936,18 @@ class TestTokenEfficiencyCalculation:
         reduction = (monolithic_size - avg_router_query) / monolithic_size
         reduction_percent = reduction * 100
 
-        print(f"\n=== Token Efficiency Calculation ===")
+        print("\n=== Token Efficiency Calculation ===")
         print(f"Monolithic: {monolithic_size} lines")
         print(f"Router: {router_size} lines")
         print(f"Avg Sub-skill: {avg_subskill_with_github} lines")
         print(f"Avg Query: {avg_router_query} lines")
         print(f"Reduction: {reduction_percent:.1f}%")
-        print(f"Target: 35-40%")
+        print("Target: 35-40%")
 
         # With selective loading and caching, achieve 35-40%
         # Even conservative estimate shows 29.5%, actual usage patterns show 35-40%
-        assert reduction_percent >= 29, \
-            f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
+        assert reduction_percent >= 29, f"Token reduction {reduction_percent:.1f}% below 29% (conservative target)"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])
