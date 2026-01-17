@@ -74,6 +74,7 @@ class UnifiedCodebaseAnalyzer:
         depth: str = "c3x",
         fetch_github_metadata: bool = True,
         output_dir: Path | None = None,
+        interactive: bool = True,
     ) -> AnalysisResult:
         """
         Analyze codebase with specified depth.
@@ -83,6 +84,7 @@ class UnifiedCodebaseAnalyzer:
             depth: 'basic' or 'c3x'
             fetch_github_metadata: Whether to fetch GitHub insights (only for GitHub sources)
             output_dir: Directory for temporary files (GitHub clones)
+            interactive: Whether to show interactive prompts (False for CI/CD and tests)
 
         Returns:
             AnalysisResult with all available streams
@@ -93,13 +95,13 @@ class UnifiedCodebaseAnalyzer:
         # Step 1: Acquire source
         if self.is_github_url(source):
             print("📦 Source type: GitHub repository")
-            return self._analyze_github(source, depth, fetch_github_metadata, output_dir)
+            return self._analyze_github(source, depth, fetch_github_metadata, output_dir, interactive)
         else:
             print("📁 Source type: Local directory")
             return self._analyze_local(source, depth)
 
     def _analyze_github(
-        self, repo_url: str, depth: str, fetch_metadata: bool, output_dir: Path | None
+        self, repo_url: str, depth: str, fetch_metadata: bool, output_dir: Path | None, interactive: bool = True
     ) -> AnalysisResult:
         """
         Analyze GitHub repository with three-stream fetcher.
@@ -109,12 +111,13 @@ class UnifiedCodebaseAnalyzer:
             depth: Analysis depth mode
             fetch_metadata: Whether to fetch GitHub metadata
             output_dir: Output directory for clone
+            interactive: Whether to show interactive prompts (False for CI/CD and tests)
 
         Returns:
             AnalysisResult with all 3 streams
         """
         # Use three-stream fetcher
-        fetcher = GitHubThreeStreamFetcher(repo_url, self.github_token)
+        fetcher = GitHubThreeStreamFetcher(repo_url, self.github_token, interactive=interactive)
         three_streams = fetcher.fetch(output_dir)
 
         # Analyze code with specified depth

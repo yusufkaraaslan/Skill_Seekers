@@ -202,7 +202,7 @@ How to use async tools.
                 return_value=mock_github_api_data["issues"],
             ),
         ):
-            fetcher = GitHubThreeStreamFetcher("https://github.com/jlowin/fastmcp")
+            fetcher = GitHubThreeStreamFetcher("https://github.com/jlowin/fastmcp", interactive=False)
             three_streams = fetcher.fetch()
 
             # Verify 3 streams exist
@@ -268,7 +268,7 @@ How to use async tools.
 
             analyzer = UnifiedCodebaseAnalyzer()
             result = analyzer.analyze(
-                source="https://github.com/jlowin/fastmcp", depth="c3x", fetch_github_metadata=True
+                source="https://github.com/jlowin/fastmcp", depth="c3x", fetch_github_metadata=True, interactive=False
             )
 
             # Verify result structure
