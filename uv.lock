@@ -1664,7 +1664,7 @@ wheels = [
 
 [[package]]
 name = "skill-seekers"
-version = "2.5.2"
+version = "2.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1690,15 +1690,11 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
-    { name = "coverage" },
     { name = "google-generativeai" },
     { name = "httpx" },
     { name = "httpx-sse" },
     { name = "mcp" },
     { name = "openai" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
     { name = "sse-starlette" },
     { name = "starlette" },
     { name = "uvicorn" },
@@ -1706,12 +1702,6 @@ all = [
 all-llms = [
     { name = "google-generativeai" },
     { name = "openai" },
-]
-dev = [
-    { name = "coverage" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
 ]
 gemini = [
     { name = "google-generativeai" },
@@ -1740,8 +1730,6 @@ dev = [
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
     { name = "click", specifier = ">=8.3.0" },
-    { name = "coverage", marker = "extra == 'all'", specifier = ">=7.11.0" },
-    { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.11.0" },
     { name = "gitpython", specifier = ">=3.1.40" },
     { name = "google-generativeai", marker = "extra == 'all'", specifier = ">=0.8.0" },
     { name = "google-generativeai", marker = "extra == 'all-llms'", specifier = ">=0.8.0" },
@@ -1768,12 +1756,6 @@ requires-dist = [
     { name = "pygments", specifier = ">=2.19.2" },
     { name = "pymupdf", specifier = ">=1.24.14" },
     { name = "pytesseract", specifier = ">=0.3.13" },
-    { name = "pytest", marker = "extra == 'all'", specifier = ">=8.4.2" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.2" },
-    { name = "pytest-asyncio", marker = "extra == 'all'", specifier = ">=0.24.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=7.0.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sse-starlette", marker = "extra == 'all'", specifier = ">=3.0.2" },
@@ -1783,7 +1765,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.38.0" },
     { name = "uvicorn", marker = "extra == 'mcp'", specifier = ">=0.38.0" },
 ]
-provides-extras = ["dev", "mcp", "gemini", "openai", "all-llms", "all"]
+provides-extras = ["mcp", "gemini", "openai", "all-llms", "all"]
 
 [package.metadata.requires-dev]
 dev = [

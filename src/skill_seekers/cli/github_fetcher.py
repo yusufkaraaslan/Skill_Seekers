@@ -18,6 +18,9 @@ from typing import List, Dict, Optional, Tuple
 from collections import Counter
 import requests
 
+from .rate_limit_handler import RateLimitHandler, RateLimitError, create_github_headers
+from .config_manager import get_config_manager
+
 
 @dataclass
 class CodeStream:
@@ -69,17 +72,37 @@ class GitHubThreeStreamFetcher:
         # - three_streams.insights_stream (for issue analyzer)
     """
 
-    def __init__(self, repo_url: str, github_token: Optional[str] = None):
+    def __init__(
+        self,
+        repo_url: str,
+        github_token: Optional[str] = None,
+        interactive: bool = True,
+        profile_name: Optional[str] = None
+    ):
         """
         Initialize fetcher.
 
         Args:
             repo_url: GitHub repository URL (e.g., https://github.com/owner/repo)
             github_token: Optional GitHub API token for higher rate limits
+            interactive: Whether to show interactive prompts (False for CI/CD)
+            profile_name: Name of the GitHub profile being used
         """
         self.repo_url = repo_url
         self.github_token = github_token or os.getenv('GITHUB_TOKEN')
         self.owner, self.repo = self.parse_repo_url(repo_url)
+        self.interactive = interactive
+
+        # Initialize rate limit handler
+        config = get_config_manager()
+        if not profile_name and self.github_token:
+            profile_name = config.get_profile_for_token(self.github_token)
+
+        self.rate_limiter = RateLimitHandler(
+            token=self.github_token,
+            interactive=interactive,
+            profile_name=profile_name
+        )
 
     def parse_repo_url(self, url: str) -> Tuple[str, str]:
         """
@@ -118,7 +141,14 @@ class GitHubThreeStreamFetcher:
 
         Returns:
             ThreeStreamData with all 3 streams
+
+        Raises:
+            RateLimitError: If rate limit cannot be handled
         """
+        # Check rate limit upfront
+        if not self.rate_limiter.check_upfront():
+            raise RateLimitError("Rate limit check failed during startup")
+
         if output_dir is None:
             output_dir = Path(tempfile.mkdtemp(prefix='github_fetch_'))
 
@@ -190,14 +220,20 @@ class GitHubThreeStreamFetcher:
 
         Returns:
             Dict with stars, forks, language, open_issues, etc.
+
+        Raises:
+            RateLimitError: If rate limit cannot be handled
         """
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}"
-        headers = {}
-        if self.github_token:
-            headers['Authorization'] = f'token {self.github_token}'
+        headers = create_github_headers(self.github_token)
 
         try:
             response = requests.get(url, headers=headers, timeout=10)
+
+            # Check for rate limit
+            if not self.rate_limiter.check_response(response):
+                raise RateLimitError("Rate limit exceeded and cannot continue")
+
             response.raise_for_status()
             data = response.json()
 
@@ -213,6 +249,8 @@ class GitHubThreeStreamFetcher:
                 'html_url': data.get('html_url', ''),  # NEW: Repository URL
                 'license': data.get('license', {})  # NEW: License info
             }
+        except RateLimitError:
+            raise
         except Exception as e:
             print(f"⚠️  Failed to fetch metadata: {e}")
             return {
@@ -258,11 +296,12 @@ class GitHubThreeStreamFetcher:
 
         Returns:
             List of issues
+
+        Raises:
+            RateLimitError: If rate limit cannot be handled
         """
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/issues"
-        headers = {}
-        if self.github_token:
-            headers['Authorization'] = f'token {self.github_token}'
+        headers = create_github_headers(self.github_token)
 
         params = {
             'state': state,
@@ -273,6 +312,11 @@ class GitHubThreeStreamFetcher:
 
         try:
             response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            # Check for rate limit
+            if not self.rate_limiter.check_response(response):
+                raise RateLimitError("Rate limit exceeded and cannot continue")
+
             response.raise_for_status()
             issues = response.json()
 
@@ -280,6 +324,8 @@ class GitHubThreeStreamFetcher:
             issues = [issue for issue in issues if 'pull_request' not in issue]
 
             return issues
+        except RateLimitError:
+            raise
         except Exception as e:
             print(f"⚠️  Failed to fetch {state} issues: {e}")
             return []

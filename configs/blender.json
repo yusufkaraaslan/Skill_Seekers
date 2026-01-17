@@ -1,0 +1,198 @@
+{
+  "name": "blender",
+  "description": "Blender 3D creation suite for modeling, animation, rendering, compositing, video editing, and game development. Use for 3D modeling, sculpting, animation, shading, rendering, simulation, video editing, and Python scripting.",
+  "base_url": "https://docs.blender.org/manual/en/latest/",
+  "selectors": {
+    "main_content": "article[role='main']",
+    "title": "h1",
+    "code_blocks": "pre code, div.highlight pre"
+  },
+  "url_patterns": {
+    "include": [
+      "/getting_started/",
+      "/interface/",
+      "/editors/",
+      "/modeling/",
+      "/sculpt_paint/",
+      "/grease_pencil/",
+      "/animation/",
+      "/physics/",
+      "/render/",
+      "/scene_layout/",
+      "/compositing/",
+      "/video_editing/",
+      "/files/",
+      "/addons/",
+      "/advanced/",
+      "/troubleshooting/"
+    ],
+    "exclude": [
+      "/_static/",
+      "/_images/",
+      "/search.html",
+      "/genindex.html",
+      "/glossary.html",
+      "/index.html$"
+    ]
+  },
+  "categories": {
+    "getting_started": [
+      "getting_started",
+      "installing",
+      "configuration",
+      "introduction",
+      "quickstart",
+      "about"
+    ],
+    "interface": [
+      "interface",
+      "window_system",
+      "keymap",
+      "controls",
+      "operators",
+      "tools",
+      "ui",
+      "navigation"
+    ],
+    "modeling": [
+      "modeling",
+      "mesh",
+      "curve",
+      "surface",
+      "metaball",
+      "text",
+      "volume",
+      "geometry_nodes",
+      "modifiers",
+      "mesh_tools",
+      "edit_mode"
+    ],
+    "sculpting": [
+      "sculpt",
+      "sculpting",
+      "brush",
+      "texture_paint",
+      "vertex_paint",
+      "weight_paint",
+      "dynamic_paint"
+    ],
+    "grease_pencil": [
+      "grease_pencil",
+      "2d_animation",
+      "drawing",
+      "stroke"
+    ],
+    "animation": [
+      "animation",
+      "keyframe",
+      "rigging",
+      "armature",
+      "constraints",
+      "drivers",
+      "shape_keys",
+      "motion_paths",
+      "timeline",
+      "dope_sheet",
+      "graph_editor",
+      "nla"
+    ],
+    "physics": [
+      "physics",
+      "simulation",
+      "particles",
+      "hair",
+      "fluid",
+      "cloth",
+      "soft_body",
+      "rigid_body",
+      "dynamic_paint",
+      "force_fields"
+    ],
+    "shading": [
+      "shading",
+      "shader",
+      "material",
+      "texture",
+      "nodes",
+      "shader_nodes",
+      "lighting",
+      "world"
+    ],
+    "rendering": [
+      "render",
+      "eevee",
+      "cycles",
+      "workbench",
+      "freestyle",
+      "camera",
+      "output",
+      "color_management",
+      "optimization"
+    ],
+    "compositing": [
+      "compositing",
+      "compositor",
+      "nodes",
+      "color_correction",
+      "filters",
+      "matte"
+    ],
+    "video_editing": [
+      "video_editing",
+      "vse",
+      "sequencer",
+      "strips",
+      "effects",
+      "preview"
+    ],
+    "scene_layout": [
+      "scene",
+      "object",
+      "collection",
+      "properties",
+      "outliner",
+      "view_layers"
+    ],
+    "files_assets": [
+      "files",
+      "import",
+      "export",
+      "asset",
+      "library",
+      "data_blocks",
+      "linking",
+      "append"
+    ],
+    "addons": [
+      "addon",
+      "plugin",
+      "extension",
+      "import_export"
+    ],
+    "scripting": [
+      "scripting",
+      "python",
+      "api",
+      "bpy",
+      "operator",
+      "custom",
+      "automation"
+    ],
+    "advanced": [
+      "advanced",
+      "command_line",
+      "app_templates",
+      "extensions",
+      "limits"
+    ],
+    "troubleshooting": [
+      "troubleshooting",
+      "crash",
+      "recover",
+      "gpu",
+      "graphics"
+    ]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 1500
+}

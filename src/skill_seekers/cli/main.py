@@ -8,6 +8,7 @@ Usage:
     skill-seekers <command> [options]
 
 Commands:
+    config               Configure GitHub tokens, API keys, and settings
     scrape               Scrape documentation website
     github               Scrape GitHub repository
     pdf                  Extract from PDF file
@@ -19,6 +20,7 @@ Commands:
     estimate             Estimate page count before scraping
     extract-test-examples Extract usage examples from test files
     install-agent        Install skill to AI agent directories
+    resume               Resume interrupted scraping job
 
 Examples:
     skill-seekers scrape --config configs/react.json
@@ -65,7 +67,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 2.5.1"
+        version="%(prog)s 2.7.0"
     )
 
     subparsers = parser.add_subparsers(
@@ -73,6 +75,33 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         title="commands",
         description="Available Skill Seekers commands",
         help="Command to run"
+    )
+
+    # === config subcommand ===
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Configure GitHub tokens, API keys, and settings",
+        description="Interactive configuration wizard"
+    )
+    config_parser.add_argument(
+        "--github",
+        action="store_true",
+        help="Go directly to GitHub token setup"
+    )
+    config_parser.add_argument(
+        "--api-keys",
+        action="store_true",
+        help="Go directly to API keys setup"
+    )
+    config_parser.add_argument(
+        "--show",
+        action="store_true",
+        help="Show current configuration and exit"
+    )
+    config_parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Test connections and exit"
     )
 
     # === scrape subcommand ===
@@ -105,6 +134,8 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     github_parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
     github_parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
     github_parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance")
+    github_parser.add_argument("--non-interactive", action="store_true", help="Non-interactive mode (fail fast on rate limits)")
+    github_parser.add_argument("--profile", type=str, help="GitHub profile name from config")
 
     # === pdf subcommand ===
     pdf_parser = subparsers.add_parser(
@@ -280,6 +311,28 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         help="Preview workflow without executing"
     )
 
+    # === resume subcommand ===
+    resume_parser = subparsers.add_parser(
+        "resume",
+        help="Resume interrupted scraping job",
+        description="Continue from saved progress checkpoint"
+    )
+    resume_parser.add_argument(
+        "job_id",
+        nargs="?",
+        help="Job ID to resume (or use --list to see available jobs)"
+    )
+    resume_parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List all resumable jobs"
+    )
+    resume_parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Clean up old progress files"
+    )
+
     return parser
 
 
@@ -301,7 +354,20 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Delegate to the appropriate tool
     try:
-        if args.command == "scrape":
+        if args.command == "config":
+            from skill_seekers.cli.config_command import main as config_main
+            sys.argv = ["config_command.py"]
+            if args.github:
+                sys.argv.append("--github")
+            if args.api_keys:
+                sys.argv.append("--api-keys")
+            if args.show:
+                sys.argv.append("--show")
+            if args.test:
+                sys.argv.append("--test")
+            return config_main() or 0
+
+        elif args.command == "scrape":
             from skill_seekers.cli.doc_scraper import main as scrape_main
             # Convert args namespace to sys.argv format for doc_scraper
             sys.argv = ["doc_scraper.py"]
@@ -344,6 +410,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 sys.argv.append("--enhance-local")
             if args.api_key:
                 sys.argv.extend(["--api-key", args.api_key])
+            if args.non_interactive:
+                sys.argv.append("--non-interactive")
+            if args.profile:
+                sys.argv.extend(["--profile", args.profile])
             return github_main() or 0
 
         elif args.command == "pdf":
@@ -463,6 +533,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.dry_run:
                 sys.argv.append("--dry-run")
             return install_main() or 0
+
+        elif args.command == "resume":
+            from skill_seekers.cli.resume_command import main as resume_main
+            sys.argv = ["resume_command.py"]
+            if args.job_id:
+                sys.argv.append(args.job_id)
+            if args.list:
+                sys.argv.append("--list")
+            if args.clean:
+                sys.argv.append("--clean")
+            return resume_main() or 0
 
         else:
             print(f"Error: Unknown command '{args.command}'", file=sys.stderr)

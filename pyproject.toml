@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.6.0"
+version = "2.7.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -110,6 +110,8 @@ Documentation = "https://github.com/yusufkaraaslan/Skill_Seekers#readme"
 skill-seekers = "skill_seekers.cli.main:main"
 
 # Individual tool entry points
+skill-seekers-config = "skill_seekers.cli.config_command:main"
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
