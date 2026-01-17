@@ -72,11 +72,9 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try:
-                    with patch.object(converter, "scrape_page"):
-                        with patch.object(converter, "save_summary"):
-                            converter.scrape_all()
-                            mock_try.assert_called_once()
+                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try, patch.object(converter, "scrape_page"), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    mock_try.assert_called_once()
             finally:
                 os.chdir(original_cwd)
 
@@ -95,11 +93,9 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try:
-                    with patch.object(converter, "scrape_page"):
-                        with patch.object(converter, "save_summary"):
-                            converter.scrape_all()
-                            mock_try.assert_not_called()
+                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "scrape_page"), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    mock_try.assert_not_called()
             finally:
                 os.chdir(original_cwd)
 
@@ -118,10 +114,9 @@ class TestSkipLlmsTxtSyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try:
-                    with patch.object(converter, "save_summary"):
-                        converter.scrape_all()
-                        mock_try.assert_not_called()
+                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    mock_try.assert_not_called()
             finally:
                 os.chdir(original_cwd)
 
@@ -145,11 +140,9 @@ class TestSkipLlmsTxtAsyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try:
-                    with patch.object(converter, "scrape_page_async", return_value=None):
-                        with patch.object(converter, "save_summary"):
-                            converter.scrape_all()
-                            mock_try.assert_called_once()
+                with patch.object(converter, "_try_llms_txt", return_value=False) as mock_try, patch.object(converter, "scrape_page_async", return_value=None), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    mock_try.assert_called_once()
             finally:
                 os.chdir(original_cwd)
 
@@ -169,11 +162,9 @@ class TestSkipLlmsTxtAsyncBehavior(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=False)
 
-                with patch.object(converter, "_try_llms_txt") as mock_try:
-                    with patch.object(converter, "scrape_page_async", return_value=None):
-                        with patch.object(converter, "save_summary"):
-                            converter.scrape_all()
-                            mock_try.assert_not_called()
+                with patch.object(converter, "_try_llms_txt") as mock_try, patch.object(converter, "scrape_page_async", return_value=None), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    mock_try.assert_not_called()
             finally:
                 os.chdir(original_cwd)
 
@@ -301,11 +292,10 @@ class TestSkipLlmsTxtEdgeCases(unittest.TestCase):
                     scrape_called.append(url)
                     return None
 
-                with patch.object(converter, "scrape_page", side_effect=mock_scrape):
-                    with patch.object(converter, "save_summary"):
-                        converter.scrape_all()
-                        # Should have attempted to scrape the base URL
-                        self.assertTrue(len(scrape_called) > 0)
+                with patch.object(converter, "scrape_page", side_effect=mock_scrape), patch.object(converter, "save_summary"):
+                    converter.scrape_all()
+                    # Should have attempted to scrape the base URL
+                    self.assertTrue(len(scrape_called) > 0)
             finally:
                 os.chdir(original_cwd)
 

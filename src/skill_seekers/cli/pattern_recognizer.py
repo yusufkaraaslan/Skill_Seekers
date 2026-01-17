@@ -427,13 +427,12 @@ class SingletonDetector(BasePatternDetector):
         for method in class_sig.methods:
             # Python: __init__ or __new__
             # Java/C#: private constructor (detected by naming)
-            if method.name in ["__new__", "__init__", "constructor"]:
-                # Check if it has logic (not just pass)
-                if method.docstring or len(method.parameters) > 1:
-                    evidence.append(f"Controlled initialization: {method.name}")
-                    confidence += 0.3
-                    has_init_control = True
-                    break
+            # Check if it has logic (not just pass)
+            if method.name in ["__new__", "__init__", "constructor"] and (method.docstring or len(method.parameters) > 1):
+                evidence.append(f"Controlled initialization: {method.name}")
+                confidence += 0.3
+                has_init_control = True
+                break
 
         # Check for class-level instance storage
         # This would require checking class attributes (future enhancement)
@@ -535,10 +534,9 @@ class FactoryDetector(BasePatternDetector):
         factory_method_names = ["create", "make", "build", "new", "get"]
         for method in class_sig.methods:
             method_lower = method.name.lower()
-            if any(name in method_lower for name in factory_method_names):
-                # Check if method returns something (has return type or is not void)
-                if method.return_type or "create" in method_lower:
-                    return PatternInstance(
+            # Check if method returns something (has return type or is not void)
+            if any(name in method_lower for name in factory_method_names) and (method.return_type or "create" in method_lower):
+                return PatternInstance(
                         pattern_type=self.pattern_type,
                         category=self.category,
                         confidence=0.6,
@@ -913,16 +911,15 @@ class DecoratorDetector(BasePatternDetector):
 
         # Check __init__ for composition (takes object parameter)
         init_method = next((m for m in class_sig.methods if m.name == "__init__"), None)
-        if init_method:
-            # Check if takes object parameter (not just self)
-            if len(init_method.parameters) > 1:  # More than just 'self'
-                param_names = [p.name for p in init_method.parameters if p.name != "self"]
-                if any(
-                    name in ["wrapped", "component", "inner", "obj", "target"]
-                    for name in param_names
-                ):
-                    evidence.append(f"Takes wrapped object in constructor: {param_names}")
-                    confidence += 0.4
+        # Check if takes object parameter (not just self)
+        if init_method and len(init_method.parameters) > 1:  # More than just 'self'
+            param_names = [p.name for p in init_method.parameters if p.name != "self"]
+            if any(
+                name in ["wrapped", "component", "inner", "obj", "target"]
+                for name in param_names
+            ):
+                evidence.append(f"Takes wrapped object in constructor: {param_names}")
+                confidence += 0.4
 
         if confidence >= 0.5:
             return PatternInstance(

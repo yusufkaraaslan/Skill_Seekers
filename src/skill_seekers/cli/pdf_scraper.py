@@ -164,7 +164,7 @@ class PDFToSkillConverter:
             else:
                 # Keyword-based categorization
                 # Initialize categories
-                for cat_key, keywords in self.categories.items():
+                for cat_key, _ in self.categories.items():
                     categorized[cat_key] = {"title": cat_key.replace("_", " ").title(), "pages": []}
 
                 # Categorize by keywords

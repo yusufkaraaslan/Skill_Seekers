@@ -1067,11 +1067,10 @@ This skill combines knowledge from multiple sources:
                 languages = c3_data["architecture"].get("languages", {})
 
             # If no languages from C3.7, try to get from GitHub data
-            if not languages:
-                # github_data already available from method scope
-                if github_data.get("languages"):
-                    # GitHub data has languages as list, convert to dict with count 1
-                    languages = dict.fromkeys(github_data["languages"], 1)
+            # github_data already available from method scope
+            if not languages and github_data.get("languages"):
+                # GitHub data has languages as list, convert to dict with count 1
+                languages = dict.fromkeys(github_data["languages"], 1)
 
             if languages:
                 f.write("**Languages Detected**:\n")

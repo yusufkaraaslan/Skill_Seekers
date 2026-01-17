@@ -361,36 +361,35 @@ class PythonTestAnalyzer:
         examples = []
 
         for node in ast.walk(func_node):
-            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
-                # Check if meaningful instantiation
-                if self._is_meaningful_instantiation(node):
-                    code = ast.unparse(node)
+            # Check if meaningful instantiation
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) and self._is_meaningful_instantiation(node):
+                code = ast.unparse(node)
 
-                    # Skip trivial or mock-only
-                    if len(code) < 20 or "Mock()" in code:
-                        continue
+                # Skip trivial or mock-only
+                if len(code) < 20 or "Mock()" in code:
+                    continue
 
-                    # Get class name
-                    class_name = self._get_class_name(node.value)
+                # Get class name
+                class_name = self._get_class_name(node.value)
 
-                    example = TestExample(
-                        example_id=self._generate_id(code),
-                        test_name=func_node.name,
-                        category="instantiation",
-                        code=code,
-                        language="Python",
-                        description=f"Instantiate {class_name}: {description}",
-                        expected_behavior=self._extract_assertion_after(func_node, node),
-                        setup_code=setup_code,
-                        file_path=file_path,
-                        line_start=node.lineno,
-                        line_end=node.end_lineno or node.lineno,
-                        complexity_score=self._calculate_complexity(code),
-                        confidence=0.8,
-                        tags=tags,
-                        dependencies=imports,
-                    )
-                    examples.append(example)
+                example = TestExample(
+                    example_id=self._generate_id(code),
+                    test_name=func_node.name,
+                    category="instantiation",
+                    code=code,
+                    language="Python",
+                    description=f"Instantiate {class_name}: {description}",
+                    expected_behavior=self._extract_assertion_after(func_node, node),
+                    setup_code=setup_code,
+                    file_path=file_path,
+                    line_start=node.lineno,
+                    line_end=node.end_lineno or node.lineno,
+                    complexity_score=self._calculate_complexity(code),
+                    confidence=0.8,
+                    tags=tags,
+                    dependencies=imports,
+                )
+                examples.append(example)
 
         return examples
 
@@ -408,39 +407,37 @@ class PythonTestAnalyzer:
 
         statements = func_node.body
         for i, stmt in enumerate(statements):
-            # Look for method calls
-            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
-                # Check if next statement is an assertion
-                if i + 1 < len(statements):
-                    next_stmt = statements[i + 1]
-                    if self._is_assertion(next_stmt):
-                        method_call = ast.unparse(stmt)
-                        assertion = ast.unparse(next_stmt)
+            # Look for method calls and check if next statement is an assertion
+            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call) and i + 1 < len(statements):
+                next_stmt = statements[i + 1]
+                if self._is_assertion(next_stmt):
+                    method_call = ast.unparse(stmt)
+                    assertion = ast.unparse(next_stmt)
 
-                        code = f"{method_call}\n{assertion}"
+                    code = f"{method_call}\n{assertion}"
 
-                        # Skip trivial assertions
-                        if any(trivial in assertion for trivial in self.trivial_patterns):
-                            continue
+                    # Skip trivial assertions
+                    if any(trivial in assertion for trivial in self.trivial_patterns):
+                        continue
 
-                        example = TestExample(
-                            example_id=self._generate_id(code),
-                            test_name=func_node.name,
-                            category="method_call",
-                            code=code,
-                            language="Python",
-                            description=description,
-                            expected_behavior=assertion,
-                            setup_code=setup_code,
-                            file_path=file_path,
-                            line_start=stmt.lineno,
-                            line_end=next_stmt.end_lineno or next_stmt.lineno,
-                            complexity_score=self._calculate_complexity(code),
-                            confidence=0.85,
-                            tags=tags,
-                            dependencies=imports,
-                        )
-                        examples.append(example)
+                    example = TestExample(
+                        example_id=self._generate_id(code),
+                        test_name=func_node.name,
+                        category="method_call",
+                        code=code,
+                        language="Python",
+                        description=description,
+                        expected_behavior=assertion,
+                        setup_code=setup_code,
+                        file_path=file_path,
+                        line_start=stmt.lineno,
+                        line_end=next_stmt.end_lineno or next_stmt.lineno,
+                        complexity_score=self._calculate_complexity(code),
+                        confidence=0.85,
+                        tags=tags,
+                        dependencies=imports,
+                    )
+                    examples.append(example)
 
         return examples
 
@@ -457,31 +454,30 @@ class PythonTestAnalyzer:
         examples = []
 
         for node in ast.walk(func_node):
-            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict):
-                # Must have 2+ keys and be meaningful
-                if len(node.value.keys) >= 2:
-                    code = ast.unparse(node)
+            # Must have 2+ keys and be meaningful
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict) and len(node.value.keys) >= 2:
+                code = ast.unparse(node)
 
-                    # Check if looks like configuration
-                    if self._is_config_dict(node.value):
-                        example = TestExample(
-                            example_id=self._generate_id(code),
-                            test_name=func_node.name,
-                            category="config",
-                            code=code,
-                            language="Python",
-                            description=f"Configuration example: {description}",
-                            expected_behavior=self._extract_assertion_after(func_node, node),
-                            setup_code=setup_code,
-                            file_path=file_path,
-                            line_start=node.lineno,
-                            line_end=node.end_lineno or node.lineno,
-                            complexity_score=self._calculate_complexity(code),
-                            confidence=0.75,
-                            tags=tags,
-                            dependencies=imports,
-                        )
-                        examples.append(example)
+                # Check if looks like configuration
+                if self._is_config_dict(node.value):
+                    example = TestExample(
+                        example_id=self._generate_id(code),
+                        test_name=func_node.name,
+                        category="config",
+                        code=code,
+                        language="Python",
+                        description=f"Configuration example: {description}",
+                        expected_behavior=self._extract_assertion_after(func_node, node),
+                        setup_code=setup_code,
+                        file_path=file_path,
+                        line_start=node.lineno,
+                        line_end=node.end_lineno or node.lineno,
+                        complexity_score=self._calculate_complexity(code),
+                        confidence=0.75,
+                        tags=tags,
+                        dependencies=imports,
+                    )
+                    examples.append(example)
 
         return examples
 

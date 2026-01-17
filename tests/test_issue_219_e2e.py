@@ -275,46 +275,45 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         except ImportError:
             self.skipTest("anthropic package not installed")
 
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
-            with patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic:
-                enhancer = SkillEnhancer(self.skill_dir)
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}), patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic:
+            enhancer = SkillEnhancer(self.skill_dir)
 
-                # Mock response with ThinkingBlock (newer SDK)
-                # ThinkingBlock has no .text attribute
-                mock_thinking_block = SimpleNamespace(type="thinking")
+            # Mock response with ThinkingBlock (newer SDK)
+            # ThinkingBlock has no .text attribute
+            mock_thinking_block = SimpleNamespace(type="thinking")
 
-                # TextBlock has .text attribute
-                mock_text_block = SimpleNamespace(text="# Enhanced SKILL.md\n\nContent here")
+            # TextBlock has .text attribute
+            mock_text_block = SimpleNamespace(text="# Enhanced SKILL.md\n\nContent here")
 
-                mock_message = Mock()
-                mock_message.content = [mock_thinking_block, mock_text_block]
+            mock_message = Mock()
+            mock_message.content = [mock_thinking_block, mock_text_block]
 
-                mock_client = mock_anthropic.return_value
-                mock_client.messages.create.return_value = mock_message
+            mock_client = mock_anthropic.return_value
+            mock_client.messages.create.return_value = mock_message
 
-                # Read references (with proper metadata structure)
-                references = {
-                    "index.md": {
-                        "content": "# Index\nTest content",
-                        "source": "documentation",
-                        "confidence": "high",
-                        "path": "index.md",
-                        "truncated": False,
-                        "size": 23,
-                        "repo_id": None,
-                    }
+            # Read references (with proper metadata structure)
+            references = {
+                "index.md": {
+                    "content": "# Index\nTest content",
+                    "source": "documentation",
+                    "confidence": "high",
+                    "path": "index.md",
+                    "truncated": False,
+                    "size": 23,
+                    "repo_id": None,
                 }
+            }
 
-                # Call enhance_skill_md (should handle ThinkingBlock gracefully)
-                result = enhancer.enhance_skill_md(references, current_skill_md="# Old")
+            # Call enhance_skill_md (should handle ThinkingBlock gracefully)
+            result = enhancer.enhance_skill_md(references, current_skill_md="# Old")
 
-                # VERIFY: Should find text from TextBlock, ignore ThinkingBlock
-                self.assertIsNotNone(result, "Should return enhanced content")
-                self.assertEqual(
-                    result,
-                    "# Enhanced SKILL.md\n\nContent here",
-                    "Should extract text from TextBlock",
-                )
+            # VERIFY: Should find text from TextBlock, ignore ThinkingBlock
+            self.assertIsNotNone(result, "Should return enhanced content")
+            self.assertEqual(
+                result,
+                "# Enhanced SKILL.md\n\nContent here",
+                "Should extract text from TextBlock",
+            )
 
 
 class TestIssue219IntegrationAll(unittest.TestCase):

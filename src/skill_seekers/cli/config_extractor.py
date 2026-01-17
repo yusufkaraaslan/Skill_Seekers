@@ -466,24 +466,23 @@ class ConfigParser:
             tree = ast.parse(config_file.raw_content)
 
             for node in ast.walk(tree):
-                if isinstance(node, ast.Assign):
-                    # Get variable name and skip private variables
-                    if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and not node.targets[0].id.startswith("_"):
-                        key = node.targets[0].id
+                # Get variable name and skip private variables
+                if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and not node.targets[0].id.startswith("_"):
+                    key = node.targets[0].id
 
-                        # Extract value
-                        try:
-                            value = ast.literal_eval(node.value)
-                            setting = ConfigSetting(
-                                key=key,
-                                value=value,
-                                value_type=self._infer_type(value),
-                                description=self._extract_python_docstring(node),
-                            )
-                            config_file.settings.append(setting)
-                        except (ValueError, TypeError):
-                            # Can't evaluate complex expressions
-                            pass
+                    # Extract value
+                    try:
+                        value = ast.literal_eval(node.value)
+                        setting = ConfigSetting(
+                            key=key,
+                            value=value,
+                            value_type=self._infer_type(value),
+                            description=self._extract_python_docstring(node),
+                        )
+                        config_file.settings.append(setting)
+                    except (ValueError, TypeError):
+                        # Can't evaluate complex expressions
+                        pass
 
         except SyntaxError as e:
             config_file.parse_errors.append(f"Python parse error: {str(e)}")

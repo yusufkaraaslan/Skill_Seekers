@@ -415,9 +415,8 @@ class TestInstallAgentCLI:
 
     def test_cli_requires_agent_flag(self):
         """Test that CLI fails without --agent flag."""
-        with pytest.raises(SystemExit) as exc_info:
-            with patch("sys.argv", ["install_agent.py", str(self.skill_dir)]):
-                main()
+        with pytest.raises(SystemExit) as exc_info, patch("sys.argv", ["install_agent.py", str(self.skill_dir)]):
+            main()
 
         # Missing required argument exits with code 2
         assert exc_info.value.code == 2

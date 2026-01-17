@@ -30,9 +30,8 @@ def test_timeout_with_retry():
     """Test timeout scenario with retry logic"""
     downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=2)
 
-    with patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get:
-        with patch("time.sleep") as mock_sleep:  # Mock sleep to speed up test
-            content = downloader.download()
+    with patch("requests.get", side_effect=requests.Timeout("Connection timeout")) as mock_get, patch("time.sleep") as mock_sleep:  # Mock sleep to speed up test
+        content = downloader.download()
 
     assert content is None
     assert mock_get.call_count == 2  # Should retry once (2 total attempts)
@@ -85,9 +84,8 @@ def test_exponential_backoff():
     """Test that exponential backoff delays are correct"""
     downloader = LlmsTxtDownloader("https://example.com/llms.txt", max_retries=3)
 
-    with patch("requests.get", side_effect=requests.Timeout("Connection timeout")):
-        with patch("time.sleep") as mock_sleep:
-            content = downloader.download()
+    with patch("requests.get", side_effect=requests.Timeout("Connection timeout")), patch("time.sleep") as mock_sleep:
+        content = downloader.download()
 
     assert content is None
     # Should sleep with delays: 1s, 2s (2^0, 2^1)

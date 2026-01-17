@@ -59,7 +59,7 @@ class ConfigValidator:
         except FileNotFoundError as e:
             raise ValueError(f"Config file not found: {self.config_path}") from e
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in config file: {e}")
+            raise ValueError(f"Invalid JSON in config file: {e}") from e
 
     def _detect_format(self) -> bool:
         """

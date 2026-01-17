@@ -1056,7 +1056,6 @@ class DocToSkillConverter:
                             futures.append(future)
 
                     # Wait for some to complete before submitting more
-                    completed = 0
                     for future in as_completed(futures[:batch_size]):
                         # Check for exceptions
                         try:
@@ -1064,8 +1063,6 @@ class DocToSkillConverter:
                         except Exception as e:
                             with self.lock:
                                 logger.warning("  ⚠️  Worker exception: %s", e)
-
-                        completed += 1
 
                         with self.lock:
                             self.pages_scraped += 1
