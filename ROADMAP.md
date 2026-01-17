@@ -4,9 +4,9 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 
 ---
 
-## 🎯 Current Status: v2.6.0 ✅
+## 🎯 Current Status: v2.7.0 ✅
 
-**Latest Release:** v2.6.0 (January 14, 2026)
+**Latest Release:** v2.7.0 (January 18, 2026)
 
 **What Works:**
 - ✅ Documentation scraping (HTML websites with llms.txt support)
@@ -19,7 +19,14 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 - ✅ 24 preset configs (including 7 unified configs)
 - ✅ Large docs support (40K+ pages with router skills)
 - ✅ C3.x codebase analysis suite (C3.1-C3.8)
-- ✅ 700+ tests passing
+- ✅ Bootstrap skill feature - self-hosting capability
+- ✅ 1200+ tests passing (improved from 700+)
+
+**Recent Improvements (v2.7.0):**
+- ✅ **Code Quality**: Fixed all 21 ruff linting errors across codebase
+- ✅ **Version Sync**: Synchronized version numbers across all package files
+- ✅ **Bug Fixes**: Resolved case-sensitivity and test fixture issues
+- ✅ **Documentation**: Comprehensive documentation updates and new guides
 
 ---
 

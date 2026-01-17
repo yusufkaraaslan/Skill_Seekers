@@ -4,10 +4,23 @@ Welcome to the Skill Seekers documentation hub. This directory contains comprehe
 
 ## 📚 Quick Navigation
 
+### 🆕 New in v2.7.0
+
+**Recently Added Documentation:**
+- ⭐ [Quick Reference](QUICK_REFERENCE.md) - One-page cheat sheet
+- ⭐ [API Reference](reference/API_REFERENCE.md) - Programmatic usage guide
+- ⭐ [Bootstrap Skill](features/BOOTSTRAP_SKILL.md) - Self-hosting documentation
+- ⭐ [Code Quality](reference/CODE_QUALITY.md) - Linting and standards
+- ⭐ [Testing Guide](guides/TESTING_GUIDE.md) - Complete testing reference
+- ⭐ [Migration Guide](guides/MIGRATION_GUIDE.md) - Version upgrade guide
+- ⭐ [FAQ](FAQ.md) - Frequently asked questions
+
 ### 🚀 Getting Started
 
 **New to Skill Seekers?** Start here:
 - [Main README](../README.md) - Project overview and installation
+- [Quick Reference](QUICK_REFERENCE.md) - **One-page cheat sheet** ⚡
+- [FAQ](FAQ.md) - Frequently asked questions
 - [Quickstart Guide](../QUICKSTART.md) - Fast introduction
 - [Bulletproof Quickstart](../BULLETPROOF_QUICKSTART.md) - Beginner-friendly guide
 - [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
@@ -24,6 +37,8 @@ Essential guides for setup and daily usage:
 - **Usage Guides**
   - [Usage Guide](guides/USAGE.md) - Comprehensive usage instructions
   - [Upload Guide](guides/UPLOAD_GUIDE.md) - Uploading skills to platforms
+  - [Testing Guide](guides/TESTING_GUIDE.md) - Complete testing reference (1200+ tests)
+  - [Migration Guide](guides/MIGRATION_GUIDE.md) - Version upgrade instructions
 
 ### ⚡ Feature Documentation
 
@@ -34,6 +49,7 @@ Learn about core features and capabilities:
 - [Test Example Extraction (C3.2)](features/TEST_EXAMPLE_EXTRACTION.md) - Extract usage from tests
 - [How-To Guides (C3.3)](features/HOW_TO_GUIDES.md) - Auto-generate tutorials
 - [Unified Scraping](features/UNIFIED_SCRAPING.md) - Multi-source scraping
+- [Bootstrap Skill](features/BOOTSTRAP_SKILL.md) - Self-hosting capability (dogfooding)
 
 #### AI Enhancement
 - [AI Enhancement](features/ENHANCEMENT.md) - AI-powered skill enhancement
@@ -55,6 +71,8 @@ Multi-LLM platform support:
 ### 📘 Reference Documentation
 
 Technical reference and architecture:
+- [API Reference](reference/API_REFERENCE.md) - **Programmatic usage guide** ⭐
+- [Code Quality](reference/CODE_QUALITY.md) - **Linting, testing, CI/CD standards** ⭐
 - [Feature Matrix](reference/FEATURE_MATRIX.md) - Platform compatibility matrix
 - [Git Config Sources](reference/GIT_CONFIG_SOURCES.md) - Config repository management
 - [Large Documentation](reference/LARGE_DOCUMENTATION.md) - Handling large docs
@@ -97,7 +115,9 @@ Want to contribute? See:
 ### For Developers
 - [Contributing](../CONTRIBUTING.md)
 - [Development Setup](../CONTRIBUTING.md#development-setup)
-- [Testing](../CONTRIBUTING.md#running-tests)
+- [Testing Guide](guides/TESTING_GUIDE.md) - Complete testing reference
+- [Code Quality](reference/CODE_QUALITY.md) - Linting and standards
+- [API Reference](reference/API_REFERENCE.md) - Programmatic usage
 - [Architecture](reference/SKILL_ARCHITECTURE.md)
 
 ### API & Tools
@@ -110,10 +130,25 @@ Want to contribute? See:
 ### I want to...
 
 **Get started quickly**
-→ [Quickstart Guide](../QUICKSTART.md) or [Bulletproof Quickstart](../BULLETPROOF_QUICKSTART.md)
+→ [Quick Reference](QUICK_REFERENCE.md) or [Quickstart Guide](../QUICKSTART.md)
+
+**Find quick answers**
+→ [FAQ](FAQ.md) - Frequently asked questions
+
+**Use Skill Seekers programmatically**
+→ [API Reference](reference/API_REFERENCE.md) - Python integration
 
 **Set up MCP server**
 → [MCP Setup Guide](guides/MCP_SETUP.md)
+
+**Run tests**
+→ [Testing Guide](guides/TESTING_GUIDE.md) - 1200+ tests
+
+**Understand code quality standards**
+→ [Code Quality](reference/CODE_QUALITY.md) - Linting and CI/CD
+
+**Upgrade to new version**
+→ [Migration Guide](guides/MIGRATION_GUIDE.md) - Version upgrades
 
 **Scrape documentation**
 → [Usage Guide](guides/USAGE.md) → Documentation Scraping
@@ -145,11 +180,14 @@ Want to contribute? See:
 **Generate how-to guides**
 → [How-To Guides](features/HOW_TO_GUIDES.md)
 
+**Create self-documenting skill**
+→ [Bootstrap Skill](features/BOOTSTRAP_SKILL.md) - Dogfooding
+
 **Fix an issue**
-→ [Troubleshooting](../TROUBLESHOOTING.md)
+→ [Troubleshooting](../TROUBLESHOOTING.md) or [FAQ](FAQ.md)
 
 **Contribute code**
-→ [Contributing Guide](../CONTRIBUTING.md)
+→ [Contributing Guide](../CONTRIBUTING.md) and [Code Quality](reference/CODE_QUALITY.md)
 
 ## 📢 Support
 
@@ -159,6 +197,6 @@ Want to contribute? See:
 
 ---
 
-**Documentation Version**: 2.6.0
-**Last Updated**: 2026-01-13
+**Documentation Version**: 2.7.0
+**Last Updated**: 2026-01-18
 **Status**: ✅ Complete & Organized

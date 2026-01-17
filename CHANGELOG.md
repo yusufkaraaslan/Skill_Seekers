@@ -13,6 +13,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Code Quality Improvements** - Fixed all 21 ruff linting errors across codebase
+  - SIM102: Combined nested if statements using `and` operator (7 fixes)
+  - SIM117: Combined multiple `with` statements into single multi-context `with` (9 fixes)
+  - B904: Added `from e` to exception chaining for proper error context (1 fix)
+  - SIM113: Removed unused enumerate counter variable (1 fix)
+  - B007: Changed unused loop variable to `_` (1 fix)
+  - ARG002: Removed unused method argument in test fixture (1 fix)
+  - Files affected: config_extractor.py, config_validator.py, doc_scraper.py, pattern_recognizer.py (3), test_example_extractor.py (3), unified_skill_builder.py, pdf_scraper.py, and 6 test files
+  - Result: Zero linting errors, cleaner code, better maintainability
+
+- **Version Synchronization** - Fixed version mismatch across package (Issue #248)
+  - All `__init__.py` files now correctly show version 2.7.0 (was 2.5.2 in 4 files)
+  - Files updated: `src/skill_seekers/__init__.py`, `src/skill_seekers/cli/__init__.py`, `src/skill_seekers/mcp/__init__.py`, `src/skill_seekers/mcp/tools/__init__.py`
+  - Ensures `skill-seekers --version` shows accurate version number
+
+- **Case-Insensitive Regex in Install Workflow** - Fixed install workflow failures (Issue #236)
+  - Made regex patterns case-insensitive using `(?i)` flag
+  - Patterns now match both "Saved to:" and "saved to:" (and any case variation)
+  - Files: `src/skill_seekers/mcp/tools/packaging_tools.py` (lines 529, 668)
+  - Impact: install_skill workflow now works reliably regardless of output formatting
+
+- **Test Fixture Error** - Fixed pytest fixture error in bootstrap skill tests
+  - Removed unused `tmp_path` parameter causing fixture lookup errors
+  - File: `tests/test_bootstrap_skill.py:54`
+  - Result: All CI test runs now pass without fixture errors
+
 ### Removed
 
 ---
@@ -975,7 +1001,7 @@ This **major release** upgrades the MCP infrastructure to the 2025 specification
 
 #### Testing
 - **`test_mcp_fastmcp.py`** (960 lines, 63 tests) - Comprehensive FastMCP server tests
-  - All 17 tools tested
+  - All 18 tools tested
   - Error handling validation
   - Type validation
   - Integration workflows

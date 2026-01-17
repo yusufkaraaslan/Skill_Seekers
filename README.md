@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-700+%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-1200+%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -316,7 +316,7 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 391 tests with comprehensive coverage
+- ✅ **Fully Tested** - 1200+ tests with comprehensive coverage
 
 ---
 
@@ -872,7 +872,7 @@ Package skill at output/react/
 - ✅ No manual CLI commands
 - ✅ Natural language interface
 - ✅ Integrated with your workflow
-- ✅ **17 tools** available instantly (up from 9!)
+- ✅ **18 tools** available instantly (up from 9!)
 - ✅ **5 AI agents supported** - auto-configured with one command
 - ✅ **Tested and working** in production
 
@@ -880,12 +880,12 @@ Package skill at output/react/
 - ✅ **Upgraded to MCP SDK v1.25.0** - Latest features and performance
 - ✅ **FastMCP Framework** - Modern, maintainable MCP implementation
 - ✅ **HTTP + stdio transport** - Works with more AI agents
-- ✅ **17 tools** (up from 9) - More capabilities
+- ✅ **18 tools** (up from 9) - More capabilities
 - ✅ **Multi-agent auto-configuration** - Setup all agents with one command
 
 **Full guides:**
 - 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 17 tools
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
 - 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
 - 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
 
@@ -1272,9 +1272,9 @@ In IntelliJ IDEA:
 "Split large Godot config"
 ```
 
-### Available MCP Tools (17 Total)
+### Available MCP Tools (18 Total)
 
-All agents have access to these 17 tools:
+All agents have access to these 18 tools:
 
 **Core Tools (9):**
 1. `list_configs` - List all available preset configurations
@@ -1303,7 +1303,7 @@ All agents have access to these 17 tools:
 - ✅ **Upgraded to MCP SDK v1.25.0** - Latest stable version
 - ✅ **FastMCP Framework** - Modern, maintainable implementation
 - ✅ **Dual Transport** - stdio + HTTP support
-- ✅ **17 Tools** - Up from 9 (almost 2x!)
+- ✅ **18 Tools** - Up from 9 (exactly 2x!)
 - ✅ **Auto-Configuration** - One script configures all agents
 
 **Agent Support:**
@@ -1316,7 +1316,7 @@ All agents have access to these 17 tools:
 - ✅ **One Setup Command** - Works for all agents
 - ✅ **Natural Language** - Use plain English in any agent
 - ✅ **No CLI Required** - All features via MCP tools
-- ✅ **Full Testing** - All 17 tools tested and working
+- ✅ **Full Testing** - All 18 tools tested and working
 
 ### Troubleshooting Multi-Agent Setup
 
@@ -1390,7 +1390,7 @@ doc-to-skill/
 │   ├── upload_skill.py     # Auto-upload (API)
 │   └── enhance_skill.py    # AI enhancement
 ├── mcp/                    # MCP server for 5 AI agents
-│   └── server.py           # 17 MCP tools (v2.4.0)
+│   └── server.py           # 18 MCP tools (v2.7.0)
 ├── configs/                # Preset configurations
 │   ├── godot.json         # Godot Engine
 │   ├── react.json         # React
