@@ -417,7 +417,7 @@ class TestIntegration:
         (repo_dir / "src" / "main.py").write_text("print('hello')")
         (repo_dir / "README.md").write_text("# README")
 
-        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo", interactive=False)
 
         # Mock clone to use our tmp_path
         with patch.object(fetcher, "clone_repo", return_value=repo_dir):
