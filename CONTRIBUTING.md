@@ -324,6 +324,62 @@ def scrape_page(url: str, selectors: dict) -> dict:
     pass
 ```
 
+### Code Quality Tools
+
+We use **Ruff** for linting and code formatting. Ruff is a fast Python linter that combines multiple tools (Flake8, isort, Black, etc.) into one.
+
+**Running Ruff:**
+
+```bash
+# Check for linting errors
+uvx ruff check src/ tests/
+
+# Auto-fix issues
+uvx ruff check --fix src/ tests/
+
+# Format code
+uvx ruff format src/ tests/
+```
+
+**Common Ruff Rules:**
+- **SIM102** - Simplify nested if statements (use `and` instead)
+- **SIM117** - Combine multiple `with` statements
+- **B904** - Use `from e` for proper exception chaining
+- **SIM113** - Use enumerate instead of manual counters
+- **B007** - Use `_` for unused loop variables
+- **ARG002** - Remove unused function arguments
+
+**CI/CD Integration:**
+
+All pull requests automatically run:
+1. `ruff check` - Linting validation
+2. `ruff format --check` - Format validation
+3. `pytest` - Test suite
+
+Make sure all checks pass before submitting your PR:
+
+```bash
+# Run the same checks as CI
+uvx ruff check src/ tests/
+uvx ruff format --check src/ tests/
+pytest tests/ -v
+```
+
+**Pre-commit Setup (Optional):**
+
+You can set up pre-commit hooks to automatically run Ruff before each commit:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Set up hooks (if .pre-commit-config.yaml exists)
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
+```
+
 ---
 
 ## Testing

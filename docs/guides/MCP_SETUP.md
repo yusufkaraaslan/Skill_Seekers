@@ -1,15 +1,15 @@
-# Complete MCP Setup Guide - MCP 2025 (v2.4.0)
+# Complete MCP Setup Guide - MCP 2025 (v2.7.0)
 
 Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI coding agents.
 
-**Version 2.4.0 Highlights:**
+**Version 2.7.0 Highlights:**
 - ✅ **MCP SDK v1.25.0** - Latest protocol support (upgraded from v1.18.0)
 - ✅ **FastMCP Framework** - Modern, decorator-based server implementation
 - ✅ **Dual Transport** - HTTP + stdio support (choose based on agent)
-- ✅ **17 MCP Tools** - Expanded from 9 tools (8 new source management tools)
+- ✅ **18 MCP Tools** - Expanded from 9 tools (enhance_skill + source management tools)
 - ✅ **Multi-Agent Support** - Claude Code, Cursor, Windsurf, VS Code + Cline, IntelliJ IDEA
 - ✅ **Auto-Configuration** - One-line setup with `./setup_mcp.sh`
-- ✅ **Production Ready** - 34 comprehensive tests, 100% pass rate
+- ✅ **Production Ready** - 700+ comprehensive tests, 100% pass rate
 
 ---
 
@@ -51,7 +51,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 
 ### New Features
 
-**17 MCP Tools** (expanded from 9):
+**18 MCP Tools** (expanded from 9):
 
 **Config Tools (3):**
 - `generate_config` - Generate config for any documentation site
@@ -168,7 +168,7 @@ In any connected agent:
 List all available MCP tools
 ```
 
-You should see 17 tools (up from 9 in v2.3.0).
+You should see 18 tools (up from 9 in v2.3.0).
 
 ### 5. Optional: Run Auto-Configuration
 
@@ -1390,7 +1390,7 @@ SETUP:
 3. Restart agent
 
 VERIFY:
-- "List all available MCP tools" (should show 17 tools)
+- "List all available MCP tools" (should show 18 tools)
 - "List all available configs" (should show 24 configs)
 
 GENERATE SKILL:
