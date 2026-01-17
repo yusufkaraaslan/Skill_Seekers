@@ -7,6 +7,38 @@ on:
     branches: [ main, development ]
 
 jobs:
+  lint:
+    name: Code Quality (Ruff & Mypy)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run ruff linter
+      run: |
+        echo "Running ruff check..."
+        ruff check src/ tests/ --output-format=github
+
+    - name: Run ruff formatter check
+      run: |
+        echo "Checking code formatting..."
+        ruff format --check src/ tests/
+
+    - name: Run mypy type checker
+      run: |
+        echo "Running mypy type checker..."
+        mypy src/skill_seekers --show-error-codes --pretty
+      continue-on-error: true  # Don't fail CI on mypy errors initially
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -74,15 +106,19 @@ jobs:
 
   # Summary job that provides a single status check for branch protection
   tests-complete:
-    name: All Tests Complete
-    needs: test
+    name: All Checks Complete
+    needs: [lint, test]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check test matrix results
+      - name: Check all results
         run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "❌ Code quality checks failed!"
+            exit 1
+          fi
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "❌ Tests failed!"
             exit 1
           fi
-          echo "✅ All tests passed!"
+          echo "✅ All checks passed!"
