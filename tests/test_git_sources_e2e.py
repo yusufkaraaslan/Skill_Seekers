@@ -493,7 +493,7 @@ class TestGitSourcesE2E:
         4. Modify one cache
         5. Verify other cache is unaffected
         """
-        config_dir = temp_dirs[1]
+        _config_dir = temp_dirs[1]
         repo_dir, repo = temp_git_repo
 
         cache_dir_1 = tempfile.mkdtemp(prefix="ss_cache1_")

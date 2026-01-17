@@ -382,7 +382,7 @@ class TestCodeDetectionMethods(unittest.TestCase):
 
     def test_pattern_based_detection(self):
         """Test pattern-based code detection"""
-        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        _extractor = self.PDFExtractor.__new__(self.PDFExtractor)
 
         # Should detect function definitions
         text = "Here is an example:\ndef calculate(x, y):\n    return x + y"
@@ -394,7 +394,7 @@ class TestCodeDetectionMethods(unittest.TestCase):
 
     def test_indent_based_detection(self):
         """Test indent-based code detection"""
-        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        _extractor = self.PDFExtractor.__new__(self.PDFExtractor)
 
         # Code with consistent indentation
         indented_text = """    def foo():

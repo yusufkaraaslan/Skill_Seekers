@@ -544,7 +544,7 @@ class DocToSkillConverter:
         return lang  # Return string for backward compatibility
 
     def extract_patterns(
-        self, main: Any, code_samples: list[dict[str, Any]]
+        self, main: Any, _code_samples: list[dict[str, Any]]
     ) -> list[dict[str, str]]:
         """Extract common coding patterns (NEW FEATURE)"""
         patterns = []
@@ -881,7 +881,7 @@ class DocToSkillConverter:
         # Save ALL variants to references/
         os.makedirs(os.path.join(self.skill_dir, "references"), exist_ok=True)
 
-        for variant, data in downloaded.items():
+        for _variant, data in downloaded.items():
             filepath = os.path.join(self.skill_dir, "references", data["filename"])
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(data["content"])

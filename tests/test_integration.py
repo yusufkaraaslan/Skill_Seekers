@@ -34,7 +34,7 @@ class TestDryRunMode(unittest.TestCase):
 
     def test_dry_run_no_directories_created(self):
         """Test that dry-run mode doesn't create directories"""
-        converter = DocToSkillConverter(self.config, dry_run=True)
+        _converter = DocToSkillConverter(self.config, dry_run=True)
 
         # Check directories were NOT created
         data_dir = Path(f"output/{self.config['name']}_data")
@@ -57,7 +57,7 @@ class TestDryRunMode(unittest.TestCase):
 
     def test_normal_mode_creates_directories(self):
         """Test that normal mode creates directories"""
-        converter = DocToSkillConverter(self.config, dry_run=False)
+        _converter = DocToSkillConverter(self.config, dry_run=False)
 
         # Check directories WERE created
         data_dir = Path(f"output/{self.config['name']}_data")
@@ -522,7 +522,7 @@ app.use('*', cors())
             mock_head.return_value = mock_head_response
 
             # Mock downloads
-            def mock_download(url, **kwargs):
+            def mock_download(url, **_kwargs):
                 response = Mock()
                 response.status_code = 200
                 if "llms-full.txt" in url:
@@ -540,7 +540,7 @@ app.use('*', cors())
             from skill_seekers.cli.doc_scraper import DocToSkillConverter as DocumentationScraper
 
             scraper = DocumentationScraper(config, dry_run=False)
-            result = scraper._try_llms_txt()
+            _result = scraper._try_llms_txt()
 
             # Verify all 3 files created
             refs_dir = Path(f"output/{config['name']}/references")

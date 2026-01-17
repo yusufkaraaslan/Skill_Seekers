@@ -227,7 +227,7 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
             patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
         ):
             # Create enhancer
-            enhancer = SkillEnhancer(self.skill_dir)
+            _enhancer = SkillEnhancer(self.skill_dir)
 
             # VERIFY: Anthropic client called with custom base_url
             mock_anthropic.assert_called_once()

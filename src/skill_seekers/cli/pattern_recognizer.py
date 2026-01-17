@@ -107,7 +107,7 @@ class BasePatternDetector:
         self.pattern_type = "BasePattern"
         self.category = "Unknown"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, _class_sig, _all_classes: list) -> PatternInstance | None:
         """
         Surface-level detection using naming conventions.
 
@@ -121,7 +121,7 @@ class BasePatternDetector:
         # Default: no surface detection
         return None
 
-    def detect_deep(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_deep(self, _class_sig, _all_classes: list) -> PatternInstance | None:
         """
         Deep detection using structural analysis.
 
@@ -136,7 +136,7 @@ class BasePatternDetector:
         return None
 
     def detect_full(
-        self, class_sig, all_classes: list, file_content: str
+        self, _class_sig, _all_classes: list, _file_content: str
     ) -> PatternInstance | None:
         """
         Full detection using behavioral analysis.
@@ -385,7 +385,7 @@ class SingletonDetector(BasePatternDetector):
         self.pattern_type = "Singleton"
         self.category = "Creational"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check if class name suggests Singleton"""
         if "singleton" in class_sig.name.lower():
             return PatternInstance(
@@ -519,7 +519,7 @@ class FactoryDetector(BasePatternDetector):
         self.pattern_type = "Factory"
         self.category = "Creational"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming conventions for Factory"""
         # Check class name
         if "factory" in class_sig.name.lower():
@@ -626,7 +626,7 @@ class ObserverDetector(BasePatternDetector):
         self.pattern_type = "Observer"
         self.category = "Behavioral"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Observer pattern"""
         observer_keywords = ["observer", "listener", "subscriber", "watcher"]
 
@@ -749,7 +749,7 @@ class StrategyDetector(BasePatternDetector):
         self.pattern_type = "Strategy"
         self.category = "Behavioral"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Strategy"""
         strategy_keywords = ["strategy", "policy", "algorithm"]
 
@@ -852,7 +852,7 @@ class DecoratorDetector(BasePatternDetector):
         self.pattern_type = "Decorator"
         self.category = "Structural"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Decorator"""
         decorator_keywords = ["decorator", "wrapper", "proxy"]
 
@@ -965,7 +965,7 @@ class BuilderDetector(BasePatternDetector):
         self.pattern_type = "Builder"
         self.category = "Creational"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Builder"""
         if "builder" in class_sig.name.lower():
             return PatternInstance(
@@ -1096,7 +1096,7 @@ class AdapterDetector(BasePatternDetector):
         self.pattern_type = "Adapter"
         self.category = "Structural"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Adapter"""
         adapter_keywords = ["adapter", "wrapper", "bridge"]
 
@@ -1182,7 +1182,7 @@ class CommandDetector(BasePatternDetector):
         self.pattern_type = "Command"
         self.category = "Behavioral"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Command"""
         command_keywords = ["command", "action", "task", "operation"]
 
@@ -1389,7 +1389,7 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
         self.pattern_type = "ChainOfResponsibility"
         self.category = "Behavioral"
 
-    def detect_surface(self, class_sig, all_classes: list) -> PatternInstance | None:
+    def detect_surface(self, class_sig, _all_classes: list) -> PatternInstance | None:
         """Check naming for Chain of Responsibility"""
         chain_keywords = ["handler", "chain", "middleware", "filter", "processor"]
 

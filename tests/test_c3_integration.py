@@ -136,7 +136,7 @@ class TestC3Integration:
             },
         }
 
-    def test_codebase_analysis_enabled_by_default(self, mock_config, temp_dir):
+    def test_codebase_analysis_enabled_by_default(self, _mock_config, temp_dir):
         """Test that enable_codebase_analysis defaults to True."""
         # Config with GitHub source but no explicit enable_codebase_analysis
         config_without_flag = {
@@ -174,7 +174,7 @@ class TestC3Integration:
 
         # Verify flag disabled it
         github_source = scraper.config["sources"][0]
-        assert github_source["enable_codebase_analysis"] == False
+        assert not github_source["enable_codebase_analysis"]
 
     def test_architecture_md_generation(self, mock_config, mock_c3_data, temp_dir):
         """Test ARCHITECTURE.md is generated with all 8 sections."""
@@ -310,7 +310,7 @@ class TestC3Integration:
 
         # Validate
         validator = ConfigValidator(config_path)
-        assert validator.validate() == True
+        assert validator.validate()
 
     def test_config_validator_rejects_invalid_ai_mode(self, temp_dir):
         """Test config validator rejects invalid ai_mode values."""

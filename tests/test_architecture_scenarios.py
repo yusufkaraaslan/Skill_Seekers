@@ -399,7 +399,7 @@ How to use async tools.
         oauth_count = oauth_keywords.count("oauth")
         assert oauth_count >= 2  # Should appear at least twice for 2x weight
 
-    def test_scenario_1_quality_metrics(self, tmp_path):
+    def test_scenario_1_quality_metrics(self, tmp_path):  # noqa: ARG002
         """Test quality metrics meet architecture targets."""
         # Create simple router output
         router_md = """---
@@ -565,7 +565,7 @@ class TestScenario2MultiSource:
         }
 
         # Mock GitHub streams
-        github_streams = ThreeStreamData(
+        _github_streams = ThreeStreamData(
             code_stream=CodeStream(directory=Path("/tmp"), files=[]),
             docs_stream=DocsStream(
                 readme="Use client_id and client_secret", contributing=None, docs_files=[]

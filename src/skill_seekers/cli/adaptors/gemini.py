@@ -154,7 +154,7 @@ See the references directory for complete documentation with examples and best p
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str, **_kwargs) -> dict[str, Any]:
         """
         Upload skill tar.gz to Gemini Files API.
 

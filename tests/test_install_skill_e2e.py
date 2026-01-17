@@ -523,7 +523,7 @@ class TestInstallSkillE2E_RealFiles:
             assert "WORKFLOW COMPLETE" in output or "✅" in output
 
             # The output directory should exist (created by scraping)
-            output_dir = tmp_path / "output"
+            _output_dir = tmp_path / "output"
             # Note: Directory existence is not guaranteed in all cases (mocked package might not create files)
             # So we mainly verify the workflow logic worked
             assert "Enhancement complete" in output

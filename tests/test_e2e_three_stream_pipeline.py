@@ -582,7 +582,7 @@ class TestE2ETokenEfficiency:
         insights_stream = InsightsStream(
             metadata={"stars": 100}, common_problems=[], known_solutions=[], top_labels=[]
         )
-        three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
+        _three_streams = ThreeStreamData(code_stream, docs_stream, insights_stream)
 
         # Verify streams are separate (no duplication)
         assert code_stream.directory == tmp_path

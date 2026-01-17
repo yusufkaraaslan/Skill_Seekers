@@ -219,7 +219,7 @@ class TestConfigTools:
         result = await server_fastmcp.generate_config(**args)
         assert isinstance(result, str)
 
-    async def test_list_configs(self, temp_dirs):
+    async def test_list_configs(self, _temp_dirs):
         """Test listing available configs."""
         result = await server_fastmcp.list_configs()
 
@@ -850,7 +850,7 @@ class TestTypeValidation:
         result = await server_fastmcp.estimate_pages(config_path=str(sample_config))
         assert isinstance(result, str)
 
-    async def test_all_tools_return_strings(self, sample_config, temp_dirs):
+    async def test_all_tools_return_strings(self, sample_config, _temp_dirs):
         """Test that all tools return string type."""
         # Sample a few tools from each category
         tools_to_test = [

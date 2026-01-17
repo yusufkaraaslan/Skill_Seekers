@@ -166,7 +166,7 @@ class ConfigManager:
         return profiles
 
     def get_github_token(
-        self, profile_name: str | None = None, repo_url: str | None = None
+        self, profile_name: str | None = None, _repo_url: str | None = None
     ) -> str | None:
         """
         Get GitHub token with smart fallback chain.
@@ -219,7 +219,7 @@ class ConfigManager:
 
         # Find current profile index
         current_idx = None
-        for idx, (name, profile) in enumerate(profiles):
+        for idx, (_name, profile) in enumerate(profiles):
             if profile["token"] == current_token:
                 current_idx = idx
                 break

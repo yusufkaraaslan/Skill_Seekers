@@ -203,7 +203,7 @@ class PDFToSkillConverter:
             categorized["content"] = {"title": "Content", "pages": self.extracted_data["pages"]}
 
         print(f"✅ Created {len(categorized)} categories")
-        for cat_key, cat_data in categorized.items():
+        for _cat_key, cat_data in categorized.items():
             print(f"   - {cat_data['title']}: {len(cat_data['pages'])} pages")
 
         return categorized
@@ -339,7 +339,7 @@ class PDFToSkillConverter:
             total_pages = self.extracted_data.get("total_pages", 0)
             f.write(f"**Total Pages:** {total_pages}\n\n")
             f.write("**Content Breakdown:**\n\n")
-            for cat_key, cat_data in categorized.items():
+            for _cat_key, cat_data in categorized.items():
                 page_count = len(cat_data["pages"])
                 f.write(f"- **{cat_data['title']}**: {page_count} pages\n")
             f.write("\n")
@@ -421,7 +421,7 @@ class PDFToSkillConverter:
             # Navigation
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
-            for cat_key, cat_data in categorized.items():
+            for _cat_key, cat_data in categorized.items():
                 cat_file = self._sanitize_filename(cat_data["title"])
                 f.write(f"- `references/{cat_file}.md` - {cat_data['title']}\n")
             f.write("\n")
@@ -477,7 +477,7 @@ class PDFToSkillConverter:
 
         # Simple pattern extraction from headings and emphasized text
         for page in self.extracted_data.get("pages", []):
-            text = page.get("text", "")
+            _text = page.get("text", "")
             headings = page.get("headings", [])
 
             # Look for common pattern keywords in headings

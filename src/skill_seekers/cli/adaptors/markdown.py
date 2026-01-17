@@ -152,7 +152,7 @@ Browse the reference files for detailed information on each topic. All files are
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, _api_key: str, **_kwargs) -> dict[str, Any]:
         """
         Generic markdown export does not support upload.
 
@@ -176,7 +176,7 @@ Browse the reference files for detailed information on each topic. All files are
             ),
         }
 
-    def validate_api_key(self, api_key: str) -> bool:
+    def validate_api_key(self, _api_key: str) -> bool:
         """
         Markdown export doesn't use API keys.
 
@@ -206,7 +206,7 @@ Browse the reference files for detailed information on each topic. All files are
         """
         return False
 
-    def enhance(self, skill_dir: Path, api_key: str) -> bool:
+    def enhance(self, _skill_dir: Path, _api_key: str) -> bool:
         """
         Markdown export doesn't support enhancement.
 

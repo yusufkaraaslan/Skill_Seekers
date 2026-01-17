@@ -350,7 +350,7 @@ class DependencyAnalyzer:
             # Extract individual imports from block
             import_line_pattern = r'(?:(\w+)\s+)?"([^"]+)"'
             for line_match in re.finditer(import_line_pattern, block):
-                alias = line_match.group(1)
+                _alias = line_match.group(1)
                 package = line_match.group(2)
                 line_num = content[: block_start + line_match.start()].count("\n") + 1
 
@@ -609,7 +609,7 @@ class DependencyAnalyzer:
         return self.graph
 
     def _resolve_import(
-        self, source_file: str, imported_module: str, is_relative: bool
+        self, _source_file: str, imported_module: str, _is_relative: bool
     ) -> str | None:
         """
         Resolve import statement to actual file path.

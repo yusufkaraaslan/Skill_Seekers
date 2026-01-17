@@ -181,7 +181,7 @@ class ArchitecturalPatternDetector:
 
         return dict(structure)
 
-    def _detect_frameworks(self, directory: Path, files: list[dict]) -> list[str]:
+    def _detect_frameworks(self, _directory: Path, files: list[dict]) -> list[str]:
         """Detect frameworks being used"""
         detected = []
 
@@ -419,7 +419,7 @@ class ArchitecturalPatternDetector:
         return patterns
 
     def _detect_layered_architecture(
-        self, dirs: dict[str, int], files: list[dict]
+        self, dirs: dict[str, int], _files: list[dict]
     ) -> list[ArchitecturalPattern]:
         """Detect Layered Architecture (3-tier, N-tier)"""
         patterns = []
@@ -430,7 +430,7 @@ class ArchitecturalPatternDetector:
             return patterns
 
         evidence = []
-        components = defaultdict(list)
+        _components = defaultdict(list)
         layers_found = []
 
         if "presentation" in dirs or "ui" in dirs:
@@ -461,7 +461,7 @@ class ArchitecturalPatternDetector:
         return patterns
 
     def _detect_clean_architecture(
-        self, dirs: dict[str, int], files: list[dict]
+        self, dirs: dict[str, int], _files: list[dict]
     ) -> list[ArchitecturalPattern]:
         """Detect Clean Architecture"""
         patterns = []

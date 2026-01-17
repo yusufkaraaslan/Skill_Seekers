@@ -605,7 +605,7 @@ class UnifiedScraper:
 
         try:
             # Run full C3.x analysis
-            results = analyze_codebase(
+            _results = analyze_codebase(
                 directory=Path(local_repo_path),
                 output_dir=temp_output,
                 depth="deep",

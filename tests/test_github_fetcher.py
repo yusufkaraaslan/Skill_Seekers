@@ -382,7 +382,7 @@ class TestIntegration:
         mock_run.return_value = Mock(returncode=0, stderr="")
 
         # Mock GitHub API calls
-        def api_side_effect(*args, **kwargs):
+        def api_side_effect(*args, **_kwargs):
             url = args[0]
             mock_response = Mock()
             mock_response.raise_for_status = Mock()

@@ -46,7 +46,7 @@ def test_detect_unified_format():
 
     try:
         validator = ConfigValidator(config_path)
-        assert validator.is_unified == True
+        assert validator.is_unified
     finally:
         os.unlink(config_path)
 
@@ -105,7 +105,7 @@ def test_needs_api_merge():
     }
 
     validator = ConfigValidator(config_needs_merge)
-    assert validator.needs_api_merge() == True
+    assert validator.needs_api_merge()
 
     # Config with only docs
     config_no_merge = {
@@ -545,8 +545,8 @@ def test_full_workflow_unified_config():
     # Validate config
     validator = ConfigValidator(config)
     validator.validate()
-    assert validator.is_unified == True
-    assert validator.needs_api_merge() == True
+    assert validator.is_unified
+    assert validator.needs_api_merge()
 
 
 def test_config_file_validation():
@@ -562,7 +562,7 @@ def test_config_file_validation():
 
     try:
         validator = validate_config(config_path)
-        assert validator.is_unified == True
+        assert validator.is_unified
     finally:
         os.unlink(config_path)
 

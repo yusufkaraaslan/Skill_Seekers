@@ -133,7 +133,7 @@ class LocalSkillEnhancer:
             Summarized content
         """
         lines = content.split("\n")
-        target_lines = int(len(lines) * target_ratio)
+        _target_lines = int(len(lines) * target_ratio)
 
         # Priority 1: Keep introduction (first 20%)
         intro_lines = int(len(lines) * 0.2)
@@ -165,7 +165,7 @@ class LocalSkillEnhancer:
         result = result_lines.copy()
 
         # Add code blocks first (prioritize code examples)
-        for idx, block in code_blocks[:5]:  # Max 5 code blocks
+        for _idx, block in code_blocks[:5]:  # Max 5 code blocks
             result.append("")  # Add blank line before code block
             result.extend(block)
 
@@ -222,7 +222,7 @@ class LocalSkillEnhancer:
                 print()
 
             # Summarize each reference
-            for filename, metadata in references.items():
+            for _filename, metadata in references.items():
                 summarized = self.summarize_reference(metadata["content"], summarization_ratio)
                 metadata["content"] = summarized
                 metadata["size"] = len(summarized)

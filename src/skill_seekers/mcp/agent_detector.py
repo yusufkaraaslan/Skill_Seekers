@@ -197,7 +197,7 @@ class AgentDetector:
 
         return json.dumps(config, indent=2)
 
-    def _generate_intellij_config(self, server_command: str, http_port: int) -> str:
+    def _generate_intellij_config(self, _server_command: str, http_port: int) -> str:
         """
         Generate IntelliJ IDEA MCP configuration (XML format).
 

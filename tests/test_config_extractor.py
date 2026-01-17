@@ -558,8 +558,8 @@ class TestConfigExtractorIntegration(unittest.TestCase):
         # Create test config
         (Path(self.temp_dir) / "config.json").write_text('{"key": "value"}')
 
-        result = self.extractor.extract_from_directory(Path(self.temp_dir))
-        output_dir = Path(self.temp_dir) / "output"
+        _result = self.extractor.extract_from_directory(Path(self.temp_dir))
+        _output_dir = Path(self.temp_dir) / "output"
 
         # TODO: Implement save_results method in ConfigExtractor
         # self.extractor.save_results(result, output_dir)

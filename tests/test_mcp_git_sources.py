@@ -272,7 +272,7 @@ class TestFetchConfigModes:
 class TestSourceManagementTools:
     """Test add/list/remove config source tools."""
 
-    async def test_add_config_source(self, temp_dirs):
+    async def test_add_config_source(self, _temp_dirs):
         """Test adding a new config source."""
         from skill_seekers.mcp.server import add_config_source_tool
 

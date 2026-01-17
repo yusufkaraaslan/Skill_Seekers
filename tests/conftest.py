@@ -10,7 +10,7 @@ import sys
 import pytest
 
 
-def pytest_configure(config):
+def pytest_configure(config):  # noqa: ARG001
     """Check if package is installed before running tests."""
     try:
         import skill_seekers  # noqa: F401

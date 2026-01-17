@@ -259,7 +259,7 @@ def install_to_agent(
         )
 
     # Copy skill directory
-    def ignore_files(directory, files):
+    def ignore_files(_directory, files):
         """Filter function for shutil.copytree to exclude unwanted files."""
         ignored = []
         for f in files:

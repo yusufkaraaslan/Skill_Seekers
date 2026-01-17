@@ -99,7 +99,7 @@ def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
         meaningful_paragraph = None
         in_code_block = False
 
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             stripped = line.strip()
 
             # Track code blocks

@@ -944,7 +944,7 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
-async def list_configs_tool(args: dict) -> list[TextContent]:
+async def list_configs_tool(_args: dict) -> list[TextContent]:
     """List available configs"""
     configs_dir = Path("configs")
 

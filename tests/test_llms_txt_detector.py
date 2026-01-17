@@ -59,7 +59,7 @@ def test_detect_all_variants():
 
     with patch("skill_seekers.cli.llms_txt_detector.requests.head") as mock_head:
         # Mock responses for different variants
-        def mock_response(url, **kwargs):
+        def mock_response(url, **_kwargs):
             response = Mock()
             # All 3 variants exist for Hono
             if "llms-full.txt" in url or "llms.txt" in url or "llms-small.txt" in url:

@@ -1308,7 +1308,7 @@ class TestSwiftErrorHandling:
                 ]
 
                 # Create new detector - should skip malformed pattern
-                detector = LanguageDetector()
+                _detector = LanguageDetector()
 
                 # Verify error was logged
                 assert any(
@@ -1367,7 +1367,7 @@ class TestSwiftErrorHandling:
                 ]
 
                 # Should log TypeError and skip
-                detector = LanguageDetector()
+                _detector = LanguageDetector()
 
                 # Verify TypeError was logged
                 assert any(

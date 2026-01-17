@@ -336,7 +336,7 @@ Focus on actionable insights:
 """
         return prompt
 
-    def _run_claude_cli(self, prompt_file: Path, output_file: Path) -> dict | None:
+    def _run_claude_cli(self, prompt_file: Path, _output_file: Path) -> dict | None:
         """Run Claude Code CLI and wait for completion"""
         try:
             # Run claude command

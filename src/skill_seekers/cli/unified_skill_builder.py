@@ -222,7 +222,7 @@ class UnifiedSkillBuilder:
         github_sections = self._parse_skill_md_sections(skill_mds.get("github", ""))
 
         # Extract GitHub metadata from full content
-        github_full = skill_mds.get("github", "")
+        _github_full = skill_mds.get("github", "")
 
         # Start with YAML frontmatter
         skill_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
@@ -688,28 +688,28 @@ This skill combines knowledge from multiple sources:
         if matched:
             content += "### ✅ Verified APIs\n\n"
             content += "*Documentation and code agree*\n\n"
-            for api_name, api_data in list(matched.items())[:10]:  # Limit to first 10
+            for _api_name, api_data in list(matched.items())[:10]:  # Limit to first 10
                 content += self._format_api_entry(api_data, inline_conflict=False)
 
         # Show conflicting APIs with warnings
         if conflicts:
             content += "\n### ⚠️ APIs with Conflicts\n\n"
             content += "*Documentation and code differ*\n\n"
-            for api_name, api_data in list(conflicts.items())[:10]:
+            for _api_name, api_data in list(conflicts.items())[:10]:
                 content += self._format_api_entry(api_data, inline_conflict=True)
 
         # Show undocumented APIs
         if code_only:
             content += "\n### 💻 Undocumented APIs\n\n"
             content += f"*Found in code but not in documentation ({len(code_only)} total)*\n\n"
-            for api_name, api_data in list(code_only.items())[:5]:
+            for _api_name, api_data in list(code_only.items())[:5]:
                 content += self._format_api_entry(api_data, inline_conflict=False)
 
         # Show removed/missing APIs
         if docs_only:
             content += "\n### 📖 Documentation-Only APIs\n\n"
             content += f"*Documented but not found in code ({len(docs_only)} total)*\n\n"
-            for api_name, api_data in list(docs_only.items())[:5]:
+            for _api_name, api_data in list(docs_only.items())[:5]:
                 content += self._format_api_entry(api_data, inline_conflict=False)
 
         content += "\n*See references/api/ for complete API documentation*\n"

@@ -217,7 +217,7 @@ Another paragraph of content.
         enhancer = LocalSkillEnhancer(skill_dir)
 
         # Mock the headless run to avoid actually calling Claude
-        def mock_headless(prompt_file, timeout):
+        def mock_headless(_prompt_file, _timeout):
             return True
 
         monkeypatch.setattr(enhancer, "_run_headless", mock_headless)

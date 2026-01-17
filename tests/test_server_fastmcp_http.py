@@ -31,7 +31,7 @@ class TestFastMCPHTTP:
         from starlette.responses import JSONResponse
         from starlette.routing import Route
 
-        async def health_check(request):
+        async def health_check(_request):
             return JSONResponse(
                 {
                     "status": "healthy",

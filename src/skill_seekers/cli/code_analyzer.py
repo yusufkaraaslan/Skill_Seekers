@@ -256,7 +256,7 @@ class CodeAnalyzer:
             decorators=decorators,
         )
 
-    def _analyze_javascript(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_javascript(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze JavaScript/TypeScript file using regex patterns.
 
@@ -407,7 +407,7 @@ class CodeAnalyzer:
 
         return params
 
-    def _analyze_cpp(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_cpp(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze C/C++ header file using regex patterns.
 
@@ -554,7 +554,7 @@ class CodeAnalyzer:
         # C++ uses the same comment syntax as JavaScript
         return self._extract_js_comments(content)
 
-    def _analyze_csharp(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_csharp(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze C# file using regex patterns.
 
@@ -742,7 +742,7 @@ class CodeAnalyzer:
 
         return comments
 
-    def _analyze_go(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_go(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze Go file using regex patterns.
 
@@ -774,7 +774,7 @@ class CodeAnalyzer:
         # Matches: func [receiver] name(params) [returns]
         func_pattern = r"func\s+(?:\((\w+)\s+\*?(\w+)\)\s+)?(\w+)\s*\(([^)]*)\)(?:\s+\(([^)]+)\)|(?:\s+(\w+(?:\[.*?\])?(?:,\s*\w+)*)))?"
         for match in re.finditer(func_pattern, content):
-            receiver_var = match.group(1)
+            _receiver_var = match.group(1)
             receiver_type = match.group(2)
             func_name = match.group(3)
             params_str = match.group(4)
@@ -851,7 +851,7 @@ class CodeAnalyzer:
         # Go uses C-style comments
         return self._extract_js_comments(content)
 
-    def _analyze_rust(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_rust(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze Rust file using regex patterns.
 
@@ -969,7 +969,7 @@ class CodeAnalyzer:
 
         return comments
 
-    def _analyze_java(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_java(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze Java file using regex patterns.
 
@@ -1151,7 +1151,7 @@ class CodeAnalyzer:
 
         return comments
 
-    def _analyze_ruby(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_ruby(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze Ruby file using regex patterns.
 
@@ -1251,7 +1251,7 @@ class CodeAnalyzer:
 
         return comments
 
-    def _analyze_php(self, content: str, file_path: str) -> dict[str, Any]:
+    def _analyze_php(self, content: str, _file_path: str) -> dict[str, Any]:
         """
         Analyze PHP file using regex patterns.
 

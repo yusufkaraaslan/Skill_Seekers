@@ -95,7 +95,7 @@ class TestBootstrapSkillE2E:
         # Find closing delimiter
         lines = content.split("\n")
         closing_found = False
-        for i, line in enumerate(lines[1:], 1):
+        for _i, line in enumerate(lines[1:], 1):
             if line.strip() == "---":
                 closing_found = True
                 break

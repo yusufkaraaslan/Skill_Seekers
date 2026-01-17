@@ -146,7 +146,7 @@ class RouterGenerator:
 
         return routing
 
-    def _extract_skill_specific_labels(self, skill_name: str, skill_keywords: set) -> list[str]:
+    def _extract_skill_specific_labels(self, _skill_name: str, skill_keywords: set) -> list[str]:
         """
         Extract labels from GitHub issues that match this specific skill.
 
@@ -198,7 +198,7 @@ class RouterGenerator:
 
         return list(matching_labels)
 
-    def _generate_frontmatter(self, routing_keywords: dict[str, list[str]]) -> str:
+    def _generate_frontmatter(self, _routing_keywords: dict[str, list[str]]) -> str:
         """
         Generate YAML frontmatter compliant with agentskills.io spec.
 
@@ -924,7 +924,7 @@ Simply ask your question and mention the topic. The router will find the right s
 
         return skill_md
 
-    def generate_subskill_issues_section(self, skill_name: str, topics: list[str]) -> str:
+    def generate_subskill_issues_section(self, _skill_name: str, topics: list[str]) -> str:
         """
         Generate "Common Issues" section for a sub-skill (Phase 4).
 

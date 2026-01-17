@@ -38,7 +38,7 @@ class TestSourceManagerInit:
 
     def test_init_creates_registry_file(self, temp_config_dir):
         """Test that initialization creates registry file."""
-        manager = SourceManager(config_dir=str(temp_config_dir))
+        _manager = SourceManager(config_dir=str(temp_config_dir))
         registry_file = temp_config_dir / "sources.json"
 
         assert registry_file.exists()
@@ -61,7 +61,7 @@ class TestSourceManagerInit:
             json.dump(existing_data, f)
 
         # Initialize manager
-        manager = SourceManager(config_dir=str(temp_config_dir))
+        _manager = SourceManager(config_dir=str(temp_config_dir))
 
         # Verify data preserved
         with open(registry_file) as f:

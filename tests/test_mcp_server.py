@@ -153,7 +153,7 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
             "rate_limit": 1.0,
         }
 
-        result = await skill_seeker_server.generate_config_tool(args)
+        _result = await skill_seeker_server.generate_config_tool(args)
 
         # Verify config has custom options
         config_path = Path("configs/custom-framework.json")
@@ -166,7 +166,7 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
         """Test that default values are applied correctly"""
         args = {"name": "default-test", "url": "https://test.dev/", "description": "Test defaults"}
 
-        result = await skill_seeker_server.generate_config_tool(args)
+        _result = await skill_seeker_server.generate_config_tool(args)
 
         config_path = Path("configs/default-test.json")
         with open(config_path) as f:
@@ -228,7 +228,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
 
         args = {"config_path": str(self.config_path), "max_discovery": 500}
 
-        result = await skill_seeker_server.estimate_pages_tool(args)
+        _result = await skill_seeker_server.estimate_pages_tool(args)
 
         # Verify subprocess was called with correct args
         mock_streaming.assert_called_once()
@@ -296,7 +296,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
 
         args = {"config_path": str(self.config_path), "skip_scrape": True}
 
-        result = await skill_seeker_server.scrape_docs_tool(args)
+        _result = await skill_seeker_server.scrape_docs_tool(args)
 
         # Verify --skip-scrape was passed
         call_args = mock_streaming.call_args[0][0]
@@ -310,7 +310,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
 
         args = {"config_path": str(self.config_path), "dry_run": True}
 
-        result = await skill_seeker_server.scrape_docs_tool(args)
+        _result = await skill_seeker_server.scrape_docs_tool(args)
 
         call_args = mock_streaming.call_args[0][0]
         self.assertIn("--dry-run", call_args)
@@ -323,7 +323,7 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
 
         args = {"config_path": str(self.config_path), "enhance_local": True}
 
-        result = await skill_seeker_server.scrape_docs_tool(args)
+        _result = await skill_seeker_server.scrape_docs_tool(args)
 
         call_args = mock_streaming.call_args[0][0]
         self.assertIn("--enhance-local", call_args)

@@ -240,7 +240,7 @@ class WorkflowAnalyzer:
 
         return steps
 
-    def _extract_steps_heuristic(self, code: str, workflow: dict) -> list[WorkflowStep]:
+    def _extract_steps_heuristic(self, code: str, _workflow: dict) -> list[WorkflowStep]:
         """Extract steps using heuristics (for non-Python or invalid syntax)"""
         steps = []
         lines = code.split("\n")
@@ -377,7 +377,7 @@ class WorkflowAnalyzer:
         has_mock = "mock" in code.lower() or "patch" in code.lower()
         has_error_handling = "try" in code or "except" in code
 
-        complexity_score = workflow.get("complexity_score", 0.5)
+        _complexity_score = workflow.get("complexity_score", 0.5)
 
         # Determine level
         if num_steps <= 3 and not has_async and not has_mock:
@@ -957,7 +957,7 @@ class HowToGuideBuilder:
 
         return guide
 
-    def _generate_overview(self, primary_workflow: dict, all_workflows: list[dict]) -> str:
+    def _generate_overview(self, primary_workflow: dict, _all_workflows: list[dict]) -> str:
         """Generate guide overview"""
         # Try to get explanation from AI analysis
         if primary_workflow.get("ai_analysis"):
@@ -973,7 +973,7 @@ class HowToGuideBuilder:
         # Final fallback
         return f"Learn how to use {primary_workflow.get('test_name', 'this feature')} in your code."
 
-    def _enhance_guide_with_ai(self, guide: HowToGuide, ai_analysis: dict, enhancer):
+    def _enhance_guide_with_ai(self, guide: HowToGuide, _ai_analysis: dict, enhancer):
         """
         Comprehensively enhance guide with AI using GuideEnhancer.
 

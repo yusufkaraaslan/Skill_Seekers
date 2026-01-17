@@ -376,7 +376,7 @@ class TestTokenHandling:
         (tmp_path / "main.py").write_text("code")
 
         analyzer = UnifiedCodebaseAnalyzer()
-        result = analyzer.analyze(source="https://github.com/test/repo", depth="basic")
+        _result = analyzer.analyze(source="https://github.com/test/repo", depth="basic")
 
         # Verify fetcher was created with token
         mock_fetcher_class.assert_called_once()
@@ -401,7 +401,7 @@ class TestTokenHandling:
         (tmp_path / "main.py").write_text("code")
 
         analyzer = UnifiedCodebaseAnalyzer(github_token="custom_token")
-        result = analyzer.analyze(source="https://github.com/test/repo", depth="basic")
+        _result = analyzer.analyze(source="https://github.com/test/repo", depth="basic")
 
         mock_fetcher_class.assert_called_once()
         args = mock_fetcher_class.call_args[0]

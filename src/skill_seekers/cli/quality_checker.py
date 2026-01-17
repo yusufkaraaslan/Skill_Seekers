@@ -180,7 +180,7 @@ class SkillQualityChecker:
         }
 
         code_blocks = len(enhancement_indicators["code_examples"].findall(content))
-        real_examples = len(enhancement_indicators["real_examples"].findall(content))
+        _real_examples = len(enhancement_indicators["real_examples"].findall(content))
         sections = len(enhancement_indicators["sections"].findall(content))
 
         # Quality thresholds

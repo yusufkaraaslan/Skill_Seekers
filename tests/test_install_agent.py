@@ -325,7 +325,7 @@ class TestInstallToAllAgents:
         """Test that install_to_all_agents attempts all 11 agents."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
 
-            def mock_get_agent_path(agent_name, project_root=None):
+            def mock_get_agent_path(agent_name, _project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
             with patch(
@@ -344,7 +344,7 @@ class TestInstallToAllAgents:
 
         # All should succeed in dry-run mode
         assert len(results) == 11
-        for agent_name, (success, message) in results.items():
+        for _agent_name, (success, message) in results.items():
             assert success is True
             assert "DRY RUN" in message
 
@@ -356,7 +356,7 @@ class TestInstallToAllAgents:
                 agent_dir = Path(agent_tmpdir) / f".{agent}" / "skills" / "test-skill"
                 agent_dir.mkdir(parents=True)
 
-            def mock_get_agent_path(agent_name, project_root=None):
+            def mock_get_agent_path(agent_name, _project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
             with patch(
@@ -365,13 +365,13 @@ class TestInstallToAllAgents:
                 # Without force - should fail
                 results_no_force = install_to_all_agents(self.skill_dir, force=False)
                 # All should fail because directories exist
-                for agent_name, (success, message) in results_no_force.items():
+                for _agent_name, (success, message) in results_no_force.items():
                     assert success is False
                     assert "already installed" in message.lower()
 
                 # With force - should succeed
                 results_with_force = install_to_all_agents(self.skill_dir, force=True)
-                for agent_name, (success, message) in results_with_force.items():
+                for _agent_name, (success, message) in results_with_force.items():
                     assert success is True
 
     def test_install_to_all_returns_results(self):
@@ -426,7 +426,7 @@ class TestInstallAgentCLI:
         """Test that --dry-run flag works correctly."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
 
-            def mock_get_agent_path(agent_name, project_root=None):
+            def mock_get_agent_path(agent_name, _project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
             with patch(
@@ -446,7 +446,7 @@ class TestInstallAgentCLI:
         """Test end-to-end CLI execution."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
 
-            def mock_get_agent_path(agent_name, project_root=None):
+            def mock_get_agent_path(agent_name, _project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
             with patch(
@@ -468,7 +468,7 @@ class TestInstallAgentCLI:
         """Test CLI with --agent all."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
 
-            def mock_get_agent_path(agent_name, project_root=None):
+            def mock_get_agent_path(agent_name, _project_root=None):
                 return Path(agent_tmpdir) / f".{agent_name}" / "skills"
 
             with patch(

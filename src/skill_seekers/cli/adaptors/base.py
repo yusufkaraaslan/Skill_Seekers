@@ -140,7 +140,7 @@ class SkillAdaptor(ABC):
         """
         return False
 
-    def enhance(self, skill_dir: Path, api_key: str) -> bool:
+    def enhance(self, _skill_dir: Path, _api_key: str) -> bool:
         """
         Optionally enhance SKILL.md using platform's AI.
 

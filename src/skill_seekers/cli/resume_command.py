@@ -73,7 +73,7 @@ def resume_job(job_id: str):
 
     # Extract job details
     command = progress.get("command", "")
-    job_config = progress.get("config", {})
+    _job_config = progress.get("config", {})
     checkpoint = progress.get("progress", {}).get("last_checkpoint")
 
     print(f"Original command: {command}")

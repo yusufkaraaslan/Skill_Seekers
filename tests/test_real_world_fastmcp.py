@@ -373,7 +373,7 @@ class TestRealWorldFastMCP:
 
         print("\n✅ Router generation verified!\n")
 
-    def test_04_quality_metrics(self, fastmcp_analysis, output_dir):
+    def test_04_quality_metrics(self, fastmcp_analysis, output_dir):  # noqa: ARG002
         """Test that quality metrics meet architecture targets."""
         print("\n" + "=" * 80)
         print("TEST 4: Quality Metrics Validation")

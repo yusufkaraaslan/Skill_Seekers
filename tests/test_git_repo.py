@@ -182,7 +182,7 @@ class TestCloneOrPull:
         mock_repo.remotes.origin = mock_origin
         mock_repo_class.return_value = mock_repo
 
-        result = git_repo.clone_or_pull(
+        _result = git_repo.clone_or_pull(
             source_name="test-source",
             git_url="https://github.com/org/repo.git",
             token="ghp_token123",

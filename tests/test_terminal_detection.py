@@ -167,7 +167,7 @@ class TestDetectTerminalApp(unittest.TestCase):
 
             # Run enhancer in interactive mode (not headless)
             enhancer = LocalSkillEnhancer(skill_dir)
-            result = enhancer.run(headless=False)
+            _result = enhancer.run(headless=False)
 
             # Verify Popen was called
             self.assertTrue(mock_popen.called)

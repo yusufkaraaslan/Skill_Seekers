@@ -103,7 +103,7 @@ Note: Default selectors may need adjustment for your documentation site.
     return [TextContent(type="text", text=result)]
 
 
-async def list_configs(args: dict) -> list[TextContent]:
+async def list_configs(_args: dict) -> list[TextContent]:
     """
     List all available preset configurations.
 
