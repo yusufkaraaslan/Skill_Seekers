@@ -1303,6 +1303,10 @@ Examples:
                        help='Enhance SKILL.md using Claude Code (no API key needed)')
     parser.add_argument('--api-key', type=str,
                        help='Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)')
+    parser.add_argument('--non-interactive', action='store_true',
+                       help='Non-interactive mode for CI/CD (fail fast on rate limits)')
+    parser.add_argument('--profile', type=str,
+                       help='GitHub profile name to use from config')
 
     args = parser.parse_args()
 
@@ -1310,6 +1314,11 @@ Examples:
     if args.config:
         with open(args.config, 'r', encoding='utf-8') as f:
             config = json.load(f)
+        # Override with CLI args if provided
+        if args.non_interactive:
+            config['interactive'] = False
+        if args.profile:
+            config['github_profile'] = args.profile
     elif args.repo:
         config = {
             'repo': args.repo,
@@ -1319,7 +1328,9 @@ Examples:
             'include_issues': not args.no_issues,
             'include_changelog': not args.no_changelog,
             'include_releases': not args.no_releases,
-            'max_issues': args.max_issues
+            'max_issues': args.max_issues,
+            'interactive': not args.non_interactive,
+            'github_profile': args.profile
         }
     else:
         parser.error('Either --repo or --config is required')

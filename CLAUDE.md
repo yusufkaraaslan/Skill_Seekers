@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.6.0
+**Current Version:** v2.7.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 
@@ -155,6 +155,19 @@ python -m twine upload dist/*
 ### Testing CLI Commands
 
 ```bash
+# Test configuration wizard (NEW: v2.7.0)
+skill-seekers config --show                          # Show current configuration
+skill-seekers config --github                        # GitHub token setup
+skill-seekers config --test                          # Test connections
+
+# Test resume functionality (NEW: v2.7.0)
+skill-seekers resume --list                          # List resumable jobs
+skill-seekers resume --clean                         # Clean up old jobs
+
+# Test GitHub scraping with profiles (NEW: v2.7.0)
+skill-seekers github --repo facebook/react --profile personal    # Use specific profile
+skill-seekers github --repo owner/repo --non-interactive         # CI/CD mode
+
 # Test scraping (dry run)
 skill-seekers scrape --config configs/react.json --dry-run
 
@@ -383,6 +396,8 @@ export BITBUCKET_TOKEN=...
 skill-seekers = "skill_seekers.cli.main:main"
 
 # Individual tool entry points
+skill-seekers-config = "skill_seekers.cli.config_command:main"                # NEW: v2.7.0 Configuration wizard
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"                # NEW: v2.7.0 Resume interrupted jobs
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
@@ -615,6 +630,44 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 **MCP Server** (`src/skill_seekers/mcp/`):
 - `server.py` - FastMCP-based server
 - `tools/` - 18 MCP tool implementations
+
+**Configuration & Rate Limit Management** (NEW: v2.7.0 - `src/skill_seekers/cli/`):
+- `config_manager.py` - Multi-token configuration system (~490 lines)
+  - `ConfigManager` class - Singleton pattern for global config access
+  - `add_github_profile()` - Add GitHub profile with token and strategy
+  - `get_github_token()` - Smart fallback chain (CLI → Env → Config → Prompt)
+  - `get_next_profile()` - Profile switching for rate limit handling
+  - `save_progress()` / `load_progress()` - Job resumption support
+  - `cleanup_old_progress()` - Auto-cleanup of old jobs (7 days default)
+- `config_command.py` - Interactive configuration wizard (~400 lines)
+  - `main_menu()` - 7-option main menu with navigation
+  - `github_token_menu()` - GitHub profile management
+  - `add_github_profile()` - Guided token setup with browser integration
+  - `api_keys_menu()` - API key configuration for Claude/Gemini/OpenAI
+  - `test_connections()` - Connection testing for tokens and API keys
+- `rate_limit_handler.py` - Smart rate limit detection and handling (~450 lines)
+  - `RateLimitHandler` class - Strategy pattern for rate limit handling
+  - `check_upfront()` - Upfront rate limit check before starting
+  - `check_response()` - Real-time detection from API responses
+  - `handle_rate_limit()` - Execute strategy (prompt/wait/switch/fail)
+  - `try_switch_profile()` - Automatic profile switching
+  - `wait_for_reset()` - Countdown timer with live progress
+  - `show_countdown_timer()` - Live terminal countdown display
+- `resume_command.py` - Resume interrupted scraping jobs (~150 lines)
+  - `list_resumable_jobs()` - Display all jobs with progress details
+  - `resume_job()` - Resume from saved checkpoint
+  - `clean_old_jobs()` - Cleanup old progress files
+
+**GitHub Integration** (Modified for v2.7.0 - `src/skill_seekers/cli/`):
+- `github_fetcher.py` - Integrated rate limit handler
+  - Constructor now accepts `interactive` and `profile_name` parameters
+  - `fetch()` - Added upfront rate limit check
+  - All API calls check responses for rate limits
+  - Raises `RateLimitError` when rate limit cannot be handled
+- `github_scraper.py` - Added CLI flags
+  - `--non-interactive` flag for CI/CD mode (fail fast)
+  - `--profile` flag to select GitHub profile from config
+  - Config supports `interactive` and `github_profile` keys
 
 ## 🎯 Project-Specific Best Practices
 

@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.6.0)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
@@ -157,6 +157,68 @@ print(f"Common issues: {len(result.github_insights['common_problems'])}")
 ```
 
 **See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+
+### 🔐 Smart Rate Limit Management & Configuration (**NEW - v2.7.0**)
+- ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
+  - Secure config storage at `~/.config/skill-seekers/config.json` (600 permissions)
+  - Per-profile rate limit strategies: `prompt`, `wait`, `switch`, `fail`
+  - Configurable timeout per profile (default: 30 min, prevents indefinite waits)
+  - Smart fallback chain: CLI arg → Env var → Config file → Prompt
+  - API key management for Claude, Gemini, OpenAI
+- ✅ **Interactive Configuration Wizard** - Beautiful terminal UI for easy setup
+  - Browser integration for token creation (auto-opens GitHub, etc.)
+  - Token validation and connection testing
+  - Visual status display with color coding
+- ✅ **Intelligent Rate Limit Handler** - No more indefinite waits!
+  - Upfront warning about rate limits (60/hour vs 5000/hour)
+  - Real-time detection from GitHub API responses
+  - Live countdown timers with progress
+  - Automatic profile switching when rate limited
+  - Four strategies: prompt (ask), wait (countdown), switch (try another), fail (abort)
+- ✅ **Resume Capability** - Continue interrupted jobs
+  - Auto-save progress at configurable intervals (default: 60 sec)
+  - List all resumable jobs with progress details
+  - Auto-cleanup of old jobs (default: 7 days)
+- ✅ **CI/CD Support** - Non-interactive mode for automation
+  - `--non-interactive` flag fails fast without prompts
+  - `--profile` flag to select specific GitHub account
+  - Clear error messages for pipeline logs
+  - Exit codes for automation integration
+
+**Quick Setup:**
+```bash
+# One-time configuration (5 minutes)
+skill-seekers config --github
+
+# Add multiple GitHub profiles
+skill-seekers config
+# → Select "1. GitHub Token Setup"
+# → Add profiles for personal, work, OSS accounts
+
+# Use specific profile for private repos
+skill-seekers github --repo mycompany/private-repo --profile work
+
+# CI/CD mode (fail fast, no prompts)
+skill-seekers github --repo owner/repo --non-interactive
+
+# View current configuration
+skill-seekers config --show
+
+# Test connections
+skill-seekers config --test
+
+# Resume interrupted job
+skill-seekers resume --list
+skill-seekers resume github_react_20260117_143022
+```
+
+**Rate Limit Strategies Explained:**
+- **prompt** (default) - Ask what to do when rate limited (wait, switch, setup token, cancel)
+- **wait** - Automatically wait with countdown timer (respects timeout)
+- **switch** - Automatically try next available profile (for multi-account setups)
+- **fail** - Fail immediately with clear error (perfect for CI/CD)
+
+**See complete documentation**: [Configuration Guide](docs/guides/CONFIGURATION.md) (coming soon)
 
 ### 🔐 Private Config Repositories (**NEW - v2.2.0**)
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
