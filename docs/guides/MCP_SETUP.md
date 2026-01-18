@@ -126,7 +126,7 @@ python3 -c "import mcp; print(mcp.__version__)"
   "mcpServers": {
     "skill-seeker": {
       "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
     }
   }
 }
@@ -148,12 +148,12 @@ New config (v2.4.0+):
 {
   "type": "stdio",
   "command": "python3",
-  "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+  "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
 }
 
 # For HTTP transport (Cursor, Windsurf, IntelliJ):
 # Run server separately:
-# python3 -m skill_seekers.mcp.server_fastmcp_fastmcp --transport http --port 3000
+# python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 3000
 #
 # Then configure agent with URL:
 {
@@ -167,10 +167,10 @@ The HTTP server now runs separately and agents connect via URL instead of spawni
 
 ```bash
 # Start HTTP server on port 3000
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 
 # Or use custom host/port
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --host 0.0.0.0 --port 8080
+python -m skill_seekers.mcp.server_fastmcp --http --host 0.0.0.0 --port 8080
 ```
 
 ### 4. Test Configuration
@@ -262,7 +262,7 @@ For **stdio agents** (Claude Code, VS Code + Cline):
 - Configuration is automatic
 
 For **HTTP agents** (Cursor, Windsurf, IntelliJ):
-- Start HTTP server: `python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000`
+- Start HTTP server: `python -m skill_seekers.mcp.server_fastmcp --http --port 3000`
 - Add server URL to agent settings (instructions provided by script)
 - Restart the agent
 
@@ -303,7 +303,7 @@ Successfully installed mcp-1.25.0 fastmcp-... uvicorn-... requests-2.31.0 beauti
 
 ```bash
 # Test stdio mode
-timeout 3 python3 -m skill_seekers.mcp.server_fastmcp_fastmcp || echo "Server OK (timeout expected)"
+timeout 3 python3 -m skill_seekers.mcp.server_fastmcp || echo "Server OK (timeout expected)"
 
 # Test HTTP mode
 python3 -c "import uvicorn; print('HTTP support available')"
@@ -380,7 +380,7 @@ pwd
 
 ```bash
 # Terminal 1 - Run HTTP server
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 
 # Should show:
 # INFO: Started server process
@@ -423,7 +423,7 @@ curl http://localhost:3000/health
 
 ```bash
 # Terminal 1 - Run HTTP server
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3001
+python -m skill_seekers.mcp.server_fastmcp --http --port 3001
 
 # Use different port if Cursor is using 3000
 ```
@@ -458,7 +458,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3001
   "mcpServers": {
     "skill-seeker": {
       "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
     }
   }
 }
@@ -484,7 +484,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3001
 
 ```bash
 # Terminal 1 - Run HTTP server
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3002
+python -m skill_seekers.mcp.server_fastmcp --http --port 3002
 ```
 
 **Step 2: Configure IntelliJ**
@@ -531,7 +531,7 @@ Edit `mcp.xml`:
 ```json
 {
   "command": "python",
-  "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+  "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
 }
 ```
 
@@ -562,16 +562,16 @@ No additional steps needed - agent handles everything.
 
 ```bash
 # Default (port 8000)
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http
+python -m skill_seekers.mcp.server_fastmcp --http
 
 # Custom port
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 
 # Custom host and port
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --host 0.0.0.0 --port 8080
+python -m skill_seekers.mcp.server_fastmcp --http --host 0.0.0.0 --port 8080
 
 # Debug mode
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
+python -m skill_seekers.mcp.server_fastmcp --http --log-level DEBUG
 ```
 
 **Step 2: Configure Agent**
@@ -831,13 +831,13 @@ Agent: ✅ Uploaded to Google Gemini
 
    **For stdio:**
    ```bash
-   timeout 3 python3 -m skill_seekers.mcp.server_fastmcp_fastmcp
+   timeout 3 python3 -m skill_seekers.mcp.server_fastmcp
    # Should exit cleanly or timeout (both OK)
    ```
 
    **For HTTP:**
    ```bash
-   python3 -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8000
+   python3 -m skill_seekers.mcp.server_fastmcp --http --port 8000
    # Should show: Uvicorn running on http://127.0.0.1:8000
    ```
 
@@ -893,7 +893,7 @@ Common configuration problems:
       "command": "python3",
       "args": [
         "-m",
-        "skill_seekers.mcp.server_fastmcp_fastmcp"
+        "skill_seekers.mcp.server_fastmcp"
       ],
       "cwd": "/full/path/to/Skill_Seekers",
       "env": {}
@@ -910,7 +910,7 @@ python3 -c "from skill_seekers.mcp import server_fastmcp; print('✓ Module OK')
 
 # Test server startup
 cd /path/to/Skill_Seekers
-python3 -m skill_seekers.mcp.server_fastmcp_fastmcp
+python3 -m skill_seekers.mcp.server_fastmcp
 # Should start without errors (Ctrl+C to stop)
 ```
 
@@ -954,7 +954,7 @@ python3 -c "import mcp; print(mcp.__version__)"
 ### Issue: HTTP Server Not Starting
 
 **Symptoms:**
-- `python -m skill_seekers.mcp.server_fastmcp_fastmcp --http` fails
+- `python -m skill_seekers.mcp.server_fastmcp --http` fails
 - "ModuleNotFoundError: No module named 'uvicorn'"
 
 **Solution:**
@@ -989,7 +989,7 @@ lsof -i :8000
 kill -9 <PID>
 
 # Or use different port
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
+python -m skill_seekers.mcp.server_fastmcp --http --port 8001
 ```
 
 ---
@@ -1023,7 +1023,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
 
 4. **Check HTTP server logs** (if using HTTP transport):
    ```bash
-   python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
+   python -m skill_seekers.mcp.server_fastmcp --http --log-level DEBUG
    ```
 
 ---
@@ -1054,7 +1054,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
 3. **Test with different host:**
    ```bash
    # Try 0.0.0.0 instead of 127.0.0.1
-   python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --host 0.0.0.0
+   python -m skill_seekers.mcp.server_fastmcp --http --host 0.0.0.0
    ```
 
 4. **Check agent config URL:**
@@ -1086,7 +1086,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
 
 4. **Enable debug logging:**
    ```bash
-   python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
+   python -m skill_seekers.mcp.server_fastmcp --http --log-level DEBUG
    ```
 
 ---
@@ -1102,7 +1102,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
   "mcpServers": {
     "skill-seeker": {
       "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "env": {
         "ANTHROPIC_API_KEY": "sk-ant-...",
         "GITHUB_TOKEN": "ghp_...",
@@ -1120,7 +1120,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8001
 # Set environment variables before starting
 export ANTHROPIC_API_KEY=sk-ant-...
 export GITHUB_TOKEN=ghp_...
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http
+python -m skill_seekers.mcp.server_fastmcp --http
 ```
 
 ---
@@ -1141,7 +1141,7 @@ which python3.11
   "mcpServers": {
     "skill-seeker": {
       "command": "/usr/local/bin/python3.11",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
     }
   }
 }
@@ -1173,7 +1173,7 @@ which python3
   "mcpServers": {
     "skill-seeker": {
       "command": "/path/to/Skill_Seekers/venv/bin/python3",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
     }
   }
 }
@@ -1196,7 +1196,7 @@ After=network.target
 Type=simple
 User=yourusername
 WorkingDirectory=/path/to/Skill_Seekers
-ExecStart=/usr/bin/python3 -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8000
+ExecStart=/usr/bin/python3 -m skill_seekers.mcp.server_fastmcp --http --port 8000
 Restart=on-failure
 Environment="ANTHROPIC_API_KEY=sk-ant-..."
 
@@ -1226,7 +1226,7 @@ Create `~/Library/LaunchAgents/com.skillseeker.mcp.plist`:
     <array>
         <string>/usr/local/bin/python3</string>
         <string>-m</string>
-        <string>skill_seekers.mcp.server_fastmcp_fastmcp</string>
+        <string>skill_seekers.mcp.server_fastmcp</string>
         <string>--http</string>
         <string>--port</string>
         <string>8000</string>
@@ -1266,7 +1266,7 @@ Enable verbose logging for troubleshooting:
       "args": [
         "-u",
         "-m",
-        "skill_seekers.mcp.server_fastmcp_fastmcp"
+        "skill_seekers.mcp.server_fastmcp"
       ],
       "env": {
         "DEBUG": "1"
@@ -1278,7 +1278,7 @@ Enable verbose logging for troubleshooting:
 
 **HTTP transport:**
 ```bash
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
+python -m skill_seekers.mcp.server_fastmcp --http --log-level DEBUG
 ```
 
 ---
@@ -1293,7 +1293,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
   "mcpServers": {
     "skill-seeker": {
       "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
     }
   }
 }
@@ -1303,7 +1303,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --log-level DEBUG
 
 Start server:
 ```bash
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 ```
 
 Config:
@@ -1327,7 +1327,7 @@ Config:
   "mcpServers": {
     "skill-seeker": {
       "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp_fastmcp"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "env": {
         "ANTHROPIC_API_KEY": "sk-ant-your-key-here",
         "GITHUB_TOKEN": "ghp_your-token-here"
@@ -1341,7 +1341,7 @@ Config:
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 export GITHUB_TOKEN=ghp_your-token-here
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 ```
 
 ---
@@ -1350,7 +1350,7 @@ python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
 
 **Start one HTTP server:**
 ```bash
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 8000
+python -m skill_seekers.mcp.server_fastmcp --http --port 8000
 ```
 
 **Configure all HTTP agents to use it:**
@@ -1412,7 +1412,7 @@ cd Skill_Seekers
 # - Configures automatically
 
 # 4. For HTTP agents, start server
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 
 # 5. Restart your AI coding agent
 
@@ -1497,11 +1497,11 @@ TRANSPORT MODES:
 - HTTP: Cursor, Windsurf, IntelliJ (requires server)
 
 START HTTP SERVER:
-python -m skill_seekers.mcp.server_fastmcp_fastmcp --http --port 3000
+python -m skill_seekers.mcp.server_fastmcp --http --port 3000
 
 TROUBLESHOOTING:
 - Check: cat ~/.config/claude-code/mcp.json
-- Test stdio: timeout 3 python -m skill_seekers.mcp.server_fastmcp_fastmcp
+- Test stdio: timeout 3 python -m skill_seekers.mcp.server_fastmcp
 - Test HTTP: curl http://localhost:8000/health
 - Logs (Claude Code): ~/Library/Logs/Claude/
 - Kill servers: pkill -f skill_seekers
