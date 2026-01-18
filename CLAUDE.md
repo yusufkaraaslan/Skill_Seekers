@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Current Version:** v2.7.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
+**Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
 
 ## 🏗️ Architecture
 
@@ -680,6 +681,9 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 7. **Run tests before commits** - Per user instructions, never skip tests
 
 ## 📖 Additional Documentation
+
+**Official Website:**
+- [SkillSeekersWeb.com](https://skillseekersweb.com/) - Browse 24+ preset configs, share configs, complete documentation
 
 **For Users:**
 - [README.md](README.md) - Complete user documentation

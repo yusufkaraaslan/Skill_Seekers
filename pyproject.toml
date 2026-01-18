@@ -99,10 +99,12 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yusufkaraaslan/Skill_Seekers"
+Homepage = "https://skillseekersweb.com/"
+Website = "https://skillseekersweb.com/"
 Repository = "https://github.com/yusufkaraaslan/Skill_Seekers"
 "Bug Tracker" = "https://github.com/yusufkaraaslan/Skill_Seekers/issues"
-Documentation = "https://github.com/yusufkaraaslan/Skill_Seekers#readme"
+Documentation = "https://skillseekersweb.com/"
+"Config Browser" = "https://skillseekersweb.com/"
 
 [project.scripts]
 # Main unified CLI
