@@ -21,9 +21,10 @@ This MCP server allows Claude Code to use Skill Seeker's tools directly through 
 
 ```bash
 # From repository root
-pip3 install -r mcp/requirements.txt
-pip3 install requests beautifulsoup4
+pip3 install -e ".[mcp]"
 ```
+
+**Note:** The `[mcp]` extra installs FastMCP and all required dependencies.
 
 ### 2. Quick Setup (Automated)
 
@@ -40,17 +41,20 @@ pip3 install requests beautifulsoup4
 
 ### 3. Manual Setup
 
-Add to `~/.config/claude-code/mcp.json`:
+Add to `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
     "skill-seeker": {
+      "type": "stdio",
       "command": "python3",
       "args": [
-        "/path/to/Skill_Seekers/mcp/server.py"
+        "-m",
+        "skill_seekers.mcp.server_fastmcp"
       ],
-      "cwd": "/path/to/Skill_Seekers"
+      "cwd": "/path/to/Skill_Seekers",
+      "env": {}
     }
   }
 }

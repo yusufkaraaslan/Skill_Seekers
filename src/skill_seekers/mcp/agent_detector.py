@@ -27,9 +27,9 @@ class AgentDetector:
             "name": "Claude Code",
             "transport": "stdio",
             "config_paths": {
-                "Linux": "~/.config/claude-code/mcp.json",
-                "Darwin": "~/Library/Application Support/Claude/mcp.json",
-                "Windows": "~\\AppData\\Roaming\\Claude\\mcp.json",
+                "Linux": "~/.claude.json",
+                "Darwin": "~/.claude.json",
+                "Windows": "~/.claude.json",
             },
         },
         "cursor": {

@@ -1143,7 +1143,7 @@ Skill Seekers MCP server supports 2 transport modes:
   "mcpServers": {
     "skill-seeker": {
       "command": "python3",
-      "args": ["-m", "skill_seekers.mcp.server"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "cwd": "/path/to/Skill_Seekers"
     }
   }
@@ -1175,7 +1175,7 @@ Skill Seekers MCP server supports 2 transport modes:
 ```bash
 # Start server manually (runs in background)
 cd /path/to/Skill_Seekers
-python3 -m skill_seekers.mcp.server --transport http --port 8765
+python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 # Or use auto-start script
 ./scripts/start_mcp_server.sh
@@ -1326,7 +1326,7 @@ All agents have access to these 18 tools:
 lsof -i :8765
 
 # Use different port
-python3 -m skill_seekers.mcp.server --transport http --port 9000
+python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 9000
 
 # Update agent config with new port
 ```
@@ -1348,7 +1348,7 @@ tail -f logs/mcp_server.log
 ```bash
 # Restart agent completely (quit and relaunch)
 # For HTTP transport, ensure server is running:
-ps aux | grep "skill_seekers.mcp.server"
+ps aux | grep "skill_seekers.mcp.server_fastmcp"
 
 # Test server directly
 curl http://localhost:8765/health
