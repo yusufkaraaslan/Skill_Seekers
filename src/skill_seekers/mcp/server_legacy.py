@@ -1479,8 +1479,16 @@ Next steps:
                 detail_response.raise_for_status()
                 config_info = detail_response.json()
 
-                # Download the actual config file
-                download_url = f"{API_BASE_URL}/api/download/{config_name}.json"
+                # Download the actual config file using the download_url from API response
+                download_url = config_info.get("download_url")
+                if not download_url:
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"❌ Config '{config_name}' has no download_url. Contact support.",
+                        )
+                    ]
+
                 download_response = await client.get(download_url)
                 download_response.raise_for_status()
                 config_data = download_response.json()
