@@ -260,7 +260,7 @@ Test MCP server and all 18 MCP tools.
 @pytest.mark.asyncio
 async def test_mcp_list_configs():
     """Test list_configs MCP tool."""
-    from skill_seekers.mcp.server import app
+    from skill_seekers.mcp.server_fastmcp import app
 
     # Call list_configs tool
     result = await app.call_tool('list_configs', {})
