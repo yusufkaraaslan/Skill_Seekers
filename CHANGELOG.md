@@ -13,37 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Code Quality Improvements** - Fixed all 21 ruff linting errors across codebase
-  - SIM102: Combined nested if statements using `and` operator (7 fixes)
-  - SIM117: Combined multiple `with` statements into single multi-context `with` (9 fixes)
-  - B904: Added `from e` to exception chaining for proper error context (1 fix)
-  - SIM113: Removed unused enumerate counter variable (1 fix)
-  - B007: Changed unused loop variable to `_` (1 fix)
-  - ARG002: Removed unused method argument in test fixture (1 fix)
-  - Files affected: config_extractor.py, config_validator.py, doc_scraper.py, pattern_recognizer.py (3), test_example_extractor.py (3), unified_skill_builder.py, pdf_scraper.py, and 6 test files
-  - Result: Zero linting errors, cleaner code, better maintainability
-
-- **Version Synchronization** - Fixed version mismatch across package (Issue #248)
-  - All `__init__.py` files now correctly show version 2.7.0 (was 2.5.2 in 4 files)
-  - Files updated: `src/skill_seekers/__init__.py`, `src/skill_seekers/cli/__init__.py`, `src/skill_seekers/mcp/__init__.py`, `src/skill_seekers/mcp/tools/__init__.py`
-  - Ensures `skill-seekers --version` shows accurate version number
-
-- **Case-Insensitive Regex in Install Workflow** - Fixed install workflow failures (Issue #236)
-  - Made regex patterns case-insensitive using `(?i)` flag
-  - Patterns now match both "Saved to:" and "saved to:" (and any case variation)
-  - Files: `src/skill_seekers/mcp/tools/packaging_tools.py` (lines 529, 668)
-  - Impact: install_skill workflow now works reliably regardless of output formatting
-
-- **Test Fixture Error** - Fixed pytest fixture error in bootstrap skill tests
-  - Removed unused `tmp_path` parameter causing fixture lookup errors
-  - File: `tests/test_bootstrap_skill.py:54`
-  - Result: All CI test runs now pass without fixture errors
-
 ### Removed
 
 ---
 
-## [2.7.0] - 2026-01-17
+## [2.7.0] - 2026-01-18
 
 ### 🔐 Smart Rate Limit Management & Multi-Token Configuration
 
@@ -197,6 +171,28 @@ This **minor feature release** introduces intelligent GitHub rate limit handling
     - Full suite: `pytest -m "e2e"` (~5-10 min)
   - **Test utilities**: Fixtures for project root, bootstrap runner, output directory
 
+- **📚 Comprehensive Documentation Overhaul** - Complete v2.7.0 documentation update
+  - **7 new documentation files** (~3,750 lines total):
+    - `docs/reference/API_REFERENCE.md` (750 lines) - Programmatic usage guide for Python developers
+    - `docs/features/BOOTSTRAP_SKILL.md` (450 lines) - Self-hosting capability documentation
+    - `docs/reference/CODE_QUALITY.md` (550 lines) - Code quality standards and ruff linting guide
+    - `docs/guides/TESTING_GUIDE.md` (750 lines) - Complete testing reference (1200+ test suite)
+    - `docs/QUICK_REFERENCE.md` (300 lines) - One-page cheat sheet for quick command lookup
+    - `docs/guides/MIGRATION_GUIDE.md` (400 lines) - Version upgrade guides (v1.0.0 → v2.7.0)
+    - `docs/FAQ.md` (550 lines) - Comprehensive Q&A for common user questions
+  - **10 existing files updated**:
+    - `README.md` - Updated test count badge (700+ → 1200+ tests), v2.7.0 callout
+    - `ROADMAP.md` - Added v2.7.0 completion section with task statuses
+    - `CONTRIBUTING.md` - Added link to CODE_QUALITY.md reference
+    - `docs/README.md` - Quick links by use case, recent updates section
+    - `docs/guides/MCP_SETUP.md` - Fixed server_fastmcp references (PR #252)
+    - `docs/QUICK_REFERENCE.md` - Updated MCP server reference (server.py → server_fastmcp.py)
+    - `CLAUDE_INTEGRATION.md` - Updated version references
+    - 3 other documentation files with v2.7.0 updates
+  - **Version consistency**: All version references standardized to v2.7.0
+  - **Test counts**: Standardized to 1200+ tests (was inconsistent 700+ in some docs)
+  - **MCP tool counts**: Updated to 18 tools (from 17)
+
 ### Changed
 
 - **GitHub Fetcher** - Integrated rate limit handler
@@ -235,6 +231,41 @@ This **minor feature release** introduces intelligent GitHub rate limit handling
   - Maintains backward compatibility for existing MCP users
 
 ### Fixed
+
+- **Code Quality Improvements** - Fixed all 21 ruff linting errors across codebase
+  - SIM102: Combined nested if statements using `and` operator (7 fixes)
+  - SIM117: Combined multiple `with` statements into single multi-context `with` (9 fixes)
+  - B904: Added `from e` to exception chaining for proper error context (1 fix)
+  - SIM113: Removed unused enumerate counter variable (1 fix)
+  - B007: Changed unused loop variable to `_` (1 fix)
+  - ARG002: Removed unused method argument in test fixture (1 fix)
+  - Files affected: config_extractor.py, config_validator.py, doc_scraper.py, pattern_recognizer.py (3), test_example_extractor.py (3), unified_skill_builder.py, pdf_scraper.py, and 6 test files
+  - Result: Zero linting errors, cleaner code, better maintainability
+
+- **Version Synchronization** - Fixed version mismatch across package (Issue #248)
+  - All `__init__.py` files now correctly show version 2.7.0 (was 2.5.2 in 4 files)
+  - Files updated: `src/skill_seekers/__init__.py`, `src/skill_seekers/cli/__init__.py`, `src/skill_seekers/mcp/__init__.py`, `src/skill_seekers/mcp/tools/__init__.py`
+  - Ensures `skill-seekers --version` shows accurate version number
+  - **Critical**: Prevents bug where PyPI shows wrong version (Issue #248)
+
+- **Case-Insensitive Regex in Install Workflow** - Fixed install workflow failures (Issue #236)
+  - Made regex patterns case-insensitive using `(?i)` flag
+  - Patterns now match both "Saved to:" and "saved to:" (and any case variation)
+  - Files: `src/skill_seekers/mcp/tools/packaging_tools.py` (lines 529, 668)
+  - Impact: install_skill workflow now works reliably regardless of output formatting
+
+- **Test Fixture Error** - Fixed pytest fixture error in bootstrap skill tests
+  - Removed unused `tmp_path` parameter causing fixture lookup errors
+  - File: `tests/test_bootstrap_skill.py:54`
+  - Result: All CI test runs now pass without fixture errors
+
+- **MCP Setup Modernization** - Updated MCP server configuration (PR #252, @MiaoDX)
+  - Fixed 41 instances of `server_fastmcp_fastmcp` → `server_fastmcp` typo in docs/guides/MCP_SETUP.md
+  - Updated all 12 files to use `skill_seekers.mcp.server_fastmcp` module
+  - Enhanced setup_mcp.sh with automatic venv detection (.venv, venv, $VIRTUAL_ENV)
+  - Updated tests to accept `-e ".[mcp]"` format and module references
+  - Files: .claude/mcp_config.example.json, CLAUDE.md, README.md, docs/guides/*.md, setup_mcp.sh, tests/test_setup_scripts.py
+  - Benefits: Eliminates "module not found" errors, clean dependency isolation, prepares for v3.0.0
 
 - **Rate limit indefinite wait** - No more infinite waiting
   - Configurable timeout per profile (default: 30 minutes)
