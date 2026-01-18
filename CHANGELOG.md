@@ -17,6 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.1] - 2026-01-18
+
+### 🚨 Critical Bug Fix - Config Download 404 Errors
+
+This **hotfix release** resolves a critical bug causing 404 errors when downloading configs from the API.
+
+### Fixed
+
+- **Critical: Config download 404 errors** - Fixed bug where code was constructing download URLs manually instead of using the `download_url` field from the API response
+  - **Root Cause**: Code was building `f"{API_BASE_URL}/api/download/{config_name}.json"` which failed when actual URLs differed (CDN URLs, version-specific paths)
+  - **Solution**: Changed to use `config_info.get("download_url")` from API response in both MCP server implementations
+  - **Files Fixed**:
+    - `src/skill_seekers/mcp/tools/source_tools.py` (FastMCP server)
+    - `src/skill_seekers/mcp/server_legacy.py` (Legacy server)
+  - **Impact**: Fixes all config downloads from skillseekersweb.com API and private Git repositories
+  - **Reported By**: User testing `skill-seekers install --config godot --unlimited`
+  - **Testing**: All 15 source tools tests pass, all 8 fetch_config tests pass
+
+---
+
 ## [2.7.0] - 2026-01-18
 
 ### 🔐 Smart Rate Limit Management & Multi-Token Configuration
