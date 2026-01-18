@@ -64,7 +64,9 @@ class TestSetupMCPScript:
         # v2.0.0 uses '-e .' (editable install) instead of requirements files
         # v2.7.0 PR #252 uses '-e ".[mcp]"' with MCP extra dependencies
         # The actual command is "$PIP_INSTALL_CMD -e ." or "$PIP_INSTALL_CMD -e ".[mcp]""
-        has_editable = " -e ." in script_content or " -e." in script_content or '-e ".' in script_content
+        has_editable = (
+            " -e ." in script_content or " -e." in script_content or '-e ".' in script_content
+        )
         assert has_editable, (
             "Should use '-e .' or '-e \".[mcp]\"' for editable install (modern packaging)"
         )
