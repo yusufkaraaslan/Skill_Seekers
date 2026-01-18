@@ -193,6 +193,21 @@ This **minor feature release** introduces intelligent GitHub rate limit handling
   - **Test counts**: Standardized to 1200+ tests (was inconsistent 700+ in some docs)
   - **MCP tool counts**: Updated to 18 tools (from 17)
 
+- **📦 Git Submodules for Configuration Management** - Improved config organization and API deployment
+  - **Configs as git submodule** at `api/configs_repo/` for cleaner repository
+  - **Production configs**: Added official production-ready configuration presets
+  - **Duplicate removal**: Cleaned up all duplicate configs from main repository
+  - **Test filtering**: Filtered out test-example configs from API endpoints
+  - **CI/CD integration**: GitHub Actions now initializes submodules automatically
+  - **API deployment**: Updated render.yaml to use git submodule for configs_repo
+  - **Benefits**: Cleaner main repo, better config versioning, production/test separation
+
+- **🔍 Config Discovery Enhancements** - Improved config listing
+  - **--all flag** for estimate command: `skill-seekers estimate --all`
+  - Lists all available preset configurations with descriptions
+  - Helps users discover supported frameworks before scraping
+  - Shows config names, frameworks, and documentation URLs
+
 ### Changed
 
 - **GitHub Fetcher** - Integrated rate limit handler
