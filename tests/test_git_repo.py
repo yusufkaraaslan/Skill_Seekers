@@ -4,11 +4,11 @@ Tests for GitConfigRepo class (git repository operations)
 """
 
 import json
-import pytest
-import shutil
 from pathlib import Path
-from unittest.mock import MagicMock, patch, Mock
-from git.exc import GitCommandError, InvalidGitRepositoryError
+from unittest.mock import MagicMock, patch
+
+import pytest
+from git.exc import GitCommandError
 
 from skill_seekers.mcp.git_repo import GitConfigRepo
 
@@ -129,14 +129,13 @@ class TestInjectToken:
 class TestCloneOrPull:
     """Test clone and pull operations."""
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo.clone_from')
+    @patch("skill_seekers.mcp.git_repo.git.Repo.clone_from")
     def test_clone_new_repo(self, mock_clone, git_repo):
         """Test cloning a new repository."""
         mock_clone.return_value = MagicMock()
 
         result = git_repo.clone_or_pull(
-            source_name="test-source",
-            git_url="https://github.com/org/repo.git"
+            source_name="test-source", git_url="https://github.com/org/repo.git"
         )
 
         assert result == git_repo.cache_dir / "test-source"
@@ -144,11 +143,11 @@ class TestCloneOrPull:
 
         # Verify shallow clone parameters
         call_kwargs = mock_clone.call_args[1]
-        assert call_kwargs['depth'] == 1
-        assert call_kwargs['single_branch'] is True
-        assert call_kwargs['branch'] == "main"
+        assert call_kwargs["depth"] == 1
+        assert call_kwargs["single_branch"] is True
+        assert call_kwargs["branch"] == "main"
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo')
+    @patch("skill_seekers.mcp.git_repo.git.Repo")
     def test_pull_existing_repo(self, mock_repo_class, git_repo, temp_cache_dir):
         """Test pulling updates to existing repository."""
         # Create fake existing repo
@@ -163,14 +162,13 @@ class TestCloneOrPull:
         mock_repo_class.return_value = mock_repo
 
         result = git_repo.clone_or_pull(
-            source_name="test-source",
-            git_url="https://github.com/org/repo.git"
+            source_name="test-source", git_url="https://github.com/org/repo.git"
         )
 
         assert result == repo_path
         mock_origin.pull.assert_called_once_with("main")
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo')
+    @patch("skill_seekers.mcp.git_repo.git.Repo")
     def test_pull_with_token_update(self, mock_repo_class, git_repo, temp_cache_dir):
         """Test pulling with token updates remote URL."""
         # Create fake existing repo
@@ -184,10 +182,10 @@ class TestCloneOrPull:
         mock_repo.remotes.origin = mock_origin
         mock_repo_class.return_value = mock_repo
 
-        result = git_repo.clone_or_pull(
+        _result = git_repo.clone_or_pull(
             source_name="test-source",
             git_url="https://github.com/org/repo.git",
-            token="ghp_token123"
+            token="ghp_token123",
         )
 
         # Verify URL was updated with token
@@ -195,7 +193,7 @@ class TestCloneOrPull:
         updated_url = mock_origin.set_url.call_args[0][0]
         assert "ghp_token123@github.com" in updated_url
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo.clone_from')
+    @patch("skill_seekers.mcp.git_repo.git.Repo.clone_from")
     def test_force_refresh_deletes_cache(self, mock_clone, git_repo, temp_cache_dir):
         """Test force refresh deletes existing cache."""
         # Create fake existing repo
@@ -207,64 +205,49 @@ class TestCloneOrPull:
         mock_clone.return_value = MagicMock()
 
         git_repo.clone_or_pull(
-            source_name="test-source",
-            git_url="https://github.com/org/repo.git",
-            force_refresh=True
+            source_name="test-source", git_url="https://github.com/org/repo.git", force_refresh=True
         )
 
         # Verify clone was called (not pull)
         mock_clone.assert_called_once()
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo.clone_from')
+    @patch("skill_seekers.mcp.git_repo.git.Repo.clone_from")
     def test_clone_with_custom_branch(self, mock_clone, git_repo):
         """Test cloning with custom branch."""
         mock_clone.return_value = MagicMock()
 
         git_repo.clone_or_pull(
-            source_name="test-source",
-            git_url="https://github.com/org/repo.git",
-            branch="develop"
+            source_name="test-source", git_url="https://github.com/org/repo.git", branch="develop"
         )
 
         call_kwargs = mock_clone.call_args[1]
-        assert call_kwargs['branch'] == "develop"
+        assert call_kwargs["branch"] == "develop"
 
     def test_clone_invalid_url_raises_error(self, git_repo):
         """Test cloning with invalid URL raises ValueError."""
         with pytest.raises(ValueError, match="Invalid git URL"):
-            git_repo.clone_or_pull(
-                source_name="test-source",
-                git_url="not-a-valid-url"
-            )
+            git_repo.clone_or_pull(source_name="test-source", git_url="not-a-valid-url")
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo.clone_from')
+    @patch("skill_seekers.mcp.git_repo.git.Repo.clone_from")
     def test_clone_auth_failure_error(self, mock_clone, git_repo):
         """Test authentication failure error handling."""
         mock_clone.side_effect = GitCommandError(
-            "clone",
-            128,
-            stderr="fatal: Authentication failed"
+            "clone", 128, stderr="fatal: Authentication failed"
         )
 
         with pytest.raises(GitCommandError, match="Authentication failed"):
             git_repo.clone_or_pull(
-                source_name="test-source",
-                git_url="https://github.com/org/repo.git"
+                source_name="test-source", git_url="https://github.com/org/repo.git"
             )
 
-    @patch('skill_seekers.mcp.git_repo.git.Repo.clone_from')
+    @patch("skill_seekers.mcp.git_repo.git.Repo.clone_from")
     def test_clone_not_found_error(self, mock_clone, git_repo):
         """Test repository not found error handling."""
-        mock_clone.side_effect = GitCommandError(
-            "clone",
-            128,
-            stderr="fatal: repository not found"
-        )
+        mock_clone.side_effect = GitCommandError("clone", 128, stderr="fatal: repository not found")
 
         with pytest.raises(GitCommandError, match="Repository not found"):
             git_repo.clone_or_pull(
-                source_name="test-source",
-                git_url="https://github.com/org/nonexistent.git"
+                source_name="test-source", git_url="https://github.com/org/nonexistent.git"
             )
 
 

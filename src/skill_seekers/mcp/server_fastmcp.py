@@ -46,20 +46,17 @@ All tool implementations are delegated to modular tool files in tools/ directory
   }
 """
 
-import sys
 import argparse
 import logging
-from pathlib import Path
-from typing import Any
+import sys
 
 # Import FastMCP
 MCP_AVAILABLE = False
 FastMCP = None
-TextContent = None
 
 try:
     from mcp.server import FastMCP
-    from mcp.types import TextContent
+
     MCP_AVAILABLE = True
 except ImportError as e:
     # Only exit if running as main module, not when importing for tests
@@ -72,63 +69,64 @@ except ImportError as e:
 # Import all tool implementations
 try:
     from .tools import (
-        # Config tools
-        generate_config_impl,
-        list_configs_impl,
-        validate_config_impl,
+        add_config_source_impl,
+        build_how_to_guides_impl,
+        detect_patterns_impl,
+        enhance_skill_impl,
         # Scraping tools
         estimate_pages_impl,
+        extract_config_patterns_impl,
+        extract_test_examples_impl,
+        # Source tools
+        fetch_config_impl,
+        # Config tools
+        generate_config_impl,
+        generate_router_impl,
+        install_skill_impl,
+        list_config_sources_impl,
+        list_configs_impl,
+        # Packaging tools
+        package_skill_impl,
+        remove_config_source_impl,
+        scrape_codebase_impl,
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
-        scrape_codebase_impl,
-        detect_patterns_impl,
-        extract_test_examples_impl,
-        build_how_to_guides_impl,
-        extract_config_patterns_impl,
-        # Packaging tools
-        package_skill_impl,
-        upload_skill_impl,
-        enhance_skill_impl,
-        install_skill_impl,
         # Splitting tools
         split_config_impl,
-        generate_router_impl,
-        # Source tools
-        fetch_config_impl,
         submit_config_impl,
-        add_config_source_impl,
-        list_config_sources_impl,
-        remove_config_source_impl,
+        upload_skill_impl,
+        validate_config_impl,
     )
 except ImportError:
     # Fallback for direct script execution
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from tools import (
-        generate_config_impl,
-        list_configs_impl,
-        validate_config_impl,
+        add_config_source_impl,
+        build_how_to_guides_impl,
+        detect_patterns_impl,
+        enhance_skill_impl,
         estimate_pages_impl,
+        extract_config_patterns_impl,
+        extract_test_examples_impl,
+        fetch_config_impl,
+        generate_config_impl,
+        generate_router_impl,
+        install_skill_impl,
+        list_config_sources_impl,
+        list_configs_impl,
+        package_skill_impl,
+        remove_config_source_impl,
+        scrape_codebase_impl,
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
-        scrape_codebase_impl,
-        detect_patterns_impl,
-        extract_test_examples_impl,
-        build_how_to_guides_impl,
-        extract_config_patterns_impl,
-        package_skill_impl,
-        upload_skill_impl,
-        enhance_skill_impl,
-        install_skill_impl,
         split_config_impl,
-        generate_router_impl,
-        fetch_config_impl,
         submit_config_impl,
-        add_config_source_impl,
-        list_config_sources_impl,
-        remove_config_source_impl,
+        upload_skill_impl,
+        validate_config_impl,
     )
 
 # Initialize FastMCP server
@@ -139,6 +137,7 @@ if MCP_AVAILABLE and FastMCP is not None:
         instructions="Skill Seeker MCP Server - Generate Claude AI skills from documentation",
     )
 
+
 # Helper decorator for tests (when MCP is not available)
 def safe_tool_decorator(*args, **kwargs):
     """Decorator that works when mcp is None (for testing)"""
@@ -148,6 +147,7 @@ def safe_tool_decorator(*args, **kwargs):
         # Return a pass-through decorator for testing
         def wrapper(func):
             return func
+
         return wrapper
 
 
@@ -196,9 +196,7 @@ async def generate_config(
     return str(result)
 
 
-@safe_tool_decorator(
-    description="List all available preset configurations."
-)
+@safe_tool_decorator(description="List all available preset configurations.")
 async def list_configs() -> str:
     """
     List all available preset configurations.
@@ -212,9 +210,7 @@ async def list_configs() -> str:
     return str(result)
 
 
-@safe_tool_decorator(
-    description="Validate a config file for errors."
-)
+@safe_tool_decorator(description="Validate a config file for errors.")
 async def validate_config(config_path: str) -> str:
     """
     Validate a config file for errors.
@@ -1160,7 +1156,7 @@ async def run_http_server(host: str, port: int):
         from starlette.responses import JSONResponse
         from starlette.routing import Route
 
-        async def health_check(request):
+        async def health_check(_request):
             """Health check endpoint."""
             return JSONResponse(
                 {
@@ -1179,20 +1175,20 @@ async def run_http_server(host: str, port: int):
         # Add route before the catch-all SSE route
         app.routes.insert(0, Route("/health", health_check, methods=["GET"]))
 
-        logging.info(f"🚀 Starting Skill Seeker MCP Server (HTTP mode)")
+        logging.info("🚀 Starting Skill Seeker MCP Server (HTTP mode)")
         logging.info(f"📡 Server URL: http://{host}:{port}")
         logging.info(f"🔗 SSE Endpoint: http://{host}:{port}/sse")
         logging.info(f"💚 Health Check: http://{host}:{port}/health")
         logging.info(f"📝 Messages: http://{host}:{port}/messages/")
         logging.info("")
         logging.info("Claude Desktop Configuration (HTTP):")
-        logging.info('{')
+        logging.info("{")
         logging.info('  "mcpServers": {')
         logging.info('    "skill-seeker": {')
         logging.info(f'      "url": "http://{host}:{port}/sse"')
-        logging.info('    }')
-        logging.info('  }')
-        logging.info('}')
+        logging.info("    }")
+        logging.info("  }")
+        logging.info("}")
         logging.info("")
         logging.info("Press Ctrl+C to stop the server")
 

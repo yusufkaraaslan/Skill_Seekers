@@ -1,0 +1,3 @@
+[submodule "api/configs_repo"]
+	path = api/configs_repo
+	url = https://github.com/yusufkaraaslan/skill-seekers-configs.git

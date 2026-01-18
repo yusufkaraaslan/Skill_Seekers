@@ -12,17 +12,17 @@ Phase 4 enhancements:
 - GitHub issue links for context
 """
 
+import argparse
 import json
 import sys
-import argparse
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Any, Optional
 
 # Import three-stream data classes (Phase 1)
 try:
-    from .github_fetcher import ThreeStreamData, DocsStream, InsightsStream
-    from .merge_sources import categorize_issues_by_topic
+    from .github_fetcher import DocsStream, InsightsStream, ThreeStreamData
     from .markdown_cleaner import MarkdownCleaner
+    from .merge_sources import categorize_issues_by_topic
 except ImportError:
     # Fallback if github_fetcher not available
     ThreeStreamData = None
@@ -34,10 +34,12 @@ except ImportError:
 class RouterGenerator:
     """Generates router skills that direct to specialized sub-skills with GitHub integration"""
 
-    def __init__(self,
-                 config_paths: List[str],
-                 router_name: str = None,
-                 github_streams: Optional['ThreeStreamData'] = None):
+    def __init__(
+        self,
+        config_paths: list[str],
+        router_name: str = None,
+        github_streams: Optional["ThreeStreamData"] = None,
+    ):
         """
         Initialize router generator with optional GitHub streams.
 
@@ -60,21 +62,21 @@ class RouterGenerator:
         if github_streams and github_streams.insights_stream:
             self.github_metadata = github_streams.insights_stream.metadata
             self.github_issues = {
-                'common_problems': github_streams.insights_stream.common_problems,
-                'known_solutions': github_streams.insights_stream.known_solutions,
-                'top_labels': github_streams.insights_stream.top_labels
+                "common_problems": github_streams.insights_stream.common_problems,
+                "known_solutions": github_streams.insights_stream.known_solutions,
+                "top_labels": github_streams.insights_stream.top_labels,
             }
 
         if github_streams and github_streams.docs_stream:
             self.github_docs = {
-                'readme': github_streams.docs_stream.readme,
-                'contributing': github_streams.docs_stream.contributing
+                "readme": github_streams.docs_stream.readme,
+                "contributing": github_streams.docs_stream.contributing,
             }
 
-    def load_config(self, path: Path) -> Dict[str, Any]:
+    def load_config(self, path: Path) -> dict[str, Any]:
         """Load a config file"""
         try:
-            with open(path, 'r') as f:
+            with open(path) as f:
                 return json.load(f)
         except Exception as e:
             print(f"❌ Error loading {path}: {e}")
@@ -83,17 +85,17 @@ class RouterGenerator:
     def infer_router_name(self) -> str:
         """Infer router name from sub-skill names"""
         # Find common prefix
-        names = [cfg['name'] for cfg in self.configs]
+        names = [cfg["name"] for cfg in self.configs]
         if not names:
             return "router"
 
         # Get common prefix before first dash
         first_name = names[0]
-        if '-' in first_name:
-            return first_name.split('-')[0]
+        if "-" in first_name:
+            return first_name.split("-")[0]
         return first_name
 
-    def extract_routing_keywords(self) -> Dict[str, List[str]]:
+    def extract_routing_keywords(self) -> dict[str, list[str]]:
         """
         Extract keywords for routing to each skill (Phase 4 enhanced).
 
@@ -103,29 +105,32 @@ class RouterGenerator:
         routing = {}
 
         for config in self.configs:
-            name = config['name']
+            name = config["name"]
             keywords = []
 
             # Extract from categories (base weight: 1x)
-            if 'categories' in config:
-                keywords.extend(config['categories'].keys())
+            if "categories" in config:
+                keywords.extend(config["categories"].keys())
 
             # Extract from name (part after dash)
-            if '-' in name:
-                skill_topic = name.split('-', 1)[1]
+            if "-" in name:
+                skill_topic = name.split("-", 1)[1]
                 keywords.append(skill_topic)
 
             # Phase 4: Add GitHub issue labels (weight 2x by including twice)
             if self.github_issues:
                 # Get top labels related to this skill topic
-                top_labels = self.github_issues.get('top_labels', [])
+                top_labels = self.github_issues.get("top_labels", [])
                 skill_keywords = set(keywords)
 
                 for label_info in top_labels[:10]:  # Top 10 labels
-                    label = label_info['label'].lower()
+                    label = label_info["label"].lower()
 
                     # Check if label relates to any skill keyword
-                    if any(keyword.lower() in label or label in keyword.lower() for keyword in skill_keywords):
+                    if any(
+                        keyword.lower() in label or label in keyword.lower()
+                        for keyword in skill_keywords
+                    ):
                         # Add twice for 2x weight
                         keywords.append(label)
                         keywords.append(label)
@@ -141,7 +146,7 @@ class RouterGenerator:
 
         return routing
 
-    def _extract_skill_specific_labels(self, skill_name: str, skill_keywords: set) -> List[str]:
+    def _extract_skill_specific_labels(self, _skill_name: str, skill_keywords: set) -> list[str]:
         """
         Extract labels from GitHub issues that match this specific skill.
 
@@ -159,14 +164,14 @@ class RouterGenerator:
         if not self.github_issues:
             return []
 
-        common_problems = self.github_issues.get('common_problems', [])
-        known_solutions = self.github_issues.get('known_solutions', [])
+        common_problems = self.github_issues.get("common_problems", [])
+        known_solutions = self.github_issues.get("known_solutions", [])
         all_issues = common_problems + known_solutions
 
         matching_labels = set()
 
         for issue in all_issues:
-            issue_labels = issue.get('labels', [])
+            issue_labels = issue.get("labels", [])
             issue_labels_lower = [label.lower() for label in issue_labels]
 
             # Check if this issue relates to the skill
@@ -180,13 +185,20 @@ class RouterGenerator:
                 # Add ALL labels from this matching issue
                 for label in issue_labels_lower:
                     # Skip generic labels that don't add routing value
-                    if label not in ['bug', 'enhancement', 'question', 'help wanted',
-                                   'good first issue', 'documentation', 'duplicate']:
+                    if label not in [
+                        "bug",
+                        "enhancement",
+                        "question",
+                        "help wanted",
+                        "good first issue",
+                        "documentation",
+                        "duplicate",
+                    ]:
                         matching_labels.add(label)
 
         return list(matching_labels)
 
-    def _generate_frontmatter(self, routing_keywords: Dict[str, List[str]]) -> str:
+    def _generate_frontmatter(self, _routing_keywords: dict[str, list[str]]) -> str:
         """
         Generate YAML frontmatter compliant with agentskills.io spec.
 
@@ -201,19 +213,23 @@ class RouterGenerator:
         # Build comprehensive description from all sub-skills
         all_topics = []
         for config in self.configs:
-            desc = config.get('description', '')
+            desc = config.get("description", "")
             # Extract key topics from description (simple extraction)
-            topics = [word.strip() for word in desc.split(',') if word.strip()]
+            topics = [word.strip() for word in desc.split(",") if word.strip()]
             all_topics.extend(topics[:2])  # Max 2 topics per skill
 
         # Create keyword-rich description
         unique_topics = list(dict.fromkeys(all_topics))[:7]  # Top 7 unique topics
 
         if unique_topics:
-            topics_str = ', '.join(unique_topics)
-            description = f"{self.router_name.title()} framework. Use when working with: {topics_str}"
+            topics_str = ", ".join(unique_topics)
+            description = (
+                f"{self.router_name.title()} framework. Use when working with: {topics_str}"
+            )
         else:
-            description = f"Use when working with {self.router_name.title()} development and programming"
+            description = (
+                f"Use when working with {self.router_name.title()} development and programming"
+            )
 
         # Truncate to 200 chars for performance (agentskills.io recommendation)
         if len(description) > 200:
@@ -225,21 +241,21 @@ class RouterGenerator:
 
         # Try to get language-specific compatibility if GitHub metadata available
         if self.github_metadata:
-            language = self.github_metadata.get('language', '')
+            language = self.github_metadata.get("language", "")
             compatibility_map = {
-                'Python': f'Python 3.10+, requires {self.router_name} package',
-                'JavaScript': f'Node.js 18+, requires {self.router_name} package',
-                'TypeScript': f'Node.js 18+, TypeScript 5+, requires {self.router_name} package',
-                'Go': f'Go 1.20+, requires {self.router_name} package',
-                'Rust': f'Rust 1.70+, requires {self.router_name} package',
-                'Java': f'Java 17+, requires {self.router_name} package',
+                "Python": f"Python 3.10+, requires {self.router_name} package",
+                "JavaScript": f"Node.js 18+, requires {self.router_name} package",
+                "TypeScript": f"Node.js 18+, TypeScript 5+, requires {self.router_name} package",
+                "Go": f"Go 1.20+, requires {self.router_name} package",
+                "Rust": f"Rust 1.70+, requires {self.router_name} package",
+                "Java": f"Java 17+, requires {self.router_name} package",
             }
             if language in compatibility_map:
                 compatibility = compatibility_map[language]
 
             # Try to extract license
-            if isinstance(self.github_metadata.get('license'), dict):
-                license_info = self.github_metadata['license'].get('name', 'MIT')
+            if isinstance(self.github_metadata.get("license"), dict):
+                license_info = self.github_metadata["license"].get("name", "MIT")
 
         frontmatter = f"""---
 name: {self.router_name}
@@ -289,27 +305,27 @@ compatibility: {compatibility}
         """
         # Remove router name prefix
         if skill_name.startswith(f"{self.router_name}-"):
-            topic = skill_name[len(self.router_name)+1:]
+            topic = skill_name[len(self.router_name) + 1 :]
         else:
             topic = skill_name
 
         # Capitalize and add context
-        topic = topic.replace('-', ' ').title()
+        topic = topic.replace("-", " ").title()
 
         # Add common suffixes for context
         topic_map = {
-            'oauth': 'OAuth authentication',
-            'auth': 'authentication',
-            'async': 'async patterns',
-            'api': 'API integration',
-            'orm': 'ORM queries',
-            'hooks': 'hooks',
-            'routing': 'routing',
-            'testing': 'testing',
-            '2d': '2D development',
-            '3d': '3D development',
-            'scripting': 'scripting',
-            'physics': 'physics',
+            "oauth": "OAuth authentication",
+            "auth": "authentication",
+            "async": "async patterns",
+            "api": "API integration",
+            "orm": "ORM queries",
+            "hooks": "hooks",
+            "routing": "routing",
+            "testing": "testing",
+            "2d": "2D development",
+            "3d": "3D development",
+            "scripting": "scripting",
+            "physics": "physics",
         }
 
         topic_lower = topic.lower()
@@ -319,7 +335,7 @@ compatibility: {compatibility}
 
         return topic
 
-    def _generate_dynamic_examples(self, routing_keywords: Dict[str, List[str]]) -> str:
+    def _generate_dynamic_examples(self, routing_keywords: dict[str, list[str]]) -> str:
         """
         Generate examples dynamically from actual sub-skill names and keywords.
 
@@ -352,8 +368,7 @@ compatibility: {compatibility}
             keyword = first_keywords[0] if first_keywords else topic
 
             examples.append(
-                f'**Q:** "How do I implement {keyword}?"\n'
-                f'**A:** Activates {first_skill} skill'
+                f'**Q:** "How do I implement {keyword}?"\n**A:** Activates {first_skill} skill'
             )
 
         # Example 2: Different skill (second sub-skill if available)
@@ -365,8 +380,7 @@ compatibility: {compatibility}
             keyword = second_keywords[0] if second_keywords else topic
 
             examples.append(
-                f'**Q:** "Working with {keyword} in {self.router_name.title()}"\n'
-                f'**A:** Activates {second_skill} skill'
+                f'**Q:** "Working with {keyword} in {self.router_name.title()}"\n**A:** Activates {second_skill} skill'
             )
 
         # Example 3: Multi-skill activation (if 2+ skills)
@@ -378,13 +392,12 @@ compatibility: {compatibility}
             topic_2 = self._extract_topic_from_skill(skill_2)
 
             examples.append(
-                f'**Q:** "Combining {topic_1} with {topic_2}"\n'
-                f'**A:** Activates {skill_1} + {skill_2} skills'
+                f'**Q:** "Combining {topic_1} with {topic_2}"\n**A:** Activates {skill_1} + {skill_2} skills'
             )
 
-        return '\n\n'.join(examples)
+        return "\n\n".join(examples)
 
-    def _generate_examples_from_github(self, routing_keywords: Dict[str, List[str]]) -> str:
+    def _generate_examples_from_github(self, routing_keywords: dict[str, list[str]]) -> str:
         """
         Generate examples from real GitHub issue titles.
 
@@ -402,7 +415,7 @@ compatibility: {compatibility}
             return self._generate_dynamic_examples(routing_keywords)
 
         examples = []
-        common_problems = self.github_issues.get('common_problems', [])
+        common_problems = self.github_issues.get("common_problems", [])
 
         if not common_problems:
             return self._generate_dynamic_examples(routing_keywords)
@@ -414,29 +427,28 @@ compatibility: {compatibility}
 
             # Find first issue matching this skill's keywords
             for issue in common_problems:
-                issue_labels = [label.lower() for label in issue.get('labels', [])]
+                issue_labels = [label.lower() for label in issue.get("labels", [])]
                 if any(label in skill_keywords_lower for label in issue_labels):
                     matched_issue = issue
                     common_problems.remove(issue)  # Don't reuse same issue
                     break
 
             if matched_issue:
-                title = matched_issue.get('title', '')
+                title = matched_issue.get("title", "")
                 question = self._convert_issue_to_question(title)
-                examples.append(
-                    f'**Q:** "{question}"\n'
-                    f'**A:** Activates {skill_name} skill'
-                )
+                examples.append(f'**Q:** "{question}"\n**A:** Activates {skill_name} skill')
             else:
                 # Fallback to keyword-based example for this skill
                 topic = self._extract_topic_from_skill(skill_name)
                 keyword = keywords[0] if keywords else topic
                 examples.append(
                     f'**Q:** "Working with {keyword} in {self.router_name.title()}"\n'
-                    f'**A:** Activates {skill_name} skill'
+                    f"**A:** Activates {skill_name} skill"
                 )
 
-        return '\n\n'.join(examples) if examples else self._generate_dynamic_examples(routing_keywords)
+        return (
+            "\n\n".join(examples) if examples else self._generate_dynamic_examples(routing_keywords)
+        )
 
     def _convert_issue_to_question(self, issue_title: str) -> str:
         """
@@ -456,24 +468,24 @@ compatibility: {compatibility}
         title_lower = issue_title.lower()
 
         # Pattern 1: Error/Failure issues
-        if 'fail' in title_lower or 'error' in title_lower or 'issue' in title_lower:
-            cleaned = issue_title.replace(' fails', '').replace(' errors', '').replace(' issue', '')
+        if "fail" in title_lower or "error" in title_lower or "issue" in title_lower:
+            cleaned = issue_title.replace(" fails", "").replace(" errors", "").replace(" issue", "")
             return f"How do I fix {cleaned.lower()}?"
 
         # Pattern 2: Documentation requests
-        if 'documentation' in title_lower or 'docs' in title_lower:
-            cleaned = issue_title.replace(' documentation', '').replace(' docs', '')
+        if "documentation" in title_lower or "docs" in title_lower:
+            cleaned = issue_title.replace(" documentation", "").replace(" docs", "")
             return f"How do I use {cleaned.lower()}?"
 
         # Pattern 3: Feature requests
-        if title_lower.startswith('add ') or title_lower.startswith('added '):
-            feature = issue_title.replace('Add ', '').replace('Added ', '')
+        if title_lower.startswith("add ") or title_lower.startswith("added "):
+            feature = issue_title.replace("Add ", "").replace("Added ", "")
             return f"How do I implement {feature.lower()}?"
 
         # Default: Generic question
         return f"How do I handle {issue_title.lower()}?"
 
-    def _extract_common_patterns(self) -> List[Dict[str, str]]:
+    def _extract_common_patterns(self) -> list[dict[str, str]]:
         """
         Extract problem-solution patterns from closed GitHub issues.
 
@@ -487,25 +499,23 @@ compatibility: {compatibility}
         if not self.github_issues:
             return []
 
-        known_solutions = self.github_issues.get('known_solutions', [])
+        known_solutions = self.github_issues.get("known_solutions", [])
         if not known_solutions:
             return []
 
         patterns = []
 
         # Top 5 closed issues with most engagement (comments indicate usefulness)
-        top_solutions = sorted(known_solutions, key=lambda x: x.get('comments', 0), reverse=True)[:5]
+        top_solutions = sorted(known_solutions, key=lambda x: x.get("comments", 0), reverse=True)[
+            :5
+        ]
 
         for issue in top_solutions:
-            title = issue.get('title', '')
-            number = issue.get('number', 0)
+            title = issue.get("title", "")
+            number = issue.get("number", 0)
             problem, solution = self._parse_issue_pattern(title)
 
-            patterns.append({
-                'problem': problem,
-                'solution': solution,
-                'issue_number': number
-            })
+            patterns.append({"problem": problem, "solution": solution, "issue_number": number})
 
         return patterns
 
@@ -530,24 +540,24 @@ compatibility: {compatibility}
         title_lower = issue_title.lower()
 
         # Pattern 1: "Fixed X" → "X not working" / "See fix"
-        if title_lower.startswith('fixed ') or title_lower.startswith('fix '):
-            problem_text = issue_title.replace('Fixed ', '').replace('Fix ', '')
+        if title_lower.startswith("fixed ") or title_lower.startswith("fix "):
+            problem_text = issue_title.replace("Fixed ", "").replace("Fix ", "")
             return (f"{problem_text} not working", "See fix implementation details")
 
         # Pattern 2: "Resolved X" → "X issue" / "See resolution"
-        if title_lower.startswith('resolved ') or title_lower.startswith('resolve '):
-            problem_text = issue_title.replace('Resolved ', '').replace('Resolve ', '')
+        if title_lower.startswith("resolved ") or title_lower.startswith("resolve "):
+            problem_text = issue_title.replace("Resolved ", "").replace("Resolve ", "")
             return (f"{problem_text} issue", "See resolution approach")
 
         # Pattern 3: "Added X" → "Missing X" / "Use X"
-        if title_lower.startswith('added ') or title_lower.startswith('add '):
-            feature_text = issue_title.replace('Added ', '').replace('Add ', '')
+        if title_lower.startswith("added ") or title_lower.startswith("add "):
+            feature_text = issue_title.replace("Added ", "").replace("Add ", "")
             return (f"Missing {feature_text}", f"Use {feature_text} feature")
 
         # Default: Use title as-is
         return (issue_title, "See issue for solution details")
 
-    def _detect_framework(self) -> Optional[str]:
+    def _detect_framework(self) -> str | None:
         """
         Detect framework from router name and GitHub metadata.
 
@@ -561,14 +571,14 @@ compatibility: {compatibility}
         router_lower = self.router_name.lower()
 
         framework_keywords = {
-            'fastapi': 'fastapi',
-            'django': 'django',
-            'flask': 'flask',
-            'react': 'react',
-            'vue': 'vue',
-            'express': 'express',
-            'fastmcp': 'fastmcp',
-            'mcp': 'fastmcp',
+            "fastapi": "fastapi",
+            "django": "django",
+            "flask": "flask",
+            "react": "react",
+            "vue": "vue",
+            "express": "express",
+            "fastmcp": "fastmcp",
+            "mcp": "fastmcp",
         }
 
         # Check router name first
@@ -578,7 +588,7 @@ compatibility: {compatibility}
 
         # Check GitHub description if available
         if self.github_metadata:
-            description = self.github_metadata.get('description', '').lower()
+            description = self.github_metadata.get("description", "").lower()
             for keyword, framework in framework_keywords.items():
                 if keyword in description:
                     return framework
@@ -599,7 +609,7 @@ compatibility: {compatibility}
             Formatted Quick Start section with install + hello world code
         """
         templates = {
-            'fastapi': """## Quick Start
+            "fastapi": """## Quick Start
 
 ```bash
 pip install fastapi uvicorn
@@ -617,7 +627,7 @@ def read_root():
 # Run: uvicorn main:app --reload
 ```
 """,
-            'fastmcp': """## Quick Start
+            "fastmcp": """## Quick Start
 
 ```bash
 pip install fastmcp
@@ -633,7 +643,7 @@ def greet(name: str) -> str:
     return f"Hello, {name}!"
 ```
 """,
-            'django': """## Quick Start
+            "django": """## Quick Start
 
 ```bash
 pip install django
@@ -644,7 +654,7 @@ python manage.py runserver
 
 Visit http://127.0.0.1:8000/ to see your Django app.
 """,
-            'react': """## Quick Start
+            "react": """## Quick Start
 
 ```bash
 npx create-react-app my-app
@@ -677,16 +687,16 @@ export default App;
         all_topics = []
 
         for config in self.configs:
-            desc = config.get('description', '')
+            desc = config.get("description", "")
             # Extract key topics from description (simple comma-separated extraction)
-            topics = [topic.strip() for topic in desc.split(',') if topic.strip()]
+            topics = [topic.strip() for topic in desc.split(",") if topic.strip()]
             all_topics.extend(topics[:2])  # Max 2 topics per skill
 
         # Deduplicate and take top 5-7 topics
         unique_topics = list(dict.fromkeys(all_topics))[:7]
 
         if not unique_topics:
-            return f'Use when working with {self.router_name} development and programming'
+            return f"Use when working with {self.router_name} development and programming"
 
         # Format as user-friendly bulleted list
         description = f"""Use this skill when working with:
@@ -695,8 +705,8 @@ export default App;
 
         for topic in unique_topics:
             # Clean up topic text (remove "when working with" prefixes if present)
-            topic = topic.replace('when working with', '').strip()
-            topic = topic.replace('Use when', '').strip()
+            topic = topic.replace("when working with", "").strip()
+            topic = topic.replace("Use when", "").strip()
             if topic:
                 description += f"- {topic}\n"
 
@@ -721,7 +731,10 @@ export default App;
         # NEW: Generate comprehensive description from all sub-skills
         when_to_use = self._generate_comprehensive_description()
 
-        skill_md = frontmatter + "\n\n" + f"""# {self.router_name.replace('-', ' ').title()} Documentation
+        skill_md = (
+            frontmatter
+            + "\n\n"
+            + f"""# {self.router_name.replace("-", " ").title()} Documentation
 
 ## When to Use This Skill
 
@@ -730,26 +743,27 @@ export default App;
 This is a router skill that directs your questions to specialized sub-skills for efficient, focused assistance.
 
 """
+        )
 
         # Phase 4: Add GitHub repository metadata
         if self.github_metadata:
             # NEW: Use html_url from GitHub metadata instead of base_url from config
-            repo_url = self.github_metadata.get('html_url', '')
-            stars = self.github_metadata.get('stars', 0)
-            language = self.github_metadata.get('language', 'Unknown')
-            description = self.github_metadata.get('description', '')
+            repo_url = self.github_metadata.get("html_url", "")
+            stars = self.github_metadata.get("stars", 0)
+            language = self.github_metadata.get("language", "Unknown")
+            description = self.github_metadata.get("description", "")
 
             skill_md += f"""## Repository Info
 
 **Repository:** {repo_url}
 **Stars:** ⭐ {stars:,} | **Language:** {language}
-{f'**Description:** {description}' if description else ''}
+{f"**Description:** {description}" if description else ""}
 
 """
 
         # Phase 4: Add Quick Start from README
-        if self.github_docs and self.github_docs.get('readme'):
-            readme = self.github_docs['readme']
+        if self.github_docs and self.github_docs.get("readme"):
+            readme = self.github_docs["readme"]
 
             # NEW: Clean HTML and extract meaningful content
             quick_start = self._extract_clean_readme_section(readme)
@@ -768,14 +782,20 @@ This is a router skill that directs your questions to specialized sub-skills for
                 if framework:
                     hello_world = self._get_framework_hello_world(framework)
                     if hello_world:
-                        skill_md += hello_world + "\n*Note: Generic template. See references/getting_started.md for project-specific setup.*\n\n"
+                        skill_md += (
+                            hello_world
+                            + "\n*Note: Generic template. See references/getting_started.md for project-specific setup.*\n\n"
+                        )
         else:
             # No README available - try framework fallback
             framework = self._detect_framework()
             if framework:
                 hello_world = self._get_framework_hello_world(framework)
                 if hello_world:
-                    skill_md += hello_world + "\n*Note: Generic template. Check repository for specific installation instructions.*\n\n"
+                    skill_md += (
+                        hello_world
+                        + "\n*Note: Generic template. Check repository for specific installation instructions.*\n\n"
+                    )
 
         skill_md += """## How It Works
 
@@ -785,11 +805,11 @@ This skill analyzes your question and activates the appropriate specialized skil
 
         # List sub-skills
         for config in self.configs:
-            name = config['name']
-            desc = config.get('description', '')
+            name = config["name"]
+            desc = config.get("description", "")
             # Remove router name prefix from description if present
             if desc.startswith(f"{self.router_name.title()} -"):
-                desc = desc.split(' - ', 1)[1]
+                desc = desc.split(" - ", 1)[1]
 
             skill_md += f"### {name}\n{desc}\n\n"
 
@@ -808,7 +828,7 @@ The router analyzes your question for topic keywords and activates relevant skil
             skill_md += f"- {keyword_str} → **{skill_name}**\n"
 
         # Quick reference
-        skill_md += f"""
+        skill_md += """
 
 ## Quick Reference
 
@@ -839,7 +859,7 @@ For quick answers, this router provides basic overview information. For detailed
 
         # Phase 4: Add Common Issues from GitHub (Summary with Reference)
         if self.github_issues:
-            common_problems = self.github_issues.get('common_problems', [])[:5]  # Top 5
+            common_problems = self.github_issues.get("common_problems", [])[:5]  # Top 5
 
             if common_problems:
                 skill_md += """
@@ -850,9 +870,9 @@ Top 5 GitHub issues from the community:
 
 """
                 for i, issue in enumerate(common_problems, 1):
-                    title = issue.get('title', '')
-                    number = issue.get('number', 0)
-                    comments = issue.get('comments', 0)
+                    title = issue.get("title", "")
+                    number = issue.get("number", 0)
+                    comments = issue.get("comments", 0)
 
                     skill_md += f"{i}. **{title}** (Issue #{number}, {comments} comments)\n"
 
@@ -871,9 +891,9 @@ Problem-solution patterns from resolved GitHub issues:
 
 """
                 for i, pattern in enumerate(patterns, 1):
-                    problem = pattern['problem']
-                    solution = pattern['solution']
-                    issue_num = pattern['issue_number']
+                    problem = pattern["problem"]
+                    solution = pattern["solution"]
+                    issue_num = pattern["issue_number"]
 
                     skill_md += f"**Pattern {i}**: {problem}\n"
                     skill_md += f"→ **Solution**: {solution} ([Issue #{issue_num}](references/github_issues.md))\n\n"
@@ -888,10 +908,10 @@ Detailed documentation available in:
 """
         if self.github_issues:
             skill_md += "- `references/github_issues.md` - Community problems and solutions\n"
-        if self.github_docs and self.github_docs.get('readme'):
+        if self.github_docs and self.github_docs.get("readme"):
             skill_md += "- `references/getting_started.md` - Detailed setup guide\n"
 
-        skill_md += f"""
+        skill_md += """
 
 ## Need Help?
 
@@ -904,7 +924,7 @@ Simply ask your question and mention the topic. The router will find the right s
 
         return skill_md
 
-    def generate_subskill_issues_section(self, skill_name: str, topics: List[str]) -> str:
+    def generate_subskill_issues_section(self, _skill_name: str, topics: list[str]) -> str:
         """
         Generate "Common Issues" section for a sub-skill (Phase 4).
 
@@ -918,8 +938,8 @@ Simply ask your question and mention the topic. The router will find the right s
         if not self.github_issues or not categorize_issues_by_topic:
             return ""
 
-        common_problems = self.github_issues.get('common_problems', [])
-        known_solutions = self.github_issues.get('known_solutions', [])
+        common_problems = self.github_issues.get("common_problems", [])
+        known_solutions = self.github_issues.get("known_solutions", [])
 
         # Categorize issues by topic
         categorized = categorize_issues_by_topic(common_problems, known_solutions, topics)
@@ -944,11 +964,11 @@ GitHub issues related to this topic:
             issues_md += f"\n### {topic.title()}\n\n"
 
             for issue in issues[:3]:  # Top 3 per topic
-                title = issue.get('title', '')
-                number = issue.get('number', 0)
-                state = issue.get('state', 'unknown')
-                comments = issue.get('comments', 0)
-                labels = issue.get('labels', [])
+                title = issue.get("title", "")
+                number = issue.get("number", 0)
+                state = issue.get("state", "unknown")
+                comments = issue.get("comments", 0)
+                labels = issue.get("labels", [])
 
                 # Format issue
                 state_icon = "🔴" if state == "open" else "✅"
@@ -964,21 +984,24 @@ GitHub issues related to this topic:
 
         return issues_md
 
-    def create_router_config(self) -> Dict[str, Any]:
+    def create_router_config(self) -> dict[str, Any]:
         """Create router configuration"""
         routing_keywords = self.extract_routing_keywords()
 
         router_config = {
             "name": self.router_name,
-            "description": self.base_config.get('description', f'Use when working with {self.router_name} documentation (router for multiple sub-skills)'),
-            "base_url": self.base_config['base_url'],
-            "selectors": self.base_config.get('selectors', {}),
-            "url_patterns": self.base_config.get('url_patterns', {}),
-            "rate_limit": self.base_config.get('rate_limit', 0.5),
+            "description": self.base_config.get(
+                "description",
+                f"Use when working with {self.router_name} documentation (router for multiple sub-skills)",
+            ),
+            "base_url": self.base_config["base_url"],
+            "selectors": self.base_config.get("selectors", {}),
+            "url_patterns": self.base_config.get("url_patterns", {}),
+            "rate_limit": self.base_config.get("rate_limit", 0.5),
             "max_pages": 500,  # Router only scrapes overview pages
             "_router": True,
-            "_sub_skills": [cfg['name'] for cfg in self.configs],
-            "_routing_keywords": routing_keywords
+            "_sub_skills": [cfg["name"] for cfg in self.configs],
+            "_routing_keywords": routing_keywords,
         }
 
         return router_config
@@ -993,34 +1016,42 @@ GitHub issues related to this topic:
         md = "# Common GitHub Issues\n\n"
         md += "Top issues reported by the community:\n\n"
 
-        common_problems = self.github_issues.get('common_problems', [])[:10] if self.github_issues else []
-        known_solutions = self.github_issues.get('known_solutions', [])[:10] if self.github_issues else []
+        common_problems = (
+            self.github_issues.get("common_problems", [])[:10] if self.github_issues else []
+        )
+        known_solutions = (
+            self.github_issues.get("known_solutions", [])[:10] if self.github_issues else []
+        )
 
         if common_problems:
             md += "## Open Issues (Common Problems)\n\n"
             for i, issue in enumerate(common_problems, 1):
-                title = issue.get('title', '')
-                number = issue.get('number', 0)
-                comments = issue.get('comments', 0)
-                labels = issue.get('labels', [])
+                title = issue.get("title", "")
+                number = issue.get("number", 0)
+                comments = issue.get("comments", 0)
+                labels = issue.get("labels", [])
                 if isinstance(labels, list):
-                    labels_str = ', '.join(str(label) for label in labels)
+                    labels_str = ", ".join(str(label) for label in labels)
                 else:
-                    labels_str = str(labels) if labels else ''
+                    labels_str = str(labels) if labels else ""
 
                 md += f"### {i}. {title}\n\n"
                 md += f"**Issue**: #{number}\n"
                 md += f"**Comments**: {comments}\n"
                 if labels_str:
                     md += f"**Labels**: {labels_str}\n"
-                md += f"**Link**: https://github.com/{self.github_metadata.get('html_url', '').replace('https://github.com/', '')}/issues/{number}\n\n" if self.github_metadata else "\n\n"
+                md += (
+                    f"**Link**: https://github.com/{self.github_metadata.get('html_url', '').replace('https://github.com/', '')}/issues/{number}\n\n"
+                    if self.github_metadata
+                    else "\n\n"
+                )
 
         if known_solutions:
             md += "\n## Closed Issues (Known Solutions)\n\n"
             for i, issue in enumerate(known_solutions, 1):
-                title = issue.get('title', '')
-                number = issue.get('number', 0)
-                comments = issue.get('comments', 0)
+                title = issue.get("title", "")
+                number = issue.get("number", 0)
+                comments = issue.get("comments", 0)
 
                 md += f"### {i}. {title}\n\n"
                 md += f"**Issue**: #{number} (Closed)\n"
@@ -1042,8 +1073,8 @@ GitHub issues related to this topic:
         md = "# Getting Started\n\n"
         md += "*Extracted from project README*\n\n"
 
-        if self.github_docs and self.github_docs.get('readme'):
-            readme = self.github_docs['readme']
+        if self.github_docs and self.github_docs.get("readme"):
+            readme = self.github_docs["readme"]
 
             # Clean and extract full quick start section (up to 2000 chars)
             cleaner = MarkdownCleaner()
@@ -1069,16 +1100,16 @@ GitHub issues related to this topic:
         # 1. GitHub Issues Reference
         if self.github_issues:
             issues_md = self._generate_github_issues_reference()
-            with open(references_dir / 'github_issues.md', 'w') as f:
+            with open(references_dir / "github_issues.md", "w") as f:
                 f.write(issues_md)
 
         # 2. Getting Started Reference
-        if self.github_docs and self.github_docs.get('readme'):
+        if self.github_docs and self.github_docs.get("readme"):
             getting_started_md = self._generate_getting_started_reference()
-            with open(references_dir / 'getting_started.md', 'w') as f:
+            with open(references_dir / "getting_started.md", "w") as f:
                 f.write(getting_started_md)
 
-    def generate(self, output_dir: Path = None) -> Tuple[Path, Path]:
+    def generate(self, output_dir: Path = None) -> tuple[Path, Path]:
         """Generate router skill and config with progressive disclosure"""
         if output_dir is None:
             output_dir = self.config_paths[0].parent
@@ -1090,11 +1121,11 @@ GitHub issues related to this topic:
         skill_path = output_dir.parent / f"output/{self.router_name}/SKILL.md"
         skill_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(skill_path, 'w') as f:
+        with open(skill_path, "w") as f:
             f.write(skill_md)
 
         # NEW: Create references/ directory and generate reference files
-        references_dir = skill_path.parent / 'references'
+        references_dir = skill_path.parent / "references"
         references_dir.mkdir(parents=True, exist_ok=True)
         self._generate_reference_files(references_dir)
 
@@ -1102,7 +1133,7 @@ GitHub issues related to this topic:
         router_config = self.create_router_config()
         config_path = output_dir / f"{self.router_name}.json"
 
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(router_config, f, indent=2)
 
         return config_path, skill_path
@@ -1125,24 +1156,14 @@ Examples:
 
   # Custom output directory
   python3 generate_router.py configs/godot-*.json --output-dir configs/routers/
-        """
+        """,
     )
 
-    parser.add_argument(
-        'configs',
-        nargs='+',
-        help='Sub-skill config files'
-    )
+    parser.add_argument("configs", nargs="+", help="Sub-skill config files")
 
-    parser.add_argument(
-        '--name',
-        help='Router skill name (default: inferred from sub-skills)'
-    )
+    parser.add_argument("--name", help="Router skill name (default: inferred from sub-skills)")
 
-    parser.add_argument(
-        '--output-dir',
-        help='Output directory (default: same as input configs)'
-    )
+    parser.add_argument("--output-dir", help="Output directory (default: same as input configs)")
 
     args = parser.parse_args()
 
@@ -1150,16 +1171,16 @@ Examples:
     config_files = []
     for path_str in args.configs:
         path = Path(path_str)
-        if path.exists() and not path.stem.endswith('-router'):
+        if path.exists() and not path.stem.endswith("-router"):
             config_files.append(path_str)
 
     if not config_files:
         print("❌ Error: No valid config files provided")
         sys.exit(1)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("ROUTER SKILL GENERATOR")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Sub-skills: {len(config_files)}")
     for cfg in config_files:
         print(f"  - {Path(cfg).stem}")
@@ -1172,11 +1193,11 @@ Examples:
     print(f"✅ Router config created: {config_path}")
     print(f"✅ Router SKILL.md created: {skill_path}")
     print("")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print("NEXT STEPS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"1. Review router SKILL.md: {skill_path}")
-    print(f"2. Optionally scrape router (for overview pages):")
+    print("2. Optionally scrape router (for overview pages):")
     print(f"     skill-seekers scrape --config {config_path}")
     print("3. Package router skill:")
     print(f"     skill-seekers package output/{generator.router_name}/")

@@ -3,14 +3,15 @@
 Tests for FastMCP server HTTP transport support.
 """
 
-import pytest
-import asyncio
 import sys
+
+import pytest
 
 # Skip all tests if mcp package is not installed
 pytest.importorskip("mcp.server")
 
 from starlette.testclient import TestClient
+
 from skill_seekers.mcp.server_fastmcp import mcp
 
 
@@ -30,7 +31,7 @@ class TestFastMCPHTTP:
         from starlette.responses import JSONResponse
         from starlette.routing import Route
 
-        async def health_check(request):
+        async def health_check(_request):
             return JSONResponse(
                 {
                     "status": "healthy",
@@ -68,7 +69,7 @@ class TestFastMCPHTTP:
 
         app = mcp.sse_app()
 
-        with TestClient(app) as client:
+        with TestClient(app):
             # SSE endpoint should exist (even if we can't fully test it without MCP client)
             # Just verify the route is registered
             routes = [route.path for route in app.routes if hasattr(route, "path")]
@@ -104,7 +105,6 @@ class TestArgumentParsing:
     def test_parse_args_default(self):
         """Test default argument parsing (stdio mode)."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         # Save original argv
         original_argv = sys.argv
@@ -124,7 +124,6 @@ class TestArgumentParsing:
     def test_parse_args_http_mode(self):
         """Test HTTP mode argument parsing."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         original_argv = sys.argv
 
@@ -141,7 +140,6 @@ class TestArgumentParsing:
     def test_parse_args_log_level(self):
         """Test log level argument parsing."""
         from skill_seekers.mcp.server_fastmcp import parse_args
-        import sys
 
         original_argv = sys.argv
 

@@ -17,10 +17,9 @@ Usage:
     builder.build_reference(output_dir)
 """
 
-import os
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any
 
 
 class APIReferenceBuilder:
@@ -31,7 +30,7 @@ class APIReferenceBuilder:
     documentation for each analyzed source file.
     """
 
-    def __init__(self, code_analysis: Dict[str, Any]):
+    def __init__(self, code_analysis: dict[str, Any]):
         """
         Initialize builder with code analysis results.
 
@@ -40,9 +39,9 @@ class APIReferenceBuilder:
                           Expected format: {'files': [{'file': 'path', 'classes': [...], 'functions': [...]}]}
         """
         self.code_analysis = code_analysis
-        self.files_data = code_analysis.get('files', [])
+        self.files_data = code_analysis.get("files", [])
 
-    def build_reference(self, output_dir: Path) -> Dict[str, Path]:
+    def build_reference(self, output_dir: Path) -> dict[str, Path]:
         """
         Generate markdown files for each analyzed source file.
 
@@ -58,11 +57,11 @@ class APIReferenceBuilder:
         generated_files = {}
 
         for file_data in self.files_data:
-            source_file = file_data.get('file', 'unknown')
-            language = file_data.get('language', 'Unknown')
+            source_file = file_data.get("file", "unknown")
+            language = file_data.get("language", "Unknown")
 
             # Skip files with no analysis
-            if not file_data.get('classes') and not file_data.get('functions'):
+            if not file_data.get("classes") and not file_data.get("functions"):
                 continue
 
             # Generate markdown content
@@ -73,7 +72,7 @@ class APIReferenceBuilder:
             output_path = output_dir / output_filename
 
             # Write markdown file
-            output_path.write_text(markdown_content, encoding='utf-8')
+            output_path.write_text(markdown_content, encoding="utf-8")
             generated_files[source_file] = output_path
 
         return generated_files
@@ -92,11 +91,12 @@ class APIReferenceBuilder:
         basename = Path(source_file).name
 
         # Replace extension with .md
-        name_without_ext = basename.rsplit('.', 1)[0] if '.' in basename else basename
+        name_without_ext = basename.rsplit(".", 1)[0] if "." in basename else basename
         return f"{name_without_ext}.md"
 
-    def _generate_file_reference(self, file_data: Dict[str, Any],
-                                 source_file: str, language: str) -> str:
+    def _generate_file_reference(
+        self, file_data: dict[str, Any], source_file: str, language: str
+    ) -> str:
         """
         Generate complete markdown reference for a single file.
 
@@ -118,7 +118,7 @@ class APIReferenceBuilder:
         lines.append("---\n")
 
         # Classes section
-        classes = file_data.get('classes', [])
+        classes = file_data.get("classes", [])
         if classes:
             lines.append("## Classes\n")
             for cls in classes:
@@ -126,16 +126,16 @@ class APIReferenceBuilder:
                 lines.append("\n")
 
         # Functions section
-        functions = file_data.get('functions', [])
+        functions = file_data.get("functions", [])
         if functions:
             lines.append("## Functions\n")
             for func in functions:
                 lines.append(self._format_function(func))
                 lines.append("\n")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def _format_class(self, class_sig: Dict[str, Any]) -> str:
+    def _format_class(self, class_sig: dict[str, Any]) -> str:
         """
         Format class signature as markdown.
 
@@ -148,33 +148,33 @@ class APIReferenceBuilder:
         lines = []
 
         # Class name
-        class_name = class_sig.get('name', 'Unknown')
+        class_name = class_sig.get("name", "Unknown")
         lines.append(f"### {class_name}\n")
 
         # Docstring
-        docstring = class_sig.get('docstring')
+        docstring = class_sig.get("docstring")
         if docstring:
             lines.append(f"{docstring}\n")
 
         # Inheritance
-        base_classes = class_sig.get('base_classes', [])
+        base_classes = class_sig.get("base_classes", [])
         if base_classes:
-            bases_str = ', '.join(base_classes)
+            bases_str = ", ".join(base_classes)
             lines.append(f"**Inherits from**: {bases_str}\n")
         else:
             lines.append("**Inherits from**: (none)\n")
 
         # Methods
-        methods = class_sig.get('methods', [])
+        methods = class_sig.get("methods", [])
         if methods:
             lines.append("#### Methods\n")
             for method in methods:
                 lines.append(self._format_method(method))
                 lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def _format_method(self, method_sig: Dict[str, Any]) -> str:
+    def _format_method(self, method_sig: dict[str, Any]) -> str:
         """
         Format method signature as markdown.
 
@@ -191,30 +191,30 @@ class APIReferenceBuilder:
         lines.append(f"##### {signature}\n")
 
         # Docstring
-        docstring = method_sig.get('docstring')
+        docstring = method_sig.get("docstring")
         if docstring:
             lines.append(f"{docstring}\n")
 
         # Decorators
-        decorators = method_sig.get('decorators', [])
+        decorators = method_sig.get("decorators", [])
         if decorators:
-            dec_str = ', '.join(f"`@{d}`" for d in decorators)
+            dec_str = ", ".join(f"`@{d}`" for d in decorators)
             lines.append(f"**Decorators**: {dec_str}\n")
 
         # Parameters table
-        params = method_sig.get('parameters', [])
+        params = method_sig.get("parameters", [])
         if params:
             lines.append(self._format_parameters(params))
             lines.append("")
 
         # Return type
-        return_type = method_sig.get('return_type')
+        return_type = method_sig.get("return_type")
         if return_type:
             lines.append(f"**Returns**: `{return_type}`\n")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def _format_function(self, func_sig: Dict[str, Any]) -> str:
+    def _format_function(self, func_sig: dict[str, Any]) -> str:
         """
         Format function signature as markdown.
 
@@ -231,30 +231,30 @@ class APIReferenceBuilder:
         lines.append(f"### {signature}\n")
 
         # Async indicator
-        if func_sig.get('is_async'):
+        if func_sig.get("is_async"):
             lines.append("**Async function**\n")
 
         # Docstring
-        docstring = func_sig.get('docstring')
+        docstring = func_sig.get("docstring")
         if docstring:
             lines.append(f"{docstring}\n")
 
         # Parameters table
-        params = func_sig.get('parameters', [])
+        params = func_sig.get("parameters", [])
         if params:
             lines.append(self._format_parameters(params))
             lines.append("")
 
         # Return type
-        return_type = func_sig.get('return_type')
+        return_type = func_sig.get("return_type")
         if return_type:
             lines.append(f"**Returns**: `{return_type}`\n")
         else:
             lines.append("**Returns**: (none)\n")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def _build_signature(self, sig: Dict[str, Any]) -> str:
+    def _build_signature(self, sig: dict[str, Any]) -> str:
         """
         Build function/method signature string.
 
@@ -264,28 +264,28 @@ class APIReferenceBuilder:
         Returns:
             Formatted signature string
         """
-        name = sig.get('name', 'unknown')
-        params = sig.get('parameters', [])
-        return_type = sig.get('return_type')
+        name = sig.get("name", "unknown")
+        params = sig.get("parameters", [])
+        return_type = sig.get("return_type")
 
         # Build parameter list
         param_strs = []
         for param in params:
-            param_str = param.get('name', '')
+            param_str = param.get("name", "")
 
             # Add type hint if available
-            type_hint = param.get('type_hint')
+            type_hint = param.get("type_hint")
             if type_hint:
                 param_str += f": {type_hint}"
 
             # Add default value if available
-            default = param.get('default')
+            default = param.get("default")
             if default:
                 param_str += f" = {default}"
 
             param_strs.append(param_str)
 
-        params_str = ', '.join(param_strs)
+        params_str = ", ".join(param_strs)
 
         # Build full signature
         if return_type:
@@ -293,7 +293,7 @@ class APIReferenceBuilder:
         else:
             return f"{name}({params_str})"
 
-    def _format_parameters(self, params: List[Dict]) -> str:
+    def _format_parameters(self, params: list[dict]) -> str:
         """
         Format parameter list as markdown table.
 
@@ -313,19 +313,19 @@ class APIReferenceBuilder:
         lines.append("|------|------|---------|-------------|")
 
         for param in params:
-            name = param.get('name', '-')
-            type_hint = param.get('type_hint', '-')
-            default = param.get('default')
+            name = param.get("name", "-")
+            type_hint = param.get("type_hint", "-")
+            default = param.get("default")
 
             # Show "-" for parameters without defaults
-            default_str = default if default is not None else '-'
+            default_str = default if default is not None else "-"
 
             # For description, use empty for now (would need JSDoc/docstring parsing)
             description = "-"
 
             lines.append(f"| {name} | {type_hint} | {default_str} | {description} |")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
 
 def main():
@@ -337,11 +337,11 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Generate API reference from code analysis results'
+        description="Generate API reference from code analysis results"
     )
 
-    parser.add_argument('input_file', help='Code analysis JSON file')
-    parser.add_argument('output_dir', help='Output directory for markdown files')
+    parser.add_argument("input_file", help="Code analysis JSON file")
+    parser.add_argument("output_dir", help="Output directory for markdown files")
 
     args = parser.parse_args()
 
@@ -351,7 +351,7 @@ def main():
         print(f"Error: Input file not found: {input_path}")
         return 1
 
-    with open(input_path, 'r', encoding='utf-8') as f:
+    with open(input_path, encoding="utf-8") as f:
         code_analysis = json.load(f)
 
     # Build API reference
@@ -367,6 +367,7 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     sys.exit(main())

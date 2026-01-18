@@ -8,44 +8,44 @@ Usage:
     python3 quality_checker.py output/godot/ --verbose
 """
 
-import os
 import re
 import sys
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
 class QualityIssue:
     """Represents a quality issue found during validation."""
+
     level: str  # 'error', 'warning', 'info'
     category: str  # 'enhancement', 'content', 'links', 'structure'
     message: str
-    file: Optional[str] = None
-    line: Optional[int] = None
+    file: str | None = None
+    line: int | None = None
 
 
 @dataclass
 class QualityReport:
     """Complete quality report for a skill."""
+
     skill_name: str
     skill_path: Path
-    errors: List[QualityIssue] = field(default_factory=list)
-    warnings: List[QualityIssue] = field(default_factory=list)
-    info: List[QualityIssue] = field(default_factory=list)
+    errors: list[QualityIssue] = field(default_factory=list)
+    warnings: list[QualityIssue] = field(default_factory=list)
+    info: list[QualityIssue] = field(default_factory=list)
 
     def add_error(self, category: str, message: str, file: str = None, line: int = None):
         """Add an error to the report."""
-        self.errors.append(QualityIssue('error', category, message, file, line))
+        self.errors.append(QualityIssue("error", category, message, file, line))
 
     def add_warning(self, category: str, message: str, file: str = None, line: int = None):
         """Add a warning to the report."""
-        self.warnings.append(QualityIssue('warning', category, message, file, line))
+        self.warnings.append(QualityIssue("warning", category, message, file, line))
 
     def add_info(self, category: str, message: str, file: str = None, line: int = None):
         """Add info to the report."""
-        self.info.append(QualityIssue('info', category, message, file, line))
+        self.info.append(QualityIssue("info", category, message, file, line))
 
     @property
     def has_errors(self) -> bool:
@@ -80,15 +80,15 @@ class QualityReport:
         """Get quality grade (A-F)."""
         score = self.quality_score
         if score >= 90:
-            return 'A'
+            return "A"
         elif score >= 80:
-            return 'B'
+            return "B"
         elif score >= 70:
-            return 'C'
+            return "C"
         elif score >= 60:
-            return 'D'
+            return "D"
         else:
-            return 'F'
+            return "F"
 
 
 class SkillQualityChecker:
@@ -103,10 +103,7 @@ class SkillQualityChecker:
         self.skill_dir = Path(skill_dir)
         self.skill_md_path = self.skill_dir / "SKILL.md"
         self.references_dir = self.skill_dir / "references"
-        self.report = QualityReport(
-            skill_name=self.skill_dir.name,
-            skill_path=self.skill_dir
-        )
+        self.report = QualityReport(skill_name=self.skill_dir.name, skill_path=self.skill_dir)
 
     def check_all(self) -> QualityReport:
         """Run all quality checks and return report.
@@ -135,25 +132,21 @@ class SkillQualityChecker:
         """Check basic skill structure."""
         # Check SKILL.md exists
         if not self.skill_md_path.exists():
-            self.report.add_error(
-                'structure',
-                'SKILL.md file not found',
-                str(self.skill_md_path)
-            )
+            self.report.add_error("structure", "SKILL.md file not found", str(self.skill_md_path))
             return
 
         # Check references directory exists
         if not self.references_dir.exists():
             self.report.add_warning(
-                'structure',
-                'references/ directory not found - skill may be incomplete',
-                str(self.references_dir)
+                "structure",
+                "references/ directory not found - skill may be incomplete",
+                str(self.references_dir),
             )
-        elif not list(self.references_dir.rglob('*.md')):
+        elif not list(self.references_dir.rglob("*.md")):
             self.report.add_warning(
-                'structure',
-                'references/ directory is empty - no reference documentation found',
-                str(self.references_dir)
+                "structure",
+                "references/ directory is empty - no reference documentation found",
+                str(self.references_dir),
             )
 
     def _check_enhancement_quality(self):
@@ -161,7 +154,7 @@ class SkillQualityChecker:
         if not self.skill_md_path.exists():
             return
 
-        content = self.skill_md_path.read_text(encoding='utf-8')
+        content = self.skill_md_path.read_text(encoding="utf-8")
 
         # Check for template indicators (signs it wasn't enhanced)
         template_indicators = [
@@ -174,139 +167,107 @@ class SkillQualityChecker:
         for indicator in template_indicators:
             if indicator.lower() in content.lower():
                 self.report.add_warning(
-                    'enhancement',
+                    "enhancement",
                     f'Found template placeholder: "{indicator}" - SKILL.md may not be enhanced',
-                    'SKILL.md'
+                    "SKILL.md",
                 )
 
         # Check for good signs of enhancement
         enhancement_indicators = {
-            'code_examples': re.compile(r'```[\w-]+\n', re.MULTILINE),
-            'real_examples': re.compile(r'Example:', re.IGNORECASE),
-            'sections': re.compile(r'^## .+', re.MULTILINE),
+            "code_examples": re.compile(r"```[\w-]+\n", re.MULTILINE),
+            "real_examples": re.compile(r"Example:", re.IGNORECASE),
+            "sections": re.compile(r"^## .+", re.MULTILINE),
         }
 
-        code_blocks = len(enhancement_indicators['code_examples'].findall(content))
-        real_examples = len(enhancement_indicators['real_examples'].findall(content))
-        sections = len(enhancement_indicators['sections'].findall(content))
+        code_blocks = len(enhancement_indicators["code_examples"].findall(content))
+        _real_examples = len(enhancement_indicators["real_examples"].findall(content))
+        sections = len(enhancement_indicators["sections"].findall(content))
 
         # Quality thresholds
         if code_blocks == 0:
             self.report.add_warning(
-                'enhancement',
-                'No code examples found in SKILL.md - consider enhancing',
-                'SKILL.md'
+                "enhancement", "No code examples found in SKILL.md - consider enhancing", "SKILL.md"
             )
         elif code_blocks < 3:
             self.report.add_info(
-                'enhancement',
-                f'Only {code_blocks} code examples found - more examples would improve quality',
-                'SKILL.md'
+                "enhancement",
+                f"Only {code_blocks} code examples found - more examples would improve quality",
+                "SKILL.md",
             )
         else:
-            self.report.add_info(
-                'enhancement',
-                f'✓ Found {code_blocks} code examples',
-                'SKILL.md'
-            )
+            self.report.add_info("enhancement", f"✓ Found {code_blocks} code examples", "SKILL.md")
 
         if sections < 4:
             self.report.add_warning(
-                'enhancement',
-                f'Only {sections} sections found - SKILL.md may be too basic',
-                'SKILL.md'
+                "enhancement",
+                f"Only {sections} sections found - SKILL.md may be too basic",
+                "SKILL.md",
             )
         else:
-            self.report.add_info(
-                'enhancement',
-                f'✓ Found {sections} sections',
-                'SKILL.md'
-            )
+            self.report.add_info("enhancement", f"✓ Found {sections} sections", "SKILL.md")
 
     def _check_content_quality(self):
         """Check content quality."""
         if not self.skill_md_path.exists():
             return
 
-        content = self.skill_md_path.read_text(encoding='utf-8')
+        content = self.skill_md_path.read_text(encoding="utf-8")
 
         # Check YAML frontmatter
-        if not content.startswith('---'):
+        if not content.startswith("---"):
             self.report.add_error(
-                'content',
-                'Missing YAML frontmatter - SKILL.md must start with ---',
-                'SKILL.md',
-                1
+                "content", "Missing YAML frontmatter - SKILL.md must start with ---", "SKILL.md", 1
             )
         else:
             # Extract frontmatter
             try:
-                frontmatter_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+                frontmatter_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
                 if frontmatter_match:
                     frontmatter = frontmatter_match.group(1)
 
                     # Check for required fields
-                    if 'name:' not in frontmatter:
+                    if "name:" not in frontmatter:
                         self.report.add_error(
-                            'content',
-                            'Missing "name:" field in YAML frontmatter',
-                            'SKILL.md',
-                            2
+                            "content", 'Missing "name:" field in YAML frontmatter', "SKILL.md", 2
                         )
 
                     # Check for description
-                    if 'description:' in frontmatter:
+                    if "description:" in frontmatter:
                         self.report.add_info(
-                            'content',
-                            '✓ YAML frontmatter includes description',
-                            'SKILL.md'
+                            "content", "✓ YAML frontmatter includes description", "SKILL.md"
                         )
                 else:
                     self.report.add_error(
-                        'content',
-                        'Invalid YAML frontmatter format',
-                        'SKILL.md',
-                        1
+                        "content", "Invalid YAML frontmatter format", "SKILL.md", 1
                     )
             except Exception as e:
                 self.report.add_error(
-                    'content',
-                    f'Error parsing YAML frontmatter: {e}',
-                    'SKILL.md',
-                    1
+                    "content", f"Error parsing YAML frontmatter: {e}", "SKILL.md", 1
                 )
 
         # Check code block language tags
-        code_blocks_without_lang = re.findall(r'```\n[^`]', content)
+        code_blocks_without_lang = re.findall(r"```\n[^`]", content)
         if code_blocks_without_lang:
             self.report.add_warning(
-                'content',
-                f'Found {len(code_blocks_without_lang)} code blocks without language tags',
-                'SKILL.md'
+                "content",
+                f"Found {len(code_blocks_without_lang)} code blocks without language tags",
+                "SKILL.md",
             )
 
         # Check for "When to Use" section
-        if 'when to use' not in content.lower():
+        if "when to use" not in content.lower():
             self.report.add_warning(
-                'content',
-                'Missing "When to Use This Skill" section',
-                'SKILL.md'
+                "content", 'Missing "When to Use This Skill" section', "SKILL.md"
             )
         else:
-            self.report.add_info(
-                'content',
-                '✓ Found "When to Use" section',
-                'SKILL.md'
-            )
+            self.report.add_info("content", '✓ Found "When to Use" section', "SKILL.md")
 
         # Check reference files
         if self.references_dir.exists():
-            ref_files = list(self.references_dir.rglob('*.md'))
+            ref_files = list(self.references_dir.rglob("*.md"))
             if ref_files:
                 self.report.add_info(
-                    'content',
-                    f'✓ Found {len(ref_files)} reference files',
-                    'references/'
+                    "content", f"✓ Found {len(ref_files)} reference files", "references/"
                 )
 
                 # Check if references are mentioned in SKILL.md
@@ -317,9 +278,9 @@ class SkillQualityChecker:
 
                 if mentioned_refs == 0:
                     self.report.add_warning(
-                        'content',
-                        'Reference files exist but none are mentioned in SKILL.md',
-                        'SKILL.md'
+                        "content",
+                        "Reference files exist but none are mentioned in SKILL.md",
+                        "SKILL.md",
                     )
 
     def _check_links(self):
@@ -327,21 +288,21 @@ class SkillQualityChecker:
         if not self.skill_md_path.exists():
             return
 
-        content = self.skill_md_path.read_text(encoding='utf-8')
+        content = self.skill_md_path.read_text(encoding="utf-8")
 
         # Find all markdown links [text](path)
-        link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+        link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
         links = link_pattern.findall(content)
 
         broken_links = []
 
         for text, link in links:
             # Skip external links (http/https)
-            if link.startswith('http://') or link.startswith('https://'):
+            if link.startswith("http://") or link.startswith("https://"):
                 continue
 
             # Skip anchor links
-            if link.startswith('#'):
+            if link.startswith("#"):
                 continue
 
             # Check if file exists (relative to SKILL.md)
@@ -351,19 +312,13 @@ class SkillQualityChecker:
 
         if broken_links:
             for text, link in broken_links:
-                self.report.add_warning(
-                    'links',
-                    f'Broken link: [{text}]({link})',
-                    'SKILL.md'
-                )
+                self.report.add_warning("links", f"Broken link: [{text}]({link})", "SKILL.md")
         else:
             if links:
-                internal_links = [l for t, l in links if not l.startswith('http')]
+                internal_links = [link for t, link in links if not link.startswith("http")]
                 if internal_links:
                     self.report.add_info(
-                        'links',
-                        f'✓ All {len(internal_links)} internal links are valid',
-                        'SKILL.md'
+                        "links", f"✓ All {len(internal_links)} internal links are valid", "SKILL.md"
                     )
 
     def _check_skill_completeness(self):
@@ -375,83 +330,75 @@ class SkillQualityChecker:
         if not self.skill_md_path.exists():
             return
 
-        content = self.skill_md_path.read_text(encoding='utf-8')
+        content = self.skill_md_path.read_text(encoding="utf-8")
 
         # Check for grounding/verification section (prerequisites)
         grounding_patterns = [
-            r'before\s+(executing|running|proceeding|you\s+start)',
-            r'verify\s+that',
-            r'prerequisites?',
-            r'requirements?:',
-            r'make\s+sure\s+you\s+have',
+            r"before\s+(executing|running|proceeding|you\s+start)",
+            r"verify\s+that",
+            r"prerequisites?",
+            r"requirements?:",
+            r"make\s+sure\s+you\s+have",
         ]
         has_grounding = any(
-            re.search(pattern, content, re.IGNORECASE)
-            for pattern in grounding_patterns
+            re.search(pattern, content, re.IGNORECASE) for pattern in grounding_patterns
         )
         if has_grounding:
             self.report.add_info(
-                'completeness',
-                '✓ Found verification/prerequisites section',
-                'SKILL.md'
+                "completeness", "✓ Found verification/prerequisites section", "SKILL.md"
             )
         else:
             self.report.add_info(
-                'completeness',
-                'Consider adding prerequisites section - helps Claude verify conditions first',
-                'SKILL.md'
+                "completeness",
+                "Consider adding prerequisites section - helps Claude verify conditions first",
+                "SKILL.md",
             )
 
         # Check for error handling/troubleshooting guidance
         error_patterns = [
-            r'if\s+.*\s+(fails?|errors?)',
-            r'troubleshoot',
-            r'common\s+(issues?|problems?)',
-            r'error\s+handling',
-            r'when\s+things\s+go\s+wrong',
+            r"if\s+.*\s+(fails?|errors?)",
+            r"troubleshoot",
+            r"common\s+(issues?|problems?)",
+            r"error\s+handling",
+            r"when\s+things\s+go\s+wrong",
         ]
         has_error_handling = any(
-            re.search(pattern, content, re.IGNORECASE)
-            for pattern in error_patterns
+            re.search(pattern, content, re.IGNORECASE) for pattern in error_patterns
         )
         if has_error_handling:
             self.report.add_info(
-                'completeness',
-                '✓ Found error handling/troubleshooting guidance',
-                'SKILL.md'
+                "completeness", "✓ Found error handling/troubleshooting guidance", "SKILL.md"
             )
         else:
             self.report.add_info(
-                'completeness',
-                'Consider adding troubleshooting section for common issues',
-                'SKILL.md'
+                "completeness",
+                "Consider adding troubleshooting section for common issues",
+                "SKILL.md",
             )
 
         # Check for workflow steps (numbered or sequential indicators)
         step_patterns = [
-            r'step\s+\d',
-            r'##\s+\d\.',
-            r'first,?\s+',
-            r'then,?\s+',
-            r'finally,?\s+',
-            r'next,?\s+',
+            r"step\s+\d",
+            r"##\s+\d\.",
+            r"first,?\s+",
+            r"then,?\s+",
+            r"finally,?\s+",
+            r"next,?\s+",
         ]
         steps_found = sum(
-            1 for pattern in step_patterns
-            if re.search(pattern, content, re.IGNORECASE)
+            1 for pattern in step_patterns if re.search(pattern, content, re.IGNORECASE)
         )
         if steps_found >= 3:
             self.report.add_info(
-                'completeness',
-                f'✓ Found clear workflow indicators ({steps_found} step markers)',
-                'SKILL.md'
+                "completeness",
+                f"✓ Found clear workflow indicators ({steps_found} step markers)",
+                "SKILL.md",
             )
         elif steps_found > 0:
             self.report.add_info(
-                'completeness',
-                f'Some workflow guidance found ({steps_found} markers) - '
-                'consider adding numbered steps for clarity',
-                'SKILL.md'
+                "completeness",
+                f"Some workflow guidance found ({steps_found} markers) - consider adding numbered steps for clarity",
+                "SKILL.md",
             )
 
 
@@ -475,7 +422,13 @@ def print_report(report: QualityReport, verbose: bool = False):
     if report.errors:
         print(f"❌ ERRORS ({len(report.errors)}):")
         for issue in report.errors:
-            location = f" ({issue.file}:{issue.line})" if issue.file and issue.line else f" ({issue.file})" if issue.file else ""
+            location = (
+                f" ({issue.file}:{issue.line})"
+                if issue.file and issue.line
+                else f" ({issue.file})"
+                if issue.file
+                else ""
+            )
             print(f"   [{issue.category}] {issue.message}{location}")
         print()
 
@@ -483,7 +436,13 @@ def print_report(report: QualityReport, verbose: bool = False):
     if report.warnings:
         print(f"⚠️  WARNINGS ({len(report.warnings)}):")
         for issue in report.warnings:
-            location = f" ({issue.file}:{issue.line})" if issue.file and issue.line else f" ({issue.file})" if issue.file else ""
+            location = (
+                f" ({issue.file}:{issue.line})"
+                if issue.file and issue.line
+                else f" ({issue.file})"
+                if issue.file
+                else ""
+            )
             print(f"   [{issue.category}] {issue.message}{location}")
         print()
 
@@ -523,24 +482,15 @@ Examples:
 
   # Exit with error code if issues found
   python3 quality_checker.py output/django/ --strict
-"""
+""",
     )
 
-    parser.add_argument(
-        'skill_directory',
-        help='Path to skill directory (e.g., output/react/)'
-    )
+    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show all info messages")
 
     parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Show all info messages'
-    )
-
-    parser.add_argument(
-        '--strict',
-        action='store_true',
-        help='Exit with error code if any warnings or errors found'
+        "--strict", action="store_true", help="Exit with error code if any warnings or errors found"
     )
 
     args = parser.parse_args()
@@ -559,9 +509,7 @@ Examples:
     print_report(report, verbose=args.verbose)
 
     # Exit code
-    if args.strict and (report.has_errors or report.has_warnings):
-        sys.exit(1)
-    elif report.has_errors:
+    if args.strict and (report.has_errors or report.has_warnings) or report.has_errors:
         sys.exit(1)
     else:
         sys.exit(0)

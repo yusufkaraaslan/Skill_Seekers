@@ -20,7 +20,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 # Avoid circular imports by using TYPE_CHECKING
 if TYPE_CHECKING:
@@ -40,15 +40,17 @@ else:
         @dataclass
         class TroubleshootingItem:
             problem: str
-            symptoms: List[str] = field(default_factory=list)
+            symptoms: list[str] = field(default_factory=list)
             solution: str = ""
-            diagnostic_steps: List[str] = field(default_factory=list)
+            diagnostic_steps: list[str] = field(default_factory=list)
+
 
 logger = logging.getLogger(__name__)
 
 # Conditional import for Anthropic API
 try:
     import anthropic
+
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
@@ -58,9 +60,10 @@ except ImportError:
 @dataclass
 class StepEnhancement:
     """Enhanced step information (internal use only)"""
+
     step_index: int
     explanation: str  # Natural language explanation
-    variations: List[str] = field(default_factory=list)  # Alternative approaches
+    variations: list[str] = field(default_factory=list)  # Alternative approaches
 
 
 class GuideEnhancer:
@@ -81,7 +84,7 @@ class GuideEnhancer:
             mode: Enhancement mode - "api", "local", or "auto"
         """
         self.mode = self._detect_mode(mode)
-        self.api_key = os.environ.get('ANTHROPIC_API_KEY')
+        self.api_key = os.environ.get("ANTHROPIC_API_KEY")
         self.client = None
 
         if self.mode == "api":
@@ -89,7 +92,9 @@ class GuideEnhancer:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
                 logger.info("✨ GuideEnhancer initialized in API mode")
             else:
-                logger.warning("⚠️  API mode requested but anthropic library not available or no API key")
+                logger.warning(
+                    "⚠️  API mode requested but anthropic library not available or no API key"
+                )
                 self.mode = "none"
         elif self.mode == "local":
             # Check if claude CLI is available
@@ -119,7 +124,7 @@ class GuideEnhancer:
         """
         if requested_mode == "auto":
             # Prefer API if key available, else LOCAL
-            if os.environ.get('ANTHROPIC_API_KEY') and ANTHROPIC_AVAILABLE:
+            if os.environ.get("ANTHROPIC_API_KEY") and ANTHROPIC_AVAILABLE:
                 return "api"
             elif self._check_claude_cli():
                 return "local"
@@ -131,16 +136,13 @@ class GuideEnhancer:
         """Check if Claude Code CLI is available."""
         try:
             result = subprocess.run(
-                ['claude', '--version'],
-                capture_output=True,
-                text=True,
-                timeout=5
+                ["claude", "--version"], capture_output=True, text=True, timeout=5
             )
             return result.returncode == 0
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
-    def enhance_guide(self, guide_data: Dict) -> Dict:
+    def enhance_guide(self, guide_data: dict) -> dict:
         """
         Apply all 5 enhancements to a guide.
 
@@ -164,7 +166,7 @@ class GuideEnhancer:
             logger.info("📝 Returning original guide without enhancement")
             return guide_data
 
-    def enhance_step_descriptions(self, steps: List[Dict]) -> List[StepEnhancement]:
+    def enhance_step_descriptions(self, steps: list[dict]) -> list[StepEnhancement]:
         """
         Enhancement 1: Add natural language explanations to steps.
 
@@ -187,17 +189,17 @@ class GuideEnhancer:
             data = json.loads(response)
             return [
                 StepEnhancement(
-                    step_index=item.get('step_index', i),
-                    explanation=item.get('explanation', ''),
-                    variations=item.get('variations', [])
+                    step_index=item.get("step_index", i),
+                    explanation=item.get("explanation", ""),
+                    variations=item.get("variations", []),
                 )
-                for i, item in enumerate(data.get('step_descriptions', []))
+                for i, item in enumerate(data.get("step_descriptions", []))
             ]
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse step descriptions: {e}")
             return []
 
-    def enhance_troubleshooting(self, guide_data: Dict) -> List[TroubleshootingItem]:
+    def enhance_troubleshooting(self, guide_data: dict) -> list[TroubleshootingItem]:
         """
         Enhancement 2: Generate diagnostic flows + solutions.
 
@@ -220,18 +222,18 @@ class GuideEnhancer:
             data = json.loads(response)
             return [
                 TroubleshootingItem(
-                    problem=item.get('problem', ''),
-                    symptoms=item.get('symptoms', []),
-                    diagnostic_steps=item.get('diagnostic_steps', []),
-                    solution=item.get('solution', '')
+                    problem=item.get("problem", ""),
+                    symptoms=item.get("symptoms", []),
+                    diagnostic_steps=item.get("diagnostic_steps", []),
+                    solution=item.get("solution", ""),
                 )
-                for item in data.get('troubleshooting', [])
+                for item in data.get("troubleshooting", [])
             ]
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse troubleshooting items: {e}")
             return []
 
-    def enhance_prerequisites(self, prereqs: List[str]) -> List[PrerequisiteItem]:
+    def enhance_prerequisites(self, prereqs: list[str]) -> list[PrerequisiteItem]:
         """
         Enhancement 3: Explain why prerequisites are needed.
 
@@ -254,17 +256,15 @@ class GuideEnhancer:
             data = json.loads(response)
             return [
                 PrerequisiteItem(
-                    name=item.get('name', ''),
-                    why=item.get('why', ''),
-                    setup=item.get('setup', '')
+                    name=item.get("name", ""), why=item.get("why", ""), setup=item.get("setup", "")
                 )
-                for item in data.get('prerequisites_detailed', [])
+                for item in data.get("prerequisites_detailed", [])
             ]
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse prerequisites: {e}")
             return []
 
-    def enhance_next_steps(self, guide_data: Dict) -> List[str]:
+    def enhance_next_steps(self, guide_data: dict) -> list[str]:
         """
         Enhancement 4: Suggest related guides and variations.
 
@@ -285,12 +285,12 @@ class GuideEnhancer:
 
         try:
             data = json.loads(response)
-            return data.get('next_steps', [])
+            return data.get("next_steps", [])
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse next steps: {e}")
             return []
 
-    def enhance_use_cases(self, guide_data: Dict) -> List[str]:
+    def enhance_use_cases(self, guide_data: dict) -> list[str]:
         """
         Enhancement 5: Generate real-world scenario examples.
 
@@ -311,14 +311,14 @@ class GuideEnhancer:
 
         try:
             data = json.loads(response)
-            return data.get('use_cases', [])
+            return data.get("use_cases", [])
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse use cases: {e}")
             return []
 
     # === AI Call Methods ===
 
-    def _call_ai(self, prompt: str, max_tokens: int = 4000) -> Optional[str]:
+    def _call_ai(self, prompt: str, max_tokens: int = 4000) -> str | None:
         """
         Call AI with the given prompt.
 
@@ -335,7 +335,7 @@ class GuideEnhancer:
             return self._call_claude_local(prompt)
         return None
 
-    def _call_claude_api(self, prompt: str, max_tokens: int = 4000) -> Optional[str]:
+    def _call_claude_api(self, prompt: str, max_tokens: int = 4000) -> str | None:
         """
         Call Claude API.
 
@@ -353,14 +353,14 @@ class GuideEnhancer:
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text
         except Exception as e:
             logger.warning(f"⚠️  Claude API call failed: {e}")
             return None
 
-    def _call_claude_local(self, prompt: str) -> Optional[str]:
+    def _call_claude_local(self, prompt: str) -> str | None:
         """
         Call Claude Code CLI.
 
@@ -372,16 +372,16 @@ class GuideEnhancer:
         """
         try:
             # Create temporary prompt file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
                 f.write(prompt)
                 prompt_file = f.name
 
             # Run claude CLI
             result = subprocess.run(
-                ['claude', prompt_file],
+                ["claude", prompt_file],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 min timeout
+                timeout=300,  # 5 min timeout
             )
 
             # Clean up prompt file
@@ -399,7 +399,7 @@ class GuideEnhancer:
 
     # === Prompt Creation Methods ===
 
-    def _enhance_via_api(self, guide_data: Dict) -> Dict:
+    def _enhance_via_api(self, guide_data: dict) -> dict:
         """
         Enhance guide via API mode.
 
@@ -417,7 +417,7 @@ class GuideEnhancer:
 
         return self._parse_enhancement_response(response, guide_data)
 
-    def _enhance_via_local(self, guide_data: Dict) -> Dict:
+    def _enhance_via_local(self, guide_data: dict) -> dict:
         """
         Enhance guide via LOCAL mode.
 
@@ -435,7 +435,7 @@ class GuideEnhancer:
 
         return self._parse_enhancement_response(response, guide_data)
 
-    def _create_enhancement_prompt(self, guide_data: Dict) -> str:
+    def _create_enhancement_prompt(self, guide_data: dict) -> str:
         """
         Create comprehensive enhancement prompt for all 5 enhancements.
 
@@ -445,13 +445,13 @@ class GuideEnhancer:
         Returns:
             Complete prompt text
         """
-        title = guide_data.get('title', 'Unknown Guide')
-        steps = guide_data.get('steps', [])
-        language = guide_data.get('language', 'python')
-        prerequisites = guide_data.get('prerequisites', [])
+        title = guide_data.get("title", "Unknown Guide")
+        steps = guide_data.get("steps", [])
+        language = guide_data.get("language", "python")
+        prerequisites = guide_data.get("prerequisites", [])
 
         steps_text = self._format_steps_for_prompt(steps)
-        prereqs_text = ', '.join(prerequisites) if prerequisites else 'None specified'
+        prereqs_text = ", ".join(prerequisites) if prerequisites else "None specified"
 
         prompt = f"""I need you to enhance this how-to guide with 5 improvements:
 
@@ -528,7 +528,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks or extra text.
 """
         return prompt
 
-    def _create_step_description_prompt(self, steps: List[Dict]) -> str:
+    def _create_step_description_prompt(self, steps: list[dict]) -> str:
         """Create prompt for step descriptions only."""
         steps_text = self._format_steps_for_prompt(steps)
         return f"""Generate natural language explanations for these code steps:
@@ -546,11 +546,11 @@ Return JSON:
 IMPORTANT: Return ONLY valid JSON.
 """
 
-    def _create_troubleshooting_prompt(self, guide_data: Dict) -> str:
+    def _create_troubleshooting_prompt(self, guide_data: dict) -> str:
         """Create prompt for troubleshooting items."""
-        title = guide_data.get('title', 'Unknown')
-        language = guide_data.get('language', 'python')
-        steps = guide_data.get('steps', [])
+        title = guide_data.get("title", "Unknown")
+        language = guide_data.get("language", "python")
+        steps = guide_data.get("steps", [])
         steps_text = self._format_steps_for_prompt(steps)
 
         return f"""Generate troubleshooting guidance for this {language} workflow:
@@ -575,9 +575,9 @@ Return JSON with 3-5 common errors:
 IMPORTANT: Return ONLY valid JSON.
 """
 
-    def _create_prerequisites_prompt(self, prereqs: List[str]) -> str:
+    def _create_prerequisites_prompt(self, prereqs: list[str]) -> str:
         """Create prompt for prerequisites enhancement."""
-        prereqs_text = ', '.join(prereqs)
+        prereqs_text = ", ".join(prereqs)
         return f"""Explain why these prerequisites are needed and how to install them:
 
 Prerequisites: {prereqs_text}
@@ -593,9 +593,9 @@ Return JSON:
 IMPORTANT: Return ONLY valid JSON.
 """
 
-    def _create_next_steps_prompt(self, guide_data: Dict) -> str:
+    def _create_next_steps_prompt(self, guide_data: dict) -> str:
         """Create prompt for next steps suggestions."""
-        title = guide_data.get('title', 'Unknown')
+        title = guide_data.get("title", "Unknown")
         return f"""Suggest 3-5 related guides and learning paths after completing: {title}
 
 Return JSON:
@@ -610,10 +610,10 @@ Return JSON:
 IMPORTANT: Return ONLY valid JSON.
 """
 
-    def _create_use_cases_prompt(self, guide_data: Dict) -> str:
+    def _create_use_cases_prompt(self, guide_data: dict) -> str:
         """Create prompt for use case examples."""
-        title = guide_data.get('title', 'Unknown')
-        description = guide_data.get('description', '')
+        title = guide_data.get("title", "Unknown")
+        description = guide_data.get("description", "")
 
         return f"""Generate 2-3 real-world use cases for this guide:
 
@@ -632,23 +632,23 @@ Return JSON:
 IMPORTANT: Return ONLY valid JSON.
 """
 
-    def _format_steps_for_prompt(self, steps: List[Dict]) -> str:
+    def _format_steps_for_prompt(self, steps: list[dict]) -> str:
         """Format steps for inclusion in prompts."""
         if not steps:
             return "No steps provided"
 
         formatted = []
         for i, step in enumerate(steps):
-            desc = step.get('description', '')
-            code = step.get('code', '')
+            desc = step.get("description", "")
+            code = step.get("code", "")
             if code:
-                formatted.append(f"Step {i+1}: {desc}\n```\n{code}\n```")
+                formatted.append(f"Step {i + 1}: {desc}\n```\n{code}\n```")
             else:
-                formatted.append(f"Step {i+1}: {desc}")
+                formatted.append(f"Step {i + 1}: {desc}")
 
         return "\n\n".join(formatted)
 
-    def _parse_enhancement_response(self, response: str, guide_data: Dict) -> Dict:
+    def _parse_enhancement_response(self, response: str, guide_data: dict) -> dict:
         """
         Parse AI enhancement response.
 
@@ -661,8 +661,8 @@ IMPORTANT: Return ONLY valid JSON.
         """
         try:
             # Try to extract JSON from response (in case there's extra text)
-            json_start = response.find('{')
-            json_end = response.rfind('}') + 1
+            json_start = response.find("{")
+            json_end = response.rfind("}") + 1
             if json_start >= 0 and json_end > json_start:
                 json_text = response[json_start:json_end]
                 data = json.loads(json_text)
@@ -673,46 +673,46 @@ IMPORTANT: Return ONLY valid JSON.
             enhanced = guide_data.copy()
 
             # Step descriptions
-            if 'step_descriptions' in data:
-                enhanced['step_enhancements'] = [
+            if "step_descriptions" in data:
+                enhanced["step_enhancements"] = [
                     StepEnhancement(
-                        step_index=item.get('step_index', i),
-                        explanation=item.get('explanation', ''),
-                        variations=item.get('variations', [])
+                        step_index=item.get("step_index", i),
+                        explanation=item.get("explanation", ""),
+                        variations=item.get("variations", []),
                     )
-                    for i, item in enumerate(data['step_descriptions'])
+                    for i, item in enumerate(data["step_descriptions"])
                 ]
 
             # Troubleshooting
-            if 'troubleshooting' in data:
-                enhanced['troubleshooting_detailed'] = [
+            if "troubleshooting" in data:
+                enhanced["troubleshooting_detailed"] = [
                     TroubleshootingItem(
-                        problem=item.get('problem', ''),
-                        symptoms=item.get('symptoms', []),
-                        diagnostic_steps=item.get('diagnostic_steps', []),
-                        solution=item.get('solution', '')
+                        problem=item.get("problem", ""),
+                        symptoms=item.get("symptoms", []),
+                        diagnostic_steps=item.get("diagnostic_steps", []),
+                        solution=item.get("solution", ""),
                     )
-                    for item in data['troubleshooting']
+                    for item in data["troubleshooting"]
                 ]
 
             # Prerequisites
-            if 'prerequisites_detailed' in data:
-                enhanced['prerequisites_detailed'] = [
+            if "prerequisites_detailed" in data:
+                enhanced["prerequisites_detailed"] = [
                     PrerequisiteItem(
-                        name=item.get('name', ''),
-                        why=item.get('why', ''),
-                        setup=item.get('setup', '')
+                        name=item.get("name", ""),
+                        why=item.get("why", ""),
+                        setup=item.get("setup", ""),
                     )
-                    for item in data['prerequisites_detailed']
+                    for item in data["prerequisites_detailed"]
                 ]
 
             # Next steps
-            if 'next_steps' in data:
-                enhanced['next_steps_detailed'] = data['next_steps']
+            if "next_steps" in data:
+                enhanced["next_steps_detailed"] = data["next_steps"]
 
             # Use cases
-            if 'use_cases' in data:
-                enhanced['use_cases'] = data['use_cases']
+            if "use_cases" in data:
+                enhanced["use_cases"] = data["use_cases"]
 
             logger.info("✅ Successfully enhanced guide with all 5 improvements")
             return enhanced

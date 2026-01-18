@@ -2,11 +2,11 @@
 
 # Skill Seeker
 
-[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.6.0)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-700+%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-1200+%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -158,6 +158,99 @@ print(f"Common issues: {len(result.github_insights['common_problems'])}")
 
 **See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
+### 🔐 Smart Rate Limit Management & Configuration (**NEW - v2.7.0**)
+- ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
+  - Secure config storage at `~/.config/skill-seekers/config.json` (600 permissions)
+  - Per-profile rate limit strategies: `prompt`, `wait`, `switch`, `fail`
+  - Configurable timeout per profile (default: 30 min, prevents indefinite waits)
+  - Smart fallback chain: CLI arg → Env var → Config file → Prompt
+  - API key management for Claude, Gemini, OpenAI
+- ✅ **Interactive Configuration Wizard** - Beautiful terminal UI for easy setup
+  - Browser integration for token creation (auto-opens GitHub, etc.)
+  - Token validation and connection testing
+  - Visual status display with color coding
+- ✅ **Intelligent Rate Limit Handler** - No more indefinite waits!
+  - Upfront warning about rate limits (60/hour vs 5000/hour)
+  - Real-time detection from GitHub API responses
+  - Live countdown timers with progress
+  - Automatic profile switching when rate limited
+  - Four strategies: prompt (ask), wait (countdown), switch (try another), fail (abort)
+- ✅ **Resume Capability** - Continue interrupted jobs
+  - Auto-save progress at configurable intervals (default: 60 sec)
+  - List all resumable jobs with progress details
+  - Auto-cleanup of old jobs (default: 7 days)
+- ✅ **CI/CD Support** - Non-interactive mode for automation
+  - `--non-interactive` flag fails fast without prompts
+  - `--profile` flag to select specific GitHub account
+  - Clear error messages for pipeline logs
+  - Exit codes for automation integration
+
+**Quick Setup:**
+```bash
+# One-time configuration (5 minutes)
+skill-seekers config --github
+
+# Add multiple GitHub profiles
+skill-seekers config
+# → Select "1. GitHub Token Setup"
+# → Add profiles for personal, work, OSS accounts
+
+# Use specific profile for private repos
+skill-seekers github --repo mycompany/private-repo --profile work
+
+# CI/CD mode (fail fast, no prompts)
+skill-seekers github --repo owner/repo --non-interactive
+
+# View current configuration
+skill-seekers config --show
+
+# Test connections
+skill-seekers config --test
+
+# Resume interrupted job
+skill-seekers resume --list
+skill-seekers resume github_react_20260117_143022
+```
+
+**Rate Limit Strategies Explained:**
+- **prompt** (default) - Ask what to do when rate limited (wait, switch, setup token, cancel)
+- **wait** - Automatically wait with countdown timer (respects timeout)
+- **switch** - Automatically try next available profile (for multi-account setups)
+- **fail** - Fail immediately with clear error (perfect for CI/CD)
+
+**See complete documentation**: [Configuration Guide](docs/guides/CONFIGURATION.md) (coming soon)
+
+### 🎯 Bootstrap Skill - Self-Hosting (**NEW - v2.7.0**)
+
+Generate skill-seekers as a Claude Code skill to use within Claude:
+
+```bash
+# Generate the skill
+./scripts/bootstrap_skill.sh
+
+# Install to Claude Code
+cp -r output/skill-seekers ~/.claude/skills/
+
+# Verify
+ls ~/.claude/skills/skill-seekers/SKILL.md
+```
+
+**What you get:**
+- ✅ **Complete skill documentation** - All CLI commands and usage patterns
+- ✅ **CLI command reference** - Every tool and its options documented
+- ✅ **Quick start examples** - Common workflows and best practices
+- ✅ **Auto-generated API docs** - Code analysis, patterns, and examples
+- ✅ **Robust validation** - YAML frontmatter and required fields checked
+- ✅ **One-command bootstrap** - Combines manual header with auto-generated analysis
+
+**How it works:**
+1. Runs codebase analysis on skill-seekers itself (dogfooding!)
+2. Combines handcrafted header (prerequisites, commands) with auto-generated content
+3. Validates SKILL.md structure (frontmatter, required fields)
+4. Outputs ready-to-use skill directory
+
+**Result:** Use skill-seekers to create skills, from within Claude Code!
+
 ### 🔐 Private Config Repositories (**NEW - v2.2.0**)
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
 - ✅ **Multi-Source Management** - Register unlimited GitHub, GitLab, Bitbucket repos
@@ -223,7 +316,7 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 391 tests with comprehensive coverage
+- ✅ **Fully Tested** - 1200+ tests with comprehensive coverage
 
 ---
 
@@ -234,6 +327,53 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 ```bash
 pip install skill-seekers
 ```
+
+### Installation Options
+
+Choose your installation profile based on which features you need:
+
+```bash
+# 1️⃣ CLI Only (Skill Generation)
+pip install skill-seekers
+
+# Features:
+# • Scrape documentation websites
+# • Analyze GitHub repositories
+# • Extract from PDFs
+# • Package skills for all platforms
+
+# 2️⃣ MCP Integration (Claude Code, Cursor, Windsurf)
+pip install skill-seekers[mcp]
+
+# Features:
+# • Everything from CLI Only
+# • MCP server for Claude Code
+# • One-command skill installation
+# • HTTP/stdio transport modes
+
+# 3️⃣ Multi-LLM Support (Gemini, OpenAI)
+pip install skill-seekers[all-llms]
+
+# Features:
+# • Everything from CLI Only
+# • Google Gemini support
+# • OpenAI ChatGPT support
+# • Enhanced AI features
+
+# 4️⃣ Everything
+pip install skill-seekers[all]
+
+# Features:
+# • All features enabled
+# • Maximum flexibility
+```
+
+**Need help choosing?** Run the setup wizard:
+```bash
+skill-seekers-setup
+```
+
+The wizard shows all options with detailed feature lists and guides you through configuration.
 
 Get started in seconds. No cloning, no setup - just install and run. See installation options below.
 
@@ -732,7 +872,7 @@ Package skill at output/react/
 - ✅ No manual CLI commands
 - ✅ Natural language interface
 - ✅ Integrated with your workflow
-- ✅ **17 tools** available instantly (up from 9!)
+- ✅ **18 tools** available instantly (up from 9!)
 - ✅ **5 AI agents supported** - auto-configured with one command
 - ✅ **Tested and working** in production
 
@@ -740,12 +880,12 @@ Package skill at output/react/
 - ✅ **Upgraded to MCP SDK v1.25.0** - Latest features and performance
 - ✅ **FastMCP Framework** - Modern, maintainable MCP implementation
 - ✅ **HTTP + stdio transport** - Works with more AI agents
-- ✅ **17 tools** (up from 9) - More capabilities
+- ✅ **18 tools** (up from 9) - More capabilities
 - ✅ **Multi-agent auto-configuration** - Setup all agents with one command
 
 **Full guides:**
 - 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 17 tools
+- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
 - 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
 - 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
 
@@ -1003,7 +1143,7 @@ Skill Seekers MCP server supports 2 transport modes:
   "mcpServers": {
     "skill-seeker": {
       "command": "python3",
-      "args": ["-m", "skill_seekers.mcp.server"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "cwd": "/path/to/Skill_Seekers"
     }
   }
@@ -1035,7 +1175,7 @@ Skill Seekers MCP server supports 2 transport modes:
 ```bash
 # Start server manually (runs in background)
 cd /path/to/Skill_Seekers
-python3 -m skill_seekers.mcp.server --transport http --port 8765
+python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 # Or use auto-start script
 ./scripts/start_mcp_server.sh
@@ -1132,9 +1272,9 @@ In IntelliJ IDEA:
 "Split large Godot config"
 ```
 
-### Available MCP Tools (17 Total)
+### Available MCP Tools (18 Total)
 
-All agents have access to these 17 tools:
+All agents have access to these 18 tools:
 
 **Core Tools (9):**
 1. `list_configs` - List all available preset configurations
@@ -1163,7 +1303,7 @@ All agents have access to these 17 tools:
 - ✅ **Upgraded to MCP SDK v1.25.0** - Latest stable version
 - ✅ **FastMCP Framework** - Modern, maintainable implementation
 - ✅ **Dual Transport** - stdio + HTTP support
-- ✅ **17 Tools** - Up from 9 (almost 2x!)
+- ✅ **18 Tools** - Up from 9 (exactly 2x!)
 - ✅ **Auto-Configuration** - One script configures all agents
 
 **Agent Support:**
@@ -1176,7 +1316,7 @@ All agents have access to these 17 tools:
 - ✅ **One Setup Command** - Works for all agents
 - ✅ **Natural Language** - Use plain English in any agent
 - ✅ **No CLI Required** - All features via MCP tools
-- ✅ **Full Testing** - All 17 tools tested and working
+- ✅ **Full Testing** - All 18 tools tested and working
 
 ### Troubleshooting Multi-Agent Setup
 
@@ -1186,7 +1326,7 @@ All agents have access to these 17 tools:
 lsof -i :8765
 
 # Use different port
-python3 -m skill_seekers.mcp.server --transport http --port 9000
+python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 9000
 
 # Update agent config with new port
 ```
@@ -1208,7 +1348,7 @@ tail -f logs/mcp_server.log
 ```bash
 # Restart agent completely (quit and relaunch)
 # For HTTP transport, ensure server is running:
-ps aux | grep "skill_seekers.mcp.server"
+ps aux | grep "skill_seekers.mcp.server_fastmcp"
 
 # Test server directly
 curl http://localhost:8765/health
@@ -1250,7 +1390,7 @@ doc-to-skill/
 │   ├── upload_skill.py     # Auto-upload (API)
 │   └── enhance_skill.py    # AI enhancement
 ├── mcp/                    # MCP server for 5 AI agents
-│   └── server.py           # 17 MCP tools (v2.4.0)
+│   └── server.py           # 18 MCP tools (v2.7.0)
 ├── configs/                # Preset configurations
 │   ├── godot.json         # Godot Engine
 │   ├── react.json         # React

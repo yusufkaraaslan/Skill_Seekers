@@ -8,8 +8,8 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
+
 import git
 from git.exc import GitCommandError, InvalidGitRepositoryError
 
@@ -17,7 +17,7 @@ from git.exc import GitCommandError, InvalidGitRepositoryError
 class GitConfigRepo:
     """Manages git operations for config repositories."""
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """
         Initialize git repository manager.
 
@@ -43,8 +43,8 @@ class GitConfigRepo:
         source_name: str,
         git_url: str,
         branch: str = "main",
-        token: Optional[str] = None,
-        force_refresh: bool = False
+        token: str | None = None,
+        force_refresh: bool = False,
     ) -> Path:
         """
         Clone repository if not cached, else pull latest changes.
@@ -93,7 +93,7 @@ class GitConfigRepo:
                     # Pull latest changes
                     origin.pull(branch)
                     return repo_path
-                except (InvalidGitRepositoryError, GitCommandError) as e:
+                except (InvalidGitRepositoryError, GitCommandError):
                     # Corrupted repo - delete and re-clone
                     shutil.rmtree(repo_path)
                     raise  # Re-raise to trigger clone below
@@ -104,7 +104,7 @@ class GitConfigRepo:
                 repo_path,
                 branch=branch,
                 depth=1,  # Shallow clone
-                single_branch=True  # Only clone one branch
+                single_branch=True,  # Only clone one branch
             )
             return repo_path
 
@@ -114,21 +114,15 @@ class GitConfigRepo:
             # Provide helpful error messages
             if "authentication failed" in error_msg.lower() or "403" in error_msg:
                 raise GitCommandError(
-                    f"Authentication failed for {git_url}. "
-                    f"Check your token or permissions.",
-                    128
+                    f"Authentication failed for {git_url}. Check your token or permissions.", 128
                 ) from e
             elif "not found" in error_msg.lower() or "404" in error_msg:
                 raise GitCommandError(
-                    f"Repository not found: {git_url}. "
-                    f"Verify the URL is correct and you have access.",
-                    128
+                    f"Repository not found: {git_url}. Verify the URL is correct and you have access.",
+                    128,
                 ) from e
             else:
-                raise GitCommandError(
-                    f"Failed to clone repository: {error_msg}",
-                    128
-                ) from e
+                raise GitCommandError(f"Failed to clone repository: {error_msg}", 128) from e
 
     def find_configs(self, repo_path: Path) -> list[Path]:
         """
@@ -208,7 +202,7 @@ class GitConfigRepo:
             ValueError: If JSON is invalid
         """
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in config file {config_path.name}: {e}") from e
@@ -276,7 +270,4 @@ class GitConfigRepo:
             return ":" in git_url and len(git_url.split(":")) == 2
 
         # Accept file:// URLs (for local testing)
-        if git_url.startswith("file://"):
-            return True
-
-        return False
+        return bool(git_url.startswith("file://"))

@@ -26,20 +26,38 @@ Examples:
     skill-seekers install --config react --dry-run
 """
 
-import asyncio
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
 # Add parent directory to path to import MCP server
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import the MCP tool function
-from skill_seekers.mcp.server import install_skill_tool
+# Import the MCP tool function (with lazy loading)
+try:
+    from skill_seekers.mcp.server import install_skill_tool
+
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    install_skill_tool = None
 
 
 def main():
     """Main entry point for CLI"""
+    # Check MCP availability first
+    if not MCP_AVAILABLE:
+        print("\n❌ Error: MCP package not installed")
+        print("\nThe 'install' command requires MCP support.")
+        print("Install with:")
+        print("  pip install skill-seekers[mcp]")
+        print("\nOr use these alternatives:")
+        print("  skill-seekers scrape --config react")
+        print("  skill-seekers package output/react/")
+        print()
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         description="Complete skill installation workflow (fetch → scrape → enhance → package → upload)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -78,51 +96,43 @@ Phases:
   3. AI Enhancement (MANDATORY - no skip option)
   4. Package for target platform (ZIP or tar.gz)
   5. Upload to target platform (optional)
-"""
+""",
     )
 
     parser.add_argument(
         "--config",
         required=True,
-        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')"
+        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')",
     )
 
     parser.add_argument(
         "--destination",
         default="output",
-        help="Output directory for skill files (default: output/)"
+        help="Output directory for skill files (default: output/)",
     )
 
-    parser.add_argument(
-        "--no-upload",
-        action="store_true",
-        help="Skip automatic upload to Claude"
-    )
+    parser.add_argument("--no-upload", action="store_true", help="Skip automatic upload to Claude")
 
     parser.add_argument(
         "--unlimited",
         action="store_true",
-        help="Remove page limits during scraping (WARNING: Can take hours)"
+        help="Remove page limits during scraping (WARNING: Can take hours)",
     )
 
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview workflow without executing"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Preview workflow without executing")
 
     parser.add_argument(
         "--target",
-        choices=['claude', 'gemini', 'openai', 'markdown'],
-        default='claude',
-        help="Target LLM platform (default: claude)"
+        choices=["claude", "gemini", "openai", "markdown"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
     )
 
     args = parser.parse_args()
 
     # Determine if config is a name or path
     config_arg = args.config
-    if config_arg.endswith('.json') or '/' in config_arg or '\\' in config_arg:
+    if config_arg.endswith(".json") or "/" in config_arg or "\\" in config_arg:
         # It's a path
         config_path = config_arg
         config_name = None
@@ -139,7 +149,7 @@ Phases:
         "auto_upload": not args.no_upload,
         "unlimited": args.unlimited,
         "dry_run": args.dry_run,
-        "target": args.target
+        "target": args.target,
     }
 
     # Run async tool

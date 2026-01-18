@@ -17,27 +17,20 @@ Usage:
     skill-seekers upload output/react-openai.zip --target openai
 """
 
+import argparse
 import os
 import sys
-import json
-import argparse
 from pathlib import Path
 
 # Import utilities
 try:
-    from utils import (
-        print_upload_instructions,
-        validate_zip_file
-    )
+    from utils import print_upload_instructions
 except ImportError:
     sys.path.insert(0, str(Path(__file__).parent))
-    from utils import (
-        print_upload_instructions,
-        validate_zip_file
-    )
+    from utils import print_upload_instructions
 
 
-def upload_skill_api(package_path, target='claude', api_key=None):
+def upload_skill_api(package_path, target="claude", api_key=None):
     """
     Upload skill package to LLM platform
 
@@ -62,7 +55,7 @@ def upload_skill_api(package_path, target='claude', api_key=None):
 
     # Get API key
     if not api_key:
-        api_key = os.environ.get(adaptor.get_env_var_name(), '').strip()
+        api_key = os.environ.get(adaptor.get_env_var_name(), "").strip()
 
     if not api_key:
         return False, f"{adaptor.get_env_var_name()} not set. Export your API key first."
@@ -91,19 +84,19 @@ def upload_skill_api(package_path, target='claude', api_key=None):
     try:
         result = adaptor.upload(package_path, api_key)
 
-        if result['success']:
+        if result["success"]:
             print()
             print(f"✅ {result['message']}")
             print()
-            if result['url']:
+            if result["url"]:
                 print("Your skill is now available at:")
                 print(f"   {result['url']}")
-            if result['skill_id']:
+            if result["skill_id"]:
                 print(f"   Skill ID: {result['skill_id']}")
             print()
             return True, "Upload successful"
         else:
-            return False, result['message']
+            return False, result["message"]
 
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
@@ -136,25 +129,19 @@ Examples:
 
   # Upload with explicit API key
   skill-seekers upload output/react.zip --api-key sk-ant-...
-        """
+        """,
     )
 
-    parser.add_argument(
-        'package_file',
-        help='Path to skill package file (e.g., output/react.zip)'
-    )
+    parser.add_argument("package_file", help="Path to skill package file (e.g., output/react.zip)")
 
     parser.add_argument(
-        '--target',
-        choices=['claude', 'gemini', 'openai'],
-        default='claude',
-        help='Target LLM platform (default: claude)'
+        "--target",
+        choices=["claude", "gemini", "openai"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
     )
 
-    parser.add_argument(
-        '--api-key',
-        help='Platform API key (or set environment variable)'
-    )
+    parser.add_argument("--api-key", help="Platform API key (or set environment variable)")
 
     args = parser.parse_args()
 

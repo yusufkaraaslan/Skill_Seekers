@@ -28,7 +28,7 @@ except ImportError:
     open_folder = None
     read_reference_files = None
 
-__version__ = "2.5.2"
+__version__ = "2.7.0"
 
 __all__ = [
     "LlmsTxtDetector",

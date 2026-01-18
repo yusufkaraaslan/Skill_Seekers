@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "2.6.0"
+version = "2.7.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,9 +43,8 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
-    "mcp>=1.25,<2",
-    "httpx>=0.28.1",
-    "httpx-sse>=0.4.3",
+    "httpx>=0.28.1",  # Required for async scraping (core feature)
+    "anthropic>=0.76.0",  # Required for AI enhancement (core feature)
     "PyMuPDF>=1.24.14",
     "Pillow>=11.0.0",
     "pytesseract>=0.3.13",
@@ -60,7 +59,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# MCP server dependencies (included by default, but optional)
+# MCP server dependencies (NOW TRULY OPTIONAL)
 mcp = [
     "mcp>=1.25,<2",
     "httpx>=0.28.1",
@@ -110,6 +109,8 @@ Documentation = "https://github.com/yusufkaraaslan/Skill_Seekers#readme"
 skill-seekers = "skill_seekers.cli.main:main"
 
 # Individual tool entry points
+skill-seekers-config = "skill_seekers.cli.config_command:main"
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
@@ -124,6 +125,7 @@ skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
 skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main"
+skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -144,8 +146,11 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short --strict-markers"
 markers = [
     "asyncio: mark test as an async test",
-    "slow: mark test as slow running",
+    "slow: mark test as slow running (>5 seconds)",
     "integration: mark test as integration test (requires external services)",
+    "e2e: mark test as end-to-end (resource-intensive, may create files)",
+    "venv: mark test as requiring virtual environment setup",
+    "bootstrap: mark test as bootstrap feature specific",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -165,10 +170,52 @@ exclude_lines = [
     "@abstractmethod",
 ]
 
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["skill_seekers"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
+    "ruff>=0.14.13",
+    "mypy>=1.19.1",
 ]

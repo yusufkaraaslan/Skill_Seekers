@@ -1,15 +1,15 @@
-# Complete MCP Setup Guide - MCP 2025 (v2.4.0)
+# Complete MCP Setup Guide - MCP 2025 (v2.7.0)
 
 Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI coding agents.
 
-**Version 2.4.0 Highlights:**
+**Version 2.7.0 Highlights:**
 - ✅ **MCP SDK v1.25.0** - Latest protocol support (upgraded from v1.18.0)
 - ✅ **FastMCP Framework** - Modern, decorator-based server implementation
 - ✅ **Dual Transport** - HTTP + stdio support (choose based on agent)
-- ✅ **17 MCP Tools** - Expanded from 9 tools (8 new source management tools)
+- ✅ **18 MCP Tools** - Expanded from 9 tools (enhance_skill + source management tools)
 - ✅ **Multi-Agent Support** - Claude Code, Cursor, Windsurf, VS Code + Cline, IntelliJ IDEA
 - ✅ **Auto-Configuration** - One-line setup with `./setup_mcp.sh`
-- ✅ **Production Ready** - 34 comprehensive tests, 100% pass rate
+- ✅ **Production Ready** - 700+ comprehensive tests, 100% pass rate
 
 ---
 
@@ -51,7 +51,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 
 ### New Features
 
-**17 MCP Tools** (expanded from 9):
+**18 MCP Tools** (expanded from 9):
 
 **Config Tools (3):**
 - `generate_config` - Generate config for any documentation site
@@ -134,16 +134,28 @@ python3 -c "import mcp; print(mcp.__version__)"
 
 **For HTTP-based agents (Cursor, Windsurf, IntelliJ):**
 
-Old config (v2.3.0):
+Old config (v2.3.0 - DEPRECATED):
 ```json
 {
   "command": "python",
-  "args": ["-m", "skill_seekers.mcp.server", "--http", "--port", "3000"]
+  "args": ["-m", "skill_seekers.mcp.server_fastmcp", "--http", "--port", "3000"]
 }
 ```
 
-New config (v2.4.0):
+New config (v2.4.0+):
 ```json
+# For stdio transport (Claude Code, VS Code + Cline):
+{
+  "type": "stdio",
+  "command": "python3",
+  "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
+}
+
+# For HTTP transport (Cursor, Windsurf, IntelliJ):
+# Run server separately:
+# python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 3000
+#
+# Then configure agent with URL:
 {
   "url": "http://localhost:3000/sse"
 }
@@ -168,7 +180,7 @@ In any connected agent:
 List all available MCP tools
 ```
 
-You should see 17 tools (up from 9 in v2.3.0).
+You should see 18 tools (up from 9 in v2.3.0).
 
 ### 5. Optional: Run Auto-Configuration
 
@@ -316,9 +328,9 @@ pwd
 ### Claude Code (stdio transport)
 
 **Config Location:**
-- **macOS**: `~/Library/Application Support/Claude/mcp.json`
-- **Linux**: `~/.config/claude-code/mcp.json`
-- **Windows**: `%APPDATA%\Claude\mcp.json`
+- **macOS**: `~/.claude.json`
+- **Linux**: `~/.claude.json`
+- **Windows**: `~/.claude.json`
 
 **Configuration:**
 
@@ -326,8 +338,10 @@ pwd
 {
   "mcpServers": {
     "skill-seeker": {
-      "command": "python",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
+      "type": "stdio",
+      "command": "python3",
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
+      "env": {}
     }
   }
 }
@@ -338,16 +352,17 @@ pwd
 {
   "mcpServers": {
     "skill-seeker": {
+      "type": "stdio",
       "command": "/usr/local/bin/python3.11",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp"]
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
+      "env": {}
     }
   }
 }
 ```
 
 **Setup Steps:**
-1. Create config directory: `mkdir -p ~/Library/Application\ Support/Claude`
-2. Edit config: `nano ~/Library/Application\ Support/Claude/mcp.json`
+1. Edit config: `nano ~/.claude.json`
 3. Paste configuration above
 4. Save and exit
 5. Restart Claude Code
@@ -840,6 +855,79 @@ Agent: ✅ Uploaded to Google Gemini
    - Quit agent (don't just close window)
    - Kill any background processes: `pkill -f skill_seekers`
    - Reopen agent
+
+---
+
+### Issue: "skill-seeker · ✘ failed" Connection Error
+
+**Symptoms:**
+- MCP server shows as "failed" when running `/mcp` in Claude Code
+- Cannot access Skill Seeker tools
+- Error: "ModuleNotFoundError: No module named 'skill_seekers'"
+
+**Solution 1: Install Package and MCP Dependencies**
+
+```bash
+# Navigate to Skill Seekers directory
+cd /path/to/Skill_Seekers
+
+# Install package with MCP dependencies
+pip3 install -e ".[mcp]"
+```
+
+**Solution 2: Fix ~/.claude.json Configuration**
+
+Common configuration problems:
+- Using `python` instead of `python3` (doesn't exist on macOS)
+- Missing `"type": "stdio"` field
+- Missing `"cwd"` field for proper working directory
+- Using deprecated `server` instead of `server_fastmcp`
+
+**Correct configuration:**
+
+```json
+{
+  "mcpServers": {
+    "skill-seeker": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "-m",
+        "skill_seekers.mcp.server_fastmcp"
+      ],
+      "cwd": "/full/path/to/Skill_Seekers",
+      "env": {}
+    }
+  }
+}
+```
+
+**Verify Installation:**
+
+```bash
+# Test module import
+python3 -c "from skill_seekers.mcp import server_fastmcp; print('✓ Module OK')"
+
+# Test server startup
+cd /path/to/Skill_Seekers
+python3 -m skill_seekers.mcp.server_fastmcp
+# Should start without errors (Ctrl+C to stop)
+```
+
+**Validate JSON Configuration:**
+
+```bash
+# Check JSON syntax
+python3 -m json.tool < ~/.claude.json > /dev/null && echo "✓ JSON valid"
+```
+
+**Restart Claude Code:**
+
+After fixing configuration:
+1. Quit Claude Code completely (don't just close window)
+2. Kill any background processes: `pkill -f skill_seekers`
+3. Reopen Claude Code
+4. Test with `/mcp` command
 
 ---
 
@@ -1390,7 +1478,7 @@ SETUP:
 3. Restart agent
 
 VERIFY:
-- "List all available MCP tools" (should show 17 tools)
+- "List all available MCP tools" (should show 18 tools)
 - "List all available configs" (should show 24 configs)
 
 GENERATE SKILL:

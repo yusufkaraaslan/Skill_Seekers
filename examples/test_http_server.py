@@ -10,8 +10,9 @@ Usage:
 
 import asyncio
 import subprocess
-import time
 import sys
+import time
+
 import requests
 
 
@@ -47,7 +48,7 @@ async def test_http_server():
         print("3. Testing health check endpoint...")
         response = requests.get("http://127.0.0.1:8765/health", timeout=5)
         if response.status_code == 200:
-            print(f"   ✓ Health check passed")
+            print("   ✓ Health check passed")
             print(f"   Response: {response.json()}")
         else:
             print(f"   ✗ Health check failed: {response.status_code}")
@@ -57,13 +58,11 @@ async def test_http_server():
         print("4. Testing SSE endpoint availability...")
         # Just check if the endpoint exists (full SSE testing requires MCP client)
         try:
-            response = requests.get(
-                "http://127.0.0.1:8765/sse", timeout=5, stream=True
-            )
+            response = requests.get("http://127.0.0.1:8765/sse", timeout=5, stream=True)
             print(f"   ✓ SSE endpoint is available (status: {response.status_code})")
         except Exception as e:
             print(f"   ℹ SSE endpoint response: {e}")
-            print(f"   (This is expected - full SSE testing requires MCP client)")
+            print("   (This is expected - full SSE testing requires MCP client)")
 
         print()
         print("=" * 60)
@@ -71,13 +70,13 @@ async def test_http_server():
         print("=" * 60)
         print()
         print("Server Configuration for Claude Desktop:")
-        print('{')
+        print("{")
         print('  "mcpServers": {')
         print('    "skill-seeker": {')
         print('      "url": "http://127.0.0.1:8765/sse"')
-        print('    }')
-        print('  }')
-        print('}')
+        print("    }")
+        print("  }")
+        print("}")
         print()
 
         return True

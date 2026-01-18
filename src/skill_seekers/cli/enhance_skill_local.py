@@ -36,18 +36,20 @@ Terminal Selection:
     Supported terminals: Ghostty, iTerm, Terminal, WezTerm
 """
 
-import os
-import sys
-import time
-import subprocess
-import tempfile
 import json
+import os
+import subprocess
+import sys
+import tempfile
 import threading
-from pathlib import Path
+import time
 from datetime import datetime
+from pathlib import Path
 
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import contextlib
 
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
@@ -77,29 +79,29 @@ def detect_terminal_app():
     """
     # Map TERM_PROGRAM values to macOS app names
     TERMINAL_MAP = {
-        'Apple_Terminal': 'Terminal',
-        'iTerm.app': 'iTerm',
-        'ghostty': 'Ghostty',
-        'WezTerm': 'WezTerm',
+        "Apple_Terminal": "Terminal",
+        "iTerm.app": "iTerm",
+        "ghostty": "Ghostty",
+        "WezTerm": "WezTerm",
     }
 
     # Priority 1: Check SKILL_SEEKER_TERMINAL env var (explicit preference)
-    preferred_terminal = os.environ.get('SKILL_SEEKER_TERMINAL', '').strip()
+    preferred_terminal = os.environ.get("SKILL_SEEKER_TERMINAL", "").strip()
     if preferred_terminal:
-        return preferred_terminal, 'SKILL_SEEKER_TERMINAL'
+        return preferred_terminal, "SKILL_SEEKER_TERMINAL"
 
     # Priority 2: Check TERM_PROGRAM (inherit current terminal)
-    term_program = os.environ.get('TERM_PROGRAM', '').strip()
+    term_program = os.environ.get("TERM_PROGRAM", "").strip()
     if term_program and term_program in TERMINAL_MAP:
-        return TERMINAL_MAP[term_program], 'TERM_PROGRAM'
+        return TERMINAL_MAP[term_program], "TERM_PROGRAM"
 
     # Priority 3: Fallback to Terminal.app
     if term_program:
         # TERM_PROGRAM is set but unknown
-        return 'Terminal', f'unknown TERM_PROGRAM ({term_program})'
+        return "Terminal", f"unknown TERM_PROGRAM ({term_program})"
     else:
         # No TERM_PROGRAM set
-        return 'Terminal', 'default'
+        return "Terminal", "default"
 
 
 class LocalSkillEnhancer:
@@ -132,8 +134,8 @@ class LocalSkillEnhancer:
         Returns:
             Summarized content
         """
-        lines = content.split('\n')
-        target_lines = int(len(lines) * target_ratio)
+        lines = content.split("\n")
+        _target_lines = int(len(lines) * target_ratio)
 
         # Priority 1: Keep introduction (first 20%)
         intro_lines = int(len(lines) * 0.2)
@@ -146,7 +148,7 @@ class LocalSkillEnhancer:
         block_start_idx = 0
 
         for i, line in enumerate(lines[intro_lines:], start=intro_lines):
-            if line.strip().startswith('```'):
+            if line.strip().startswith("```"):
                 if in_code_block:
                     # End of code block - add closing ``` and save
                     current_block.append(line)
@@ -165,7 +167,7 @@ class LocalSkillEnhancer:
         result = result_lines.copy()
 
         # Add code blocks first (prioritize code examples)
-        for idx, block in code_blocks[:5]:  # Max 5 code blocks
+        for _idx, block in code_blocks[:5]:  # Max 5 code blocks
             result.append("")  # Add blank line before code block
             result.extend(block)
 
@@ -174,9 +176,9 @@ class LocalSkillEnhancer:
         headings_added = 0
         while i < len(lines) and headings_added < 10:
             line = lines[i]
-            if line.startswith('#'):
+            if line.startswith("#"):
                 # Found heading - keep it and next 3 lines
-                chunk = lines[i:min(i+4, len(lines))]
+                chunk = lines[i : min(i + 4, len(lines))]
                 result.extend(chunk)
                 headings_added += 1
                 i += 4
@@ -185,7 +187,7 @@ class LocalSkillEnhancer:
 
         result.append("\n\n[Content intelligently summarized - full details in reference files]")
 
-        return '\n'.join(result)
+        return "\n".join(result)
 
     def create_enhancement_prompt(self, use_summarization=False, summarization_ratio=0.3):
         """Create the prompt file for Claude Code
@@ -197,9 +199,7 @@ class LocalSkillEnhancer:
 
         # Read reference files (with enriched metadata)
         references = read_reference_files(
-            self.skill_dir,
-            max_chars=LOCAL_CONTENT_LIMIT,
-            preview_limit=LOCAL_PREVIEW_LIMIT
+            self.skill_dir, max_chars=LOCAL_CONTENT_LIMIT, preview_limit=LOCAL_PREVIEW_LIMIT
         )
 
         if not references:
@@ -209,52 +209,56 @@ class LocalSkillEnhancer:
         # Analyze sources
         sources_found = set()
         for metadata in references.values():
-            sources_found.add(metadata['source'])
+            sources_found.add(metadata["source"])
 
         # Calculate total size
-        total_ref_size = sum(meta['size'] for meta in references.values())
+        total_ref_size = sum(meta["size"] for meta in references.values())
 
         # Apply summarization if requested or if content is too large
         if use_summarization or total_ref_size > 30000:
             if not use_summarization:
                 print(f"  ⚠️  Large skill detected ({total_ref_size:,} chars)")
-                print(f"  📊 Applying smart summarization (target: {int(summarization_ratio*100)}% of original)")
+                print(
+                    f"  📊 Applying smart summarization (target: {int(summarization_ratio * 100)}% of original)"
+                )
                 print()
 
             # Summarize each reference
-            for filename, metadata in references.items():
-                summarized = self.summarize_reference(metadata['content'], summarization_ratio)
-                metadata['content'] = summarized
-                metadata['size'] = len(summarized)
+            for _filename, metadata in references.items():
+                summarized = self.summarize_reference(metadata["content"], summarization_ratio)
+                metadata["content"] = summarized
+                metadata["size"] = len(summarized)
 
-            new_size = sum(meta['size'] for meta in references.values())
-            print(f"  ✓ Reduced from {total_ref_size:,} to {new_size:,} chars ({int(new_size/total_ref_size*100)}%)")
+            new_size = sum(meta["size"] for meta in references.values())
+            print(
+                f"  ✓ Reduced from {total_ref_size:,} to {new_size:,} chars ({int(new_size / total_ref_size * 100)}%)"
+            )
             print()
 
         # Read current SKILL.md
         current_skill_md = ""
         if self.skill_md_path.exists():
-            current_skill_md = self.skill_md_path.read_text(encoding='utf-8')
+            current_skill_md = self.skill_md_path.read_text(encoding="utf-8")
 
         # Analyze conflicts if present
-        has_conflicts = any('conflicts' in meta['path'] for meta in references.values())
+        has_conflicts = any("conflicts" in meta["path"] for meta in references.values())
 
         # Build prompt with multi-source awareness
         prompt = f"""I need you to enhance the SKILL.md file for the {self.skill_dir.name} skill.
 
 SKILL OVERVIEW:
 - Name: {self.skill_dir.name}
-- Source Types: {', '.join(sorted(sources_found))}
-- Multi-Source: {'Yes' if len(sources_found) > 1 else 'No'}
-- Conflicts Detected: {'Yes - see conflicts.md in references' if has_conflicts else 'No'}
+- Source Types: {", ".join(sorted(sources_found))}
+- Multi-Source: {"Yes" if len(sources_found) > 1 else "No"}
+- Conflicts Detected: {"Yes - see conflicts.md in references" if has_conflicts else "No"}
 
 CURRENT SKILL.MD:
-{'-'*60}
-{current_skill_md if current_skill_md else '(No existing SKILL.md - create from scratch)'}
-{'-'*60}
+{"-" * 60}
+{current_skill_md if current_skill_md else "(No existing SKILL.md - create from scratch)"}
+{"-" * 60}
 
 SOURCE ANALYSIS:
-{'-'*60}
+{"-" * 60}
 This skill combines knowledge from {len(sources_found)} source type(s):
 
 """
@@ -262,8 +266,8 @@ This skill combines knowledge from {len(sources_found)} source type(s):
         # Group references by (source_type, repo_id) for multi-source support
         by_source = {}
         for filename, metadata in references.items():
-            source = metadata['source']
-            repo_id = metadata.get('repo_id')  # None for single-source
+            source = metadata["source"]
+            repo_id = metadata.get("repo_id")  # None for single-source
             key = (source, repo_id) if repo_id else (source, None)
 
             if key not in by_source:
@@ -271,7 +275,7 @@ This skill combines knowledge from {len(sources_found)} source type(s):
             by_source[key].append((filename, metadata))
 
         # Add source breakdown with repo identity
-        for (source, repo_id) in sorted(by_source.keys()):
+        for source, repo_id in sorted(by_source.keys()):
             files = by_source[(source, repo_id)]
             if repo_id:
                 prompt += f"\n**{source.upper()} - {repo_id} ({len(files)} file(s))**\n"
@@ -283,14 +287,14 @@ This skill combines knowledge from {len(sources_found)} source type(s):
                 prompt += f"- ... and {len(files) - 5} more\n"
 
         prompt += f"""
-{'-'*60}
+{"-" * 60}
 
 REFERENCE DOCUMENTATION:
-{'-'*60}
+{"-" * 60}
 """
 
         # Add references grouped by (source, repo_id) with metadata
-        for (source, repo_id) in sorted(by_source.keys()):
+        for source, repo_id in sorted(by_source.keys()):
             if repo_id:
                 prompt += f"\n### {source.upper()} SOURCES - {repo_id}\n\n"
             else:
@@ -298,7 +302,7 @@ REFERENCE DOCUMENTATION:
 
             for filename, metadata in by_source[(source, repo_id)]:
                 # Further limit per-file to 12K to be safe
-                content = metadata['content']
+                content = metadata["content"]
                 max_per_file = 12000
                 if len(content) > max_per_file:
                     content = content[:max_per_file] + "\n\n[Content truncated for size...]"
@@ -307,11 +311,13 @@ REFERENCE DOCUMENTATION:
                 if repo_id:
                     prompt += f"*Source: {metadata['source']} ({repo_id}), Confidence: {metadata['confidence']}*\n\n"
                 else:
-                    prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    prompt += (
+                        f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+                    )
                 prompt += f"{content}\n"
 
         prompt += f"""
-{'-'*60}
+{"-" * 60}
 
 REFERENCE PRIORITY (when sources differ):
 1. **Code patterns (codebase_analysis)**: Ground truth - what the code actually does
@@ -325,12 +331,12 @@ MULTI-REPOSITORY HANDLING:
         # Detect multiple repos from same source type
         repo_ids = set()
         for metadata in references.values():
-            if metadata.get('repo_id'):
-                repo_ids.add(metadata['repo_id'])
+            if metadata.get("repo_id"):
+                repo_ids.add(metadata["repo_id"])
 
         if len(repo_ids) > 1:
             prompt += f"""
-⚠️ MULTIPLE REPOSITORIES DETECTED: {', '.join(sorted(repo_ids))}
+⚠️ MULTIPLE REPOSITORIES DETECTED: {", ".join(sorted(repo_ids))}
 
 This skill combines codebase analysis from {len(repo_ids)} different repositories.
 Each repo has its own ARCHITECTURE.md, patterns, examples, and configuration.
@@ -435,10 +441,10 @@ After writing, the file SKILL.md should:
             "progress": progress,
             "timestamp": datetime.now().isoformat(),
             "skill_dir": str(self.skill_dir),
-            "error": error
+            "error": error,
         }
 
-        self.status_file.write_text(json.dumps(status_data, indent=2), encoding='utf-8')
+        self.status_file.write_text(json.dumps(status_data, indent=2), encoding="utf-8")
 
     def read_status(self):
         """Read enhancement status from file.
@@ -450,8 +456,8 @@ After writing, the file SKILL.md should:
             return None
 
         try:
-            return json.loads(self.status_file.read_text(encoding='utf-8'))
-        except:
+            return json.loads(self.status_file.read_text(encoding="utf-8"))
+        except Exception:
             return None
 
     def run(self, headless=True, timeout=600, background=False, daemon=False):
@@ -482,9 +488,9 @@ After writing, the file SKILL.md should:
         # Daemon mode: Run as persistent process with monitoring
         if daemon:
             return self._run_daemon(timeout)
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"LOCAL ENHANCEMENT: {self.skill_dir.name}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         # Validate
         if not self.skill_dir.exists():
@@ -494,9 +500,7 @@ After writing, the file SKILL.md should:
         # Read reference files
         print("📖 Reading reference documentation...")
         references = read_reference_files(
-            self.skill_dir,
-            max_chars=LOCAL_CONTENT_LIMIT,
-            preview_limit=LOCAL_PREVIEW_LIMIT
+            self.skill_dir, max_chars=LOCAL_CONTENT_LIMIT, preview_limit=LOCAL_PREVIEW_LIMIT
         )
 
         if not references:
@@ -504,7 +508,7 @@ After writing, the file SKILL.md should:
             return False
 
         print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(ref['size'] for ref in references.values())
+        total_size = sum(ref["size"] for ref in references.values())
         print(f"  ✓ Total size: {total_size:,} characters\n")
 
         # Check if we need smart summarization
@@ -513,7 +517,7 @@ After writing, the file SKILL.md should:
         if use_summarization:
             print("⚠️  LARGE SKILL DETECTED")
             print(f"  📊 Reference content: {total_size:,} characters")
-            print(f"  💡 Claude CLI limit: ~30,000-40,000 characters")
+            print("  💡 Claude CLI limit: ~30,000-40,000 characters")
             print()
             print("  🔧 Applying smart summarization to ensure success...")
             print("     • Keeping introductions and overviews")
@@ -530,13 +534,15 @@ After writing, the file SKILL.md should:
             return False
 
         # Save prompt to temp file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, encoding="utf-8"
+        ) as f:
             prompt_file = f.name
             f.write(prompt)
 
         if use_summarization:
             print(f"  ✓ Prompt created and optimized ({len(prompt):,} characters)")
-            print(f"  ✓ Ready for Claude CLI (within safe limits)")
+            print("  ✓ Ready for Claude CLI (within safe limits)")
             print()
         else:
             print(f"  ✓ Prompt saved ({len(prompt):,} characters)\n")
@@ -555,49 +561,49 @@ After writing, the file SKILL.md should:
         print()
 
         # Create a shell script to run in the terminal
-        shell_script = f'''#!/bin/bash
+        shell_script = f"""#!/bin/bash
 claude {prompt_file}
 echo ""
 echo "✅ Enhancement complete!"
 echo "Press any key to close..."
 read -n 1
 rm {prompt_file}
-'''
+"""
 
         # Save shell script
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as f:
             script_file = f.name
             f.write(shell_script)
 
         os.chmod(script_file, 0o755)
 
         # Launch in new terminal (macOS specific)
-        if sys.platform == 'darwin':
+        if sys.platform == "darwin":
             # Detect which terminal app to use
             terminal_app, detection_method = detect_terminal_app()
 
             # Show detection info
-            if detection_method == 'SKILL_SEEKER_TERMINAL':
+            if detection_method == "SKILL_SEEKER_TERMINAL":
                 print(f"   Using terminal: {terminal_app} (from SKILL_SEEKER_TERMINAL)")
-            elif detection_method == 'TERM_PROGRAM':
+            elif detection_method == "TERM_PROGRAM":
                 print(f"   Using terminal: {terminal_app} (inherited from current terminal)")
-            elif detection_method.startswith('unknown TERM_PROGRAM'):
+            elif detection_method.startswith("unknown TERM_PROGRAM"):
                 print(f"⚠️  {detection_method}")
-                print(f"   → Using Terminal.app as fallback")
+                print("   → Using Terminal.app as fallback")
             else:
                 print(f"   Using terminal: {terminal_app} (default)")
 
             try:
-                subprocess.Popen(['open', '-a', terminal_app, script_file])
+                subprocess.Popen(["open", "-a", terminal_app, script_file])
             except Exception as e:
                 print(f"⚠️  Error launching {terminal_app}: {e}")
                 print(f"\nManually run: {script_file}")
                 return False
         else:
             print("⚠️  Auto-launch only works on macOS")
-            print(f"\nManually run this command in a new terminal:")
+            print("\nManually run this command in a new terminal:")
             print(f"  claude '{prompt_file}'")
-            print(f"\nThen delete the prompt file:")
+            print("\nThen delete the prompt file:")
             print(f"  rm '{prompt_file}'")
             return False
 
@@ -607,14 +613,18 @@ rm {prompt_file}
         print(f"  - Prompt file: {prompt_file}")
         print(f"  - Skill directory: {self.skill_dir.absolute()}")
         print(f"  - SKILL.md will be saved to: {self.skill_md_path.absolute()}")
-        print(f"  - Original backed up to: {self.skill_md_path.with_suffix('.md.backup').absolute()}")
+        print(
+            f"  - Original backed up to: {self.skill_md_path.with_suffix('.md.backup').absolute()}"
+        )
         print()
         print("⏳ Wait for Claude Code to finish in the other terminal...")
         print("   (Usually takes 30-60 seconds)")
         print()
         print("💡 When done:")
         print(f"  1. Check the enhanced SKILL.md: {self.skill_md_path}")
-        print(f"  2. If you don't like it, restore: mv {self.skill_md_path.with_suffix('.md.backup')} {self.skill_md_path}")
+        print(
+            f"  2. If you don't like it, restore: mv {self.skill_md_path.with_suffix('.md.backup')} {self.skill_md_path}"
+        )
         print(f"  3. Package: skill-seekers package {self.skill_dir}/")
 
         return True
@@ -630,10 +640,9 @@ rm {prompt_file}
             bool: True if enhancement succeeded
         """
         import time
-        from pathlib import Path
 
         print("✨ Running Claude Code enhancement (headless mode)...")
-        print(f"   Timeout: {timeout} seconds ({timeout//60} minutes)")
+        print(f"   Timeout: {timeout} seconds ({timeout // 60} minutes)")
         print()
 
         # Record initial state
@@ -652,11 +661,11 @@ rm {prompt_file}
             print()
 
             result = subprocess.run(
-                ['claude', '--dangerously-skip-permissions', prompt_file],
+                ["claude", "--dangerously-skip-permissions", prompt_file],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=str(self.skill_dir)  # Run from skill directory
+                cwd=str(self.skill_dir),  # Run from skill directory
             )
 
             elapsed = time.time() - start_time
@@ -674,28 +683,26 @@ rm {prompt_file}
                         print()
 
                         # Clean up prompt file
-                        try:
+                        with contextlib.suppress(Exception):
                             os.unlink(prompt_file)
-                        except:
-                            pass
 
                         return True
                     else:
-                        print(f"⚠️  Claude finished but SKILL.md was not updated")
+                        print("⚠️  Claude finished but SKILL.md was not updated")
                         print(f"   Initial: mtime={initial_mtime}, size={initial_size}")
                         print(f"   Final:   mtime={new_mtime}, size={new_size}")
-                        print(f"   This might indicate an error during enhancement")
+                        print("   This might indicate an error during enhancement")
                         print()
                         # Show last 20 lines of stdout for debugging
                         if result.stdout:
                             print("   Last output from Claude:")
-                            lines = result.stdout.strip().split('\n')[-20:]
+                            lines = result.stdout.strip().split("\n")[-20:]
                             for line in lines:
                                 print(f"   | {line}")
                         print()
                         return False
                 else:
-                    print(f"❌ SKILL.md not found after enhancement")
+                    print("❌ SKILL.md not found after enhancement")
                     return False
             else:
                 print(f"❌ Claude Code returned error (exit code: {result.returncode})")
@@ -719,10 +726,8 @@ rm {prompt_file}
             print("   3. Try again later")
 
             # Clean up
-            try:
+            with contextlib.suppress(Exception):
                 os.unlink(prompt_file)
-            except:
-                pass
 
             return False
 
@@ -750,9 +755,9 @@ rm {prompt_file}
         Returns:
             bool: True if background task started successfully
         """
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"BACKGROUND ENHANCEMENT: {self.skill_dir.name}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         # Write initial status
         self.write_status("pending", "Starting background enhancement...")
@@ -764,9 +769,7 @@ rm {prompt_file}
 
                 # Read reference files
                 references = read_reference_files(
-                    self.skill_dir,
-                    max_chars=LOCAL_CONTENT_LIMIT,
-                    preview_limit=LOCAL_PREVIEW_LIMIT
+                    self.skill_dir, max_chars=LOCAL_CONTENT_LIMIT, preview_limit=LOCAL_PREVIEW_LIMIT
                 )
 
                 if not references:
@@ -785,7 +788,9 @@ rm {prompt_file}
                     return
 
                 # Save prompt to temp file
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as f:
                     prompt_file = f.name
                     f.write(prompt)
 
@@ -795,22 +800,21 @@ rm {prompt_file}
                 if headless:
                     # Run headless (subprocess.run - blocking in thread)
                     result = subprocess.run(
-                        ['claude', prompt_file],
-                        capture_output=True,
-                        text=True,
-                        timeout=timeout
+                        ["claude", prompt_file], capture_output=True, text=True, timeout=timeout
                     )
 
                     # Clean up
-                    try:
+                    with contextlib.suppress(Exception):
                         os.unlink(prompt_file)
-                    except:
-                        pass
 
                     if result.returncode == 0:
-                        self.write_status("completed", "Enhancement completed successfully!", progress=1.0)
+                        self.write_status(
+                            "completed", "Enhancement completed successfully!", progress=1.0
+                        )
                     else:
-                        self.write_status("failed", error=f"Claude returned error: {result.returncode}")
+                        self.write_status(
+                            "failed", error=f"Claude returned error: {result.returncode}"
+                        )
                 else:
                     # Terminal mode in background doesn't make sense
                     self.write_status("failed", error="Terminal mode not supported in background")
@@ -848,9 +852,9 @@ rm {prompt_file}
         Returns:
             bool: True if daemon started successfully
         """
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"DAEMON MODE: {self.skill_dir.name}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         # Write initial status
         self.write_status("pending", "Starting daemon process...")
@@ -919,7 +923,7 @@ try:
     # Clean up
     try:
         os.unlink(prompt_file)
-    except:
+    except Exception:
         pass
 
     if result.returncode == 0:
@@ -939,7 +943,7 @@ except Exception as e:
 
         # Save daemon script
         daemon_script_path = self.skill_dir / ".enhancement_daemon.py"
-        daemon_script_path.write_text(daemon_script, encoding='utf-8')
+        daemon_script_path.write_text(daemon_script, encoding="utf-8")
         daemon_script_path.chmod(0o755)
 
         # Start daemon process (fully detached)
@@ -950,19 +954,19 @@ except Exception as e:
             if self.force:
                 # Force mode: No output, fully silent
                 subprocess.Popen(
-                    ['nohup', 'python3', str(daemon_script_path)],
+                    ["nohup", "python3", str(daemon_script_path)],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    start_new_session=True
+                    start_new_session=True,
                 )
             else:
                 # Normal mode: Log to file
-                with open(log_file, 'w') as log:
+                with open(log_file, "w") as log:
                     subprocess.Popen(
-                        ['nohup', 'python3', str(daemon_script_path)],
+                        ["nohup", "python3", str(daemon_script_path)],
                         stdout=log,
                         stderr=log,
-                        start_new_session=True
+                        start_new_session=True,
                     )
 
             # Give daemon time to start
@@ -971,7 +975,7 @@ except Exception as e:
             # Read status to verify it started
             status = self.read_status()
 
-            if status and status.get('status') in ['pending', 'running']:
+            if status and status.get("status") in ["pending", "running"]:
                 print("✅ Daemon process started successfully!")
                 print()
                 print("📊 Monitoring:")
@@ -1032,43 +1036,38 @@ Mode Comparison:
 Force Mode (Default ON):
   By default, all modes skip confirmations (auto-yes).
   Use --no-force to enable confirmation prompts.
-"""
+""",
+    )
+
+    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument(
+        "--interactive-enhancement",
+        action="store_true",
+        help="Open terminal window for enhancement (default: headless mode)",
     )
 
     parser.add_argument(
-        'skill_directory',
-        help='Path to skill directory (e.g., output/react/)'
+        "--background",
+        action="store_true",
+        help="Run in background and return immediately (non-blocking)",
     )
 
     parser.add_argument(
-        '--interactive-enhancement',
-        action='store_true',
-        help='Open terminal window for enhancement (default: headless mode)'
+        "--daemon", action="store_true", help="Run as persistent daemon process (fully detached)"
     )
 
     parser.add_argument(
-        '--background',
-        action='store_true',
-        help='Run in background and return immediately (non-blocking)'
+        "--no-force",
+        action="store_true",
+        help="Disable force mode: enable confirmation prompts (default: force mode ON)",
     )
 
     parser.add_argument(
-        '--daemon',
-        action='store_true',
-        help='Run as persistent daemon process (fully detached)'
-    )
-
-    parser.add_argument(
-        '--no-force',
-        action='store_true',
-        help='Disable force mode: enable confirmation prompts (default: force mode ON)'
-    )
-
-    parser.add_argument(
-        '--timeout',
+        "--timeout",
         type=int,
         default=600,
-        help='Timeout in seconds for headless mode (default: 600 = 10 minutes)'
+        help="Timeout in seconds for headless mode (default: 600 = 10 minutes)",
     )
 
     args = parser.parse_args()
@@ -1076,7 +1075,9 @@ Force Mode (Default ON):
     # Validate mutually exclusive options
     mode_count = sum([args.interactive_enhancement, args.background, args.daemon])
     if mode_count > 1:
-        print("❌ Error: --interactive-enhancement, --background, and --daemon are mutually exclusive")
+        print(
+            "❌ Error: --interactive-enhancement, --background, and --daemon are mutually exclusive"
+        )
         print("   Choose only one mode")
         sys.exit(1)
 
@@ -1085,10 +1086,7 @@ Force Mode (Default ON):
     enhancer = LocalSkillEnhancer(args.skill_directory, force=not args.no_force)
     headless = not args.interactive_enhancement  # Invert: default is headless
     success = enhancer.run(
-        headless=headless,
-        timeout=args.timeout,
-        background=args.background,
-        daemon=args.daemon
+        headless=headless, timeout=args.timeout, background=args.background, daemon=args.daemon
     )
 
     sys.exit(0 if success else 1)

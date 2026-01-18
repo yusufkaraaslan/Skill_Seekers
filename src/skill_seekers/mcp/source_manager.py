@@ -5,16 +5,14 @@ Manages registry of custom config sources (git repositories)
 """
 
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 
 class SourceManager:
     """Manages config source registry at ~/.skill-seekers/sources.json"""
 
-    def __init__(self, config_dir: Optional[str] = None):
+    def __init__(self, config_dir: str | None = None):
         """
         Initialize source manager.
 
@@ -41,10 +39,10 @@ class SourceManager:
         name: str,
         git_url: str,
         source_type: str = "github",
-        token_env: Optional[str] = None,
+        token_env: str | None = None,
         branch: str = "main",
         priority: int = 100,
-        enabled: bool = True
+        enabled: bool = True,
     ) -> dict:
         """
         Add or update a config source.
@@ -67,8 +65,7 @@ class SourceManager:
         # Validate name
         if not name or not name.replace("-", "").replace("_", "").isalnum():
             raise ValueError(
-                f"Invalid source name '{name}'. "
-                "Must be alphanumeric with optional hyphens/underscores."
+                f"Invalid source name '{name}'. Must be alphanumeric with optional hyphens/underscores."
             )
 
         # Validate git_url
@@ -89,7 +86,7 @@ class SourceManager:
             "enabled": enabled,
             "priority": priority,
             "added_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Load registry
@@ -142,8 +139,7 @@ class SourceManager:
         # Not found - provide helpful error
         available = [s["name"] for s in registry["sources"]]
         raise KeyError(
-            f"Source '{name}' not found. "
-            f"Available sources: {', '.join(available) if available else 'none'}"
+            f"Source '{name}' not found. Available sources: {', '.join(available) if available else 'none'}"
         )
 
     def list_sources(self, enabled_only: bool = False) -> list[dict]:
@@ -187,11 +183,7 @@ class SourceManager:
 
         return False
 
-    def update_source(
-        self,
-        name: str,
-        **kwargs
-    ) -> dict:
+    def update_source(self, name: str, **kwargs) -> dict:
         """
         Update specific fields of an existing source.
 
@@ -239,7 +231,7 @@ class SourceManager:
             Registry dictionary
         """
         try:
-            with open(self.registry_file, 'r', encoding='utf-8') as f:
+            with open(self.registry_file, encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"Corrupted registry file: {e}") from e
@@ -259,7 +251,7 @@ class SourceManager:
         temp_file = self.registry_file.with_suffix(".tmp")
 
         try:
-            with open(temp_file, 'w', encoding='utf-8') as f:
+            with open(temp_file, "w", encoding="utf-8") as f:
                 json.dump(registry, f, indent=2, ensure_ascii=False)
 
             # Atomic rename
@@ -287,7 +279,7 @@ class SourceManager:
             "gitlab": "GITLAB_TOKEN",
             "gitea": "GITEA_TOKEN",
             "bitbucket": "BITBUCKET_TOKEN",
-            "custom": "GIT_TOKEN"
+            "custom": "GIT_TOKEN",
         }
 
         return type_map.get(source_type.lower(), "GIT_TOKEN")

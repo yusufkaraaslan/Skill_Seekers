@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
 - **✨ 18 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)
 - **📚 Comprehensive Documentation**: Complete guides for all platforms
-- **🧪 Test Coverage**: 700+ tests passing, extensive platform compatibility testing
+- **🧪 Test Coverage**: 1200+ tests passing, extensive platform compatibility testing
 
 **🚀 NEW: Three-Stream GitHub Architecture (v2.6.0)**
 - **📊 Three-Stream Fetcher**: Split GitHub repos into Code, Docs, and Insights streams

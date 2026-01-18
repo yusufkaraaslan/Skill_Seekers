@@ -6,10 +6,9 @@ Implements platform-specific handling for Claude AI (Anthropic) skills.
 Refactored from upload_skill.py and enhance_skill.py.
 """
 
-import os
 import zipfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -101,16 +100,16 @@ version: {metadata.version}
         skill_dir = Path(skill_dir)
 
         # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith('/'):
+        if output_path.is_dir() or str(output_path).endswith("/"):
             output_path = Path(output_path) / f"{skill_dir.name}.zip"
-        elif not str(output_path).endswith('.zip'):
-            output_path = Path(str(output_path) + '.zip')
+        elif not str(output_path).endswith(".zip"):
+            output_path = Path(str(output_path) + ".zip")
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Create ZIP file
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add SKILL.md (required)
             skill_md = skill_dir / "SKILL.md"
             if skill_md.exists():
@@ -120,7 +119,7 @@ version: {metadata.version}
             refs_dir = skill_dir / "references"
             if refs_dir.exists():
                 for ref_file in refs_dir.rglob("*"):
-                    if ref_file.is_file() and not ref_file.name.startswith('.'):
+                    if ref_file.is_file() and not ref_file.name.startswith("."):
                         arcname = ref_file.relative_to(skill_dir)
                         zf.write(ref_file, str(arcname))
 
@@ -128,7 +127,7 @@ version: {metadata.version}
             scripts_dir = skill_dir / "scripts"
             if scripts_dir.exists():
                 for script_file in scripts_dir.rglob("*"):
-                    if script_file.is_file() and not script_file.name.startswith('.'):
+                    if script_file.is_file() and not script_file.name.startswith("."):
                         arcname = script_file.relative_to(skill_dir)
                         zf.write(script_file, str(arcname))
 
@@ -136,13 +135,13 @@ version: {metadata.version}
             assets_dir = skill_dir / "assets"
             if assets_dir.exists():
                 for asset_file in assets_dir.rglob("*"):
-                    if asset_file.is_file() and not asset_file.name.startswith('.'):
+                    if asset_file.is_file() and not asset_file.name.startswith("."):
                         arcname = asset_file.relative_to(skill_dir)
                         zf.write(asset_file, str(arcname))
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> Dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
         """
         Upload skill ZIP to Anthropic Skills API.
 
@@ -159,28 +158,28 @@ version: {metadata.version}
             import requests
         except ImportError:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': 'requests library not installed. Run: pip install requests'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": "requests library not installed. Run: pip install requests",
             }
 
         # Validate ZIP file
         package_path = Path(package_path)
         if not package_path.exists():
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'File not found: {package_path}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"File not found: {package_path}",
             }
 
-        if not package_path.suffix == '.zip':
+        if package_path.suffix != ".zip":
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'Not a ZIP file: {package_path}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Not a ZIP file: {package_path}",
             }
 
         # Prepare API request
@@ -188,100 +187,93 @@ version: {metadata.version}
         headers = {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
-            "anthropic-beta": "skills-2025-10-02"
+            "anthropic-beta": "skills-2025-10-02",
         }
 
-        timeout = kwargs.get('timeout', 60)
+        timeout = kwargs.get("timeout", 60)
 
         try:
             # Read ZIP file
-            with open(package_path, 'rb') as f:
+            with open(package_path, "rb") as f:
                 zip_data = f.read()
 
             # Upload skill
-            files = {
-                'files[]': (package_path.name, zip_data, 'application/zip')
-            }
+            files = {"files[]": (package_path.name, zip_data, "application/zip")}
 
-            response = requests.post(
-                api_url,
-                headers=headers,
-                files=files,
-                timeout=timeout
-            )
+            response = requests.post(api_url, headers=headers, files=files, timeout=timeout)
 
             # Check response
             if response.status_code == 200:
                 # Extract skill ID if available
                 try:
                     response_data = response.json()
-                    skill_id = response_data.get('id')
-                except:
+                    skill_id = response_data.get("id")
+                except Exception:
                     skill_id = None
 
                 return {
-                    'success': True,
-                    'skill_id': skill_id,
-                    'url': 'https://claude.ai/skills',
-                    'message': 'Skill uploaded successfully to Claude AI'
+                    "success": True,
+                    "skill_id": skill_id,
+                    "url": "https://claude.ai/skills",
+                    "message": "Skill uploaded successfully to Claude AI",
                 }
 
             elif response.status_code == 401:
                 return {
-                    'success': False,
-                    'skill_id': None,
-                    'url': None,
-                    'message': 'Authentication failed. Check your ANTHROPIC_API_KEY'
+                    "success": False,
+                    "skill_id": None,
+                    "url": None,
+                    "message": "Authentication failed. Check your ANTHROPIC_API_KEY",
                 }
 
             elif response.status_code == 400:
                 try:
-                    error_msg = response.json().get('error', {}).get('message', 'Unknown error')
-                except:
-                    error_msg = 'Invalid skill format'
+                    error_msg = response.json().get("error", {}).get("message", "Unknown error")
+                except Exception:
+                    error_msg = "Invalid skill format"
 
                 return {
-                    'success': False,
-                    'skill_id': None,
-                    'url': None,
-                    'message': f'Invalid skill format: {error_msg}'
+                    "success": False,
+                    "skill_id": None,
+                    "url": None,
+                    "message": f"Invalid skill format: {error_msg}",
                 }
 
             else:
                 try:
-                    error_msg = response.json().get('error', {}).get('message', 'Unknown error')
-                except:
-                    error_msg = f'HTTP {response.status_code}'
+                    error_msg = response.json().get("error", {}).get("message", "Unknown error")
+                except Exception:
+                    error_msg = f"HTTP {response.status_code}"
 
                 return {
-                    'success': False,
-                    'skill_id': None,
-                    'url': None,
-                    'message': f'Upload failed: {error_msg}'
+                    "success": False,
+                    "skill_id": None,
+                    "url": None,
+                    "message": f"Upload failed: {error_msg}",
                 }
 
         except requests.exceptions.Timeout:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': 'Upload timed out. Try again or use manual upload'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": "Upload timed out. Try again or use manual upload",
             }
 
         except requests.exceptions.ConnectionError:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': 'Connection error. Check your internet connection'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": "Connection error. Check your internet connection",
             }
 
         except Exception as e:
             return {
-                'success': False,
-                'skill_id': None,
-                'url': None,
-                'message': f'Unexpected error: {str(e)}'
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Unexpected error: {str(e)}",
             }
 
     def validate_api_key(self, api_key: str) -> bool:
@@ -294,7 +286,7 @@ version: {metadata.version}
         Returns:
             True if key starts with 'sk-ant-'
         """
-        return api_key.strip().startswith('sk-ant-')
+        return api_key.strip().startswith("sk-ant-")
 
     def get_env_var_name(self) -> str:
         """
@@ -355,17 +347,13 @@ version: {metadata.version}
         # Read current SKILL.md
         current_skill_md = None
         if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding='utf-8')
+            current_skill_md = skill_md_path.read_text(encoding="utf-8")
             print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
         else:
-            print(f"  ℹ No existing SKILL.md, will create new one")
+            print("  ℹ No existing SKILL.md, will create new one")
 
         # Build enhancement prompt
-        prompt = self._build_enhancement_prompt(
-            skill_dir.name,
-            references,
-            current_skill_md
-        )
+        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
 
         print("\n🤖 Asking Claude to enhance SKILL.md...")
         print(f"   Input: {len(prompt):,} characters")
@@ -377,10 +365,7 @@ version: {metadata.version}
                 model="claude-sonnet-4-20250514",
                 max_tokens=4096,
                 temperature=0.3,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             enhanced_content = message.content[0].text
@@ -388,13 +373,13 @@ version: {metadata.version}
 
             # Backup original
             if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix('.md.backup')
+                backup_path = skill_md_path.with_suffix(".md.backup")
                 skill_md_path.rename(backup_path)
                 print(f"  💾 Backed up original to: {backup_path.name}")
 
             # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding='utf-8')
-            print(f"  ✅ Saved enhanced SKILL.md")
+            skill_md_path.write_text(enhanced_content, encoding="utf-8")
+            print("  ✅ Saved enhanced SKILL.md")
 
             return True
 
@@ -402,7 +387,9 @@ version: {metadata.version}
             print(f"❌ Error calling Claude API: {e}")
             return False
 
-    def _read_reference_files(self, references_dir: Path, max_chars: int = 200000) -> Dict[str, str]:
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
         """
         Read reference markdown files from skill directory.
 
@@ -425,7 +412,7 @@ version: {metadata.version}
                 break
 
             try:
-                content = ref_file.read_text(encoding='utf-8')
+                content = ref_file.read_text(encoding="utf-8")
                 # Limit individual file size
                 if len(content) > 30000:
                     content = content[:30000] + "\n\n...(truncated)"
@@ -439,10 +426,7 @@ version: {metadata.version}
         return references
 
     def _build_enhancement_prompt(
-        self,
-        skill_name: str,
-        references: Dict[str, str],
-        current_skill_md: str = None
+        self, skill_name: str, references: dict[str, str], current_skill_md: str = None
     ) -> str:
         """
         Build Claude API prompt for enhancement.
@@ -460,9 +444,9 @@ version: {metadata.version}
 I've scraped documentation and organized it into reference files. Your job is to create an EXCELLENT SKILL.md that will help Claude use this documentation effectively.
 
 CURRENT SKILL.MD:
-{'```markdown' if current_skill_md else '(none - create from scratch)'}
-{current_skill_md or 'No existing SKILL.md'}
-{'```' if current_skill_md else ''}
+{"```markdown" if current_skill_md else "(none - create from scratch)"}
+{current_skill_md or "No existing SKILL.md"}
+{"```" if current_skill_md else ""}
 
 REFERENCE DOCUMENTATION:
 """

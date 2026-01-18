@@ -8,7 +8,7 @@ No platform-specific features, just clean markdown documentation.
 
 import zipfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -100,33 +100,33 @@ Browse the reference files for detailed information on each topic. All files are
         skill_dir = Path(skill_dir)
 
         # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith('/'):
+        if output_path.is_dir() or str(output_path).endswith("/"):
             output_path = Path(output_path) / f"{skill_dir.name}-markdown.zip"
-        elif not str(output_path).endswith('.zip'):
+        elif not str(output_path).endswith(".zip"):
             # Replace extension if needed
-            output_str = str(output_path).replace('.tar.gz', '.zip')
-            if not output_str.endswith('-markdown.zip'):
-                output_str = output_str.replace('.zip', '-markdown.zip')
-            if not output_str.endswith('.zip'):
-                output_str += '.zip'
+            output_str = str(output_path).replace(".tar.gz", ".zip")
+            if not output_str.endswith("-markdown.zip"):
+                output_str = output_str.replace(".zip", "-markdown.zip")
+            if not output_str.endswith(".zip"):
+                output_str += ".zip"
             output_path = Path(output_str)
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Create ZIP file
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add SKILL.md as README.md
             skill_md = skill_dir / "SKILL.md"
             if skill_md.exists():
-                content = skill_md.read_text(encoding='utf-8')
+                content = skill_md.read_text(encoding="utf-8")
                 zf.writestr("README.md", content)
 
             # Add individual reference files
             refs_dir = skill_dir / "references"
             if refs_dir.exists():
                 for ref_file in refs_dir.rglob("*.md"):
-                    if ref_file.is_file() and not ref_file.name.startswith('.'):
+                    if ref_file.is_file() and not ref_file.name.startswith("."):
                         # Preserve directory structure under references/
                         arcname = ref_file.relative_to(skill_dir)
                         zf.write(ref_file, str(arcname))
@@ -138,20 +138,21 @@ Browse the reference files for detailed information on each topic. All files are
 
             # Add metadata file
             import json
+
             metadata = {
-                'platform': 'markdown',
-                'name': skill_dir.name,
-                'version': '1.0.0',
-                'created_with': 'skill-seekers',
-                'format': 'universal_markdown',
-                'usage': 'Use with any LLM or documentation system'
+                "platform": "markdown",
+                "name": skill_dir.name,
+                "version": "1.0.0",
+                "created_with": "skill-seekers",
+                "format": "universal_markdown",
+                "usage": "Use with any LLM or documentation system",
             }
 
             zf.writestr("metadata.json", json.dumps(metadata, indent=2))
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str, **kwargs) -> Dict[str, Any]:
+    def upload(self, package_path: Path, _api_key: str, **_kwargs) -> dict[str, Any]:
         """
         Generic markdown export does not support upload.
 
@@ -166,16 +167,16 @@ Browse the reference files for detailed information on each topic. All files are
             Result indicating no upload capability
         """
         return {
-            'success': False,
-            'skill_id': None,
-            'url': str(package_path.absolute()),
-            'message': (
-                'Generic markdown export does not support automatic upload. '
-                f'Your documentation is packaged at: {package_path.absolute()}'
-            )
+            "success": False,
+            "skill_id": None,
+            "url": str(package_path.absolute()),
+            "message": (
+                "Generic markdown export does not support automatic upload. "
+                f"Your documentation is packaged at: {package_path.absolute()}"
+            ),
         }
 
-    def validate_api_key(self, api_key: str) -> bool:
+    def validate_api_key(self, _api_key: str) -> bool:
         """
         Markdown export doesn't use API keys.
 
@@ -205,7 +206,7 @@ Browse the reference files for detailed information on each topic. All files are
         """
         return False
 
-    def enhance(self, skill_dir: Path, api_key: str) -> bool:
+    def enhance(self, _skill_dir: Path, _api_key: str) -> bool:
         """
         Markdown export doesn't support enhancement.
 
@@ -237,10 +238,10 @@ Browse the reference files for detailed information on each topic. All files are
 
         # Add main content
         if skill_md.exists():
-            content = skill_md.read_text(encoding='utf-8')
+            content = skill_md.read_text(encoding="utf-8")
             # Strip YAML frontmatter if present
-            if content.startswith('---'):
-                parts = content.split('---', 2)
+            if content.startswith("---"):
+                parts = content.split("---", 2)
                 if len(parts) >= 3:
                     content = parts[2].strip()
             combined_parts.append(content)
@@ -258,7 +259,7 @@ Browse the reference files for detailed information on each topic. All files are
                     continue  # Skip index
 
                 try:
-                    ref_content = ref_file.read_text(encoding='utf-8')
+                    ref_content = ref_file.read_text(encoding="utf-8")
                     combined_parts.append(f"# {ref_file.stem.replace('_', ' ').title()}\n\n")
                     combined_parts.append(ref_content)
                     combined_parts.append("\n\n---\n\n")

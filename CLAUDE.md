@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.5.2
+**Current Version:** v2.7.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 
@@ -155,6 +155,19 @@ python -m twine upload dist/*
 ### Testing CLI Commands
 
 ```bash
+# Test configuration wizard (NEW: v2.7.0)
+skill-seekers config --show                          # Show current configuration
+skill-seekers config --github                        # GitHub token setup
+skill-seekers config --test                          # Test connections
+
+# Test resume functionality (NEW: v2.7.0)
+skill-seekers resume --list                          # List resumable jobs
+skill-seekers resume --clean                         # Clean up old jobs
+
+# Test GitHub scraping with profiles (NEW: v2.7.0)
+skill-seekers github --repo facebook/react --profile personal    # Use specific profile
+skill-seekers github --repo owner/repo --non-interactive         # CI/CD mode
+
 # Test scraping (dry run)
 skill-seekers scrape --config configs/react.json --dry-run
 
@@ -174,10 +187,10 @@ skill-seekers enhance-status output/react/ --watch
 skill-seekers package output/react/ --target gemini --dry-run
 
 # Test MCP server (stdio mode)
-python -m skill_seekers.mcp.server
+python -m skill_seekers.mcp.server_fastmcp
 
 # Test MCP server (HTTP mode)
-python -m skill_seekers.mcp.server --transport http --port 8765
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
 
 ## 🔧 Key Implementation Details
@@ -195,8 +208,8 @@ The unified CLI modifies `sys.argv` and calls existing `main()` functions to mai
 
 **Subcommands:** scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
 
-**New in v2.5.2:**
-- `codebase` - Local codebase analysis without GitHub API (C2.x features)
+**Recent Additions:**
+- `codebase` - Local codebase analysis without GitHub API (C2.x + C3.x features)
 - `enhance-status` - Monitor background/daemon enhancement processes
 - `patterns` - Detect design patterns in code (C3.1)
 - `how-to-guides` - Generate educational guides from tests (C3.3)
@@ -224,7 +237,7 @@ adaptor.enhance(skill_dir='output/react/', mode='api')
 
 ### C3.x Codebase Analysis Features
 
-The project has comprehensive codebase analysis capabilities (C3.1-C3.7):
+The project has comprehensive codebase analysis capabilities (C3.1-C3.8):
 
 **C3.1 Design Pattern Detection** (`pattern_recognizer.py`):
 - Detects 10 common patterns: Singleton, Factory, Observer, Strategy, Decorator, Builder, Adapter, Command, Template Method, Chain of Responsibility
@@ -249,12 +262,25 @@ The project has comprehensive codebase analysis capabilities (C3.1-C3.7):
 - Identifies config files, env vars, CLI arguments
 - AI enhancement for better organization
 
-**C3.5 Router Skill Generation** (`generate_router.py`):
-- Creates meta-skills that route to specialized skills
+**C3.5 Architectural Overview** (`generate_router.py`):
+- Generates comprehensive ARCHITECTURE.md files
+- Router skill generation for large documentation
 - Quality improvements: 6.5/10 → 8.5/10 (+31%)
 - Integrates GitHub metadata, issues, labels
 
-**Codebase Scraper Integration** (`codebase_scraper.py`):
+**C3.6 AI Enhancement** (Claude API integration):
+- Enhances C3.1-C3.5 with AI-powered insights
+- Pattern explanations and improvement suggestions
+- Test example context and best practices
+- Guide enhancement with troubleshooting and prerequisites
+
+**C3.7 Architectural Pattern Detection** (`architectural_pattern_detector.py`):
+- Detects 8 architectural patterns (MVC, MVVM, MVP, Repository, etc.)
+- Framework detection (Django, Flask, Spring, React, Angular, etc.)
+- Multi-file analysis with directory structure patterns
+- Evidence-based detection with confidence scoring
+
+**C3.8 Standalone Codebase Scraper** (`codebase_scraper.py`):
 ```bash
 # All C3.x features enabled by default, use --skip-* to disable
 skill-seekers codebase --directory /path/to/repo
@@ -266,7 +292,11 @@ skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
 skill-seekers codebase --directory . --build-api-reference --build-dependency-graph
 ```
 
-**Key Architecture Decision (v2.5.2):**
+- Generates 300+ line standalone SKILL.md files from codebases
+- All C3.x features integrated (patterns, tests, guides, config, architecture)
+- Complete codebase analysis without documentation scraping
+
+**Key Architecture Decision (BREAKING in v2.5.2):**
 - Changed from opt-in (`--build-*`) to opt-out (`--skip-*`) flags
 - All analysis features now ON by default for maximum value
 - Backward compatibility warnings for deprecated flags
@@ -366,6 +396,8 @@ export BITBUCKET_TOKEN=...
 skill-seekers = "skill_seekers.cli.main:main"
 
 # Individual tool entry points
+skill-seekers-config = "skill_seekers.cli.config_command:main"                # NEW: v2.7.0 Configuration wizard
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"                # NEW: v2.7.0 Resume interrupted jobs
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
@@ -514,10 +546,10 @@ See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 
 ```bash
 # stdio mode (Claude Code, VS Code + Cline)
-python -m skill_seekers.mcp.server
+python -m skill_seekers.mcp.server_fastmcp
 
 # HTTP mode (Cursor, Windsurf, IntelliJ)
-python -m skill_seekers.mcp.server --transport http --port 8765
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
 
 ## 📋 Common Workflows
@@ -599,6 +631,44 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 - `server.py` - FastMCP-based server
 - `tools/` - 18 MCP tool implementations
 
+**Configuration & Rate Limit Management** (NEW: v2.7.0 - `src/skill_seekers/cli/`):
+- `config_manager.py` - Multi-token configuration system (~490 lines)
+  - `ConfigManager` class - Singleton pattern for global config access
+  - `add_github_profile()` - Add GitHub profile with token and strategy
+  - `get_github_token()` - Smart fallback chain (CLI → Env → Config → Prompt)
+  - `get_next_profile()` - Profile switching for rate limit handling
+  - `save_progress()` / `load_progress()` - Job resumption support
+  - `cleanup_old_progress()` - Auto-cleanup of old jobs (7 days default)
+- `config_command.py` - Interactive configuration wizard (~400 lines)
+  - `main_menu()` - 7-option main menu with navigation
+  - `github_token_menu()` - GitHub profile management
+  - `add_github_profile()` - Guided token setup with browser integration
+  - `api_keys_menu()` - API key configuration for Claude/Gemini/OpenAI
+  - `test_connections()` - Connection testing for tokens and API keys
+- `rate_limit_handler.py` - Smart rate limit detection and handling (~450 lines)
+  - `RateLimitHandler` class - Strategy pattern for rate limit handling
+  - `check_upfront()` - Upfront rate limit check before starting
+  - `check_response()` - Real-time detection from API responses
+  - `handle_rate_limit()` - Execute strategy (prompt/wait/switch/fail)
+  - `try_switch_profile()` - Automatic profile switching
+  - `wait_for_reset()` - Countdown timer with live progress
+  - `show_countdown_timer()` - Live terminal countdown display
+- `resume_command.py` - Resume interrupted scraping jobs (~150 lines)
+  - `list_resumable_jobs()` - Display all jobs with progress details
+  - `resume_job()` - Resume from saved checkpoint
+  - `clean_old_jobs()` - Cleanup old progress files
+
+**GitHub Integration** (Modified for v2.7.0 - `src/skill_seekers/cli/`):
+- `github_fetcher.py` - Integrated rate limit handler
+  - Constructor now accepts `interactive` and `profile_name` parameters
+  - `fetch()` - Added upfront rate limit check
+  - All API calls check responses for rate limits
+  - Raises `RateLimitError` when rate limit cannot be handled
+- `github_scraper.py` - Added CLI flags
+  - `--non-interactive` flag for CI/CD mode (fail fast)
+  - `--profile` flag to select GitHub profile from config
+  - Config supports `interactive` and `github_profile` keys
+
 ## 🎯 Project-Specific Best Practices
 
 1. **Always use platform adaptors** - Never hardcode platform-specific logic
@@ -618,7 +688,7 @@ pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
 
 **For Developers:**
 - [CHANGELOG.md](CHANGELOG.md) - Release history
-- [FLEXIBLE_ROADMAP.md](FLEXIBLE_ROADMAP.md) - 134 tasks across 22 feature groups
+- [ROADMAP.md](ROADMAP.md) - 136 tasks across 10 categories
 - [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) - Multi-source scraping
 - [docs/MCP_SETUP.md](docs/MCP_SETUP.md) - MCP server setup
 - [docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md) - AI enhancement modes
@@ -701,35 +771,40 @@ The `unified_codebase_analyzer.py` splits GitHub repositories into three indepen
 
 ## 🎉 Recent Achievements
 
-**v2.5.2 (Latest):**
+**v2.6.0 (Latest - January 14, 2026):**
+- **C3.x Codebase Analysis Suite Complete** (C3.1-C3.8)
+- Multi-platform support with platform adaptor architecture
+- 18 MCP tools fully functional
+- 700+ tests passing
+- Unified multi-source scraping maturity
+
+**C3.x Series (Complete - Code Analysis Features):**
+- **C3.1:** Design pattern detection (10 GoF patterns, 9 languages, 87% precision)
+- **C3.2:** Test example extraction (5 categories, AST-based for Python)
+- **C3.3:** How-to guide generation with AI enhancement (5 improvements)
+- **C3.4:** Configuration pattern extraction (env vars, config files, CLI args)
+- **C3.5:** Architectural overview & router skill generation
+- **C3.6:** AI enhancement for patterns and test examples (Claude API integration)
+- **C3.7:** Architectural pattern detection (8 patterns, framework-aware)
+- **C3.8:** Standalone codebase scraper (300+ line SKILL.md from code alone)
+
+**v2.5.2:**
 - UX Improvement: Analysis features now default ON with --skip-* flags (BREAKING)
-- Changed from opt-in (--build-*) to opt-out (--skip-*) for better discoverability
 - Router quality improvements: 6.5/10 → 8.5/10 (+31%)
-- C3.5 Architectural Overview & Skill Integrator
 - All 107 codebase analysis tests passing
 
-**v2.5.1:**
-- Fixed critical PyPI packaging bug (missing adaptors module)
-- 100% of multi-platform features working
-
 **v2.5.0:**
-- Multi-platform support (4 LLM platforms)
+- Multi-platform support (Claude, Gemini, OpenAI, Markdown)
 - Platform adaptor architecture
 - 18 MCP tools (up from 9)
 - Complete feature parity across platforms
-- 700+ tests passing
 
-**C3.x Series (Code Analysis Features):**
-- C3.1: Design pattern detection (10 patterns, 9 languages, 87% precision)
-- C3.2: Test example extraction (AST-based, 19 tests)
-- C3.3: How-to guide generation with AI enhancement (5 improvements)
-- C3.4: Configuration pattern extraction
-- C3.5: Router skill generation
-- C3.6: AI enhancement (dual-mode: API + LOCAL)
-- C3.7: Architectural pattern detection
+**v2.1.0:**
+- Unified multi-source scraping (docs + GitHub + PDF)
+- Conflict detection between sources
+- 427 tests passing
 
-**v2.0.0:**
-- Unified multi-source scraping
-- Conflict detection between docs and code
-- 5 unified configs (React, Django, FastAPI, Godot)
-- 22 unified tests passing
+**v1.0.0:**
+- Production release with MCP integration
+- Documentation scraping with smart categorization
+- 12 preset configurations
