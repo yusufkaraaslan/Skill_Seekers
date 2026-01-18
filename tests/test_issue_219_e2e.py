@@ -22,6 +22,13 @@ from unittest.mock import Mock, patch
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+# Check if anthropic is available
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+
 
 class TestIssue219Problem1LargeFiles(unittest.TestCase):
     """E2E Test: Problem #1 - Large file download via download_url"""
@@ -188,6 +195,7 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             )
 
 
+@unittest.skipIf(not ANTHROPIC_AVAILABLE, "anthropic package not installed")
 class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
     """E2E Test: Problem #3 - Custom API endpoint support"""
 
@@ -323,6 +331,7 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
             )
 
 
+@unittest.skipIf(not ANTHROPIC_AVAILABLE, "anthropic package not installed")
 class TestIssue219IntegrationAll(unittest.TestCase):
     """E2E Integration: All 3 problems together"""
 
