@@ -187,10 +187,10 @@ skill-seekers enhance-status output/react/ --watch
 skill-seekers package output/react/ --target gemini --dry-run
 
 # Test MCP server (stdio mode)
-python -m skill_seekers.mcp.server
+python -m skill_seekers.mcp.server_fastmcp
 
 # Test MCP server (HTTP mode)
-python -m skill_seekers.mcp.server --transport http --port 8765
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
 
 ## 🔧 Key Implementation Details
@@ -546,10 +546,10 @@ See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 
 ```bash
 # stdio mode (Claude Code, VS Code + Cline)
-python -m skill_seekers.mcp.server
+python -m skill_seekers.mcp.server_fastmcp
 
 # HTTP mode (Cursor, Windsurf, IntelliJ)
-python -m skill_seekers.mcp.server --transport http --port 8765
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
 
 ## 📋 Common Workflows

@@ -8,7 +8,7 @@ The setup script automatically detects and configures:
 
 | Agent | Transport | Config Path (macOS) |
 |-------|-----------|---------------------|
-| **Claude Code** | stdio | `~/Library/Application Support/Claude/mcp.json` |
+| **Claude Code** | stdio | `~/.claude.json` |
 | **Cursor** | HTTP | `~/Library/Application Support/Cursor/mcp_settings.json` |
 | **Windsurf** | HTTP | `~/Library/Application Support/Windsurf/mcp_config.json` |
 | **VS Code + Cline** | stdio | `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` |

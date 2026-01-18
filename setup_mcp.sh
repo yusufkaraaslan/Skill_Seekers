@@ -20,6 +20,7 @@ NC='\033[0m' # No Color
 # Global variables
 REPO_PATH=$(pwd)
 PIP_INSTALL_CMD=""
+PYTHON_CMD=""  # Will be set after detecting venv
 HTTP_PORT=3000
 HTTP_AGENTS=()
 STDIO_AGENTS=()
@@ -61,6 +62,44 @@ echo "Path: $REPO_PATH"
 echo ""
 
 # =============================================================================
+# STEP 2.5: DETECT VIRTUAL ENVIRONMENT
+# =============================================================================
+echo "Step 2.5: Detecting virtual environment..."
+
+# Check for existing venv
+if [ -d "$REPO_PATH/.venv" ]; then
+    VENV_PATH="$REPO_PATH/.venv"
+    echo -e "${GREEN}✓${NC} Found virtual environment: .venv"
+elif [ -d "$REPO_PATH/venv" ]; then
+    VENV_PATH="$REPO_PATH/venv"
+    echo -e "${GREEN}✓${NC} Found virtual environment: venv"
+elif [ -n "$VIRTUAL_ENV" ]; then
+    VENV_PATH="$VIRTUAL_ENV"
+    echo -e "${GREEN}✓${NC} Already in virtual environment: $VIRTUAL_ENV"
+else
+    VENV_PATH=""
+    echo -e "${YELLOW}⚠${NC} No virtual environment found"
+fi
+
+# Set Python command for MCP configuration
+if [ -n "$VENV_PATH" ]; then
+    PYTHON_CMD="$VENV_PATH/bin/python3"
+    if [ -f "$PYTHON_CMD" ]; then
+        VENV_PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+        echo "  Using venv Python: $PYTHON_CMD"
+        echo "  Version: $VENV_PYTHON_VERSION"
+    else
+        echo -e "${RED}✗${NC} Virtual environment Python not found at $PYTHON_CMD"
+        echo "  Falling back to system python3"
+        PYTHON_CMD="python3"
+    fi
+else
+    PYTHON_CMD="python3"
+    echo "  Using system Python: $(which python3)"
+fi
+echo ""
+
+# =============================================================================
 # STEP 3: INSTALL DEPENDENCIES
 # =============================================================================
 echo "Step 3: Installing Python dependencies..."
@@ -69,11 +108,19 @@ echo "Step 3: Installing Python dependencies..."
 if [[ -n "$VIRTUAL_ENV" ]]; then
     echo -e "${GREEN}✓${NC} Virtual environment detected: $VIRTUAL_ENV"
     PIP_INSTALL_CMD="pip install"
+    # Update PYTHON_CMD if not already set to venv Python
+    if [[ "$PYTHON_CMD" != "$VIRTUAL_ENV"* ]]; then
+        PYTHON_CMD="$VIRTUAL_ENV/bin/python3"
+        echo "  Using venv Python: $PYTHON_CMD"
+    fi
 elif [[ -d "venv" ]]; then
     echo -e "${YELLOW}⚠${NC} Virtual environment found but not activated"
     echo "Activating venv..."
     source venv/bin/activate
     PIP_INSTALL_CMD="pip install"
+    # Update PYTHON_CMD to use the activated venv
+    PYTHON_CMD="$REPO_PATH/venv/bin/python3"
+    echo -e "${GREEN}✓${NC} Using venv Python: $PYTHON_CMD"
 else
     echo -e "${YELLOW}⚠${NC} No virtual environment found"
     echo "It's recommended to use a virtual environment to avoid conflicts."
@@ -92,7 +139,10 @@ else
         if [[ -d "venv" ]]; then
             source venv/bin/activate
             PIP_INSTALL_CMD="pip install"
+            # Update PYTHON_CMD to use the newly created venv
+            PYTHON_CMD="$REPO_PATH/venv/bin/python3"
             echo -e "${GREEN}✓${NC} Virtual environment created and activated"
+            echo "  Using venv Python: $PYTHON_CMD"
         fi
     else
         echo "Proceeding with system install (using --user --break-system-packages)..."
@@ -106,8 +156,8 @@ read -p "Continue? (y/n) " -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Installing package in editable mode..."
-    $PIP_INSTALL_CMD -e . || {
+    echo "Installing package with MCP dependencies in editable mode..."
+    $PIP_INSTALL_CMD -e ".[mcp]" || {
         echo -e "${RED}❌ Failed to install package${NC}"
         exit 1
     }
@@ -123,9 +173,13 @@ echo ""
 # =============================================================================
 echo "Step 4: Testing MCP server..."
 
+# Determine which Python to use for testing
+TEST_PYTHON="${PYTHON_CMD:-python3}"
+
 # Test stdio mode
 echo "  Testing stdio transport..."
-timeout 3 python3 -m skill_seekers.mcp.server_fastmcp 2>/dev/null || {
+echo "  Using: $TEST_PYTHON"
+timeout 3 $TEST_PYTHON -m skill_seekers.mcp.server_fastmcp 2>/dev/null || {
     if [ $? -eq 124 ]; then
         echo -e "  ${GREEN}✓${NC} Stdio transport working"
     else
@@ -136,9 +190,9 @@ timeout 3 python3 -m skill_seekers.mcp.server_fastmcp 2>/dev/null || {
 # Test HTTP mode
 echo "  Testing HTTP transport..."
 # Check if uvicorn is available
-if python3 -c "import uvicorn" 2>/dev/null; then
+if $TEST_PYTHON -c "import uvicorn" 2>/dev/null; then
     # Start HTTP server in background
-    python3 -m skill_seekers.mcp.server_fastmcp --http --port 8765 > /dev/null 2>&1 &
+    $TEST_PYTHON -m skill_seekers.mcp.server_fastmcp --transport http --port 8765 > /dev/null 2>&1 &
     HTTP_TEST_PID=$!
     sleep 2
 
@@ -349,11 +403,8 @@ sys.path.insert(0, 'src')
 from skill_seekers.mcp.agent_detector import AgentDetector
 detector = AgentDetector()
 
-# Determine server command based on install type
-if '$VIRTUAL_ENV':
-    server_command = 'python -m skill_seekers.mcp.server_fastmcp'
-else:
-    server_command = 'skill-seekers mcp'
+# Use the detected Python command
+server_command = '$PYTHON_CMD -m skill_seekers.mcp.server_fastmcp'
 
 config = detector.generate_config('$agent_id', server_command, $HTTP_PORT)
 print(config)
@@ -381,14 +432,18 @@ except:
 # Parse new config
 new = json.loads('''$GENERATED_CONFIG''')
 
-# Merge (add skill-seeker, preserve others)
+# Merge (add skill-seeker to GLOBAL mcpServers, preserve others)
+# Handle the structure: { \"mcpServers\": { ... }, \"/path/to/project\": { \"mcpServers\": { ... } } }
 if 'mcpServers' not in existing:
     existing['mcpServers'] = {}
+
+# Add/update skill-seeker in the global mcpServers section
 existing['mcpServers']['skill-seeker'] = new['mcpServers']['skill-seeker']
 
-# Write back
+# Write back with proper formatting
 with open('$config_path', 'w') as f:
     json.dump(existing, f, indent=2)
+    f.write('\n')  # Add trailing newline
 " 2>/dev/null || {
                             echo -e "  ${RED}✗${NC} Failed to merge config"
                             continue
@@ -450,7 +505,7 @@ if [ ${#SELECTED_AGENTS[@]} -gt 0 ]; then
                 echo "Starting HTTP server on port $HTTP_PORT..."
 
                 # Start server in background
-                nohup python3 -m skill_seekers.mcp.server_fastmcp --http --port $HTTP_PORT > /tmp/skill-seekers-mcp.log 2>&1 &
+                nohup $PYTHON_CMD -m skill_seekers.mcp.server_fastmcp --transport http --port $HTTP_PORT > /tmp/skill-seekers-mcp.log 2>&1 &
                 SERVER_PID=$!
 
                 sleep 2
@@ -471,10 +526,10 @@ if [ ${#SELECTED_AGENTS[@]} -gt 0 ]; then
             2)
                 echo "Manual start command:"
                 echo ""
-                echo -e "${GREEN}python3 -m skill_seekers.mcp.server_fastmcp --http --port $HTTP_PORT${NC}"
+                echo -e "${GREEN}$PYTHON_CMD -m skill_seekers.mcp.server_fastmcp --transport http --port $HTTP_PORT${NC}"
                 echo ""
                 echo "Or run in background:"
-                echo -e "${GREEN}nohup python3 -m skill_seekers.mcp.server_fastmcp --http --port $HTTP_PORT > /tmp/skill-seekers-mcp.log 2>&1 &${NC}"
+                echo -e "${GREEN}nohup $PYTHON_CMD -m skill_seekers.mcp.server_fastmcp --transport http --port $HTTP_PORT > /tmp/skill-seekers-mcp.log 2>&1 &${NC}"
                 ;;
             3)
                 echo "Skipping HTTP server start"
@@ -565,11 +620,14 @@ else
     echo -e "${GREEN}{"
     echo "  \"mcpServers\": {"
     echo "    \"skill-seeker\": {"
-    echo "      \"command\": \"python3\","
+    echo "      \"type\": \"stdio\","
+    echo "      \"command\": \"$PYTHON_CMD\","
     echo "      \"args\": ["
-    echo "        \"$REPO_PATH/src/skill_seekers/mcp/server_fastmcp.py\""
+    echo "        \"-m\","
+    echo "        \"skill_seekers.mcp.server_fastmcp\""
     echo "      ],"
-    echo "      \"cwd\": \"$REPO_PATH\""
+    echo "      \"cwd\": \"$REPO_PATH\","
+    echo "      \"env\": {}"
     echo "    }"
     echo "  }"
     echo -e "}${NC}"
@@ -580,7 +638,7 @@ else
         echo "${CYAN}For Cursor/Windsurf (HTTP):${NC}"
         echo ""
         echo "1. Start HTTP server:"
-        echo "   ${GREEN}python3 -m skill_seekers.mcp.server_fastmcp --http --port 3000${NC}"
+        echo "   ${GREEN}$PYTHON_CMD -m skill_seekers.mcp.server_fastmcp --transport http --port 3000${NC}"
         echo ""
         echo "2. Add to agent config:"
         echo -e "${GREEN}{"
@@ -644,10 +702,10 @@ echo "    - Cursor: ~/.cursor/logs/"
 echo "    - VS Code: ~/.config/Code/logs/"
 echo ""
 echo "  • Test MCP server:"
-echo "    ${CYAN}python3 -m skill_seekers.mcp.server_fastmcp${NC}"
+echo "    ${CYAN}$PYTHON_CMD -m skill_seekers.mcp.server_fastmcp${NC}"
 echo ""
 echo "  • Test HTTP server:"
-echo "    ${CYAN}python3 -m skill_seekers.mcp.server_fastmcp --http${NC}"
+echo "    ${CYAN}$PYTHON_CMD -m skill_seekers.mcp.server_fastmcp --transport http${NC}"
 echo "    ${CYAN}curl http://127.0.0.1:8000/health${NC}"
 echo ""
 echo "  • Run tests:"

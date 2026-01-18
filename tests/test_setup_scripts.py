@@ -62,9 +62,11 @@ class TestSetupMCPScript:
     def test_requirements_txt_path(self, script_content):
         """Test that script uses pip install -e . (v2.0.0 modern packaging)"""
         # v2.0.0 uses '-e .' (editable install) instead of requirements files
-        # The actual command is "$PIP_INSTALL_CMD -e ."
-        assert " -e ." in script_content or " -e." in script_content, (
-            "Should use '-e .' for editable install (modern packaging)"
+        # v2.7.0 PR #252 uses '-e ".[mcp]"' with MCP extra dependencies
+        # The actual command is "$PIP_INSTALL_CMD -e ." or "$PIP_INSTALL_CMD -e ".[mcp]""
+        has_editable = " -e ." in script_content or " -e." in script_content or '-e ".' in script_content
+        assert has_editable, (
+            "Should use '-e .' or '-e \".[mcp]\"' for editable install (modern packaging)"
         )
 
         # Should NOT reference old requirements.txt paths
@@ -121,9 +123,10 @@ class TestSetupMCPScript:
     def test_json_config_path_format(self, script_content):
         """Test that JSON config examples use correct format (v2.4.0 MCP 2025 upgrade)"""
         # MCP 2025 uses module import: python3 -m skill_seekers.mcp.server_fastmcp
-        # Config should show the server_fastmcp.py path for stdio examples
-        assert "server_fastmcp.py" in script_content, (
-            "Config should reference server_fastmcp.py (MCP 2025 upgrade)"
+        # v2.7.0 PR #252 uses module reference format, not file path
+        # Config should show the module reference: skill_seekers.mcp.server_fastmcp
+        assert "skill_seekers.mcp.server_fastmcp" in script_content, (
+            "Config should reference skill_seekers.mcp.server_fastmcp module (MCP 2025 upgrade)"
         )
 
     def test_no_hardcoded_paths(self, script_content):
