@@ -111,6 +111,7 @@ Repository = "https://github.com/yusufkaraaslan/Skill_Seekers"
 Documentation = "https://skillseekersweb.com/"
 "Config Browser" = "https://skillseekersweb.com/"
 "中文文档 (Chinese)" = "https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md"
+"Author" = "https://x.com/_yUSyUS_"
 
 [project.scripts]
 # Main unified CLI
