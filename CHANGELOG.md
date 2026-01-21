@@ -17,6 +17,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.3] - 2026-01-21
+
+### 🌏 International i18n Release
+
+This **documentation release** adds comprehensive Chinese language support, making Skill Seekers accessible to the world's largest developer community.
+
+### Added
+
+- **🇨🇳 Chinese (Simplified) README Translation** (#260)
+  - Complete 1,962-line translation of all documentation (README.zh-CN.md)
+  - Language selector badges in both English and Chinese READMEs
+  - Machine translation disclaimer with invitation for community improvements
+  - GitHub issue #260 created for community review and contributions
+  - Impact: Makes Skill Seekers accessible to 1+ billion Chinese speakers
+
+- **📦 PyPI Metadata Internationalization**
+  - Updated package description to highlight Chinese documentation availability
+  - Added i18n-related keywords: "i18n", "chinese", "international"
+  - Added Natural Language classifiers: English and Chinese (Simplified)
+  - Added direct link to Chinese README in project URLs
+  - Impact: Better discoverability on PyPI for Chinese developers
+
+### Why This Matters
+
+- **Market Reach**: Addresses existing Chinese traffic and taps into world's largest developer community
+- **Discoverability**: Better indexing on Chinese search engines (Baidu, Gitee, etc.)
+- **User Experience**: Native language documentation lowers barrier to entry
+- **Community Growth**: Opens contribution opportunities from Chinese developers
+- **Competitive Edge**: Most similar tools don't offer Chinese documentation
+
+### Community Engagement
+
+Chinese developers are invited to improve the translation quality:
+- Review issue: https://github.com/yusufkaraaslan/Skill_Seekers/issues/260
+- Translation guidelines provided for technical accuracy and natural expression
+- All contributions welcome and appreciated
+
+---
+
 ## [2.7.2] - 2026-01-21
 
 ### 🚨 Critical CLI Bug Fixes
