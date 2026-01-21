@@ -591,14 +591,26 @@ def main():
         }
 
     # Create converter
-    converter = PDFToSkillConverter(config)
+    try:
+        converter = PDFToSkillConverter(config)
 
-    # Extract if needed
-    if config.get("pdf_path") and not converter.extract_pdf():
+        # Extract if needed
+        if config.get("pdf_path"):
+            if not converter.extract_pdf():
+                print("\n❌ PDF extraction failed - see error above", file=sys.stderr)
+                sys.exit(1)
+
+        # Build skill
+        converter.build_skill()
+
+    except RuntimeError as e:
+        print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
-
-    # Build skill
-    converter.build_skill()
+    except Exception as e:
+        print(f"\n❌ Unexpected error during PDF processing: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

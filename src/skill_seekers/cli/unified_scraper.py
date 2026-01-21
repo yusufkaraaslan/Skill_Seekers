@@ -870,6 +870,16 @@ Examples:
         action="store_true",
         help="Skip C3.x codebase analysis for GitHub sources (default: enabled)",
     )
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="Clear any existing data and start fresh (ignore checkpoints)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview what will be scraped without actually scraping",
+    )
 
     args = parser.parse_args()
 
@@ -884,6 +894,35 @@ Examples:
                 logger.info(
                     f"⏭️  Skipping codebase analysis for GitHub source: {source.get('repo', 'unknown')}"
                 )
+
+    # Handle --fresh flag (clear cache)
+    if args.fresh:
+        import shutil
+
+        if os.path.exists(scraper.cache_dir):
+            logger.info(f"🧹 Clearing cache: {scraper.cache_dir}")
+            shutil.rmtree(scraper.cache_dir)
+            # Recreate directories
+            os.makedirs(scraper.sources_dir, exist_ok=True)
+            os.makedirs(scraper.data_dir, exist_ok=True)
+            os.makedirs(scraper.repos_dir, exist_ok=True)
+            os.makedirs(scraper.logs_dir, exist_ok=True)
+
+    # Handle --dry-run flag
+    if args.dry_run:
+        logger.info("🔍 DRY RUN MODE - Preview only, no scraping will occur")
+        logger.info(f"\nWould scrape {len(scraper.config.get('sources', []))} sources:")
+        for idx, source in enumerate(scraper.config.get("sources", []), 1):
+            source_type = source.get("type", "unknown")
+            if source_type == "documentation":
+                logger.info(f"  {idx}. Documentation: {source.get('base_url', 'N/A')}")
+            elif source_type == "github":
+                logger.info(f"  {idx}. GitHub: {source.get('repo', 'N/A')}")
+            elif source_type == "pdf":
+                logger.info(f"  {idx}. PDF: {source.get('pdf_path', 'N/A')}")
+        logger.info(f"\nOutput directory: {scraper.output_dir}")
+        logger.info(f"Merge mode: {scraper.merge_mode}")
+        return
 
     # Run scraper
     scraper.run()

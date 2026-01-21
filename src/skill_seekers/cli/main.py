@@ -34,6 +34,8 @@ Examples:
 import argparse
 import sys
 
+from skill_seekers.cli import __version__
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser with subcommands."""
@@ -63,7 +65,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         """,
     )
 
-    parser.add_argument("--version", action="version", version="%(prog)s 2.7.0")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -95,10 +97,11 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         help="Scrape documentation website",
         description="Scrape documentation website and generate skill",
     )
+    scrape_parser.add_argument("url", nargs="?", help="Documentation URL (positional argument)")
     scrape_parser.add_argument("--config", help="Config JSON file")
     scrape_parser.add_argument("--name", help="Skill name")
-    scrape_parser.add_argument("--url", help="Documentation URL")
     scrape_parser.add_argument("--description", help="Skill description")
+    scrape_parser.add_argument("--max-pages", type=int, dest="max_pages", help="Maximum pages to scrape (override config)")
     scrape_parser.add_argument(
         "--skip-scrape", action="store_true", help="Skip scraping, use cached data"
     )
@@ -154,6 +157,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     unified_parser.add_argument("--config", required=True, help="Unified config JSON file")
     unified_parser.add_argument("--merge-mode", help="Merge mode (rule-based, claude-enhanced)")
+    unified_parser.add_argument("--fresh", action="store_true", help="Clear existing data and start fresh")
     unified_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
     # === enhance subcommand ===
@@ -338,14 +342,17 @@ def main(argv: list[str] | None = None) -> int:
 
             # Convert args namespace to sys.argv format for doc_scraper
             sys.argv = ["doc_scraper.py"]
+            # Add positional URL if provided (positional arg has priority)
+            if hasattr(args, 'url') and args.url:
+                sys.argv.append(args.url)
             if args.config:
                 sys.argv.extend(["--config", args.config])
             if args.name:
                 sys.argv.extend(["--name", args.name])
-            if args.url:
-                sys.argv.extend(["--url", args.url])
             if args.description:
                 sys.argv.extend(["--description", args.description])
+            if hasattr(args, 'max_pages') and args.max_pages:
+                sys.argv.extend(["--max-pages", str(args.max_pages)])
             if args.skip_scrape:
                 sys.argv.append("--skip-scrape")
             if args.enhance:
@@ -406,6 +413,8 @@ def main(argv: list[str] | None = None) -> int:
             sys.argv = ["unified_scraper.py", "--config", args.config]
             if args.merge_mode:
                 sys.argv.extend(["--merge-mode", args.merge_mode])
+            if args.fresh:
+                sys.argv.append("--fresh")
             if args.dry_run:
                 sys.argv.append("--dry-run")
             return unified_main() or 0
@@ -533,7 +542,15 @@ def main(argv: list[str] | None = None) -> int:
         print("\n\nInterrupted by user", file=sys.stderr)
         return 130
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        # Provide helpful error message
+        error_msg = str(e) if str(e) else f"{type(e).__name__} occurred"
+        print(f"Error: {error_msg}", file=sys.stderr)
+
+        # Show traceback in verbose mode (if -v flag exists in args)
+        import traceback
+        if hasattr(args, 'verbose') and getattr(args, 'verbose', False):
+            traceback.print_exc()
+
         return 1
 
 

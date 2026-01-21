@@ -1900,6 +1900,14 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
+    # Positional URL argument (optional, for quick scraping)
+    parser.add_argument(
+        "url",
+        nargs="?",
+        type=str,
+        help="Base documentation URL (alternative to --url)",
+    )
+
     parser.add_argument(
         "--interactive",
         "-i",
@@ -1913,8 +1921,14 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         help="Load configuration from file (e.g., configs/godot.json)",
     )
     parser.add_argument("--name", type=str, help="Skill name")
-    parser.add_argument("--url", type=str, help="Base documentation URL")
+    parser.add_argument("--url", type=str, help="Base documentation URL (alternative to positional URL)")
     parser.add_argument("--description", "-d", type=str, help="Skill description")
+    parser.add_argument(
+        "--max-pages",
+        type=int,
+        metavar="N",
+        help="Maximum pages to scrape (overrides config). Use with caution - for testing/prototyping only.",
+    )
     parser.add_argument(
         "--skip-scrape", action="store_true", help="Skip scraping, use existing data"
     )
@@ -2012,16 +2026,20 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
         >>> print(config['name'])
         react
     """
+    # Handle URL from either positional argument or --url flag
+    # Positional 'url' takes precedence, then --url flag
+    effective_url = getattr(args, 'url', None)
+
     # Get base configuration
     if args.config:
         config = load_config(args.config)
-    elif args.interactive or not (args.name and args.url):
+    elif args.interactive or not (args.name and effective_url):
         config = interactive_config()
     else:
         config = {
             "name": args.name,
             "description": args.description or f"Use when working with {args.name}",
-            "base_url": args.url,
+            "base_url": effective_url,
             "selectors": {
                 "main_content": "div[role='main']",
                 "title": "title",
@@ -2066,6 +2084,31 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             logger.warning(
                 "⚠️  Async mode enabled but workers=1. Consider using --workers 4 for better performance"
             )
+
+    # Apply CLI override for max_pages
+    if args.max_pages is not None:
+        old_max = config.get("max_pages", DEFAULT_MAX_PAGES)
+        config["max_pages"] = args.max_pages
+
+        # Warnings for --max-pages usage
+        if args.max_pages > 1000:
+            logger.warning(
+                "⚠️  --max-pages=%d is very high - scraping may take hours", args.max_pages
+            )
+            logger.warning(
+                "   Recommendation: Use configs with reasonable limits for production"
+            )
+        elif args.max_pages < 10:
+            logger.warning(
+                "⚠️  --max-pages=%d is very low - may result in incomplete skill", args.max_pages
+            )
+
+        if old_max and old_max != args.max_pages:
+            logger.info(
+                "📊 Max pages override: %d → %d (from --max-pages flag)", old_max, args.max_pages
+            )
+        else:
+            logger.info("📊 Max pages set to: %d (from --max-pages flag)", args.max_pages)
 
     return config
 
