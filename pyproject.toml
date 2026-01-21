@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "skill-seekers"
 version = "2.7.2"
-description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills"
+description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills. International support with Chinese (简体中文) documentation."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -20,7 +20,10 @@ keywords = [
     "skills",
     "llm",
     "mcp",
-    "automation"
+    "automation",
+    "i18n",
+    "chinese",
+    "international"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -35,6 +38,8 @@ classifiers = [
     "Topic :: Software Development :: Documentation",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Text Processing :: Markup :: Markdown",
+    "Natural Language :: English",
+    "Natural Language :: Chinese (Simplified)",
 ]
 
 # Core dependencies
@@ -105,6 +110,7 @@ Repository = "https://github.com/yusufkaraaslan/Skill_Seekers"
 "Bug Tracker" = "https://github.com/yusufkaraaslan/Skill_Seekers/issues"
 Documentation = "https://skillseekersweb.com/"
 "Config Browser" = "https://skillseekersweb.com/"
+"中文文档 (Chinese)" = "https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md"
 
 [project.scripts]
 # Main unified CLI
