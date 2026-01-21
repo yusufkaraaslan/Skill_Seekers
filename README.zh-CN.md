@@ -10,7 +10,7 @@
 >
 > 欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 帮助改进翻译！您的反馈对我们非常宝贵。
 
-[![版本](https://img.shields.io/badge/version-2.7.2-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.2)
+[![版本](https://img.shields.io/badge/version-2.7.3-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.3)
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 集成](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
