@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-English | [简体中文](README.zh-CN.md)
+English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
 
 [![Version](https://img.shields.io/badge/version-2.7.3-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.3)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

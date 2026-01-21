@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-[English](README.md) | 简体中文
+[English](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.md) | 简体中文
 
 > ⚠️ **机器翻译声明**
 >
