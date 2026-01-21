@@ -17,6 +17,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.2] - 2026-01-21
+
+### 🚨 Critical CLI Bug Fixes
+
+This **hotfix release** resolves 4 critical CLI bugs reported in issues #258 and #259 that prevented core commands from working correctly.
+
+### Fixed
+
+- **Issue #258: `install --config` command fails with unified scraper** (#258)
+  - **Root Cause**: `unified_scraper.py` missing `--fresh` and `--dry-run` argument definitions
+  - **Solution**: Added both flags to unified_scraper argument parser and main.py dispatcher
+  - **Impact**: `skill-seekers install --config react` now works without "unrecognized arguments" error
+  - **Files Fixed**: `src/skill_seekers/cli/unified_scraper.py`, `src/skill_seekers/cli/main.py`
+
+- **Issue #259 (Original): `scrape` command doesn't accept URL and --max-pages** (#259)
+  - **Root Cause**: No positional URL argument or `--max-pages` flag support
+  - **Solution**: Added positional URL argument and `--max-pages` flag with safety warnings
+  - **Impact**: `skill-seekers scrape https://example.com --max-pages 50` now works
+  - **Safety Warnings**:
+    - ⚠️ Warning if max-pages > 1000 (may take hours)
+    - ⚠️ Warning if max-pages < 10 (incomplete skill)
+  - **Files Fixed**: `src/skill_seekers/cli/doc_scraper.py`, `src/skill_seekers/cli/main.py`
+
+- **Issue #259 (Comment A): Version shows 2.7.0 instead of actual version** (#259)
+  - **Root Cause**: Hardcoded version string in main.py
+  - **Solution**: Import `__version__` from `__init__.py` dynamically
+  - **Impact**: `skill-seekers --version` now shows correct version (2.7.2)
+  - **Files Fixed**: `src/skill_seekers/cli/main.py`
+
+- **Issue #259 (Comment B): PDF command shows empty "Error: " message** (#259)
+  - **Root Cause**: Exception handler didn't handle empty exception messages
+  - **Solution**:
+    - Improved exception handler to show exception type if message is empty
+    - Added proper error handling with context-specific messages
+    - Added traceback support in verbose mode
+  - **Impact**: PDF errors now show clear messages like "Error: RuntimeError occurred" instead of just "Error: "
+  - **Files Fixed**: `src/skill_seekers/cli/main.py`, `src/skill_seekers/cli/pdf_scraper.py`
+
+### Testing
+
+- ✅ Verified `skill-seekers install --config react --dry-run` works
+- ✅ Verified `skill-seekers scrape https://tailwindcss.com/docs/installation --max-pages 50` works
+- ✅ Verified `skill-seekers --version` shows "2.7.2"
+- ✅ Verified PDF errors show proper messages
+- ✅ All 202 tests passing
+
+---
+
 ## [2.7.1] - 2026-01-18
 
 ### 🚨 Critical Bug Fix - Config Download 404 Errors
