@@ -17,6 +17,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.4] - 2026-01-22
+
+### 🔧 Bug Fix - Language Selector Links
+
+This **patch release** fixes the broken Chinese language selector link that appeared on PyPI and other non-GitHub platforms.
+
+### Fixed
+
+- **Broken Language Selector Links on PyPI**
+  - **Issue**: Chinese language link used relative URL (`README.zh-CN.md`) which only worked on GitHub
+  - **Impact**: Users on PyPI clicking "简体中文" got 404 errors
+  - **Solution**: Changed to absolute GitHub URL (`https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md`)
+  - **Result**: Language selector now works on PyPI, GitHub, and all platforms
+  - **Files Fixed**: `README.md`, `README.zh-CN.md`
+
+### Technical Details
+
+**Why This Happened:**
+- PyPI displays `README.md` but doesn't include `README.zh-CN.md` in the package
+- Relative links break when README is rendered outside GitHub repository context
+- Absolute GitHub URLs work universally across all platforms
+
+**Impact:**
+- ✅ Chinese language link now accessible from PyPI
+- ✅ Consistent experience across all platforms
+- ✅ Better user experience for Chinese developers
+
+---
+
 ## [2.7.3] - 2026-01-21
 
 ### 🌏 International i18n Release

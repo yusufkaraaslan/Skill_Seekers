@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.7.0
+**Current Version:** v2.8.0-dev
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
@@ -353,6 +353,33 @@ Configs (`configs/*.json`) define scraping behavior:
 - MCP tools: All 18 tools must be tested
 - Integration tests: End-to-end workflows
 
+### Test Markers (from pytest.ini_options)
+
+The project uses pytest markers to categorize tests:
+
+```bash
+# Run only fast unit tests (default)
+pytest tests/ -v
+
+# Include slow tests (>5 seconds)
+pytest tests/ -v -m slow
+
+# Run integration tests (requires external services)
+pytest tests/ -v -m integration
+
+# Run end-to-end tests (resource-intensive, creates files)
+pytest tests/ -v -m e2e
+
+# Run tests requiring virtual environment setup
+pytest tests/ -v -m venv
+
+# Run bootstrap feature tests
+pytest tests/ -v -m bootstrap
+
+# Skip slow and integration tests (fastest)
+pytest tests/ -v -m "not slow and not integration"
+```
+
 ### Key Test Files
 
 - `test_scraper_features.py` - Core scraping functionality
@@ -365,6 +392,7 @@ Configs (`configs/*.json`) define scraping behavior:
 - `test_integration.py` - End-to-end workflows
 - `test_install_skill.py` - One-command install
 - `test_install_agent.py` - AI agent installation
+- `conftest.py` - Test configuration (checks package installation)
 
 ## 🌐 Environment Variables
 
@@ -513,6 +541,33 @@ See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 - Always create feature branches from `development`
 - Feature branch naming: `feature/{task-id}-{description}` or `feature/{category}`
 
+### CI/CD Pipeline
+
+The project has GitHub Actions workflows in `.github/workflows/`:
+
+**tests.yml** - Runs on every push and PR:
+- Tests on Ubuntu + macOS
+- Python versions: 3.10, 3.11, 3.12, 3.13
+- Installs package with `pip install -e .`
+- Runs full test suite with coverage
+- All tests must pass before merge
+
+**release.yml** - Runs on version tags:
+- Builds package with `uv build`
+- Publishes to PyPI with `uv publish`
+- Creates GitHub release
+
+**Local validation before pushing:**
+```bash
+# Run the same checks as CI
+pip install -e .
+pytest tests/ -v --cov=src/skill_seekers --cov-report=term
+
+# Check code quality
+ruff check src/ tests/
+mypy src/skill_seekers/
+```
+
 ## 🔌 MCP Integration
 
 ### MCP Server (18 Tools)
@@ -573,8 +628,42 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 5. Update CHANGELOG.md
 6. Commit only when all tests pass
 
-### Debugging Test Failures
+### Debugging Common Issues
 
+**Import Errors:**
+```bash
+# Always ensure package is installed first
+pip install -e .
+
+# Verify installation
+python -c "import skill_seekers; print(skill_seekers.__version__)"
+```
+
+**Rate Limit Issues:**
+```bash
+# Check current GitHub rate limit status
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/rate_limit
+
+# Configure multiple GitHub profiles
+skill-seekers config --github
+
+# Test your tokens
+skill-seekers config --test
+```
+
+**Enhancement Not Working:**
+```bash
+# Check if API key is set
+echo $ANTHROPIC_API_KEY
+
+# Try LOCAL mode instead (uses Claude Code Max)
+skill-seekers enhance output/react/ --mode LOCAL
+
+# Monitor enhancement status
+skill-seekers enhance-status output/react/ --watch
+```
+
+**Test Failures:**
 ```bash
 # Run specific failing test with verbose output
 pytest tests/test_file.py::test_name -vv
@@ -584,6 +673,21 @@ pytest tests/test_file.py -s
 
 # Run with coverage to see what's not tested
 pytest tests/test_file.py --cov=src/skill_seekers --cov-report=term-missing
+
+# Run only unit tests (skip slow integration tests)
+pytest tests/ -v -m "not slow and not integration"
+```
+
+**Config Issues:**
+```bash
+# Validate config structure
+skill-seekers-validate configs/myconfig.json
+
+# Show current configuration
+skill-seekers config --show
+
+# Estimate pages before scraping
+skill-seekers estimate configs/myconfig.json
 ```
 
 ## 📚 Key Code Locations
@@ -761,6 +865,26 @@ The `unified_codebase_analyzer.py` splits GitHub repositories into three indepen
 - Smart keyword extraction weighted by GitHub labels (2x weight)
 - 81 E2E tests passing (0.44 seconds)
 
+## 🔧 Helper Scripts
+
+The `scripts/` directory contains utility scripts:
+
+```bash
+# Bootstrap skill generation - self-hosting skill-seekers as a Claude skill
+./scripts/bootstrap_skill.sh
+
+# Start MCP server for HTTP transport
+./scripts/start_mcp_server.sh
+
+# Script templates are in scripts/skill_header.md
+```
+
+**Bootstrap Skill Workflow:**
+1. Analyzes skill-seekers codebase itself (dogfooding)
+2. Combines handcrafted header with auto-generated analysis
+3. Validates SKILL.md structure
+4. Outputs ready-to-use skill for Claude Code
+
 ## 🔍 Performance Characteristics
 
 | Operation | Time | Notes |
@@ -775,7 +899,23 @@ The `unified_codebase_analyzer.py` splits GitHub repositories into three indepen
 
 ## 🎉 Recent Achievements
 
-**v2.6.0 (Latest - January 14, 2026):**
+**v2.8.0-dev (Current Development):**
+- Active development on next release
+
+**v2.7.1 (January 18, 2026 - Hotfix):**
+- 🚨 **Critical Bug Fix:** Config download 404 errors resolved
+- Fixed manual URL construction bug - now uses `download_url` from API response
+- All 15 source tools tests + 8 fetch_config tests passing
+
+**v2.7.0 (January 18, 2026):**
+- 🔐 **Smart Rate Limit Management** - Multi-token GitHub configuration system
+- 🧙 **Interactive Configuration Wizard** - Beautiful terminal UI (`skill-seekers config`)
+- 🚦 **Intelligent Rate Limit Handler** - Four strategies (prompt/wait/switch/fail)
+- 📥 **Resume Capability** - Continue interrupted jobs with progress tracking
+- 🔧 **CI/CD Support** - Non-interactive mode for automation
+- 🎯 **Bootstrap Skill** - Self-hosting skill-seekers as Claude Code skill
+
+**v2.6.0 (January 14, 2026):**
 - **C3.x Codebase Analysis Suite Complete** (C3.1-C3.8)
 - Multi-platform support with platform adaptor architecture
 - 18 MCP tools fully functional
