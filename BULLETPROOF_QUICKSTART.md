@@ -278,12 +278,40 @@ cat > configs/test.json << 'EOF'
   "name": "test-skill",
   "description": "Test skill creation",
   "base_url": "https://tailwindcss.com/docs/installation",
+  "selectors": {
+    "main_content": "#content-wrapper",
+    "title": "h1, h2, h3",
+    "code_blocks": "pre code"
+  },
   "max_pages": 5,
   "rate_limit": 0.5
 }
 EOF
 
 # Run the scraper
+skill-seekers scrape --config configs/test.json
+```
+
+**Note for Windows users:** The `cat > file << 'EOF'` syntax doesn't work in PowerShell. Instead, create the file manually:
+
+```powershell
+# In PowerShell, create configs/test.json with this content:
+@"
+{
+  "name": "test-skill",
+  "description": "Test skill creation",
+  "base_url": "https://tailwindcss.com/docs/installation",
+  "selectors": {
+    "main_content": "#content-wrapper",
+    "title": "h1, h2, h3",
+    "code_blocks": "pre code"
+  },
+  "max_pages": 5,
+  "rate_limit": 0.5
+}
+"@ | Out-File -FilePath configs/test.json -Encoding utf8
+
+# Then run the scraper
 skill-seekers scrape --config configs/test.json
 ```
 
