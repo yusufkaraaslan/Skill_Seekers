@@ -165,7 +165,7 @@ ping google.com
 
 ---
 
-## Step 4: Setup Virtual Environment & Install Dependencies (3 minutes)
+## Step 4: Setup Virtual Environment & Install Skill Seekers (3 minutes)
 
 A virtual environment keeps Skill Seeker's dependencies isolated and prevents conflicts.
 
@@ -189,25 +189,27 @@ source venv/bin/activate  # macOS/Linux
 Notice `(venv)` appears in your prompt - this means the virtual environment is active!
 
 ```bash
-# Now install packages (only needed once)
-pip install requests beautifulsoup4 pytest
-
-# Save the dependency list
-pip freeze > requirements.txt
+# Now install Skill Seekers package (this installs all dependencies automatically)
+pip install -e .
 ```
 
 **✅ Success looks like:**
 ```
-Successfully installed requests-2.32.5 beautifulsoup4-4.14.2 pytest-8.4.2 ...
+Successfully installed skill-seekers-2.7.4 requests-2.32.5 beautifulsoup4-4.14.2 anthropic-0.76.0 ...
+Obtaining file:///path/to/Skill_Seekers
+Installing collected packages: skill-seekers
+Successfully installed skill-seekers
 ```
 
-**Optional - Only if you want API-based enhancement (not needed for LOCAL enhancement):**
-```bash
-pip install anthropic
-```
+**What just happened?**
+- `pip install -e .` installs the package in "editable" mode
+- The `.` means "current directory" (where pyproject.toml is)
+- This automatically installs ALL required dependencies
+- This registers the `skill-seekers` command so you can use it from anywhere
+- The `-e` flag means changes to the code take effect immediately (useful for development)
 
 **Important Notes:**
-- **Every time** you open a new terminal to use Skill Seeker, run `source venv/bin/activate` first
+- **Every time** you open a new terminal to use Skill Seeker, run `source venv/bin/activate` first (Windows: `venv\Scripts\activate`)
 - You'll know it's active when you see `(venv)` in your terminal prompt
 - To deactivate later: just type `deactivate`
 
@@ -226,6 +228,12 @@ pwd
 #   macOS: /Users/yourname/Projects/Skill_Seekers
 #   Linux: /home/yourname/Projects/Skill_Seekers
 # (Replace 'yourname' with YOUR actual username)
+```
+
+**❌ If "pip: command not found":**
+```bash
+# Try with python -m pip instead
+python3 -m pip install -e .
 ```
 
 ---
@@ -437,17 +445,21 @@ ls cli/
 # Should show doc_scraper.py
 ```
 
-### "ModuleNotFoundError"
+### "ModuleNotFoundError" or "command not found: skill-seekers"
 
-**Problem:** Missing Python packages
+**Problem:** Package not installed or virtual environment not activated
 
 **Solution:**
 ```bash
-# Install dependencies again
-pip3 install requests beautifulsoup4
+# Make sure virtual environment is activated (you should see (venv) in prompt)
+source venv/bin/activate  # macOS/Linux
+# Windows: venv\Scripts\activate
+
+# Install the package
+pip install -e .
 
 # If that fails, try:
-pip3 install --user requests beautifulsoup4
+python3 -m pip install -e .
 ```
 
 ### Scraping is slow or fails
