@@ -40,7 +40,7 @@ Skill Seeker 是一个自动化工具，可将文档网站、GitHub 仓库和 PD
 5. **增强**使用 AI 提取最佳示例和关键概念
 6. **打包**所有内容为可上传的 `.zip` 文件供 Claude 使用
 
-**结果：**20-40 分钟内获得任何框架、API 或工具的全面 Claude 技能，而不是数小时的手动工作。
+**结果**：20-40 分钟内获得任何框架、API 或工具的全面 Claude 技能，而不是数小时的手动工作。
 
 ## 为什么使用 Skill Seeker？
 
@@ -53,11 +53,11 @@ Skill Seeker 是一个自动化工具，可将文档网站、GitHub 仓库和 PD
 ## 核心功能
 
 ### 🌐 文档抓取
-- ✅ **llms.txt 支持** - 自动检测并使用 LLM 就绪的文档文件（快 10 倍）
+- ✅ **llms.txt 支持** - 自动检测并使用专为 LLM 撰写的 Doc 文档（快 10 倍）
 - ✅ **通用抓取器** - 适用于任何文档网站
 - ✅ **智能分类** - 自动按主题组织内容
 - ✅ **代码语言检测** - 识别 Python、JavaScript、C++、GDScript 等
-- ✅ **8 个开箱即用的预设** - Godot、React、Vue、Django、FastAPI 等
+- ✅ **8 个开箱即用的预设 Preset** - Godot、React、Vue、Django、FastAPI 等
 
 ### 📄 PDF 支持 (**v1.2.0**)
 - ✅ **基础 PDF 提取** - 从 PDF 文件提取文本、代码和图像
@@ -451,7 +451,7 @@ skill-seekers scrape --config configs/react.json
 "抓取 docs/manual.pdf 的 PDF 并创建技能"
 ```
 
-**时间：**自动化 | **质量：**生产就绪 | **成本：**免费
+**时间**：自动化 | **质量**：生产就绪 | **成本**：免费
 
 **v2.4.0 全新：**MCP 服务器现在支持 5 个 AI 编码代理，带自动配置！
 
@@ -467,7 +467,7 @@ python3 src/skill_seekers/cli/doc_scraper.py --config configs/react.json
 # 上传 output/react.zip 到 Claude - 完成！
 ```
 
-**时间：**约 25 分钟 | **质量：**生产就绪 | **成本：**免费
+**时间**：约 25 分钟 | **质量**：生产就绪 | **成本**：免费
 
 ---
 
@@ -492,7 +492,7 @@ skill-seekers install --config godot --unlimited
 skill-seekers install --config react --dry-run
 ```
 
-**时间：**总共 20-45 分钟 | **质量：**生产就绪（9/10）| **成本：**免费
+**时间**：总共 20-45 分钟 | **质量**：生产就绪（9/10）| **成本**：免费
 
 ### 它自动执行的操作：
 
