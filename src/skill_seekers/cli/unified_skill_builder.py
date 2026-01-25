@@ -611,7 +611,15 @@ This skill combines knowledge from multiple sources:
                 content += f"- ✅ **PDF Document**: {source.get('path', 'N/A')}\n"
 
         # C3.x Architecture & Code Analysis section (if available)
-        github_data = self.scraped_data.get("github", {}).get("data", {})
+        github_data = self.scraped_data.get("github", {})
+        # Handle both dict and list cases
+        if isinstance(github_data, dict):
+            github_data = github_data.get("data", {})
+        elif isinstance(github_data, list) and len(github_data) > 0:
+            github_data = github_data[0].get("data", {})
+        else:
+            github_data = {}
+
         if github_data.get("c3_analysis"):
             content += self._format_c3_summary_section(github_data["c3_analysis"])
 

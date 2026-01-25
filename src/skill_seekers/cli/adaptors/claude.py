@@ -359,7 +359,14 @@ version: {metadata.version}
         print(f"   Input: {len(prompt):,} characters")
 
         try:
-            client = anthropic.Anthropic(api_key=api_key)
+            import os
+            # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
+            client_kwargs = {"api_key": api_key}
+            base_url = os.environ.get("ANTHROPIC_BASE_URL")
+            if base_url:
+                client_kwargs["base_url"] = base_url
+                print(f"ℹ️  Using custom API base URL: {base_url}")
+            client = anthropic.Anthropic(**client_kwargs)
 
             message = client.messages.create(
                 model="claude-sonnet-4-20250514",

@@ -79,7 +79,14 @@ class ConfigEnhancer:
         self.client = None
 
         if self.mode == "api" and ANTHROPIC_AVAILABLE and self.api_key:
-            self.client = anthropic.Anthropic(api_key=self.api_key)
+            import os
+            # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
+            client_kwargs = {"api_key": self.api_key}
+            base_url = os.environ.get("ANTHROPIC_BASE_URL")
+            if base_url:
+                client_kwargs["base_url"] = base_url
+                logger.info(f"✅ Using custom API base URL: {base_url}")
+            self.client = anthropic.Anthropic(**client_kwargs)
 
     def _detect_mode(self, requested_mode: str) -> str:
         """

@@ -87,12 +87,12 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 - ✅ **Optional Dependencies** - Install only what you need
 - ✅ **100% Backward Compatible** - Existing Claude workflows unchanged
 
-| Platform | Format | Upload | Enhancement | API Key |
-|----------|--------|--------|-------------|---------|
-| **Claude AI** | ZIP + YAML | ✅ Auto | ✅ Yes | ANTHROPIC_API_KEY |
-| **Google Gemini** | tar.gz | ✅ Auto | ✅ Yes | GOOGLE_API_KEY |
-| **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Auto | ✅ Yes | OPENAI_API_KEY |
-| **Generic Markdown** | ZIP | ❌ Manual | ❌ No | None |
+| Platform | Format | Upload | Enhancement | API Key | Custom Endpoint |
+|----------|--------|--------|-------------|---------|-----------------|
+| **Claude AI** | ZIP + YAML | ✅ Auto | ✅ Yes | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
+| **Google Gemini** | tar.gz | ✅ Auto | ✅ Yes | GOOGLE_API_KEY | - |
+| **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Auto | ✅ Yes | OPENAI_API_KEY | - |
+| **Generic Markdown** | ZIP | ❌ Manual | ❌ No | - | - |
 
 ```bash
 # Claude (default - no changes needed!)
@@ -113,6 +113,28 @@ skill-seekers upload react-openai.zip --target openai
 skill-seekers package output/react/ --target markdown
 # Use the markdown files directly in any LLM
 ```
+
+<details>
+<summary>🔧 <strong>Environment Variables for Claude-Compatible APIs (e.g., GLM-4.7)</strong></summary>
+
+Skill Seekers supports any Claude-compatible API endpoint:
+
+```bash
+# Option 1: Official Anthropic API (default)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Option 2: GLM-4.7 Claude-compatible API
+export ANTHROPIC_API_KEY=your-glm-47-api-key
+export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
+
+# All AI enhancement features will use the configured endpoint
+skill-seekers enhance output/react/
+skill-seekers codebase --directory . --enhance
+```
+
+**Note**: Setting `ANTHROPIC_BASE_URL` allows you to use any Claude-compatible API endpoint, such as GLM-4.7 (智谱 AI) or other compatible services.
+
+</details>
 
 **Installation:**
 ```bash

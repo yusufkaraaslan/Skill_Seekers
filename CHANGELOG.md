@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Support for custom Claude-compatible API endpoints via `ANTHROPIC_BASE_URL` environment variable
+- Compatibility with GLM-4.7 and other Claude-compatible APIs across all AI enhancement features
 
 ### Changed
+- All AI enhancement modules now respect `ANTHROPIC_BASE_URL` for custom endpoints
+- Updated documentation with GLM-4.7 configuration examples
 
 ### Fixed
 

@@ -74,8 +74,15 @@ class AIEnhancer:
         if self.mode == "api" and self.enabled:
             try:
                 import anthropic
+                import os
 
-                self.client = anthropic.Anthropic(api_key=self.api_key)
+                # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
+                client_kwargs = {"api_key": self.api_key}
+                base_url = os.environ.get("ANTHROPIC_BASE_URL")
+                if base_url:
+                    client_kwargs["base_url"] = base_url
+                    logger.info(f"✅ Using custom API base URL: {base_url}")
+                self.client = anthropic.Anthropic(**client_kwargs)
                 logger.info("✅ AI enhancement enabled (using Claude API)")
             except ImportError:
                 logger.warning("⚠️  anthropic package not installed. AI enhancement disabled.")
