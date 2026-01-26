@@ -144,7 +144,7 @@ class PDFToSkillConverter:
                 "pages": self.extracted_data.get("pages", [])
             }
 
-            print(f"✅ Created 1 category (single PDF source)")
+            print("✅ Created 1 category (single PDF source)")
             print(f"   - {pdf_basename}: {len(categorized[category_key]['pages'])} pages")
             return categorized
 
@@ -267,7 +267,7 @@ class PDFToSkillConverter:
         print(f"\n✅ Skill built successfully: {self.skill_dir}/")
         print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
 
-    def _generate_reference_file(self, cat_key, cat_data, section_num, total_sections):
+    def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
         """Generate a reference markdown file for a category"""
         # Calculate page range for filename - use PDF basename
         pages = cat_data["pages"]
@@ -356,7 +356,7 @@ class PDFToSkillConverter:
             f.write("## Categories\n\n")
 
             section_num = 1
-            for cat_key, cat_data in categorized.items():
+            for _cat_key, cat_data in categorized.items():
                 pages = cat_data["pages"]
                 page_count = len(pages)
 
@@ -680,10 +680,9 @@ def main():
         converter = PDFToSkillConverter(config)
 
         # Extract if needed
-        if config.get("pdf_path"):
-            if not converter.extract_pdf():
-                print("\n❌ PDF extraction failed - see error above", file=sys.stderr)
-                sys.exit(1)
+        if config.get("pdf_path") and not converter.extract_pdf():
+            print("\n❌ PDF extraction failed - see error above", file=sys.stderr)
+            sys.exit(1)
 
         # Build skill
         converter.build_skill()

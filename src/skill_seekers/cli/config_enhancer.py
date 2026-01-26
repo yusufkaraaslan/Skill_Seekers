@@ -79,7 +79,6 @@ class ConfigEnhancer:
         self.client = None
 
         if self.mode == "api" and ANTHROPIC_AVAILABLE and self.api_key:
-            import os
             # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
             client_kwargs = {"api_key": self.api_key}
             base_url = os.environ.get("ANTHROPIC_BASE_URL")
