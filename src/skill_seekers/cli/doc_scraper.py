@@ -30,6 +30,8 @@ from bs4 import BeautifulSoup
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from skill_seekers.cli.config_fetcher import list_available_configs, resolve_config_path
+from skill_seekers.cli.config_validator import ConfigValidator
 from skill_seekers.cli.constants import (
     CONTENT_PREVIEW_LENGTH,
     DEFAULT_ASYNC_MODE,
@@ -1751,6 +1753,8 @@ def validate_config(config: dict[str, Any]) -> tuple[list[str], list[str]]:
 def load_config(config_path: str) -> dict[str, Any]:
     """Load and validate configuration from JSON file.
 
+    Automatically fetches configs from SkillSeekersWeb.com API if not found locally.
+
     Args:
         config_path (str): Path to JSON configuration file
 
@@ -1765,36 +1769,56 @@ def load_config(config_path: str) -> dict[str, Any]:
         >>> print(config['name'])
         'react'
     """
+    # Try to resolve config path (with auto-fetch from API)
+    resolved_path = resolve_config_path(config_path, auto_fetch=True)
+
+    if resolved_path is None:
+        # Config not found locally and fetch failed
+        available = list_available_configs()
+        logger.error("❌ Error: Config file not found: %s", config_path)
+        logger.error("   Tried:")
+        logger.error("     1. Local path: %s", config_path)
+        logger.error("     2. With prefix: configs/%s", config_path)
+        logger.error("     3. SkillSeekersWeb.com API")
+        logger.error("")
+        if available:
+            logger.error("   📋 Available configs from API (%d total):", len(available))
+            for cfg in available[:10]:  # Show first 10
+                logger.error("      • %s", cfg)
+            if len(available) > 10:
+                logger.error("      ... and %d more", len(available) - 10)
+            logger.error("")
+            logger.error("   💡 Use any config name: skill-seekers scrape --config <name>.json")
+            logger.error("   🌐 Browse all: https://skillseekersweb.com/")
+        else:
+            logger.error("   ⚠️  Could not connect to API to list available configs")
+            logger.error("   🌐 Visit: https://skillseekersweb.com/ for available configs")
+        sys.exit(1)
+
+    # Load the resolved config file
     try:
-        with open(config_path, encoding="utf-8") as f:
+        with open(resolved_path, encoding="utf-8") as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
-        logger.error("❌ Error: Invalid JSON in config file: %s", config_path)
+        logger.error("❌ Error: Invalid JSON in config file: %s", resolved_path)
         logger.error("   Details: %s", e)
         logger.error("   Suggestion: Check syntax at line %d, column %d", e.lineno, e.colno)
         sys.exit(1)
-    except FileNotFoundError:
-        logger.error("❌ Error: Config file not found: %s", config_path)
-        logger.error("   Suggestion: Create a config file or use an existing one from configs/")
-        logger.error("   Available configs: react.json, vue.json, django.json, godot.json")
-        sys.exit(1)
 
-    # Validate config
-    errors, warnings = validate_config(config)
+    # Validate config using ConfigValidator (supports both unified and legacy formats)
+    try:
+        validator = ConfigValidator(config)
+        validator.validate()
 
-    # Show warnings (non-blocking)
-    if warnings:
-        logger.warning("⚠️  Configuration warnings in %s:", config_path)
-        for warning in warnings:
-            logger.warning("   - %s", warning)
-        logger.info("")
-
-    # Show errors (blocking)
-    if errors:
+        # Log config type
+        if validator.is_unified:
+            logger.debug("✓ Unified config format detected")
+        else:
+            logger.debug("✓ Legacy config format detected")
+    except ValueError as e:
         logger.error("❌ Configuration validation errors in %s:", config_path)
-        for error in errors:
-            logger.error("   - %s", error)
-        logger.error("\n   Suggestion: Fix the above errors or check configs/ for working examples")
+        logger.error("   %s", str(e))
+        logger.error("\n   Suggestion: Fix the above errors or check https://skillseekersweb.com/ for examples")
         sys.exit(1)
 
     return config
