@@ -43,14 +43,27 @@ class ConfigManager:
         self.config_file = self.CONFIG_FILE
         self.progress_dir = self.PROGRESS_DIR
         self._ensure_directories()
+
+        # Check if config file exists before loading
+        config_exists = self.config_file.exists()
         self.config = self._load_config()
+
+        # Save config file if it was just created with defaults
+        if not config_exists:
+            self.save_config()
 
     def _ensure_directories(self):
         """Ensure configuration and progress directories exist with secure permissions."""
+        # Create main config and progress directories
         for directory in [self.config_dir, self.progress_dir]:
             directory.mkdir(parents=True, exist_ok=True)
             # Set directory permissions to 700 (rwx------)
             directory.chmod(stat.S_IRWXU)
+
+        # Also create configs subdirectory for user custom configs
+        configs_dir = self.config_dir / "configs"
+        configs_dir.mkdir(exist_ok=True)
+        configs_dir.chmod(stat.S_IRWXU)
 
     def _load_config(self) -> dict[str, Any]:
         """Load configuration from file or create default."""
@@ -391,6 +404,7 @@ class ConfigManager:
         """Display current configuration summary."""
         print("\n📋 Skill Seekers Configuration\n")
         print(f"Config file: {self.config_file}")
+        print(f"Custom configs dir: {self.config_dir / 'configs'}")
         print(f"Progress dir: {self.progress_dir}\n")
 
         # GitHub profiles

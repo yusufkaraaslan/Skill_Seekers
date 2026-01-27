@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 API_BASE_URL = "https://api.skillseekersweb.com"
 
+# Track last searched paths for better error messages
+_last_searched_paths = []
+
 
 def fetch_config_from_api(
     config_name: str, destination: str = "configs", timeout: float = 30.0
@@ -138,8 +141,9 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Optional[P
 
     Tries to find config in this order:
     1. Exact path as provided
-    2. With 'configs/' prefix added
-    3. Fetch from API (if auto_fetch=True)
+    2. With 'configs/' prefix added (current directory)
+    3. User config directory (~/.config/skill-seekers/configs/)
+    4. Fetch from API (if auto_fetch=True)
 
     Args:
         config_path: Config file path or name
@@ -154,18 +158,35 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Optional[P
         ...     with open(path) as f:
         ...         config = json.load(f)
     """
+    # Track searched paths for better error messages
+    global _last_searched_paths
+    _last_searched_paths = []
+
     # 1. Try exact path
     exact_path = Path(config_path)
+    _last_searched_paths.append(exact_path.resolve())
     if exact_path.exists():
         return exact_path.resolve()
 
-    # 2. Try with configs/ prefix
+    # 2. Try with configs/ prefix (current directory)
     if not config_path.startswith("configs/"):
         with_prefix = Path("configs") / config_path
+        _last_searched_paths.append(with_prefix.resolve())
         if with_prefix.exists():
             return with_prefix.resolve()
 
-    # 3. Try API fetch (if enabled)
+    # 3. Try user config directory
+    user_config_dir = Path.home() / ".config" / "skill-seekers" / "configs"
+
+    # Extract just the filename if path contains directory separators
+    config_filename = Path(config_path).name
+    user_config_path = user_config_dir / config_filename
+    _last_searched_paths.append(user_config_path)
+
+    if user_config_path.exists():
+        return user_config_path.resolve()
+
+    # 4. Try API fetch (if enabled)
     if auto_fetch:
         # Extract config name (remove .json, remove configs/ prefix)
         config_name = config_path
@@ -182,3 +203,19 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Optional[P
             return fetched_path.resolve()
 
     return None
+
+
+def get_last_searched_paths() -> list[Path]:
+    """
+    Get the list of paths that were searched in the last resolve_config_path call.
+
+    Returns:
+        List of absolute paths that were checked for the config file
+
+    Example:
+        >>> resolve_config_path('myconfig.json', auto_fetch=False)
+        >>> paths = get_last_searched_paths()
+        >>> for p in paths:
+        ...     print(f"Searched: {p}")
+    """
+    return _last_searched_paths.copy()

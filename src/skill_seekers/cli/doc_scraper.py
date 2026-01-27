@@ -30,7 +30,11 @@ from bs4 import BeautifulSoup
 # Add parent directory to path for imports when run as script
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from skill_seekers.cli.config_fetcher import list_available_configs, resolve_config_path
+from skill_seekers.cli.config_fetcher import (
+    get_last_searched_paths,
+    list_available_configs,
+    resolve_config_path,
+)
 from skill_seekers.cli.config_validator import ConfigValidator
 from skill_seekers.cli.constants import (
     CONTENT_PREVIEW_LENGTH,
@@ -1775,20 +1779,32 @@ def load_config(config_path: str) -> dict[str, Any]:
     if resolved_path is None:
         # Config not found locally and fetch failed
         available = list_available_configs()
+        searched_paths = get_last_searched_paths()
+
         logger.error("❌ Error: Config file not found: %s", config_path)
-        logger.error("   Tried:")
-        logger.error("     1. Local path: %s", config_path)
-        logger.error("     2. With prefix: configs/%s", config_path)
-        logger.error("     3. SkillSeekersWeb.com API")
         logger.error("")
+        logger.error("   Searched in these locations:")
+        for i, path in enumerate(searched_paths, 1):
+            logger.error("     %d. %s", i, path)
+        logger.error("     %d. SkillSeekersWeb.com API", len(searched_paths) + 1)
+        logger.error("")
+
+        # Show where user should place custom configs
+        user_config_dir = Path.home() / ".config" / "skill-seekers" / "configs"
+        logger.error("   💡 To use a custom config, place it in one of these locations:")
+        logger.error("      • Current directory: ./configs/%s", Path(config_path).name)
+        logger.error("      • User config directory: %s", user_config_dir / Path(config_path).name)
+        logger.error("      • Absolute path: /full/path/to/%s", Path(config_path).name)
+        logger.error("")
+
         if available:
-            logger.error("   📋 Available configs from API (%d total):", len(available))
+            logger.error("   📋 Or use a preset config from API (%d total):", len(available))
             for cfg in available[:10]:  # Show first 10
                 logger.error("      • %s", cfg)
             if len(available) > 10:
                 logger.error("      ... and %d more", len(available) - 10)
             logger.error("")
-            logger.error("   💡 Use any config name: skill-seekers scrape --config <name>.json")
+            logger.error("   💡 Use any preset: skill-seekers scrape --config <name>.json")
             logger.error("   🌐 Browse all: https://skillseekersweb.com/")
         else:
             logger.error("   ⚠️  Could not connect to API to list available configs")
