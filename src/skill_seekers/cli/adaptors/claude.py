@@ -360,6 +360,7 @@ version: {metadata.version}
 
         try:
             import os
+
             # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
             client_kwargs = {"api_key": api_key}
             base_url = os.environ.get("ANTHROPIC_BASE_URL")

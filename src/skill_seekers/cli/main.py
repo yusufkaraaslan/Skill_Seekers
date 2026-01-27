@@ -101,7 +101,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     scrape_parser.add_argument("--config", help="Config JSON file")
     scrape_parser.add_argument("--name", help="Skill name")
     scrape_parser.add_argument("--description", help="Skill description")
-    scrape_parser.add_argument("--max-pages", type=int, dest="max_pages", help="Maximum pages to scrape (override config)")
+    scrape_parser.add_argument(
+        "--max-pages", type=int, dest="max_pages", help="Maximum pages to scrape (override config)"
+    )
     scrape_parser.add_argument(
         "--skip-scrape", action="store_true", help="Skip scraping, use cached data"
     )
@@ -157,7 +159,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     unified_parser.add_argument("--config", required=True, help="Unified config JSON file")
     unified_parser.add_argument("--merge-mode", help="Merge mode (rule-based, claude-enhanced)")
-    unified_parser.add_argument("--fresh", action="store_true", help="Clear existing data and start fresh")
+    unified_parser.add_argument(
+        "--fresh", action="store_true", help="Clear existing data and start fresh"
+    )
     unified_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
     # === enhance subcommand ===
@@ -343,7 +347,7 @@ def main(argv: list[str] | None = None) -> int:
             # Convert args namespace to sys.argv format for doc_scraper
             sys.argv = ["doc_scraper.py"]
             # Add positional URL if provided (positional arg has priority)
-            if hasattr(args, 'url') and args.url:
+            if hasattr(args, "url") and args.url:
                 sys.argv.append(args.url)
             if args.config:
                 sys.argv.extend(["--config", args.config])
@@ -351,7 +355,7 @@ def main(argv: list[str] | None = None) -> int:
                 sys.argv.extend(["--name", args.name])
             if args.description:
                 sys.argv.extend(["--description", args.description])
-            if hasattr(args, 'max_pages') and args.max_pages:
+            if hasattr(args, "max_pages") and args.max_pages:
                 sys.argv.extend(["--max-pages", str(args.max_pages)])
             if args.skip_scrape:
                 sys.argv.append("--skip-scrape")
@@ -548,7 +552,8 @@ def main(argv: list[str] | None = None) -> int:
 
         # Show traceback in verbose mode (if -v flag exists in args)
         import traceback
-        if hasattr(args, 'verbose') and getattr(args, 'verbose', False):
+
+        if hasattr(args, "verbose") and getattr(args, "verbose", False):
             traceback.print_exc()
 
         return 1

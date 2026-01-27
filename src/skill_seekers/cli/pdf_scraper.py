@@ -141,7 +141,7 @@ class PDFToSkillConverter:
 
             categorized[category_key] = {
                 "title": pdf_basename,
-                "pages": self.extracted_data.get("pages", [])
+                "pages": self.extracted_data.get("pages", []),
             }
 
             print(f"✅ Created 1 category (single PDF source)")
@@ -176,7 +176,7 @@ class PDFToSkillConverter:
             if uncategorized_pages:
                 categorized["uncategorized"] = {
                     "title": "Additional Content",
-                    "pages": uncategorized_pages
+                    "pages": uncategorized_pages,
                 }
 
         # Fall back to keyword-based categorization
@@ -282,7 +282,11 @@ class PDFToSkillConverter:
 
             # If only one section or section covers most pages, use simple name
             if total_sections == 1:
-                filename = f"{self.skill_dir}/references/{pdf_basename}.md" if pdf_basename else f"{self.skill_dir}/references/main.md"
+                filename = (
+                    f"{self.skill_dir}/references/{pdf_basename}.md"
+                    if pdf_basename
+                    else f"{self.skill_dir}/references/main.md"
+                )
             else:
                 # Multiple sections: use PDF basename + page range
                 base_name = pdf_basename if pdf_basename else "section"
@@ -376,7 +380,9 @@ class PDFToSkillConverter:
                     link_filename = f"section_{section_num:02d}.md"
                     page_range_str = "N/A"
 
-                f.write(f"- [{cat_data['title']}]({link_filename}) ({page_count} pages, {page_range_str})\n")
+                f.write(
+                    f"- [{cat_data['title']}]({link_filename}) ({page_count} pages, {page_range_str})\n"
+                )
                 section_num += 1
 
             f.write("\n## Statistics\n\n")
@@ -694,6 +700,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Unexpected error during PDF processing: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
