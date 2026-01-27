@@ -397,8 +397,13 @@ pytest tests/ -v -m "not slow and not integration"
 ## 🌐 Environment Variables
 
 ```bash
-# Claude AI (default platform)
+# Claude AI / Compatible APIs
+# Option 1: Official Anthropic API (default)
 export ANTHROPIC_API_KEY=sk-ant-...
+
+# Option 2: GLM-4.7 Claude-compatible API (or any compatible endpoint)
+export ANTHROPIC_API_KEY=your-api-key
+export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # Google Gemini (optional)
 export GOOGLE_API_KEY=AIza...
@@ -414,6 +419,15 @@ export GITLAB_TOKEN=glpat-...
 export GITEA_TOKEN=...
 export BITBUCKET_TOKEN=...
 ```
+
+**All AI enhancement features respect these settings**:
+- `enhance_skill.py` - API mode SKILL.md enhancement
+- `ai_enhancer.py` - C3.1/C3.2 pattern and test example enhancement
+- `guide_enhancer.py` - C3.3 guide enhancement
+- `config_enhancer.py` - C3.4 configuration enhancement
+- `adaptors/claude.py` - Claude platform adaptor enhancement
+
+**Note**: Setting `ANTHROPIC_BASE_URL` allows you to use any Claude-compatible API endpoint, such as GLM-4.7 (智谱 AI).
 
 ## 📦 Package Structure (pyproject.toml)
 

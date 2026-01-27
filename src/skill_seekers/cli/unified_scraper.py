@@ -468,7 +468,8 @@ class UnifiedScraper:
         # Create config for PDF scraper
         pdf_config = {
             "name": f"{self.name}_pdf_{idx}_{pdf_id}",
-            "pdf": source["path"],
+            "pdf_path": source["path"],  # Fixed: use pdf_path instead of pdf
+            "description": f"{source.get('name', pdf_id)} documentation",
             "extract_tables": source.get("extract_tables", False),
             "ocr": source.get("ocr", False),
             "password": source.get("password"),
@@ -477,12 +478,18 @@ class UnifiedScraper:
         # Scrape
         logger.info(f"Scraping PDF: {source['path']}")
         converter = PDFToSkillConverter(pdf_config)
-        pdf_data = converter.extract_all()
 
-        # Save data
-        pdf_data_file = os.path.join(self.data_dir, f"pdf_data_{idx}_{pdf_id}.json")
-        with open(pdf_data_file, "w", encoding="utf-8") as f:
-            json.dump(pdf_data, f, indent=2, ensure_ascii=False)
+        # Extract PDF content
+        converter.extract_pdf()
+
+        # Load extracted data from file
+        pdf_data_file = converter.data_file
+        with open(pdf_data_file, encoding="utf-8") as f:
+            pdf_data = json.load(f)
+
+        # Copy data file to cache
+        cache_pdf_data = os.path.join(self.data_dir, f"pdf_data_{idx}_{pdf_id}.json")
+        shutil.copy(pdf_data_file, cache_pdf_data)
 
         # Append to list instead of overwriting
         self.scraped_data["pdf"].append(
@@ -491,7 +498,7 @@ class UnifiedScraper:
                 "pdf_id": pdf_id,
                 "idx": idx,
                 "data": pdf_data,
-                "data_file": pdf_data_file,
+                "data_file": cache_pdf_data,
             }
         )
 

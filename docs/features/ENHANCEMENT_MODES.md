@@ -350,11 +350,35 @@ rm output/react/.enhancement_daemon.log
 rm output/react/.enhancement_daemon.py
 ```
 
+## API Mode Configuration
+
+When using API mode for AI enhancement (instead of LOCAL mode), you can configure any Claude-compatible endpoint:
+
+```bash
+# Required for API mode
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional: Use custom Claude-compatible endpoint (e.g., GLM-4.7)
+export ANTHROPIC_BASE_URL=https://your-endpoint.com/v1
+```
+
+**Note**: You can use any Claude-compatible API by setting `ANTHROPIC_BASE_URL`. This includes:
+- GLM-4.7 (智谱 AI)
+- Other Claude-compatible services
+
+**All AI enhancement features respect these settings**:
+- `enhance_skill.py` - API mode SKILL.md enhancement
+- `ai_enhancer.py` - C3.1/C3.2 pattern and test example enhancement
+- `guide_enhancer.py` - C3.3 guide enhancement
+- `config_enhancer.py` - C3.4 configuration enhancement
+- `adaptors/claude.py` - Claude platform adaptor enhancement
+
 ## Comparison with API Mode
 
 | Feature | LOCAL Mode | API Mode |
 |---------|-----------|----------|
 | **API Key** | Not needed | Required (ANTHROPIC_API_KEY) |
+| **Endpoint** | N/A | Customizable via ANTHROPIC_BASE_URL |
 | **Cost** | Free (uses Claude Code Max) | ~$0.15-$0.30 per skill |
 | **Speed** | 30-60 seconds | 20-40 seconds |
 | **Quality** | 9/10 | 9/10 (same) |

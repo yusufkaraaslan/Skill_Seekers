@@ -789,7 +789,12 @@ class PDFExtractor:
         text = self.extract_text_with_ocr(page) if self.use_ocr else page.get_text("text")
 
         # Extract markdown (better structure preservation)
-        markdown = page.get_text("markdown")
+        # Use "text" format with layout info for PyMuDF 1.24+
+        try:
+            markdown = page.get_text("markdown")
+        except (AssertionError, ValueError):
+            # Fallback to text format for older/newer PyMuDF versions
+            markdown = page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE | fitz.TEXT_PRESERVE_LIGATURES | fitz.TEXT_PRESERVE_SPANS)
 
         # Extract tables (Priority 2)
         tables = self.extract_tables_from_page(page)
