@@ -114,9 +114,11 @@ class TestCategorization(unittest.TestCase):
 
         categories = converter.categorize_content()
 
-        # Should have both categories
-        self.assertIn("getting_started", categories)
-        self.assertIn("api", categories)
+        # With single PDF source, should use single-file strategy
+        # Category named after PDF basename (test.pdf -> test)
+        self.assertIn("test", categories)
+        self.assertEqual(len(categories), 1)
+        self.assertEqual(len(categories["test"]["pages"]), 2)
 
     def test_categorize_by_chapters(self):
         """Test categorization using chapter information"""
@@ -234,17 +236,12 @@ class TestSkillBuilding(unittest.TestCase):
             "total_pages": 2,
         }
 
-        converter.categories = {
-            "getting_started": [converter.extracted_data["pages"][0]],
-            "api": [converter.extracted_data["pages"][1]],
-        }
-
         converter.build_skill()
 
         # Check reference files exist
+        # With single PDF source, uses single-file strategy (named after PDF basename)
         refs_dir = Path(self.temp_dir) / "test_skill" / "references"
-        self.assertTrue((refs_dir / "getting_started.md").exists())
-        self.assertTrue((refs_dir / "api.md").exists())
+        self.assertTrue((refs_dir / "test.md").exists())
         self.assertTrue((refs_dir / "index.md").exists())
 
 
@@ -289,12 +286,11 @@ class TestCodeBlockHandling(unittest.TestCase):
             "total_pages": 1,
         }
 
-        converter.categories = {"examples": [converter.extracted_data["pages"][0]]}
-
         converter.build_skill()
 
         # Check code block in reference file
-        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "examples.md"
+        # With single PDF source, uses single-file strategy (named after PDF basename)
+        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
         content = ref_file.read_text()
 
         self.assertIn("```python", content)
@@ -329,10 +325,10 @@ class TestCodeBlockHandling(unittest.TestCase):
             "total_pages": 1,
         }
 
-        converter.categories = {"examples": [converter.extracted_data["pages"][0]]}
         converter.build_skill()
 
-        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "examples.md"
+        # With single PDF source, uses single-file strategy (named after PDF basename)
+        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
         content = ref_file.read_text()
 
         # High quality code should be included
@@ -422,11 +418,11 @@ class TestImageHandling(unittest.TestCase):
             "total_pages": 1,
         }
 
-        converter.categories = {"architecture": [converter.extracted_data["pages"][0]]}
         converter.build_skill()
 
         # Check markdown has image reference
-        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "architecture.md"
+        # With single PDF source, uses single-file strategy (named after PDF basename)
+        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
         content = ref_file.read_text()
 
         self.assertIn("![", content)  # Markdown image syntax
