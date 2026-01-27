@@ -1769,6 +1769,70 @@ nano configs/myframework.json
 skill-seekers scrape --config configs/myframework.json
 ```
 
+### Where to Place Custom Configs
+
+You have **three options** for placing your custom config files:
+
+#### Option A: User Config Directory (Recommended for Personal Configs)
+
+```bash
+# Create your config in your home directory
+mkdir -p ~/.config/skill-seekers/configs
+cat > ~/.config/skill-seekers/configs/myproject.json << 'EOF'
+{
+  "name": "myproject",
+  "base_url": "https://docs.myproject.com/",
+  "max_pages": 50
+}
+EOF
+
+# Use it (tool automatically finds it)
+skill-seekers scrape --config myproject.json
+# or
+skill-seekers scrape --config configs/myproject.json
+```
+
+**Benefits:**
+- ✅ Configs persist across project directories
+- ✅ Separate from your project code
+- ✅ Easy to manage personal configurations
+
+#### Option B: Current Directory (Good for Project-Specific Configs)
+
+```bash
+# Create configs in your project folder
+mkdir -p configs
+cat > configs/myproject.json << 'EOF'
+{
+  "name": "myproject",
+  "base_url": "https://docs.myproject.com/"
+}
+EOF
+
+# Use it
+skill-seekers scrape --config configs/myproject.json
+```
+
+**Benefits:**
+- ✅ Config lives with your project
+- ✅ Easy to commit to version control
+- ✅ Team members can use the same config
+
+#### Option C: Absolute Path (For Configs Stored Elsewhere)
+
+```bash
+# Use any file path
+skill-seekers scrape --config /full/path/to/myconfig.json
+```
+
+**Config Resolution Order:**
+
+The tool searches for configs in this order:
+1. Exact path as provided
+2. `./configs/` (current directory)
+3. `~/.config/skill-seekers/configs/` (user config directory)
+4. SkillSeekersWeb.com API (preset configs)
+
 ### Config Structure
 
 ```json

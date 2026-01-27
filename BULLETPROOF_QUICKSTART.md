@@ -418,6 +418,47 @@ skill-seekers scrape \
   --description "My favorite framework"
 ```
 
+### Where to Save Custom Configs
+
+You have three options for placing your custom config files:
+
+**Option 1: User Config Directory (Recommended)**
+
+```bash
+# Create config in your home directory
+mkdir -p ~/.config/skill-seekers/configs
+cat > ~/.config/skill-seekers/configs/myproject.json << 'EOF'
+{
+  "name": "myproject",
+  "base_url": "https://docs.myproject.com/",
+  "max_pages": 50
+}
+EOF
+
+# Use it
+skill-seekers scrape --config myproject.json
+```
+
+**Option 2: Current Directory (Project-Specific)**
+
+```bash
+# Create config in your project
+mkdir -p configs
+nano configs/myproject.json
+
+# Use it
+skill-seekers scrape --config configs/myproject.json
+```
+
+**Option 3: Absolute Path**
+
+```bash
+# Use any file path
+skill-seekers scrape --config /full/path/to/config.json
+```
+
+The tool searches in this order: exact path → `./configs/` → `~/.config/skill-seekers/configs/` → API presets
+
 ### Use with Claude Code (Advanced)
 
 If you have Claude Code installed:

@@ -111,22 +111,51 @@ FileNotFoundError: [Errno 2] No such file or directory: 'cli/doc_scraper.py'
 
 **Error:**
 ```
-FileNotFoundError: configs/react.json
+❌ Error: Config file not found: configs/myconfig.json
 ```
 
+**Understanding Config Locations:**
+
+The tool searches for configs in this order:
+1. Exact path as provided
+2. `./configs/` (current directory)
+3. `~/.config/skill-seekers/configs/` (user config directory)
+4. SkillSeekersWeb.com API (preset configs)
+
 **Solutions:**
-1. **Check config exists:**
+
+1. **Place config in user directory (recommended for custom configs):**
    ```bash
-   ls configs/
-   # Should show: godot.json, react.json, vue.json, etc.
+   mkdir -p ~/.config/skill-seekers/configs
+   cp myconfig.json ~/.config/skill-seekers/configs/
+
+   # Now you can use it from anywhere
+   skill-seekers scrape --config myconfig.json
    ```
 
-2. **Use full path:**
+2. **Place config in current directory (project-specific):**
    ```bash
-   skill-seekers scrape --config $(pwd)/configs/react.json
+   mkdir -p configs
+   cp myconfig.json configs/
+
+   skill-seekers scrape --config configs/myconfig.json
    ```
 
-3. **Create missing config:**
+3. **Use absolute path:**
+   ```bash
+   skill-seekers scrape --config /full/path/to/myconfig.json
+   ```
+
+4. **Check if it's a preset config (auto-downloads):**
+   ```bash
+   # List all available presets
+   skill-seekers estimate --all
+
+   # Use preset (auto-fetched from API)
+   skill-seekers scrape --config react.json
+   ```
+
+5. **Create new config interactively:**
    ```bash
    skill-seekers scrape --interactive
    ```
