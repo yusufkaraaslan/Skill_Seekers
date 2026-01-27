@@ -74,7 +74,6 @@ class AIEnhancer:
         if self.mode == "api" and self.enabled:
             try:
                 import anthropic
-                import os
 
                 # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
                 client_kwargs = {"api_key": self.api_key}
