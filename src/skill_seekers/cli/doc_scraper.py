@@ -1921,7 +1921,9 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         help="Load configuration from file (e.g., configs/godot.json)",
     )
     parser.add_argument("--name", type=str, help="Skill name")
-    parser.add_argument("--url", type=str, help="Base documentation URL (alternative to positional URL)")
+    parser.add_argument(
+        "--url", type=str, help="Base documentation URL (alternative to positional URL)"
+    )
     parser.add_argument("--description", "-d", type=str, help="Skill description")
     parser.add_argument(
         "--max-pages",
@@ -2028,7 +2030,7 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
     """
     # Handle URL from either positional argument or --url flag
     # Positional 'url' takes precedence, then --url flag
-    effective_url = getattr(args, 'url', None)
+    effective_url = getattr(args, "url", None)
 
     # Get base configuration
     if args.config:
@@ -2095,9 +2097,7 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             logger.warning(
                 "⚠️  --max-pages=%d is very high - scraping may take hours", args.max_pages
             )
-            logger.warning(
-                "   Recommendation: Use configs with reasonable limits for production"
-            )
+            logger.warning("   Recommendation: Use configs with reasonable limits for production")
         elif args.max_pages < 10:
             logger.warning(
                 "⚠️  --max-pages=%d is very low - may result in incomplete skill", args.max_pages

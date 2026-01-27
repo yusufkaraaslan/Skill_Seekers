@@ -794,7 +794,12 @@ class PDFExtractor:
             markdown = page.get_text("markdown")
         except (AssertionError, ValueError):
             # Fallback to text format for older/newer PyMuDF versions
-            markdown = page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE | fitz.TEXT_PRESERVE_LIGATURES | fitz.TEXT_PRESERVE_SPANS)
+            markdown = page.get_text(
+                "text",
+                flags=fitz.TEXT_PRESERVE_WHITESPACE
+                | fitz.TEXT_PRESERVE_LIGATURES
+                | fitz.TEXT_PRESERVE_SPANS,
+            )
 
         # Extract tables (Priority 2)
         tables = self.extract_tables_from_page(page)
