@@ -129,7 +129,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # All AI enhancement features will use the configured endpoint
 skill-seekers enhance output/react/
-skill-seekers codebase --directory . --enhance
+skill-seekers analyze --directory . --enhance
 ```
 
 **Note**: Setting `ANTHROPIC_BASE_URL` allows you to use any Claude-compatible API endpoint, such as GLM-4.7 (智谱 AI) or other compatible services.
@@ -321,17 +321,14 @@ ls ~/.claude/skills/skill-seekers/SKILL.md
 
 **Usage:**
 ```bash
-# AUTO mode (default) - automatically detects best option
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode auto
+# Quick analysis (1-2 min, basic features only)
+skill-seekers analyze --directory tests/ --quick
 
-# API mode - fast, efficient (requires ANTHROPIC_API_KEY)
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode api
+# Comprehensive analysis with AI (20-60 min, all features)
+skill-seekers analyze --directory tests/ --comprehensive
 
-# LOCAL mode - FREE using Claude Code Max (no API key needed)
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
-
-# Disable enhancement - basic guides only
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
+# With AI enhancement
+skill-seekers analyze --directory tests/ --enhance
 ```
 
 **Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)

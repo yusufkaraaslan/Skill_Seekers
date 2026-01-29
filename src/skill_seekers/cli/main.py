@@ -13,6 +13,7 @@ Commands:
     github               Scrape GitHub repository
     pdf                  Extract from PDF file
     unified              Multi-source scraping (docs + GitHub + PDF)
+    analyze              Analyze local codebase and extract code knowledge
     enhance              AI-powered enhancement (local, no API key)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
@@ -270,6 +271,45 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
         "--dry-run", action="store_true", help="Preview installation without making changes"
     )
 
+    # === analyze subcommand ===
+    analyze_parser = subparsers.add_parser(
+        "analyze",
+        help="Analyze local codebase and extract code knowledge",
+        description="Standalone codebase analysis with C3.x features (patterns, tests, guides)",
+    )
+    analyze_parser.add_argument("--directory", required=True, help="Directory to analyze")
+    analyze_parser.add_argument(
+        "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
+    )
+    analyze_parser.add_argument(
+        "--quick", action="store_true", help="Quick analysis (1-2 min, basic features only)"
+    )
+    analyze_parser.add_argument(
+        "--comprehensive",
+        action="store_true",
+        help="Comprehensive analysis (20-60 min, all features + AI)"
+    )
+    analyze_parser.add_argument(
+        "--depth",
+        choices=["surface", "deep", "full"],
+        help="Analysis depth (deprecated - use --quick or --comprehensive instead)",
+    )
+    analyze_parser.add_argument(
+        "--languages", help="Comma-separated languages (e.g., Python,JavaScript,C++)"
+    )
+    analyze_parser.add_argument("--file-patterns", help="Comma-separated file patterns")
+    analyze_parser.add_argument(
+        "--enhance", action="store_true", help="Enable AI enhancement (auto-detects API or LOCAL)"
+    )
+    analyze_parser.add_argument("--skip-api-reference", action="store_true", help="Skip API docs")
+    analyze_parser.add_argument("--skip-dependency-graph", action="store_true", help="Skip dep graph")
+    analyze_parser.add_argument("--skip-patterns", action="store_true", help="Skip pattern detection")
+    analyze_parser.add_argument("--skip-test-examples", action="store_true", help="Skip test examples")
+    analyze_parser.add_argument("--skip-how-to-guides", action="store_true", help="Skip guides")
+    analyze_parser.add_argument("--skip-config-patterns", action="store_true", help="Skip config")
+    analyze_parser.add_argument("--no-comments", action="store_true", help="Skip comments")
+    analyze_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
+
     # === install subcommand ===
     install_parser = subparsers.add_parser(
         "install",
@@ -498,6 +538,57 @@ def main(argv: list[str] | None = None) -> int:
             if args.markdown:
                 sys.argv.append("--markdown")
             return test_examples_main() or 0
+
+        elif args.command == "analyze":
+            from skill_seekers.cli.codebase_scraper import main as analyze_main
+
+            sys.argv = ["codebase_scraper.py", "--directory", args.directory]
+
+            if args.output:
+                sys.argv.extend(["--output", args.output])
+
+            # Handle preset flags (new)
+            if args.quick:
+                # Quick = surface depth + skip advanced features
+                sys.argv.extend([
+                    "--depth", "surface",
+                    "--skip-patterns",
+                    "--skip-test-examples",
+                    "--skip-how-to-guides",
+                    "--skip-config-patterns",
+                ])
+            elif args.comprehensive:
+                # Comprehensive = full depth + all features + AI
+                sys.argv.extend(["--depth", "full", "--ai-mode", "auto"])
+            elif args.depth:
+                sys.argv.extend(["--depth", args.depth])
+
+            if args.languages:
+                sys.argv.extend(["--languages", args.languages])
+            if args.file_patterns:
+                sys.argv.extend(["--file-patterns", args.file_patterns])
+            if args.enhance:
+                sys.argv.extend(["--ai-mode", "auto"])
+
+            # Pass through skip flags
+            if args.skip_api_reference:
+                sys.argv.append("--skip-api-reference")
+            if args.skip_dependency_graph:
+                sys.argv.append("--skip-dependency-graph")
+            if args.skip_patterns:
+                sys.argv.append("--skip-patterns")
+            if args.skip_test_examples:
+                sys.argv.append("--skip-test-examples")
+            if args.skip_how_to_guides:
+                sys.argv.append("--skip-how-to-guides")
+            if args.skip_config_patterns:
+                sys.argv.append("--skip-config-patterns")
+            if args.no_comments:
+                sys.argv.append("--no-comments")
+            if args.verbose:
+                sys.argv.append("--verbose")
+
+            return analyze_main() or 0
 
         elif args.command == "install-agent":
             from skill_seekers.cli.install_agent import main as install_agent_main

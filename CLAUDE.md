@@ -173,7 +173,7 @@ skill-seekers github --repo owner/repo --non-interactive         # CI/CD mode
 skill-seekers scrape --config configs/react.json --dry-run
 
 # Test codebase analysis (C2.x features)
-skill-seekers codebase --directory . --output output/codebase/
+skill-seekers analyze --directory . --output output/codebase/
 
 # Test pattern detection (C3.1)
 skill-seekers patterns --file src/skill_seekers/cli/code_analyzer.py
@@ -283,14 +283,17 @@ The project has comprehensive codebase analysis capabilities (C3.1-C3.8):
 
 **C3.8 Standalone Codebase Scraper** (`codebase_scraper.py`):
 ```bash
-# All C3.x features enabled by default, use --skip-* to disable
-skill-seekers codebase --directory /path/to/repo
+# Quick analysis (1-2 min, basic features only)
+skill-seekers analyze --directory /path/to/repo --quick
+
+# Comprehensive analysis (20-60 min, all features + AI)
+skill-seekers analyze --directory . --comprehensive
+
+# With AI enhancement (auto-detects API or LOCAL)
+skill-seekers analyze --directory . --enhance
 
 # Disable specific features
-skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
-
-# Legacy flags (deprecated but still work)
-skill-seekers codebase --directory . --build-api-reference --build-dependency-graph
+skill-seekers analyze --directory . --skip-patterns --skip-how-to-guides
 ```
 
 - Generates 300+ line standalone SKILL.md files from codebases

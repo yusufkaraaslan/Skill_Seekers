@@ -1082,7 +1082,13 @@ Examples:
         "--depth",
         choices=["surface", "deep", "full"],
         default="deep",
-        help="Analysis depth (default: deep)",
+        help=(
+            "Analysis depth: "
+            "surface (basic code structure, ~1-2 min), "
+            "deep (code + patterns + tests, ~5-10 min, DEFAULT), "
+            "full (everything + AI enhancement, ~20-60 min). "
+            "💡 TIP: Use --quick or --comprehensive presets instead for better UX!"
+        ),
     )
     parser.add_argument(
         "--languages", help="Comma-separated languages to analyze (e.g., Python,JavaScript,C++)"
@@ -1130,7 +1136,14 @@ Examples:
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
         default="auto",
-        help="AI enhancement mode for how-to guides: auto (detect best), api (Claude API), local (Claude Code CLI), none (disable) (default: auto)",
+        help=(
+            "AI enhancement mode for how-to guides: "
+            "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
+            "api (Claude API, requires ANTHROPIC_API_KEY), "
+            "local (Claude Code Max, FREE, no API key), "
+            "none (disable AI enhancement). "
+            "💡 TIP: Use --enhance flag instead for simpler UX!"
+        ),
     )
     parser.add_argument("--no-comments", action="store_true", help="Skip comment extraction")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -1154,6 +1167,31 @@ Examples:
             )
 
     args = parser.parse_args()
+
+    # Handle presets (Phase 1 feature - NEW)
+    if hasattr(args, "quick") and args.quick and hasattr(args, "comprehensive") and args.comprehensive:
+        logger.error("❌ Cannot use --quick and --comprehensive together. Choose one.")
+        return 1
+
+    if hasattr(args, "quick") and args.quick:
+        # Override depth and disable advanced features
+        args.depth = "surface"
+        args.skip_patterns = True
+        args.skip_test_examples = True
+        args.skip_how_to_guides = True
+        args.skip_config_patterns = True
+        args.ai_mode = "none"
+        logger.info("⚡ Quick analysis mode: surface depth, basic features only (~1-2 min)")
+
+    if hasattr(args, "comprehensive") and args.comprehensive:
+        # Override depth and enable all features
+        args.depth = "full"
+        args.skip_patterns = False
+        args.skip_test_examples = False
+        args.skip_how_to_guides = False
+        args.skip_config_patterns = False
+        args.ai_mode = "auto"
+        logger.info("🚀 Comprehensive analysis mode: all features + AI enhancement (~20-60 min)")
 
     # Set logging level
     if args.verbose:
