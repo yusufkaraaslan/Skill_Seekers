@@ -530,7 +530,7 @@ This **minor feature release** completes the C3.x codebase analysis suite with s
   - Includes language statistics, analysis depth indicators, and feature checkboxes
   - Creates references/ directory with organized outputs (API, dependencies, patterns, architecture, config)
   - Integration points:
-    - CLI tool: `skill-seekers-codebase-scraper --directory /path/to/code --output /path/to/output`
+    - CLI tool: `skill-seekers analyze --directory /path/to/code --output /path/to/output`
     - Unified scraper: Automatic SKILL.md generation when using codebase analysis
   - Format helpers for all C3.x sections (patterns, examples, API, architecture, config)
   - Perfect for local codebase documentation without GitHub

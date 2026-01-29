@@ -37,11 +37,9 @@ echo "✓ Done"
 # Step 2: Run codebase analysis
 echo "Step 2: Analyzing codebase..."
 rm -rf "$OUTPUT_DIR" 2>/dev/null || true
-uv run skill-seekers-codebase \
+uv run skill-seekers analyze \
     --directory "$PROJECT_ROOT" \
-    --output "$OUTPUT_DIR" \
-    --depth deep \
-    --ai-mode none 2>&1 | grep -E "^(INFO|✅)" || true
+    --output "$OUTPUT_DIR" 2>&1 | grep -E "^(INFO|✅)" || true
 echo "✓ Done"
 
 # Step 3: Prepend header to SKILL.md

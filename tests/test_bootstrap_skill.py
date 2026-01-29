@@ -37,7 +37,7 @@ class TestBootstrapSkillScript:
 
         # Must have commands table
         assert "## Commands" in content, "Header must have Commands section"
-        assert "skill-seekers-codebase" in content, "Header must mention codebase command"
+        assert "skill-seekers analyze" in content, "Header must mention analyze command"
         assert "skill-seekers scrape" in content, "Header must mention scrape command"
         assert "skill-seekers github" in content, "Header must mention github command"
 

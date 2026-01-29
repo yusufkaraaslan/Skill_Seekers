@@ -16,7 +16,7 @@ pip install skill-seekers
 
 | Source | Command |
 |--------|---------|
-| Local code | `skill-seekers-codebase --directory ./path` |
+| Local code | `skill-seekers analyze --directory ./path` |
 | Docs URL | `skill-seekers scrape --url https://...` |
 | GitHub | `skill-seekers github --repo owner/repo` |
 | PDF | `skill-seekers pdf --file doc.pdf` |
@@ -25,7 +25,7 @@ pip install skill-seekers
 
 ```bash
 # Analyze local codebase
-skill-seekers-codebase --directory /path/to/project --output output/my-skill/
+skill-seekers analyze --directory /path/to/project --output output/my-skill/
 
 # Package for Claude
 yes | skill-seekers package output/my-skill/ --no-open

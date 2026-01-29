@@ -305,17 +305,17 @@ ls ~/.claude/skills/skill-seekers/SKILL.md
 
 **用法：**
 ```bash
-# AUTO 模式（默认）- 自动检测最佳选项
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode auto
+# 快速分析（1-2 分钟，基础功能）
+skill-seekers analyze --directory tests/ --quick
 
-# API 模式 - 快速、高效（需要 ANTHROPIC_API_KEY）
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode api
+# 综合分析（20-60 分钟，所有功能 + AI）
+skill-seekers analyze --directory tests/ --comprehensive
 
-# LOCAL 模式 - 使用 Claude Code Max 免费（无需 API 密钥）
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
+# 启用 AI 增强（自动检测 API 或 LOCAL）
+skill-seekers analyze --directory tests/ --enhance
 
-# 禁用增强 - 仅基础指南
-skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
+# 自定义：禁用特定功能
+skill-seekers analyze --directory tests/ --skip-how-to-guides
 ```
 
 **完整文档：**[docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)

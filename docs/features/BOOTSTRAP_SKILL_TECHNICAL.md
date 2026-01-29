@@ -148,7 +148,7 @@ Fails fast with helpful installation instructions.
 **Step 2: Codebase Analysis (lines 37-45)**
 ```bash
 rm -rf "$OUTPUT_DIR" 2>/dev/null || true
-uv run skill-seekers-codebase \
+uv run skill-seekers analyze \
     --directory "$PROJECT_ROOT" \
     --output "$OUTPUT_DIR" \
     --depth deep \

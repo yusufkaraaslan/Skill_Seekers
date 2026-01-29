@@ -31,7 +31,7 @@ First, extract workflow examples from your test files:
 
 ```bash
 # Extract test examples including workflows
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --extract-test-examples \
   --output output/codebase/
 
@@ -64,13 +64,13 @@ Enable guide generation during codebase analysis:
 
 ```bash
 # Automatic pipeline: extract tests → build guides
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --extract-test-examples \
   --build-how-to-guides \
   --output output/codebase/
 
 # Skip guide generation
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --skip-how-to-guides
 ```
 
@@ -284,7 +284,7 @@ AI enhancement happens automatically with AUTO mode detection:
 
 ```bash
 # Auto-detects best mode (API if key set, else LOCAL)
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --extract-test-examples \
   --build-how-to-guides \
   --ai-mode auto
@@ -299,7 +299,7 @@ Use Claude API directly (requires ANTHROPIC_API_KEY):
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # Enable API mode
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --build-how-to-guides \
   --ai-mode api
 ```
@@ -316,7 +316,7 @@ Use Claude Code CLI (no API key needed):
 
 ```bash
 # Uses your Claude Code Max plan (FREE!)
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --build-how-to-guides \
   --ai-mode local
 ```
@@ -334,7 +334,7 @@ Generate basic guides without AI:
 
 ```bash
 # Faster, but basic quality
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --build-how-to-guides \
   --ai-mode none
 ```
@@ -358,7 +358,7 @@ skill-seekers-codebase tests/ \
 
 ```bash
 # 1. Extract test examples from your codebase
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --extract-test-examples \
   --output output/codebase/
 
@@ -401,7 +401,7 @@ which claude
 **Issue: Enhancement takes too long**
 ```bash
 # Switch to API mode for faster processing
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --build-how-to-guides \
   --ai-mode api  # Much faster than LOCAL
 
@@ -873,7 +873,7 @@ How-to guides are built from workflow examples extracted by C3.2:
 
 ```bash
 # Full pipeline
-skill-seekers-codebase tests/ \
+skill-seekers analyze tests/ \
   --extract-test-examples \
   --build-how-to-guides
 ```
@@ -907,7 +907,7 @@ skill-seekers-how-to-guides examples.json --no-ai
 Automatic guide generation during codebase analysis:
 
 ```bash
-skill-seekers-codebase /path/to/repo/ \
+skill-seekers analyze /path/to/repo/ \
   --extract-test-examples \
   --build-how-to-guides \
   --output output/codebase/
@@ -946,7 +946,7 @@ skill-seekers-how-to-guides tests/integration/test_examples.json \
 Extract usage patterns from test suites:
 
 ```bash
-skill-seekers-codebase tests/api/ \
+skill-seekers analyze tests/api/ \
   --extract-test-examples \
   --build-how-to-guides
 ```
@@ -1375,7 +1375,7 @@ pytest tests/test_how_to_guide_builder.py --cov=skill_seekers.cli.how_to_guide_b
 **Get Started:**
 ```bash
 # Quick start
-skill-seekers-codebase tests/ --output output/codebase/
+skill-seekers analyze tests/ --output output/codebase/
 
 # Check your new guides
 cat output/codebase/tutorials/index.md
