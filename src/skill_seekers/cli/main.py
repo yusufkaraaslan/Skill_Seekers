@@ -572,13 +572,19 @@ def main(argv: list[str] | None = None) -> int:
                 sys.argv.extend(["--depth", args.depth])
 
             # Determine enhance_level (independent of --comprehensive)
-            # Priority: explicit --enhance-level > --enhance (level 1) > --quick (level 0) > 0
+            # Priority: explicit --enhance-level > --enhance (uses config default) > --quick (level 0) > 0
             if args.enhance_level is not None:
                 enhance_level = args.enhance_level
             elif args.quick:
                 enhance_level = 0  # Quick mode disables AI
             elif args.enhance:
-                enhance_level = 1  # --enhance defaults to level 1
+                # Use default from config (default: 1)
+                try:
+                    from skill_seekers.cli.config_manager import get_config_manager
+                    config = get_config_manager()
+                    enhance_level = config.get_default_enhance_level()
+                except Exception:
+                    enhance_level = 1  # Fallback to level 1
             else:
                 enhance_level = 0  # Default: no AI
 

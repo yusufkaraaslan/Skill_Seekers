@@ -35,6 +35,7 @@ class ConfigManager:
         "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
         "api_keys": {"anthropic": None, "google": None, "openai": None},
         "ai_enhancement": {
+            "default_enhance_level": 1,  # Default AI enhancement level (0-3)
             "local_batch_size": 20,  # Patterns per Claude CLI call (default was 5)
             "local_parallel_workers": 3,  # Concurrent Claude CLI calls
         },
@@ -384,6 +385,19 @@ class ConfigManager:
 
     # AI Enhancement Settings
 
+    def get_default_enhance_level(self) -> int:
+        """Get default AI enhancement level (0-3)."""
+        return self.config.get("ai_enhancement", {}).get("default_enhance_level", 1)
+
+    def set_default_enhance_level(self, level: int):
+        """Set default AI enhancement level (0-3)."""
+        if level not in [0, 1, 2, 3]:
+            raise ValueError("enhance_level must be 0, 1, 2, or 3")
+        if "ai_enhancement" not in self.config:
+            self.config["ai_enhancement"] = {}
+        self.config["ai_enhancement"]["default_enhance_level"] = level
+        self.save_config()
+
     def get_local_batch_size(self) -> int:
         """Get batch size for LOCAL mode AI enhancement."""
         return self.config.get("ai_enhancement", {}).get("local_batch_size", 20)
@@ -472,7 +486,10 @@ class ConfigManager:
         print(f"  • Keep progress for: {self.config['resume']['keep_progress_days']} days")
 
         # AI Enhancement settings
-        print("\nAI Enhancement (LOCAL mode):")
+        level_names = {0: "off", 1: "SKILL.md only", 2: "standard", 3: "full"}
+        default_level = self.get_default_enhance_level()
+        print("\nAI Enhancement:")
+        print(f"  • Default level: {default_level} ({level_names.get(default_level, 'unknown')})")
         print(f"  • Batch size: {self.get_local_batch_size()} patterns per call")
         print(f"  • Parallel workers: {self.get_local_parallel_workers()} concurrent calls")
 
