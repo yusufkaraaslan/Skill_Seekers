@@ -170,9 +170,18 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     enhance_parser = subparsers.add_parser(
         "enhance",
         help="AI-powered enhancement (local, no API key)",
-        description="Enhance SKILL.md using Claude Code (local)",
+        description="Enhance SKILL.md using a local coding agent",
     )
     enhance_parser.add_argument("skill_directory", help="Skill directory path")
+    enhance_parser.add_argument(
+        "--agent",
+        choices=["claude", "codex", "copilot", "opencode", "custom"],
+        help="Local coding agent to use (default: claude or SKILL_SEEKER_AGENT)",
+    )
+    enhance_parser.add_argument(
+        "--agent-cmd",
+        help="Override agent command template (use {prompt_file} or stdin).",
+    )
     enhance_parser.add_argument("--background", action="store_true", help="Run in background")
     enhance_parser.add_argument("--daemon", action="store_true", help="Run as daemon")
     enhance_parser.add_argument(
@@ -486,6 +495,10 @@ def main(argv: list[str] | None = None) -> int:
             from skill_seekers.cli.enhance_skill_local import main as enhance_main
 
             sys.argv = ["enhance_skill_local.py", args.skill_directory]
+            if args.agent:
+                sys.argv.extend(["--agent", args.agent])
+            if args.agent_cmd:
+                sys.argv.extend(["--agent-cmd", args.agent_cmd])
             if args.background:
                 sys.argv.append("--background")
             if args.daemon:
