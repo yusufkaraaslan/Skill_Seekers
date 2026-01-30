@@ -165,12 +165,16 @@ class ConfigEnhancer:
         for cf in config_files[:10]:  # Limit to first 10 files
             settings_summary = []
             for setting in cf.get("settings", [])[:5]:  # First 5 settings per file
+                # Support both "type" (from config_extractor) and "value_type" (legacy)
+                value_type = setting.get("type", setting.get("value_type", "unknown"))
                 settings_summary.append(
-                    f"  - {setting['key']}: {setting['value']} ({setting['value_type']})"
+                    f"  - {setting['key']}: {setting['value']} ({value_type})"
                 )
 
+            # Support both "type" (from config_extractor) and "config_type" (legacy)
+            config_type = cf.get("type", cf.get("config_type", "unknown"))
             config_summary.append(f"""
-File: {cf["relative_path"]} ({cf["config_type"]})
+File: {cf["relative_path"]} ({config_type})
 Purpose: {cf["purpose"]}
 Settings:
 {chr(10).join(settings_summary)}
@@ -291,8 +295,10 @@ Focus on actionable insights that help developers understand and improve their c
         # Format config data for Claude
         config_data = []
         for cf in config_files[:10]:
+            # Support both "type" (from config_extractor) and "config_type" (legacy)
+            config_type = cf.get("type", cf.get("config_type", "unknown"))
             config_data.append(f"""
-### {cf["relative_path"]} ({cf["config_type"]})
+### {cf["relative_path"]} ({config_type})
 - Purpose: {cf["purpose"]}
 - Patterns: {", ".join(cf.get("patterns", []))}
 - Settings count: {len(cf.get("settings", []))}
