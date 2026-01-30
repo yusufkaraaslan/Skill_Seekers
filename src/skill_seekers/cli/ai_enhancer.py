@@ -27,10 +27,18 @@ import logging
 import os
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Import config manager for settings
+try:
+    from skill_seekers.cli.config_manager import get_config_manager
+    CONFIG_AVAILABLE = True
+except ImportError:
+    CONFIG_AVAILABLE = False
 
 
 @dataclass
@@ -64,6 +72,15 @@ class AIEnhancer:
         self.mode = mode
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.client = None
+
+        # Get settings from config (with defaults)
+        if CONFIG_AVAILABLE:
+            config = get_config_manager()
+            self.local_batch_size = config.get_local_batch_size()
+            self.local_parallel_workers = config.get_local_parallel_workers()
+        else:
+            self.local_batch_size = 20  # Default
+            self.local_parallel_workers = 3  # Default
 
         # Determine actual mode
         if mode == "auto":
@@ -232,18 +249,66 @@ class PatternEnhancer(AIEnhancer):
         if not self.enabled or not patterns:
             return patterns
 
-        logger.info(f"🤖 Enhancing {len(patterns)} detected patterns with AI...")
+        # Use larger batch size for LOCAL mode (configurable)
+        if self.mode == "local":
+            batch_size = self.local_batch_size
+            parallel_workers = self.local_parallel_workers
+            logger.info(
+                f"🤖 Enhancing {len(patterns)} patterns with AI "
+                f"(LOCAL mode: {batch_size} per batch, {parallel_workers} parallel workers)..."
+            )
+        else:
+            batch_size = 5  # API mode uses smaller batches
+            parallel_workers = 1  # API mode is sequential
+            logger.info(f"🤖 Enhancing {len(patterns)} detected patterns with AI...")
 
-        # Batch patterns to minimize API calls (max 5 per batch)
-        batch_size = 5
-        enhanced = []
-
+        # Create batches
+        batches = []
         for i in range(0, len(patterns), batch_size):
-            batch = patterns[i : i + batch_size]
-            batch_results = self._enhance_pattern_batch(batch)
-            enhanced.extend(batch_results)
+            batches.append(patterns[i : i + batch_size])
+
+        # Process batches (parallel for LOCAL, sequential for API)
+        if parallel_workers > 1 and len(batches) > 1:
+            enhanced = self._enhance_patterns_parallel(batches, parallel_workers)
+        else:
+            enhanced = []
+            for batch in batches:
+                batch_results = self._enhance_pattern_batch(batch)
+                enhanced.extend(batch_results)
 
         logger.info(f"✅ Enhanced {len(enhanced)} patterns")
+        return enhanced
+
+    def _enhance_patterns_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
+        """Process pattern batches in parallel using ThreadPoolExecutor."""
+        results = [None] * len(batches)  # Preserve order
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            # Submit all batches
+            future_to_idx = {
+                executor.submit(self._enhance_pattern_batch, batch): idx
+                for idx, batch in enumerate(batches)
+            }
+
+            # Collect results as they complete
+            completed = 0
+            total = len(batches)
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                try:
+                    results[idx] = future.result()
+                    completed += 1
+                    if completed % 5 == 0 or completed == total:
+                        logger.info(f"   Progress: {completed}/{total} batches completed")
+                except Exception as e:
+                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
+                    results[idx] = batches[idx]  # Return unenhanced on failure
+
+        # Flatten results
+        enhanced = []
+        for batch_result in results:
+            if batch_result:
+                enhanced.extend(batch_result)
         return enhanced
 
     def _enhance_pattern_batch(self, patterns: list[dict]) -> list[dict]:
@@ -321,18 +386,66 @@ class TestExampleEnhancer(AIEnhancer):
         if not self.enabled or not examples:
             return examples
 
-        logger.info(f"🤖 Enhancing {len(examples)} test examples with AI...")
+        # Use larger batch size for LOCAL mode (configurable)
+        if self.mode == "local":
+            batch_size = self.local_batch_size
+            parallel_workers = self.local_parallel_workers
+            logger.info(
+                f"🤖 Enhancing {len(examples)} test examples with AI "
+                f"(LOCAL mode: {batch_size} per batch, {parallel_workers} parallel workers)..."
+            )
+        else:
+            batch_size = 5  # API mode uses smaller batches
+            parallel_workers = 1  # API mode is sequential
+            logger.info(f"🤖 Enhancing {len(examples)} test examples with AI...")
 
-        # Batch examples to minimize API calls
-        batch_size = 5
-        enhanced = []
-
+        # Create batches
+        batches = []
         for i in range(0, len(examples), batch_size):
-            batch = examples[i : i + batch_size]
-            batch_results = self._enhance_example_batch(batch)
-            enhanced.extend(batch_results)
+            batches.append(examples[i : i + batch_size])
+
+        # Process batches (parallel for LOCAL, sequential for API)
+        if parallel_workers > 1 and len(batches) > 1:
+            enhanced = self._enhance_examples_parallel(batches, parallel_workers)
+        else:
+            enhanced = []
+            for batch in batches:
+                batch_results = self._enhance_example_batch(batch)
+                enhanced.extend(batch_results)
 
         logger.info(f"✅ Enhanced {len(enhanced)} examples")
+        return enhanced
+
+    def _enhance_examples_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
+        """Process example batches in parallel using ThreadPoolExecutor."""
+        results = [None] * len(batches)  # Preserve order
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            # Submit all batches
+            future_to_idx = {
+                executor.submit(self._enhance_example_batch, batch): idx
+                for idx, batch in enumerate(batches)
+            }
+
+            # Collect results as they complete
+            completed = 0
+            total = len(batches)
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                try:
+                    results[idx] = future.result()
+                    completed += 1
+                    if completed % 5 == 0 or completed == total:
+                        logger.info(f"   Progress: {completed}/{total} batches completed")
+                except Exception as e:
+                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
+                    results[idx] = batches[idx]  # Return unenhanced on failure
+
+        # Flatten results
+        enhanced = []
+        for batch_result in results:
+            if batch_result:
+                enhanced.extend(batch_result)
         return enhanced
 
     def _enhance_example_batch(self, examples: list[dict]) -> list[dict]:
