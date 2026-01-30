@@ -229,8 +229,7 @@ def analyze_codebase(
     extract_test_examples: bool = True,
     build_how_to_guides: bool = True,
     extract_config_patterns: bool = True,
-    enhance_with_ai: bool = True,
-    ai_mode: str = "auto",
+    enhance_level: int = 0,
 ) -> dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -248,12 +247,25 @@ def analyze_codebase(
         extract_test_examples: Extract usage examples from test files
         build_how_to_guides: Build how-to guides from workflow examples (C3.3)
         extract_config_patterns: Extract configuration patterns from config files (C3.4)
-        enhance_with_ai: Enhance patterns and examples with AI analysis (C3.6)
-        ai_mode: AI enhancement mode for how-to guides (auto, api, local, none)
+        enhance_level: AI enhancement level (0=off, 1=SKILL.md only, 2=+config+arch, 3=full)
 
     Returns:
         Analysis results dictionary
     """
+    # Determine AI enhancement settings based on level
+    # Level 0: No AI enhancement
+    # Level 1: SKILL.md only (handled in main.py)
+    # Level 2: Architecture + Config AI enhancement
+    # Level 3: Full AI enhancement (patterns, tests, config, architecture)
+    enhance_patterns = enhance_level >= 3
+    enhance_tests = enhance_level >= 3
+    enhance_config = enhance_level >= 2
+    enhance_architecture = enhance_level >= 2
+    ai_mode = "auto" if enhance_level > 0 else "none"
+
+    if enhance_level > 0:
+        level_names = {1: "SKILL.md only", 2: "SKILL.md+Architecture+Config", 3: "full"}
+        logger.info(f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})")
     # Resolve directory to absolute path to avoid relative_to() errors
     directory = Path(directory).resolve()
 
@@ -405,7 +417,7 @@ def analyze_codebase(
         logger.info("Detecting design patterns...")
         from skill_seekers.cli.pattern_recognizer import PatternRecognizer
 
-        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_with_ai)
+        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_patterns)
         pattern_results = []
 
         for file_path in files:
@@ -447,7 +459,7 @@ def analyze_codebase(
             min_confidence=0.5,
             max_per_file=10,
             languages=languages,
-            enhance_with_ai=enhance_with_ai,
+            enhance_with_ai=enhance_tests,
         )
 
         # Extract examples from directory
@@ -486,8 +498,8 @@ def analyze_codebase(
         try:
             from skill_seekers.cli.how_to_guide_builder import HowToGuideBuilder
 
-            # Create guide builder
-            guide_builder = HowToGuideBuilder(enhance_with_ai=enhance_with_ai)
+            # Create guide builder (uses same enhance level as test examples)
+            guide_builder = HowToGuideBuilder(enhance_with_ai=enhance_tests)
 
             # Build guides from workflow examples
             tutorials_dir = output_dir / "tutorials"
@@ -505,7 +517,7 @@ def analyze_codebase(
                     examples_list,
                     grouping_strategy="ai-tutorial-group",
                     output_dir=tutorials_dir,
-                    enhance_with_ai=enhance_with_ai,
+                    enhance_with_ai=enhance_tests,
                     ai_mode=ai_mode,
                 )
 
@@ -538,8 +550,8 @@ def analyze_codebase(
                 # Convert to dict for enhancement
                 result_dict = config_extractor.to_dict(extraction_result)
 
-                # AI Enhancement (if enabled)
-                if enhance_with_ai and ai_mode != "none":
+                # AI Enhancement (if enabled - level 2+)
+                if enhance_config and ai_mode != "none":
                     try:
                         from skill_seekers.cli.config_enhancer import ConfigEnhancer
 
@@ -591,7 +603,7 @@ def analyze_codebase(
     logger.info("Analyzing architectural patterns...")
     from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
 
-    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_with_ai)
+    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture)
     arch_report = arch_detector.analyze(directory, results["files"])
 
     if arch_report.patterns:
@@ -1147,6 +1159,19 @@ Examples:
     )
     parser.add_argument("--no-comments", action="store_true", help="Skip comment extraction")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument(
+        "--enhance-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=0,
+        help=(
+            "AI enhancement level: "
+            "0=off (default), "
+            "1=SKILL.md only, "
+            "2=SKILL.md+Architecture+Config, "
+            "3=full (patterns, tests, config, architecture, SKILL.md)"
+        ),
+    )
 
     # Check for deprecated flags
     deprecated_flags = {
@@ -1232,8 +1257,7 @@ Examples:
             extract_test_examples=not args.skip_test_examples,
             build_how_to_guides=not args.skip_how_to_guides,
             extract_config_patterns=not args.skip_config_patterns,
-            enhance_with_ai=True,  # Auto-disables if no API key present
-            ai_mode=args.ai_mode,  # NEW: AI enhancement mode for how-to guides
+            enhance_level=args.enhance_level,  # AI enhancement level (0-3)
         )
 
         # Print summary

@@ -300,7 +300,14 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     analyze_parser.add_argument("--file-patterns", help="Comma-separated file patterns")
     analyze_parser.add_argument(
-        "--enhance", action="store_true", help="Enable AI enhancement (auto-detects API or LOCAL)"
+        "--enhance", action="store_true", help="Enable AI enhancement (default level 1 = SKILL.md only)"
+    )
+    analyze_parser.add_argument(
+        "--enhance-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=None,
+        help="AI enhancement level: 0=off, 1=SKILL.md only (default), 2=+Architecture+Config, 3=full"
     )
     analyze_parser.add_argument("--skip-api-reference", action="store_true", help="Skip API docs")
     analyze_parser.add_argument("--skip-dependency-graph", action="store_true", help="Skip dep graph")
@@ -548,9 +555,9 @@ def main(argv: list[str] | None = None) -> int:
             if args.output:
                 sys.argv.extend(["--output", args.output])
 
-            # Handle preset flags (new)
+            # Handle preset flags (depth and features)
             if args.quick:
-                # Quick = surface depth + skip advanced features
+                # Quick = surface depth + skip advanced features + no AI
                 sys.argv.extend([
                     "--depth", "surface",
                     "--skip-patterns",
@@ -559,17 +566,29 @@ def main(argv: list[str] | None = None) -> int:
                     "--skip-config-patterns",
                 ])
             elif args.comprehensive:
-                # Comprehensive = full depth + all features + AI
-                sys.argv.extend(["--depth", "full", "--ai-mode", "auto"])
+                # Comprehensive = full depth + all features (AI level is separate)
+                sys.argv.extend(["--depth", "full"])
             elif args.depth:
                 sys.argv.extend(["--depth", args.depth])
+
+            # Determine enhance_level (independent of --comprehensive)
+            # Priority: explicit --enhance-level > --enhance (level 1) > --quick (level 0) > 0
+            if args.enhance_level is not None:
+                enhance_level = args.enhance_level
+            elif args.quick:
+                enhance_level = 0  # Quick mode disables AI
+            elif args.enhance:
+                enhance_level = 1  # --enhance defaults to level 1
+            else:
+                enhance_level = 0  # Default: no AI
+
+            # Pass enhance_level to codebase_scraper
+            sys.argv.extend(["--enhance-level", str(enhance_level)])
 
             if args.languages:
                 sys.argv.extend(["--languages", args.languages])
             if args.file_patterns:
                 sys.argv.extend(["--file-patterns", args.file_patterns])
-            if args.enhance:
-                sys.argv.extend(["--ai-mode", "auto"])
 
             # Pass through skip flags
             if args.skip_api_reference:
@@ -591,14 +610,14 @@ def main(argv: list[str] | None = None) -> int:
 
             result = analyze_main() or 0
 
-            # If --enhance or --comprehensive was used, also enhance the SKILL.md
-            if result == 0 and (args.enhance or args.comprehensive):
+            # Enhance SKILL.md if enhance_level >= 1
+            if result == 0 and enhance_level >= 1:
                 skill_dir = Path(args.output)
                 skill_md = skill_dir / "SKILL.md"
 
                 if skill_md.exists():
                     print("\n" + "=" * 60)
-                    print("ENHANCING SKILL.MD WITH AI")
+                    print(f"ENHANCING SKILL.MD WITH AI (Level {enhance_level})")
                     print("=" * 60 + "\n")
 
                     try:
