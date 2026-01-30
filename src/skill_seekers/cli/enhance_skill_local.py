@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-SKILL.md Enhancement Script (Local - Using Claude Code)
-Opens a new terminal with Claude Code to enhance SKILL.md, then reports back.
-No API key needed - uses your existing Claude Code Max plan!
+SKILL.md Enhancement Script (Local - Using CLI Coding Agents)
+Uses a local coding agent CLI (Claude Code, Codex CLI, Copilot CLI, OpenCode CLI)
+to enhance SKILL.md, then reports back. No API key needed.
 
 Usage:
     # Headless mode (default - runs in foreground, waits for completion)
@@ -11,8 +11,8 @@ Usage:
     # Background mode (runs in background, returns immediately)
     skill-seekers enhance output/react/ --background
 
-    # Force mode (no confirmations, auto-yes to everything)
-    skill-seekers enhance output/react/ --force
+    # Disable force mode (enable confirmations)
+    skill-seekers enhance output/react/ --no-force
 
     # Daemon mode (persistent background process)
     skill-seekers enhance output/react/ --daemon
@@ -20,9 +20,17 @@ Usage:
     # Interactive terminal mode
     skill-seekers enhance output/react/ --interactive-enhancement
 
+    # Use a different local coding agent
+    skill-seekers enhance output/react/ --agent codex
+    skill-seekers enhance output/react/ --agent copilot
+    skill-seekers enhance output/react/ --agent opencode
+
+    # Custom agent command (advanced)
+    skill-seekers enhance output/react/ --agent custom --agent-cmd "my-agent --prompt {prompt_file}"
+
 Modes:
-    - headless: Runs claude CLI directly, BLOCKS until done (default)
-    - background: Runs claude CLI in background, returns immediately
+    - headless: Runs local CLI directly, BLOCKS until done (default)
+    - background: Runs local CLI in background, returns immediately
     - daemon: Runs as persistent background process with monitoring
     - terminal: Opens new terminal window (interactive)
 
@@ -38,6 +46,7 @@ Terminal Selection:
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -104,19 +113,157 @@ def detect_terminal_app():
         return "Terminal", "default"
 
 
+AGENT_PRESETS = {
+    "claude": {
+        "display_name": "Claude Code",
+        "command": ["claude", "{prompt_file}"],
+        "supports_skip_permissions": True,
+    },
+    "codex": {
+        "display_name": "OpenAI Codex CLI",
+        "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
+        "supports_skip_permissions": False,
+    },
+    "copilot": {
+        "display_name": "GitHub Copilot CLI",
+        "command": ["gh", "copilot", "chat"],
+        "supports_skip_permissions": False,
+    },
+    "opencode": {
+        "display_name": "OpenCode CLI",
+        "command": ["opencode"],
+        "supports_skip_permissions": False,
+    },
+}
+
+
+def _normalize_agent_name(agent_name: str) -> str:
+    if not agent_name:
+        return "claude"
+    normalized = agent_name.strip().lower()
+    aliases = {
+        "claude-code": "claude",
+        "claude_code": "claude",
+        "codex-cli": "codex",
+        "copilot-cli": "copilot",
+        "open-code": "opencode",
+        "open_code": "opencode",
+    }
+    return aliases.get(normalized, normalized)
+
+
 class LocalSkillEnhancer:
-    def __init__(self, skill_dir, force=True):
+    def __init__(self, skill_dir, force=True, agent=None, agent_cmd=None):
         """Initialize enhancer.
 
         Args:
             skill_dir: Path to skill directory
             force: If True, skip all confirmations (default: True, use --no-force to disable)
+            agent: Local coding agent identifier (claude, codex, copilot, opencode, custom)
+            agent_cmd: Override command template (use {prompt_file} placeholder or stdin)
         """
         self.skill_dir = Path(skill_dir)
         self.references_dir = self.skill_dir / "references"
         self.skill_md_path = self.skill_dir / "SKILL.md"
         self.force = force
         self.status_file = self.skill_dir / ".enhancement_status.json"
+        self.agent, self.agent_cmd, self.agent_display = self._resolve_agent(agent, agent_cmd)
+
+    def _resolve_agent(self, agent, agent_cmd):
+        env_agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip()
+        env_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
+
+        agent_name = _normalize_agent_name(agent or env_agent or "claude")
+        cmd_override = agent_cmd or env_cmd or None
+
+        if agent_name == "custom":
+            if not cmd_override:
+                raise ValueError(
+                    "Custom agent requires --agent-cmd or SKILL_SEEKER_AGENT_CMD to be set."
+                )
+            display_name = "Custom CLI Agent"
+            return agent_name, cmd_override, display_name
+
+        if agent_name not in AGENT_PRESETS:
+            available = ", ".join(sorted(AGENT_PRESETS.keys()))
+            raise ValueError(
+                f"Unknown agent '{agent_name}'. Choose one of: {available} or use --agent custom."
+            )
+
+        display_name = AGENT_PRESETS[agent_name]["display_name"]
+        return agent_name, cmd_override, display_name
+
+    def _build_agent_command(self, prompt_file, include_permissions_flag):
+        if self.agent_cmd:
+            cmd_parts = shlex.split(self.agent_cmd)
+            supports_skip_permissions = False
+        else:
+            preset = AGENT_PRESETS[self.agent]
+            cmd_parts = list(preset["command"])
+            supports_skip_permissions = preset.get("supports_skip_permissions", False)
+
+        if (
+            include_permissions_flag
+            and supports_skip_permissions
+            and "--dangerously-skip-permissions" not in cmd_parts
+        ):
+            cmd_parts.insert(1, "--dangerously-skip-permissions")
+
+        uses_prompt_file = False
+        for idx, arg in enumerate(cmd_parts):
+            if "{prompt_file}" in arg:
+                cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
+                uses_prompt_file = True
+
+        return cmd_parts, uses_prompt_file
+
+    def _format_agent_command(self, prompt_file, include_permissions_flag):
+        cmd_parts, uses_prompt_file = self._build_agent_command(
+            prompt_file, include_permissions_flag
+        )
+        cmd_str = shlex.join(cmd_parts)
+        if uses_prompt_file:
+            return cmd_str
+        return f"cat {shlex.quote(prompt_file)} | {cmd_str}"
+
+    def _run_agent_command(self, prompt_file, timeout, include_permissions_flag, quiet=False):
+        cmd_parts, uses_prompt_file = self._build_agent_command(
+            prompt_file, include_permissions_flag
+        )
+
+        if not quiet:
+            cmd_display = self._format_agent_command(prompt_file, include_permissions_flag)
+            print(f"   Command: {cmd_display}")
+
+        try:
+            if uses_prompt_file:
+                return (
+                    subprocess.run(
+                        cmd_parts,
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout,
+                        cwd=str(self.skill_dir),
+                    ),
+                    None,
+                )
+
+            prompt_text = Path(prompt_file).read_text(encoding="utf-8")
+            return (
+                subprocess.run(
+                    cmd_parts,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    cwd=str(self.skill_dir),
+                    input=prompt_text,
+                ),
+                None,
+            )
+        except FileNotFoundError:
+            return None, f"Command not found: {cmd_parts[0]}"
+        except Exception as e:
+            return None, str(e)
 
     def summarize_reference(self, content: str, target_ratio: float = 0.3) -> str:
         """Intelligently summarize reference content to reduce size.
@@ -190,7 +337,7 @@ class LocalSkillEnhancer:
         return "\n".join(result)
 
     def create_enhancement_prompt(self, use_summarization=False, summarization_ratio=0.3):
-        """Create the prompt file for Claude Code
+        """Create the prompt file for a local coding agent
 
         Args:
             use_summarization: If True, apply smart summarization to reduce size
@@ -415,7 +562,7 @@ CRITICAL INSTRUCTIONS:
 2. Then, write the enhanced content to: SKILL.md
 
 This is NOT a read-only task - you have permission to modify SKILL.md.
-Even if running from within another Claude Code session, this modification is ALLOWED and EXPECTED.
+Even if running from within another coding agent session, this modification is ALLOWED and EXPECTED.
 
 VERIFICATION:
 After writing, the file SKILL.md should:
@@ -464,7 +611,7 @@ After writing, the file SKILL.md should:
         """Main enhancement workflow with automatic smart summarization for large skills.
 
         Automatically detects large skills (>30K chars) and applies smart summarization
-        to ensure compatibility with Claude CLI's ~30-40K character limit.
+        to reduce input size for local coding agent CLIs.
 
         Smart summarization strategy:
         - Keeps first 20% (introduction/overview)
@@ -473,7 +620,7 @@ After writing, the file SKILL.md should:
         - Reduces to ~30% of original size
 
         Args:
-            headless: If True, run claude directly without opening terminal (default: True)
+            headless: If True, run local agent directly without opening terminal (default: True)
             timeout: Maximum time to wait for enhancement in seconds (default: 600 = 10 minutes)
             background: If True, run in background and return immediately (default: False)
             daemon: If True, run as persistent daemon with monitoring (default: False)
@@ -490,6 +637,7 @@ After writing, the file SKILL.md should:
             return self._run_daemon(timeout)
         print(f"\n{'=' * 60}")
         print(f"LOCAL ENHANCEMENT: {self.skill_dir.name}")
+        print(f"Agent: {self.agent_display}")
         print(f"{'=' * 60}\n")
 
         # Validate
@@ -517,7 +665,10 @@ After writing, the file SKILL.md should:
         if use_summarization:
             print("⚠️  LARGE SKILL DETECTED")
             print(f"  📊 Reference content: {total_size:,} characters")
-            print("  💡 Claude CLI limit: ~30,000-40,000 characters")
+            if self.agent == "claude":
+                print("  💡 Claude CLI limit: ~30,000-40,000 characters")
+            else:
+                print("  💡 Local CLI agents often have input limits; summarizing to be safe")
             print()
             print("  🔧 Applying smart summarization to ensure success...")
             print("     • Keeping introductions and overviews")
@@ -542,27 +693,31 @@ After writing, the file SKILL.md should:
 
         if use_summarization:
             print(f"  ✓ Prompt created and optimized ({len(prompt):,} characters)")
-            print("  ✓ Ready for Claude CLI (within safe limits)")
+            if self.agent == "claude":
+                print("  ✓ Ready for Claude CLI (within safe limits)")
+            else:
+                print("  ✓ Ready for local CLI (within safe limits)")
             print()
         else:
             print(f"  ✓ Prompt saved ({len(prompt):,} characters)\n")
 
-        # Headless mode: Run claude directly without opening terminal
+        # Headless mode: Run local agent directly without opening terminal
         if headless:
             return self._run_headless(prompt_file, timeout)
 
-        # Terminal mode: Launch Claude Code in new terminal
-        print("🚀 Launching Claude Code in new terminal...")
+        # Terminal mode: Launch local agent in new terminal
+        print(f"🚀 Launching {self.agent_display} in new terminal...")
         print("   This will:")
         print("   1. Open a new terminal window")
-        print("   2. Run Claude Code with the enhancement task")
-        print("   3. Claude will read the docs and enhance SKILL.md")
+        print("   2. Run the local coding agent with the enhancement task")
+        print("   3. The agent will read the docs and enhance SKILL.md")
         print("   4. Terminal will auto-close when done")
         print()
 
         # Create a shell script to run in the terminal
+        command_line = self._format_agent_command(prompt_file, include_permissions_flag=False)
         shell_script = f"""#!/bin/bash
-claude {prompt_file}
+{command_line}
 echo ""
 echo "✅ Enhancement complete!"
 echo "Press any key to close..."
@@ -602,12 +757,12 @@ rm {prompt_file}
         else:
             print("⚠️  Auto-launch only works on macOS")
             print("\nManually run this command in a new terminal:")
-            print(f"  claude '{prompt_file}'")
+            print(f"  {self._format_agent_command(prompt_file, include_permissions_flag=False)}")
             print("\nThen delete the prompt file:")
             print(f"  rm '{prompt_file}'")
             return False
 
-        print("✅ New terminal launched with Claude Code!")
+        print(f"✅ New terminal launched with {self.agent_display}!")
         print()
         print("📊 Status:")
         print(f"  - Prompt file: {prompt_file}")
@@ -617,7 +772,7 @@ rm {prompt_file}
             f"  - Original backed up to: {self.skill_md_path.with_suffix('.md.backup').absolute()}"
         )
         print()
-        print("⏳ Wait for Claude Code to finish in the other terminal...")
+        print("⏳ Wait for the local agent to finish in the other terminal...")
         print("   (Usually takes 30-60 seconds)")
         print()
         print("💡 When done:")
@@ -630,7 +785,7 @@ rm {prompt_file}
         return True
 
     def _run_headless(self, prompt_file, timeout):
-        """Run Claude enhancement in headless mode (no terminal window)
+        """Run local agent enhancement in headless mode (no terminal window)
 
         Args:
             prompt_file: Path to prompt file
@@ -641,7 +796,7 @@ rm {prompt_file}
         """
         import time
 
-        print("✨ Running Claude Code enhancement (headless mode)...")
+        print(f"✨ Running {self.agent_display} enhancement (headless mode)...")
         print(f"   Timeout: {timeout} seconds ({timeout // 60} minutes)")
         print()
 
@@ -653,20 +808,20 @@ rm {prompt_file}
         start_time = time.time()
 
         try:
-            # Run claude command directly (this WAITS for completion)
-            # Use --dangerously-skip-permissions to bypass ALL permission checks
-            print(f"   Running: claude --dangerously-skip-permissions {prompt_file}")
+            # Run local agent command directly (this WAITS for completion)
             print("   ⏳ Please wait...")
             print(f"   Working directory: {self.skill_dir}")
             print()
 
-            result = subprocess.run(
-                ["claude", "--dangerously-skip-permissions", prompt_file],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=str(self.skill_dir),  # Run from skill directory
+            result, error = self._run_agent_command(
+                prompt_file, timeout, include_permissions_flag=True
             )
+
+            if error:
+                print(f"❌ {error}")
+                with contextlib.suppress(Exception):
+                    os.unlink(prompt_file)
+                return False
 
             elapsed = time.time() - start_time
 
@@ -688,14 +843,14 @@ rm {prompt_file}
 
                         return True
                     else:
-                        print("⚠️  Claude finished but SKILL.md was not updated")
+                        print("⚠️  Agent finished but SKILL.md was not updated")
                         print(f"   Initial: mtime={initial_mtime}, size={initial_size}")
                         print(f"   Final:   mtime={new_mtime}, size={new_size}")
                         print("   This might indicate an error during enhancement")
                         print()
                         # Show last 20 lines of stdout for debugging
                         if result.stdout:
-                            print("   Last output from Claude:")
+                            print("   Last output from agent:")
                             lines = result.stdout.strip().split("\n")[-20:]
                             for line in lines:
                                 print(f"   | {line}")
@@ -705,7 +860,9 @@ rm {prompt_file}
                     print("❌ SKILL.md not found after enhancement")
                     return False
             else:
-                print(f"❌ Claude Code returned error (exit code: {result.returncode})")
+                print(
+                    f"❌ {self.agent_display} returned error (exit code: {result.returncode})"
+                )
                 if result.stderr:
                     print(f"   Error: {result.stderr[:200]}")
                 return False
@@ -717,7 +874,7 @@ rm {prompt_file}
             print()
             print("   Possible reasons:")
             print("   - Skill is very large (many references)")
-            print("   - Claude is taking longer than usual")
+            print("   - Agent is taking longer than usual")
             print("   - Network issues")
             print()
             print("   Try:")
@@ -732,10 +889,9 @@ rm {prompt_file}
             return False
 
         except FileNotFoundError:
-            print("❌ 'claude' command not found")
+            print(f"❌ '{self._build_agent_command(prompt_file, True)[0][0]}' command not found")
             print()
-            print("   Make sure Claude Code CLI is installed:")
-            print("   See: https://docs.claude.com/claude-code")
+            print("   Make sure your local coding agent CLI is installed and on PATH.")
             print()
             print("   Try terminal mode instead: --interactive-enhancement")
 
@@ -776,7 +932,7 @@ rm {prompt_file}
                     self.write_status("failed", error="No reference files found")
                     return
 
-                total_size = sum(len(c) for c in references.values())
+                total_size = sum(meta["size"] for meta in references.values())
                 use_summarization = total_size > 30000
 
                 self.write_status("running", "Creating enhancement prompt...", progress=0.3)
@@ -794,26 +950,30 @@ rm {prompt_file}
                     prompt_file = f.name
                     f.write(prompt)
 
-                self.write_status("running", "Running Claude Code enhancement...", progress=0.5)
+                self.write_status(
+                    "running", f"Running {self.agent_display} enhancement...", progress=0.5
+                )
 
                 # Run enhancement
                 if headless:
                     # Run headless (subprocess.run - blocking in thread)
-                    result = subprocess.run(
-                        ["claude", prompt_file], capture_output=True, text=True, timeout=timeout
+                    result, error = self._run_agent_command(
+                        prompt_file, timeout, include_permissions_flag=True, quiet=True
                     )
 
                     # Clean up
                     with contextlib.suppress(Exception):
                         os.unlink(prompt_file)
 
-                    if result.returncode == 0:
+                    if error:
+                        self.write_status("failed", error=error)
+                    elif result.returncode == 0:
                         self.write_status(
                             "completed", "Enhancement completed successfully!", progress=1.0
                         )
                     else:
                         self.write_status(
-                            "failed", error=f"Claude returned error: {result.returncode}"
+                            "failed", error=f"Agent returned error: {result.returncode}"
                         )
                 else:
                     # Terminal mode in background doesn't make sense
@@ -895,7 +1055,11 @@ try:
     sys.path.insert(0, "{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-    enhancer = LocalSkillEnhancer("{self.skill_dir}")
+    enhancer = LocalSkillEnhancer(
+        "{self.skill_dir}",
+        agent="{self.agent}",
+        agent_cmd={repr(self.agent_cmd)}
+    )
 
     # Create prompt
     write_status("running", "Creating enhancement prompt...", progress=0.3)
@@ -910,14 +1074,14 @@ try:
         prompt_file = f.name
         f.write(prompt)
 
-    write_status("running", "Running Claude Code...", progress=0.5)
+    write_status("running", "Running local agent...", progress=0.5)
 
-    # Run Claude
-    result = subprocess.run(
-        ['claude', prompt_file],
-        capture_output=True,
-        text=True,
-        timeout={timeout}
+    # Run local agent
+    result, error = enhancer._run_agent_command(
+        prompt_file,
+        timeout={timeout},
+        include_permissions_flag=True,
+        quiet=True
     )
 
     # Clean up
@@ -926,11 +1090,14 @@ try:
     except Exception:
         pass
 
+    if error:
+        write_status("failed", error=error)
+        sys.exit(1)
     if result.returncode == 0:
         write_status("completed", "Enhancement completed successfully!", progress=1.0)
         sys.exit(0)
     else:
-        write_status("failed", error=f"Claude returned error: {{result.returncode}}")
+        write_status("failed", error=f"Agent returned error: {{result.returncode}}")
         sys.exit(1)
 
 except subprocess.TimeoutExpired:
@@ -1005,7 +1172,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Enhance a skill with Claude Code (local)",
+        description="Enhance a skill with a local coding agent (no API key)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1028,7 +1195,7 @@ Examples:
   skill-seekers enhance output/react/ --timeout 1200
 
 Mode Comparison:
-  - headless:    Runs claude CLI directly, BLOCKS until done (default)
+  - headless:    Runs local agent CLI directly, BLOCKS until done (default)
   - background:  Runs in background thread, returns immediately
   - daemon:      Fully detached process, continues after parent exits
   - terminal:    Opens new terminal window (interactive)
@@ -1040,6 +1207,20 @@ Force Mode (Default ON):
     )
 
     parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument(
+        "--agent",
+        choices=sorted(list(AGENT_PRESETS.keys()) + ["custom"]),
+        help="Local coding agent to use (default: claude or SKILL_SEEKER_AGENT)",
+    )
+
+    parser.add_argument(
+        "--agent-cmd",
+        help=(
+            "Override agent command template. Use {prompt_file} placeholder or omit to use stdin. "
+            "Can also be set via SKILL_SEEKER_AGENT_CMD."
+        ),
+    )
 
     parser.add_argument(
         "--interactive-enhancement",
@@ -1083,7 +1264,16 @@ Force Mode (Default ON):
 
     # Run enhancement
     # Force mode is ON by default, use --no-force to disable
-    enhancer = LocalSkillEnhancer(args.skill_directory, force=not args.no_force)
+    try:
+        enhancer = LocalSkillEnhancer(
+            args.skill_directory,
+            force=not args.no_force,
+            agent=args.agent,
+            agent_cmd=args.agent_cmd,
+        )
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
     headless = not args.interactive_enhancement  # Invert: default is headless
     success = enhancer.run(
         headless=headless, timeout=args.timeout, background=args.background, daemon=args.daemon
