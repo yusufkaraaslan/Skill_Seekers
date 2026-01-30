@@ -34,6 +34,7 @@ Examples:
 
 import argparse
 import sys
+from pathlib import Path
 
 from skill_seekers.cli import __version__
 
@@ -588,7 +589,45 @@ def main(argv: list[str] | None = None) -> int:
             if args.verbose:
                 sys.argv.append("--verbose")
 
-            return analyze_main() or 0
+            result = analyze_main() or 0
+
+            # If --enhance or --comprehensive was used, also enhance the SKILL.md
+            if result == 0 and (args.enhance or args.comprehensive):
+                skill_dir = Path(args.output)
+                skill_md = skill_dir / "SKILL.md"
+
+                if skill_md.exists():
+                    print("\n" + "=" * 60)
+                    print("ENHANCING SKILL.MD WITH AI")
+                    print("=" * 60 + "\n")
+
+                    try:
+                        from skill_seekers.cli.enhance_skill_local import SkillEnhancer
+
+                        enhancer = SkillEnhancer(str(skill_dir))
+                        # Use headless mode with force (no prompts)
+                        success = enhancer.enhance(
+                            mode="headless",
+                            force=True,
+                            timeout=600,  # 10 minute timeout
+                        )
+
+                        if success:
+                            print("\n✅ SKILL.md enhancement complete!")
+                            # Re-read line count
+                            with open(skill_md) as f:
+                                lines = len(f.readlines())
+                            print(f"   Enhanced SKILL.md: {lines} lines")
+                        else:
+                            print("\n⚠️  SKILL.md enhancement did not complete")
+                            print("   You can retry with: skill-seekers enhance " + str(skill_dir))
+                    except Exception as e:
+                        print(f"\n⚠️  SKILL.md enhancement failed: {e}")
+                        print("   You can retry with: skill-seekers enhance " + str(skill_dir))
+                else:
+                    print(f"\n⚠️  SKILL.md not found at {skill_md}, skipping enhancement")
+
+            return result
 
         elif args.command == "install-agent":
             from skill_seekers.cli.install_agent import main as install_agent_main
