@@ -616,7 +616,11 @@ This skill combines knowledge from multiple sources:
         if isinstance(github_data, dict):
             github_data = github_data.get("data", {})
         elif isinstance(github_data, list) and len(github_data) > 0:
-            github_data = github_data[0].get("data", {})
+            first_item = github_data[0]
+            if isinstance(first_item, dict):
+                github_data = first_item.get("data", {})
+            else:
+                github_data = {}
         else:
             github_data = {}
 

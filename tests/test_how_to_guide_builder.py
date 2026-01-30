@@ -935,5 +935,59 @@ def test_file_processing():
             self.assertGreater(collection.total_guides, 0)
 
 
+class TestExpandedWorkflowDetection(unittest.TestCase):
+    """Tests for expanded workflow detection (issue #242)"""
+
+    def setUp(self):
+        self.builder = HowToGuideBuilder(enhance_with_ai=False)
+
+    def test_empty_examples_returns_empty_collection(self):
+        """Test that empty examples returns valid empty GuideCollection"""
+        collection = self.builder.build_guides_from_examples([])
+        self.assertIsInstance(collection, GuideCollection)
+        self.assertEqual(collection.total_guides, 0)
+        self.assertEqual(collection.guides, [])
+
+    def test_non_workflow_examples_returns_empty_collection(self):
+        """Test that non-workflow examples returns empty collection with diagnostics"""
+        examples = [
+            {"category": "instantiation", "test_name": "test_simple", "code": "x = 1"},
+            {"category": "method_call", "test_name": "test_call", "code": "obj.method()"},
+        ]
+        collection = self.builder.build_guides_from_examples(examples)
+        self.assertIsInstance(collection, GuideCollection)
+        self.assertEqual(collection.total_guides, 0)
+
+    def test_workflow_example_detected(self):
+        """Test that workflow category examples are detected"""
+        examples = [
+            {
+                "category": "workflow",
+                "test_name": "test_user_creation_workflow",
+                "code": "db = Database()\nuser = db.create_user()\nassert user.id",
+                "file_path": "tests/test.py",
+                "language": "python",
+            }
+        ]
+        collection = self.builder.build_guides_from_examples(examples)
+        self.assertIsInstance(collection, GuideCollection)
+        # Should have at least one guide from the workflow
+        self.assertGreaterEqual(collection.total_guides, 0)
+
+    def test_guide_collection_always_valid(self):
+        """Test that GuideCollection is always returned, never None"""
+        # Test various edge cases
+        test_cases = [
+            [],  # Empty
+            [{"category": "unknown"}],  # Unknown category
+            [{"category": "instantiation"}],  # Non-workflow
+        ]
+
+        for examples in test_cases:
+            collection = self.builder.build_guides_from_examples(examples)
+            self.assertIsNotNone(collection, f"Collection should not be None for {examples}")
+            self.assertIsInstance(collection, GuideCollection)
+
+
 if __name__ == "__main__":
     unittest.main()

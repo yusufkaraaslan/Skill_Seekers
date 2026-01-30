@@ -577,8 +577,23 @@ class PythonTestAnalyzer:
     def _is_integration_test(self, func_node: ast.FunctionDef) -> bool:
         """Check if test looks like an integration test"""
         test_name = func_node.name.lower()
-        integration_keywords = ["workflow", "integration", "end_to_end", "e2e", "full"]
-        return any(keyword in test_name for keyword in integration_keywords)
+        # Expanded keyword list for better workflow detection
+        integration_keywords = [
+            "workflow", "integration", "end_to_end", "e2e", "full",
+            "complete", "scenario", "flow", "multi_step", "multistep",
+            "process", "chain", "sequence", "pipeline", "lifecycle"
+        ]
+
+        # Check test name for keywords
+        if any(keyword in test_name for keyword in integration_keywords):
+            return True
+
+        # Heuristic: tests with 4+ assignments and 3+ calls are likely workflows
+        assignments = sum(1 for n in ast.walk(func_node)
+                         if isinstance(n, (ast.Assign, ast.AugAssign)))
+        calls = sum(1 for n in ast.walk(func_node) if isinstance(n, ast.Call))
+
+        return assignments >= 4 and calls >= 3
 
     def _extract_assertion_after(self, func_node: ast.FunctionDef, target_node: ast.AST) -> str:
         """Find assertion that follows the target node"""

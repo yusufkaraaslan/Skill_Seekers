@@ -67,8 +67,8 @@ Skill Seeker 是一个自动化工具，可将文档网站、GitHub 仓库和 PD
 - ✅ **并行处理** - 大型 PDF 快 3 倍
 - ✅ **智能缓存** - 重复运行快 50%
 
-### 🐙 GitHub 仓库抓取 (**v2.0.0**)
-- ✅ **深度代码分析** - 对 Python、JavaScript、TypeScript、Java、C++、Go 进行 AST 解析
+### 🐙 GitHub 仓库分析 (**v2.0.0**)
+- ✅ **深度代码分析** - 基于 AST（抽象语法树）解析 Python、JavaScript、TypeScript、Java、C++、Go 代码
 - ✅ **API 提取** - 提取函数、类、方法及其参数和类型
 - ✅ **仓库元数据** - README、文件树、语言分布、星标/fork 数
 - ✅ **GitHub Issues 和 PR** - 获取带标签和里程碑的开放/关闭问题
@@ -977,6 +977,10 @@ skill-seekers scrape \
 # 设置您的 API 密钥（一次性）
 export ANTHROPIC_API_KEY=sk-ant-...
 
+# 或使用兼容 Claude 的 API 端点（如 GLM-4.7 智谱 AI）
+# export ANTHROPIC_API_KEY=your-api-key
+# export ANTHROPIC_BASE_URL=https://your-compatible-endpoint.com/v1
+
 # 自动打包和上传
 skill-seekers package output/react/ --upload
 
@@ -1524,6 +1528,8 @@ skill-seekers scrape --config configs/largedocs.json --async --workers 8 --no-ra
 # 选项 1：抓取期间（基于 API，需要 API 密钥）
 pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
+# 或使用兼容 Claude 的 API（如 GLM-4.7 智谱 AI）：
+# export ANTHROPIC_BASE_URL=https://your-endpoint.com/v1
 skill-seekers scrape --config configs/react.json --enhance
 
 # 选项 2：抓取期间（LOCAL，无需 API 密钥 - 使用 Claude Code Max）
