@@ -12,14 +12,23 @@ Features:
 - Groups related examples into tutorials
 - Identifies best practices
 
+Modes:
+- API mode: Uses Claude API (requires ANTHROPIC_API_KEY)
+- LOCAL mode: Uses Claude Code CLI (no API key needed, uses your Claude Max plan)
+- AUTO mode: Tries API first, falls back to LOCAL
+
 Credits:
 - Uses Claude AI (Anthropic) for analysis
 - Graceful degradation if API unavailable
 """
 
+import json
 import logging
 import os
+import subprocess
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +56,9 @@ class AIEnhancer:
             api_key: Anthropic API key (uses ANTHROPIC_API_KEY env if None)
             enabled: Enable AI enhancement (default: True)
             mode: Enhancement mode - "auto" (default), "api", or "local"
-                  - "auto": Use API if key available, otherwise disable
+                  - "auto": Use API if key available, otherwise fall back to LOCAL
                   - "api": Force API mode (fails if no key)
-                  - "local": Use Claude Code local mode (opens terminal)
+                  - "local": Use Claude Code CLI (no API key needed)
         """
         self.enabled = enabled
         self.mode = mode
@@ -61,15 +70,9 @@ class AIEnhancer:
             if self.api_key:
                 self.mode = "api"
             else:
-                # For now, disable if no API key
-                # LOCAL mode for batch processing is complex
-                self.mode = "disabled"
-                self.enabled = False
-                logger.info("ℹ️  AI enhancement disabled (no API key found)")
-                logger.info(
-                    "   Set ANTHROPIC_API_KEY to enable, or use 'skill-seekers enhance' for SKILL.md"
-                )
-                return
+                # Fall back to LOCAL mode (Claude Code CLI)
+                self.mode = "local"
+                logger.info("ℹ️  No API key found, using LOCAL mode (Claude Code CLI)")
 
         if self.mode == "api" and self.enabled:
             try:
@@ -84,23 +87,44 @@ class AIEnhancer:
                 self.client = anthropic.Anthropic(**client_kwargs)
                 logger.info("✅ AI enhancement enabled (using Claude API)")
             except ImportError:
-                logger.warning("⚠️  anthropic package not installed. AI enhancement disabled.")
-                logger.warning("   Install with: pip install anthropic")
-                self.enabled = False
+                logger.warning("⚠️  anthropic package not installed, falling back to LOCAL mode")
+                self.mode = "local"
             except Exception as e:
-                logger.warning(f"⚠️  Failed to initialize AI client: {e}")
+                logger.warning(f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode")
+                self.mode = "local"
+
+        if self.mode == "local" and self.enabled:
+            # Verify Claude CLI is available
+            if self._check_claude_cli():
+                logger.info("✅ AI enhancement enabled (using LOCAL mode - Claude Code CLI)")
+            else:
+                logger.warning("⚠️  Claude Code CLI not found. AI enhancement disabled.")
+                logger.warning("   Install with: npm install -g @anthropic-ai/claude-code")
                 self.enabled = False
-        elif self.mode == "local":
-            # LOCAL mode requires Claude Code to be available
-            # For patterns/examples, this is less practical than API mode
-            logger.info("ℹ️  LOCAL mode not yet supported for pattern/example enhancement")
-            logger.info(
-                "   Use API mode (set ANTHROPIC_API_KEY) or 'skill-seekers enhance' for SKILL.md"
+
+    def _check_claude_cli(self) -> bool:
+        """Check if Claude Code CLI is available"""
+        try:
+            result = subprocess.run(
+                ["claude", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
-            self.enabled = False
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
 
     def _call_claude(self, prompt: str, max_tokens: int = 1000) -> str | None:
-        """Call Claude API with error handling"""
+        """Call Claude (API or LOCAL mode) with error handling"""
+        if self.mode == "api":
+            return self._call_claude_api(prompt, max_tokens)
+        elif self.mode == "local":
+            return self._call_claude_local(prompt)
+        return None
+
+    def _call_claude_api(self, prompt: str, max_tokens: int = 1000) -> str | None:
+        """Call Claude API"""
         if not self.client:
             return None
 
@@ -113,6 +137,82 @@ class AIEnhancer:
             return response.content[0].text
         except Exception as e:
             logger.warning(f"⚠️  AI API call failed: {e}")
+            return None
+
+    def _call_claude_local(self, prompt: str) -> str | None:
+        """Call Claude using LOCAL mode (Claude Code CLI)"""
+        try:
+            # Create a temporary directory for this enhancement
+            with tempfile.TemporaryDirectory(prefix="ai_enhance_") as temp_dir:
+                temp_path = Path(temp_dir)
+
+                # Create prompt file
+                prompt_file = temp_path / "prompt.md"
+                output_file = temp_path / "response.json"
+
+                # Write prompt with instructions to output JSON
+                full_prompt = f"""# AI Analysis Task
+
+IMPORTANT: You MUST write your response as valid JSON to this file:
+{output_file}
+
+## Task
+
+{prompt}
+
+## Instructions
+
+1. Analyze the input carefully
+2. Generate the JSON response as specified
+3. Use the Write tool to save the JSON to: {output_file}
+4. The JSON must be valid and parseable
+
+DO NOT include any explanation - just write the JSON file.
+"""
+                prompt_file.write_text(full_prompt)
+
+                # Run Claude CLI
+                result = subprocess.run(
+                    ["claude", "--dangerously-skip-permissions", str(prompt_file)],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,  # 2 minute timeout per call
+                    cwd=str(temp_path),
+                )
+
+                if result.returncode != 0:
+                    logger.warning(f"⚠️  Claude CLI returned error: {result.returncode}")
+                    return None
+
+                # Read output file
+                if output_file.exists():
+                    response_text = output_file.read_text()
+                    # Try to extract JSON from response
+                    try:
+                        # Validate it's valid JSON
+                        json.loads(response_text)
+                        return response_text
+                    except json.JSONDecodeError:
+                        # Try to find JSON in the response
+                        import re
+                        json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', response_text)
+                        if json_match:
+                            return json_match.group()
+                        logger.warning("⚠️  Could not parse JSON from LOCAL response")
+                        return None
+                else:
+                    # Look for any JSON file created
+                    for json_file in temp_path.glob("*.json"):
+                        if json_file.name != "prompt.json":
+                            return json_file.read_text()
+                    logger.warning("⚠️  No output file from LOCAL mode")
+                    return None
+
+        except subprocess.TimeoutExpired:
+            logger.warning("⚠️  Claude CLI timeout (2 minutes)")
+            return None
+        except Exception as e:
+            logger.warning(f"⚠️  LOCAL mode error: {e}")
             return None
 
 
@@ -176,8 +276,6 @@ Format as JSON array matching input order. Be concise and actionable.
             return patterns
 
         try:
-            import json
-
             analyses = json.loads(response)
 
             # Merge AI analysis into patterns
@@ -268,8 +366,6 @@ Format as JSON array matching input order. Focus on educational value.
             return examples
 
         try:
-            import json
-
             analyses = json.loads(response)
 
             # Merge AI analysis into examples
