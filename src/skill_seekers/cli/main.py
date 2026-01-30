@@ -621,13 +621,12 @@ def main(argv: list[str] | None = None) -> int:
                     print("=" * 60 + "\n")
 
                     try:
-                        from skill_seekers.cli.enhance_skill_local import SkillEnhancer
+                        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                        enhancer = SkillEnhancer(str(skill_dir))
-                        # Use headless mode with force (no prompts)
-                        success = enhancer.enhance(
-                            mode="headless",
-                            force=True,
+                        enhancer = LocalSkillEnhancer(str(skill_dir), force=True)
+                        # Use headless mode (runs claude directly, waits for completion)
+                        success = enhancer.run(
+                            headless=True,
                             timeout=600,  # 10 minute timeout
                         )
 
