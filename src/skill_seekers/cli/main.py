@@ -315,6 +315,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     analyze_parser.add_argument("--skip-test-examples", action="store_true", help="Skip test examples")
     analyze_parser.add_argument("--skip-how-to-guides", action="store_true", help="Skip guides")
     analyze_parser.add_argument("--skip-config-patterns", action="store_true", help="Skip config")
+    analyze_parser.add_argument("--skip-docs", action="store_true", help="Skip project docs (README, docs/)")
     analyze_parser.add_argument("--no-comments", action="store_true", help="Skip comments")
     analyze_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
 
@@ -609,6 +610,8 @@ def main(argv: list[str] | None = None) -> int:
                 sys.argv.append("--skip-how-to-guides")
             if args.skip_config_patterns:
                 sys.argv.append("--skip-config-patterns")
+            if args.skip_docs:
+                sys.argv.append("--skip-docs")
             if args.no_comments:
                 sys.argv.append("--no-comments")
             if args.verbose:

@@ -464,6 +464,7 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
             - skip_test_examples (bool, optional): Skip test example extraction (default: False)
             - skip_how_to_guides (bool, optional): Skip how-to guide generation (default: False)
             - skip_config_patterns (bool, optional): Skip config pattern extraction (default: False)
+            - skip_docs (bool, optional): Skip project documentation extraction (default: False)
 
     Returns:
         List[TextContent]: Tool execution results
@@ -497,6 +498,7 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     skip_test_examples = args.get("skip_test_examples", False)
     skip_how_to_guides = args.get("skip_how_to_guides", False)
     skip_config_patterns = args.get("skip_config_patterns", False)
+    skip_docs = args.get("skip_docs", False)
 
     # Build command
     cmd = [sys.executable, "-m", "skill_seekers.cli.codebase_scraper"]
@@ -526,6 +528,8 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
         cmd.append("--skip-how-to-guides")
     if skip_config_patterns:
         cmd.append("--skip-config-patterns")
+    if skip_docs:
+        cmd.append("--skip-docs")
 
     # Adjust timeout based on enhance_level
     timeout = 600  # 10 minutes base
