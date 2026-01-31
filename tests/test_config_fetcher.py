@@ -1,7 +1,6 @@
 """Tests for config_fetcher module - automatic API config downloading."""
 
 import json
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import httpx
@@ -45,7 +44,7 @@ class TestFetchConfigFromApi:
         download_response.raise_for_status = Mock()
 
         # Setup mock to return different responses for different URLs
-        def get_side_effect(url, *args, **kwargs):
+        def get_side_effect(url, *_args, **_kwargs):
             if "download" in url:
                 return download_response
             return detail_response
@@ -133,16 +132,14 @@ class TestFetchConfigFromApi:
 
             detail_response = Mock()
             detail_response.status_code = 200
-            detail_response.json.return_value = {
-                "download_url": "https://api.example.com/download"
-            }
+            detail_response.json.return_value = {"download_url": "https://api.example.com/download"}
             detail_response.raise_for_status = Mock()
 
             download_response = Mock()
             download_response.json.return_value = {"name": "test"}
             download_response.raise_for_status = Mock()
 
-            def get_side_effect(url, *args, **kwargs):
+            def get_side_effect(url, *_args, **_kwargs):
                 if "download" in url:
                     return download_response
                 return detail_response

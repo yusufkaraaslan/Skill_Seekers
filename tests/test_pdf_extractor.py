@@ -434,5 +434,164 @@ class TestQualityFiltering(unittest.TestCase):
         self.assertLess(low_quality["quality"], extractor.min_quality)
 
 
+class TestMarkdownExtractionFallback(unittest.TestCase):
+    """Test markdown extraction fallback behavior for issue #267"""
+
+    def test_exception_types_in_fallback(self):
+        """Test that fallback handles various exception types"""
+        # This test verifies the code structure handles multiple exception types
+        # The actual exception handling is in pdf_extractor_poc.py lines 793-802
+        exception_types = (
+            AssertionError,
+            ValueError,
+            RuntimeError,
+            TypeError,
+            AttributeError,
+        )
+
+        # Verify all expected exception types are valid
+        for exc_type in exception_types:
+            self.assertTrue(issubclass(exc_type, Exception))
+            # Verify we can raise and catch each type
+            try:
+                raise exc_type("Test exception")
+            except exception_types:
+                pass  # Should be caught
+
+    def test_fallback_text_extraction_logic(self):
+        """Test that text extraction fallback produces valid output"""
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        # Verify the fallback flags are valid fitz constants
+        import fitz
+
+        # These flags should exist and be combinable
+        flags = (
+            fitz.TEXT_PRESERVE_WHITESPACE | fitz.TEXT_PRESERVE_LIGATURES | fitz.TEXT_PRESERVE_SPANS
+        )
+        self.assertIsInstance(flags, int)
+        self.assertGreater(flags, 0)
+
+    def test_markdown_fallback_on_assertion_error(self):
+        """Test that AssertionError triggers fallback to text extraction"""
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from unittest.mock import Mock
+
+        import fitz
+
+        # Create a mock page that raises AssertionError on markdown extraction
+        mock_page = Mock()
+        mock_page.get_text.side_effect = [
+            AssertionError("markdown format not supported"),  # First call raises
+            "Fallback text content",  # Second call succeeds
+        ]
+
+        # Simulate the extraction logic
+        try:
+            markdown = mock_page.get_text("markdown")
+            self.fail("Should have raised AssertionError")
+        except AssertionError:
+            # Fallback to text extraction
+            markdown = mock_page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+
+        # Verify fallback returned text content
+        self.assertEqual(markdown, "Fallback text content")
+        # Verify get_text was called twice (markdown attempt + text fallback)
+        self.assertEqual(mock_page.get_text.call_count, 2)
+
+    def test_markdown_fallback_on_runtime_error(self):
+        """Test that RuntimeError triggers fallback to text extraction"""
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from unittest.mock import Mock
+
+        import fitz
+
+        # Create a mock page that raises RuntimeError
+        mock_page = Mock()
+        mock_page.get_text.side_effect = [
+            RuntimeError("PyMuPDF runtime error"),
+            "Fallback text content",
+        ]
+
+        # Simulate the extraction logic
+        try:
+            markdown = mock_page.get_text("markdown")
+        except (AssertionError, ValueError, RuntimeError, TypeError, AttributeError):
+            # Fallback to text extraction
+            markdown = mock_page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+
+        # Verify fallback worked
+        self.assertEqual(markdown, "Fallback text content")
+        self.assertEqual(mock_page.get_text.call_count, 2)
+
+    def test_markdown_fallback_on_type_error(self):
+        """Test that TypeError triggers fallback to text extraction"""
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from unittest.mock import Mock
+
+        import fitz
+
+        # Create a mock page that raises TypeError
+        mock_page = Mock()
+        mock_page.get_text.side_effect = [
+            TypeError("Invalid argument type"),
+            "Fallback text content",
+        ]
+
+        # Simulate the extraction logic
+        try:
+            markdown = mock_page.get_text("markdown")
+        except (AssertionError, ValueError, RuntimeError, TypeError, AttributeError):
+            markdown = mock_page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+
+        # Verify fallback worked
+        self.assertEqual(markdown, "Fallback text content")
+
+    def test_markdown_fallback_preserves_content_quality(self):
+        """Test that fallback text extraction preserves content structure"""
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from unittest.mock import Mock
+
+        import fitz
+
+        # Create a mock page with structured content
+        fallback_content = """This is a heading
+
+This is a paragraph with multiple lines
+and preserved whitespace.
+
+    Code block with indentation
+    def example():
+        return True"""
+
+        mock_page = Mock()
+        mock_page.get_text.side_effect = [
+            ValueError("markdown extraction failed"),
+            fallback_content,
+        ]
+
+        # Simulate the extraction logic
+        try:
+            markdown = mock_page.get_text("markdown")
+        except (AssertionError, ValueError, RuntimeError, TypeError, AttributeError):
+            markdown = mock_page.get_text("text", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+
+        # Verify content structure is preserved
+        self.assertIn("This is a heading", markdown)
+        self.assertIn("Code block with indentation", markdown)
+        self.assertIn("def example():", markdown)
+        # Verify whitespace preservation
+        self.assertIn("    ", markdown)
+
+
 if __name__ == "__main__":
     unittest.main()

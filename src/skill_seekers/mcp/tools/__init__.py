@@ -11,7 +11,7 @@ Tools are organized by functionality:
 - source_tools: Config source management (fetch, submit, add/remove sources)
 """
 
-__version__ = "2.7.2"
+__version__ = "2.7.4"
 
 from .config_tools import (
     generate_config as generate_config_impl,

@@ -869,10 +869,16 @@ class HowToGuideBuilder:
 
         # Filter to workflow examples only
         workflows = self._extract_workflow_examples(examples)
-        logger.info(f"Found {len(workflows)} workflow examples")
+        logger.info(f"Found {len(workflows)} workflow examples (from {len(examples)} total)")
 
         if not workflows:
-            logger.warning("No workflow examples found!")
+            # Log categories for debugging
+            categories = {ex.get("category", "unknown") for ex in examples}
+            logger.warning(f"No workflow examples found! Categories in input: {categories}")
+            logger.info(
+                "Tip: Workflow detection requires keywords like 'workflow', 'integration', 'e2e' in test names,"
+            )
+            logger.info("     or tests with 4+ assignments and 3+ method calls")
             return GuideCollection(
                 total_guides=0,
                 guides_by_complexity={},

@@ -792,8 +792,9 @@ class PDFExtractor:
         # Use "text" format with layout info for PyMuDF 1.24+
         try:
             markdown = page.get_text("markdown")
-        except (AssertionError, ValueError):
-            # Fallback to text format for older/newer PyMuDF versions
+        except (AssertionError, ValueError, RuntimeError, TypeError, AttributeError):
+            # Fallback to text format for incompatible PyMuPDF versions
+            # Some versions don't support "markdown" format or have internal errors
             markdown = page.get_text(
                 "text",
                 flags=fitz.TEXT_PRESERVE_WHITESPACE

@@ -8,7 +8,6 @@ when local config files are not found.
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 import httpx
 
@@ -22,7 +21,7 @@ _last_searched_paths = []
 
 def fetch_config_from_api(
     config_name: str, destination: str = "configs", timeout: float = 30.0
-) -> Optional[Path]:
+) -> Path | None:
     """
     Fetch a config file from the SkillSeekersWeb.com API.
 
@@ -65,12 +64,10 @@ def fetch_config_from_api(
             # Download the actual config file using download_url from API response
             download_url = config_info.get("download_url")
             if not download_url:
-                logger.error(
-                    f"❌ Config '{config_name}' has no download_url. Contact support."
-                )
+                logger.error(f"❌ Config '{config_name}' has no download_url. Contact support.")
                 return None
 
-            logger.info(f"📥 Downloading config from API...")
+            logger.info("📥 Downloading config from API...")
             download_response = client.get(download_url)
             download_response.raise_for_status()
             config_data = download_response.json()
@@ -84,9 +81,7 @@ def fetch_config_from_api(
                 json.dump(config_data, f, indent=2)
 
             logger.info(f"✅ Config downloaded successfully: {config_file}")
-            logger.info(
-                f"   Category: {config_info.get('category', 'uncategorized')}"
-            )
+            logger.info(f"   Category: {config_info.get('category', 'uncategorized')}")
             logger.info(f"   Type: {config_info.get('type', 'unknown')}")
 
             return config_file
@@ -102,7 +97,7 @@ def fetch_config_from_api(
         return None
 
 
-def list_available_configs(category: Optional[str] = None, timeout: float = 30.0) -> list[str]:
+def list_available_configs(category: str | None = None, timeout: float = 30.0) -> list[str]:
     """
     List all available configs from the API.
 
@@ -135,7 +130,7 @@ def list_available_configs(category: Optional[str] = None, timeout: float = 30.0
         return []
 
 
-def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Optional[Path]:
+def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Path | None:
     """
     Resolve config path with automatic API fallback.
 
@@ -196,7 +191,7 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Optional[P
             config_name = config_name[8:]
 
         logger.info(
-            f"\n💡 Config not found locally, attempting to fetch from SkillSeekersWeb.com API..."
+            "\n💡 Config not found locally, attempting to fetch from SkillSeekersWeb.com API..."
         )
         fetched_path = fetch_config_from_api(config_name, destination="configs")
         if fetched_path and fetched_path.exists():

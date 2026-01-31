@@ -83,11 +83,7 @@ class TestApplication(unittest.TestCase):
         """Run skill-seekers command and return result."""
         cmd = ["skill-seekers"] + list(args)
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=str(self.test_dir)
+            cmd, capture_output=True, text=True, timeout=timeout, cwd=str(self.test_dir)
         )
         return result
 
@@ -112,15 +108,15 @@ class TestApplication(unittest.TestCase):
         output_dir = self.test_dir / "output_quick"
 
         result = self.run_command(
-            "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
-            "--quick"
+            "analyze", "--directory", str(self.test_dir), "--output", str(output_dir), "--quick"
         )
 
         # Check command succeeded
-        self.assertEqual(result.returncode, 0,
-                        f"Quick analysis failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"Quick analysis failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}",
+        )
 
         # Verify output directory was created
         self.assertTrue(output_dir.exists(), "Output directory not created")
@@ -146,10 +142,7 @@ class TestApplication(unittest.TestCase):
         output_dir = self.test_dir / "custom_output"
 
         result = self.run_command(
-            "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
-            "--quick"
+            "analyze", "--directory", str(self.test_dir), "--output", str(output_dir), "--quick"
         )
 
         self.assertEqual(result.returncode, 0, f"Analysis failed: {result.stderr}")
@@ -162,30 +155,31 @@ class TestApplication(unittest.TestCase):
 
         result = self.run_command(
             "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
+            "--directory",
+            str(self.test_dir),
+            "--output",
+            str(output_dir),
             "--quick",
             "--skip-patterns",
-            "--skip-test-examples"
+            "--skip-test-examples",
         )
 
         self.assertEqual(result.returncode, 0, f"Analysis with skip flags failed: {result.stderr}")
-        self.assertTrue((output_dir / "SKILL.md").exists(), "SKILL.md not generated with skip flags")
+        self.assertTrue(
+            (output_dir / "SKILL.md").exists(), "SKILL.md not generated with skip flags"
+        )
 
     def test_analyze_invalid_directory(self):
         """Test analysis with non-existent directory."""
         result = self.run_command(
-            "analyze",
-            "--directory", "/nonexistent/directory/path",
-            "--quick",
-            timeout=10
+            "analyze", "--directory", "/nonexistent/directory/path", "--quick", timeout=10
         )
 
         # Should fail with error
         self.assertNotEqual(result.returncode, 0, "Should fail with invalid directory")
         self.assertTrue(
             "not found" in result.stderr.lower() or "does not exist" in result.stderr.lower(),
-            f"Expected directory error, got: {result.stderr}"
+            f"Expected directory error, got: {result.stderr}",
         )
 
     def test_analyze_missing_directory_arg(self):
@@ -196,7 +190,7 @@ class TestApplication(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, "Should fail without --directory")
         self.assertTrue(
             "required" in result.stderr.lower() or "directory" in result.stderr.lower(),
-            f"Expected missing argument error, got: {result.stderr}"
+            f"Expected missing argument error, got: {result.stderr}",
         )
 
     def test_backward_compatibility_depth_flag(self):
@@ -205,9 +199,12 @@ class TestApplication(unittest.TestCase):
 
         result = self.run_command(
             "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
-            "--depth", "surface"
+            "--directory",
+            str(self.test_dir),
+            "--output",
+            str(output_dir),
+            "--depth",
+            "surface",
         )
 
         self.assertEqual(result.returncode, 0, f"Depth flag failed: {result.stderr}")
@@ -218,10 +215,7 @@ class TestApplication(unittest.TestCase):
         output_dir = self.test_dir / "output_refs"
 
         result = self.run_command(
-            "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
-            "--quick"
+            "analyze", "--directory", str(self.test_dir), "--output", str(output_dir), "--quick"
         )
 
         self.assertEqual(result.returncode, 0, f"Analysis failed: {result.stderr}")
@@ -236,10 +230,7 @@ class TestApplication(unittest.TestCase):
         output_dir = self.test_dir / "output_structure"
 
         result = self.run_command(
-            "analyze",
-            "--directory", str(self.test_dir),
-            "--output", str(output_dir),
-            "--quick"
+            "analyze", "--directory", str(self.test_dir), "--output", str(output_dir), "--quick"
         )
 
         self.assertEqual(result.returncode, 0, f"Analysis failed: {result.stderr}")
@@ -262,15 +253,11 @@ class TestAnalyzeOldCommand(unittest.TestCase):
     def test_old_command_still_exists(self):
         """Test that skill-seekers-codebase still exists."""
         result = subprocess.run(
-            ["skill-seekers-codebase", "--help"],
-            capture_output=True,
-            text=True,
-            timeout=5
+            ["skill-seekers-codebase", "--help"], capture_output=True, text=True, timeout=5
         )
 
         # Command should exist and show help
-        self.assertEqual(result.returncode, 0,
-                        f"Old command doesn't work: {result.stderr}")
+        self.assertEqual(result.returncode, 0, f"Old command doesn't work: {result.stderr}")
         self.assertIn("--directory", result.stdout)
 
 
@@ -300,14 +287,17 @@ def hello():
         # Run analysis
         result = subprocess.run(
             [
-                "skill-seekers", "analyze",
-                "--directory", str(self.test_dir),
-                "--output", str(output_dir),
-                "--quick"
+                "skill-seekers",
+                "analyze",
+                "--directory",
+                str(self.test_dir),
+                "--output",
+                str(output_dir),
+                "--quick",
             ],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         self.assertEqual(result.returncode, 0, f"Analysis failed: {result.stderr}")
@@ -329,15 +319,18 @@ def hello():
 
         result = subprocess.run(
             [
-                "skill-seekers", "analyze",
-                "--directory", str(self.test_dir),
-                "--output", str(output_dir),
+                "skill-seekers",
+                "analyze",
+                "--directory",
+                str(self.test_dir),
+                "--output",
+                str(output_dir),
                 "--quick",
-                "--verbose"
+                "--verbose",
             ],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         self.assertEqual(result.returncode, 0, f"Verbose analysis failed: {result.stderr}")
