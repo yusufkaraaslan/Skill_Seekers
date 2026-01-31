@@ -5,7 +5,7 @@ This package provides tools for automatically scraping, organizing, and packagin
 documentation from various sources into uploadable Claude AI skills.
 """
 
-__version__ = "2.7.2"
+__version__ = "2.7.4"
 __author__ = "Yusuf Karaaslan"
 __license__ = "MIT"
 

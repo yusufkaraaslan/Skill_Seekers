@@ -28,6 +28,6 @@ Usage:
     in ~/.config/claude-code/mcp.json
 """
 
-__version__ = "2.7.2"
+__version__ = "2.7.4"
 
 __all__ = ["agent_detector"]

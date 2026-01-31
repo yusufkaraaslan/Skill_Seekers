@@ -480,8 +480,9 @@ class TestMarkdownExtractionFallback(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
 
+        from unittest.mock import Mock
+
         import fitz
-        from unittest.mock import Mock, patch
 
         # Create a mock page that raises AssertionError on markdown extraction
         mock_page = Mock()
@@ -508,8 +509,9 @@ class TestMarkdownExtractionFallback(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
 
-        import fitz
         from unittest.mock import Mock
+
+        import fitz
 
         # Create a mock page that raises RuntimeError
         mock_page = Mock()
@@ -534,8 +536,9 @@ class TestMarkdownExtractionFallback(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
 
-        import fitz
         from unittest.mock import Mock
+
+        import fitz
 
         # Create a mock page that raises TypeError
         mock_page = Mock()
@@ -558,8 +561,9 @@ class TestMarkdownExtractionFallback(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
 
-        import fitz
         from unittest.mock import Mock
+
+        import fitz
 
         # Create a mock page with structured content
         fallback_content = """This is a heading

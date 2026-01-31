@@ -1003,14 +1003,6 @@ def test_complex_setup():
     assert user.id
 """
 
-        # Extract example
-        example = {
-            "test_name": "test_complex_setup",
-            "code": code,
-            "language": "python",
-            "file_path": "tests/test.py",
-        }
-
         # The heuristic should be checked in test_example_extractor
         # For this test, we verify the code structure would match
         import ast
@@ -1038,30 +1030,14 @@ def test_complex_setup():
             "process", "chain", "sequence", "pipeline", "lifecycle"
         ]
 
+        # Check if all keywords are in integration_keywords list
+        integration_keywords = [
+            "workflow", "integration", "end_to_end", "e2e", "full",
+            "complete", "scenario", "flow", "multi_step", "multistep",
+            "process", "chain", "sequence", "pipeline", "lifecycle"
+        ]
+
         for keyword in new_keywords:
-            test_name = f"test_{keyword}_example"
-            examples = [
-                {
-                    "category": "unknown",  # Not explicitly workflow
-                    "test_name": test_name,
-                    "code": "db = Database()\nuser = db.create_user()\nassert user.id",
-                    "file_path": "tests/test.py",
-                    "language": "python",
-                }
-            ]
-
-            # The test_example_extractor should categorize as workflow based on keyword
-            # For this test, we verify the keyword list includes these terms
-            from skill_seekers.cli.test_example_extractor import TestExampleExtractor
-            extractor = TestExampleExtractor(language="python")
-
-            # Check if keyword would match integration_keywords
-            integration_keywords = [
-                "workflow", "integration", "end_to_end", "e2e", "full",
-                "complete", "scenario", "flow", "multi_step", "multistep",
-                "process", "chain", "sequence", "pipeline", "lifecycle"
-            ]
-
             self.assertIn(keyword, integration_keywords,
                           f"Keyword '{keyword}' should be in integration_keywords")
 
