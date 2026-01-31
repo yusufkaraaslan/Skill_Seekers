@@ -75,6 +75,53 @@ LANGUAGE_EXTENSIONS = {
     ".php": "PHP",
 }
 
+# Markdown extension mapping
+MARKDOWN_EXTENSIONS = {".md", ".markdown", ".mdown", ".mkd"}
+
+# Common documentation folders to scan
+DOC_FOLDERS = {"docs", "doc", "documentation", "wiki", ".github"}
+
+# Root-level doc files → category mapping
+ROOT_DOC_CATEGORIES = {
+    "readme": "overview",
+    "contributing": "contributing",
+    "changelog": "changelog",
+    "history": "changelog",
+    "license": "license",
+    "authors": "authors",
+    "code_of_conduct": "community",
+    "security": "security",
+    "architecture": "architecture",
+    "design": "architecture",
+}
+
+# Folder name → category mapping
+FOLDER_CATEGORIES = {
+    "architecture": "architecture",
+    "arch": "architecture",
+    "design": "architecture",
+    "guides": "guides",
+    "guide": "guides",
+    "tutorials": "guides",
+    "tutorial": "guides",
+    "howto": "guides",
+    "how-to": "guides",
+    "workflows": "workflows",
+    "workflow": "workflows",
+    "templates": "templates",
+    "template": "templates",
+    "api": "api",
+    "reference": "api",
+    "examples": "examples",
+    "example": "examples",
+    "specs": "specifications",
+    "spec": "specifications",
+    "rfcs": "specifications",
+    "rfc": "specifications",
+    "features": "features",
+    "feature": "features",
+}
+
 # Default directories to exclude
 DEFAULT_EXCLUDED_DIRS = {
     "node_modules",
@@ -216,6 +263,469 @@ def walk_directory(
     return sorted(files)
 
 
+def walk_markdown_files(
+    root: Path,
+    gitignore_spec: pathspec.PathSpec | None = None,
+    excluded_dirs: set | None = None,
+) -> list[Path]:
+    """
+    Walk directory tree and collect markdown documentation files.
+
+    Args:
+        root: Root directory to walk
+        gitignore_spec: Optional PathSpec object for .gitignore rules
+        excluded_dirs: Set of directory names to exclude
+
+    Returns:
+        List of markdown file paths
+    """
+    if excluded_dirs is None:
+        excluded_dirs = DEFAULT_EXCLUDED_DIRS
+
+    files = []
+    root = Path(root).resolve()
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        current_dir = Path(dirpath)
+
+        # Filter out excluded directories (in-place modification)
+        dirnames[:] = [d for d in dirnames if not should_exclude_dir(d, excluded_dirs)]
+
+        for filename in filenames:
+            file_path = current_dir / filename
+
+            # Check .gitignore rules
+            if gitignore_spec:
+                try:
+                    rel_path = file_path.relative_to(root)
+                    if gitignore_spec.match_file(str(rel_path)):
+                        logger.debug(f"Skipping (gitignore): {rel_path}")
+                        continue
+                except ValueError:
+                    continue
+
+            # Check if markdown file
+            if file_path.suffix.lower() not in MARKDOWN_EXTENSIONS:
+                continue
+
+            files.append(file_path)
+
+    return sorted(files)
+
+
+def categorize_markdown_file(file_path: Path, root: Path) -> str:
+    """
+    Categorize a markdown file based on its location and filename.
+
+    Args:
+        file_path: Path to the markdown file
+        root: Root directory of the project
+
+    Returns:
+        Category name (e.g., 'overview', 'guides', 'architecture')
+    """
+    try:
+        rel_path = file_path.relative_to(root)
+    except ValueError:
+        return "other"
+
+    # Check root-level files by filename
+    if len(rel_path.parts) == 1:
+        filename_lower = file_path.stem.lower().replace("-", "_").replace(" ", "_")
+        for key, category in ROOT_DOC_CATEGORIES.items():
+            if key in filename_lower:
+                return category
+        return "overview"  # Default for root .md files
+
+    # Check folder-based categorization
+    for part in rel_path.parts[:-1]:  # Exclude filename
+        part_lower = part.lower().replace("-", "_").replace(" ", "_")
+        for key, category in FOLDER_CATEGORIES.items():
+            if key in part_lower:
+                return category
+
+    # Default category
+    return "other"
+
+
+def extract_markdown_structure(content: str) -> dict[str, Any]:
+    """
+    Extract structure from markdown content (headers, code blocks, links).
+
+    Args:
+        content: Markdown file content
+
+    Returns:
+        Dictionary with extracted structure
+    """
+    import re
+
+    structure = {
+        "title": None,
+        "headers": [],
+        "code_blocks": [],
+        "links": [],
+        "word_count": len(content.split()),
+        "line_count": len(content.split("\n")),
+    }
+
+    lines = content.split("\n")
+
+    # Extract headers
+    for i, line in enumerate(lines):
+        header_match = re.match(r"^(#{1,6})\s+(.+)$", line)
+        if header_match:
+            level = len(header_match.group(1))
+            text = header_match.group(2).strip()
+            structure["headers"].append({
+                "level": level,
+                "text": text,
+                "line": i + 1,
+            })
+            # First h1 is the title
+            if level == 1 and structure["title"] is None:
+                structure["title"] = text
+
+    # Extract code blocks (fenced)
+    code_block_pattern = re.compile(r"```(\w*)\n(.*?)```", re.DOTALL)
+    for match in code_block_pattern.finditer(content):
+        language = match.group(1) or "text"
+        code = match.group(2).strip()
+        if len(code) > 0:
+            structure["code_blocks"].append({
+                "language": language,
+                "code": code[:500],  # Truncate long code blocks
+                "full_length": len(code),
+            })
+
+    # Extract links
+    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+    for match in link_pattern.finditer(content):
+        structure["links"].append({
+            "text": match.group(1),
+            "url": match.group(2),
+        })
+
+    return structure
+
+
+def generate_markdown_summary(content: str, structure: dict[str, Any], max_length: int = 500) -> str:
+    """
+    Generate a summary of markdown content.
+
+    Args:
+        content: Full markdown content
+        structure: Extracted structure from extract_markdown_structure()
+        max_length: Maximum summary length
+
+    Returns:
+        Summary string
+    """
+    # Start with title if available
+    summary_parts = []
+
+    if structure.get("title"):
+        summary_parts.append(f"**{structure['title']}**")
+
+    # Add header outline (first 5 h2/h3 headers)
+    h2_h3 = [h for h in structure.get("headers", []) if h["level"] in (2, 3)][:5]
+    if h2_h3:
+        sections = [h["text"] for h in h2_h3]
+        summary_parts.append(f"Sections: {', '.join(sections)}")
+
+    # Extract first paragraph (skip headers and empty lines)
+    lines = content.split("\n")
+    first_para = []
+    in_para = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#") or stripped.startswith("```"):
+            if in_para:
+                break
+            continue
+        if stripped:
+            in_para = True
+            first_para.append(stripped)
+        elif in_para:
+            break
+
+    if first_para:
+        para_text = " ".join(first_para)
+        if len(para_text) > 200:
+            para_text = para_text[:200] + "..."
+        summary_parts.append(para_text)
+
+    # Add stats
+    stats = f"({structure.get('word_count', 0)} words, {len(structure.get('code_blocks', []))} code blocks)"
+    summary_parts.append(stats)
+
+    summary = "\n".join(summary_parts)
+    if len(summary) > max_length:
+        summary = summary[:max_length] + "..."
+
+    return summary
+
+
+def process_markdown_docs(
+    directory: Path,
+    output_dir: Path,
+    depth: str = "deep",
+    gitignore_spec: pathspec.PathSpec | None = None,
+    enhance_with_ai: bool = False,
+    ai_mode: str = "none",
+) -> dict[str, Any]:
+    """
+    Process all markdown documentation files in a directory.
+
+    Args:
+        directory: Root directory to scan
+        output_dir: Output directory for processed docs
+        depth: Processing depth ('surface', 'deep', 'full')
+        gitignore_spec: Optional .gitignore spec
+        enhance_with_ai: Whether to use AI enhancement
+        ai_mode: AI mode ('none', 'auto', 'api', 'local')
+
+    Returns:
+        Dictionary with processed documentation data
+    """
+    logger.info("Scanning for markdown documentation...")
+
+    # Find all markdown files
+    md_files = walk_markdown_files(directory, gitignore_spec)
+    logger.info(f"Found {len(md_files)} markdown files")
+
+    if not md_files:
+        return {"files": [], "categories": {}, "total_files": 0}
+
+    # Process each file
+    processed_docs = []
+    categories = {}
+
+    for md_path in md_files:
+        try:
+            content = md_path.read_text(encoding="utf-8", errors="ignore")
+            rel_path = str(md_path.relative_to(directory))
+            category = categorize_markdown_file(md_path, directory)
+
+            doc_data = {
+                "path": rel_path,
+                "filename": md_path.name,
+                "category": category,
+                "size_bytes": len(content.encode("utf-8")),
+            }
+
+            # Surface depth: just path and category
+            if depth == "surface":
+                processed_docs.append(doc_data)
+            else:
+                # Deep/Full: extract structure and summary
+                structure = extract_markdown_structure(content)
+                summary = generate_markdown_summary(content, structure)
+
+                doc_data.update({
+                    "title": structure.get("title") or md_path.stem,
+                    "structure": structure,
+                    "summary": summary,
+                    "content": content if depth == "full" else None,
+                })
+                processed_docs.append(doc_data)
+
+            # Track categories
+            if category not in categories:
+                categories[category] = []
+            categories[category].append(rel_path)
+
+        except Exception as e:
+            logger.warning(f"Failed to process {md_path}: {e}")
+            continue
+
+    # AI Enhancement (if enabled and enhance_level >= 2)
+    if enhance_with_ai and ai_mode != "none" and processed_docs:
+        logger.info("🤖 Enhancing documentation analysis with AI...")
+        try:
+            processed_docs = _enhance_docs_with_ai(processed_docs, ai_mode)
+            logger.info("✅ AI documentation enhancement complete")
+        except Exception as e:
+            logger.warning(f"⚠️  AI enhancement failed: {e}")
+
+    # Save processed docs to output
+    docs_output_dir = output_dir / "documentation"
+    docs_output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy files organized by category
+    for doc in processed_docs:
+        try:
+            src_path = directory / doc["path"]
+            category = doc["category"]
+            category_dir = docs_output_dir / category
+            category_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copy file to category folder
+            dest_path = category_dir / doc["filename"]
+            import shutil
+            shutil.copy2(src_path, dest_path)
+        except Exception as e:
+            logger.debug(f"Failed to copy {doc['path']}: {e}")
+
+    # Save documentation index
+    index_data = {
+        "total_files": len(processed_docs),
+        "categories": categories,
+        "files": processed_docs,
+    }
+
+    index_json = docs_output_dir / "documentation_index.json"
+    with open(index_json, "w", encoding="utf-8") as f:
+        json.dump(index_data, f, indent=2, default=str)
+
+    logger.info(f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories")
+    logger.info(f"📁 Saved to: {docs_output_dir}")
+
+    return index_data
+
+
+def _enhance_docs_with_ai(docs: list[dict], ai_mode: str) -> list[dict]:
+    """
+    Enhance documentation analysis with AI.
+
+    Args:
+        docs: List of processed document dictionaries
+        ai_mode: AI mode ('api' or 'local')
+
+    Returns:
+        Enhanced document list
+    """
+    # Try API mode first
+    if ai_mode in ("api", "auto"):
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if api_key:
+            return _enhance_docs_api(docs, api_key)
+
+    # Fall back to LOCAL mode
+    if ai_mode in ("local", "auto"):
+        return _enhance_docs_local(docs)
+
+    return docs
+
+
+def _enhance_docs_api(docs: list[dict], api_key: str) -> list[dict]:
+    """Enhance docs using Claude API."""
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+
+        # Batch documents for efficiency
+        batch_size = 10
+        for i in range(0, len(docs), batch_size):
+            batch = docs[i:i + batch_size]
+
+            # Create prompt for batch
+            docs_text = "\n\n".join([
+                f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
+                for d in batch if d.get("summary")
+            ])
+
+            if not docs_text:
+                continue
+
+            prompt = f"""Analyze these documentation files and provide:
+1. A brief description of what each document covers
+2. Key topics/concepts mentioned
+3. How they relate to each other
+
+Documents:
+{docs_text}
+
+Return JSON with format:
+{{"enhancements": [{{"filename": "...", "description": "...", "key_topics": [...], "related_to": [...]}}]}}"""
+
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            # Parse response and merge enhancements
+            try:
+                import re
+                json_match = re.search(r"\{.*\}", response.content[0].text, re.DOTALL)
+                if json_match:
+                    enhancements = json.loads(json_match.group())
+                    for enh in enhancements.get("enhancements", []):
+                        for doc in batch:
+                            if doc["filename"] == enh.get("filename"):
+                                doc["ai_description"] = enh.get("description")
+                                doc["ai_topics"] = enh.get("key_topics", [])
+                                doc["ai_related"] = enh.get("related_to", [])
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.warning(f"API enhancement failed: {e}")
+
+    return docs
+
+
+def _enhance_docs_local(docs: list[dict]) -> list[dict]:
+    """Enhance docs using Claude Code CLI (LOCAL mode)."""
+    import subprocess
+    import tempfile
+
+    # Prepare batch of docs for enhancement
+    docs_with_summary = [d for d in docs if d.get("summary")]
+    if not docs_with_summary:
+        return docs
+
+    docs_text = "\n\n".join([
+        f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
+        for d in docs_with_summary[:20]  # Limit to 20 docs
+    ])
+
+    prompt = f"""Analyze these documentation files from a codebase and provide insights.
+
+For each document, provide:
+1. A brief description of what it covers
+2. Key topics/concepts
+3. Related documents
+
+Documents:
+{docs_text}
+
+Output JSON only:
+{{"enhancements": [{{"filename": "...", "description": "...", "key_topics": ["..."], "related_to": ["..."]}}]}}"""
+
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(prompt)
+            prompt_file = f.name
+
+        result = subprocess.run(
+            ["claude", "--dangerously-skip-permissions", "-p", prompt],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        os.unlink(prompt_file)
+
+        if result.returncode == 0 and result.stdout:
+            import re
+            json_match = re.search(r"\{.*\}", result.stdout, re.DOTALL)
+            if json_match:
+                enhancements = json.loads(json_match.group())
+                for enh in enhancements.get("enhancements", []):
+                    for doc in docs:
+                        if doc["filename"] == enh.get("filename"):
+                            doc["ai_description"] = enh.get("description")
+                            doc["ai_topics"] = enh.get("key_topics", [])
+                            doc["ai_related"] = enh.get("related_to", [])
+
+    except Exception as e:
+        logger.warning(f"LOCAL enhancement failed: {e}")
+
+    return docs
+
+
 def analyze_codebase(
     directory: Path,
     output_dir: Path,
@@ -229,8 +739,8 @@ def analyze_codebase(
     extract_test_examples: bool = True,
     build_how_to_guides: bool = True,
     extract_config_patterns: bool = True,
-    enhance_with_ai: bool = True,
-    ai_mode: str = "auto",
+    extract_docs: bool = True,
+    enhance_level: int = 0,
 ) -> dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -248,12 +758,26 @@ def analyze_codebase(
         extract_test_examples: Extract usage examples from test files
         build_how_to_guides: Build how-to guides from workflow examples (C3.3)
         extract_config_patterns: Extract configuration patterns from config files (C3.4)
-        enhance_with_ai: Enhance patterns and examples with AI analysis (C3.6)
-        ai_mode: AI enhancement mode for how-to guides (auto, api, local, none)
+        extract_docs: Extract and process markdown documentation files (default: True)
+        enhance_level: AI enhancement level (0=off, 1=SKILL.md only, 2=+config+arch+docs, 3=full)
 
     Returns:
         Analysis results dictionary
     """
+    # Determine AI enhancement settings based on level
+    # Level 0: No AI enhancement
+    # Level 1: SKILL.md only (handled in main.py)
+    # Level 2: Architecture + Config AI enhancement
+    # Level 3: Full AI enhancement (patterns, tests, config, architecture)
+    enhance_patterns = enhance_level >= 3
+    enhance_tests = enhance_level >= 3
+    enhance_config = enhance_level >= 2
+    enhance_architecture = enhance_level >= 2
+    ai_mode = "auto" if enhance_level > 0 else "none"
+
+    if enhance_level > 0:
+        level_names = {1: "SKILL.md only", 2: "SKILL.md+Architecture+Config", 3: "full"}
+        logger.info(f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})")
     # Resolve directory to absolute path to avoid relative_to() errors
     directory = Path(directory).resolve()
 
@@ -405,7 +929,7 @@ def analyze_codebase(
         logger.info("Detecting design patterns...")
         from skill_seekers.cli.pattern_recognizer import PatternRecognizer
 
-        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_with_ai)
+        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_patterns)
         pattern_results = []
 
         for file_path in files:
@@ -447,7 +971,7 @@ def analyze_codebase(
             min_confidence=0.5,
             max_per_file=10,
             languages=languages,
-            enhance_with_ai=enhance_with_ai,
+            enhance_with_ai=enhance_tests,
         )
 
         # Extract examples from directory
@@ -486,8 +1010,8 @@ def analyze_codebase(
         try:
             from skill_seekers.cli.how_to_guide_builder import HowToGuideBuilder
 
-            # Create guide builder
-            guide_builder = HowToGuideBuilder(enhance_with_ai=enhance_with_ai)
+            # Create guide builder (uses same enhance level as test examples)
+            guide_builder = HowToGuideBuilder(enhance_with_ai=enhance_tests)
 
             # Build guides from workflow examples
             tutorials_dir = output_dir / "tutorials"
@@ -505,7 +1029,7 @@ def analyze_codebase(
                     examples_list,
                     grouping_strategy="ai-tutorial-group",
                     output_dir=tutorials_dir,
-                    enhance_with_ai=enhance_with_ai,
+                    enhance_with_ai=enhance_tests,
                     ai_mode=ai_mode,
                 )
 
@@ -538,8 +1062,8 @@ def analyze_codebase(
                 # Convert to dict for enhancement
                 result_dict = config_extractor.to_dict(extraction_result)
 
-                # AI Enhancement (if enabled)
-                if enhance_with_ai and ai_mode != "none":
+                # AI Enhancement (if enabled - level 2+)
+                if enhance_config and ai_mode != "none":
                     try:
                         from skill_seekers.cli.config_enhancer import ConfigEnhancer
 
@@ -591,7 +1115,7 @@ def analyze_codebase(
     logger.info("Analyzing architectural patterns...")
     from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
 
-    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_with_ai)
+    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture)
     arch_report = arch_detector.analyze(directory, results["files"])
 
     if arch_report.patterns:
@@ -610,6 +1134,33 @@ def analyze_codebase(
     else:
         logger.info("No clear architectural patterns detected")
 
+    # Extract markdown documentation (C3.9)
+    docs_data = None
+    if extract_docs:
+        logger.info("Extracting project documentation...")
+        try:
+            # Determine AI enhancement for docs (level 2+)
+            enhance_docs_ai = enhance_level >= 2
+            docs_data = process_markdown_docs(
+                directory=directory,
+                output_dir=output_dir,
+                depth=depth,
+                gitignore_spec=gitignore_spec,
+                enhance_with_ai=enhance_docs_ai,
+                ai_mode=ai_mode,
+            )
+
+            if docs_data and docs_data.get("total_files", 0) > 0:
+                logger.info(
+                    f"✅ Extracted {docs_data['total_files']} documentation files "
+                    f"in {len(docs_data.get('categories', {}))} categories"
+                )
+            else:
+                logger.info("No markdown documentation files found")
+        except Exception as e:
+            logger.warning(f"Documentation extraction failed: {e}")
+            docs_data = None
+
     # Generate SKILL.md and references/ directory
     logger.info("Generating SKILL.md and references...")
     _generate_skill_md(
@@ -622,6 +1173,8 @@ def analyze_codebase(
         detect_patterns=detect_patterns,
         extract_test_examples=extract_test_examples,
         extract_config_patterns=extract_config_patterns,
+        extract_docs=extract_docs,
+        docs_data=docs_data,
     )
 
     return results
@@ -637,6 +1190,8 @@ def _generate_skill_md(
     detect_patterns: bool,
     extract_test_examples: bool,
     extract_config_patterns: bool,
+    extract_docs: bool = True,
+    docs_data: dict[str, Any] | None = None,
 ):
     """
     Generate rich SKILL.md from codebase analysis results.
@@ -716,7 +1271,10 @@ Use this skill when you need to:
         skill_content += "- ✅ Test Examples (C3.2)\n"
     if extract_config_patterns:
         skill_content += "- ✅ Configuration Patterns (C3.4)\n"
-    skill_content += "- ✅ Architectural Analysis (C3.7)\n\n"
+    skill_content += "- ✅ Architectural Analysis (C3.7)\n"
+    if extract_docs:
+        skill_content += "- ✅ Project Documentation (C3.9)\n"
+    skill_content += "\n"
 
     # Add design patterns if available
     if detect_patterns:
@@ -747,6 +1305,12 @@ Use this skill when you need to:
         if config_content:
             skill_content += config_content
 
+    # Add project documentation if available
+    if extract_docs and docs_data:
+        docs_content = _format_documentation_section(output_dir, docs_data)
+        if docs_content:
+            skill_content += docs_content
+
     # Available references
     skill_content += "## 📚 Available References\n\n"
     skill_content += "This skill includes detailed reference documentation:\n\n"
@@ -775,6 +1339,9 @@ Use this skill when you need to:
         refs_added = True
     if (output_dir / "architecture").exists():
         skill_content += "- **Architecture**: `references/architecture/` - Architectural patterns\n"
+        refs_added = True
+    if extract_docs and (output_dir / "documentation").exists():
+        skill_content += "- **Documentation**: `references/documentation/` - Project documentation\n"
         refs_added = True
 
     if not refs_added:
@@ -1005,6 +1572,75 @@ def _format_config_section(output_dir: Path) -> str:
     return content
 
 
+def _format_documentation_section(output_dir: Path, docs_data: dict[str, Any]) -> str:
+    """Format project documentation section from extracted markdown files."""
+    if not docs_data or docs_data.get("total_files", 0) == 0:
+        return ""
+
+    categories = docs_data.get("categories", {})
+    files = docs_data.get("files", [])
+
+    content = "## 📖 Project Documentation\n\n"
+    content += "*Extracted from markdown files in the project (C3.9)*\n\n"
+    content += f"**Total Documentation Files:** {docs_data['total_files']}\n"
+    content += f"**Categories:** {len(categories)}\n\n"
+
+    # List documents by category (most important first)
+    priority_order = ["overview", "architecture", "guides", "workflows", "features", "api", "examples"]
+
+    # Sort categories by priority
+    sorted_categories = []
+    for cat in priority_order:
+        if cat in categories:
+            sorted_categories.append(cat)
+    for cat in sorted(categories.keys()):
+        if cat not in sorted_categories:
+            sorted_categories.append(cat)
+
+    for category in sorted_categories[:6]:  # Limit to 6 categories in SKILL.md
+        cat_files = categories[category]
+        content += f"### {category.title()}\n\n"
+
+        # Get file details for this category
+        cat_docs = [f for f in files if f.get("category") == category]
+
+        for doc in cat_docs[:5]:  # Limit to 5 docs per category
+            title = doc.get("title") or doc.get("filename", "Unknown")
+            path = doc.get("path", "")
+
+            # Add summary if available (deep/full depth)
+            if doc.get("ai_description"):
+                content += f"- **{title}**: {doc['ai_description']}\n"
+            elif doc.get("summary"):
+                # Extract first sentence from summary
+                summary = doc["summary"].split("\n")[0]
+                if len(summary) > 100:
+                    summary = summary[:100] + "..."
+                content += f"- **{title}**: {summary}\n"
+            else:
+                content += f"- **{title}** (`{path}`)\n"
+
+        if len(cat_files) > 5:
+            content += f"- *...and {len(cat_files) - 5} more*\n"
+
+        content += "\n"
+
+    # AI-enhanced topics if available
+    all_topics = []
+    for doc in files:
+        all_topics.extend(doc.get("ai_topics", []))
+
+    if all_topics:
+        # Deduplicate and count
+        from collections import Counter
+        topic_counts = Counter(all_topics)
+        top_topics = [t for t, _ in topic_counts.most_common(10)]
+        content += f"**Key Topics:** {', '.join(top_topics)}\n\n"
+
+    content += "*See `references/documentation/` for all project documentation*\n\n"
+    return content
+
+
 def _generate_references(output_dir: Path):
     """
     Generate references/ directory structure by symlinking analysis output.
@@ -1023,6 +1659,7 @@ def _generate_references(output_dir: Path):
         "tutorials": "tutorials",
         "config_patterns": "config_patterns",
         "architecture": "architecture",
+        "documentation": "documentation",
     }
 
     for source, target in mappings.items():
@@ -1133,6 +1770,12 @@ Examples:
         help="Skip configuration pattern extraction from config files (JSON, YAML, TOML, ENV, etc.) (default: enabled)",
     )
     parser.add_argument(
+        "--skip-docs",
+        action="store_true",
+        default=False,
+        help="Skip project documentation extraction from markdown files (README, docs/, etc.) (default: enabled)",
+    )
+    parser.add_argument(
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
         default="auto",
@@ -1147,6 +1790,19 @@ Examples:
     )
     parser.add_argument("--no-comments", action="store_true", help="Skip comment extraction")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument(
+        "--enhance-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=0,
+        help=(
+            "AI enhancement level: "
+            "0=off (default), "
+            "1=SKILL.md only, "
+            "2=SKILL.md+Architecture+Config, "
+            "3=full (patterns, tests, config, architecture, SKILL.md)"
+        ),
+    )
 
     # Check for deprecated flags
     deprecated_flags = {
@@ -1232,8 +1888,8 @@ Examples:
             extract_test_examples=not args.skip_test_examples,
             build_how_to_guides=not args.skip_how_to_guides,
             extract_config_patterns=not args.skip_config_patterns,
-            enhance_with_ai=True,  # Auto-disables if no API key present
-            ai_mode=args.ai_mode,  # NEW: AI enhancement mode for how-to guides
+            extract_docs=not args.skip_docs,
+            enhance_level=args.enhance_level,  # AI enhancement level (0-3)
         )
 
         # Print summary

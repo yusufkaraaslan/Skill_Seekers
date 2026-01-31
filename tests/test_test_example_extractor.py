@@ -307,6 +307,82 @@ fn test_subtract() {
         self.assertGreater(len(examples), 0)
         self.assertEqual(examples[0].language, "Rust")
 
+    def test_extract_csharp_nunit_tests(self):
+        """Test C# NUnit test extraction"""
+        code = """
+using NUnit.Framework;
+using NSubstitute;
+
+[TestFixture]
+public class GameControllerTests
+{
+    private IGameService _gameService;
+    private GameController _controller;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _gameService = Substitute.For<IGameService>();
+        _controller = new GameController(_gameService);
+    }
+
+    [Test]
+    public void StartGame_ShouldInitializeBoard()
+    {
+        var config = new GameConfig { Rows = 8, Columns = 8 };
+        var board = new GameBoard(config);
+
+        _controller.StartGame(board);
+
+        Assert.IsTrue(board.IsInitialized);
+        Assert.AreEqual(64, board.CellCount);
+    }
+
+    [TestCase(1, 2)]
+    [TestCase(3, 4)]
+    public void MovePlayer_ShouldUpdatePosition(int x, int y)
+    {
+        var player = new Player("Test");
+        _controller.MovePlayer(player, x, y);
+
+        Assert.AreEqual(x, player.X);
+        Assert.AreEqual(y, player.Y);
+    }
+}
+"""
+        examples = self.analyzer.extract("GameControllerTests.cs", code, "C#")
+
+        # Should extract test functions and instantiations
+        self.assertGreater(len(examples), 0)
+        self.assertEqual(examples[0].language, "C#")
+
+        # Check that we found some instantiations
+        instantiations = [e for e in examples if e.category == "instantiation"]
+        self.assertGreater(len(instantiations), 0)
+
+        # Check for setup extraction
+        setups = [e for e in examples if e.category == "setup"]
+        # May or may not have setups depending on extraction
+
+    def test_extract_csharp_with_mocks(self):
+        """Test C# mock pattern extraction (NSubstitute)"""
+        code = """
+[Test]
+public void ProcessOrder_ShouldCallPaymentService()
+{
+    var paymentService = Substitute.For<IPaymentService>();
+    var orderProcessor = new OrderProcessor(paymentService);
+
+    orderProcessor.ProcessOrder(100);
+
+    paymentService.Received().Charge(100);
+}
+"""
+        examples = self.analyzer.extract("OrderTests.cs", code, "C#")
+
+        # Should extract instantiation and mock
+        self.assertGreater(len(examples), 0)
+
     def test_language_fallback(self):
         """Test handling of unsupported languages"""
         code = """

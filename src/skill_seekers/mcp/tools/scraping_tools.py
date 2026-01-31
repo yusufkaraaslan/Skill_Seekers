@@ -441,8 +441,10 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     Analyze local codebase and extract code knowledge.
 
     Walks directory tree, analyzes code files, extracts signatures,
-    docstrings, and optionally generates API reference documentation
-    and dependency graphs.
+    docstrings, and generates API reference documentation, dependency graphs,
+    design patterns, test examples, and how-to guides.
+
+    All features are ON by default. Use skip_* parameters to disable specific features.
 
     Args:
         args: Dictionary containing:
@@ -451,8 +453,18 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
             - depth (str, optional): Analysis depth - surface, deep, full (default: deep)
             - languages (str, optional): Comma-separated languages (e.g., "Python,JavaScript,C++")
             - file_patterns (str, optional): Comma-separated file patterns (e.g., "*.py,src/**/*.js")
-            - build_api_reference (bool, optional): Generate API reference markdown (default: False)
-            - build_dependency_graph (bool, optional): Generate dependency graph and detect circular dependencies (default: False)
+            - enhance_level (int, optional): AI enhancement level 0-3 (default: 0)
+                - 0: No AI enhancement
+                - 1: SKILL.md enhancement only
+                - 2: SKILL.md + Architecture + Config enhancement
+                - 3: Full enhancement (patterns, tests, config, architecture, SKILL.md)
+            - skip_api_reference (bool, optional): Skip API reference generation (default: False)
+            - skip_dependency_graph (bool, optional): Skip dependency graph (default: False)
+            - skip_patterns (bool, optional): Skip design pattern detection (default: False)
+            - skip_test_examples (bool, optional): Skip test example extraction (default: False)
+            - skip_how_to_guides (bool, optional): Skip how-to guide generation (default: False)
+            - skip_config_patterns (bool, optional): Skip config pattern extraction (default: False)
+            - skip_docs (bool, optional): Skip project documentation extraction (default: False)
 
     Returns:
         List[TextContent]: Tool execution results
@@ -461,8 +473,12 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
         scrape_codebase(
             directory="/path/to/repo",
             depth="deep",
-            build_api_reference=True,
-            build_dependency_graph=True
+            enhance_level=1
+        )
+        scrape_codebase(
+            directory="/path/to/repo",
+            enhance_level=2,
+            skip_patterns=True
         )
     """
     directory = args.get("directory")
@@ -473,8 +489,16 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     depth = args.get("depth", "deep")
     languages = args.get("languages", "")
     file_patterns = args.get("file_patterns", "")
-    build_api_reference = args.get("build_api_reference", False)
-    build_dependency_graph = args.get("build_dependency_graph", False)
+    enhance_level = args.get("enhance_level", 0)
+
+    # Skip flags (features are ON by default)
+    skip_api_reference = args.get("skip_api_reference", False)
+    skip_dependency_graph = args.get("skip_dependency_graph", False)
+    skip_patterns = args.get("skip_patterns", False)
+    skip_test_examples = args.get("skip_test_examples", False)
+    skip_how_to_guides = args.get("skip_how_to_guides", False)
+    skip_config_patterns = args.get("skip_config_patterns", False)
+    skip_docs = args.get("skip_docs", False)
 
     # Build command
     cmd = [sys.executable, "-m", "skill_seekers.cli.codebase_scraper"]
@@ -488,15 +512,38 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
         cmd.extend(["--languages", languages])
     if file_patterns:
         cmd.extend(["--file-patterns", file_patterns])
-    if build_api_reference:
-        cmd.append("--build-api-reference")
-    if build_dependency_graph:
-        cmd.append("--build-dependency-graph")
+    if enhance_level > 0:
+        cmd.extend(["--enhance-level", str(enhance_level)])
 
-    timeout = 600  # 10 minutes for codebase analysis
+    # Skip flags
+    if skip_api_reference:
+        cmd.append("--skip-api-reference")
+    if skip_dependency_graph:
+        cmd.append("--skip-dependency-graph")
+    if skip_patterns:
+        cmd.append("--skip-patterns")
+    if skip_test_examples:
+        cmd.append("--skip-test-examples")
+    if skip_how_to_guides:
+        cmd.append("--skip-how-to-guides")
+    if skip_config_patterns:
+        cmd.append("--skip-config-patterns")
+    if skip_docs:
+        cmd.append("--skip-docs")
 
+    # Adjust timeout based on enhance_level
+    timeout = 600  # 10 minutes base
+    if enhance_level >= 2:
+        timeout = 1200  # 20 minutes with AI enhancement
+    if enhance_level >= 3:
+        timeout = 3600  # 60 minutes for full enhancement
+
+    level_names = {0: "off", 1: "SKILL.md only", 2: "standard", 3: "full"}
     progress_msg = "🔍 Analyzing local codebase...\n"
     progress_msg += f"📁 Directory: {directory}\n"
+    progress_msg += f"📊 Depth: {depth}\n"
+    if enhance_level > 0:
+        progress_msg += f"🤖 AI Enhancement: Level {enhance_level} ({level_names.get(enhance_level, 'unknown')})\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)

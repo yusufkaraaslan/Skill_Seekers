@@ -651,9 +651,20 @@ class GenericTestAnalyzer:
             "test_function": r"@Test\s+public\s+void\s+(\w+)\(\)",
         },
         "csharp": {
-            "instantiation": r"var\s+(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
-            "assertion": r"Assert\.(?:AreEqual|IsTrue|IsFalse|IsNotNull)\(([^)]+)\)",
-            "test_function": r"\[Test\]\s+public\s+void\s+(\w+)\(\)",
+            # Object instantiation patterns (var, explicit type, generic)
+            "instantiation": r"(?:var|[\w<>]+)\s+(\w+)\s*=\s*new\s+([\w<>]+)\(([^)]*)\)",
+            # NUnit assertions (Assert.AreEqual, Assert.That, etc.)
+            "assertion": r"Assert\.(?:AreEqual|AreNotEqual|IsTrue|IsFalse|IsNull|IsNotNull|That|Throws|DoesNotThrow|Greater|Less|Contains)\(([^)]+)\)",
+            # NUnit test attributes ([Test], [TestCase], [TestCaseSource])
+            "test_function": r"\[(?:Test|TestCase|TestCaseSource|Theory|Fact)\(?[^\]]*\)?\]\s*(?:\[[\w\(\)\"',\s]+\]\s*)*public\s+(?:async\s+)?(?:Task|void)\s+(\w+)\s*\(",
+            # Setup/Teardown patterns
+            "setup": r"\[(?:SetUp|OneTimeSetUp|TearDown|OneTimeTearDown)\]\s*public\s+(?:async\s+)?(?:Task|void)\s+(\w+)\s*\(",
+            # Mock/substitute patterns (NSubstitute, Moq)
+            "mock": r"(?:Substitute\.For<([\w<>]+)>|new\s+Mock<([\w<>]+)>|MockRepository\.GenerateMock<([\w<>]+)>)\(",
+            # Dependency injection patterns (Zenject, etc.)
+            "injection": r"Container\.(?:Bind|BindInterfacesTo|BindInterfacesAndSelfTo)<([\w<>]+)>",
+            # Configuration/setup dictionaries
+            "config": r"(?:var|[\w<>]+)\s+\w+\s*=\s*new\s+(?:Dictionary|List|HashSet)<[^>]+>\s*\{[\s\S]{20,500}?\}",
         },
         "php": {
             "instantiation": r"\$(\w+)\s*=\s*new\s+(\w+)\(([^)]*)\)",
@@ -667,11 +678,21 @@ class GenericTestAnalyzer:
         },
     }
 
+    # Language name normalization mapping
+    LANGUAGE_ALIASES = {
+        "c#": "csharp",
+        "c++": "cpp",
+        "c plus plus": "cpp",
+    }
+
     def extract(self, file_path: str, code: str, language: str) -> list[TestExample]:
         """Extract examples from test file using regex patterns"""
         examples = []
 
         language_lower = language.lower()
+        # Normalize language name (e.g., "C#" -> "csharp")
+        language_lower = self.LANGUAGE_ALIASES.get(language_lower, language_lower)
+
         if language_lower not in self.PATTERNS:
             logger.warning(f"Language {language} not supported for regex extraction")
             return []
@@ -714,6 +735,54 @@ class GenericTestAnalyzer:
                         line_number=code[: start_pos + config_match.start()].count("\n") + 1,
                     )
                     examples.append(example)
+
+            # Extract mock/substitute patterns (if pattern exists)
+            if "mock" in patterns:
+                for mock_match in re.finditer(patterns["mock"], test_body):
+                    example = self._create_example(
+                        test_name=test_name,
+                        category="setup",
+                        code=mock_match.group(0),
+                        language=language,
+                        file_path=file_path,
+                        line_number=code[: start_pos + mock_match.start()].count("\n") + 1,
+                    )
+                    examples.append(example)
+
+            # Extract dependency injection patterns (if pattern exists)
+            if "injection" in patterns:
+                for inject_match in re.finditer(patterns["injection"], test_body):
+                    example = self._create_example(
+                        test_name=test_name,
+                        category="setup",
+                        code=inject_match.group(0),
+                        language=language,
+                        file_path=file_path,
+                        line_number=code[: start_pos + inject_match.start()].count("\n") + 1,
+                    )
+                    examples.append(example)
+
+        # Also extract setup/teardown methods (outside test functions)
+        if "setup" in patterns:
+            for setup_match in re.finditer(patterns["setup"], code):
+                setup_name = setup_match.group(1)
+                # Get setup function body
+                setup_start = setup_match.end()
+                # Find next method (setup or test)
+                next_pattern = patterns.get("setup", patterns["test_function"])
+                next_setup = re.search(next_pattern, code[setup_start:])
+                setup_end = setup_start + next_setup.start() if next_setup else min(setup_start + 500, len(code))
+                setup_body = code[setup_start:setup_end]
+
+                example = self._create_example(
+                    test_name=setup_name,
+                    category="setup",
+                    code=setup_match.group(0) + setup_body[:200],  # Include some of the body
+                    language=language,
+                    file_path=file_path,
+                    line_number=code[: setup_match.start()].count("\n") + 1,
+                )
+                examples.append(example)
 
         return examples
 

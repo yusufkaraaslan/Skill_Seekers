@@ -34,6 +34,7 @@ Examples:
 
 import argparse
 import sys
+from pathlib import Path
 
 from skill_seekers.cli import __version__
 
@@ -299,7 +300,14 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     analyze_parser.add_argument("--file-patterns", help="Comma-separated file patterns")
     analyze_parser.add_argument(
-        "--enhance", action="store_true", help="Enable AI enhancement (auto-detects API or LOCAL)"
+        "--enhance", action="store_true", help="Enable AI enhancement (default level 1 = SKILL.md only)"
+    )
+    analyze_parser.add_argument(
+        "--enhance-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=None,
+        help="AI enhancement level: 0=off, 1=SKILL.md only (default), 2=+Architecture+Config, 3=full"
     )
     analyze_parser.add_argument("--skip-api-reference", action="store_true", help="Skip API docs")
     analyze_parser.add_argument("--skip-dependency-graph", action="store_true", help="Skip dep graph")
@@ -307,6 +315,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     analyze_parser.add_argument("--skip-test-examples", action="store_true", help="Skip test examples")
     analyze_parser.add_argument("--skip-how-to-guides", action="store_true", help="Skip guides")
     analyze_parser.add_argument("--skip-config-patterns", action="store_true", help="Skip config")
+    analyze_parser.add_argument("--skip-docs", action="store_true", help="Skip project docs (README, docs/)")
     analyze_parser.add_argument("--no-comments", action="store_true", help="Skip comments")
     analyze_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
 
@@ -547,9 +556,9 @@ def main(argv: list[str] | None = None) -> int:
             if args.output:
                 sys.argv.extend(["--output", args.output])
 
-            # Handle preset flags (new)
+            # Handle preset flags (depth and features)
             if args.quick:
-                # Quick = surface depth + skip advanced features
+                # Quick = surface depth + skip advanced features + no AI
                 sys.argv.extend([
                     "--depth", "surface",
                     "--skip-patterns",
@@ -558,17 +567,35 @@ def main(argv: list[str] | None = None) -> int:
                     "--skip-config-patterns",
                 ])
             elif args.comprehensive:
-                # Comprehensive = full depth + all features + AI
-                sys.argv.extend(["--depth", "full", "--ai-mode", "auto"])
+                # Comprehensive = full depth + all features (AI level is separate)
+                sys.argv.extend(["--depth", "full"])
             elif args.depth:
                 sys.argv.extend(["--depth", args.depth])
+
+            # Determine enhance_level (independent of --comprehensive)
+            # Priority: explicit --enhance-level > --enhance (uses config default) > --quick (level 0) > 0
+            if args.enhance_level is not None:
+                enhance_level = args.enhance_level
+            elif args.quick:
+                enhance_level = 0  # Quick mode disables AI
+            elif args.enhance:
+                # Use default from config (default: 1)
+                try:
+                    from skill_seekers.cli.config_manager import get_config_manager
+                    config = get_config_manager()
+                    enhance_level = config.get_default_enhance_level()
+                except Exception:
+                    enhance_level = 1  # Fallback to level 1
+            else:
+                enhance_level = 0  # Default: no AI
+
+            # Pass enhance_level to codebase_scraper
+            sys.argv.extend(["--enhance-level", str(enhance_level)])
 
             if args.languages:
                 sys.argv.extend(["--languages", args.languages])
             if args.file_patterns:
                 sys.argv.extend(["--file-patterns", args.file_patterns])
-            if args.enhance:
-                sys.argv.extend(["--ai-mode", "auto"])
 
             # Pass through skip flags
             if args.skip_api_reference:
@@ -583,12 +610,51 @@ def main(argv: list[str] | None = None) -> int:
                 sys.argv.append("--skip-how-to-guides")
             if args.skip_config_patterns:
                 sys.argv.append("--skip-config-patterns")
+            if args.skip_docs:
+                sys.argv.append("--skip-docs")
             if args.no_comments:
                 sys.argv.append("--no-comments")
             if args.verbose:
                 sys.argv.append("--verbose")
 
-            return analyze_main() or 0
+            result = analyze_main() or 0
+
+            # Enhance SKILL.md if enhance_level >= 1
+            if result == 0 and enhance_level >= 1:
+                skill_dir = Path(args.output)
+                skill_md = skill_dir / "SKILL.md"
+
+                if skill_md.exists():
+                    print("\n" + "=" * 60)
+                    print(f"ENHANCING SKILL.MD WITH AI (Level {enhance_level})")
+                    print("=" * 60 + "\n")
+
+                    try:
+                        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                        enhancer = LocalSkillEnhancer(str(skill_dir), force=True)
+                        # Use headless mode (runs claude directly, waits for completion)
+                        success = enhancer.run(
+                            headless=True,
+                            timeout=600,  # 10 minute timeout
+                        )
+
+                        if success:
+                            print("\n✅ SKILL.md enhancement complete!")
+                            # Re-read line count
+                            with open(skill_md) as f:
+                                lines = len(f.readlines())
+                            print(f"   Enhanced SKILL.md: {lines} lines")
+                        else:
+                            print("\n⚠️  SKILL.md enhancement did not complete")
+                            print("   You can retry with: skill-seekers enhance " + str(skill_dir))
+                    except Exception as e:
+                        print(f"\n⚠️  SKILL.md enhancement failed: {e}")
+                        print("   You can retry with: skill-seekers enhance " + str(skill_dir))
+                else:
+                    print(f"\n⚠️  SKILL.md not found at {skill_md}, skipping enhancement")
+
+            return result
 
         elif args.command == "install-agent":
             from skill_seekers.cli.install_agent import main as install_agent_main

@@ -297,8 +297,16 @@ skill-seekers analyze --directory . --skip-patterns --skip-how-to-guides
 ```
 
 - Generates 300+ line standalone SKILL.md files from codebases
-- All C3.x features integrated (patterns, tests, guides, config, architecture)
+- All C3.x features integrated (patterns, tests, guides, config, architecture, docs)
 - Complete codebase analysis without documentation scraping
+
+**C3.9 Project Documentation Extraction** (`codebase_scraper.py`):
+- Extracts and categorizes all markdown files from the project
+- Auto-detects categories: overview, architecture, guides, workflows, features, etc.
+- Integrates documentation into SKILL.md with summaries
+- AI enhancement (level 2+) adds topic extraction and cross-references
+- Controlled by depth: surface=raw copy, deep=parse+summarize, full=AI-enhanced
+- Default ON, use `--skip-docs` to disable
 
 **Key Architecture Decision (BREAKING in v2.5.2):**
 - Changed from opt-in (`--build-*`) to opt-out (`--skip-*`) flags
