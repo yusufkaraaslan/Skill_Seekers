@@ -452,9 +452,8 @@ class WorkflowGrouper:
         ungrouped = []
 
         for workflow in workflows:
-
-            ai_analysis = workflow.get('ai_analysis') or {}
-            tutorial_group = ai_analysis.get('tutorial_group')
+            ai_analysis = workflow.get("ai_analysis") or {}
+            tutorial_group = ai_analysis.get("tutorial_group")
 
             if tutorial_group:
                 groups[tutorial_group].append(workflow)
@@ -909,7 +908,7 @@ class HowToGuideBuilder:
 
     def _extract_workflow_examples(self, examples: list[dict]) -> list[dict]:
         """Filter to workflow category only"""
-        return [ex for ex in examples if isinstance(ex, dict) and ex.get('category') == 'workflow']
+        return [ex for ex in examples if isinstance(ex, dict) and ex.get("category") == "workflow"]
 
     def _create_guide(self, title: str, workflows: list[dict], enhancer=None) -> HowToGuide:
         """
@@ -935,9 +934,9 @@ class HowToGuideBuilder:
         # Extract use case from AI analysis or title
         use_case = title
 
-        ai_analysis = primary_workflow.get('ai_analysis') or {}
+        ai_analysis = primary_workflow.get("ai_analysis") or {}
         if ai_analysis:
-            use_case = ai_analysis.get('tutorial_group', title)
+            use_case = ai_analysis.get("tutorial_group", title)
 
         # Determine overview
         overview = self._generate_overview(primary_workflow, workflows)
@@ -970,7 +969,7 @@ class HowToGuideBuilder:
         )
 
         # Add AI enhancements if enhancer is available
-        ai_analysis_for_enhancement = primary_workflow.get('ai_analysis') or {}
+        ai_analysis_for_enhancement = primary_workflow.get("ai_analysis") or {}
         if enhancer:
             self._enhance_guide_with_ai(guide, ai_analysis_for_enhancement, enhancer)
         elif self.enhance_with_ai and ai_analysis_for_enhancement:
@@ -983,9 +982,9 @@ class HowToGuideBuilder:
         """Generate guide overview"""
         # Try to get explanation from AI analysis
 
-        ai_analysis = primary_workflow.get('ai_analysis') or {}
+        ai_analysis = primary_workflow.get("ai_analysis") or {}
         if ai_analysis:
-            explanation = ai_analysis.get('explanation')
+            explanation = ai_analysis.get("explanation")
             if explanation:
                 return explanation
 
