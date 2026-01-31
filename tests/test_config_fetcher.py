@@ -132,9 +132,7 @@ class TestFetchConfigFromApi:
 
             detail_response = Mock()
             detail_response.status_code = 200
-            detail_response.json.return_value = {
-                "download_url": "https://api.example.com/download"
-            }
+            detail_response.json.return_value = {"download_url": "https://api.example.com/download"}
             detail_response.raise_for_status = Mock()
 
             download_response = Mock()

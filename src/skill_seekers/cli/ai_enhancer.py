@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # Import config manager for settings
 try:
     from skill_seekers.cli.config_manager import get_config_manager
+
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False
@@ -107,7 +108,9 @@ class AIEnhancer:
                 logger.warning("⚠️  anthropic package not installed, falling back to LOCAL mode")
                 self.mode = "local"
             except Exception as e:
-                logger.warning(f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode")
+                logger.warning(
+                    f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode"
+                )
                 self.mode = "local"
 
         if self.mode == "local" and self.enabled:
@@ -212,7 +215,8 @@ DO NOT include any explanation - just write the JSON file.
                     except json.JSONDecodeError:
                         # Try to find JSON in the response
                         import re
-                        json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', response_text)
+
+                        json_match = re.search(r"\[[\s\S]*\]|\{[\s\S]*\}", response_text)
                         if json_match:
                             return json_match.group()
                         logger.warning("⚠️  Could not parse JSON from LOCAL response")

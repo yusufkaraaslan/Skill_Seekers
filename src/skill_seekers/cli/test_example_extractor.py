@@ -579,9 +579,21 @@ class PythonTestAnalyzer:
         test_name = func_node.name.lower()
         # Expanded keyword list for better workflow detection
         integration_keywords = [
-            "workflow", "integration", "end_to_end", "e2e", "full",
-            "complete", "scenario", "flow", "multi_step", "multistep",
-            "process", "chain", "sequence", "pipeline", "lifecycle"
+            "workflow",
+            "integration",
+            "end_to_end",
+            "e2e",
+            "full",
+            "complete",
+            "scenario",
+            "flow",
+            "multi_step",
+            "multistep",
+            "process",
+            "chain",
+            "sequence",
+            "pipeline",
+            "lifecycle",
         ]
 
         # Check test name for keywords
@@ -589,8 +601,9 @@ class PythonTestAnalyzer:
             return True
 
         # Heuristic: tests with 4+ assignments and 3+ calls are likely workflows
-        assignments = sum(1 for n in ast.walk(func_node)
-                         if isinstance(n, (ast.Assign, ast.AugAssign)))
+        assignments = sum(
+            1 for n in ast.walk(func_node) if isinstance(n, (ast.Assign, ast.AugAssign))
+        )
         calls = sum(1 for n in ast.walk(func_node) if isinstance(n, ast.Call))
 
         return assignments >= 4 and calls >= 3
@@ -786,7 +799,11 @@ class GenericTestAnalyzer:
                 # Find next method (setup or test)
                 next_pattern = patterns.get("setup", patterns["test_function"])
                 next_setup = re.search(next_pattern, code[setup_start:])
-                setup_end = setup_start + next_setup.start() if next_setup else min(setup_start + 500, len(code))
+                setup_end = (
+                    setup_start + next_setup.start()
+                    if next_setup
+                    else min(setup_start + 500, len(code))
+                )
                 setup_body = code[setup_start:setup_end]
 
                 example = self._create_example(

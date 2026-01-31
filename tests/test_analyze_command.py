@@ -55,28 +55,28 @@ class TestAnalyzeSubcommand(unittest.TestCase):
 
     def test_skip_flags_passed_through(self):
         """Test that skip flags are recognized."""
-        args = self.parser.parse_args([
-            "analyze",
-            "--directory", ".",
-            "--skip-patterns",
-            "--skip-test-examples"
-        ])
+        args = self.parser.parse_args(
+            ["analyze", "--directory", ".", "--skip-patterns", "--skip-test-examples"]
+        )
         self.assertTrue(args.skip_patterns)
         self.assertTrue(args.skip_test_examples)
 
     def test_all_skip_flags(self):
         """Test all skip flags are properly parsed."""
-        args = self.parser.parse_args([
-            "analyze",
-            "--directory", ".",
-            "--skip-api-reference",
-            "--skip-dependency-graph",
-            "--skip-patterns",
-            "--skip-test-examples",
-            "--skip-how-to-guides",
-            "--skip-config-patterns",
-            "--skip-docs"
-        ])
+        args = self.parser.parse_args(
+            [
+                "analyze",
+                "--directory",
+                ".",
+                "--skip-api-reference",
+                "--skip-dependency-graph",
+                "--skip-patterns",
+                "--skip-test-examples",
+                "--skip-how-to-guides",
+                "--skip-config-patterns",
+                "--skip-docs",
+            ]
+        )
         self.assertTrue(args.skip_api_reference)
         self.assertTrue(args.skip_dependency_graph)
         self.assertTrue(args.skip_patterns)
@@ -98,12 +98,16 @@ class TestAnalyzeSubcommand(unittest.TestCase):
 
     def test_languages_flag(self):
         """Test languages flag parsing."""
-        args = self.parser.parse_args(["analyze", "--directory", ".", "--languages", "Python,JavaScript"])
+        args = self.parser.parse_args(
+            ["analyze", "--directory", ".", "--languages", "Python,JavaScript"]
+        )
         self.assertEqual(args.languages, "Python,JavaScript")
 
     def test_file_patterns_flag(self):
         """Test file patterns flag parsing."""
-        args = self.parser.parse_args(["analyze", "--directory", ".", "--file-patterns", "*.py,src/**/*.js"])
+        args = self.parser.parse_args(
+            ["analyze", "--directory", ".", "--file-patterns", "*.py,src/**/*.js"]
+        )
         self.assertEqual(args.file_patterns, "*.py,src/**/*.js")
 
     def test_no_comments_flag(self):
@@ -118,15 +122,20 @@ class TestAnalyzeSubcommand(unittest.TestCase):
 
     def test_complex_command_combination(self):
         """Test complex command with multiple flags."""
-        args = self.parser.parse_args([
-            "analyze",
-            "--directory", "./src",
-            "--output", "analysis/",
-            "--quick",
-            "--languages", "Python",
-            "--skip-patterns",
-            "--verbose"
-        ])
+        args = self.parser.parse_args(
+            [
+                "analyze",
+                "--directory",
+                "./src",
+                "--output",
+                "analysis/",
+                "--quick",
+                "--languages",
+                "Python",
+                "--skip-patterns",
+                "--verbose",
+            ]
+        )
         self.assertEqual(args.directory, "./src")
         self.assertEqual(args.output, "analysis/")
         self.assertTrue(args.quick)

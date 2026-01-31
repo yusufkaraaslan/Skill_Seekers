@@ -875,7 +875,9 @@ class HowToGuideBuilder:
             # Log categories for debugging
             categories = {ex.get("category", "unknown") for ex in examples}
             logger.warning(f"No workflow examples found! Categories in input: {categories}")
-            logger.info("Tip: Workflow detection requires keywords like 'workflow', 'integration', 'e2e' in test names,")
+            logger.info(
+                "Tip: Workflow detection requires keywords like 'workflow', 'integration', 'e2e' in test names,"
+            )
             logger.info("     or tests with 4+ assignments and 3+ method calls")
             return GuideCollection(
                 total_guides=0,

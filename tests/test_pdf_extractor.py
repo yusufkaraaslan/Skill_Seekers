@@ -468,9 +468,7 @@ class TestMarkdownExtractionFallback(unittest.TestCase):
 
         # These flags should exist and be combinable
         flags = (
-            fitz.TEXT_PRESERVE_WHITESPACE
-            | fitz.TEXT_PRESERVE_LIGATURES
-            | fitz.TEXT_PRESERVE_SPANS
+            fitz.TEXT_PRESERVE_WHITESPACE | fitz.TEXT_PRESERVE_LIGATURES | fitz.TEXT_PRESERVE_SPANS
         )
         self.assertIsInstance(flags, int)
         self.assertGreater(flags, 0)

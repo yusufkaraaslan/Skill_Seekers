@@ -64,9 +64,7 @@ def fetch_config_from_api(
             # Download the actual config file using download_url from API response
             download_url = config_info.get("download_url")
             if not download_url:
-                logger.error(
-                    f"❌ Config '{config_name}' has no download_url. Contact support."
-                )
+                logger.error(f"❌ Config '{config_name}' has no download_url. Contact support.")
                 return None
 
             logger.info("📥 Downloading config from API...")
@@ -83,9 +81,7 @@ def fetch_config_from_api(
                 json.dump(config_data, f, indent=2)
 
             logger.info(f"✅ Config downloaded successfully: {config_file}")
-            logger.info(
-                f"   Category: {config_info.get('category', 'uncategorized')}"
-            )
+            logger.info(f"   Category: {config_info.get('category', 'uncategorized')}")
             logger.info(f"   Type: {config_info.get('type', 'unknown')}")
 
             return config_file

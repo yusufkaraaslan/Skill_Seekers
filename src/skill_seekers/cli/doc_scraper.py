@@ -1834,7 +1834,9 @@ def load_config(config_path: str) -> dict[str, Any]:
     except ValueError as e:
         logger.error("❌ Configuration validation errors in %s:", config_path)
         logger.error("   %s", str(e))
-        logger.error("\n   Suggestion: Fix the above errors or check https://skillseekersweb.com/ for examples")
+        logger.error(
+            "\n   Suggestion: Fix the above errors or check https://skillseekersweb.com/ for examples"
+        )
         sys.exit(1)
 
     return config

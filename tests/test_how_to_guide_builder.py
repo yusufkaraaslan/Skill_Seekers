@@ -1006,13 +1006,13 @@ def test_complex_setup():
         # The heuristic should be checked in test_example_extractor
         # For this test, we verify the code structure would match
         import ast
+
         tree = ast.parse(code)
         func_node = tree.body[0]
 
         # Count assignments
         assignments = sum(
-            1 for n in ast.walk(func_node)
-            if isinstance(n, (ast.Assign, ast.AugAssign))
+            1 for n in ast.walk(func_node) if isinstance(n, (ast.Assign, ast.AugAssign))
         )
         # Count calls
         calls = sum(1 for n in ast.walk(func_node) if isinstance(n, ast.Call))
@@ -1026,20 +1026,43 @@ def test_complex_setup():
         # New keywords added: complete, scenario, flow, multi_step, multistep,
         # process, chain, sequence, pipeline, lifecycle
         new_keywords = [
-            "complete", "scenario", "flow", "multi_step", "multistep",
-            "process", "chain", "sequence", "pipeline", "lifecycle"
+            "complete",
+            "scenario",
+            "flow",
+            "multi_step",
+            "multistep",
+            "process",
+            "chain",
+            "sequence",
+            "pipeline",
+            "lifecycle",
         ]
 
         # Check if all keywords are in integration_keywords list
         integration_keywords = [
-            "workflow", "integration", "end_to_end", "e2e", "full",
-            "complete", "scenario", "flow", "multi_step", "multistep",
-            "process", "chain", "sequence", "pipeline", "lifecycle"
+            "workflow",
+            "integration",
+            "end_to_end",
+            "e2e",
+            "full",
+            "complete",
+            "scenario",
+            "flow",
+            "multi_step",
+            "multistep",
+            "process",
+            "chain",
+            "sequence",
+            "pipeline",
+            "lifecycle",
         ]
 
         for keyword in new_keywords:
-            self.assertIn(keyword, integration_keywords,
-                          f"Keyword '{keyword}' should be in integration_keywords")
+            self.assertIn(
+                keyword,
+                integration_keywords,
+                f"Keyword '{keyword}' should be in integration_keywords",
+            )
 
     def test_heuristic_does_not_match_simple_tests(self):
         """Test that simple tests don't match heuristic (< 4 assignments or < 3 calls)"""
@@ -1058,8 +1081,7 @@ def test_simple():
 
         # Count assignments
         assignments = sum(
-            1 for n in ast.walk(func_node)
-            if isinstance(n, (ast.Assign, ast.AugAssign))
+            1 for n in ast.walk(func_node) if isinstance(n, (ast.Assign, ast.AugAssign))
         )
         # Count calls
         calls = sum(1 for n in ast.walk(func_node) if isinstance(n, ast.Call))
@@ -1072,26 +1094,37 @@ def test_simple():
         """Test that workflow keyword matching works regardless of case"""
         # Keywords should match in test names regardless of case
         test_cases = [
-            "test_workflow_example",      # lowercase
-            "test_Workflow_Example",      # mixed case
-            "test_WORKFLOW_EXAMPLE",      # uppercase
-            "test_end_to_end_flow",       # compound
+            "test_workflow_example",  # lowercase
+            "test_Workflow_Example",  # mixed case
+            "test_WORKFLOW_EXAMPLE",  # uppercase
+            "test_end_to_end_flow",  # compound
             "test_integration_scenario",  # multiple keywords
         ]
 
         for test_name in test_cases:
             # Verify test name contains at least one keyword (case-insensitive)
             integration_keywords = [
-                "workflow", "integration", "end_to_end", "e2e", "full",
-                "complete", "scenario", "flow", "multi_step", "multistep",
-                "process", "chain", "sequence", "pipeline", "lifecycle"
+                "workflow",
+                "integration",
+                "end_to_end",
+                "e2e",
+                "full",
+                "complete",
+                "scenario",
+                "flow",
+                "multi_step",
+                "multistep",
+                "process",
+                "chain",
+                "sequence",
+                "pipeline",
+                "lifecycle",
             ]
 
             test_name_lower = test_name.lower()
             has_keyword = any(kw in test_name_lower for kw in integration_keywords)
 
-            self.assertTrue(has_keyword,
-                            f"Test name '{test_name}' should contain workflow keyword")
+            self.assertTrue(has_keyword, f"Test name '{test_name}' should contain workflow keyword")
 
 
 if __name__ == "__main__":

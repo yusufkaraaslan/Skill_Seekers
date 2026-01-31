@@ -288,7 +288,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     analyze_parser.add_argument(
         "--comprehensive",
         action="store_true",
-        help="Comprehensive analysis (20-60 min, all features + AI)"
+        help="Comprehensive analysis (20-60 min, all features + AI)",
     )
     analyze_parser.add_argument(
         "--depth",
@@ -300,22 +300,32 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     analyze_parser.add_argument("--file-patterns", help="Comma-separated file patterns")
     analyze_parser.add_argument(
-        "--enhance", action="store_true", help="Enable AI enhancement (default level 1 = SKILL.md only)"
+        "--enhance",
+        action="store_true",
+        help="Enable AI enhancement (default level 1 = SKILL.md only)",
     )
     analyze_parser.add_argument(
         "--enhance-level",
         type=int,
         choices=[0, 1, 2, 3],
         default=None,
-        help="AI enhancement level: 0=off, 1=SKILL.md only (default), 2=+Architecture+Config, 3=full"
+        help="AI enhancement level: 0=off, 1=SKILL.md only (default), 2=+Architecture+Config, 3=full",
     )
     analyze_parser.add_argument("--skip-api-reference", action="store_true", help="Skip API docs")
-    analyze_parser.add_argument("--skip-dependency-graph", action="store_true", help="Skip dep graph")
-    analyze_parser.add_argument("--skip-patterns", action="store_true", help="Skip pattern detection")
-    analyze_parser.add_argument("--skip-test-examples", action="store_true", help="Skip test examples")
+    analyze_parser.add_argument(
+        "--skip-dependency-graph", action="store_true", help="Skip dep graph"
+    )
+    analyze_parser.add_argument(
+        "--skip-patterns", action="store_true", help="Skip pattern detection"
+    )
+    analyze_parser.add_argument(
+        "--skip-test-examples", action="store_true", help="Skip test examples"
+    )
     analyze_parser.add_argument("--skip-how-to-guides", action="store_true", help="Skip guides")
     analyze_parser.add_argument("--skip-config-patterns", action="store_true", help="Skip config")
-    analyze_parser.add_argument("--skip-docs", action="store_true", help="Skip project docs (README, docs/)")
+    analyze_parser.add_argument(
+        "--skip-docs", action="store_true", help="Skip project docs (README, docs/)"
+    )
     analyze_parser.add_argument("--no-comments", action="store_true", help="Skip comments")
     analyze_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
 
@@ -559,13 +569,16 @@ def main(argv: list[str] | None = None) -> int:
             # Handle preset flags (depth and features)
             if args.quick:
                 # Quick = surface depth + skip advanced features + no AI
-                sys.argv.extend([
-                    "--depth", "surface",
-                    "--skip-patterns",
-                    "--skip-test-examples",
-                    "--skip-how-to-guides",
-                    "--skip-config-patterns",
-                ])
+                sys.argv.extend(
+                    [
+                        "--depth",
+                        "surface",
+                        "--skip-patterns",
+                        "--skip-test-examples",
+                        "--skip-how-to-guides",
+                        "--skip-config-patterns",
+                    ]
+                )
             elif args.comprehensive:
                 # Comprehensive = full depth + all features (AI level is separate)
                 sys.argv.extend(["--depth", "full"])
@@ -582,6 +595,7 @@ def main(argv: list[str] | None = None) -> int:
                 # Use default from config (default: 1)
                 try:
                     from skill_seekers.cli.config_manager import get_config_manager
+
                     config = get_config_manager()
                     enhance_level = config.get_default_enhance_level()
                 except Exception:

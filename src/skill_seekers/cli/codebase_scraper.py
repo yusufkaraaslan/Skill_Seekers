@@ -377,11 +377,13 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
         if header_match:
             level = len(header_match.group(1))
             text = header_match.group(2).strip()
-            structure["headers"].append({
-                "level": level,
-                "text": text,
-                "line": i + 1,
-            })
+            structure["headers"].append(
+                {
+                    "level": level,
+                    "text": text,
+                    "line": i + 1,
+                }
+            )
             # First h1 is the title
             if level == 1 and structure["title"] is None:
                 structure["title"] = text
@@ -392,24 +394,30 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
         language = match.group(1) or "text"
         code = match.group(2).strip()
         if len(code) > 0:
-            structure["code_blocks"].append({
-                "language": language,
-                "code": code[:500],  # Truncate long code blocks
-                "full_length": len(code),
-            })
+            structure["code_blocks"].append(
+                {
+                    "language": language,
+                    "code": code[:500],  # Truncate long code blocks
+                    "full_length": len(code),
+                }
+            )
 
     # Extract links
     link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
     for match in link_pattern.finditer(content):
-        structure["links"].append({
-            "text": match.group(1),
-            "url": match.group(2),
-        })
+        structure["links"].append(
+            {
+                "text": match.group(1),
+                "url": match.group(2),
+            }
+        )
 
     return structure
 
 
-def generate_markdown_summary(content: str, structure: dict[str, Any], max_length: int = 500) -> str:
+def generate_markdown_summary(
+    content: str, structure: dict[str, Any], max_length: int = 500
+) -> str:
     """
     Generate a summary of markdown content.
 
@@ -522,12 +530,14 @@ def process_markdown_docs(
                 structure = extract_markdown_structure(content)
                 summary = generate_markdown_summary(content, structure)
 
-                doc_data.update({
-                    "title": structure.get("title") or md_path.stem,
-                    "structure": structure,
-                    "summary": summary,
-                    "content": content if depth == "full" else None,
-                })
+                doc_data.update(
+                    {
+                        "title": structure.get("title") or md_path.stem,
+                        "structure": structure,
+                        "summary": summary,
+                        "content": content if depth == "full" else None,
+                    }
+                )
                 processed_docs.append(doc_data)
 
             # Track categories
@@ -563,6 +573,7 @@ def process_markdown_docs(
             # Copy file to category folder
             dest_path = category_dir / doc["filename"]
             import shutil
+
             shutil.copy2(src_path, dest_path)
         except Exception as e:
             logger.debug(f"Failed to copy {doc['path']}: {e}")
@@ -578,7 +589,9 @@ def process_markdown_docs(
     with open(index_json, "w", encoding="utf-8") as f:
         json.dump(index_data, f, indent=2, default=str)
 
-    logger.info(f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories")
+    logger.info(
+        f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories"
+    )
     logger.info(f"📁 Saved to: {docs_output_dir}")
 
     return index_data
@@ -612,18 +625,22 @@ def _enhance_docs_api(docs: list[dict], api_key: str) -> list[dict]:
     """Enhance docs using Claude API."""
     try:
         import anthropic
+
         client = anthropic.Anthropic(api_key=api_key)
 
         # Batch documents for efficiency
         batch_size = 10
         for i in range(0, len(docs), batch_size):
-            batch = docs[i:i + batch_size]
+            batch = docs[i : i + batch_size]
 
             # Create prompt for batch
-            docs_text = "\n\n".join([
-                f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
-                for d in batch if d.get("summary")
-            ])
+            docs_text = "\n\n".join(
+                [
+                    f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
+                    for d in batch
+                    if d.get("summary")
+                ]
+            )
 
             if not docs_text:
                 continue
@@ -642,12 +659,13 @@ Return JSON with format:
             response = client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Parse response and merge enhancements
             try:
                 import re
+
                 json_match = re.search(r"\{.*\}", response.content[0].text, re.DOTALL)
                 if json_match:
                     enhancements = json.loads(json_match.group())
@@ -676,10 +694,12 @@ def _enhance_docs_local(docs: list[dict]) -> list[dict]:
     if not docs_with_summary:
         return docs
 
-    docs_text = "\n\n".join([
-        f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
-        for d in docs_with_summary[:20]  # Limit to 20 docs
-    ])
+    docs_text = "\n\n".join(
+        [
+            f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
+            for d in docs_with_summary[:20]  # Limit to 20 docs
+        ]
+    )
 
     prompt = f"""Analyze these documentation files from a codebase and provide insights.
 
@@ -710,6 +730,7 @@ Output JSON only:
 
         if result.returncode == 0 and result.stdout:
             import re
+
             json_match = re.search(r"\{.*\}", result.stdout, re.DOTALL)
             if json_match:
                 enhancements = json.loads(json_match.group())
@@ -777,7 +798,9 @@ def analyze_codebase(
 
     if enhance_level > 0:
         level_names = {1: "SKILL.md only", 2: "SKILL.md+Architecture+Config", 3: "full"}
-        logger.info(f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})")
+        logger.info(
+            f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})"
+        )
     # Resolve directory to absolute path to avoid relative_to() errors
     directory = Path(directory).resolve()
 
@@ -1341,7 +1364,9 @@ Use this skill when you need to:
         skill_content += "- **Architecture**: `references/architecture/` - Architectural patterns\n"
         refs_added = True
     if extract_docs and (output_dir / "documentation").exists():
-        skill_content += "- **Documentation**: `references/documentation/` - Project documentation\n"
+        skill_content += (
+            "- **Documentation**: `references/documentation/` - Project documentation\n"
+        )
         refs_added = True
 
     if not refs_added:
@@ -1590,7 +1615,15 @@ def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) 
     content += f"**Categories:** {len(categories)}\n\n"
 
     # List documents by category (most important first)
-    priority_order = ["overview", "architecture", "guides", "workflows", "features", "api", "examples"]
+    priority_order = [
+        "overview",
+        "architecture",
+        "guides",
+        "workflows",
+        "features",
+        "api",
+        "examples",
+    ]
 
     # Sort categories by priority
     sorted_categories = []
@@ -1637,6 +1670,7 @@ def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) 
     if all_topics:
         # Deduplicate and count
         from collections import Counter
+
         topic_counts = Counter(all_topics)
         top_topics = [t for t, _ in topic_counts.most_common(10)]
         content += f"**Key Topics:** {', '.join(top_topics)}\n\n"
@@ -1829,7 +1863,12 @@ Examples:
     args = parser.parse_args()
 
     # Handle presets (Phase 1 feature - NEW)
-    if hasattr(args, "quick") and args.quick and hasattr(args, "comprehensive") and args.comprehensive:
+    if (
+        hasattr(args, "quick")
+        and args.quick
+        and hasattr(args, "comprehensive")
+        and args.comprehensive
+    ):
         logger.error("❌ Cannot use --quick and --comprehensive together. Choose one.")
         return 1
 
