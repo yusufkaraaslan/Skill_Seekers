@@ -45,7 +45,7 @@ class TestFetchConfigFromApi:
         download_response.raise_for_status = Mock()
 
         # Setup mock to return different responses for different URLs
-        def get_side_effect(url, *args, **kwargs):
+        def get_side_effect(url, *_args, **_kwargs):
             if "download" in url:
                 return download_response
             return detail_response
@@ -142,7 +142,7 @@ class TestFetchConfigFromApi:
             download_response.json.return_value = {"name": "test"}
             download_response.raise_for_status = Mock()
 
-            def get_side_effect(url, *args, **kwargs):
+            def get_side_effect(url, *_args, **_kwargs):
                 if "download" in url:
                     return download_response
                 return detail_response
