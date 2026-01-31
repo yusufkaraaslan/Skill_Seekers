@@ -1,7 +1,6 @@
 """Tests for config_fetcher module - automatic API config downloading."""
 
 import json
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import httpx

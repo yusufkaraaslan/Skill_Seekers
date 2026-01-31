@@ -990,8 +990,6 @@ class TestExpandedWorkflowDetection(unittest.TestCase):
 
     def test_heuristic_detection_4_assignments_3_calls(self):
         """Test heuristic detection: 4+ assignments and 3+ calls"""
-        from skill_seekers.cli.test_example_extractor import TestExampleExtractor
-
         # Code with 4 assignments and 3 method calls (should match heuristic)
         code = """
 def test_complex_setup():
@@ -1004,7 +1002,6 @@ def test_complex_setup():
     cache.clear()             # call 3
     assert user.id
 """
-        extractor = TestExampleExtractor(language="python")
 
         # Extract example
         example = {
