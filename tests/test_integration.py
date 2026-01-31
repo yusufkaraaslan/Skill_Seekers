@@ -15,8 +15,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from skill_seekers.cli.doc_scraper import DocToSkillConverter, load_config, validate_config
 from skill_seekers.cli.config_validator import ConfigValidator
+from skill_seekers.cli.doc_scraper import DocToSkillConverter, load_config, validate_config
 
 
 class TestDryRunMode(unittest.TestCase):

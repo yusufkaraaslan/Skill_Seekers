@@ -5,7 +5,6 @@ Tests real-world usage scenarios with actual command execution.
 """
 
 import json
-import os
 import shutil
 import subprocess
 import sys

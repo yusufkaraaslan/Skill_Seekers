@@ -360,9 +360,8 @@ public class GameControllerTests
         instantiations = [e for e in examples if e.category == "instantiation"]
         self.assertGreater(len(instantiations), 0)
 
-        # Check for setup extraction
-        setups = [e for e in examples if e.category == "setup"]
-        # May or may not have setups depending on extraction
+        # Setup extraction may or may not occur depending on test patterns
+        # No assertion needed as setup examples are optional
 
     def test_extract_csharp_with_mocks(self):
         """Test C# mock pattern extraction (NSubstitute)"""
