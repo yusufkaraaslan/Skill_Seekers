@@ -61,6 +61,7 @@ dependencies = [
     "Pygments>=2.19.2",
     "pathspec>=0.12.1",
     "networkx>=3.0",
+    "tomli>=2.0.0; python_version < '3.11'",  # TOML parser for version reading
 ]
 
 [project.optional-dependencies]
