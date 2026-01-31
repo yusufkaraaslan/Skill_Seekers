@@ -1572,8 +1572,12 @@ def _format_config_section(output_dir: Path) -> str:
     return content
 
 
-def _format_documentation_section(output_dir: Path, docs_data: dict[str, Any]) -> str:
-    """Format project documentation section from extracted markdown files."""
+def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) -> str:
+    """Format project documentation section from extracted markdown files.
+
+    Note: output_dir parameter is unused but kept for consistency with other _format_* functions.
+    Documentation data is provided via docs_data parameter.
+    """
     if not docs_data or docs_data.get("total_files", 0) == 0:
         return ""
 
