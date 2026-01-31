@@ -165,12 +165,16 @@ class ConfigEnhancer:
         for cf in config_files[:10]:  # Limit to first 10 files
             settings_summary = []
             for setting in cf.get("settings", [])[:5]:  # First 5 settings per file
+                # Support both "type" (from config_extractor) and "value_type" (legacy)
+                value_type = setting.get("type", setting.get("value_type", "unknown"))
                 settings_summary.append(
-                    f"  - {setting['key']}: {setting['value']} ({setting['value_type']})"
+                    f"  - {setting['key']}: {setting['value']} ({value_type})"
                 )
 
+            # Support both "type" (from config_extractor) and "config_type" (legacy)
+            config_type = cf.get("type", cf.get("config_type", "unknown"))
             config_summary.append(f"""
-File: {cf["relative_path"]} ({cf["config_type"]})
+File: {cf["relative_path"]} ({config_type})
 Purpose: {cf["purpose"]}
 Settings:
 {chr(10).join(settings_summary)}
@@ -252,124 +256,184 @@ Focus on actionable insights that help developers understand and improve their c
     def _enhance_via_local(self, result: dict) -> dict:
         """Enhance configs using Claude Code CLI"""
         try:
-            # Create temporary prompt file
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-                prompt_file = Path(f.name)
-                f.write(self._create_local_prompt(result))
+            # Create a temporary directory for this enhancement session
+            with tempfile.TemporaryDirectory(prefix="config_enhance_") as temp_dir:
+                temp_path = Path(temp_dir)
 
-            # Create output file path
-            output_file = prompt_file.parent / f"{prompt_file.stem}_enhanced.json"
+                # Define output file path (absolute path that Claude will write to)
+                output_file = temp_path / "config_enhancement.json"
 
-            logger.info("🖥️  Launching Claude Code CLI for config analysis...")
-            logger.info("⏱️  This will take 30-60 seconds...")
+                # Create prompt file with the output path embedded
+                prompt_file = temp_path / "enhance_prompt.md"
+                prompt_content = self._create_local_prompt(result, output_file)
+                prompt_file.write_text(prompt_content)
 
-            # Run Claude Code CLI
-            result_data = self._run_claude_cli(prompt_file, output_file)
+                logger.info("🖥️  Launching Claude Code CLI for config analysis...")
+                logger.info("⏱️  This will take 30-60 seconds...")
 
-            # Clean up
-            prompt_file.unlink()
-            if output_file.exists():
-                output_file.unlink()
+                # Run Claude Code CLI
+                result_data = self._run_claude_cli(prompt_file, output_file, temp_path)
 
-            if result_data:
-                # Merge LOCAL enhancements
-                result["ai_enhancements"] = result_data
-                logger.info("✅ LOCAL enhancement complete")
-                return result
-            else:
-                logger.warning("⚠️  LOCAL enhancement produced no results")
-                return result
+                if result_data:
+                    # Merge LOCAL enhancements
+                    result["ai_enhancements"] = result_data
+                    logger.info("✅ LOCAL enhancement complete")
+                    return result
+                else:
+                    logger.warning("⚠️  LOCAL enhancement produced no results")
+                    return result
 
         except Exception as e:
             logger.error(f"❌ LOCAL enhancement failed: {e}")
             return result
 
-    def _create_local_prompt(self, result: dict) -> str:
-        """Create prompt file for Claude Code CLI"""
+    def _create_local_prompt(self, result: dict, output_file: Path) -> str:
+        """Create prompt file for Claude Code CLI
+
+        Args:
+            result: Config extraction result dict
+            output_file: Absolute path where Claude should write the JSON output
+
+        Returns:
+            Prompt content string
+        """
         config_files = result.get("config_files", [])
 
-        # Format config data for Claude
+        # Format config data for Claude (limit to 15 files for reasonable prompt size)
         config_data = []
-        for cf in config_files[:10]:
+        for cf in config_files[:15]:
+            # Support both "type" (from config_extractor) and "config_type" (legacy)
+            config_type = cf.get("type", cf.get("config_type", "unknown"))
+            settings_preview = []
+            for s in cf.get("settings", [])[:3]:  # Show first 3 settings
+                settings_preview.append(f"    - {s.get('key', 'unknown')}: {str(s.get('value', ''))[:50]}")
+
             config_data.append(f"""
-### {cf["relative_path"]} ({cf["config_type"]})
+### {cf["relative_path"]} ({config_type})
 - Purpose: {cf["purpose"]}
-- Patterns: {", ".join(cf.get("patterns", []))}
-- Settings count: {len(cf.get("settings", []))}
+- Patterns: {", ".join(cf.get("patterns", [])) or "none detected"}
+- Settings: {len(cf.get("settings", []))} total
+{chr(10).join(settings_preview) if settings_preview else "  (no settings)"}
 """)
 
         prompt = f"""# Configuration Analysis Task
 
-I need you to analyze these configuration files and provide AI-enhanced insights.
+IMPORTANT: You MUST write the output to this EXACT file path:
+{output_file}
 
-## Configuration Files ({len(config_files)} total)
+## Configuration Files ({len(config_files)} total, showing first 15)
 
 {chr(10).join(config_data)}
 
 ## Your Task
 
-Analyze these configs and create a JSON file with the following structure:
+Analyze these configuration files and write a JSON file to the path specified above.
+
+The JSON must have this EXACT structure:
 
 ```json
 {{
   "file_enhancements": [
     {{
-      "file_path": "path/to/file",
-      "explanation": "What this config does",
-      "best_practice": "Suggested improvements",
-      "security_concern": "Security issues (if any)",
-      "migration_suggestion": "Consolidation opportunities",
-      "context": "Pattern explanation"
+      "file_path": "relative/path/to/config.json",
+      "explanation": "Brief explanation of what this config file does",
+      "best_practice": "Suggested improvement or 'None'",
+      "security_concern": "Security issue if any, or 'None'",
+      "migration_suggestion": "Consolidation opportunity or 'None'",
+      "context": "What pattern or purpose this serves"
     }}
   ],
   "overall_insights": {{
     "config_count": {len(config_files)},
     "security_issues_found": 0,
-    "consolidation_opportunities": [],
-    "recommended_actions": []
+    "consolidation_opportunities": ["List of suggestions"],
+    "recommended_actions": ["List of actions"]
   }}
 }}
 ```
 
-Please save the JSON output to a file named `config_enhancement.json` in the current directory.
+## Instructions
 
-Focus on actionable insights:
-1. Explain what each config does
-2. Suggest best practices
-3. Identify security concerns (hardcoded secrets, exposed credentials)
-4. Suggest consolidation opportunities
-5. Explain the detected patterns
+1. Use the Write tool to create the JSON file at: {output_file}
+2. Include an enhancement entry for each config file shown above
+3. Focus on actionable insights:
+   - Explain what each config does in 1-2 sentences
+   - Identify any hardcoded secrets or security issues
+   - Suggest consolidation if configs have overlapping settings
+   - Note any missing best practices
+
+DO NOT explain your work - just write the JSON file directly.
 """
         return prompt
 
-    def _run_claude_cli(self, prompt_file: Path, _output_file: Path) -> dict | None:
-        """Run Claude Code CLI and wait for completion"""
+    def _run_claude_cli(
+        self, prompt_file: Path, output_file: Path, working_dir: Path
+    ) -> dict | None:
+        """Run Claude Code CLI and wait for completion
+
+        Args:
+            prompt_file: Path to the prompt markdown file
+            output_file: Expected path where Claude will write the JSON output
+            working_dir: Working directory to run Claude from
+
+        Returns:
+            Parsed JSON dict if successful, None otherwise
+        """
+        import time
+
         try:
-            # Run claude command
+            start_time = time.time()
+
+            # Run claude command with --dangerously-skip-permissions to bypass all prompts
+            # This allows Claude to write files without asking for confirmation
+            logger.info(f"   Running: claude --dangerously-skip-permissions {prompt_file.name}")
+            logger.info(f"   Output expected at: {output_file}")
+
             result = subprocess.run(
-                ["claude", str(prompt_file)],
+                ["claude", "--dangerously-skip-permissions", str(prompt_file)],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
+                cwd=str(working_dir),
             )
 
+            elapsed = time.time() - start_time
+            logger.info(f"   Claude finished in {elapsed:.1f} seconds")
+
             if result.returncode != 0:
-                logger.error(f"❌ Claude CLI failed: {result.stderr}")
+                logger.error(f"❌ Claude CLI failed (exit code {result.returncode})")
+                if result.stderr:
+                    logger.error(f"   Error: {result.stderr[:200]}")
                 return None
 
-            # Try to find output file (Claude might save it with different name)
-            # Look for JSON files created in the last minute
-            import time
+            # Check if the expected output file was created
+            if output_file.exists():
+                try:
+                    with open(output_file) as f:
+                        data = json.load(f)
+                        if "file_enhancements" in data or "overall_insights" in data:
+                            logger.info(f"✅ Found enhancement data in {output_file.name}")
+                            return data
+                        else:
+                            logger.warning("⚠️  Output file exists but missing expected keys")
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ Failed to parse output JSON: {e}")
+                    return None
 
+            # Fallback: Look for any JSON files created in the working directory
+            logger.info("   Looking for JSON files in working directory...")
             current_time = time.time()
             potential_files = []
 
-            for json_file in prompt_file.parent.glob("*.json"):
-                if current_time - json_file.stat().st_mtime < 120:  # Created in last 2 minutes
+            for json_file in working_dir.glob("*.json"):
+                # Check if created recently (within last 2 minutes)
+                if current_time - json_file.stat().st_mtime < 120:
                     potential_files.append(json_file)
 
-            # Try to load the most recent JSON file
-            for json_file in sorted(potential_files, key=lambda f: f.stat().st_mtime, reverse=True):
+            # Try to load the most recent JSON file with expected structure
+            for json_file in sorted(
+                potential_files, key=lambda f: f.stat().st_mtime, reverse=True
+            ):
                 try:
                     with open(json_file) as f:
                         data = json.load(f)
@@ -380,10 +444,16 @@ Focus on actionable insights:
                     continue
 
             logger.warning("⚠️  Could not find enhancement output file")
+            logger.info(f"   Expected file: {output_file}")
+            logger.info(f"   Files in dir: {list(working_dir.glob('*'))}")
             return None
 
         except subprocess.TimeoutExpired:
             logger.error("❌ Claude CLI timeout (5 minutes)")
+            return None
+        except FileNotFoundError:
+            logger.error("❌ 'claude' command not found. Is Claude Code CLI installed?")
+            logger.error("   Install with: npm install -g @anthropic-ai/claude-code")
             return None
         except Exception as e:
             logger.error(f"❌ Error running Claude CLI: {e}")

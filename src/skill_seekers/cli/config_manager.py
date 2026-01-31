@@ -34,6 +34,11 @@ class ConfigManager:
         },
         "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
         "api_keys": {"anthropic": None, "google": None, "openai": None},
+        "ai_enhancement": {
+            "default_enhance_level": 1,  # Default AI enhancement level (0-3)
+            "local_batch_size": 20,  # Patterns per Claude CLI call (default was 5)
+            "local_parallel_workers": 3,  # Concurrent Claude CLI calls
+        },
         "first_run": {"completed": False, "version": "2.7.0"},
     }
 
@@ -378,6 +383,43 @@ class ConfigManager:
         if deleted_count > 0:
             print(f"🧹 Cleaned up {deleted_count} old progress file(s)")
 
+    # AI Enhancement Settings
+
+    def get_default_enhance_level(self) -> int:
+        """Get default AI enhancement level (0-3)."""
+        return self.config.get("ai_enhancement", {}).get("default_enhance_level", 1)
+
+    def set_default_enhance_level(self, level: int):
+        """Set default AI enhancement level (0-3)."""
+        if level not in [0, 1, 2, 3]:
+            raise ValueError("enhance_level must be 0, 1, 2, or 3")
+        if "ai_enhancement" not in self.config:
+            self.config["ai_enhancement"] = {}
+        self.config["ai_enhancement"]["default_enhance_level"] = level
+        self.save_config()
+
+    def get_local_batch_size(self) -> int:
+        """Get batch size for LOCAL mode AI enhancement."""
+        return self.config.get("ai_enhancement", {}).get("local_batch_size", 20)
+
+    def set_local_batch_size(self, size: int):
+        """Set batch size for LOCAL mode AI enhancement."""
+        if "ai_enhancement" not in self.config:
+            self.config["ai_enhancement"] = {}
+        self.config["ai_enhancement"]["local_batch_size"] = size
+        self.save_config()
+
+    def get_local_parallel_workers(self) -> int:
+        """Get number of parallel workers for LOCAL mode AI enhancement."""
+        return self.config.get("ai_enhancement", {}).get("local_parallel_workers", 3)
+
+    def set_local_parallel_workers(self, workers: int):
+        """Set number of parallel workers for LOCAL mode AI enhancement."""
+        if "ai_enhancement" not in self.config:
+            self.config["ai_enhancement"] = {}
+        self.config["ai_enhancement"]["local_parallel_workers"] = workers
+        self.save_config()
+
     # First Run Experience
 
     def is_first_run(self) -> bool:
@@ -442,6 +484,14 @@ class ConfigManager:
         print(f"  • Rate limit timeout: {self.config['rate_limit']['default_timeout_minutes']}m")
         print(f"  • Auto-switch profiles: {self.config['rate_limit']['auto_switch_profiles']}")
         print(f"  • Keep progress for: {self.config['resume']['keep_progress_days']} days")
+
+        # AI Enhancement settings
+        level_names = {0: "off", 1: "SKILL.md only", 2: "standard", 3: "full"}
+        default_level = self.get_default_enhance_level()
+        print("\nAI Enhancement:")
+        print(f"  • Default level: {default_level} ({level_names.get(default_level, 'unknown')})")
+        print(f"  • Batch size: {self.get_local_batch_size()} patterns per call")
+        print(f"  • Parallel workers: {self.get_local_parallel_workers()} concurrent calls")
 
         # Resumable jobs
         jobs = self.list_resumable_jobs()

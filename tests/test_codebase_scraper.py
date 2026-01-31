@@ -21,10 +21,17 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from skill_seekers.cli.codebase_scraper import (
     DEFAULT_EXCLUDED_DIRS,
+    FOLDER_CATEGORIES,
+    MARKDOWN_EXTENSIONS,
+    ROOT_DOC_CATEGORIES,
+    categorize_markdown_file,
     detect_language,
+    extract_markdown_structure,
+    generate_markdown_summary,
     load_gitignore,
     should_exclude_dir,
     walk_directory,
+    walk_markdown_files,
 )
 
 
@@ -199,6 +206,191 @@ class TestGitignoreLoading(unittest.TestCase):
         if spec is not None:
             # Verify it's a PathSpec object
             self.assertIsNotNone(spec)
+
+
+class TestMarkdownDocumentation(unittest.TestCase):
+    """Tests for markdown documentation extraction (C3.9)"""
+
+    def setUp(self):
+        """Set up test environment"""
+        self.temp_dir = tempfile.mkdtemp()
+        self.root = Path(self.temp_dir)
+
+    def tearDown(self):
+        """Clean up test environment"""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_markdown_extensions(self):
+        """Test that markdown extensions are properly defined."""
+        self.assertIn(".md", MARKDOWN_EXTENSIONS)
+        self.assertIn(".markdown", MARKDOWN_EXTENSIONS)
+
+    def test_root_doc_categories(self):
+        """Test root document category mapping."""
+        self.assertEqual(ROOT_DOC_CATEGORIES.get("readme"), "overview")
+        self.assertEqual(ROOT_DOC_CATEGORIES.get("changelog"), "changelog")
+        self.assertEqual(ROOT_DOC_CATEGORIES.get("architecture"), "architecture")
+
+    def test_folder_categories(self):
+        """Test folder category mapping."""
+        self.assertEqual(FOLDER_CATEGORIES.get("guides"), "guides")
+        self.assertEqual(FOLDER_CATEGORIES.get("tutorials"), "guides")
+        self.assertEqual(FOLDER_CATEGORIES.get("workflows"), "workflows")
+        self.assertEqual(FOLDER_CATEGORIES.get("architecture"), "architecture")
+
+    def test_walk_markdown_files(self):
+        """Test walking directory for markdown files."""
+        # Create test markdown files
+        (self.root / "README.md").write_text("# Test README")
+        (self.root / "test.py").write_text("print('test')")
+
+        docs_dir = self.root / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "guide.md").write_text("# Guide")
+
+        files = walk_markdown_files(self.root)
+
+        # Should find markdown files only
+        self.assertEqual(len(files), 2)
+        filenames = [f.name for f in files]
+        self.assertIn("README.md", filenames)
+        self.assertIn("guide.md", filenames)
+
+    def test_categorize_root_readme(self):
+        """Test categorizing root README file."""
+        readme_path = self.root / "README.md"
+        readme_path.write_text("# Test")
+
+        category = categorize_markdown_file(readme_path, self.root)
+        self.assertEqual(category, "overview")
+
+    def test_categorize_changelog(self):
+        """Test categorizing CHANGELOG file."""
+        changelog_path = self.root / "CHANGELOG.md"
+        changelog_path.write_text("# Changelog")
+
+        category = categorize_markdown_file(changelog_path, self.root)
+        self.assertEqual(category, "changelog")
+
+    def test_categorize_docs_guide(self):
+        """Test categorizing file in docs/guides folder."""
+        guides_dir = self.root / "docs" / "guides"
+        guides_dir.mkdir(parents=True)
+        guide_path = guides_dir / "getting-started.md"
+        guide_path.write_text("# Getting Started")
+
+        category = categorize_markdown_file(guide_path, self.root)
+        self.assertEqual(category, "guides")
+
+    def test_categorize_architecture(self):
+        """Test categorizing architecture documentation."""
+        arch_dir = self.root / "docs" / "architecture"
+        arch_dir.mkdir(parents=True)
+        arch_path = arch_dir / "overview.md"
+        arch_path.write_text("# Architecture")
+
+        category = categorize_markdown_file(arch_path, self.root)
+        self.assertEqual(category, "architecture")
+
+
+class TestMarkdownStructureExtraction(unittest.TestCase):
+    """Tests for markdown structure extraction"""
+
+    def test_extract_headers(self):
+        """Test extracting headers from markdown."""
+        content = """# Main Title
+
+## Section 1
+Some content
+
+### Subsection
+More content
+
+## Section 2
+"""
+        structure = extract_markdown_structure(content)
+
+        self.assertEqual(structure["title"], "Main Title")
+        self.assertEqual(len(structure["headers"]), 4)
+        self.assertEqual(structure["headers"][0]["level"], 1)
+        self.assertEqual(structure["headers"][1]["level"], 2)
+
+    def test_extract_code_blocks(self):
+        """Test extracting code blocks from markdown."""
+        content = """# Example
+
+```python
+def hello():
+    print("Hello")
+```
+
+```javascript
+console.log("test");
+```
+"""
+        structure = extract_markdown_structure(content)
+
+        self.assertEqual(len(structure["code_blocks"]), 2)
+        self.assertEqual(structure["code_blocks"][0]["language"], "python")
+        self.assertEqual(structure["code_blocks"][1]["language"], "javascript")
+
+    def test_extract_links(self):
+        """Test extracting links from markdown."""
+        content = """# Links
+
+Check out [Example](https://example.com) and [Another](./local.md).
+"""
+        structure = extract_markdown_structure(content)
+
+        self.assertEqual(len(structure["links"]), 2)
+        self.assertEqual(structure["links"][0]["text"], "Example")
+        self.assertEqual(structure["links"][0]["url"], "https://example.com")
+
+    def test_word_and_line_count(self):
+        """Test word and line count."""
+        content = "First line\nSecond line\nThird line"
+        structure = extract_markdown_structure(content)
+
+        self.assertEqual(structure["line_count"], 3)
+        self.assertEqual(structure["word_count"], 6)  # First, line, Second, line, Third, line
+
+
+class TestMarkdownSummaryGeneration(unittest.TestCase):
+    """Tests for markdown summary generation"""
+
+    def test_generate_summary_with_title(self):
+        """Test summary includes title."""
+        content = "# My Title\n\nSome content here."
+        structure = extract_markdown_structure(content)
+        summary = generate_markdown_summary(content, structure)
+
+        self.assertIn("**My Title**", summary)
+
+    def test_generate_summary_with_sections(self):
+        """Test summary includes section names."""
+        content = """# Main
+
+## Getting Started
+Content
+
+## Installation
+Content
+
+## Usage
+Content
+"""
+        structure = extract_markdown_structure(content)
+        summary = generate_markdown_summary(content, structure)
+
+        self.assertIn("Sections:", summary)
+
+    def test_generate_summary_truncation(self):
+        """Test summary is truncated to max length."""
+        content = "# Title\n\n" + "Long content. " * 100
+        structure = extract_markdown_structure(content)
+        summary = generate_markdown_summary(content, structure, max_length=200)
+
+        self.assertLessEqual(len(summary), 210)  # Allow some buffer for truncation marker
 
 
 if __name__ == "__main__":

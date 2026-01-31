@@ -28,6 +28,7 @@ Usage:
     in ~/.config/claude-code/mcp.json
 """
 
-__version__ = "2.7.4"
+# Import centralized version
+from skill_seekers._version import __version__
 
-__all__ = ["agent_detector"]
+__all__ = ["agent_detector", "__version__"]

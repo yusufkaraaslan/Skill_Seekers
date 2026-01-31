@@ -28,7 +28,8 @@ except ImportError:
     open_folder = None
     read_reference_files = None
 
-__version__ = "2.7.4"
+# Import centralized version
+from skill_seekers._version import __version__
 
 __all__ = [
     "LlmsTxtDetector",
@@ -36,4 +37,5 @@ __all__ = [
     "LlmsTxtParser",
     "open_folder",
     "read_reference_files",
+    "__version__",
 ]

@@ -8,16 +8,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+#### C3.9: Project Documentation Extraction
+- **Markdown Documentation Extraction**: Automatically extracts and categorizes all `.md` files from projects
+  - Smart categorization by folder/filename (overview, architecture, guides, workflows, features, etc.)
+  - Processing depth control: `surface` (raw copy), `deep` (parse+summarize), `full` (AI-enhanced)
+  - AI enhancement (level 2+) adds topic extraction and cross-references
+  - New "📖 Project Documentation" section in SKILL.md
+  - Output to `references/documentation/` organized by category
+  - Default ON, use `--skip-docs` to disable
+  - 15 new tests for documentation extraction features
+
+#### Granular AI Enhancement Control
+- **`--enhance-level` Flag**: Fine-grained control over AI enhancement (0-3)
+  - Level 0: No AI enhancement (default)
+  - Level 1: SKILL.md enhancement only (fast, high value)
+  - Level 2: SKILL.md + Architecture + Config + Documentation
+  - Level 3: Full enhancement (patterns, tests, config, architecture, docs)
+- **Config Integration**: `default_enhance_level` setting in `~/.config/skill-seekers/config.json`
+- **MCP Support**: All MCP tools updated with `enhance_level` parameter
+- **Independent from `--comprehensive`**: Enhancement level is separate from feature depth
+
+#### C# Language Support
+- **C# Test Example Extraction**: Full support for C# test frameworks
+  - Language alias mapping (C# → csharp, C++ → cpp)
+  - NUnit, xUnit, MSTest test framework patterns
+  - Mock pattern support (NSubstitute, Moq)
+  - Zenject dependency injection patterns
+  - Setup/teardown method extraction
+  - 2 new tests for C# extraction features
+
+#### Performance Optimizations
+- **Parallel LOCAL Mode AI Enhancement**: 6-12x faster with ThreadPoolExecutor
+  - Concurrent workers: 3 (configurable via `local_parallel_workers`)
+  - Batch processing: 20 patterns per Claude CLI call (configurable via `local_batch_size`)
+  - Significant speedup for large codebases
+- **Config Settings**: New `ai_enhancement` section in config
+  - `local_batch_size`: Patterns per CLI call (default: 20)
+  - `local_parallel_workers`: Concurrent workers (default: 3)
+
+#### UX Improvements
+- **Auto-Enhancement**: SKILL.md automatically enhanced when using `--enhance` or `--comprehensive`
+  - No need for separate `skill-seekers enhance` command
+  - Seamless one-command workflow
+  - 10-minute timeout for large codebases
+  - Graceful fallback with retry instructions on failure
+- **LOCAL Mode Fallback**: All AI enhancements now fall back to LOCAL mode when no API key is set
+  - Applies to: pattern enhancement (C3.1), test examples (C3.2), architecture (C3.7)
+  - Uses Claude Code CLI instead of failing silently
+  - Better UX: "Using LOCAL mode (Claude Code CLI)" instead of "AI disabled"
+
 - Support for custom Claude-compatible API endpoints via `ANTHROPIC_BASE_URL` environment variable
 - Compatibility with GLM-4.7 and other Claude-compatible APIs across all AI enhancement features
 
 ### Changed
 - All AI enhancement modules now respect `ANTHROPIC_BASE_URL` for custom endpoints
 - Updated documentation with GLM-4.7 configuration examples
+- Rewritten LOCAL mode in `config_enhancer.py` to use Claude CLI properly with explicit output file paths
+- Updated MCP `scrape_codebase_tool` with `skip_docs` and `enhance_level` parameters
+- Updated CLAUDE.md with C3.9 documentation extraction feature and --enhance-level flag
+- Increased default batch size from 5 to 20 patterns for LOCAL mode
 
 ### Fixed
+- **C# Test Extraction**: Fixed "Language C# not supported" error with language alias mapping
+- **Config Type Field Mismatch**: Fixed KeyError in `config_enhancer.py` by supporting both "type" and "config_type" fields
+- **LocalSkillEnhancer Import**: Fixed incorrect import and method call in `main.py` (SkillEnhancer → LocalSkillEnhancer)
+- **Code Quality**: Fixed 4 critical linter errors (unused imports, variables, arguments, import sorting)
 
 ### Removed
+- Removed client-specific documentation files from repository
 
 ---
 

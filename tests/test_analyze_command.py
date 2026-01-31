@@ -74,7 +74,8 @@ class TestAnalyzeSubcommand(unittest.TestCase):
             "--skip-patterns",
             "--skip-test-examples",
             "--skip-how-to-guides",
-            "--skip-config-patterns"
+            "--skip-config-patterns",
+            "--skip-docs"
         ])
         self.assertTrue(args.skip_api_reference)
         self.assertTrue(args.skip_dependency_graph)
@@ -82,6 +83,7 @@ class TestAnalyzeSubcommand(unittest.TestCase):
         self.assertTrue(args.skip_test_examples)
         self.assertTrue(args.skip_how_to_guides)
         self.assertTrue(args.skip_config_patterns)
+        self.assertTrue(args.skip_docs)
 
     def test_backward_compatible_depth_flag(self):
         """Test that deprecated --depth flag still works."""
