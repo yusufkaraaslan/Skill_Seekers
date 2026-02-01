@@ -79,3 +79,13 @@ jobs:
       run: |
         echo "ℹ️  Release ${{ github.ref_name }} already exists, skipping creation"
         echo "View at: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+
+    - name: Build package
+      run: |
+        uv build
+
+    - name: Publish to PyPI
+      env:
+        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        uv publish --token $UV_PUBLISH_TOKEN
