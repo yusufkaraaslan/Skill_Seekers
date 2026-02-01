@@ -327,10 +327,10 @@ LANGUAGE_PATTERNS: dict[str, list[tuple[str, int]]] = {
     "scala": [
         (r"\bcase\s+class\s+\w+", 5),
         (r"\btrait\s+\w+", 5),
-        (r"\bdef\s+\w+.*:\s*\w+", 5),
+        (r"\bdef\s+\w+[^:]*:\s*\w+\s*=", 5),
         (r"\bimport\s+scala\.", 4),
         (r"\bmatch\s*\{", 4),
-        (r"\bval\s+\w+.*:\s*\w+", 4),
+        (r"\bval\s+\w+\s*:\s*\w+\s*=", 4),
         (r"\bobject\s+\w+", 5),
         (r"=>", 3),
         (r"\bdef\s+\w+\[\w+\]", 4),
