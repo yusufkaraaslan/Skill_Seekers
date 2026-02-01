@@ -24,7 +24,7 @@ class TestCliPackage:
         import skill_seekers.cli
 
         assert hasattr(skill_seekers.cli, "__version__")
-        assert skill_seekers.cli.__version__ == "2.7.4"
+        assert skill_seekers.cli.__version__ == "2.8.0"
 
     def test_cli_has_all(self):
         """Test that skill_seekers.cli package has __all__ export list."""
@@ -88,7 +88,7 @@ class TestMcpPackage:
         import skill_seekers.mcp
 
         assert hasattr(skill_seekers.mcp, "__version__")
-        assert skill_seekers.mcp.__version__ == "2.7.4"
+        assert skill_seekers.mcp.__version__ == "2.8.0"
 
     def test_mcp_has_all(self):
         """Test that skill_seekers.mcp package has __all__ export list."""
@@ -108,7 +108,7 @@ class TestMcpPackage:
         import skill_seekers.mcp.tools
 
         assert hasattr(skill_seekers.mcp.tools, "__version__")
-        assert skill_seekers.mcp.tools.__version__ == "2.7.4"
+        assert skill_seekers.mcp.tools.__version__ == "2.8.0"
 
 
 class TestPackageStructure:
@@ -212,7 +212,7 @@ class TestRootPackage:
         import skill_seekers
 
         assert hasattr(skill_seekers, "__version__")
-        assert skill_seekers.__version__ == "2.7.4"
+        assert skill_seekers.__version__ == "2.8.0"
 
     def test_root_has_metadata(self):
         """Test that skill_seekers root package has metadata."""
