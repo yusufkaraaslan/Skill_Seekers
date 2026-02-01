@@ -11,7 +11,8 @@ Tools are organized by functionality:
 - source_tools: Config source management (fetch, submit, add/remove sources)
 """
 
-__version__ = "2.8.0"
+# Import centralized version
+from skill_seekers._version import __version__
 
 from .config_tools import (
     generate_config as generate_config_impl,
