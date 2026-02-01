@@ -85,6 +85,7 @@ from .splitting_tools import (
 )
 
 __all__ = [
+    "__version__",
     # Config tools
     "generate_config_impl",
     "list_configs_impl",
