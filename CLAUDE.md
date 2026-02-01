@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.8.0-dev
+**Current Version:** v2.8.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
@@ -924,7 +924,7 @@ The `scripts/` directory contains utility scripts:
 
 ## 🎉 Recent Achievements
 
-**v2.8.0-dev (Current Development):**
+**v2.8.0 (February 1, 2026):**
 - Active development on next release
 
 **v2.7.1 (January 18, 2026 - Hotfix):**

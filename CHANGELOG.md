@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.8.0] - 2026-02-01
+
+### 🚀 Major Feature Release - Enhanced Code Analysis & Documentation
+
+This release brings powerful new code analysis features, performance optimizations, and international API support. Special thanks to all our contributors who made this release possible!
+
 ### Added
 
 #### C3.9: Project Documentation Extraction
@@ -77,6 +85,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed client-specific documentation files from repository
+
+### 🙏 Contributors
+
+A huge thank you to everyone who contributed to this release:
+
+- **[@xuintl](https://github.com/xuintl)** - Chinese README improvements and documentation refinements
+- **[@Zhichang Yu](https://github.com/yuzhichang)** - GLM-4.7 support and PDF scraper fixes
+- **[@YusufKaraaslanSpyke](https://github.com/yusufkaraaslan)** - Core features, bug fixes, and project maintenance
+
+Special thanks to all our community members who reported issues, provided feedback, and helped test new features. Your contributions make Skill Seekers better for everyone! 🎉
 
 ---
 

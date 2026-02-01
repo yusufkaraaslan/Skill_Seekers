@@ -1867,6 +1867,7 @@ dependencies = [
     { name = "pytesseract" },
     { name = "python-dotenv" },
     { name = "requests" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.optional-dependencies]
@@ -1944,6 +1945,7 @@ requires-dist = [
     { name = "sse-starlette", marker = "extra == 'mcp'", specifier = ">=3.0.2" },
     { name = "starlette", marker = "extra == 'all'", specifier = ">=0.48.0" },
     { name = "starlette", marker = "extra == 'mcp'", specifier = ">=0.48.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.38.0" },
     { name = "uvicorn", marker = "extra == 'mcp'", specifier = ">=0.38.0" },
 ]
