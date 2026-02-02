@@ -39,6 +39,7 @@ from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.config_extractor import ConfigExtractor
 from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
+from skill_seekers.cli.signal_flow_analyzer import SignalFlowAnalyzer
 
 # Try to import pathspec for .gitignore support
 try:
@@ -68,6 +69,10 @@ LANGUAGE_EXTENSIONS = {
     ".hxx": "C++",
     ".c": "C",
     ".cs": "C#",
+    ".gd": "GDScript",  # Godot scripting language
+    ".tscn": "GodotScene",  # Godot scene files
+    ".tres": "GodotResource",  # Godot resource files
+    ".gdshader": "GodotShader",  # Godot shader files
     ".go": "Go",
     ".rs": "Rust",
     ".java": "Java",
@@ -124,6 +129,7 @@ FOLDER_CATEGORIES = {
 
 # Default directories to exclude
 DEFAULT_EXCLUDED_DIRS = {
+    # Python/Node
     "node_modules",
     "venv",
     "__pycache__",
@@ -141,10 +147,28 @@ DEFAULT_EXCLUDED_DIRS = {
     ".coverage",
     ".eggs",
     "*.egg-info",
+    # IDE
     ".idea",
     ".vscode",
     ".vs",
     "__pypackages__",
+    # Unity (critical - contains massive build cache)
+    "Library",
+    "Temp",
+    "Logs",
+    "UserSettings",
+    "MemoryCaptures",
+    "Recordings",
+    # Unreal Engine
+    "Intermediate",
+    "Saved",
+    "DerivedDataCache",
+    # Godot
+    ".godot",
+    ".import",
+    # Misc
+    "tmp",
+    ".tmp",
 }
 
 
@@ -377,13 +401,11 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
         if header_match:
             level = len(header_match.group(1))
             text = header_match.group(2).strip()
-            structure["headers"].append(
-                {
-                    "level": level,
-                    "text": text,
-                    "line": i + 1,
-                }
-            )
+            structure["headers"].append({
+                "level": level,
+                "text": text,
+                "line": i + 1,
+            })
             # First h1 is the title
             if level == 1 and structure["title"] is None:
                 structure["title"] = text
@@ -394,30 +416,24 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
         language = match.group(1) or "text"
         code = match.group(2).strip()
         if len(code) > 0:
-            structure["code_blocks"].append(
-                {
-                    "language": language,
-                    "code": code[:500],  # Truncate long code blocks
-                    "full_length": len(code),
-                }
-            )
+            structure["code_blocks"].append({
+                "language": language,
+                "code": code[:500],  # Truncate long code blocks
+                "full_length": len(code),
+            })
 
     # Extract links
     link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
     for match in link_pattern.finditer(content):
-        structure["links"].append(
-            {
-                "text": match.group(1),
-                "url": match.group(2),
-            }
-        )
+        structure["links"].append({
+            "text": match.group(1),
+            "url": match.group(2),
+        })
 
     return structure
 
 
-def generate_markdown_summary(
-    content: str, structure: dict[str, Any], max_length: int = 500
-) -> str:
+def generate_markdown_summary(content: str, structure: dict[str, Any], max_length: int = 500) -> str:
     """
     Generate a summary of markdown content.
 
@@ -530,14 +546,12 @@ def process_markdown_docs(
                 structure = extract_markdown_structure(content)
                 summary = generate_markdown_summary(content, structure)
 
-                doc_data.update(
-                    {
-                        "title": structure.get("title") or md_path.stem,
-                        "structure": structure,
-                        "summary": summary,
-                        "content": content if depth == "full" else None,
-                    }
-                )
+                doc_data.update({
+                    "title": structure.get("title") or md_path.stem,
+                    "structure": structure,
+                    "summary": summary,
+                    "content": content if depth == "full" else None,
+                })
                 processed_docs.append(doc_data)
 
             # Track categories
@@ -573,7 +587,6 @@ def process_markdown_docs(
             # Copy file to category folder
             dest_path = category_dir / doc["filename"]
             import shutil
-
             shutil.copy2(src_path, dest_path)
         except Exception as e:
             logger.debug(f"Failed to copy {doc['path']}: {e}")
@@ -589,9 +602,7 @@ def process_markdown_docs(
     with open(index_json, "w", encoding="utf-8") as f:
         json.dump(index_data, f, indent=2, default=str)
 
-    logger.info(
-        f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories"
-    )
+    logger.info(f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories")
     logger.info(f"📁 Saved to: {docs_output_dir}")
 
     return index_data
@@ -625,22 +636,18 @@ def _enhance_docs_api(docs: list[dict], api_key: str) -> list[dict]:
     """Enhance docs using Claude API."""
     try:
         import anthropic
-
         client = anthropic.Anthropic(api_key=api_key)
 
         # Batch documents for efficiency
         batch_size = 10
         for i in range(0, len(docs), batch_size):
-            batch = docs[i : i + batch_size]
+            batch = docs[i:i + batch_size]
 
             # Create prompt for batch
-            docs_text = "\n\n".join(
-                [
-                    f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
-                    for d in batch
-                    if d.get("summary")
-                ]
-            )
+            docs_text = "\n\n".join([
+                f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
+                for d in batch if d.get("summary")
+            ])
 
             if not docs_text:
                 continue
@@ -659,13 +666,12 @@ Return JSON with format:
             response = client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": prompt}]
             )
 
             # Parse response and merge enhancements
             try:
                 import re
-
                 json_match = re.search(r"\{.*\}", response.content[0].text, re.DOTALL)
                 if json_match:
                     enhancements = json.loads(json_match.group())
@@ -694,12 +700,10 @@ def _enhance_docs_local(docs: list[dict]) -> list[dict]:
     if not docs_with_summary:
         return docs
 
-    docs_text = "\n\n".join(
-        [
-            f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
-            for d in docs_with_summary[:20]  # Limit to 20 docs
-        ]
-    )
+    docs_text = "\n\n".join([
+        f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
+        for d in docs_with_summary[:20]  # Limit to 20 docs
+    ])
 
     prompt = f"""Analyze these documentation files from a codebase and provide insights.
 
@@ -730,7 +734,6 @@ Output JSON only:
 
         if result.returncode == 0 and result.stdout:
             import re
-
             json_match = re.search(r"\{.*\}", result.stdout, re.DOTALL)
             if json_match:
                 enhancements = json.loads(json_match.group())
@@ -798,9 +801,7 @@ def analyze_codebase(
 
     if enhance_level > 0:
         level_names = {1: "SKILL.md only", 2: "SKILL.md+Architecture+Config", 3: "full"}
-        logger.info(
-            f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})"
-        )
+        logger.info(f"🤖 AI Enhancement Level: {enhance_level} ({level_names.get(enhance_level, 'unknown')})")
     # Resolve directory to absolute path to avoid relative_to() errors
     directory = Path(directory).resolve()
 
@@ -845,7 +846,18 @@ def analyze_codebase(
             analysis = analyzer.analyze_file(str(file_path), content, language)
 
             # Only include files with actual analysis results
-            if analysis and (analysis.get("classes") or analysis.get("functions")):
+            # Check for any meaningful content (classes, functions, nodes, properties, etc.)
+            has_content = (
+                analysis.get("classes")
+                or analysis.get("functions")
+                or analysis.get("nodes")  # Godot scenes
+                or analysis.get("properties")  # Godot resources
+                or analysis.get("uniforms")  # Godot shaders
+                or analysis.get("signals")  # GDScript signals
+                or analysis.get("exports")  # GDScript exports
+            )
+
+            if analysis and has_content:
                 results["files"].append(
                     {
                         "file": str(file_path.relative_to(directory)),
@@ -1157,6 +1169,30 @@ def analyze_codebase(
     else:
         logger.info("No clear architectural patterns detected")
 
+    # Analyze signal flow patterns (C3.10) - Godot projects only
+    signal_analysis = None
+    has_godot_files = any(
+        f.get("language") in ("GDScript", "GodotScene", "GodotResource", "GodotShader")
+        for f in results.get("files", [])
+    )
+
+    if has_godot_files:
+        logger.info("Analyzing signal flow patterns (Godot)...")
+        try:
+            signal_analyzer = SignalFlowAnalyzer(results)
+            signal_output = signal_analyzer.save_analysis(output_dir, ai_mode)
+            signal_analysis = signal_analyzer.analyze()
+
+            stats = signal_analysis["statistics"]
+            logger.info(f"📡 Signal Analysis Complete:")
+            logger.info(f"   - {stats['total_signals']} signal declarations")
+            logger.info(f"   - {stats['total_connections']} signal connections")
+            logger.info(f"   - {stats['total_emissions']} signal emissions")
+            logger.info(f"   - {len(signal_analysis['patterns'])} patterns detected")
+            logger.info(f"📁 Saved to: {signal_output}")
+        except Exception as e:
+            logger.warning(f"Signal flow analysis failed: {e}")
+
     # Extract markdown documentation (C3.9)
     docs_data = None
     if extract_docs:
@@ -1297,6 +1333,12 @@ Use this skill when you need to:
     skill_content += "- ✅ Architectural Analysis (C3.7)\n"
     if extract_docs:
         skill_content += "- ✅ Project Documentation (C3.9)\n"
+
+    # Check if signal flow analysis was performed
+    has_signal_analysis = (output_dir / "signals" / "signal_flow.json").exists()
+    if has_signal_analysis:
+        skill_content += "- ✅ Signal Flow Analysis (C3.10)\n"
+
     skill_content += "\n"
 
     # Add design patterns if available
@@ -1327,6 +1369,11 @@ Use this skill when you need to:
         config_content = _format_config_section(output_dir)
         if config_content:
             skill_content += config_content
+
+    # Add signal flow analysis if available (C3.10)
+    signal_content = _format_signal_flow_section(output_dir, results)
+    if signal_content:
+        skill_content += signal_content
 
     # Add project documentation if available
     if extract_docs and docs_data:
@@ -1364,9 +1411,7 @@ Use this skill when you need to:
         skill_content += "- **Architecture**: `references/architecture/` - Architectural patterns\n"
         refs_added = True
     if extract_docs and (output_dir / "documentation").exists():
-        skill_content += (
-            "- **Documentation**: `references/documentation/` - Project documentation\n"
-        )
+        skill_content += "- **Documentation**: `references/documentation/` - Project documentation\n"
         refs_added = True
 
     if not refs_added:
@@ -1597,6 +1642,78 @@ def _format_config_section(output_dir: Path) -> str:
     return content
 
 
+def _format_signal_flow_section(output_dir: Path, results: dict[str, Any]) -> str:
+    """Format signal flow analysis section (C3.10 - Godot projects)."""
+    signal_file = output_dir / "signals" / "signal_flow.json"
+    if not signal_file.exists():
+        return ""
+
+    try:
+        with open(signal_file, encoding="utf-8") as f:
+            signal_data = json.load(f)
+    except Exception:
+        return ""
+
+    stats = signal_data.get("statistics", {})
+    patterns = signal_data.get("patterns", {})
+
+    # Only show section if there are signals
+    if stats.get("total_signals", 0) == 0:
+        return ""
+
+    content = "## 📡 Signal Flow Analysis\n\n"
+    content += "*From C3.10 signal flow analysis (Godot Event System)*\n\n"
+
+    # Statistics
+    content += "**Signal Statistics:**\n"
+    content += f"- **Total Signals**: {stats.get('total_signals', 0)}\n"
+    content += f"- **Signal Connections**: {stats.get('total_connections', 0)}\n"
+    content += f"- **Signal Emissions**: {stats.get('total_emissions', 0)}\n"
+    content += f"- **Signal Density**: {stats.get('signal_density', 0):.2f} signals per file\n\n"
+
+    # Most connected signals
+    most_connected = stats.get("most_connected_signals", [])
+    if most_connected:
+        content += "**Most Connected Signals:**\n"
+        for sig in most_connected[:5]:
+            content += f"- `{sig['signal']}`: {sig['connection_count']} connections\n"
+        content += "\n"
+
+    # Detected patterns
+    if patterns:
+        content += "**Detected Event Patterns:**\n"
+        for pattern_name, pattern_data in patterns.items():
+            if pattern_data.get("detected"):
+                confidence = pattern_data.get("confidence", 0)
+                description = pattern_data.get("description", "")
+                content += f"- **{pattern_name}** (confidence: {confidence:.2f})\n"
+                content += f"  - {description}\n"
+        content += "\n"
+
+    # Test framework detection
+    test_files = [
+        f for f in results.get("files", [])
+        if f.get("test_framework")
+    ]
+
+    if test_files:
+        frameworks = {}
+        total_tests = 0
+        for f in test_files:
+            fw = f.get("test_framework")
+            test_count = len(f.get("test_functions", []))
+            frameworks[fw] = frameworks.get(fw, 0) + 1
+            total_tests += test_count
+
+        content += "**Test Framework Detection:**\n"
+        for fw, count in frameworks.items():
+            content += f"- **{fw}**: {count} test files, {total_tests} test cases\n"
+        content += "\n"
+
+    content += "*See `references/signals/` for complete signal flow analysis*\n\n"
+    return content
+
+
 def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) -> str:
     """Format project documentation section from extracted markdown files.
 
@@ -1615,15 +1732,7 @@ def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) 
     content += f"**Categories:** {len(categories)}\n\n"
 
     # List documents by category (most important first)
-    priority_order = [
-        "overview",
-        "architecture",
-        "guides",
-        "workflows",
-        "features",
-        "api",
-        "examples",
-    ]
+    priority_order = ["overview", "architecture", "guides", "workflows", "features", "api", "examples"]
 
     # Sort categories by priority
     sorted_categories = []
@@ -1670,7 +1779,6 @@ def _format_documentation_section(_output_dir: Path, docs_data: dict[str, Any]) 
     if all_topics:
         # Deduplicate and count
         from collections import Counter
-
         topic_counts = Counter(all_topics)
         top_topics = [t for t, _ in topic_counts.most_common(10)]
         content += f"**Key Topics:** {', '.join(top_topics)}\n\n"

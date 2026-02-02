@@ -105,6 +105,15 @@ class CodeAnalyzer:
         try:
             if language == "Python":
                 return self._analyze_python(content, file_path)
+            elif language == "GDScript":
+                # GDScript has Godot-specific syntax, use dedicated parser
+                return self._analyze_gdscript(content, file_path)
+            elif language == "GodotScene":
+                return self._analyze_godot_scene(content, file_path)
+            elif language == "GodotResource":
+                return self._analyze_godot_resource(content, file_path)
+            elif language == "GodotShader":
+                return self._analyze_godot_shader(content, file_path)
             elif language in ["JavaScript", "TypeScript"]:
                 return self._analyze_javascript(content, file_path)
             elif language in ["C", "C++"]:
@@ -1421,6 +1430,352 @@ class CodeAnalyzer:
         return comments
 
 
+    def _analyze_godot_scene(self, content: str, file_path: str) -> dict[str, Any]:
+        """
+        Analyze Godot .tscn scene file.
+        
+        Extracts:
+        - Node hierarchy
+        - Script attachments
+        - External resource dependencies
+        - Scene metadata
+        """
+        nodes = []
+        resources = []
+        scripts = []
+        
+        # Extract external resources
+        for match in re.finditer(r'\[ext_resource.*?type="(.+?)".*?path="(.+?)".*?id="(.+?)"\]', content):
+            res_type, path, res_id = match.groups()
+            resources.append({
+                "type": res_type,
+                "path": path,
+                "id": res_id
+            })
+            
+            # Track scripts separately
+            if res_type == "Script":
+                scripts.append({
+                    "path": path,
+                    "id": res_id
+                })
+        
+        # Extract nodes
+        for match in re.finditer(r'\[node name="(.+?)".*?type="(.+?)".*?\]', content):
+            node_name, node_type = match.groups()
+            
+            # Check if node has a script attached
+            script_match = re.search(rf'\[node name="{re.escape(node_name)}".*?script = ExtResource\("(.+?)"\)', content, re.DOTALL)
+            attached_script = script_match.group(1) if script_match else None
+            
+            nodes.append({
+                "name": node_name,
+                "type": node_type,
+                "script": attached_script
+            })
+        
+        return {
+            "file": file_path,
+            "nodes": nodes,
+            "scripts": scripts,
+            "resources": resources,
+            "scene_metadata": {
+                "node_count": len(nodes),
+                "script_count": len(scripts),
+                "resource_count": len(resources)
+            }
+        }
+    
+    def _analyze_godot_resource(self, content: str, file_path: str) -> dict[str, Any]:
+        """
+        Analyze Godot .tres resource file.
+        
+        Extracts:
+        - Resource type and class
+        - Script reference
+        - Properties and values
+        - External dependencies
+        """
+        properties = []
+        resources = []
+        resource_type = None
+        script_class = None
+        script_path = None
+        
+        # Extract resource header
+        header_match = re.search(r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s+', content)
+        if header_match:
+            resource_type = header_match.group(1)
+            script_class = header_match.group(2)
+        
+        # Extract external resources
+        for match in re.finditer(r'\[ext_resource.*?type="(.+?)".*?path="(.+?)".*?id="(.+?)"\]', content):
+            res_type, path, res_id = match.groups()
+            resources.append({
+                "type": res_type,
+                "path": path,
+                "id": res_id
+            })
+            
+            if res_type == "Script":
+                script_path = path
+        
+        # Extract properties from [resource] section
+        resource_section = re.search(r'\[resource\](.*?)(?:\n\[|$)', content, re.DOTALL)
+        if resource_section:
+            prop_text = resource_section.group(1)
+            
+            for line in prop_text.strip().split('\n'):
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    properties.append({
+                        "name": key.strip(),
+                        "value": value.strip()
+                    })
+        
+        return {
+            "file": file_path,
+            "resource_type": resource_type,
+            "script_class": script_class,
+            "script_path": script_path,
+            "properties": properties,
+            "resources": resources,
+            "resource_metadata": {
+                "property_count": len(properties),
+                "dependency_count": len(resources)
+            }
+        }
+    
+    def _analyze_godot_shader(self, content: str, file_path: str) -> dict[str, Any]:
+        """
+        Analyze Godot .gdshader shader file.
+        
+        Extracts:
+        - Shader type (spatial, canvas_item, particles, etc.)
+        - Uniforms (parameters)
+        - Functions
+        - Varying variables
+        """
+        uniforms = []
+        functions = []
+        varyings = []
+        shader_type = None
+        
+        # Extract shader type
+        type_match = re.search(r'shader_type\s+(\w+)', content)
+        if type_match:
+            shader_type = type_match.group(1)
+        
+        # Extract uniforms
+        for match in re.finditer(r'uniform\s+(\w+)\s+(\w+)(?:\s*:\s*(.+?))?(?:\s*=\s*(.+?))?;', content):
+            uniform_type, name, hint, default = match.groups()
+            uniforms.append({
+                "name": name,
+                "type": uniform_type,
+                "hint": hint,
+                "default": default
+            })
+        
+        # Extract varying variables
+        for match in re.finditer(r'varying\s+(\w+)\s+(\w+)', content):
+            var_type, name = match.groups()
+            varyings.append({
+                "name": name,
+                "type": var_type
+            })
+        
+        # Extract functions
+        for match in re.finditer(r'void\s+(\w+)\s*\(([^)]*)\)', content):
+            func_name, params = match.groups()
+            functions.append({
+                "name": func_name,
+                "parameters": params.strip() if params else ""
+            })
+        
+        return {
+            "file": file_path,
+            "shader_type": shader_type,
+            "uniforms": uniforms,
+            "varyings": varyings,
+            "functions": functions,
+            "shader_metadata": {
+                "uniform_count": len(uniforms),
+                "function_count": len(functions)
+            }
+        }
+
+    def _analyze_gdscript(self, content: str, file_path: str) -> dict[str, Any]:
+        """
+        Analyze GDScript file using regex (Godot-specific syntax).
+        
+        GDScript has Python-like syntax but with Godot-specific keywords:
+        - class_name MyClass extends Node
+        - func _ready(): (functions)
+        - signal my_signal(param)
+        - @export var speed: float = 100.0
+        - @onready var sprite = $Sprite2D
+        """
+        classes = []
+        functions = []
+        signals = []
+        exports = []
+        
+        # Extract class definition
+        class_match = re.search(r'class_name\s+(\w+)(?:\s+extends\s+(\w+))?', content)
+        if class_match:
+            class_name = class_match.group(1)
+            extends = class_match.group(2)
+            classes.append({
+                "name": class_name,
+                "bases": [extends] if extends else [],
+                "methods": [],
+                "line_number": content[: class_match.start()].count("\n") + 1
+            })
+        
+        # Extract functions
+        for match in re.finditer(r'func\s+(\w+)\s*\(([^)]*)\)(?:\s*->\s*(\w+))?:', content):
+            func_name, params, return_type = match.groups()
+            
+            # Parse parameters
+            param_list = []
+            if params.strip():
+                for param in params.split(','):
+                    param = param.strip()
+                    if ':' in param:
+                        # param_name: Type = default
+                        parts = param.split(':')
+                        name = parts[0].strip()
+                        type_and_default = parts[1].strip()
+                        
+                        param_type = type_and_default.split('=')[0].strip() if '=' in type_and_default else type_and_default
+                        default = type_and_default.split('=')[1].strip() if '=' in type_and_default else None
+                        
+                        param_list.append({
+                            "name": name,
+                            "type_hint": param_type,
+                            "default": default
+                        })
+                    else:
+                        param_list.append({
+                            "name": param,
+                            "type_hint": None,
+                            "default": None
+                        })
+            
+            functions.append({
+                "name": func_name,
+                "parameters": param_list,
+                "return_type": return_type,
+                "line_number": content[: match.start()].count("\n") + 1
+            })
+        
+        # Extract signals with documentation
+        signal_connections = []
+        signal_emissions = []
+
+        for match in re.finditer(r'signal\s+(\w+)(?:\(([^)]*)\))?', content):
+            signal_name, params = match.groups()
+            line_number = content[: match.start()].count("\n") + 1
+
+            # Extract documentation comment above signal (## or #)
+            doc_comment = None
+            lines = content[:match.start()].split('\n')
+            if len(lines) >= 2:
+                prev_line = lines[-1].strip()
+                if prev_line.startswith('##') or prev_line.startswith('#'):
+                    doc_comment = prev_line.lstrip('#').strip()
+
+            signals.append({
+                "name": signal_name,
+                "parameters": params if params else "",
+                "line_number": line_number,
+                "documentation": doc_comment
+            })
+
+        # Extract signal connections (.connect() calls)
+        for match in re.finditer(r'(\w+(?:\.\w+)*)\.connect\(([^)]+)\)', content):
+            signal_path, handler = match.groups()
+            signal_connections.append({
+                "signal": signal_path,
+                "handler": handler.strip(),
+                "line_number": content[: match.start()].count("\n") + 1
+            })
+
+        # Extract signal emissions (.emit() calls)
+        for match in re.finditer(r'(\w+(?:\.\w+)*)\.emit\(([^)]*)\)', content):
+            signal_path, args = match.groups()
+            signal_emissions.append({
+                "signal": signal_path,
+                "arguments": args.strip() if args else "",
+                "line_number": content[: match.start()].count("\n") + 1
+            })
+
+        # Extract @export variables
+        for match in re.finditer(r'@export(?:\(([^)]+)\))?\s+var\s+(\w+)(?:\s*:\s*(\w+))?(?:\s*=\s*(.+?))?(?:\n|$)', content):
+            hint, var_name, var_type, default = match.groups()
+            exports.append({
+                "name": var_name,
+                "type": var_type,
+                "default": default,
+                "export_hint": hint,
+                "line_number": content[: match.start()].count("\n") + 1
+            })
+
+        # Detect test framework
+        test_framework = None
+        test_functions = []
+
+        # GUT (Godot Unit Test) - extends "res://addons/gut/test.gd" or extends GutTest
+        if re.search(r'extends\s+["\']?res://addons/gut/test\.gd["\']?', content) or \
+           re.search(r'extends\s+GutTest', content):
+            test_framework = "GUT"
+
+            # Extract test functions (test_* functions)
+            for func in functions:
+                if func["name"].startswith("test_"):
+                    test_functions.append(func)
+
+        # gdUnit4 - @suite class annotation
+        elif re.search(r'@suite', content):
+            test_framework = "gdUnit4"
+
+            # Extract test functions (@test annotated or test_* prefix)
+            for i, func in enumerate(functions):
+                # Check for @test annotation above function
+                func_line = func["line_number"]
+                lines = content.split('\n')
+                if func_line > 1:
+                    prev_line = lines[func_line - 2].strip()
+                    if prev_line.startswith('@test'):
+                        test_functions.append(func)
+                    elif func["name"].startswith("test_"):
+                        test_functions.append(func)
+
+        # WAT (WizAds Test) - less common
+        elif re.search(r'extends\s+WAT\.Test', content):
+            test_framework = "WAT"
+            for func in functions:
+                if func["name"].startswith("test_"):
+                    test_functions.append(func)
+
+        result = {
+            "file": file_path,
+            "classes": classes,
+            "functions": functions,
+            "signals": signals,
+            "exports": exports,
+            "signal_connections": signal_connections,
+            "signal_emissions": signal_emissions,
+        }
+
+        # Add test framework info if detected
+        if test_framework:
+            result["test_framework"] = test_framework
+            result["test_functions"] = test_functions
+
+        return result
+
+
 if __name__ == "__main__":
     # Test the analyzer
     python_code = '''
@@ -1460,3 +1815,4 @@ def create_sprite(texture: str) -> Node2D:
                 ]
             )
             print(f"    {method['name']}({params}) -> {method['return_type']}")
+

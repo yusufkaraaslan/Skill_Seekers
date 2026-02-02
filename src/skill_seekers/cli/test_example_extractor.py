@@ -9,9 +9,9 @@ Analyzes test files to extract meaningful code examples showing:
 - Setup patterns from fixtures/setUp()
 - Multi-step workflows from integration tests
 
-Supports 9 languages:
+Supports 10 languages:
 - Python (AST-based, deep analysis)
-- JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby (regex-based)
+- JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby, GDScript (regex-based)
 
 Example usage:
     # Extract from directory
@@ -704,6 +704,23 @@ class GenericTestAnalyzer:
             "assertion": r"expect\(([^)]+)\)\.to\s+(?:eq|be|match)\(([^)]+)\)",
             "test_function": r'(?:test|it)\s+["\']([^"\']+)["\']',
         },
+        "gdscript": {
+            # GDScript object instantiation (var x = Class.new(), preload, load)
+            "instantiation": r"(?:var|const)\s+(\w+)\s*=\s*(?:(\w+)\.new\(|(?:preload|load)\([\"']([^\"']+)[\"']\)\.new\()",
+            # GUT/gdUnit4 assertions
+            "assertion": r"assert_(?:eq|ne|true|false|null|not_null|gt|lt|between|has|contains|typeof)\(([^)]+)\)",
+            # Test functions: GUT (func test_*), gdUnit4 (@test), WAT (extends WAT.Test)
+            "test_function": r"(?:@test\s+)?func\s+(test_\w+)\s*\(",
+            # Signal connections and emissions
+            "signal": r"(?:(\w+)\.connect\(|emit_signal\([\"'](\w+)[\"'])",
+        },
+    }
+
+    # Language name normalization mapping
+    LANGUAGE_ALIASES = {
+        "c#": "csharp",
+        "c++": "cpp",
+        "c plus plus": "cpp",
     }
 
     # Language name normalization mapping
@@ -799,11 +816,7 @@ class GenericTestAnalyzer:
                 # Find next method (setup or test)
                 next_pattern = patterns.get("setup", patterns["test_function"])
                 next_setup = re.search(next_pattern, code[setup_start:])
-                setup_end = (
-                    setup_start + next_setup.start()
-                    if next_setup
-                    else min(setup_start + 500, len(code))
-                )
+                setup_end = setup_start + next_setup.start() if next_setup else min(setup_start + 500, len(code))
                 setup_body = code[setup_start:setup_end]
 
                 example = self._create_example(
@@ -915,6 +928,8 @@ class TestExampleExtractor:
         "Test*.cs",
         "*Test.php",
         "*_spec.rb",
+        "test_*.gd",  # GUT, gdUnit4, WAT test files
+        "*_test.gd",
     ]
 
     # Language detection by extension
@@ -928,6 +943,7 @@ class TestExampleExtractor:
         ".cs": "C#",
         ".php": "PHP",
         ".rb": "Ruby",
+        ".gd": "GDScript",
     }
 
     def __init__(

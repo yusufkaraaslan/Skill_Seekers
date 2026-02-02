@@ -88,6 +88,11 @@ class ArchitecturalPatternDetector:
 
     # Framework detection patterns
     FRAMEWORK_MARKERS = {
+        # Game Engines (checked first to avoid false positives)
+        "Unity": ["Assembly-CSharp.csproj", "UnityEngine.dll", "ProjectSettings/ProjectVersion.txt", ".unity", "Library/"],
+        "Unreal": ["Source/", ".uproject", "Config/DefaultEngine.ini", "Binaries/", "Content/"],
+        "Godot": ["project.godot", ".godot", ".tscn", ".tres", ".gd"],
+        # Web Frameworks
         "Django": ["django", "manage.py", "settings.py", "urls.py"],
         "Flask": ["flask", "app.py", "wsgi.py"],
         "Spring": ["springframework", "@Controller", "@Service", "@Repository"],
@@ -181,17 +186,48 @@ class ArchitecturalPatternDetector:
 
         return dict(structure)
 
-    def _detect_frameworks(self, _directory: Path, files: list[dict]) -> list[str]:
+    def _detect_frameworks(self, directory: Path, files: list[dict]) -> list[str]:
         """Detect frameworks being used"""
         detected = []
 
-        # Check file paths and content
+        # Check file paths from analyzed files
         all_paths = [str(f.get("file", "")) for f in files]
         all_content = " ".join(all_paths)
 
+        # Also check actual directory structure for game engine markers
+        # (project.godot, .unity, .uproject are config files, not in analyzed files)
+        dir_files = []
+        try:
+            # Get all files and directories in the root (non-recursive for performance)
+            for item in directory.iterdir():
+                dir_files.append(item.name)
+        except Exception as e:
+            logger.warning(f"Could not scan directory for framework markers: {e}")
+
+        dir_content = " ".join(dir_files)
+
+        # Check game engines FIRST (priority detection)
+        for framework in ["Unity", "Unreal", "Godot"]:
+            if framework in self.FRAMEWORK_MARKERS:
+                markers = self.FRAMEWORK_MARKERS[framework]
+                # Check both analyzed files AND directory structure
+                file_matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
+                dir_matches = sum(1 for marker in markers if marker.lower() in dir_content.lower())
+                total_matches = file_matches + dir_matches
+
+                if total_matches >= 2:
+                    detected.append(framework)
+                    logger.info(f"  📦 Detected framework: {framework}")
+                    # Return early to prevent web framework false positives
+                    return detected
+
+        # Check other frameworks
         for framework, markers in self.FRAMEWORK_MARKERS.items():
+            if framework in ["Unity", "Unreal", "Godot"]:
+                continue  # Already checked
+
             matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
-            if matches >= 2:  # Require at least 2 markers
+            if matches >= 2:
                 detected.append(framework)
                 logger.info(f"  📦 Detected framework: {framework}")
 

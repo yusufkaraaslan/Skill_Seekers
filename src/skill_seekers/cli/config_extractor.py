@@ -222,6 +222,7 @@ class ConfigFileDetector:
 
     # Directories to skip
     SKIP_DIRS = {
+        # Python/Node
         "node_modules",
         "venv",
         "env",
@@ -237,6 +238,23 @@ class ConfigFileDetector:
         "coverage",
         ".eggs",
         "*.egg-info",
+        # Unity (critical - contains massive build cache)
+        "Library",
+        "Temp",
+        "Logs",
+        "UserSettings",
+        "MemoryCaptures",
+        "Recordings",
+        # Unreal Engine
+        "Intermediate",
+        "Saved",
+        "DerivedDataCache",
+        # Godot
+        ".godot",
+        ".import",
+        # Misc
+        "tmp",
+        ".tmp",
     }
 
     def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
@@ -398,7 +416,18 @@ class ConfigParser:
         """Parse JSON configuration"""
         try:
             data = json.loads(config_file.raw_content)
-            self._extract_settings_from_dict(data, config_file)
+
+            # Handle both dict and list at root level
+            if isinstance(data, dict):
+                self._extract_settings_from_dict(data, config_file)
+            elif isinstance(data, list):
+                # JSON array at root - extract from each dict item
+                for idx, item in enumerate(data):
+                    if isinstance(item, dict):
+                        self._extract_settings_from_dict(item, config_file, parent_path=[f"[{idx}]"])
+            else:
+                # Primitive value at root (string, number, etc.) - skip
+                logger.debug(f"Skipping JSON with primitive root: {config_file.relative_path}")
         except json.JSONDecodeError as e:
             config_file.parse_errors.append(f"JSON parse error: {str(e)}")
 
@@ -410,8 +439,15 @@ class ConfigParser:
 
         try:
             data = yaml.safe_load(config_file.raw_content)
+
+            # Handle both dict and list at root level
             if isinstance(data, dict):
                 self._extract_settings_from_dict(data, config_file)
+            elif isinstance(data, list):
+                # YAML array at root - extract from each dict item
+                for idx, item in enumerate(data):
+                    if isinstance(item, dict):
+                        self._extract_settings_from_dict(item, config_file, parent_path=[f"[{idx}]"])
         except yaml.YAMLError as e:
             config_file.parse_errors.append(f"YAML parse error: {str(e)}")
 

@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 # Import config manager for settings
 try:
     from skill_seekers.cli.config_manager import get_config_manager
-
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False
@@ -108,9 +107,7 @@ class AIEnhancer:
                 logger.warning("⚠️  anthropic package not installed, falling back to LOCAL mode")
                 self.mode = "local"
             except Exception as e:
-                logger.warning(
-                    f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode"
-                )
+                logger.warning(f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode")
                 self.mode = "local"
 
         if self.mode == "local" and self.enabled:
@@ -215,8 +212,7 @@ DO NOT include any explanation - just write the JSON file.
                     except json.JSONDecodeError:
                         # Try to find JSON in the response
                         import re
-
-                        json_match = re.search(r"\[[\s\S]*\]|\{[\s\S]*\}", response_text)
+                        json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', response_text)
                         if json_match:
                             return json_match.group()
                         logger.warning("⚠️  Could not parse JSON from LOCAL response")
@@ -302,7 +298,8 @@ class PatternEnhancer(AIEnhancer):
                 try:
                     results[idx] = future.result()
                     completed += 1
-                    if completed % 5 == 0 or completed == total:
+                    # Show progress: always for small jobs (<10), every 5 for larger jobs
+                    if total < 10 or completed % 5 == 0 or completed == total:
                         logger.info(f"   Progress: {completed}/{total} batches completed")
                 except Exception as e:
                     logger.warning(f"⚠️  Batch {idx} failed: {e}")
@@ -439,7 +436,8 @@ class TestExampleEnhancer(AIEnhancer):
                 try:
                     results[idx] = future.result()
                     completed += 1
-                    if completed % 5 == 0 or completed == total:
+                    # Show progress: always for small jobs (<10), every 5 for larger jobs
+                    if total < 10 or completed % 5 == 0 or completed == total:
                         logger.info(f"   Progress: {completed}/{total} batches completed")
                 except Exception as e:
                     logger.warning(f"⚠️  Batch {idx} failed: {e}")

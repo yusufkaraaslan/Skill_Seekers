@@ -3,7 +3,7 @@
 Dependency Graph Analyzer (C2.6)
 
 Analyzes import/require/include/use statements to build dependency graphs.
-Supports 9 programming languages with language-specific extraction.
+Supports 10 programming languages + Godot ecosystem with language-specific extraction.
 
 Features:
 - Multi-language import extraction (Python AST, others regex-based)
@@ -14,6 +14,8 @@ Features:
 
 Supported Languages:
 - Python: import, from...import, relative imports (AST-based)
+- GDScript: preload(), load(), extends (regex-based, Godot game engine)
+- Godot Files: .tscn, .tres, .gdshader ext_resource parsing
 - JavaScript/TypeScript: ES6 import, CommonJS require (regex-based)
 - C/C++: #include directives (regex-based)
 - C#: using statements (regex, based on MS C# spec)
@@ -101,13 +103,20 @@ class DependencyAnalyzer:
         Args:
             file_path: Path to source file
             content: File content
-            language: Programming language (Python, JavaScript, TypeScript, C, C++, C#, Go, Rust, Java, Ruby, PHP)
+            language: Programming language (Python, GDScript, GodotScene, GodotResource, GodotShader,
+                     JavaScript, TypeScript, C, C++, C#, Go, Rust, Java, Ruby, PHP)
 
         Returns:
             List of DependencyInfo objects
         """
         if language == "Python":
             deps = self._extract_python_imports(content, file_path)
+        elif language == "GDScript":
+            # GDScript uses preload/load, not Python imports
+            deps = self._extract_gdscript_imports(content, file_path)
+        elif language in ("GodotScene", "GodotResource", "GodotShader"):
+            # Godot resource files use ext_resource references
+            deps = self._extract_godot_resources(content, file_path)
         elif language in ("JavaScript", "TypeScript"):
             deps = self._extract_js_imports(content, file_path)
         elif language in ("C++", "C"):
@@ -184,6 +193,125 @@ class DependencyAnalyzer:
                         import_type="from",
                         is_relative=is_relative,
                         line_number=node.lineno,
+                    )
+                )
+
+        return deps
+
+    def _extract_gdscript_imports(self, content: str, file_path: str) -> list[DependencyInfo]:
+        """
+        Extract GDScript import/preload/load statements.
+
+        Handles:
+        - const MyClass = preload("res://path/to/file.gd")
+        - var scene = load("res://path/to/scene.tscn")
+        - extends "res://path/to/base.gd"
+        - extends MyBaseClass (implicit dependency)
+
+        Note: GDScript uses res:// paths which are converted to relative paths.
+        """
+        deps = []
+
+        # Extract preload() calls: const/var NAME = preload("path")
+        preload_pattern = r'(?:const|var)\s+\w+\s*=\s*preload\("(.+?)"\)'
+        for match in re.finditer(preload_pattern, content):
+            resource_path = match.group(1)
+            line_num = content[: match.start()].count("\n") + 1
+
+            # Convert res:// paths to relative
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="preload",
+                    is_relative=True,
+                    line_number=line_num,
+                )
+            )
+
+        # Extract load() calls: var/const NAME = load("path")
+        load_pattern = r'(?:const|var)\s+\w+\s*=\s*load\("(.+?)"\)'
+        for match in re.finditer(load_pattern, content):
+            resource_path = match.group(1)
+            line_num = content[: match.start()].count("\n") + 1
+
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="load",
+                    is_relative=True,
+                    line_number=line_num,
+                )
+            )
+
+        # Extract extends with string path: extends "res://path/to/base.gd"
+        extends_path_pattern = r'extends\s+"(.+?)"'
+        for match in re.finditer(extends_path_pattern, content):
+            resource_path = match.group(1)
+            line_num = content[: match.start()].count("\n") + 1
+
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="extends",
+                    is_relative=True,
+                    line_number=line_num,
+                )
+            )
+
+        # Extract extends with class name: extends MyBaseClass
+        # Note: This creates a symbolic dependency that may not resolve to a file
+        extends_class_pattern = r'extends\s+([A-Z]\w+)'
+        for match in re.finditer(extends_class_pattern, content):
+            class_name = match.group(1)
+            line_num = content[: match.start()].count("\n") + 1
+
+            # Skip built-in Godot classes (Node, Resource, etc.)
+            if class_name not in (
+                "Node",
+                "Node2D",
+                "Node3D",
+                "Resource",
+                "RefCounted",
+                "Object",
+                "Control",
+                "Area2D",
+                "Area3D",
+                "CharacterBody2D",
+                "CharacterBody3D",
+                "RigidBody2D",
+                "RigidBody3D",
+                "StaticBody2D",
+                "StaticBody3D",
+                "Camera2D",
+                "Camera3D",
+                "Sprite2D",
+                "Sprite3D",
+                "Label",
+                "Button",
+                "Panel",
+                "Container",
+                "VBoxContainer",
+                "HBoxContainer",
+            ):
+                deps.append(
+                    DependencyInfo(
+                        source_file=file_path,
+                        imported_module=class_name,
+                        import_type="extends",
+                        is_relative=False,
+                        line_number=line_num,
                     )
                 )
 
@@ -596,7 +724,8 @@ class DependencyAnalyzer:
                 # Try to resolve the imported module to an actual file
                 target = self._resolve_import(file_path, dep.imported_module, dep.is_relative)
 
-                if target and target in self.file_nodes:
+                # Skip self-dependencies (file depending on itself)
+                if target and target in self.file_nodes and target != file_path:
                     # Add edge from source to dependency
                     self.graph.add_edge(
                         file_path, target, import_type=dep.import_type, line_number=dep.line_number
@@ -755,3 +884,48 @@ class DependencyAnalyzer:
                 [node for node in self.graph.nodes() if self.graph.in_degree(node) == 0]
             ),
         }
+
+    def _extract_godot_resources(self, content: str, file_path: str) -> list[DependencyInfo]:
+        """
+        Extract resource dependencies from Godot files (.tscn, .tres, .gdshader).
+        
+        Extracts:
+        - ext_resource paths (scripts, scenes, textures, etc.)
+        - preload() and load() calls
+        """
+        deps = []
+        
+        # Extract ext_resource dependencies
+        for match in re.finditer(r'\[ext_resource.*?path="(.+?)".*?\]', content):
+            resource_path = match.group(1)
+
+            # Convert res:// paths to relative paths
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]  # Remove res:// prefix
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="ext_resource",
+                    line_number=content[: match.start()].count("\n") + 1,
+                )
+            )
+
+        # Extract preload() and load() calls (in GDScript sections)
+        for match in re.finditer(r'(?:preload|load)\("(.+?)"\)', content):
+            resource_path = match.group(1)
+
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="preload",
+                    line_number=content[: match.start()].count("\n") + 1,
+                )
+            )
+        
+        return deps

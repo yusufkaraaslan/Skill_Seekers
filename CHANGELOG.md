@@ -17,6 +17,57 @@ This release brings powerful new code analysis features, performance optimizatio
 
 ### Added
 
+#### C3.10: Signal Flow Analysis for Godot Projects
+- **Complete Signal Flow Analysis System**: Analyze event-driven architectures in Godot game projects
+  - Signal declaration extraction (`signal` keyword detection)
+  - Connection mapping (`.connect()` calls with targets and methods)
+  - Emission tracking (`.emit()` and `emit_signal()` calls)
+  - **208 signals**, **634 connections**, and **298 emissions** detected in test project (Cosmic Idler)
+  - Signal density metrics (signals per file)
+  - Event chain detection (signals triggering other signals)
+  - Output: `signal_flow.json`, `signal_flow.mmd` (Mermaid diagram), `signal_reference.md`
+
+- **Signal Pattern Detection**: Three major patterns identified
+  - **EventBus Pattern** (0.90 confidence): Centralized signal hub in autoload
+  - **Observer Pattern** (0.85 confidence): Multi-observer signals (3+ listeners)
+  - **Event Chains** (0.80 confidence): Cascading signal propagation
+
+- **Signal-Based How-To Guides (C3.10.1)**: AI-generated usage guides
+  - Step-by-step guides (Connect → Emit → Handle)
+  - Real code examples from project
+  - Common usage locations
+  - Parameter documentation
+  - Output: `signal_how_to_guides.md` (10 guides for Cosmic Idler)
+
+#### Godot Game Engine Support
+- **Comprehensive Godot File Type Support**: Full analysis of Godot 4.x projects
+  - **GDScript (.gd)**: 265 files analyzed in test project
+  - **Scene files (.tscn)**: 118 scene files
+  - **Resource files (.tres)**: 38 resource files
+  - **Shader files (.gdshader, .gdshaderinc)**: 9 shader files
+  - **C# integration**: Phantom Camera addon (13 files)
+
+- **GDScript Language Support**: Complete GDScript parsing with regex-based extraction
+  - Dependency extraction: `preload()`, `load()`, `extends` patterns
+  - Test framework detection: GUT, gdUnit4, WAT
+  - Test file patterns: `test_*.gd`, `*_test.gd`
+  - Signal syntax: `signal`, `.connect()`, `.emit()`
+  - Export decorators: `@export`, `@onready`
+  - Test decorators: `@test` (gdUnit4)
+
+- **Game Engine Framework Detection**: Improved detection for Unity, Unreal, Godot
+  - **Godot markers**: `project.godot`, `.godot` directory, `.tscn`, `.tres`, `.gd` files
+  - **Unity markers**: `Assembly-CSharp.csproj`, `UnityEngine.dll`, `ProjectSettings/ProjectVersion.txt`
+  - **Unreal markers**: `.uproject`, `Source/`, `Config/DefaultEngine.ini`
+  - Fixed false positive Unity detection (was using generic "Assets" keyword)
+
+- **GDScript Test Extraction**: Extract usage examples from Godot test files
+  - **396 test cases** extracted from 20 GUT test files in test project
+  - Patterns: instantiation (`preload().new()`, `load().new()`), assertions (`assert_eq`, `assert_true`), signals
+  - GUT framework: `extends GutTest`, `func test_*()`, `add_child_autofree()`
+  - Test categories: instantiation, assertions, signal connections, setup/teardown
+  - Real code examples from production test files
+
 #### C3.9: Project Documentation Extraction
 - **Markdown Documentation Extraction**: Automatically extracts and categorizes all `.md` files from projects
   - Smart categorization by folder/filename (overview, architecture, guides, workflows, features, etc.)
@@ -74,7 +125,7 @@ This release brings powerful new code analysis features, performance optimizatio
 - Updated documentation with GLM-4.7 configuration examples
 - Rewritten LOCAL mode in `config_enhancer.py` to use Claude CLI properly with explicit output file paths
 - Updated MCP `scrape_codebase_tool` with `skip_docs` and `enhance_level` parameters
-- Updated CLAUDE.md with C3.9 documentation extraction feature and --enhance-level flag
+- Updated CLAUDE.md with C3.9 documentation extraction feature
 - Increased default batch size from 5 to 20 patterns for LOCAL mode
 
 ### Fixed
@@ -83,18 +134,60 @@ This release brings powerful new code analysis features, performance optimizatio
 - **LocalSkillEnhancer Import**: Fixed incorrect import and method call in `main.py` (SkillEnhancer → LocalSkillEnhancer)
 - **Code Quality**: Fixed 4 critical linter errors (unused imports, variables, arguments, import sorting)
 
+#### Godot Game Engine Fixes
+- **GDScript Dependency Extraction**: Fixed 265+ "Syntax error in *.gd" warnings (commit 3e6c448)
+  - GDScript files were incorrectly routed to Python AST parser
+  - Created dedicated `_extract_gdscript_imports()` with regex patterns
+  - Now correctly parses `preload()`, `load()`, `extends` patterns
+  - Result: 377 dependencies extracted with 0 warnings
+
+- **Framework Detection False Positive**: Fixed Unity detection on Godot projects (commit 50b28fe)
+  - Was detecting "Unity" due to generic "Assets" keyword in comments
+  - Changed Unity markers to specific files: `Assembly-CSharp.csproj`, `UnityEngine.dll`, `Library/`
+  - Now correctly detects Godot via `project.godot`, `.godot` directory
+
+- **Circular Dependencies**: Fixed self-referential cycles (commit 50b28fe)
+  - 3 self-loop warnings (files depending on themselves)
+  - Added `target != file_path` check in dependency graph builder
+  - Result: 0 circular dependencies detected
+
+- **GDScript Test Discovery**: Fixed 0 test files found in Godot projects (commit 50b28fe)
+  - Added GDScript test patterns: `test_*.gd`, `*_test.gd`
+  - Added GDScript to LANGUAGE_MAP
+  - Result: 32 test files discovered (20 GUT files with 396 tests)
+
+- **GDScript Test Extraction**: Fixed "Language GDScript not supported" warning (commit c826690)
+  - Added GDScript regex patterns to PATTERNS dictionary
+  - Patterns: instantiation (`preload().new()`), assertions (`assert_eq`), signals (`.connect()`)
+  - Result: 22 test examples extracted successfully
+
+- **Config Extractor Array Handling**: Fixed JSON/YAML array parsing (commit fca0951)
+  - Error: `'list' object has no attribute 'items'` on root-level arrays
+  - Added isinstance checks for dict/list/primitive at root
+  - Result: No JSON array errors, save.json parsed correctly
+
+- **Progress Indicators**: Fixed missing progress for small batches (commit eec37f5)
+  - Progress only shown every 5 batches, invisible for small jobs
+  - Modified condition to always show for batches < 10
+  - Result: "Progress: 1/2 batches completed" now visible
+
+#### Other Fixes
+- **C# Test Extraction**: Fixed "Language C# not supported" error with language alias mapping
+- **Config Type Field Mismatch**: Fixed KeyError in `config_enhancer.py` by supporting both "type" and "config_type" fields
+- **LocalSkillEnhancer Import**: Fixed incorrect import and method call in `main.py` (SkillEnhancer → LocalSkillEnhancer)
+- **Code Quality**: Fixed 4 critical linter errors (unused imports, variables, arguments, import sorting)
+
+### Tests
+- **GDScript Test Extraction Test**: Added comprehensive test case for GDScript GUT/gdUnit4 framework
+  - Tests player instantiation with `preload()` and `load()`
+  - Tests signal connections and emissions
+  - Tests gdUnit4 `@test` annotation syntax
+  - Tests game state management patterns
+  - 4 test functions with 60+ lines of GDScript code
+  - Validates extraction of instantiations, assertions, and signal patterns
+
 ### Removed
 - Removed client-specific documentation files from repository
-
-### 🙏 Contributors
-
-A huge thank you to everyone who contributed to this release:
-
-- **[@xuintl](https://github.com/xuintl)** - Chinese README improvements and documentation refinements
-- **[@Zhichang Yu](https://github.com/yuzhichang)** - GLM-4.7 support and PDF scraper fixes
-- **[@YusufKaraaslanSpyke](https://github.com/yusufkaraaslan)** - Core features, bug fixes, and project maintenance
-
-Special thanks to all our community members who reported issues, provided feedback, and helped test new features. Your contributions make Skill Seekers better for everyone! 🎉
 
 ---
 
