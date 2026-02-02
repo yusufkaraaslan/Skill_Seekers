@@ -298,7 +298,8 @@ class PatternEnhancer(AIEnhancer):
                 try:
                     results[idx] = future.result()
                     completed += 1
-                    if completed % 5 == 0 or completed == total:
+                    # Show progress: always for small jobs (<10), every 5 for larger jobs
+                    if total < 10 or completed % 5 == 0 or completed == total:
                         logger.info(f"   Progress: {completed}/{total} batches completed")
                 except Exception as e:
                     logger.warning(f"⚠️  Batch {idx} failed: {e}")
@@ -435,7 +436,8 @@ class TestExampleEnhancer(AIEnhancer):
                 try:
                     results[idx] = future.result()
                     completed += 1
-                    if completed % 5 == 0 or completed == total:
+                    # Show progress: always for small jobs (<10), every 5 for larger jobs
+                    if total < 10 or completed % 5 == 0 or completed == total:
                         logger.info(f"   Progress: {completed}/{total} batches completed")
                 except Exception as e:
                     logger.warning(f"⚠️  Batch {idx} failed: {e}")
