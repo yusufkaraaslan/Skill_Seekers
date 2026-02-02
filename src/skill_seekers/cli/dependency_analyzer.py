@@ -111,6 +111,9 @@ class DependencyAnalyzer:
         elif language == "GDScript":
             # GDScript is Python-like, uses similar import syntax
             deps = self._extract_python_imports(content, file_path)
+        elif language in ("GodotScene", "GodotResource", "GodotShader"):
+            # Godot resource files use ext_resource references
+            deps = self._extract_godot_resources(content, file_path)
         elif language in ("JavaScript", "TypeScript"):
             deps = self._extract_js_imports(content, file_path)
         elif language in ("C++", "C"):
@@ -758,3 +761,48 @@ class DependencyAnalyzer:
                 [node for node in self.graph.nodes() if self.graph.in_degree(node) == 0]
             ),
         }
+
+    def _extract_godot_resources(self, content: str, file_path: str) -> list[DependencyInfo]:
+        """
+        Extract resource dependencies from Godot files (.tscn, .tres, .gdshader).
+        
+        Extracts:
+        - ext_resource paths (scripts, scenes, textures, etc.)
+        - preload() and load() calls
+        """
+        deps = []
+        
+        # Extract ext_resource dependencies
+        for match in re.finditer(r'\[ext_resource.*?path="(.+?)".*?\]', content):
+            resource_path = match.group(1)
+
+            # Convert res:// paths to relative paths
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]  # Remove res:// prefix
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="ext_resource",
+                    line_number=content[: match.start()].count("\n") + 1,
+                )
+            )
+
+        # Extract preload() and load() calls (in GDScript sections)
+        for match in re.finditer(r'(?:preload|load)\("(.+?)"\)', content):
+            resource_path = match.group(1)
+
+            if resource_path.startswith("res://"):
+                resource_path = resource_path[6:]
+
+            deps.append(
+                DependencyInfo(
+                    source_file=file_path,
+                    imported_module=resource_path,
+                    import_type="preload",
+                    line_number=content[: match.start()].count("\n") + 1,
+                )
+            )
+        
+        return deps

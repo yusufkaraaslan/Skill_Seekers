@@ -69,6 +69,9 @@ LANGUAGE_EXTENSIONS = {
     ".c": "C",
     ".cs": "C#",
     ".gd": "GDScript",  # Godot scripting language
+    ".tscn": "GodotScene",  # Godot scene files
+    ".tres": "GodotResource",  # Godot resource files
+    ".gdshader": "GodotShader",  # Godot shader files
     ".go": "Go",
     ".rs": "Rust",
     ".java": "Java",
@@ -842,7 +845,18 @@ def analyze_codebase(
             analysis = analyzer.analyze_file(str(file_path), content, language)
 
             # Only include files with actual analysis results
-            if analysis and (analysis.get("classes") or analysis.get("functions")):
+            # Check for any meaningful content (classes, functions, nodes, properties, etc.)
+            has_content = (
+                analysis.get("classes")
+                or analysis.get("functions")
+                or analysis.get("nodes")  # Godot scenes
+                or analysis.get("properties")  # Godot resources
+                or analysis.get("uniforms")  # Godot shaders
+                or analysis.get("signals")  # GDScript signals
+                or analysis.get("exports")  # GDScript exports
+            )
+
+            if analysis and has_content:
                 results["files"].append(
                     {
                         "file": str(file_path.relative_to(directory)),
