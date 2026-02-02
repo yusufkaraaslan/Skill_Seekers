@@ -105,6 +105,9 @@ class CodeAnalyzer:
         try:
             if language == "Python":
                 return self._analyze_python(content, file_path)
+            elif language == "GDScript":
+                # GDScript is Python-like, use Python analyzer
+                return self._analyze_python(content, file_path)
             elif language in ["JavaScript", "TypeScript"]:
                 return self._analyze_javascript(content, file_path)
             elif language in ["C", "C++"]:

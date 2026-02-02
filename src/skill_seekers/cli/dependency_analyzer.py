@@ -108,6 +108,9 @@ class DependencyAnalyzer:
         """
         if language == "Python":
             deps = self._extract_python_imports(content, file_path)
+        elif language == "GDScript":
+            # GDScript is Python-like, uses similar import syntax
+            deps = self._extract_python_imports(content, file_path)
         elif language in ("JavaScript", "TypeScript"):
             deps = self._extract_js_imports(content, file_path)
         elif language in ("C++", "C"):

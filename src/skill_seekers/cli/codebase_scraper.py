@@ -68,6 +68,7 @@ LANGUAGE_EXTENSIONS = {
     ".hxx": "C++",
     ".c": "C",
     ".cs": "C#",
+    ".gd": "GDScript",  # Godot scripting language
     ".go": "Go",
     ".rs": "Rust",
     ".java": "Java",
