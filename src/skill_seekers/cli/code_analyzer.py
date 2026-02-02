@@ -1669,15 +1669,47 @@ class CodeAnalyzer:
                 "line_number": content[: match.start()].count("\n") + 1
             })
         
-        # Extract signals
+        # Extract signals with documentation
+        signal_connections = []
+        signal_emissions = []
+
         for match in re.finditer(r'signal\s+(\w+)(?:\(([^)]*)\))?', content):
             signal_name, params = match.groups()
+            line_number = content[: match.start()].count("\n") + 1
+
+            # Extract documentation comment above signal (## or #)
+            doc_comment = None
+            lines = content[:match.start()].split('\n')
+            if len(lines) >= 2:
+                prev_line = lines[-1].strip()
+                if prev_line.startswith('##') or prev_line.startswith('#'):
+                    doc_comment = prev_line.lstrip('#').strip()
+
             signals.append({
                 "name": signal_name,
                 "parameters": params if params else "",
+                "line_number": line_number,
+                "documentation": doc_comment
+            })
+
+        # Extract signal connections (.connect() calls)
+        for match in re.finditer(r'(\w+(?:\.\w+)*)\.connect\(([^)]+)\)', content):
+            signal_path, handler = match.groups()
+            signal_connections.append({
+                "signal": signal_path,
+                "handler": handler.strip(),
                 "line_number": content[: match.start()].count("\n") + 1
             })
-        
+
+        # Extract signal emissions (.emit() calls)
+        for match in re.finditer(r'(\w+(?:\.\w+)*)\.emit\(([^)]*)\)', content):
+            signal_path, args = match.groups()
+            signal_emissions.append({
+                "signal": signal_path,
+                "arguments": args.strip() if args else "",
+                "line_number": content[: match.start()].count("\n") + 1
+            })
+
         # Extract @export variables
         for match in re.finditer(r'@export(?:\(([^)]+)\))?\s+var\s+(\w+)(?:\s*:\s*(\w+))?(?:\s*=\s*(.+?))?(?:\n|$)', content):
             hint, var_name, var_type, default = match.groups()
@@ -1688,14 +1720,60 @@ class CodeAnalyzer:
                 "export_hint": hint,
                 "line_number": content[: match.start()].count("\n") + 1
             })
-        
-        return {
+
+        # Detect test framework
+        test_framework = None
+        test_functions = []
+
+        # GUT (Godot Unit Test) - extends "res://addons/gut/test.gd" or extends GutTest
+        if re.search(r'extends\s+["\']?res://addons/gut/test\.gd["\']?', content) or \
+           re.search(r'extends\s+GutTest', content):
+            test_framework = "GUT"
+
+            # Extract test functions (test_* functions)
+            for func in functions:
+                if func["name"].startswith("test_"):
+                    test_functions.append(func)
+
+        # gdUnit4 - @suite class annotation
+        elif re.search(r'@suite', content):
+            test_framework = "gdUnit4"
+
+            # Extract test functions (@test annotated or test_* prefix)
+            for i, func in enumerate(functions):
+                # Check for @test annotation above function
+                func_line = func["line_number"]
+                lines = content.split('\n')
+                if func_line > 1:
+                    prev_line = lines[func_line - 2].strip()
+                    if prev_line.startswith('@test'):
+                        test_functions.append(func)
+                    elif func["name"].startswith("test_"):
+                        test_functions.append(func)
+
+        # WAT (WizAds Test) - less common
+        elif re.search(r'extends\s+WAT\.Test', content):
+            test_framework = "WAT"
+            for func in functions:
+                if func["name"].startswith("test_"):
+                    test_functions.append(func)
+
+        result = {
             "file": file_path,
             "classes": classes,
             "functions": functions,
             "signals": signals,
-            "exports": exports
+            "exports": exports,
+            "signal_connections": signal_connections,
+            "signal_emissions": signal_emissions,
         }
+
+        # Add test framework info if detected
+        if test_framework:
+            result["test_framework"] = test_framework
+            result["test_functions"] = test_functions
+
+        return result
 
 
 if __name__ == "__main__":

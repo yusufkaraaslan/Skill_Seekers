@@ -39,6 +39,7 @@ from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.config_extractor import ConfigExtractor
 from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
+from skill_seekers.cli.signal_flow_analyzer import SignalFlowAnalyzer
 
 # Try to import pathspec for .gitignore support
 try:
@@ -1168,6 +1169,30 @@ def analyze_codebase(
     else:
         logger.info("No clear architectural patterns detected")
 
+    # Analyze signal flow patterns (C3.10) - Godot projects only
+    signal_analysis = None
+    has_godot_files = any(
+        f.get("language") in ("GDScript", "GodotScene", "GodotResource", "GodotShader")
+        for f in results.get("files", [])
+    )
+
+    if has_godot_files:
+        logger.info("Analyzing signal flow patterns (Godot)...")
+        try:
+            signal_analyzer = SignalFlowAnalyzer(results)
+            signal_output = signal_analyzer.save_analysis(output_dir)
+            signal_analysis = signal_analyzer.analyze()
+
+            stats = signal_analysis["statistics"]
+            logger.info(f"📡 Signal Analysis Complete:")
+            logger.info(f"   - {stats['total_signals']} signal declarations")
+            logger.info(f"   - {stats['total_connections']} signal connections")
+            logger.info(f"   - {stats['total_emissions']} signal emissions")
+            logger.info(f"   - {len(signal_analysis['patterns'])} patterns detected")
+            logger.info(f"📁 Saved to: {signal_output}")
+        except Exception as e:
+            logger.warning(f"Signal flow analysis failed: {e}")
+
     # Extract markdown documentation (C3.9)
     docs_data = None
     if extract_docs:
@@ -1308,6 +1333,12 @@ Use this skill when you need to:
     skill_content += "- ✅ Architectural Analysis (C3.7)\n"
     if extract_docs:
         skill_content += "- ✅ Project Documentation (C3.9)\n"
+
+    # Check if signal flow analysis was performed
+    has_signal_analysis = (output_dir / "signals" / "signal_flow.json").exists()
+    if has_signal_analysis:
+        skill_content += "- ✅ Signal Flow Analysis (C3.10)\n"
+
     skill_content += "\n"
 
     # Add design patterns if available
@@ -1338,6 +1369,11 @@ Use this skill when you need to:
         config_content = _format_config_section(output_dir)
         if config_content:
             skill_content += config_content
+
+    # Add signal flow analysis if available (C3.10)
+    signal_content = _format_signal_flow_section(output_dir, results)
+    if signal_content:
+        skill_content += signal_content
 
     # Add project documentation if available
     if extract_docs and docs_data:
@@ -1603,6 +1639,78 @@ def _format_config_section(output_dir: Path) -> str:
         content += "\n"
 
     content += "*See `references/config_patterns/` for detailed configuration analysis*\n\n"
+    return content
+
+
+def _format_signal_flow_section(output_dir: Path, results: dict[str, Any]) -> str:
+    """Format signal flow analysis section (C3.10 - Godot projects)."""
+    signal_file = output_dir / "signals" / "signal_flow.json"
+    if not signal_file.exists():
+        return ""
+
+    try:
+        with open(signal_file, encoding="utf-8") as f:
+            signal_data = json.load(f)
+    except Exception:
+        return ""
+
+    stats = signal_data.get("statistics", {})
+    patterns = signal_data.get("patterns", {})
+
+    # Only show section if there are signals
+    if stats.get("total_signals", 0) == 0:
+        return ""
+
+    content = "## 📡 Signal Flow Analysis\n\n"
+    content += "*From C3.10 signal flow analysis (Godot Event System)*\n\n"
+
+    # Statistics
+    content += "**Signal Statistics:**\n"
+    content += f"- **Total Signals**: {stats.get('total_signals', 0)}\n"
+    content += f"- **Signal Connections**: {stats.get('total_connections', 0)}\n"
+    content += f"- **Signal Emissions**: {stats.get('total_emissions', 0)}\n"
+    content += f"- **Signal Density**: {stats.get('signal_density', 0):.2f} signals per file\n\n"
+
+    # Most connected signals
+    most_connected = stats.get("most_connected_signals", [])
+    if most_connected:
+        content += "**Most Connected Signals:**\n"
+        for sig in most_connected[:5]:
+            content += f"- `{sig['signal']}`: {sig['connection_count']} connections\n"
+        content += "\n"
+
+    # Detected patterns
+    if patterns:
+        content += "**Detected Event Patterns:**\n"
+        for pattern_name, pattern_data in patterns.items():
+            if pattern_data.get("detected"):
+                confidence = pattern_data.get("confidence", 0)
+                description = pattern_data.get("description", "")
+                content += f"- **{pattern_name}** (confidence: {confidence:.2f})\n"
+                content += f"  - {description}\n"
+        content += "\n"
+
+    # Test framework detection
+    test_files = [
+        f for f in results.get("files", [])
+        if f.get("test_framework")
+    ]
+
+    if test_files:
+        frameworks = {}
+        total_tests = 0
+        for f in test_files:
+            fw = f.get("test_framework")
+            test_count = len(f.get("test_functions", []))
+            frameworks[fw] = frameworks.get(fw, 0) + 1
+            total_tests += test_count
+
+        content += "**Test Framework Detection:**\n"
+        for fw, count in frameworks.items():
+            content += f"- **{fw}**: {count} test files, {total_tests} test cases\n"
+        content += "\n"
+
+    content += "*See `references/signals/` for complete signal flow analysis*\n\n"
     return content
 
 
