@@ -236,9 +236,15 @@ DO NOT include any explanation - just write the JSON file.
 class PatternEnhancer(AIEnhancer):
     """Enhance design pattern detection with AI analysis"""
 
+    # Maximum samples per pattern type to analyze (avoids analyzing 1000s of similar patterns)
+    MAX_SAMPLES_PER_TYPE = 5
+
     def enhance_patterns(self, patterns: list[dict]) -> list[dict]:
         """
         Enhance detected patterns with AI analysis.
+
+        Groups similar patterns by type and analyzes representative samples,
+        then applies the analysis to all patterns of that type.
 
         Args:
             patterns: List of detected pattern instances
@@ -249,125 +255,113 @@ class PatternEnhancer(AIEnhancer):
         if not self.enabled or not patterns:
             return patterns
 
-        # Use larger batch size for LOCAL mode (configurable)
-        if self.mode == "local":
-            batch_size = self.local_batch_size
-            parallel_workers = self.local_parallel_workers
+        total_patterns = len(patterns)
+
+        # Group patterns by type to avoid redundant analysis
+        grouped = self._group_patterns_by_type(patterns)
+        unique_types = len(grouped)
+
+        logger.info(
+            f"🤖 Grouped {total_patterns} patterns into {unique_types} types "
+            f"(analyzing {self.MAX_SAMPLES_PER_TYPE} samples per type max)"
+        )
+
+        # Enhance each pattern type with representative samples
+        enhanced_patterns = []
+        for idx, (pattern_type, type_patterns) in enumerate(grouped.items()):
+            # Select diverse samples (up to MAX_SAMPLES_PER_TYPE)
+            samples = self._select_diverse_samples(type_patterns, self.MAX_SAMPLES_PER_TYPE)
+
             logger.info(
-                f"🤖 Enhancing {len(patterns)} patterns with AI "
-                f"(LOCAL mode: {batch_size} per batch, {parallel_workers} parallel workers)..."
+                f"   [{idx + 1}/{unique_types}] Enhancing {pattern_type} "
+                f"({len(samples)} samples from {len(type_patterns)} instances)"
             )
-        else:
-            batch_size = 5  # API mode uses smaller batches
-            parallel_workers = 1  # API mode is sequential
-            logger.info(f"🤖 Enhancing {len(patterns)} detected patterns with AI...")
 
-        # Create batches
-        batches = []
-        for i in range(0, len(patterns), batch_size):
-            batches.append(patterns[i : i + batch_size])
+            # Get AI analysis for samples
+            sample_analysis = self._enhance_pattern_type(pattern_type, samples)
 
-        # Process batches (parallel for LOCAL, sequential for API)
-        if parallel_workers > 1 and len(batches) > 1:
-            enhanced = self._enhance_patterns_parallel(batches, parallel_workers)
-        else:
-            enhanced = []
-            for batch in batches:
-                batch_results = self._enhance_pattern_batch(batch)
-                enhanced.extend(batch_results)
+            # Apply analysis to ALL patterns of this type
+            for pattern in type_patterns:
+                pattern["ai_analysis"] = sample_analysis
+                enhanced_patterns.append(pattern)
 
-        logger.info(f"✅ Enhanced {len(enhanced)} patterns")
-        return enhanced
+        logger.info(f"✅ Enhanced {unique_types} pattern types ({total_patterns} total instances)")
+        return enhanced_patterns
 
-    def _enhance_patterns_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
-        """Process pattern batches in parallel using ThreadPoolExecutor."""
-        results = [None] * len(batches)  # Preserve order
+    def _group_patterns_by_type(self, patterns: list[dict]) -> dict[str, list[dict]]:
+        """Group patterns by their type (Factory, Observer, etc.)"""
+        grouped: dict[str, list[dict]] = {}
+        for pattern in patterns:
+            pattern_type = pattern.get("pattern_type", "Unknown")
+            if pattern_type not in grouped:
+                grouped[pattern_type] = []
+            grouped[pattern_type].append(pattern)
+        return grouped
 
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            # Submit all batches
-            future_to_idx = {
-                executor.submit(self._enhance_pattern_batch, batch): idx
-                for idx, batch in enumerate(batches)
-            }
+    def _select_diverse_samples(self, patterns: list[dict], max_samples: int) -> list[dict]:
+        """Select diverse samples from patterns (different files, classes)"""
+        if len(patterns) <= max_samples:
+            return patterns
 
-            # Collect results as they complete
-            completed = 0
-            total = len(batches)
-            for future in as_completed(future_to_idx):
-                idx = future_to_idx[future]
-                try:
-                    results[idx] = future.result()
-                    completed += 1
-                    if completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
-                except Exception as e:
-                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
-                    results[idx] = batches[idx]  # Return unenhanced on failure
+        # Try to get samples from different files/classes for diversity
+        seen_files = set()
+        samples = []
 
-        # Flatten results
-        enhanced = []
-        for batch_result in results:
-            if batch_result:
-                enhanced.extend(batch_result)
-        return enhanced
+        for pattern in patterns:
+            file_path = pattern.get("file_path", "")
+            if file_path not in seen_files:
+                samples.append(pattern)
+                seen_files.add(file_path)
+                if len(samples) >= max_samples:
+                    break
 
-    def _enhance_pattern_batch(self, patterns: list[dict]) -> list[dict]:
-        """Enhance a batch of patterns"""
-        # Prepare prompt
-        pattern_descriptions = []
-        for idx, p in enumerate(patterns):
-            desc = f"{idx + 1}. {p['pattern_type']} in {p.get('class_name', 'unknown')}"
+        # If not enough diverse samples, just take first N
+        if len(samples) < max_samples:
+            for pattern in patterns:
+                if pattern not in samples:
+                    samples.append(pattern)
+                    if len(samples) >= max_samples:
+                        break
+
+        return samples
+
+    def _enhance_pattern_type(self, pattern_type: str, samples: list[dict]) -> dict:
+        """Enhance a pattern type with AI analysis based on samples"""
+        # Prepare sample descriptions
+        sample_descriptions = []
+        for idx, p in enumerate(samples):
+            desc = f"{idx + 1}. {p.get('class_name', 'unknown')} in {p.get('file_path', 'unknown')}"
             desc += f"\n   Evidence: {', '.join(p.get('evidence', []))}"
-            pattern_descriptions.append(desc)
+            sample_descriptions.append(desc)
 
-        prompt = f"""Analyze these detected design patterns and provide insights:
+        prompt = f"""Analyze this {pattern_type} design pattern usage based on these representative samples:
 
-{chr(10).join(pattern_descriptions)}
+{chr(10).join(sample_descriptions)}
 
-For EACH pattern, provide (in JSON format):
-1. "explanation": Brief why this pattern was detected (1-2 sentences)
-2. "issues": List of potential issues or anti-patterns (if any)
-3. "recommendations": Suggestions for improvement (if any)
-4. "related_patterns": Other patterns that might be relevant
-5. "confidence_boost": Confidence adjustment from -0.2 to +0.2 based on evidence quality
+Provide a SINGLE analysis that applies to all {pattern_type} patterns in this codebase:
 
-Format as JSON array matching input order. Be concise and actionable.
+1. "explanation": Why this pattern is commonly used here (1-2 sentences)
+2. "common_issues": List of potential issues to watch for with this pattern
+3. "best_practices": Recommendations for using this pattern well
+4. "related_patterns": Other patterns often used alongside this one
+5. "overall_quality": Assessment of how well this pattern is used (good/fair/needs_review)
+
+Format as a single JSON object. Be concise and actionable.
 """
 
-        response = self._call_claude(prompt, max_tokens=2000)
+        response = self._call_claude(prompt, max_tokens=1000)
 
         if not response:
-            # Return patterns unchanged if API fails
-            return patterns
+            return {"explanation": f"{pattern_type} pattern detected", "enhanced": False}
 
         try:
-            analyses = json.loads(response)
-
-            # Merge AI analysis into patterns
-            for idx, pattern in enumerate(patterns):
-                if idx < len(analyses):
-                    analysis = analyses[idx]
-                    pattern["ai_analysis"] = {
-                        "explanation": analysis.get("explanation", ""),
-                        "issues": analysis.get("issues", []),
-                        "recommendations": analysis.get("recommendations", []),
-                        "related_patterns": analysis.get("related_patterns", []),
-                        "confidence_boost": analysis.get("confidence_boost", 0.0),
-                    }
-
-                    # Adjust confidence
-                    boost = analysis.get("confidence_boost", 0.0)
-                    if -0.2 <= boost <= 0.2:
-                        pattern["confidence"] = min(1.0, max(0.0, pattern["confidence"] + boost))
-
-            return patterns
-
+            analysis = json.loads(response)
+            analysis["enhanced"] = True
+            analysis["samples_analyzed"] = len(samples)
+            return analysis
         except json.JSONDecodeError:
-            logger.warning("⚠️  Failed to parse AI response, returning patterns unchanged")
-            return patterns
-        except Exception as e:
-            logger.warning(f"⚠️  Error processing AI analysis: {e}")
-            return patterns
+            logger.warning(f"⚠️  Failed to parse AI response for {pattern_type}")
+            return {"explanation": f"{pattern_type} pattern detected", "enhanced": False}
 
 
 class TestExampleEnhancer(AIEnhancer):
@@ -386,39 +380,57 @@ class TestExampleEnhancer(AIEnhancer):
         if not self.enabled or not examples:
             return examples
 
+        total_examples = len(examples)
+
         # Use larger batch size for LOCAL mode (configurable)
         if self.mode == "local":
             batch_size = self.local_batch_size
             parallel_workers = self.local_parallel_workers
-            logger.info(
-                f"🤖 Enhancing {len(examples)} test examples with AI "
-                f"(LOCAL mode: {batch_size} per batch, {parallel_workers} parallel workers)..."
-            )
         else:
             batch_size = 5  # API mode uses smaller batches
             parallel_workers = 1  # API mode is sequential
-            logger.info(f"🤖 Enhancing {len(examples)} test examples with AI...")
 
         # Create batches
         batches = []
         for i in range(0, len(examples), batch_size):
             batches.append(examples[i : i + batch_size])
 
+        total_batches = len(batches)
+
+        # Log initial progress info
+        logger.info(
+            f"🤖 Enhancing {total_examples} test examples with AI "
+            f"({self.mode.upper()} mode, {total_batches} batches of ~{batch_size})"
+        )
+        logger.info(f"   [0/{total_examples}] 0% - Starting enhancement...")
+
         # Process batches (parallel for LOCAL, sequential for API)
         if parallel_workers > 1 and len(batches) > 1:
-            enhanced = self._enhance_examples_parallel(batches, parallel_workers)
+            enhanced = self._enhance_examples_parallel(
+                batches, parallel_workers, total_examples
+            )
         else:
             enhanced = []
-            for batch in batches:
+            processed = 0
+            for batch_idx, batch in enumerate(batches):
                 batch_results = self._enhance_example_batch(batch)
                 enhanced.extend(batch_results)
+                processed += len(batch)
+                percent = int((processed / total_examples) * 100)
+                logger.info(
+                    f"   [{processed}/{total_examples}] {percent}% - "
+                    f"Batch {batch_idx + 1}/{total_batches} complete"
+                )
 
-        logger.info(f"✅ Enhanced {len(enhanced)} examples")
+        logger.info(f"✅ Enhanced {len(enhanced)}/{total_examples} test examples (100%)")
         return enhanced
 
-    def _enhance_examples_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
+    def _enhance_examples_parallel(
+        self, batches: list[list[dict]], workers: int, total_items: int
+    ) -> list[dict]:
         """Process example batches in parallel using ThreadPoolExecutor."""
         results = [None] * len(batches)  # Preserve order
+        batch_sizes = [len(b) for b in batches]  # Track size of each batch
 
         with ThreadPoolExecutor(max_workers=workers) as executor:
             # Submit all batches
@@ -428,18 +440,26 @@ class TestExampleEnhancer(AIEnhancer):
             }
 
             # Collect results as they complete
-            completed = 0
-            total = len(batches)
+            completed_batches = 0
+            completed_items = 0
+            total_batches = len(batches)
+
             for future in as_completed(future_to_idx):
                 idx = future_to_idx[future]
                 try:
                     results[idx] = future.result()
-                    completed += 1
-                    if completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
+                    completed_batches += 1
+                    completed_items += batch_sizes[idx]
+                    percent = int((completed_items / total_items) * 100)
+                    logger.info(
+                        f"   [{completed_items}/{total_items}] {percent}% - "
+                        f"Batch {completed_batches}/{total_batches} complete"
+                    )
                 except Exception as e:
                     logger.warning(f"⚠️  Batch {idx} failed: {e}")
                     results[idx] = batches[idx]  # Return unenhanced on failure
+                    completed_batches += 1
+                    completed_items += batch_sizes[idx]
 
         # Flatten results
         enhanced = []

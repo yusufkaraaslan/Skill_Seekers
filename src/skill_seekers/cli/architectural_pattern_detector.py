@@ -86,16 +86,21 @@ class ArchitecturalPatternDetector:
     REPO_DIRS = {"repositories", "repository"}
     SERVICE_DIRS = {"services", "service"}
 
-    # Framework detection patterns
+    # Framework detection patterns (order matters - more specific first)
     FRAMEWORK_MARKERS = {
+        # Game engines (check first - they have MVC-like folders too)
+        "Unity": ["Assembly-CSharp.csproj", "ProjectSettings", ".unity", "MonoBehaviour", "ScriptableObject", "Assets/Scripts"],
+        "Unreal": [".uproject", "Source", "Content", "Config/DefaultEngine.ini"],
+        "Godot": ["project.godot", ".gd", ".tscn"],
+        # Web frameworks
         "Django": ["django", "manage.py", "settings.py", "urls.py"],
         "Flask": ["flask", "app.py", "wsgi.py"],
         "Spring": ["springframework", "@Controller", "@Service", "@Repository"],
-        "ASP.NET": ["Controllers", "Models", "Views", ".cshtml", "Startup.cs"],
+        "ASP.NET": [".cshtml", "Startup.cs", "Program.cs", "appsettings.json"],  # More specific markers
         "Rails": ["app/models", "app/views", "app/controllers", "config/routes.rb"],
         "Angular": ["app.module.ts", "@Component", "@Injectable", "angular.json"],
-        "React": ["package.json", "react", "components"],
-        "Vue.js": ["vue", ".vue", "components"],
+        "React": ["react-dom", "jsx", "tsx", "React.Component"],  # More specific than just package.json
+        "Vue.js": ["vue", ".vue", "createApp"],
         "Express": ["express", "app.js", "routes"],
         "Laravel": ["artisan", "app/Http/Controllers", "app/Models"],
     }
@@ -181,15 +186,44 @@ class ArchitecturalPatternDetector:
 
         return dict(structure)
 
-    def _detect_frameworks(self, _directory: Path, files: list[dict]) -> list[str]:
+    def _detect_frameworks(self, directory: Path, files: list[dict]) -> list[str]:
         """Detect frameworks being used"""
         detected = []
 
-        # Check file paths and content
+        # Check file paths and content from analyzed files
         all_paths = [str(f.get("file", "")) for f in files]
         all_content = " ".join(all_paths)
 
+        # Also check directory structure for project files (not just analyzed source files)
+        dir_files = []
+        try:
+            # Check root and common locations for project files
+            for pattern in ["*", "*/*", "**/*.csproj", "**/*.uproject", "**/*.godot"]:
+                dir_files.extend([str(p.name) for p in directory.glob(pattern) if p.is_file()])
+            # Check for specific directories
+            for subdir in ["ProjectSettings", "Assets", "Source", "Content"]:
+                if (directory / subdir).exists():
+                    dir_files.append(subdir)
+        except Exception:
+            pass
+
+        all_content = " ".join(all_paths + dir_files)
+
+        # Check for game engines first (they have MVC-like folders)
+        for framework in ["Unity", "Unreal", "Godot"]:
+            if framework in self.FRAMEWORK_MARKERS:
+                markers = self.FRAMEWORK_MARKERS[framework]
+                matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
+                if matches >= 2:
+                    detected.append(framework)
+                    logger.info(f"  📦 Detected framework: {framework}")
+                    # If game engine detected, skip web framework detection that might conflict
+                    return detected
+
+        # Check other frameworks
         for framework, markers in self.FRAMEWORK_MARKERS.items():
+            if framework in ["Unity", "Unreal", "Godot"]:
+                continue  # Already checked
             matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
             if matches >= 2:  # Require at least 2 markers
                 detected.append(framework)

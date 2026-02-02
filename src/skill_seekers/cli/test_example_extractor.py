@@ -932,14 +932,26 @@ class TestExampleExtractor:
 
         # Find test files
         test_files = self._find_test_files(directory, recursive)
+        total_files = len(test_files)
 
-        logger.info(f"Found {len(test_files)} test files in {directory}")
+        logger.info(f"Found {total_files} test files in {directory}")
+        if total_files > 0:
+            logger.info(f"   [0/{total_files}] 0% - Starting extraction...")
 
         # Extract from each file
         all_examples = []
-        for test_file in test_files:
+        for idx, test_file in enumerate(test_files):
             examples = self.extract_from_file(test_file)
             all_examples.extend(examples)
+
+            # Log progress every 10% or at specific intervals
+            if total_files > 0:
+                progress_pct = int(((idx + 1) / total_files) * 100)
+                if (idx + 1) % max(1, total_files // 10) == 0 or idx + 1 == total_files:
+                    logger.info(
+                        f"   [{idx + 1}/{total_files}] {progress_pct}% - "
+                        f"Extracted {len(all_examples)} examples so far"
+                    )
 
         # Generate report
         return self._create_report(all_examples, directory=str(directory))

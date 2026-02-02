@@ -53,25 +53,56 @@ except ImportError:
 
 # Directories to exclude from local repository analysis
 EXCLUDED_DIRS = {
+    # Virtual environments
     "venv",
     "env",
     ".venv",
-    ".env",  # Virtual environments
+    ".env",
+    # Dependencies and caches
     "node_modules",
     "__pycache__",
-    ".pytest_cache",  # Dependencies and caches
+    ".pytest_cache",
+    ".cache",
+    # Version control
     ".git",
     ".svn",
-    ".hg",  # Version control
+    ".hg",
+    # Build artifacts
     "build",
     "dist",
-    "*.egg-info",  # Build artifacts
+    "obj",
+    "bin",
+    "out",
+    "target",
+    "*.egg-info",
+    # Coverage reports
     "htmlcov",
-    ".coverage",  # Coverage reports
+    ".coverage",
+    "coverage",
+    # Testing environments
     ".tox",
-    ".nox",  # Testing environments
+    ".nox",
+    # Linter caches
     ".mypy_cache",
-    ".ruff_cache",  # Linter caches
+    ".ruff_cache",
+    # IDE/Editor
+    ".vs",
+    ".vscode",
+    ".idea",
+    # Unity specific (critical - contains massive build cache)
+    "Library",
+    "Temp",
+    "Logs",
+    "UserSettings",
+    "MemoryCaptures",
+    "Recordings",
+    # Unreal Engine
+    "Intermediate",
+    "Saved",
+    "DerivedDataCache",
+    # Misc
+    "tmp",
+    ".tmp",
 }
 
 

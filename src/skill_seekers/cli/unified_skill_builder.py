@@ -136,6 +136,25 @@ class UnifiedSkillBuilder:
             skill_mds["pdf"] = "\n\n---\n\n".join(pdf_sources)
             logger.debug(f"Combined {len(pdf_sources)} PDF SKILL.md files")
 
+        # Load ALL local codebase sources (multi-source support)
+        local_sources = []
+        for local_dir in sources_dir.glob("local_*"):
+            local_skill_path = local_dir / "SKILL.md"
+            if local_skill_path.exists():
+                try:
+                    content = local_skill_path.read_text(encoding="utf-8")
+                    local_sources.append(content)
+                    logger.debug(
+                        f"Loaded local SKILL.md from {local_dir.name} ({len(content)} chars)"
+                    )
+                except OSError as e:
+                    logger.warning(f"Failed to read local SKILL.md from {local_dir.name}: {e}")
+
+        if local_sources:
+            # Concatenate all local sources with separator
+            skill_mds["local"] = "\n\n---\n\n".join(local_sources)
+            logger.debug(f"Combined {len(local_sources)} local SKILL.md files")
+
         logger.info(f"Loaded {len(skill_mds)} source SKILL.md files")
         return skill_mds
 
@@ -445,6 +464,7 @@ This skill synthesizes knowledge from multiple sources:
         has_docs = "documentation" in skill_mds
         has_github = "github" in skill_mds
         has_pdf = "pdf" in skill_mds
+        has_local = "local" in skill_mds
 
         content = None
 
@@ -476,6 +496,10 @@ This skill synthesizes knowledge from multiple sources:
         elif has_pdf:
             logger.info("Using PDF SKILL.md as-is")
             content = skill_mds["pdf"]
+
+        elif has_local:
+            logger.info("Using local codebase SKILL.md as-is")
+            content = skill_mds["local"]
 
         # Fallback: generate minimal SKILL.md (legacy behavior)
         if not content:
@@ -609,6 +633,9 @@ This skill combines knowledge from multiple sources:
                 content += f"  - Issues: {source.get('max_issues', 0)}\n"
             elif source_type == "pdf":
                 content += f"- ✅ **PDF Document**: {source.get('path', 'N/A')}\n"
+            elif source_type == "local":
+                content += f"- ✅ **Local Codebase**: {source.get('path', 'N/A')}\n"
+                content += f"  - Analysis Depth: {source.get('analysis_depth', 'deep')}\n"
 
         # C3.x Architecture & Code Analysis section (if available)
         github_data = self.scraped_data.get("github", {})
@@ -795,6 +822,11 @@ This skill combines knowledge from multiple sources:
         if pdf_list:
             self._generate_pdf_references(pdf_list)
 
+        # Generate references from local codebase sources
+        local_list = self.scraped_data.get("local", [])
+        if local_list:
+            self._generate_local_references(local_list)
+
         # Generate merged API reference if available
         if self.merged_data:
             self._generate_merged_api_reference()
@@ -975,6 +1007,64 @@ This skill combines knowledge from multiple sources:
             f.write(f"Reference from {len(pdf_list)} PDF document(s).\n\n")
 
         logger.info(f"Created PDF references ({len(pdf_list)} sources)")
+
+    def _generate_local_references(self, local_list: list[dict]):
+        """Generate references from local codebase sources by copying from cache."""
+        import shutil
+
+        if not local_list:
+            return
+
+        refs_dir = os.path.join(self.skill_dir, "references")
+        os.makedirs(refs_dir, exist_ok=True)
+
+        total_copied = 0
+
+        for i, local_source in enumerate(local_list):
+            # Support both 'output_dir' (from unified_scraper) and 'source_dir' (legacy)
+            source_dir = local_source.get("output_dir") or local_source.get("source_dir", "")
+
+            if not source_dir or not os.path.exists(source_dir):
+                logger.warning(f"Local source {i}: source_dir not found: {source_dir}")
+                continue
+
+            # Check for references directory in cache
+            cache_refs = os.path.join(source_dir, "references")
+            if os.path.exists(cache_refs) and os.path.isdir(cache_refs):
+                # Copy all subdirectories from cache references
+                for subdir in os.listdir(cache_refs):
+                    src_path = os.path.join(cache_refs, subdir)
+                    if os.path.isdir(src_path):
+                        dst_path = os.path.join(refs_dir, subdir)
+                        if os.path.exists(dst_path):
+                            shutil.rmtree(dst_path)
+                        shutil.copytree(src_path, dst_path)
+                        total_copied += 1
+                        logger.debug(f"   Copied {subdir}/ from local cache")
+
+            # Also copy direct analysis directories if not already in references
+            analysis_dirs = [
+                "api_reference",
+                "dependencies",
+                "patterns",
+                "test_examples",
+                "config_patterns",
+                "architecture",
+                "documentation",
+            ]
+            for adir in analysis_dirs:
+                src_path = os.path.join(source_dir, adir)
+                dst_path = os.path.join(refs_dir, adir)
+                if os.path.exists(src_path) and os.path.isdir(src_path):
+                    if not os.path.exists(dst_path):
+                        shutil.copytree(src_path, dst_path)
+                        total_copied += 1
+                        logger.debug(f"   Copied {adir}/ from local source")
+
+        if total_copied > 0:
+            logger.info(f"✅ Copied {total_copied} reference directories from local sources")
+        else:
+            logger.warning("No reference directories found in local sources")
 
     def _generate_merged_api_reference(self):
         """Generate merged API reference file."""

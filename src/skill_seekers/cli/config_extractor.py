@@ -222,14 +222,12 @@ class ConfigFileDetector:
 
     # Directories to skip
     SKIP_DIRS = {
+        # Python
         "node_modules",
         "venv",
         "env",
         ".venv",
         "__pycache__",
-        ".git",
-        "build",
-        "dist",
         ".tox",
         ".mypy_cache",
         ".pytest_cache",
@@ -237,6 +235,36 @@ class ConfigFileDetector:
         "coverage",
         ".eggs",
         "*.egg-info",
+        # Build artifacts
+        "build",
+        "dist",
+        "obj",
+        "bin",
+        "out",
+        "target",
+        # Version control
+        ".git",
+        ".svn",
+        ".hg",
+        # IDE/Editor
+        ".vs",
+        ".vscode",
+        ".idea",
+        # Unity specific (critical - contains massive build cache)
+        "Library",
+        "Temp",
+        "Logs",
+        "UserSettings",
+        "MemoryCaptures",
+        "Recordings",
+        # Other game engines
+        "Intermediate",  # Unreal
+        "Saved",  # Unreal
+        "DerivedDataCache",  # Unreal
+        # Misc
+        ".cache",
+        "tmp",
+        ".tmp",
     }
 
     def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
@@ -715,13 +743,17 @@ class ConfigExtractor:
         # Step 1: Find config files
         config_files = self.detector.find_config_files(directory, max_files)
         result.total_files = len(config_files)
+        total_files = len(config_files)
 
         if not config_files:
             logger.warning("No configuration files found")
             return result
 
+        logger.info(f"Found {total_files} config files to process")
+        logger.info(f"   [0/{total_files}] 0% - Starting extraction...")
+
         # Step 2: Parse each config file
-        for config_file in config_files:
+        for idx, config_file in enumerate(config_files):
             try:
                 parsed = self.parser.parse_config_file(config_file)
 
@@ -743,8 +775,16 @@ class ConfigExtractor:
                 logger.error(error_msg)
                 result.errors.append(error_msg)
 
+            # Log progress every 10% or at specific intervals
+            progress_pct = int(((idx + 1) / total_files) * 100)
+            if (idx + 1) % max(1, total_files // 10) == 0 or idx + 1 == total_files:
+                logger.info(
+                    f"   [{idx + 1}/{total_files}] {progress_pct}% - "
+                    f"Extracted {result.total_settings} settings so far"
+                )
+
         logger.info(
-            f"Extracted {result.total_settings} settings from {result.total_files} config files"
+            f"✅ Extracted {result.total_settings} settings from {result.total_files} config files"
         )
         logger.info(f"Detected patterns: {list(result.detected_patterns.keys())}")
 

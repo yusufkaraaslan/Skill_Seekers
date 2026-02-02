@@ -124,15 +124,12 @@ FOLDER_CATEGORIES = {
 
 # Default directories to exclude
 DEFAULT_EXCLUDED_DIRS = {
+    # Python
     "node_modules",
     "venv",
+    "env",
+    ".venv",
     "__pycache__",
-    ".git",
-    ".svn",
-    ".hg",
-    "build",
-    "dist",
-    "target",
     ".pytest_cache",
     ".tox",
     ".mypy_cache",
@@ -141,10 +138,37 @@ DEFAULT_EXCLUDED_DIRS = {
     ".coverage",
     ".eggs",
     "*.egg-info",
+    "__pypackages__",
+    ".cache",
+    # Version control
+    ".git",
+    ".svn",
+    ".hg",
+    # Build artifacts
+    "build",
+    "dist",
+    "obj",
+    "bin",
+    "out",
+    "target",
+    # IDE/Editor
     ".idea",
     ".vscode",
     ".vs",
-    "__pypackages__",
+    # Unity specific (critical - contains massive build cache)
+    "Library",
+    "Temp",
+    "Logs",
+    "UserSettings",
+    "MemoryCaptures",
+    "Recordings",
+    # Unreal Engine
+    "Intermediate",
+    "Saved",
+    "DerivedDataCache",
+    # Misc
+    "tmp",
+    ".tmp",
 }
 
 
@@ -926,13 +950,16 @@ def analyze_codebase(
 
     # Detect design patterns if requested (C3.1)
     if detect_patterns:
-        logger.info("Detecting design patterns...")
         from skill_seekers.cli.pattern_recognizer import PatternRecognizer
 
-        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_patterns)
+        total_files = len(files)
+        logger.info(f"Detecting design patterns in {total_files} files...")
+        # IMPORTANT: Disable per-file enhancement - we enhance ALL patterns once at the end
+        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=False)
         pattern_results = []
+        patterns_found = 0
 
-        for file_path in files:
+        for idx, file_path in enumerate(files):
             try:
                 content = file_path.read_text(encoding="utf-8", errors="ignore")
                 language = detect_language(file_path)
@@ -942,9 +969,45 @@ def analyze_codebase(
 
                     if report.patterns:
                         pattern_results.append(report.to_dict())
+                        patterns_found += len(report.patterns)
+
+                # Log progress every 10% or at specific intervals
+                progress_pct = int(((idx + 1) / total_files) * 100)
+                if (idx + 1) % max(1, total_files // 10) == 0 or idx + 1 == total_files:
+                    logger.info(
+                        f"   [{idx + 1}/{total_files}] {progress_pct}% - "
+                        f"Found {patterns_found} patterns so far"
+                    )
             except Exception as e:
                 logger.warning(f"Pattern detection failed for {file_path}: {e}")
                 continue
+
+        # AI Enhancement: Enhance ALL patterns at once (grouped by type)
+        if enhance_patterns and pattern_results:
+            try:
+                from skill_seekers.cli.ai_enhancer import PatternEnhancer
+
+                # Collect all patterns from all files
+                all_patterns = []
+                for result in pattern_results:
+                    all_patterns.extend(result.get("patterns", []))
+
+                if all_patterns:
+                    logger.info(f"🤖 Starting AI enhancement for {len(all_patterns)} patterns...")
+                    enhancer = PatternEnhancer()
+                    enhanced_patterns = enhancer.enhance_patterns(all_patterns)
+
+                    # Update pattern_results with enhanced data
+                    enhanced_idx = 0
+                    for result in pattern_results:
+                        for i in range(len(result.get("patterns", []))):
+                            if enhanced_idx < len(enhanced_patterns):
+                                result["patterns"][i] = enhanced_patterns[enhanced_idx]
+                                enhanced_idx += 1
+
+                    logger.info(f"✅ AI enhancement complete for {len(enhanced_patterns)} patterns")
+            except Exception as e:
+                logger.warning(f"Pattern AI enhancement failed: {e}")
 
         # Save pattern results
         if pattern_results:

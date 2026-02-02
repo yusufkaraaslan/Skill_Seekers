@@ -73,10 +73,11 @@ class UnifiedScraper:
             "documentation": [],  # List of doc sources
             "github": [],  # List of github sources
             "pdf": [],  # List of pdf sources
+            "local": [],  # List of local codebase sources
         }
 
         # Track source index for unique naming (multi-source support)
-        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0}
+        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "local": 0}
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
@@ -150,6 +151,8 @@ class UnifiedScraper:
                     self._scrape_github(source)
                 elif source_type == "pdf":
                     self._scrape_pdf(source)
+                elif source_type == "local":
+                    self._scrape_local(source)
                 else:
                     logger.warning(f"Unknown source type: {source_type}")
             except Exception as e:
@@ -333,7 +336,8 @@ class UnifiedScraper:
 
         # Check if we need to clone for C3.x analysis
         enable_codebase_analysis = source.get("enable_codebase_analysis", True)
-        local_repo_path = source.get("local_repo_path")
+        # Support both 'clone_path' (config style) and 'local_repo_path' (legacy)
+        local_repo_path = source.get("clone_path") or source.get("local_repo_path")
         cloned_repo_path = None
 
         # Auto-clone if C3.x analysis is enabled but no local path provided
@@ -510,6 +514,73 @@ class UnifiedScraper:
             logger.warning(f"⚠️  Failed to build standalone PDF SKILL.md: {e}")
 
         logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
+
+    def _scrape_local(self, source: dict[str, Any]):
+        """Scrape local codebase directory."""
+        try:
+            from skill_seekers.cli.codebase_scraper import (
+                analyze_codebase,
+                DEFAULT_EXCLUDED_DIRS,
+            )
+        except ImportError as e:
+            logger.error(f"codebase_scraper.py import failed: {e}")
+            return
+
+        # Multi-source support: Get unique index for this local source
+        idx = self._source_counters["local"]
+        self._source_counters["local"] += 1
+
+        local_path = source["path"]
+        local_id = os.path.basename(os.path.normpath(local_path))
+
+        logger.info(f"Analyzing local codebase: {local_path}")
+
+        # Get analysis options from source config
+        codebase_options = source.get("codebase_options", {})
+        analysis_depth = source.get("analysis_depth", "deep")
+
+        # Get enhance level from config (default 0 - no AI enhancement during scrape)
+        ai_enhancement = self.config.get("ai_enhancement", {})
+        enhance_level = ai_enhancement.get("level", 0) if ai_enhancement.get("enable", False) else 0
+        if enhance_level > 0:
+            logger.info(f"🤖 AI enhancement enabled (level {enhance_level})")
+
+        # Create output directory for this local source
+        local_output_dir = os.path.join(self.sources_dir, f"local_{idx}_{local_id}")
+        os.makedirs(local_output_dir, exist_ok=True)
+
+        # Analyze codebase
+        try:
+            from pathlib import Path
+            analysis_result = analyze_codebase(
+                directory=Path(local_path),
+                output_dir=Path(local_output_dir),
+                depth=analysis_depth,
+                build_api_reference=codebase_options.get("build_api_reference", True),
+                build_dependency_graph=codebase_options.get("build_dependency_graph", True),
+                detect_patterns=codebase_options.get("detect_patterns", True),
+                extract_test_examples=codebase_options.get("extract_test_examples", True),
+                extract_config_patterns=codebase_options.get("extract_config_patterns", True),
+                extract_docs=codebase_options.get("extract_docs", True),
+                enhance_level=enhance_level,
+            )
+
+            # Store the result
+            self.scraped_data["local"].append(
+                {
+                    "local_path": local_path,
+                    "local_id": local_id,
+                    "idx": idx,
+                    "output_dir": local_output_dir,
+                    "analysis_result": analysis_result,
+                }
+            )
+
+            logger.info(f"✅ Local: Codebase analysis complete for {local_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to analyze local codebase {local_path}: {e}")
+            raise
 
     def _load_json(self, file_path: Path) -> dict:
         """
@@ -805,6 +876,25 @@ class UnifiedScraper:
         builder.build()
 
         logger.info(f"✅ Unified skill built: {self.output_dir}/")
+
+        # SKILL.md Enhancement (when enhance_level >= 1)
+        ai_enhancement = self.config.get("ai_enhancement", {})
+        enhance_level = ai_enhancement.get("level", 0) if ai_enhancement.get("enable", False) else 0
+
+        if enhance_level >= 1:
+            logger.info("")
+            logger.info("=" * 60)
+            logger.info("PHASE 5: AI Enhancement of SKILL.md")
+            logger.info("=" * 60)
+            try:
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                enhancer = LocalSkillEnhancer(self.output_dir, force=True)
+                enhancer.run(headless=True, timeout=600)
+                logger.info("✅ SKILL.md AI enhancement complete")
+            except Exception as e:
+                logger.warning(f"SKILL.md enhancement failed: {e}")
+                logger.info("You can manually enhance later: skill-seekers enhance " + self.output_dir)
 
     def run(self):
         """
