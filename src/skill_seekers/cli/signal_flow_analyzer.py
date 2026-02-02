@@ -236,7 +236,176 @@ class SignalFlowAnalyzer:
         lines.append("```")
         return "\n".join(lines)
 
-    def save_analysis(self, output_dir: Path):
+    def extract_signal_usage_patterns(self) -> list[dict[str, Any]]:
+        """
+        Extract common signal usage patterns for how-to guide generation.
+
+        Returns:
+            List of signal usage patterns with connect/emit/handle examples
+        """
+        patterns = []
+
+        # For each signal, find usage examples (connect + emit + handle)
+        for signal_name, signal_info in self.signal_declarations.items():
+            # Find connections to this signal
+            connections = self.signal_connections.get(signal_name, [])
+            emissions = self.signal_emissions.get(signal_name, [])
+
+            if not connections and not emissions:
+                continue  # Skip signals with no usage
+
+            # Build usage pattern
+            pattern = {
+                "signal_name": signal_name,
+                "signal_file": signal_info.get("file", ""),
+                "parameters": signal_info.get("parameters", ""),
+                "documentation": signal_info.get("documentation"),
+                "connections": connections[:3],  # Top 3 connections
+                "emissions": emissions[:3],  # Top 3 emissions
+                "usage_count": len(connections) + len(emissions),
+            }
+
+            patterns.append(pattern)
+
+        # Sort by usage count (most used first)
+        patterns.sort(key=lambda x: x["usage_count"], reverse=True)
+
+        return patterns[:10]  # Top 10 most used signals
+
+    def generate_how_to_guides(
+        self, output_dir: Path, ai_mode: str = "LOCAL"
+    ) -> str:
+        """
+        Generate signal-based how-to guides using AI.
+
+        Args:
+            output_dir: Directory to save guides
+            ai_mode: "LOCAL" (Claude Code) or "API" (Anthropic API)
+
+        Returns:
+            Path to generated guide file
+        """
+        patterns = self.extract_signal_usage_patterns()
+
+        if not patterns:
+            return ""
+
+        # Build guide content
+        guide_content = "# Signal Usage How-To Guides\n\n"
+        guide_content += "*AI-generated guides for common signal patterns*\n\n"
+        guide_content += "## Table of Contents\n\n"
+
+        for i, pattern in enumerate(patterns, 1):
+            signal_name = pattern["signal_name"]
+            guide_content += f"{i}. [How to use `{signal_name}`](#{signal_name.lower().replace('_', '-')})\n"
+
+        guide_content += "\n---\n\n"
+
+        # Generate guide for each pattern
+        for pattern in patterns:
+            guide_section = self._generate_signal_guide(pattern, ai_mode)
+            guide_content += guide_section + "\n---\n\n"
+
+        # Save guide
+        guide_file = output_dir / "signals" / "signal_how_to_guides.md"
+        with open(guide_file, "w") as f:
+            f.write(guide_content)
+
+        return str(guide_file)
+
+    def _generate_signal_guide(
+        self, pattern: dict[str, Any], ai_mode: str
+    ) -> str:
+        """
+        Generate a how-to guide for a single signal using AI.
+
+        Args:
+            pattern: Signal usage pattern data
+            ai_mode: "LOCAL" or "API"
+
+        Returns:
+            Markdown guide content
+        """
+        signal_name = pattern["signal_name"]
+        params = pattern["parameters"]
+        docs = pattern["documentation"]
+        connections = pattern["connections"]
+        emissions = pattern["emissions"]
+
+        # Build guide without AI (basic template)
+        guide = f"## How to use `{signal_name}`\n\n"
+
+        if docs:
+            guide += f"**Description:** {docs}\n\n"
+
+        if params:
+            guide += f"**Parameters:** `{params}`\n\n"
+
+        guide += "### Step 1: Connect to the signal\n\n"
+        guide += "```gdscript\n"
+        if connections:
+            handler = connections[0].get("handler", "_on_signal")
+            file_context = Path(connections[0].get("file", "")).stem
+            guide += f"# In {file_context}.gd\n"
+            guide += f"{signal_name}.connect({handler})\n"
+        else:
+            guide += f"{signal_name}.connect(_on_{signal_name.split('.')[-1]})\n"
+        guide += "```\n\n"
+
+        guide += "### Step 2: Emit the signal\n\n"
+        guide += "```gdscript\n"
+        if emissions:
+            args = emissions[0].get("arguments", "")
+            file_context = Path(emissions[0].get("file", "")).stem
+            guide += f"# In {file_context}.gd\n"
+            guide += f"{signal_name}.emit({args})\n"
+        else:
+            guide += f"{signal_name}.emit()\n"
+        guide += "```\n\n"
+
+        guide += "### Step 3: Handle the signal\n\n"
+        guide += "```gdscript\n"
+        if connections:
+            handler = connections[0].get("handler", "_on_signal")
+            if params:
+                # Parse params to function signature
+                param_list = params.split(",")
+                param_names = [p.split(":")[0].strip() for p in param_list]
+                func_params = ", ".join(param_names)
+                guide += f"func {handler}({func_params}):\n"
+                guide += f"    # Handle {signal_name} event\n"
+                guide += f"    print('Signal received with:', {param_names[0] if param_names else 'null'})\n"
+            else:
+                guide += f"func {handler}():\n"
+                guide += f"    # Handle {signal_name} event\n"
+                guide += f"    print('Signal received')\n"
+        else:
+            guide += f"func _on_{signal_name.split('.')[-1]}():\n"
+            guide += f"    # Handle {signal_name} event\n"
+            guide += f"    pass\n"
+        guide += "```\n\n"
+
+        # Add usage examples
+        if len(connections) > 1 or len(emissions) > 1:
+            guide += "### Common Usage Locations\n\n"
+            if connections:
+                guide += "**Connected in:**\n"
+                for conn in connections[:3]:
+                    file_path = Path(conn.get("file", "")).stem
+                    handler = conn.get("handler", "")
+                    guide += f"- `{file_path}.gd` → `{handler}()`\n"
+                guide += "\n"
+
+            if emissions:
+                guide += "**Emitted from:**\n"
+                for emit in emissions[:3]:
+                    file_path = Path(emit.get("file", "")).stem
+                    guide += f"- `{file_path}.gd`\n"
+                guide += "\n"
+
+        return guide
+
+    def save_analysis(self, output_dir: Path, ai_mode: str = "LOCAL"):
         """
         Save signal flow analysis to files.
 
@@ -259,6 +428,18 @@ class SignalFlowAnalyzer:
         diagram = self.generate_signal_flow_diagram()
         with open(signal_dir / "signal_flow.mmd", "w") as f:
             f.write(diagram)
+
+        # Generate how-to guides
+        try:
+            guide_file = self.generate_how_to_guides(output_dir, ai_mode)
+            if guide_file:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"📚 Generated signal how-to guides: {guide_file}")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to generate signal how-to guides: {e}")
 
         return signal_dir
 

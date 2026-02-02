@@ -1180,7 +1180,7 @@ def analyze_codebase(
         logger.info("Analyzing signal flow patterns (Godot)...")
         try:
             signal_analyzer = SignalFlowAnalyzer(results)
-            signal_output = signal_analyzer.save_analysis(output_dir)
+            signal_output = signal_analyzer.save_analysis(output_dir, ai_mode)
             signal_analysis = signal_analyzer.analyze()
 
             stats = signal_analysis["statistics"]
