@@ -25,7 +25,7 @@ class ConfigValidator:
     """
 
     # Valid source types
-    VALID_SOURCE_TYPES = {"documentation", "github", "pdf"}
+    VALID_SOURCE_TYPES = {"documentation", "github", "pdf", "local"}
 
     # Valid merge modes
     VALID_MERGE_MODES = {"rule-based", "claude-enhanced"}
@@ -143,6 +143,8 @@ class ConfigValidator:
             self._validate_github_source(source, index)
         elif source_type == "pdf":
             self._validate_pdf_source(source, index)
+        elif source_type == "local":
+            self._validate_local_source(source, index)
 
     def _validate_documentation_source(self, source: dict[str, Any], index: int):
         """Validate documentation source configuration."""
@@ -208,6 +210,34 @@ class ConfigValidator:
         pdf_path = source["path"]
         if not Path(pdf_path).exists():
             logger.warning(f"Source {index} (pdf): File not found: {pdf_path}")
+
+    def _validate_local_source(self, source: dict[str, Any], index: int):
+        """Validate local codebase source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (local): Missing required field 'path'")
+
+        # Check if directory exists
+        local_path = source["path"]
+        if not Path(local_path).exists():
+            logger.warning(f"Source {index} (local): Directory not found: {local_path}")
+        elif not Path(local_path).is_dir():
+            raise ValueError(f"Source {index} (local): Path is not a directory: {local_path}")
+
+        # Validate analysis_depth if provided
+        if "analysis_depth" in source:
+            depth = source["analysis_depth"]
+            if depth not in self.VALID_DEPTH_LEVELS:
+                raise ValueError(
+                    f"Source {index} (local): Invalid analysis_depth '{depth}'. Must be one of {self.VALID_DEPTH_LEVELS}"
+                )
+
+        # Validate ai_mode if provided
+        if "ai_mode" in source:
+            ai_mode = source["ai_mode"]
+            if ai_mode not in self.VALID_AI_MODES:
+                raise ValueError(
+                    f"Source {index} (local): Invalid ai_mode '{ai_mode}'. Must be one of {self.VALID_AI_MODES}"
+                )
 
     def _validate_legacy(self) -> bool:
         """

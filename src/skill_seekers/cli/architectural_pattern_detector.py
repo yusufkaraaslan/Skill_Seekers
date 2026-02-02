@@ -88,6 +88,11 @@ class ArchitecturalPatternDetector:
 
     # Framework detection patterns
     FRAMEWORK_MARKERS = {
+        # Game Engines (checked first to avoid false positives)
+        "Unity": ["Assembly-CSharp", "UnityEngine", "Assets", ".unity", "ProjectSettings"],
+        "Unreal": ["Source/", ".uproject", "Config/DefaultEngine.ini", "Binaries/", "Content/"],
+        "Godot": ["project.godot", ".godot", "scenes/", ".tscn", ".gd"],
+        # Web Frameworks
         "Django": ["django", "manage.py", "settings.py", "urls.py"],
         "Flask": ["flask", "app.py", "wsgi.py"],
         "Spring": ["springframework", "@Controller", "@Service", "@Repository"],

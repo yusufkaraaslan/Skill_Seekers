@@ -222,6 +222,7 @@ class ConfigFileDetector:
 
     # Directories to skip
     SKIP_DIRS = {
+        # Python/Node
         "node_modules",
         "venv",
         "env",
@@ -237,6 +238,23 @@ class ConfigFileDetector:
         "coverage",
         ".eggs",
         "*.egg-info",
+        # Unity (critical - contains massive build cache)
+        "Library",
+        "Temp",
+        "Logs",
+        "UserSettings",
+        "MemoryCaptures",
+        "Recordings",
+        # Unreal Engine
+        "Intermediate",
+        "Saved",
+        "DerivedDataCache",
+        # Godot
+        ".godot",
+        ".import",
+        # Misc
+        "tmp",
+        ".tmp",
     }
 
     def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:

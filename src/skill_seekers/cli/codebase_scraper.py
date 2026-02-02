@@ -124,6 +124,7 @@ FOLDER_CATEGORIES = {
 
 # Default directories to exclude
 DEFAULT_EXCLUDED_DIRS = {
+    # Python/Node
     "node_modules",
     "venv",
     "__pycache__",
@@ -141,10 +142,28 @@ DEFAULT_EXCLUDED_DIRS = {
     ".coverage",
     ".eggs",
     "*.egg-info",
+    # IDE
     ".idea",
     ".vscode",
     ".vs",
     "__pypackages__",
+    # Unity (critical - contains massive build cache)
+    "Library",
+    "Temp",
+    "Logs",
+    "UserSettings",
+    "MemoryCaptures",
+    "Recordings",
+    # Unreal Engine
+    "Intermediate",
+    "Saved",
+    "DerivedDataCache",
+    # Godot
+    ".godot",
+    ".import",
+    # Misc
+    "tmp",
+    ".tmp",
 }
 
 
