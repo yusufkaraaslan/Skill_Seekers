@@ -724,7 +724,8 @@ class DependencyAnalyzer:
                 # Try to resolve the imported module to an actual file
                 target = self._resolve_import(file_path, dep.imported_module, dep.is_relative)
 
-                if target and target in self.file_nodes:
+                # Skip self-dependencies (file depending on itself)
+                if target and target in self.file_nodes and target != file_path:
                     # Add edge from source to dependency
                     self.graph.add_edge(
                         file_path, target, import_type=dep.import_type, line_number=dep.line_number

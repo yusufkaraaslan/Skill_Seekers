@@ -883,6 +883,8 @@ class TestExampleExtractor:
         "Test*.cs",
         "*Test.php",
         "*_spec.rb",
+        "test_*.gd",  # GUT, gdUnit4, WAT test files
+        "*_test.gd",
     ]
 
     # Language detection by extension
@@ -896,6 +898,7 @@ class TestExampleExtractor:
         ".cs": "C#",
         ".php": "PHP",
         ".rb": "Ruby",
+        ".gd": "GDScript",
     }
 
     def __init__(
