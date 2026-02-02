@@ -9,9 +9,9 @@ Analyzes test files to extract meaningful code examples showing:
 - Setup patterns from fixtures/setUp()
 - Multi-step workflows from integration tests
 
-Supports 9 languages:
+Supports 10 languages:
 - Python (AST-based, deep analysis)
-- JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby (regex-based)
+- JavaScript, TypeScript, Go, Rust, Java, C#, PHP, Ruby, GDScript (regex-based)
 
 Example usage:
     # Extract from directory
@@ -675,6 +675,16 @@ class GenericTestAnalyzer:
             "instantiation": r"(\w+)\s*=\s*(\w+)\.new\(([^)]*)\)",
             "assertion": r"expect\(([^)]+)\)\.to\s+(?:eq|be|match)\(([^)]+)\)",
             "test_function": r'(?:test|it)\s+["\']([^"\']+)["\']',
+        },
+        "gdscript": {
+            # GDScript object instantiation (var x = Class.new(), preload, load)
+            "instantiation": r"(?:var|const)\s+(\w+)\s*=\s*(?:(\w+)\.new\(|(?:preload|load)\([\"']([^\"']+)[\"']\)\.new\()",
+            # GUT/gdUnit4 assertions
+            "assertion": r"assert_(?:eq|ne|true|false|null|not_null|gt|lt|between|has|contains|typeof)\(([^)]+)\)",
+            # Test functions: GUT (func test_*), gdUnit4 (@test), WAT (extends WAT.Test)
+            "test_function": r"(?:@test\s+)?func\s+(test_\w+)\s*\(",
+            # Signal connections and emissions
+            "signal": r"(?:(\w+)\.connect\(|emit_signal\([\"'](\w+)[\"'])",
         },
     }
 
