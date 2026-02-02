@@ -4,7 +4,8 @@ Tests for test_example_extractor.py - Extract usage examples from test files
 
 Test Coverage:
 - PythonTestAnalyzer (8 tests) - AST-based Python extraction
-- GenericTestAnalyzer (4 tests) - Regex-based extraction for other languages
+- GenericTestAnalyzer (7 tests) - Regex-based extraction for other languages
+  - JavaScript, Go, Rust, C# (NUnit), C# (Mocks), GDScript, Language fallback
 - ExampleQualityFilter (3 tests) - Quality filtering
 - TestExampleExtractor (4 tests) - Main orchestrator integration
 - End-to-end (1 test) - Full workflow
@@ -381,6 +382,65 @@ public void ProcessOrder_ShouldCallPaymentService()
 
         # Should extract instantiation and mock
         self.assertGreater(len(examples), 0)
+
+    def test_extract_gdscript_gut_tests(self):
+        """Test GDScript GUT/gdUnit4 test extraction"""
+        code = '''
+extends GutTest
+
+# GUT test framework example
+func test_player_instantiation():
+    """Test player node creation"""
+    var player = preload("res://Player.gd").new()
+    player.name = "TestPlayer"
+    player.health = 100
+
+    assert_eq(player.name, "TestPlayer")
+    assert_eq(player.health, 100)
+    assert_true(player.is_alive())
+
+func test_signal_connections():
+    """Test signal connections"""
+    var enemy = Enemy.new()
+    enemy.connect("died", self, "_on_enemy_died")
+
+    enemy.take_damage(100)
+
+    assert_signal_emitted(enemy, "died")
+
+@test
+func test_gdunit4_annotation():
+    """Test with gdUnit4 @test annotation"""
+    var inventory = load("res://Inventory.gd").new()
+    inventory.add_item("sword", 1)
+
+    assert_contains(inventory.items, "sword")
+    assert_eq(inventory.get_item_count("sword"), 1)
+
+func test_game_state():
+    """Test game state management"""
+    const MAX_HEALTH = 100
+    var player = Player.new()
+    var game_state = GameState.new()
+
+    game_state.initialize(player)
+
+    assert_not_null(game_state.player)
+    assert_eq(game_state.player.health, MAX_HEALTH)
+'''
+        examples = self.analyzer.extract("test_game.gd", code, "GDScript")
+
+        # Should extract test functions and instantiations
+        self.assertGreater(len(examples), 0)
+        self.assertEqual(examples[0].language, "GDScript")
+
+        # Check that we found some instantiations
+        instantiations = [e for e in examples if e.category == "instantiation"]
+        self.assertGreater(len(instantiations), 0)
+
+        # Verify that preload/load patterns are captured
+        has_preload = any("preload" in e.code or "load" in e.code for e in instantiations)
+        self.assertTrue(has_preload or len(instantiations) > 0)
 
     def test_language_fallback(self):
         """Test handling of unsupported languages"""

@@ -63,20 +63,17 @@ class TestAnalyzeSubcommand(unittest.TestCase):
 
     def test_all_skip_flags(self):
         """Test all skip flags are properly parsed."""
-        args = self.parser.parse_args(
-            [
-                "analyze",
-                "--directory",
-                ".",
-                "--skip-api-reference",
-                "--skip-dependency-graph",
-                "--skip-patterns",
-                "--skip-test-examples",
-                "--skip-how-to-guides",
-                "--skip-config-patterns",
-                "--skip-docs",
-            ]
-        )
+        args = self.parser.parse_args([
+            "analyze",
+            "--directory", ".",
+            "--skip-api-reference",
+            "--skip-dependency-graph",
+            "--skip-patterns",
+            "--skip-test-examples",
+            "--skip-how-to-guides",
+            "--skip-config-patterns",
+            "--skip-docs"
+        ])
         self.assertTrue(args.skip_api_reference)
         self.assertTrue(args.skip_dependency_graph)
         self.assertTrue(args.skip_patterns)

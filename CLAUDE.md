@@ -292,6 +292,11 @@ skill-seekers analyze --directory . --comprehensive
 # With AI enhancement (auto-detects API or LOCAL)
 skill-seekers analyze --directory . --enhance
 
+# Granular AI enhancement control (NEW)
+skill-seekers analyze --directory . --enhance-level 1  # SKILL.md only
+skill-seekers analyze --directory . --enhance-level 2  # + Architecture + Config + Docs
+skill-seekers analyze --directory . --enhance-level 3  # Full enhancement (all features)
+
 # Disable specific features
 skill-seekers analyze --directory . --skip-patterns --skip-how-to-guides
 ```
@@ -299,6 +304,15 @@ skill-seekers analyze --directory . --skip-patterns --skip-how-to-guides
 - Generates 300+ line standalone SKILL.md files from codebases
 - All C3.x features integrated (patterns, tests, guides, config, architecture, docs)
 - Complete codebase analysis without documentation scraping
+- **NEW**: Granular AI enhancement control with `--enhance-level` (0-3)
+
+**C3.9 Project Documentation Extraction** (`codebase_scraper.py`):
+- Extracts and categorizes all markdown files from the project
+- Auto-detects categories: overview, architecture, guides, workflows, features, etc.
+- Integrates documentation into SKILL.md with summaries
+- AI enhancement (level 2+) adds topic extraction and cross-references
+- Controlled by depth: surface=raw copy, deep=parse+summarize, full=AI-enhanced
+- Default ON, use `--skip-docs` to disable
 
 **C3.9 Project Documentation Extraction** (`codebase_scraper.py`):
 - Extracts and categorizes all markdown files from the project
