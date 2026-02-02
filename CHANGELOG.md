@@ -7,17 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
----
-
-## [2.8.0] - 2026-02-01
-
-### 🚀 Major Feature Release - Enhanced Code Analysis & Documentation
-
-This release brings powerful new code analysis features, performance optimizations, and international API support. Special thanks to all our contributors who made this release possible!
-
 ### Added
 
-#### C3.10: Signal Flow Analysis for Godot Projects
+#### C3.10: Signal Flow Analysis for Godot Projects (NEW)
 - **Complete Signal Flow Analysis System**: Analyze event-driven architectures in Godot game projects
   - Signal declaration extraction (`signal` keyword detection)
   - Connection mapping (`.connect()` calls with targets and methods)
