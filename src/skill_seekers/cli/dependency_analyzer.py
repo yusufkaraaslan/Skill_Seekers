@@ -888,13 +888,13 @@ class DependencyAnalyzer:
     def _extract_godot_resources(self, content: str, file_path: str) -> list[DependencyInfo]:
         """
         Extract resource dependencies from Godot files (.tscn, .tres, .gdshader).
-        
+
         Extracts:
         - ext_resource paths (scripts, scenes, textures, etc.)
         - preload() and load() calls
         """
         deps = []
-        
+
         # Extract ext_resource dependencies
         for match in re.finditer(r'\[ext_resource.*?path="(.+?)".*?\]', content):
             resource_path = match.group(1)
@@ -927,5 +927,5 @@ class DependencyAnalyzer:
                     line_number=content[: match.start()].count("\n") + 1,
                 )
             )
-        
+
         return deps
