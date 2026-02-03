@@ -199,6 +199,11 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "F541",   # f-string without placeholders (style preference)
+    "ARG002", # unused method argument (often needed for interface compliance)
+    "B007",   # loop control variable not used (sometimes intentional)
+    "I001",   # import block unsorted (handled by formatter)
+    "SIM114", # combine if branches (style preference, can reduce readability)
 ]
 
 [tool.ruff.lint.isort]
