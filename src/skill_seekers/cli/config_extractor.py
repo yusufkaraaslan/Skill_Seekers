@@ -299,8 +299,13 @@ class ConfigFileDetector:
             if item.is_dir():
                 continue
 
-            # Skip if in excluded directory
-            if any(skip_dir in item.parts for skip_dir in self.SKIP_DIRS):
+            # Skip if in excluded directory (check relative path only)
+            try:
+                relative_parts = item.relative_to(directory).parts
+                if any(skip_dir in relative_parts for skip_dir in self.SKIP_DIRS):
+                    continue
+            except ValueError:
+                # Item is not relative to directory, skip it
                 continue
 
             yield item
