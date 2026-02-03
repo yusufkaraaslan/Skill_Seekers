@@ -1433,7 +1433,7 @@ class CodeAnalyzer:
     def _analyze_godot_scene(self, content: str, file_path: str) -> dict[str, Any]:
         """
         Analyze Godot .tscn scene file.
-        
+
         Extracts:
         - Node hierarchy
         - Script attachments
@@ -1443,7 +1443,7 @@ class CodeAnalyzer:
         nodes = []
         resources = []
         scripts = []
-        
+
         # Extract external resources
         for match in re.finditer(r'\[ext_resource.*?type="(.+?)".*?path="(.+?)".*?id="(.+?)"\]', content):
             res_type, path, res_id = match.groups()
@@ -1452,28 +1452,28 @@ class CodeAnalyzer:
                 "path": path,
                 "id": res_id
             })
-            
+
             # Track scripts separately
             if res_type == "Script":
                 scripts.append({
                     "path": path,
                     "id": res_id
                 })
-        
+
         # Extract nodes
         for match in re.finditer(r'\[node name="(.+?)".*?type="(.+?)".*?\]', content):
             node_name, node_type = match.groups()
-            
+
             # Check if node has a script attached
             script_match = re.search(rf'\[node name="{re.escape(node_name)}".*?script = ExtResource\("(.+?)"\)', content, re.DOTALL)
             attached_script = script_match.group(1) if script_match else None
-            
+
             nodes.append({
                 "name": node_name,
                 "type": node_type,
                 "script": attached_script
             })
-        
+
         return {
             "file": file_path,
             "nodes": nodes,
@@ -1485,11 +1485,11 @@ class CodeAnalyzer:
                 "resource_count": len(resources)
             }
         }
-    
+
     def _analyze_godot_resource(self, content: str, file_path: str) -> dict[str, Any]:
         """
         Analyze Godot .tres resource file.
-        
+
         Extracts:
         - Resource type and class
         - Script reference
@@ -1501,7 +1501,7 @@ class CodeAnalyzer:
         resource_type = None
         script_class = None
         script_path = None
-        
+
         # Extract resource header
         header_match = re.search(r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s+', content)
         if header_match:
