@@ -1583,7 +1583,7 @@ class CodeAnalyzer:
                 "name": name,
                 "type": var_type
             })
-        
+
         # Extract functions
         for match in re.finditer(r'void\s+(\w+)\s*\(([^)]*)\)', content):
             func_name, params = match.groups()
@@ -1591,7 +1591,7 @@ class CodeAnalyzer:
                 "name": func_name,
                 "parameters": params.strip() if params else ""
             })
-        
+
         return {
             "file": file_path,
             "shader_type": shader_type,
@@ -1607,7 +1607,7 @@ class CodeAnalyzer:
     def _analyze_gdscript(self, content: str, file_path: str) -> dict[str, Any]:
         """
         Analyze GDScript file using regex (Godot-specific syntax).
-        
+
         GDScript has Python-like syntax but with Godot-specific keywords:
         - class_name MyClass extends Node
         - func _ready(): (functions)
@@ -1619,7 +1619,7 @@ class CodeAnalyzer:
         functions = []
         signals = []
         exports = []
-        
+
         # Extract class definition
         class_match = re.search(r'class_name\s+(\w+)(?:\s+extends\s+(\w+))?', content)
         if class_match:
@@ -1631,11 +1631,11 @@ class CodeAnalyzer:
                 "methods": [],
                 "line_number": content[: class_match.start()].count("\n") + 1
             })
-        
+
         # Extract functions
         for match in re.finditer(r'func\s+(\w+)\s*\(([^)]*)\)(?:\s*->\s*(\w+))?:', content):
             func_name, params, return_type = match.groups()
-            
+
             # Parse parameters
             param_list = []
             if params.strip():
@@ -1646,10 +1646,10 @@ class CodeAnalyzer:
                         parts = param.split(':')
                         name = parts[0].strip()
                         type_and_default = parts[1].strip()
-                        
+
                         param_type = type_and_default.split('=')[0].strip() if '=' in type_and_default else type_and_default
                         default = type_and_default.split('=')[1].strip() if '=' in type_and_default else None
-                        
+
                         param_list.append({
                             "name": name,
                             "type_hint": param_type,
@@ -1661,14 +1661,14 @@ class CodeAnalyzer:
                             "type_hint": None,
                             "default": None
                         })
-            
+
             functions.append({
                 "name": func_name,
                 "parameters": param_list,
                 "return_type": return_type,
                 "line_number": content[: match.start()].count("\n") + 1
             })
-        
+
         # Extract signals with documentation
         signal_connections = []
         signal_emissions = []
