@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
 
-**Current Version:** v2.8.0
+**Current Version:** v2.9.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
@@ -79,6 +79,7 @@ src/skill_seekers/
 │   ├── code_analyzer.py              # Multi-language code analysis
 │   ├── api_reference_builder.py      # API documentation builder
 │   ├── dependency_analyzer.py        # Dependency graph analysis
+│   ├── signal_flow_analyzer.py       # C3.10 Signal flow analysis (Godot)
 │   └── adaptors/                     # Platform adaptor architecture
 │       ├── __init__.py
 │       ├── base_adaptor.py
@@ -314,13 +315,29 @@ skill-seekers analyze --directory . --skip-patterns --skip-how-to-guides
 - Controlled by depth: surface=raw copy, deep=parse+summarize, full=AI-enhanced
 - Default ON, use `--skip-docs` to disable
 
-**C3.9 Project Documentation Extraction** (`codebase_scraper.py`):
-- Extracts and categorizes all markdown files from the project
-- Auto-detects categories: overview, architecture, guides, workflows, features, etc.
-- Integrates documentation into SKILL.md with summaries
-- AI enhancement (level 2+) adds topic extraction and cross-references
-- Controlled by depth: surface=raw copy, deep=parse+summarize, full=AI-enhanced
-- Default ON, use `--skip-docs` to disable
+**C3.10 Signal Flow Analysis for Godot Projects** (`signal_flow_analyzer.py`):
+- Complete signal flow analysis system for event-driven Godot architectures
+- Signal declaration extraction (detects `signal` keyword declarations)
+- Connection mapping (tracks `.connect()` calls with targets and methods)
+- Emission tracking (finds `.emit()` and `emit_signal()` calls)
+- Real-world metrics: 208 signals, 634 connections, 298 emissions in test project
+- Signal density metrics (signals per file)
+- Event chain detection (signals triggering other signals)
+- Signal pattern detection:
+  - **EventBus Pattern** (0.90 confidence): Centralized signal hub in autoload
+  - **Observer Pattern** (0.85 confidence): Multi-observer signals (3+ listeners)
+  - **Event Chains** (0.80 confidence): Cascading signal propagation
+- Signal-based how-to guides (C3.10.1):
+  - AI-generated step-by-step usage guides (Connect → Emit → Handle)
+  - Real code examples from project
+  - Common usage locations
+  - Parameter documentation
+- Outputs: `signal_flow.json`, `signal_flow.mmd` (Mermaid diagram), `signal_reference.md`, `signal_how_to_guides.md`
+- Comprehensive Godot 4.x support:
+  - GDScript (.gd), Scene files (.tscn), Resources (.tres), Shaders (.gdshader)
+  - GDScript test extraction (GUT, gdUnit4, WAT frameworks)
+  - 396 test cases extracted in test project
+  - Framework detection (Unity, Unreal, Godot)
 
 **Key Architecture Decision (BREAKING in v2.5.2):**
 - Changed from opt-in (`--build-*`) to opt-out (`--skip-*`) flags
@@ -753,6 +770,7 @@ skill-seekers estimate configs/myconfig.json
 - `how_to_guide_builder.py` - C3.3 guide generation
 - `config_extractor.py` - C3.4 configuration extraction
 - `generate_router.py` - C3.5 router skill generation
+- `signal_flow_analyzer.py` - C3.10 signal flow analysis (Godot projects)
 - `unified_codebase_analyzer.py` - Three-stream GitHub+local analyzer
 
 **AI Enhancement** (`src/skill_seekers/cli/`):
@@ -938,8 +956,16 @@ The `scripts/` directory contains utility scripts:
 
 ## 🎉 Recent Achievements
 
+**v2.9.0 (February 3, 2026):**
+- **C3.10: Signal Flow Analysis** - Complete signal flow analysis for Godot projects
+- Comprehensive Godot 4.x support (GDScript, .tscn, .tres, .gdshader files)
+- GDScript test extraction (GUT, gdUnit4, WAT frameworks)
+- Signal pattern detection (EventBus, Observer, Event Chains)
+- Signal-based how-to guides generation
+
 **v2.8.0 (February 1, 2026):**
-- Active development on next release
+- C3.9: Project Documentation Extraction
+- Granular AI enhancement control with `--enhance-level` (0-3)
 
 **v2.7.1 (January 18, 2026 - Hotfix):**
 - 🚨 **Critical Bug Fix:** Config download 404 errors resolved
@@ -970,6 +996,8 @@ The `scripts/` directory contains utility scripts:
 - **C3.6:** AI enhancement for patterns and test examples (Claude API integration)
 - **C3.7:** Architectural pattern detection (8 patterns, framework-aware)
 - **C3.8:** Standalone codebase scraper (300+ line SKILL.md from code alone)
+- **C3.9:** Project documentation extraction (markdown categorization, AI enhancement)
+- **C3.10:** Signal flow analysis (Godot event-driven architecture, pattern detection)
 
 **v2.5.2:**
 - UX Improvement: Analysis features now default ON with --skip-* flags (BREAKING)
