@@ -1507,7 +1507,7 @@ class CodeAnalyzer:
         if header_match:
             resource_type = header_match.group(1)
             script_class = header_match.group(2)
-        
+
         # Extract external resources
         for match in re.finditer(r'\[ext_resource.*?type="(.+?)".*?path="(.+?)".*?id="(.+?)"\]', content):
             res_type, path, res_id = match.groups()
@@ -1516,15 +1516,15 @@ class CodeAnalyzer:
                 "path": path,
                 "id": res_id
             })
-            
+
             if res_type == "Script":
                 script_path = path
-        
+
         # Extract properties from [resource] section
         resource_section = re.search(r'\[resource\](.*?)(?:\n\[|$)', content, re.DOTALL)
         if resource_section:
             prop_text = resource_section.group(1)
-            
+
             for line in prop_text.strip().split('\n'):
                 if '=' in line:
                     key, value = line.split('=', 1)
@@ -1532,7 +1532,7 @@ class CodeAnalyzer:
                         "name": key.strip(),
                         "value": value.strip()
                     })
-        
+
         return {
             "file": file_path,
             "resource_type": resource_type,
@@ -1545,11 +1545,11 @@ class CodeAnalyzer:
                 "dependency_count": len(resources)
             }
         }
-    
+
     def _analyze_godot_shader(self, content: str, file_path: str) -> dict[str, Any]:
         """
         Analyze Godot .gdshader shader file.
-        
+
         Extracts:
         - Shader type (spatial, canvas_item, particles, etc.)
         - Uniforms (parameters)
@@ -1560,12 +1560,12 @@ class CodeAnalyzer:
         functions = []
         varyings = []
         shader_type = None
-        
+
         # Extract shader type
         type_match = re.search(r'shader_type\s+(\w+)', content)
         if type_match:
             shader_type = type_match.group(1)
-        
+
         # Extract uniforms
         for match in re.finditer(r'uniform\s+(\w+)\s+(\w+)(?:\s*:\s*(.+?))?(?:\s*=\s*(.+?))?;', content):
             uniform_type, name, hint, default = match.groups()
@@ -1575,7 +1575,7 @@ class CodeAnalyzer:
                 "hint": hint,
                 "default": default
             })
-        
+
         # Extract varying variables
         for match in re.finditer(r'varying\s+(\w+)\s+(\w+)', content):
             var_type, name = match.groups()
