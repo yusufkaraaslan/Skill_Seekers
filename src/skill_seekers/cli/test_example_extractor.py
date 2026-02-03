@@ -816,7 +816,11 @@ class GenericTestAnalyzer:
                 # Find next method (setup or test)
                 next_pattern = patterns.get("setup", patterns["test_function"])
                 next_setup = re.search(next_pattern, code[setup_start:])
-                setup_end = setup_start + next_setup.start() if next_setup else min(setup_start + 500, len(code))
+                setup_end = (
+                    setup_start + next_setup.start()
+                    if next_setup
+                    else min(setup_start + 500, len(code))
+                )
                 setup_body = code[setup_start:setup_end]
 
                 example = self._create_example(

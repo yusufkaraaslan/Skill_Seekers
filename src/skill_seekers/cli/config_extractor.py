@@ -429,7 +429,9 @@ class ConfigParser:
                 # JSON array at root - extract from each dict item
                 for idx, item in enumerate(data):
                     if isinstance(item, dict):
-                        self._extract_settings_from_dict(item, config_file, parent_path=[f"[{idx}]"])
+                        self._extract_settings_from_dict(
+                            item, config_file, parent_path=[f"[{idx}]"]
+                        )
             else:
                 # Primitive value at root (string, number, etc.) - skip
                 logger.debug(f"Skipping JSON with primitive root: {config_file.relative_path}")
@@ -452,7 +454,9 @@ class ConfigParser:
                 # YAML array at root - extract from each dict item
                 for idx, item in enumerate(data):
                     if isinstance(item, dict):
-                        self._extract_settings_from_dict(item, config_file, parent_path=[f"[{idx}]"])
+                        self._extract_settings_from_dict(
+                            item, config_file, parent_path=[f"[{idx}]"]
+                        )
         except yaml.YAMLError as e:
             config_file.parse_errors.append(f"YAML parse error: {str(e)}")
 

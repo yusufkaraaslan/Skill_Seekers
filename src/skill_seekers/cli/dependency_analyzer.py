@@ -272,7 +272,7 @@ class DependencyAnalyzer:
 
         # Extract extends with class name: extends MyBaseClass
         # Note: This creates a symbolic dependency that may not resolve to a file
-        extends_class_pattern = r'extends\s+([A-Z]\w+)'
+        extends_class_pattern = r"extends\s+([A-Z]\w+)"
         for match in re.finditer(extends_class_pattern, content):
             class_name = match.group(1)
             line_num = content[: match.start()].count("\n") + 1

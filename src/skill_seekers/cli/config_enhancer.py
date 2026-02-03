@@ -167,9 +167,7 @@ class ConfigEnhancer:
             for setting in cf.get("settings", [])[:5]:  # First 5 settings per file
                 # Support both "type" (from config_extractor) and "value_type" (legacy)
                 value_type = setting.get("type", setting.get("value_type", "unknown"))
-                settings_summary.append(
-                    f"  - {setting['key']}: {setting['value']} ({value_type})"
-                )
+                settings_summary.append(f"  - {setting['key']}: {setting['value']} ({value_type})")
 
             # Support both "type" (from config_extractor) and "config_type" (legacy)
             config_type = cf.get("type", cf.get("config_type", "unknown"))
@@ -306,7 +304,9 @@ Focus on actionable insights that help developers understand and improve their c
             config_type = cf.get("type", cf.get("config_type", "unknown"))
             settings_preview = []
             for s in cf.get("settings", [])[:3]:  # Show first 3 settings
-                settings_preview.append(f"    - {s.get('key', 'unknown')}: {str(s.get('value', ''))[:50]}")
+                settings_preview.append(
+                    f"    - {s.get('key', 'unknown')}: {str(s.get('value', ''))[:50]}"
+                )
 
             config_data.append(f"""
 ### {cf["relative_path"]} ({config_type})
@@ -431,9 +431,7 @@ DO NOT explain your work - just write the JSON file directly.
                     potential_files.append(json_file)
 
             # Try to load the most recent JSON file with expected structure
-            for json_file in sorted(
-                potential_files, key=lambda f: f.stat().st_mtime, reverse=True
-            ):
+            for json_file in sorted(potential_files, key=lambda f: f.stat().st_mtime, reverse=True):
                 try:
                     with open(json_file) as f:
                         data = json.load(f)

@@ -89,7 +89,13 @@ class ArchitecturalPatternDetector:
     # Framework detection patterns
     FRAMEWORK_MARKERS = {
         # Game Engines (checked first to avoid false positives)
-        "Unity": ["Assembly-CSharp.csproj", "UnityEngine.dll", "ProjectSettings/ProjectVersion.txt", ".unity", "Library/"],
+        "Unity": [
+            "Assembly-CSharp.csproj",
+            "UnityEngine.dll",
+            "ProjectSettings/ProjectVersion.txt",
+            ".unity",
+            "Library/",
+        ],
         "Unreal": ["Source/", ".uproject", "Config/DefaultEngine.ini", "Binaries/", "Content/"],
         "Godot": ["project.godot", ".godot", ".tscn", ".tres", ".gd"],
         # Web Frameworks

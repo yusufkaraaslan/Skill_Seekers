@@ -144,9 +144,7 @@ class SignalFlowAnalyzer:
 
         # Observer pattern - signals with multiple connections
         multi_connected = {
-            sig: len(conns)
-            for sig, conns in self.signal_connections.items()
-            if len(conns) >= 3
+            sig: len(conns) for sig, conns in self.signal_connections.items() if len(conns) >= 3
         }
 
         if multi_connected:
@@ -170,9 +168,7 @@ class SignalFlowAnalyzer:
     def _calculate_statistics(self) -> dict[str, Any]:
         """Calculate signal usage statistics."""
         total_signals = len(self.signal_declarations)
-        total_connections = sum(
-            len(conns) for conns in self.signal_connections.values()
-        )
+        total_connections = sum(len(conns) for conns in self.signal_connections.values())
         total_emissions = sum(len(emits) for emits in self.signal_emissions.items())
 
         # Find most connected signals
@@ -181,17 +177,13 @@ class SignalFlowAnalyzer:
         )[:5]
 
         # Find most emitted signals
-        most_emitted = sorted(
-            self.signal_emissions.items(), key=lambda x: len(x[1]), reverse=True
-        )[:5]
+        most_emitted = sorted(self.signal_emissions.items(), key=lambda x: len(x[1]), reverse=True)[
+            :5
+        ]
 
         # Signal density (signals per GDScript file)
-        gdscript_files = sum(
-            1 for f in self.files if f.get("language") == "GDScript"
-        )
-        signal_density = (
-            total_signals / gdscript_files if gdscript_files > 0 else 0
-        )
+        gdscript_files = sum(1 for f in self.files if f.get("language") == "GDScript")
+        signal_density = total_signals / gdscript_files if gdscript_files > 0 else 0
 
         return {
             "total_signals": total_signals,
@@ -200,12 +192,10 @@ class SignalFlowAnalyzer:
             "signal_density": round(signal_density, 2),
             "gdscript_files": gdscript_files,
             "most_connected_signals": [
-                {"signal": sig, "connection_count": len(conns)}
-                for sig, conns in most_connected
+                {"signal": sig, "connection_count": len(conns)} for sig, conns in most_connected
             ],
             "most_emitted_signals": [
-                {"signal": sig, "emission_count": len(emits)}
-                for sig, emits in most_emitted
+                {"signal": sig, "emission_count": len(emits)} for sig, emits in most_emitted
             ],
         }
 
@@ -272,9 +262,7 @@ class SignalFlowAnalyzer:
 
         return patterns[:10]  # Top 10 most used signals
 
-    def generate_how_to_guides(
-        self, output_dir: Path, ai_mode: str = "LOCAL"
-    ) -> str:
+    def generate_how_to_guides(self, output_dir: Path, ai_mode: str = "LOCAL") -> str:
         """
         Generate signal-based how-to guides using AI.
 
@@ -297,7 +285,9 @@ class SignalFlowAnalyzer:
 
         for i, pattern in enumerate(patterns, 1):
             signal_name = pattern["signal_name"]
-            guide_content += f"{i}. [How to use `{signal_name}`](#{signal_name.lower().replace('_', '-')})\n"
+            guide_content += (
+                f"{i}. [How to use `{signal_name}`](#{signal_name.lower().replace('_', '-')})\n"
+            )
 
         guide_content += "\n---\n\n"
 
@@ -313,9 +303,7 @@ class SignalFlowAnalyzer:
 
         return str(guide_file)
 
-    def _generate_signal_guide(
-        self, pattern: dict[str, Any], ai_mode: str
-    ) -> str:
+    def _generate_signal_guide(self, pattern: dict[str, Any], ai_mode: str) -> str:
         """
         Generate a how-to guide for a single signal using AI.
 
@@ -434,10 +422,12 @@ class SignalFlowAnalyzer:
             guide_file = self.generate_how_to_guides(output_dir, ai_mode)
             if guide_file:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.info(f"📚 Generated signal how-to guides: {guide_file}")
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to generate signal how-to guides: {e}")
 
@@ -453,9 +443,7 @@ class SignalFlowAnalyzer:
         lines.append(f"- **Total Signals**: {stats['total_signals']}")
         lines.append(f"- **Total Connections**: {stats['total_connections']}")
         lines.append(f"- **Total Emissions**: {stats['total_emissions']}")
-        lines.append(
-            f"- **Signal Density**: {stats['signal_density']} signals per file\n"
-        )
+        lines.append(f"- **Signal Density**: {stats['signal_density']} signals per file\n")
 
         # Patterns
         if analysis["patterns"]:
@@ -480,9 +468,7 @@ class SignalFlowAnalyzer:
         if stats["most_connected_signals"]:
             lines.append("## Most Connected Signals\n")
             for item in stats["most_connected_signals"]:
-                lines.append(
-                    f"- **{item['signal']}**: {item['connection_count']} connections"
-                )
+                lines.append(f"- **{item['signal']}**: {item['connection_count']} connections")
             lines.append("")
 
         with open(output_dir / "signal_reference.md", "w") as f:
