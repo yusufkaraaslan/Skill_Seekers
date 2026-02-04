@@ -119,6 +119,195 @@ class TestLanguageDetection(unittest.TestCase):
             self.assertGreaterEqual(confidence, 0.0)
             self.assertLessEqual(confidence, 1.0)
 
+    def test_detect_scss_with_confidence(self):
+        """Test SCSS detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        $primary-color: #3498db;
+
+        @mixin border-radius($radius) {
+          border-radius: $radius;
+        }
+
+        .button {
+          color: $primary-color;
+          @include border-radius(5px);
+
+          &:hover {
+            background: darken($primary-color, 10%);
+          }
+        }
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "scss")
+        self.assertGreater(confidence, 0.8)
+
+    def test_detect_dart_with_confidence(self):
+        """Test Dart detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        import 'package:flutter/material.dart';
+
+        class MyApp extends StatelessWidget {
+          @override
+          Widget build(BuildContext context) {
+            return MaterialApp(
+              home: Text('Hello'),
+            );
+          }
+        }
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "dart")
+        self.assertGreater(confidence, 0.6)
+
+    def test_detect_scala_with_confidence(self):
+        """Test Scala detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        case class Person(name: String, age: Int)
+
+        object Main extends App {
+          val person = Person("Alice", 30)
+          person match {
+            case Person(n, a) if a >= 18 => println(s"Adult: $n")
+            case _ => println("Minor")
+          }
+        }
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "scala")
+        self.assertGreater(confidence, 0.7)
+
+    def test_detect_sass_with_confidence(self):
+        """Test SASS detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        $primary-color: #3498db
+
+        =border-radius($radius)
+          border-radius: $radius
+
+        .button
+          color: $primary-color
+          +border-radius(5px)
+
+          &:hover
+            background: darken($primary-color, 10%)
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "sass")
+        self.assertGreater(confidence, 0.8)
+
+    def test_detect_elixir_with_confidence(self):
+        """Test Elixir detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        defmodule MyApp.User do
+          def greet(name) do
+            "Hello, #{name}"
+          end
+
+          defp calculate_age(birth_year) do
+            2024 - birth_year
+          end
+
+          def process(data) do
+            data
+            |> String.trim()
+            |> String.downcase()
+            |> String.split(",")
+          end
+        end
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "elixir")
+        self.assertGreater(confidence, 0.8)
+
+    def test_detect_lua_with_confidence(self):
+        """Test Lua detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = """
+        local function calculate_sum(numbers)
+          local total = 0
+          for i = 1, #numbers do
+            total = total + numbers[i]
+          end
+          return total
+        end
+
+        local items = {1, 2, 3, 4, 5}
+        local result = calculate_sum(items)
+        print("Sum: " .. result)
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "lua")
+        self.assertGreater(confidence, 0.7)
+
+    def test_detect_perl_with_confidence(self):
+        """Test Perl detection"""
+        extractor = self.PDFExtractor.__new__(self.PDFExtractor)
+        from skill_seekers.cli.language_detector import LanguageDetector
+
+        extractor.language_detector = LanguageDetector(min_confidence=0.15)
+
+        code = r"""
+        #!/usr/bin/perl
+        use strict;
+        use warnings;
+
+        sub process_line {
+          my $line = shift;
+          chomp($line);
+
+          if ($line =~ /^(\w+)=(\w+)$/) {
+            my ($name, $value) = ($1, $2);
+            return "$name has value $value";
+          }
+          return undef;
+        }
+
+        my @lines = ("foo=10", "bar=20");
+        foreach my $line (@lines) {
+          my $result = process_line($line);
+          print $result if defined $result;
+        }
+        """
+
+        language, confidence = extractor.detect_language_from_code(code)
+        self.assertEqual(language, "perl")
+        self.assertGreater(confidence, 0.8)
+
 
 class TestSyntaxValidation(unittest.TestCase):
     """Test syntax validation for different languages"""
@@ -315,7 +504,11 @@ class TestCodeBlockMerging(unittest.TestCase):
             {
                 "page_number": 1,
                 "code_samples": [
-                    {"code": "def hello():", "language": "python", "detection_method": "pattern"}
+                    {
+                        "code": "def hello():",
+                        "language": "python",
+                        "detection_method": "pattern",
+                    }
                 ],
                 "code_blocks_count": 1,
             },
@@ -346,7 +539,11 @@ class TestCodeBlockMerging(unittest.TestCase):
             {
                 "page_number": 1,
                 "code_samples": [
-                    {"code": "def foo():", "language": "python", "detection_method": "pattern"}
+                    {
+                        "code": "def foo():",
+                        "language": "python",
+                        "detection_method": "pattern",
+                    }
                 ],
                 "code_blocks_count": 1,
             },
