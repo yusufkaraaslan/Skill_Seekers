@@ -47,6 +47,7 @@ Terminal Selection:
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -169,6 +170,32 @@ class LocalSkillEnhancer:
         self.status_file = self.skill_dir / ".enhancement_status.json"
         self.agent, self.agent_cmd, self.agent_display = self._resolve_agent(agent, agent_cmd)
 
+    def _validate_custom_command(self, cmd_template: str) -> None:
+        """Validate custom command template for basic safety and executability."""
+        dangerous_chars = [";", "&", "|", "$", "`", "\n", "\r"]
+        if any(char in cmd_template for char in dangerous_chars):
+            raise ValueError(
+                "Custom command contains dangerous shell characters. "
+                f"Command: {cmd_template}"
+            )
+
+        try:
+            cmd_parts = shlex.split(cmd_template)
+        except ValueError as exc:
+            raise ValueError(f"Invalid command template: {exc}") from exc
+
+        if not cmd_parts:
+            raise ValueError("Custom command is empty.")
+
+        executable = cmd_parts[0]
+        if "/" in executable:
+            executable_path = Path(executable)
+            if not executable_path.is_file():
+                raise ValueError(f"Custom command executable not found: {executable}")
+        else:
+            if not shutil.which(executable):
+                raise ValueError(f"Executable '{executable}' not found in PATH")
+
     def _resolve_agent(self, agent, agent_cmd):
         env_agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip()
         env_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
@@ -181,6 +208,7 @@ class LocalSkillEnhancer:
                 raise ValueError(
                     "Custom agent requires --agent-cmd or SKILL_SEEKER_AGENT_CMD to be set."
                 )
+            self._validate_custom_command(cmd_override)
             display_name = "Custom CLI Agent"
             return agent_name, cmd_override, display_name
 
