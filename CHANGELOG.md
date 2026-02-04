@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### URL Conversion Bug with Anchor Fragments (Issue #277)
+- **Critical Bug Fix**: Fixed 404 errors when scraping documentation with anchor links
+  - **Problem**: URLs with anchor fragments (e.g., `#synchronous-initialization`) were malformed
+    - Incorrect: `https://example.com/docs/api#method/index.html.md` ❌
+    - Correct: `https://example.com/docs/api/index.html.md` ✅
+  - **Root Cause**: `_convert_to_md_urls()` didn't strip anchor fragments before appending `/index.html.md`
+  - **Solution**: Parse URLs with `urllib.parse` to remove fragments and deduplicate base URLs
+  - **Impact**: Prevents duplicate requests for the same page with different anchors
+  - **Additional Fix**: Changed `.md` detection from `".md" in url` to `url.endswith('.md')`
+    - Prevents false matches on URLs like `/cmd-line` or `/AMD-processors`
+- **Test Coverage**: 12 comprehensive tests covering all edge cases
+  - Anchor fragment stripping
+  - Deduplication of multiple anchors on same URL
+  - Query parameter preservation
+  - Trailing slash handling
+  - Real-world MikroORM case validation
+  - 54/54 tests passing (42 existing + 12 new)
+- **Reported by**: @devjones via Issue #277
+
 ### Added
 
 #### Extended Language Detection (NEW)

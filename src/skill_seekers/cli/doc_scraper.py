@@ -705,27 +705,42 @@ class DocToSkillConverter:
     def _convert_to_md_urls(self, urls: list[str]) -> list[str]:
         """
         Convert URLs to .md format, trying /index.html.md suffix for non-.md URLs.
+        Strips anchor fragments (#anchor) and deduplicates base URLs to avoid 404 errors.
         不预先检查 URL 是否存在，直接加入队列，在爬取时再验证。
 
         Args:
             urls: List of URLs to process
 
         Returns:
-            List of .md URLs (未验证)
+            List of .md URLs (未验证, deduplicated, no anchors)
         """
+        from urllib.parse import urlparse, urlunparse
+
+        seen_base_urls = set()
         md_urls = []
 
         for url in urls:
-            if ".md" in url:
-                md_urls.append(url)
+            # Parse URL to extract and remove fragment (anchor)
+            parsed = urlparse(url)
+            base_url = urlunparse(parsed._replace(fragment=""))  # Remove #anchor
+
+            # Skip if we've already processed this base URL
+            if base_url in seen_base_urls:
+                continue
+            seen_base_urls.add(base_url)
+
+            # Check if URL already ends with .md (not just contains "md")
+            if base_url.endswith(".md"):
+                md_urls.append(base_url)
             else:
                 # 直接转换为 .md 格式，不发送 HEAD 请求检查
-                url = url.rstrip("/")
-                md_url = f"{url}/index.html.md"
+                base_url = base_url.rstrip("/")
+                md_url = f"{base_url}/index.html.md"
                 md_urls.append(md_url)
 
         logger.info(
-            "  ✓ Converted %d URLs to .md format (will validate during crawl)",
+            "  ✓ Converted %d URLs to %d unique .md URLs (anchors stripped, will validate during crawl)",
+            len(urls),
             len(md_urls),
         )
         return md_urls
