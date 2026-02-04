@@ -11,6 +11,98 @@ Skill Seekers supports **4 enhancement modes** for different use cases:
 3. **Daemon** - Fully detached process, continues after parent exits
 4. **Terminal** - Opens new terminal window (interactive)
 
+## Multi-Agent Support (NEW)
+
+All enhancement modes now support **multiple local coding agents**:
+
+### Supported Agents
+
+| Agent | Display Name | Default | Notes |
+|-------|--------------|---------|-------|
+| **claude** | Claude Code | ✅ Yes | Your Claude Code Max plan (no API costs) |
+| **codex** | OpenAI Codex CLI | No | Uses `codex exec --full-auto` |
+| **copilot** | GitHub Copilot CLI | No | Uses `gh copilot chat` |
+| **opencode** | OpenCode CLI | No | Uses `opencode` command |
+| **custom** | Custom CLI Agent | No | Use any CLI tool with `--agent-cmd` |
+
+### Agent Selection
+
+**CLI Flags:**
+```bash
+# Use Codex CLI
+skill-seekers enhance output/react/ --agent codex
+
+# Use Copilot CLI
+skill-seekers enhance output/react/ --agent copilot
+
+# Use OpenCode CLI
+skill-seekers enhance output/react/ --agent opencode
+
+# Custom agent with file input
+skill-seekers enhance output/react/ --agent custom --agent-cmd "my-agent --prompt {prompt_file}"
+
+# Custom agent with stdin input
+skill-seekers enhance output/react/ --agent custom --agent-cmd "my-agent --enhance"
+```
+
+**Environment Variables (CI/CD):**
+```bash
+# Set default agent
+export SKILL_SEEKER_AGENT=codex
+skill-seekers enhance output/react/
+
+# Set custom command template
+export SKILL_SEEKER_AGENT=custom
+export SKILL_SEEKER_AGENT_CMD="my-agent {prompt_file}"
+skill-seekers enhance output/react/
+```
+
+### Agent Command Templates
+
+**File-based agents** (use `{prompt_file}` placeholder):
+```bash
+--agent-cmd "my-agent --input {prompt_file}"
+--agent-cmd "my-agent < {prompt_file}"
+```
+
+**Stdin-based agents** (no placeholder):
+```bash
+--agent-cmd "my-agent --enhance"
+```
+
+### Security
+
+Custom commands are validated for security:
+- ✅ Blocks dangerous shell characters: `;`, `&`, `|`, `$`, `` ` ``, `\n`, `\r`
+- ✅ Validates executable exists in PATH
+- ✅ Safe parsing with `shlex.split()`
+
+**Example rejection:**
+```bash
+# This will fail with security error:
+skill-seekers enhance . --agent custom --agent-cmd "evil; rm -rf /"
+# Error: Custom command contains dangerous shell characters
+```
+
+### Agent Aliases
+
+Agent names are normalized with smart alias support:
+```bash
+# All resolve to "claude"
+--agent claude
+--agent claude-code
+--agent claude_code
+--agent CLAUDE
+
+# All resolve to "codex"
+--agent codex
+--agent codex-cli
+
+# All resolve to "copilot"
+--agent copilot
+--agent copilot-cli
+```
+
 ## Mode Comparison
 
 | Feature | Headless | Background | Daemon | Terminal |
@@ -28,18 +120,25 @@ Skill Seekers supports **4 enhancement modes** for different use cases:
 **When to use**: CI/CD pipelines, automation scripts, when you want to wait for completion
 
 ```bash
-# Basic usage - waits until done
+# Basic usage - waits until done (uses Claude Code by default)
 skill-seekers enhance output/react/
+
+# Use different agent
+skill-seekers enhance output/react/ --agent codex
+skill-seekers enhance output/react/ --agent copilot
 
 # With custom timeout
 skill-seekers enhance output/react/ --timeout 1200
 
 # Force mode - no confirmations
 skill-seekers enhance output/react/ --force
+
+# Combine agent + force mode
+skill-seekers enhance output/react/ --agent codex --force
 ```
 
 **Behavior**:
-- Runs `claude` CLI directly
+- Runs selected coding agent CLI directly (default: Claude Code)
 - **BLOCKS** until enhancement completes
 - Shows progress output
 - Returns exit code: 0 = success, 1 = failure
@@ -49,8 +148,12 @@ skill-seekers enhance output/react/ --force
 **When to use**: When you want to continue working while enhancement runs
 
 ```bash
-# Start enhancement in background
+# Start enhancement in background (default agent: Claude Code)
 skill-seekers enhance output/react/ --background
+
+# Start with different agent
+skill-seekers enhance output/react/ --background --agent codex
+skill-seekers enhance output/react/ --background --agent copilot
 
 # Returns immediately with status file created
 # ✅ Background enhancement started!

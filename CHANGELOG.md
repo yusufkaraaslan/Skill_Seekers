@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Multi-Agent Support for Local Enhancement (NEW)
+- **Multiple Coding Agent Support**: Choose your preferred local coding agent for SKILL.md enhancement
+  - **Claude Code** (default): Claude Code CLI with `--dangerously-skip-permissions`
+  - **Codex CLI**: OpenAI Codex CLI with `--full-auto` and `--skip-git-repo-check`
+  - **Copilot CLI**: GitHub Copilot CLI (`gh copilot chat`)
+  - **OpenCode CLI**: OpenCode CLI
+  - **Custom agents**: Use any CLI tool with `--agent custom --agent-cmd "command {prompt_file}"`
+- **CLI Arguments**: New flags for agent selection
+  - `--agent`: Choose agent (claude, codex, copilot, opencode, custom)
+  - `--agent-cmd`: Override command template for custom agents
+- **Environment Variables**: CI/CD friendly configuration
+  - `SKILL_SEEKER_AGENT`: Default agent to use
+  - `SKILL_SEEKER_AGENT_CMD`: Default command template for custom agents
+- **Security First**: Custom command validation
+  - Blocks dangerous shell characters (`;`, `&`, `|`, `$`, `` ` ``, `\n`, `\r`)
+  - Validates executable exists in PATH
+  - Safe parsing with `shlex.split()`
+- **Dual Input Modes**: Supports both file-based and stdin-based agents
+  - File-based: Uses `{prompt_file}` placeholder (Claude, custom agents)
+  - Stdin-based: Pipes prompt via stdin (Codex CLI)
+- **Backward Compatible**: Claude Code remains the default, no breaking changes
+- **Comprehensive Tests**: 13 new tests covering all agent types and security validation
+- **Agent Normalization**: Smart alias handling (e.g., "claude-code" → "claude")
+- **Credit**: Contributed by @rovo79 (Robert Dean) via PR #270
+
 #### C3.10: Signal Flow Analysis for Godot Projects (NEW)
 - **Complete Signal Flow Analysis System**: Analyze event-driven architectures in Godot game projects
   - Signal declaration extraction (`signal` keyword detection)

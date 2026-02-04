@@ -1560,8 +1560,24 @@ skill-seekers enhance output/react/
 - **Quality:** Transforms 75-line templates into 500+ line comprehensive guides
 
 **LOCAL Enhancement (Recommended):**
-- Uses your Claude Code Max plan (no API costs)
-- Opens new terminal with Claude Code
+- Uses your local coding agent (no API costs)
+- **Multiple Agent Support:**
+  - Claude Code (default) - Your Claude Code Max plan
+  - Codex CLI - OpenAI Codex CLI
+  - Copilot CLI - GitHub Copilot CLI
+  - OpenCode CLI - OpenCode CLI
+  - Custom agents - Use any CLI tool
+- Choose agent with `--agent` flag:
+  ```bash
+  skill-seekers enhance output/react/ --agent codex
+  skill-seekers enhance output/react/ --agent copilot
+  skill-seekers enhance output/react/ --agent custom --agent-cmd "my-agent {prompt_file}"
+  ```
+- Environment variables for CI/CD:
+  ```bash
+  export SKILL_SEEKER_AGENT=codex
+  export SKILL_SEEKER_AGENT_CMD="my-agent {prompt_file}"
+  ```
 - Analyzes reference files automatically
 - Takes 30-60 seconds
 - Quality: 9/10 (comparable to API version)
