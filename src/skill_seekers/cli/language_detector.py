@@ -3,7 +3,7 @@
 Unified Language Detection for Code Blocks
 
 Provides confidence-based language detection for documentation scrapers.
-Supports 20+ programming languages with weighted pattern matching.
+Supports 27+ programming languages with weighted pattern matching.
 
 Author: Skill Seekers Project
 """
@@ -505,7 +505,7 @@ class LanguageDetector:
     """
     Unified confidence-based language detection for code blocks.
 
-    Supports 20+ programming languages with weighted pattern matching.
+    Supports 27+ programming languages with weighted pattern matching.
     Uses two-stage detection:
     1. CSS class extraction (high confidence = 1.0)
     2. Pattern-based heuristics with confidence scoring (0.0-1.0)

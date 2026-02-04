@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Extended Language Detection (NEW)
+- **7 New Programming Languages**: Dart, Scala, SCSS, SASS, Elixir, Lua, Perl
+  - Pattern-based detection with confidence scoring (0.6-0.8+ thresholds)
+  - **70 regex patterns** prioritizing unique identifiers (weight 5)
+  - Framework-specific patterns:
+    - **Dart**: Flutter widgets (`StatelessWidget`, `StatefulWidget`, `Widget build()`)
+    - **Scala**: Pattern matching (`case class`, `trait`, `match {}`)
+    - **SCSS**: Preprocessor features (`$variables`, `@mixin`, `@include`, `@extend`)
+    - **SASS**: Indented syntax (`=mixin`, `+include`, `$variables`)
+    - **Elixir**: Functional patterns (`defmodule`, `def ... do`, pipe operator `|>`)
+    - **Lua**: Game scripting (`local`, `repeat...until`, `~=`, `elseif`)
+    - **Perl**: Text processing (`my $`, `use strict`, `sub`, `chomp`, regex `=~`)
+  - **Comprehensive test coverage**: 7 new tests, 30/30 passing (100%)
+  - **False positive prevention**: Unique identifiers (weight 5) + confidence thresholds
+  - **No regressions**: All existing language detection tests still pass
+  - **Total language support**: Now 27+ programming languages
+  - **Credit**: Contributed by @PaawanBarach via PR #275
+
 #### Multi-Agent Support for Local Enhancement (NEW)
 - **Multiple Coding Agent Support**: Choose your preferred local coding agent for SKILL.md enhancement
   - **Claude Code** (default): Claude Code CLI with `--dangerously-skip-permissions`
