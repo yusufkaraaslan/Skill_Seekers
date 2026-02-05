@@ -44,6 +44,11 @@ try:
 except ImportError:
     WeaviateAdaptor = None
 
+try:
+    from .chroma import ChromaAdaptor
+except ImportError:
+    ChromaAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -63,6 +68,8 @@ if LlamaIndexAdaptor:
     ADAPTORS["llama-index"] = LlamaIndexAdaptor
 if WeaviateAdaptor:
     ADAPTORS["weaviate"] = WeaviateAdaptor
+if ChromaAdaptor:
+    ADAPTORS["chroma"] = ChromaAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
