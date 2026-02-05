@@ -49,6 +49,11 @@ try:
 except ImportError:
     ChromaAdaptor = None
 
+try:
+    from .faiss_helpers import FAISSHelpers
+except ImportError:
+    FAISSHelpers = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -70,6 +75,8 @@ if WeaviateAdaptor:
     ADAPTORS["weaviate"] = WeaviateAdaptor
 if ChromaAdaptor:
     ADAPTORS["chroma"] = ChromaAdaptor
+if FAISSHelpers:
+    ADAPTORS["faiss"] = FAISSHelpers
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
