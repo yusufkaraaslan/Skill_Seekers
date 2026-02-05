@@ -54,6 +54,11 @@ try:
 except ImportError:
     FAISSHelpers = None
 
+try:
+    from .qdrant import QdrantAdaptor
+except ImportError:
+    QdrantAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -77,6 +82,8 @@ if ChromaAdaptor:
     ADAPTORS["chroma"] = ChromaAdaptor
 if FAISSHelpers:
     ADAPTORS["faiss"] = FAISSHelpers
+if QdrantAdaptor:
+    ADAPTORS["qdrant"] = QdrantAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
