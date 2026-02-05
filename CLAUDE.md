@@ -11,6 +11,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
 
+## ⚡ Quick Command Reference (Most Used)
+
+**First time setup:**
+```bash
+pip install -e .  # REQUIRED before running tests or CLI
+```
+
+**Running tests (NEVER skip - user requirement):**
+```bash
+pytest tests/ -v  # All tests
+pytest tests/test_scraper_features.py -v  # Single file
+pytest tests/ --cov=src/skill_seekers --cov-report=html  # With coverage
+```
+
+**Code quality checks (matches CI):**
+```bash
+ruff check src/ tests/  # Lint
+ruff format src/ tests/  # Format
+mypy src/skill_seekers  # Type check
+```
+
+**Common workflows:**
+```bash
+# Documentation scraping
+skill-seekers scrape --config configs/react.json
+
+# GitHub analysis
+skill-seekers github --repo facebook/react
+
+# Local codebase analysis
+skill-seekers analyze --directory . --comprehensive
+
+# Package for all platforms
+skill-seekers package output/react/ --target claude
+skill-seekers package output/react/ --target gemini
+```
+
 ## 🏗️ Architecture
 
 ### Core Design Pattern: Platform Adaptors
@@ -422,6 +459,36 @@ pytest tests/ -v -m bootstrap
 pytest tests/ -v -m "not slow and not integration"
 ```
 
+### Test Execution Strategy
+
+**By default, only fast tests run**. Use markers to control test execution:
+
+```bash
+# Default: Only fast tests (skip slow/integration/e2e)
+pytest tests/ -v
+
+# Include slow tests (>5 seconds)
+pytest tests/ -v -m slow
+
+# Include integration tests (requires external services)
+pytest tests/ -v -m integration
+
+# Include resource-intensive e2e tests (creates files)
+pytest tests/ -v -m e2e
+
+# Run ONLY fast tests (explicit)
+pytest tests/ -v -m "not slow and not integration and not e2e"
+
+# Run everything (CI does this)
+pytest tests/ -v -m ""
+```
+
+**When to use which:**
+- **Local development:** Default (fast tests only) - `pytest tests/ -v`
+- **Pre-commit:** Fast tests - `pytest tests/ -v`
+- **Before PR:** Include slow + integration - `pytest tests/ -v -m "not e2e"`
+- **CI validation:** All tests run automatically
+
 ### Key Test Files
 
 - `test_scraper_features.py` - Core scraping functionality
@@ -601,27 +668,150 @@ See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 
 The project has GitHub Actions workflows in `.github/workflows/`:
 
-**tests.yml** - Runs on every push and PR:
-- Tests on Ubuntu + macOS
-- Python versions: 3.10, 3.11, 3.12, 3.13
-- Installs package with `pip install -e .`
-- Runs full test suite with coverage
-- All tests must pass before merge
+**tests.yml** - Runs on every push and PR to `main` or `development`:
 
-**release.yml** - Runs on version tags:
+1. **Lint Job** (Python 3.12, Ubuntu):
+   - `ruff check src/ tests/` - Code linting with GitHub annotations
+   - `ruff format --check src/ tests/` - Format validation
+   - `mypy src/skill_seekers` - Type checking (continue-on-error)
+
+2. **Test Job** (Matrix):
+   - **OS:** Ubuntu + macOS
+   - **Python:** 3.10, 3.11, 3.12
+   - **Exclusions:** macOS + Python 3.10 (speed optimization)
+   - **Steps:**
+     - Install dependencies + `pip install -e .`
+     - Run CLI tests (scraper, config, integration)
+     - Run MCP server tests
+     - Generate coverage report → Upload to Codecov
+
+3. **Summary Job** - Single status check for branch protection
+   - Ensures both lint and test jobs succeed
+   - Provides single "All Checks Complete" status
+
+**release.yml** - Triggers on version tags (e.g., `v2.9.0`):
 - Builds package with `uv build`
 - Publishes to PyPI with `uv publish`
 - Creates GitHub release
 
-**Local validation before pushing:**
+**Local Pre-Commit Validation**
+
+Run the same checks as CI before pushing:
+
 ```bash
-# Run the same checks as CI
+# 1. Code quality (matches lint job)
+ruff check src/ tests/
+ruff format --check src/ tests/
+mypy src/skill_seekers
+
+# 2. Tests (matches test job)
 pip install -e .
 pytest tests/ -v --cov=src/skill_seekers --cov-report=term
 
-# Check code quality
-ruff check src/ tests/
-mypy src/skill_seekers/
+# 3. If all pass, you're good to push!
+git push origin feature/my-feature
+```
+
+**Branch Protection Rules:**
+- **main:** Requires tests + 1 review, only maintainers merge
+- **development:** Requires tests to pass, default target for PRs
+
+## 🚨 Common Pitfalls & Solutions
+
+### 1. Import Errors
+**Problem:** `ModuleNotFoundError: No module named 'skill_seekers'`
+
+**Solution:** Must install package first due to src/ layout
+```bash
+pip install -e .
+```
+
+**Why:** The src/ layout prevents imports from repo root. Package must be installed.
+
+### 2. Tests Fail with "No module named..."
+**Problem:** Package not installed in test environment
+
+**Solution:** CI runs `pip install -e .` before tests - do the same locally
+```bash
+pip install -e .
+pytest tests/ -v
+```
+
+### 3. Platform-Specific Dependencies Not Found
+**Problem:** `ModuleNotFoundError: No module named 'google.generativeai'`
+
+**Solution:** Install platform-specific dependencies
+```bash
+pip install -e ".[gemini]"   # For Gemini
+pip install -e ".[openai]"   # For OpenAI
+pip install -e ".[all-llms]" # For all platforms
+```
+
+### 4. Git Branch Confusion
+**Problem:** PR targets `main` instead of `development`
+
+**Solution:** Always create PRs targeting `development` branch
+```bash
+git checkout development
+git pull upstream development
+git checkout -b feature/my-feature
+# ... make changes ...
+git push origin feature/my-feature
+# Create PR: feature/my-feature → development
+```
+
+**Important:** See `CONTRIBUTING.md` for complete branch workflow.
+
+### 5. Tests Pass Locally But Fail in CI
+**Problem:** Different Python version or missing dependency
+
+**Solution:** Test with multiple Python versions locally
+```bash
+# CI tests: Python 3.10, 3.11, 3.12 on Ubuntu + macOS
+# Use pyenv or docker to test locally:
+pyenv install 3.10.13 3.11.7 3.12.1
+
+pyenv local 3.10.13
+pip install -e . && pytest tests/ -v
+
+pyenv local 3.11.7
+pip install -e . && pytest tests/ -v
+
+pyenv local 3.12.1
+pip install -e . && pytest tests/ -v
+```
+
+### 6. Enhancement Not Working
+**Problem:** AI enhancement fails or hangs
+
+**Solutions:**
+```bash
+# Check if API key is set
+echo $ANTHROPIC_API_KEY
+
+# Try LOCAL mode instead (uses Claude Code Max, no API key needed)
+skill-seekers enhance output/react/ --mode LOCAL
+
+# Monitor enhancement status for background jobs
+skill-seekers enhance-status output/react/ --watch
+```
+
+### 7. Rate Limit Errors from GitHub
+**Problem:** `403 Forbidden` from GitHub API
+
+**Solutions:**
+```bash
+# Check current rate limit
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/rate_limit
+
+# Configure multiple GitHub profiles (recommended)
+skill-seekers config --github
+
+# Use specific profile
+skill-seekers github --repo owner/repo --profile work
+
+# Test all configured tokens
+skill-seekers config --test
 ```
 
 ## 🔌 MCP Integration
@@ -746,6 +936,139 @@ skill-seekers config --show
 skill-seekers estimate configs/myconfig.json
 ```
 
+## 🎯 Where to Make Changes
+
+This section helps you quickly locate the right files when implementing common changes.
+
+### Adding a New CLI Command
+
+**Files to modify:**
+1. **Create command file:** `src/skill_seekers/cli/my_command.py`
+   ```python
+   def main():
+       """Entry point for my-command."""
+       # Implementation
+   ```
+
+2. **Add entry point:** `pyproject.toml`
+   ```toml
+   [project.scripts]
+   skill-seekers-my-command = "skill_seekers.cli.my_command:main"
+   ```
+
+3. **Update unified CLI:** `src/skill_seekers/cli/main.py`
+   - Add subcommand handler to dispatcher
+
+4. **Add tests:** `tests/test_my_command.py`
+   - Test main functionality
+   - Test CLI argument parsing
+   - Test error cases
+
+5. **Update docs:** `CHANGELOG.md` + `README.md` (if user-facing)
+
+### Adding a New Platform Adaptor
+
+**Files to modify:**
+1. **Create adaptor:** `src/skill_seekers/cli/adaptors/my_platform_adaptor.py`
+   ```python
+   from .base_adaptor import BaseAdaptor
+
+   class MyPlatformAdaptor(BaseAdaptor):
+       def package(self, skill_dir, output_path):
+           # Platform-specific packaging
+
+       def upload(self, package_path, api_key):
+           # Platform-specific upload
+
+       def enhance(self, skill_dir, mode):
+           # Platform-specific AI enhancement
+   ```
+
+2. **Register in factory:** `src/skill_seekers/cli/adaptors/__init__.py`
+   ```python
+   def get_adaptor(target):
+       adaptors = {
+           'claude': ClaudeAdaptor,
+           'gemini': GeminiAdaptor,
+           'openai': OpenAIAdaptor,
+           'markdown': MarkdownAdaptor,
+           'myplatform': MyPlatformAdaptor,  # ADD THIS
+       }
+   ```
+
+3. **Add optional dependency:** `pyproject.toml`
+   ```toml
+   [project.optional-dependencies]
+   myplatform = ["myplatform-sdk>=1.0.0"]
+   ```
+
+4. **Add tests:** `tests/test_adaptors/test_my_platform_adaptor.py`
+
+5. **Update README:** Add to platform comparison table
+
+### Adding a New Config Preset
+
+**Files to modify:**
+1. **Create config:** `configs/my_framework.json`
+   ```json
+   {
+     "name": "my_framework",
+     "base_url": "https://docs.myframework.com/",
+     "selectors": {...},
+     "categories": {...}
+   }
+   ```
+
+2. **Test locally:**
+   ```bash
+   # Estimate first
+   skill-seekers estimate configs/my_framework.json
+
+   # Test scrape (small sample)
+   skill-seekers scrape --config configs/my_framework.json --max-pages 50
+   ```
+
+3. **Add to README:** Update presets table in `README.md`
+
+4. **Submit to website:** (Optional) Submit to SkillSeekersWeb.com
+
+### Modifying Core Scraping Logic
+
+**Key files by feature:**
+
+| Feature | File | Size | Notes |
+|---------|------|------|-------|
+| Doc scraping | `src/skill_seekers/cli/doc_scraper.py` | ~90KB | Main scraper, BFS traversal |
+| GitHub scraping | `src/skill_seekers/cli/github_scraper.py` | ~56KB | Repo analysis + metadata |
+| GitHub API | `src/skill_seekers/cli/github_fetcher.py` | ~17KB | Rate limit handling |
+| PDF extraction | `src/skill_seekers/cli/pdf_scraper.py` | Medium | PyMuPDF + OCR |
+| Code analysis | `src/skill_seekers/cli/code_analyzer.py` | ~65KB | Multi-language AST parsing |
+| Pattern detection | `src/skill_seekers/cli/pattern_recognizer.py` | Medium | C3.1 - 10 GoF patterns |
+| Test extraction | `src/skill_seekers/cli/test_example_extractor.py` | Medium | C3.2 - 5 categories |
+| Guide generation | `src/skill_seekers/cli/how_to_guide_builder.py` | ~45KB | C3.3 - AI-enhanced guides |
+| Config extraction | `src/skill_seekers/cli/config_extractor.py` | ~32KB | C3.4 - 9 formats |
+| Router generation | `src/skill_seekers/cli/generate_router.py` | ~43KB | C3.5 - Architecture docs |
+| Signal flow | `src/skill_seekers/cli/signal_flow_analyzer.py` | Medium | C3.10 - Godot-specific |
+
+**Always add tests when modifying core logic!**
+
+### Adding MCP Tools
+
+**Files to modify:**
+1. **Add tool function:** `src/skill_seekers/mcp/tools/{category}_tools.py`
+
+2. **Register tool:** `src/skill_seekers/mcp/server.py`
+   ```python
+   @mcp.tool()
+   def my_new_tool(param: str) -> str:
+       """Tool description."""
+       # Implementation
+   ```
+
+3. **Add tests:** `tests/test_mcp_fastmcp.py`
+
+4. **Update count:** README.md (currently 18 tools)
+
 ## 📚 Key Code Locations
 
 **Documentation Scraper** (`src/skill_seekers/cli/doc_scraper.py`):
@@ -840,6 +1163,149 @@ skill-seekers estimate configs/myconfig.json
 5. **Keep dependencies optional** - Platform-specific deps are optional
 6. **Use src/ layout** - Proper package structure with `pip install -e .`
 7. **Run tests before commits** - Per user instructions, never skip tests
+
+## 🐛 Debugging Tips
+
+### Enable Verbose Logging
+
+```bash
+# Set environment variable for debug output
+export SKILL_SEEKERS_DEBUG=1
+skill-seekers scrape --config configs/react.json
+```
+
+### Test Single Function/Module
+
+Run Python modules directly for debugging:
+```bash
+# Run modules with --help to see options
+python -m skill_seekers.cli.doc_scraper --help
+python -m skill_seekers.cli.github_scraper --repo facebook/react --dry-run
+python -m skill_seekers.cli.package_skill --help
+
+# Test MCP server directly
+python -m skill_seekers.mcp.server_fastmcp
+```
+
+### Use pytest with Debugging
+
+```bash
+# Drop into debugger on failure
+pytest tests/test_scraper_features.py --pdb
+
+# Show print statements (normally suppressed)
+pytest tests/test_scraper_features.py -s
+
+# Verbose test output (shows full diff, more details)
+pytest tests/test_scraper_features.py -vv
+
+# Run only failed tests from last run
+pytest tests/ --lf
+
+# Run until first failure (stop immediately)
+pytest tests/ -x
+
+# Show local variables on failure
+pytest tests/ -l
+```
+
+### Debug Specific Test
+
+```bash
+# Run single test with full output
+pytest tests/test_scraper_features.py::test_detect_language -vv -s
+
+# With debugger
+pytest tests/test_scraper_features.py::test_detect_language --pdb
+```
+
+### Check Package Installation
+
+```bash
+# Verify package is installed
+pip list | grep skill-seekers
+
+# Check installation mode (should show editable location)
+pip show skill-seekers
+
+# Verify imports work
+python -c "import skill_seekers; print(skill_seekers.__version__)"
+
+# Check CLI entry points
+which skill-seekers
+skill-seekers --version
+```
+
+### Common Error Messages & Solutions
+
+**"ModuleNotFoundError: No module named 'skill_seekers'"**
+→ **Solution:** `pip install -e .`
+→ **Why:** src/ layout requires package installation
+
+**"403 Forbidden" from GitHub API**
+→ **Solution:** Rate limit hit, set `GITHUB_TOKEN` or use `skill-seekers config --github`
+→ **Check limit:** `curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/rate_limit`
+
+**"SKILL.md enhancement failed"**
+→ **Solution:** Check if `ANTHROPIC_API_KEY` is set, or use `--mode LOCAL`
+→ **Monitor:** `skill-seekers enhance-status output/react/ --watch`
+
+**"No such file or directory: 'configs/myconfig.json'"**
+→ **Solution:** Config path resolution order:
+  1. Exact path as provided
+  2. `./configs/` (current directory)
+  3. `~/.config/skill-seekers/configs/` (user config)
+  4. SkillSeekersWeb.com API (presets)
+
+**"pytest: command not found"**
+→ **Solution:** Install dev dependencies
+```bash
+pip install pytest pytest-asyncio pytest-cov coverage
+# Or: pip install -e ".[dev]"  (if available)
+```
+
+**"ruff: command not found"**
+→ **Solution:** Install ruff
+```bash
+pip install ruff
+# Or use uvx: uvx ruff check src/
+```
+
+### Debugging Scraping Issues
+
+**No content extracted?**
+```python
+# Test selectors in Python
+from bs4 import BeautifulSoup
+import requests
+
+url = "https://docs.example.com/page"
+soup = BeautifulSoup(requests.get(url).content, 'html.parser')
+
+# Try different selectors
+print(soup.select_one('article'))
+print(soup.select_one('main'))
+print(soup.select_one('div[role="main"]'))
+print(soup.select_one('.documentation-content'))
+```
+
+**Categories not working?**
+- Check `categories` in config has correct keywords
+- Run with `--dry-run` to see categorization without scraping
+- Enable debug mode: `export SKILL_SEEKERS_DEBUG=1`
+
+### Profiling Performance
+
+```bash
+# Profile scraping performance
+python -m cProfile -o profile.stats -m skill_seekers.cli.doc_scraper --config configs/react.json --max-pages 10
+
+# Analyze profile
+python -m pstats profile.stats
+# In pstats shell:
+# > sort cumtime
+# > stats 20
+```
 
 ## 📖 Additional Documentation
 
