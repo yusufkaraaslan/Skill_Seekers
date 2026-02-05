@@ -28,6 +28,17 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Confidence thresholds for pattern filtering (Issue #240)
+CONFIDENCE_THRESHOLDS = {
+    'critical': 0.80,   # High-confidence patterns for ARCHITECTURE.md
+    'high': 0.70,       # Include in detailed analysis
+    'medium': 0.60,     # Include with warning/context
+    'low': 0.50,        # Minimum detection threshold
+}
+
+# Default minimum confidence for pattern detection
+DEFAULT_MIN_CONFIDENCE = CONFIDENCE_THRESHOLDS['low']
+
 
 @dataclass
 class PatternInstance:
@@ -1634,6 +1645,76 @@ class LanguageAdapter:
                 pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
         return pattern
+
+
+# ============================================================================
+# PATTERN FILTERING UTILITIES (Issue #240 - C4.2)
+# ============================================================================
+
+
+def filter_patterns_by_confidence(patterns: list[dict], min_confidence: float) -> list[dict]:
+    """
+    Filter patterns by minimum confidence threshold.
+
+    Args:
+        patterns: List of pattern dictionaries (from PatternReport.to_dict())
+        min_confidence: Minimum confidence threshold (0.0-1.0)
+
+    Returns:
+        Filtered list of patterns meeting the threshold
+    """
+    filtered = []
+    for pattern in patterns:
+        if pattern.get("confidence", 0.0) >= min_confidence:
+            filtered.append(pattern)
+    return filtered
+
+
+def create_multi_level_report(pattern_results: list[dict]) -> dict:
+    """
+    Create multi-level pattern report with different confidence thresholds.
+
+    Args:
+        pattern_results: List of PatternReport dictionaries
+
+    Returns:
+        Dictionary with patterns grouped by confidence level:
+        - all_patterns: All detected patterns
+        - high_confidence: Patterns >= 0.70 (for detailed analysis)
+        - critical: Patterns >= 0.80 (for ARCHITECTURE.md)
+        - statistics: Pattern count by level
+    """
+    # Flatten all patterns from all files
+    all_patterns = []
+    for report in pattern_results:
+        file_path = report.get("file_path", "unknown")
+        for pattern in report.get("patterns", []):
+            # Add file path to pattern for context
+            pattern_with_file = {**pattern, "file_path": file_path}
+            all_patterns.append(pattern_with_file)
+
+    # Sort by confidence (highest first)
+    all_patterns_sorted = sorted(all_patterns, key=lambda p: p.get("confidence", 0.0), reverse=True)
+
+    # Filter by confidence levels
+    critical = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['critical'])
+    high_confidence = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['high'])
+    medium = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['medium'])
+
+    return {
+        "all_patterns": all_patterns_sorted,
+        "critical": critical,
+        "high_confidence": high_confidence,
+        "medium": medium,
+        "statistics": {
+            "total": len(all_patterns_sorted),
+            "critical_count": len(critical),
+            "high_confidence_count": len(high_confidence),
+            "medium_count": len(medium),
+            "low_count": len(all_patterns_sorted) - len(medium),
+        },
+        "thresholds": CONFIDENCE_THRESHOLDS,
+    }
 
 
 def main():

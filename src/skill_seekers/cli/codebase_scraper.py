@@ -1006,18 +1006,49 @@ def analyze_codebase(
                 logger.warning(f"Pattern detection failed for {file_path}: {e}")
                 continue
 
-        # Save pattern results
+        # Save pattern results with multi-level filtering (Issue #240)
         if pattern_results:
             pattern_output = output_dir / "patterns"
             pattern_output.mkdir(parents=True, exist_ok=True)
 
-            pattern_json = pattern_output / "detected_patterns.json"
-            with open(pattern_json, "w", encoding="utf-8") as f:
+            # Import filtering utilities
+            from skill_seekers.cli.pattern_recognizer import create_multi_level_report
+
+            # Create multi-level report
+            multi_level = create_multi_level_report(pattern_results)
+            stats = multi_level["statistics"]
+
+            # Save all patterns (unfiltered)
+            all_patterns_json = pattern_output / "all_patterns.json"
+            with open(all_patterns_json, "w", encoding="utf-8") as f:
                 json.dump(pattern_results, f, indent=2)
 
-            total_patterns = sum(len(r["patterns"]) for r in pattern_results)
-            logger.info(f"✅ Detected {total_patterns} patterns in {len(pattern_results)} files")
-            logger.info(f"📁 Saved to: {pattern_json}")
+            # Save high-confidence patterns (>= 0.70) for detailed analysis
+            high_confidence_json = pattern_output / "high_confidence_patterns.json"
+            with open(high_confidence_json, "w", encoding="utf-8") as f:
+                json.dump(multi_level["high_confidence"], f, indent=2)
+
+            # Save critical patterns (>= 0.80) for ARCHITECTURE.md
+            critical_json = pattern_output / "critical_patterns.json"
+            with open(critical_json, "w", encoding="utf-8") as f:
+                json.dump(multi_level["critical"], f, indent=2)
+
+            # Save summary statistics
+            summary_json = pattern_output / "summary.json"
+            with open(summary_json, "w", encoding="utf-8") as f:
+                json.dump({
+                    "statistics": stats,
+                    "thresholds": multi_level["thresholds"],
+                    "files_analyzed": len(pattern_results),
+                }, f, indent=2)
+
+            # Log results with breakdown by confidence
+            logger.info(f"✅ Detected {stats['total']} patterns in {len(pattern_results)} files")
+            logger.info(f"   🔴 Critical (≥0.80): {stats['critical_count']} patterns")
+            logger.info(f"   🟠 High (≥0.70): {stats['high_confidence_count']} patterns")
+            logger.info(f"   🟡 Medium (≥0.60): {stats['medium_count']} patterns")
+            logger.info(f"   ⚪ Low (<0.60): {stats['low_count']} patterns")
+            logger.info(f"📁 Saved to: {pattern_output}/")
         else:
             logger.info("No design patterns detected")
 
