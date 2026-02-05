@@ -147,6 +147,7 @@ class CodeAnalyzer:
 
         classes = []
         functions = []
+        imports = []
 
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
@@ -171,11 +172,24 @@ class CodeAnalyzer:
                 if not is_method:
                     func_sig = self._extract_python_function(node)
                     functions.append(asdict(func_sig))
+            elif isinstance(node, ast.Import):
+                # Extract: import foo, bar
+                for alias in node.names:
+                    imports.append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                # Extract: from foo import bar
+                module = node.module or ""
+                imports.append(module)
 
         # Extract comments
         comments = self._extract_python_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": imports,  # Include imports for framework detection
+        }
 
     def _extract_python_class(self, node: ast.ClassDef) -> ClassSignature:
         """Extract class signature from AST node."""

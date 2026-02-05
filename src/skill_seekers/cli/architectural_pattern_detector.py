@@ -200,6 +200,16 @@ class ArchitecturalPatternDetector:
         all_paths = [str(f.get("file", "")) for f in files]
         all_content = " ".join(all_paths)
 
+        # Extract all imports from Python files (fixes #239)
+        all_imports = []
+        for file_data in files:
+            if file_data.get("language") == "Python" and file_data.get("imports"):
+                all_imports.extend(file_data["imports"])
+
+        # Create searchable import string
+        import_content = " ".join(all_imports)
+        logger.debug(f"Collected {len(all_imports)} imports for framework detection")
+
         # Also check actual directory structure for game engine markers
         # (project.godot, .unity, .uproject are config files, not in analyzed files)
         dir_files = []
@@ -227,15 +237,27 @@ class ArchitecturalPatternDetector:
                     # Return early to prevent web framework false positives
                     return detected
 
-        # Check other frameworks
+        # Check other frameworks (including imports - fixes #239)
         for framework, markers in self.FRAMEWORK_MARKERS.items():
             if framework in ["Unity", "Unreal", "Godot"]:
                 continue  # Already checked
 
-            matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
-            if matches >= 2:
+            # Check in file paths, directory structure, AND imports
+            path_matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
+            dir_matches = sum(1 for marker in markers if marker.lower() in dir_content.lower())
+            import_matches = sum(1 for marker in markers if marker.lower() in import_content.lower())
+
+            # Strategy: Prioritize import-based detection (more accurate)
+            # If we have import matches, they're strong signals - use them alone
+            # Otherwise, require 2+ matches from paths/dirs
+            if import_matches >= 1:
+                # Import-based detection (high confidence)
                 detected.append(framework)
-                logger.info(f"  📦 Detected framework: {framework}")
+                logger.info(f"  📦 Detected framework: {framework} (imports:{import_matches})")
+            elif (path_matches + dir_matches) >= 2:
+                # Path/directory-based detection (requires 2+ matches)
+                detected.append(framework)
+                logger.info(f"  📦 Detected framework: {framework} (path:{path_matches} dir:{dir_matches})")
 
         return detected
 

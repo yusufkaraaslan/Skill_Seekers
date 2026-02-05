@@ -869,10 +869,12 @@ def analyze_codebase(
             analysis = analyzer.analyze_file(str(file_path), content, language)
 
             # Only include files with actual analysis results
-            # Check for any meaningful content (classes, functions, nodes, properties, etc.)
+            # Check for any meaningful content (classes, functions, imports, nodes, properties, etc.)
+            # IMPORTANT: Include files with imports for framework detection (fixes #239)
             has_content = (
                 analysis.get("classes")
                 or analysis.get("functions")
+                or analysis.get("imports")  # Include import-only files (fixes #239)
                 or analysis.get("nodes")  # Godot scenes
                 or analysis.get("properties")  # Godot resources
                 or analysis.get("uniforms")  # Godot shaders
@@ -1176,7 +1178,8 @@ def analyze_codebase(
     arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture)
     arch_report = arch_detector.analyze(directory, results["files"])
 
-    if arch_report.patterns:
+    # Save architecture analysis if we have patterns OR frameworks (fixes #239)
+    if arch_report.patterns or arch_report.frameworks_detected:
         arch_output = output_dir / "architecture"
         arch_output.mkdir(parents=True, exist_ok=True)
 
@@ -1185,12 +1188,19 @@ def analyze_codebase(
         with open(arch_json, "w", encoding="utf-8") as f:
             json.dump(arch_report.to_dict(), f, indent=2)
 
-        logger.info(f"🏗️  Detected {len(arch_report.patterns)} architectural patterns")
-        for pattern in arch_report.patterns:
-            logger.info(f"   - {pattern.pattern_name} (confidence: {pattern.confidence:.2f})")
+        if arch_report.patterns:
+            logger.info(f"🏗️  Detected {len(arch_report.patterns)} architectural patterns")
+            for pattern in arch_report.patterns:
+                logger.info(f"   - {pattern.pattern_name} (confidence: {pattern.confidence:.2f})")
+        else:
+            logger.info("No clear architectural patterns detected")
+
+        if arch_report.frameworks_detected:
+            logger.info(f"📦 Detected {len(arch_report.frameworks_detected)} frameworks")
+
         logger.info(f"📁 Saved to: {arch_json}")
     else:
-        logger.info("No clear architectural patterns detected")
+        logger.info("No architectural patterns or frameworks detected")
 
     # Analyze signal flow patterns (C3.10) - Godot projects only
     signal_analysis = None
