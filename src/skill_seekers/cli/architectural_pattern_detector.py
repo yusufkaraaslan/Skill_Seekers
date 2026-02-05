@@ -101,14 +101,14 @@ class ArchitecturalPatternDetector:
         # Web Frameworks
         "Django": ["django", "manage.py", "settings.py", "urls.py"],
         "Flask": ["flask", "app.py", "wsgi.py"],
-        "Spring": ["springframework", "@Controller", "@Service", "@Repository"],
-        "ASP.NET": ["Controllers", "Models", "Views", ".cshtml", "Startup.cs"],
-        "Rails": ["app/models", "app/views", "app/controllers", "config/routes.rb"],
-        "Angular": ["app.module.ts", "@Component", "@Injectable", "angular.json"],
-        "React": ["package.json", "react", "components"],
+        "Spring": ["springframework", "org.springframework", "@Controller", "@Service", "@Repository"],
+        "ASP.NET": ["Microsoft.AspNetCore", "System.Web", "Controllers", "Models", "Views", ".cshtml", "Startup.cs"],
+        "Rails": ["rails", "action", "app/models", "app/views", "app/controllers", "config/routes.rb"],
+        "Angular": ["@angular", "angular", "app.module.ts", "@Component", "@Injectable", "angular.json"],
+        "React": ["react", "package.json", "components"],
         "Vue.js": ["vue", ".vue", "components"],
         "Express": ["express", "app.js", "routes"],
-        "Laravel": ["artisan", "app/Http/Controllers", "app/Models"],
+        "Laravel": ["laravel", "illuminate", "artisan", "app/Http/Controllers", "app/Models"],
     }
 
     def __init__(self, enhance_with_ai: bool = True):
@@ -200,15 +200,15 @@ class ArchitecturalPatternDetector:
         all_paths = [str(f.get("file", "")) for f in files]
         all_content = " ".join(all_paths)
 
-        # Extract all imports from Python files (fixes #239)
+        # Extract all imports from ALL languages (fixes #239 - extended to multi-language)
         all_imports = []
         for file_data in files:
-            if file_data.get("language") == "Python" and file_data.get("imports"):
+            if file_data.get("imports"):
                 all_imports.extend(file_data["imports"])
 
         # Create searchable import string
         import_content = " ".join(all_imports)
-        logger.debug(f"Collected {len(all_imports)} imports for framework detection")
+        logger.debug(f"Collected {len(all_imports)} imports from {len([f for f in files if f.get('imports')])} files for framework detection")
 
         # Also check actual directory structure for game engine markers
         # (project.godot, .unity, .uproject are config files, not in analyzed files)

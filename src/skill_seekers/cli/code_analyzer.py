@@ -361,7 +361,31 @@ class CodeAnalyzer:
         # Extract comments
         comments = self._extract_js_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        # Extract imports for framework detection
+        imports = []
+        # Match: import foo from 'bar'
+        # Match: import { foo } from 'bar'
+        # Match: import * as foo from 'bar'
+        # Match: const foo = require('bar')
+        import_patterns = [
+            r"import\s+.*?\s+from\s+['\"]([^'\"]+)['\"]",  # ES6 imports
+            r"import\s+['\"]([^'\"]+)['\"]",  # Side-effect imports
+            r"require\(['\"]([^'\"]+)['\"]\)",  # CommonJS require
+        ]
+        for pattern in import_patterns:
+            for match in re.finditer(pattern, content):
+                module = match.group(1)
+                # Extract package name (before first /)
+                package = module.split('/')[0]
+                if package and not package.startswith('.'):  # Skip relative imports
+                    imports.append(package)
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(set(imports)),  # Deduplicate
+        }
 
     def _extract_js_methods(self, class_body: str) -> list[dict]:
         """Extract method signatures from class body."""
@@ -662,7 +686,29 @@ class CodeAnalyzer:
         # Extract comments
         comments = self._extract_csharp_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        # Extract imports for framework detection
+        imports = []
+        # Match: using System.Collections.Generic;
+        # Match: using static System.Math;
+        using_pattern = r"using\s+(?:static\s+)?([^;=]+);"
+        for match in re.finditer(using_pattern, content):
+            namespace = match.group(1).strip()
+            # Skip using aliases (using Foo = Bar.Baz)
+            if '=' not in namespace:
+                # Extract base namespace (first 1-2 segments)
+                parts = namespace.split('.')
+                if len(parts) >= 2:
+                    base_ns = '.'.join(parts[:2])
+                    imports.append(base_ns)
+                elif len(parts) == 1:
+                    imports.append(parts[0])
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(set(imports)),  # Deduplicate
+        }
 
     def _extract_csharp_methods(self, class_body: str) -> list[dict]:
         """Extract C# method signatures from class body."""
@@ -1076,7 +1122,26 @@ class CodeAnalyzer:
         # Extract comments
         comments = self._extract_java_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        # Extract imports for framework detection
+        imports = []
+        # Match: import com.example.Foo;
+        # Match: import static com.example.Foo.bar;
+        import_pattern = r"import\s+(?:static\s+)?([^;]+);"
+        for match in re.finditer(import_pattern, content):
+            import_path = match.group(1).strip()
+            # Extract package name (first 2-3 segments for framework detection)
+            parts = import_path.split('.')
+            if len(parts) >= 2:
+                # Get base package (e.g., "org.springframework" from "org.springframework.boot.SpringApplication")
+                package = '.'.join(parts[:2])
+                imports.append(package)
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(set(imports)),  # Deduplicate
+        }
 
     def _extract_java_methods(self, class_body: str) -> list[dict]:
         """Extract Java method signatures from class body."""
@@ -1229,7 +1294,24 @@ class CodeAnalyzer:
         # Extract comments
         comments = self._extract_ruby_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        # Extract imports for framework detection
+        imports = []
+        # Match: require 'foo'
+        # Match: require "foo"
+        # Match: require_relative 'foo'
+        require_pattern = r"require(?:_relative)?\s+['\"]([^'\"]+)['\"]"
+        for match in re.finditer(require_pattern, content):
+            module = match.group(1)
+            # Extract gem name (before first /)
+            gem = module.split('/')[0]
+            imports.append(gem)
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(set(imports)),  # Deduplicate
+        }
 
     def _parse_ruby_parameters(self, params_str: str) -> list[dict]:
         """Parse Ruby parameter string."""
@@ -1353,7 +1435,25 @@ class CodeAnalyzer:
         # Extract comments
         comments = self._extract_php_comments(content)
 
-        return {"classes": classes, "functions": functions, "comments": comments}
+        # Extract imports for framework detection
+        imports = []
+        # Match: use Foo\Bar\Baz;
+        # Match: use Foo\Bar\Baz as Alias;
+        use_pattern = r"use\s+([^;]+?)(?:\s+as\s+\w+)?;"
+        for match in re.finditer(use_pattern, content):
+            namespace = match.group(1).strip()
+            # Extract vendor name (first segment)
+            parts = namespace.split('\\')
+            if parts:
+                vendor = parts[0]
+                imports.append(vendor.lower())
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(set(imports)),  # Deduplicate
+        }
 
     def _extract_php_methods(self, class_body: str) -> list[dict]:
         """Extract PHP method signatures from class body."""
