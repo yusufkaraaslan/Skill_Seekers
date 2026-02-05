@@ -1855,6 +1855,11 @@ def _generate_references(output_dir: Path):
             shutil.copytree(source_dir, target_dir)
             logger.debug(f"Copied {source} → references/{target}")
 
+            # Clean up source directory to avoid duplication (Issue #279)
+            # SKILL.md only references references/{target}, so source dir is redundant
+            shutil.rmtree(source_dir)
+            logger.debug(f"Cleaned up duplicate {source}/ directory")
+
     logger.info(f"✅ Generated references directory: {references_dir}")
 
 

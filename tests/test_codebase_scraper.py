@@ -24,6 +24,7 @@ from skill_seekers.cli.codebase_scraper import (
     FOLDER_CATEGORIES,
     MARKDOWN_EXTENSIONS,
     ROOT_DOC_CATEGORIES,
+    _generate_references,
     categorize_markdown_file,
     detect_language,
     extract_markdown_structure,
@@ -391,6 +392,85 @@ Content
         summary = generate_markdown_summary(content, structure, max_length=200)
 
         self.assertLessEqual(len(summary), 210)  # Allow some buffer for truncation marker
+
+
+class TestReferenceGeneration(unittest.TestCase):
+    """Tests for _generate_references function (Issue #279)"""
+
+    def setUp(self):
+        """Create temporary directory for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.output_dir = Path(self.temp_dir) / "output"
+        self.output_dir.mkdir()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    def test_no_duplicate_directories_created(self):
+        """Test that source directories are cleaned up after copying to references/ (Issue #279)."""
+        # Create test directories that will be copied
+        test_dirs = ["documentation", "api_reference", "patterns"]
+        for dir_name in test_dirs:
+            dir_path = self.output_dir / dir_name
+            dir_path.mkdir()
+            # Add a test file
+            (dir_path / "test.txt").write_text(f"Test content for {dir_name}")
+
+        # Generate references (should copy and then cleanup)
+        _generate_references(self.output_dir)
+
+        # Verify references/ exists
+        references_dir = self.output_dir / "references"
+        self.assertTrue(references_dir.exists(), "references/ should exist")
+
+        # Verify content was copied to references/
+        for dir_name in test_dirs:
+            ref_path = references_dir / dir_name
+            self.assertTrue(ref_path.exists(), f"references/{dir_name} should exist")
+            self.assertTrue(
+                (ref_path / "test.txt").exists(),
+                f"references/{dir_name}/test.txt should exist",
+            )
+
+        # Verify source directories were cleaned up (Issue #279 fix)
+        for dir_name in test_dirs:
+            source_path = self.output_dir / dir_name
+            self.assertFalse(
+                source_path.exists(),
+                f"Source directory {dir_name}/ should be cleaned up to avoid duplication",
+            )
+
+    def test_no_disk_space_wasted(self):
+        """Test that disk space is not wasted by duplicate directories."""
+        # Create a documentation directory with some content
+        doc_dir = self.output_dir / "documentation"
+        doc_dir.mkdir()
+        test_content = "x" * 1000  # 1KB of content
+        (doc_dir / "large_file.txt").write_text(test_content)
+
+        # Generate references
+        _generate_references(self.output_dir)
+
+        # Verify only one copy exists (in references/)
+        ref_doc_dir = self.output_dir / "references" / "documentation"
+        source_doc_dir = self.output_dir / "documentation"
+
+        self.assertTrue(ref_doc_dir.exists(), "references/documentation/ should exist")
+        self.assertFalse(
+            source_doc_dir.exists(), "Source documentation/ should not exist (cleaned up)"
+        )
+
+        # Verify content is accessible in references/
+        self.assertTrue(
+            (ref_doc_dir / "large_file.txt").exists(), "File should exist in references/"
+        )
+        self.assertEqual(
+            (ref_doc_dir / "large_file.txt").read_text(),
+            test_content,
+            "File content should be preserved",
+        )
 
 
 if __name__ == "__main__":
