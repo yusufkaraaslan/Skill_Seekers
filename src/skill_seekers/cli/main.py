@@ -215,7 +215,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     package_parser.add_argument("--upload", action="store_true", help="Auto-upload after packaging")
     package_parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index"],
+        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "weaviate"],
         default="claude",
         help="Target LLM platform (default: claude)",
     )

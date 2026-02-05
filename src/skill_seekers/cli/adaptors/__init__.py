@@ -39,6 +39,11 @@ try:
 except ImportError:
     LlamaIndexAdaptor = None
 
+try:
+    from .weaviate import WeaviateAdaptor
+except ImportError:
+    WeaviateAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -56,6 +61,8 @@ if LangChainAdaptor:
     ADAPTORS["langchain"] = LangChainAdaptor
 if LlamaIndexAdaptor:
     ADAPTORS["llama-index"] = LlamaIndexAdaptor
+if WeaviateAdaptor:
+    ADAPTORS["weaviate"] = WeaviateAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
