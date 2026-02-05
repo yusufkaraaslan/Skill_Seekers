@@ -29,6 +29,16 @@ try:
 except ImportError:
     MarkdownAdaptor = None
 
+try:
+    from .langchain import LangChainAdaptor
+except ImportError:
+    LangChainAdaptor = None
+
+try:
+    from .llama_index import LlamaIndexAdaptor
+except ImportError:
+    LlamaIndexAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -42,6 +52,10 @@ if OpenAIAdaptor:
     ADAPTORS["openai"] = OpenAIAdaptor
 if MarkdownAdaptor:
     ADAPTORS["markdown"] = MarkdownAdaptor
+if LangChainAdaptor:
+    ADAPTORS["langchain"] = LangChainAdaptor
+if LlamaIndexAdaptor:
+    ADAPTORS["llama-index"] = LlamaIndexAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:

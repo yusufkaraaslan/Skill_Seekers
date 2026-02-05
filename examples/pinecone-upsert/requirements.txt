@@ -1,0 +1,11 @@
+# Pinecone Upsert Example Requirements
+
+# Pinecone vector database client
+pinecone-client>=3.0.0
+
+# OpenAI for embeddings
+openai>=1.12.0
+
+# Optional: Alternative embedding providers
+# cohere>=4.45  # For Cohere embeddings
+# sentence-transformers>=2.2.2  # For local embeddings

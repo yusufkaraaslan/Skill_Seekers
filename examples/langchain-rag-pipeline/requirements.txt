@@ -1,0 +1,17 @@
+# LangChain RAG Pipeline Requirements
+
+# Core LangChain
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-openai>=0.0.5
+
+# Vector Store
+chromadb>=0.4.22
+
+# Embeddings & LLM
+openai>=1.12.0
+
+# Optional: Other vector stores
+# faiss-cpu>=1.7.4  # For FAISS
+# pinecone-client>=3.0.0  # For Pinecone
+# weaviate-client>=3.25.0  # For Weaviate

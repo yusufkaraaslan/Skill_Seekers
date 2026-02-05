@@ -1,0 +1,14 @@
+# LlamaIndex Query Engine Requirements
+
+# Core LlamaIndex
+llama-index>=0.10.0
+llama-index-core>=0.10.0
+
+# OpenAI integration
+llama-index-llms-openai>=0.1.0
+llama-index-embeddings-openai>=0.1.0
+
+# Optional: Other LLMs and embeddings
+# llama-index-llms-anthropic  # For Claude
+# llama-index-llms-huggingface  # For HuggingFace models
+# llama-index-embeddings-huggingface  # For HuggingFace embeddings

@@ -213,6 +213,12 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     package_parser.add_argument("skill_directory", help="Skill directory path")
     package_parser.add_argument("--no-open", action="store_true", help="Don't open output folder")
     package_parser.add_argument("--upload", action="store_true", help="Auto-upload after packaging")
+    package_parser.add_argument(
+        "--target",
+        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
+    )
 
     # === upload subcommand ===
     upload_parser = subparsers.add_parser(
@@ -529,6 +535,8 @@ def main(argv: list[str] | None = None) -> int:
                 sys.argv.append("--no-open")
             if args.upload:
                 sys.argv.append("--upload")
+            if hasattr(args, 'target') and args.target:
+                sys.argv.extend(["--target", args.target])
             return package_main() or 0
 
         elif args.command == "upload":

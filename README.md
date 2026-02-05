@@ -4,7 +4,7 @@
 
 English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
 
-[![Version](https://img.shields.io/badge/version-2.7.4-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.4)
+[![Version](https://img.shields.io/badge/version-2.9.0--dev-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
@@ -17,15 +17,79 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**Automatically convert documentation websites, GitHub repositories, and PDFs into Claude AI skills in minutes.**
+**The universal preprocessing layer for AI systems: Convert documentation, GitHub repos, and PDFs into production-ready formats for RAG pipelines, Claude AI skills, and AI coding assistants—in minutes, not hours.**
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
 > 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tasks across 10 categories, pick any to contribute!
 
+## 🚀 **NEW: Universal RAG Preprocessor**
+
+**Skill Seekers is now the data layer for AI systems.** 70% of RAG development time is spent on data preprocessing—scraping, cleaning, chunking, and structuring documentation. **We automate all of it.**
+
+```bash
+# One command → Production-ready RAG data
+skill-seekers scrape --config configs/react.json
+skill-seekers package output/react --target langchain  # or llama-index, pinecone, cursor
+
+# 15 minutes → Ready for: LangChain, LlamaIndex, Pinecone, Cursor, Custom RAG
+```
+
+### Supported Integrations
+
+| Integration | Format | Use Case | Guide |
+|------------|--------|----------|-------|
+| **LangChain** | `Documents` | QA chains, agents, retrievers | [Guide](docs/integrations/LANGCHAIN.md) |
+| **LlamaIndex** | `TextNodes` | Query engines, chat engines | [Guide](docs/integrations/LLAMA_INDEX.md) |
+| **Pinecone** | Ready for upsert | Production vector search | [Guide](docs/integrations/PINECONE.md) |
+| **Cursor IDE** | `.cursorrules` | AI coding assistant context | [Guide](docs/integrations/CURSOR.md) |
+| **Claude AI** | Skills (ZIP) | Claude Code skills | Default |
+| **Gemini** | tar.gz | Google Gemini skills | `--target gemini` |
+| **OpenAI** | ChatGPT format | Custom GPTs | `--target openai` |
+
+**Why Skill Seekers for RAG?**
+
+- ⚡ **99% faster preprocessing** - Days → 15-45 minutes
+- ✅ **Production quality** - 700+ tests, battle-tested on 24+ frameworks
+- 🎯 **Smart chunking** - Preserves code blocks, maintains context
+- 📊 **Rich metadata** - Categories, sources, types for filtering
+- 🔄 **Multi-source** - Combine docs + GitHub + PDFs seamlessly
+- 🌐 **Platform-agnostic** - One preprocessing, export anywhere
+
+**Read the full story:** [Blog: Universal RAG Preprocessor](docs/blog/UNIVERSAL_RAG_PREPROCESSOR.md)
+
+## Quick Start: RAG Pipeline
+
+```bash
+# 1. Install
+pip install skill-seekers
+
+# 2. Generate documentation (Django example)
+skill-seekers scrape --config configs/django.json  # 15 min
+
+# 3. Export for your RAG stack
+skill-seekers package output/django --target langchain  # For LangChain
+skill-seekers package output/django --target llama-index  # For LlamaIndex
+
+# 4. Use in your RAG pipeline
+python your_rag_pipeline.py  # Load and query!
+```
+
+**Complete examples:**
+- [LangChain RAG Pipeline](examples/langchain-rag-pipeline/) - QA chain with Chroma
+- [LlamaIndex Query Engine](examples/llama-index-query-engine/) - Chat with memory
+- [Pinecone Upsert](examples/pinecone-upsert/) - Production vector search
+
 ## What is Skill Seeker?
 
-Skill Seeker is an automated tool that transforms documentation websites, GitHub repositories, and PDF files into production-ready [Claude AI skills](https://www.anthropic.com/news/skills). Instead of manually reading and summarizing documentation, Skill Seeker:
+Skill Seeker is the **universal preprocessing layer for AI systems**. It transforms documentation websites, GitHub repositories, and PDF files into production-ready formats for:
+
+- **RAG Pipelines** - LangChain, LlamaIndex, Pinecone, Weaviate, Chroma, FAISS
+- **AI Coding Assistants** - Cursor IDE, VS Code, custom tools
+- **Claude AI Skills** - [Claude Code](https://www.anthropic.com/news/skills) and Claude API
+- **Custom GPTs** - OpenAI, Gemini, and other LLM platforms
+
+Instead of spending days on manual preprocessing, Skill Seeker:
 
 1. **Scrapes** multiple sources (docs, GitHub repos, PDFs) automatically
 2. **Analyzes** code repositories with deep AST parsing
@@ -38,11 +102,28 @@ Skill Seeker is an automated tool that transforms documentation websites, GitHub
 
 ## Why Use This?
 
-- 🎯 **For Developers**: Create skills from documentation + GitHub repos with conflict detection
-- 🎮 **For Game Devs**: Generate skills for game engines (Godot docs + GitHub, Unity, etc.)
-- 🔧 **For Teams**: Combine internal docs + code repositories into single source of truth
-- 📚 **For Learners**: Build comprehensive skills from docs, code examples, and PDFs
-- 🔍 **For Open Source**: Analyze repos to find documentation gaps and outdated examples
+### For RAG Builders & AI Engineers
+
+- 🤖 **RAG Systems**: Build production-grade Q&A bots, chatbots, documentation portals
+- 🚀 **99% Faster**: Days of preprocessing → 15-45 minutes
+- ✅ **Battle-Tested**: 700+ tests, 24+ framework presets, production-ready
+- 🔄 **Multi-Source**: Combine docs + GitHub + PDFs automatically
+- 🌐 **Platform-Agnostic**: Export to LangChain, LlamaIndex, Pinecone, or custom
+- 📊 **Smart Metadata**: Categories, sources, types → Better retrieval accuracy
+
+### For AI Coding Assistant Users
+
+- 💻 **Cursor IDE**: Generate .cursorrules for framework-specific AI assistance
+- 🎯 **Persistent Context**: AI "knows" your frameworks without manual prompting
+- 📚 **Always Current**: Update docs in 5 minutes, not hours
+
+### For Claude Code Users
+
+- 🎯 **Skills**: Create comprehensive Claude Code skills from any documentation
+- 🎮 **Game Dev**: Generate skills for game engines (Godot, Unity, Unreal)
+- 🔧 **Teams**: Combine internal docs + code into single source of truth
+- 📚 **Learning**: Build skills from docs, code examples, and PDFs
+- 🔍 **Open Source**: Analyze repos to find documentation gaps
 
 ## Key Features
 
@@ -147,6 +228,44 @@ pip install skill-seekers[openai]
 # Install with all LLM platforms
 pip install skill-seekers[all-llms]
 ```
+
+### 🔗 RAG Framework Integrations (**NEW - v2.9.0**)
+
+- ✅ **LangChain Documents** - Direct export to `Document` format with `page_content` + metadata
+  - Perfect for: QA chains, retrievers, vector stores, agents
+  - Example: [LangChain RAG Pipeline](examples/langchain-rag-pipeline/)
+  - Guide: [LangChain Integration](docs/integrations/LANGCHAIN.md)
+
+- ✅ **LlamaIndex TextNodes** - Export to `TextNode` format with unique IDs + embeddings
+  - Perfect for: Query engines, chat engines, storage context
+  - Example: [LlamaIndex Query Engine](examples/llama-index-query-engine/)
+  - Guide: [LlamaIndex Integration](docs/integrations/LLAMA_INDEX.md)
+
+- ✅ **Pinecone-Ready Format** - Optimized for vector database upsert
+  - Perfect for: Production vector search, semantic search, hybrid search
+  - Example: [Pinecone Upsert](examples/pinecone-upsert/)
+  - Guide: [Pinecone Integration](docs/integrations/PINECONE.md)
+
+- ✅ **Cursor IDE (.cursorrules)** - Generate custom rules for AI coding assistant
+  - Perfect for: Framework-specific code suggestions, persistent AI context
+  - Guide: [Cursor Integration](docs/integrations/CURSOR.md)
+
+**Quick Export:**
+```bash
+# LangChain Documents (JSON)
+skill-seekers package output/django --target langchain
+# → output/django-langchain.json
+
+# LlamaIndex TextNodes (JSON)
+skill-seekers package output/django --target llama-index
+# → output/django-llama-index.json
+
+# Markdown (Universal)
+skill-seekers package output/django --target markdown
+# → output/django-markdown/SKILL.md + references/
+```
+
+**Complete RAG Pipeline Guide:** [RAG Pipelines Documentation](docs/integrations/RAG_PIPELINES.md)
 
 ### 🌊 Three-Stream GitHub Architecture (**NEW - v2.6.0**)
 - ✅ **Triple-Stream Analysis** - Split GitHub repos into Code, Docs, and Insights streams
