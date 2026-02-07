@@ -215,7 +215,7 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     package_parser.add_argument("--upload", action="store_true", help="Auto-upload after packaging")
     package_parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "weaviate", "chroma", "faiss", "qdrant"],
+        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "haystack", "weaviate", "chroma", "faiss", "qdrant"],
         default="claude",
         help="Target LLM platform (default: claude)",
     )
@@ -379,6 +379,46 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     )
     resume_parser.add_argument("--list", action="store_true", help="List all resumable jobs")
     resume_parser.add_argument("--clean", action="store_true", help="Clean up old progress files")
+
+    # === stream subcommand ===
+    stream_parser = subparsers.add_parser(
+        "stream",
+        help="Stream large files chunk-by-chunk",
+        description="Ingest large documentation files using streaming",
+    )
+    stream_parser.add_argument("input_file", help="Large file to stream")
+    stream_parser.add_argument("--chunk-size", type=int, default=1024, help="Chunk size in KB")
+    stream_parser.add_argument("--output", help="Output directory")
+
+    # === update subcommand ===
+    update_parser = subparsers.add_parser(
+        "update",
+        help="Update docs without full rescrape",
+        description="Incrementally update documentation skills",
+    )
+    update_parser.add_argument("skill_directory", help="Skill directory to update")
+    update_parser.add_argument("--check-changes", action="store_true", help="Check for changes only")
+    update_parser.add_argument("--force", action="store_true", help="Force update all files")
+
+    # === multilang subcommand ===
+    multilang_parser = subparsers.add_parser(
+        "multilang",
+        help="Multi-language documentation support",
+        description="Handle multi-language documentation scraping and organization",
+    )
+    multilang_parser.add_argument("skill_directory", help="Skill directory path")
+    multilang_parser.add_argument("--languages", nargs="+", help="Languages to process (e.g., en es fr)")
+    multilang_parser.add_argument("--detect", action="store_true", help="Auto-detect languages")
+
+    # === quality subcommand ===
+    quality_parser = subparsers.add_parser(
+        "quality",
+        help="Quality scoring for SKILL.md",
+        description="Analyze and score skill documentation quality",
+    )
+    quality_parser.add_argument("skill_directory", help="Skill directory path")
+    quality_parser.add_argument("--report", action="store_true", help="Generate detailed report")
+    quality_parser.add_argument("--threshold", type=float, default=7.0, help="Quality threshold (0-10)")
 
     return parser
 
@@ -728,6 +768,46 @@ def main(argv: list[str] | None = None) -> int:
             if args.clean:
                 sys.argv.append("--clean")
             return resume_main() or 0
+
+        elif args.command == "stream":
+            from skill_seekers.cli.streaming_ingest import main as stream_main
+
+            sys.argv = ["streaming_ingest.py", args.input_file]
+            if args.chunk_size:
+                sys.argv.extend(["--chunk-size", str(args.chunk_size)])
+            if args.output:
+                sys.argv.extend(["--output", args.output])
+            return stream_main() or 0
+
+        elif args.command == "update":
+            from skill_seekers.cli.incremental_updater import main as update_main
+
+            sys.argv = ["incremental_updater.py", args.skill_directory]
+            if args.check_changes:
+                sys.argv.append("--check-changes")
+            if args.force:
+                sys.argv.append("--force")
+            return update_main() or 0
+
+        elif args.command == "multilang":
+            from skill_seekers.cli.multilang_support import main as multilang_main
+
+            sys.argv = ["multilang_support.py", args.skill_directory]
+            if args.languages:
+                sys.argv.extend(["--languages"] + args.languages)
+            if args.detect:
+                sys.argv.append("--detect")
+            return multilang_main() or 0
+
+        elif args.command == "quality":
+            from skill_seekers.cli.quality_metrics import main as quality_main
+
+            sys.argv = ["quality_metrics.py", args.skill_directory]
+            if args.report:
+                sys.argv.append("--report")
+            if args.threshold:
+                sys.argv.extend(["--threshold", str(args.threshold)])
+            return quality_main() or 0
 
         else:
             print(f"Error: Unknown command '{args.command}'", file=sys.stderr)

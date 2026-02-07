@@ -177,6 +177,10 @@ skill-seekers-cloud = "skill_seekers.cli.cloud_storage_cli:main"
 skill-seekers-embed = "skill_seekers.embedding.server:main"
 skill-seekers-sync = "skill_seekers.cli.sync_cli:main"
 skill-seekers-benchmark = "skill_seekers.cli.benchmark_cli:main"
+skill-seekers-stream = "skill_seekers.cli.streaming_ingest:main"
+skill-seekers-update = "skill_seekers.cli.incremental_updater:main"
+skill-seekers-multilang = "skill_seekers.cli.multilang_support:main"
+skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
