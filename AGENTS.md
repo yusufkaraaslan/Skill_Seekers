@@ -6,17 +6,32 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 ## Project Overview
 
-**Skill Seekers** is a Python CLI tool that converts documentation websites, GitHub repositories, and PDF files into AI-ready skills for LLM platforms. It supports 4 target platforms:
+**Skill Seekers** is a Python CLI tool that converts documentation websites, GitHub repositories, and PDF files into AI-ready skills for LLM platforms and RAG (Retrieval-Augmented Generation) pipelines. It serves as the universal preprocessing layer for AI systems.
 
-- **Claude AI** (ZIP + YAML format)
-- **Google Gemini** (tar.gz format)
-- **OpenAI ChatGPT** (ZIP + Vector Store)
-- **Generic Markdown** (universal ZIP export)
+### Supported Target Platforms
 
-**Current Version:** 2.7.4
+| Platform | Format | Use Case |
+|----------|--------|----------|
+| **Claude AI** | ZIP + YAML | Claude Code skills |
+| **Google Gemini** | tar.gz | Gemini skills |
+| **OpenAI ChatGPT** | ZIP + Vector Store | Custom GPTs |
+| **LangChain** | Documents | QA chains, agents, retrievers |
+| **LlamaIndex** | TextNodes | Query engines, chat engines |
+| **Haystack** | Documents | Enterprise RAG pipelines |
+| **Pinecone** | Ready for upsert | Production vector search |
+| **Weaviate** | Vector objects | Vector database |
+| **Qdrant** | Points | Vector database |
+| **Chroma** | Documents | Local vector database |
+| **FAISS** | Index files | Local similarity search |
+| **Cursor IDE** | .cursorrules | AI coding assistant rules |
+| **Windsurf** | .windsurfrules | AI coding rules |
+| **Generic Markdown** | ZIP | Universal export |
+
+**Current Version:** 2.9.0
 **Python Version:** 3.10+ required
 **License:** MIT
 **Website:** https://skillseekersweb.com/
+**Repository:** https://github.com/yusufkaraaslan/Skill_Seekers
 
 ### Core Workflow
 
@@ -39,27 +54,67 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   │   ├── claude.py           # Claude AI adaptor
 │   │   │   ├── gemini.py           # Google Gemini adaptor
 │   │   │   ├── openai.py           # OpenAI ChatGPT adaptor
-│   │   │   └── markdown.py         # Generic Markdown adaptor
+│   │   │   ├── markdown.py         # Generic Markdown adaptor
+│   │   │   ├── chroma.py           # Chroma vector DB adaptor
+│   │   │   ├── faiss_helpers.py    # FAISS index adaptor
+│   │   │   ├── haystack.py         # Haystack RAG adaptor
+│   │   │   ├── langchain.py        # LangChain adaptor
+│   │   │   ├── llama_index.py      # LlamaIndex adaptor
+│   │   │   ├── qdrant.py           # Qdrant vector DB adaptor
+│   │   │   ├── weaviate.py         # Weaviate vector DB adaptor
+│   │   │   └── streaming_adaptor.py # Streaming output adaptor
+│   │   ├── storage/                # Cloud storage backends
+│   │   │   ├── base_storage.py     # Storage interface
+│   │   │   ├── s3_storage.py       # AWS S3 support
+│   │   │   ├── gcs_storage.py      # Google Cloud Storage
+│   │   │   └── azure_storage.py    # Azure Blob Storage
 │   │   ├── main.py                 # Unified CLI entry point
 │   │   ├── doc_scraper.py          # Documentation scraper
 │   │   ├── github_scraper.py       # GitHub repository scraper
 │   │   ├── pdf_scraper.py          # PDF extraction
 │   │   ├── unified_scraper.py      # Multi-source scraping
-│   │   ├── codebase_scraper.py     # Local codebase analysis (C2.x/C3.x)
-│   │   ├── enhance_skill_local.py  # AI enhancement (LOCAL mode)
+│   │   ├── codebase_scraper.py     # Local codebase analysis
+│   │   ├── enhance_skill_local.py  # AI enhancement (local mode)
 │   │   ├── package_skill.py        # Skill packager
 │   │   ├── upload_skill.py         # Upload to platforms
-│   │   └── ...                     # 50+ CLI modules
-│   └── mcp/                        # MCP server integration
-│       ├── server_fastmcp.py       # FastMCP server (main)
-│       ├── server.py               # Legacy server
-│       └── tools/                  # MCP tool implementations
-├── tests/                          # Test suite (76 test files)
+│   │   ├── cloud_storage_cli.py    # Cloud storage CLI
+│   │   ├── benchmark_cli.py        # Benchmarking CLI
+│   │   ├── sync_cli.py             # Sync monitoring CLI
+│   │   └── ...                     # 70+ CLI modules
+│   ├── mcp/                        # MCP server integration
+│   │   ├── server_fastmcp.py       # FastMCP server (main)
+│   │   ├── server_legacy.py        # Legacy server implementation
+│   │   ├── server.py               # Server entry point
+│   │   └── tools/                  # MCP tool implementations
+│   │       ├── config_tools.py     # Configuration tools
+│   │       ├── scraping_tools.py   # Scraping tools
+│   │       ├── packaging_tools.py  # Packaging tools
+│   │       ├── source_tools.py     # Source management tools
+│   │       ├── splitting_tools.py  # Config splitting tools
+│   │       └── vector_db_tools.py  # Vector database tools
+│   ├── sync/                       # Sync monitoring module
+│   │   ├── detector.py             # Change detection
+│   │   ├── models.py               # Data models
+│   │   ├── monitor.py              # Monitoring logic
+│   │   └── notifier.py             # Notification system
+│   ├── benchmark/                  # Benchmarking framework
+│   │   ├── framework.py            # Benchmark framework
+│   │   ├── models.py               # Benchmark models
+│   │   └── runner.py               # Benchmark runner
+│   └── embedding/                  # Embedding server
+│       ├── server.py               # FastAPI embedding server
+│       ├── generator.py            # Embedding generation
+│       ├── cache.py                # Embedding cache
+│       └── models.py               # Embedding models
+├── tests/                          # Test suite (83 test files)
 ├── configs/                        # Preset configuration files
-├── docs/                           # Documentation (54 markdown files)
+├── docs/                           # Documentation (80+ markdown files)
 ├── .github/workflows/              # CI/CD workflows
 ├── pyproject.toml                  # Main project configuration
-└── requirements.txt                # Pinned dependencies
+├── requirements.txt                # Pinned dependencies
+├── Dockerfile                      # Main Docker image
+├── Dockerfile.mcp                  # MCP server Docker image
+└── docker-compose.yml              # Full stack deployment
 ```
 
 ---
@@ -75,10 +130,20 @@ pip install -e .
 # Install with all platform dependencies
 pip install -e ".[all-llms]"
 
+# Install with all optional dependencies
+pip install -e ".[all]"
+
 # Install specific platforms only
 pip install -e ".[gemini]"    # Google Gemini support
 pip install -e ".[openai]"    # OpenAI ChatGPT support
 pip install -e ".[mcp]"       # MCP server dependencies
+pip install -e ".[s3]"        # AWS S3 support
+pip install -e ".[gcs]"       # Google Cloud Storage
+pip install -e ".[azure]"     # Azure Blob Storage
+pip install -e ".[embedding]" # Embedding server support
+
+# Install dev dependencies (using dependency-groups)
+pip install -e ".[dev]"
 ```
 
 **CRITICAL:** The project uses a `src/` layout. Tests WILL FAIL unless you install with `pip install -e .` first.
@@ -96,6 +161,19 @@ python -m build
 uv publish
 ```
 
+### Docker
+
+```bash
+# Build Docker image
+docker build -t skill-seekers .
+
+# Run with docker-compose (includes vector databases)
+docker-compose up -d
+
+# Run MCP server only
+docker-compose up -d mcp-server
+```
+
 ### Running Tests
 
 **CRITICAL:** Never skip tests - all tests must pass before commits.
@@ -107,6 +185,7 @@ pytest tests/ -v
 # Specific test file
 pytest tests/test_scraper_features.py -v
 pytest tests/test_mcp_fastmcp.py -v
+pytest tests/test_cloud_storage.py -v
 
 # With coverage
 pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html
@@ -116,11 +195,17 @@ pytest tests/test_scraper_features.py::test_detect_language -v
 
 # E2E tests
 pytest tests/test_e2e_three_stream_pipeline.py -v
+
+# Skip slow tests
+pytest tests/ -v -m "not slow"
+
+# Run only integration tests
+pytest tests/ -v -m integration
 ```
 
 **Test Architecture:**
-- 76 test files covering all features
-- CI Matrix: Ubuntu + macOS, Python 3.10-3.13
+- 83 test files covering all features
+- CI Matrix: Ubuntu + macOS, Python 3.10-3.12
 - 1200+ tests passing
 - Test markers: `slow`, `integration`, `e2e`, `venv`, `bootstrap`
 
@@ -150,6 +235,7 @@ mypy src/skill_seekers --show-error-codes --pretty
 - **Line length:** 100 characters
 - **Target Python:** 3.10+
 - **Enabled rules:** E, W, F, I, B, C4, UP, ARG, SIM
+- **Ignored rules:** E501, F541, ARG002, B007, I001, SIM114
 - **Import sorting:** isort style with `skill_seekers` as first-party
 
 ### Code Conventions
@@ -159,6 +245,7 @@ mypy src/skill_seekers --show-error-codes --pretty
 3. **Error handling:** Use specific exceptions, provide helpful messages
 4. **Async code:** Use `asyncio`, mark tests with `@pytest.mark.asyncio`
 5. **File naming:** Use snake_case for all Python files
+6. **MyPy configuration:** Lenient gradual typing (see mypy.ini)
 
 ---
 
@@ -172,7 +259,7 @@ All platform-specific logic is encapsulated in adaptors:
 from skill_seekers.cli.adaptors import get_adaptor
 
 # Get platform-specific adaptor
-adaptor = get_adaptor('gemini')  # or 'claude', 'openai', 'markdown'
+adaptor = get_adaptor('gemini')  # or 'claude', 'openai', 'langchain', etc.
 
 # Package skill
 adaptor.package(skill_dir='output/react/', output_path='output/')
@@ -190,7 +277,7 @@ Entry point: `src/skill_seekers/cli/main.py`
 
 The CLI uses subcommands that delegate to existing modules:
 
-```python
+```bash
 # skill-seekers scrape --config react.json
 # Transforms to: doc_scraper.main() with modified sys.argv
 ```
@@ -201,24 +288,37 @@ The CLI uses subcommands that delegate to existing modules:
 - `github` - GitHub repository scraping
 - `pdf` - PDF extraction
 - `unified` - Multi-source scraping
-- `analyze` - Local codebase analysis
+- `analyze` / `codebase` - Local codebase analysis
 - `enhance` - AI enhancement
-- `package` - Package skill
+- `package` - Package skill for target platform
 - `upload` - Upload to platform
+- `cloud` - Cloud storage operations
+- `sync` - Sync monitoring
+- `benchmark` - Performance benchmarking
+- `embed` - Embedding server
 - `install` / `install-agent` - Complete workflow
 
 ### MCP Server Architecture
 
 Two implementations:
-- `server_fastmcp.py` - Modern, decorator-based (recommended, 708 lines)
-- `server.py` - Legacy implementation (2200 lines)
+- `server_fastmcp.py` - Modern, decorator-based (recommended)
+- `server_legacy.py` - Legacy implementation
 
 Tools are organized by category:
-- Config tools (3)
-- Scraping tools (8)
-- Packaging tools (4)
-- Splitting tools (2)
-- Source tools (4)
+- Config tools (3 tools)
+- Scraping tools (8 tools)
+- Packaging tools (4 tools)
+- Source tools (4 tools)
+- Splitting tools (2 tools)
+- Vector DB tools (multiple)
+
+### Cloud Storage Architecture
+
+Abstract base class pattern for cloud providers:
+- `base_storage.py` - Defines `CloudStorage` interface
+- `s3_storage.py` - AWS S3 implementation
+- `gcs_storage.py` - Google Cloud Storage implementation
+- `azure_storage.py` - Azure Blob Storage implementation
 
 ---
 
@@ -247,7 +347,7 @@ pytest tests/ -v -m integration
 pytest tests/ -v -m e2e
 ```
 
-### Test Configuration (pytest.ini in pyproject.toml)
+### Test Configuration (pyproject.toml)
 
 ```toml
 [tool.pytest.ini_options]
@@ -255,6 +355,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short --strict-markers"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 ```
 
 ---
@@ -310,8 +411,18 @@ git push origin my-feature
 - Coverage: Uploads to Codecov
 
 **`.github/workflows/release.yml`:**
-- Triggered on version tags
-- Builds and publishes to PyPI
+- Triggered on version tags (`v*`)
+- Builds and publishes to PyPI using `uv`
+- Creates GitHub release with changelog
+
+**`.github/workflows/docker-publish.yml`:**
+- Builds and publishes Docker images
+
+**`.github/workflows/vector-db-export.yml`:**
+- Tests vector database exports
+
+**`.github/workflows/scheduled-updates.yml`:**
+- Scheduled sync monitoring
 
 ### Pre-commit Checks (Manual)
 
@@ -334,6 +445,9 @@ pytest tests/ -v -x  # Stop on first failure
    - `GOOGLE_API_KEY` - Google Gemini
    - `OPENAI_API_KEY` - OpenAI
    - `GITHUB_TOKEN` - GitHub API
+   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` - AWS S3
+   - `GOOGLE_APPLICATION_CREDENTIALS` - GCS
+   - `AZURE_STORAGE_CONNECTION_STRING` - Azure
 3. **Configuration storage:**
    - Stored at `~/.config/skill-seekers/config.json`
    - Permissions: 600 (owner read/write only)
@@ -346,11 +460,11 @@ pytest tests/ -v -x  # Stop on first failure
 
 ### Custom API Endpoints
 
-Support for Claude-compatible APIs (e.g., GLM-4.7):
+Support for Claude-compatible APIs:
 
 ```bash
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
+export ANTHROPIC_API_KEY=your-custom-api-key
+export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
 ```
 
 ---
@@ -384,6 +498,14 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 2. Register in `src/skill_seekers/mcp/server_fastmcp.py`
 3. Add test in `tests/test_mcp_fastmcp.py`
 
+### Adding Cloud Storage Provider
+
+1. Create module in `src/skill_seekers/cli/storage/my_storage.py`
+2. Inherit from `CloudStorage` base class
+3. Implement required methods: `upload()`, `download()`, `list()`, `delete()`
+4. Register in `src/skill_seekers/cli/storage/__init__.py`
+5. Add optional dependencies in `pyproject.toml`
+
 ---
 
 ## Documentation
@@ -395,16 +517,70 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 - **CLAUDE.md** - Detailed implementation guidance
 - **QUICKSTART.md** - Quick start guide
 - **CONTRIBUTING.md** - Contribution guidelines
-- **docs/** - Comprehensive documentation (54 files)
+- **TROUBLESHOOTING.md** - Common issues and solutions
+- **docs/** - Comprehensive documentation (80+ files)
+  - `docs/integrations/` - Integration guides for each platform
+  - `docs/guides/` - User guides
+  - `docs/reference/` - API reference
+  - `docs/features/` - Feature documentation
+  - `docs/blog/` - Blog posts and articles
 
 ### Configuration Documentation
 
 Preset configs are in `configs/` directory:
+- `react.json` - React documentation
+- `vue.json` - Vue.js documentation
+- `fastapi.json` - FastAPI documentation
+- `django.json` - Django documentation
+- `blender.json` / `blender-unified.json` - Blender Engine
 - `godot.json` - Godot Engine
-- `react.json` - React
-- `vue.json` - Vue.js
-- `fastapi.json` - FastAPI
+- `claude-code.json` - Claude Code
 - `*_unified.json` - Multi-source configs
+
+---
+
+## Key Dependencies
+
+### Core Dependencies
+- `requests>=2.32.5` - HTTP requests
+- `beautifulsoup4>=4.14.2` - HTML parsing
+- `PyGithub>=2.5.0` - GitHub API
+- `GitPython>=3.1.40` - Git operations
+- `httpx>=0.28.1` - Async HTTP
+- `anthropic>=0.76.0` - Claude AI API
+- `PyMuPDF>=1.24.14` - PDF processing
+- `Pillow>=11.0.0` - Image processing
+- `pytesseract>=0.3.13` - OCR
+- `pydantic>=2.12.3` - Data validation
+- `pydantic-settings>=2.11.0` - Settings management
+- `click>=8.3.0` - CLI framework
+- `Pygments>=2.19.2` - Syntax highlighting
+- `pathspec>=0.12.1` - Path matching
+- `networkx>=3.0` - Graph operations
+- `schedule>=1.2.0` - Scheduled tasks
+- `python-dotenv>=1.1.1` - Environment variables
+- `jsonschema>=4.25.1` - JSON validation
+
+### Optional Dependencies
+- `mcp>=1.25,<2` - MCP server
+- `google-generativeai>=0.8.0` - Gemini support
+- `openai>=1.0.0` - OpenAI support
+- `boto3>=1.34.0` - AWS S3
+- `google-cloud-storage>=2.10.0` - GCS
+- `azure-storage-blob>=12.19.0` - Azure
+- `fastapi>=0.109.0` - Embedding server
+- `uvicorn>=0.27.0` - ASGI server
+- `sentence-transformers>=2.3.0` - Embeddings
+- `numpy>=1.24.0` - Numerical computing
+- `voyageai>=0.2.0` - Voyage AI embeddings
+
+### Dev Dependencies (in dependency-groups)
+- `pytest>=8.4.2` - Testing framework
+- `pytest-asyncio>=0.24.0` - Async test support
+- `pytest-cov>=7.0.0` - Coverage
+- `coverage>=7.11.0` - Coverage reporting
+- `ruff>=0.14.13` - Linting/formatting
+- `mypy>=1.19.1` - Type checking
 
 ---
 
@@ -425,6 +601,10 @@ Preset configs are in `configs/` directory:
 - MyPy is configured to be lenient (gradual typing)
 - Focus on critical paths, not full coverage
 
+**Docker build failures**
+- Ensure you have BuildKit enabled: `DOCKER_BUILDKIT=1`
+- Check that all submodules are initialized: `git submodule update --init`
+
 ### Getting Help
 
 - Check **TROUBLESHOOTING.md** for detailed solutions
@@ -436,33 +616,6 @@ Preset configs are in `configs/` directory:
   - Expected vs actual behavior
   - Environment details (OS, Python version)
   - Error messages and stack traces
-
----
-
-## Key Dependencies
-
-### Core Dependencies
-- `requests>=2.32.5` - HTTP requests
-- `beautifulsoup4>=4.14.2` - HTML parsing
-- `PyGithub>=2.5.0` - GitHub API
-- `GitPython>=3.1.40` - Git operations
-- `httpx>=0.28.1` - Async HTTP
-- `anthropic>=0.76.0` - Claude AI API
-- `PyMuPDF>=1.24.14` - PDF processing
-- `pydantic>=2.12.3` - Data validation
-- `click>=8.3.0` - CLI framework
-
-### Optional Dependencies
-- `mcp>=1.25` - MCP server
-- `google-generativeai>=0.8.0` - Gemini support
-- `openai>=1.0.0` - OpenAI support
-
-### Dev Dependencies
-- `pytest>=8.4.2` - Testing framework
-- `pytest-asyncio>=0.24.0` - Async test support
-- `pytest-cov>=7.0.0` - Coverage
-- `ruff>=0.14.13` - Linting/formatting
-- `mypy>=1.19.1` - Type checking
 
 ---
 
