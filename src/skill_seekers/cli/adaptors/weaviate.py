@@ -7,7 +7,6 @@ Converts Skill Seekers documentation into Weaviate-compatible objects with schem
 """
 
 import json
-import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -42,13 +41,7 @@ class WeaviateAdaptor(SkillAdaptor):
         Returns:
             UUID string (RFC 4122 format)
         """
-        # Create deterministic ID from content + metadata
-        id_string = f"{metadata.get('source', '')}-{metadata.get('file', '')}-{content[:100]}"
-        hash_obj = hashlib.md5(id_string.encode())
-        hash_hex = hash_obj.hexdigest()
-
-        # Format as UUID (8-4-4-4-12)
-        return f"{hash_hex[:8]}-{hash_hex[8:12]}-{hash_hex[12:16]}-{hash_hex[16:20]}-{hash_hex[20:32]}"
+        return self._generate_deterministic_id(content, metadata, format="uuid")
 
     def _generate_schema(self, class_name: str) -> dict:
         """
@@ -156,41 +149,33 @@ class WeaviateAdaptor(SkillAdaptor):
                     }
                 )
 
-        # Convert all reference files
-        refs_dir = skill_dir / "references"
-        if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
-                if ref_file.is_file() and not ref_file.name.startswith("."):
-                    try:
-                        ref_content = ref_file.read_text(encoding="utf-8")
-                        if ref_content.strip():
-                            # Derive category from filename
-                            category = ref_file.stem.replace("_", " ").lower()
+        # Convert all reference files using base helper method
+        for ref_file, ref_content in self._iterate_references(skill_dir):
+            if ref_content.strip():
+                # Derive category from filename
+                category = ref_file.stem.replace("_", " ").lower()
 
-                            obj_metadata = {
-                                "source": metadata.name,
-                                "category": category,
-                                "file": ref_file.name,
-                                "type": "reference",
-                                "version": metadata.version,
-                            }
+                obj_metadata = {
+                    "source": metadata.name,
+                    "category": category,
+                    "file": ref_file.name,
+                    "type": "reference",
+                    "version": metadata.version,
+                }
 
-                            objects.append(
-                                {
-                                    "id": self._generate_uuid(ref_content, obj_metadata),
-                                    "properties": {
-                                        "content": ref_content,
-                                        "source": obj_metadata["source"],
-                                        "category": obj_metadata["category"],
-                                        "file": obj_metadata["file"],
-                                        "type": obj_metadata["type"],
-                                        "version": obj_metadata["version"],
-                                    },
-                                }
-                            )
-                    except Exception as e:
-                        print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
-                        continue
+                objects.append(
+                    {
+                        "id": self._generate_uuid(ref_content, obj_metadata),
+                        "properties": {
+                            "content": ref_content,
+                            "source": obj_metadata["source"],
+                            "category": obj_metadata["category"],
+                            "file": obj_metadata["file"],
+                            "type": obj_metadata["type"],
+                            "version": obj_metadata["version"],
+                        },
+                    }
+                )
 
         # Generate schema
         class_name = "".join(word.capitalize() for word in metadata.name.split("_"))
@@ -221,19 +206,8 @@ class WeaviateAdaptor(SkillAdaptor):
         """
         skill_dir = Path(skill_dir)
 
-        # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith("/"):
-            output_path = Path(output_path) / f"{skill_dir.name}-weaviate.json"
-        elif not str(output_path).endswith(".json"):
-            # Replace extension if needed
-            output_str = str(output_path).replace(".zip", ".json").replace(".tar.gz", ".json")
-            if not output_str.endswith("-weaviate.json"):
-                output_str = output_str.replace(".json", "-weaviate.json")
-            if not output_str.endswith(".json"):
-                output_str += ".json"
-            output_path = Path(output_str)
-
-        output_path = Path(output_path)
+        # Determine output filename using base helper method
+        output_path = self._format_output_path(skill_dir, Path(output_path), "-weaviate.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read metadata

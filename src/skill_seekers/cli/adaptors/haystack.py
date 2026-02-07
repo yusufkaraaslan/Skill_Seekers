@@ -65,32 +65,24 @@ class HaystackAdaptor(SkillAdaptor):
                     }
                 )
 
-        # Convert all reference files
-        refs_dir = skill_dir / "references"
-        if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
-                if ref_file.is_file() and not ref_file.name.startswith("."):
-                    try:
-                        ref_content = ref_file.read_text(encoding="utf-8")
-                        if ref_content.strip():
-                            # Derive category from filename
-                            category = ref_file.stem.replace("_", " ").lower()
+        # Convert all reference files using base helper method
+        for ref_file, ref_content in self._iterate_references(skill_dir):
+            if ref_content.strip():
+                # Derive category from filename
+                category = ref_file.stem.replace("_", " ").lower()
 
-                            documents.append(
-                                {
-                                    "content": ref_content,
-                                    "meta": {
-                                        "source": metadata.name,
-                                        "category": category,
-                                        "file": ref_file.name,
-                                        "type": "reference",
-                                        "version": metadata.version,
-                                    },
-                                }
-                            )
-                    except Exception as e:
-                        print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
-                        continue
+                documents.append(
+                    {
+                        "content": ref_content,
+                        "meta": {
+                            "source": metadata.name,
+                            "category": category,
+                            "file": ref_file.name,
+                            "type": "reference",
+                            "version": metadata.version,
+                        },
+                    }
+                )
 
         # Return as formatted JSON
         return json.dumps(documents, indent=2, ensure_ascii=False)
@@ -111,19 +103,8 @@ class HaystackAdaptor(SkillAdaptor):
         """
         skill_dir = Path(skill_dir)
 
-        # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith("/"):
-            output_path = Path(output_path) / f"{skill_dir.name}-haystack.json"
-        elif not str(output_path).endswith(".json"):
-            # Replace extension if needed
-            output_str = str(output_path).replace(".zip", ".json").replace(".tar.gz", ".json")
-            if not output_str.endswith("-haystack.json"):
-                output_str = output_str.replace(".json", "-haystack.json")
-            if not output_str.endswith(".json"):
-                output_str += ".json"
-            output_path = Path(output_str)
-
-        output_path = Path(output_path)
+        # Determine output filename using base helper method
+        output_path = self._format_output_path(skill_dir, Path(output_path), "-haystack.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read metadata

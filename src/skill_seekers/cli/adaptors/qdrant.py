@@ -9,8 +9,6 @@ Qdrant stores vectors and metadata together in collections with points.
 import json
 from pathlib import Path
 from typing import Any
-import hashlib
-import uuid
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -43,10 +41,7 @@ class QdrantAdaptor(SkillAdaptor):
         Returns:
             UUID string (version 5, deterministic)
         """
-        # Use content hash + source for deterministic UUID
-        namespace = uuid.UUID("00000000-0000-0000-0000-000000000000")
-        id_string = f"{metadata.get('source', '')}-{metadata.get('file', '')}-{content[:100]}"
-        return str(uuid.uuid5(namespace, id_string))
+        return self._generate_deterministic_id(content, metadata, format="uuid5")
 
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
@@ -89,36 +84,28 @@ class QdrantAdaptor(SkillAdaptor):
                     }
                 })
 
-        # Convert all reference files
-        refs_dir = skill_dir / "references"
-        if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
-                if ref_file.is_file() and not ref_file.name.startswith("."):
-                    try:
-                        ref_content = ref_file.read_text(encoding="utf-8")
-                        if ref_content.strip():
-                            category = ref_file.stem.replace("_", " ").lower()
+        # Convert all reference files using base helper method
+        for ref_file, ref_content in self._iterate_references(skill_dir):
+            if ref_content.strip():
+                category = ref_file.stem.replace("_", " ").lower()
 
-                            point_id = self._generate_point_id(ref_content, {
-                                "source": metadata.name,
-                                "file": ref_file.name
-                            })
+                point_id = self._generate_point_id(ref_content, {
+                    "source": metadata.name,
+                    "file": ref_file.name
+                })
 
-                            points.append({
-                                "id": point_id,
-                                "vector": None,  # User will generate embeddings
-                                "payload": {
-                                    "content": ref_content,
-                                    "source": metadata.name,
-                                    "category": category,
-                                    "file": ref_file.name,
-                                    "type": "reference",
-                                    "version": metadata.version,
-                                }
-                            })
-                    except Exception as e:
-                        print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
-                        continue
+                points.append({
+                    "id": point_id,
+                    "vector": None,  # User will generate embeddings
+                    "payload": {
+                        "content": ref_content,
+                        "source": metadata.name,
+                        "category": category,
+                        "file": ref_file.name,
+                        "type": "reference",
+                        "version": metadata.version,
+                    }
+                })
 
         # Qdrant configuration
         config = {
@@ -158,18 +145,8 @@ class QdrantAdaptor(SkillAdaptor):
         """
         skill_dir = Path(skill_dir)
 
-        # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith("/"):
-            output_path = Path(output_path) / f"{skill_dir.name}-qdrant.json"
-        elif not str(output_path).endswith(".json"):
-            output_str = str(output_path).replace(".zip", ".json").replace(".tar.gz", ".json")
-            if not output_str.endswith("-qdrant.json"):
-                output_str = output_str.replace(".json", "-qdrant.json")
-            if not output_str.endswith(".json"):
-                output_str += ".json"
-            output_path = Path(output_str)
-
-        output_path = Path(output_path)
+        # Determine output filename using base helper method
+        output_path = self._format_output_path(skill_dir, Path(output_path), "-qdrant.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read metadata

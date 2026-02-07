@@ -9,7 +9,6 @@ Provides easy-to-use wrappers around FAISS with metadata management.
 import json
 from pathlib import Path
 from typing import Any
-import hashlib
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -44,8 +43,7 @@ class FAISSHelpers(SkillAdaptor):
         Returns:
             ID string (hex digest)
         """
-        id_string = f"{metadata.get('source', '')}-{metadata.get('file', '')}-{content[:100]}"
-        return hashlib.md5(id_string.encode()).hexdigest()
+        return self._generate_deterministic_id(content, metadata, format="hex")
 
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
@@ -85,30 +83,22 @@ class FAISSHelpers(SkillAdaptor):
                 metadatas.append(doc_metadata)
                 ids.append(self._generate_id(content, doc_metadata))
 
-        # Convert all reference files
-        refs_dir = skill_dir / "references"
-        if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
-                if ref_file.is_file() and not ref_file.name.startswith("."):
-                    try:
-                        ref_content = ref_file.read_text(encoding="utf-8")
-                        if ref_content.strip():
-                            category = ref_file.stem.replace("_", " ").lower()
+        # Convert all reference files using base helper method
+        for ref_file, ref_content in self._iterate_references(skill_dir):
+            if ref_content.strip():
+                category = ref_file.stem.replace("_", " ").lower()
 
-                            doc_metadata = {
-                                "source": metadata.name,
-                                "category": category,
-                                "file": ref_file.name,
-                                "type": "reference",
-                                "version": metadata.version,
-                            }
+                doc_metadata = {
+                    "source": metadata.name,
+                    "category": category,
+                    "file": ref_file.name,
+                    "type": "reference",
+                    "version": metadata.version,
+                }
 
-                            documents.append(ref_content)
-                            metadatas.append(doc_metadata)
-                            ids.append(self._generate_id(ref_content, doc_metadata))
-                    except Exception as e:
-                        print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
-                        continue
+                documents.append(ref_content)
+                metadatas.append(doc_metadata)
+                ids.append(self._generate_id(ref_content, doc_metadata))
 
         # FAISS configuration hints
         config = {
@@ -147,18 +137,8 @@ class FAISSHelpers(SkillAdaptor):
         """
         skill_dir = Path(skill_dir)
 
-        # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith("/"):
-            output_path = Path(output_path) / f"{skill_dir.name}-faiss.json"
-        elif not str(output_path).endswith(".json"):
-            output_str = str(output_path).replace(".zip", ".json").replace(".tar.gz", ".json")
-            if not output_str.endswith("-faiss.json"):
-                output_str = output_str.replace(".json", "-faiss.json")
-            if not output_str.endswith(".json"):
-                output_str += ".json"
-            output_path = Path(output_str)
-
-        output_path = Path(output_path)
+        # Determine output filename using base helper method
+        output_path = self._format_output_path(skill_dir, Path(output_path), "-faiss.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read metadata

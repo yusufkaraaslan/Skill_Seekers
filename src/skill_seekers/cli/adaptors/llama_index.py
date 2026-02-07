@@ -9,7 +9,6 @@ Converts Skill Seekers documentation into LlamaIndex-compatible Node objects.
 import json
 from pathlib import Path
 from typing import Any
-import hashlib
 
 from .base import SkillAdaptor, SkillMetadata
 
@@ -40,9 +39,7 @@ class LlamaIndexAdaptor(SkillAdaptor):
         Returns:
             Unique node ID (hash-based)
         """
-        # Create deterministic ID from content + source + file
-        id_string = f"{metadata.get('source', '')}-{metadata.get('file', '')}-{content[:100]}"
-        return hashlib.md5(id_string.encode()).hexdigest()
+        return self._generate_deterministic_id(content, metadata, format="hex")
 
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
@@ -86,36 +83,28 @@ class LlamaIndexAdaptor(SkillAdaptor):
                     }
                 )
 
-        # Convert all reference files
-        refs_dir = skill_dir / "references"
-        if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
-                if ref_file.is_file() and not ref_file.name.startswith("."):
-                    try:
-                        ref_content = ref_file.read_text(encoding="utf-8")
-                        if ref_content.strip():
-                            # Derive category from filename
-                            category = ref_file.stem.replace("_", " ").lower()
+        # Convert all reference files using base helper method
+        for ref_file, ref_content in self._iterate_references(skill_dir):
+            if ref_content.strip():
+                # Derive category from filename
+                category = ref_file.stem.replace("_", " ").lower()
 
-                            node_metadata = {
-                                "source": metadata.name,
-                                "category": category,
-                                "file": ref_file.name,
-                                "type": "reference",
-                                "version": metadata.version,
-                            }
+                node_metadata = {
+                    "source": metadata.name,
+                    "category": category,
+                    "file": ref_file.name,
+                    "type": "reference",
+                    "version": metadata.version,
+                }
 
-                            nodes.append(
-                                {
-                                    "text": ref_content,
-                                    "metadata": node_metadata,
-                                    "id_": self._generate_node_id(ref_content, node_metadata),
-                                    "embedding": None,
-                                }
-                            )
-                    except Exception as e:
-                        print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
-                        continue
+                nodes.append(
+                    {
+                        "text": ref_content,
+                        "metadata": node_metadata,
+                        "id_": self._generate_node_id(ref_content, node_metadata),
+                        "embedding": None,
+                    }
+                )
 
         # Return as formatted JSON
         return json.dumps(nodes, indent=2, ensure_ascii=False)
@@ -136,19 +125,8 @@ class LlamaIndexAdaptor(SkillAdaptor):
         """
         skill_dir = Path(skill_dir)
 
-        # Determine output filename
-        if output_path.is_dir() or str(output_path).endswith("/"):
-            output_path = Path(output_path) / f"{skill_dir.name}-llama-index.json"
-        elif not str(output_path).endswith(".json"):
-            # Replace extension if needed
-            output_str = str(output_path).replace(".zip", ".json").replace(".tar.gz", ".json")
-            if not output_str.endswith("-llama-index.json"):
-                output_str = output_str.replace(".json", "-llama-index.json")
-            if not output_str.endswith(".json"):
-                output_str += ".json"
-            output_path = Path(output_str)
-
-        output_path = Path(output_path)
+        # Determine output filename using base helper method
+        output_path = self._format_output_path(skill_dir, Path(output_path), "-llama-index.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Read metadata

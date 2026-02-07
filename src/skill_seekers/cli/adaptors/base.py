@@ -266,22 +266,89 @@ class SkillAdaptor(ABC):
         return base_meta
 
     def _format_output_path(
-        self, skill_dir: Path, output_dir: Path, suffix: str
+        self, skill_dir: Path, output_path: Path, suffix: str
     ) -> Path:
         """
-        Generate standardized output path.
+        Generate standardized output path with intelligent format handling.
+
+        Handles three cases:
+        1. output_path is a directory → generate filename with suffix
+        2. output_path is a file without correct suffix → fix extension and add suffix
+        3. output_path is already correct → use as-is
 
         Args:
             skill_dir: Input skill directory
-            output_dir: Output directory
+            output_path: Output path (file or directory)
             suffix: Platform-specific suffix (e.g., "-langchain.json")
 
         Returns:
-            Output file path
+            Output file path with correct extension and suffix
         """
         skill_name = skill_dir.name
-        filename = f"{skill_name}{suffix}"
-        return output_dir / filename
+
+        # Case 1: Directory path - generate filename
+        if output_path.is_dir() or str(output_path).endswith("/"):
+            return Path(output_path) / f"{skill_name}{suffix}"
+
+        # Case 2: File path without correct extension - fix it
+        output_str = str(output_path)
+
+        # Extract the file extension from suffix (e.g., ".json" from "-langchain.json")
+        correct_ext = suffix.split('.')[-1] if '.' in suffix else ''
+
+        if correct_ext and not output_str.endswith(f".{correct_ext}"):
+            # Replace common incorrect extensions
+            output_str = output_str.replace(".zip", f".{correct_ext}").replace(".tar.gz", f".{correct_ext}")
+
+            # Ensure platform suffix is present
+            if not output_str.endswith(suffix):
+                output_str = output_str.replace(f".{correct_ext}", suffix)
+
+            # Add extension if still missing
+            if not output_str.endswith(f".{correct_ext}"):
+                output_str += f".{correct_ext}"
+
+        return Path(output_str)
+
+    def _generate_deterministic_id(
+        self, content: str, metadata: dict, format: str = "hex"
+    ) -> str:
+        """
+        Generate deterministic ID from content and metadata.
+
+        Provides consistent ID generation across all RAG adaptors with platform-specific formatting.
+
+        Args:
+            content: Document content
+            metadata: Document metadata
+            format: ID format - 'hex', 'uuid', or 'uuid5'
+                - 'hex': Plain MD5 hex digest (32 chars) - used by Chroma, FAISS
+                - 'uuid': UUID format from MD5 (8-4-4-4-12) - used by Weaviate, Qdrant
+                - 'uuid5': RFC 4122 UUID v5 (SHA-1 based) - used by LlamaIndex
+
+        Returns:
+            Generated ID string in requested format
+        """
+        import hashlib
+        import uuid
+
+        # Create stable input for hashing
+        id_string = f"{metadata.get('source', '')}-{metadata.get('file', '')}-{content[:100]}"
+
+        if format == "uuid5":
+            # UUID v5 (SHA-1 based, RFC 4122 compliant)
+            return str(uuid.uuid5(uuid.NAMESPACE_DNS, id_string))
+
+        # For hex and uuid formats, use MD5
+        hash_obj = hashlib.md5(id_string.encode())
+        hash_hex = hash_obj.hexdigest()
+
+        if format == "uuid":
+            # Format as UUID (8-4-4-4-12)
+            return f"{hash_hex[:8]}-{hash_hex[8:12]}-{hash_hex[12:16]}-{hash_hex[16:20]}-{hash_hex[20:32]}"
+        else:  # format == "hex"
+            # Plain hex digest
+            return hash_hex
 
     def _generate_toc(self, skill_dir: Path) -> str:
         """
