@@ -802,7 +802,12 @@ class GitHubScraper:
             issues = self.repo.get_issues(state="all", sort="updated", direction="desc")
 
             issue_list = []
-            for issue in issues[: self.max_issues]:
+            count = 0
+            for issue in issues:
+                # Stop if we've reached the limit
+                if count >= self.max_issues:
+                    break
+
                 # Skip pull requests (they appear in issues)
                 if issue.pull_request:
                     continue
@@ -820,6 +825,7 @@ class GitHubScraper:
                     "body": issue.body[:500] if issue.body else None,  # First 500 chars
                 }
                 issue_list.append(issue_data)
+                count += 1
 
             self.extracted_data["issues"] = issue_list
             logger.info(f"Extracted {len(issue_list)} issues")
