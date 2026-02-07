@@ -525,6 +525,7 @@ def main():
     parser.add_argument("skill_dir", help="Path to skill directory")
     parser.add_argument("--report", action="store_true", help="Generate detailed report")
     parser.add_argument("--output", help="Output path for JSON report")
+    parser.add_argument("--threshold", type=float, default=7.0, help="Quality threshold (0-10)")
     args = parser.parse_args()
 
     # Analyze skill

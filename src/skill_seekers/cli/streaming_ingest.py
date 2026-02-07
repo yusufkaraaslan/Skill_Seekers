@@ -413,7 +413,22 @@ def main():
     if input_path.is_dir():
         chunks = ingester.stream_skill_directory(input_path, callback=on_progress)
     else:
-        chunks = ingester.stream_file(input_path, callback=on_progress)
+        # Stream single file
+        content = input_path.read_text(encoding="utf-8")
+        metadata = {"source": input_path.stem, "file": input_path.name}
+        file_chunks = ingester.chunk_document(content, metadata)
+        # Convert to generator format matching stream_skill_directory
+        chunks = ((text, {
+            "content": text,
+            "chunk_id": meta.chunk_id,
+            "source": meta.source,
+            "category": meta.category,
+            "file": meta.file,
+            "chunk_index": meta.chunk_index,
+            "total_chunks": meta.total_chunks,
+            "char_start": meta.char_start,
+            "char_end": meta.char_end,
+        }) for text, meta in file_chunks)
 
     # Process in batches
     all_chunks = []

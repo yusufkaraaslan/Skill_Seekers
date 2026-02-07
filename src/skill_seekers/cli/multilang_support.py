@@ -438,9 +438,10 @@ def main():
 
     # Detect languages
     if args.detect:
-        detected = manager.detect_languages()
-        print(f"\n🌍 Detected languages: {', '.join(detected.keys())}")
-        for lang, count in detected.items():
+        languages = manager.get_languages()
+        print(f"\n🌍 Detected languages: {', '.join(languages)}")
+        for lang in languages:
+            count = manager.get_document_count(lang)
             print(f"   {lang}: {count} documents")
 
     # Generate report
