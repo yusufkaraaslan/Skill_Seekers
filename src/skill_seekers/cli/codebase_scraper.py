@@ -1995,16 +1995,40 @@ Examples:
     parser.add_argument(
         "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
     )
+
+    # Preset selection (NEW - recommended way)
+    parser.add_argument(
+        "--preset",
+        choices=["quick", "standard", "comprehensive"],
+        help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)"
+    )
+    parser.add_argument(
+        "--preset-list",
+        action="store_true",
+        help="Show available presets and exit"
+    )
+
+    # Legacy preset flags (kept for backward compatibility)
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="[DEPRECATED] Quick analysis - use '--preset quick' instead"
+    )
+    parser.add_argument(
+        "--comprehensive",
+        action="store_true",
+        help="[DEPRECATED] Comprehensive analysis - use '--preset comprehensive' instead"
+    )
+
     parser.add_argument(
         "--depth",
         choices=["surface", "deep", "full"],
-        default="deep",
+        default=None,  # Don't set default here - let preset system handle it
         help=(
-            "Analysis depth: "
+            "[DEPRECATED] Analysis depth - use --preset instead. "
             "surface (basic code structure, ~1-2 min), "
             "deep (code + patterns + tests, ~5-10 min, DEFAULT), "
-            "full (everything + AI enhancement, ~20-60 min). "
-            "💡 TIP: Use --quick or --comprehensive presets instead for better UX!"
+            "full (everything + AI enhancement, ~20-60 min)"
         ),
     )
     parser.add_argument(
@@ -2102,13 +2126,13 @@ Examples:
                 f"Use {new_flag} to disable this feature."
             )
 
-    args = parser.parse_args()
-
-    # Handle --preset-list flag
-    if hasattr(args, "preset_list") and args.preset_list:
+    # Handle --preset-list flag BEFORE parse_args() to avoid required --directory validation
+    if "--preset-list" in sys.argv:
         from skill_seekers.cli.presets import PresetManager
         print(PresetManager.format_preset_help())
         return 0
+
+    args = parser.parse_args()
 
     # Check for deprecated flags and show warnings
     _check_deprecated_flags(args)
@@ -2144,6 +2168,10 @@ Examples:
         except ValueError as e:
             logger.error(f"❌ {e}")
             return 1
+
+    # Apply default depth if not set by preset or CLI
+    if args.depth is None:
+        args.depth = "deep"  # Default depth
 
     # Set logging level
     if args.verbose:
