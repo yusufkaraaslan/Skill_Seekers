@@ -210,148 +210,208 @@ class ChromaAdaptor(SkillAdaptor):
 
         return output_path
 
-    def upload(self, package_path: Path, _api_key: str, **_kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str = None, **kwargs) -> dict[str, Any]:
         """
-        Chroma format does not support direct upload.
-
-        Users should import the JSON file into their Chroma instance:
-
-        ```python
-        import chromadb
-        import json
-
-        # Create client (persistent)
-        client = chromadb.PersistentClient(path="./chroma_db")
-
-        # Load data
-        with open("skill-chroma.json") as f:
-            data = json.load(f)
-
-        # Create or get collection
-        collection = client.get_or_create_collection(
-            name=data["collection_name"]
-        )
-
-        # Add documents (Chroma generates embeddings automatically)
-        collection.add(
-            documents=data["documents"],
-            metadatas=data["metadatas"],
-            ids=data["ids"]
-        )
-        ```
+        Upload packaged skill to ChromaDB.
 
         Args:
-            package_path: Path to JSON file
-            api_key: Not used
-            **kwargs: Not used
+            package_path: Path to packaged JSON
+            api_key: Not used for Chroma (uses URL instead)
+            **kwargs:
+                chroma_url: ChromaDB URL (default: http://localhost:8000)
+                collection_name: Override collection name
+                distance_function: "cosine", "l2", or "ip" (default: "cosine")
+                embedding_function: "openai", "sentence-transformers", or None
+                openai_api_key: For OpenAI embeddings
+                persist_directory: Local directory for persistent storage
 
         Returns:
-            Result indicating no upload capability
+            {"success": bool, "message": str, "collection": str, "count": int}
         """
-        example_code = """
-# Example: Import into Chroma
+        try:
+            import chromadb
+            from chromadb.config import Settings
+        except ImportError:
+            return {
+                "success": False,
+                "message": "chromadb not installed. Run: pip install chromadb"
+            }
 
-import chromadb
-import json
-from openai import OpenAI
+        # Load package
+        with open(package_path) as f:
+            data = json.load(f)
 
-# Load data
-with open("{path}") as f:
-    data = json.load(f)
+        # Determine client type and configuration
+        persist_directory = kwargs.get('persist_directory')
+        chroma_url = kwargs.get('chroma_url')
 
-# Option 1: Persistent client (recommended)
-client = chromadb.PersistentClient(path="./chroma_db")
+        try:
+            if persist_directory:
+                # Local persistent storage
+                print(f"📁 Using persistent storage: {persist_directory}")
+                client = chromadb.PersistentClient(path=persist_directory)
+            elif chroma_url:
+                # Remote HTTP client
+                print(f"🌐 Connecting to ChromaDB at: {chroma_url}")
+                # Parse URL
+                if '://' in chroma_url:
+                    parts = chroma_url.split('://')
+                    protocol = parts[0]
+                    host_port = parts[1]
+                else:
+                    protocol = 'http'
+                    host_port = chroma_url
 
-# Option 2: In-memory client (for testing)
-# client = chromadb.Client()
+                if ':' in host_port:
+                    host, port = host_port.rsplit(':', 1)
+                    port = int(port)
+                else:
+                    host = host_port
+                    port = 8000
 
-# Create or get collection
-collection = client.get_or_create_collection(
-    name=data["collection_name"],
-    metadata={{"description": "Documentation from Skill Seekers"}}
-)
+                client = chromadb.HttpClient(host=host, port=port)
+            else:
+                # Default: local persistent client
+                print("📁 Using default persistent storage: ./chroma_db")
+                client = chromadb.PersistentClient(path="./chroma_db")
 
-# Option A: Let Chroma generate embeddings (default)
-collection.add(
-    documents=data["documents"],
-    metadatas=data["metadatas"],
-    ids=data["ids"]
-)
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to connect to ChromaDB: {e}\n\nTry:\n  pip install chromadb\n  chroma run  # Start local server"
+            }
 
-# Option B: Use custom embeddings (OpenAI)
-openai_client = OpenAI()
-embeddings = []
-for doc in data["documents"]:
-    response = openai_client.embeddings.create(
-        model="text-embedding-ada-002",
-        input=doc
-    )
-    embeddings.append(response.data[0].embedding)
+        # Get or create collection
+        collection_name = kwargs.get('collection_name', data.get('collection_name', 'skill_docs'))
+        distance_function = kwargs.get('distance_function', 'cosine')
 
-collection.add(
-    documents=data["documents"],
-    embeddings=embeddings,
-    metadatas=data["metadatas"],
-    ids=data["ids"]
-)
+        try:
+            # Try to get existing collection
+            collection = client.get_collection(name=collection_name)
+            print(f"ℹ️  Using existing collection: {collection_name}")
+        except:
+            try:
+                # Create new collection
+                metadata = {"hnsw:space": distance_function}
+                collection = client.create_collection(
+                    name=collection_name,
+                    metadata=metadata
+                )
+                print(f"✅ Created collection: {collection_name} (distance: {distance_function})")
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": f"Failed to create collection '{collection_name}': {e}"
+                }
 
-print(f"✅ Added {{len(data['documents'])}} documents to collection")
-print(f"📊 Total documents in collection: {{collection.count()}}")
+        # Handle embeddings
+        embedding_function = kwargs.get('embedding_function')
 
-# Query example (semantic search)
-results = collection.query(
-    query_texts=["your search query"],
-    n_results=3
-)
+        try:
+            if embedding_function == 'openai':
+                # Generate embeddings with OpenAI
+                print("🔄 Generating OpenAI embeddings...")
+                embeddings = self._generate_openai_embeddings(
+                    data['documents'],
+                    api_key=kwargs.get('openai_api_key')
+                )
+                collection.add(
+                    documents=data['documents'],
+                    metadatas=data['metadatas'],
+                    ids=data['ids'],
+                    embeddings=embeddings
+                )
+            elif embedding_function == 'sentence-transformers':
+                # Use sentence-transformers
+                print("🔄 Generating sentence-transformer embeddings...")
+                try:
+                    from chromadb.utils import embedding_functions
+                    ef = embedding_functions.SentenceTransformerEmbeddingFunction()
+                    embeddings = [ef([doc])[0] for doc in data['documents']]
+                    collection.add(
+                        documents=data['documents'],
+                        metadatas=data['metadatas'],
+                        ids=data['ids'],
+                        embeddings=embeddings
+                    )
+                except ImportError:
+                    return {
+                        "success": False,
+                        "message": "sentence-transformers not installed. Run: pip install sentence-transformers"
+                    }
+            else:
+                # No embeddings - Chroma will auto-generate
+                print("🔄 Using Chroma's default embedding function...")
+                collection.add(
+                    documents=data['documents'],
+                    metadatas=data['metadatas'],
+                    ids=data['ids']
+                )
 
-# Query with metadata filter
-results = collection.query(
-    query_texts=["search query"],
-    n_results=5,
-    where={{"category": "api"}}  # Filter by category
-)
+            count = len(data['documents'])
+            print(f"✅ Uploaded {count} documents to ChromaDB")
+            print(f"📊 Collection '{collection_name}' now has {collection.count()} total documents")
 
-# Query with multiple filters (AND)
-results = collection.query(
-    query_texts=["search query"],
-    n_results=5,
-    where={{
-        "$and": [
-            {{"category": "api"}},
-            {{"type": "reference"}}
-        ]
-    }}
-)
+            return {
+                "success": True,
+                "message": f"Uploaded {count} documents to ChromaDB collection '{collection_name}'",
+                "collection": collection_name,
+                "count": count,
+                "url": f"{chroma_url}/collections/{collection_name}" if chroma_url else None
+            }
 
-# Get documents by ID
-docs = collection.get(ids=[data["ids"][0]])
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Upload failed: {e}"
+            }
 
-# Update collection (re-add with same IDs)
-collection.update(
-    ids=[data["ids"][0]],
-    documents=["updated content"],
-    metadatas=[data["metadatas"][0]]
-)
+    def _generate_openai_embeddings(
+        self,
+        documents: list[str],
+        api_key: str = None
+    ) -> list[list[float]]:
+        """
+        Generate embeddings using OpenAI API.
 
-# Delete documents
-collection.delete(ids=[data["ids"][0]])
+        Args:
+            documents: List of document texts
+            api_key: OpenAI API key (or uses OPENAI_API_KEY env var)
 
-# Persist collection (if using PersistentClient, automatic on exit)
-# Collection is automatically persisted to disk
-""".format(
-            path=package_path.name
-        )
+        Returns:
+            List of embedding vectors
+        """
+        import os
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("openai not installed. Run: pip install openai")
 
-        return {
-            "success": False,
-            "skill_id": None,
-            "url": str(package_path.absolute()),
-            "message": (
-                f"Chroma data packaged at: {package_path.absolute()}\n\n"
-                "Import into Chroma:\n"
-                f"{example_code}"
-            ),
-        }
+        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
+
+        client = OpenAI(api_key=api_key)
+
+        # Batch process (OpenAI allows up to 2048 inputs)
+        embeddings = []
+        batch_size = 100
+
+        print(f"  Generating embeddings for {len(documents)} documents...")
+
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i+batch_size]
+            try:
+                response = client.embeddings.create(
+                    input=batch,
+                    model="text-embedding-3-small"  # Cheapest, fastest
+                )
+                embeddings.extend([item.embedding for item in response.data])
+                print(f"  ✓ Processed {min(i+batch_size, len(documents))}/{len(documents)}")
+            except Exception as e:
+                raise Exception(f"OpenAI embedding generation failed: {e}")
+
+        return embeddings
 
     def validate_api_key(self, _api_key: str) -> bool:
         """

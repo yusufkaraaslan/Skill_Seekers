@@ -288,126 +288,203 @@ class WeaviateAdaptor(SkillAdaptor):
 
         return output_path
 
-    def upload(self, package_path: Path, _api_key: str, **_kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str = None, **kwargs) -> dict[str, Any]:
         """
-        Weaviate format does not support direct upload.
-
-        Users should import the JSON file into their Weaviate instance:
-
-        ```python
-        import weaviate
-        import json
-
-        # Connect to Weaviate
-        client = weaviate.Client("http://localhost:8080")
-
-        # Load data
-        with open("skill-weaviate.json") as f:
-            data = json.load(f)
-
-        # Create schema
-        client.schema.create_class(data["schema"])
-
-        # Batch import objects
-        with client.batch as batch:
-            for obj in data["objects"]:
-                batch.add_data_object(
-                    data_object=obj["properties"],
-                    class_name=data["class_name"],
-                    uuid=obj["id"]
-                )
-        ```
+        Upload packaged skill to Weaviate.
 
         Args:
-            package_path: Path to JSON file
-            api_key: Not used
-            **kwargs: Not used
+            package_path: Path to packaged JSON
+            api_key: Weaviate API key (for Weaviate Cloud)
+            **kwargs:
+                weaviate_url: Weaviate URL (default: http://localhost:8080)
+                use_cloud: Use Weaviate Cloud (default: False)
+                cluster_url: Weaviate Cloud cluster URL
+                embedding_function: "openai", "sentence-transformers", or None
+                openai_api_key: For OpenAI embeddings
 
         Returns:
-            Result indicating no upload capability
+            {"success": bool, "message": str, "class_name": str, "count": int}
         """
-        example_code = """
-# Example: Import into Weaviate
+        try:
+            import weaviate
+        except ImportError:
+            return {
+                "success": False,
+                "message": "weaviate-client not installed. Run: pip install weaviate-client"
+            }
 
-import weaviate
-import json
-from openai import OpenAI
+        # Load package
+        with open(package_path) as f:
+            data = json.load(f)
 
-# Connect to Weaviate
-client = weaviate.Client("http://localhost:8080")
+        # Connect to Weaviate
+        try:
+            if kwargs.get('use_cloud') and api_key:
+                # Weaviate Cloud
+                print(f"🌐 Connecting to Weaviate Cloud: {kwargs.get('cluster_url')}")
+                client = weaviate.Client(
+                    url=kwargs.get('cluster_url'),
+                    auth_client_secret=weaviate.AuthApiKey(api_key=api_key)
+                )
+            else:
+                # Local Weaviate instance
+                weaviate_url = kwargs.get('weaviate_url', 'http://localhost:8080')
+                print(f"🌐 Connecting to Weaviate at: {weaviate_url}")
+                client = weaviate.Client(url=weaviate_url)
 
-# Load data
-with open("{path}") as f:
-    data = json.load(f)
+            # Test connection
+            if not client.is_ready():
+                return {
+                    "success": False,
+                    "message": "Weaviate server not ready. Make sure Weaviate is running:\n  docker run -p 8080:8080 semitechnologies/weaviate:latest"
+                }
 
-# Create schema (first time only)
-try:
-    client.schema.create_class(data["schema"])
-    print(f"✅ Created class: {{data['class_name']}}")
-except Exception as e:
-    print(f"Schema already exists or error: {{e}}")
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to connect to Weaviate: {e}\n\nMake sure Weaviate is running or provide correct credentials."
+            }
 
-# Generate embeddings and batch import
-openai_client = OpenAI()
+        # Create schema
+        try:
+            client.schema.create_class(data['schema'])
+            print(f"✅ Created schema: {data['class_name']}")
+        except Exception as e:
+            if "already exists" in str(e).lower():
+                print(f"ℹ️  Schema already exists: {data['class_name']}")
+            else:
+                return {
+                    "success": False,
+                    "message": f"Schema creation failed: {e}"
+                }
 
-with client.batch as batch:
-    batch.batch_size = 100
-    for obj in data["objects"]:
-        # Generate embedding
-        response = openai_client.embeddings.create(
-            model="text-embedding-ada-002",
-            input=obj["properties"]["content"]
-        )
-        vector = response.data[0].embedding
+        # Handle embeddings
+        embedding_function = kwargs.get('embedding_function')
 
-        # Add to Weaviate with vector
-        batch.add_data_object(
-            data_object=obj["properties"],
-            class_name=data["class_name"],
-            uuid=obj["id"],
-            vector=vector
-        )
+        try:
+            with client.batch as batch:
+                batch.batch_size = 100
 
-print(f"✅ Imported {{len(data['objects'])}} objects")
+                if embedding_function == 'openai':
+                    # Generate embeddings with OpenAI
+                    print("🔄 Generating OpenAI embeddings and uploading...")
+                    embeddings = self._generate_openai_embeddings(
+                        [obj['properties']['content'] for obj in data['objects']],
+                        api_key=kwargs.get('openai_api_key')
+                    )
 
-# Query example (semantic search)
-result = client.query.get(
-    data["class_name"],
-    ["content", "category", "source"]
-).with_near_text({{"concepts": ["your search query"]}}).with_limit(3).do()
+                    for i, obj in enumerate(data['objects']):
+                        batch.add_data_object(
+                            data_object=obj['properties'],
+                            class_name=data['class_name'],
+                            uuid=obj['id'],
+                            vector=embeddings[i]
+                        )
 
-# Query with filter (category = "api")
-result = client.query.get(
-    data["class_name"],
-    ["content", "category"]
-).with_where({{
-    "path": ["category"],
-    "operator": "Equal",
-    "valueText": "api"
-}}).with_near_text({{"concepts": ["search query"]}}).do()
+                        if (i + 1) % 100 == 0:
+                            print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
 
-# Hybrid search (vector + keyword)
-result = client.query.get(
-    data["class_name"],
-    ["content", "source"]
-).with_hybrid(
-    query="search query",
-    alpha=0.5  # 0=keyword only, 1=vector only
-).do()
-""".format(
-            path=package_path.name
-        )
+                elif embedding_function == 'sentence-transformers':
+                    # Use sentence-transformers
+                    print("🔄 Generating sentence-transformer embeddings and uploading...")
+                    try:
+                        from sentence_transformers import SentenceTransformer
+                        model = SentenceTransformer('all-MiniLM-L6-v2')
+                        contents = [obj['properties']['content'] for obj in data['objects']]
+                        embeddings = model.encode(contents, show_progress_bar=True).tolist()
 
-        return {
-            "success": False,
-            "skill_id": None,
-            "url": str(package_path.absolute()),
-            "message": (
-                f"Weaviate objects packaged at: {package_path.absolute()}\n\n"
-                "Import into Weaviate:\n"
-                f"{example_code}"
-            ),
-        }
+                        for i, obj in enumerate(data['objects']):
+                            batch.add_data_object(
+                                data_object=obj['properties'],
+                                class_name=data['class_name'],
+                                uuid=obj['id'],
+                                vector=embeddings[i]
+                            )
+
+                            if (i + 1) % 100 == 0:
+                                print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
+
+                    except ImportError:
+                        return {
+                            "success": False,
+                            "message": "sentence-transformers not installed. Run: pip install sentence-transformers"
+                        }
+
+                else:
+                    # No embeddings - Weaviate will use its configured vectorizer
+                    print("🔄 Uploading objects (Weaviate will generate embeddings)...")
+                    for i, obj in enumerate(data['objects']):
+                        batch.add_data_object(
+                            data_object=obj['properties'],
+                            class_name=data['class_name'],
+                            uuid=obj['id']
+                        )
+
+                        if (i + 1) % 100 == 0:
+                            print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
+
+            count = len(data['objects'])
+            print(f"✅ Upload complete! {count} objects added to Weaviate")
+
+            return {
+                "success": True,
+                "message": f"Uploaded {count} objects to Weaviate class '{data['class_name']}'",
+                "class_name": data['class_name'],
+                "count": count
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Upload failed: {e}"
+            }
+
+    def _generate_openai_embeddings(
+        self,
+        documents: list[str],
+        api_key: str = None
+    ) -> list[list[float]]:
+        """
+        Generate embeddings using OpenAI API.
+
+        Args:
+            documents: List of document texts
+            api_key: OpenAI API key (or uses OPENAI_API_KEY env var)
+
+        Returns:
+            List of embedding vectors
+        """
+        import os
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("openai not installed. Run: pip install openai")
+
+        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
+
+        client = OpenAI(api_key=api_key)
+
+        # Batch process (OpenAI allows up to 2048 inputs)
+        embeddings = []
+        batch_size = 100
+
+        print(f"  Generating embeddings for {len(documents)} documents...")
+
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i+batch_size]
+            try:
+                response = client.embeddings.create(
+                    input=batch,
+                    model="text-embedding-3-small"  # Cheapest, fastest
+                )
+                embeddings.extend([item.embedding for item in response.data])
+                print(f"  ✓ Generated {min(i+batch_size, len(documents))}/{len(documents)} embeddings")
+            except Exception as e:
+                raise Exception(f"OpenAI embedding generation failed: {e}")
+
+        return embeddings
 
     def validate_api_key(self, _api_key: str) -> bool:
         """

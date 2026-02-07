@@ -123,10 +123,10 @@ class TestChromaAdaptor:
         adaptor = get_adaptor("chroma")
         result = adaptor.upload(package_path, "fake-key")
 
-        assert result["success"] is False  # No upload capability
-        assert result["skill_id"] is None
+        # Upload may fail if chromadb not installed (expected)
         assert "message" in result
-        assert "import chromadb" in result["message"]
+        # Either chromadb not installed or connection error
+        assert ("chromadb not installed" in result["message"] or "Failed to connect" in result["message"])
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""
