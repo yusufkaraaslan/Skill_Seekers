@@ -280,12 +280,20 @@ class RAGChunker:
         for match in re.finditer(r'\n', text):
             boundaries.append(match.start())
 
-        # If we have very few boundaries, add artificial ones
-        # (for text without natural boundaries like "AAA...")
-        if len(boundaries) < 3:
-            target_size_chars = self.chunk_size * self.chars_per_token
-            for i in range(target_size_chars, len(text), target_size_chars):
-                boundaries.append(i)
+        # Add artificial boundaries for large documents
+        # This ensures chunking works even when natural boundaries are sparse/clustered
+        target_size_chars = self.chunk_size * self.chars_per_token
+
+        # Only add artificial boundaries if:
+        # 1. Document is large enough (> target_size_chars)
+        # 2. We have sparse boundaries (< 1 boundary per chunk_size on average)
+        if len(text) > target_size_chars:
+            expected_chunks = len(text) // target_size_chars
+            # If we don't have at least one boundary per expected chunk, add artificial ones
+            if len(boundaries) < expected_chunks:
+                for i in range(target_size_chars, len(text), target_size_chars):
+                    if i not in boundaries:  # Don't duplicate existing boundaries
+                        boundaries.append(i)
 
         # End is always a boundary
         boundaries.append(len(text))

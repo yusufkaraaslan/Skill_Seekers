@@ -43,7 +43,10 @@ def package_skill(
     streaming=False,
     chunk_size=4000,
     chunk_overlap=200,
-    batch_size=100
+    batch_size=100,
+    enable_chunking=False,
+    chunk_max_tokens=512,
+    preserve_code_blocks=True,
 ):
     """
     Package a skill directory into platform-specific format
@@ -57,6 +60,9 @@ def package_skill(
         chunk_size: Maximum characters per chunk (streaming mode)
         chunk_overlap: Overlap between chunks (streaming mode)
         batch_size: Number of chunks per batch (streaming mode)
+        enable_chunking: Enable intelligent chunking for RAG platforms
+        chunk_max_tokens: Maximum tokens per chunk (default: 512)
+        preserve_code_blocks: Preserve code blocks during chunking
 
     Returns:
         tuple: (success, package_path) where success is bool and package_path is Path or None
@@ -106,12 +112,21 @@ def package_skill(
     skill_name = skill_path.name
     output_dir = skill_path.parent
 
+    # Auto-enable chunking for RAG platforms
+    RAG_PLATFORMS = ['langchain', 'llama-index', 'haystack', 'weaviate', 'chroma', 'faiss', 'qdrant']
+
+    if target in RAG_PLATFORMS and not enable_chunking:
+        print(f"ℹ️  Auto-enabling chunking for {target} platform")
+        enable_chunking = True
+
     print(f"📦 Packaging skill: {skill_name}")
     print(f"   Target: {adaptor.PLATFORM_NAME}")
     print(f"   Source: {skill_path}")
 
     if streaming:
         print(f"   Mode: Streaming (chunk_size={chunk_size}, overlap={chunk_overlap})")
+    elif enable_chunking:
+        print(f"   Chunking: Enabled (max_tokens={chunk_max_tokens}, preserve_code={preserve_code_blocks})")
 
     try:
         # Use streaming if requested and supported
@@ -125,9 +140,21 @@ def package_skill(
             )
         elif streaming:
             print("⚠️  Streaming not supported for this platform, using standard packaging")
-            package_path = adaptor.package(skill_path, output_dir)
+            package_path = adaptor.package(
+                skill_path,
+                output_dir,
+                enable_chunking=enable_chunking,
+                chunk_max_tokens=chunk_max_tokens,
+                preserve_code_blocks=preserve_code_blocks
+            )
         else:
-            package_path = adaptor.package(skill_path, output_dir)
+            package_path = adaptor.package(
+                skill_path,
+                output_dir,
+                enable_chunking=enable_chunking,
+                chunk_max_tokens=chunk_max_tokens,
+                preserve_code_blocks=preserve_code_blocks
+            )
 
         print(f"   Output: {package_path}")
     except Exception as e:
@@ -223,6 +250,26 @@ Examples:
         help="Number of chunks per batch (streaming mode, default: 100)",
     )
 
+    # Chunking parameters (for RAG platforms)
+    parser.add_argument(
+        "--chunk",
+        action="store_true",
+        help="Enable intelligent chunking for RAG platforms (auto-enabled for RAG adaptors)",
+    )
+
+    parser.add_argument(
+        "--chunk-tokens",
+        type=int,
+        default=512,
+        help="Maximum tokens per chunk (default: 512, recommended for OpenAI embeddings)",
+    )
+
+    parser.add_argument(
+        "--no-preserve-code",
+        action="store_true",
+        help="Allow code block splitting (default: false, code blocks preserved)",
+    )
+
     args = parser.parse_args()
 
     success, package_path = package_skill(
@@ -234,6 +281,9 @@ Examples:
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         batch_size=args.batch_size,
+        enable_chunking=args.chunk,
+        chunk_max_tokens=args.chunk_tokens,
+        preserve_code_blocks=not args.no_preserve_code,
     )
 
     if not success:

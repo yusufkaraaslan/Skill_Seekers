@@ -28,7 +28,13 @@ class HaystackAdaptor(SkillAdaptor):
     PLATFORM_NAME = "Haystack (RAG Framework)"
     DEFAULT_API_ENDPOINT = None  # No upload endpoint
 
-    def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
+    def format_skill_md(
+        self,
+        skill_dir: Path,
+        metadata: SkillMetadata,
+        enable_chunking: bool = False,
+        **kwargs
+    ) -> str:
         """
         Format skill as JSON array of Haystack Documents.
 
@@ -87,7 +93,14 @@ class HaystackAdaptor(SkillAdaptor):
         # Return as formatted JSON
         return json.dumps(documents, indent=2, ensure_ascii=False)
 
-    def package(self, skill_dir: Path, output_path: Path) -> Path:
+    def package(
+        self,
+        skill_dir: Path,
+        output_path: Path,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True
+    ) -> Path:
         """
         Package skill into JSON file for Haystack.
 
@@ -115,7 +128,13 @@ class HaystackAdaptor(SkillAdaptor):
         )
 
         # Generate Haystack documents
-        documents_json = self.format_skill_md(skill_dir, metadata)
+        documents_json = self.format_skill_md(
+            skill_dir,
+            metadata,
+            enable_chunking=enable_chunking,
+            chunk_max_tokens=chunk_max_tokens,
+            preserve_code_blocks=preserve_code_blocks
+        )
 
         # Write to file
         output_path.write_text(documents_json, encoding="utf-8")

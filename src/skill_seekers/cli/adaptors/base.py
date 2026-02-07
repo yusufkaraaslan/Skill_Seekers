@@ -9,7 +9,7 @@ This enables Skill Seekers to generate skills for multiple LLM platforms (Claude
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Tuple
 
 
 @dataclass
@@ -68,7 +68,14 @@ class SkillAdaptor(ABC):
         pass
 
     @abstractmethod
-    def package(self, skill_dir: Path, output_path: Path) -> Path:
+    def package(
+        self,
+        skill_dir: Path,
+        output_path: Path,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True
+    ) -> Path:
         """
         Package skill for platform (ZIP, tar.gz, etc.).
 
@@ -80,6 +87,9 @@ class SkillAdaptor(ABC):
         Args:
             skill_dir: Path to skill directory to package
             output_path: Path for output package (file or directory)
+            enable_chunking: Enable intelligent chunking for large documents
+            chunk_max_tokens: Maximum tokens per chunk (default: 512)
+            preserve_code_blocks: Preserve code blocks during chunking
 
         Returns:
             Path to created package file
@@ -264,6 +274,81 @@ class SkillAdaptor(ABC):
             base_meta["tags"] = metadata.tags
         base_meta.update(extra)
         return base_meta
+
+    def _maybe_chunk_content(
+        self,
+        content: str,
+        metadata: dict,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True,
+        source_file: str = None
+    ) -> List[Tuple[str, dict]]:
+        """
+        Optionally chunk content for RAG platforms.
+
+        Args:
+            content: Document content to chunk
+            metadata: Base metadata for document
+            enable_chunking: Whether to enable chunking
+            chunk_max_tokens: Maximum tokens per chunk
+            preserve_code_blocks: Preserve code blocks during chunking
+            source_file: Source file name for tracking
+
+        Returns:
+            List of (chunk_text, chunk_metadata) tuples
+            If chunking disabled or doc small: [(content, metadata)]
+            If chunking enabled: [(chunk1, meta1), (chunk2, meta2), ...]
+        """
+        # Skip chunking if disabled or document is small
+        if not enable_chunking:
+            return [(content, metadata)]
+
+        # Estimate tokens (~4 chars per token)
+        estimated_tokens = len(content) // 4
+
+        # Add some buffer for safety (20%)
+        if estimated_tokens < (chunk_max_tokens * 0.8):
+            # Document fits in single chunk (with buffer)
+            return [(content, metadata)]
+
+        # Initialize chunker with current settings (don't reuse to allow different settings per call)
+        try:
+            from skill_seekers.cli.rag_chunker import RAGChunker
+        except ImportError:
+            # RAGChunker not available - fall back to no chunking
+            print("⚠️  Warning: RAGChunker not available, chunking disabled")
+            return [(content, metadata)]
+
+        # RAGChunker uses TOKENS (it converts to chars internally)
+        chunker = RAGChunker(
+            chunk_size=chunk_max_tokens,
+            chunk_overlap=max(50, chunk_max_tokens // 10),  # 10% overlap
+            preserve_code_blocks=preserve_code_blocks,
+            preserve_paragraphs=True,
+            min_chunk_size=100  # 100 tokens minimum
+        )
+
+        # Chunk the document
+        chunks = chunker.chunk_document(
+            text=content,
+            metadata=metadata,
+            source_file=source_file or metadata.get('file', 'unknown')
+        )
+
+        # Convert RAGChunker output format to (text, metadata) tuples
+        result = []
+        for chunk_dict in chunks:
+            chunk_text = chunk_dict['page_content']
+            chunk_meta = {
+                **metadata,  # Base metadata
+                **chunk_dict['metadata'],  # RAGChunker metadata (chunk_index, etc.)
+                'is_chunked': True,
+                'chunk_id': chunk_dict['chunk_id']
+            }
+            result.append((chunk_text, chunk_meta))
+
+        return result
 
     def _format_output_path(
         self, skill_dir: Path, output_path: Path, suffix: str

@@ -45,7 +45,13 @@ class FAISSHelpers(SkillAdaptor):
         """
         return self._generate_deterministic_id(content, metadata, format="hex")
 
-    def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
+    def format_skill_md(
+        self,
+        skill_dir: Path,
+        metadata: SkillMetadata,
+        enable_chunking: bool = False,
+        **kwargs
+    ) -> str:
         """
         Format skill as JSON for FAISS ingestion.
 
@@ -122,7 +128,14 @@ class FAISSHelpers(SkillAdaptor):
             ensure_ascii=False,
         )
 
-    def package(self, skill_dir: Path, output_path: Path) -> Path:
+    def package(
+        self,
+        skill_dir: Path,
+        output_path: Path,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True
+    ) -> Path:
         """
         Package skill into JSON file for FAISS.
 
@@ -149,7 +162,13 @@ class FAISSHelpers(SkillAdaptor):
         )
 
         # Generate FAISS data
-        faiss_json = self.format_skill_md(skill_dir, metadata)
+        faiss_json = self.format_skill_md(
+            skill_dir,
+            metadata,
+            enable_chunking=enable_chunking,
+            chunk_max_tokens=chunk_max_tokens,
+            preserve_code_blocks=preserve_code_blocks
+        )
 
         # Write to file
         output_path.write_text(faiss_json, encoding="utf-8")
