@@ -2060,6 +2060,37 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         help="Minimize output (WARNING level logging only)",
     )
 
+    # RAG chunking arguments (NEW - v2.10.0)
+    parser.add_argument(
+        "--chunk-for-rag",
+        action="store_true",
+        help="Enable semantic chunking for RAG pipelines (generates rag_chunks.json)",
+    )
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=512,
+        metavar="TOKENS",
+        help="Target chunk size in tokens for RAG (default: 512)",
+    )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=50,
+        metavar="TOKENS",
+        help="Overlap size between chunks in tokens (default: 50)",
+    )
+    parser.add_argument(
+        "--no-preserve-code-blocks",
+        action="store_true",
+        help="Allow splitting code blocks across chunks (not recommended)",
+    )
+    parser.add_argument(
+        "--no-preserve-paragraphs",
+        action="store_true",
+        help="Ignore paragraph boundaries when chunking (not recommended)",
+    )
+
     return parser
 
 
@@ -2274,6 +2305,33 @@ def execute_scraping_and_building(
 
     if not success:
         sys.exit(1)
+
+    # RAG chunking (optional - NEW v2.10.0)
+    if args.chunk_for_rag:
+        logger.info("\n" + "=" * 60)
+        logger.info("🔪 Generating RAG chunks...")
+        logger.info("=" * 60)
+
+        from skill_seekers.cli.rag_chunker import RAGChunker
+
+        chunker = RAGChunker(
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            preserve_code_blocks=not args.no_preserve_code_blocks,
+            preserve_paragraphs=not args.no_preserve_paragraphs,
+        )
+
+        # Chunk the skill
+        chunks = chunker.chunk_skill(converter.output_dir)
+
+        # Save chunks
+        chunks_path = converter.output_dir / "rag_chunks.json"
+        chunker.save_chunks(chunks, chunks_path)
+
+        logger.info(f"✅ Generated {len(chunks)} RAG chunks")
+        logger.info(f"📄 Saved to: {chunks_path}")
+        logger.info(f"💡 Use with LangChain: --target langchain")
+        logger.info(f"💡 Use with LlamaIndex: --target llama-index")
 
     return converter
 
