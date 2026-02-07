@@ -1,0 +1,117 @@
+# Sample Query Results from Weaviate
+
+## Database Statistics
+Total objects: 21
+
+Objects by category:
+  • overview: 1
+  • guides: 8
+  • api: 12
+
+====================================================================================
+## Example 1: Hybrid Search
+
+Query: How do I use React hooks?
+Alpha: 0.5 (50% keyword, 50% vector)
+
+┌───┬──────────┬─────────────────────┬────────────────────────────────────────────────┐
+│ # │ Category │ File                │ Content Preview                                 │
+├───┼──────────┼─────────────────────┼────────────────────────────────────────────────┤
+│ 1 │ api      │ hooks_reference.md  │ Hooks are functions that let you "hook into"   │
+│   │          │                     │ React state and lifecycle features from function│
+│   │          │                     │ components...                                   │
+├───┼──────────┼─────────────────────┼────────────────────────────────────────────────┤
+│ 2 │ guides   │ using_hooks.md      │ To use a Hook, you need to call it at the top  │
+│   │          │                     │ level of your component...                      │
+├───┼──────────┼─────────────────────┼────────────────────────────────────────────────┤
+│ 3 │ api      │ usestate.md         │ useState is a Hook that lets you add state to  │
+│   │          │                     │ function components...                          │
+└───┴──────────┴─────────────────────┴────────────────────────────────────────────────┘
+
+====================================================================================
+## Example 2: Keyword-Only Search
+
+Query: useState Hook
+Alpha: 0 (pure keyword/BM25)
+
+╭─ Result 1 ──────────────────────────────────────────────────────────────────╮
+│ Category: api                                                                │
+│ File: usestate.md                                                            │
+│                                                                              │
+│ useState is a Hook that lets you add state to function components. Call it  │
+│ at the top level of your component to declare a state variable...           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─ Result 2 ──────────────────────────────────────────────────────────────────╮
+│ Category: api                                                                │
+│ File: hooks_reference.md                                                     │
+│                                                                              │
+│ This page describes the APIs for the built-in Hooks in React. useState is   │
+│ the most commonly used Hook. It allows you to add state to function         │
+│ components...                                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+====================================================================================
+## Example 3: Filtered Search
+
+Query: component
+Filter: category = 'api'
+
+Found 5 results in 'api' category:
+
+1. usestate.md
+   useState is a Hook that lets you add state to function components. Call it
+   at the top level of your component to declare a state variable...
+
+2. useeffect.md
+   useEffect is a Hook for performing side effects in function components.
+   It runs after render and can access props and state...
+
+3. usecontext.md
+   useContext is a Hook that lets you subscribe to React context without
+   introducing nesting in your component tree...
+
+4. usereducer.md
+   useReducer is an alternative to useState. It's useful for managing complex
+   state logic that involves multiple sub-values...
+
+5. hooks_reference.md
+   This page describes the APIs for the built-in Hooks in React. Hooks let
+   you use different React features from your components...
+
+====================================================================================
+## Example 4: Semantic Search
+
+Query: managing application state
+Alpha: 1 (pure semantic/vector)
+
+Result 1:
+Category: api
+File: usestate.md
+useState is a Hook that lets you add state to function components. Call it
+at the top level of your component to declare a state variable. The state
+will be preserved between re-renders...
+
+Result 2:
+Category: api
+File: usereducer.md
+useReducer is an alternative to useState. It's useful for managing complex
+state logic that involves multiple sub-values or when the next state depends
+on the previous one...
+
+Result 3:
+Category: guides
+File: state_and_lifecycle.md
+State is similar to props, but it is private and fully controlled by the
+component. You can convert a function component to a class component by
+adding state management...
+
+====================================================================================
+
+✅ All examples completed!
+
+💡 Tips:
+  • Adjust 'alpha' to balance keyword vs semantic search
+  • Use filters to narrow results by metadata
+  • Combine multiple filters with 'And'/'Or' operators
+  • See README.md for more customization options

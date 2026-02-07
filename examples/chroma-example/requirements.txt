@@ -1,0 +1,10 @@
+# ChromaDB Example Dependencies
+
+# Skill Seekers (main package)
+skill-seekers>=2.10.0
+
+# ChromaDB
+chromadb>=0.4.0
+
+# For pretty output
+rich>=13.0.0

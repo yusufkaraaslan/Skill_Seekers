@@ -1,0 +1,6 @@
+# FAISS Example Dependencies
+skill-seekers>=2.10.0
+faiss-cpu>=1.7.4  # or faiss-gpu for GPU support
+openai>=1.0.0
+numpy>=1.24.0
+rich>=13.0.0

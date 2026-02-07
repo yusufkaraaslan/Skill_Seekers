@@ -1,0 +1,10 @@
+# Weaviate Example Dependencies
+
+# Skill Seekers (main package)
+skill-seekers>=2.10.0
+
+# Weaviate Python client
+weaviate-client>=4.0.0
+
+# For pretty output
+rich>=13.0.0

@@ -1,0 +1,4 @@
+# Qdrant Example Dependencies
+skill-seekers>=2.10.0
+qdrant-client>=1.7.0
+rich>=13.0.0
