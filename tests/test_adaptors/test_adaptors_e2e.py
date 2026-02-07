@@ -552,5 +552,359 @@ class TestAdaptorsErrorHandling(unittest.TestCase):
                 self.assertFalse(result["success"])
 
 
+class TestRAGAdaptorsE2E(unittest.TestCase):
+    """End-to-end tests for RAG framework and vector DB adaptors"""
+
+    def setUp(self):
+        """Set up test environment with sample skill directory"""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.skill_dir = Path(self.temp_dir.name) / "test-rag-skill"
+        self.skill_dir.mkdir()
+
+        # Create realistic skill structure
+        self._create_sample_skill()
+
+        self.output_dir = Path(self.temp_dir.name) / "output"
+        self.output_dir.mkdir()
+
+    def tearDown(self):
+        """Clean up temporary directory"""
+        self.temp_dir.cleanup()
+
+    def _create_sample_skill(self):
+        """Create a sample skill directory with realistic content"""
+        # Create SKILL.md
+        skill_md_content = """# Vue.js Framework
+
+Vue.js is a progressive JavaScript framework for building user interfaces.
+
+## Quick Reference
+
+```javascript
+// Create a Vue app
+const app = Vue.createApp({
+  data() {
+    return { message: 'Hello Vue!' }
+  }
+})
+```
+
+## Key Concepts
+
+- Reactivity system
+- Components
+- Directives
+- Composition API
+"""
+        (self.skill_dir / "SKILL.md").write_text(skill_md_content)
+
+        # Create references directory
+        refs_dir = self.skill_dir / "references"
+        refs_dir.mkdir()
+
+        # Create sample reference files with different categories
+        (refs_dir / "getting_started.md").write_text("""# Getting Started
+
+Install Vue:
+
+```bash
+npm install vue@next
+```
+
+Create your first app:
+
+```javascript
+const app = Vue.createApp({
+  data() {
+    return { count: 0 }
+  }
+})
+app.mount('#app')
+```
+""")
+
+        (refs_dir / "reactivity_api.md").write_text("""# Reactivity API
+
+## ref()
+
+```javascript
+import { ref } from 'vue'
+const count = ref(0)
+```
+
+## reactive()
+
+```javascript
+import { reactive } from 'vue'
+const state = reactive({ count: 0 })
+```
+""")
+
+        (refs_dir / "components_guide.md").write_text("""# Components Guide
+
+## Defining Components
+
+```javascript
+export default {
+  name: 'MyComponent',
+  props: ['title'],
+  emits: ['update']
+}
+```
+
+## Using Components
+
+```vue
+<MyComponent title="Hello" @update="handleUpdate" />
+```
+""")
+
+    def test_e2e_all_rag_adaptors_from_same_skill(self):
+        """Test all 7 RAG adaptors can package the same skill"""
+        rag_platforms = [
+            "langchain", "llama-index", "haystack",
+            "weaviate", "chroma", "faiss", "qdrant"
+        ]
+        packages = {}
+
+        for platform in rag_platforms:
+            adaptor = get_adaptor(platform)
+
+            # Package for this platform
+            package_path = adaptor.package(self.skill_dir, self.output_dir)
+
+            # Verify package was created
+            self.assertTrue(
+                package_path.exists(),
+                f"Package not created for {platform}"
+            )
+
+            # Verify it's a JSON file
+            self.assertTrue(
+                str(package_path).endswith(".json"),
+                f"{platform} should produce JSON file"
+            )
+
+            # Store for later verification
+            packages[platform] = package_path
+
+        # Verify all packages were created
+        self.assertEqual(len(packages), 7, "All 7 RAG adaptors should create packages")
+
+        # Verify all are JSON files
+        for platform, path in packages.items():
+            with open(path) as f:
+                data = json.load(f)
+                # Should be valid JSON (dict or list)
+                self.assertIsInstance(
+                    data, (dict, list),
+                    f"{platform} should produce valid JSON"
+                )
+
+    def test_e2e_rag_adaptors_preserve_metadata(self):
+        """Test that metadata is preserved across RAG adaptors"""
+        metadata = SkillMetadata(
+            name="vue",
+            description="Vue.js framework skill",
+            version="2.0.0",
+            author="Test Author",
+            tags=["vue", "javascript", "frontend"]
+        )
+
+        # Test subset of platforms (representative sample)
+        test_platforms = ["langchain", "weaviate", "chroma"]
+
+        for platform in test_platforms:
+            adaptor = get_adaptor(platform)
+
+            # Format skill with metadata
+            formatted = adaptor.format_skill_md(self.skill_dir, metadata)
+            data = json.loads(formatted)
+
+            # Check metadata is present (structure varies by platform)
+            if platform == "langchain":
+                # LangChain uses list of documents
+                self.assertIsInstance(data, list)
+                self.assertGreater(len(data), 0)
+                # Check first document has metadata
+                self.assertIn("metadata", data[0])
+                self.assertEqual(data[0]["metadata"]["source"], "vue")
+                self.assertEqual(data[0]["metadata"]["version"], "2.0.0")
+
+            elif platform == "weaviate":
+                # Weaviate uses schema + objects
+                self.assertIn("schema", data)
+                self.assertIn("objects", data)
+                self.assertGreater(len(data["objects"]), 0)
+                # Check first object has metadata in properties
+                self.assertIn("properties", data["objects"][0])
+                self.assertEqual(data["objects"][0]["properties"]["source"], "vue")
+                self.assertEqual(data["objects"][0]["properties"]["version"], "2.0.0")
+
+            elif platform == "chroma":
+                # Chroma uses documents + metadatas + ids
+                self.assertIn("documents", data)
+                self.assertIn("metadatas", data)
+                self.assertIn("ids", data)
+                self.assertGreater(len(data["metadatas"]), 0)
+                # Check first metadata
+                self.assertEqual(data["metadatas"][0]["source"], "vue")
+                self.assertEqual(data["metadatas"][0]["version"], "2.0.0")
+
+    def test_e2e_rag_json_structure_validation(self):
+        """Validate JSON structure for each RAG adaptor"""
+        metadata = SkillMetadata(name="vue", description="Vue framework")
+
+        # Define expected structure for each platform
+        validations = {
+            "langchain": lambda d: (
+                isinstance(d, list) and
+                all("page_content" in item and "metadata" in item for item in d)
+            ),
+            "llama-index": lambda d: (
+                isinstance(d, list) and
+                all("text" in item and "metadata" in item for item in d)
+            ),
+            "haystack": lambda d: (
+                isinstance(d, list) and
+                all("content" in item and "meta" in item for item in d)
+            ),
+            "weaviate": lambda d: (
+                isinstance(d, dict) and
+                "schema" in d and "objects" in d and "class_name" in d
+            ),
+            "chroma": lambda d: (
+                isinstance(d, dict) and
+                "documents" in d and "metadatas" in d and "ids" in d and
+                "collection_name" in d
+            ),
+            "faiss": lambda d: (
+                isinstance(d, dict) and
+                "documents" in d and "metadatas" in d and "ids" in d
+            ),
+            "qdrant": lambda d: (
+                isinstance(d, dict) and
+                "collection_name" in d and "points" in d and "config" in d
+            ),
+        }
+
+        for platform, validate_func in validations.items():
+            adaptor = get_adaptor(platform)
+            formatted = adaptor.format_skill_md(self.skill_dir, metadata)
+            data = json.loads(formatted)
+
+            # Validate structure
+            self.assertTrue(
+                validate_func(data),
+                f"{platform} validation failed: incorrect JSON structure"
+            )
+
+    def test_e2e_rag_empty_skill_handling(self):
+        """Test RAG adaptors handle empty skills correctly"""
+        empty_dir = Path(self.temp_dir.name) / "empty_skill"
+        empty_dir.mkdir()
+
+        metadata = SkillMetadata(name="empty", description="Empty skill")
+
+        for platform in ["langchain", "chroma", "qdrant"]:
+            adaptor = get_adaptor(platform)
+            formatted = adaptor.format_skill_md(empty_dir, metadata)
+            data = json.loads(formatted)
+
+            # Should return empty but valid structure
+            if isinstance(data, list):
+                self.assertEqual(data, [], f"{platform} should return empty list")
+            elif isinstance(data, dict):
+                # Check that collections are empty
+                if "documents" in data:
+                    self.assertEqual(len(data["documents"]), 0)
+                elif "objects" in data:
+                    self.assertEqual(len(data["objects"]), 0)
+                elif "points" in data:
+                    self.assertEqual(len(data["points"]), 0)
+
+    def test_e2e_rag_category_detection(self):
+        """Test that categories are correctly detected"""
+        metadata = SkillMetadata(name="vue", description="Vue framework")
+
+        for platform in ["langchain", "weaviate", "chroma"]:
+            adaptor = get_adaptor(platform)
+            formatted = adaptor.format_skill_md(self.skill_dir, metadata)
+            data = json.loads(formatted)
+
+            # Extract categories based on platform structure
+            categories = set()
+
+            if platform == "langchain":
+                categories = {item["metadata"]["category"] for item in data}
+            elif platform == "weaviate":
+                categories = {
+                    obj["properties"]["category"] for obj in data["objects"]
+                }
+            elif platform == "chroma":
+                categories = {meta["category"] for meta in data["metadatas"]}
+
+            # Should have overview (SKILL.md) and reference categories
+            self.assertIn("overview", categories, f"{platform}: Should have 'overview' category")
+
+            # Should have categories from reference files
+            # Files: getting_started.md, reactivity_api.md, components_guide.md
+            # Categories derived from filenames (stem.replace("_", " ").lower())
+            expected_refs = {"getting started", "reactivity api", "components guide"}
+
+            # Check that at least one reference category exists
+            ref_categories = categories - {"overview"}
+            self.assertGreater(
+                len(ref_categories), 0,
+                f"{platform}: Should have at least one reference category"
+            )
+
+    def test_e2e_rag_integration_workflow_chromadb(self):
+        """Test complete workflow: package → ChromaDB → query → verify"""
+        try:
+            import chromadb
+        except ImportError:
+            self.skipTest("chromadb not installed")
+
+        # Package
+        adaptor = get_adaptor("chroma")
+        package_path = adaptor.package(self.skill_dir, self.output_dir)
+
+        # Load packaged data
+        with open(package_path) as f:
+            data = json.load(f)
+
+        # Create in-memory ChromaDB client
+        client = chromadb.Client()
+
+        # Create collection and add documents
+        collection = client.create_collection(data["collection_name"])
+        collection.add(
+            documents=data["documents"],
+            metadatas=data["metadatas"],
+            ids=data["ids"]
+        )
+
+        # Query
+        results = collection.query(
+            query_texts=["reactivity"],
+            n_results=2
+        )
+
+        # Verify results
+        self.assertGreater(len(results["documents"][0]), 0, "Should return results")
+
+        # Check that results contain relevant content
+        # At least one result should mention reactivity
+        found_reactivity = any(
+            "reactivity" in doc.lower() or "reactive" in doc.lower()
+            for doc in results["documents"][0]
+        )
+        self.assertTrue(found_reactivity, "Results should be relevant to query")
+
+        # Cleanup
+        client.delete_collection(data["collection_name"])
+
+
 if __name__ == "__main__":
     unittest.main()
