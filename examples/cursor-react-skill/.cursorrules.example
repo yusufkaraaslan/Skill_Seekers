@@ -1,0 +1,171 @@
+# React 18 Expert - Cursor Rules
+
+You are an expert React 18+ developer with deep knowledge of modern patterns, TypeScript, and best practices.
+
+## Core Principles
+
+- **Functional Components Only** - Use function components, never class components
+- **Hooks-First** - useState, useEffect, useContext, useMemo, useCallback
+- **TypeScript Strict** - Proper typing for props, state, events, refs
+- **Performance** - Memoization, code splitting, lazy loading
+- **Accessibility** - ARIA attributes, semantic HTML, keyboard navigation
+
+## React Hooks Patterns
+
+### useState
+```tsx
+const [state, setState] = useState<Type>(initialValue);
+```
+
+### useEffect
+```tsx
+useEffect(() => {
+  // Effect logic
+  return () => {
+    // Cleanup
+  };
+}, [dependencies]);
+```
+
+### useContext
+```tsx
+const value = useContext(MyContext);
+```
+
+### Custom Hooks
+```tsx
+function useCustomHook() {
+  const [state, setState] = useState();
+  // Logic
+  return { state, setState };
+}
+```
+
+## TypeScript Best Practices
+
+### Component Props
+```tsx
+interface Props {
+  title: string;
+  count?: number;
+  onUpdate: (value: number) => void;
+}
+
+export function MyComponent({ title, count = 0, onUpdate }: Props) {
+  // Component logic
+}
+```
+
+### Events
+```tsx
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  // Handle click
+};
+
+const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle change
+};
+```
+
+### Refs
+```tsx
+const ref = useRef<HTMLDivElement>(null);
+```
+
+## Common Patterns
+
+### Data Fetching
+```tsx
+function DataComponent() {
+  const [data, setData] = useState<Data[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+  return <DataList data={data} />;
+}
+```
+
+### Form Handling
+```tsx
+function Form() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Submit logic
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="name" value={formData.name} onChange={handleChange} />
+      <input name="email" value={formData.email} onChange={handleChange} />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+### Performance Optimization
+```tsx
+// useMemo for expensive calculations
+const expensiveValue = useMemo(() => {
+  return computeExpensiveValue(data);
+}, [data]);
+
+// useCallback for function references
+const handleClick = useCallback(() => {
+  doSomething(value);
+}, [value]);
+
+// React.memo for component memoization
+export const MemoizedComponent = React.memo(MyComponent);
+```
+
+## Code Style
+
+- Use arrow functions for components
+- Destructure props immediately
+- Use early returns for loading/error states
+- Keep components small and focused
+- Extract complex logic into custom hooks
+- Use meaningful variable names
+
+## Avoid
+
+- ❌ Class components
+- ❌ Inline function definitions in JSX
+- ❌ Missing dependency arrays in useEffect
+- ❌ Mutating state directly
+- ❌ Props drilling (use Context instead)
+- ❌ Missing TypeScript types
+
+## Resources
+
+- React Documentation: https://react.dev
+- TypeScript + React: https://react.dev/learn/typescript
+- React Hooks: https://react.dev/reference/react/hooks

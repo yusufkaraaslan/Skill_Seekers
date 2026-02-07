@@ -17,7 +17,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**The universal preprocessor for any AI system: Convert documentation, GitHub repos, and PDFs into production-ready formats for LangChain, LlamaIndex, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
+**The universal preprocessor for any AI system: Convert documentation, GitHub repos, and PDFs into production-ready formats for LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
@@ -32,7 +32,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 skill-seekers scrape --config configs/react.json
 skill-seekers package output/react --target langchain  # or llama-index, pinecone, cursor
 
-# 15 minutes → Ready for: LangChain, LlamaIndex, Pinecone, Cursor, Custom RAG
+# 15 minutes → Ready for: LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Custom RAG
 ```
 
 ### Supported Integrations
@@ -41,6 +41,7 @@ skill-seekers package output/react --target langchain  # or llama-index, pinecon
 |------------|--------|----------|-------|
 | **LangChain** | `Documents` | QA chains, agents, retrievers | [Guide](docs/integrations/LANGCHAIN.md) |
 | **LlamaIndex** | `TextNodes` | Query engines, chat engines | [Guide](docs/integrations/LLAMA_INDEX.md) |
+| **Haystack** | `Documents` | Enterprise RAG pipelines | [Guide](docs/integrations/HAYSTACK.md) |
 | **Pinecone** | Ready for upsert | Production vector search | [Guide](docs/integrations/PINECONE.md) |
 | **Cursor IDE** | `.cursorrules` | AI coding (VS Code fork) | [Guide](docs/integrations/CURSOR.md) |
 | **Windsurf** | `.windsurfrules` | AI coding (Codeium IDE) | [Guide](docs/integrations/WINDSURF.md) |

@@ -30,7 +30,7 @@ Transform documentation into RAG-ready formats for AI-powered search and retriev
 |-----------|-------|--------|----------|-------|
 | **[LangChain](LANGCHAIN.md)** | 500K+ | Document | Python RAG, most popular | [Setup →](LANGCHAIN.md) |
 | **[LlamaIndex](LLAMA_INDEX.md)** | 200K+ | TextNode | Q&A focus, query engine | [Setup →](LLAMA_INDEX.md) |
-| **[Haystack](HAYSTACK.md)** | 50K+ | Document | Enterprise, multi-language | *Coming in v2.11.0* |
+| **[Haystack](HAYSTACK.md)** | 50K+ | Document | Enterprise, multi-language | [Setup →](HAYSTACK.md) |
 
 **Quick Example:**
 ```bash
