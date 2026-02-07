@@ -3,19 +3,20 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 21 tools for generating Claude AI skills from documentation.
+Provides 25 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 21 tools organized into 5 categories:
+- 25 tools organized into 6 categories:
   * Config tools (3): generate_config, list_configs, validate_config
   * Scraping tools (8): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
   * Source tools (4): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
 
 **Usage:**
   # Stdio transport (default, backward compatible)
@@ -75,6 +76,11 @@ try:
         enhance_skill_impl,
         # Scraping tools
         estimate_pages_impl,
+        # Vector database tools
+        export_to_chroma_impl,
+        export_to_faiss_impl,
+        export_to_qdrant_impl,
+        export_to_weaviate_impl,
         extract_config_patterns_impl,
         extract_test_examples_impl,
         # Source tools
@@ -109,6 +115,10 @@ except ImportError:
         detect_patterns_impl,
         enhance_skill_impl,
         estimate_pages_impl,
+        export_to_chroma_impl,
+        export_to_faiss_impl,
+        export_to_qdrant_impl,
+        export_to_weaviate_impl,
         extract_config_patterns_impl,
         extract_test_examples_impl,
         fetch_config_impl,
@@ -1050,6 +1060,119 @@ async def remove_config_source(name: str) -> str:
         Removal results with success/error message.
     """
     result = await remove_config_source_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+# ============================================================================
+# VECTOR DATABASE TOOLS (4 tools)
+# ============================================================================
+
+
+@safe_tool_decorator(
+    description="Export skill to Weaviate vector database format. Weaviate supports hybrid search (vector + BM25 keyword) with 450K+ users. Ideal for production RAG applications."
+)
+async def export_to_weaviate(
+    skill_dir: str,
+    output_dir: str | None = None,
+) -> str:
+    """
+    Export skill to Weaviate vector database format.
+
+    Args:
+        skill_dir: Path to skill directory (e.g., output/react/)
+        output_dir: Output directory (default: same as skill_dir parent)
+
+    Returns:
+        Export results with package path and usage instructions.
+    """
+    args = {"skill_dir": skill_dir}
+    if output_dir:
+        args["output_dir"] = output_dir
+
+    result = await export_to_weaviate_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Export skill to Chroma vector database format. Chroma is a popular open-source embedding database designed for local-first development with 800K+ developers."
+)
+async def export_to_chroma(
+    skill_dir: str,
+    output_dir: str | None = None,
+) -> str:
+    """
+    Export skill to Chroma vector database format.
+
+    Args:
+        skill_dir: Path to skill directory (e.g., output/react/)
+        output_dir: Output directory (default: same as skill_dir parent)
+
+    Returns:
+        Export results with package path and usage instructions.
+    """
+    args = {"skill_dir": skill_dir}
+    if output_dir:
+        args["output_dir"] = output_dir
+
+    result = await export_to_chroma_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Export skill to FAISS vector index format. FAISS (Facebook AI Similarity Search) supports billion-scale vector search with GPU acceleration."
+)
+async def export_to_faiss(
+    skill_dir: str,
+    output_dir: str | None = None,
+) -> str:
+    """
+    Export skill to FAISS vector index format.
+
+    Args:
+        skill_dir: Path to skill directory (e.g., output/react/)
+        output_dir: Output directory (default: same as skill_dir parent)
+
+    Returns:
+        Export results with package path and usage instructions.
+    """
+    args = {"skill_dir": skill_dir}
+    if output_dir:
+        args["output_dir"] = output_dir
+
+    result = await export_to_faiss_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Export skill to Qdrant vector database format. Qdrant is a modern vector database with native payload filtering and high-performance search, serving 100K+ users."
+)
+async def export_to_qdrant(
+    skill_dir: str,
+    output_dir: str | None = None,
+) -> str:
+    """
+    Export skill to Qdrant vector database format.
+
+    Args:
+        skill_dir: Path to skill directory (e.g., output/react/)
+        output_dir: Output directory (default: same as skill_dir parent)
+
+    Returns:
+        Export results with package path and usage instructions.
+    """
+    args = {"skill_dir": skill_dir}
+    if output_dir:
+        args["output_dir"] = output_dir
+
+    result = await export_to_qdrant_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

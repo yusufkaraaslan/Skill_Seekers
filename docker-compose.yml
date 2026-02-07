@@ -1,0 +1,111 @@
+# Skill Seekers Docker Compose
+# Complete deployment with MCP server and vector databases
+
+version: '3.8'
+
+services:
+  # Main Skill Seekers CLI application
+  skill-seekers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: skill-seekers:latest
+    container_name: skill-seekers
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ./data:/data
+      - ./configs:/configs:ro
+      - ./output:/output
+    networks:
+      - skill-seekers-net
+    command: ["skill-seekers", "--help"]
+
+  # MCP Server (HTTP mode)
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    image: skill-seekers-mcp:latest
+    container_name: skill-seekers-mcp
+    ports:
+      - "8765:8765"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - MCP_TRANSPORT=http
+      - MCP_PORT=8765
+    volumes:
+      - ./data:/data
+      - ./configs:/configs:ro
+      - ./output:/output
+    networks:
+      - skill-seekers-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Weaviate Vector Database
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    container_name: weaviate
+    ports:
+      - "8080:8080"
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: ''
+      CLUSTER_HOSTNAME: 'node1'
+    volumes:
+      - weaviate-data:/var/lib/weaviate
+    networks:
+      - skill-seekers-net
+    restart: unless-stopped
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - skill-seekers-net
+    restart: unless-stopped
+
+  # Chroma Vector Database
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: chroma
+    ports:
+      - "8000:8000"
+    environment:
+      IS_PERSISTENT: 'TRUE'
+      PERSIST_DIRECTORY: '/chroma/data'
+    volumes:
+      - chroma-data:/chroma/data
+    networks:
+      - skill-seekers-net
+    restart: unless-stopped
+
+networks:
+  skill-seekers-net:
+    driver: bridge
+
+volumes:
+  weaviate-data:
+  qdrant-data:
+  chroma-data:

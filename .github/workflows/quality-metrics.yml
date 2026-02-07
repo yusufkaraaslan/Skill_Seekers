@@ -1,0 +1,176 @@
+# Security Note: This workflow uses workflow_dispatch inputs and pull_request events.
+# All untrusted inputs are accessed via environment variables (env:) as recommended.
+# No direct usage of github.event.issue/comment/review content in run: commands.
+
+name: Quality Metrics Dashboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      skill_dir:
+        description: 'Path to skill directory to analyze (e.g., output/react)'
+        required: true
+        type: string
+      fail_threshold:
+        description: 'Minimum quality score to pass (default: 70)'
+        required: false
+        default: '70'
+        type: string
+  pull_request:
+    paths:
+      - 'output/**'
+      - 'configs/**'
+
+jobs:
+  analyze:
+    name: Quality Metrics Analysis
+    runs-on: ubuntu-latest
+
+    env:
+      SKILL_DIR_INPUT: ${{ github.event.inputs.skill_dir }}
+      FAIL_THRESHOLD_INPUT: ${{ github.event.inputs.fail_threshold }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Find skill directories
+      id: find_skills
+      run: |
+        if [ -n "$SKILL_DIR_INPUT" ]; then
+          # Manual trigger with specific directory
+          echo "dirs=$SKILL_DIR_INPUT" >> $GITHUB_OUTPUT
+        else
+          # PR trigger - find all skill directories
+          DIRS=$(find output -maxdepth 1 -type d -name "*" ! -name "output" | tr '\n' ' ' || echo "")
+          if [ -z "$DIRS" ]; then
+            echo "No skill directories found"
+            echo "dirs=" >> $GITHUB_OUTPUT
+          else
+            echo "dirs=$DIRS" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+    - name: Analyze quality metrics
+      id: quality
+      run: |
+        DIRS="${{ steps.find_skills.outputs.dirs }}"
+        THRESHOLD="${FAIL_THRESHOLD_INPUT:-70}"
+
+        if [ -z "$DIRS" ]; then
+          echo "No directories to analyze"
+          exit 0
+        fi
+
+        ALL_PASSED=true
+        SUMMARY_FILE="quality_summary.md"
+
+        echo "# 📊 Quality Metrics Dashboard" > $SUMMARY_FILE
+        echo "" >> $SUMMARY_FILE
+        echo "**Threshold:** $THRESHOLD/100" >> $SUMMARY_FILE
+        echo "" >> $SUMMARY_FILE
+
+        for skill_dir in $DIRS; do
+          if [ ! -d "$skill_dir" ]; then
+            continue
+          fi
+
+          SKILL_NAME=$(basename "$skill_dir")
+          echo "🔍 Analyzing $SKILL_NAME..."
+
+          # Run quality analysis
+          python3 << 'EOF' "$skill_dir" "$THRESHOLD" "$SKILL_NAME"
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+
+from skill_seekers.cli.quality_metrics import QualityAnalyzer
+
+skill_dir = Path(sys.argv[1])
+threshold = float(sys.argv[2])
+skill_name = sys.argv[3]
+
+analyzer = QualityAnalyzer(skill_dir)
+report = analyzer.generate_report()
+
+# Print formatted report
+formatted = analyzer.format_report(report)
+print(formatted)
+
+# Save individual report
+with open(f'quality_{skill_name}.txt', 'w') as f:
+    f.write(formatted)
+
+# Add to summary
+score = report.overall_score.total_score
+grade = report.overall_score.grade
+status = "✅" if score >= threshold else "❌"
+
+summary_line = f"{status} **{skill_name}**: {grade} ({score:.1f}/100)"
+print(f"\n{summary_line}")
+
+with open('quality_summary.md', 'a') as f:
+    f.write(f"{summary_line}\n")
+
+# Set metrics as annotations
+if score < threshold:
+    print(f"::error file={skill_dir}/SKILL.md::Quality score {score:.1f} is below threshold {threshold}")
+    sys.exit(1)
+elif score < 80:
+    print(f"::warning file={skill_dir}/SKILL.md::Quality score {score:.1f} could be improved")
+else:
+    print(f"::notice file={skill_dir}/SKILL.md::Quality score {score:.1f} - Excellent!")
+EOF
+
+          if [ $? -ne 0 ]; then
+            ALL_PASSED=false
+          fi
+
+          echo "" >> $SUMMARY_FILE
+        done
+
+        if [ "$ALL_PASSED" = false ]; then
+          echo "❌ Some skills failed quality thresholds"
+          exit 1
+        else
+          echo "✅ All skills passed quality thresholds"
+        fi
+
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-metrics-reports
+        path: quality_*.txt
+        retention-days: 30
+      continue-on-error: true
+
+    - name: Post summary to PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('quality_summary.md', 'utf8');
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+      continue-on-error: true
+
+    - name: Create dashboard summary
+      run: |
+        if [ -f "quality_summary.md" ]; then
+          cat quality_summary.md >> $GITHUB_STEP_SUMMARY
+        fi

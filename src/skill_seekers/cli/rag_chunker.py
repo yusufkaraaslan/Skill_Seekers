@@ -206,8 +206,9 @@ class RAGChunker:
         code_blocks = []
         placeholder_pattern = "<<CODE_BLOCK_{idx}>>"
 
-        # Match code blocks (both ``` and indented)
-        code_block_pattern = r'```[\s\S]*?```|(?:^|\n)(?: {4}|\t).+(?:\n(?: {4}|\t).+)*'
+        # Match code blocks (``` fenced blocks)
+        # Use DOTALL flag to match across newlines
+        code_block_pattern = r'```[^\n]*\n.*?```'
 
         def replacer(match):
             idx = len(code_blocks)
@@ -219,7 +220,12 @@ class RAGChunker:
             })
             return placeholder_pattern.format(idx=idx)
 
-        text_with_placeholders = re.sub(code_block_pattern, replacer, text)
+        text_with_placeholders = re.sub(
+            code_block_pattern,
+            replacer,
+            text,
+            flags=re.DOTALL
+        )
 
         return text_with_placeholders, code_blocks
 
@@ -269,6 +275,17 @@ class RAGChunker:
         # Section headers (# Header)
         for match in re.finditer(r'\n#{1,6}\s+.+\n', text):
             boundaries.append(match.start())
+
+        # Single newlines (less preferred, but useful)
+        for match in re.finditer(r'\n', text):
+            boundaries.append(match.start())
+
+        # If we have very few boundaries, add artificial ones
+        # (for text without natural boundaries like "AAA...")
+        if len(boundaries) < 3:
+            target_size_chars = self.chunk_size * self.chars_per_token
+            for i in range(target_size_chars, len(text), target_size_chars):
+                boundaries.append(i)
 
         # End is always a boundary
         boundaries.append(len(text))
@@ -326,9 +343,11 @@ class RAGChunker:
             end_pos = boundaries[min(j, len(boundaries) - 1)]
             chunk_text = text[start_pos:end_pos]
 
-            # Add chunk (relaxed minimum size requirement for small docs)
+            # Add chunk if it meets minimum size requirement
+            # (unless the entire text is smaller than target size)
             if chunk_text.strip():
-                chunks.append(chunk_text)
+                if len(text) <= target_size_chars or len(chunk_text) >= min_size_chars:
+                    chunks.append(chunk_text)
 
             # Move to next chunk with overlap
             if j < len(boundaries) - 1:

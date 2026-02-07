@@ -1,0 +1,50 @@
+{{- if .Values.vectorDatabases.qdrant.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-qdrant
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+spec:
+  replicas: {{ .Values.vectorDatabases.qdrant.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "skill-seekers.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: qdrant
+  template:
+    metadata:
+      labels:
+        {{- include "skill-seekers.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: qdrant
+    spec:
+      containers:
+      - name: qdrant
+        image: "{{ .Values.vectorDatabases.qdrant.image.repository }}:{{ .Values.vectorDatabases.qdrant.image.tag }}"
+        imagePullPolicy: {{ .Values.vectorDatabases.qdrant.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 6333
+          protocol: TCP
+        - name: grpc
+          containerPort: 6334
+          protocol: TCP
+        env:
+        - name: QDRANT__SERVICE__HTTP_PORT
+          value: "6333"
+        - name: QDRANT__SERVICE__GRPC_PORT
+          value: "6334"
+        resources:
+          {{- toYaml .Values.vectorDatabases.qdrant.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /qdrant/storage
+      volumes:
+      - name: data
+        {{- if .Values.vectorDatabases.qdrant.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "skill-seekers.fullname" . }}-qdrant-data
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

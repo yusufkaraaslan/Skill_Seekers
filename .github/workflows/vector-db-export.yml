@@ -1,0 +1,198 @@
+name: Vector Database Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      skill_name:
+        description: 'Skill name to export (e.g., react, django, godot)'
+        required: true
+        type: string
+      targets:
+        description: 'Vector databases to export (comma-separated: weaviate,chroma,faiss,qdrant or "all")'
+        required: true
+        default: 'all'
+        type: string
+      config_path:
+        description: 'Path to config file (optional, auto-detected from skill_name if not provided)'
+        required: false
+        type: string
+  schedule:
+    # Run weekly on Sunday at 2 AM UTC for popular frameworks
+    - cron: '0 2 * * 0'
+
+jobs:
+  export:
+    name: Export to Vector Databases
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # For scheduled runs, export popular frameworks
+        skill: ${{ github.event_name == 'schedule' && fromJson('["react", "django", "godot", "fastapi"]') || fromJson(format('["{0}"]', github.event.inputs.skill_name)) }}
+
+    env:
+      SKILL_NAME: ${{ matrix.skill }}
+      TARGETS_INPUT: ${{ github.event.inputs.targets }}
+      CONFIG_PATH_INPUT: ${{ github.event.inputs.config_path }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Determine config path
+      id: config
+      run: |
+        if [ -n "$CONFIG_PATH_INPUT" ]; then
+          echo "path=$CONFIG_PATH_INPUT" >> $GITHUB_OUTPUT
+        else
+          echo "path=configs/$SKILL_NAME.json" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check if config exists
+      id: check_config
+      run: |
+        CONFIG_FILE="${{ steps.config.outputs.path }}"
+        if [ -f "$CONFIG_FILE" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "⚠️  Config not found: $CONFIG_FILE"
+        fi
+
+    - name: Scrape documentation
+      if: steps.check_config.outputs.exists == 'true'
+      run: |
+        echo "📥 Scraping documentation for $SKILL_NAME..."
+        skill-seekers scrape --config "${{ steps.config.outputs.path }}" --max-pages 100
+      continue-on-error: true
+
+    - name: Determine export targets
+      id: targets
+      run: |
+        TARGETS="${TARGETS_INPUT:-all}"
+        if [ "$TARGETS" = "all" ]; then
+          echo "list=weaviate chroma faiss qdrant" >> $GITHUB_OUTPUT
+        else
+          echo "list=$(echo "$TARGETS" | tr ',' ' ')" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Export to vector databases
+      if: steps.check_config.outputs.exists == 'true'
+      env:
+        EXPORT_TARGETS: ${{ steps.targets.outputs.list }}
+      run: |
+        SKILL_DIR="output/$SKILL_NAME"
+
+        if [ ! -d "$SKILL_DIR" ]; then
+          echo "❌ Skill directory not found: $SKILL_DIR"
+          exit 1
+        fi
+
+        echo "📦 Exporting $SKILL_NAME to vector databases..."
+
+        for target in $EXPORT_TARGETS; do
+          echo ""
+          echo "🔹 Exporting to $target..."
+
+          # Use adaptor directly via CLI
+          python -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+
+from skill_seekers.cli.adaptors import get_adaptor
+
+adaptor = get_adaptor('$target')
+package_path = adaptor.package(Path('$SKILL_DIR'), Path('output'))
+print(f'✅ Exported to {package_path}')
+          "
+
+          if [ $? -eq 0 ]; then
+            echo "✅ $target export complete"
+          else
+            echo "❌ $target export failed"
+          fi
+        done
+
+    - name: Generate quality report
+      if: steps.check_config.outputs.exists == 'true'
+      run: |
+        SKILL_DIR="output/$SKILL_NAME"
+
+        if [ -d "$SKILL_DIR" ]; then
+          echo "📊 Generating quality metrics..."
+
+          python -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+
+from skill_seekers.cli.quality_metrics import QualityAnalyzer
+
+analyzer = QualityAnalyzer(Path('$SKILL_DIR'))
+report = analyzer.generate_report()
+formatted = analyzer.format_report(report)
+print(formatted)
+
+# Save to file
+with open('quality_report_${SKILL_NAME}.txt', 'w') as f:
+    f.write(formatted)
+          "
+        fi
+      continue-on-error: true
+
+    - name: Upload vector database exports
+      if: steps.check_config.outputs.exists == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.SKILL_NAME }}-vector-exports
+        path: |
+          output/${{ env.SKILL_NAME }}-*.json
+        retention-days: 30
+
+    - name: Upload quality report
+      if: steps.check_config.outputs.exists == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.SKILL_NAME }}-quality-report
+        path: quality_report_${{ env.SKILL_NAME }}.txt
+        retention-days: 30
+      continue-on-error: true
+
+    - name: Create export summary
+      if: steps.check_config.outputs.exists == 'true'
+      env:
+        EXPORT_TARGETS: ${{ steps.targets.outputs.list }}
+      run: |
+        echo "## 📦 Vector Database Export Summary: $SKILL_NAME" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        for target in $EXPORT_TARGETS; do
+          FILE="output/${SKILL_NAME}-${target}.json"
+          if [ -f "$FILE" ]; then
+            SIZE=$(du -h "$FILE" | cut -f1)
+            echo "✅ **$target**: $SIZE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **$target**: Export failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ -f "quality_report_${SKILL_NAME}.txt" ]; then
+          echo "### 📊 Quality Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          head -30 "quality_report_${SKILL_NAME}.txt" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi

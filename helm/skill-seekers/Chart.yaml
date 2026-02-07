@@ -1,0 +1,32 @@
+apiVersion: v2
+name: skill-seekers
+description: A Helm chart for Skill Seekers - Convert documentation to AI skills
+type: application
+version: 1.0.0
+appVersion: "2.9.0"
+
+keywords:
+  - ai
+  - documentation
+  - skills
+  - mcp
+  - vector-database
+  - claude
+  - gemini
+  - openai
+
+home: https://skillseekersweb.com
+sources:
+  - https://github.com/your-org/skill-seekers
+
+maintainers:
+  - name: Skill Seekers Team
+    email: noreply@skillseekers.dev
+
+icon: https://skillseekersweb.com/icon.png
+
+dependencies: []
+
+annotations:
+  category: AI/ML
+  licenses: MIT

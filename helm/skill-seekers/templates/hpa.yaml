@@ -1,0 +1,33 @@
+{{- if .Values.mcpServer.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-mcp
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "skill-seekers.fullname" . }}-mcp
+  minReplicas: {{ .Values.mcpServer.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.mcpServer.autoscaling.maxReplicas }}
+  metrics:
+  {{- if .Values.mcpServer.autoscaling.targetCPUUtilizationPercentage }}
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.mcpServer.autoscaling.targetCPUUtilizationPercentage }}
+  {{- end }}
+  {{- if .Values.mcpServer.autoscaling.targetMemoryUtilizationPercentage }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.mcpServer.autoscaling.targetMemoryUtilizationPercentage }}
+  {{- end }}
+{{- end }}

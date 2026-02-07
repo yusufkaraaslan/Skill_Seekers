@@ -1,0 +1,55 @@
+{{- if .Values.vectorDatabases.weaviate.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-weaviate
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+spec:
+  replicas: {{ .Values.vectorDatabases.weaviate.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "skill-seekers.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: weaviate
+  template:
+    metadata:
+      labels:
+        {{- include "skill-seekers.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: weaviate
+    spec:
+      containers:
+      - name: weaviate
+        image: "{{ .Values.vectorDatabases.weaviate.image.repository }}:{{ .Values.vectorDatabases.weaviate.image.tag }}"
+        imagePullPolicy: {{ .Values.vectorDatabases.weaviate.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: QUERY_DEFAULTS_LIMIT
+          value: "25"
+        - name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED
+          value: "true"
+        - name: PERSISTENCE_DATA_PATH
+          value: "/var/lib/weaviate"
+        - name: DEFAULT_VECTORIZER_MODULE
+          value: "none"
+        - name: ENABLE_MODULES
+          value: ""
+        - name: CLUSTER_HOSTNAME
+          value: "node1"
+        resources:
+          {{- toYaml .Values.vectorDatabases.weaviate.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/weaviate
+      volumes:
+      - name: data
+        {{- if .Values.vectorDatabases.weaviate.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "skill-seekers.fullname" . }}-weaviate-data
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

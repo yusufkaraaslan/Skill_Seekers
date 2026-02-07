@@ -1,0 +1,110 @@
+{{- if .Values.persistence.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-data
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.data.accessMode }}
+  {{- if .Values.persistence.data.storageClass }}
+  storageClassName: {{ .Values.persistence.data.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
+{{- end }}
+---
+{{- if .Values.persistence.output.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-output
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.output.accessMode }}
+  {{- if .Values.persistence.output.storageClass }}
+  storageClassName: {{ .Values.persistence.output.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.output.size }}
+{{- end }}
+---
+{{- if .Values.persistence.configs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-configs
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.configs.accessMode }}
+  {{- if .Values.persistence.configs.storageClass }}
+  storageClassName: {{ .Values.persistence.configs.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.configs.size }}
+{{- end }}
+---
+{{- if and .Values.vectorDatabases.weaviate.enabled .Values.vectorDatabases.weaviate.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-weaviate-data
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.vectorDatabases.weaviate.persistence.storageClass }}
+  storageClassName: {{ .Values.vectorDatabases.weaviate.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.vectorDatabases.weaviate.persistence.size }}
+{{- end }}
+---
+{{- if and .Values.vectorDatabases.qdrant.enabled .Values.vectorDatabases.qdrant.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-qdrant-data
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.vectorDatabases.qdrant.persistence.storageClass }}
+  storageClassName: {{ .Values.vectorDatabases.qdrant.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.vectorDatabases.qdrant.persistence.size }}
+{{- end }}
+---
+{{- if and .Values.vectorDatabases.chroma.enabled .Values.vectorDatabases.chroma.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-chroma-data
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chroma
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.vectorDatabases.chroma.persistence.storageClass }}
+  storageClassName: {{ .Values.vectorDatabases.chroma.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.vectorDatabases.chroma.persistence.size }}
+{{- end }}

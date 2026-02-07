@@ -9,6 +9,7 @@ Tools are organized by functionality:
 - packaging_tools: Skill packaging and upload
 - splitting_tools: Config splitting and router generation
 - source_tools: Config source management (fetch, submit, add/remove sources)
+- vector_db_tools: Vector database export (Weaviate, Chroma, FAISS, Qdrant)
 """
 
 # Import centralized version
@@ -83,6 +84,18 @@ from .splitting_tools import (
 from .splitting_tools import (
     split_config as split_config_impl,
 )
+from .vector_db_tools import (
+    export_to_chroma_impl,
+)
+from .vector_db_tools import (
+    export_to_faiss_impl,
+)
+from .vector_db_tools import (
+    export_to_qdrant_impl,
+)
+from .vector_db_tools import (
+    export_to_weaviate_impl,
+)
 
 __all__ = [
     "__version__",
@@ -114,4 +127,9 @@ __all__ = [
     "add_config_source_impl",
     "list_config_sources_impl",
     "remove_config_source_impl",
+    # Vector database tools
+    "export_to_weaviate_impl",
+    "export_to_chroma_impl",
+    "export_to_faiss_impl",
+    "export_to_qdrant_impl",
 ]

@@ -1,0 +1,49 @@
+{{- if .Values.vectorDatabases.chroma.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-chroma
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chroma
+spec:
+  replicas: {{ .Values.vectorDatabases.chroma.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "skill-seekers.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: chroma
+  template:
+    metadata:
+      labels:
+        {{- include "skill-seekers.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: chroma
+    spec:
+      containers:
+      - name: chroma
+        image: "{{ .Values.vectorDatabases.chroma.image.repository }}:{{ .Values.vectorDatabases.chroma.image.tag }}"
+        imagePullPolicy: {{ .Values.vectorDatabases.chroma.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        - name: IS_PERSISTENT
+          value: "TRUE"
+        - name: PERSIST_DIRECTORY
+          value: "/chroma/chroma"
+        - name: ANONYMIZED_TELEMETRY
+          value: "FALSE"
+        resources:
+          {{- toYaml .Values.vectorDatabases.chroma.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /chroma/chroma
+      volumes:
+      - name: data
+        {{- if .Values.vectorDatabases.chroma.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "skill-seekers.fullname" . }}-chroma-data
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

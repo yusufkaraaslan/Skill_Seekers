@@ -1,0 +1,313 @@
+# Default values for skill-seekers Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  # Environment: development, staging, production
+  environment: production
+
+# Main application (CLI)
+app:
+  enabled: true
+  name: skill-seekers
+  replicaCount: 1
+
+  image:
+    repository: skill-seekers
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+    allowPrivilegeEscalation: false
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# MCP Server
+mcpServer:
+  enabled: true
+  name: mcp-server
+  replicaCount: 2
+
+  image:
+    repository: skill-seekers-mcp
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8765
+    targetPort: 8765
+    protocol: TCP
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+    allowPrivilegeEscalation: false
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  # Horizontal Pod Autoscaler
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8765
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8765
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Environment variables (non-sensitive)
+env:
+  MCP_TRANSPORT: "http"
+  MCP_PORT: "8765"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+# Secrets (sensitive values)
+# Set these via --set or external secret management
+secrets:
+  # Claude AI / Anthropic API
+  anthropicApiKey: ""
+  # Google Gemini API (optional)
+  googleApiKey: ""
+  # OpenAI API (optional)
+  openaiApiKey: ""
+  # GitHub Token (optional)
+  githubToken: ""
+
+# Persistent storage
+persistence:
+  enabled: true
+
+  data:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    existingClaim: ""
+
+  output:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 20Gi
+    existingClaim: ""
+
+  configs:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadOnlyMany
+    size: 1Gi
+    existingClaim: ""
+
+# Vector Databases
+vectorDatabases:
+  # Weaviate
+  weaviate:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: semitechnologies/weaviate
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      port: 8080
+
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 50Gi
+
+  # Qdrant
+  qdrant:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: qdrant/qdrant
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      httpPort: 6333
+      grpcPort: 6334
+
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 50Gi
+
+  # Chroma
+  chroma:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: ghcr.io/chroma-core/chroma
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      port: 8000
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 30Gi
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: skill-seekers.example.com
+      paths:
+        - path: /mcp
+          pathType: Prefix
+          backend:
+            service:
+              name: mcp-server
+              port: 8765
+  tls:
+    - secretName: skill-seekers-tls
+      hosts:
+        - skill-seekers.example.com
+
+# Service Monitor (Prometheus)
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+# Network Policies
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: monitoring
+  egress:
+    - to:
+      - namespaceSelector: {}
+
+# RBAC
+rbac:
+  create: true
+  rules: []
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Resource Quotas
+resourceQuota:
+  enabled: false
+  hard:
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    persistentvolumeclaims: "10"

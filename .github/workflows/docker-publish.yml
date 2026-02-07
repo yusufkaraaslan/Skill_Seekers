@@ -1,0 +1,139 @@
+# Docker Image Publishing - Automated builds and pushes to Docker Hub
+# Security Note: Uses secrets for Docker Hub credentials. Matrix values are hardcoded.
+# Triggers: push/pull_request/workflow_dispatch only. No untrusted input.
+
+name: Docker Publish
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile*'
+      - 'docker-compose.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: skill-seekers
+            dockerfile: Dockerfile
+            description: "Skill Seekers CLI - Convert documentation to AI skills"
+          - name: skill-seekers-mcp
+            dockerfile: Dockerfile.mcp
+            description: "Skill Seekers MCP Server - 25 tools for AI assistants"
+
+    env:
+      IMAGE_NAME: ${{ matrix.image.name }}
+      IMAGE_DOCKERFILE: ${{ matrix.image.dockerfile }}
+      IMAGE_DESCRIPTION: ${{ matrix.image.description }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ${{ env.IMAGE_DOCKERFILE }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Create image summary
+      run: |
+        echo "## 🐳 Docker Image: $IMAGE_NAME" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Description:** $IMAGE_DESCRIPTION" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  test-images:
+    name: Test Docker Images
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build CLI image
+      run: |
+        docker build -t skill-seekers:test -f Dockerfile .
+
+    - name: Test CLI image
+      run: |
+        echo "🧪 Testing CLI image..."
+        docker run --rm skill-seekers:test skill-seekers --version
+        docker run --rm skill-seekers:test skill-seekers --help
+
+    - name: Build MCP image
+      run: |
+        docker build -t skill-seekers-mcp:test -f Dockerfile.mcp .
+
+    - name: Test MCP image
+      run: |
+        echo "🧪 Testing MCP server image..."
+        # Start MCP server in background
+        docker run -d --name mcp-test -p 8765:8765 skill-seekers-mcp:test
+
+        # Wait for server to start
+        sleep 10
+
+        # Check health
+        curl -f http://localhost:8765/health || exit 1
+
+        # Stop container
+        docker stop mcp-test
+        docker rm mcp-test
+
+    - name: Test Docker Compose
+      run: |
+        echo "🧪 Testing Docker Compose..."
+        docker-compose config
+        echo "✅ Docker Compose configuration valid"

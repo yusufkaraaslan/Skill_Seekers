@@ -1,0 +1,144 @@
+🎉 Skill Seekers {{ .Chart.AppVersion }} has been installed!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 DEPLOYMENT SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Release Name:      {{ .Release.Name }}
+Namespace:         {{ .Release.Namespace }}
+Chart Version:     {{ .Chart.Version }}
+App Version:       {{ .Chart.AppVersion }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 SERVICES DEPLOYED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if .Values.mcpServer.enabled }}
+✅ MCP Server ({{ .Values.mcpServer.replicaCount }} replicas)
+   - Port: {{ .Values.mcpServer.service.port }}
+   {{- if .Values.mcpServer.autoscaling.enabled }}
+   - Autoscaling: {{ .Values.mcpServer.autoscaling.minReplicas }}-{{ .Values.mcpServer.autoscaling.maxReplicas }} replicas
+   {{- end }}
+{{- end }}
+
+{{- if .Values.vectorDatabases.weaviate.enabled }}
+✅ Weaviate Vector Database
+   - Port: {{ .Values.vectorDatabases.weaviate.service.port }}
+   {{- if .Values.vectorDatabases.weaviate.persistence.enabled }}
+   - Storage: {{ .Values.vectorDatabases.weaviate.persistence.size }}
+   {{- end }}
+{{- end }}
+
+{{- if .Values.vectorDatabases.qdrant.enabled }}
+✅ Qdrant Vector Database
+   - HTTP Port: {{ .Values.vectorDatabases.qdrant.service.httpPort }}
+   - gRPC Port: {{ .Values.vectorDatabases.qdrant.service.grpcPort }}
+   {{- if .Values.vectorDatabases.qdrant.persistence.enabled }}
+   - Storage: {{ .Values.vectorDatabases.qdrant.persistence.size }}
+   {{- end }}
+{{- end }}
+
+{{- if .Values.vectorDatabases.chroma.enabled }}
+✅ Chroma Vector Database
+   - Port: {{ .Values.vectorDatabases.chroma.service.port }}
+   {{- if .Values.vectorDatabases.chroma.persistence.enabled }}
+   - Storage: {{ .Values.vectorDatabases.chroma.persistence.size }}
+   {{- end }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 ACCESSING YOUR SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if .Values.mcpServer.enabled }}
+MCP Server:
+  {{- if eq .Values.mcpServer.service.type "ClusterIP" }}
+  # Port-forward to access locally
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "skill-seekers.fullname" . }}-mcp {{ .Values.mcpServer.service.port }}:{{ .Values.mcpServer.service.port }}
+
+  # Then connect to: http://localhost:{{ .Values.mcpServer.service.port }}
+  {{- else if eq .Values.mcpServer.service.type "LoadBalancer" }}
+  # Get external IP
+  kubectl get svc -n {{ .Release.Namespace }} {{ include "skill-seekers.fullname" . }}-mcp
+  {{- else if eq .Values.mcpServer.service.type "NodePort" }}
+  # Get node port
+  kubectl get svc -n {{ .Release.Namespace }} {{ include "skill-seekers.fullname" . }}-mcp
+  {{- end }}
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+Ingress:
+  {{- range .Values.ingress.hosts }}
+  - https://{{ .host }}
+  {{- end }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 MONITORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# View pod status
+kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+# View logs
+kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=mcp-server --tail=100 -f
+
+# View events
+kubectl get events -n {{ .Release.Namespace }} --sort-by='.lastTimestamp'
+
+{{- if .Values.mcpServer.autoscaling.enabled }}
+# View autoscaler status
+kubectl get hpa -n {{ .Release.Namespace }} {{ include "skill-seekers.fullname" . }}-mcp
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if not .Values.secrets.anthropicApiKey }}
+⚠️  WARNING: ANTHROPIC_API_KEY not set
+   Set it with:
+   helm upgrade {{ .Release.Name }} skill-seekers/skill-seekers \
+     --set secrets.anthropicApiKey="sk-ant-..." \
+     --reuse-values
+{{- end }}
+
+View current configuration:
+  helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+Update configuration:
+  helm upgrade {{ .Release.Name }} skill-seekers/skill-seekers \
+    --set key=value \
+    --reuse-values
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Configure API Keys (if not already set):
+   kubectl create secret generic {{ include "skill-seekers.fullname" . }} \
+     --from-literal=ANTHROPIC_API_KEY="sk-ant-..." \
+     -n {{ .Release.Namespace }}
+
+2. Test MCP Server Connection:
+   curl http://localhost:{{ .Values.mcpServer.service.port }}/health
+
+3. Use Skill Seekers CLI:
+   kubectl exec -it -n {{ .Release.Namespace }} \
+     deployment/{{ include "skill-seekers.fullname" . }}-mcp -- \
+     skill-seekers --help
+
+4. Export to Vector Databases:
+   kubectl exec -it -n {{ .Release.Namespace }} \
+     deployment/{{ include "skill-seekers.fullname" . }}-mcp -- \
+     skill-seekers package /data/myskill --target weaviate
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📖 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Project: https://github.com/yourusername/skill-seekers
+- Docs:    https://skillseekersweb.com
+- Issues:  https://github.com/yourusername/skill-seekers/issues
+
+Happy skill seeking! 🚀

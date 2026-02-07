@@ -1,0 +1,83 @@
+{{- if .Values.mcpServer.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-mcp
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+spec:
+  type: {{ .Values.mcpServer.service.type }}
+  ports:
+  - port: {{ .Values.mcpServer.service.port }}
+    targetPort: {{ .Values.mcpServer.service.targetPort }}
+    protocol: {{ .Values.mcpServer.service.protocol }}
+    name: http
+  selector:
+    {{- include "skill-seekers.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+{{- end }}
+---
+{{- if .Values.vectorDatabases.weaviate.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-weaviate
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+spec:
+  type: {{ .Values.vectorDatabases.weaviate.service.type }}
+  ports:
+  - port: {{ .Values.vectorDatabases.weaviate.service.port }}
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "skill-seekers.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: weaviate
+{{- end }}
+---
+{{- if .Values.vectorDatabases.qdrant.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-qdrant
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+spec:
+  type: {{ .Values.vectorDatabases.qdrant.service.type }}
+  ports:
+  - port: {{ .Values.vectorDatabases.qdrant.service.httpPort }}
+    targetPort: 6333
+    protocol: TCP
+    name: http
+  - port: {{ .Values.vectorDatabases.qdrant.service.grpcPort }}
+    targetPort: 6334
+    protocol: TCP
+    name: grpc
+  selector:
+    {{- include "skill-seekers.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: qdrant
+{{- end }}
+---
+{{- if .Values.vectorDatabases.chroma.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "skill-seekers.fullname" . }}-chroma
+  labels:
+    {{- include "skill-seekers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chroma
+spec:
+  type: {{ .Values.vectorDatabases.chroma.service.type }}
+  ports:
+  - port: {{ .Values.vectorDatabases.chroma.service.port }}
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "skill-seekers.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: chroma
+{{- end }}
