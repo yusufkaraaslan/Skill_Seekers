@@ -206,6 +206,7 @@ markers = [
     "e2e: mark test as end-to-end (resource-intensive, may create files)",
     "venv: mark test as requiring virtual environment setup",
     "bootstrap: mark test as bootstrap feature specific",
+    "benchmark: mark test as performance benchmark",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
