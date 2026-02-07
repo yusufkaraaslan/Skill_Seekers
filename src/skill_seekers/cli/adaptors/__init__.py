@@ -59,6 +59,11 @@ try:
 except ImportError:
     QdrantAdaptor = None
 
+try:
+    from .haystack import HaystackAdaptor
+except ImportError:
+    HaystackAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -84,6 +89,8 @@ if FAISSHelpers:
     ADAPTORS["faiss"] = FAISSHelpers
 if QdrantAdaptor:
     ADAPTORS["qdrant"] = QdrantAdaptor
+if HaystackAdaptor:
+    ADAPTORS["haystack"] = HaystackAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
