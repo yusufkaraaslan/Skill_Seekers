@@ -541,5 +541,5 @@ skill-seekers enhance-status output/react/ --json | jq -r '.error'
 ## See Also
 
 - [ENHANCEMENT.md](ENHANCEMENT.md) - Main enhancement guide
-- [UPLOAD_GUIDE.md](UPLOAD_GUIDE.md) - Upload instructions
+- [UPLOAD_GUIDE.md](../guides/UPLOAD_GUIDE.md) - Upload instructions
 - [README.md](../README.md) - Main documentation

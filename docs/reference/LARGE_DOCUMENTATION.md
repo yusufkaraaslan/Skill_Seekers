@@ -427,5 +427,5 @@ wait
 
 **Questions? See:**
 - [Main README](../README.md)
-- [MCP Setup Guide](MCP_SETUP.md)
-- [Enhancement Guide](ENHANCEMENT.md)
+- [MCP Setup Guide](../guides/MCP_SETUP.md)
+- [Enhancement Guide](../features/ENHANCEMENT.md)

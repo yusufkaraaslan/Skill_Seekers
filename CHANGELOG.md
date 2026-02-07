@@ -1297,9 +1297,9 @@ None - All changes are backward compatible. Existing v2.4.0 workflows continue t
    - All packaging tools now accept `target` parameter
 
 **See full documentation:**
-- [Multi-Platform Guide](docs/UPLOAD_GUIDE.md)
-- [Feature Matrix](docs/FEATURE_MATRIX.md)
-- [Enhancement Guide](docs/ENHANCEMENT.md)
+- [Multi-Platform Guide](docs/guides/UPLOAD_GUIDE.md)
+- [Feature Matrix](docs/reference/FEATURE_MATRIX.md)
+- [Enhancement Guide](docs/features/ENHANCEMENT.md)
 
 ### Contributors
 
@@ -1722,7 +1722,7 @@ fetch_config(source="team", config_name="react-custom")
 - Example repository uses 'master' branch (git init default)
 
 ### See Also
-- [GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) - Complete guide
+- [GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) - Complete guide
 - [configs/example-team/](configs/example-team/) - Example repository
 - [Issue #211](https://github.com/yusufkaraaslan/Skill_Seekers/issues/211) - Original feature request
 

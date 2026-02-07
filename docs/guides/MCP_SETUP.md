@@ -1457,15 +1457,15 @@ After successful setup:
 
 - **Documentation**:
   - [README.md](../README.md) - User guide
-  - [CLAUDE.md](CLAUDE.md) - Technical architecture
-  - [ENHANCEMENT.md](ENHANCEMENT.md) - Enhancement guide
+  - [CLAUDE.md](../../CLAUDE.md) - Technical architecture
+  - [ENHANCEMENT.md](../features/ENHANCEMENT.md) - Enhancement guide
   - [UPLOAD_GUIDE.md](UPLOAD_GUIDE.md) - Upload instructions
 
 - **Issues**: [GitHub Issues](https://github.com/yusufkaraaslan/Skill_Seekers/issues)
 
-- **Agent Detection**: See [agent_detector.py](../src/skill_seekers/mcp/agent_detector.py)
+- **Agent Detection**: See [agent_detector.py](../../src/skill_seekers/mcp/agent_detector.py)
 
-- **Auto-Configuration**: See [setup_mcp.sh](../setup_mcp.sh)
+- **Auto-Configuration**: See [setup_mcp.sh](../../setup_mcp.sh)
 
 ---
 
