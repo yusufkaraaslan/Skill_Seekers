@@ -379,14 +379,23 @@ class StreamingIngester:
         return "\n".join(lines)
 
 
-def example_usage():
-    """Example usage of streaming ingestion."""
+def main():
+    """CLI entry point for streaming ingestion."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Stream and chunk skill documents")
+    parser.add_argument("input", help="Input file or directory path")
+    parser.add_argument("--chunk-size", type=int, default=4000, help="Chunk size in characters")
+    parser.add_argument("--chunk-overlap", type=int, default=200, help="Chunk overlap in characters")
+    parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
+    parser.add_argument("--checkpoint", help="Checkpoint file path")
+    args = parser.parse_args()
 
     # Initialize ingester
     ingester = StreamingIngester(
-        chunk_size=4000,
-        chunk_overlap=200,
-        batch_size=100
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
+        batch_size=args.batch_size
     )
 
     # Progress callback
@@ -395,26 +404,36 @@ def example_usage():
             print(f"Progress: {progress.progress_percent:.1f}% - "
                   f"{progress.processed_chunks}/{progress.total_chunks} chunks")
 
-    # Stream skill directory
-    skill_dir = Path("output/react")
-    chunks = ingester.stream_skill_directory(skill_dir, callback=on_progress)
+    # Stream input
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"❌ Error: Path not found: {input_path}")
+        return 1
+
+    if input_path.is_dir():
+        chunks = ingester.stream_skill_directory(input_path, callback=on_progress)
+    else:
+        chunks = ingester.stream_file(input_path, callback=on_progress)
 
     # Process in batches
     all_chunks = []
-    for batch in ingester.batch_iterator(chunks, batch_size=50):
+    for batch in ingester.batch_iterator(chunks, batch_size=args.batch_size):
         print(f"\nProcessing batch of {len(batch)} chunks...")
         all_chunks.extend(batch)
 
-        # Save checkpoint every batch
-        ingester.save_checkpoint(
-            Path("output/.checkpoints/react.json"),
-            {"processed_batches": len(all_chunks) // 50}
-        )
+        # Save checkpoint if specified
+        if args.checkpoint:
+            ingester.save_checkpoint(
+                Path(args.checkpoint),
+                {"processed_batches": len(all_chunks) // args.batch_size}
+            )
 
     # Final progress
     print("\n" + ingester.format_progress())
     print(f"\n✅ Processed {len(all_chunks)} total chunks")
+    return 0
 
 
 if __name__ == "__main__":
-    example_usage()
+    import sys
+    sys.exit(main())

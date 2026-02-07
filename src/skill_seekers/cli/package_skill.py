@@ -185,7 +185,7 @@ Examples:
 
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "weaviate", "chroma", "faiss", "qdrant"],
+        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "haystack", "weaviate", "chroma", "faiss", "qdrant"],
         default="claude",
         help="Target LLM platform (default: claude)",
     )

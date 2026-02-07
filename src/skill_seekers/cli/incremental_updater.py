@@ -411,14 +411,36 @@ class IncrementalUpdater:
             return False
 
 
-def example_usage():
-    """Example usage of incremental updater."""
+def main():
+    """CLI entry point for incremental updates."""
+    import argparse
     from pathlib import Path
 
-    skill_dir = Path("output/react")
+    parser = argparse.ArgumentParser(description="Detect and apply incremental skill updates")
+    parser.add_argument("skill_dir", help="Path to skill directory")
+    parser.add_argument("--check-changes", action="store_true", help="Check for changes only")
+    parser.add_argument("--generate-package", help="Generate update package at specified path")
+    parser.add_argument("--apply-update", help="Apply update package from specified path")
+    args = parser.parse_args()
+
+    skill_dir = Path(args.skill_dir)
+    if not skill_dir.exists():
+        print(f"❌ Error: Directory not found: {skill_dir}")
+        return 1
 
     # Initialize updater
     updater = IncrementalUpdater(skill_dir)
+
+    # Apply update if specified
+    if args.apply_update:
+        update_path = Path(args.apply_update)
+        if not update_path.exists():
+            print(f"❌ Error: Update package not found: {update_path}")
+            return 1
+
+        print(f"📥 Applying update from: {update_path}")
+        success = updater.apply_update_package(update_path)
+        return 0 if success else 1
 
     # Detect changes
     print("🔍 Detecting changes...")
@@ -428,13 +450,18 @@ def example_usage():
     report = updater.generate_diff_report(change_set)
     print(report)
 
+    if args.check_changes:
+        return 0 if not change_set.has_changes else 1
+
     if change_set.has_changes:
-        # Generate update package
+        # Generate update package if specified
+        if args.generate_package:
+            package_path = Path(args.generate_package)
+        else:
+            package_path = skill_dir.parent / f"{skill_dir.name}-update.json"
+
         print("\n📦 Generating update package...")
-        package_path = updater.generate_update_package(
-            change_set,
-            skill_dir.parent / f"{skill_dir.name}-update.json"
-        )
+        package_path = updater.generate_update_package(change_set, package_path)
         print(f"✅ Package created: {package_path}")
 
         # Save versions
@@ -443,6 +470,9 @@ def example_usage():
     else:
         print("\n✅ No changes detected - skill is up to date!")
 
+    return 0
+
 
 if __name__ == "__main__":
-    example_usage()
+    import sys
+    sys.exit(main())

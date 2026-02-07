@@ -397,40 +397,68 @@ class MultiLanguageManager:
         return "\n".join(lines)
 
 
-def example_usage():
-    """Example usage of multi-language support."""
+def main():
+    """CLI entry point for multi-language support."""
+    import argparse
     from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Manage multi-language skill documents")
+    parser.add_argument("skill_dir", help="Path to skill directory")
+    parser.add_argument("--detect", action="store_true", help="Detect languages in skill")
+    parser.add_argument("--report", action="store_true", help="Generate translation report")
+    parser.add_argument("--export", help="Export by language to specified directory")
+    args = parser.parse_args()
+
+    skill_dir = Path(args.skill_dir)
+    if not skill_dir.exists():
+        print(f"❌ Error: Directory not found: {skill_dir}")
+        return 1
 
     manager = MultiLanguageManager()
 
-    # Add documents in different languages
-    manager.add_document(
-        "README.md",
-        "# Getting Started\n\nThis is an English document about the project.",
-        {"category": "overview"}
-    )
+    # Load skill documents
+    print("📥 Loading skill documents...")
+    skill_md = skill_dir / "SKILL.md"
+    if skill_md.exists():
+        manager.add_document(
+            "SKILL.md",
+            skill_md.read_text(encoding="utf-8"),
+            {"category": "overview"}
+        )
 
-    manager.add_document(
-        "README.es.md",
-        "# Empezando\n\nEste es un documento en español sobre el proyecto.",
-        {"category": "overview"}
-    )
+    # Load reference files
+    refs_dir = skill_dir / "references"
+    if refs_dir.exists():
+        for ref_file in refs_dir.glob("*.md"):
+            manager.add_document(
+                ref_file.name,
+                ref_file.read_text(encoding="utf-8"),
+                {"category": ref_file.stem}
+            )
 
-    manager.add_document(
-        "README.fr.md",
-        "# Commencer\n\nCeci est un document en français sur le projet.",
-        {"category": "overview"}
-    )
+    # Detect languages
+    if args.detect:
+        detected = manager.detect_languages()
+        print(f"\n🌍 Detected languages: {', '.join(detected.keys())}")
+        for lang, count in detected.items():
+            print(f"   {lang}: {count} documents")
 
     # Generate report
-    print(manager.generate_translation_report())
+    if args.report:
+        print(manager.generate_translation_report())
 
     # Export by language
-    exports = manager.export_by_language(Path("output/multilang"))
-    print(f"\n✅ Exported {len(exports)} language files:")
-    for lang, path in exports.items():
-        print(f"   {lang}: {path}")
+    if args.export:
+        output_dir = Path(args.export)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        exports = manager.export_by_language(output_dir)
+        print(f"\n✅ Exported {len(exports)} language files:")
+        for lang, path in exports.items():
+            print(f"   {lang}: {path}")
+
+    return 0
 
 
 if __name__ == "__main__":
-    example_usage()
+    import sys
+    sys.exit(main())

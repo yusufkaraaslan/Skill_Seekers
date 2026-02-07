@@ -516,26 +516,44 @@ class QualityAnalyzer:
         return "\n".join(lines)
 
 
-def example_usage():
-    """Example usage of quality metrics."""
+def main():
+    """CLI entry point for quality metrics."""
+    import argparse
     from pathlib import Path
 
+    parser = argparse.ArgumentParser(description="Analyze skill quality metrics")
+    parser.add_argument("skill_dir", help="Path to skill directory")
+    parser.add_argument("--report", action="store_true", help="Generate detailed report")
+    parser.add_argument("--output", help="Output path for JSON report")
+    args = parser.parse_args()
+
     # Analyze skill
-    skill_dir = Path("output/ansible")
+    skill_dir = Path(args.skill_dir)
+    if not skill_dir.exists():
+        print(f"❌ Error: Directory not found: {skill_dir}")
+        return 1
+
     analyzer = QualityAnalyzer(skill_dir)
 
     # Generate report
     report = analyzer.generate_report()
 
     # Display report
-    formatted = analyzer.format_report(report)
-    print(formatted)
+    if args.report:
+        formatted = analyzer.format_report(report)
+        print(formatted)
 
     # Save report
-    report_path = skill_dir / "quality_report.json"
+    if args.output:
+        report_path = Path(args.output)
+    else:
+        report_path = skill_dir / "quality_report.json"
+
     report_path.write_text(json.dumps(asdict(report), indent=2, default=str))
     print(f"\n✅ Report saved: {report_path}")
+    return 0
 
 
 if __name__ == "__main__":
-    example_usage()
+    import sys
+    sys.exit(main())
