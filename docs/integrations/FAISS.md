@@ -574,7 +574,6 @@ gpu_index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index)
 
 - **FAISS Wiki:** https://github.com/facebookresearch/faiss/wiki
 - **LangChain FAISS:** https://python.langchain.com/docs/integrations/vectorstores/faiss
-- **Skill Seekers Examples:** `examples/faiss-index/`
 - **Support:** https://github.com/yusufkaraaslan/Skill_Seekers/discussions
 
 ---

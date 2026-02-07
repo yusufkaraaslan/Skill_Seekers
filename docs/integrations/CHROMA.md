@@ -995,7 +995,6 @@ collection.add(
 
 - **Chroma Docs:** https://docs.trychroma.com/
 - **Python Client:** https://docs.trychroma.com/reference/py-client
-- **Skill Seekers Examples:** `examples/chroma-local/`
 - **Support:** https://github.com/yusufkaraaslan/Skill_Seekers/discussions
 
 ---

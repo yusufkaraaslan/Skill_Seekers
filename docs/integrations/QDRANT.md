@@ -895,7 +895,6 @@ print(f"Indexed: {info.indexed_vectors_count}/{info.points_count}")
 
 - **Qdrant Docs:** https://qdrant.tech/documentation/
 - **Python Client:** https://qdrant.tech/documentation/quick-start/
-- **Skill Seekers Examples:** `examples/qdrant-upload/`
 - **Support:** https://github.com/yusufkaraaslan/Skill_Seekers/discussions
 
 ---

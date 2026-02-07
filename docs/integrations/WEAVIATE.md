@@ -984,7 +984,6 @@ print(schema.get("multiTenancyConfig", {}).get("enabled"))  # Should be True
 
 - **Weaviate Docs:** https://weaviate.io/developers/weaviate
 - **Python Client:** https://weaviate.io/developers/weaviate/client-libraries/python
-- **Skill Seekers Examples:** `examples/weaviate-upload/`
 - **Support:** https://github.com/yusufkaraaslan/Skill_Seekers/discussions
 
 ---

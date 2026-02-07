@@ -197,6 +197,92 @@ class SkillAdaptor(ABC):
         content = index_path.read_text(encoding="utf-8")
         return content[:500] + "..." if len(content) > 500 else content
 
+    def _read_skill_md(self, skill_dir: Path) -> str:
+        """
+        Read SKILL.md file with error handling.
+
+        Args:
+            skill_dir: Path to skill directory
+
+        Returns:
+            SKILL.md contents
+
+        Raises:
+            FileNotFoundError: If SKILL.md doesn't exist
+        """
+        skill_md_path = skill_dir / "SKILL.md"
+
+        if not skill_md_path.exists():
+            # Return empty string instead of raising - let adaptors decide how to handle
+            return ""
+
+        return skill_md_path.read_text(encoding="utf-8")
+
+    def _iterate_references(self, skill_dir: Path):
+        """
+        Iterate over all reference files in skill directory.
+
+        Args:
+            skill_dir: Path to skill directory
+
+        Yields:
+            Tuple of (file_path, file_content)
+        """
+        references_dir = skill_dir / "references"
+
+        if not references_dir.exists():
+            return
+
+        for ref_file in sorted(references_dir.glob("*.md")):
+            if ref_file.is_file() and not ref_file.name.startswith("."):
+                try:
+                    content = ref_file.read_text(encoding="utf-8")
+                    yield ref_file, content
+                except Exception as e:
+                    print(f"⚠️  Warning: Could not read {ref_file.name}: {e}")
+                    continue
+
+    def _build_metadata_dict(self, metadata: SkillMetadata, **extra: Any) -> dict[str, Any]:
+        """
+        Build standard metadata dictionary from SkillMetadata.
+
+        Args:
+            metadata: SkillMetadata object
+            **extra: Additional platform-specific fields
+
+        Returns:
+            Metadata dictionary
+        """
+        base_meta = {
+            "source": metadata.name,
+            "version": metadata.version,
+            "description": metadata.description,
+        }
+        if metadata.author:
+            base_meta["author"] = metadata.author
+        if metadata.tags:
+            base_meta["tags"] = metadata.tags
+        base_meta.update(extra)
+        return base_meta
+
+    def _format_output_path(
+        self, skill_dir: Path, output_dir: Path, suffix: str
+    ) -> Path:
+        """
+        Generate standardized output path.
+
+        Args:
+            skill_dir: Input skill directory
+            output_dir: Output directory
+            suffix: Platform-specific suffix (e.g., "-langchain.json")
+
+        Returns:
+            Output file path
+        """
+        skill_name = skill_dir.name
+        filename = f"{skill_name}{suffix}"
+        return output_dir / filename
+
     def _generate_toc(self, skill_dir: Path) -> str:
         """
         Helper to generate table of contents from references.
