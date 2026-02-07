@@ -6,8 +6,10 @@ Validates unified config format that supports multiple sources:
 - documentation (website scraping)
 - github (repository scraping)
 - pdf (PDF document scraping)
+- local (local codebase analysis)
 
-Also provides backward compatibility detection for legacy configs.
+Legacy config format support removed in v2.11.0.
+All configs must use unified format with 'sources' array.
 """
 
 import json
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class ConfigValidator:
     """
-    Validates unified config format and provides backward compatibility.
+    Validates unified config format (legacy support removed in v2.11.0).
     """
 
     # Valid source types
@@ -49,7 +51,7 @@ class ConfigValidator:
         else:
             self.config_path = config_or_path
             self.config = self._load_config()
-        self.is_unified = self._detect_format()
+        self.is_unified = True  # Always unified format now
 
     def _load_config(self) -> dict[str, Any]:
         """Load JSON config file."""
@@ -61,19 +63,9 @@ class ConfigValidator:
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in config file: {e}") from e
 
-    def _detect_format(self) -> bool:
-        """
-        Detect if config is unified format or legacy.
-
-        Returns:
-            True if unified format (has 'sources' array)
-            False if legacy format
-        """
-        return "sources" in self.config and isinstance(self.config["sources"], list)
-
     def validate(self) -> bool:
         """
-        Validate config based on detected format.
+        Validate unified config format.
 
         Returns:
             True if valid
@@ -81,10 +73,32 @@ class ConfigValidator:
         Raises:
             ValueError if invalid with detailed error message
         """
-        if self.is_unified:
-            return self._validate_unified()
-        else:
-            return self._validate_legacy()
+        # Check if legacy format (no sources array)
+        if "sources" not in self.config:
+            raise ValueError(
+                "\n❌ LEGACY CONFIG FORMAT DETECTED\n\n"
+                "   Legacy config format was removed in v2.11.0.\n"
+                "   All configs must now use unified format with 'sources' array.\n\n"
+                "   OLD FORMAT (removed):\n"
+                "   {\n"
+                '     "name": "example",\n'
+                '     "base_url": "https://..."\n'
+                "   }\n\n"
+                "   NEW FORMAT (required):\n"
+                "   {\n"
+                '     "name": "example",\n'
+                '     "description": "...",\n'
+                '     "sources": [\n'
+                "       {\n"
+                '         "type": "documentation",\n'
+                '         "base_url": "https://..."\n'
+                "       }\n"
+                "     ]\n"
+                "   }\n\n"
+                "   📖 See: https://skillseekersweb.com/docs/config-format\n"
+            )
+
+        return self._validate_unified()
 
     def _validate_unified(self) -> bool:
         """Validate unified config format."""
@@ -239,117 +253,21 @@ class ConfigValidator:
                     f"Source {index} (local): Invalid ai_mode '{ai_mode}'. Must be one of {self.VALID_AI_MODES}"
                 )
 
-    def _validate_legacy(self) -> bool:
-        """
-        Validate legacy config format (backward compatibility).
-
-        Legacy configs are the old format used by doc_scraper, github_scraper, pdf_scraper.
-        """
-        logger.info("Detected legacy config format (backward compatible)")
-
-        # Detect which legacy type based on fields
-        if "base_url" in self.config:
-            logger.info("Legacy type: documentation")
-        elif "repo" in self.config:
-            logger.info("Legacy type: github")
-        elif "pdf" in self.config or "path" in self.config:
-            logger.info("Legacy type: pdf")
-        else:
-            raise ValueError("Cannot detect legacy config type (missing base_url, repo, or pdf)")
-
-        return True
-
-    def convert_legacy_to_unified(self) -> dict[str, Any]:
-        """
-        Convert legacy config to unified format.
-
-        Returns:
-            Unified config dict
-        """
-        if self.is_unified:
-            logger.info("Config already in unified format")
-            return self.config
-
-        logger.info("Converting legacy config to unified format...")
-
-        # Detect legacy type and convert
-        if "base_url" in self.config:
-            return self._convert_legacy_documentation()
-        elif "repo" in self.config:
-            return self._convert_legacy_github()
-        elif "pdf" in self.config or "path" in self.config:
-            return self._convert_legacy_pdf()
-        else:
-            raise ValueError("Cannot convert: unknown legacy format")
-
-    def _convert_legacy_documentation(self) -> dict[str, Any]:
-        """Convert legacy documentation config to unified."""
-        unified = {
-            "name": self.config.get("name", "unnamed"),
-            "description": self.config.get("description", "Documentation skill"),
-            "merge_mode": "rule-based",
-            "sources": [
-                {
-                    "type": "documentation",
-                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
-                }
-            ],
-        }
-        return unified
-
-    def _convert_legacy_github(self) -> dict[str, Any]:
-        """Convert legacy GitHub config to unified."""
-        unified = {
-            "name": self.config.get("name", "unnamed"),
-            "description": self.config.get("description", "GitHub repository skill"),
-            "merge_mode": "rule-based",
-            "sources": [
-                {
-                    "type": "github",
-                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
-                }
-            ],
-        }
-        return unified
-
-    def _convert_legacy_pdf(self) -> dict[str, Any]:
-        """Convert legacy PDF config to unified."""
-        unified = {
-            "name": self.config.get("name", "unnamed"),
-            "description": self.config.get("description", "PDF document skill"),
-            "merge_mode": "rule-based",
-            "sources": [
-                {
-                    "type": "pdf",
-                    **{k: v for k, v in self.config.items() if k not in ["name", "description"]},
-                }
-            ],
-        }
-        return unified
-
     def get_sources_by_type(self, source_type: str) -> list[dict[str, Any]]:
         """
         Get all sources of a specific type.
 
         Args:
-            source_type: 'documentation', 'github', or 'pdf'
+            source_type: 'documentation', 'github', 'pdf', or 'local'
 
         Returns:
             List of sources matching the type
         """
-        if not self.is_unified:
-            # For legacy, convert and get sources
-            unified = self.convert_legacy_to_unified()
-            sources = unified["sources"]
-        else:
-            sources = self.config["sources"]
-
+        sources = self.config["sources"]
         return [s for s in sources if s.get("type") == source_type]
 
     def has_multiple_sources(self) -> bool:
         """Check if config has multiple sources (requires merging)."""
-        if not self.is_unified:
-            return False
         return len(self.config["sources"]) > 1
 
     def needs_api_merge(self) -> bool:
@@ -406,18 +324,16 @@ if __name__ == "__main__":
         validator = validate_config(config_file)
 
         print("\n✅ Config valid!")
-        print(f"   Format: {'Unified' if validator.is_unified else 'Legacy'}")
         print(f"   Name: {validator.config.get('name')}")
 
-        if validator.is_unified:
-            sources = validator.config["sources"]
-            print(f"   Sources: {len(sources)}")
-            for i, source in enumerate(sources):
-                print(f"     {i + 1}. {source['type']}")
+        sources = validator.config["sources"]
+        print(f"   Sources: {len(sources)}")
+        for i, source in enumerate(sources):
+            print(f"     {i + 1}. {source['type']}")
 
-            if validator.needs_api_merge():
-                merge_mode = validator.config.get("merge_mode", "rule-based")
-                print(f"   ⚠️  API merge required (mode: {merge_mode})")
+        if validator.needs_api_merge():
+            merge_mode = validator.config.get("merge_mode", "rule-based")
+            print(f"   ⚠️  API merge required (mode: {merge_mode})")
 
     except ValueError as e:
         print(f"\n❌ Config invalid: {e}")

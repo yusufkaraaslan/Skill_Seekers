@@ -22,6 +22,12 @@
 - ✅ All 65 tests passing
 - ✅ Runtime behavior verified
 
+### Legacy Config Format Removal
+- ✅ All configs converted to unified format
+- ✅ Legacy validation methods removed
+- ✅ Clear error messages for old configs
+- ✅ Simplified codebase (removed 86 lines)
+
 ---
 
 ## 📊 Key Metrics
@@ -181,6 +187,7 @@ Status: ✅ ALL PASSED
 ## 📦 Commits
 
 ```
+PENDING refactor: Remove legacy config format support (v2.11.0)
 c8195bc fix: QA audit - Fix 5 critical bugs in preset system
 19fa91e docs: Add comprehensive summary for all 4 phases (v2.11.0)
 67c3ab9 feat(cli): Implement formal preset system for analyze command (Phase 4)
