@@ -23,18 +23,36 @@ class AnalyzeParser(SubcommandParser):
         parser.add_argument(
             "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
         )
+
+        # Preset selection (NEW - recommended way)
         parser.add_argument(
-            "--quick", action="store_true", help="Quick analysis (1-2 min, basic features only)"
+            "--preset",
+            choices=["quick", "standard", "comprehensive"],
+            help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)"
+        )
+        parser.add_argument(
+            "--preset-list",
+            action="store_true",
+            help="Show available presets and exit"
+        )
+
+        # Legacy preset flags (kept for backward compatibility)
+        parser.add_argument(
+            "--quick",
+            action="store_true",
+            help="[DEPRECATED] Quick analysis - use '--preset quick' instead"
         )
         parser.add_argument(
             "--comprehensive",
             action="store_true",
-            help="Comprehensive analysis (20-60 min, all features + AI)",
+            help="[DEPRECATED] Comprehensive analysis - use '--preset comprehensive' instead",
         )
+
+        # Deprecated depth flag
         parser.add_argument(
             "--depth",
             choices=["surface", "deep", "full"],
-            help="Analysis depth (deprecated - use --quick or --comprehensive instead)",
+            help="[DEPRECATED] Analysis depth - use --preset instead",
         )
         parser.add_argument(
             "--languages", help="Comma-separated languages (e.g., Python,JavaScript,C++)"

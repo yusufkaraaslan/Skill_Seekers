@@ -1904,6 +1904,63 @@ def _generate_references(output_dir: Path):
     logger.info(f"✅ Generated references directory: {references_dir}")
 
 
+def _check_deprecated_flags(args):
+    """Check for deprecated flags and show migration warnings."""
+    warnings = []
+
+    # Deprecated: --depth
+    if hasattr(args, "depth") and args.depth:
+        preset_map = {
+            "surface": "quick",
+            "deep": "standard",
+            "full": "comprehensive",
+        }
+        suggested_preset = preset_map.get(args.depth, "standard")
+        warnings.append(
+            f"⚠️  DEPRECATED: --depth {args.depth} → use --preset {suggested_preset} instead"
+        )
+
+    # Deprecated: --ai-mode
+    if hasattr(args, "ai_mode") and args.ai_mode and args.ai_mode != "auto":
+        if args.ai_mode == "api":
+            warnings.append(
+                "⚠️  DEPRECATED: --ai-mode api → use --enhance-level with ANTHROPIC_API_KEY set instead"
+            )
+        elif args.ai_mode == "local":
+            warnings.append(
+                "⚠️  DEPRECATED: --ai-mode local → use --enhance-level without API key instead"
+            )
+        elif args.ai_mode == "none":
+            warnings.append(
+                "⚠️  DEPRECATED: --ai-mode none → use --enhance-level 0 instead"
+            )
+
+    # Deprecated: --quick flag
+    if hasattr(args, "quick") and args.quick:
+        warnings.append(
+            "⚠️  DEPRECATED: --quick → use --preset quick instead"
+        )
+
+    # Deprecated: --comprehensive flag
+    if hasattr(args, "comprehensive") and args.comprehensive:
+        warnings.append(
+            "⚠️  DEPRECATED: --comprehensive → use --preset comprehensive instead"
+        )
+
+    # Show warnings if any found
+    if warnings:
+        print("\n" + "=" * 70)
+        for warning in warnings:
+            print(warning)
+        print("\n💡 MIGRATION TIP:")
+        print("   --preset quick          (1-2 min, basic features)")
+        print("   --preset standard       (5-10 min, core features, DEFAULT)")
+        print("   --preset comprehensive  (20-60 min, all features + AI)")
+        print("   --enhance-level 0-3     (granular AI enhancement control)")
+        print("\n⚠️  Deprecated flags will be removed in v3.0.0")
+        print("=" * 70 + "\n")
+
+
 def main():
     """Command-line interface for codebase analysis."""
     parser = argparse.ArgumentParser(
@@ -2047,35 +2104,46 @@ Examples:
 
     args = parser.parse_args()
 
-    # Handle presets (Phase 1 feature - NEW)
-    if (
-        hasattr(args, "quick")
-        and args.quick
-        and hasattr(args, "comprehensive")
-        and args.comprehensive
-    ):
-        logger.error("❌ Cannot use --quick and --comprehensive together. Choose one.")
-        return 1
+    # Handle --preset-list flag
+    if hasattr(args, "preset_list") and args.preset_list:
+        from skill_seekers.cli.presets import PresetManager
+        print(PresetManager.format_preset_help())
+        return 0
 
-    if hasattr(args, "quick") and args.quick:
-        # Override depth and disable advanced features
-        args.depth = "surface"
-        args.skip_patterns = True
-        args.skip_test_examples = True
-        args.skip_how_to_guides = True
-        args.skip_config_patterns = True
-        args.ai_mode = "none"
-        logger.info("⚡ Quick analysis mode: surface depth, basic features only (~1-2 min)")
+    # Check for deprecated flags and show warnings
+    _check_deprecated_flags(args)
 
-    if hasattr(args, "comprehensive") and args.comprehensive:
-        # Override depth and enable all features
-        args.depth = "full"
-        args.skip_patterns = False
-        args.skip_test_examples = False
-        args.skip_how_to_guides = False
-        args.skip_config_patterns = False
-        args.ai_mode = "auto"
-        logger.info("🚀 Comprehensive analysis mode: all features + AI enhancement (~20-60 min)")
+    # Handle presets using formal preset system
+    preset_name = None
+    if hasattr(args, "preset") and args.preset:
+        # New --preset flag (recommended)
+        preset_name = args.preset
+    elif hasattr(args, "quick") and args.quick:
+        # Legacy --quick flag (backward compatibility)
+        preset_name = "quick"
+    elif hasattr(args, "comprehensive") and args.comprehensive:
+        # Legacy --comprehensive flag (backward compatibility)
+        preset_name = "comprehensive"
+    else:
+        # Default preset if none specified
+        preset_name = "standard"
+
+    # Apply preset using PresetManager
+    if preset_name:
+        from skill_seekers.cli.presets import PresetManager
+        try:
+            preset_args = PresetManager.apply_preset(preset_name, vars(args))
+            # Update args with preset values
+            for key, value in preset_args.items():
+                setattr(args, key, value)
+
+            preset = PresetManager.get_preset(preset_name)
+            logger.info(
+                f"{preset.icon} {preset.name} analysis mode: {preset.description}"
+            )
+        except ValueError as e:
+            logger.error(f"❌ {e}")
+            return 1
 
     # Set logging level
     if args.verbose:
