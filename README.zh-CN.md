@@ -169,7 +169,7 @@ print(f"星标: {result.github_insights['metadata']['stars']}")
 print(f"常见问题: {len(result.github_insights['common_problems'])}")
 ```
 
-**查看完整文档**：[三流实现摘要](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**查看完整文档**：[三流实现摘要](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 智能速率限制管理和配置 (**全新 - v2.7.0**)
 - ✅ **多令牌配置系统** - 管理多个 GitHub 账户（个人、工作、开源）
@@ -318,7 +318,7 @@ skill-seekers analyze --directory tests/ --enhance
 skill-seekers analyze --directory tests/ --skip-how-to-guides
 ```
 
-**完整文档：**[docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**完整文档：**[docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### ⚡ 性能和规模
 - ✅ **异步模式** - 使用 async/await 实现 2-3 倍更快的抓取（使用 `--async` 标志）
@@ -543,7 +543,7 @@ Skill Seekers 支持 **4 个平台**和 **5 种技能模式**，具有完整的�
 **平台：**Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
 **技能模式：**文档、GitHub、PDF、统一多源、本地仓库
 
-查看[完整功能矩阵](docs/FEATURE_MATRIX.md)了解详细的平台和功能支持。
+查看[完整功能矩阵](docs/reference/FEATURE_MATRIX.md)了解详细的平台和功能支持。
 
 ### 快速平台比较
 
@@ -819,7 +819,7 @@ add_config_source(
 fetch_config(source="example", config_name="react-custom")
 ```
 
-**完整指南：**请参阅 [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) 获取完整文档。
+**完整指南：**请参阅 [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) 获取完整文档。
 
 ## 工作原理
 
@@ -897,10 +897,10 @@ cd Skill_Seekers
 - ✅ **多代理自动配置** - 一个命令设置所有代理
 
 **完整指南：**
-- 📘 [MCP 设置指南](docs/MCP_SETUP.md) - 完整安装说明
-- 🧪 [MCP 测试指南](docs/TEST_MCP_IN_CLAUDE_CODE.md) - 测试所有 18 个工具
-- 📦 [大型文档指南](docs/LARGE_DOCUMENTATION.md) - 处理 10K-40K+ 页
-- 📤 [上传指南](docs/UPLOAD_GUIDE.md) - 如何上传技能到 Claude
+- 📘 [MCP 设置指南](docs/guides/MCP_SETUP.md) - 完整安装说明
+- 🧪 [MCP 测试指南](docs/archive/historical/TEST_MCP_IN_CLAUDE_CODE.md) - 测试所有 18 个工具
+- 📦 [大型文档指南](docs/reference/LARGE_DOCUMENTATION.md) - 处理 10K-40K+ 页
+- 📤 [上传指南](docs/guides/UPLOAD_GUIDE.md) - 如何上传技能到 Claude
 
 ### 方法 2：CLI（传统）
 
@@ -1393,7 +1393,7 @@ cd Skill_Seekers
 # 5. 结果：无需触摸 CLI 即可创建技能！
 ```
 
-**完整指南：**请参阅 [docs/MCP_SETUP.md](docs/MCP_SETUP.md) 获取详细的多代理设置说明。
+**完整指南：**请参阅 [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md) 获取详细的多代理设置说明。
 
 ---
 
@@ -1621,7 +1621,7 @@ python3 -m skill_seekers.cli.package_multi output/godot*/
 }
 ```
 
-**完整指南：**[大型文档指南](docs/LARGE_DOCUMENTATION.md)
+**完整指南：**[大型文档指南](docs/reference/LARGE_DOCUMENTATION.md)
 
 ### 8. 长时间抓取的检查点/恢复
 
@@ -1935,15 +1935,15 @@ skill-seekers scrape --config configs/godot.json
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - 常见问题和解决方案
 
 ### 指南
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 处理 10K-40K+ 页文档
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 处理 10K-40K+ 页文档
 - **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - 异步模式指南（抓取快 2-3 倍）
-- **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI 增强指南
+- **[docs/features/ENHANCEMENT.md](docs/features/ENHANCEMENT.md)** - AI 增强指南
 - **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - 为本地增强配置终端应用
-- **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - 如何上传技能到 Claude
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 集成设置
+- **[docs/guides/UPLOAD_GUIDE.md](docs/guides/UPLOAD_GUIDE.md)** - 如何上传技能到 Claude
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP 集成设置
 
 ### 技术
-- **[docs/CLAUDE.md](docs/CLAUDE.md)** - 技术架构
+- **[CLAUDE.md](CLAUDE.md)** - 技术架构
 - **[STRUCTURE.md](STRUCTURE.md)** - 仓库结构
 
 ## 🎮 准备好了吗？

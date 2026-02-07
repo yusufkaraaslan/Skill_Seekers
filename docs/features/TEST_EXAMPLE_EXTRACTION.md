@@ -494,8 +494,8 @@ for example in report.examples:
 
 ## See Also
 
-- [Pattern Detection (C3.1)](../src/skill_seekers/cli/pattern_recognizer.py) - Detect design patterns
-- [Codebase Scraper](../src/skill_seekers/cli/codebase_scraper.py) - Analyze local repositories
+- [Pattern Detection (C3.1)](../../src/skill_seekers/cli/pattern_recognizer.py) - Detect design patterns
+- [Codebase Scraper](../../src/skill_seekers/cli/codebase_scraper.py) - Analyze local repositories
 - [Unified Scraping](UNIFIED_SCRAPING.md) - Multi-source documentation
 
 ---

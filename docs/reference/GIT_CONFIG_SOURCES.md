@@ -899,9 +899,9 @@ def update_source(name: str, **kwargs) -> dict:
 ## See Also
 
 - [README.md](../README.md) - Main documentation
-- [MCP_SETUP.md](MCP_SETUP.md) - MCP server setup
-- [UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md) - Multi-source scraping
-- [configs/example-team/](../configs/example-team/) - Example repository
+- [MCP_SETUP.md](../guides/MCP_SETUP.md) - MCP server setup
+- [UNIFIED_SCRAPING.md](../features/UNIFIED_SCRAPING.md) - Multi-source scraping
+- [configs/example-team/](../../configs/example-team/) - Example repository
 
 ---
 

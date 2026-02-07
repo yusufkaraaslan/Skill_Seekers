@@ -315,7 +315,7 @@ A: Yes! All 5 skill modes (Docs, GitHub, PDF, Unified, Local Repo) work with all
 ## See Also
 
 - **[README.md](../README.md)** - Complete user documentation
-- **[UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md)** - Multi-source scraping guide
-- **[ENHANCEMENT.md](ENHANCEMENT.md)** - AI enhancement guide
-- **[UPLOAD_GUIDE.md](UPLOAD_GUIDE.md)** - Upload instructions
-- **[MCP_SETUP.md](MCP_SETUP.md)** - MCP server setup
+- **[UNIFIED_SCRAPING.md](../features/UNIFIED_SCRAPING.md)** - Multi-source scraping guide
+- **[ENHANCEMENT.md](../features/ENHANCEMENT.md)** - AI enhancement guide
+- **[UPLOAD_GUIDE.md](../guides/UPLOAD_GUIDE.md)** - Upload instructions
+- **[MCP_SETUP.md](../guides/MCP_SETUP.md)** - MCP server setup

@@ -611,16 +611,16 @@ If you previously used `setup_mcp.sh`, the new version is fully backward compati
 
 After successful setup:
 
-1. **Read the MCP Setup Guide**: [docs/MCP_SETUP.md](MCP_SETUP.md)
-2. **Learn HTTP Transport**: [docs/HTTP_TRANSPORT.md](HTTP_TRANSPORT.md)
-3. **Explore Agent Detection**: [src/skill_seekers/mcp/agent_detector.py](../src/skill_seekers/mcp/agent_detector.py)
-4. **Try the Quick Start**: [QUICKSTART.md](../QUICKSTART.md)
+1. **Read the MCP Setup Guide**: [docs/guides/MCP_SETUP.md](MCP_SETUP.md)
+2. **Learn HTTP Transport**: [docs/guides/HTTP_TRANSPORT.md](HTTP_TRANSPORT.md)
+3. **Explore Agent Detection**: [src/skill_seekers/mcp/agent_detector.py](../../src/skill_seekers/mcp/agent_detector.py)
+4. **Try the Quick Start**: [QUICKSTART.md](../../QUICKSTART.md)
 
 ## Related Documentation
 
 - [MCP Setup Guide](MCP_SETUP.md) - Detailed MCP integration guide
 - [HTTP Transport](HTTP_TRANSPORT.md) - HTTP transport documentation
-- [Agent Detector API](../src/skill_seekers/mcp/agent_detector.py) - Python API reference
+- [Agent Detector API](../../src/skill_seekers/mcp/agent_detector.py) - Python API reference
 - [README](../README.md) - Main documentation
 
 ## Support

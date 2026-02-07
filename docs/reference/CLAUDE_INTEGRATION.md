@@ -100,7 +100,7 @@ generator = RouterGenerator(
 skill_md = generator.generate_skill_md()
 ```
 
-**See full documentation**: [Three-Stream Implementation Summary](IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**See full documentation**: [Three-Stream Implementation Summary](../archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ## Overview
 
@@ -233,7 +233,7 @@ skill-seekers enhance output/react/ --target gemini --mode api    # Gemini 2.0
 skill-seekers enhance output/react/ --target openai --mode api    # GPT-4o
 ```
 
-See [Multi-Platform Guide](UPLOAD_GUIDE.md) and [Feature Matrix](FEATURE_MATRIX.md) for complete details.
+See [Multi-Platform Guide](../guides/UPLOAD_GUIDE.md) and [Feature Matrix](FEATURE_MATRIX.md) for complete details.
 
 ## Architecture
 
