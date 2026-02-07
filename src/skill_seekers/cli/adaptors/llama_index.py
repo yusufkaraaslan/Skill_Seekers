@@ -62,6 +62,8 @@ class LlamaIndexAdaptor(SkillAdaptor):
         Args:
             skill_dir: Path to skill directory
             metadata: Skill metadata
+            enable_chunking: Enable intelligent chunking for large documents
+            **kwargs: Additional chunking parameters (chunk_max_tokens, preserve_code_blocks)
 
         Returns:
             JSON string containing array of LlamaIndex Nodes
@@ -80,14 +82,25 @@ class LlamaIndexAdaptor(SkillAdaptor):
                     "type": "documentation",
                     "version": metadata.version,
                 }
-                nodes.append(
-                    {
-                        "text": content,
-                        "metadata": node_metadata,
-                        "id_": self._generate_node_id(content, node_metadata),
-                        "embedding": None,
-                    }
+
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    content,
+                    node_metadata,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file="SKILL.md"
                 )
+
+                # Add all chunks as nodes
+                for chunk_text, chunk_meta in chunks:
+                    nodes.append({
+                        "text": chunk_text,
+                        "metadata": chunk_meta,
+                        "id_": self._generate_node_id(chunk_text, chunk_meta),
+                        "embedding": None,
+                    })
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -103,14 +116,24 @@ class LlamaIndexAdaptor(SkillAdaptor):
                     "version": metadata.version,
                 }
 
-                nodes.append(
-                    {
-                        "text": ref_content,
-                        "metadata": node_metadata,
-                        "id_": self._generate_node_id(ref_content, node_metadata),
-                        "embedding": None,
-                    }
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    ref_content,
+                    node_metadata,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file=ref_file.name
                 )
+
+                # Add all chunks as nodes
+                for chunk_text, chunk_meta in chunks:
+                    nodes.append({
+                        "text": chunk_text,
+                        "metadata": chunk_meta,
+                        "id_": self._generate_node_id(chunk_text, chunk_meta),
+                        "embedding": None,
+                    })
 
         # Return as formatted JSON
         return json.dumps(nodes, indent=2, ensure_ascii=False)

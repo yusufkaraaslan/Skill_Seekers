@@ -47,6 +47,8 @@ class HaystackAdaptor(SkillAdaptor):
         Args:
             skill_dir: Path to skill directory
             metadata: Skill metadata
+            enable_chunking: Enable intelligent chunking for large documents
+            **kwargs: Additional chunking parameters
 
         Returns:
             JSON string containing array of Haystack Documents
@@ -58,18 +60,30 @@ class HaystackAdaptor(SkillAdaptor):
         if skill_md_path.exists():
             content = self._read_existing_content(skill_dir)
             if content.strip():
-                documents.append(
-                    {
-                        "content": content,
-                        "meta": {
-                            "source": metadata.name,
-                            "category": "overview",
-                            "file": "SKILL.md",
-                            "type": "documentation",
-                            "version": metadata.version,
-                        },
-                    }
+                doc_meta = {
+                    "source": metadata.name,
+                    "category": "overview",
+                    "file": "SKILL.md",
+                    "type": "documentation",
+                    "version": metadata.version,
+                }
+
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    content,
+                    doc_meta,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file="SKILL.md"
                 )
+
+                # Add all chunks as documents
+                for chunk_text, chunk_meta in chunks:
+                    documents.append({
+                        "content": chunk_text,
+                        "meta": chunk_meta,
+                    })
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -77,18 +91,30 @@ class HaystackAdaptor(SkillAdaptor):
                 # Derive category from filename
                 category = ref_file.stem.replace("_", " ").lower()
 
-                documents.append(
-                    {
-                        "content": ref_content,
-                        "meta": {
-                            "source": metadata.name,
-                            "category": category,
-                            "file": ref_file.name,
-                            "type": "reference",
-                            "version": metadata.version,
-                        },
-                    }
+                doc_meta = {
+                    "source": metadata.name,
+                    "category": category,
+                    "file": ref_file.name,
+                    "type": "reference",
+                    "version": metadata.version,
+                }
+
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    ref_content,
+                    doc_meta,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file=ref_file.name
                 )
+
+                # Add all chunks as documents
+                for chunk_text, chunk_meta in chunks:
+                    documents.append({
+                        "content": chunk_text,
+                        "meta": chunk_meta,
+                    })
 
         # Return as formatted JSON
         return json.dumps(documents, indent=2, ensure_ascii=False)

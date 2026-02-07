@@ -64,6 +64,8 @@ class FAISSHelpers(SkillAdaptor):
         Args:
             skill_dir: Path to skill directory
             metadata: Skill metadata
+            enable_chunking: Enable intelligent chunking for large documents
+            **kwargs: Additional chunking parameters
 
         Returns:
             JSON string containing FAISS-compatible data
@@ -85,9 +87,21 @@ class FAISSHelpers(SkillAdaptor):
                     "version": metadata.version,
                 }
 
-                documents.append(content)
-                metadatas.append(doc_metadata)
-                ids.append(self._generate_id(content, doc_metadata))
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    content,
+                    doc_metadata,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file="SKILL.md"
+                )
+
+                # Add all chunks to parallel arrays
+                for chunk_text, chunk_meta in chunks:
+                    documents.append(chunk_text)
+                    metadatas.append(chunk_meta)
+                    ids.append(self._generate_id(chunk_text, chunk_meta))
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -102,9 +116,21 @@ class FAISSHelpers(SkillAdaptor):
                     "version": metadata.version,
                 }
 
-                documents.append(ref_content)
-                metadatas.append(doc_metadata)
-                ids.append(self._generate_id(ref_content, doc_metadata))
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    ref_content,
+                    doc_metadata,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file=ref_file.name
+                )
+
+                # Add all chunks to parallel arrays
+                for chunk_text, chunk_meta in chunks:
+                    documents.append(chunk_text)
+                    metadatas.append(chunk_meta)
+                    ids.append(self._generate_id(chunk_text, chunk_meta))
 
         # FAISS configuration hints
         config = {

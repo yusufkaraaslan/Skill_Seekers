@@ -61,6 +61,8 @@ class QdrantAdaptor(SkillAdaptor):
         Args:
             skill_dir: Path to skill directory
             metadata: Skill metadata
+            enable_chunking: Enable intelligent chunking for large documents
+            **kwargs: Additional chunking parameters
 
         Returns:
             JSON string containing Qdrant-compatible data
@@ -72,46 +74,86 @@ class QdrantAdaptor(SkillAdaptor):
         if skill_md_path.exists():
             content = self._read_existing_content(skill_dir)
             if content.strip():
-                point_id = self._generate_point_id(content, {
+                payload_meta = {
                     "source": metadata.name,
-                    "file": "SKILL.md"
-                })
+                    "category": "overview",
+                    "file": "SKILL.md",
+                    "type": "documentation",
+                    "version": metadata.version,
+                }
 
-                points.append({
-                    "id": point_id,
-                    "vector": None,  # User will generate embeddings
-                    "payload": {
-                        "content": content,
-                        "source": metadata.name,
-                        "category": "overview",
-                        "file": "SKILL.md",
-                        "type": "documentation",
-                        "version": metadata.version,
-                    }
-                })
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    content,
+                    payload_meta,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file="SKILL.md"
+                )
+
+                # Add all chunks as points
+                for chunk_text, chunk_meta in chunks:
+                    point_id = self._generate_point_id(chunk_text, {
+                        "source": chunk_meta.get("source", metadata.name),
+                        "file": chunk_meta.get("file", "SKILL.md")
+                    })
+
+                    points.append({
+                        "id": point_id,
+                        "vector": None,  # User will generate embeddings
+                        "payload": {
+                            "content": chunk_text,
+                            "source": chunk_meta.get("source", metadata.name),
+                            "category": chunk_meta.get("category", "overview"),
+                            "file": chunk_meta.get("file", "SKILL.md"),
+                            "type": chunk_meta.get("type", "documentation"),
+                            "version": chunk_meta.get("version", metadata.version),
+                        }
+                    })
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
             if ref_content.strip():
                 category = ref_file.stem.replace("_", " ").lower()
 
-                point_id = self._generate_point_id(ref_content, {
+                payload_meta = {
                     "source": metadata.name,
-                    "file": ref_file.name
-                })
+                    "category": category,
+                    "file": ref_file.name,
+                    "type": "reference",
+                    "version": metadata.version,
+                }
 
-                points.append({
-                    "id": point_id,
-                    "vector": None,  # User will generate embeddings
-                    "payload": {
-                        "content": ref_content,
-                        "source": metadata.name,
-                        "category": category,
-                        "file": ref_file.name,
-                        "type": "reference",
-                        "version": metadata.version,
-                    }
-                })
+                # Chunk if enabled
+                chunks = self._maybe_chunk_content(
+                    ref_content,
+                    payload_meta,
+                    enable_chunking=enable_chunking,
+                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
+                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
+                    source_file=ref_file.name
+                )
+
+                # Add all chunks as points
+                for chunk_text, chunk_meta in chunks:
+                    point_id = self._generate_point_id(chunk_text, {
+                        "source": chunk_meta.get("source", metadata.name),
+                        "file": chunk_meta.get("file", ref_file.name)
+                    })
+
+                    points.append({
+                        "id": point_id,
+                        "vector": None,  # User will generate embeddings
+                        "payload": {
+                            "content": chunk_text,
+                            "source": chunk_meta.get("source", metadata.name),
+                            "category": chunk_meta.get("category", category),
+                            "file": chunk_meta.get("file", ref_file.name),
+                            "type": chunk_meta.get("type", "reference"),
+                            "version": chunk_meta.get("version", metadata.version),
+                        }
+                    })
 
         # Qdrant configuration
         config = {
