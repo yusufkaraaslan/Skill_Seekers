@@ -1,0 +1,5 @@
+skill-seekers[mcp]>=2.9.0
+django>=5.0.0
+djangorestframework>=3.15.0
+pytest>=8.0.0
+pytest-django>=4.8.0

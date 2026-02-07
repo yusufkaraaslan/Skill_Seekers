@@ -17,7 +17,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**The universal preprocessing layer for AI systems: Convert documentation, GitHub repos, and PDFs into production-ready formats for RAG pipelines, Claude AI skills, and AI coding assistants—in minutes, not hours.**
+**The universal preprocessor for any AI system: Convert documentation, GitHub repos, and PDFs into production-ready formats for LangChain, LlamaIndex, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
@@ -42,7 +42,10 @@ skill-seekers package output/react --target langchain  # or llama-index, pinecon
 | **LangChain** | `Documents` | QA chains, agents, retrievers | [Guide](docs/integrations/LANGCHAIN.md) |
 | **LlamaIndex** | `TextNodes` | Query engines, chat engines | [Guide](docs/integrations/LLAMA_INDEX.md) |
 | **Pinecone** | Ready for upsert | Production vector search | [Guide](docs/integrations/PINECONE.md) |
-| **Cursor IDE** | `.cursorrules` | AI coding assistant context | [Guide](docs/integrations/CURSOR.md) |
+| **Cursor IDE** | `.cursorrules` | AI coding (VS Code fork) | [Guide](docs/integrations/CURSOR.md) |
+| **Windsurf** | `.windsurfrules` | AI coding (Codeium IDE) | [Guide](docs/integrations/WINDSURF.md) |
+| **Cline** | `.clinerules` + MCP | AI coding (VS Code ext) | [Guide](docs/integrations/CLINE.md) |
+| **Continue.dev** | HTTP context | AI coding (any IDE) | [Guide](docs/integrations/CONTINUE_DEV.md) |
 | **Claude AI** | Skills (ZIP) | Claude Code skills | Default |
 | **Gemini** | tar.gz | Google Gemini skills | `--target gemini` |
 | **OpenAI** | ChatGPT format | Custom GPTs | `--target openai` |
@@ -246,9 +249,13 @@ pip install skill-seekers[all-llms]
   - Example: [Pinecone Upsert](examples/pinecone-upsert/)
   - Guide: [Pinecone Integration](docs/integrations/PINECONE.md)
 
-- ✅ **Cursor IDE (.cursorrules)** - Generate custom rules for AI coding assistant
-  - Perfect for: Framework-specific code suggestions, persistent AI context
-  - Guide: [Cursor Integration](docs/integrations/CURSOR.md)
+- ✅ **AI Coding Assistants** - Expert context for 4+ IDE AI tools
+  - **Cursor IDE** - `.cursorrules` format for VS Code fork | [Guide](docs/integrations/CURSOR.md)
+  - **Windsurf** - `.windsurfrules` format for Codeium IDE | [Guide](docs/integrations/WINDSURF.md)
+  - **Cline** - `.clinerules` + MCP for VS Code extension | [Guide](docs/integrations/CLINE.md)
+  - **Continue.dev** - HTTP context providers for any IDE | [Guide](docs/integrations/CONTINUE_DEV.md)
+  - Perfect for: Framework-specific code generation, consistent team patterns
+  - Hub: [All AI Coding Integrations](docs/integrations/INTEGRATIONS.md)
 
 **Quick Export:**
 ```bash
@@ -266,6 +273,71 @@ skill-seekers package output/django --target markdown
 ```
 
 **Complete RAG Pipeline Guide:** [RAG Pipelines Documentation](docs/integrations/RAG_PIPELINES.md)
+
+---
+
+### 🧠 AI Coding Assistant Integrations (**NEW - v2.10.0**)
+
+Transform any framework documentation into expert coding context for 4+ AI assistants:
+
+- ✅ **Cursor IDE** - Generate `.cursorrules` for AI-powered code suggestions
+  - Perfect for: Framework-specific code generation, consistent patterns
+  - Works with: Cursor IDE (VS Code fork)
+  - Guide: [Cursor Integration](docs/integrations/CURSOR.md)
+  - Example: [Cursor React Skill](examples/cursor-react-skill/)
+
+- ✅ **Windsurf** - Customize Windsurf's AI assistant context with `.windsurfrules`
+  - Perfect for: IDE-native AI assistance, flow-based coding
+  - Works with: Windsurf IDE by Codeium
+  - Guide: [Windsurf Integration](docs/integrations/WINDSURF.md)
+  - Example: [Windsurf FastAPI Context](examples/windsurf-fastapi-context/)
+
+- ✅ **Cline (VS Code)** - System prompts + MCP for VS Code agent
+  - Perfect for: Agentic code generation in VS Code, Cursor Composer equivalent
+  - Works with: Cline extension for VS Code
+  - Guide: [Cline Integration](docs/integrations/CLINE.md)
+  - Example: [Cline Django Assistant](examples/cline-django-assistant/)
+
+- ✅ **Continue.dev** - Context servers for IDE-agnostic AI
+  - Perfect for: Multi-IDE environments (VS Code, JetBrains, Vim), custom LLM providers
+  - Works with: Any IDE with Continue.dev plugin
+  - Guide: [Continue Integration](docs/integrations/CONTINUE_DEV.md)
+  - Example: [Continue Universal Context](examples/continue-dev-universal/)
+
+**Quick Export for AI Coding Tools:**
+```bash
+# For any AI coding assistant (Cursor, Windsurf, Cline, Continue.dev)
+skill-seekers scrape --config configs/django.json
+skill-seekers package output/django --target markdown  # or --target claude
+
+# Copy to your project (example for Cursor)
+cp output/django-markdown/SKILL.md my-project/.cursorrules
+
+# Or for Windsurf
+cp output/django-markdown/SKILL.md my-project/.windsurf/rules/django.md
+
+# Or for Cline
+cp output/django-markdown/SKILL.md my-project/.clinerules
+
+# Or for Continue.dev (HTTP server)
+python examples/continue-dev-universal/context_server.py
+# Configure in ~/.continue/config.json
+```
+
+**Multi-IDE Team Consistency:**
+```bash
+# Use Continue.dev for teams with mixed IDEs
+skill-seekers scrape --config configs/react.json
+python context_server.py --host 0.0.0.0 --port 8765
+
+# Team members configure Continue.dev (same config works in ALL IDEs):
+# VS Code, IntelliJ, PyCharm, WebStorm, Vim...
+# Result: Identical AI suggestions across all environments!
+```
+
+**Integration Hub:** [All AI System Integrations](docs/integrations/INTEGRATIONS.md)
+
+---
 
 ### 🌊 Three-Stream GitHub Architecture (**NEW - v2.6.0**)
 - ✅ **Triple-Stream Analysis** - Split GitHub repos into Code, Docs, and Insights streams
