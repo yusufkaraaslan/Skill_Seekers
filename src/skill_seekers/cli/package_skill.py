@@ -35,7 +35,16 @@ except ImportError:
     )
 
 
-def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, target="claude"):
+def package_skill(
+    skill_dir,
+    open_folder_after=True,
+    skip_quality_check=False,
+    target="claude",
+    streaming=False,
+    chunk_size=4000,
+    chunk_overlap=200,
+    batch_size=100
+):
     """
     Package a skill directory into platform-specific format
 
@@ -44,6 +53,10 @@ def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, t
         open_folder_after: Whether to open the output folder after packaging
         skip_quality_check: Skip quality checks before packaging
         target: Target LLM platform ('claude', 'gemini', 'openai', 'markdown')
+        streaming: Use streaming ingestion for large docs
+        chunk_size: Maximum characters per chunk (streaming mode)
+        chunk_overlap: Overlap between chunks (streaming mode)
+        batch_size: Number of chunks per batch (streaming mode)
 
     Returns:
         tuple: (success, package_path) where success is bool and package_path is Path or None
@@ -97,8 +110,25 @@ def package_skill(skill_dir, open_folder_after=True, skip_quality_check=False, t
     print(f"   Target: {adaptor.PLATFORM_NAME}")
     print(f"   Source: {skill_path}")
 
+    if streaming:
+        print(f"   Mode: Streaming (chunk_size={chunk_size}, overlap={chunk_overlap})")
+
     try:
-        package_path = adaptor.package(skill_path, output_dir)
+        # Use streaming if requested and supported
+        if streaming and hasattr(adaptor, 'package_streaming'):
+            package_path = adaptor.package_streaming(
+                skill_path,
+                output_dir,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                batch_size=batch_size
+            )
+        elif streaming:
+            print("⚠️  Streaming not supported for this platform, using standard packaging")
+            package_path = adaptor.package(skill_path, output_dir)
+        else:
+            package_path = adaptor.package(skill_path, output_dir)
+
         print(f"   Output: {package_path}")
     except Exception as e:
         print(f"❌ Error creating package: {e}")
@@ -166,6 +196,33 @@ Examples:
         help="Automatically upload after packaging (requires platform API key)",
     )
 
+    parser.add_argument(
+        "--streaming",
+        action="store_true",
+        help="Use streaming ingestion for large docs (memory-efficient, with chunking)",
+    )
+
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=4000,
+        help="Maximum characters per chunk (streaming mode, default: 4000)",
+    )
+
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=200,
+        help="Overlap between chunks for context (streaming mode, default: 200)",
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Number of chunks per batch (streaming mode, default: 100)",
+    )
+
     args = parser.parse_args()
 
     success, package_path = package_skill(
@@ -173,6 +230,10 @@ Examples:
         open_folder_after=not args.no_open,
         skip_quality_check=args.skip_quality_check,
         target=args.target,
+        streaming=args.streaming,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
+        batch_size=args.batch_size,
     )
 
     if not success:
