@@ -8,7 +8,7 @@ Tracks completeness, accuracy, coverage, and health metrics.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
@@ -29,7 +29,7 @@ class QualityMetric:
     value: float  # 0.0-1.0 (or 0-100 percentage)
     level: MetricLevel
     description: str
-    suggestions: List[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -49,10 +49,10 @@ class QualityReport:
     timestamp: str
     skill_name: str
     overall_score: QualityScore
-    metrics: List[QualityMetric]
-    statistics: Dict[str, Any]
-    recommendations: List[str]
-    history: List[Dict[str, Any]] = field(default_factory=list)
+    metrics: list[QualityMetric]
+    statistics: dict[str, Any]
+    recommendations: list[str]
+    history: list[dict[str, Any]] = field(default_factory=list)
 
 
 class QualityAnalyzer:
@@ -73,8 +73,8 @@ class QualityAnalyzer:
     def __init__(self, skill_dir: Path):
         """Initialize quality analyzer."""
         self.skill_dir = Path(skill_dir)
-        self.metrics: List[QualityMetric] = []
-        self.statistics: Dict[str, Any] = {}
+        self.metrics: list[QualityMetric] = []
+        self.statistics: dict[str, Any] = {}
 
     def analyze_completeness(self) -> float:
         """
@@ -192,9 +192,8 @@ class QualityAnalyzer:
 
         level = MetricLevel.INFO if accuracy >= 80 else MetricLevel.WARNING
         suggestions = []
-        if accuracy < 100:
-            if issues:
-                suggestions.extend(issues[:3])  # Top 3 issues
+        if accuracy < 100 and issues:
+            suggestions.extend(issues[:3])  # Top 3 issues
 
         self.metrics.append(QualityMetric(
             name="Accuracy",
@@ -319,7 +318,7 @@ class QualityAnalyzer:
 
         return health
 
-    def calculate_statistics(self) -> Dict[str, Any]:
+    def calculate_statistics(self) -> dict[str, Any]:
         """Calculate skill statistics."""
         stats = {
             'total_files': 0,
@@ -392,7 +391,7 @@ class QualityAnalyzer:
             grade=grade
         )
 
-    def generate_recommendations(self, score: QualityScore) -> List[str]:
+    def generate_recommendations(self, score: QualityScore) -> list[str]:
         """Generate improvement recommendations."""
         recommendations = []
 
@@ -545,10 +544,7 @@ def main():
         print(formatted)
 
     # Save report
-    if args.output:
-        report_path = Path(args.output)
-    else:
-        report_path = skill_dir / "quality_report.json"
+    report_path = Path(args.output) if args.output else skill_dir / "quality_report.json"
 
     report_path.write_text(json.dumps(asdict(report), indent=2, default=str))
     print(f"\n✅ Report saved: {report_path}")

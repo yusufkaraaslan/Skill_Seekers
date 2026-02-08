@@ -4,7 +4,6 @@ Google Cloud Storage (GCS) adaptor implementation.
 
 import os
 from pathlib import Path
-from typing import List, Dict, Optional
 from datetime import timedelta
 
 try:
@@ -82,7 +81,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
         self.bucket = self.storage_client.bucket(self.bucket_name)
 
     def upload_file(
-        self, local_path: str, remote_path: str, metadata: Optional[Dict[str, str]] = None
+        self, local_path: str, remote_path: str, metadata: dict[str, str] | None = None
     ) -> str:
         """Upload file to GCS."""
         local_file = Path(local_path)
@@ -125,7 +124,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
-    ) -> List[StorageObject]:
+    ) -> list[StorageObject]:
         """List files in GCS bucket."""
         try:
             blobs = self.storage_client.list_blobs(

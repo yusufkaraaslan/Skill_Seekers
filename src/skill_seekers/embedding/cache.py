@@ -5,7 +5,6 @@ Caching layer for embeddings.
 import json
 import sqlite3
 from pathlib import Path
-from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
 
 
@@ -78,7 +77,7 @@ class EmbeddingCache:
     def set(
         self,
         hash_key: str,
-        embedding: List[float],
+        embedding: list[float],
         model: str
     ) -> None:
         """
@@ -103,7 +102,7 @@ class EmbeddingCache:
 
         self.conn.commit()
 
-    def get(self, hash_key: str) -> Optional[List[float]]:
+    def get(self, hash_key: str) -> list[float] | None:
         """
         Retrieve embedding from cache.
 
@@ -146,7 +145,7 @@ class EmbeddingCache:
 
         return json.loads(embedding_json)
 
-    def get_batch(self, hash_keys: List[str]) -> Tuple[List[Optional[List[float]]], List[bool]]:
+    def get_batch(self, hash_keys: list[str]) -> tuple[list[list[float] | None], list[bool]]:
         """
         Retrieve multiple embeddings from cache.
 
@@ -214,7 +213,7 @@ class EmbeddingCache:
 
         self.conn.commit()
 
-    def clear(self, model: Optional[str] = None) -> int:
+    def clear(self, model: str | None = None) -> int:
         """
         Clear cache entries.
 

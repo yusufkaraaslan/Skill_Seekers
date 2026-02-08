@@ -261,7 +261,7 @@ class QdrantAdaptor(SkillAdaptor):
         Returns:
             Result with usage instructions
         """
-        example_code = """
+        example_code = f"""
 # Example: Create Qdrant collection and upload points
 
 from qdrant_client import QdrantClient
@@ -271,7 +271,7 @@ from pathlib import Path
 from openai import OpenAI
 
 # Load data
-with open("{path}") as f:
+with open("{package_path.name}") as f:
     data = json.load(f)
 
 # Connect to Qdrant (local or cloud)
@@ -438,7 +438,7 @@ similar = client.recommend(
     negative=["point-id-2"],  # But not this
     limit=5
 )
-""".format(path=package_path.name)
+"""
 
         return {
             "success": False,

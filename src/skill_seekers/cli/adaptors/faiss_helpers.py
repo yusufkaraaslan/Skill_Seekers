@@ -236,7 +236,7 @@ class FAISSHelpers(SkillAdaptor):
         Returns:
             Result with usage instructions
         """
-        example_code = """
+        example_code = f"""
 # Example: Create FAISS index with JSON metadata (safe & portable)
 
 import faiss
@@ -246,7 +246,7 @@ from openai import OpenAI
 from pathlib import Path
 
 # Load data
-with open("{path}") as f:
+with open("{package_path.name}") as f:
     data = json.load(f)
 
 # Generate embeddings (using OpenAI)
@@ -387,9 +387,7 @@ print(f"\\nIndex stats:")
 print(f"  Total vectors: {{index.ntotal}}")
 print(f"  Dimension: {{dimension}}")
 print(f"  Type: {{type(index).__name__}}")
-""".format(
-            path=package_path.name
-        )
+"""
 
         return {
             "success": False,

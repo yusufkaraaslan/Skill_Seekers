@@ -12,7 +12,6 @@ import pytest
 import json
 from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
-from skill_seekers.cli.adaptors.base import SkillMetadata
 
 
 def create_test_skill(tmp_path: Path, large_doc: bool = False) -> Path:
@@ -293,7 +292,7 @@ class TestBaseAdaptorChunkingHelper:
         for chunk_text, chunk_meta in chunks:
             assert isinstance(chunk_text, str)
             assert isinstance(chunk_meta, dict)
-            assert chunk_meta['is_chunked'] == True
+            assert chunk_meta['is_chunked']
             assert 'chunk_index' in chunk_meta
             assert 'chunk_id' in chunk_meta
             # Original metadata preserved

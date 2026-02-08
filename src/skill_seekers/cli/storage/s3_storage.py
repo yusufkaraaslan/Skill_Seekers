@@ -4,7 +4,6 @@ AWS S3 storage adaptor implementation.
 
 import os
 from pathlib import Path
-from typing import List, Dict, Optional
 
 try:
     import boto3
@@ -93,7 +92,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
         self.s3_resource = boto3.resource('s3', **client_kwargs)
 
     def upload_file(
-        self, local_path: str, remote_path: str, metadata: Optional[Dict[str, str]] = None
+        self, local_path: str, remote_path: str, metadata: dict[str, str] | None = None
     ) -> str:
         """Upload file to S3."""
         local_file = Path(local_path)
@@ -143,7 +142,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
-    ) -> List[StorageObject]:
+    ) -> list[StorageObject]:
         """List files in S3 bucket."""
         try:
             paginator = self.s3_client.get_paginator('list_objects_v2')

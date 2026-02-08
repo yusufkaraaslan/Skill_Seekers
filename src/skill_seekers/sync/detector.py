@@ -4,10 +4,8 @@ Change detection for documentation pages.
 
 import hashlib
 import difflib
-from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 import requests
-from pathlib import Path
 
 from .models import PageChange, ChangeType, ChangeReport
 
@@ -59,7 +57,7 @@ class ChangeDetector:
         """
         return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
-    def fetch_page(self, url: str) -> Tuple[str, Dict[str, str]]:
+    def fetch_page(self, url: str) -> tuple[str, dict[str, str]]:
         """
         Fetch page content and metadata.
 
@@ -92,9 +90,9 @@ class ChangeDetector:
     def check_page(
         self,
         url: str,
-        old_hash: Optional[str] = None,
+        old_hash: str | None = None,
         generate_diff: bool = False,
-        old_content: Optional[str] = None
+        old_content: str | None = None
     ) -> PageChange:
         """
         Check if page has changed.
@@ -137,7 +135,7 @@ class ChangeDetector:
                 detected_at=datetime.utcnow()
             )
 
-        except requests.RequestException as e:
+        except requests.RequestException:
             # Page might be deleted or temporarily unavailable
             return PageChange(
                 url=url,
@@ -149,8 +147,8 @@ class ChangeDetector:
 
     def check_pages(
         self,
-        urls: List[str],
-        previous_hashes: Dict[str, str],
+        urls: list[str],
+        previous_hashes: dict[str, str],
         generate_diffs: bool = False
     ) -> ChangeReport:
         """
@@ -254,8 +252,8 @@ class ChangeDetector:
     def check_header_changes(
         self,
         url: str,
-        old_modified: Optional[str] = None,
-        old_etag: Optional[str] = None
+        old_modified: str | None = None,
+        old_etag: str | None = None
     ) -> bool:
         """
         Quick check using HTTP headers (no content download).
@@ -284,10 +282,7 @@ class ChangeDetector:
             if old_modified and new_modified and old_modified != new_modified:
                 return True
 
-            if old_etag and new_etag and old_etag != new_etag:
-                return True
-
-            return False
+            return bool(old_etag and new_etag and old_etag != new_etag)
 
         except requests.RequestException:
             # If HEAD request fails, assume change (will be verified with GET)
@@ -295,9 +290,9 @@ class ChangeDetector:
 
     def batch_check_headers(
         self,
-        urls: List[str],
-        previous_metadata: Dict[str, Dict[str, str]]
-    ) -> List[str]:
+        urls: list[str],
+        previous_metadata: dict[str, dict[str, str]]
+    ) -> list[str]:
         """
         Batch check URLs using headers only.
 

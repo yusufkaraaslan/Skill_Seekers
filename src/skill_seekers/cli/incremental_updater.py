@@ -9,10 +9,8 @@ Tracks document versions and generates delta packages.
 import json
 import hashlib
 from pathlib import Path
-from typing import Optional, Dict, List, Set
 from dataclasses import dataclass, asdict
 from datetime import datetime
-import difflib
 
 
 @dataclass
@@ -28,10 +26,10 @@ class DocumentVersion:
 @dataclass
 class ChangeSet:
     """Set of changes detected."""
-    added: List[DocumentVersion]
-    modified: List[DocumentVersion]
-    deleted: List[str]
-    unchanged: List[DocumentVersion]
+    added: list[DocumentVersion]
+    modified: list[DocumentVersion]
+    deleted: list[str]
+    unchanged: list[DocumentVersion]
 
     @property
     def has_changes(self) -> bool:
@@ -50,7 +48,7 @@ class UpdateMetadata:
     timestamp: str
     previous_version: str
     new_version: str
-    change_summary: Dict[str, int]
+    change_summary: dict[str, int]
     total_documents: int
 
 
@@ -72,8 +70,8 @@ class IncrementalUpdater:
         """
         self.skill_dir = Path(skill_dir)
         self.version_file = self.skill_dir / version_file
-        self.current_versions: Dict[str, DocumentVersion] = {}
-        self.previous_versions: Dict[str, DocumentVersion] = {}
+        self.current_versions: dict[str, DocumentVersion] = {}
+        self.previous_versions: dict[str, DocumentVersion] = {}
 
     def _compute_file_hash(self, file_path: Path) -> str:
         """
@@ -96,7 +94,7 @@ class IncrementalUpdater:
             print(f"⚠️  Warning: Failed to hash {file_path}: {e}")
             return ""
 
-    def _scan_documents(self) -> Dict[str, DocumentVersion]:
+    def _scan_documents(self) -> dict[str, DocumentVersion]:
         """
         Scan skill directory and build version map.
 
@@ -356,7 +354,7 @@ class IncrementalUpdater:
 
                     # Read current content
                     current_path = self.skill_dir / doc.file_path
-                    current_content = current_path.read_text(encoding="utf-8").splitlines()
+                    current_path.read_text(encoding="utf-8").splitlines()
 
                     # Generate diff (simplified)
                     lines.append(f"   Size: {prev.size_bytes:,} → {doc.size_bytes:,} bytes")

@@ -10,7 +10,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Tuple
+from typing import Any
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 import numpy as np
@@ -23,7 +23,7 @@ class EmbeddingConfig:
     model: str
     dimension: int
     batch_size: int = 100
-    cache_dir: Optional[Path] = None
+    cache_dir: Path | None = None
     max_retries: int = 3
     retry_delay: float = 1.0
 
@@ -31,8 +31,8 @@ class EmbeddingConfig:
 @dataclass
 class EmbeddingResult:
     """Result of embedding generation."""
-    embeddings: List[List[float]]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    embeddings: list[list[float]]
+    metadata: dict[str, Any] = field(default_factory=dict)
     cached_count: int = 0
     generated_count: int = 0
     total_time: float = 0.0
@@ -59,7 +59,7 @@ class CostTracker:
         else:
             self.cache_misses += 1
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics."""
         cache_rate = (self.cache_hits / self.total_requests * 100) if self.total_requests > 0 else 0
 
@@ -77,7 +77,7 @@ class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers."""
 
     @abstractmethod
-    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for texts."""
         pass
 
@@ -108,7 +108,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         'text-embedding-3-large': 3072,
     }
 
-    def __init__(self, model: str = 'text-embedding-ada-002', api_key: Optional[str] = None):
+    def __init__(self, model: str = 'text-embedding-ada-002', api_key: str | None = None):
         """Initialize OpenAI provider."""
         self.model = model
         self.api_key = api_key
@@ -124,7 +124,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 raise ImportError("OpenAI package not installed. Install with: pip install openai")
         return self._client
 
-    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings using OpenAI."""
         client = self._get_client()
 
@@ -155,7 +155,7 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         """Initialize local provider."""
         self.dimension = dimension
 
-    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings using local model (simulated)."""
         # In production, would use sentence-transformers or similar
         embeddings = []
@@ -180,10 +180,10 @@ class LocalEmbeddingProvider(EmbeddingProvider):
 class EmbeddingCache:
     """Cache for embeddings to avoid recomputation."""
 
-    def __init__(self, cache_dir: Optional[Path] = None):
+    def __init__(self, cache_dir: Path | None = None):
         """Initialize cache."""
         self.cache_dir = Path(cache_dir) if cache_dir else None
-        self._memory_cache: Dict[str, List[float]] = {}
+        self._memory_cache: dict[str, list[float]] = {}
 
         if self.cache_dir:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -193,7 +193,7 @@ class EmbeddingCache:
         key = f"{model}:{text}"
         return hashlib.sha256(key.encode()).hexdigest()
 
-    def get(self, text: str, model: str) -> Optional[List[float]]:
+    def get(self, text: str, model: str) -> list[float] | None:
         """Get embedding from cache."""
         cache_key = self._compute_hash(text, model)
 
@@ -215,7 +215,7 @@ class EmbeddingCache:
 
         return None
 
-    def set(self, text: str, model: str, embedding: List[float]) -> None:
+    def set(self, text: str, model: str, embedding: list[float]) -> None:
         """Store embedding in cache."""
         cache_key = self._compute_hash(text, model)
 
@@ -266,7 +266,7 @@ class EmbeddingPipeline:
 
     def generate_batch(
         self,
-        texts: List[str],
+        texts: list[str],
         show_progress: bool = True
     ) -> EmbeddingResult:
         """
@@ -313,7 +313,7 @@ class EmbeddingPipeline:
                 new_embeddings = self.provider.generate_embeddings(to_generate)
 
                 # Store in cache
-                for text, embedding in zip(to_generate, new_embeddings):
+                for text, embedding in zip(to_generate, new_embeddings, strict=False):
                     self.cache.set(text, self.config.model, embedding)
 
                 # Track cost
@@ -322,7 +322,7 @@ class EmbeddingPipeline:
                 self.cost_tracker.add_request(total_tokens, cost, from_cache=False)
 
                 # Merge with cached
-                for idx, embedding in zip(to_generate_indices, new_embeddings):
+                for idx, embedding in zip(to_generate_indices, new_embeddings, strict=False):
                     batch_embeddings.insert(idx, embedding)
 
                 generated_count += len(to_generate)
@@ -359,7 +359,7 @@ class EmbeddingPipeline:
             cost_estimate=self.cost_tracker.estimated_cost
         )
 
-    def validate_dimensions(self, embeddings: List[List[float]]) -> bool:
+    def validate_dimensions(self, embeddings: list[list[float]]) -> bool:
         """
         Validate embedding dimensions.
 
@@ -379,7 +379,7 @@ class EmbeddingPipeline:
 
         return True
 
-    def get_cost_stats(self) -> Dict[str, Any]:
+    def get_cost_stats(self) -> dict[str, Any]:
         """Get cost tracking statistics."""
         return self.cost_tracker.get_stats()
 

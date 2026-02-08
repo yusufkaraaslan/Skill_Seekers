@@ -20,7 +20,6 @@ Usage:
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 try:
     from fastapi import FastAPI, HTTPException, Query
@@ -208,7 +207,7 @@ if FASTAPI_AVAILABLE:
                 )
 
                 # Fill in placeholders and cache
-                for idx, text, embedding in zip(text_indices, texts_to_generate, generated_embeddings):
+                for idx, text, embedding in zip(text_indices, texts_to_generate, generated_embeddings, strict=False):
                     embeddings[idx] = embedding
 
                     if cache:
@@ -300,7 +299,7 @@ if FASTAPI_AVAILABLE:
 
     @app.post("/cache/clear", response_model=dict)
     async def clear_cache(
-        model: Optional[str] = Query(None, description="Model to clear (all if not specified)")
+        model: str | None = Query(None, description="Model to clear (all if not specified)")
     ):
         """Clear cache entries."""
         if not cache:

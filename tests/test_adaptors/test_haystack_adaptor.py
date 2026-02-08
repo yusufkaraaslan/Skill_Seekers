@@ -4,8 +4,6 @@ Tests for Haystack Adaptor
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 import pytest
 

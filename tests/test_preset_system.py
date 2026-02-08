@@ -40,12 +40,12 @@ class TestPresetDefinitions:
         assert quick.estimated_time == '1-2 minutes'
         assert quick.icon == '⚡'
         # Quick should disable slow features
-        assert quick.features['api_reference'] == True  # Essential
-        assert quick.features['dependency_graph'] == False  # Slow
-        assert quick.features['patterns'] == False  # Slow
-        assert quick.features['test_examples'] == False  # Slow
-        assert quick.features['how_to_guides'] == False  # Requires AI
-        assert quick.features['docs'] == True  # Essential
+        assert quick.features['api_reference']  # Essential
+        assert not quick.features['dependency_graph']  # Slow
+        assert not quick.features['patterns']  # Slow
+        assert not quick.features['test_examples']  # Slow
+        assert not quick.features['how_to_guides']  # Requires AI
+        assert quick.features['docs']  # Essential
 
     def test_standard_preset(self):
         """Test standard preset configuration."""
@@ -56,13 +56,13 @@ class TestPresetDefinitions:
         assert standard.estimated_time == '5-10 minutes'
         assert standard.icon == '🎯'
         # Standard should enable core features
-        assert standard.features['api_reference'] == True
-        assert standard.features['dependency_graph'] == True
-        assert standard.features['patterns'] == True
-        assert standard.features['test_examples'] == True
-        assert standard.features['how_to_guides'] == False  # Slow
-        assert standard.features['config_patterns'] == True
-        assert standard.features['docs'] == True
+        assert standard.features['api_reference']
+        assert standard.features['dependency_graph']
+        assert standard.features['patterns']
+        assert standard.features['test_examples']
+        assert not standard.features['how_to_guides']  # Slow
+        assert standard.features['config_patterns']
+        assert standard.features['docs']
 
     def test_comprehensive_preset(self):
         """Test comprehensive preset configuration."""
@@ -131,12 +131,12 @@ class TestPresetApplication:
 
         assert updated['depth'] == 'surface'
         assert updated['enhance_level'] == 0
-        assert updated['skip_patterns'] == True  # Quick disables patterns
-        assert updated['skip_dependency_graph'] == True  # Quick disables dep graph
-        assert updated['skip_test_examples'] == True  # Quick disables tests
-        assert updated['skip_how_to_guides'] == True  # Quick disables guides
-        assert updated['skip_api_reference'] == False  # Quick enables API ref
-        assert updated['skip_docs'] == False  # Quick enables docs
+        assert updated['skip_patterns']  # Quick disables patterns
+        assert updated['skip_dependency_graph']  # Quick disables dep graph
+        assert updated['skip_test_examples']  # Quick disables tests
+        assert updated['skip_how_to_guides']  # Quick disables guides
+        assert not updated['skip_api_reference']  # Quick enables API ref
+        assert not updated['skip_docs']  # Quick enables docs
 
     def test_apply_preset_standard(self):
         """Test applying standard preset."""
@@ -145,12 +145,12 @@ class TestPresetApplication:
 
         assert updated['depth'] == 'deep'
         assert updated['enhance_level'] == 1
-        assert updated['skip_patterns'] == False  # Standard enables patterns
-        assert updated['skip_dependency_graph'] == False  # Standard enables dep graph
-        assert updated['skip_test_examples'] == False  # Standard enables tests
-        assert updated['skip_how_to_guides'] == True  # Standard disables guides (slow)
-        assert updated['skip_api_reference'] == False  # Standard enables API ref
-        assert updated['skip_docs'] == False  # Standard enables docs
+        assert not updated['skip_patterns']  # Standard enables patterns
+        assert not updated['skip_dependency_graph']  # Standard enables dep graph
+        assert not updated['skip_test_examples']  # Standard enables tests
+        assert updated['skip_how_to_guides']  # Standard disables guides (slow)
+        assert not updated['skip_api_reference']  # Standard enables API ref
+        assert not updated['skip_docs']  # Standard enables docs
 
     def test_apply_preset_comprehensive(self):
         """Test applying comprehensive preset."""
@@ -160,13 +160,13 @@ class TestPresetApplication:
         assert updated['depth'] == 'full'
         assert updated['enhance_level'] == 3
         # Comprehensive enables ALL features
-        assert updated['skip_patterns'] == False
-        assert updated['skip_dependency_graph'] == False
-        assert updated['skip_test_examples'] == False
-        assert updated['skip_how_to_guides'] == False
-        assert updated['skip_api_reference'] == False
-        assert updated['skip_config_patterns'] == False
-        assert updated['skip_docs'] == False
+        assert not updated['skip_patterns']
+        assert not updated['skip_dependency_graph']
+        assert not updated['skip_test_examples']
+        assert not updated['skip_how_to_guides']
+        assert not updated['skip_api_reference']
+        assert not updated['skip_config_patterns']
+        assert not updated['skip_docs']
 
     def test_cli_overrides_preset(self):
         """Test that CLI args override preset defaults."""
@@ -182,7 +182,7 @@ class TestPresetApplication:
         assert updated['enhance_level'] == 2  # CLI wins
 
         # Preset says skip_patterns=True (disabled), but CLI said False (enabled)
-        assert updated['skip_patterns'] == False  # CLI wins
+        assert not updated['skip_patterns']  # CLI wins
 
     def test_apply_preset_preserves_args(self):
         """Test that apply_preset preserves existing args."""

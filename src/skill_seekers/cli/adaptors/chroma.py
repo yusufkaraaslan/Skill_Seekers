@@ -256,10 +256,9 @@ class ChromaAdaptor(SkillAdaptor):
                 # Parse URL
                 if '://' in chroma_url:
                     parts = chroma_url.split('://')
-                    protocol = parts[0]
+                    parts[0]
                     host_port = parts[1]
                 else:
-                    protocol = 'http'
                     host_port = chroma_url
 
                 if ':' in host_port:

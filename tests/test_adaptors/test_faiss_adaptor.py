@@ -4,8 +4,6 @@ Tests for FAISS Adaptor
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 import pytest
 

@@ -61,15 +61,6 @@ class TestIssue277RealWorld(unittest.TestCase):
             )
 
         # Verify correct transformed URLs
-        expected_urls = {
-            "https://mikro-orm.io/docs/index.html.md",  # Root URL
-            "https://mikro-orm.io/docs/reference.md",  # Already .md
-            "https://mikro-orm.io/docs/quick-start/index.html.md",  # Deduplicated from anchor
-            "https://mikro-orm.io/docs/repositories.md",  # Already .md, anchor stripped
-            "https://mikro-orm.io/docs/propagation/index.html.md",
-            "https://mikro-orm.io/docs/defining-entities.md",  # Already .md, deduplicated
-            "https://mikro-orm.io/docs/defining-entities/index.html.md",  # Non-.md version
-        }
 
         # Check that we got the expected number of unique URLs
         # Note: defining-entities has both .md and non-.md versions, so we have 2 entries for it

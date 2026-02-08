@@ -42,17 +42,15 @@ def run_scraping_benchmark(runner, config):
         scrape_config_path = config.get("scrape_config")
 
         # Time scraping
-        with bench.timer("scrape_docs"):
-            with bench.memory("scrape_docs"):
-                pages = scrape_all(scrape_config_path)
+        with bench.timer("scrape_docs"), bench.memory("scrape_docs"):
+            pages = scrape_all(scrape_config_path)
 
         # Track metrics
         bench.metric("pages_scraped", len(pages), "pages")
 
         # Time building
-        with bench.timer("build_skill"):
-            with bench.memory("build_skill"):
-                build_skill(scrape_config_path, pages)
+        with bench.timer("build_skill"), bench.memory("build_skill"):
+            build_skill(scrape_config_path, pages)
 
     name = config.get("name", "scraping-benchmark")
     report = runner.run(name, benchmark_func)
@@ -76,9 +74,8 @@ def run_embedding_benchmark(runner, config):
 
         # Batch embedding
         if len(texts) > 1:
-            with bench.timer("batch_embedding"):
-                with bench.memory("batch_embedding"):
-                    embeddings = generator.generate_batch(texts, model=model)
+            with bench.timer("batch_embedding"), bench.memory("batch_embedding"):
+                embeddings = generator.generate_batch(texts, model=model)
 
             bench.metric("embeddings_per_sec", len(embeddings) / bench.result.timings[-1].duration, "emb/sec")
 

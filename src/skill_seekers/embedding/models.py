@@ -2,7 +2,7 @@
 Pydantic models for embedding API.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any
 from pydantic import BaseModel, Field
 
 
@@ -32,7 +32,7 @@ class EmbeddingRequest(BaseModel):
 class BatchEmbeddingRequest(BaseModel):
     """Request model for batch embedding generation."""
 
-    texts: List[str] = Field(..., description="List of texts to embed")
+    texts: list[str] = Field(..., description="List of texts to embed")
     model: str = Field(
         default="text-embedding-3-small",
         description="Embedding model to use"
@@ -41,7 +41,7 @@ class BatchEmbeddingRequest(BaseModel):
         default=True,
         description="Normalize embeddings to unit length"
     )
-    batch_size: Optional[int] = Field(
+    batch_size: int | None = Field(
         default=32,
         description="Batch size for processing (default: 32)"
     )
@@ -64,7 +64,7 @@ class BatchEmbeddingRequest(BaseModel):
 class EmbeddingResponse(BaseModel):
     """Response model for embedding generation."""
 
-    embedding: List[float] = Field(..., description="Generated embedding vector")
+    embedding: list[float] = Field(..., description="Generated embedding vector")
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
     cached: bool = Field(
@@ -76,7 +76,7 @@ class EmbeddingResponse(BaseModel):
 class BatchEmbeddingResponse(BaseModel):
     """Response model for batch embedding generation."""
 
-    embeddings: List[List[float]] = Field(..., description="List of embedding vectors")
+    embeddings: list[list[float]] = Field(..., description="List of embedding vectors")
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
     count: int = Field(..., description="Number of embeddings generated")
@@ -121,7 +121,7 @@ class SkillEmbeddingResponse(BaseModel):
     total_chunks: int = Field(..., description="Total number of chunks embedded")
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Skill metadata"
     )
@@ -132,9 +132,9 @@ class HealthResponse(BaseModel):
 
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
-    models: List[str] = Field(..., description="Available embedding models")
+    models: list[str] = Field(..., description="Available embedding models")
     cache_enabled: bool = Field(..., description="Whether cache is enabled")
-    cache_size: Optional[int] = Field(None, description="Number of cached embeddings")
+    cache_size: int | None = Field(None, description="Number of cached embeddings")
 
 
 class ModelInfo(BaseModel):
@@ -144,7 +144,7 @@ class ModelInfo(BaseModel):
     provider: str = Field(..., description="Model provider (openai, anthropic, sentence-transformers)")
     dimensions: int = Field(..., description="Embedding dimensions")
     max_tokens: int = Field(..., description="Maximum input tokens")
-    cost_per_million: Optional[float] = Field(
+    cost_per_million: float | None = Field(
         None,
         description="Cost per million tokens (if applicable)"
     )
@@ -153,5 +153,5 @@ class ModelInfo(BaseModel):
 class ModelsResponse(BaseModel):
     """Response model for listing available models."""
 
-    models: List[ModelInfo] = Field(..., description="List of available models")
+    models: list[ModelInfo] = Field(..., description="List of available models")
     count: int = Field(..., description="Number of available models")

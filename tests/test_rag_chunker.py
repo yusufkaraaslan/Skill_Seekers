@@ -3,9 +3,7 @@ Tests for RAG Chunker (semantic chunking for RAG pipelines).
 """
 
 import pytest
-from pathlib import Path
 import json
-import tempfile
 
 from skill_seekers.cli.rag_chunker import RAGChunker
 
@@ -199,7 +197,7 @@ class TestRAGChunker:
         assert len(chunks) > 0
 
         # Check metadata diversity
-        categories = set(chunk["metadata"]["category"] for chunk in chunks)
+        categories = {chunk["metadata"]["category"] for chunk in chunks}
         assert "overview" in categories  # From SKILL.md
         assert "getting_started" in categories or "api" in categories  # From references
 
@@ -222,7 +220,7 @@ class TestRAGChunker:
         assert output_path.exists()
 
         # Check content
-        with open(output_path, 'r') as f:
+        with open(output_path) as f:
             loaded = json.load(f)
 
         assert len(loaded) == 1

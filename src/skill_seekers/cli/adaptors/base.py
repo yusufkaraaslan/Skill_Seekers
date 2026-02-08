@@ -9,7 +9,7 @@ This enables Skill Seekers to generate skills for multiple LLM platforms (Claude
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any
 
 
 @dataclass
@@ -283,7 +283,7 @@ class SkillAdaptor(ABC):
         chunk_max_tokens: int = 512,
         preserve_code_blocks: bool = True,
         source_file: str = None
-    ) -> List[Tuple[str, dict]]:
+    ) -> list[tuple[str, dict]]:
         """
         Optionally chunk content for RAG platforms.
 

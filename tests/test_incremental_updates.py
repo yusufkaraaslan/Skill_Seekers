@@ -21,9 +21,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from skill_seekers.cli.incremental_updater import (
-    IncrementalUpdater,
-    DocumentVersion,
-    ChangeSet
+    IncrementalUpdater
 )
 
 
@@ -67,7 +65,7 @@ def test_no_changes_after_save(temp_skill_dir):
     updater = IncrementalUpdater(temp_skill_dir)
 
     # First scan
-    change_set1 = updater.detect_changes()
+    updater.detect_changes()
     updater.save_current_versions()
 
     # Second scan (no changes)

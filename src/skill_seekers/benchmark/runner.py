@@ -4,7 +4,8 @@ Benchmark execution and orchestration.
 
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any
+from collections.abc import Callable
 from datetime import datetime
 
 from .framework import Benchmark
@@ -34,7 +35,7 @@ class BenchmarkRunner:
         })
     """
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """
         Initialize runner.
 
@@ -91,9 +92,9 @@ class BenchmarkRunner:
 
     def run_suite(
         self,
-        benchmarks: Dict[str, Callable[[Benchmark], None]],
+        benchmarks: dict[str, Callable[[Benchmark], None]],
         save: bool = True
-    ) -> Dict[str, BenchmarkReport]:
+    ) -> dict[str, BenchmarkReport]:
         """
         Run multiple benchmarks.
 
@@ -217,7 +218,7 @@ class BenchmarkRunner:
             memory_change_mb=memory_change_mb
         )
 
-    def list_benchmarks(self) -> List[Dict[str, Any]]:
+    def list_benchmarks(self) -> list[dict[str, Any]]:
         """
         List saved benchmarks.
 
@@ -252,7 +253,7 @@ class BenchmarkRunner:
 
         return benchmarks
 
-    def get_latest(self, name: str) -> Optional[Path]:
+    def get_latest(self, name: str) -> Path | None:
         """
         Get path to latest benchmark with given name.
 
@@ -292,7 +293,7 @@ class BenchmarkRunner:
             runner.cleanup_old(keep_latest=3)
         """
         # Group by benchmark name
-        by_name: Dict[str, List[Path]] = {}
+        by_name: dict[str, list[Path]] = {}
 
         for path in self.output_dir.glob("*.json"):
             # Extract name from filename (name_timestamp.json)

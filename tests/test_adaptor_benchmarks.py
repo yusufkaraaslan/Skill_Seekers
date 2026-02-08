@@ -207,7 +207,7 @@ class TestAdaptorBenchmarks(unittest.TestCase):
             time_per_ref = elapsed / ref_count
 
             # Get output size
-            data = json.loads(formatted)
+            json.loads(formatted)
             size_kb = len(formatted) / 1024
 
             results.append({
@@ -350,14 +350,14 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         empty_dir.mkdir()
 
         start = time.perf_counter()
-        empty_result = adaptor.format_skill_md(empty_dir, metadata)
+        adaptor.format_skill_md(empty_dir, metadata)
         empty_time = time.perf_counter() - start
 
         # Full skill (50 references)
         full_dir = self._create_skill_with_n_references(50)
 
         start = time.perf_counter()
-        full_result = adaptor.format_skill_md(full_dir, metadata)
+        adaptor.format_skill_md(full_dir, metadata)
         full_time = time.perf_counter() - start
 
         print(f"\nEmpty skill: {empty_time*1000:.2f}ms")

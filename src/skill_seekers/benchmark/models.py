@@ -2,7 +2,7 @@
 Pydantic models for benchmarking.
 """
 
-from typing import List, Dict, Optional, Any
+from typing import Any
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -26,8 +26,8 @@ class TimingResult(BaseModel):
     duration: float = Field(..., description="Duration in seconds")
     iterations: int = Field(default=1, description="Number of iterations")
     avg_duration: float = Field(..., description="Average duration per iteration")
-    min_duration: Optional[float] = Field(None, description="Minimum duration")
-    max_duration: Optional[float] = Field(None, description="Maximum duration")
+    min_duration: float | None = Field(None, description="Minimum duration")
+    max_duration: float | None = Field(None, description="Maximum duration")
 
 
 class MemoryUsage(BaseModel):
@@ -48,24 +48,24 @@ class BenchmarkReport(BaseModel):
     finished_at: datetime = Field(..., description="Finish time")
     total_duration: float = Field(..., description="Total duration in seconds")
 
-    timings: List[TimingResult] = Field(
+    timings: list[TimingResult] = Field(
         default_factory=list,
         description="Timing results"
     )
-    memory: List[MemoryUsage] = Field(
+    memory: list[MemoryUsage] = Field(
         default_factory=list,
         description="Memory usage results"
     )
-    metrics: List[Metric] = Field(
+    metrics: list[Metric] = Field(
         default_factory=list,
         description="Additional metrics"
     )
 
-    system_info: Dict[str, Any] = Field(
+    system_info: dict[str, Any] = Field(
         default_factory=dict,
         description="System information"
     )
-    recommendations: List[str] = Field(
+    recommendations: list[str] = Field(
         default_factory=list,
         description="Optimization recommendations"
     )
@@ -89,11 +89,11 @@ class ComparisonReport(BaseModel):
     baseline: BenchmarkReport = Field(..., description="Baseline benchmark")
     current: BenchmarkReport = Field(..., description="Current benchmark")
 
-    improvements: List[str] = Field(
+    improvements: list[str] = Field(
         default_factory=list,
         description="Performance improvements"
     )
-    regressions: List[str] = Field(
+    regressions: list[str] = Field(
         default_factory=list,
         description="Performance regressions"
     )

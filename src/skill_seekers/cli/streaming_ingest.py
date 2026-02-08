@@ -9,7 +9,7 @@ skill documentation. Handles chunking, progress tracking, and resume functionali
 import json
 import hashlib
 from pathlib import Path
-from typing import Any, Iterator, Optional
+from collections.abc import Iterator
 from dataclasses import dataclass
 import time
 
@@ -102,8 +102,8 @@ class StreamingIngester:
         self,
         content: str,
         metadata: dict,
-        chunk_size: Optional[int] = None,
-        chunk_overlap: Optional[int] = None
+        chunk_size: int | None = None,
+        chunk_overlap: int | None = None
     ) -> Iterator[tuple[str, ChunkMetadata]]:
         """
         Split document into overlapping chunks.
@@ -180,7 +180,7 @@ class StreamingIngester:
     def stream_skill_directory(
         self,
         skill_dir: Path,
-        callback: Optional[callable] = None
+        callback: callable | None = None
     ) -> Iterator[tuple[str, dict]]:
         """
         Stream all documents from skill directory.
@@ -276,7 +276,7 @@ class StreamingIngester:
     def batch_iterator(
         self,
         chunks: Iterator[tuple[str, dict]],
-        batch_size: Optional[int] = None
+        batch_size: int | None = None
     ) -> Iterator[list[tuple[str, dict]]]:
         """
         Group chunks into batches for efficient processing.
@@ -328,7 +328,7 @@ class StreamingIngester:
 
         checkpoint_path.write_text(json.dumps(checkpoint_data, indent=2))
 
-    def load_checkpoint(self, checkpoint_path: Path) -> Optional[dict]:
+    def load_checkpoint(self, checkpoint_path: Path) -> dict | None:
         """
         Load ingestion checkpoint for resume.
 

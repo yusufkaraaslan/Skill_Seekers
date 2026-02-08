@@ -4,7 +4,6 @@ Provides predefined analysis configurations with clear trade-offs
 between speed and comprehensiveness.
 """
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 
 @dataclass
@@ -17,7 +16,7 @@ class AnalysisPreset:
     name: str
     description: str
     depth: str  # surface, deep, full
-    features: Dict[str, bool]  # Feature flags (api_reference, patterns, etc.)
+    features: dict[str, bool]  # Feature flags (api_reference, patterns, etc.)
     enhance_level: int  # 0=none, 1=SKILL.md, 2=+Arch+Config, 3=full
     estimated_time: str
     icon: str
@@ -85,7 +84,7 @@ class PresetManager:
     """Manages analysis presets and applies them to CLI arguments."""
 
     @staticmethod
-    def get_preset(name: str) -> Optional[AnalysisPreset]:
+    def get_preset(name: str) -> AnalysisPreset | None:
         """Get preset by name.
 
         Args:

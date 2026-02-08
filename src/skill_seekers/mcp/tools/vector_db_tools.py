@@ -12,7 +12,6 @@ Each tool provides a direct interface to its respective vector database adaptor.
 
 import sys
 from pathlib import Path
-from typing import List
 
 try:
     from mcp.types import TextContent
@@ -36,7 +35,7 @@ except ImportError:
     get_adaptor = None  # Will handle gracefully below
 
 
-async def export_to_weaviate_impl(args: dict) -> List[TextContent]:
+async def export_to_weaviate_impl(args: dict) -> list[TextContent]:
     """
     Export skill to Weaviate vector database format.
 
@@ -140,7 +139,7 @@ async def export_to_weaviate_impl(args: dict) -> List[TextContent]:
         ]
 
 
-async def export_to_chroma_impl(args: dict) -> List[TextContent]:
+async def export_to_chroma_impl(args: dict) -> list[TextContent]:
     """
     Export skill to Chroma vector database format.
 
@@ -244,7 +243,7 @@ async def export_to_chroma_impl(args: dict) -> List[TextContent]:
         ]
 
 
-async def export_to_faiss_impl(args: dict) -> List[TextContent]:
+async def export_to_faiss_impl(args: dict) -> list[TextContent]:
     """
     Export skill to FAISS vector index format.
 
@@ -363,7 +362,7 @@ async def export_to_faiss_impl(args: dict) -> List[TextContent]:
         ]
 
 
-async def export_to_qdrant_impl(args: dict) -> List[TextContent]:
+async def export_to_qdrant_impl(args: dict) -> list[TextContent]:
     """
     Export skill to Qdrant vector database format.
 

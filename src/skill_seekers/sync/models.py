@@ -2,7 +2,7 @@
 Pydantic models for sync system.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field
@@ -21,9 +21,9 @@ class PageChange(BaseModel):
 
     url: str = Field(..., description="Page URL")
     change_type: ChangeType = Field(..., description="Type of change")
-    old_hash: Optional[str] = Field(None, description="Previous content hash")
-    new_hash: Optional[str] = Field(None, description="New content hash")
-    diff: Optional[str] = Field(None, description="Content diff (if available)")
+    old_hash: str | None = Field(None, description="Previous content hash")
+    new_hash: str | None = Field(None, description="New content hash")
+    diff: str | None = Field(None, description="Content diff (if available)")
     detected_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="When change was detected"
@@ -47,9 +47,9 @@ class ChangeReport(BaseModel):
 
     skill_name: str = Field(..., description="Skill name")
     total_pages: int = Field(..., description="Total pages checked")
-    added: List[PageChange] = Field(default_factory=list, description="Added pages")
-    modified: List[PageChange] = Field(default_factory=list, description="Modified pages")
-    deleted: List[PageChange] = Field(default_factory=list, description="Deleted pages")
+    added: list[PageChange] = Field(default_factory=list, description="Added pages")
+    modified: list[PageChange] = Field(default_factory=list, description="Modified pages")
+    deleted: list[PageChange] = Field(default_factory=list, description="Deleted pages")
     unchanged: int = Field(0, description="Number of unchanged pages")
     checked_at: datetime = Field(
         default_factory=datetime.utcnow,
@@ -84,19 +84,19 @@ class SyncConfig(BaseModel):
         default=True,
         description="Send notifications on changes"
     )
-    notification_channels: List[str] = Field(
+    notification_channels: list[str] = Field(
         default_factory=list,
         description="Notification channels (email, slack, webhook)"
     )
-    webhook_url: Optional[str] = Field(
+    webhook_url: str | None = Field(
         None,
         description="Webhook URL for change notifications"
     )
-    email_recipients: List[str] = Field(
+    email_recipients: list[str] = Field(
         default_factory=list,
         description="Email recipients for notifications"
     )
-    slack_webhook: Optional[str] = Field(
+    slack_webhook: str | None = Field(
         None,
         description="Slack webhook URL"
     )
@@ -120,16 +120,16 @@ class SyncState(BaseModel):
     """Current state of sync monitoring."""
 
     skill_name: str = Field(..., description="Skill name")
-    last_check: Optional[datetime] = Field(None, description="Last check time")
-    last_change: Optional[datetime] = Field(None, description="Last change detected")
+    last_check: datetime | None = Field(None, description="Last check time")
+    last_change: datetime | None = Field(None, description="Last change detected")
     total_checks: int = Field(default=0, description="Total checks performed")
     total_changes: int = Field(default=0, description="Total changes detected")
-    page_hashes: Dict[str, str] = Field(
+    page_hashes: dict[str, str] = Field(
         default_factory=dict,
         description="URL -> content hash mapping"
     )
     status: str = Field(default="idle", description="Current status")
-    error: Optional[str] = Field(None, description="Last error message")
+    error: str | None = Field(None, description="Last error message")
 
 
 class WebhookPayload(BaseModel):
@@ -141,8 +141,8 @@ class WebhookPayload(BaseModel):
         default_factory=datetime.utcnow,
         description="Event timestamp"
     )
-    changes: Optional[ChangeReport] = Field(None, description="Change report")
-    metadata: Dict[str, Any] = Field(
+    changes: ChangeReport | None = Field(None, description="Change report")
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata"
     )

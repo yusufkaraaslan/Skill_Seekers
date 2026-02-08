@@ -17,12 +17,12 @@ Usage:
 
 import json
 import time
-from pathlib import Path
 
 import pytest
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
+import contextlib
 
 
 @pytest.fixture
@@ -144,7 +144,7 @@ class TestWeaviateIntegration:
 
         # Package skill
         adaptor = get_adaptor("weaviate")
-        metadata = SkillMetadata(
+        SkillMetadata(
             name="integration_test",
             description="Integration test skill for Weaviate"
         )
@@ -231,7 +231,7 @@ class TestWeaviateIntegration:
 
         # Package with rich metadata
         adaptor = get_adaptor("weaviate")
-        metadata = SkillMetadata(
+        SkillMetadata(
             name="metadata_test",
             description="Test metadata preservation",
             version="2.0.0",
@@ -271,10 +271,8 @@ class TestWeaviateIntegration:
             assert "test" in obj["tags"], "Tags not preserved"
 
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 client.schema.delete_class(class_name)
-            except Exception:
-                pass
 
 
 @pytest.mark.integration
@@ -302,7 +300,7 @@ class TestChromaIntegration:
 
         # Package skill
         adaptor = get_adaptor("chroma")
-        metadata = SkillMetadata(
+        SkillMetadata(
             name="chroma_integration_test",
             description="Integration test skill for ChromaDB"
         )
@@ -415,10 +413,8 @@ class TestChromaIntegration:
                     "Filter returned wrong category"
 
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_collection(name=collection_name)
-            except Exception:
-                pass
 
 
 @pytest.mark.integration
@@ -447,7 +443,7 @@ class TestQdrantIntegration:
 
         # Package skill
         adaptor = get_adaptor("qdrant")
-        metadata = SkillMetadata(
+        SkillMetadata(
             name="qdrant_integration_test",
             description="Integration test skill for Qdrant"
         )
@@ -554,7 +550,7 @@ class TestQdrantIntegration:
 
         # Package and upload
         adaptor = get_adaptor("qdrant")
-        metadata = SkillMetadata(
+        SkillMetadata(
             name="qdrant_filter_test",
             description="Test filtering capabilities"
         )
@@ -610,10 +606,8 @@ class TestQdrantIntegration:
                     "Filter returned wrong type"
 
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_collection(collection_name)
-            except Exception:
-                pass
 
 
 if __name__ == "__main__":

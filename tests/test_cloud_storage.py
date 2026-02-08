@@ -6,7 +6,7 @@ import os
 import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from skill_seekers.cli.storage import (
     get_storage_adaptor,

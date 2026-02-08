@@ -7,7 +7,8 @@ import psutil
 import functools
 from contextlib import contextmanager
 from datetime import datetime
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any
+from collections.abc import Callable
 from pathlib import Path
 
 from .models import (
@@ -38,13 +39,13 @@ class BenchmarkResult:
         """
         self.name = name
         self.started_at = datetime.utcnow()
-        self.finished_at: Optional[datetime] = None
+        self.finished_at: datetime | None = None
 
-        self.timings: List[TimingResult] = []
-        self.memory: List[MemoryUsage] = []
-        self.metrics: List[Metric] = []
-        self.system_info: Dict[str, Any] = {}
-        self.recommendations: List[str] = []
+        self.timings: list[TimingResult] = []
+        self.memory: list[MemoryUsage] = []
+        self.metrics: list[Metric] = []
+        self.system_info: dict[str, Any] = {}
+        self.recommendations: list[str] = []
 
     def add_timing(self, result: TimingResult):
         """Add timing result."""
@@ -209,7 +210,7 @@ class Benchmark:
         self,
         func: Callable,
         *args,
-        operation: Optional[str] = None,
+        operation: str | None = None,
         track_memory: bool = False,
         **kwargs
     ) -> Any:
@@ -237,14 +238,13 @@ class Benchmark:
         op_name = operation or func.__name__
 
         if track_memory:
-            with self.memory(op_name):
-                with self.timer(op_name):
-                    return func(*args, **kwargs)
+            with self.memory(op_name), self.timer(op_name):
+                return func(*args, **kwargs)
         else:
             with self.timer(op_name):
                 return func(*args, **kwargs)
 
-    def timed(self, operation: Optional[str] = None, track_memory: bool = False):
+    def timed(self, operation: str | None = None, track_memory: bool = False):
         """
         Decorator for timing functions.
 

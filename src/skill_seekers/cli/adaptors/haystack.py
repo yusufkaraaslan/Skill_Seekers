@@ -225,7 +225,7 @@ class HaystackAdaptor(SkillAdaptor):
         Returns:
             Result indicating no upload capability
         """
-        example_code = """
+        example_code = f"""
 # Example: Load into Haystack 2.x
 
 from haystack import Document
@@ -234,7 +234,7 @@ from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
 import json
 
 # Load documents
-with open("{path}") as f:
+with open("{package_path.name}") as f:
     docs_data = json.load(f)
 
 # Convert to Haystack Documents
@@ -254,9 +254,7 @@ retriever = InMemoryBM25Retriever(document_store=document_store)
 results = retriever.run(query="your question here")
 for doc in results["documents"]:
     print(doc.content)
-""".format(
-            path=package_path.name
-        )
+"""
 
         return {
             "success": False,

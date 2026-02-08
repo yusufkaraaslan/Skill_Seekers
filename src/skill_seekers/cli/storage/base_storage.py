@@ -4,7 +4,6 @@ Base storage adaptor interface for cloud storage providers.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 
@@ -23,9 +22,9 @@ class StorageObject:
 
     key: str
     size: int
-    last_modified: Optional[str] = None
-    etag: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    last_modified: str | None = None
+    etag: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class BaseStorageAdaptor(ABC):
@@ -47,7 +46,7 @@ class BaseStorageAdaptor(ABC):
 
     @abstractmethod
     def upload_file(
-        self, local_path: str, remote_path: str, metadata: Optional[Dict[str, str]] = None
+        self, local_path: str, remote_path: str, metadata: dict[str, str] | None = None
     ) -> str:
         """
         Upload file to cloud storage.
@@ -98,7 +97,7 @@ class BaseStorageAdaptor(ABC):
     @abstractmethod
     def list_files(
         self, prefix: str = "", max_results: int = 1000
-    ) -> List[StorageObject]:
+    ) -> list[StorageObject]:
         """
         List files in cloud storage.
 
@@ -146,8 +145,8 @@ class BaseStorageAdaptor(ABC):
         pass
 
     def upload_directory(
-        self, local_dir: str, remote_prefix: str = "", exclude_patterns: Optional[List[str]] = None
-    ) -> List[str]:
+        self, local_dir: str, remote_prefix: str = "", exclude_patterns: list[str] | None = None
+    ) -> list[str]:
         """
         Upload entire directory to cloud storage.
 
@@ -194,7 +193,7 @@ class BaseStorageAdaptor(ABC):
 
     def download_directory(
         self, remote_prefix: str, local_dir: str
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Download directory from cloud storage.
 

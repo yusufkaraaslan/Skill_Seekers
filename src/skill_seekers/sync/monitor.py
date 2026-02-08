@@ -6,12 +6,12 @@ import json
 import time
 import threading
 from pathlib import Path
-from typing import Optional, Dict, List, Callable
+from collections.abc import Callable
 from datetime import datetime
 import schedule
 
 from .detector import ChangeDetector
-from .models import SyncConfig, SyncState, ChangeReport, WebhookPayload
+from .models import SyncState, ChangeReport, WebhookPayload
 from .notifier import Notifier
 
 
@@ -50,8 +50,8 @@ class SyncMonitor:
         config_path: str,
         check_interval: int = 3600,
         auto_update: bool = False,
-        state_file: Optional[str] = None,
-        on_change: Optional[Callable[[ChangeReport], None]] = None
+        state_file: str | None = None,
+        on_change: Callable[[ChangeReport], None] | None = None
     ):
         """
         Initialize sync monitor.
@@ -244,7 +244,7 @@ class SyncMonitor:
 
         print(f"🛑 Stopped monitoring {self.skill_name}")
 
-    def stats(self) -> Dict:
+    def stats(self) -> dict:
         """Get monitoring statistics."""
         return {
             "skill_name": self.skill_name,

@@ -4,7 +4,6 @@ Embedding generation with multiple model support.
 
 import os
 import hashlib
-from typing import List, Optional, Tuple
 import numpy as np
 
 # OpenAI support
@@ -128,9 +127,9 @@ class EmbeddingGenerator:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        voyage_api_key: Optional[str] = None,
-        cache_dir: Optional[str] = None
+        api_key: str | None = None,
+        voyage_api_key: str | None = None,
+        cache_dir: str | None = None
     ):
         """
         Initialize embedding generator.
@@ -168,7 +167,7 @@ class EmbeddingGenerator:
             )
         return self.MODELS[model]
 
-    def list_models(self) -> List[dict]:
+    def list_models(self) -> list[dict]:
         """List all available models."""
         models = []
         for name, info in self.MODELS.items():
@@ -186,7 +185,7 @@ class EmbeddingGenerator:
         text: str,
         model: str = "text-embedding-3-small",
         normalize: bool = True
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate embedding for a single text.
 
@@ -216,11 +215,11 @@ class EmbeddingGenerator:
 
     def generate_batch(
         self,
-        texts: List[str],
+        texts: list[str],
         model: str = "text-embedding-3-small",
         normalize: bool = True,
         batch_size: int = 32
-    ) -> Tuple[List[List[float]], int]:
+    ) -> tuple[list[list[float]], int]:
         """
         Generate embeddings for multiple texts.
 
@@ -251,7 +250,7 @@ class EmbeddingGenerator:
 
     def _generate_openai(
         self, text: str, model: str, normalize: bool
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using OpenAI API."""
         if not OPENAI_AVAILABLE:
             raise ImportError(
@@ -277,8 +276,8 @@ class EmbeddingGenerator:
             raise Exception(f"OpenAI embedding generation failed: {e}")
 
     def _generate_openai_batch(
-        self, texts: List[str], model: str, normalize: bool, batch_size: int
-    ) -> Tuple[List[List[float]], int]:
+        self, texts: list[str], model: str, normalize: bool, batch_size: int
+    ) -> tuple[list[list[float]], int]:
         """Generate embeddings using OpenAI API in batches."""
         if not OPENAI_AVAILABLE:
             raise ImportError(
@@ -316,7 +315,7 @@ class EmbeddingGenerator:
 
     def _generate_voyage(
         self, text: str, model: str, normalize: bool
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using Voyage AI API."""
         if not VOYAGE_AVAILABLE:
             raise ImportError(
@@ -342,8 +341,8 @@ class EmbeddingGenerator:
             raise Exception(f"Voyage AI embedding generation failed: {e}")
 
     def _generate_voyage_batch(
-        self, texts: List[str], model: str, normalize: bool, batch_size: int
-    ) -> Tuple[List[List[float]], int]:
+        self, texts: list[str], model: str, normalize: bool, batch_size: int
+    ) -> tuple[list[list[float]], int]:
         """Generate embeddings using Voyage AI API in batches."""
         if not VOYAGE_AVAILABLE:
             raise ImportError(
@@ -381,7 +380,7 @@ class EmbeddingGenerator:
 
     def _generate_sentence_transformer(
         self, text: str, model: str, normalize: bool
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using sentence-transformers."""
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
@@ -401,8 +400,8 @@ class EmbeddingGenerator:
         return embedding.tolist()
 
     def _generate_sentence_transformer_batch(
-        self, texts: List[str], model: str, normalize: bool, batch_size: int
-    ) -> Tuple[List[List[float]], int]:
+        self, texts: list[str], model: str, normalize: bool, batch_size: int
+    ) -> tuple[list[list[float]], int]:
         """Generate embeddings using sentence-transformers in batches."""
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
@@ -428,7 +427,7 @@ class EmbeddingGenerator:
         return embeddings.tolist(), dimensions
 
     @staticmethod
-    def _normalize(embedding: List[float]) -> List[float]:
+    def _normalize(embedding: list[float]) -> list[float]:
         """Normalize embedding to unit length."""
         vec = np.array(embedding)
         norm = np.linalg.norm(vec)

@@ -4,8 +4,6 @@ Tests for Chroma Adaptor
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 import pytest
 

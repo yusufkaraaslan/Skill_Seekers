@@ -4,7 +4,6 @@ Azure Blob Storage adaptor implementation.
 
 import os
 from pathlib import Path
-from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 
 try:
@@ -118,7 +117,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
         )
 
     def upload_file(
-        self, local_path: str, remote_path: str, metadata: Optional[Dict[str, str]] = None
+        self, local_path: str, remote_path: str, metadata: dict[str, str] | None = None
     ) -> str:
         """Upload file to Azure Blob Storage."""
         local_file = Path(local_path)
@@ -167,7 +166,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
-    ) -> List[StorageObject]:
+    ) -> list[StorageObject]:
         """List files in Azure container."""
         try:
             blobs = self.container_client.list_blobs(

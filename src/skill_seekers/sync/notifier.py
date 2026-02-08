@@ -4,7 +4,6 @@ Notification system for sync events.
 
 import os
 import requests
-from typing import Optional, List
 from .models import WebhookPayload
 
 
@@ -32,9 +31,9 @@ class Notifier:
 
     def __init__(
         self,
-        webhook_url: Optional[str] = None,
-        slack_webhook: Optional[str] = None,
-        email_recipients: Optional[List[str]] = None,
+        webhook_url: str | None = None,
+        slack_webhook: str | None = None,
+        email_recipients: list[str] | None = None,
         console: bool = True
     ):
         """

@@ -8,7 +8,6 @@ Upload, download, and manage skills in cloud storage (S3, GCS, Azure).
 import sys
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from .storage import get_storage_adaptor
 
@@ -155,7 +154,7 @@ def format_size(size_bytes: int) -> str:
     return f"{size_bytes:.1f}PB"
 
 
-def parse_extra_args(extra: Optional[list]) -> dict:
+def parse_extra_args(extra: list | None) -> dict:
     """Parse extra arguments into dictionary."""
     if not extra:
         return {}

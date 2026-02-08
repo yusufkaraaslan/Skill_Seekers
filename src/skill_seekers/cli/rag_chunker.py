@@ -16,7 +16,6 @@ Usage:
 
 import re
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
 import json
 import logging
 
@@ -78,9 +77,9 @@ class RAGChunker:
     def chunk_document(
         self,
         text: str,
-        metadata: Dict,
-        source_file: Optional[str] = None
-    ) -> List[Dict]:
+        metadata: dict,
+        source_file: str | None = None
+    ) -> list[dict]:
         """
         Chunk single document into RAG-ready chunks.
 
@@ -139,7 +138,7 @@ class RAGChunker:
 
         return result
 
-    def chunk_skill(self, skill_dir: Path) -> List[Dict]:
+    def chunk_skill(self, skill_dir: Path) -> list[dict]:
         """
         Chunk entire skill directory.
 
@@ -154,7 +153,7 @@ class RAGChunker:
         # Chunk main SKILL.md
         skill_md = skill_dir / "SKILL.md"
         if skill_md.exists():
-            with open(skill_md, 'r', encoding='utf-8') as f:
+            with open(skill_md, encoding='utf-8') as f:
                 content = f.read()
 
             metadata = {
@@ -170,7 +169,7 @@ class RAGChunker:
         references_dir = skill_dir / "references"
         if references_dir.exists():
             for ref_file in references_dir.glob("*.md"):
-                with open(ref_file, 'r', encoding='utf-8') as f:
+                with open(ref_file, encoding='utf-8') as f:
                     content = f.read()
 
                 metadata = {
@@ -193,7 +192,7 @@ class RAGChunker:
 
         return all_chunks
 
-    def _extract_code_blocks(self, text: str) -> Tuple[str, List[Dict]]:
+    def _extract_code_blocks(self, text: str) -> tuple[str, list[dict]]:
         """
         Extract code blocks and replace with placeholders.
 
@@ -231,9 +230,9 @@ class RAGChunker:
 
     def _reinsert_code_blocks(
         self,
-        chunks: List[str],
-        code_blocks: List[Dict]
-    ) -> List[str]:
+        chunks: list[str],
+        code_blocks: list[dict]
+    ) -> list[str]:
         """
         Re-insert code blocks into chunks.
 
@@ -255,7 +254,7 @@ class RAGChunker:
 
         return result
 
-    def _find_semantic_boundaries(self, text: str) -> List[int]:
+    def _find_semantic_boundaries(self, text: str) -> list[int]:
         """
         Find paragraph and section boundaries.
 
@@ -303,7 +302,7 @@ class RAGChunker:
 
         return boundaries
 
-    def _split_with_overlap(self, text: str, boundaries: List[int]) -> List[str]:
+    def _split_with_overlap(self, text: str, boundaries: list[int]) -> list[str]:
         """
         Split text at semantic boundaries with overlap.
 
@@ -375,7 +374,7 @@ class RAGChunker:
 
         return chunks
 
-    def save_chunks(self, chunks: List[Dict], output_path: Path) -> None:
+    def save_chunks(self, chunks: list[dict], output_path: Path) -> None:
         """
         Save chunks to JSON file.
 

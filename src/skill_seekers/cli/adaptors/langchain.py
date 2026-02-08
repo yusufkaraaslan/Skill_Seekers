@@ -222,14 +222,14 @@ class LangChainAdaptor(SkillAdaptor):
         Returns:
             Result indicating no upload capability
         """
-        example_code = """
+        example_code = f"""
 # Example: Load into LangChain
 
 from langchain.schema import Document
 import json
 
 # Load documents
-with open("{path}") as f:
+with open("{package_path.name}") as f:
     docs_data = json.load(f)
 
 # Convert to LangChain Documents
@@ -247,9 +247,7 @@ retriever = vectorstore.as_retriever()
 
 # Query
 results = retriever.get_relevant_documents("your query here")
-""".format(
-            path=package_path.name
-        )
+"""
 
         return {
             "success": False,

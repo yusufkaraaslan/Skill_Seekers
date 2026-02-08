@@ -245,7 +245,7 @@ class LlamaIndexAdaptor(SkillAdaptor):
         Returns:
             Result indicating no upload capability
         """
-        example_code = """
+        example_code = f"""
 # Example: Load into LlamaIndex
 
 from llama_index.core.schema import TextNode
@@ -253,7 +253,7 @@ from llama_index.core import VectorStoreIndex
 import json
 
 # Load nodes
-with open("{path}") as f:
+with open("{package_path.name}") as f:
     nodes_data = json.load(f)
 
 # Convert to LlamaIndex Nodes
@@ -275,9 +275,7 @@ query_engine = index.as_query_engine()
 # Query
 response = query_engine.query("your question here")
 print(response)
-""".format(
-            path=package_path.name
-        )
+"""
 
         return {
             "success": False,

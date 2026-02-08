@@ -6,10 +6,7 @@ Tests real upload capabilities for vector databases.
 """
 
 import json
-import os
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch
 
 # Import adaptors
 from skill_seekers.cli.adaptors import get_adaptor
@@ -211,7 +208,6 @@ class TestUploadCommandIntegration:
 
     def test_upload_command_supports_chroma(self):
         """Test upload command recognizes chroma as target."""
-        from skill_seekers.cli.upload_skill import upload_skill_api
 
         # This should not raise ValueError
         adaptor = get_adaptor('chroma')
@@ -219,7 +215,6 @@ class TestUploadCommandIntegration:
 
     def test_upload_command_supports_weaviate(self):
         """Test upload command recognizes weaviate as target."""
-        from skill_seekers.cli.upload_skill import upload_skill_api
 
         # This should not raise ValueError
         adaptor = get_adaptor('weaviate')

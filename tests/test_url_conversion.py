@@ -4,7 +4,6 @@ Covers bug fix for issue #277: URLs with anchor fragments causing 404 errors.
 """
 
 import unittest
-from unittest.mock import MagicMock
 
 from skill_seekers.cli.doc_scraper import DocToSkillConverter
 

@@ -4,10 +4,8 @@ Tests for benchmarking suite.
 
 import time
 import json
-from pathlib import Path
 from datetime import datetime
 
-import pytest
 
 from skill_seekers.benchmark import (
     Benchmark,
@@ -164,7 +162,7 @@ class TestBenchmark:
 
         with benchmark.memory("operation"):
             # Allocate some memory
-            data = [0] * 1000000
+            pass
 
         assert len(benchmark.result.memory) == 1
         assert benchmark.result.memory[0].operation == "operation"
@@ -394,7 +392,7 @@ class TestBenchmarkRunner:
             with bench.timer("operation"):
                 time.sleep(0.1)
 
-        baseline_report = runner.run("baseline", baseline_bench, save=True)
+        runner.run("baseline", baseline_bench, save=True)
         baseline_path = list(tmp_path.glob("baseline_*.json"))[0]
 
         # Create faster version
@@ -402,7 +400,7 @@ class TestBenchmarkRunner:
             with bench.timer("operation"):
                 time.sleep(0.05)
 
-        improved_report = runner.run("improved", improved_bench, save=True)
+        runner.run("improved", improved_bench, save=True)
         improved_path = list(tmp_path.glob("improved_*.json"))[0]
 
         # Compare

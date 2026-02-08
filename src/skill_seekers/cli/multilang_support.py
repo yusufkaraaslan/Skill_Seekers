@@ -8,9 +8,7 @@ and translation-ready format generation.
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 from dataclasses import dataclass
-from collections import Counter
 import json
 
 
@@ -20,16 +18,16 @@ class LanguageInfo:
     code: str  # ISO 639-1 code (e.g., 'en', 'es', 'zh')
     name: str  # Full name (e.g., 'English', 'Spanish', 'Chinese')
     confidence: float  # Detection confidence (0.0-1.0)
-    script: Optional[str] = None  # Script type (e.g., 'Latin', 'Cyrillic')
+    script: str | None = None  # Script type (e.g., 'Latin', 'Cyrillic')
 
 
 @dataclass
 class TranslationStatus:
     """Translation status for a document."""
     source_language: str
-    target_languages: List[str]
-    translated_languages: Set[str]
-    missing_languages: Set[str]
+    target_languages: list[str]
+    translated_languages: set[str]
+    missing_languages: set[str]
     completeness: float  # Percentage (0.0-1.0)
 
 
@@ -155,7 +153,7 @@ class LanguageDetector:
             script=self.SCRIPTS.get(best_lang)
         )
 
-    def detect_from_filename(self, filename: str) -> Optional[str]:
+    def detect_from_filename(self, filename: str) -> str | None:
         """
         Detect language from filename pattern.
 
@@ -194,15 +192,15 @@ class MultiLanguageManager:
     def __init__(self):
         """Initialize multi-language manager."""
         self.detector = LanguageDetector()
-        self.documents: Dict[str, List[Dict]] = {}  # lang_code -> [docs]
-        self.primary_language: Optional[str] = None
+        self.documents: dict[str, list[dict]] = {}  # lang_code -> [docs]
+        self.primary_language: str | None = None
 
     def add_document(
         self,
         file_path: str,
         content: str,
-        metadata: Optional[Dict] = None,
-        force_language: Optional[str] = None
+        metadata: dict | None = None,
+        force_language: str | None = None
     ) -> None:
         """
         Add document with language detection.
@@ -258,11 +256,11 @@ class MultiLanguageManager:
 
         self.documents[lang_code].append(doc)
 
-    def get_languages(self) -> List[str]:
+    def get_languages(self) -> list[str]:
         """Get list of detected languages."""
         return sorted(self.documents.keys())
 
-    def get_document_count(self, language: Optional[str] = None) -> int:
+    def get_document_count(self, language: str | None = None) -> int:
         """
         Get document count for a language.
 
@@ -276,7 +274,7 @@ class MultiLanguageManager:
             return len(self.documents.get(language, []))
         return sum(len(docs) for docs in self.documents.values())
 
-    def get_translation_status(self, base_language: Optional[str] = None) -> TranslationStatus:
+    def get_translation_status(self, base_language: str | None = None) -> TranslationStatus:
         """
         Get translation status.
 
@@ -320,7 +318,7 @@ class MultiLanguageManager:
             completeness=min(completeness, 1.0)
         )
 
-    def export_by_language(self, output_dir: Path) -> Dict[str, Path]:
+    def export_by_language(self, output_dir: Path) -> dict[str, Path]:
         """
         Export documents organized by language.
 

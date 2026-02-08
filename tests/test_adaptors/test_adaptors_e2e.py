@@ -850,7 +850,6 @@ export default {
             # Should have categories from reference files
             # Files: getting_started.md, reactivity_api.md, components_guide.md
             # Categories derived from filenames (stem.replace("_", " ").lower())
-            expected_refs = {"getting started", "reactivity api", "components guide"}
 
             # Check that at least one reference category exists
             ref_categories = categories - {"overview"}
