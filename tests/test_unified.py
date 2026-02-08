@@ -27,7 +27,7 @@ from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
 
 
 def test_detect_unified_format():
-    """Test unified format detection"""
+    """Test unified format detection and legacy rejection"""
     import json
     import tempfile
 
@@ -47,17 +47,21 @@ def test_detect_unified_format():
     try:
         validator = ConfigValidator(config_path)
         assert validator.is_unified
+        validator.validate()  # Should pass
     finally:
         os.unlink(config_path)
 
-    # Test legacy detection
+    # Test legacy rejection (legacy format removed in v2.11.0)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(legacy_config, f)
         config_path = f.name
 
     try:
         validator = ConfigValidator(config_path)
-        assert not validator.is_unified
+        assert validator.is_unified  # Always True now
+        # Validation should fail for legacy format
+        with pytest.raises(ValueError, match="LEGACY CONFIG FORMAT DETECTED"):
+            validator.validate()
     finally:
         os.unlink(config_path)
 
@@ -119,7 +123,7 @@ def test_needs_api_merge():
 
 
 def test_backward_compatibility():
-    """Test legacy config conversion"""
+    """Test legacy config rejection (removed in v2.11.0)"""
     legacy_config = {
         "name": "test",
         "description": "Test skill",
@@ -128,13 +132,16 @@ def test_backward_compatibility():
         "max_pages": 100,
     }
 
+    # Legacy format should be rejected with clear error message
     validator = ConfigValidator(legacy_config)
-    unified = validator.convert_legacy_to_unified()
+    with pytest.raises(ValueError) as exc_info:
+        validator.validate()
 
-    assert "sources" in unified
-    assert len(unified["sources"]) == 1
-    assert unified["sources"][0]["type"] == "documentation"
-    assert unified["sources"][0]["base_url"] == "https://example.com"
+    # Check error message provides migration guidance
+    error_msg = str(exc_info.value)
+    assert "LEGACY CONFIG FORMAT DETECTED" in error_msg
+    assert "removed in v2.11.0" in error_msg
+    assert "sources" in error_msg  # Shows new format requires sources array
 
 
 # ===========================

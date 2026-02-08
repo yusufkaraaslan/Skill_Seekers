@@ -84,13 +84,19 @@ class TestConfigLoading(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_valid_config(self):
-        """Test loading a valid configuration file"""
+        """Test loading a valid configuration file (unified format)"""
         config_data = {
             "name": "test-config",
-            "base_url": "https://example.com/",
-            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
-            "rate_limit": 0.5,
-            "max_pages": 100,
+            "description": "Test configuration",
+            "sources": [
+                {
+                    "type": "documentation",
+                    "base_url": "https://example.com/",
+                    "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+                    "rate_limit": 0.5,
+                    "max_pages": 100,
+                }
+            ],
         }
 
         config_path = Path(self.temp_dir) / "test.json"
@@ -99,7 +105,8 @@ class TestConfigLoading(unittest.TestCase):
 
         loaded_config = load_config(str(config_path))
         self.assertEqual(loaded_config["name"], "test-config")
-        self.assertEqual(loaded_config["base_url"], "https://example.com/")
+        self.assertEqual(len(loaded_config["sources"]), 1)
+        self.assertEqual(loaded_config["sources"][0]["base_url"], "https://example.com/")
 
     def test_load_invalid_json(self):
         """Test loading an invalid JSON file"""
