@@ -15,6 +15,9 @@ from pathlib import Path
 import sys
 import tempfile
 
+# Skip all tests if numpy is not installed
+pytest.importorskip("numpy")
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

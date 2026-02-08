@@ -7,6 +7,9 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+# Skip all tests if numpy is not installed
+pytest.importorskip("numpy")
+
 from skill_seekers.embedding.models import (
     EmbeddingRequest,
     BatchEmbeddingRequest,

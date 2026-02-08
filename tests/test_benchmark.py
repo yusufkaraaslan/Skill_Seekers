@@ -2,10 +2,13 @@
 Tests for benchmarking suite.
 """
 
+import pytest
 import time
 import json
 from datetime import datetime
 
+# Skip all tests if psutil is not installed
+pytest.importorskip("psutil")
 
 from skill_seekers.benchmark import (
     Benchmark,
