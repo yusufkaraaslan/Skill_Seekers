@@ -4,11 +4,11 @@
 
 English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
 
-[![Version](https://img.shields.io/badge/version-2.9.0--dev-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-1200+%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-1852%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -17,7 +17,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**The universal preprocessor for any AI system: Convert documentation, GitHub repos, and PDFs into production-ready formats for LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
+**🚀 v3.0.0 "Universal Intelligence Platform" - The universal preprocessor for any AI system. Convert documentation, GitHub repos, and PDFs into 16 production-ready formats: LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 

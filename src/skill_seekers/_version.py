@@ -24,11 +24,11 @@ def get_version() -> str:
     Read version from pyproject.toml.
 
     Returns:
-        Version string (e.g., "2.8.0")
+        Version string (e.g., "3.0.0")
     """
     if tomllib is None:
         # Fallback if TOML library not available
-        return "2.8.0"  # Hardcoded fallback
+        return "3.0.0"  # Hardcoded fallback
 
     try:
         # Get path to pyproject.toml (3 levels up from this file)
@@ -37,7 +37,7 @@ def get_version() -> str:
 
         if not pyproject_path.exists():
             # Fallback for installed package
-            return "2.8.0"  # Hardcoded fallback
+            return "3.0.0"  # Hardcoded fallback
 
         with open(pyproject_path, "rb") as f:
             pyproject_data = tomllib.load(f)
@@ -46,7 +46,7 @@ def get_version() -> str:
 
     except Exception:
         # Fallback if anything goes wrong
-        return "2.8.0"  # Hardcoded fallback
+        return "3.0.0"  # Hardcoded fallback
 
 
 __version__ = get_version()
