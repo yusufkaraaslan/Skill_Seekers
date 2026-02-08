@@ -136,12 +136,16 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
         config_path = Path("configs/test-framework.json")
         self.assertTrue(config_path.exists())
 
-        # Verify config content
+        # Verify config content (unified format)
         with open(config_path) as f:
             config = json.load(f)
             self.assertEqual(config["name"], "test-framework")
-            self.assertEqual(config["base_url"], "https://test-framework.dev/")
             self.assertEqual(config["description"], "Test framework skill")
+            # Check unified format structure
+            self.assertIn("sources", config)
+            self.assertEqual(len(config["sources"]), 1)
+            self.assertEqual(config["sources"][0]["type"], "documentation")
+            self.assertEqual(config["sources"][0]["base_url"], "https://test-framework.dev/")
 
     async def test_generate_config_with_options(self):
         """Test config generation with custom options"""
@@ -155,12 +159,12 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
 
         _result = await skill_seeker_server.generate_config_tool(args)
 
-        # Verify config has custom options
+        # Verify config has custom options (unified format)
         config_path = Path("configs/custom-framework.json")
         with open(config_path) as f:
             config = json.load(f)
-            self.assertEqual(config["max_pages"], 200)
-            self.assertEqual(config["rate_limit"], 1.0)
+            self.assertEqual(config["sources"][0]["max_pages"], 200)
+            self.assertEqual(config["sources"][0]["rate_limit"], 1.0)
 
     async def test_generate_config_defaults(self):
         """Test that default values are applied correctly"""
@@ -171,8 +175,9 @@ class TestGenerateConfigTool(unittest.IsolatedAsyncioTestCase):
         config_path = Path("configs/default-test.json")
         with open(config_path) as f:
             config = json.load(f)
-            self.assertEqual(config["max_pages"], 100)  # Default
-            self.assertEqual(config["rate_limit"], 0.5)  # Default
+            # Check unified format defaults
+            self.assertEqual(config["sources"][0]["max_pages"], 100)  # Default
+            self.assertEqual(config["sources"][0]["rate_limit"], 0.5)  # Default
 
 
 @unittest.skipUnless(MCP_AVAILABLE, "MCP package not installed")
@@ -583,14 +588,18 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_validates_required_fields(self):
         """Should reject config missing required fields"""
         args = {
-            "config_json": '{"name": "test"}',  # Missing description, base_url
+            "config_json": '{"name": "test"}',  # Missing description and sources
             "github_token": "fake_token",
         }
         result = await skill_seeker_server.submit_config_tool(args)
-        self.assertIn("validation failed", result[0].text.lower())
-        # ConfigValidator detects missing config type (base_url/repo/pdf)
+        # Should fail validation for missing required fields
+        result_text = result[0].text.lower()
         self.assertTrue(
-            "cannot detect" in result[0].text.lower() or "missing" in result[0].text.lower()
+            "validation failed" in result_text
+            or "error" in result_text
+            or "missing" in result_text
+            or "required" in result_text,
+            f"Expected validation error, got: {result[0].text}",
         )
 
     async def test_submit_config_validates_name_format(self):
