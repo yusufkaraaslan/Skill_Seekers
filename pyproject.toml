@@ -294,10 +294,24 @@ check_untyped_defs = false
 
 [dependency-groups]
 dev = [
+    # Core testing
     "pytest>=8.4.2",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.0.0",
     "coverage>=7.11.0",
+
+    # Code quality
     "ruff>=0.14.13",
     "mypy>=1.19.1",
+
+    # Test dependencies (Kimi's finding #3)
+    "psutil>=5.9.0",        # Process utilities for testing
+    "numpy>=1.24.0",        # Numerical operations
+    "starlette>=0.31.0",    # HTTP transport testing
+    "httpx>=0.24.0",        # HTTP client for testing
+
+    # Cloud storage testing (Kimi's finding #2)
+    "boto3>=1.26.0",                    # AWS S3
+    "google-cloud-storage>=2.10.0",     # Google Cloud Storage
+    "azure-storage-blob>=12.17.0",      # Azure Blob Storage
 ]

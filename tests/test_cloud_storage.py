@@ -17,11 +17,31 @@ from skill_seekers.cli.storage import (
     StorageObject,
 )
 
+# Check if cloud storage dependencies are available
+try:
+    import boto3
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+
+try:
+    from google.cloud import storage
+    GCS_AVAILABLE = True
+except ImportError:
+    GCS_AVAILABLE = False
+
+try:
+    from azure.storage.blob import BlobServiceClient
+    AZURE_AVAILABLE = True
+except ImportError:
+    AZURE_AVAILABLE = False
+
 
 # ========================================
 # Factory Tests
 # ========================================
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 def test_get_storage_adaptor_s3():
     """Test S3 adaptor factory."""
     with patch('skill_seekers.cli.storage.s3_storage.boto3'):
@@ -29,6 +49,7 @@ def test_get_storage_adaptor_s3():
         assert isinstance(adaptor, S3StorageAdaptor)
 
 
+@pytest.mark.skipif(not GCS_AVAILABLE, reason="google-cloud-storage not installed")
 def test_get_storage_adaptor_gcs():
     """Test GCS adaptor factory."""
     with patch('skill_seekers.cli.storage.gcs_storage.storage'):
@@ -36,6 +57,7 @@ def test_get_storage_adaptor_gcs():
         assert isinstance(adaptor, GCSStorageAdaptor)
 
 
+@pytest.mark.skipif(not AZURE_AVAILABLE, reason="azure-storage-blob not installed")
 def test_get_storage_adaptor_azure():
     """Test Azure adaptor factory."""
     with patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient'):
@@ -57,6 +79,7 @@ def test_get_storage_adaptor_invalid_provider():
 # S3 Storage Tests
 # ========================================
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_s3_upload_file(mock_boto3):
     """Test S3 file upload."""
@@ -82,6 +105,7 @@ def test_s3_upload_file(mock_boto3):
         Path(tmp_path).unlink()
 
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_s3_download_file(mock_boto3):
     """Test S3 file download."""
@@ -103,6 +127,7 @@ def test_s3_download_file(mock_boto3):
         )
 
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_s3_list_files(mock_boto3):
     """Test S3 file listing."""
@@ -138,6 +163,7 @@ def test_s3_list_files(mock_boto3):
     assert files[0].etag == 'abc123'
 
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_s3_file_exists(mock_boto3):
     """Test S3 file existence check."""
@@ -153,6 +179,7 @@ def test_s3_file_exists(mock_boto3):
     assert adaptor.file_exists('test.txt') is True
 
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_s3_get_file_url(mock_boto3):
     """Test S3 presigned URL generation."""
@@ -175,6 +202,7 @@ def test_s3_get_file_url(mock_boto3):
 # GCS Storage Tests
 # ========================================
 
+@pytest.mark.skipif(not GCS_AVAILABLE, reason="google-cloud-storage not installed")
 @patch('skill_seekers.cli.storage.gcs_storage.storage')
 def test_gcs_upload_file(mock_storage):
     """Test GCS file upload."""
@@ -204,6 +232,7 @@ def test_gcs_upload_file(mock_storage):
         Path(tmp_path).unlink()
 
 
+@pytest.mark.skipif(not GCS_AVAILABLE, reason="google-cloud-storage not installed")
 @patch('skill_seekers.cli.storage.gcs_storage.storage')
 def test_gcs_download_file(mock_storage):
     """Test GCS file download."""
@@ -227,6 +256,7 @@ def test_gcs_download_file(mock_storage):
         mock_blob.download_to_filename.assert_called_once()
 
 
+@pytest.mark.skipif(not GCS_AVAILABLE, reason="google-cloud-storage not installed")
 @patch('skill_seekers.cli.storage.gcs_storage.storage')
 def test_gcs_list_files(mock_storage):
     """Test GCS file listing."""
@@ -257,6 +287,7 @@ def test_gcs_list_files(mock_storage):
 # Azure Storage Tests
 # ========================================
 
+@pytest.mark.skipif(not AZURE_AVAILABLE, reason="azure-storage-blob not installed")
 @patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient')
 def test_azure_upload_file(mock_blob_service):
     """Test Azure file upload."""
@@ -287,6 +318,7 @@ def test_azure_upload_file(mock_blob_service):
         Path(tmp_path).unlink()
 
 
+@pytest.mark.skipif(not AZURE_AVAILABLE, reason="azure-storage-blob not installed")
 @patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient')
 def test_azure_download_file(mock_blob_service):
     """Test Azure file download."""
@@ -315,6 +347,7 @@ def test_azure_download_file(mock_blob_service):
         assert Path(local_path).read_bytes() == b'test content'
 
 
+@pytest.mark.skipif(not AZURE_AVAILABLE, reason="azure-storage-blob not installed")
 @patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient')
 def test_azure_list_files(mock_blob_service):
     """Test Azure file listing."""
@@ -372,6 +405,7 @@ def test_base_adaptor_abstract():
 # Integration-style Tests
 # ========================================
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_upload_directory(mock_boto3):
     """Test directory upload."""
@@ -396,6 +430,7 @@ def test_upload_directory(mock_boto3):
         assert mock_client.upload_file.call_count == 3
 
 
+@pytest.mark.skipif(not BOTO3_AVAILABLE, reason="boto3 not installed")
 @patch('skill_seekers.cli.storage.s3_storage.boto3')
 def test_download_directory(mock_boto3):
     """Test directory download."""
