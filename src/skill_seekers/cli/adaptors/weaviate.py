@@ -458,7 +458,7 @@ class WeaviateAdaptor(SkillAdaptor):
         try:
             from openai import OpenAI
         except ImportError:
-            raise ImportError("openai not installed. Run: pip install openai")
+            raise ImportError("openai not installed. Run: pip install openai") from None
 
         api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not api_key:
@@ -482,7 +482,7 @@ class WeaviateAdaptor(SkillAdaptor):
                 embeddings.extend([item.embedding for item in response.data])
                 print(f"  ✓ Generated {min(i+batch_size, len(documents))}/{len(documents)} embeddings")
             except Exception as e:
-                raise Exception(f"OpenAI embedding generation failed: {e}")
+                raise Exception(f"OpenAI embedding generation failed: {e}") from e
 
         return embeddings
 

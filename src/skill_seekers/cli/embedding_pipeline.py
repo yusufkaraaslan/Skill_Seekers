@@ -121,7 +121,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 from openai import OpenAI
                 self._client = OpenAI(api_key=self.api_key)
             except ImportError:
-                raise ImportError("OpenAI package not installed. Install with: pip install openai")
+                raise ImportError("OpenAI package not installed. Install with: pip install openai") from None
         return self._client
 
     def generate_embeddings(self, texts: list[str]) -> list[list[float]]:

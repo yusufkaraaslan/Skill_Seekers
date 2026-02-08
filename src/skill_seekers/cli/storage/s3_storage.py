@@ -112,7 +112,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
             )
             return f"s3://{self.bucket}/{remote_path}"
         except ClientError as e:
-            raise Exception(f"S3 upload failed: {e}")
+            raise Exception(f"S3 upload failed: {e}") from e
 
     def download_file(self, remote_path: str, local_path: str) -> None:
         """Download file from S3."""
@@ -127,8 +127,8 @@ class S3StorageAdaptor(BaseStorageAdaptor):
             )
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
-                raise FileNotFoundError(f"Remote file not found: {remote_path}")
-            raise Exception(f"S3 download failed: {e}")
+                raise FileNotFoundError(f"Remote file not found: {remote_path}") from e
+            raise Exception(f"S3 download failed: {e}") from e
 
     def delete_file(self, remote_path: str) -> None:
         """Delete file from S3."""
@@ -138,7 +138,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
                 Key=remote_path
             )
         except ClientError as e:
-            raise Exception(f"S3 deletion failed: {e}")
+            raise Exception(f"S3 deletion failed: {e}") from e
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
@@ -167,7 +167,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
 
             return files
         except ClientError as e:
-            raise Exception(f"S3 listing failed: {e}")
+            raise Exception(f"S3 listing failed: {e}") from e
 
     def file_exists(self, remote_path: str) -> bool:
         """Check if file exists in S3."""
@@ -180,7 +180,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
                 return False
-            raise Exception(f"S3 head_object failed: {e}")
+            raise Exception(f"S3 head_object failed: {e}") from e
 
     def get_file_url(self, remote_path: str, expires_in: int = 3600) -> str:
         """Generate presigned URL for S3 object."""
@@ -195,7 +195,7 @@ class S3StorageAdaptor(BaseStorageAdaptor):
             )
             return url
         except ClientError as e:
-            raise Exception(f"S3 presigned URL generation failed: {e}")
+            raise Exception(f"S3 presigned URL generation failed: {e}") from e
 
     def copy_file(self, source_path: str, dest_path: str) -> None:
         """Copy file within S3 bucket (server-side copy)."""
@@ -211,5 +211,5 @@ class S3StorageAdaptor(BaseStorageAdaptor):
             )
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
-                raise FileNotFoundError(f"Source file not found: {source_path}")
-            raise Exception(f"S3 copy failed: {e}")
+                raise FileNotFoundError(f"Source file not found: {source_path}") from e
+            raise Exception(f"S3 copy failed: {e}") from e

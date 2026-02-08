@@ -24,7 +24,6 @@ from pathlib import Path
 try:
     from fastapi import FastAPI, HTTPException, Query
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse
     import uvicorn
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -162,7 +161,7 @@ if FASTAPI_AVAILABLE:
             )
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/embed/batch", response_model=BatchEmbeddingResponse)
     async def embed_batch(request: BatchEmbeddingRequest):
@@ -225,7 +224,7 @@ if FASTAPI_AVAILABLE:
             )
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/embed/skill", response_model=SkillEmbeddingResponse)
     async def embed_skill(request: SkillEmbeddingRequest):
@@ -287,7 +286,7 @@ if FASTAPI_AVAILABLE:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/cache/stats", response_model=dict)
     async def cache_stats():

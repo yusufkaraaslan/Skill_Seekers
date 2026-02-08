@@ -230,7 +230,6 @@ class ChromaAdaptor(SkillAdaptor):
         """
         try:
             import chromadb
-            from chromadb.config import Settings
         except ImportError:
             return {
                 "success": False,
@@ -384,7 +383,7 @@ class ChromaAdaptor(SkillAdaptor):
         try:
             from openai import OpenAI
         except ImportError:
-            raise ImportError("openai not installed. Run: pip install openai")
+            raise ImportError("openai not installed. Run: pip install openai") from None
 
         api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not api_key:
@@ -408,7 +407,7 @@ class ChromaAdaptor(SkillAdaptor):
                 embeddings.extend([item.embedding for item in response.data])
                 print(f"  ✓ Processed {min(i+batch_size, len(documents))}/{len(documents)}")
             except Exception as e:
-                raise Exception(f"OpenAI embedding generation failed: {e}")
+                raise Exception(f"OpenAI embedding generation failed: {e}") from e
 
         return embeddings
 

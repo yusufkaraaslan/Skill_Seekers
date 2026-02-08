@@ -273,7 +273,7 @@ class EmbeddingGenerator:
 
             return embedding
         except Exception as e:
-            raise Exception(f"OpenAI embedding generation failed: {e}")
+            raise Exception(f"OpenAI embedding generation failed: {e}") from e
 
     def _generate_openai_batch(
         self, texts: list[str], model: str, normalize: bool, batch_size: int
@@ -308,7 +308,7 @@ class EmbeddingGenerator:
                 all_embeddings.extend(batch_embeddings)
 
             except Exception as e:
-                raise Exception(f"OpenAI batch embedding generation failed: {e}")
+                raise Exception(f"OpenAI batch embedding generation failed: {e}") from e
 
         dimensions = len(all_embeddings[0]) if all_embeddings else 0
         return all_embeddings, dimensions
@@ -338,7 +338,7 @@ class EmbeddingGenerator:
 
             return embedding
         except Exception as e:
-            raise Exception(f"Voyage AI embedding generation failed: {e}")
+            raise Exception(f"Voyage AI embedding generation failed: {e}") from e
 
     def _generate_voyage_batch(
         self, texts: list[str], model: str, normalize: bool, batch_size: int
@@ -373,7 +373,7 @@ class EmbeddingGenerator:
                 all_embeddings.extend(batch_embeddings)
 
             except Exception as e:
-                raise Exception(f"Voyage AI batch embedding generation failed: {e}")
+                raise Exception(f"Voyage AI batch embedding generation failed: {e}") from e
 
         dimensions = len(all_embeddings[0]) if all_embeddings else 0
         return all_embeddings, dimensions

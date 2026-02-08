@@ -136,7 +136,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
 
             return f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{remote_path}"
         except Exception as e:
-            raise Exception(f"Azure upload failed: {e}")
+            raise Exception(f"Azure upload failed: {e}") from e
 
     def download_file(self, remote_path: str, local_path: str) -> None:
         """Download file from Azure Blob Storage."""
@@ -150,9 +150,9 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
                 download_stream = blob_client.download_blob()
                 download_file.write(download_stream.readall())
         except ResourceNotFoundError:
-            raise FileNotFoundError(f"Remote file not found: {remote_path}")
+            raise FileNotFoundError(f"Remote file not found: {remote_path}") from None
         except Exception as e:
-            raise Exception(f"Azure download failed: {e}")
+            raise Exception(f"Azure download failed: {e}") from e
 
     def delete_file(self, remote_path: str) -> None:
         """Delete file from Azure Blob Storage."""
@@ -160,9 +160,9 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
             blob_client = self.container_client.get_blob_client(remote_path)
             blob_client.delete_blob()
         except ResourceNotFoundError:
-            raise FileNotFoundError(f"Remote file not found: {remote_path}")
+            raise FileNotFoundError(f"Remote file not found: {remote_path}") from None
         except Exception as e:
-            raise Exception(f"Azure deletion failed: {e}")
+            raise Exception(f"Azure deletion failed: {e}") from e
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
@@ -186,7 +186,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
 
             return files
         except Exception as e:
-            raise Exception(f"Azure listing failed: {e}")
+            raise Exception(f"Azure listing failed: {e}") from e
 
     def file_exists(self, remote_path: str) -> bool:
         """Check if file exists in Azure Blob Storage."""
@@ -194,7 +194,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
             blob_client = self.container_client.get_blob_client(remote_path)
             return blob_client.exists()
         except Exception as e:
-            raise Exception(f"Azure file existence check failed: {e}")
+            raise Exception(f"Azure file existence check failed: {e}") from e
 
     def get_file_url(self, remote_path: str, expires_in: int = 3600) -> str:
         """Generate SAS URL for Azure blob."""
@@ -222,7 +222,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
         except FileNotFoundError:
             raise
         except Exception as e:
-            raise Exception(f"Azure SAS URL generation failed: {e}")
+            raise Exception(f"Azure SAS URL generation failed: {e}") from e
 
     def copy_file(self, source_path: str, dest_path: str) -> None:
         """Copy file within Azure container (server-side copy)."""
@@ -250,4 +250,4 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
         except FileNotFoundError:
             raise
         except Exception as e:
-            raise Exception(f"Azure copy failed: {e}")
+            raise Exception(f"Azure copy failed: {e}") from e

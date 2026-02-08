@@ -97,7 +97,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
             blob.upload_from_filename(str(local_file))
             return f"gs://{self.bucket_name}/{remote_path}"
         except Exception as e:
-            raise Exception(f"GCS upload failed: {e}")
+            raise Exception(f"GCS upload failed: {e}") from e
 
     def download_file(self, remote_path: str, local_path: str) -> None:
         """Download file from GCS."""
@@ -108,9 +108,9 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
             blob = self.bucket.blob(remote_path)
             blob.download_to_filename(str(local_file))
         except NotFound:
-            raise FileNotFoundError(f"Remote file not found: {remote_path}")
+            raise FileNotFoundError(f"Remote file not found: {remote_path}") from None
         except Exception as e:
-            raise Exception(f"GCS download failed: {e}")
+            raise Exception(f"GCS download failed: {e}") from e
 
     def delete_file(self, remote_path: str) -> None:
         """Delete file from GCS."""
@@ -118,9 +118,9 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
             blob = self.bucket.blob(remote_path)
             blob.delete()
         except NotFound:
-            raise FileNotFoundError(f"Remote file not found: {remote_path}")
+            raise FileNotFoundError(f"Remote file not found: {remote_path}") from None
         except Exception as e:
-            raise Exception(f"GCS deletion failed: {e}")
+            raise Exception(f"GCS deletion failed: {e}") from e
 
     def list_files(
         self, prefix: str = "", max_results: int = 1000
@@ -145,7 +145,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
 
             return files
         except Exception as e:
-            raise Exception(f"GCS listing failed: {e}")
+            raise Exception(f"GCS listing failed: {e}") from e
 
     def file_exists(self, remote_path: str) -> bool:
         """Check if file exists in GCS."""
@@ -153,7 +153,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
             blob = self.bucket.blob(remote_path)
             return blob.exists()
         except Exception as e:
-            raise Exception(f"GCS file existence check failed: {e}")
+            raise Exception(f"GCS file existence check failed: {e}") from e
 
     def get_file_url(self, remote_path: str, expires_in: int = 3600) -> str:
         """Generate signed URL for GCS object."""
@@ -172,7 +172,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
         except FileNotFoundError:
             raise
         except Exception as e:
-            raise Exception(f"GCS signed URL generation failed: {e}")
+            raise Exception(f"GCS signed URL generation failed: {e}") from e
 
     def copy_file(self, source_path: str, dest_path: str) -> None:
         """Copy file within GCS bucket (server-side copy)."""
@@ -190,4 +190,4 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
         except FileNotFoundError:
             raise
         except Exception as e:
-            raise Exception(f"GCS copy failed: {e}")
+            raise Exception(f"GCS copy failed: {e}") from e

@@ -19,19 +19,19 @@ from skill_seekers.cli.storage import (
 
 # Check if cloud storage dependencies are available
 try:
-    import boto3
+    import boto3  # noqa: F401
     BOTO3_AVAILABLE = True
 except ImportError:
     BOTO3_AVAILABLE = False
 
 try:
-    from google.cloud import storage
+    from google.cloud import storage  # noqa: F401
     GCS_AVAILABLE = True
 except ImportError:
     GCS_AVAILABLE = False
 
 try:
-    from azure.storage.blob import BlobServiceClient
+    from azure.storage.blob import BlobServiceClient  # noqa: F401
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False
