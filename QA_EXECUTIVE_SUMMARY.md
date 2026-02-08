@@ -49,6 +49,33 @@ All critical systems validated, 232 core tests passing (100% pass rate), and onl
 
 ---
 
+## ✅ Test Failures Found & Fixed (Post-QA)
+
+After initial QA audit, full test suite execution revealed 3 test failures from legacy config removal:
+
+### Fixed Issues
+1. **test_unified.py::test_detect_unified_format** ✅ FIXED
+   - Cause: Test expected `is_unified` to be False for legacy configs
+   - Fix: Updated to expect `is_unified=True` always, validation raises ValueError
+
+2. **test_unified.py::test_backward_compatibility** ✅ FIXED
+   - Cause: Called removed `convert_legacy_to_unified()` method
+   - Fix: Test now validates proper error message for legacy configs
+
+3. **test_integration.py::TestConfigLoading::test_load_valid_config** ✅ FIXED
+   - Cause: Used legacy config format in test
+   - Fix: Converted to unified format with sources array
+
+### Kimi's Finding Addressed
+4. **pdf_extractor_poc.py undefined variable bug** ✅ ALREADY FIXED
+   - Lines 302, 330: `[l for line in ...]` → `[line for line in ...]`
+   - Fixed in commit 6439c85 (Jan 17, 2026)
+
+**Fix Results:** All 41 tests in test_unified.py + test_integration.py passing (1.25s)
+**Documentation:** QA_TEST_FIXES_SUMMARY.md
+
+---
+
 ## 📊 Issue Breakdown
 
 ### Issue #1: Missing Test Dependency (Medium Priority)
@@ -161,6 +188,8 @@ All future-compatibility warnings with clear migration paths:
 - ✅ QA audit complete
 - ✅ Documentation updated
 - ✅ No critical bugs
+- ✅ Test failures fixed (3 failures from legacy removal → all passing)
+- ✅ Kimi's findings addressed (undefined variable bug already fixed)
 
 ### Post-Release v2.11.1 (Should Do)
 **Priority: Medium | Time: 1 hour total**
