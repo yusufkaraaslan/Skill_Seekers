@@ -5,6 +5,7 @@ Tests the async/await implementation for parallel web scraping
 """
 
 import asyncio
+import inspect
 import os
 import tempfile
 import unittest
@@ -103,7 +104,7 @@ class TestAsyncScrapeMethods(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
                 self.assertTrue(hasattr(converter, "scrape_page_async"))
-                self.assertTrue(asyncio.iscoroutinefunction(converter.scrape_page_async))
+                self.assertTrue(inspect.iscoroutinefunction(converter.scrape_page_async))
             finally:
                 os.chdir(self.original_cwd)
 
@@ -120,7 +121,7 @@ class TestAsyncScrapeMethods(unittest.TestCase):
                 os.chdir(tmpdir)
                 converter = DocToSkillConverter(config, dry_run=True)
                 self.assertTrue(hasattr(converter, "scrape_all_async"))
-                self.assertTrue(asyncio.iscoroutinefunction(converter.scrape_all_async))
+                self.assertTrue(inspect.iscoroutinefunction(converter.scrape_all_async))
             finally:
                 os.chdir(self.original_cwd)
 
