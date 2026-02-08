@@ -239,9 +239,7 @@ class StreamingIngester:
                 }
 
                 # Chunk document and yield chunks
-                chunk_count = 0
-                for chunk_text, chunk_meta in self.chunk_document(content, metadata):
-                    chunk_count += 1
+                for chunk_count, (chunk_text, chunk_meta) in enumerate(self.chunk_document(content, metadata), start=1):
                     self.progress.total_chunks += 1
 
                     # Convert chunk metadata to dict

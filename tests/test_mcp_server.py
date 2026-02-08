@@ -459,14 +459,18 @@ class TestValidateConfigTool(unittest.IsolatedAsyncioTestCase):
 
     async def test_validate_valid_config(self):
         """Test validating a valid config"""
-        # Create valid config
+        # Create valid config (unified format)
         config_path = Path("configs/valid.json")
         valid_config = {
             "name": "valid-test",
-            "base_url": "https://example.com/",
-            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
-            "rate_limit": 0.5,
-            "max_pages": 100,
+            "description": "Test configuration",
+            "sources": [{
+                "type": "documentation",
+                "base_url": "https://example.com/",
+                "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
+                "rate_limit": 0.5,
+                "max_pages": 100,
+            }],
         }
         with open(config_path, "w") as f:
             json.dump(valid_config, f)
@@ -569,7 +573,7 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_requires_token(self):
         """Should error without GitHub token"""
         args = {
-            "config_json": '{"name": "test", "description": "Test", "base_url": "https://example.com"}'
+            "config_json": '{"name": "test", "description": "Test", "sources": [{"type": "documentation", "base_url": "https://example.com"}]}'
         }
         result = await skill_seeker_server.submit_config_tool(args)
         self.assertIn("GitHub token required", result[0].text)
@@ -590,7 +594,7 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_validates_name_format(self):
         """Should reject invalid name characters"""
         args = {
-            "config_json": '{"name": "React@2024!", "description": "Test", "base_url": "https://example.com"}',
+            "config_json": '{"name": "React@2024!", "description": "Test", "sources": [{"type": "documentation", "base_url": "https://example.com"}]}',
             "github_token": "fake_token",
         }
         result = await skill_seeker_server.submit_config_tool(args)
@@ -599,35 +603,28 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_validates_url_format(self):
         """Should reject invalid URL format"""
         args = {
-            "config_json": '{"name": "test", "description": "Test", "base_url": "not-a-url"}',
+            "config_json": '{"name": "test", "description": "Test", "sources": [{"type": "documentation", "base_url": "not-a-url"}]}',
             "github_token": "fake_token",
         }
         result = await skill_seeker_server.submit_config_tool(args)
         self.assertIn("validation failed", result[0].text.lower())
 
-    async def test_submit_config_accepts_legacy_format(self):
-        """Should accept valid legacy config"""
-        valid_config = {
+    async def test_submit_config_rejects_legacy_format(self):
+        """Should reject legacy config format (removed in v2.11.0)"""
+        legacy_config = {
             "name": "testframework",
             "description": "Test framework docs",
-            "base_url": "https://docs.test.com/",
+            "base_url": "https://docs.test.com/",  # Legacy: base_url at root level
             "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
             "max_pages": 100,
         }
-        args = {"config_json": json.dumps(valid_config), "github_token": "fake_token"}
+        args = {"config_json": json.dumps(legacy_config), "github_token": "fake_token"}
 
-        # Mock GitHub API call
-        with patch("github.Github") as mock_gh:
-            mock_repo = MagicMock()
-            mock_issue = MagicMock()
-            mock_issue.html_url = "https://github.com/test/issue/1"
-            mock_issue.number = 1
-            mock_repo.create_issue.return_value = mock_issue
-            mock_gh.return_value.get_repo.return_value = mock_repo
-
-            result = await skill_seeker_server.submit_config_tool(args)
-            self.assertIn("Config submitted successfully", result[0].text)
-            self.assertIn("https://github.com", result[0].text)
+        result = await skill_seeker_server.submit_config_tool(args)
+        # Should reject with helpful error message
+        self.assertIn("❌", result[0].text)
+        self.assertIn("LEGACY CONFIG FORMAT DETECTED", result[0].text)
+        self.assertIn("sources", result[0].text)  # Should mention unified format with sources array
 
     async def test_submit_config_accepts_unified_format(self):
         """Should accept valid unified config"""
@@ -658,7 +655,12 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
         """Should accept config_path parameter"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(
-                {"name": "testfile", "description": "From file", "base_url": "https://test.com/"}, f
+                {
+                    "name": "testfile",
+                    "description": "From file",
+                    "sources": [{"type": "documentation", "base_url": "https://test.com/"}],
+                },
+                f,
             )
             temp_path = f.name
 
@@ -681,7 +683,7 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_detects_category(self):
         """Should auto-detect category from config name"""
         args = {
-            "config_json": '{"name": "react-test", "description": "React", "base_url": "https://react.dev/"}',
+            "config_json": '{"name": "react-test", "description": "React", "sources": [{"type": "documentation", "base_url": "https://react.dev/"}]}',
             "github_token": "fake_token",
         }
 

@@ -65,16 +65,19 @@ async def generate_config(args: dict) -> list[TextContent]:
     else:
         limit_msg = str(max_pages)
 
-    # Create config
+    # Create config (unified format)
     config = {
         "name": name,
         "description": description,
-        "base_url": url,
-        "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
-        "url_patterns": {"include": [], "exclude": []},
-        "categories": {},
-        "rate_limit": rate_limit,
-        "max_pages": max_pages,
+        "sources": [{
+            "type": "documentation",
+            "base_url": url,
+            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+            "url_patterns": {"include": [], "exclude": []},
+            "categories": {},
+            "rate_limit": rate_limit,
+            "max_pages": max_pages,
+        }],
     }
 
     # Save to configs directory

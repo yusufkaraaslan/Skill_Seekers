@@ -13,7 +13,7 @@ from pathlib import Path
 from ..sync import SyncMonitor
 
 
-def handle_signal(signum, frame):
+def handle_signal(_signum, _frame):
     """Handle interrupt signals."""
     print("\n🛑 Stopping sync monitor...")
     sys.exit(0)

@@ -352,9 +352,8 @@ class RAGChunker:
 
             # Add chunk if it meets minimum size requirement
             # (unless the entire text is smaller than target size)
-            if chunk_text.strip():
-                if len(text) <= target_size_chars or len(chunk_text) >= min_size_chars:
-                    chunks.append(chunk_text)
+            if chunk_text.strip() and (len(text) <= target_size_chars or len(chunk_text) >= min_size_chars):
+                chunks.append(chunk_text)
 
             # Move to next chunk with overlap
             if j < len(boundaries) - 1:

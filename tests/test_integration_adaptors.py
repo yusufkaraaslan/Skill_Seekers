@@ -208,10 +208,8 @@ class TestWeaviateIntegration:
 
         finally:
             # Cleanup - Delete collection
-            try:
+            with contextlib.suppress(Exception):
                 client.schema.delete_class(class_name)
-            except Exception:
-                pass  # Best effort cleanup
 
     def test_weaviate_metadata_preservation(self, sample_skill_dir, tmp_path):
         """Test that metadata is correctly stored and retrieved."""
@@ -357,10 +355,8 @@ class TestChromaIntegration:
 
         finally:
             # Cleanup - Delete collection
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_collection(name=collection_name)
-            except Exception:
-                pass  # Best effort cleanup
 
     def test_chroma_query_filtering(self, sample_skill_dir, tmp_path):
         """Test metadata filtering in ChromaDB queries."""
@@ -523,10 +519,8 @@ class TestQdrantIntegration:
 
         finally:
             # Cleanup - Delete collection
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_collection(collection_name)
-            except Exception:
-                pass  # Best effort cleanup
 
     def test_qdrant_payload_filtering(self, sample_skill_dir, tmp_path):
         """Test payload filtering in Qdrant."""
