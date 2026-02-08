@@ -18,9 +18,10 @@ jobs:
         submodules: 'recursive'
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
 
     - name: Install uv
       run: |
@@ -42,6 +43,11 @@ jobs:
     - name: Extract version from tag
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Verify Python version
+      run: |
+        python --version
+        python -c "import sys; assert sys.version_info >= (3, 10), f'Python {sys.version} is not >= 3.10'"
 
     - name: Create Release Notes
       id: release_notes
