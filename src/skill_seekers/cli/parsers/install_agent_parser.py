@@ -1,4 +1,5 @@
 """Install-agent subcommand parser."""
+
 from .base import SubcommandParser
 
 
@@ -19,9 +20,7 @@ class InstallAgentParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add install-agent-specific arguments."""
-        parser.add_argument(
-            "skill_directory", help="Skill directory path (e.g., output/react/)"
-        )
+        parser.add_argument("skill_directory", help="Skill directory path (e.g., output/react/)")
         parser.add_argument(
             "--agent",
             required=True,

@@ -74,12 +74,7 @@ class EmbeddingCache:
 
         self.conn.commit()
 
-    def set(
-        self,
-        hash_key: str,
-        embedding: list[float],
-        model: str
-    ) -> None:
+    def set(self, hash_key: str, embedding: list[float], model: str) -> None:
         """
         Store embedding in cache.
 
@@ -94,11 +89,14 @@ class EmbeddingCache:
         embedding_json = json.dumps(embedding)
         dimensions = len(embedding)
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO embeddings
             (hash, embedding, model, dimensions, created_at, accessed_at, access_count)
             VALUES (?, ?, ?, ?, ?, ?, 1)
-        """, (hash_key, embedding_json, model, dimensions, now, now))
+        """,
+            (hash_key, embedding_json, model, dimensions, now, now),
+        )
 
         self.conn.commit()
 
@@ -115,11 +113,14 @@ class EmbeddingCache:
         cursor = self.conn.cursor()
 
         # Get embedding
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT embedding, created_at
             FROM embeddings
             WHERE hash = ?
-        """, (hash_key,))
+        """,
+            (hash_key,),
+        )
 
         row = cursor.fetchone()
         if not row:
@@ -136,11 +137,14 @@ class EmbeddingCache:
 
         # Update access stats
         now = datetime.utcnow().isoformat()
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE embeddings
             SET accessed_at = ?, access_count = access_count + 1
             WHERE hash = ?
-        """, (now, hash_key))
+        """,
+            (now, hash_key),
+        )
         self.conn.commit()
 
         return json.loads(embedding_json)
@@ -178,11 +182,14 @@ class EmbeddingCache:
         """
         cursor = self.conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT created_at
             FROM embeddings
             WHERE hash = ?
-        """, (hash_key,))
+        """,
+            (hash_key,),
+        )
 
         row = cursor.fetchone()
         if not row:
@@ -206,10 +213,13 @@ class EmbeddingCache:
         """
         cursor = self.conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             DELETE FROM embeddings
             WHERE hash = ?
-        """, (hash_key,))
+        """,
+            (hash_key,),
+        )
 
         self.conn.commit()
 
@@ -226,10 +236,13 @@ class EmbeddingCache:
         cursor = self.conn.cursor()
 
         if model:
-            cursor.execute("""
+            cursor.execute(
+                """
                 DELETE FROM embeddings
                 WHERE model = ?
-            """, (model,))
+            """,
+                (model,),
+            )
         else:
             cursor.execute("DELETE FROM embeddings")
 
@@ -249,10 +262,13 @@ class EmbeddingCache:
 
         cutoff = (datetime.utcnow() - timedelta(days=self.ttl_days)).isoformat()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             DELETE FROM embeddings
             WHERE created_at < ?
-        """, (cutoff,))
+        """,
+            (cutoff,),
+        )
 
         deleted = cursor.rowcount
         self.conn.commit()
@@ -300,17 +316,19 @@ class EmbeddingCache:
             LIMIT 10
         """)
         top_accessed = [
-            {"hash": row[0], "model": row[1], "access_count": row[2]}
-            for row in cursor.fetchall()
+            {"hash": row[0], "model": row[1], "access_count": row[2]} for row in cursor.fetchall()
         ]
 
         # Expired entries
         cutoff = (datetime.utcnow() - timedelta(days=self.ttl_days)).isoformat()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT COUNT(*)
             FROM embeddings
             WHERE created_at < ?
-        """, (cutoff,))
+        """,
+            (cutoff,),
+        )
         expired = cursor.fetchone()[0]
 
         return {
@@ -318,7 +336,7 @@ class EmbeddingCache:
             "by_model": by_model,
             "top_accessed": top_accessed,
             "expired": expired,
-            "ttl_days": self.ttl_days
+            "ttl_days": self.ttl_days,
         }
 
     def close(self):

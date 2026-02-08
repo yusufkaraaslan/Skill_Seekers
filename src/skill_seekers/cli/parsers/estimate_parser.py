@@ -1,4 +1,5 @@
 """Estimate subcommand parser."""
+
 from .base import SubcommandParser
 
 

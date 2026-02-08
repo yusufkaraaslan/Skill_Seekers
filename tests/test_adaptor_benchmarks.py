@@ -85,9 +85,17 @@ class TestAdaptorBenchmarks(unittest.TestCase):
 
         # Platforms to benchmark
         platforms = [
-            "claude", "gemini", "openai", "markdown",  # IDE integrations
-            "langchain", "llama-index", "haystack",     # RAG frameworks
-            "weaviate", "chroma", "faiss", "qdrant"     # Vector DBs
+            "claude",
+            "gemini",
+            "openai",
+            "markdown",  # IDE integrations
+            "langchain",
+            "llama-index",
+            "haystack",  # RAG frameworks
+            "weaviate",
+            "chroma",
+            "faiss",
+            "qdrant",  # Vector DBs
         ]
 
         results = {}
@@ -115,20 +123,19 @@ class TestAdaptorBenchmarks(unittest.TestCase):
             min_time = min(times)
             max_time = max(times)
 
-            results[platform] = {
-                "avg": avg_time,
-                "min": min_time,
-                "max": max_time
-            }
+            results[platform] = {"avg": avg_time, "min": min_time, "max": max_time}
 
-            print(f"{platform:15} - Avg: {avg_time*1000:6.2f}ms | "
-                  f"Min: {min_time*1000:6.2f}ms | Max: {max_time*1000:6.2f}ms")
+            print(
+                f"{platform:15} - Avg: {avg_time * 1000:6.2f}ms | "
+                f"Min: {min_time * 1000:6.2f}ms | Max: {max_time * 1000:6.2f}ms"
+            )
 
         # Performance assertions (should complete in reasonable time)
         for platform, metrics in results.items():
             self.assertLess(
-                metrics["avg"], 0.5,  # Should average < 500ms
-                f"{platform} format_skill_md too slow: {metrics['avg']*1000:.2f}ms"
+                metrics["avg"],
+                0.5,  # Should average < 500ms
+                f"{platform} format_skill_md too slow: {metrics['avg'] * 1000:.2f}ms",
             )
 
     def test_benchmark_package_operations(self):
@@ -158,12 +165,9 @@ class TestAdaptorBenchmarks(unittest.TestCase):
             # Get file size
             file_size_kb = package_path.stat().st_size / 1024
 
-            results[platform] = {
-                "time": elapsed,
-                "size_kb": file_size_kb
-            }
+            results[platform] = {"time": elapsed, "size_kb": file_size_kb}
 
-            print(f"{platform:15} - Time: {elapsed*1000:7.2f}ms | Size: {file_size_kb:7.1f} KB")
+            print(f"{platform:15} - Time: {elapsed * 1000:7.2f}ms | Size: {file_size_kb:7.1f} KB")
 
             # Validate output
             self.assertTrue(package_path.exists())
@@ -171,12 +175,14 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         # Performance assertions
         for platform, metrics in results.items():
             self.assertLess(
-                metrics["time"], 1.0,  # Should complete < 1 second
-                f"{platform} packaging too slow: {metrics['time']*1000:.2f}ms"
+                metrics["time"],
+                1.0,  # Should complete < 1 second
+                f"{platform} packaging too slow: {metrics['time'] * 1000:.2f}ms",
             )
             self.assertLess(
-                metrics["size_kb"], 1000,  # Should be < 1MB for 10 refs
-                f"{platform} package too large: {metrics['size_kb']:.1f}KB"
+                metrics["size_kb"],
+                1000,  # Should be < 1MB for 10 refs
+                f"{platform} package too large: {metrics['size_kb']:.1f}KB",
             )
 
     def test_benchmark_scaling_with_reference_count(self):
@@ -210,14 +216,18 @@ class TestAdaptorBenchmarks(unittest.TestCase):
             json.loads(formatted)
             size_kb = len(formatted) / 1024
 
-            results.append({
-                "count": ref_count,
-                "time": elapsed,
-                "time_per_ref": time_per_ref,
-                "size_kb": size_kb
-            })
+            results.append(
+                {
+                    "count": ref_count,
+                    "time": elapsed,
+                    "time_per_ref": time_per_ref,
+                    "size_kb": size_kb,
+                }
+            )
 
-            print(f"{ref_count:4} | {elapsed*1000:10.2f} | {time_per_ref*1000:10.3f} | {size_kb:10.1f}")
+            print(
+                f"{ref_count:4} | {elapsed * 1000:10.2f} | {time_per_ref * 1000:10.3f} | {size_kb:10.1f}"
+            )
 
         # Analyze scaling behavior
         # Time per ref should not increase significantly (linear scaling)
@@ -230,10 +240,7 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         print(f"(Time per ref at 50 refs / Time per ref at 1 ref)")
 
         # Assert linear or sub-linear scaling (not exponential)
-        self.assertLess(
-            scaling_factor, 3.0,
-            f"Non-linear scaling detected: {scaling_factor:.2f}x"
-        )
+        self.assertLess(scaling_factor, 3.0, f"Non-linear scaling detected: {scaling_factor:.2f}x")
 
     def test_benchmark_json_vs_zip_size_comparison(self):
         """Compare output sizes: JSON vs ZIP/tar.gz"""
@@ -263,16 +270,15 @@ class TestAdaptorBenchmarks(unittest.TestCase):
 
             size_kb = package_path.stat().st_size / 1024
 
-            results[platform] = {
-                "format": format_name,
-                "size_kb": size_kb
-            }
+            results[platform] = {"format": format_name, "size_kb": size_kb}
 
             print(f"{platform:15} | {format_name:8} | {size_kb:10.1f}")
 
         # Analyze results
         json_sizes = [v["size_kb"] for k, v in results.items() if v["format"] == "JSON"]
-        compressed_sizes = [v["size_kb"] for k, v in results.items() if v["format"] in ["ZIP", "tar.gz"]]
+        compressed_sizes = [
+            v["size_kb"] for k, v in results.items() if v["format"] in ["ZIP", "tar.gz"]
+        ]
 
         if json_sizes and compressed_sizes:
             avg_json = sum(json_sizes) / len(json_sizes)
@@ -280,7 +286,7 @@ class TestAdaptorBenchmarks(unittest.TestCase):
 
             print(f"\nAverage JSON size: {avg_json:.1f} KB")
             print(f"Average compressed size: {avg_compressed:.1f} KB")
-            print(f"Compression ratio: {avg_json/avg_compressed:.2f}x")
+            print(f"Compression ratio: {avg_json / avg_compressed:.2f}x")
 
     def test_benchmark_metadata_overhead(self):
         """Measure metadata processing overhead"""
@@ -299,7 +305,7 @@ class TestAdaptorBenchmarks(unittest.TestCase):
             description="A comprehensive test skill for benchmarking purposes",
             version="2.5.0",
             author="Benchmark Suite",
-            tags=["test", "benchmark", "performance", "validation", "quality"]
+            tags=["test", "benchmark", "performance", "validation", "quality"],
         )
 
         adaptor = get_adaptor("langchain")
@@ -326,15 +332,12 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         overhead = avg_rich - avg_minimal
         overhead_pct = (overhead / avg_minimal) * 100
 
-        print(f"\nMinimal metadata: {avg_minimal*1000:.2f}ms")
-        print(f"Rich metadata:    {avg_rich*1000:.2f}ms")
-        print(f"Overhead:         {overhead*1000:.2f}ms ({overhead_pct:.1f}%)")
+        print(f"\nMinimal metadata: {avg_minimal * 1000:.2f}ms")
+        print(f"Rich metadata:    {avg_rich * 1000:.2f}ms")
+        print(f"Overhead:         {overhead * 1000:.2f}ms ({overhead_pct:.1f}%)")
 
         # Overhead should be negligible (< 10%)
-        self.assertLess(
-            overhead_pct, 10.0,
-            f"Metadata overhead too high: {overhead_pct:.1f}%"
-        )
+        self.assertLess(overhead_pct, 10.0, f"Metadata overhead too high: {overhead_pct:.1f}%")
 
     def test_benchmark_empty_vs_full_skill(self):
         """Compare performance: empty skill vs full skill"""
@@ -360,9 +363,9 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         adaptor.format_skill_md(full_dir, metadata)
         full_time = time.perf_counter() - start
 
-        print(f"\nEmpty skill: {empty_time*1000:.2f}ms")
-        print(f"Full skill (50 refs): {full_time*1000:.2f}ms")
-        print(f"Ratio: {full_time/empty_time:.1f}x")
+        print(f"\nEmpty skill: {empty_time * 1000:.2f}ms")
+        print(f"Full skill (50 refs): {full_time * 1000:.2f}ms")
+        print(f"Ratio: {full_time / empty_time:.1f}x")
 
         # Empty should be very fast
         self.assertLess(empty_time, 0.01, "Empty skill processing too slow")

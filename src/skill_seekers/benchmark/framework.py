@@ -11,12 +11,7 @@ from typing import Any
 from collections.abc import Callable
 from pathlib import Path
 
-from .models import (
-    Metric,
-    TimingResult,
-    MemoryUsage,
-    BenchmarkReport
-)
+from .models import Metric, TimingResult, MemoryUsage, BenchmarkReport
 
 
 class BenchmarkResult:
@@ -97,7 +92,7 @@ class BenchmarkResult:
             memory=self.memory,
             metrics=self.metrics,
             system_info=self.system_info,
-            recommendations=self.recommendations
+            recommendations=self.recommendations,
         )
 
 
@@ -161,7 +156,7 @@ class Benchmark:
                 operation=operation,
                 duration=duration,
                 iterations=iterations,
-                avg_duration=duration / iterations if iterations > 1 else duration
+                avg_duration=duration / iterations if iterations > 1 else duration,
             )
 
             self.result.add_timing(timing)
@@ -201,7 +196,7 @@ class Benchmark:
                 before_mb=mem_before,
                 after_mb=mem_after,
                 peak_mb=peak_memory,
-                allocated_mb=mem_after - mem_before
+                allocated_mb=mem_after - mem_before,
             )
 
             self.result.add_memory(usage)
@@ -212,7 +207,7 @@ class Benchmark:
         *args,
         operation: str | None = None,
         track_memory: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Any:
         """
         Measure function execution.
@@ -260,17 +255,16 @@ class Benchmark:
             def load_config(path):
                 return json.load(open(path))
         """
+
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 return self.measure(
-                    func,
-                    *args,
-                    operation=operation,
-                    track_memory=track_memory,
-                    **kwargs
+                    func, *args, operation=operation, track_memory=track_memory, **kwargs
                 )
+
             return wrapper
+
         return decorator
 
     def metric(self, name: str, value: float, unit: str):
@@ -285,11 +279,7 @@ class Benchmark:
         Examples:
             benchmark.metric("pages_per_sec", 12.5, "pages/sec")
         """
-        metric = Metric(
-            name=name,
-            value=value,
-            unit=unit
-        )
+        metric = Metric(name=name, value=value, unit=unit)
         self.result.add_metric(metric)
 
     def recommend(self, text: str):
@@ -328,7 +318,7 @@ class Benchmark:
 
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(report.model_dump_json(indent=2))
 
     def analyze(self):
@@ -339,11 +329,7 @@ class Benchmark:
         """
         # Analyze timing bottlenecks
         if self.result.timings:
-            sorted_timings = sorted(
-                self.result.timings,
-                key=lambda t: t.duration,
-                reverse=True
-            )
+            sorted_timings = sorted(self.result.timings, key=lambda t: t.duration, reverse=True)
 
             slowest = sorted_timings[0]
             total_time = sum(t.duration for t in self.result.timings)
@@ -351,7 +337,7 @@ class Benchmark:
             if slowest.duration > total_time * 0.5:
                 self.recommend(
                     f"Bottleneck: '{slowest.operation}' takes "
-                    f"{slowest.duration:.1f}s ({slowest.duration/total_time*100:.0f}% of total)"
+                    f"{slowest.duration:.1f}s ({slowest.duration / total_time * 100:.0f}% of total)"
                 )
 
         # Analyze memory usage
@@ -360,8 +346,7 @@ class Benchmark:
 
             if peak > 1000:  # >1GB
                 self.recommend(
-                    f"High memory usage: {peak:.0f}MB peak. "
-                    "Consider processing in batches."
+                    f"High memory usage: {peak:.0f}MB peak. Consider processing in batches."
                 )
 
             # Check for memory leaks

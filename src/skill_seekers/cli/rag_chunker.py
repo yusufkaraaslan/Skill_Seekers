@@ -75,10 +75,7 @@ class RAGChunker:
         return len(text) // self.chars_per_token
 
     def chunk_document(
-        self,
-        text: str,
-        metadata: dict,
-        source_file: str | None = None
+        self, text: str, metadata: dict, source_file: str | None = None
     ) -> list[dict]:
         """
         Chunk single document into RAG-ready chunks.
@@ -125,11 +122,13 @@ class RAGChunker:
             if source_file:
                 chunk_metadata["source_file"] = source_file
 
-            result.append({
-                "chunk_id": f"{metadata.get('source', 'unknown')}_{i}",
-                "page_content": chunk_text.strip(),
-                "metadata": chunk_metadata
-            })
+            result.append(
+                {
+                    "chunk_id": f"{metadata.get('source', 'unknown')}_{i}",
+                    "page_content": chunk_text.strip(),
+                    "metadata": chunk_metadata,
+                }
+            )
 
         logger.info(
             f"Created {len(result)} chunks from {source_file or 'document'} "
@@ -153,14 +152,10 @@ class RAGChunker:
         # Chunk main SKILL.md
         skill_md = skill_dir / "SKILL.md"
         if skill_md.exists():
-            with open(skill_md, encoding='utf-8') as f:
+            with open(skill_md, encoding="utf-8") as f:
                 content = f.read()
 
-            metadata = {
-                "source": skill_dir.name,
-                "category": "overview",
-                "file_type": "skill_md"
-            }
+            metadata = {"source": skill_dir.name, "category": "overview", "file_type": "skill_md"}
 
             chunks = self.chunk_document(content, metadata, source_file="SKILL.md")
             all_chunks.extend(chunks)
@@ -169,26 +164,21 @@ class RAGChunker:
         references_dir = skill_dir / "references"
         if references_dir.exists():
             for ref_file in references_dir.glob("*.md"):
-                with open(ref_file, encoding='utf-8') as f:
+                with open(ref_file, encoding="utf-8") as f:
                     content = f.read()
 
                 metadata = {
                     "source": skill_dir.name,
                     "category": ref_file.stem,
-                    "file_type": "reference"
+                    "file_type": "reference",
                 }
 
                 chunks = self.chunk_document(
-                    content,
-                    metadata,
-                    source_file=str(ref_file.relative_to(skill_dir))
+                    content, metadata, source_file=str(ref_file.relative_to(skill_dir))
                 )
                 all_chunks.extend(chunks)
 
-        logger.info(
-            f"Chunked skill directory {skill_dir.name}: "
-            f"{len(all_chunks)} total chunks"
-        )
+        logger.info(f"Chunked skill directory {skill_dir.name}: {len(all_chunks)} total chunks")
 
         return all_chunks
 
@@ -207,32 +197,25 @@ class RAGChunker:
 
         # Match code blocks (``` fenced blocks)
         # Use DOTALL flag to match across newlines
-        code_block_pattern = r'```[^\n]*\n.*?```'
+        code_block_pattern = r"```[^\n]*\n.*?```"
 
         def replacer(match):
             idx = len(code_blocks)
-            code_blocks.append({
-                "index": idx,
-                "content": match.group(0),
-                "start": match.start(),
-                "end": match.end()
-            })
+            code_blocks.append(
+                {
+                    "index": idx,
+                    "content": match.group(0),
+                    "start": match.start(),
+                    "end": match.end(),
+                }
+            )
             return placeholder_pattern.format(idx=idx)
 
-        text_with_placeholders = re.sub(
-            code_block_pattern,
-            replacer,
-            text,
-            flags=re.DOTALL
-        )
+        text_with_placeholders = re.sub(code_block_pattern, replacer, text, flags=re.DOTALL)
 
         return text_with_placeholders, code_blocks
 
-    def _reinsert_code_blocks(
-        self,
-        chunks: list[str],
-        code_blocks: list[dict]
-    ) -> list[str]:
+    def _reinsert_code_blocks(self, chunks: list[str], code_blocks: list[dict]) -> list[str]:
         """
         Re-insert code blocks into chunks.
 
@@ -249,7 +232,7 @@ class RAGChunker:
             for block in code_blocks:
                 placeholder = f"<<CODE_BLOCK_{block['index']}>>"
                 if placeholder in chunk:
-                    chunk = chunk.replace(placeholder, block['content'])
+                    chunk = chunk.replace(placeholder, block["content"])
             result.append(chunk)
 
         return result
@@ -268,15 +251,15 @@ class RAGChunker:
 
         # Paragraph boundaries (double newline)
         if self.preserve_paragraphs:
-            for match in re.finditer(r'\n\n+', text):
+            for match in re.finditer(r"\n\n+", text):
                 boundaries.append(match.end())
 
         # Section headers (# Header)
-        for match in re.finditer(r'\n#{1,6}\s+.+\n', text):
+        for match in re.finditer(r"\n#{1,6}\s+.+\n", text):
             boundaries.append(match.start())
 
         # Single newlines (less preferred, but useful)
-        for match in re.finditer(r'\n', text):
+        for match in re.finditer(r"\n", text):
             boundaries.append(match.start())
 
         # Add artificial boundaries for large documents
@@ -352,7 +335,9 @@ class RAGChunker:
 
             # Add chunk if it meets minimum size requirement
             # (unless the entire text is smaller than target size)
-            if chunk_text.strip() and (len(text) <= target_size_chars or len(chunk_text) >= min_size_chars):
+            if chunk_text.strip() and (
+                len(text) <= target_size_chars or len(chunk_text) >= min_size_chars
+            ):
                 chunks.append(chunk_text)
 
             # Move to next chunk with overlap
@@ -383,7 +368,7 @@ class RAGChunker:
         """
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(chunks, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Saved {len(chunks)} chunks to {output_path}")
@@ -393,7 +378,9 @@ def main():
     """CLI entry point for testing RAG chunker."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="RAG Chunker - Semantic chunking for RAG pipelines")
+    parser = argparse.ArgumentParser(
+        description="RAG Chunker - Semantic chunking for RAG pipelines"
+    )
     parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
     parser.add_argument("--chunk-size", type=int, default=512, help="Target chunk size in tokens")

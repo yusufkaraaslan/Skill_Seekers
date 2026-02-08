@@ -18,10 +18,7 @@ import tempfile
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from skill_seekers.cli.streaming_ingest import (
-    StreamingIngester,
-    IngestionProgress
-)
+from skill_seekers.cli.streaming_ingest import StreamingIngester, IngestionProgress
 
 
 @pytest.fixture
@@ -158,11 +155,13 @@ def test_progress_tracking(temp_skill_dir):
     progress_updates = []
 
     def callback(progress: IngestionProgress):
-        progress_updates.append({
-            "processed_docs": progress.processed_documents,
-            "processed_chunks": progress.processed_chunks,
-            "percent": progress.progress_percent
-        })
+        progress_updates.append(
+            {
+                "processed_docs": progress.processed_documents,
+                "processed_chunks": progress.processed_chunks,
+                "percent": progress.progress_percent,
+            }
+        )
 
     list(ingester.stream_skill_directory(temp_skill_dir, callback=callback))
 
@@ -171,7 +170,9 @@ def test_progress_tracking(temp_skill_dir):
 
     # Progress should increase
     for i in range(len(progress_updates) - 1):
-        assert progress_updates[i + 1]["processed_chunks"] >= progress_updates[i]["processed_chunks"]
+        assert (
+            progress_updates[i + 1]["processed_chunks"] >= progress_updates[i]["processed_chunks"]
+        )
 
 
 def test_checkpoint_save_load():
@@ -189,7 +190,7 @@ def test_checkpoint_save_load():
             processed_chunks=50,
             failed_chunks=2,
             bytes_processed=10000,
-            start_time=1234567890.0
+            start_time=1234567890.0,
         )
 
         # Save checkpoint
@@ -215,7 +216,7 @@ def test_format_progress():
         processed_chunks=50,
         failed_chunks=0,
         bytes_processed=10000,
-        start_time=0.0
+        start_time=0.0,
     )
 
     progress_str = ingester.format_progress()
@@ -245,17 +246,19 @@ def test_chunk_size_validation():
 
     # Small chunks
     ingester_small = StreamingIngester(chunk_size=100, chunk_overlap=10)
-    chunks_small = list(ingester_small.chunk_document(
-        content,
-        {"source": "test", "file": "test.md", "category": "test"}
-    ))
+    chunks_small = list(
+        ingester_small.chunk_document(
+            content, {"source": "test", "file": "test.md", "category": "test"}
+        )
+    )
 
     # Large chunks
     ingester_large = StreamingIngester(chunk_size=500, chunk_overlap=50)
-    chunks_large = list(ingester_large.chunk_document(
-        content,
-        {"source": "test", "file": "test.md", "category": "test"}
-    ))
+    chunks_large = list(
+        ingester_large.chunk_document(
+            content, {"source": "test", "file": "test.md", "category": "test"}
+        )
+    )
 
     # Smaller chunk size should create more chunks
     assert len(chunks_small) > len(chunks_large)

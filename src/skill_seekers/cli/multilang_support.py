@@ -15,6 +15,7 @@ import json
 @dataclass
 class LanguageInfo:
     """Language information for a document."""
+
     code: str  # ISO 639-1 code (e.g., 'en', 'es', 'zh')
     name: str  # Full name (e.g., 'English', 'Spanish', 'Chinese')
     confidence: float  # Detection confidence (0.0-1.0)
@@ -24,6 +25,7 @@ class LanguageInfo:
 @dataclass
 class TranslationStatus:
     """Translation status for a document."""
+
     source_language: str
     target_languages: list[str]
     translated_languages: set[str]
@@ -40,74 +42,81 @@ class LanguageDetector:
 
     # Common word patterns by language
     LANGUAGE_PATTERNS = {
-        'en': [
-            r'\b(the|and|is|are|in|to|of|for|with|on|at|by|from)\b',
-            r'\b(this|that|these|those|what|which|who|where|when)\b',
+        "en": [
+            r"\b(the|and|is|are|in|to|of|for|with|on|at|by|from)\b",
+            r"\b(this|that|these|those|what|which|who|where|when)\b",
         ],
-        'es': [
-            r'\b(el|la|los|las|de|en|y|a|es|por|para|con|su)\b',
-            r'\b(que|no|un|una|como|más|pero|muy|todo|ya)\b',
+        "es": [
+            r"\b(el|la|los|las|de|en|y|a|es|por|para|con|su)\b",
+            r"\b(que|no|un|una|como|más|pero|muy|todo|ya)\b",
         ],
-        'fr': [
-            r'\b(le|la|les|de|et|en|un|une|pour|dans|que|sur|avec)\b',
-            r'\b(est|sont|ce|qui|plus|ne|pas|nous|vous|tout)\b',
+        "fr": [
+            r"\b(le|la|les|de|et|en|un|une|pour|dans|que|sur|avec)\b",
+            r"\b(est|sont|ce|qui|plus|ne|pas|nous|vous|tout)\b",
         ],
-        'de': [
-            r'\b(der|die|das|und|in|zu|den|von|ist|mit|für|auf)\b',
-            r'\b(ein|eine|nicht|sich|auch|werden|an|als|ich|sie)\b',
+        "de": [
+            r"\b(der|die|das|und|in|zu|den|von|ist|mit|für|auf)\b",
+            r"\b(ein|eine|nicht|sich|auch|werden|an|als|ich|sie)\b",
         ],
-        'zh': [
-            r'[\u4e00-\u9fff]',  # Chinese characters
-            r'(的|了|和|是|在|有|我|他|不|这)',
+        "zh": [
+            r"[\u4e00-\u9fff]",  # Chinese characters
+            r"(的|了|和|是|在|有|我|他|不|这)",
         ],
-        'ja': [
-            r'[\u3040-\u309f]',  # Hiragana
-            r'[\u30a0-\u30ff]',  # Katakana
-            r'[\u4e00-\u9faf]',  # Kanji
+        "ja": [
+            r"[\u3040-\u309f]",  # Hiragana
+            r"[\u30a0-\u30ff]",  # Katakana
+            r"[\u4e00-\u9faf]",  # Kanji
         ],
-        'ko': [
-            r'[\uac00-\ud7af]',  # Hangul
-            r'(의|가|이|은|들|는|좀|잘|께|을)',
+        "ko": [
+            r"[\uac00-\ud7af]",  # Hangul
+            r"(의|가|이|은|들|는|좀|잘|께|을)",
         ],
-        'ru': [
-            r'[\u0400-\u04ff]',  # Cyrillic
-            r'\b(и|в|не|на|с|что|он|по|а|как|это|все)\b',
+        "ru": [
+            r"[\u0400-\u04ff]",  # Cyrillic
+            r"\b(и|в|не|на|с|что|он|по|а|как|это|все)\b",
         ],
-        'pt': [
-            r'\b(o|a|de|e|do|da|em|um|para|é|com|não|os|as)\b',
-            r'\b(que|se|mais|por|dos|das|como|mas|uma|ou)\b',
+        "pt": [
+            r"\b(o|a|de|e|do|da|em|um|para|é|com|não|os|as)\b",
+            r"\b(que|se|mais|por|dos|das|como|mas|uma|ou)\b",
         ],
-        'it': [
-            r'\b(il|la|di|e|a|da|in|che|per|un|una|non|del)\b',
-            r'\b(con|alla|della|al|nel|sono|come|più|ma|dei)\b',
+        "it": [
+            r"\b(il|la|di|e|a|da|in|che|per|un|una|non|del)\b",
+            r"\b(con|alla|della|al|nel|sono|come|più|ma|dei)\b",
         ],
-        'ar': [
-            r'[\u0600-\u06ff]',  # Arabic
-            r'(في|من|على|إلى|هذا|ما|أن|كان|هو|التي)',
+        "ar": [
+            r"[\u0600-\u06ff]",  # Arabic
+            r"(في|من|على|إلى|هذا|ما|أن|كان|هو|التي)",
         ],
     }
 
     # Language names
     LANGUAGE_NAMES = {
-        'en': 'English',
-        'es': 'Spanish',
-        'fr': 'French',
-        'de': 'German',
-        'zh': 'Chinese',
-        'ja': 'Japanese',
-        'ko': 'Korean',
-        'ru': 'Russian',
-        'pt': 'Portuguese',
-        'it': 'Italian',
-        'ar': 'Arabic',
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "zh": "Chinese",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "ru": "Russian",
+        "pt": "Portuguese",
+        "it": "Italian",
+        "ar": "Arabic",
     }
 
     # Script types
     SCRIPTS = {
-        'en': 'Latin', 'es': 'Latin', 'fr': 'Latin', 'de': 'Latin',
-        'pt': 'Latin', 'it': 'Latin',
-        'zh': 'Han', 'ja': 'Japanese', 'ko': 'Hangul',
-        'ru': 'Cyrillic', 'ar': 'Arabic',
+        "en": "Latin",
+        "es": "Latin",
+        "fr": "Latin",
+        "de": "Latin",
+        "pt": "Latin",
+        "it": "Latin",
+        "zh": "Han",
+        "ja": "Japanese",
+        "ko": "Hangul",
+        "ru": "Cyrillic",
+        "ar": "Arabic",
     }
 
     def detect(self, text: str, sample_size: int = 2000) -> LanguageInfo:
@@ -122,7 +131,7 @@ class LanguageDetector:
             LanguageInfo with detected language
         """
         if not text.strip():
-            return LanguageInfo('en', 'English', 0.0)
+            return LanguageInfo("en", "English", 0.0)
 
         # Sample text for efficiency
         sample = text[:sample_size].lower()
@@ -140,7 +149,7 @@ class LanguageDetector:
         # Find best match
         if not scores or max(scores.values()) == 0:
             # Default to English
-            return LanguageInfo('en', 'English', 0.1)
+            return LanguageInfo("en", "English", 0.1)
 
         best_lang = max(scores, key=scores.get)
         total_score = sum(scores.values())
@@ -150,7 +159,7 @@ class LanguageDetector:
             code=best_lang,
             name=self.LANGUAGE_NAMES.get(best_lang, best_lang.upper()),
             confidence=min(confidence, 1.0),
-            script=self.SCRIPTS.get(best_lang)
+            script=self.SCRIPTS.get(best_lang),
         )
 
     def detect_from_filename(self, filename: str) -> str | None:
@@ -170,12 +179,12 @@ class LanguageDetector:
             ISO 639-1 language code or None
         """
         # Pattern: file.en.md
-        match = re.search(r'\.([a-z]{2})\.md$', filename)
+        match = re.search(r"\.([a-z]{2})\.md$", filename)
         if match and match.group(1) in self.LANGUAGE_NAMES:
             return match.group(1)
 
         # Pattern: file_en.md or file-en.md
-        match = re.search(r'[_-]([a-z]{2})\.md$', filename)
+        match = re.search(r"[_-]([a-z]{2})\.md$", filename)
         if match and match.group(1) in self.LANGUAGE_NAMES:
             return match.group(1)
 
@@ -200,7 +209,7 @@ class MultiLanguageManager:
         file_path: str,
         content: str,
         metadata: dict | None = None,
-        force_language: str | None = None
+        force_language: str | None = None,
     ) -> None:
         """
         Add document with language detection.
@@ -218,7 +227,7 @@ class MultiLanguageManager:
                 code=lang_code,
                 name=self.detector.LANGUAGE_NAMES.get(lang_code, lang_code.upper()),
                 confidence=1.0,
-                script=self.detector.SCRIPTS.get(lang_code)
+                script=self.detector.SCRIPTS.get(lang_code),
             )
         else:
             # Try filename pattern first
@@ -229,7 +238,7 @@ class MultiLanguageManager:
                     code=lang_code,
                     name=self.detector.LANGUAGE_NAMES.get(lang_code, lang_code.upper()),
                     confidence=0.95,
-                    script=self.detector.SCRIPTS.get(lang_code)
+                    script=self.detector.SCRIPTS.get(lang_code),
                 )
             else:
                 # Detect from content
@@ -245,13 +254,13 @@ class MultiLanguageManager:
             self.documents[lang_code] = []
 
         doc = {
-            'file_path': file_path,
-            'content': content,
-            'language': lang_info.code,
-            'language_name': lang_info.name,
-            'confidence': lang_info.confidence,
-            'script': lang_info.script,
-            'metadata': metadata or {}
+            "file_path": file_path,
+            "content": content,
+            "language": lang_info.code,
+            "language_name": lang_info.name,
+            "confidence": lang_info.confidence,
+            "script": lang_info.script,
+            "metadata": metadata or {},
         }
 
         self.documents[lang_code].append(doc)
@@ -284,7 +293,7 @@ class MultiLanguageManager:
         Returns:
             Translation status summary
         """
-        base_lang = base_language or self.primary_language or 'en'
+        base_lang = base_language or self.primary_language or "en"
 
         all_languages = set(self.documents.keys())
         base_count = self.get_document_count(base_lang)
@@ -295,7 +304,7 @@ class MultiLanguageManager:
                 target_languages=[],
                 translated_languages=set(),
                 missing_languages=set(),
-                completeness=0.0
+                completeness=0.0,
             )
 
         # Check which languages have translations
@@ -305,7 +314,7 @@ class MultiLanguageManager:
                 translated.add(lang)
 
         # Commonly expected languages for completeness
-        expected_languages = {'en', 'es', 'fr', 'de', 'zh', 'ja'}
+        expected_languages = {"en", "es", "fr", "de", "zh", "ja"}
         missing = expected_languages - all_languages
 
         completeness = len(all_languages) / len(expected_languages)
@@ -315,7 +324,7 @@ class MultiLanguageManager:
             target_languages=list(all_languages - {base_lang}),
             translated_languages=translated,
             missing_languages=missing,
-            completeness=min(completeness, 1.0)
+            completeness=min(completeness, 1.0),
         )
 
     def export_by_language(self, output_dir: Path) -> dict[str, Path]:
@@ -337,10 +346,10 @@ class MultiLanguageManager:
             lang_file = output_dir / f"documents_{lang_code}.json"
 
             export_data = {
-                'language': lang_code,
-                'language_name': self.detector.LANGUAGE_NAMES.get(lang_code, lang_code.upper()),
-                'document_count': len(docs),
-                'documents': docs
+                "language": lang_code,
+                "language_name": self.detector.LANGUAGE_NAMES.get(lang_code, lang_code.upper()),
+                "document_count": len(docs),
+                "documents": docs,
             }
 
             lang_file.write_text(json.dumps(export_data, indent=2, ensure_ascii=False))
@@ -419,9 +428,7 @@ def main():
     skill_md = skill_dir / "SKILL.md"
     if skill_md.exists():
         manager.add_document(
-            "SKILL.md",
-            skill_md.read_text(encoding="utf-8"),
-            {"category": "overview"}
+            "SKILL.md", skill_md.read_text(encoding="utf-8"), {"category": "overview"}
         )
 
     # Load reference files
@@ -429,9 +436,7 @@ def main():
     if refs_dir.exists():
         for ref_file in refs_dir.glob("*.md"):
             manager.add_document(
-                ref_file.name,
-                ref_file.read_text(encoding="utf-8"),
-                {"category": ref_file.stem}
+                ref_file.name, ref_file.read_text(encoding="utf-8"), {"category": ref_file.stem}
             )
 
     # Detect languages
@@ -460,4 +465,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

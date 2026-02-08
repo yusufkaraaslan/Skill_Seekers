@@ -16,6 +16,7 @@ from datetime import datetime
 @dataclass
 class DocumentVersion:
     """Version information for a document."""
+
     file_path: str
     content_hash: str
     size_bytes: int
@@ -26,6 +27,7 @@ class DocumentVersion:
 @dataclass
 class ChangeSet:
     """Set of changes detected."""
+
     added: list[DocumentVersion]
     modified: list[DocumentVersion]
     deleted: list[str]
@@ -45,6 +47,7 @@ class ChangeSet:
 @dataclass
 class UpdateMetadata:
     """Metadata for an incremental update."""
+
     timestamp: str
     previous_version: str
     new_version: str
@@ -86,7 +89,7 @@ class IncrementalUpdater:
         sha256 = hashlib.sha256()
 
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 while chunk := f.read(8192):
                     sha256.update(chunk)
             return sha256.hexdigest()
@@ -111,7 +114,7 @@ class IncrementalUpdater:
                 content_hash=self._compute_file_hash(skill_md),
                 size_bytes=skill_md.stat().st_size,
                 last_modified=skill_md.stat().st_mtime,
-                version=1
+                version=1,
             )
 
         # Scan references
@@ -125,7 +128,7 @@ class IncrementalUpdater:
                         content_hash=self._compute_file_hash(ref_file),
                         size_bytes=ref_file.stat().st_size,
                         last_modified=ref_file.stat().st_mtime,
-                        version=1
+                        version=1,
                     )
 
         return versions
@@ -157,9 +160,8 @@ class IncrementalUpdater:
             "timestamp": datetime.now().isoformat(),
             "version": "1.0.0",
             "documents": {
-                file_path: asdict(version)
-                for file_path, version in self.current_versions.items()
-            }
+                file_path: asdict(version) for file_path, version in self.current_versions.items()
+            },
         }
 
         self.version_file.write_text(json.dumps(data, indent=2))
@@ -180,10 +182,7 @@ class IncrementalUpdater:
         if not has_previous:
             # First time - all files are "added"
             return ChangeSet(
-                added=list(self.current_versions.values()),
-                modified=[],
-                deleted=[],
-                unchanged=[]
+                added=list(self.current_versions.values()), modified=[], deleted=[], unchanged=[]
             )
 
         # Detect changes
@@ -215,18 +214,10 @@ class IncrementalUpdater:
             else:
                 unchanged.append(current)
 
-        return ChangeSet(
-            added=added,
-            modified=modified,
-            deleted=deleted,
-            unchanged=unchanged
-        )
+        return ChangeSet(added=added, modified=modified, deleted=deleted, unchanged=unchanged)
 
     def generate_update_package(
-        self,
-        change_set: ChangeSet,
-        output_path: Path,
-        include_content: bool = True
+        self, change_set: ChangeSet, output_path: Path, include_content: bool = True
     ) -> Path:
         """
         Generate incremental update package.
@@ -250,11 +241,11 @@ class IncrementalUpdater:
                     "added": len(change_set.added),
                     "modified": len(change_set.modified),
                     "deleted": len(change_set.deleted),
-                    "unchanged": len(change_set.unchanged)
+                    "unchanged": len(change_set.unchanged),
                 },
-                "total_changes": change_set.total_changes
+                "total_changes": change_set.total_changes,
             },
-            "changes": {}
+            "changes": {},
         }
 
         # Include changed documents
@@ -267,7 +258,7 @@ class IncrementalUpdater:
                     "version": doc.version,
                     "content": file_path.read_text(encoding="utf-8"),
                     "hash": doc.content_hash,
-                    "size": doc.size_bytes
+                    "size": doc.size_bytes,
                 }
 
             # Modified documents
@@ -278,14 +269,12 @@ class IncrementalUpdater:
                     "version": doc.version,
                     "content": file_path.read_text(encoding="utf-8"),
                     "hash": doc.content_hash,
-                    "size": doc.size_bytes
+                    "size": doc.size_bytes,
                 }
 
             # Deleted documents
             for file_path in change_set.deleted:
-                update_data["changes"][file_path] = {
-                    "action": "delete"
-                }
+                update_data["changes"][file_path] = {"action": "delete"}
 
         # Write package
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -332,7 +321,9 @@ class IncrementalUpdater:
                 if prev:
                     size_diff = doc.size_bytes - prev.size_bytes
                     size_str = f"{size_diff:+,} bytes" if size_diff != 0 else "same size"
-                    lines.append(f"   ~ {doc.file_path} (v{prev.version} → v{doc.version}, {size_str})")
+                    lines.append(
+                        f"   ~ {doc.file_path} (v{prev.version} → v{doc.version}, {size_str})"
+                    )
                 else:
                     lines.append(f"   ~ {doc.file_path} (v{doc.version})")
             lines.append("")
@@ -473,4 +464,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

@@ -15,18 +15,13 @@ from .storage import get_storage_adaptor
 def upload_command(args):
     """Handle upload subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     if Path(args.local_path).is_dir():
         print(f"📁 Uploading directory: {args.local_path}")
         uploaded_files = adaptor.upload_directory(
-            args.local_path,
-            args.remote_path,
-            exclude_patterns=args.exclude
+            args.local_path, args.remote_path, exclude_patterns=args.exclude
         )
         print(f"✅ Uploaded {len(uploaded_files)} files")
         if args.verbose:
@@ -41,19 +36,13 @@ def upload_command(args):
 def download_command(args):
     """Handle download subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     # Check if remote path is a directory (ends with /)
-    if args.remote_path.endswith('/'):
+    if args.remote_path.endswith("/"):
         print(f"📁 Downloading directory: {args.remote_path}")
-        downloaded_files = adaptor.download_directory(
-            args.remote_path,
-            args.local_path
-        )
+        downloaded_files = adaptor.download_directory(args.remote_path, args.local_path)
         print(f"✅ Downloaded {len(downloaded_files)} files")
         if args.verbose:
             for file_path in downloaded_files:
@@ -67,10 +56,7 @@ def download_command(args):
 def list_command(args):
     """Handle list subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     print(f"📋 Listing files: {args.prefix or '(root)'}")
@@ -99,15 +85,12 @@ def list_command(args):
 def delete_command(args):
     """Handle delete subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     if not args.force:
         response = input(f"⚠️  Delete {args.remote_path}? [y/N]: ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("❌ Deletion cancelled")
             return
 
@@ -119,10 +102,7 @@ def delete_command(args):
 def url_command(args):
     """Handle url subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     print(f"🔗 Generating signed URL: {args.remote_path}")
@@ -134,10 +114,7 @@ def url_command(args):
 def copy_command(args):
     """Handle copy subcommand."""
     adaptor = get_storage_adaptor(
-        args.provider,
-        bucket=args.bucket,
-        container=args.container,
-        **parse_extra_args(args.extra)
+        args.provider, bucket=args.bucket, container=args.container, **parse_extra_args(args.extra)
     )
 
     print(f"📋 Copying: {args.source_path} → {args.dest_path}")
@@ -147,7 +124,7 @@ def copy_command(args):
 
 def format_size(size_bytes: int) -> str:
     """Format file size in human-readable format."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.1f}{unit}"
         size_bytes /= 1024.0
@@ -161,11 +138,11 @@ def parse_extra_args(extra: list | None) -> dict:
 
     result = {}
     for arg in extra:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            result[key.lstrip('-')] = value
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+            result[key.lstrip("-")] = value
         else:
-            result[arg.lstrip('-')] = True
+            result[arg.lstrip("-")] = True
 
     return result
 
@@ -173,7 +150,7 @@ def parse_extra_args(extra: list | None) -> dict:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Cloud storage operations for Skill Seekers',
+        description="Cloud storage operations for Skill Seekers",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -197,114 +174,66 @@ Provider-specific options:
   S3:    --region=us-west-2 --endpoint-url=https://...
   GCS:   --project=my-project --credentials-path=/path/to/creds.json
   Azure: --account-name=myaccount --account-key=...
-        """
+        """,
     )
 
     # Global arguments
     parser.add_argument(
-        '--provider',
-        choices=['s3', 'gcs', 'azure'],
-        required=True,
-        help='Cloud storage provider'
+        "--provider", choices=["s3", "gcs", "azure"], required=True, help="Cloud storage provider"
     )
-    parser.add_argument(
-        '--bucket',
-        help='S3/GCS bucket name (for S3/GCS)'
-    )
-    parser.add_argument(
-        '--container',
-        help='Azure container name (for Azure)'
-    )
-    parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Verbose output'
-    )
+    parser.add_argument("--bucket", help="S3/GCS bucket name (for S3/GCS)")
+    parser.add_argument("--container", help="Azure container name (for Azure)")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Upload command
-    upload_parser = subparsers.add_parser('upload', help='Upload file or directory')
-    upload_parser.add_argument('local_path', help='Local file or directory path')
-    upload_parser.add_argument('remote_path', help='Remote path in cloud storage')
+    upload_parser = subparsers.add_parser("upload", help="Upload file or directory")
+    upload_parser.add_argument("local_path", help="Local file or directory path")
+    upload_parser.add_argument("remote_path", help="Remote path in cloud storage")
     upload_parser.add_argument(
-        '--exclude',
-        action='append',
-        help='Glob patterns to exclude (for directories)'
+        "--exclude", action="append", help="Glob patterns to exclude (for directories)"
     )
-    upload_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    upload_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     # Download command
-    download_parser = subparsers.add_parser('download', help='Download file or directory')
-    download_parser.add_argument('remote_path', help='Remote path in cloud storage')
-    download_parser.add_argument('local_path', help='Local destination path')
-    download_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    download_parser = subparsers.add_parser("download", help="Download file or directory")
+    download_parser.add_argument("remote_path", help="Remote path in cloud storage")
+    download_parser.add_argument("local_path", help="Local destination path")
+    download_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     # List command
-    list_parser = subparsers.add_parser('list', help='List files in cloud storage')
+    list_parser = subparsers.add_parser("list", help="List files in cloud storage")
+    list_parser.add_argument("--prefix", default="", help="Prefix to filter files")
     list_parser.add_argument(
-        '--prefix',
-        default='',
-        help='Prefix to filter files'
+        "--max-results", type=int, default=1000, help="Maximum number of results"
     )
-    list_parser.add_argument(
-        '--max-results',
-        type=int,
-        default=1000,
-        help='Maximum number of results'
-    )
-    list_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    list_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     # Delete command
-    delete_parser = subparsers.add_parser('delete', help='Delete file from cloud storage')
-    delete_parser.add_argument('remote_path', help='Remote path in cloud storage')
+    delete_parser = subparsers.add_parser("delete", help="Delete file from cloud storage")
+    delete_parser.add_argument("remote_path", help="Remote path in cloud storage")
     delete_parser.add_argument(
-        '--force', '-f',
-        action='store_true',
-        help='Skip confirmation prompt'
+        "--force", "-f", action="store_true", help="Skip confirmation prompt"
     )
-    delete_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    delete_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     # URL command
-    url_parser = subparsers.add_parser('url', help='Generate signed URL')
-    url_parser.add_argument('remote_path', help='Remote path in cloud storage')
+    url_parser = subparsers.add_parser("url", help="Generate signed URL")
+    url_parser.add_argument("remote_path", help="Remote path in cloud storage")
     url_parser.add_argument(
-        '--expires-in',
+        "--expires-in",
         type=int,
         default=3600,
-        help='URL expiration time in seconds (default: 3600)'
+        help="URL expiration time in seconds (default: 3600)",
     )
-    url_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    url_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     # Copy command
-    copy_parser = subparsers.add_parser('copy', help='Copy file within cloud storage')
-    copy_parser.add_argument('source_path', help='Source path')
-    copy_parser.add_argument('dest_path', help='Destination path')
-    copy_parser.add_argument(
-        'extra',
-        nargs='*',
-        help='Provider-specific options (--key=value)'
-    )
+    copy_parser = subparsers.add_parser("copy", help="Copy file within cloud storage")
+    copy_parser.add_argument("source_path", help="Source path")
+    copy_parser.add_argument("dest_path", help="Destination path")
+    copy_parser.add_argument("extra", nargs="*", help="Provider-specific options (--key=value)")
 
     args = parser.parse_args()
 
@@ -313,26 +242,26 @@ Provider-specific options:
         sys.exit(1)
 
     # Validate bucket/container based on provider
-    if args.provider in ['s3', 'gcs'] and not args.bucket:
+    if args.provider in ["s3", "gcs"] and not args.bucket:
         print(f"❌ Error: --bucket is required for {args.provider.upper()}", file=sys.stderr)
         sys.exit(1)
-    elif args.provider == 'azure' and not args.container:
+    elif args.provider == "azure" and not args.container:
         print("❌ Error: --container is required for Azure", file=sys.stderr)
         sys.exit(1)
 
     try:
         # Execute command
-        if args.command == 'upload':
+        if args.command == "upload":
             upload_command(args)
-        elif args.command == 'download':
+        elif args.command == "download":
             download_command(args)
-        elif args.command == 'list':
+        elif args.command == "list":
             list_command(args)
-        elif args.command == 'delete':
+        elif args.command == "delete":
             delete_command(args)
-        elif args.command == 'url':
+        elif args.command == "url":
             url_command(args)
-        elif args.command == 'copy':
+        elif args.command == "copy":
             copy_command(args)
 
     except FileNotFoundError as e:
@@ -342,9 +271,10 @@ Provider-specific options:
         print(f"❌ Error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

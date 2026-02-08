@@ -28,7 +28,7 @@ class TestRAGChunker:
             chunk_overlap=100,
             preserve_code_blocks=False,
             preserve_paragraphs=False,
-            min_chunk_size=50
+            min_chunk_size=50,
         )
 
         assert chunker.chunk_size == 1024
@@ -180,13 +180,17 @@ class TestRAGChunker:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text("# Main Skill\n\nThis is the main skill content.\n\nWith multiple paragraphs.")
+        skill_md.write_text(
+            "# Main Skill\n\nThis is the main skill content.\n\nWith multiple paragraphs."
+        )
 
         # Create references directory with files
         references_dir = skill_dir / "references"
         references_dir.mkdir()
 
-        (references_dir / "getting_started.md").write_text("# Getting Started\n\nQuick start guide.")
+        (references_dir / "getting_started.md").write_text(
+            "# Getting Started\n\nQuick start guide."
+        )
         (references_dir / "api.md").write_text("# API Reference\n\nAPI documentation.")
 
         # Chunk skill
@@ -209,7 +213,7 @@ class TestRAGChunker:
             {
                 "chunk_id": "test_0",
                 "page_content": "Test content",
-                "metadata": {"source": "test", "chunk_index": 0}
+                "metadata": {"source": "test", "chunk_index": 0},
             }
         ]
 
@@ -340,7 +344,7 @@ class TestRAGChunker:
         metadata = {
             "source": "react-docs",
             "category": "hooks",
-            "url": "https://react.dev/reference/react"
+            "url": "https://react.dev/reference/react",
         }
 
         chunks = chunker.chunk_document(text, metadata)
@@ -379,10 +383,7 @@ class TestRAGChunkerIntegration:
 
         # Convert to LangChain Documents
         docs = [
-            Document(
-                page_content=chunk["page_content"],
-                metadata=chunk["metadata"]
-            )
+            Document(page_content=chunk["page_content"], metadata=chunk["metadata"])
             for chunk in chunks
         ]
 
@@ -407,11 +408,7 @@ class TestRAGChunkerIntegration:
 
         # Convert to LlamaIndex TextNodes
         nodes = [
-            TextNode(
-                text=chunk["page_content"],
-                metadata=chunk["metadata"],
-                id_=chunk["chunk_id"]
-            )
+            TextNode(text=chunk["page_content"], metadata=chunk["metadata"], id_=chunk["chunk_id"])
             for chunk in chunks
         ]
 

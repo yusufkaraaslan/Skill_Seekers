@@ -29,11 +29,7 @@ class LangChainAdaptor(SkillAdaptor):
     DEFAULT_API_ENDPOINT = None  # No upload endpoint
 
     def format_skill_md(
-        self,
-        skill_dir: Path,
-        metadata: SkillMetadata,
-        enable_chunking: bool = False,
-        **kwargs
+        self, skill_dir: Path, metadata: SkillMetadata, enable_chunking: bool = False, **kwargs
     ) -> str:
         """
         Format skill as JSON array of LangChain Documents.
@@ -73,17 +69,14 @@ class LangChainAdaptor(SkillAdaptor):
                     content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file="SKILL.md"
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file="SKILL.md",
                 )
 
                 # Add all chunks to documents
                 for chunk_text, chunk_meta in chunks:
-                    documents.append({
-                        "page_content": chunk_text,
-                        "metadata": chunk_meta
-                    })
+                    documents.append({"page_content": chunk_text, "metadata": chunk_meta})
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -104,17 +97,14 @@ class LangChainAdaptor(SkillAdaptor):
                     ref_content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file=ref_file.name
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file=ref_file.name,
                 )
 
                 # Add all chunks to documents
                 for chunk_text, chunk_meta in chunks:
-                    documents.append({
-                        "page_content": chunk_text,
-                        "metadata": chunk_meta
-                    })
+                    documents.append({"page_content": chunk_text, "metadata": chunk_meta})
 
         # Return as formatted JSON
         return json.dumps(documents, indent=2, ensure_ascii=False)
@@ -125,7 +115,7 @@ class LangChainAdaptor(SkillAdaptor):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill into JSON file for LangChain.
@@ -162,7 +152,7 @@ class LangChainAdaptor(SkillAdaptor):
             metadata,
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
-            preserve_code_blocks=preserve_code_blocks
+            preserve_code_blocks=preserve_code_blocks,
         )
 
         # Write to file

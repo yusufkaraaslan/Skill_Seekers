@@ -13,6 +13,7 @@ pytest.importorskip("mcp.server")
 # Check if starlette is available
 try:
     from starlette.testclient import TestClient
+
     STARLETTE_AVAILABLE = True
 except ImportError:
     STARLETTE_AVAILABLE = False
@@ -21,8 +22,7 @@ from skill_seekers.mcp.server_fastmcp import mcp
 
 # Skip all tests if starlette is not installed
 pytestmark = pytest.mark.skipif(
-    not STARLETTE_AVAILABLE,
-    reason="starlette not installed (pip install starlette httpx)"
+    not STARLETTE_AVAILABLE, reason="starlette not installed (pip install starlette httpx)"
 )
 
 

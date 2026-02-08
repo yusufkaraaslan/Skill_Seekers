@@ -86,7 +86,14 @@ See the references directory for complete documentation with examples and best p
         # Return plain markdown (NO frontmatter)
         return content_body
 
-    def package(self, skill_dir: Path, output_path: Path, enable_chunking: bool = False, chunk_max_tokens: int = 512, preserve_code_blocks: bool = True) -> Path:
+    def package(
+        self,
+        skill_dir: Path,
+        output_path: Path,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True,
+    ) -> Path:
         """
         Package skill into tar.gz file for Gemini.
 

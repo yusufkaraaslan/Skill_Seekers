@@ -20,9 +20,7 @@ import time
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from skill_seekers.cli.incremental_updater import (
-    IncrementalUpdater
-)
+from skill_seekers.cli.incremental_updater import IncrementalUpdater
 
 
 @pytest.fixture
@@ -281,15 +279,15 @@ def test_apply_update_package(temp_skill_dir):
                 "timestamp": "2026-02-05T12:00:00",
                 "skill_name": "test_skill",
                 "change_summary": {"modified": 1},
-                "total_changes": 1
+                "total_changes": 1,
             },
             "changes": {
                 "SKILL.md": {
                     "action": "modify",
                     "version": 2,
-                    "content": "# Updated Content\n\nApplied from package"
+                    "content": "# Updated Content\n\nApplied from package",
                 }
-            }
+            },
         }
 
         package_path.write_text(json.dumps(update_data))
@@ -298,7 +296,9 @@ def test_apply_update_package(temp_skill_dir):
         success = updater.apply_update_package(package_path)
 
         assert success
-        assert (temp_skill_dir / "SKILL.md").read_text() == "# Updated Content\n\nApplied from package"
+        assert (
+            temp_skill_dir / "SKILL.md"
+        ).read_text() == "# Updated Content\n\nApplied from package"
 
 
 def test_content_hash_consistency(temp_skill_dir):

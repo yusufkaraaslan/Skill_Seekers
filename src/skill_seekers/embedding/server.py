@@ -25,6 +25,7 @@ try:
     from fastapi import FastAPI, HTTPException, Query
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
+
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
@@ -51,7 +52,7 @@ if FASTAPI_AVAILABLE:
         description="Generate embeddings for text and skill content",
         version="1.0.0",
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
     )
 
     # Add CORS middleware
@@ -64,13 +65,14 @@ if FASTAPI_AVAILABLE:
     )
 
     # Initialize generator and cache
-    cache_dir = os.getenv("EMBEDDING_CACHE_DIR", os.path.expanduser("~/.cache/skill-seekers/embeddings"))
+    cache_dir = os.getenv(
+        "EMBEDDING_CACHE_DIR", os.path.expanduser("~/.cache/skill-seekers/embeddings")
+    )
     cache_db = os.path.join(cache_dir, "embeddings.db")
     cache_enabled = os.getenv("EMBEDDING_CACHE_ENABLED", "true").lower() == "true"
 
     generator = EmbeddingGenerator(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        voyage_api_key=os.getenv("VOYAGE_API_KEY")
+        api_key=os.getenv("OPENAI_API_KEY"), voyage_api_key=os.getenv("VOYAGE_API_KEY")
     )
     cache = EmbeddingCache(cache_db) if cache_enabled else None
 
@@ -81,7 +83,7 @@ if FASTAPI_AVAILABLE:
             "service": "Skill Seekers Embedding API",
             "version": "1.0.0",
             "docs": "/docs",
-            "health": "/health"
+            "health": "/health",
         }
 
     @app.get("/health", response_model=HealthResponse)
@@ -95,7 +97,7 @@ if FASTAPI_AVAILABLE:
             version="1.0.0",
             models=models,
             cache_enabled=cache_enabled,
-            cache_size=cache_size
+            cache_size=cache_size,
         )
 
     @app.get("/models", response_model=ModelsResponse)
@@ -109,15 +111,12 @@ if FASTAPI_AVAILABLE:
                 provider=m["provider"],
                 dimensions=m["dimensions"],
                 max_tokens=m["max_tokens"],
-                cost_per_million=m.get("cost_per_million")
+                cost_per_million=m.get("cost_per_million"),
             )
             for m in models_list
         ]
 
-        return ModelsResponse(
-            models=model_infos,
-            count=len(model_infos)
-        )
+        return ModelsResponse(models=model_infos, count=len(model_infos))
 
     @app.post("/embed", response_model=EmbeddingResponse)
     async def embed_text(request: EmbeddingRequest):
@@ -144,9 +143,7 @@ if FASTAPI_AVAILABLE:
             else:
                 # Generate embedding
                 embedding = generator.generate(
-                    request.text,
-                    model=request.model,
-                    normalize=request.normalize
+                    request.text, model=request.model, normalize=request.normalize
                 )
 
                 # Store in cache
@@ -154,10 +151,7 @@ if FASTAPI_AVAILABLE:
                     cache.set(hash_key, embedding, request.model)
 
             return EmbeddingResponse(
-                embedding=embedding,
-                model=request.model,
-                dimensions=len(embedding),
-                cached=cached
+                embedding=embedding, model=request.model, dimensions=len(embedding), cached=cached
             )
 
         except Exception as e:
@@ -202,11 +196,13 @@ if FASTAPI_AVAILABLE:
                     texts_to_generate,
                     model=request.model,
                     normalize=request.normalize,
-                    batch_size=request.batch_size
+                    batch_size=request.batch_size,
                 )
 
                 # Fill in placeholders and cache
-                for idx, text, embedding in zip(text_indices, texts_to_generate, generated_embeddings, strict=False):
+                for idx, text, embedding in zip(
+                    text_indices, texts_to_generate, generated_embeddings, strict=False
+                ):
                     embeddings[idx] = embedding
 
                     if cache:
@@ -220,7 +216,7 @@ if FASTAPI_AVAILABLE:
                 model=request.model,
                 dimensions=dimensions,
                 count=len(embeddings),
-                cached_count=cached_count
+                cached_count=cached_count,
             )
 
         except Exception as e:
@@ -244,12 +240,16 @@ if FASTAPI_AVAILABLE:
             skill_path = Path(request.skill_path)
 
             if not skill_path.exists():
-                raise HTTPException(status_code=404, detail=f"Skill path not found: {request.skill_path}")
+                raise HTTPException(
+                    status_code=404, detail=f"Skill path not found: {request.skill_path}"
+                )
 
             # Read SKILL.md
             skill_md = skill_path / "SKILL.md"
             if not skill_md.exists():
-                raise HTTPException(status_code=404, detail=f"SKILL.md not found in {request.skill_path}")
+                raise HTTPException(
+                    status_code=404, detail=f"SKILL.md not found in {request.skill_path}"
+                )
 
             skill_content = skill_md.read_text()
 
@@ -262,10 +262,7 @@ if FASTAPI_AVAILABLE:
 
             # Generate embeddings for chunks
             embeddings, dimensions = generator.generate_batch(
-                chunks,
-                model=request.model,
-                normalize=True,
-                batch_size=32
+                chunks, model=request.model, normalize=True, batch_size=32
             )
 
             # TODO: Store embeddings in vector database
@@ -279,8 +276,8 @@ if FASTAPI_AVAILABLE:
                 metadata={
                     "skill_path": str(skill_path),
                     "chunks": len(chunks),
-                    "content_length": len(skill_content)
-                }
+                    "content_length": len(skill_content),
+                },
             )
 
         except HTTPException:
@@ -298,7 +295,7 @@ if FASTAPI_AVAILABLE:
 
     @app.post("/cache/clear", response_model=dict)
     async def clear_cache(
-        model: str | None = Query(None, description="Model to clear (all if not specified)")
+        model: str | None = Query(None, description="Model to clear (all if not specified)"),
     ):
         """Clear cache entries."""
         if not cache:
@@ -306,11 +303,7 @@ if FASTAPI_AVAILABLE:
 
         deleted = cache.clear(model=model)
 
-        return {
-            "status": "ok",
-            "deleted": deleted,
-            "model": model or "all"
-        }
+        return {"status": "ok", "deleted": deleted, "model": model or "all"}
 
     @app.post("/cache/clear-expired", response_model=dict)
     async def clear_expired():
@@ -320,10 +313,7 @@ if FASTAPI_AVAILABLE:
 
         deleted = cache.clear_expired()
 
-        return {
-            "status": "ok",
-            "deleted": deleted
-        }
+        return {"status": "ok", "deleted": deleted}
 
 else:
     print("Error: FastAPI not available. Install with: pip install fastapi uvicorn")
@@ -348,12 +338,7 @@ def main():
     if cache_enabled:
         print(f"💾 Cache database: {cache_db}")
 
-    uvicorn.run(
-        "skill_seekers.embedding.server:app",
-        host=host,
-        port=port,
-        reload=reload
-    )
+    uvicorn.run("skill_seekers.embedding.server:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

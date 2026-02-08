@@ -464,13 +464,15 @@ class TestValidateConfigTool(unittest.IsolatedAsyncioTestCase):
         valid_config = {
             "name": "valid-test",
             "description": "Test configuration",
-            "sources": [{
-                "type": "documentation",
-                "base_url": "https://example.com/",
-                "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
-                "rate_limit": 0.5,
-                "max_pages": 100,
-            }],
+            "sources": [
+                {
+                    "type": "documentation",
+                    "base_url": "https://example.com/",
+                    "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
+                    "rate_limit": 0.5,
+                    "max_pages": 100,
+                }
+            ],
         }
         with open(config_path, "w") as f:
             json.dump(valid_config, f)

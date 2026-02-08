@@ -77,7 +77,9 @@ def run_embedding_benchmark(runner, config):
             with bench.timer("batch_embedding"), bench.memory("batch_embedding"):
                 embeddings = generator.generate_batch(texts, model=model)
 
-            bench.metric("embeddings_per_sec", len(embeddings) / bench.result.timings[-1].duration, "emb/sec")
+            bench.metric(
+                "embeddings_per_sec", len(embeddings) / bench.result.timings[-1].duration, "emb/sec"
+            )
 
     name = config.get("name", "embedding-benchmark")
     report = runner.run(name, benchmark_func)
@@ -97,7 +99,7 @@ def run_storage_benchmark(runner, config):
         storage = get_storage_adaptor(provider, bucket=bucket)
 
         # Create test file
-        with NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        with NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
             f.write("Test data" * 1000)
             test_file = Path(f.name)
 
@@ -128,10 +130,7 @@ def compare_command(args):
     """Compare two benchmarks."""
     runner = BenchmarkRunner()
 
-    comparison = runner.compare(
-        baseline_path=Path(args.baseline),
-        current_path=Path(args.current)
-    )
+    comparison = runner.compare(baseline_path=Path(args.baseline), current_path=Path(args.current))
 
     print(f"\n📊 Comparison: {comparison.name}\n")
     print(f"Overall: {comparison.overall_improvement}\n")
@@ -213,7 +212,7 @@ def cleanup_command(args):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Performance benchmarking suite',
+        description="Performance benchmarking suite",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -233,54 +232,46 @@ Examples:
 
   # Cleanup old benchmarks
   skill-seekers-benchmark cleanup --keep 5
-        """
+        """,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Run command
-    run_parser = subparsers.add_parser('run', help='Run benchmark')
-    run_parser.add_argument('--config', required=True, help='Benchmark config file')
+    run_parser = subparsers.add_parser("run", help="Run benchmark")
+    run_parser.add_argument("--config", required=True, help="Benchmark config file")
     run_parser.add_argument(
-        '--output-dir', '-o',
-        default='benchmarks',
-        help='Output directory (default: benchmarks)'
+        "--output-dir", "-o", default="benchmarks", help="Output directory (default: benchmarks)"
     )
 
     # Compare command
-    compare_parser = subparsers.add_parser('compare', help='Compare two benchmarks')
-    compare_parser.add_argument('--baseline', required=True, help='Baseline benchmark')
-    compare_parser.add_argument('--current', required=True, help='Current benchmark')
+    compare_parser = subparsers.add_parser("compare", help="Compare two benchmarks")
+    compare_parser.add_argument("--baseline", required=True, help="Baseline benchmark")
+    compare_parser.add_argument("--current", required=True, help="Current benchmark")
     compare_parser.add_argument(
-        '--fail-on-regression',
-        action='store_true',
-        help='Exit with error if regressions detected'
+        "--fail-on-regression", action="store_true", help="Exit with error if regressions detected"
     )
 
     # List command
-    list_parser = subparsers.add_parser('list', help='List saved benchmarks')
+    list_parser = subparsers.add_parser("list", help="List saved benchmarks")
     list_parser.add_argument(
-        '--output-dir', '-o',
-        default='benchmarks',
-        help='Benchmark directory (default: benchmarks)'
+        "--output-dir", "-o", default="benchmarks", help="Benchmark directory (default: benchmarks)"
     )
 
     # Show command
-    show_parser = subparsers.add_parser('show', help='Show benchmark details')
-    show_parser.add_argument('path', help='Path to benchmark file')
+    show_parser = subparsers.add_parser("show", help="Show benchmark details")
+    show_parser.add_argument("path", help="Path to benchmark file")
 
     # Cleanup command
-    cleanup_parser = subparsers.add_parser('cleanup', help='Cleanup old benchmarks')
+    cleanup_parser = subparsers.add_parser("cleanup", help="Cleanup old benchmarks")
     cleanup_parser.add_argument(
-        '--output-dir', '-o',
-        default='benchmarks',
-        help='Benchmark directory (default: benchmarks)'
+        "--output-dir", "-o", default="benchmarks", help="Benchmark directory (default: benchmarks)"
     )
     cleanup_parser.add_argument(
-        '--keep',
+        "--keep",
         type=int,
         default=5,
-        help='Number of latest benchmarks to keep per name (default: 5)'
+        help="Number of latest benchmarks to keep per name (default: 5)",
     )
 
     args = parser.parse_args()
@@ -290,20 +281,20 @@ Examples:
         sys.exit(1)
 
     try:
-        if args.command == 'run':
+        if args.command == "run":
             run_command(args)
-        elif args.command == 'compare':
+        elif args.command == "compare":
             compare_command(args)
-        elif args.command == 'list':
+        elif args.command == "list":
             list_command(args)
-        elif args.command == 'show':
+        elif args.command == "show":
             show_command(args)
-        elif args.command == 'cleanup':
+        elif args.command == "cleanup":
             cleanup_command(args)
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

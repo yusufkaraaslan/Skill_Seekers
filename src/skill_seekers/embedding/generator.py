@@ -9,6 +9,7 @@ import numpy as np
 # OpenAI support
 try:
     from openai import OpenAI
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -16,6 +17,7 @@ except ImportError:
 # Sentence transformers support
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -23,6 +25,7 @@ except ImportError:
 # Voyage AI support (recommended by Anthropic for embeddings)
 try:
     import voyageai
+
     VOYAGE_AVAILABLE = True
 except ImportError:
     VOYAGE_AVAILABLE = False
@@ -129,7 +132,7 @@ class EmbeddingGenerator:
         self,
         api_key: str | None = None,
         voyage_api_key: str | None = None,
-        cache_dir: str | None = None
+        cache_dir: str | None = None,
     ):
         """
         Initialize embedding generator.
@@ -162,8 +165,7 @@ class EmbeddingGenerator:
         """Get information about a model."""
         if model not in self.MODELS:
             raise ValueError(
-                f"Unknown model: {model}. "
-                f"Available models: {', '.join(self.MODELS.keys())}"
+                f"Unknown model: {model}. Available models: {', '.join(self.MODELS.keys())}"
             )
         return self.MODELS[model]
 
@@ -171,20 +173,19 @@ class EmbeddingGenerator:
         """List all available models."""
         models = []
         for name, info in self.MODELS.items():
-            models.append({
-                "name": name,
-                "provider": info["provider"],
-                "dimensions": info["dimensions"],
-                "max_tokens": info["max_tokens"],
-                "cost_per_million": info.get("cost_per_million", 0.0),
-            })
+            models.append(
+                {
+                    "name": name,
+                    "provider": info["provider"],
+                    "dimensions": info["dimensions"],
+                    "max_tokens": info["max_tokens"],
+                    "cost_per_million": info.get("cost_per_million", 0.0),
+                }
+            )
         return models
 
     def generate(
-        self,
-        text: str,
-        model: str = "text-embedding-3-small",
-        normalize: bool = True
+        self, text: str, model: str = "text-embedding-3-small", normalize: bool = True
     ) -> list[float]:
         """
         Generate embedding for a single text.
@@ -218,7 +219,7 @@ class EmbeddingGenerator:
         texts: list[str],
         model: str = "text-embedding-3-small",
         normalize: bool = True,
-        batch_size: int = 32
+        batch_size: int = 32,
     ) -> tuple[list[list[float]], int]:
         """
         Generate embeddings for multiple texts.
@@ -248,24 +249,18 @@ class EmbeddingGenerator:
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 
-    def _generate_openai(
-        self, text: str, model: str, normalize: bool
-    ) -> list[float]:
+    def _generate_openai(self, text: str, model: str, normalize: bool) -> list[float]:
         """Generate embedding using OpenAI API."""
         if not OPENAI_AVAILABLE:
             raise ImportError(
-                "OpenAI is required for OpenAI embeddings. "
-                "Install with: pip install openai"
+                "OpenAI is required for OpenAI embeddings. Install with: pip install openai"
             )
 
         if not self.openai_client:
             raise ValueError("OpenAI API key not provided")
 
         try:
-            response = self.openai_client.embeddings.create(
-                input=text,
-                model=model
-            )
+            response = self.openai_client.embeddings.create(input=text, model=model)
             embedding = response.data[0].embedding
 
             if normalize:
@@ -281,8 +276,7 @@ class EmbeddingGenerator:
         """Generate embeddings using OpenAI API in batches."""
         if not OPENAI_AVAILABLE:
             raise ImportError(
-                "OpenAI is required for OpenAI embeddings. "
-                "Install with: pip install openai"
+                "OpenAI is required for OpenAI embeddings. Install with: pip install openai"
             )
 
         if not self.openai_client:
@@ -292,13 +286,10 @@ class EmbeddingGenerator:
 
         # Process in batches
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
+            batch = texts[i : i + batch_size]
 
             try:
-                response = self.openai_client.embeddings.create(
-                    input=batch,
-                    model=model
-                )
+                response = self.openai_client.embeddings.create(input=batch, model=model)
 
                 batch_embeddings = [item.embedding for item in response.data]
 
@@ -313,24 +304,18 @@ class EmbeddingGenerator:
         dimensions = len(all_embeddings[0]) if all_embeddings else 0
         return all_embeddings, dimensions
 
-    def _generate_voyage(
-        self, text: str, model: str, normalize: bool
-    ) -> list[float]:
+    def _generate_voyage(self, text: str, model: str, normalize: bool) -> list[float]:
         """Generate embedding using Voyage AI API."""
         if not VOYAGE_AVAILABLE:
             raise ImportError(
-                "voyageai is required for Voyage AI embeddings. "
-                "Install with: pip install voyageai"
+                "voyageai is required for Voyage AI embeddings. Install with: pip install voyageai"
             )
 
         if not self.voyage_client:
             raise ValueError("Voyage API key not provided")
 
         try:
-            result = self.voyage_client.embed(
-                texts=[text],
-                model=model
-            )
+            result = self.voyage_client.embed(texts=[text], model=model)
             embedding = result.embeddings[0]
 
             if normalize:
@@ -346,8 +331,7 @@ class EmbeddingGenerator:
         """Generate embeddings using Voyage AI API in batches."""
         if not VOYAGE_AVAILABLE:
             raise ImportError(
-                "voyageai is required for Voyage AI embeddings. "
-                "Install with: pip install voyageai"
+                "voyageai is required for Voyage AI embeddings. Install with: pip install voyageai"
             )
 
         if not self.voyage_client:
@@ -357,13 +341,10 @@ class EmbeddingGenerator:
 
         # Process in batches (Voyage AI supports up to 128 texts per request)
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
+            batch = texts[i : i + batch_size]
 
             try:
-                result = self.voyage_client.embed(
-                    texts=batch,
-                    model=model
-                )
+                result = self.voyage_client.embed(texts=batch, model=model)
 
                 batch_embeddings = result.embeddings
 
@@ -378,9 +359,7 @@ class EmbeddingGenerator:
         dimensions = len(all_embeddings[0]) if all_embeddings else 0
         return all_embeddings, dimensions
 
-    def _generate_sentence_transformer(
-        self, text: str, model: str, normalize: bool
-    ) -> list[float]:
+    def _generate_sentence_transformer(self, text: str, model: str, normalize: bool) -> list[float]:
         """Generate embedding using sentence-transformers."""
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
@@ -417,10 +396,7 @@ class EmbeddingGenerator:
 
         # Generate embeddings in batches
         embeddings = st_model.encode(
-            texts,
-            batch_size=batch_size,
-            normalize_embeddings=normalize,
-            show_progress_bar=False
+            texts, batch_size=batch_size, normalize_embeddings=normalize, show_progress_bar=False
         )
 
         dimensions = len(embeddings[0]) if len(embeddings) > 0 else 0

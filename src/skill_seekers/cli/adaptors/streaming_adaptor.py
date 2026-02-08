@@ -36,7 +36,7 @@ class StreamingAdaptorMixin:
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         batch_size: int = 100,
-        progress_callback: callable | None = None
+        progress_callback: callable | None = None,
     ) -> Path:
         """
         Package skill using streaming ingestion.
@@ -60,9 +60,7 @@ class StreamingAdaptorMixin:
 
         # Initialize streaming ingester
         ingester = StreamingIngester(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            batch_size=batch_size
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap, batch_size=batch_size
         )
 
         print(f"\n📊 Streaming ingestion starting...")
@@ -77,9 +75,11 @@ class StreamingAdaptorMixin:
             nonlocal last_update
             # Update every 10 chunks
             if progress.processed_chunks - last_update >= 10:
-                print(f"   {progress.progress_percent:.1f}% - "
-                      f"{progress.processed_chunks}/{progress.total_chunks} chunks "
-                      f"({progress.chunks_per_second:.1f} chunks/sec)")
+                print(
+                    f"   {progress.progress_percent:.1f}% - "
+                    f"{progress.processed_chunks}/{progress.total_chunks} chunks "
+                    f"({progress.chunks_per_second:.1f} chunks/sec)"
+                )
                 last_update = progress.processed_chunks
 
             if progress_callback:
@@ -97,10 +97,7 @@ class StreamingAdaptorMixin:
 
         # Convert chunks to platform format
         print(f"\n📦 Converting to {self.PLATFORM_NAME} format...")
-        package_data = self._convert_chunks_to_platform_format(
-            all_chunks,
-            skill_dir.name
-        )
+        package_data = self._convert_chunks_to_platform_format(all_chunks, skill_dir.name)
 
         # Determine output filename
         if output_path.is_dir() or str(output_path).endswith("/"):
@@ -114,8 +111,7 @@ class StreamingAdaptorMixin:
         # Write output
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
-            json.dumps(package_data, indent=2, ensure_ascii=False),
-            encoding="utf-8"
+            json.dumps(package_data, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
         print(f"✅ Package created: {output_path}")
@@ -124,9 +120,7 @@ class StreamingAdaptorMixin:
         return output_path
 
     def _convert_chunks_to_platform_format(
-        self,
-        chunks: list[tuple[str, dict]],
-        skill_name: str
+        self, chunks: list[tuple[str, dict]], skill_name: str
     ) -> dict:
         """
         Convert chunks to platform-specific format.
@@ -156,14 +150,11 @@ class StreamingAdaptorMixin:
             "metadatas": metadatas,
             "ids": ids,
             "total_chunks": len(chunks),
-            "streaming": True
+            "streaming": True,
         }
 
     def estimate_chunks(
-        self,
-        skill_dir: Path,
-        chunk_size: int = 4000,
-        chunk_overlap: int = 200
+        self, skill_dir: Path, chunk_size: int = 4000, chunk_overlap: int = 200
     ) -> dict[str, Any]:
         """
         Estimate chunking for a skill directory.
@@ -179,10 +170,7 @@ class StreamingAdaptorMixin:
             Estimation statistics
         """
         skill_dir = Path(skill_dir)
-        StreamingIngester(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
-        )
+        StreamingIngester(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
         # Count files and estimate chunks
         total_docs = 0
@@ -201,11 +189,9 @@ class StreamingAdaptorMixin:
             total_chars += char_count
             estimated_chunks += chunk_count
 
-            file_stats.append({
-                "file": "SKILL.md",
-                "chars": char_count,
-                "estimated_chunks": chunk_count
-            })
+            file_stats.append(
+                {"file": "SKILL.md", "chars": char_count, "estimated_chunks": chunk_count}
+            )
 
         # Reference files
         refs_dir = skill_dir / "references"
@@ -214,17 +200,21 @@ class StreamingAdaptorMixin:
                 if ref_file.is_file() and not ref_file.name.startswith("."):
                     content = ref_file.read_text(encoding="utf-8")
                     char_count = len(content)
-                    chunk_count = max(1, (char_count - chunk_overlap) // (chunk_size - chunk_overlap) + 1)
+                    chunk_count = max(
+                        1, (char_count - chunk_overlap) // (chunk_size - chunk_overlap) + 1
+                    )
 
                     total_docs += 1
                     total_chars += char_count
                     estimated_chunks += chunk_count
 
-                    file_stats.append({
-                        "file": ref_file.name,
-                        "chars": char_count,
-                        "estimated_chunks": chunk_count
-                    })
+                    file_stats.append(
+                        {
+                            "file": ref_file.name,
+                            "chars": char_count,
+                            "estimated_chunks": chunk_count,
+                        }
+                    )
 
         return {
             "skill_name": skill_dir.name,
@@ -235,7 +225,7 @@ class StreamingAdaptorMixin:
             "chunk_overlap": chunk_overlap,
             "file_stats": file_stats,
             "estimated_memory_mb": (total_chars * 2) / (1024 * 1024),  # UTF-8 estimate
-            "recommended_streaming": total_chars > 1_000_000 or total_docs > 100
+            "recommended_streaming": total_chars > 1_000_000 or total_docs > 100,
         }
 
 
@@ -251,25 +241,27 @@ class StreamingLangChainAdaptor(StreamingAdaptorMixin):
         documents = []
 
         for chunk_text, chunk_meta in chunks:
-            documents.append({
-                "page_content": chunk_text,
-                "metadata": {
-                    "source": chunk_meta["source"],
-                    "category": chunk_meta["category"],
-                    "file": chunk_meta["file"],
-                    "chunk_id": chunk_meta["chunk_id"],
-                    "chunk_index": chunk_meta["chunk_index"],
-                    "total_chunks": chunk_meta["total_chunks"],
-                    "type": chunk_meta.get("type", "documentation"),
-                    "version": chunk_meta.get("version", "1.0.0"),
+            documents.append(
+                {
+                    "page_content": chunk_text,
+                    "metadata": {
+                        "source": chunk_meta["source"],
+                        "category": chunk_meta["category"],
+                        "file": chunk_meta["file"],
+                        "chunk_id": chunk_meta["chunk_id"],
+                        "chunk_index": chunk_meta["chunk_index"],
+                        "total_chunks": chunk_meta["total_chunks"],
+                        "type": chunk_meta.get("type", "documentation"),
+                        "version": chunk_meta.get("version", "1.0.0"),
+                    },
                 }
-            })
+            )
 
         return {
             "documents": documents,
             "total_chunks": len(chunks),
             "streaming": True,
-            "format": "LangChain Document"
+            "format": "LangChain Document",
         }
 
 
@@ -287,14 +279,16 @@ class StreamingChromaAdaptor(StreamingAdaptorMixin):
 
         for chunk_text, chunk_meta in chunks:
             documents.append(chunk_text)
-            metadatas.append({
-                "source": chunk_meta["source"],
-                "category": chunk_meta["category"],
-                "file": chunk_meta["file"],
-                "chunk_index": chunk_meta["chunk_index"],
-                "total_chunks": chunk_meta["total_chunks"],
-                "type": chunk_meta.get("type", "documentation"),
-            })
+            metadatas.append(
+                {
+                    "source": chunk_meta["source"],
+                    "category": chunk_meta["category"],
+                    "file": chunk_meta["file"],
+                    "chunk_index": chunk_meta["chunk_index"],
+                    "total_chunks": chunk_meta["total_chunks"],
+                    "type": chunk_meta.get("type", "documentation"),
+                }
+            )
             ids.append(chunk_meta["chunk_id"])
 
         return {
@@ -303,7 +297,7 @@ class StreamingChromaAdaptor(StreamingAdaptorMixin):
             "ids": ids,
             "collection_name": skill_name.replace("_", "-"),
             "total_chunks": len(chunks),
-            "streaming": True
+            "streaming": True,
         }
 
 
@@ -339,11 +333,7 @@ def demo_streaming():
     print("=" * 60)
 
     output = adaptor.package_streaming(
-        skill_dir,
-        Path("output"),
-        chunk_size=2000,
-        chunk_overlap=100,
-        batch_size=50
+        skill_dir, Path("output"), chunk_size=2000, chunk_overlap=100, batch_size=50
     )
 
     print(f"\n✅ Complete! Output: {output}")

@@ -1,4 +1,5 @@
 """Base parser class for subcommands."""
+
 from abc import ABC, abstractmethod
 import argparse
 
@@ -48,10 +49,6 @@ class SubcommandParser(ABC):
         Returns:
             Configured ArgumentParser for this subcommand
         """
-        parser = subparsers.add_parser(
-            self.name,
-            help=self.help,
-            description=self.description
-        )
+        parser = subparsers.add_parser(self.name, help=self.help, description=self.description)
         self.add_arguments(parser)
         return parser

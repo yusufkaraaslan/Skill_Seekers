@@ -74,7 +74,7 @@ class SkillAdaptor(ABC):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill for platform (ZIP, tar.gz, etc.).
@@ -282,7 +282,7 @@ class SkillAdaptor(ABC):
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
         preserve_code_blocks: bool = True,
-        source_file: str = None
+        source_file: str = None,
     ) -> list[tuple[str, dict]]:
         """
         Optionally chunk content for RAG platforms.
@@ -326,33 +326,31 @@ class SkillAdaptor(ABC):
             chunk_overlap=max(50, chunk_max_tokens // 10),  # 10% overlap
             preserve_code_blocks=preserve_code_blocks,
             preserve_paragraphs=True,
-            min_chunk_size=100  # 100 tokens minimum
+            min_chunk_size=100,  # 100 tokens minimum
         )
 
         # Chunk the document
         chunks = chunker.chunk_document(
             text=content,
             metadata=metadata,
-            source_file=source_file or metadata.get('file', 'unknown')
+            source_file=source_file or metadata.get("file", "unknown"),
         )
 
         # Convert RAGChunker output format to (text, metadata) tuples
         result = []
         for chunk_dict in chunks:
-            chunk_text = chunk_dict['page_content']
+            chunk_text = chunk_dict["page_content"]
             chunk_meta = {
                 **metadata,  # Base metadata
-                **chunk_dict['metadata'],  # RAGChunker metadata (chunk_index, etc.)
-                'is_chunked': True,
-                'chunk_id': chunk_dict['chunk_id']
+                **chunk_dict["metadata"],  # RAGChunker metadata (chunk_index, etc.)
+                "is_chunked": True,
+                "chunk_id": chunk_dict["chunk_id"],
             }
             result.append((chunk_text, chunk_meta))
 
         return result
 
-    def _format_output_path(
-        self, skill_dir: Path, output_path: Path, suffix: str
-    ) -> Path:
+    def _format_output_path(self, skill_dir: Path, output_path: Path, suffix: str) -> Path:
         """
         Generate standardized output path with intelligent format handling.
 
@@ -379,11 +377,13 @@ class SkillAdaptor(ABC):
         output_str = str(output_path)
 
         # Extract the file extension from suffix (e.g., ".json" from "-langchain.json")
-        correct_ext = suffix.split('.')[-1] if '.' in suffix else ''
+        correct_ext = suffix.split(".")[-1] if "." in suffix else ""
 
         if correct_ext and not output_str.endswith(f".{correct_ext}"):
             # Replace common incorrect extensions
-            output_str = output_str.replace(".zip", f".{correct_ext}").replace(".tar.gz", f".{correct_ext}")
+            output_str = output_str.replace(".zip", f".{correct_ext}").replace(
+                ".tar.gz", f".{correct_ext}"
+            )
 
             # Ensure platform suffix is present
             if not output_str.endswith(suffix):
@@ -395,9 +395,7 @@ class SkillAdaptor(ABC):
 
         return Path(output_str)
 
-    def _generate_deterministic_id(
-        self, content: str, metadata: dict, format: str = "hex"
-    ) -> str:
+    def _generate_deterministic_id(self, content: str, metadata: dict, format: str = "hex") -> str:
         """
         Generate deterministic ID from content and metadata.
 

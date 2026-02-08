@@ -104,11 +104,7 @@ class WeaviateAdaptor(SkillAdaptor):
         }
 
     def format_skill_md(
-        self,
-        skill_dir: Path,
-        metadata: SkillMetadata,
-        enable_chunking: bool = False,
-        **kwargs
+        self, skill_dir: Path, metadata: SkillMetadata, enable_chunking: bool = False, **kwargs
     ) -> str:
         """
         Format skill as JSON for Weaviate ingestion.
@@ -148,24 +144,26 @@ class WeaviateAdaptor(SkillAdaptor):
                     content,
                     obj_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file="SKILL.md"
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file="SKILL.md",
                 )
 
                 # Add all chunks as objects
                 for chunk_text, chunk_meta in chunks:
-                    objects.append({
-                        "id": self._generate_uuid(chunk_text, chunk_meta),
-                        "properties": {
-                            "content": chunk_text,
-                            "source": chunk_meta.get("source", metadata.name),
-                            "category": chunk_meta.get("category", "overview"),
-                            "file": chunk_meta.get("file", "SKILL.md"),
-                            "type": chunk_meta.get("type", "documentation"),
-                            "version": chunk_meta.get("version", metadata.version),
-                        },
-                    })
+                    objects.append(
+                        {
+                            "id": self._generate_uuid(chunk_text, chunk_meta),
+                            "properties": {
+                                "content": chunk_text,
+                                "source": chunk_meta.get("source", metadata.name),
+                                "category": chunk_meta.get("category", "overview"),
+                                "file": chunk_meta.get("file", "SKILL.md"),
+                                "type": chunk_meta.get("type", "documentation"),
+                                "version": chunk_meta.get("version", metadata.version),
+                            },
+                        }
+                    )
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -186,24 +184,26 @@ class WeaviateAdaptor(SkillAdaptor):
                     ref_content,
                     obj_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file=ref_file.name
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file=ref_file.name,
                 )
 
                 # Add all chunks as objects
                 for chunk_text, chunk_meta in chunks:
-                    objects.append({
-                        "id": self._generate_uuid(chunk_text, chunk_meta),
-                        "properties": {
-                            "content": chunk_text,
-                            "source": chunk_meta.get("source", metadata.name),
-                            "category": chunk_meta.get("category", category),
-                            "file": chunk_meta.get("file", ref_file.name),
-                            "type": chunk_meta.get("type", "reference"),
-                            "version": chunk_meta.get("version", metadata.version),
-                        },
-                    })
+                    objects.append(
+                        {
+                            "id": self._generate_uuid(chunk_text, chunk_meta),
+                            "properties": {
+                                "content": chunk_text,
+                                "source": chunk_meta.get("source", metadata.name),
+                                "category": chunk_meta.get("category", category),
+                                "file": chunk_meta.get("file", ref_file.name),
+                                "type": chunk_meta.get("type", "reference"),
+                                "version": chunk_meta.get("version", metadata.version),
+                            },
+                        }
+                    )
 
         # Generate schema
         class_name = "".join(word.capitalize() for word in metadata.name.split("_"))
@@ -222,7 +222,7 @@ class WeaviateAdaptor(SkillAdaptor):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill into JSON file for Weaviate.
@@ -258,7 +258,7 @@ class WeaviateAdaptor(SkillAdaptor):
             metadata,
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
-            preserve_code_blocks=preserve_code_blocks
+            preserve_code_blocks=preserve_code_blocks,
         )
 
         # Write to file
@@ -310,7 +310,7 @@ class WeaviateAdaptor(SkillAdaptor):
         except ImportError:
             return {
                 "success": False,
-                "message": "weaviate-client not installed. Run: pip install weaviate-client"
+                "message": "weaviate-client not installed. Run: pip install weaviate-client",
             }
 
         # Load package
@@ -319,16 +319,16 @@ class WeaviateAdaptor(SkillAdaptor):
 
         # Connect to Weaviate
         try:
-            if kwargs.get('use_cloud') and api_key:
+            if kwargs.get("use_cloud") and api_key:
                 # Weaviate Cloud
                 print(f"🌐 Connecting to Weaviate Cloud: {kwargs.get('cluster_url')}")
                 client = weaviate.Client(
-                    url=kwargs.get('cluster_url'),
-                    auth_client_secret=weaviate.AuthApiKey(api_key=api_key)
+                    url=kwargs.get("cluster_url"),
+                    auth_client_secret=weaviate.AuthApiKey(api_key=api_key),
                 )
             else:
                 # Local Weaviate instance
-                weaviate_url = kwargs.get('weaviate_url', 'http://localhost:8080')
+                weaviate_url = kwargs.get("weaviate_url", "http://localhost:8080")
                 print(f"🌐 Connecting to Weaviate at: {weaviate_url}")
                 client = weaviate.Client(url=weaviate_url)
 
@@ -336,69 +336,67 @@ class WeaviateAdaptor(SkillAdaptor):
             if not client.is_ready():
                 return {
                     "success": False,
-                    "message": "Weaviate server not ready. Make sure Weaviate is running:\n  docker run -p 8080:8080 semitechnologies/weaviate:latest"
+                    "message": "Weaviate server not ready. Make sure Weaviate is running:\n  docker run -p 8080:8080 semitechnologies/weaviate:latest",
                 }
 
         except Exception as e:
             return {
                 "success": False,
-                "message": f"Failed to connect to Weaviate: {e}\n\nMake sure Weaviate is running or provide correct credentials."
+                "message": f"Failed to connect to Weaviate: {e}\n\nMake sure Weaviate is running or provide correct credentials.",
             }
 
         # Create schema
         try:
-            client.schema.create_class(data['schema'])
+            client.schema.create_class(data["schema"])
             print(f"✅ Created schema: {data['class_name']}")
         except Exception as e:
             if "already exists" in str(e).lower():
                 print(f"ℹ️  Schema already exists: {data['class_name']}")
             else:
-                return {
-                    "success": False,
-                    "message": f"Schema creation failed: {e}"
-                }
+                return {"success": False, "message": f"Schema creation failed: {e}"}
 
         # Handle embeddings
-        embedding_function = kwargs.get('embedding_function')
+        embedding_function = kwargs.get("embedding_function")
 
         try:
             with client.batch as batch:
                 batch.batch_size = 100
 
-                if embedding_function == 'openai':
+                if embedding_function == "openai":
                     # Generate embeddings with OpenAI
                     print("🔄 Generating OpenAI embeddings and uploading...")
                     embeddings = self._generate_openai_embeddings(
-                        [obj['properties']['content'] for obj in data['objects']],
-                        api_key=kwargs.get('openai_api_key')
+                        [obj["properties"]["content"] for obj in data["objects"]],
+                        api_key=kwargs.get("openai_api_key"),
                     )
 
-                    for i, obj in enumerate(data['objects']):
+                    for i, obj in enumerate(data["objects"]):
                         batch.add_data_object(
-                            data_object=obj['properties'],
-                            class_name=data['class_name'],
-                            uuid=obj['id'],
-                            vector=embeddings[i]
+                            data_object=obj["properties"],
+                            class_name=data["class_name"],
+                            uuid=obj["id"],
+                            vector=embeddings[i],
                         )
 
                         if (i + 1) % 100 == 0:
                             print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
 
-                elif embedding_function == 'sentence-transformers':
+                elif embedding_function == "sentence-transformers":
                     # Use sentence-transformers
                     print("🔄 Generating sentence-transformer embeddings and uploading...")
                     try:
                         from sentence_transformers import SentenceTransformer
-                        model = SentenceTransformer('all-MiniLM-L6-v2')
-                        contents = [obj['properties']['content'] for obj in data['objects']]
+
+                        model = SentenceTransformer("all-MiniLM-L6-v2")
+                        contents = [obj["properties"]["content"] for obj in data["objects"]]
                         embeddings = model.encode(contents, show_progress_bar=True).tolist()
 
-                        for i, obj in enumerate(data['objects']):
+                        for i, obj in enumerate(data["objects"]):
                             batch.add_data_object(
-                                data_object=obj['properties'],
-                                class_name=data['class_name'],
-                                uuid=obj['id'],
-                                vector=embeddings[i]
+                                data_object=obj["properties"],
+                                class_name=data["class_name"],
+                                uuid=obj["id"],
+                                vector=embeddings[i],
                             )
 
                             if (i + 1) % 100 == 0:
@@ -407,42 +405,37 @@ class WeaviateAdaptor(SkillAdaptor):
                     except ImportError:
                         return {
                             "success": False,
-                            "message": "sentence-transformers not installed. Run: pip install sentence-transformers"
+                            "message": "sentence-transformers not installed. Run: pip install sentence-transformers",
                         }
 
                 else:
                     # No embeddings - Weaviate will use its configured vectorizer
                     print("🔄 Uploading objects (Weaviate will generate embeddings)...")
-                    for i, obj in enumerate(data['objects']):
+                    for i, obj in enumerate(data["objects"]):
                         batch.add_data_object(
-                            data_object=obj['properties'],
-                            class_name=data['class_name'],
-                            uuid=obj['id']
+                            data_object=obj["properties"],
+                            class_name=data["class_name"],
+                            uuid=obj["id"],
                         )
 
                         if (i + 1) % 100 == 0:
                             print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
 
-            count = len(data['objects'])
+            count = len(data["objects"])
             print(f"✅ Upload complete! {count} objects added to Weaviate")
 
             return {
                 "success": True,
                 "message": f"Uploaded {count} objects to Weaviate class '{data['class_name']}'",
-                "class_name": data['class_name'],
-                "count": count
+                "class_name": data["class_name"],
+                "count": count,
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "message": f"Upload failed: {e}"
-            }
+            return {"success": False, "message": f"Upload failed: {e}"}
 
     def _generate_openai_embeddings(
-        self,
-        documents: list[str],
-        api_key: str = None
+        self, documents: list[str], api_key: str = None
     ) -> list[list[float]]:
         """
         Generate embeddings using OpenAI API.
@@ -455,12 +448,13 @@ class WeaviateAdaptor(SkillAdaptor):
             List of embedding vectors
         """
         import os
+
         try:
             from openai import OpenAI
         except ImportError:
             raise ImportError("openai not installed. Run: pip install openai") from None
 
-        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
 
@@ -473,14 +467,16 @@ class WeaviateAdaptor(SkillAdaptor):
         print(f"  Generating embeddings for {len(documents)} documents...")
 
         for i in range(0, len(documents), batch_size):
-            batch = documents[i:i+batch_size]
+            batch = documents[i : i + batch_size]
             try:
                 response = client.embeddings.create(
                     input=batch,
-                    model="text-embedding-3-small"  # Cheapest, fastest
+                    model="text-embedding-3-small",  # Cheapest, fastest
                 )
                 embeddings.extend([item.embedding for item in response.data])
-                print(f"  ✓ Generated {min(i+batch_size, len(documents))}/{len(documents)} embeddings")
+                print(
+                    f"  ✓ Generated {min(i + batch_size, len(documents))}/{len(documents)} embeddings"
+                )
             except Exception as e:
                 raise Exception(f"OpenAI embedding generation failed: {e}") from e
 

@@ -32,9 +32,9 @@ from .detector import ChangeDetector
 from .models import SyncConfig, ChangeReport, PageChange
 
 __all__ = [
-    'SyncMonitor',
-    'ChangeDetector',
-    'SyncConfig',
-    'ChangeReport',
-    'PageChange',
+    "SyncMonitor",
+    "ChangeDetector",
+    "SyncConfig",
+    "ChangeReport",
+    "PageChange",
 ]

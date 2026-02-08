@@ -33,9 +33,9 @@ from .runner import BenchmarkRunner
 from .models import BenchmarkReport, Metric
 
 __all__ = [
-    'Benchmark',
-    'BenchmarkResult',
-    'BenchmarkRunner',
-    'BenchmarkReport',
-    'Metric',
+    "Benchmark",
+    "BenchmarkResult",
+    "BenchmarkRunner",
+    "BenchmarkReport",
+    "Metric",
 ]

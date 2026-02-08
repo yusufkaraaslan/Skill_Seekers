@@ -23,6 +23,7 @@ from skill_seekers.embedding.cache import EmbeddingCache
 # Cache Tests
 # ========================================
 
+
 def test_cache_init():
     """Test cache initialization."""
     cache = EmbeddingCache(":memory:")
@@ -121,6 +122,7 @@ def test_cache_context_manager():
 # Generator Tests
 # ========================================
 
+
 def test_generator_init():
     """Test generator initialization."""
     generator = EmbeddingGenerator()
@@ -174,7 +176,7 @@ def test_generator_compute_hash():
     assert hash1 != hash4
 
 
-@patch('skill_seekers.embedding.generator.SENTENCE_TRANSFORMERS_AVAILABLE', False)
+@patch("skill_seekers.embedding.generator.SENTENCE_TRANSFORMERS_AVAILABLE", False)
 def test_generator_sentence_transformers_not_available():
     """Test sentence-transformers not available."""
     generator = EmbeddingGenerator()
@@ -183,7 +185,7 @@ def test_generator_sentence_transformers_not_available():
         generator.generate("test", model="all-MiniLM-L6-v2")
 
 
-@patch('skill_seekers.embedding.generator.OPENAI_AVAILABLE', False)
+@patch("skill_seekers.embedding.generator.OPENAI_AVAILABLE", False)
 def test_generator_openai_not_available():
     """Test OpenAI not available."""
     generator = EmbeddingGenerator()
@@ -192,7 +194,7 @@ def test_generator_openai_not_available():
         generator.generate("test", model="text-embedding-3-small")
 
 
-@patch('skill_seekers.embedding.generator.VOYAGE_AVAILABLE', False)
+@patch("skill_seekers.embedding.generator.VOYAGE_AVAILABLE", False)
 def test_generator_voyage_not_available():
     """Test Voyage AI not available."""
     generator = EmbeddingGenerator()
@@ -227,13 +229,10 @@ def test_generator_voyage_large_2_model_info():
 # Model Tests
 # ========================================
 
+
 def test_embedding_request():
     """Test EmbeddingRequest model."""
-    request = EmbeddingRequest(
-        text="Hello world",
-        model="text-embedding-3-small",
-        normalize=True
-    )
+    request = EmbeddingRequest(text="Hello world", model="text-embedding-3-small", normalize=True)
 
     assert request.text == "Hello world"
     assert request.model == "text-embedding-3-small"
@@ -243,9 +242,7 @@ def test_embedding_request():
 def test_batch_embedding_request():
     """Test BatchEmbeddingRequest model."""
     request = BatchEmbeddingRequest(
-        texts=["text1", "text2", "text3"],
-        model="text-embedding-3-small",
-        batch_size=32
+        texts=["text1", "text2", "text3"], model="text-embedding-3-small", batch_size=32
     )
 
     assert len(request.texts) == 3
@@ -255,10 +252,7 @@ def test_batch_embedding_request():
 def test_embedding_response():
     """Test EmbeddingResponse model."""
     response = EmbeddingResponse(
-        embedding=[0.1, 0.2, 0.3],
-        model="test-model",
-        dimensions=3,
-        cached=False
+        embedding=[0.1, 0.2, 0.3], model="test-model", dimensions=3, cached=False
     )
 
     assert len(response.embedding) == 3
@@ -273,7 +267,7 @@ def test_batch_embedding_response():
         model="test-model",
         dimensions=2,
         count=2,
-        cached_count=1
+        cached_count=1,
     )
 
     assert len(response.embeddings) == 2
@@ -288,7 +282,7 @@ def test_health_response():
         version="1.0.0",
         models=["model1", "model2"],
         cache_enabled=True,
-        cache_size=100
+        cache_size=100,
     )
 
     assert response.status == "ok"
@@ -303,7 +297,7 @@ def test_model_info():
         provider="openai",
         dimensions=1536,
         max_tokens=8191,
-        cost_per_million=0.02
+        cost_per_million=0.02,
     )
 
     assert info.name == "test-model"
@@ -314,6 +308,7 @@ def test_model_info():
 # ========================================
 # Integration Tests
 # ========================================
+
 
 def test_cache_batch_operations():
     """Test cache batch operations."""

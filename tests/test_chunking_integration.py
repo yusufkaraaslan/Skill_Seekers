@@ -60,7 +60,7 @@ class TestChunkingDisabledByDefault:
         """Test that LangChain doesn't chunk by default."""
         skill_dir = create_test_skill(tmp_path, large_doc=True)
 
-        adaptor = get_adaptor('langchain')
+        adaptor = get_adaptor("langchain")
         package_path = adaptor.package(skill_dir, tmp_path)
 
         with open(package_path) as f:
@@ -71,8 +71,8 @@ class TestChunkingDisabledByDefault:
 
         # No chunking metadata
         for doc in data:
-            assert 'is_chunked' not in doc['metadata']
-            assert 'chunk_index' not in doc['metadata']
+            assert "is_chunked" not in doc["metadata"]
+            assert "chunk_index" not in doc["metadata"]
 
 
 class TestChunkingEnabled:
@@ -82,12 +82,9 @@ class TestChunkingEnabled:
         """Test that LangChain chunks large documents when enabled."""
         skill_dir = create_test_skill(tmp_path, large_doc=True)
 
-        adaptor = get_adaptor('langchain')
+        adaptor = get_adaptor("langchain")
         package_path = adaptor.package(
-            skill_dir,
-            tmp_path,
-            enable_chunking=True,
-            chunk_max_tokens=512
+            skill_dir, tmp_path, enable_chunking=True, chunk_max_tokens=512
         )
 
         with open(package_path) as f:
@@ -97,25 +94,22 @@ class TestChunkingEnabled:
         assert len(data) > 2, f"Large doc should be chunked, got {len(data)} docs"
 
         # Check for chunking metadata
-        chunked_docs = [doc for doc in data if doc['metadata'].get('is_chunked')]
+        chunked_docs = [doc for doc in data if doc["metadata"].get("is_chunked")]
         assert len(chunked_docs) > 0, "Should have chunked documents"
 
         # Verify chunk metadata structure
         for doc in chunked_docs:
-            assert 'chunk_index' in doc['metadata']
-            assert 'total_chunks' in doc['metadata']
-            assert 'chunk_id' in doc['metadata']
+            assert "chunk_index" in doc["metadata"]
+            assert "total_chunks" in doc["metadata"]
+            assert "chunk_id" in doc["metadata"]
 
     def test_chunking_preserves_small_docs(self, tmp_path):
         """Test that small documents are not chunked."""
         skill_dir = create_test_skill(tmp_path, large_doc=False)
 
-        adaptor = get_adaptor('langchain')
+        adaptor = get_adaptor("langchain")
         package_path = adaptor.package(
-            skill_dir,
-            tmp_path,
-            enable_chunking=True,
-            chunk_max_tokens=512
+            skill_dir, tmp_path, enable_chunking=True, chunk_max_tokens=512
         )
 
         with open(package_path) as f:
@@ -125,7 +119,7 @@ class TestChunkingEnabled:
         assert len(data) == 2, "Small docs should not be chunked"
 
         for doc in data:
-            assert 'is_chunked' not in doc['metadata']
+            assert "is_chunked" not in doc["metadata"]
 
 
 class TestCodeBlockPreservation:
@@ -158,43 +152,43 @@ More content after code block.
         # Create references dir (required)
         (skill_dir / "references").mkdir()
 
-        adaptor = get_adaptor('langchain')
+        adaptor = get_adaptor("langchain")
         package_path = adaptor.package(
             skill_dir,
             tmp_path,
             enable_chunking=True,
             chunk_max_tokens=200,  # Small chunks to force splitting
-            preserve_code_blocks=True
+            preserve_code_blocks=True,
         )
 
         with open(package_path) as f:
             data = json.load(f)
 
         # Find chunks with code block
-        code_chunks = [
-            doc for doc in data
-            if '```python' in doc['page_content']
-        ]
+        code_chunks = [doc for doc in data if "```python" in doc["page_content"]]
 
         # Code block should be in at least one chunk
         assert len(code_chunks) >= 1, "Code block should be preserved"
 
         # Code block should be complete (opening and closing backticks)
         for chunk in code_chunks:
-            content = chunk['page_content']
-            if '```python' in content:
+            content = chunk["page_content"]
+            if "```python" in content:
                 # Should also have closing backticks
-                assert content.count('```') >= 2, "Code block should be complete"
+                assert content.count("```") >= 2, "Code block should be complete"
 
 
 class TestAutoChunkingForRAGPlatforms:
     """Test that chunking is auto-enabled for RAG platforms."""
 
-    @pytest.mark.parametrize("platform", [
-        'langchain',
-        # Add others after they're updated:
-        # 'llama-index', 'haystack', 'weaviate', 'chroma', 'faiss', 'qdrant'
-    ])
+    @pytest.mark.parametrize(
+        "platform",
+        [
+            "langchain",
+            # Add others after they're updated:
+            # 'llama-index', 'haystack', 'weaviate', 'chroma', 'faiss', 'qdrant'
+        ],
+    )
     def test_rag_platforms_auto_chunk(self, platform, tmp_path):
         """Test that RAG platforms auto-enable chunking."""
         skill_dir = create_test_skill(tmp_path, large_doc=True)
@@ -208,7 +202,7 @@ class TestAutoChunkingForRAGPlatforms:
             open_folder_after=False,
             skip_quality_check=True,
             target=platform,
-            enable_chunking=False  # Explicitly disabled, but should be auto-enabled
+            enable_chunking=False,  # Explicitly disabled, but should be auto-enabled
         )
 
         assert success, f"Packaging failed for {platform}"
@@ -221,8 +215,8 @@ class TestAutoChunkingForRAGPlatforms:
         # Should have multiple documents/chunks
         if isinstance(data, list):
             assert len(data) > 2, f"{platform}: Should auto-chunk large docs"
-        elif isinstance(data, dict) and 'documents' in data:
-            assert len(data['documents']) > 2, f"{platform}: Should auto-chunk large docs"
+        elif isinstance(data, dict) and "documents" in data:
+            assert len(data["documents"]) > 2, f"{platform}: Should auto-chunk large docs"
 
 
 class TestBaseAdaptorChunkingHelper:
@@ -237,11 +231,7 @@ class TestBaseAdaptorChunkingHelper:
         content = "Test content " * 1000  # Large content
         metadata = {"source": "test"}
 
-        chunks = adaptor._maybe_chunk_content(
-            content,
-            metadata,
-            enable_chunking=False
-        )
+        chunks = adaptor._maybe_chunk_content(content, metadata, enable_chunking=False)
 
         # Should return single chunk
         assert len(chunks) == 1
@@ -258,10 +248,7 @@ class TestBaseAdaptorChunkingHelper:
         metadata = {"source": "test"}
 
         chunks = adaptor._maybe_chunk_content(
-            content,
-            metadata,
-            enable_chunking=True,
-            chunk_max_tokens=512
+            content, metadata, enable_chunking=True, chunk_max_tokens=512
         )
 
         # Should return single chunk
@@ -282,7 +269,7 @@ class TestBaseAdaptorChunkingHelper:
             enable_chunking=True,
             chunk_max_tokens=512,
             preserve_code_blocks=True,
-            source_file="test.md"
+            source_file="test.md",
         )
 
         # Should return multiple chunks
@@ -292,12 +279,12 @@ class TestBaseAdaptorChunkingHelper:
         for chunk_text, chunk_meta in chunks:
             assert isinstance(chunk_text, str)
             assert isinstance(chunk_meta, dict)
-            assert chunk_meta['is_chunked']
-            assert 'chunk_index' in chunk_meta
-            assert 'chunk_id' in chunk_meta
+            assert chunk_meta["is_chunked"]
+            assert "chunk_index" in chunk_meta
+            assert "chunk_id" in chunk_meta
             # Original metadata preserved
-            assert chunk_meta['source'] == 'test'
-            assert chunk_meta['file'] == 'test.md'
+            assert chunk_meta["source"] == "test"
+            assert chunk_meta["file"] == "test.md"
 
 
 class TestChunkingCLIIntegration:
@@ -313,10 +300,10 @@ class TestChunkingCLIIntegration:
             skill_dir=skill_dir,
             open_folder_after=False,
             skip_quality_check=True,
-            target='langchain',
+            target="langchain",
             enable_chunking=True,  # --chunk flag
             chunk_max_tokens=512,
-            preserve_code_blocks=True
+            preserve_code_blocks=True,
         )
 
         assert success
@@ -339,10 +326,10 @@ class TestChunkingCLIIntegration:
             skill_dir=skill_dir,
             open_folder_after=False,
             skip_quality_check=True,
-            target='langchain',
+            target="langchain",
             enable_chunking=True,
             chunk_max_tokens=256,  # Small chunks
-            preserve_code_blocks=True
+            preserve_code_blocks=True,
         )
 
         assert success
@@ -355,10 +342,10 @@ class TestChunkingCLIIntegration:
             skill_dir=skill_dir,
             open_folder_after=False,
             skip_quality_check=True,
-            target='langchain',
+            target="langchain",
             enable_chunking=True,
             chunk_max_tokens=1024,  # Large chunks
-            preserve_code_blocks=True
+            preserve_code_blocks=True,
         )
 
         assert success
@@ -367,9 +354,10 @@ class TestChunkingCLIIntegration:
             data_large = json.load(f)
 
         # Small chunk size should produce more chunks
-        assert len(data_small) > len(data_large), \
+        assert len(data_small) > len(data_large), (
             f"Small chunks ({len(data_small)}) should be more than large chunks ({len(data_large)})"
+        )
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

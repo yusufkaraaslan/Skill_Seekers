@@ -1,4 +1,5 @@
 """Multilang subcommand parser."""
+
 from .base import SubcommandParser
 
 

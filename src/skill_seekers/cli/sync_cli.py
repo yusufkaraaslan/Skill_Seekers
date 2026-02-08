@@ -22,9 +22,7 @@ def handle_signal(_signum, _frame):
 def start_command(args):
     """Start monitoring."""
     monitor = SyncMonitor(
-        config_path=args.config,
-        check_interval=args.interval,
-        auto_update=args.auto_update
+        config_path=args.config, check_interval=args.interval, auto_update=args.auto_update
     )
 
     # Register signal handlers
@@ -42,6 +40,7 @@ def start_command(args):
         # Keep running
         while True:
             import time
+
             time.sleep(1)
 
     except KeyboardInterrupt:
@@ -53,7 +52,7 @@ def check_command(args):
     """Check for changes once."""
     monitor = SyncMonitor(
         config_path=args.config,
-        check_interval=3600  # Not used for single check
+        check_interval=3600,  # Not used for single check
     )
 
     print(f"🔍 Checking {args.config} for changes...")
@@ -82,7 +81,7 @@ def check_command(args):
                     print(f"   • {change.url}")
                     if change.diff and args.diff:
                         print(f"      Diff preview (first 5 lines):")
-                        for line in change.diff.split('\n')[:5]:
+                        for line in change.diff.split("\n")[:5]:
                             print(f"        {line}")
 
             if report.deleted:
@@ -95,10 +94,7 @@ def check_command(args):
 
 def stats_command(args):
     """Show monitoring statistics."""
-    monitor = SyncMonitor(
-        config_path=args.config,
-        check_interval=3600
-    )
+    monitor = SyncMonitor(config_path=args.config, check_interval=3600)
 
     stats = monitor.stats()
 
@@ -117,7 +113,7 @@ def reset_command(args):
     state_file = Path(f"{args.skill_name}_sync.json")
 
     if state_file.exists():
-        if args.force or input(f"⚠️  Reset state for {args.skill_name}? [y/N]: ").lower() == 'y':
+        if args.force or input(f"⚠️  Reset state for {args.skill_name}? [y/N]: ").lower() == "y":
             state_file.unlink()
             print(f"✅ State reset for {args.skill_name}")
         else:
@@ -129,7 +125,7 @@ def reset_command(args):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Monitor documentation for changes and update skills',
+        description="Monitor documentation for changes and update skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -153,52 +149,39 @@ Examples:
 
   # Reset state
   skill-seekers-sync reset --skill-name react
-        """
+        """,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Start command
-    start_parser = subparsers.add_parser('start', help='Start continuous monitoring')
-    start_parser.add_argument('--config', required=True, help='Path to skill config file')
+    start_parser = subparsers.add_parser("start", help="Start continuous monitoring")
+    start_parser.add_argument("--config", required=True, help="Path to skill config file")
     start_parser.add_argument(
-        '--interval', '-i',
+        "--interval",
+        "-i",
         type=int,
         default=3600,
-        help='Check interval in seconds (default: 3600 = 1 hour)'
+        help="Check interval in seconds (default: 3600 = 1 hour)",
     )
     start_parser.add_argument(
-        '--auto-update',
-        action='store_true',
-        help='Automatically rebuild skill on changes'
+        "--auto-update", action="store_true", help="Automatically rebuild skill on changes"
     )
 
     # Check command
-    check_parser = subparsers.add_parser('check', help='Check for changes once')
-    check_parser.add_argument('--config', required=True, help='Path to skill config file')
-    check_parser.add_argument(
-        '--diff', '-d',
-        action='store_true',
-        help='Generate content diffs'
-    )
-    check_parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Show detailed output'
-    )
+    check_parser = subparsers.add_parser("check", help="Check for changes once")
+    check_parser.add_argument("--config", required=True, help="Path to skill config file")
+    check_parser.add_argument("--diff", "-d", action="store_true", help="Generate content diffs")
+    check_parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed output")
 
     # Stats command
-    stats_parser = subparsers.add_parser('stats', help='Show monitoring statistics')
-    stats_parser.add_argument('--config', required=True, help='Path to skill config file')
+    stats_parser = subparsers.add_parser("stats", help="Show monitoring statistics")
+    stats_parser.add_argument("--config", required=True, help="Path to skill config file")
 
     # Reset command
-    reset_parser = subparsers.add_parser('reset', help='Reset monitoring state')
-    reset_parser.add_argument('--skill-name', required=True, help='Skill name')
-    reset_parser.add_argument(
-        '--force', '-f',
-        action='store_true',
-        help='Skip confirmation'
-    )
+    reset_parser = subparsers.add_parser("reset", help="Reset monitoring state")
+    reset_parser.add_argument("--skill-name", required=True, help="Skill name")
+    reset_parser.add_argument("--force", "-f", action="store_true", help="Skip confirmation")
 
     args = parser.parse_args()
 
@@ -207,18 +190,18 @@ Examples:
         sys.exit(1)
 
     try:
-        if args.command == 'start':
+        if args.command == "start":
             start_command(args)
-        elif args.command == 'check':
+        elif args.command == "check":
             check_command(args)
-        elif args.command == 'stats':
+        elif args.command == "stats":
             stats_command(args)
-        elif args.command == 'reset':
+        elif args.command == "reset":
             reset_command(args)
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

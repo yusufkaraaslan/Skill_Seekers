@@ -14,8 +14,7 @@ class Metric(BaseModel):
     value: float = Field(..., description="Metric value")
     unit: str = Field(..., description="Unit (seconds, bytes, pages/sec, etc.)")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When metric was recorded"
+        default_factory=datetime.utcnow, description="When metric was recorded"
     )
 
 
@@ -48,26 +47,13 @@ class BenchmarkReport(BaseModel):
     finished_at: datetime = Field(..., description="Finish time")
     total_duration: float = Field(..., description="Total duration in seconds")
 
-    timings: list[TimingResult] = Field(
-        default_factory=list,
-        description="Timing results"
-    )
-    memory: list[MemoryUsage] = Field(
-        default_factory=list,
-        description="Memory usage results"
-    )
-    metrics: list[Metric] = Field(
-        default_factory=list,
-        description="Additional metrics"
-    )
+    timings: list[TimingResult] = Field(default_factory=list, description="Timing results")
+    memory: list[MemoryUsage] = Field(default_factory=list, description="Memory usage results")
+    metrics: list[Metric] = Field(default_factory=list, description="Additional metrics")
 
-    system_info: dict[str, Any] = Field(
-        default_factory=dict,
-        description="System information"
-    )
+    system_info: dict[str, Any] = Field(default_factory=dict, description="System information")
     recommendations: list[str] = Field(
-        default_factory=list,
-        description="Optimization recommendations"
+        default_factory=list, description="Optimization recommendations"
     )
 
     @property
@@ -89,14 +75,8 @@ class ComparisonReport(BaseModel):
     baseline: BenchmarkReport = Field(..., description="Baseline benchmark")
     current: BenchmarkReport = Field(..., description="Current benchmark")
 
-    improvements: list[str] = Field(
-        default_factory=list,
-        description="Performance improvements"
-    )
-    regressions: list[str] = Field(
-        default_factory=list,
-        description="Performance regressions"
-    )
+    improvements: list[str] = Field(default_factory=list, description="Performance improvements")
+    regressions: list[str] = Field(default_factory=list, description="Performance regressions")
 
     speedup_factor: float = Field(..., description="Overall speedup factor")
     memory_change_mb: float = Field(..., description="Memory usage change (MB)")

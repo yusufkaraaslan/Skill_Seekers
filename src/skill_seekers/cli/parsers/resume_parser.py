@@ -1,4 +1,5 @@
 """Resume subcommand parser."""
+
 from .base import SubcommandParser
 
 

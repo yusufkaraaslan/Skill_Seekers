@@ -9,6 +9,7 @@ from datetime import timedelta
 try:
     from google.cloud import storage
     from google.cloud.exceptions import NotFound
+
     GCS_AVAILABLE = True
 except ImportError:
     GCS_AVAILABLE = False
@@ -63,19 +64,19 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
                 "Install with: pip install google-cloud-storage"
             )
 
-        if 'bucket' not in kwargs:
+        if "bucket" not in kwargs:
             raise ValueError("bucket parameter is required for GCS storage")
 
-        self.bucket_name = kwargs['bucket']
-        self.project = kwargs.get('project', os.getenv('GOOGLE_CLOUD_PROJECT'))
+        self.bucket_name = kwargs["bucket"]
+        self.project = kwargs.get("project", os.getenv("GOOGLE_CLOUD_PROJECT"))
 
         # Initialize GCS client
         client_kwargs = {}
         if self.project:
-            client_kwargs['project'] = self.project
+            client_kwargs["project"] = self.project
 
-        if 'credentials_path' in kwargs:
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = kwargs['credentials_path']
+        if "credentials_path" in kwargs:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = kwargs["credentials_path"]
 
         self.storage_client = storage.Client(**client_kwargs)
         self.bucket = self.storage_client.bucket(self.bucket_name)
@@ -122,26 +123,24 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
         except Exception as e:
             raise Exception(f"GCS deletion failed: {e}") from e
 
-    def list_files(
-        self, prefix: str = "", max_results: int = 1000
-    ) -> list[StorageObject]:
+    def list_files(self, prefix: str = "", max_results: int = 1000) -> list[StorageObject]:
         """List files in GCS bucket."""
         try:
             blobs = self.storage_client.list_blobs(
-                self.bucket_name,
-                prefix=prefix,
-                max_results=max_results
+                self.bucket_name, prefix=prefix, max_results=max_results
             )
 
             files = []
             for blob in blobs:
-                files.append(StorageObject(
-                    key=blob.name,
-                    size=blob.size,
-                    last_modified=blob.updated.isoformat() if blob.updated else None,
-                    etag=blob.etag,
-                    metadata=blob.metadata
-                ))
+                files.append(
+                    StorageObject(
+                        key=blob.name,
+                        size=blob.size,
+                        last_modified=blob.updated.isoformat() if blob.updated else None,
+                        etag=blob.etag,
+                        metadata=blob.metadata,
+                    )
+                )
 
             return files
         except Exception as e:
@@ -164,9 +163,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
                 raise FileNotFoundError(f"Remote file not found: {remote_path}")
 
             url = blob.generate_signed_url(
-                version="v4",
-                expiration=timedelta(seconds=expires_in),
-                method="GET"
+                version="v4", expiration=timedelta(seconds=expires_in), method="GET"
             )
             return url
         except FileNotFoundError:
@@ -182,11 +179,7 @@ class GCSStorageAdaptor(BaseStorageAdaptor):
             if not source_blob.exists():
                 raise FileNotFoundError(f"Source file not found: {source_path}")
 
-            self.bucket.copy_blob(
-                source_blob,
-                self.bucket,
-                dest_path
-            )
+            self.bucket.copy_blob(source_blob, self.bucket, dest_path)
         except FileNotFoundError:
             raise
         except Exception as e:

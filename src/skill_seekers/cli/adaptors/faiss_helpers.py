@@ -46,11 +46,7 @@ class FAISSHelpers(SkillAdaptor):
         return self._generate_deterministic_id(content, metadata, format="hex")
 
     def format_skill_md(
-        self,
-        skill_dir: Path,
-        metadata: SkillMetadata,
-        enable_chunking: bool = False,
-        **kwargs
+        self, skill_dir: Path, metadata: SkillMetadata, enable_chunking: bool = False, **kwargs
     ) -> str:
         """
         Format skill as JSON for FAISS ingestion.
@@ -92,9 +88,9 @@ class FAISSHelpers(SkillAdaptor):
                     content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file="SKILL.md"
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file="SKILL.md",
                 )
 
                 # Add all chunks to parallel arrays
@@ -121,9 +117,9 @@ class FAISSHelpers(SkillAdaptor):
                     ref_content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file=ref_file.name
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file=ref_file.name,
                 )
 
                 # Add all chunks to parallel arrays
@@ -160,7 +156,7 @@ class FAISSHelpers(SkillAdaptor):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill into JSON file for FAISS.
@@ -193,7 +189,7 @@ class FAISSHelpers(SkillAdaptor):
             metadata,
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
-            preserve_code_blocks=preserve_code_blocks
+            preserve_code_blocks=preserve_code_blocks,
         )
 
         # Write to file

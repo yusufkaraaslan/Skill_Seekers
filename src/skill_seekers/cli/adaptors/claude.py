@@ -81,7 +81,14 @@ version: {metadata.version}
 {content_body}
 """
 
-    def package(self, skill_dir: Path, output_path: Path, enable_chunking: bool = False, chunk_max_tokens: int = 512, preserve_code_blocks: bool = True) -> Path:
+    def package(
+        self,
+        skill_dir: Path,
+        output_path: Path,
+        enable_chunking: bool = False,
+        chunk_max_tokens: int = 512,
+        preserve_code_blocks: bool = True,
+    ) -> Path:
         """
         Package skill into ZIP file for Claude.
 

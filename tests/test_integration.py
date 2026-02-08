@@ -92,7 +92,11 @@ class TestConfigLoading(unittest.TestCase):
                 {
                     "type": "documentation",
                     "base_url": "https://example.com/",
-                    "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+                    "selectors": {
+                        "main_content": "article",
+                        "title": "h1",
+                        "code_blocks": "pre code",
+                    },
                     "rate_limit": 0.5,
                     "max_pages": 100,
                 }

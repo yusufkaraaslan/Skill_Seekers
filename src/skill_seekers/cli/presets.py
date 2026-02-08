@@ -3,6 +3,7 @@
 Provides predefined analysis configurations with clear trade-offs
 between speed and comprehensiveness.
 """
+
 from dataclasses import dataclass
 
 
@@ -13,6 +14,7 @@ class AnalysisPreset:
     Defines a complete analysis configuration including depth,
     feature flags, and AI enhancement level.
     """
+
     name: str
     description: str
     depth: str  # surface, deep, full
@@ -29,54 +31,52 @@ PRESETS = {
         description="Fast basic analysis (1-2 min, essential features only)",
         depth="surface",
         features={
-            "api_reference": True,      # ON - Essential for API docs
+            "api_reference": True,  # ON - Essential for API docs
             "dependency_graph": False,  # OFF - Slow, not critical for quick
-            "patterns": False,          # OFF - Slow pattern detection
-            "test_examples": False,     # OFF - Time-consuming extraction
-            "how_to_guides": False,     # OFF - Requires AI enhancement
-            "config_patterns": False,   # OFF - Not critical for quick scan
-            "docs": True,               # ON - README/docs are essential
+            "patterns": False,  # OFF - Slow pattern detection
+            "test_examples": False,  # OFF - Time-consuming extraction
+            "how_to_guides": False,  # OFF - Requires AI enhancement
+            "config_patterns": False,  # OFF - Not critical for quick scan
+            "docs": True,  # ON - README/docs are essential
         },
         enhance_level=0,  # No AI enhancement (fast)
         estimated_time="1-2 minutes",
-        icon="⚡"
+        icon="⚡",
     ),
-
     "standard": AnalysisPreset(
         name="Standard",
         description="Balanced analysis (5-10 min, core features, DEFAULT)",
         depth="deep",
         features={
-            "api_reference": True,      # ON - Core feature
-            "dependency_graph": True,   # ON - Valuable insights
-            "patterns": True,           # ON - Design pattern detection
-            "test_examples": True,      # ON - Real usage examples
-            "how_to_guides": False,     # OFF - Requires AI (slow)
-            "config_patterns": True,    # ON - Configuration docs
-            "docs": True,               # ON - Project documentation
+            "api_reference": True,  # ON - Core feature
+            "dependency_graph": True,  # ON - Valuable insights
+            "patterns": True,  # ON - Design pattern detection
+            "test_examples": True,  # ON - Real usage examples
+            "how_to_guides": False,  # OFF - Requires AI (slow)
+            "config_patterns": True,  # ON - Configuration docs
+            "docs": True,  # ON - Project documentation
         },
         enhance_level=1,  # SKILL.md enhancement only
         estimated_time="5-10 minutes",
-        icon="🎯"
+        icon="🎯",
     ),
-
     "comprehensive": AnalysisPreset(
         name="Comprehensive",
         description="Full analysis (20-60 min, all features + AI)",
         depth="full",
         features={
-            "api_reference": True,      # ON - Complete API docs
-            "dependency_graph": True,   # ON - Full dependency analysis
-            "patterns": True,           # ON - All design patterns
-            "test_examples": True,      # ON - All test examples
-            "how_to_guides": True,      # ON - AI-generated guides
-            "config_patterns": True,    # ON - All configuration patterns
-            "docs": True,               # ON - All project docs
+            "api_reference": True,  # ON - Complete API docs
+            "dependency_graph": True,  # ON - Full dependency analysis
+            "patterns": True,  # ON - All design patterns
+            "test_examples": True,  # ON - All test examples
+            "how_to_guides": True,  # ON - AI-generated guides
+            "config_patterns": True,  # ON - All configuration patterns
+            "docs": True,  # ON - All project docs
         },
         enhance_level=3,  # Full AI enhancement (all features)
         estimated_time="20-60 minutes",
-        icon="🚀"
-    )
+        icon="🚀",
+    ),
 }
 
 
@@ -142,10 +142,7 @@ class PresetManager:
             raise ValueError(f"Unknown preset: {preset_name}")
 
         # Start with preset defaults
-        updated_args = {
-            'depth': preset.depth,
-            'enhance_level': preset.enhance_level
-        }
+        updated_args = {"depth": preset.depth, "enhance_level": preset.enhance_level}
 
         # Convert feature flags to skip_* arguments
         # feature=False → skip_feature=True (disabled)

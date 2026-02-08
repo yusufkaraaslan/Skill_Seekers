@@ -113,6 +113,7 @@ def check_service_available(url: str, timeout: int = 5) -> bool:
     """Check if a service is available."""
     try:
         import requests
+
         response = requests.get(url, timeout=timeout)
         return response.status_code == 200
     except Exception:
@@ -133,7 +134,9 @@ class TestWeaviateIntegration:
 
         # Check if Weaviate is running
         if not check_service_available("http://localhost:8080/v1/.well-known/ready"):
-            pytest.skip("Weaviate not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)")
+            pytest.skip(
+                "Weaviate not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)"
+            )
 
         # Connect to Weaviate
         try:
@@ -144,10 +147,7 @@ class TestWeaviateIntegration:
 
         # Package skill
         adaptor = get_adaptor("weaviate")
-        SkillMetadata(
-            name="integration_test",
-            description="Integration test skill for Weaviate"
-        )
+        SkillMetadata(name="integration_test", description="Integration test skill for Weaviate")
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
         assert package_path.exists(), "Package not created"
@@ -173,19 +173,16 @@ class TestWeaviateIntegration:
             with client.batch as batch:
                 for obj in data["objects"]:
                     batch.add_data_object(
-                        data_object=obj["properties"],
-                        class_name=class_name,
-                        uuid=obj["id"]
+                        data_object=obj["properties"], class_name=class_name, uuid=obj["id"]
                     )
 
             # Wait for indexing
             time.sleep(1)
 
             # Query - Get all objects
-            result = client.query.get(
-                class_name,
-                ["content", "source", "category"]
-            ).with_limit(10).do()
+            result = (
+                client.query.get(class_name, ["content", "source", "category"]).with_limit(10).do()
+            )
 
             # Verify results
             assert "data" in result, "Query returned no data"
@@ -203,8 +200,9 @@ class TestWeaviateIntegration:
 
             # Verify content
             contents = [obj["content"] for obj in objects]
-            assert any("vector" in content.lower() for content in contents), \
+            assert any("vector" in content.lower() for content in contents), (
                 "Expected content not found"
+            )
 
         finally:
             # Cleanup - Delete collection
@@ -234,7 +232,7 @@ class TestWeaviateIntegration:
             description="Test metadata preservation",
             version="2.0.0",
             author="Integration Test Suite",
-            tags=["test", "integration", "weaviate"]
+            tags=["test", "integration", "weaviate"],
         )
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
@@ -249,18 +247,17 @@ class TestWeaviateIntegration:
             with client.batch as batch:
                 for obj in data["objects"]:
                     batch.add_data_object(
-                        data_object=obj["properties"],
-                        class_name=class_name,
-                        uuid=obj["id"]
+                        data_object=obj["properties"], class_name=class_name, uuid=obj["id"]
                     )
 
             time.sleep(1)
 
             # Query and verify metadata
-            result = client.query.get(
-                class_name,
-                ["source", "version", "author", "tags"]
-            ).with_limit(1).do()
+            result = (
+                client.query.get(class_name, ["source", "version", "author", "tags"])
+                .with_limit(1)
+                .do()
+            )
 
             obj = result["data"]["Get"][class_name][0]
             assert obj["source"] == "metadata_test", "Source not preserved"
@@ -287,7 +284,9 @@ class TestChromaIntegration:
 
         # Check if Chroma is running
         if not check_service_available("http://localhost:8000/api/v1/heartbeat"):
-            pytest.skip("ChromaDB not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)")
+            pytest.skip(
+                "ChromaDB not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)"
+            )
 
         # Connect to ChromaDB
         try:
@@ -299,8 +298,7 @@ class TestChromaIntegration:
         # Package skill
         adaptor = get_adaptor("chroma")
         SkillMetadata(
-            name="chroma_integration_test",
-            description="Integration test skill for ChromaDB"
+            name="chroma_integration_test", description="Integration test skill for ChromaDB"
         )
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
@@ -326,9 +324,7 @@ class TestChromaIntegration:
 
             # Add documents
             collection.add(
-                documents=data["documents"],
-                metadatas=data["metadatas"],
-                ids=data["ids"]
+                documents=data["documents"], metadatas=data["metadatas"], ids=data["ids"]
             )
 
             # Wait for indexing
@@ -340,8 +336,7 @@ class TestChromaIntegration:
             # Verify results
             assert "documents" in results, "Query returned no documents"
             assert len(results["documents"]) > 0, "No documents returned"
-            assert len(results["documents"]) == len(data["documents"]), \
-                "Document count mismatch"
+            assert len(results["documents"]) == len(data["documents"]), "Document count mismatch"
 
             # Verify metadata
             assert "metadatas" in results, "Query returned no metadatas"
@@ -350,8 +345,9 @@ class TestChromaIntegration:
             assert "category" in first_metadata, "Missing category in metadata"
 
             # Verify content
-            assert any("vector" in doc.lower() for doc in results["documents"]), \
+            assert any("vector" in doc.lower() for doc in results["documents"]), (
                 "Expected content not found"
+            )
 
         finally:
             # Cleanup - Delete collection
@@ -377,8 +373,7 @@ class TestChromaIntegration:
         # Package and upload
         adaptor = get_adaptor("chroma")
         metadata = SkillMetadata(
-            name="chroma_filter_test",
-            description="Test filtering capabilities"
+            name="chroma_filter_test", description="Test filtering capabilities"
         )
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
@@ -390,23 +385,18 @@ class TestChromaIntegration:
         try:
             collection = client.get_or_create_collection(name=collection_name)
             collection.add(
-                documents=data["documents"],
-                metadatas=data["metadatas"],
-                ids=data["ids"]
+                documents=data["documents"], metadatas=data["metadatas"], ids=data["ids"]
             )
 
             time.sleep(1)
 
             # Query with category filter
-            results = collection.get(
-                where={"category": "getting started"}
-            )
+            results = collection.get(where={"category": "getting started"})
 
             # Verify filtering worked
             assert len(results["documents"]) > 0, "No documents matched filter"
             for metadata in results["metadatas"]:
-                assert metadata["category"] == "getting started", \
-                    "Filter returned wrong category"
+                assert metadata["category"] == "getting started", "Filter returned wrong category"
 
         finally:
             with contextlib.suppress(Exception):
@@ -428,7 +418,9 @@ class TestQdrantIntegration:
 
         # Check if Qdrant is running
         if not check_service_available("http://localhost:6333/"):
-            pytest.skip("Qdrant not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)")
+            pytest.skip(
+                "Qdrant not running (start with: docker-compose -f tests/docker-compose.test.yml up -d)"
+            )
 
         # Connect to Qdrant
         try:
@@ -440,8 +432,7 @@ class TestQdrantIntegration:
         # Package skill
         adaptor = get_adaptor("qdrant")
         SkillMetadata(
-            name="qdrant_integration_test",
-            description="Integration test skill for Qdrant"
+            name="qdrant_integration_test", description="Integration test skill for Qdrant"
         )
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
@@ -465,25 +456,21 @@ class TestQdrantIntegration:
             # Create collection
             client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=vector_size,
-                    distance=Distance.COSINE
-                )
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
 
             # Upload points (with placeholder vectors for testing)
             points = []
             for point in data["points"]:
-                points.append(PointStruct(
-                    id=point["id"],
-                    vector=[0.0] * vector_size,  # Placeholder vectors
-                    payload=point["payload"]
-                ))
+                points.append(
+                    PointStruct(
+                        id=point["id"],
+                        vector=[0.0] * vector_size,  # Placeholder vectors
+                        payload=point["payload"],
+                    )
+                )
 
-            client.upsert(
-                collection_name=collection_name,
-                points=points
-            )
+            client.upsert(collection_name=collection_name, points=points)
 
             # Wait for indexing
             time.sleep(1)
@@ -493,14 +480,10 @@ class TestQdrantIntegration:
 
             # Verify collection
             assert collection_info.points_count > 0, "No points in collection"
-            assert collection_info.points_count == len(data["points"]), \
-                "Point count mismatch"
+            assert collection_info.points_count == len(data["points"]), "Point count mismatch"
 
             # Query - Scroll through points
-            scroll_result = client.scroll(
-                collection_name=collection_name,
-                limit=10
-            )
+            scroll_result = client.scroll(collection_name=collection_name, limit=10)
 
             points_list = scroll_result[0]
             assert len(points_list) > 0, "No points returned"
@@ -514,8 +497,9 @@ class TestQdrantIntegration:
 
             # Verify content
             contents = [p.payload["content"] for p in points_list]
-            assert any("vector" in content.lower() for content in contents), \
+            assert any("vector" in content.lower() for content in contents), (
                 "Expected content not found"
+            )
 
         finally:
             # Cleanup - Delete collection
@@ -527,8 +511,12 @@ class TestQdrantIntegration:
         try:
             from qdrant_client import QdrantClient
             from qdrant_client.models import (
-                Distance, VectorParams, PointStruct,
-                Filter, FieldCondition, MatchValue
+                Distance,
+                VectorParams,
+                PointStruct,
+                Filter,
+                FieldCondition,
+                MatchValue,
             )
         except ImportError:
             pytest.skip("qdrant-client not installed")
@@ -544,10 +532,7 @@ class TestQdrantIntegration:
 
         # Package and upload
         adaptor = get_adaptor("qdrant")
-        SkillMetadata(
-            name="qdrant_filter_test",
-            description="Test filtering capabilities"
-        )
+        SkillMetadata(name="qdrant_filter_test", description="Test filtering capabilities")
         package_path = adaptor.package(sample_skill_dir, tmp_path)
 
         with open(package_path) as f:
@@ -560,19 +545,16 @@ class TestQdrantIntegration:
             # Create and upload
             client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=vector_size,
-                    distance=Distance.COSINE
-                )
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
 
             points = []
             for point in data["points"]:
-                points.append(PointStruct(
-                    id=point["id"],
-                    vector=[0.0] * vector_size,
-                    payload=point["payload"]
-                ))
+                points.append(
+                    PointStruct(
+                        id=point["id"], vector=[0.0] * vector_size, payload=point["payload"]
+                    )
+                )
 
             client.upsert(collection_name=collection_name, points=points)
             time.sleep(1)
@@ -581,14 +563,9 @@ class TestQdrantIntegration:
             scroll_result = client.scroll(
                 collection_name=collection_name,
                 scroll_filter=Filter(
-                    must=[
-                        FieldCondition(
-                            key="type",
-                            match=MatchValue(value="reference")
-                        )
-                    ]
+                    must=[FieldCondition(key="type", match=MatchValue(value="reference"))]
                 ),
-                limit=10
+                limit=10,
             )
 
             points_list = scroll_result[0]
@@ -596,8 +573,7 @@ class TestQdrantIntegration:
             # Verify filtering worked
             assert len(points_list) > 0, "No points matched filter"
             for point in points_list:
-                assert point.payload["type"] == "reference", \
-                    "Filter returned wrong type"
+                assert point.payload["type"] == "reference", "Filter returned wrong type"
 
         finally:
             with contextlib.suppress(Exception):
@@ -607,4 +583,5 @@ class TestQdrantIntegration:
 if __name__ == "__main__":
     # Run integration tests
     import sys
+
     sys.exit(pytest.main([__file__, "-v", "-m", "integration"]))

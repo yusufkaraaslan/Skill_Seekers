@@ -80,8 +80,9 @@ class TestFrameworkDetection(unittest.TestCase):
             arch_data = json.load(f)
 
         self.assertIn("frameworks_detected", arch_data)
-        self.assertIn("Flask", arch_data["frameworks_detected"],
-                      "Flask should be detected from imports")
+        self.assertIn(
+            "Flask", arch_data["frameworks_detected"], "Flask should be detected from imports"
+        )
 
     def test_files_with_imports_are_included(self):
         """Test that files with only imports are included in analysis (Issue #239)."""
@@ -119,24 +120,19 @@ class TestFrameworkDetection(unittest.TestCase):
             analysis_data = json.load(f)
 
         # File should be included
-        self.assertGreater(len(analysis_data["files"]), 0,
-                           "Files with imports should be included")
+        self.assertGreater(len(analysis_data["files"]), 0, "Files with imports should be included")
 
         # Find our import-only file
         import_file = next(
-            (f for f in analysis_data["files"] if "imports_only.py" in f["file"]),
-            None
+            (f for f in analysis_data["files"] if "imports_only.py" in f["file"]), None
         )
         self.assertIsNotNone(import_file, "Import-only file should be in analysis")
 
         # Verify imports were extracted
         self.assertIn("imports", import_file, "Imports should be extracted")
-        self.assertGreater(len(import_file["imports"]), 0,
-                           "Should have captured imports")
-        self.assertIn("django", import_file["imports"],
-                      "Django import should be captured")
-        self.assertIn("flask", import_file["imports"],
-                      "Flask import should be captured")
+        self.assertGreater(len(import_file["imports"]), 0, "Should have captured imports")
+        self.assertIn("django", import_file["imports"], "Django import should be captured")
+        self.assertIn("flask", import_file["imports"], "Flask import should be captured")
 
     def test_no_false_positive_frameworks(self):
         """Test that framework detection doesn't produce false positives (Issue #239)."""
@@ -145,10 +141,7 @@ class TestFrameworkDetection(unittest.TestCase):
         app_dir.mkdir()
 
         # File with no framework imports
-        (app_dir / "utils.py").write_text(
-            "def my_function():\n"
-            "    return 'hello'\n"
-        )
+        (app_dir / "utils.py").write_text("def my_function():\n    return 'hello'\n")
 
         # Run codebase analyzer
         from skill_seekers.cli.codebase_scraper import main as scraper_main
@@ -180,12 +173,10 @@ class TestFrameworkDetection(unittest.TestCase):
 
             frameworks = arch_data.get("frameworks_detected", [])
             # Should not detect Flask just from "app" directory name
-            self.assertNotIn("Flask", frameworks,
-                             "Should not detect Flask without imports")
+            self.assertNotIn("Flask", frameworks, "Should not detect Flask without imports")
             # Should not detect other frameworks with "app" in markers
             for fw in ["ASP.NET", "Rails", "Laravel"]:
-                self.assertNotIn(fw, frameworks,
-                                 f"Should not detect {fw} without real evidence")
+                self.assertNotIn(fw, frameworks, f"Should not detect {fw} without real evidence")
 
 
 if __name__ == "__main__":

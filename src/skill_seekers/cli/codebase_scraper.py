@@ -1036,11 +1036,15 @@ def analyze_codebase(
             # Save summary statistics
             summary_json = pattern_output / "summary.json"
             with open(summary_json, "w", encoding="utf-8") as f:
-                json.dump({
-                    "statistics": stats,
-                    "thresholds": multi_level["thresholds"],
-                    "files_analyzed": len(pattern_results),
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "statistics": stats,
+                        "thresholds": multi_level["thresholds"],
+                        "files_analyzed": len(pattern_results),
+                    },
+                    f,
+                    indent=2,
+                )
 
             # Log results with breakdown by confidence
             logger.info(f"✅ Detected {stats['total']} patterns in {len(pattern_results)} files")
@@ -1931,21 +1935,15 @@ def _check_deprecated_flags(args):
                 "⚠️  DEPRECATED: --ai-mode local → use --enhance-level without API key instead"
             )
         elif args.ai_mode == "none":
-            warnings.append(
-                "⚠️  DEPRECATED: --ai-mode none → use --enhance-level 0 instead"
-            )
+            warnings.append("⚠️  DEPRECATED: --ai-mode none → use --enhance-level 0 instead")
 
     # Deprecated: --quick flag
     if hasattr(args, "quick") and args.quick:
-        warnings.append(
-            "⚠️  DEPRECATED: --quick → use --preset quick instead"
-        )
+        warnings.append("⚠️  DEPRECATED: --quick → use --preset quick instead")
 
     # Deprecated: --comprehensive flag
     if hasattr(args, "comprehensive") and args.comprehensive:
-        warnings.append(
-            "⚠️  DEPRECATED: --comprehensive → use --preset comprehensive instead"
-        )
+        warnings.append("⚠️  DEPRECATED: --comprehensive → use --preset comprehensive instead")
 
     # Show warnings if any found
     if warnings:
@@ -2000,24 +1998,22 @@ Examples:
     parser.add_argument(
         "--preset",
         choices=["quick", "standard", "comprehensive"],
-        help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)"
+        help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)",
     )
     parser.add_argument(
-        "--preset-list",
-        action="store_true",
-        help="Show available presets and exit"
+        "--preset-list", action="store_true", help="Show available presets and exit"
     )
 
     # Legacy preset flags (kept for backward compatibility)
     parser.add_argument(
         "--quick",
         action="store_true",
-        help="[DEPRECATED] Quick analysis - use '--preset quick' instead"
+        help="[DEPRECATED] Quick analysis - use '--preset quick' instead",
     )
     parser.add_argument(
         "--comprehensive",
         action="store_true",
-        help="[DEPRECATED] Comprehensive analysis - use '--preset comprehensive' instead"
+        help="[DEPRECATED] Comprehensive analysis - use '--preset comprehensive' instead",
     )
 
     parser.add_argument(
@@ -2129,6 +2125,7 @@ Examples:
     # Handle --preset-list flag BEFORE parse_args() to avoid required --directory validation
     if "--preset-list" in sys.argv:
         from skill_seekers.cli.presets import PresetManager
+
         print(PresetManager.format_preset_help())
         return 0
 
@@ -2155,6 +2152,7 @@ Examples:
     # Apply preset using PresetManager
     if preset_name:
         from skill_seekers.cli.presets import PresetManager
+
         try:
             preset_args = PresetManager.apply_preset(preset_name, vars(args))
             # Update args with preset values
@@ -2162,9 +2160,7 @@ Examples:
                 setattr(args, key, value)
 
             preset = PresetManager.get_preset(preset_name)
-            logger.info(
-                f"{preset.icon} {preset.name} analysis mode: {preset.description}"
-            )
+            logger.info(f"{preset.icon} {preset.name} analysis mode: {preset.description}")
         except ValueError as e:
             logger.error(f"❌ {e}")
             return 1

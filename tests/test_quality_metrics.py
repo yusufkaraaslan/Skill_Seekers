@@ -19,10 +19,7 @@ import tempfile
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from skill_seekers.cli.quality_metrics import (
-    QualityAnalyzer,
-    MetricLevel
-)
+from skill_seekers.cli.quality_metrics import QualityAnalyzer, MetricLevel
 
 
 @pytest.fixture
@@ -176,9 +173,9 @@ def test_calculate_statistics(complete_skill_dir):
     analyzer = QualityAnalyzer(complete_skill_dir)
     stats = analyzer.calculate_statistics()
 
-    assert stats['total_files'] > 0
-    assert stats['markdown_files'] > 0
-    assert stats['total_words'] > 0
+    assert stats["total_files"] > 0
+    assert stats["markdown_files"] > 0
+    assert stats["total_words"] > 0
 
 
 def test_overall_score_calculation():
@@ -197,9 +194,7 @@ def test_overall_score_calculation():
         coverage = 70.0
         health = 85.0
 
-        overall = analyzer.calculate_overall_score(
-            completeness, accuracy, coverage, health
-        )
+        overall = analyzer.calculate_overall_score(completeness, accuracy, coverage, health)
 
         assert overall.completeness == 80.0
         assert overall.accuracy == 90.0
@@ -218,13 +213,13 @@ def test_grade_assignment():
 
         # Test various scores
         score_95 = analyzer.calculate_overall_score(95, 95, 95, 95)
-        assert score_95.grade == 'A+'
+        assert score_95.grade == "A+"
 
         score_85 = analyzer.calculate_overall_score(85, 85, 85, 85)
-        assert score_85.grade in ['A-', 'B+']
+        assert score_85.grade in ["A-", "B+"]
 
         score_70 = analyzer.calculate_overall_score(70, 70, 70, 70)
-        assert score_70.grade in ['B-', 'C+', 'C']
+        assert score_70.grade in ["B-", "C+", "C"]
 
 
 def test_generate_recommendations():
@@ -240,7 +235,7 @@ def test_generate_recommendations():
         recommendations = analyzer.generate_recommendations(score)
 
         assert len(recommendations) > 0
-        assert any('completeness' in r.lower() for r in recommendations)
+        assert any("completeness" in r.lower() for r in recommendations)
 
 
 def test_generate_report(complete_skill_dir):

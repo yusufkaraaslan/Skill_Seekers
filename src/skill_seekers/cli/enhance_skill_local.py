@@ -175,8 +175,7 @@ class LocalSkillEnhancer:
         dangerous_chars = [";", "&", "|", "$", "`", "\n", "\r"]
         if any(char in cmd_template for char in dangerous_chars):
             raise ValueError(
-                "Custom command contains dangerous shell characters. "
-                f"Command: {cmd_template}"
+                f"Custom command contains dangerous shell characters. Command: {cmd_template}"
             )
 
         try:
@@ -888,9 +887,7 @@ rm {prompt_file}
                     print("❌ SKILL.md not found after enhancement")
                     return False
             else:
-                print(
-                    f"❌ {self.agent_display} returned error (exit code: {result.returncode})"
-                )
+                print(f"❌ {self.agent_display} returned error (exit code: {result.returncode})")
                 if result.stderr:
                     print(f"   Error: {result.stderr[:200]}")
                 return False

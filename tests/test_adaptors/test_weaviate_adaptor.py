@@ -28,9 +28,7 @@ class TestWeaviateAdaptor:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(
-            "# Test Skill\n\nThis is a test skill for Weaviate format."
-        )
+        skill_md.write_text("# Test Skill\n\nThis is a test skill for Weaviate format.")
 
         # Create references directory with files
         refs_dir = skill_dir / "references"
@@ -40,9 +38,7 @@ class TestWeaviateAdaptor:
 
         # Format as Weaviate objects
         adaptor = get_adaptor("weaviate")
-        metadata = SkillMetadata(
-            name="test_skill", description="Test skill", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="test_skill", description="Test skill", version="1.0.0")
 
         objects_json = adaptor.format_skill_md(skill_dir, metadata)
 
@@ -119,7 +115,7 @@ class TestWeaviateAdaptor:
         """Test upload returns instructions (no actual upload)."""
         # Create test package
         package_path = tmp_path / "test-weaviate.json"
-        package_path.write_text('[]')
+        package_path.write_text("[]")
 
         adaptor = get_adaptor("weaviate")
         result = adaptor.upload(package_path, "fake-key")
@@ -127,7 +123,11 @@ class TestWeaviateAdaptor:
         # Upload may fail if weaviate not installed (expected)
         assert "message" in result
         # Either weaviate not installed, invalid JSON, or connection error
-        assert ("import weaviate" in result["message"] or "Failed to connect" in result["message"] or result["success"] is False)
+        assert (
+            "import weaviate" in result["message"]
+            or "Failed to connect" in result["message"]
+            or result["success"] is False
+        )
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""
@@ -160,9 +160,7 @@ class TestWeaviateAdaptor:
         skill_dir.mkdir()
 
         adaptor = get_adaptor("weaviate")
-        metadata = SkillMetadata(
-            name="empty_skill", description="Empty", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="empty_skill", description="Empty", version="1.0.0")
 
         objects_json = adaptor.format_skill_md(skill_dir, metadata)
         result = json.loads(objects_json)
@@ -181,9 +179,7 @@ class TestWeaviateAdaptor:
         (refs_dir / "test.md").write_text("# Test\n\nTest content.")
 
         adaptor = get_adaptor("weaviate")
-        metadata = SkillMetadata(
-            name="refs_only", description="Refs only", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="refs_only", description="Refs only", version="1.0.0")
 
         objects_json = adaptor.format_skill_md(skill_dir, metadata)
         result = json.loads(objects_json)

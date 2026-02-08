@@ -12,7 +12,7 @@ from skill_seekers.benchmark import (
     BenchmarkResult,
     BenchmarkRunner,
     BenchmarkReport,
-    Metric
+    Metric,
 )
 from skill_seekers.benchmark.models import TimingResult, MemoryUsage
 
@@ -37,12 +37,7 @@ class TestBenchmarkResult:
         """Test adding timing result."""
         result = BenchmarkResult("test")
 
-        timing = TimingResult(
-            operation="test_op",
-            duration=1.5,
-            iterations=1,
-            avg_duration=1.5
-        )
+        timing = TimingResult(operation="test_op", duration=1.5, iterations=1, avg_duration=1.5)
 
         result.add_timing(timing)
 
@@ -55,11 +50,7 @@ class TestBenchmarkResult:
         result = BenchmarkResult("test")
 
         usage = MemoryUsage(
-            operation="test_op",
-            before_mb=100.0,
-            after_mb=150.0,
-            peak_mb=160.0,
-            allocated_mb=50.0
+            operation="test_op", before_mb=100.0, after_mb=150.0, peak_mb=160.0, allocated_mb=50.0
         )
 
         result.add_memory(usage)
@@ -72,11 +63,7 @@ class TestBenchmarkResult:
         """Test adding custom metric."""
         result = BenchmarkResult("test")
 
-        metric = Metric(
-            name="pages_per_sec",
-            value=12.5,
-            unit="pages/sec"
-        )
+        metric = Metric(name="pages_per_sec", value=12.5, unit="pages/sec")
 
         result.add_metric(metric)
 
@@ -107,12 +94,7 @@ class TestBenchmarkResult:
         """Test report generation."""
         result = BenchmarkResult("test")
 
-        timing = TimingResult(
-            operation="test_op",
-            duration=1.0,
-            iterations=1,
-            avg_duration=1.0
-        )
+        timing = TimingResult(operation="test_op", duration=1.0, iterations=1, avg_duration=1.0)
         result.add_timing(timing)
 
         report = result.to_report()
@@ -303,7 +285,7 @@ class TestBenchmark:
             before_mb=100.0,
             after_mb=1200.0,
             peak_mb=1500.0,
-            allocated_mb=1100.0
+            allocated_mb=1100.0,
         )
         benchmark.result.add_memory(usage)
 
@@ -370,10 +352,7 @@ class TestBenchmarkRunner:
             with bench.timer("op2"):
                 time.sleep(0.03)
 
-        reports = runner.run_suite({
-            "test1": bench1,
-            "test2": bench2
-        })
+        reports = runner.run_suite({"test1": bench1, "test2": bench2})
 
         assert len(reports) == 2
         assert "test1" in reports
@@ -405,6 +384,7 @@ class TestBenchmarkRunner:
 
         # Compare
         from skill_seekers.benchmark.models import ComparisonReport
+
         comparison = runner.compare(baseline_path, improved_path)
 
         assert isinstance(comparison, ComparisonReport)
@@ -458,6 +438,7 @@ class TestBenchmarkRunner:
     def test_cleanup_old(self, tmp_path):
         """Test cleaning up old benchmarks."""
         import os
+
         runner = BenchmarkRunner(output_dir=tmp_path)
 
         # Create 10 benchmark files with different timestamps
@@ -476,10 +457,10 @@ class TestBenchmarkRunner:
                 "memory": [],
                 "metrics": [],
                 "system_info": {},
-                "recommendations": []
+                "recommendations": [],
             }
 
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(report_data, f)
 
             # Set different modification times
@@ -505,12 +486,7 @@ class TestBenchmarkModels:
 
     def test_timing_result_model(self):
         """Test TimingResult model."""
-        timing = TimingResult(
-            operation="test",
-            duration=1.5,
-            iterations=10,
-            avg_duration=0.15
-        )
+        timing = TimingResult(operation="test", duration=1.5, iterations=10, avg_duration=0.15)
 
         assert timing.operation == "test"
         assert timing.duration == 1.5
@@ -520,11 +496,7 @@ class TestBenchmarkModels:
     def test_memory_usage_model(self):
         """Test MemoryUsage model."""
         usage = MemoryUsage(
-            operation="allocate",
-            before_mb=100.0,
-            after_mb=200.0,
-            peak_mb=250.0,
-            allocated_mb=100.0
+            operation="allocate", before_mb=100.0, after_mb=200.0, peak_mb=250.0, allocated_mb=100.0
         )
 
         assert usage.operation == "allocate"
@@ -533,11 +505,7 @@ class TestBenchmarkModels:
 
     def test_metric_model(self):
         """Test Metric model."""
-        metric = Metric(
-            name="throughput",
-            value=125.5,
-            unit="ops/sec"
-        )
+        metric = Metric(name="throughput", value=125.5, unit="ops/sec")
 
         assert metric.name == "throughput"
         assert metric.value == 125.5
@@ -551,26 +519,19 @@ class TestBenchmarkModels:
             started_at=datetime.utcnow(),
             finished_at=datetime.utcnow(),
             total_duration=5.0,
-            timings=[
-                TimingResult(
-                    operation="op1",
-                    duration=2.0,
-                    iterations=1,
-                    avg_duration=2.0
-                )
-            ],
+            timings=[TimingResult(operation="op1", duration=2.0, iterations=1, avg_duration=2.0)],
             memory=[
                 MemoryUsage(
                     operation="op1",
                     before_mb=100.0,
                     after_mb=200.0,
                     peak_mb=250.0,
-                    allocated_mb=100.0
+                    allocated_mb=100.0,
                 )
             ],
             metrics=[],
             system_info={},
-            recommendations=[]
+            recommendations=[],
         )
 
         summary = report.summary
@@ -592,7 +553,7 @@ class TestBenchmarkModels:
             memory=[],
             metrics=[],
             system_info={},
-            recommendations=[]
+            recommendations=[],
         )
 
         current = BenchmarkReport(
@@ -604,7 +565,7 @@ class TestBenchmarkModels:
             memory=[],
             metrics=[],
             system_info={},
-            recommendations=[]
+            recommendations=[],
         )
 
         comparison = ComparisonReport(
@@ -614,7 +575,7 @@ class TestBenchmarkModels:
             improvements=[],
             regressions=["Slower performance"],
             speedup_factor=0.5,
-            memory_change_mb=0.0
+            memory_change_mb=0.0,
         )
 
         assert comparison.has_regressions is True
@@ -632,7 +593,7 @@ class TestBenchmarkModels:
             memory=[],
             metrics=[],
             system_info={},
-            recommendations=[]
+            recommendations=[],
         )
 
         current = BenchmarkReport(
@@ -644,7 +605,7 @@ class TestBenchmarkModels:
             memory=[],
             metrics=[],
             system_info={},
-            recommendations=[]
+            recommendations=[],
         )
 
         comparison = ComparisonReport(
@@ -654,7 +615,7 @@ class TestBenchmarkModels:
             improvements=[],
             regressions=[],
             speedup_factor=2.0,
-            memory_change_mb=0.0
+            memory_change_mb=0.0,
         )
 
         improvement = comparison.overall_improvement

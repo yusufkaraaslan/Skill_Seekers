@@ -1,4 +1,5 @@
 """Analyze subcommand parser."""
+
 from .base import SubcommandParser
 
 
@@ -21,26 +22,26 @@ class AnalyzeParser(SubcommandParser):
         """Add analyze-specific arguments."""
         parser.add_argument("--directory", required=True, help="Directory to analyze")
         parser.add_argument(
-            "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
+            "--output",
+            default="output/codebase/",
+            help="Output directory (default: output/codebase/)",
         )
 
         # Preset selection (NEW - recommended way)
         parser.add_argument(
             "--preset",
             choices=["quick", "standard", "comprehensive"],
-            help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)"
+            help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)",
         )
         parser.add_argument(
-            "--preset-list",
-            action="store_true",
-            help="Show available presets and exit"
+            "--preset-list", action="store_true", help="Show available presets and exit"
         )
 
         # Legacy preset flags (kept for backward compatibility)
         parser.add_argument(
             "--quick",
             action="store_true",
-            help="[DEPRECATED] Quick analysis - use '--preset quick' instead"
+            help="[DEPRECATED] Quick analysis - use '--preset quick' instead",
         )
         parser.add_argument(
             "--comprehensive",
@@ -71,15 +72,9 @@ class AnalyzeParser(SubcommandParser):
             help="AI enhancement level: 0=off, 1=SKILL.md only (default), 2=+Architecture+Config, 3=full",
         )
         parser.add_argument("--skip-api-reference", action="store_true", help="Skip API docs")
-        parser.add_argument(
-            "--skip-dependency-graph", action="store_true", help="Skip dep graph"
-        )
-        parser.add_argument(
-            "--skip-patterns", action="store_true", help="Skip pattern detection"
-        )
-        parser.add_argument(
-            "--skip-test-examples", action="store_true", help="Skip test examples"
-        )
+        parser.add_argument("--skip-dependency-graph", action="store_true", help="Skip dep graph")
+        parser.add_argument("--skip-patterns", action="store_true", help="Skip pattern detection")
+        parser.add_argument("--skip-test-examples", action="store_true", help="Skip test examples")
         parser.add_argument("--skip-how-to-guides", action="store_true", help="Skip guides")
         parser.add_argument("--skip-config-patterns", action="store_true", help="Skip config")
         parser.add_argument(

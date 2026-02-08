@@ -19,10 +19,7 @@ import json
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from skill_seekers.cli.multilang_support import (
-    LanguageDetector,
-    MultiLanguageManager
-)
+from skill_seekers.cli.multilang_support import LanguageDetector, MultiLanguageManager
 
 
 def test_detect_english():
@@ -32,8 +29,8 @@ def test_detect_english():
     text = "This is an English document. It contains common English words."
     lang_info = detector.detect(text)
 
-    assert lang_info.code == 'en'
-    assert lang_info.name == 'English'
+    assert lang_info.code == "en"
+    assert lang_info.name == "English"
     assert lang_info.confidence > 0.0
 
 
@@ -44,8 +41,8 @@ def test_detect_spanish():
     text = "Este es un documento en español. Contiene palabras comunes en español."
     lang_info = detector.detect(text)
 
-    assert lang_info.code == 'es'
-    assert lang_info.name == 'Spanish'
+    assert lang_info.code == "es"
+    assert lang_info.name == "Spanish"
 
 
 def test_detect_french():
@@ -55,8 +52,8 @@ def test_detect_french():
     text = "Ceci est un document en français. Il contient des mots français communs."
     lang_info = detector.detect(text)
 
-    assert lang_info.code == 'fr'
-    assert lang_info.name == 'French'
+    assert lang_info.code == "fr"
+    assert lang_info.name == "French"
 
 
 def test_detect_german():
@@ -66,8 +63,8 @@ def test_detect_german():
     text = "Dies ist ein deutsches Dokument. Es enthält übliche deutsche Wörter."
     lang_info = detector.detect(text)
 
-    assert lang_info.code == 'de'
-    assert lang_info.name == 'German'
+    assert lang_info.code == "de"
+    assert lang_info.name == "German"
 
 
 def test_detect_chinese():
@@ -77,33 +74,33 @@ def test_detect_chinese():
     text = "这是一个中文文档。它包含常见的中文字符。"
     lang_info = detector.detect(text)
 
-    assert lang_info.code == 'zh'
-    assert lang_info.name == 'Chinese'
+    assert lang_info.code == "zh"
+    assert lang_info.name == "Chinese"
 
 
 def test_detect_from_filename_dot_pattern():
     """Test language detection from filename (file.en.md pattern)."""
     detector = LanguageDetector()
 
-    assert detector.detect_from_filename("README.en.md") == 'en'
-    assert detector.detect_from_filename("guide.es.md") == 'es'
-    assert detector.detect_from_filename("doc.fr.md") == 'fr'
+    assert detector.detect_from_filename("README.en.md") == "en"
+    assert detector.detect_from_filename("guide.es.md") == "es"
+    assert detector.detect_from_filename("doc.fr.md") == "fr"
 
 
 def test_detect_from_filename_underscore_pattern():
     """Test language detection from filename (file_en.md pattern)."""
     detector = LanguageDetector()
 
-    assert detector.detect_from_filename("README_en.md") == 'en'
-    assert detector.detect_from_filename("guide_es.md") == 'es'
+    assert detector.detect_from_filename("README_en.md") == "en"
+    assert detector.detect_from_filename("guide_es.md") == "es"
 
 
 def test_detect_from_filename_dash_pattern():
     """Test language detection from filename (file-en.md pattern)."""
     detector = LanguageDetector()
 
-    assert detector.detect_from_filename("README-en.md") == 'en'
-    assert detector.detect_from_filename("guide-es.md") == 'es'
+    assert detector.detect_from_filename("README-en.md") == "en"
+    assert detector.detect_from_filename("guide-es.md") == "es"
 
 
 def test_detect_from_filename_no_match():
@@ -118,15 +115,11 @@ def test_add_document_single_language():
     """Test adding documents in single language."""
     manager = MultiLanguageManager()
 
-    manager.add_document(
-        "README.md",
-        "This is an English document.",
-        {"category": "overview"}
-    )
+    manager.add_document("README.md", "This is an English document.", {"category": "overview"})
 
     assert len(manager.get_languages()) == 1
-    assert 'en' in manager.get_languages()
-    assert manager.get_document_count('en') == 1
+    assert "en" in manager.get_languages()
+    assert manager.get_document_count("en") == 1
 
 
 def test_add_document_multiple_languages():
@@ -138,9 +131,9 @@ def test_add_document_multiple_languages():
     manager.add_document("README.fr.md", "Ceci est français.", {})
 
     assert len(manager.get_languages()) == 3
-    assert 'en' in manager.get_languages()
-    assert 'es' in manager.get_languages()
-    assert 'fr' in manager.get_languages()
+    assert "en" in manager.get_languages()
+    assert "es" in manager.get_languages()
+    assert "fr" in manager.get_languages()
 
 
 def test_force_language():
@@ -148,15 +141,10 @@ def test_force_language():
     manager = MultiLanguageManager()
 
     # Force Spanish despite English content
-    manager.add_document(
-        "file.md",
-        "This is actually English content.",
-        {},
-        force_language='es'
-    )
+    manager.add_document("file.md", "This is actually English content.", {}, force_language="es")
 
-    assert 'es' in manager.get_languages()
-    assert manager.get_document_count('es') == 1
+    assert "es" in manager.get_languages()
+    assert manager.get_document_count("es") == 1
 
 
 def test_filename_language_priority():
@@ -164,14 +152,10 @@ def test_filename_language_priority():
     manager = MultiLanguageManager()
 
     # Filename says Spanish, but content is English
-    manager.add_document(
-        "guide.es.md",
-        "This is English content.",
-        {}
-    )
+    manager.add_document("guide.es.md", "This is English content.", {})
 
     # Should use filename language
-    assert 'es' in manager.get_languages()
+    assert "es" in manager.get_languages()
 
 
 def test_document_count_all():
@@ -183,8 +167,8 @@ def test_document_count_all():
     manager.add_document("file3.es.md", "Spanish doc", {})
 
     assert manager.get_document_count() == 3
-    assert manager.get_document_count('en') == 2
-    assert manager.get_document_count('es') == 1
+    assert manager.get_document_count("en") == 2
+    assert manager.get_document_count("es") == 1
 
 
 def test_primary_language():
@@ -195,7 +179,7 @@ def test_primary_language():
     manager.add_document("file2.es.md", "Spanish doc", {})
 
     # Primary should be first added
-    assert manager.primary_language == 'en'
+    assert manager.primary_language == "en"
 
 
 def test_translation_status():
@@ -208,9 +192,9 @@ def test_translation_status():
 
     status = manager.get_translation_status()
 
-    assert status.source_language == 'en'
-    assert 'es' in status.translated_languages
-    assert 'fr' in status.translated_languages
+    assert status.source_language == "en"
+    assert "es" in status.translated_languages
+    assert "fr" in status.translated_languages
     assert len(status.translated_languages) == 2
 
 
@@ -225,17 +209,17 @@ def test_export_by_language():
         exports = manager.export_by_language(Path(tmpdir))
 
         assert len(exports) == 2
-        assert 'en' in exports
-        assert 'es' in exports
+        assert "en" in exports
+        assert "es" in exports
 
         # Check files exist
-        assert exports['en'].exists()
-        assert exports['es'].exists()
+        assert exports["en"].exists()
+        assert exports["es"].exists()
 
         # Check content
-        en_data = json.loads(exports['en'].read_text())
-        assert en_data['language'] == 'en'
-        assert en_data['document_count'] == 1
+        en_data = json.loads(exports["en"].read_text())
+        assert en_data["language"] == "en"
+        assert en_data["document_count"] == 1
 
 
 def test_translation_report_generation():
@@ -268,11 +252,11 @@ def test_script_detection():
 
     # English uses Latin script
     en_info = detector.detect("This is English")
-    assert en_info.script == 'Latin'
+    assert en_info.script == "Latin"
 
     # Chinese uses Han script
     zh_info = detector.detect("这是中文")
-    assert zh_info.script == 'Han'
+    assert zh_info.script == "Han"
 
 
 def test_confidence_scoring():
@@ -283,7 +267,7 @@ def test_confidence_scoring():
     strong_en = "The quick brown fox jumps over the lazy dog. This is clearly English."
     lang_info = detector.detect(strong_en)
 
-    assert lang_info.code == 'en'
+    assert lang_info.code == "en"
     assert lang_info.confidence > 0.3  # Should have decent confidence
 
 
@@ -294,9 +278,9 @@ def test_metadata_preservation():
     metadata = {"category": "guide", "version": "1.0"}
     manager.add_document("file.md", "English content", metadata)
 
-    docs = manager.documents['en']
+    docs = manager.documents["en"]
     assert len(docs) == 1
-    assert docs[0]['metadata'] == metadata
+    assert docs[0]["metadata"] == metadata
 
 
 if __name__ == "__main__":

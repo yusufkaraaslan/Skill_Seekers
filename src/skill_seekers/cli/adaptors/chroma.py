@@ -43,11 +43,7 @@ class ChromaAdaptor(SkillAdaptor):
         return self._generate_deterministic_id(content, metadata, format="hex")
 
     def format_skill_md(
-        self,
-        skill_dir: Path,
-        metadata: SkillMetadata,
-        enable_chunking: bool = False,
-        **kwargs
+        self, skill_dir: Path, metadata: SkillMetadata, enable_chunking: bool = False, **kwargs
     ) -> str:
         """
         Format skill as JSON for Chroma ingestion.
@@ -90,9 +86,9 @@ class ChromaAdaptor(SkillAdaptor):
                     content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file="SKILL.md"
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file="SKILL.md",
                 )
 
                 # Add all chunks to parallel arrays
@@ -120,9 +116,9 @@ class ChromaAdaptor(SkillAdaptor):
                     ref_content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file=ref_file.name
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file=ref_file.name,
                 )
 
                 # Add all chunks to parallel arrays
@@ -149,7 +145,7 @@ class ChromaAdaptor(SkillAdaptor):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill into JSON file for Chroma.
@@ -183,7 +179,7 @@ class ChromaAdaptor(SkillAdaptor):
             metadata,
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
-            preserve_code_blocks=preserve_code_blocks
+            preserve_code_blocks=preserve_code_blocks,
         )
 
         # Write to file
@@ -233,7 +229,7 @@ class ChromaAdaptor(SkillAdaptor):
         except ImportError:
             return {
                 "success": False,
-                "message": "chromadb not installed. Run: pip install chromadb"
+                "message": "chromadb not installed. Run: pip install chromadb",
             }
 
         # Load package
@@ -241,8 +237,8 @@ class ChromaAdaptor(SkillAdaptor):
             data = json.load(f)
 
         # Determine client type and configuration
-        persist_directory = kwargs.get('persist_directory')
-        chroma_url = kwargs.get('chroma_url')
+        persist_directory = kwargs.get("persist_directory")
+        chroma_url = kwargs.get("chroma_url")
 
         try:
             if persist_directory:
@@ -253,15 +249,15 @@ class ChromaAdaptor(SkillAdaptor):
                 # Remote HTTP client
                 print(f"🌐 Connecting to ChromaDB at: {chroma_url}")
                 # Parse URL
-                if '://' in chroma_url:
-                    parts = chroma_url.split('://')
+                if "://" in chroma_url:
+                    parts = chroma_url.split("://")
                     parts[0]
                     host_port = parts[1]
                 else:
                     host_port = chroma_url
 
-                if ':' in host_port:
-                    host, port = host_port.rsplit(':', 1)
+                if ":" in host_port:
+                    host, port = host_port.rsplit(":", 1)
                     port = int(port)
                 else:
                     host = host_port
@@ -276,12 +272,12 @@ class ChromaAdaptor(SkillAdaptor):
         except Exception as e:
             return {
                 "success": False,
-                "message": f"Failed to connect to ChromaDB: {e}\n\nTry:\n  pip install chromadb\n  chroma run  # Start local server"
+                "message": f"Failed to connect to ChromaDB: {e}\n\nTry:\n  pip install chromadb\n  chroma run  # Start local server",
             }
 
         # Get or create collection
-        collection_name = kwargs.get('collection_name', data.get('collection_name', 'skill_docs'))
-        distance_function = kwargs.get('distance_function', 'cosine')
+        collection_name = kwargs.get("collection_name", data.get("collection_name", "skill_docs"))
+        distance_function = kwargs.get("distance_function", "cosine")
 
         try:
             # Try to get existing collection
@@ -291,62 +287,57 @@ class ChromaAdaptor(SkillAdaptor):
             try:
                 # Create new collection
                 metadata = {"hnsw:space": distance_function}
-                collection = client.create_collection(
-                    name=collection_name,
-                    metadata=metadata
-                )
+                collection = client.create_collection(name=collection_name, metadata=metadata)
                 print(f"✅ Created collection: {collection_name} (distance: {distance_function})")
             except Exception as e:
                 return {
                     "success": False,
-                    "message": f"Failed to create collection '{collection_name}': {e}"
+                    "message": f"Failed to create collection '{collection_name}': {e}",
                 }
 
         # Handle embeddings
-        embedding_function = kwargs.get('embedding_function')
+        embedding_function = kwargs.get("embedding_function")
 
         try:
-            if embedding_function == 'openai':
+            if embedding_function == "openai":
                 # Generate embeddings with OpenAI
                 print("🔄 Generating OpenAI embeddings...")
                 embeddings = self._generate_openai_embeddings(
-                    data['documents'],
-                    api_key=kwargs.get('openai_api_key')
+                    data["documents"], api_key=kwargs.get("openai_api_key")
                 )
                 collection.add(
-                    documents=data['documents'],
-                    metadatas=data['metadatas'],
-                    ids=data['ids'],
-                    embeddings=embeddings
+                    documents=data["documents"],
+                    metadatas=data["metadatas"],
+                    ids=data["ids"],
+                    embeddings=embeddings,
                 )
-            elif embedding_function == 'sentence-transformers':
+            elif embedding_function == "sentence-transformers":
                 # Use sentence-transformers
                 print("🔄 Generating sentence-transformer embeddings...")
                 try:
                     from chromadb.utils import embedding_functions
+
                     ef = embedding_functions.SentenceTransformerEmbeddingFunction()
-                    embeddings = [ef([doc])[0] for doc in data['documents']]
+                    embeddings = [ef([doc])[0] for doc in data["documents"]]
                     collection.add(
-                        documents=data['documents'],
-                        metadatas=data['metadatas'],
-                        ids=data['ids'],
-                        embeddings=embeddings
+                        documents=data["documents"],
+                        metadatas=data["metadatas"],
+                        ids=data["ids"],
+                        embeddings=embeddings,
                     )
                 except ImportError:
                     return {
                         "success": False,
-                        "message": "sentence-transformers not installed. Run: pip install sentence-transformers"
+                        "message": "sentence-transformers not installed. Run: pip install sentence-transformers",
                     }
             else:
                 # No embeddings - Chroma will auto-generate
                 print("🔄 Using Chroma's default embedding function...")
                 collection.add(
-                    documents=data['documents'],
-                    metadatas=data['metadatas'],
-                    ids=data['ids']
+                    documents=data["documents"], metadatas=data["metadatas"], ids=data["ids"]
                 )
 
-            count = len(data['documents'])
+            count = len(data["documents"])
             print(f"✅ Uploaded {count} documents to ChromaDB")
             print(f"📊 Collection '{collection_name}' now has {collection.count()} total documents")
 
@@ -355,19 +346,14 @@ class ChromaAdaptor(SkillAdaptor):
                 "message": f"Uploaded {count} documents to ChromaDB collection '{collection_name}'",
                 "collection": collection_name,
                 "count": count,
-                "url": f"{chroma_url}/collections/{collection_name}" if chroma_url else None
+                "url": f"{chroma_url}/collections/{collection_name}" if chroma_url else None,
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "message": f"Upload failed: {e}"
-            }
+            return {"success": False, "message": f"Upload failed: {e}"}
 
     def _generate_openai_embeddings(
-        self,
-        documents: list[str],
-        api_key: str = None
+        self, documents: list[str], api_key: str = None
     ) -> list[list[float]]:
         """
         Generate embeddings using OpenAI API.
@@ -380,12 +366,13 @@ class ChromaAdaptor(SkillAdaptor):
             List of embedding vectors
         """
         import os
+
         try:
             from openai import OpenAI
         except ImportError:
             raise ImportError("openai not installed. Run: pip install openai") from None
 
-        api_key = api_key or os.getenv('OPENAI_API_KEY')
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
 
@@ -398,14 +385,14 @@ class ChromaAdaptor(SkillAdaptor):
         print(f"  Generating embeddings for {len(documents)} documents...")
 
         for i in range(0, len(documents), batch_size):
-            batch = documents[i:i+batch_size]
+            batch = documents[i : i + batch_size]
             try:
                 response = client.embeddings.create(
                     input=batch,
-                    model="text-embedding-3-small"  # Cheapest, fastest
+                    model="text-embedding-3-small",  # Cheapest, fastest
                 )
                 embeddings.extend([item.embedding for item in response.data])
-                print(f"  ✓ Processed {min(i+batch_size, len(documents))}/{len(documents)}")
+                print(f"  ✓ Processed {min(i + batch_size, len(documents))}/{len(documents)}")
             except Exception as e:
                 raise Exception(f"OpenAI embedding generation failed: {e}") from e
 

@@ -369,8 +369,6 @@ LANGUAGE_PATTERNS: dict[str, list[tuple[str, int]]] = {
         (r"\$[0-9]+", 4),
         (r"->", 3),
     ],
-
-
     # ===== Markup/Config Languages =====
     "html": [
         (r"<!DOCTYPE\s+html>", 5),

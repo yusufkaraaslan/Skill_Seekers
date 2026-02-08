@@ -192,9 +192,7 @@ https://mikro-orm.io/docs/defining-entities#formulas
 
         # Verify converted URLs are valid
         # In real scenario, these would be added to pending_urls and scraped
-        self.assertTrue(
-            len(converted_urls) > 0, "Should generate at least one URL to scrape"
-        )
+        self.assertTrue(len(converted_urls) > 0, "Should generate at least one URL to scrape")
 
         # Verify no URLs would cause 404 (no anchors in middle of path)
         for url in converted_urls:

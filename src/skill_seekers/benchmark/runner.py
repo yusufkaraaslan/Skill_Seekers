@@ -46,10 +46,7 @@ class BenchmarkRunner:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def run(
-        self,
-        name: str,
-        benchmark_func: Callable[[Benchmark], None],
-        save: bool = True
+        self, name: str, benchmark_func: Callable[[Benchmark], None], save: bool = True
     ) -> BenchmarkReport:
         """
         Run single benchmark.
@@ -83,7 +80,7 @@ class BenchmarkRunner:
             filename = f"{name}_{timestamp}.json"
             path = self.output_dir / filename
 
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write(report.model_dump_json(indent=2))
 
             print(f"📊 Saved benchmark: {path}")
@@ -91,9 +88,7 @@ class BenchmarkRunner:
         return report
 
     def run_suite(
-        self,
-        benchmarks: dict[str, Callable[[Benchmark], None]],
-        save: bool = True
+        self, benchmarks: dict[str, Callable[[Benchmark], None]], save: bool = True
     ) -> dict[str, BenchmarkReport]:
         """
         Run multiple benchmarks.
@@ -122,11 +117,7 @@ class BenchmarkRunner:
 
         return reports
 
-    def compare(
-        self,
-        baseline_path: Path,
-        current_path: Path
-    ) -> ComparisonReport:
+    def compare(self, baseline_path: Path, current_path: Path) -> ComparisonReport:
         """
         Compare two benchmark reports.
 
@@ -215,7 +206,7 @@ class BenchmarkRunner:
             improvements=improvements,
             regressions=regressions,
             speedup_factor=speedup_factor,
-            memory_change_mb=memory_change_mb
+            memory_change_mb=memory_change_mb,
         )
 
     def list_benchmarks(self) -> list[dict[str, Any]]:
@@ -237,13 +228,15 @@ class BenchmarkRunner:
                 with open(path) as f:
                     data = json.load(f)
 
-                benchmarks.append({
-                    "name": data["name"],
-                    "path": str(path),
-                    "started_at": data["started_at"],
-                    "duration": data["total_duration"],
-                    "operations": len(data.get("timings", []))
-                })
+                benchmarks.append(
+                    {
+                        "name": data["name"],
+                        "path": str(path),
+                        "started_at": data["started_at"],
+                        "duration": data["total_duration"],
+                        "operations": len(data.get("timings", [])),
+                    }
+                )
             except Exception:
                 # Skip invalid files
                 continue

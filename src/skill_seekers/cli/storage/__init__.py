@@ -59,27 +59,26 @@ def get_storage_adaptor(provider: str, **kwargs) -> BaseStorageAdaptor:
                                      account_name='myaccount')
     """
     adaptors = {
-        's3': S3StorageAdaptor,
-        'gcs': GCSStorageAdaptor,
-        'azure': AzureStorageAdaptor,
+        "s3": S3StorageAdaptor,
+        "gcs": GCSStorageAdaptor,
+        "azure": AzureStorageAdaptor,
     }
 
     provider_lower = provider.lower()
     if provider_lower not in adaptors:
-        supported = ', '.join(adaptors.keys())
+        supported = ", ".join(adaptors.keys())
         raise ValueError(
-            f"Unsupported storage provider: {provider}. "
-            f"Supported providers: {supported}"
+            f"Unsupported storage provider: {provider}. Supported providers: {supported}"
         )
 
     return adaptors[provider_lower](**kwargs)
 
 
 __all__ = [
-    'BaseStorageAdaptor',
-    'StorageObject',
-    'S3StorageAdaptor',
-    'GCSStorageAdaptor',
-    'AzureStorageAdaptor',
-    'get_storage_adaptor',
+    "BaseStorageAdaptor",
+    "StorageObject",
+    "S3StorageAdaptor",
+    "GCSStorageAdaptor",
+    "AzureStorageAdaptor",
+    "get_storage_adaptor",
 ]

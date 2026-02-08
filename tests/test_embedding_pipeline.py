@@ -23,7 +23,7 @@ from skill_seekers.cli.embedding_pipeline import (
     EmbeddingPipeline,
     LocalEmbeddingProvider,
     EmbeddingCache,
-    CostTracker
+    CostTracker,
 )
 
 
@@ -112,21 +112,16 @@ def test_cost_tracker():
 
     stats = tracker.get_stats()
 
-    assert stats['total_requests'] == 2
-    assert stats['total_tokens'] == 1500
-    assert stats['cache_hits'] == 1
-    assert stats['cache_misses'] == 1
-    assert '50.0%' in stats['cache_rate']
+    assert stats["total_requests"] == 2
+    assert stats["total_tokens"] == 1500
+    assert stats["cache_hits"] == 1
+    assert stats["cache_misses"] == 1
+    assert "50.0%" in stats["cache_rate"]
 
 
 def test_pipeline_initialization():
     """Test pipeline initialization."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=128,
-        batch_size=10
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=128, batch_size=10)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -137,12 +132,7 @@ def test_pipeline_initialization():
 
 def test_pipeline_generate_batch():
     """Test batch embedding generation."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=64,
-        batch_size=2
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=64, batch_size=2)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -159,11 +149,11 @@ def test_pipeline_caching():
     """Test pipeline uses caching."""
     with tempfile.TemporaryDirectory() as tmpdir:
         config = EmbeddingConfig(
-            provider='local',
-            model='test-model',
+            provider="local",
+            model="test-model",
             dimension=32,
             batch_size=10,
-            cache_dir=Path(tmpdir)
+            cache_dir=Path(tmpdir),
         )
 
         pipeline = EmbeddingPipeline(config)
@@ -184,10 +174,10 @@ def test_pipeline_caching():
 def test_pipeline_batch_processing():
     """Test large batch is processed in chunks."""
     config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
+        provider="local",
+        model="test-model",
         dimension=16,
-        batch_size=3  # Small batch size
+        batch_size=3,  # Small batch size
     )
 
     pipeline = EmbeddingPipeline(config)
@@ -201,11 +191,7 @@ def test_pipeline_batch_processing():
 
 def test_validate_dimensions_valid():
     """Test dimension validation with valid embeddings."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=128
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=128)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -217,11 +203,7 @@ def test_validate_dimensions_valid():
 
 def test_validate_dimensions_invalid():
     """Test dimension validation with invalid embeddings."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=128
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=128)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -234,30 +216,22 @@ def test_validate_dimensions_invalid():
 
 def test_embedding_result_metadata():
     """Test embedding result includes metadata."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=256
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=256)
 
     pipeline = EmbeddingPipeline(config)
 
     texts = ["test"]
     result = pipeline.generate_batch(texts, show_progress=False)
 
-    assert 'provider' in result.metadata
-    assert 'model' in result.metadata
-    assert 'dimension' in result.metadata
-    assert result.metadata['dimension'] == 256
+    assert "provider" in result.metadata
+    assert "model" in result.metadata
+    assert "dimension" in result.metadata
+    assert result.metadata["dimension"] == 256
 
 
 def test_cost_stats():
     """Test cost statistics tracking."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=64
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=64)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -266,18 +240,14 @@ def test_cost_stats():
 
     stats = pipeline.get_cost_stats()
 
-    assert 'total_requests' in stats
-    assert 'cache_hits' in stats
-    assert 'estimated_cost' in stats
+    assert "total_requests" in stats
+    assert "cache_hits" in stats
+    assert "estimated_cost" in stats
 
 
 def test_empty_batch():
     """Test handling empty batch."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=32
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=32)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -289,11 +259,7 @@ def test_empty_batch():
 
 def test_single_document():
     """Test single document generation."""
-    config = EmbeddingConfig(
-        provider='local',
-        model='test-model',
-        dimension=128
-    )
+    config = EmbeddingConfig(provider="local", model="test-model", dimension=128)
 
     pipeline = EmbeddingPipeline(config)
 
@@ -306,11 +272,7 @@ def test_single_document():
 def test_different_dimensions():
     """Test different embedding dimensions."""
     for dim in [64, 128, 256, 512]:
-        config = EmbeddingConfig(
-            provider='local',
-            model='test-model',
-            dimension=dim
-        )
+        config = EmbeddingConfig(provider="local", model="test-model", dimension=dim)
 
         pipeline = EmbeddingPipeline(config)
         result = pipeline.generate_batch(["test"], show_progress=False)

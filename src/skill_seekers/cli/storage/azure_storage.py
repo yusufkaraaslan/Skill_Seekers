@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 try:
     from azure.storage.blob import BlobServiceClient, BlobSasPermissions, generate_blob_sas
     from azure.core.exceptions import ResourceNotFoundError
+
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False
@@ -65,38 +66,30 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
                 "Install with: pip install azure-storage-blob"
             )
 
-        if 'container' not in kwargs:
+        if "container" not in kwargs:
             raise ValueError("container parameter is required for Azure storage")
 
-        self.container_name = kwargs['container']
+        self.container_name = kwargs["container"]
 
         # Initialize BlobServiceClient
-        if 'connection_string' in kwargs:
-            connection_string = kwargs['connection_string']
+        if "connection_string" in kwargs:
+            connection_string = kwargs["connection_string"]
         else:
-            connection_string = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+            connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
         if connection_string:
-            self.blob_service_client = BlobServiceClient.from_connection_string(
-                connection_string
-            )
+            self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
             # Extract account name from connection string
             self.account_name = None
             self.account_key = None
-            for part in connection_string.split(';'):
-                if part.startswith('AccountName='):
-                    self.account_name = part.split('=', 1)[1]
-                elif part.startswith('AccountKey='):
-                    self.account_key = part.split('=', 1)[1]
+            for part in connection_string.split(";"):
+                if part.startswith("AccountName="):
+                    self.account_name = part.split("=", 1)[1]
+                elif part.startswith("AccountKey="):
+                    self.account_key = part.split("=", 1)[1]
         else:
-            account_name = kwargs.get(
-                'account_name',
-                os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
-            )
-            account_key = kwargs.get(
-                'account_key',
-                os.getenv('AZURE_STORAGE_ACCOUNT_KEY')
-            )
+            account_name = kwargs.get("account_name", os.getenv("AZURE_STORAGE_ACCOUNT_NAME"))
+            account_key = kwargs.get("account_key", os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
 
             if not account_name or not account_key:
                 raise ValueError(
@@ -108,13 +101,10 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
             self.account_key = account_key
             account_url = f"https://{account_name}.blob.core.windows.net"
             self.blob_service_client = BlobServiceClient(
-                account_url=account_url,
-                credential=account_key
+                account_url=account_url, credential=account_key
             )
 
-        self.container_client = self.blob_service_client.get_container_client(
-            self.container_name
-        )
+        self.container_client = self.blob_service_client.get_container_client(self.container_name)
 
     def upload_file(
         self, local_path: str, remote_path: str, metadata: dict[str, str] | None = None
@@ -128,11 +118,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
             blob_client = self.container_client.get_blob_client(remote_path)
 
             with open(local_file, "rb") as data:
-                blob_client.upload_blob(
-                    data,
-                    overwrite=True,
-                    metadata=metadata
-                )
+                blob_client.upload_blob(data, overwrite=True, metadata=metadata)
 
             return f"https://{self.account_name}.blob.core.windows.net/{self.container_name}/{remote_path}"
         except Exception as e:
@@ -164,25 +150,26 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
         except Exception as e:
             raise Exception(f"Azure deletion failed: {e}") from e
 
-    def list_files(
-        self, prefix: str = "", max_results: int = 1000
-    ) -> list[StorageObject]:
+    def list_files(self, prefix: str = "", max_results: int = 1000) -> list[StorageObject]:
         """List files in Azure container."""
         try:
             blobs = self.container_client.list_blobs(
-                name_starts_with=prefix,
-                results_per_page=max_results
+                name_starts_with=prefix, results_per_page=max_results
             )
 
             files = []
             for blob in blobs:
-                files.append(StorageObject(
-                    key=blob.name,
-                    size=blob.size,
-                    last_modified=blob.last_modified.isoformat() if blob.last_modified else None,
-                    etag=blob.etag,
-                    metadata=blob.metadata
-                ))
+                files.append(
+                    StorageObject(
+                        key=blob.name,
+                        size=blob.size,
+                        last_modified=blob.last_modified.isoformat()
+                        if blob.last_modified
+                        else None,
+                        etag=blob.etag,
+                        metadata=blob.metadata,
+                    )
+                )
 
             return files
         except Exception as e:
@@ -205,9 +192,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
                 raise FileNotFoundError(f"Remote file not found: {remote_path}")
 
             if not self.account_name or not self.account_key:
-                raise ValueError(
-                    "Account name and key are required for SAS URL generation"
-                )
+                raise ValueError("Account name and key are required for SAS URL generation")
 
             sas_token = generate_blob_sas(
                 account_name=self.account_name,
@@ -215,7 +200,7 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
                 blob_name=remote_path,
                 account_key=self.account_key,
                 permission=BlobSasPermissions(read=True),
-                expiry=datetime.utcnow() + timedelta(seconds=expires_in)
+                expiry=datetime.utcnow() + timedelta(seconds=expires_in),
             )
 
             return f"{blob_client.url}?{sas_token}"
@@ -239,12 +224,13 @@ class AzureStorageAdaptor(BaseStorageAdaptor):
 
             # Wait for copy to complete
             properties = dest_blob.get_blob_properties()
-            while properties.copy.status == 'pending':
+            while properties.copy.status == "pending":
                 import time
+
                 time.sleep(0.1)
                 properties = dest_blob.get_blob_properties()
 
-            if properties.copy.status != 'success':
+            if properties.copy.status != "success":
                 raise Exception(f"Copy failed with status: {properties.copy.status}")
 
         except FileNotFoundError:

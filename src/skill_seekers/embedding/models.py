@@ -14,20 +14,14 @@ class EmbeddingRequest(BaseModel):
             "example": {
                 "text": "This is a test document about Python programming.",
                 "model": "text-embedding-3-small",
-                "normalize": True
+                "normalize": True,
             }
         }
     )
 
     text: str = Field(..., description="Text to generate embedding for")
-    model: str = Field(
-        default="text-embedding-3-small",
-        description="Embedding model to use"
-    )
-    normalize: bool = Field(
-        default=True,
-        description="Normalize embeddings to unit length"
-    )
+    model: str = Field(default="text-embedding-3-small", description="Embedding model to use")
+    normalize: bool = Field(default=True, description="Normalize embeddings to unit length")
 
 
 class BatchEmbeddingRequest(BaseModel):
@@ -39,27 +33,20 @@ class BatchEmbeddingRequest(BaseModel):
                 "texts": [
                     "First document about Python",
                     "Second document about JavaScript",
-                    "Third document about Rust"
+                    "Third document about Rust",
                 ],
                 "model": "text-embedding-3-small",
                 "normalize": True,
-                "batch_size": 32
+                "batch_size": 32,
             }
         }
     )
 
     texts: list[str] = Field(..., description="List of texts to embed")
-    model: str = Field(
-        default="text-embedding-3-small",
-        description="Embedding model to use"
-    )
-    normalize: bool = Field(
-        default=True,
-        description="Normalize embeddings to unit length"
-    )
+    model: str = Field(default="text-embedding-3-small", description="Embedding model to use")
+    normalize: bool = Field(default=True, description="Normalize embeddings to unit length")
     batch_size: int | None = Field(
-        default=32,
-        description="Batch size for processing (default: 32)"
+        default=32, description="Batch size for processing (default: 32)"
     )
 
 
@@ -69,10 +56,7 @@ class EmbeddingResponse(BaseModel):
     embedding: list[float] = Field(..., description="Generated embedding vector")
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
-    cached: bool = Field(
-        default=False,
-        description="Whether embedding was retrieved from cache"
-    )
+    cached: bool = Field(default=False, description="Whether embedding was retrieved from cache")
 
 
 class BatchEmbeddingResponse(BaseModel):
@@ -82,10 +66,7 @@ class BatchEmbeddingResponse(BaseModel):
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
     count: int = Field(..., description="Number of embeddings generated")
-    cached_count: int = Field(
-        default=0,
-        description="Number of embeddings retrieved from cache"
-    )
+    cached_count: int = Field(default=0, description="Number of embeddings retrieved from cache")
 
 
 class SkillEmbeddingRequest(BaseModel):
@@ -97,24 +78,15 @@ class SkillEmbeddingRequest(BaseModel):
                 "skill_path": "/path/to/skill/react",
                 "model": "text-embedding-3-small",
                 "chunk_size": 512,
-                "overlap": 50
+                "overlap": 50,
             }
         }
     )
 
     skill_path: str = Field(..., description="Path to skill directory")
-    model: str = Field(
-        default="text-embedding-3-small",
-        description="Embedding model to use"
-    )
-    chunk_size: int = Field(
-        default=512,
-        description="Chunk size for splitting documents (tokens)"
-    )
-    overlap: int = Field(
-        default=50,
-        description="Overlap between chunks (tokens)"
-    )
+    model: str = Field(default="text-embedding-3-small", description="Embedding model to use")
+    chunk_size: int = Field(default=512, description="Chunk size for splitting documents (tokens)")
+    overlap: int = Field(default=50, description="Overlap between chunks (tokens)")
 
 
 class SkillEmbeddingResponse(BaseModel):
@@ -124,10 +96,7 @@ class SkillEmbeddingResponse(BaseModel):
     total_chunks: int = Field(..., description="Total number of chunks embedded")
     model: str = Field(..., description="Model used for generation")
     dimensions: int = Field(..., description="Embedding dimensions")
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Skill metadata"
-    )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Skill metadata")
 
 
 class HealthResponse(BaseModel):
@@ -144,12 +113,13 @@ class ModelInfo(BaseModel):
     """Information about an embedding model."""
 
     name: str = Field(..., description="Model name")
-    provider: str = Field(..., description="Model provider (openai, anthropic, sentence-transformers)")
+    provider: str = Field(
+        ..., description="Model provider (openai, anthropic, sentence-transformers)"
+    )
     dimensions: int = Field(..., description="Embedding dimensions")
     max_tokens: int = Field(..., description="Maximum input tokens")
     cost_per_million: float | None = Field(
-        None,
-        description="Cost per million tokens (if applicable)"
+        None, description="Cost per million tokens (if applicable)"
     )
 
 

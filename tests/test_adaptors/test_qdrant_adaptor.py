@@ -28,9 +28,7 @@ class TestQdrantAdaptor:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(
-            "# Test Skill\n\nThis is a test skill for Qdrant format."
-        )
+        skill_md.write_text("# Test Skill\n\nThis is a test skill for Qdrant format.")
 
         # Create references directory with files
         refs_dir = skill_dir / "references"
@@ -40,9 +38,7 @@ class TestQdrantAdaptor:
 
         # Format as Qdrant points
         adaptor = get_adaptor("qdrant")
-        metadata = SkillMetadata(
-            name="test_skill", description="Test skill", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="test_skill", description="Test skill", version="1.0.0")
 
         points_json = adaptor.format_skill_md(skill_dir, metadata)
 
@@ -119,7 +115,7 @@ class TestQdrantAdaptor:
         """Test upload returns instructions (no actual upload)."""
         # Create test package
         package_path = tmp_path / "test-qdrant.json"
-        package_path.write_text('[]')
+        package_path.write_text("[]")
 
         adaptor = get_adaptor("qdrant")
         result = adaptor.upload(package_path, "fake-key")
@@ -160,9 +156,7 @@ class TestQdrantAdaptor:
         skill_dir.mkdir()
 
         adaptor = get_adaptor("qdrant")
-        metadata = SkillMetadata(
-            name="empty_skill", description="Empty", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="empty_skill", description="Empty", version="1.0.0")
 
         points_json = adaptor.format_skill_md(skill_dir, metadata)
         result = json.loads(points_json)
@@ -181,9 +175,7 @@ class TestQdrantAdaptor:
         (refs_dir / "test.md").write_text("# Test\n\nTest content.")
 
         adaptor = get_adaptor("qdrant")
-        metadata = SkillMetadata(
-            name="refs_only", description="Refs only", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="refs_only", description="Refs only", version="1.0.0")
 
         points_json = adaptor.format_skill_md(skill_dir, metadata)
         result = json.loads(points_json)

@@ -101,10 +101,38 @@ class ArchitecturalPatternDetector:
         # Web Frameworks
         "Django": ["django", "manage.py", "settings.py", "urls.py"],
         "Flask": ["flask", "app.py", "wsgi.py"],
-        "Spring": ["springframework", "org.springframework", "@Controller", "@Service", "@Repository"],
-        "ASP.NET": ["Microsoft.AspNetCore", "System.Web", "Controllers", "Models", "Views", ".cshtml", "Startup.cs"],
-        "Rails": ["rails", "action", "app/models", "app/views", "app/controllers", "config/routes.rb"],
-        "Angular": ["@angular", "angular", "app.module.ts", "@Component", "@Injectable", "angular.json"],
+        "Spring": [
+            "springframework",
+            "org.springframework",
+            "@Controller",
+            "@Service",
+            "@Repository",
+        ],
+        "ASP.NET": [
+            "Microsoft.AspNetCore",
+            "System.Web",
+            "Controllers",
+            "Models",
+            "Views",
+            ".cshtml",
+            "Startup.cs",
+        ],
+        "Rails": [
+            "rails",
+            "action",
+            "app/models",
+            "app/views",
+            "app/controllers",
+            "config/routes.rb",
+        ],
+        "Angular": [
+            "@angular",
+            "angular",
+            "app.module.ts",
+            "@Component",
+            "@Injectable",
+            "angular.json",
+        ],
         "React": ["react", "package.json", "components"],
         "Vue.js": ["vue", ".vue", "components"],
         "Express": ["express", "app.js", "routes"],
@@ -208,7 +236,9 @@ class ArchitecturalPatternDetector:
 
         # Create searchable import string
         import_content = " ".join(all_imports)
-        logger.debug(f"Collected {len(all_imports)} imports from {len([f for f in files if f.get('imports')])} files for framework detection")
+        logger.debug(
+            f"Collected {len(all_imports)} imports from {len([f for f in files if f.get('imports')])} files for framework detection"
+        )
 
         # Also check actual directory structure for game engine markers
         # (project.godot, .unity, .uproject are config files, not in analyzed files)
@@ -245,7 +275,9 @@ class ArchitecturalPatternDetector:
             # Check in file paths, directory structure, AND imports
             path_matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
             dir_matches = sum(1 for marker in markers if marker.lower() in dir_content.lower())
-            import_matches = sum(1 for marker in markers if marker.lower() in import_content.lower())
+            import_matches = sum(
+                1 for marker in markers if marker.lower() in import_content.lower()
+            )
 
             # Strategy: Prioritize import-based detection (more accurate)
             # If we have import matches, they're strong signals - use them alone
@@ -257,7 +289,9 @@ class ArchitecturalPatternDetector:
             elif (path_matches + dir_matches) >= 2:
                 # Path/directory-based detection (requires 2+ matches)
                 detected.append(framework)
-                logger.info(f"  📦 Detected framework: {framework} (path:{path_matches} dir:{dir_matches})")
+                logger.info(
+                    f"  📦 Detected framework: {framework} (path:{path_matches} dir:{dir_matches})"
+                )
 
         return detected
 

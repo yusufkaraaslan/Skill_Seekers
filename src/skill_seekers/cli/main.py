@@ -42,25 +42,25 @@ from skill_seekers.cli import __version__
 
 # Command module mapping (command name -> module path)
 COMMAND_MODULES = {
-    'config': 'skill_seekers.cli.config_command',
-    'scrape': 'skill_seekers.cli.doc_scraper',
-    'github': 'skill_seekers.cli.github_scraper',
-    'pdf': 'skill_seekers.cli.pdf_scraper',
-    'unified': 'skill_seekers.cli.unified_scraper',
-    'enhance': 'skill_seekers.cli.enhance_skill_local',
-    'enhance-status': 'skill_seekers.cli.enhance_status',
-    'package': 'skill_seekers.cli.package_skill',
-    'upload': 'skill_seekers.cli.upload_skill',
-    'estimate': 'skill_seekers.cli.estimate_pages',
-    'extract-test-examples': 'skill_seekers.cli.test_example_extractor',
-    'install-agent': 'skill_seekers.cli.install_agent',
-    'analyze': 'skill_seekers.cli.codebase_scraper',
-    'install': 'skill_seekers.cli.install_skill',
-    'resume': 'skill_seekers.cli.resume_command',
-    'stream': 'skill_seekers.cli.streaming_ingest',
-    'update': 'skill_seekers.cli.incremental_updater',
-    'multilang': 'skill_seekers.cli.multilang_support',
-    'quality': 'skill_seekers.cli.quality_metrics',
+    "config": "skill_seekers.cli.config_command",
+    "scrape": "skill_seekers.cli.doc_scraper",
+    "github": "skill_seekers.cli.github_scraper",
+    "pdf": "skill_seekers.cli.pdf_scraper",
+    "unified": "skill_seekers.cli.unified_scraper",
+    "enhance": "skill_seekers.cli.enhance_skill_local",
+    "enhance-status": "skill_seekers.cli.enhance_status",
+    "package": "skill_seekers.cli.package_skill",
+    "upload": "skill_seekers.cli.upload_skill",
+    "estimate": "skill_seekers.cli.estimate_pages",
+    "extract-test-examples": "skill_seekers.cli.test_example_extractor",
+    "install-agent": "skill_seekers.cli.install_agent",
+    "analyze": "skill_seekers.cli.codebase_scraper",
+    "install": "skill_seekers.cli.install_skill",
+    "resume": "skill_seekers.cli.resume_command",
+    "stream": "skill_seekers.cli.streaming_ingest",
+    "update": "skill_seekers.cli.incremental_updater",
+    "multilang": "skill_seekers.cli.multilang_support",
+    "quality": "skill_seekers.cli.quality_metrics",
 }
 
 
@@ -124,12 +124,21 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
 
     # Convert args to sys.argv format
     for key, value in vars(args).items():
-        if key == 'command':
+        if key == "command":
             continue
 
         # Handle positional arguments (no -- prefix)
-        if key in ['url', 'directory', 'file', 'job_id', 'skill_directory', 'zip_file', 'config', 'input_file']:
-            if value is not None and value != '':
+        if key in [
+            "url",
+            "directory",
+            "file",
+            "job_id",
+            "skill_directory",
+            "zip_file",
+            "config",
+            "input_file",
+        ]:
+            if value is not None and value != "":
                 argv.append(str(value))
             continue
 
@@ -172,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     # Special handling for 'analyze' command (has post-processing)
-    if args.command == 'analyze':
+    if args.command == "analyze":
         return _handle_analyze_command(args)
 
     # Standard delegation for all other commands
@@ -200,6 +209,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # Show traceback in verbose mode
         import traceback
+
         if hasattr(args, "verbose") and getattr(args, "verbose", False):
             traceback.print_exc()
 
@@ -226,13 +236,16 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
 
     # Handle preset flags (depth and features)
     if args.quick:
-        sys.argv.extend([
-            "--depth", "surface",
-            "--skip-patterns",
-            "--skip-test-examples",
-            "--skip-how-to-guides",
-            "--skip-config-patterns",
-        ])
+        sys.argv.extend(
+            [
+                "--depth",
+                "surface",
+                "--skip-patterns",
+                "--skip-test-examples",
+                "--skip-how-to-guides",
+                "--skip-config-patterns",
+            ]
+        )
     elif args.comprehensive:
         sys.argv.extend(["--depth", "full"])
     elif args.depth:
@@ -246,6 +259,7 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
     elif args.enhance:
         try:
             from skill_seekers.cli.config_manager import get_config_manager
+
             config = get_config_manager()
             enhance_level = config.get_default_enhance_level()
         except Exception:

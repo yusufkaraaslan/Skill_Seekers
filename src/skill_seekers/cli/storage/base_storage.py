@@ -95,9 +95,7 @@ class BaseStorageAdaptor(ABC):
         pass
 
     @abstractmethod
-    def list_files(
-        self, prefix: str = "", max_results: int = 1000
-    ) -> list[StorageObject]:
+    def list_files(self, prefix: str = "", max_results: int = 1000) -> list[StorageObject]:
         """
         List files in cloud storage.
 
@@ -191,9 +189,7 @@ class BaseStorageAdaptor(ABC):
 
         return uploaded_files
 
-    def download_directory(
-        self, remote_prefix: str, local_dir: str
-    ) -> list[str]:
+    def download_directory(self, remote_prefix: str, local_dir: str) -> list[str]:
         """
         Download directory from cloud storage.
 
@@ -245,9 +241,7 @@ class BaseStorageAdaptor(ABC):
             raise FileNotFoundError(f"File not found: {remote_path}")
         return files[0].size
 
-    def copy_file(
-        self, source_path: str, dest_path: str
-    ) -> None:
+    def copy_file(self, source_path: str, dest_path: str) -> None:
         """
         Copy file within cloud storage.
 

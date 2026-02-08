@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class ChangeType(str, Enum):
     """Type of change detected."""
+
     ADDED = "added"
     MODIFIED = "modified"
     DELETED = "deleted"
@@ -25,8 +26,7 @@ class PageChange(BaseModel):
     new_hash: str | None = Field(None, description="New content hash")
     diff: str | None = Field(None, description="Content diff (if available)")
     detected_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When change was detected"
+        default_factory=datetime.utcnow, description="When change was detected"
     )
 
     class Config:
@@ -37,7 +37,7 @@ class PageChange(BaseModel):
                 "old_hash": "abc123",
                 "new_hash": "def456",
                 "diff": "@@ -10,3 +10,4 @@\n+New content here",
-                "detected_at": "2024-01-15T10:30:00Z"
+                "detected_at": "2024-01-15T10:30:00Z",
             }
         }
 
@@ -52,8 +52,7 @@ class ChangeReport(BaseModel):
     deleted: list[PageChange] = Field(default_factory=list, description="Deleted pages")
     unchanged: int = Field(0, description="Number of unchanged pages")
     checked_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When check was performed"
+        default_factory=datetime.utcnow, description="When check was performed"
     )
 
     @property
@@ -72,34 +71,19 @@ class SyncConfig(BaseModel):
 
     skill_config: str = Field(..., description="Path to skill config file")
     check_interval: int = Field(
-        default=3600,
-        description="Check interval in seconds (default: 1 hour)"
+        default=3600, description="Check interval in seconds (default: 1 hour)"
     )
     enabled: bool = Field(default=True, description="Whether sync is enabled")
-    auto_update: bool = Field(
-        default=False,
-        description="Automatically rebuild skill on changes"
-    )
-    notify_on_change: bool = Field(
-        default=True,
-        description="Send notifications on changes"
-    )
+    auto_update: bool = Field(default=False, description="Automatically rebuild skill on changes")
+    notify_on_change: bool = Field(default=True, description="Send notifications on changes")
     notification_channels: list[str] = Field(
-        default_factory=list,
-        description="Notification channels (email, slack, webhook)"
+        default_factory=list, description="Notification channels (email, slack, webhook)"
     )
-    webhook_url: str | None = Field(
-        None,
-        description="Webhook URL for change notifications"
-    )
+    webhook_url: str | None = Field(None, description="Webhook URL for change notifications")
     email_recipients: list[str] = Field(
-        default_factory=list,
-        description="Email recipients for notifications"
+        default_factory=list, description="Email recipients for notifications"
     )
-    slack_webhook: str | None = Field(
-        None,
-        description="Slack webhook URL"
-    )
+    slack_webhook: str | None = Field(None, description="Slack webhook URL")
 
     class Config:
         json_schema_extra = {
@@ -111,7 +95,7 @@ class SyncConfig(BaseModel):
                 "notify_on_change": True,
                 "notification_channels": ["slack", "webhook"],
                 "webhook_url": "https://example.com/webhook",
-                "slack_webhook": "https://hooks.slack.com/services/..."
+                "slack_webhook": "https://hooks.slack.com/services/...",
             }
         }
 
@@ -125,8 +109,7 @@ class SyncState(BaseModel):
     total_checks: int = Field(default=0, description="Total checks performed")
     total_changes: int = Field(default=0, description="Total changes detected")
     page_hashes: dict[str, str] = Field(
-        default_factory=dict,
-        description="URL -> content hash mapping"
+        default_factory=dict, description="URL -> content hash mapping"
     )
     status: str = Field(default="idle", description="Current status")
     error: str | None = Field(None, description="Last error message")
@@ -137,15 +120,9 @@ class WebhookPayload(BaseModel):
 
     event: str = Field(..., description="Event type (change_detected, sync_complete)")
     skill_name: str = Field(..., description="Skill name")
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Event timestamp"
-    )
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Event timestamp")
     changes: ChangeReport | None = Field(None, description="Change report")
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata"
-    )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     class Config:
         json_schema_extra = {
@@ -157,8 +134,8 @@ class WebhookPayload(BaseModel):
                     "total_pages": 150,
                     "added": [],
                     "modified": [{"url": "https://react.dev/learn"}],
-                    "deleted": []
+                    "deleted": [],
                 },
-                "metadata": {"source": "periodic_check"}
+                "metadata": {"source": "periodic_check"},
             }
         }

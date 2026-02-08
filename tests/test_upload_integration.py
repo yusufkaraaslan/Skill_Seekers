@@ -21,9 +21,9 @@ def sample_chroma_package(tmp_path):
         "metadatas": [
             {"source": "test", "category": "overview", "file": "SKILL.md"},
             {"source": "test", "category": "api", "file": "API.md"},
-            {"source": "test", "category": "guide", "file": "GUIDE.md"}
+            {"source": "test", "category": "guide", "file": "GUIDE.md"},
         ],
-        "ids": ["id1", "id2", "id3"]
+        "ids": ["id1", "id2", "id3"],
     }
 
     package_path = tmp_path / "test-chroma.json"
@@ -43,8 +43,8 @@ def sample_weaviate_package(tmp_path):
             "properties": [
                 {"name": "content", "dataType": ["text"]},
                 {"name": "source", "dataType": ["string"]},
-                {"name": "category", "dataType": ["string"]}
-            ]
+                {"name": "category", "dataType": ["string"]},
+            ],
         },
         "objects": [
             {
@@ -52,18 +52,14 @@ def sample_weaviate_package(tmp_path):
                 "properties": {
                     "content": "Test content 1",
                     "source": "test",
-                    "category": "overview"
-                }
+                    "category": "overview",
+                },
             },
             {
                 "id": "00000000-0000-0000-0000-000000000002",
-                "properties": {
-                    "content": "Test content 2",
-                    "source": "test",
-                    "category": "api"
-                }
-            }
-        ]
+                "properties": {"content": "Test content 2", "source": "test", "category": "api"},
+            },
+        ],
     }
 
     package_path = tmp_path / "test-weaviate.json"
@@ -76,40 +72,41 @@ class TestChromaUploadBasics:
 
     def test_chroma_adaptor_exists(self):
         """Test that ChromaDB adaptor can be loaded."""
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
         assert adaptor is not None
-        assert adaptor.PLATFORM == 'chroma'
+        assert adaptor.PLATFORM == "chroma"
 
     def test_chroma_upload_without_chromadb_installed(self, sample_chroma_package):
         """Test upload fails gracefully without chromadb installed."""
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
 
         # Temporarily remove chromadb if it exists
         import sys
-        chromadb_backup = sys.modules.get('chromadb')
-        if 'chromadb' in sys.modules:
-            del sys.modules['chromadb']
+
+        chromadb_backup = sys.modules.get("chromadb")
+        if "chromadb" in sys.modules:
+            del sys.modules["chromadb"]
 
         try:
             result = adaptor.upload(sample_chroma_package)
 
-            assert result['success'] is False
-            assert 'chromadb not installed' in result['message']
-            assert 'pip install chromadb' in result['message']
+            assert result["success"] is False
+            assert "chromadb not installed" in result["message"]
+            assert "pip install chromadb" in result["message"]
         finally:
             if chromadb_backup:
-                sys.modules['chromadb'] = chromadb_backup
+                sys.modules["chromadb"] = chromadb_backup
 
     def test_chroma_upload_api_signature(self, sample_chroma_package):
         """Test ChromaDB upload has correct API signature."""
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
 
         # Verify upload method exists and accepts kwargs
-        assert hasattr(adaptor, 'upload')
+        assert hasattr(adaptor, "upload")
         assert callable(adaptor.upload)
 
         # Verify adaptor methods exist
-        assert hasattr(adaptor, '_generate_openai_embeddings')
+        assert hasattr(adaptor, "_generate_openai_embeddings")
 
 
 class TestWeaviateUploadBasics:
@@ -117,40 +114,41 @@ class TestWeaviateUploadBasics:
 
     def test_weaviate_adaptor_exists(self):
         """Test that Weaviate adaptor can be loaded."""
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
         assert adaptor is not None
-        assert adaptor.PLATFORM == 'weaviate'
+        assert adaptor.PLATFORM == "weaviate"
 
     def test_weaviate_upload_without_weaviate_installed(self, sample_weaviate_package):
         """Test upload fails gracefully without weaviate-client installed."""
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
 
         # Temporarily remove weaviate if it exists
         import sys
-        weaviate_backup = sys.modules.get('weaviate')
-        if 'weaviate' in sys.modules:
-            del sys.modules['weaviate']
+
+        weaviate_backup = sys.modules.get("weaviate")
+        if "weaviate" in sys.modules:
+            del sys.modules["weaviate"]
 
         try:
             result = adaptor.upload(sample_weaviate_package)
 
-            assert result['success'] is False
-            assert 'weaviate-client not installed' in result['message']
-            assert 'pip install weaviate-client' in result['message']
+            assert result["success"] is False
+            assert "weaviate-client not installed" in result["message"]
+            assert "pip install weaviate-client" in result["message"]
         finally:
             if weaviate_backup:
-                sys.modules['weaviate'] = weaviate_backup
+                sys.modules["weaviate"] = weaviate_backup
 
     def test_weaviate_upload_api_signature(self, sample_weaviate_package):
         """Test Weaviate upload has correct API signature."""
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
 
         # Verify upload method exists and accepts kwargs
-        assert hasattr(adaptor, 'upload')
+        assert hasattr(adaptor, "upload")
         assert callable(adaptor.upload)
 
         # Verify adaptor methods exist
-        assert hasattr(adaptor, '_generate_openai_embeddings')
+        assert hasattr(adaptor, "_generate_openai_embeddings")
 
 
 class TestPackageStructure:
@@ -161,30 +159,30 @@ class TestPackageStructure:
         with open(sample_chroma_package) as f:
             data = json.load(f)
 
-        assert 'collection_name' in data
-        assert 'documents' in data
-        assert 'metadatas' in data
-        assert 'ids' in data
-        assert len(data['documents']) == len(data['metadatas']) == len(data['ids'])
+        assert "collection_name" in data
+        assert "documents" in data
+        assert "metadatas" in data
+        assert "ids" in data
+        assert len(data["documents"]) == len(data["metadatas"]) == len(data["ids"])
 
     def test_weaviate_package_structure(self, sample_weaviate_package):
         """Test Weaviate package has required fields."""
         with open(sample_weaviate_package) as f:
             data = json.load(f)
 
-        assert 'class_name' in data
-        assert 'schema' in data
-        assert 'objects' in data
-        assert len(data['objects']) == 2
+        assert "class_name" in data
+        assert "schema" in data
+        assert "objects" in data
+        assert len(data["objects"]) == 2
 
         # Verify schema structure
-        assert 'class' in data['schema']
-        assert 'properties' in data['schema']
+        assert "class" in data["schema"]
+        assert "properties" in data["schema"]
 
         # Verify object structure
-        for obj in data['objects']:
-            assert 'id' in obj
-            assert 'properties' in obj
+        for obj in data["objects"]:
+            assert "id" in obj
+            assert "properties" in obj
 
 
 class TestUploadCommandIntegration:
@@ -199,25 +197,26 @@ class TestUploadCommandIntegration:
 
         # Verify it accepts kwargs for vector DBs
         import inspect
+
         sig = inspect.signature(upload_skill_api)
         params = list(sig.parameters.keys())
-        assert 'package_path' in params
-        assert 'target' in params
-        assert 'api_key' in params
-        assert 'kwargs' in params  # For platform-specific options
+        assert "package_path" in params
+        assert "target" in params
+        assert "api_key" in params
+        assert "kwargs" in params  # For platform-specific options
 
     def test_upload_command_supports_chroma(self):
         """Test upload command recognizes chroma as target."""
 
         # This should not raise ValueError
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
         assert adaptor is not None
 
     def test_upload_command_supports_weaviate(self):
         """Test upload command recognizes weaviate as target."""
 
         # This should not raise ValueError
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
         assert adaptor is not None
 
 
@@ -226,7 +225,7 @@ class TestErrorHandling:
 
     def test_chroma_handles_missing_file(self, tmp_path):
         """Test ChromaDB upload handles missing files gracefully."""
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
 
         missing_file = tmp_path / "nonexistent.json"
 
@@ -234,14 +233,14 @@ class TestErrorHandling:
         try:
             result = adaptor.upload(missing_file)
             # If it returns a dict, it should indicate failure
-            assert result['success'] is False
+            assert result["success"] is False
         except FileNotFoundError:
             # This is also acceptable
             pass
 
     def test_weaviate_handles_missing_file(self, tmp_path):
         """Test Weaviate upload handles missing files gracefully."""
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
 
         missing_file = tmp_path / "nonexistent.json"
 
@@ -249,14 +248,14 @@ class TestErrorHandling:
         try:
             result = adaptor.upload(missing_file)
             # If it returns a dict, it should indicate failure
-            assert result['success'] is False
+            assert result["success"] is False
         except FileNotFoundError:
             # This is also acceptable
             pass
 
     def test_chroma_handles_invalid_json(self, tmp_path):
         """Test ChromaDB upload handles invalid JSON gracefully."""
-        adaptor = get_adaptor('chroma')
+        adaptor = get_adaptor("chroma")
 
         invalid_file = tmp_path / "invalid.json"
         invalid_file.write_text("not valid json{")
@@ -265,14 +264,14 @@ class TestErrorHandling:
         try:
             result = adaptor.upload(invalid_file)
             # If it returns a dict, it should indicate failure
-            assert result['success'] is False
+            assert result["success"] is False
         except json.JSONDecodeError:
             # This is also acceptable
             pass
 
     def test_weaviate_handles_invalid_json(self, tmp_path):
         """Test Weaviate upload handles invalid JSON gracefully."""
-        adaptor = get_adaptor('weaviate')
+        adaptor = get_adaptor("weaviate")
 
         invalid_file = tmp_path / "invalid.json"
         invalid_file.write_text("not valid json{")
@@ -281,7 +280,7 @@ class TestErrorHandling:
         try:
             result = adaptor.upload(invalid_file)
             # If it returns a dict, it should indicate failure
-            assert result['success'] is False
+            assert result["success"] is False
         except json.JSONDecodeError:
             # This is also acceptable
             pass

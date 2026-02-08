@@ -55,7 +55,7 @@ class ChangeDetector:
         Returns:
             Hexadecimal hash string
         """
-        return hashlib.sha256(content.encode('utf-8')).hexdigest()
+        return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     def fetch_page(self, url: str) -> tuple[str, dict[str, str]]:
         """
@@ -72,17 +72,15 @@ class ChangeDetector:
             requests.RequestException: If fetch fails
         """
         response = requests.get(
-            url,
-            timeout=self.timeout,
-            headers={'User-Agent': 'SkillSeekers-Sync/1.0'}
+            url, timeout=self.timeout, headers={"User-Agent": "SkillSeekers-Sync/1.0"}
         )
         response.raise_for_status()
 
         metadata = {
-            'last-modified': response.headers.get('Last-Modified'),
-            'etag': response.headers.get('ETag'),
-            'content-type': response.headers.get('Content-Type'),
-            'content-length': response.headers.get('Content-Length'),
+            "last-modified": response.headers.get("Last-Modified"),
+            "etag": response.headers.get("ETag"),
+            "content-type": response.headers.get("Content-Type"),
+            "content-length": response.headers.get("Content-Length"),
         }
 
         return response.text, metadata
@@ -92,7 +90,7 @@ class ChangeDetector:
         url: str,
         old_hash: str | None = None,
         generate_diff: bool = False,
-        old_content: str | None = None
+        old_content: str | None = None,
     ) -> PageChange:
         """
         Check if page has changed.
@@ -132,7 +130,7 @@ class ChangeDetector:
                 old_hash=old_hash,
                 new_hash=new_hash,
                 diff=diff,
-                detected_at=datetime.utcnow()
+                detected_at=datetime.utcnow(),
             )
 
         except requests.RequestException:
@@ -142,14 +140,11 @@ class ChangeDetector:
                 change_type=ChangeType.DELETED,
                 old_hash=old_hash,
                 new_hash=None,
-                detected_at=datetime.utcnow()
+                detected_at=datetime.utcnow(),
             )
 
     def check_pages(
-        self,
-        urls: list[str],
-        previous_hashes: dict[str, str],
-        generate_diffs: bool = False
+        self, urls: list[str], previous_hashes: dict[str, str], generate_diffs: bool = False
     ) -> ChangeReport:
         """
         Check multiple pages for changes.
@@ -185,13 +180,15 @@ class ChangeDetector:
         # Check for deleted pages (in previous state but not in current)
         for url, old_hash in previous_hashes.items():
             if url not in checked_urls:
-                deleted.append(PageChange(
-                    url=url,
-                    change_type=ChangeType.DELETED,
-                    old_hash=old_hash,
-                    new_hash=None,
-                    detected_at=datetime.utcnow()
-                ))
+                deleted.append(
+                    PageChange(
+                        url=url,
+                        change_type=ChangeType.DELETED,
+                        old_hash=old_hash,
+                        new_hash=None,
+                        detected_at=datetime.utcnow(),
+                    )
+                )
 
         return ChangeReport(
             skill_name="unknown",  # To be set by caller
@@ -200,7 +197,7 @@ class ChangeDetector:
             modified=modified,
             deleted=deleted,
             unchanged=unchanged_count,
-            checked_at=datetime.utcnow()
+            checked_at=datetime.utcnow(),
         )
 
     def generate_diff(self, old_content: str, new_content: str) -> str:
@@ -217,15 +214,9 @@ class ChangeDetector:
         old_lines = old_content.splitlines(keepends=True)
         new_lines = new_content.splitlines(keepends=True)
 
-        diff = difflib.unified_diff(
-            old_lines,
-            new_lines,
-            fromfile='old',
-            tofile='new',
-            lineterm=''
-        )
+        diff = difflib.unified_diff(old_lines, new_lines, fromfile="old", tofile="new", lineterm="")
 
-        return ''.join(diff)
+        return "".join(diff)
 
     def generate_summary_diff(self, old_content: str, new_content: str) -> str:
         """
@@ -244,16 +235,15 @@ class ChangeDetector:
         diff = difflib.unified_diff(old_lines, new_lines)
         diff_lines = list(diff)
 
-        added = sum(1 for line in diff_lines if line.startswith('+') and not line.startswith('+++'))
-        removed = sum(1 for line in diff_lines if line.startswith('-') and not line.startswith('---'))
+        added = sum(1 for line in diff_lines if line.startswith("+") and not line.startswith("+++"))
+        removed = sum(
+            1 for line in diff_lines if line.startswith("-") and not line.startswith("---")
+        )
 
         return f"+{added} -{removed} lines"
 
     def check_header_changes(
-        self,
-        url: str,
-        old_modified: str | None = None,
-        old_etag: str | None = None
+        self, url: str, old_modified: str | None = None, old_etag: str | None = None
     ) -> bool:
         """
         Quick check using HTTP headers (no content download).
@@ -269,14 +259,12 @@ class ChangeDetector:
         try:
             # Use HEAD request for efficiency
             response = requests.head(
-                url,
-                timeout=self.timeout,
-                headers={'User-Agent': 'SkillSeekers-Sync/1.0'}
+                url, timeout=self.timeout, headers={"User-Agent": "SkillSeekers-Sync/1.0"}
             )
             response.raise_for_status()
 
-            new_modified = response.headers.get('Last-Modified')
-            new_etag = response.headers.get('ETag')
+            new_modified = response.headers.get("Last-Modified")
+            new_etag = response.headers.get("ETag")
 
             # Check if headers indicate change
             if old_modified and new_modified and old_modified != new_modified:
@@ -289,9 +277,7 @@ class ChangeDetector:
             return True
 
     def batch_check_headers(
-        self,
-        urls: list[str],
-        previous_metadata: dict[str, dict[str, str]]
+        self, urls: list[str], previous_metadata: dict[str, dict[str, str]]
     ) -> list[str]:
         """
         Batch check URLs using headers only.
@@ -307,8 +293,8 @@ class ChangeDetector:
 
         for url in urls:
             old_meta = previous_metadata.get(url, {})
-            old_modified = old_meta.get('last-modified')
-            old_etag = old_meta.get('etag')
+            old_modified = old_meta.get("last-modified")
+            old_etag = old_meta.get("etag")
 
             if self.check_header_changes(url, old_modified, old_etag):
                 changed_urls.append(url)

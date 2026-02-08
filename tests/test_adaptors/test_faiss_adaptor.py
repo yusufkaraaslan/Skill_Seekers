@@ -28,9 +28,7 @@ class TestFAISSAdaptor:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(
-            "# Test Skill\n\nThis is a test skill for FAISS format."
-        )
+        skill_md.write_text("# Test Skill\n\nThis is a test skill for FAISS format.")
 
         # Create references directory with files
         refs_dir = skill_dir / "references"
@@ -40,9 +38,7 @@ class TestFAISSAdaptor:
 
         # Format as FAISS index data
         adaptor = get_adaptor("faiss")
-        metadata = SkillMetadata(
-            name="test_skill", description="Test skill", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="test_skill", description="Test skill", version="1.0.0")
 
         index_json = adaptor.format_skill_md(skill_dir, metadata)
 
@@ -158,9 +154,7 @@ class TestFAISSAdaptor:
         skill_dir.mkdir()
 
         adaptor = get_adaptor("faiss")
-        metadata = SkillMetadata(
-            name="empty_skill", description="Empty", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="empty_skill", description="Empty", version="1.0.0")
 
         index_json = adaptor.format_skill_md(skill_dir, metadata)
         index_data = json.loads(index_json)
@@ -180,9 +174,7 @@ class TestFAISSAdaptor:
         (refs_dir / "test.md").write_text("# Test\n\nTest content.")
 
         adaptor = get_adaptor("faiss")
-        metadata = SkillMetadata(
-            name="refs_only", description="Refs only", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="refs_only", description="Refs only", version="1.0.0")
 
         index_json = adaptor.format_skill_md(skill_dir, metadata)
         index_data = json.loads(index_json)

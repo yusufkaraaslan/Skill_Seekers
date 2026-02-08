@@ -28,9 +28,7 @@ class TestLlamaIndexAdaptor:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(
-            "# Test Skill\n\nThis is a test skill for LlamaIndex format."
-        )
+        skill_md.write_text("# Test Skill\n\nThis is a test skill for LlamaIndex format.")
 
         # Create references directory with files
         refs_dir = skill_dir / "references"
@@ -40,9 +38,7 @@ class TestLlamaIndexAdaptor:
 
         # Format as LlamaIndex Documents
         adaptor = get_adaptor("llama-index")
-        metadata = SkillMetadata(
-            name="test_skill", description="Test skill", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="test_skill", description="Test skill", version="1.0.0")
 
         documents_json = adaptor.format_skill_md(skill_dir, metadata)
 
@@ -112,7 +108,7 @@ class TestLlamaIndexAdaptor:
         """Test upload returns instructions (no actual upload)."""
         # Create test package
         package_path = tmp_path / "test-llama-index.json"
-        package_path.write_text('[]')
+        package_path.write_text("[]")
 
         adaptor = get_adaptor("llama-index")
         result = adaptor.upload(package_path, "fake-key")
@@ -153,9 +149,7 @@ class TestLlamaIndexAdaptor:
         skill_dir.mkdir()
 
         adaptor = get_adaptor("llama-index")
-        metadata = SkillMetadata(
-            name="empty_skill", description="Empty", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="empty_skill", description="Empty", version="1.0.0")
 
         documents_json = adaptor.format_skill_md(skill_dir, metadata)
         documents = json.loads(documents_json)
@@ -173,9 +167,7 @@ class TestLlamaIndexAdaptor:
         (refs_dir / "test.md").write_text("# Test\n\nTest content.")
 
         adaptor = get_adaptor("llama-index")
-        metadata = SkillMetadata(
-            name="refs_only", description="Refs only", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="refs_only", description="Refs only", version="1.0.0")
 
         documents_json = adaptor.format_skill_md(skill_dir, metadata)
         documents = json.loads(documents_json)

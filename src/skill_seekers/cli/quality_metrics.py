@@ -16,6 +16,7 @@ from enum import Enum
 
 class MetricLevel(Enum):
     """Metric severity level."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -25,6 +26,7 @@ class MetricLevel(Enum):
 @dataclass
 class QualityMetric:
     """Individual quality metric."""
+
     name: str
     value: float  # 0.0-1.0 (or 0-100 percentage)
     level: MetricLevel
@@ -35,6 +37,7 @@ class QualityMetric:
 @dataclass
 class QualityScore:
     """Overall quality score."""
+
     total_score: float  # 0-100
     completeness: float  # 0-100
     accuracy: float  # 0-100
@@ -46,6 +49,7 @@ class QualityScore:
 @dataclass
 class QualityReport:
     """Complete quality report."""
+
     timestamp: str
     skill_name: str
     overall_score: QualityScore
@@ -64,10 +68,17 @@ class QualityAnalyzer:
 
     # Thresholds for quality grades
     GRADE_THRESHOLDS = {
-        'A+': 95, 'A': 90, 'A-': 85,
-        'B+': 80, 'B': 75, 'B-': 70,
-        'C+': 65, 'C': 60, 'C-': 55,
-        'D': 50, 'F': 0
+        "A+": 95,
+        "A": 90,
+        "A-": 85,
+        "B+": 80,
+        "B": 75,
+        "B-": 70,
+        "C+": 65,
+        "C": 60,
+        "C-": 55,
+        "D": 50,
+        "F": 0,
     }
 
     def __init__(self, skill_dir: Path):
@@ -102,7 +113,7 @@ class QualityAnalyzer:
                 score += 10
 
             # Has sections (10 points)
-            if content.count('#') >= 5:
+            if content.count("#") >= 5:
                 score += 10
 
         # References directory (20 points)
@@ -134,13 +145,15 @@ class QualityAnalyzer:
             if len(suggestions) == 0:
                 suggestions.append("Expand documentation coverage")
 
-        self.metrics.append(QualityMetric(
-            name="Completeness",
-            value=completeness,
-            level=level,
-            description=f"Documentation completeness: {completeness:.1f}%",
-            suggestions=suggestions
-        ))
+        self.metrics.append(
+            QualityMetric(
+                name="Completeness",
+                value=completeness,
+                level=level,
+                description=f"Documentation completeness: {completeness:.1f}%",
+                suggestions=suggestions,
+            )
+        )
 
         return completeness
 
@@ -166,14 +179,14 @@ class QualityAnalyzer:
             content = skill_md.read_text(encoding="utf-8")
 
             # Check for TODO markers (deduct 5 points each, max 20)
-            todo_count = content.lower().count('todo')
+            todo_count = content.lower().count("todo")
             if todo_count > 0:
                 deduction = min(todo_count * 5, 20)
                 score -= deduction
                 issues.append(f"Found {todo_count} TODO markers")
 
             # Check for placeholder text (deduct 10)
-            placeholders = ['lorem ipsum', 'placeholder', 'coming soon']
+            placeholders = ["lorem ipsum", "placeholder", "coming soon"]
             for placeholder in placeholders:
                 if placeholder in content.lower():
                     score -= 10
@@ -195,13 +208,15 @@ class QualityAnalyzer:
         if accuracy < 100 and issues:
             suggestions.extend(issues[:3])  # Top 3 issues
 
-        self.metrics.append(QualityMetric(
-            name="Accuracy",
-            value=accuracy,
-            level=level,
-            description=f"Documentation accuracy: {accuracy:.1f}%",
-            suggestions=suggestions
-        ))
+        self.metrics.append(
+            QualityMetric(
+                name="Accuracy",
+                value=accuracy,
+                level=level,
+                description=f"Documentation accuracy: {accuracy:.1f}%",
+                suggestions=suggestions,
+            )
+        )
 
         return accuracy
 
@@ -234,13 +249,13 @@ class QualityAnalyzer:
             # Check for specific types (20 points each)
             ref_names = [f.stem.lower() for f in ref_files]
 
-            if any('getting' in name or 'start' in name for name in ref_names):
+            if any("getting" in name or "start" in name for name in ref_names):
                 score += 20
 
-            if any('api' in name or 'reference' in name for name in ref_names):
+            if any("api" in name or "reference" in name for name in ref_names):
                 score += 20
 
-            if any('example' in name or 'tutorial' in name for name in ref_names):
+            if any("example" in name or "tutorial" in name for name in ref_names):
                 score += 20
 
             # Has diverse content (10 points)
@@ -258,13 +273,15 @@ class QualityAnalyzer:
                 suggestions.append("Add API reference documentation")
             suggestions.append("Expand documentation coverage")
 
-        self.metrics.append(QualityMetric(
-            name="Coverage",
-            value=coverage,
-            level=level,
-            description=f"Documentation coverage: {coverage:.1f}%",
-            suggestions=suggestions
-        ))
+        self.metrics.append(
+            QualityMetric(
+                name="Coverage",
+                value=coverage,
+                level=level,
+                description=f"Documentation coverage: {coverage:.1f}%",
+                suggestions=suggestions,
+            )
+        )
 
         return coverage
 
@@ -308,56 +325,54 @@ class QualityAnalyzer:
         if health < 100:
             suggestions.extend(issues[:3])
 
-        self.metrics.append(QualityMetric(
-            name="Health",
-            value=health,
-            level=level,
-            description=f"Skill health: {health:.1f}%",
-            suggestions=suggestions
-        ))
+        self.metrics.append(
+            QualityMetric(
+                name="Health",
+                value=health,
+                level=level,
+                description=f"Skill health: {health:.1f}%",
+                suggestions=suggestions,
+            )
+        )
 
         return health
 
     def calculate_statistics(self) -> dict[str, Any]:
         """Calculate skill statistics."""
         stats = {
-            'total_files': 0,
-            'total_size_bytes': 0,
-            'markdown_files': 0,
-            'reference_files': 0,
-            'total_characters': 0,
-            'total_words': 0
+            "total_files": 0,
+            "total_size_bytes": 0,
+            "markdown_files": 0,
+            "reference_files": 0,
+            "total_characters": 0,
+            "total_words": 0,
         }
 
         # Count files and sizes
         for md_file in self.skill_dir.rglob("*.md"):
-            stats['total_files'] += 1
-            stats['markdown_files'] += 1
+            stats["total_files"] += 1
+            stats["markdown_files"] += 1
             size = md_file.stat().st_size
-            stats['total_size_bytes'] += size
+            stats["total_size_bytes"] += size
 
             # Count words
             try:
                 content = md_file.read_text(encoding="utf-8")
-                stats['total_characters'] += len(content)
-                stats['total_words'] += len(content.split())
+                stats["total_characters"] += len(content)
+                stats["total_words"] += len(content.split())
             except Exception:
                 pass
 
         # Count references
         refs_dir = self.skill_dir / "references"
         if refs_dir.exists():
-            stats['reference_files'] = len(list(refs_dir.glob("*.md")))
+            stats["reference_files"] = len(list(refs_dir.glob("*.md")))
 
         self.statistics = stats
         return stats
 
     def calculate_overall_score(
-        self,
-        completeness: float,
-        accuracy: float,
-        coverage: float,
-        health: float
+        self, completeness: float, accuracy: float, coverage: float, health: float
     ) -> QualityScore:
         """
         Calculate overall quality score.
@@ -368,15 +383,10 @@ class QualityAnalyzer:
         - Coverage: 25%
         - Health: 20%
         """
-        total = (
-            completeness * 0.30 +
-            accuracy * 0.25 +
-            coverage * 0.25 +
-            health * 0.20
-        )
+        total = completeness * 0.30 + accuracy * 0.25 + coverage * 0.25 + health * 0.20
 
         # Determine grade
-        grade = 'F'
+        grade = "F"
         for g, threshold in self.GRADE_THRESHOLDS.items():
             if total >= threshold:
                 grade = g
@@ -388,7 +398,7 @@ class QualityAnalyzer:
             accuracy=accuracy,
             coverage=coverage,
             health=health,
-            grade=grade
+            grade=grade,
         )
 
     def generate_recommendations(self, score: QualityScore) -> list[str]:
@@ -431,9 +441,7 @@ class QualityAnalyzer:
         health = self.analyze_health()
 
         # Calculate overall score
-        overall_score = self.calculate_overall_score(
-            completeness, accuracy, coverage, health
-        )
+        overall_score = self.calculate_overall_score(completeness, accuracy, coverage, health)
 
         # Calculate statistics
         stats = self.calculate_statistics()
@@ -447,7 +455,7 @@ class QualityAnalyzer:
             overall_score=overall_score,
             metrics=self.metrics,
             statistics=stats,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def format_report(self, report: QualityReport) -> str:
@@ -484,7 +492,7 @@ class QualityAnalyzer:
                 MetricLevel.INFO: "✅",
                 MetricLevel.WARNING: "⚠️",
                 MetricLevel.ERROR: "❌",
-                MetricLevel.CRITICAL: "🔴"
+                MetricLevel.CRITICAL: "🔴",
             }.get(metric.level, "ℹ️")
 
             lines.append(f"   {icon} {metric.name}: {metric.value:.1f}%")
@@ -553,4 +561,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

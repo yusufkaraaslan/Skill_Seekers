@@ -19,6 +19,7 @@ import numpy as np
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding generation."""
+
     provider: str  # 'openai', 'cohere', 'huggingface', 'local'
     model: str
     dimension: int
@@ -31,6 +32,7 @@ class EmbeddingConfig:
 @dataclass
 class EmbeddingResult:
     """Result of embedding generation."""
+
     embeddings: list[list[float]]
     metadata: dict[str, Any] = field(default_factory=dict)
     cached_count: int = 0
@@ -42,6 +44,7 @@ class EmbeddingResult:
 @dataclass
 class CostTracker:
     """Track embedding generation costs."""
+
     total_tokens: int = 0
     total_requests: int = 0
     cache_hits: int = 0
@@ -64,12 +67,12 @@ class CostTracker:
         cache_rate = (self.cache_hits / self.total_requests * 100) if self.total_requests > 0 else 0
 
         return {
-            'total_requests': self.total_requests,
-            'total_tokens': self.total_tokens,
-            'cache_hits': self.cache_hits,
-            'cache_misses': self.cache_misses,
-            'cache_rate': f"{cache_rate:.1f}%",
-            'estimated_cost': f"${self.estimated_cost:.4f}"
+            "total_requests": self.total_requests,
+            "total_tokens": self.total_tokens,
+            "cache_hits": self.cache_hits,
+            "cache_misses": self.cache_misses,
+            "cache_rate": f"{cache_rate:.1f}%",
+            "estimated_cost": f"${self.estimated_cost:.4f}",
         }
 
 
@@ -97,18 +100,18 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     # Pricing per 1M tokens (as of 2026)
     PRICING = {
-        'text-embedding-ada-002': 0.10,
-        'text-embedding-3-small': 0.02,
-        'text-embedding-3-large': 0.13,
+        "text-embedding-ada-002": 0.10,
+        "text-embedding-3-small": 0.02,
+        "text-embedding-3-large": 0.13,
     }
 
     DIMENSIONS = {
-        'text-embedding-ada-002': 1536,
-        'text-embedding-3-small': 1536,
-        'text-embedding-3-large': 3072,
+        "text-embedding-ada-002": 1536,
+        "text-embedding-3-small": 1536,
+        "text-embedding-3-large": 3072,
     }
 
-    def __init__(self, model: str = 'text-embedding-ada-002', api_key: str | None = None):
+    def __init__(self, model: str = "text-embedding-ada-002", api_key: str | None = None):
         """Initialize OpenAI provider."""
         self.model = model
         self.api_key = api_key
@@ -119,9 +122,12 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         if self._client is None:
             try:
                 from openai import OpenAI
+
                 self._client = OpenAI(api_key=self.api_key)
             except ImportError:
-                raise ImportError("OpenAI package not installed. Install with: pip install openai") from None
+                raise ImportError(
+                    "OpenAI package not installed. Install with: pip install openai"
+                ) from None
         return self._client
 
     def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
@@ -130,10 +136,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
         embeddings = []
         for text in texts:
-            response = client.embeddings.create(
-                model=self.model,
-                input=text
-            )
+            response = client.embeddings.create(model=self.model, input=text)
             embeddings.append(response.data[0].embedding)
 
         return embeddings
@@ -207,7 +210,7 @@ class EmbeddingCache:
             if cache_file.exists():
                 try:
                     data = json.loads(cache_file.read_text())
-                    embedding = data['embedding']
+                    embedding = data["embedding"]
                     self._memory_cache[cache_key] = embedding
                     return embedding
                 except Exception:
@@ -226,12 +229,16 @@ class EmbeddingCache:
         if self.cache_dir:
             cache_file = self.cache_dir / f"{cache_key}.json"
             try:
-                cache_file.write_text(json.dumps({
-                    'text_hash': cache_key,
-                    'model': model,
-                    'embedding': embedding,
-                    'timestamp': time.time()
-                }))
+                cache_file.write_text(
+                    json.dumps(
+                        {
+                            "text_hash": cache_key,
+                            "model": model,
+                            "embedding": embedding,
+                            "timestamp": time.time(),
+                        }
+                    )
+                )
             except Exception as e:
                 print(f"⚠️  Warning: Failed to write cache: {e}")
 
@@ -252,9 +259,9 @@ class EmbeddingPipeline:
 
     def _create_provider(self) -> EmbeddingProvider:
         """Create provider based on config."""
-        if self.config.provider == 'openai':
+        if self.config.provider == "openai":
             return OpenAIEmbeddingProvider(self.config.model)
-        elif self.config.provider == 'local':
+        elif self.config.provider == "local":
             return LocalEmbeddingProvider(self.config.dimension)
         else:
             raise ValueError(f"Unknown provider: {self.config.provider}")
@@ -264,11 +271,7 @@ class EmbeddingPipeline:
         # Rough estimate: 1 token ≈ 4 characters
         return len(text) // 4
 
-    def generate_batch(
-        self,
-        texts: list[str],
-        show_progress: bool = True
-    ) -> EmbeddingResult:
+    def generate_batch(self, texts: list[str], show_progress: bool = True) -> EmbeddingResult:
         """
         Generate embeddings for batch of texts.
 
@@ -293,7 +296,7 @@ class EmbeddingPipeline:
 
         # Process in batches
         for i in range(0, len(texts), self.config.batch_size):
-            batch = texts[i:i + self.config.batch_size]
+            batch = texts[i : i + self.config.batch_size]
             batch_embeddings = []
             to_generate = []
             to_generate_indices = []
@@ -331,7 +334,7 @@ class EmbeddingPipeline:
 
             if show_progress and len(texts) > self.config.batch_size:
                 progress = min(i + self.config.batch_size, len(texts))
-                print(f"   Progress: {progress}/{len(texts)} ({progress/len(texts)*100:.1f}%)")
+                print(f"   Progress: {progress}/{len(texts)} ({progress / len(texts) * 100:.1f}%)")
 
         total_time = time.time() - start_time
 
@@ -342,21 +345,21 @@ class EmbeddingPipeline:
             print(f"   Generated: {generated_count}")
             print(f"   Time: {total_time:.2f}s")
 
-            if self.config.provider != 'local':
+            if self.config.provider != "local":
                 stats = self.cost_tracker.get_stats()
                 print(f"   Cost: {stats['estimated_cost']}")
 
         return EmbeddingResult(
             embeddings=embeddings,
             metadata={
-                'provider': self.config.provider,
-                'model': self.config.model,
-                'dimension': self.provider.get_dimension()
+                "provider": self.config.provider,
+                "model": self.config.model,
+                "dimension": self.provider.get_dimension(),
             },
             cached_count=cached_count,
             generated_count=generated_count,
             total_time=total_time,
-            cost_estimate=self.cost_tracker.estimated_cost
+            cost_estimate=self.cost_tracker.estimated_cost,
         )
 
     def validate_dimensions(self, embeddings: list[list[float]]) -> bool:
@@ -373,8 +376,10 @@ class EmbeddingPipeline:
 
         for i, embedding in enumerate(embeddings):
             if len(embedding) != expected_dim:
-                print(f"❌ Dimension mismatch at index {i}: "
-                      f"expected {expected_dim}, got {len(embedding)}")
+                print(
+                    f"❌ Dimension mismatch at index {i}: "
+                    f"expected {expected_dim}, got {len(embedding)}"
+                )
                 return False
 
         return True
@@ -390,11 +395,11 @@ def example_usage():
 
     # Configure pipeline
     config = EmbeddingConfig(
-        provider='local',  # Use 'openai' for production
-        model='text-embedding-ada-002',
+        provider="local",  # Use 'openai' for production
+        model="text-embedding-ada-002",
         dimension=384,
         batch_size=50,
-        cache_dir=Path("output/.embeddings_cache")
+        cache_dir=Path("output/.embeddings_cache"),
     )
 
     # Initialize pipeline

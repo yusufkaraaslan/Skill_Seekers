@@ -28,9 +28,7 @@ class TestChromaAdaptor:
 
         # Create SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(
-            "# Test Skill\n\nThis is a test skill for Chroma format."
-        )
+        skill_md.write_text("# Test Skill\n\nThis is a test skill for Chroma format.")
 
         # Create references directory with files
         refs_dir = skill_dir / "references"
@@ -40,9 +38,7 @@ class TestChromaAdaptor:
 
         # Format as Chroma collection
         adaptor = get_adaptor("chroma")
-        metadata = SkillMetadata(
-            name="test_skill", description="Test skill", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="test_skill", description="Test skill", version="1.0.0")
 
         collection_json = adaptor.format_skill_md(skill_dir, metadata)
 
@@ -124,7 +120,10 @@ class TestChromaAdaptor:
         # Upload may fail if chromadb not installed (expected)
         assert "message" in result
         # Either chromadb not installed or connection error
-        assert ("chromadb not installed" in result["message"] or "Failed to connect" in result["message"])
+        assert (
+            "chromadb not installed" in result["message"]
+            or "Failed to connect" in result["message"]
+        )
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""
@@ -157,9 +156,7 @@ class TestChromaAdaptor:
         skill_dir.mkdir()
 
         adaptor = get_adaptor("chroma")
-        metadata = SkillMetadata(
-            name="empty_skill", description="Empty", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="empty_skill", description="Empty", version="1.0.0")
 
         collection_json = adaptor.format_skill_md(skill_dir, metadata)
         collection = json.loads(collection_json)
@@ -179,9 +176,7 @@ class TestChromaAdaptor:
         (refs_dir / "test.md").write_text("# Test\n\nTest content.")
 
         adaptor = get_adaptor("chroma")
-        metadata = SkillMetadata(
-            name="refs_only", description="Refs only", version="1.0.0"
-        )
+        metadata = SkillMetadata(name="refs_only", description="Refs only", version="1.0.0")
 
         collection_json = adaptor.format_skill_md(skill_dir, metadata)
         collection = json.loads(collection_json)

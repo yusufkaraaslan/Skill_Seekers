@@ -44,11 +44,7 @@ class QdrantAdaptor(SkillAdaptor):
         return self._generate_deterministic_id(content, metadata, format="uuid5")
 
     def format_skill_md(
-        self,
-        skill_dir: Path,
-        metadata: SkillMetadata,
-        enable_chunking: bool = False,
-        **kwargs
+        self, skill_dir: Path, metadata: SkillMetadata, enable_chunking: bool = False, **kwargs
     ) -> str:
         """
         Format skill as Qdrant collection JSON.
@@ -87,30 +83,35 @@ class QdrantAdaptor(SkillAdaptor):
                     content,
                     payload_meta,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file="SKILL.md"
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file="SKILL.md",
                 )
 
                 # Add all chunks as points
                 for chunk_text, chunk_meta in chunks:
-                    point_id = self._generate_point_id(chunk_text, {
-                        "source": chunk_meta.get("source", metadata.name),
-                        "file": chunk_meta.get("file", "SKILL.md")
-                    })
-
-                    points.append({
-                        "id": point_id,
-                        "vector": None,  # User will generate embeddings
-                        "payload": {
-                            "content": chunk_text,
+                    point_id = self._generate_point_id(
+                        chunk_text,
+                        {
                             "source": chunk_meta.get("source", metadata.name),
-                            "category": chunk_meta.get("category", "overview"),
                             "file": chunk_meta.get("file", "SKILL.md"),
-                            "type": chunk_meta.get("type", "documentation"),
-                            "version": chunk_meta.get("version", metadata.version),
+                        },
+                    )
+
+                    points.append(
+                        {
+                            "id": point_id,
+                            "vector": None,  # User will generate embeddings
+                            "payload": {
+                                "content": chunk_text,
+                                "source": chunk_meta.get("source", metadata.name),
+                                "category": chunk_meta.get("category", "overview"),
+                                "file": chunk_meta.get("file", "SKILL.md"),
+                                "type": chunk_meta.get("type", "documentation"),
+                                "version": chunk_meta.get("version", metadata.version),
+                            },
                         }
-                    })
+                    )
 
         # Convert all reference files using base helper method
         for ref_file, ref_content in self._iterate_references(skill_dir):
@@ -130,30 +131,35 @@ class QdrantAdaptor(SkillAdaptor):
                     ref_content,
                     payload_meta,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get('chunk_max_tokens', 512),
-                    preserve_code_blocks=kwargs.get('preserve_code_blocks', True),
-                    source_file=ref_file.name
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
+                    source_file=ref_file.name,
                 )
 
                 # Add all chunks as points
                 for chunk_text, chunk_meta in chunks:
-                    point_id = self._generate_point_id(chunk_text, {
-                        "source": chunk_meta.get("source", metadata.name),
-                        "file": chunk_meta.get("file", ref_file.name)
-                    })
-
-                    points.append({
-                        "id": point_id,
-                        "vector": None,  # User will generate embeddings
-                        "payload": {
-                            "content": chunk_text,
+                    point_id = self._generate_point_id(
+                        chunk_text,
+                        {
                             "source": chunk_meta.get("source", metadata.name),
-                            "category": chunk_meta.get("category", category),
                             "file": chunk_meta.get("file", ref_file.name),
-                            "type": chunk_meta.get("type", "reference"),
-                            "version": chunk_meta.get("version", metadata.version),
+                        },
+                    )
+
+                    points.append(
+                        {
+                            "id": point_id,
+                            "vector": None,  # User will generate embeddings
+                            "payload": {
+                                "content": chunk_text,
+                                "source": chunk_meta.get("source", metadata.name),
+                                "category": chunk_meta.get("category", category),
+                                "file": chunk_meta.get("file", ref_file.name),
+                                "type": chunk_meta.get("type", "reference"),
+                                "version": chunk_meta.get("version", metadata.version),
+                            },
                         }
-                    })
+                    )
 
         # Qdrant configuration
         config = {
@@ -184,7 +190,7 @@ class QdrantAdaptor(SkillAdaptor):
         output_path: Path,
         enable_chunking: bool = False,
         chunk_max_tokens: int = 512,
-        preserve_code_blocks: bool = True
+        preserve_code_blocks: bool = True,
     ) -> Path:
         """
         Package skill into JSON file for Qdrant.
@@ -217,7 +223,7 @@ class QdrantAdaptor(SkillAdaptor):
             metadata,
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
-            preserve_code_blocks=preserve_code_blocks
+            preserve_code_blocks=preserve_code_blocks,
         )
 
         # Write to file

@@ -155,13 +155,9 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Should deduplicate to 3 unique base URLs
         self.assertEqual(len(result), 3)
-        self.assertIn(
-            "https://mikro-orm.io/docs/quick-start/index.html.md", result
-        )
+        self.assertIn("https://mikro-orm.io/docs/quick-start/index.html.md", result)
         self.assertIn("https://mikro-orm.io/docs/propagation/index.html.md", result)
-        self.assertIn(
-            "https://mikro-orm.io/docs/defining-entities/index.html.md", result
-        )
+        self.assertIn("https://mikro-orm.io/docs/defining-entities/index.html.md", result)
 
         # Should NOT contain any URLs with anchor fragments
         for url in result:

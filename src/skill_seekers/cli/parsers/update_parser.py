@@ -1,4 +1,5 @@
 """Update subcommand parser."""
+
 from .base import SubcommandParser
 
 

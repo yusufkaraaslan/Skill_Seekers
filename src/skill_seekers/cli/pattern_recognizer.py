@@ -30,14 +30,14 @@ logger = logging.getLogger(__name__)
 
 # Confidence thresholds for pattern filtering (Issue #240)
 CONFIDENCE_THRESHOLDS = {
-    'critical': 0.80,   # High-confidence patterns for ARCHITECTURE.md
-    'high': 0.70,       # Include in detailed analysis
-    'medium': 0.60,     # Include with warning/context
-    'low': 0.50,        # Minimum detection threshold
+    "critical": 0.80,  # High-confidence patterns for ARCHITECTURE.md
+    "high": 0.70,  # Include in detailed analysis
+    "medium": 0.60,  # Include with warning/context
+    "low": 0.50,  # Minimum detection threshold
 }
 
 # Default minimum confidence for pattern detection
-DEFAULT_MIN_CONFIDENCE = CONFIDENCE_THRESHOLDS['low']
+DEFAULT_MIN_CONFIDENCE = CONFIDENCE_THRESHOLDS["low"]
 
 
 @dataclass
@@ -1697,9 +1697,11 @@ def create_multi_level_report(pattern_results: list[dict]) -> dict:
     all_patterns_sorted = sorted(all_patterns, key=lambda p: p.get("confidence", 0.0), reverse=True)
 
     # Filter by confidence levels
-    critical = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['critical'])
-    high_confidence = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['high'])
-    medium = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS['medium'])
+    critical = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS["critical"])
+    high_confidence = filter_patterns_by_confidence(
+        all_patterns_sorted, CONFIDENCE_THRESHOLDS["high"]
+    )
+    medium = filter_patterns_by_confidence(all_patterns_sorted, CONFIDENCE_THRESHOLDS["medium"])
 
     return {
         "all_patterns": all_patterns_sorted,

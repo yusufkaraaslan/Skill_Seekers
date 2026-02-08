@@ -34,7 +34,7 @@ class Notifier:
         webhook_url: str | None = None,
         slack_webhook: str | None = None,
         email_recipients: list[str] | None = None,
-        console: bool = True
+        console: bool = True,
     ):
         """
         Initialize notifier.
@@ -45,8 +45,8 @@ class Notifier:
             email_recipients: List of email recipients
             console: Whether to print to console
         """
-        self.webhook_url = webhook_url or os.getenv('SYNC_WEBHOOK_URL')
-        self.slack_webhook = slack_webhook or os.getenv('SLACK_WEBHOOK_URL')
+        self.webhook_url = webhook_url or os.getenv("SYNC_WEBHOOK_URL")
+        self.slack_webhook = slack_webhook or os.getenv("SLACK_WEBHOOK_URL")
         self.email_recipients = email_recipients or []
         self.console = console
 
@@ -92,8 +92,8 @@ class Notifier:
             response = requests.post(
                 self.webhook_url,
                 json=payload.dict(),
-                headers={'Content-Type': 'application/json'},
-                timeout=10
+                headers={"Content-Type": "application/json"},
+                timeout=10,
             )
             response.raise_for_status()
             print(f"✅ Webhook notification sent to {self.webhook_url}")
@@ -124,14 +124,10 @@ class Notifier:
             slack_payload = {
                 "text": text,
                 "username": "Skill Seekers Sync",
-                "icon_emoji": ":books:"
+                "icon_emoji": ":books:",
             }
 
-            response = requests.post(
-                self.slack_webhook,
-                json=slack_payload,
-                timeout=10
-            )
+            response = requests.post(self.slack_webhook, json=slack_payload, timeout=10)
             response.raise_for_status()
             print("✅ Slack notification sent")
         except Exception as e:

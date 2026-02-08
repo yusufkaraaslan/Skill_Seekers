@@ -662,8 +662,13 @@ export default {
     def test_e2e_all_rag_adaptors_from_same_skill(self):
         """Test all 7 RAG adaptors can package the same skill"""
         rag_platforms = [
-            "langchain", "llama-index", "haystack",
-            "weaviate", "chroma", "faiss", "qdrant"
+            "langchain",
+            "llama-index",
+            "haystack",
+            "weaviate",
+            "chroma",
+            "faiss",
+            "qdrant",
         ]
         packages = {}
 
@@ -674,15 +679,11 @@ export default {
             package_path = adaptor.package(self.skill_dir, self.output_dir)
 
             # Verify package was created
-            self.assertTrue(
-                package_path.exists(),
-                f"Package not created for {platform}"
-            )
+            self.assertTrue(package_path.exists(), f"Package not created for {platform}")
 
             # Verify it's a JSON file
             self.assertTrue(
-                str(package_path).endswith(".json"),
-                f"{platform} should produce JSON file"
+                str(package_path).endswith(".json"), f"{platform} should produce JSON file"
             )
 
             # Store for later verification
@@ -696,10 +697,7 @@ export default {
             with open(path) as f:
                 data = json.load(f)
                 # Should be valid JSON (dict or list)
-                self.assertIsInstance(
-                    data, (dict, list),
-                    f"{platform} should produce valid JSON"
-                )
+                self.assertIsInstance(data, (dict, list), f"{platform} should produce valid JSON")
 
     def test_e2e_rag_adaptors_preserve_metadata(self):
         """Test that metadata is preserved across RAG adaptors"""
@@ -708,7 +706,7 @@ export default {
             description="Vue.js framework skill",
             version="2.0.0",
             author="Test Author",
-            tags=["vue", "javascript", "frontend"]
+            tags=["vue", "javascript", "frontend"],
         )
 
         # Test subset of platforms (representative sample)
@@ -758,33 +756,30 @@ export default {
         # Define expected structure for each platform
         validations = {
             "langchain": lambda d: (
-                isinstance(d, list) and
-                all("page_content" in item and "metadata" in item for item in d)
+                isinstance(d, list)
+                and all("page_content" in item and "metadata" in item for item in d)
             ),
             "llama-index": lambda d: (
-                isinstance(d, list) and
-                all("text" in item and "metadata" in item for item in d)
+                isinstance(d, list) and all("text" in item and "metadata" in item for item in d)
             ),
             "haystack": lambda d: (
-                isinstance(d, list) and
-                all("content" in item and "meta" in item for item in d)
+                isinstance(d, list) and all("content" in item and "meta" in item for item in d)
             ),
             "weaviate": lambda d: (
-                isinstance(d, dict) and
-                "schema" in d and "objects" in d and "class_name" in d
+                isinstance(d, dict) and "schema" in d and "objects" in d and "class_name" in d
             ),
             "chroma": lambda d: (
-                isinstance(d, dict) and
-                "documents" in d and "metadatas" in d and "ids" in d and
-                "collection_name" in d
+                isinstance(d, dict)
+                and "documents" in d
+                and "metadatas" in d
+                and "ids" in d
+                and "collection_name" in d
             ),
             "faiss": lambda d: (
-                isinstance(d, dict) and
-                "documents" in d and "metadatas" in d and "ids" in d
+                isinstance(d, dict) and "documents" in d and "metadatas" in d and "ids" in d
             ),
             "qdrant": lambda d: (
-                isinstance(d, dict) and
-                "collection_name" in d and "points" in d and "config" in d
+                isinstance(d, dict) and "collection_name" in d and "points" in d and "config" in d
             ),
         }
 
@@ -795,8 +790,7 @@ export default {
 
             # Validate structure
             self.assertTrue(
-                validate_func(data),
-                f"{platform} validation failed: incorrect JSON structure"
+                validate_func(data), f"{platform} validation failed: incorrect JSON structure"
             )
 
     def test_e2e_rag_empty_skill_handling(self):
@@ -838,9 +832,7 @@ export default {
             if platform == "langchain":
                 categories = {item["metadata"]["category"] for item in data}
             elif platform == "weaviate":
-                categories = {
-                    obj["properties"]["category"] for obj in data["objects"]
-                }
+                categories = {obj["properties"]["category"] for obj in data["objects"]}
             elif platform == "chroma":
                 categories = {meta["category"] for meta in data["metadatas"]}
 
@@ -854,8 +846,7 @@ export default {
             # Check that at least one reference category exists
             ref_categories = categories - {"overview"}
             self.assertGreater(
-                len(ref_categories), 0,
-                f"{platform}: Should have at least one reference category"
+                len(ref_categories), 0, f"{platform}: Should have at least one reference category"
             )
 
     def test_e2e_rag_integration_workflow_chromadb(self):
@@ -878,17 +869,10 @@ export default {
 
         # Create collection and add documents
         collection = client.create_collection(data["collection_name"])
-        collection.add(
-            documents=data["documents"],
-            metadatas=data["metadatas"],
-            ids=data["ids"]
-        )
+        collection.add(documents=data["documents"], metadatas=data["metadatas"], ids=data["ids"])
 
         # Query
-        results = collection.query(
-            query_texts=["reactivity"],
-            n_results=2
-        )
+        results = collection.query(query_texts=["reactivity"], n_results=2)
 
         # Verify results
         self.assertGreater(len(results["documents"][0]), 0, "Should return results")

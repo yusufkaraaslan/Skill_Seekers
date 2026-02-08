@@ -51,7 +51,7 @@ class SyncMonitor:
         check_interval: int = 3600,
         auto_update: bool = False,
         state_file: str | None = None,
-        on_change: Callable[[ChangeReport], None] | None = None
+        on_change: Callable[[ChangeReport], None] | None = None,
     ):
         """
         Initialize sync monitor.
@@ -72,7 +72,7 @@ class SyncMonitor:
         with open(self.config_path) as f:
             self.skill_config = json.load(f)
 
-        self.skill_name = self.skill_config.get('name', 'unknown')
+        self.skill_name = self.skill_config.get("name", "unknown")
 
         # State file
         if state_file:
@@ -97,10 +97,10 @@ class SyncMonitor:
             with open(self.state_file) as f:
                 data = json.load(f)
                 # Convert datetime strings back
-                if data.get('last_check'):
-                    data['last_check'] = datetime.fromisoformat(data['last_check'])
-                if data.get('last_change'):
-                    data['last_change'] = datetime.fromisoformat(data['last_change'])
+                if data.get("last_check"):
+                    data["last_check"] = datetime.fromisoformat(data["last_check"])
+                if data.get("last_change"):
+                    data["last_change"] = datetime.fromisoformat(data["last_change"])
                 return SyncState(**data)
         else:
             return SyncState(skill_name=self.skill_name)
@@ -109,12 +109,12 @@ class SyncMonitor:
         """Save current state to file."""
         # Convert datetime to ISO format
         data = self.state.dict()
-        if data.get('last_check'):
-            data['last_check'] = data['last_check'].isoformat()
-        if data.get('last_change'):
-            data['last_change'] = data['last_change'].isoformat()
+        if data.get("last_check"):
+            data["last_check"] = data["last_check"].isoformat()
+        if data.get("last_change"):
+            data["last_change"] = data["last_change"].isoformat()
 
-        with open(self.state_file, 'w') as f:
+        with open(self.state_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def check_now(self, generate_diffs: bool = False) -> ChangeReport:
@@ -132,7 +132,7 @@ class SyncMonitor:
 
         try:
             # Get URLs to check from config
-            base_url = self.skill_config.get('base_url')
+            base_url = self.skill_config.get("base_url")
             # TODO: In real implementation, get actual URLs from scraper
 
             # For now, simulate with base URL only
@@ -140,9 +140,7 @@ class SyncMonitor:
 
             # Check for changes
             report = self.detector.check_pages(
-                urls=urls,
-                previous_hashes=self.state.page_hashes,
-                generate_diffs=generate_diffs
+                urls=urls, previous_hashes=self.state.page_hashes, generate_diffs=generate_diffs
             )
             report.skill_name = self.skill_name
 
@@ -192,7 +190,7 @@ class SyncMonitor:
             event="change_detected",
             skill_name=self.skill_name,
             changes=report,
-            metadata={"auto_update": self.auto_update}
+            metadata={"auto_update": self.auto_update},
         )
 
         self.notifier.send(payload)
@@ -214,9 +212,7 @@ class SyncMonitor:
         self._running = True
 
         # Schedule checks
-        schedule.every(self.check_interval).seconds.do(
-            lambda: self.check_now()
-        )
+        schedule.every(self.check_interval).seconds.do(lambda: self.check_now())
 
         # Run in thread
         def run_schedule():

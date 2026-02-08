@@ -1,4 +1,5 @@
 """Quality subcommand parser."""
+
 from .base import SubcommandParser
 
 

@@ -1,4 +1,5 @@
 """Config subcommand parser."""
+
 from .base import SubcommandParser
 
 
@@ -22,9 +23,7 @@ class ConfigParser(SubcommandParser):
         parser.add_argument(
             "--github", action="store_true", help="Go directly to GitHub token setup"
         )
-        parser.add_argument(
-            "--api-keys", action="store_true", help="Go directly to API keys setup"
-        )
+        parser.add_argument("--api-keys", action="store_true", help="Go directly to API keys setup")
         parser.add_argument(
             "--show", action="store_true", help="Show current configuration and exit"
         )

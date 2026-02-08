@@ -113,7 +113,15 @@ def package_skill(
     output_dir = skill_path.parent
 
     # Auto-enable chunking for RAG platforms
-    RAG_PLATFORMS = ['langchain', 'llama-index', 'haystack', 'weaviate', 'chroma', 'faiss', 'qdrant']
+    RAG_PLATFORMS = [
+        "langchain",
+        "llama-index",
+        "haystack",
+        "weaviate",
+        "chroma",
+        "faiss",
+        "qdrant",
+    ]
 
     if target in RAG_PLATFORMS and not enable_chunking:
         print(f"ℹ️  Auto-enabling chunking for {target} platform")
@@ -126,17 +134,19 @@ def package_skill(
     if streaming:
         print(f"   Mode: Streaming (chunk_size={chunk_size}, overlap={chunk_overlap})")
     elif enable_chunking:
-        print(f"   Chunking: Enabled (max_tokens={chunk_max_tokens}, preserve_code={preserve_code_blocks})")
+        print(
+            f"   Chunking: Enabled (max_tokens={chunk_max_tokens}, preserve_code={preserve_code_blocks})"
+        )
 
     try:
         # Use streaming if requested and supported
-        if streaming and hasattr(adaptor, 'package_streaming'):
+        if streaming and hasattr(adaptor, "package_streaming"):
             package_path = adaptor.package_streaming(
                 skill_path,
                 output_dir,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
-                batch_size=batch_size
+                batch_size=batch_size,
             )
         elif streaming:
             print("⚠️  Streaming not supported for this platform, using standard packaging")
@@ -145,7 +155,7 @@ def package_skill(
                 output_dir,
                 enable_chunking=enable_chunking,
                 chunk_max_tokens=chunk_max_tokens,
-                preserve_code_blocks=preserve_code_blocks
+                preserve_code_blocks=preserve_code_blocks,
             )
         else:
             package_path = adaptor.package(
@@ -153,7 +163,7 @@ def package_skill(
                 output_dir,
                 enable_chunking=enable_chunking,
                 chunk_max_tokens=chunk_max_tokens,
-                preserve_code_blocks=preserve_code_blocks
+                preserve_code_blocks=preserve_code_blocks,
             )
 
         print(f"   Output: {package_path}")
@@ -212,7 +222,19 @@ Examples:
 
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "markdown", "langchain", "llama-index", "haystack", "weaviate", "chroma", "faiss", "qdrant"],
+        choices=[
+            "claude",
+            "gemini",
+            "openai",
+            "markdown",
+            "langchain",
+            "llama-index",
+            "haystack",
+            "weaviate",
+            "chroma",
+            "faiss",
+            "qdrant",
+        ],
         default="claude",
         help="Target LLM platform (default: claude)",
     )

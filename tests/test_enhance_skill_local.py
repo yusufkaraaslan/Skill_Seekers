@@ -152,9 +152,7 @@ class TestMultiAgentSupport:
 
     def test_rejects_missing_executable(self, tmp_path, monkeypatch):
         """Test rejection when executable is not found on PATH."""
-        monkeypatch.setattr(
-            "skill_seekers.cli.enhance_skill_local.shutil.which", lambda _exe: None
-        )
+        monkeypatch.setattr("skill_seekers.cli.enhance_skill_local.shutil.which", lambda _exe: None)
         skill_dir = _make_skill_dir(tmp_path)
 
         with pytest.raises(ValueError, match="not found in PATH"):

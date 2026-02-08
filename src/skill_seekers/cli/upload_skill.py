@@ -59,7 +59,7 @@ def upload_skill_api(package_path, target="claude", api_key=None, **kwargs):
         api_key = os.environ.get(adaptor.get_env_var_name(), "").strip()
 
     # API key validation only for platforms that require it
-    if target in ['claude', 'gemini', 'openai']:
+    if target in ["claude", "gemini", "openai"]:
         if not api_key:
             return False, f"{adaptor.get_env_var_name()} not set. Export your API key first."
 
@@ -172,41 +172,39 @@ Examples:
     # ChromaDB upload options
     parser.add_argument(
         "--chroma-url",
-        help="ChromaDB URL (default: http://localhost:8000 for HTTP, or use --persist-directory for local)"
+        help="ChromaDB URL (default: http://localhost:8000 for HTTP, or use --persist-directory for local)",
     )
 
     parser.add_argument(
         "--persist-directory",
-        help="Local directory for persistent ChromaDB storage (default: ./chroma_db)"
+        help="Local directory for persistent ChromaDB storage (default: ./chroma_db)",
     )
 
     parser.add_argument(
         "--embedding-function",
         choices=["openai", "sentence-transformers", "none"],
-        help="Embedding function for ChromaDB/Weaviate (default: platform default)"
+        help="Embedding function for ChromaDB/Weaviate (default: platform default)",
     )
 
     parser.add_argument(
-        "--openai-api-key",
-        help="OpenAI API key for embeddings (or set OPENAI_API_KEY env var)"
+        "--openai-api-key", help="OpenAI API key for embeddings (or set OPENAI_API_KEY env var)"
     )
 
     # Weaviate upload options
     parser.add_argument(
         "--weaviate-url",
         default="http://localhost:8080",
-        help="Weaviate URL (default: http://localhost:8080)"
+        help="Weaviate URL (default: http://localhost:8080)",
     )
 
     parser.add_argument(
         "--use-cloud",
         action="store_true",
-        help="Use Weaviate Cloud (requires --api-key and --cluster-url)"
+        help="Use Weaviate Cloud (requires --api-key and --cluster-url)",
     )
 
     parser.add_argument(
-        "--cluster-url",
-        help="Weaviate Cloud cluster URL (e.g., https://xxx.weaviate.network)"
+        "--cluster-url", help="Weaviate Cloud cluster URL (e.g., https://xxx.weaviate.network)"
     )
 
     args = parser.parse_args()
@@ -214,28 +212,30 @@ Examples:
     # Build kwargs for vector DB upload
     upload_kwargs = {}
 
-    if args.target == 'chroma':
+    if args.target == "chroma":
         if args.chroma_url:
-            upload_kwargs['chroma_url'] = args.chroma_url
+            upload_kwargs["chroma_url"] = args.chroma_url
         if args.persist_directory:
-            upload_kwargs['persist_directory'] = args.persist_directory
+            upload_kwargs["persist_directory"] = args.persist_directory
         if args.embedding_function:
-            upload_kwargs['embedding_function'] = args.embedding_function
+            upload_kwargs["embedding_function"] = args.embedding_function
         if args.openai_api_key:
-            upload_kwargs['openai_api_key'] = args.openai_api_key
+            upload_kwargs["openai_api_key"] = args.openai_api_key
 
-    elif args.target == 'weaviate':
-        upload_kwargs['weaviate_url'] = args.weaviate_url
-        upload_kwargs['use_cloud'] = args.use_cloud
+    elif args.target == "weaviate":
+        upload_kwargs["weaviate_url"] = args.weaviate_url
+        upload_kwargs["use_cloud"] = args.use_cloud
         if args.cluster_url:
-            upload_kwargs['cluster_url'] = args.cluster_url
+            upload_kwargs["cluster_url"] = args.cluster_url
         if args.embedding_function:
-            upload_kwargs['embedding_function'] = args.embedding_function
+            upload_kwargs["embedding_function"] = args.embedding_function
         if args.openai_api_key:
-            upload_kwargs['openai_api_key'] = args.openai_api_key
+            upload_kwargs["openai_api_key"] = args.openai_api_key
 
     # Upload skill
-    success, message = upload_skill_api(args.package_file, args.target, args.api_key, **upload_kwargs)
+    success, message = upload_skill_api(
+        args.package_file, args.target, args.api_key, **upload_kwargs
+    )
 
     if success:
         sys.exit(0)

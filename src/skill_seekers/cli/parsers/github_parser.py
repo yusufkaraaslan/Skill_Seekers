@@ -1,4 +1,5 @@
 """GitHub subcommand parser."""
+
 from .base import SubcommandParser
 
 
@@ -24,9 +25,7 @@ class GitHubParser(SubcommandParser):
         parser.add_argument("--name", help="Skill name")
         parser.add_argument("--description", help="Skill description")
         parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
-        parser.add_argument(
-            "--enhance-local", action="store_true", help="AI enhancement (local)"
-        )
+        parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
         parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance")
         parser.add_argument(
             "--non-interactive",
