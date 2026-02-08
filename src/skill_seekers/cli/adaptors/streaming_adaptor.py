@@ -8,7 +8,7 @@ Enables memory-efficient processing of large documentation sets.
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 import sys
 
 # Add parent directory to path for imports
@@ -36,7 +36,7 @@ class StreamingAdaptorMixin:
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         batch_size: int = 100,
-        progress_callback: callable | None = None,
+        progress_callback: Callable | None = None,
     ) -> Path:
         """
         Package skill using streaming ingestion.

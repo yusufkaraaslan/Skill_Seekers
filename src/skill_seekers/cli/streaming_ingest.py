@@ -9,7 +9,7 @@ skill documentation. Handles chunking, progress tracking, and resume functionali
 import json
 import hashlib
 from pathlib import Path
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 import time
 
@@ -177,7 +177,7 @@ class StreamingIngester:
         return hashlib.md5(id_string.encode()).hexdigest()
 
     def stream_skill_directory(
-        self, skill_dir: Path, callback: callable | None = None
+        self, skill_dir: Path, callback: Callable | None = None
     ) -> Iterator[tuple[str, dict]]:
         """
         Stream all documents from skill directory.
