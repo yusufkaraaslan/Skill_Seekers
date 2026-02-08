@@ -3,7 +3,6 @@ Tests for cloud storage adaptors.
 """
 
 import os
-import sys
 import pytest
 import tempfile
 from pathlib import Path
@@ -87,7 +86,7 @@ def test_s3_upload_file():
     """Test S3 file upload."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -115,7 +114,7 @@ def test_s3_download_file():
     """Test S3 file download."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -139,7 +138,7 @@ def test_s3_list_files():
     """Test S3 file listing."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -177,7 +176,7 @@ def test_s3_file_exists():
     """Test S3 file existence check."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -195,7 +194,7 @@ def test_s3_get_file_url():
     """Test S3 presigned URL generation."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -220,7 +219,7 @@ def test_gcs_upload_file():
     """Test GCS file upload."""
     if not GCS_AVAILABLE:
         pytest.skip("google-cloud-storage not installed")
-    
+
     with patch('skill_seekers.cli.storage.gcs_storage.storage') as mock_storage:
         # Setup mocks
         mock_client = Mock()
@@ -252,7 +251,7 @@ def test_gcs_download_file():
     """Test GCS file download."""
     if not GCS_AVAILABLE:
         pytest.skip("google-cloud-storage not installed")
-    
+
     with patch('skill_seekers.cli.storage.gcs_storage.storage') as mock_storage:
         # Setup mocks
         mock_client = Mock()
@@ -278,7 +277,7 @@ def test_gcs_list_files():
     """Test GCS file listing."""
     if not GCS_AVAILABLE:
         pytest.skip("google-cloud-storage not installed")
-    
+
     with patch('skill_seekers.cli.storage.gcs_storage.storage') as mock_storage:
         # Setup mocks
         mock_client = Mock()
@@ -311,7 +310,7 @@ def test_azure_upload_file():
     """Test Azure file upload."""
     if not AZURE_AVAILABLE:
         pytest.skip("azure-storage-blob not installed")
-    
+
     with patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient') as mock_blob_service:
         # Setup mocks
         mock_service_client = Mock()
@@ -344,7 +343,7 @@ def test_azure_download_file():
     """Test Azure file download."""
     if not AZURE_AVAILABLE:
         pytest.skip("azure-storage-blob not installed")
-    
+
     with patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient') as mock_blob_service:
         # Setup mocks
         mock_service_client = Mock()
@@ -375,7 +374,7 @@ def test_azure_list_files():
     """Test Azure file listing."""
     if not AZURE_AVAILABLE:
         pytest.skip("azure-storage-blob not installed")
-    
+
     with patch('skill_seekers.cli.storage.azure_storage.BlobServiceClient') as mock_blob_service:
         # Setup mocks
         mock_service_client = Mock()
@@ -435,7 +434,7 @@ def test_upload_directory():
     """Test directory upload."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()
@@ -462,7 +461,7 @@ def test_download_directory():
     """Test directory download."""
     if not BOTO3_AVAILABLE:
         pytest.skip("boto3 not installed")
-    
+
     with patch('skill_seekers.cli.storage.s3_storage.boto3') as mock_boto3:
         # Setup mocks
         mock_client = Mock()

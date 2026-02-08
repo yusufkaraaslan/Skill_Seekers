@@ -287,7 +287,7 @@ class ChromaAdaptor(SkillAdaptor):
             # Try to get existing collection
             collection = client.get_collection(name=collection_name)
             print(f"ℹ️  Using existing collection: {collection_name}")
-        except:
+        except Exception:
             try:
                 # Create new collection
                 metadata = {"hnsw:space": distance_function}
