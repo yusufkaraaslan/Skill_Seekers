@@ -377,7 +377,7 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 print(f"Common issues: {len(result.github_insights['common_problems'])}")
 ```
 
-**See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**See complete documentation**: [Three-Stream Implementation Summary](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Smart Rate Limit Management & Configuration (**NEW - v2.7.0**)
 - ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
@@ -523,7 +523,7 @@ skill-seekers analyze --directory tests/ --comprehensive
 skill-seekers analyze --directory tests/ --enhance
 ```
 
-**Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Full Documentation:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### ⚡ Performance & Scale
 - ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)
@@ -748,7 +748,7 @@ Skill Seekers supports **4 platforms** and **5 skill modes** with full feature p
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
 **Skill Modes:** Documentation, GitHub, PDF, Unified Multi-Source, Local Repository
 
-See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
+See [Complete Feature Matrix](docs/reference/FEATURE_MATRIX.md) for detailed platform and feature support.
 
 ### Quick Platform Comparison
 
@@ -1024,7 +1024,7 @@ add_config_source(
 fetch_config(source="example", config_name="react-custom")
 ```
 
-**Full Guide:** See [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) for complete documentation.
+**Full Guide:** See [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) for complete documentation.
 
 ## How It Works
 
@@ -1102,10 +1102,10 @@ Package skill at output/react/
 - ✅ **Multi-agent auto-configuration** - Setup all agents with one command
 
 **Full guides:**
-- 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
-- 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
-- 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
+- 📘 [MCP Setup Guide](docs/guides/MCP_SETUP.md) - Complete installation instructions
+- 🧪 [MCP Testing Guide](docs/archive/historical/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
+- 📦 [Large Documentation Guide](docs/reference/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
+- 📤 [Upload Guide](docs/guides/UPLOAD_GUIDE.md) - How to upload skills to Claude
 
 ### Method 2: CLI (Traditional)
 
@@ -1594,7 +1594,7 @@ cd Skill_Seekers
 # 5. Result: Skills created without touching CLI!
 ```
 
-**Full Guide:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) for detailed multi-agent setup instructions.
+**Full Guide:** See [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md) for detailed multi-agent setup instructions.
 
 ---
 
@@ -1836,7 +1836,7 @@ python3 -m skill_seekers.cli.package_multi output/godot*/
 }
 ```
 
-**Full Guide:** [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md)
+**Full Guide:** [Large Documentation Guide](docs/reference/LARGE_DOCUMENTATION.md)
 
 ### 8. Checkpoint/Resume for Long Scrapes
 
@@ -2214,15 +2214,15 @@ skill-seekers scrape --config configs/godot.json
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### Guides
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
 - **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
-- **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
+- **[docs/features/ENHANCEMENT.md](docs/features/ENHANCEMENT.md)** - AI enhancement guide
 - **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - Configure terminal app for local enhancement
-- **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
+- **[docs/guides/UPLOAD_GUIDE.md](docs/guides/UPLOAD_GUIDE.md)** - How to upload skills to Claude
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP integration setup
 
 ### Technical
-- **[docs/CLAUDE.md](docs/CLAUDE.md)** - Technical architecture
+- **[CLAUDE.md](CLAUDE.md)** - Technical architecture
 - **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
 
 ## 🎮 Ready?
