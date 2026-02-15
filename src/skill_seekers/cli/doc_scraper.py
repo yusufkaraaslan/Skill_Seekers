@@ -362,12 +362,15 @@ class DocToSkillConverter:
     def _extract_markdown_content(self, content: str, url: str) -> dict[str, Any]:
         """Extract structured content from a Markdown file.
 
-        Parses markdown files from llms.txt URLs to extract:
-        - Title from first h1 heading
-        - Headings (h2-h6, excluding h1)
-        - Code blocks with language detection
+        Uses the enhanced unified MarkdownParser for comprehensive extraction:
+        - Title from first h1 heading or frontmatter
+        - Headings (h1-h6) with IDs
+        - Code blocks with language detection and quality scoring
+        - Tables (GitHub-flavored)
         - Internal .md links for BFS crawling
         - Content paragraphs (>20 chars)
+        - Admonitions/callouts
+        - Images
 
         Auto-detects HTML content and falls back to _extract_html_as_markdown.
 
@@ -395,6 +398,52 @@ class DocToSkillConverter:
         if content.strip().startswith("<!DOCTYPE") or content.strip().startswith("<html"):
             return self._extract_html_as_markdown(content, url)
 
+        # Try enhanced unified parser first
+        try:
+            from skill_seekers.cli.parsers.extractors import MarkdownParser
+            
+            parser = MarkdownParser()
+            result = parser.parse_string(content, url)
+            
+            if result.success and result.document:
+                doc = result.document
+                
+                # Extract links from the document
+                links = []
+                for link in doc.external_links:
+                    href = link.target
+                    if href.startswith("http"):
+                        full_url = href
+                    elif not href.startswith("#"):
+                        full_url = urljoin(url, href)
+                    else:
+                        continue
+                    full_url = full_url.split("#")[0]
+                    if ".md" in full_url and self.is_valid_url(full_url) and full_url not in links:
+                        links.append(full_url)
+                
+                return {
+                    "url": url,
+                    "title": doc.title or "",
+                    "content": doc._extract_content_text(),
+                    "headings": [
+                        {"level": f"h{h.level}", "text": h.text, "id": h.id or ""}
+                        for h in doc.headings
+                    ],
+                    "code_samples": [
+                        {"code": cb.code, "language": cb.language or "unknown"}
+                        for cb in doc.code_blocks
+                    ],
+                    "patterns": [],
+                    "links": links,
+                    "_enhanced": True,
+                    "_tables": len(doc.tables),
+                    "_images": len(doc.images),
+                }
+        except Exception as e:
+            logger.debug(f"Enhanced markdown parser failed: {e}, using legacy parser")
+
+        # Legacy extraction (fallback)
         page = {
             "url": url,
             "title": "",
@@ -403,6 +452,7 @@ class DocToSkillConverter:
             "code_samples": [],
             "patterns": [],
             "links": [],
+            "_enhanced": False,
         }
 
         lines = content.split("\n")

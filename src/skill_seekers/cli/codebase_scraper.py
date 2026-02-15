@@ -444,6 +444,8 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
 def extract_rst_structure(content: str) -> dict[str, Any]:
     """
     Extract structure from ReStructuredText (RST) content.
+    
+    Uses the enhanced unified RST parser for comprehensive extraction.
 
     RST uses underline-style headers:
         Title
@@ -459,23 +461,93 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
         content: RST file content
 
     Returns:
-        Dictionary with extracted structure
+        Dictionary with extracted structure including:
+        - title: Document title
+        - headers: List of headers with levels
+        - code_blocks: Code blocks with language and content
+        - tables: Tables with rows and headers
+        - links: External links
+        - cross_references: Internal cross-references
+        - word_count: Total word count
+        - line_count: Total line count
     """
+    # Use the enhanced unified RST parser
+    try:
+        from skill_seekers.cli.parsers.extractors import RstParser
+        
+        parser = RstParser()
+        result = parser.parse_string(content, "<string>")
+        
+        if result.success and result.document:
+            doc = result.document
+            
+            # Convert to legacy structure format for backward compatibility
+            structure = {
+                "title": doc.title,
+                "headers": [
+                    {"level": h.level, "text": h.text, "line": h.source_line}
+                    for h in doc.headings
+                ],
+                "code_blocks": [
+                    {
+                        "language": cb.language or "text",
+                        "code": cb.code[:500] if len(cb.code) > 500 else cb.code,
+                        "full_length": len(cb.code),
+                        "quality_score": cb.quality_score,
+                    }
+                    for cb in doc.code_blocks
+                ],
+                "tables": [
+                    {
+                        "caption": t.caption,
+                        "headers": t.headers,
+                        "rows": t.rows,
+                        "row_count": t.num_rows,
+                        "col_count": t.num_cols,
+                    }
+                    for t in doc.tables
+                ],
+                "links": [
+                    {"text": x.text or x.target, "url": x.target}
+                    for x in doc.external_links
+                ],
+                "cross_references": [
+                    {"type": x.ref_type.value, "target": x.target}
+                    for x in doc.internal_links
+                ],
+                "word_count": len(content.split()),
+                "line_count": len(content.split("\n")),
+                # New enhanced fields
+                "_enhanced": True,
+                "_extraction_stats": {
+                    "total_blocks": doc.stats.total_blocks,
+                    "code_blocks": len(doc.code_blocks),
+                    "tables": len(doc.tables),
+                    "headings": len(doc.headings),
+                    "cross_references": len(doc.internal_links),
+                },
+            }
+            return structure
+    except Exception as e:
+        # Fall back to basic extraction if unified parser fails
+        logger.warning(f"Enhanced RST parser failed: {e}, using basic parser")
+    
+    # Legacy basic extraction (fallback)
     import re
 
     structure = {
         "title": None,
         "headers": [],
         "code_blocks": [],
+        "tables": [],
         "links": [],
+        "cross_references": [],
         "word_count": len(content.split()),
         "line_count": len(content.split("\n")),
+        "_enhanced": False,
     }
 
     lines = content.split("\n")
-
-    # RST header underline characters (ordered by common usage for levels)
-    # Level 1: ===, Level 2: ---, Level 3: ~~~, Level 4: ^^^, etc.
     underline_chars = ["=", "-", "~", "^", '"', "'", "`", ":", "."]
 
     # Extract headers (RST style: text on one line, underline on next)
@@ -483,25 +555,20 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
         current_line = lines[i].strip()
         next_line = lines[i + 1].strip()
 
-        # Check if next line is an underline (same character repeated)
         if (
             current_line
             and next_line
-            and len(set(next_line)) == 1  # All same character
+            and len(set(next_line)) == 1
             and next_line[0] in underline_chars
-            and len(next_line) >= len(current_line) - 2  # Underline roughly matches length
+            and len(next_line) >= len(current_line) - 2
         ):
             level = underline_chars.index(next_line[0]) + 1
             text = current_line.strip()
-
             structure["headers"].append({"level": level, "text": text, "line": i + 1})
-
-            # First header is typically the title
             if structure["title"] is None:
                 structure["title"] = text
 
-    # Extract code blocks (RST uses :: and indentation or .. code-block::)
-    # Simple extraction: look for .. code-block:: directive
+    # Basic code block extraction
     code_block_pattern = re.compile(r"\.\.\s+code-block::\s+(\w+)\s*\n\s+(.*?)(?=\n\S|\Z)", re.DOTALL)
     for match in code_block_pattern.finditer(content):
         language = match.group(1) or "text"
@@ -510,19 +577,16 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
             structure["code_blocks"].append(
                 {
                     "language": language,
-                    "code": code[:500],  # Truncate long code blocks
+                    "code": code[:500],
                     "full_length": len(code),
                 }
             )
 
-    # Extract links (RST uses `text <url>`_ or :ref:`label`)
+    # Basic link extraction
     link_pattern = re.compile(r"`([^<`]+)\s+<([^>]+)>`_")
     for match in link_pattern.finditer(content):
         structure["links"].append(
-            {
-                "text": match.group(1).strip(),
-                "url": match.group(2),
-            }
+            {"text": match.group(1).strip(), "url": match.group(2)}
         )
 
     return structure
