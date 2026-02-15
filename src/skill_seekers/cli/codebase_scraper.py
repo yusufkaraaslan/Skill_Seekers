@@ -80,8 +80,10 @@ LANGUAGE_EXTENSIONS = {
     ".php": "PHP",
 }
 
-# Markdown extension mapping
+# Documentation file extensions
 MARKDOWN_EXTENSIONS = {".md", ".markdown", ".mdown", ".mkd"}
+RST_EXTENSIONS = {".rst", ".rest"}  # ReStructuredText (Sphinx, Godot docs, etc.)
+DOC_EXTENSIONS = MARKDOWN_EXTENSIONS | RST_EXTENSIONS  # All supported doc formats
 
 # Common documentation folders to scan
 DOC_FOLDERS = {"docs", "doc", "documentation", "wiki", ".github"}
@@ -328,8 +330,8 @@ def walk_markdown_files(
                 except ValueError:
                     continue
 
-            # Check if markdown file
-            if file_path.suffix.lower() not in MARKDOWN_EXTENSIONS:
+            # Check if documentation file (markdown or RST)
+            if file_path.suffix.lower() not in DOC_EXTENSIONS:
                 continue
 
             files.append(file_path)
@@ -432,6 +434,93 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
         structure["links"].append(
             {
                 "text": match.group(1),
+                "url": match.group(2),
+            }
+        )
+
+    return structure
+
+
+def extract_rst_structure(content: str) -> dict[str, Any]:
+    """
+    Extract structure from ReStructuredText (RST) content.
+
+    RST uses underline-style headers:
+        Title
+        =====
+
+        Section
+        -------
+
+        Subsection
+        ~~~~~~~~~~
+
+    Args:
+        content: RST file content
+
+    Returns:
+        Dictionary with extracted structure
+    """
+    import re
+
+    structure = {
+        "title": None,
+        "headers": [],
+        "code_blocks": [],
+        "links": [],
+        "word_count": len(content.split()),
+        "line_count": len(content.split("\n")),
+    }
+
+    lines = content.split("\n")
+
+    # RST header underline characters (ordered by common usage for levels)
+    # Level 1: ===, Level 2: ---, Level 3: ~~~, Level 4: ^^^, etc.
+    underline_chars = ["=", "-", "~", "^", '"', "'", "`", ":", "."]
+
+    # Extract headers (RST style: text on one line, underline on next)
+    for i in range(len(lines) - 1):
+        current_line = lines[i].strip()
+        next_line = lines[i + 1].strip()
+
+        # Check if next line is an underline (same character repeated)
+        if (
+            current_line
+            and next_line
+            and len(set(next_line)) == 1  # All same character
+            and next_line[0] in underline_chars
+            and len(next_line) >= len(current_line) - 2  # Underline roughly matches length
+        ):
+            level = underline_chars.index(next_line[0]) + 1
+            text = current_line.strip()
+
+            structure["headers"].append({"level": level, "text": text, "line": i + 1})
+
+            # First header is typically the title
+            if structure["title"] is None:
+                structure["title"] = text
+
+    # Extract code blocks (RST uses :: and indentation or .. code-block::)
+    # Simple extraction: look for .. code-block:: directive
+    code_block_pattern = re.compile(r"\.\.\s+code-block::\s+(\w+)\s*\n\s+(.*?)(?=\n\S|\Z)", re.DOTALL)
+    for match in code_block_pattern.finditer(content):
+        language = match.group(1) or "text"
+        code = match.group(2).strip()
+        if code:
+            structure["code_blocks"].append(
+                {
+                    "language": language,
+                    "code": code[:500],  # Truncate long code blocks
+                    "full_length": len(code),
+                }
+            )
+
+    # Extract links (RST uses `text <url>`_ or :ref:`label`)
+    link_pattern = re.compile(r"`([^<`]+)\s+<([^>]+)>`_")
+    for match in link_pattern.finditer(content):
+        structure["links"].append(
+            {
+                "text": match.group(1).strip(),
                 "url": match.group(2),
             }
         )
@@ -551,7 +640,11 @@ def process_markdown_docs(
                 processed_docs.append(doc_data)
             else:
                 # Deep/Full: extract structure and summary
-                structure = extract_markdown_structure(content)
+                # Use appropriate parser based on file extension
+                if md_path.suffix.lower() in RST_EXTENSIONS:
+                    structure = extract_rst_structure(content)
+                else:
+                    structure = extract_markdown_structure(content)
                 summary = generate_markdown_summary(content, structure)
 
                 doc_data.update(
