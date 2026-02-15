@@ -49,6 +49,7 @@ from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+from skill_seekers.cli.arguments.scrape import add_scrape_arguments
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -1943,6 +1944,9 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     Creates an ArgumentParser with all CLI options for the doc scraper tool,
     including configuration, scraping, enhancement, and performance options.
 
+    All arguments are defined in skill_seekers.cli.arguments.scrape to ensure
+    consistency between the standalone scraper and unified CLI.
+
     Returns:
         argparse.ArgumentParser: Configured argument parser
 
@@ -1957,139 +1961,9 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    # Positional URL argument (optional, for quick scraping)
-    parser.add_argument(
-        "url",
-        nargs="?",
-        type=str,
-        help="Base documentation URL (alternative to --url)",
-    )
-
-    parser.add_argument(
-        "--interactive",
-        "-i",
-        action="store_true",
-        help="Interactive configuration mode",
-    )
-    parser.add_argument(
-        "--config",
-        "-c",
-        type=str,
-        help="Load configuration from file (e.g., configs/godot.json)",
-    )
-    parser.add_argument("--name", type=str, help="Skill name")
-    parser.add_argument(
-        "--url", type=str, help="Base documentation URL (alternative to positional URL)"
-    )
-    parser.add_argument("--description", "-d", type=str, help="Skill description")
-    parser.add_argument(
-        "--max-pages",
-        type=int,
-        metavar="N",
-        help="Maximum pages to scrape (overrides config). Use with caution - for testing/prototyping only.",
-    )
-    parser.add_argument(
-        "--skip-scrape", action="store_true", help="Skip scraping, use existing data"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview what will be scraped without actually scraping",
-    )
-    parser.add_argument(
-        "--enhance",
-        action="store_true",
-        help="Enhance SKILL.md using Claude API after building (requires API key)",
-    )
-    parser.add_argument(
-        "--enhance-local",
-        action="store_true",
-        help="Enhance SKILL.md using Claude Code (no API key needed, runs in background)",
-    )
-    parser.add_argument(
-        "--interactive-enhancement",
-        action="store_true",
-        help="Open terminal window for enhancement (use with --enhance-local)",
-    )
-    parser.add_argument(
-        "--api-key",
-        type=str,
-        help="Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)",
-    )
-    parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="Resume from last checkpoint (for interrupted scrapes)",
-    )
-    parser.add_argument("--fresh", action="store_true", help="Clear checkpoint and start fresh")
-    parser.add_argument(
-        "--rate-limit",
-        "-r",
-        type=float,
-        metavar="SECONDS",
-        help=f"Override rate limit in seconds (default: from config or {DEFAULT_RATE_LIMIT}). Use 0 for no delay.",
-    )
-    parser.add_argument(
-        "--workers",
-        "-w",
-        type=int,
-        metavar="N",
-        help="Number of parallel workers for faster scraping (default: 1, max: 10)",
-    )
-    parser.add_argument(
-        "--async",
-        dest="async_mode",
-        action="store_true",
-        help="Enable async mode for better parallel performance (2-3x faster than threads)",
-    )
-    parser.add_argument(
-        "--no-rate-limit",
-        action="store_true",
-        help="Disable rate limiting completely (same as --rate-limit 0)",
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Enable verbose output (DEBUG level logging)",
-    )
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Minimize output (WARNING level logging only)",
-    )
-
-    # RAG chunking arguments (NEW - v2.10.0)
-    parser.add_argument(
-        "--chunk-for-rag",
-        action="store_true",
-        help="Enable semantic chunking for RAG pipelines (generates rag_chunks.json)",
-    )
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        default=512,
-        metavar="TOKENS",
-        help="Target chunk size in tokens for RAG (default: 512)",
-    )
-    parser.add_argument(
-        "--chunk-overlap",
-        type=int,
-        default=50,
-        metavar="TOKENS",
-        help="Overlap size between chunks in tokens (default: 50)",
-    )
-    parser.add_argument(
-        "--no-preserve-code-blocks",
-        action="store_true",
-        help="Allow splitting code blocks across chunks (not recommended)",
-    )
-    parser.add_argument(
-        "--no-preserve-paragraphs",
-        action="store_true",
-        help="Ignore paragraph boundaries when chunking (not recommended)",
-    )
+    # Add all scrape arguments from shared definitions
+    # This ensures the standalone scraper and unified CLI stay in sync
+    add_scrape_arguments(parser)
 
     return parser
 
@@ -2356,63 +2230,43 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
     """
     import subprocess
 
-    # Optional enhancement with Claude API
-    if args.enhance:
+    # Optional enhancement with auto-detected mode (API or LOCAL)
+    if getattr(args, 'enhance_level', 0) > 0:
+        import os
+        has_api_key = bool(os.environ.get("ANTHROPIC_API_KEY") or args.api_key)
+        mode = "API" if has_api_key else "LOCAL"
+
         logger.info("\n" + "=" * 60)
-        logger.info("ENHANCING SKILL.MD WITH CLAUDE API")
-        logger.info("=" * 60 + "\n")
-
-        try:
-            enhance_cmd = [
-                "python3",
-                "cli/enhance_skill.py",
-                f"output/{config['name']}/",
-            ]
-            if args.api_key:
-                enhance_cmd.extend(["--api-key", args.api_key])
-
-            result = subprocess.run(enhance_cmd, check=True)
-            if result.returncode == 0:
-                logger.info("\n✅ Enhancement complete!")
-        except subprocess.CalledProcessError:
-            logger.warning("\n⚠ Enhancement failed, but skill was still built")
-        except FileNotFoundError:
-            logger.warning("\n⚠ enhance_skill.py not found. Run manually:")
-            logger.info("  skill-seekers-enhance output/%s/", config["name"])
-
-    # Optional enhancement with Claude Code (local, no API key)
-    if args.enhance_local:
-        logger.info("\n" + "=" * 60)
-        if args.interactive_enhancement:
-            logger.info("ENHANCING SKILL.MD WITH CLAUDE CODE (INTERACTIVE)")
-        else:
-            logger.info("ENHANCING SKILL.MD WITH CLAUDE CODE (HEADLESS)")
+        logger.info(f"ENHANCING SKILL.MD WITH CLAUDE ({mode} mode, level {args.enhance_level})")
         logger.info("=" * 60 + "\n")
 
         try:
             enhance_cmd = ["skill-seekers-enhance", f"output/{config['name']}/"]
-            if args.interactive_enhancement:
+            enhance_cmd.extend(["--enhance-level", str(args.enhance_level)])
+
+            if args.api_key:
+                enhance_cmd.extend(["--api-key", args.api_key])
+            if getattr(args, 'interactive_enhancement', False):
                 enhance_cmd.append("--interactive-enhancement")
 
             result = subprocess.run(enhance_cmd, check=True)
-
             if result.returncode == 0:
                 logger.info("\n✅ Enhancement complete!")
         except subprocess.CalledProcessError:
             logger.warning("\n⚠ Enhancement failed, but skill was still built")
         except FileNotFoundError:
             logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
-            logger.info("  skill-seekers-enhance output/%s/", config["name"])
+            logger.info("  skill-seekers-enhance output/%s/ --enhance-level %d", config["name"], args.enhance_level)
 
     # Print packaging instructions
     logger.info("\n📦 Package your skill:")
     logger.info("  skill-seekers-package output/%s/", config["name"])
 
     # Suggest enhancement if not done
-    if not args.enhance and not args.enhance_local:
+    if getattr(args, 'enhance_level', 0) == 0:
         logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
-        logger.info("  Local (recommended):  skill-seekers-enhance output/%s/", config["name"])
-        logger.info("                        or re-run with: --enhance-local")
+        logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
+        logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")
         logger.info(
             "  API-based:            skill-seekers-enhance-api output/%s/",
             config["name"],

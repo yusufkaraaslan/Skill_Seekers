@@ -4,12 +4,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🎯 Project Overview
 
-**Skill Seekers** is a Python tool that converts documentation websites, GitHub repositories, and PDFs into LLM skills. It supports 4 platforms: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown.
+**Skill Seekers** is the **universal documentation preprocessor** for AI systems. It transforms documentation websites, GitHub repositories, and PDFs into production-ready formats for **16+ platforms**: RAG pipelines (LangChain, LlamaIndex, Haystack), vector databases (Pinecone, Chroma, Weaviate, FAISS, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), and LLM platforms (Claude, Gemini, OpenAI).
 
-**Current Version:** v2.9.0
+**Current Version:** v3.0.0
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
+
+## 📚 Table of Contents
+
+- [First Time Here?](#-first-time-here) - Start here!
+- [Quick Commands](#-quick-command-reference-most-used) - Common workflows
+- [Architecture](#️-architecture) - How it works
+- [Development](#️-development-commands) - Building & testing
+- [Testing](#-testing-guidelines) - Test strategy
+- [Debugging](#-debugging-tips) - Troubleshooting
+- [Contributing](#-where-to-make-changes) - How to add features
+
+## 👋 First Time Here?
+
+**Complete this 3-minute setup to start contributing:**
+
+```bash
+# 1. Install package in editable mode (REQUIRED for development)
+pip install -e .
+
+# 2. Verify installation
+python -c "import skill_seekers; print(skill_seekers.__version__)"  # Should print: 3.0.0
+
+# 3. Run a quick test
+pytest tests/test_scraper_features.py::test_detect_language -v
+
+# 4. You're ready! Pick a task from the roadmap:
+# https://github.com/users/yusufkaraaslan/projects/2
+```
+
+**Quick Navigation:**
+- Building/Testing → [Development Commands](#️-development-commands)
+- Architecture → [Core Design Pattern](#️-architecture)
+- Common Issues → [Common Pitfalls](#-common-pitfalls--solutions)
+- Contributing → See `CONTRIBUTING.md`
 
 ## ⚡ Quick Command Reference (Most Used)
 
@@ -43,31 +77,97 @@ skill-seekers github --repo facebook/react
 # Local codebase analysis
 skill-seekers analyze --directory . --comprehensive
 
-# Package for all platforms
+# Package for LLM platforms
 skill-seekers package output/react/ --target claude
 skill-seekers package output/react/ --target gemini
+```
+
+**RAG Pipeline workflows:**
+```bash
+# LangChain Documents
+skill-seekers package output/react/ --format langchain
+
+# LlamaIndex TextNodes
+skill-seekers package output/react/ --format llama-index
+
+# Haystack Documents
+skill-seekers package output/react/ --format haystack
+
+# ChromaDB direct upload
+skill-seekers package output/react/ --format chroma --upload
+
+# FAISS export
+skill-seekers package output/react/ --format faiss
+
+# Weaviate/Qdrant upload (requires API keys)
+skill-seekers package output/react/ --format weaviate --upload
+skill-seekers package output/react/ --format qdrant --upload
+```
+
+**AI Coding Assistant workflows:**
+```bash
+# Cursor IDE
+skill-seekers package output/react/ --target claude
+cp output/react-claude/SKILL.md .cursorrules
+
+# Windsurf
+cp output/react-claude/SKILL.md .windsurf/rules/react.md
+
+# Cline (VS Code)
+cp output/react-claude/SKILL.md .clinerules
+
+# Continue.dev (universal IDE)
+python examples/continue-dev-universal/context_server.py
+# Configure in ~/.continue/config.json
+```
+
+**Cloud Storage:**
+```bash
+# Upload to S3
+skill-seekers cloud upload --provider s3 --bucket my-skills output/react.zip
+
+# Upload to GCS
+skill-seekers cloud upload --provider gcs --bucket my-skills output/react.zip
+
+# Upload to Azure
+skill-seekers cloud upload --provider azure --container my-skills output/react.zip
 ```
 
 ## 🏗️ Architecture
 
 ### Core Design Pattern: Platform Adaptors
 
-The codebase uses the **Strategy Pattern** with a factory method to support multiple LLM platforms:
+The codebase uses the **Strategy Pattern** with a factory method to support **16 platforms** across 4 categories:
 
 ```
 src/skill_seekers/cli/adaptors/
-├── __init__.py          # Factory: get_adaptor(target)
-├── base_adaptor.py      # Abstract base class
-├── claude_adaptor.py    # Claude AI (ZIP + YAML)
-├── gemini_adaptor.py    # Google Gemini (tar.gz)
-├── openai_adaptor.py    # OpenAI ChatGPT (ZIP + Vector Store)
-└── markdown_adaptor.py  # Generic Markdown (ZIP)
+├── __init__.py          # Factory: get_adaptor(target/format)
+├── base.py              # Abstract base class
+# LLM Platforms (3)
+├── claude.py            # Claude AI (ZIP + YAML)
+├── gemini.py            # Google Gemini (tar.gz)
+├── openai.py            # OpenAI ChatGPT (ZIP + Vector Store)
+# RAG Frameworks (3)
+├── langchain.py         # LangChain Documents
+├── llama_index.py       # LlamaIndex TextNodes
+├── haystack.py          # Haystack Documents
+# Vector Databases (5)
+├── chroma.py            # ChromaDB
+├── faiss_helpers.py     # FAISS
+├── qdrant.py            # Qdrant
+├── weaviate.py          # Weaviate
+# AI Coding Assistants (4 - via Claude format + config files)
+# - Cursor, Windsurf, Cline, Continue.dev
+# Generic (1)
+├── markdown.py          # Generic Markdown (ZIP)
+└── streaming_adaptor.py # Streaming data ingest
 ```
 
 **Key Methods:**
 - `package(skill_dir, output_path)` - Platform-specific packaging
-- `upload(package_path, api_key)` - Platform-specific upload
+- `upload(package_path, api_key)` - Platform-specific upload (where applicable)
 - `enhance(skill_dir, mode)` - AI enhancement with platform-specific models
+- `export(skill_dir, format)` - Export to RAG/vector DB formats
 
 ### Data Flow (5 Phases)
 
@@ -90,21 +190,23 @@ src/skill_seekers/cli/adaptors/
 5. **Upload Phase** (optional, `upload_skill.py` → adaptor)
    - Upload via platform API
 
-### File Structure (src/ layout)
+### File Structure (src/ layout) - Key Files Only
 
 ```
 src/skill_seekers/
-├── cli/                              # CLI tools
-│   ├── main.py                       # Git-style CLI dispatcher
-│   ├── doc_scraper.py                # Main scraper (~790 lines)
+├── cli/                              # All CLI commands
+│   ├── main.py                       # ⭐ Git-style CLI dispatcher
+│   ├── doc_scraper.py                # ⭐ Main scraper (~790 lines)
+│   │   ├── scrape_all()              # BFS traversal engine
+│   │   ├── smart_categorize()        # Category detection
+│   │   └── build_skill()             # SKILL.md generation
 │   ├── github_scraper.py             # GitHub repo analysis
-│   ├── pdf_scraper.py                # PDF extraction
+│   ├── codebase_scraper.py           # ⭐ Local analysis (C2.x+C3.x)
+│   ├── package_skill.py              # Platform packaging
 │   ├── unified_scraper.py            # Multi-source scraping
-│   ├── codebase_scraper.py           # Local codebase analysis (C2.x)
 │   ├── unified_codebase_analyzer.py  # Three-stream GitHub+local analyzer
 │   ├── enhance_skill_local.py        # AI enhancement (LOCAL mode)
 │   ├── enhance_status.py             # Enhancement status monitoring
-│   ├── package_skill.py              # Skill packager
 │   ├── upload_skill.py               # Upload to platforms
 │   ├── install_skill.py              # Complete workflow automation
 │   ├── install_agent.py              # Install to AI agent directories
@@ -117,17 +219,31 @@ src/skill_seekers/
 │   ├── api_reference_builder.py      # API documentation builder
 │   ├── dependency_analyzer.py        # Dependency graph analysis
 │   ├── signal_flow_analyzer.py       # C3.10 Signal flow analysis (Godot)
-│   └── adaptors/                     # Platform adaptor architecture
-│       ├── __init__.py
-│       ├── base_adaptor.py
-│       ├── claude_adaptor.py
-│       ├── gemini_adaptor.py
-│       ├── openai_adaptor.py
-│       └── markdown_adaptor.py
-└── mcp/                              # MCP server integration
-    ├── server.py                     # FastMCP server (stdio + HTTP)
-    └── tools/                        # 18 MCP tool implementations
+│   ├── pdf_scraper.py                # PDF extraction
+│   └── adaptors/                     # ⭐ Platform adaptor pattern
+│       ├── __init__.py               # Factory: get_adaptor()
+│       ├── base_adaptor.py           # Abstract base
+│       ├── claude_adaptor.py         # Claude AI
+│       ├── gemini_adaptor.py         # Google Gemini
+│       ├── openai_adaptor.py         # OpenAI ChatGPT
+│       ├── markdown_adaptor.py       # Generic Markdown
+│       ├── langchain.py              # LangChain RAG
+│       ├── llama_index.py            # LlamaIndex RAG
+│       ├── haystack.py               # Haystack RAG
+│       ├── chroma.py                 # ChromaDB
+│       ├── faiss_helpers.py          # FAISS
+│       ├── qdrant.py                 # Qdrant
+│       ├── weaviate.py               # Weaviate
+│       └── streaming_adaptor.py      # Streaming data ingest
+└── mcp/                              # MCP server (26 tools)
+    ├── server_fastmcp.py             # FastMCP server
+    └── tools/                        # Tool implementations
 ```
+
+**Most Modified Files (when contributing):**
+- Platform adaptors: `src/skill_seekers/cli/adaptors/{platform}.py`
+- Tests: `tests/test_{feature}.py`
+- Configs: `configs/{framework}.json`
 
 ## 🛠️ Development Commands
 
@@ -172,7 +288,7 @@ pytest tests/test_mcp_fastmcp.py -v
 **Test Architecture:**
 - 46 test files covering all features
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.13
-- 700+ tests passing
+- **1,852 tests passing** (up from 700+ in v2.x)
 - Must run `pip install -e .` before tests (src/ layout requirement)
 
 ### Building & Publishing
@@ -230,6 +346,36 @@ python -m skill_seekers.mcp.server_fastmcp
 
 # Test MCP server (HTTP mode)
 python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
+```
+
+### New v3.0.0 CLI Commands
+
+```bash
+# Setup wizard (interactive configuration)
+skill-seekers-setup
+
+# Cloud storage operations
+skill-seekers cloud upload --provider s3 --bucket my-bucket output/react.zip
+skill-seekers cloud download --provider gcs --bucket my-bucket react.zip
+skill-seekers cloud list --provider azure --container my-container
+
+# Embedding server (for RAG pipelines)
+skill-seekers embed --port 8080 --model sentence-transformers
+
+# Sync & incremental updates
+skill-seekers sync --source https://docs.react.dev/ --target output/react/
+skill-seekers update --skill output/react/ --check-changes
+
+# Quality metrics & benchmarking
+skill-seekers quality --skill output/react/ --report
+skill-seekers benchmark --config configs/react.json --compare-versions
+
+# Multilingual support
+skill-seekers multilang --detect output/react/
+skill-seekers multilang --translate output/react/ --target zh-CN
+
+# Streaming data ingest
+skill-seekers stream --source docs/ --target output/streaming/
 ```
 
 ## 🔧 Key Implementation Details
@@ -547,26 +693,43 @@ export BITBUCKET_TOKEN=...
 # Main unified CLI
 skill-seekers = "skill_seekers.cli.main:main"
 
-# Individual tool entry points
-skill-seekers-config = "skill_seekers.cli.config_command:main"                # NEW: v2.7.0 Configuration wizard
-skill-seekers-resume = "skill_seekers.cli.resume_command:main"                # NEW: v2.7.0 Resume interrupted jobs
+# Individual tool entry points (Core)
+skill-seekers-config = "skill_seekers.cli.config_command:main"                # v2.7.0 Configuration wizard
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"                # v2.7.0 Resume interrupted jobs
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
-skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"           # NEW: C2.x
+skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"           # C2.x Local codebase analysis
 skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
-skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"       # NEW: Status monitoring
+skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"       # Status monitoring
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
 skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
-skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"         # NEW: C3.1
-skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main" # NEW: C3.3
+skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"         # C3.1 Pattern detection
+skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main" # C3.3 Guide generation
+
+# New v3.0.0 Entry Points
+skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"                  # NEW: v3.0.0 Setup wizard
+skill-seekers-cloud = "skill_seekers.cli.cloud_storage_cli:main"             # NEW: v3.0.0 Cloud storage
+skill-seekers-embed = "skill_seekers.embedding.server:main"                  # NEW: v3.0.0 Embedding server
+skill-seekers-sync = "skill_seekers.cli.sync_cli:main"                       # NEW: v3.0.0 Sync & monitoring
+skill-seekers-benchmark = "skill_seekers.cli.benchmark_cli:main"             # NEW: v3.0.0 Benchmarking
+skill-seekers-stream = "skill_seekers.cli.streaming_ingest:main"             # NEW: v3.0.0 Streaming ingest
+skill-seekers-update = "skill_seekers.cli.incremental_updater:main"          # NEW: v3.0.0 Incremental updates
+skill-seekers-multilang = "skill_seekers.cli.multilang_support:main"         # NEW: v3.0.0 Multilingual
+skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"             # NEW: v3.0.0 Quality metrics
 ```
 
 ### Optional Dependencies
+
+**Project uses PEP 735 `[dependency-groups]` (Python 3.13+)**:
+- Replaces deprecated `tool.uv.dev-dependencies`
+- Dev dependencies: `[dependency-groups] dev = [...]` in pyproject.toml
+- Install with: `pip install -e .` (installs only core deps)
+- Install dev deps: See CI workflow or manually install pytest, ruff, mypy
 
 ```toml
 [project.optional-dependencies]
@@ -582,8 +745,6 @@ dev = [
     "coverage>=7.11.0",
 ]
 ```
-
-**Note:** Project uses PEP 735 `dependency-groups` instead of deprecated `tool.uv.dev-dependencies`.
 
 ## 🚨 Critical Development Notes
 
@@ -601,17 +762,33 @@ pip install -e .
 
 Per user instructions in `~/.claude/CLAUDE.md`:
 - "never skipp any test. always make sure all test pass"
-- All 700+ tests must pass before commits
+- All 1,852 tests must pass before commits
 - Run full test suite: `pytest tests/ -v`
 
 ### Platform-Specific Dependencies
 
-Platform dependencies are optional:
+Platform dependencies are optional (install only what you need):
+
 ```bash
-# Install only what you need
-pip install skill-seekers[gemini]  # Gemini support
-pip install skill-seekers[openai]  # OpenAI support
-pip install skill-seekers[all-llms]  # All platforms
+# Install specific platform support
+pip install -e ".[gemini]"         # Google Gemini
+pip install -e ".[openai]"         # OpenAI ChatGPT
+pip install -e ".[chroma]"         # ChromaDB
+pip install -e ".[weaviate]"       # Weaviate
+pip install -e ".[s3]"             # AWS S3
+pip install -e ".[gcs]"            # Google Cloud Storage
+pip install -e ".[azure]"          # Azure Blob Storage
+pip install -e ".[mcp]"            # MCP integration
+pip install -e ".[all]"            # Everything (16 platforms + cloud + embedding)
+
+# Or install from PyPI:
+pip install skill-seekers[gemini]    # Google Gemini support
+pip install skill-seekers[openai]    # OpenAI ChatGPT support
+pip install skill-seekers[all-llms]  # All LLM platforms
+pip install skill-seekers[chroma]    # ChromaDB support
+pip install skill-seekers[weaviate]  # Weaviate support
+pip install skill-seekers[s3]        # AWS S3 support
+pip install skill-seekers[all]       # All optional dependencies
 ```
 
 ### AI Enhancement Modes
@@ -659,10 +836,13 @@ See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 
 ### Git Workflow
 
+**Git Workflow Notes:**
 - Main branch: `main`
-- Current branch: `development`
+- Development branch: `development`
 - Always create feature branches from `development`
-- Feature branch naming: `feature/{task-id}-{description}` or `feature/{category}`
+- Branch naming: `feature/{task-id}-{description}` or `feature/{category}`
+
+**To see current status:** `git status`
 
 ### CI/CD Pipeline
 
@@ -816,7 +996,7 @@ skill-seekers config --test
 
 ## 🔌 MCP Integration
 
-### MCP Server (18 Tools)
+### MCP Server (26 Tools)
 
 **Transport modes:**
 - stdio: Claude Code, VS Code + Cline
@@ -828,21 +1008,33 @@ skill-seekers config --test
 3. `validate_config` - Validate config structure
 4. `estimate_pages` - Estimate page count
 5. `scrape_docs` - Scrape documentation
-6. `package_skill` - Package to .zip (supports `--target`)
+6. `package_skill` - Package to format (supports `--format` and `--target`)
 7. `upload_skill` - Upload to platform (supports `--target`)
 8. `enhance_skill` - AI enhancement with platform support
 9. `install_skill` - Complete workflow automation
 
-**Extended Tools (9):**
+**Extended Tools (10):**
 10. `scrape_github` - GitHub repository analysis
 11. `scrape_pdf` - PDF extraction
 12. `unified_scrape` - Multi-source scraping
 13. `merge_sources` - Merge docs + code
 14. `detect_conflicts` - Find discrepancies
-15. `split_config` - Split large configs
-16. `generate_router` - Generate router skills
-17. `add_config_source` - Register git repos
-18. `fetch_config` - Fetch configs from git
+15. `add_config_source` - Register git repos
+16. `fetch_config` - Fetch configs from git
+17. `list_config_sources` - List registered sources
+18. `remove_config_source` - Remove config source
+19. `split_config` - Split large configs
+
+**NEW Vector DB Tools (4):**
+20. `export_to_chroma` - Export to ChromaDB
+21. `export_to_weaviate` - Export to Weaviate
+22. `export_to_faiss` - Export to FAISS
+23. `export_to_qdrant` - Export to Qdrant
+
+**NEW Cloud Tools (3):**
+24. `cloud_upload` - Upload to S3/GCS/Azure
+25. `cloud_download` - Download from cloud storage
+26. `cloud_list` - List files in cloud storage
 
 ### Starting MCP Server
 
@@ -853,6 +1045,336 @@ python -m skill_seekers.mcp.server_fastmcp
 # HTTP mode (Cursor, Windsurf, IntelliJ)
 python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
+
+## 🤖 RAG Framework & Vector Database Integrations (**NEW - v3.0.0**)
+
+Skill Seekers is now the **universal preprocessor for RAG pipelines**. Export documentation to any RAG framework or vector database with a single command.
+
+### RAG Frameworks
+
+**LangChain Documents:**
+```bash
+# Export to LangChain Document format
+skill-seekers package output/django --format langchain
+
+# Output: output/django-langchain.json
+# Format: Array of LangChain Document objects
+# - page_content: Full text content
+# - metadata: {source, category, type, url}
+
+# Use in LangChain:
+from langchain.document_loaders import JSONLoader
+loader = JSONLoader("output/django-langchain.json")
+documents = loader.load()
+```
+
+**LlamaIndex TextNodes:**
+```bash
+# Export to LlamaIndex TextNode format
+skill-seekers package output/django --format llama-index
+
+# Output: output/django-llama-index.json
+# Format: Array of LlamaIndex TextNode objects
+# - text: Content
+# - id_: Unique identifier
+# - metadata: {source, category, type}
+# - relationships: Document relationships
+
+# Use in LlamaIndex:
+from llama_index import StorageContext, load_index_from_storage
+from llama_index.schema import TextNode
+nodes = [TextNode.from_dict(n) for n in json.load(open("output/django-llama-index.json"))]
+```
+
+**Haystack Documents:**
+```bash
+# Export to Haystack Document format
+skill-seekers package output/django --format haystack
+
+# Output: output/django-haystack.json
+# Format: Haystack Document objects for pipelines
+# Perfect for: Question answering, search, RAG pipelines
+```
+
+### Vector Databases
+
+**ChromaDB (Direct Integration):**
+```bash
+# Export and optionally upload to ChromaDB
+skill-seekers package output/django --format chroma
+
+# Output: output/django-chroma/ (ChromaDB collection)
+# With direct upload (requires chromadb running):
+skill-seekers package output/django --format chroma --upload
+
+# Configuration via environment:
+export CHROMA_HOST=localhost
+export CHROMA_PORT=8000
+```
+
+**FAISS (Facebook AI Similarity Search):**
+```bash
+# Export to FAISS index format
+skill-seekers package output/django --format faiss
+
+# Output:
+# - output/django-faiss.index (FAISS index)
+# - output/django-faiss-metadata.json (Document metadata)
+
+# Use with FAISS:
+import faiss
+index = faiss.read_index("output/django-faiss.index")
+```
+
+**Weaviate:**
+```bash
+# Export and upload to Weaviate
+skill-seekers package output/django --format weaviate --upload
+
+# Requires environment variables:
+export WEAVIATE_URL=http://localhost:8080
+export WEAVIATE_API_KEY=your-api-key
+
+# Creates class "DjangoDoc" with schema
+```
+
+**Qdrant:**
+```bash
+# Export and upload to Qdrant
+skill-seekers package output/django --format qdrant --upload
+
+# Requires environment variables:
+export QDRANT_URL=http://localhost:6333
+export QDRANT_API_KEY=your-api-key
+
+# Creates collection "django_docs"
+```
+
+**Pinecone (via Markdown):**
+```bash
+# Pinecone uses the markdown format
+skill-seekers package output/django --target markdown
+
+# Then use Pinecone's Python client for upsert
+# See: docs/integrations/PINECONE.md
+```
+
+### Complete RAG Pipeline Example
+
+```bash
+# 1. Scrape documentation
+skill-seekers scrape --config configs/django.json
+
+# 2. Export to your RAG stack
+skill-seekers package output/django --format langchain  # For LangChain
+skill-seekers package output/django --format llama-index  # For LlamaIndex
+skill-seekers package output/django --format chroma --upload  # Direct to ChromaDB
+
+# 3. Use in your application
+# See examples/:
+# - examples/langchain-rag-pipeline/
+# - examples/llama-index-query-engine/
+# - examples/pinecone-upsert/
+```
+
+**Integration Hub:** [docs/integrations/RAG_PIPELINES.md](docs/integrations/RAG_PIPELINES.md)
+
+## 🛠️ AI Coding Assistant Integrations (**NEW - v3.0.0**)
+
+Transform any framework documentation into persistent expert context for 4+ AI coding assistants. Your IDE's AI now "knows" your frameworks without manual prompting.
+
+### Cursor IDE
+
+**Setup:**
+```bash
+# 1. Generate skill
+skill-seekers scrape --config configs/react.json
+skill-seekers package output/react/ --target claude
+
+# 2. Install to Cursor
+cp output/react-claude/SKILL.md .cursorrules
+
+# 3. Restart Cursor
+# AI now has React expertise!
+```
+
+**Benefits:**
+- ✅ AI suggests React-specific patterns
+- ✅ No manual "use React hooks" prompts needed
+- ✅ Consistent team patterns
+- ✅ Works for ANY framework
+
+**Guide:** [docs/integrations/CURSOR.md](docs/integrations/CURSOR.md)
+**Example:** [examples/cursor-react-skill/](examples/cursor-react-skill/)
+
+### Windsurf
+
+**Setup:**
+```bash
+# 1. Generate skill
+skill-seekers scrape --config configs/django.json
+skill-seekers package output/django/ --target claude
+
+# 2. Install to Windsurf
+mkdir -p .windsurf/rules
+cp output/django-claude/SKILL.md .windsurf/rules/django.md
+
+# 3. Restart Windsurf
+# AI now knows Django patterns!
+```
+
+**Benefits:**
+- ✅ Flow-based coding with framework knowledge
+- ✅ IDE-native AI assistance
+- ✅ Persistent context across sessions
+
+**Guide:** [docs/integrations/WINDSURF.md](docs/integrations/WINDSURF.md)
+**Example:** [examples/windsurf-fastapi-context/](examples/windsurf-fastapi-context/)
+
+### Cline (VS Code Extension)
+
+**Setup:**
+```bash
+# 1. Generate skill
+skill-seekers scrape --config configs/fastapi.json
+skill-seekers package output/fastapi/ --target claude
+
+# 2. Install to Cline
+cp output/fastapi-claude/SKILL.md .clinerules
+
+# 3. Reload VS Code
+# Cline now has FastAPI expertise!
+```
+
+**Benefits:**
+- ✅ Agentic code generation in VS Code
+- ✅ Cursor Composer equivalent for VS Code
+- ✅ System prompts + MCP integration
+
+**Guide:** [docs/integrations/CLINE.md](docs/integrations/CLINE.md)
+**Example:** [examples/cline-django-assistant/](examples/cline-django-assistant/)
+
+### Continue.dev (Universal IDE)
+
+**Setup:**
+```bash
+# 1. Generate skill
+skill-seekers scrape --config configs/react.json
+skill-seekers package output/react/ --target claude
+
+# 2. Start context server
+cd examples/continue-dev-universal/
+python context_server.py --port 8765
+
+# 3. Configure in ~/.continue/config.json
+{
+  "contextProviders": [
+    {
+      "name": "http",
+      "params": {
+        "url": "http://localhost:8765/context",
+        "title": "React Documentation"
+      }
+    }
+  ]
+}
+
+# 4. Works in ALL IDEs!
+# VS Code, JetBrains, Vim, Emacs...
+```
+
+**Benefits:**
+- ✅ IDE-agnostic (works in VS Code, IntelliJ, Vim, Emacs)
+- ✅ Custom LLM providers supported
+- ✅ HTTP-based context serving
+- ✅ Team consistency across mixed IDE environments
+
+**Guide:** [docs/integrations/CONTINUE_DEV.md](docs/integrations/CONTINUE_DEV.md)
+**Example:** [examples/continue-dev-universal/](examples/continue-dev-universal/)
+
+### Multi-IDE Team Setup
+
+For teams using different IDEs (VS Code, IntelliJ, Vim):
+
+```bash
+# Use Continue.dev as universal context provider
+skill-seekers scrape --config configs/react.json
+python context_server.py --host 0.0.0.0 --port 8765
+
+# ALL team members configure Continue.dev
+# Result: Identical AI suggestions across all IDEs!
+```
+
+**Integration Hub:** [docs/integrations/INTEGRATIONS.md](docs/integrations/INTEGRATIONS.md)
+
+## ☁️ Cloud Storage Integration (**NEW - v3.0.0**)
+
+Upload skills directly to cloud storage for team sharing and CI/CD pipelines.
+
+### Supported Providers
+
+**AWS S3:**
+```bash
+# Upload skill
+skill-seekers cloud upload --provider s3 --bucket my-skills output/react.zip
+
+# Download skill
+skill-seekers cloud download --provider s3 --bucket my-skills react.zip
+
+# List skills
+skill-seekers cloud list --provider s3 --bucket my-skills
+
+# Environment variables:
+export AWS_ACCESS_KEY_ID=your-key
+export AWS_SECRET_ACCESS_KEY=your-secret
+export AWS_REGION=us-east-1
+```
+
+**Google Cloud Storage:**
+```bash
+# Upload skill
+skill-seekers cloud upload --provider gcs --bucket my-skills output/react.zip
+
+# Download skill
+skill-seekers cloud download --provider gcs --bucket my-skills react.zip
+
+# List skills
+skill-seekers cloud list --provider gcs --bucket my-skills
+
+# Environment variables:
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+```
+
+**Azure Blob Storage:**
+```bash
+# Upload skill
+skill-seekers cloud upload --provider azure --container my-skills output/react.zip
+
+# Download skill
+skill-seekers cloud download --provider azure --container my-skills react.zip
+
+# List skills
+skill-seekers cloud list --provider azure --container my-skills
+
+# Environment variables:
+export AZURE_STORAGE_CONNECTION_STRING=your-connection-string
+```
+
+### CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Upload skill to S3
+  run: |
+    skill-seekers scrape --config configs/react.json
+    skill-seekers package output/react/
+    skill-seekers cloud upload --provider s3 --bucket ci-skills output/react.zip
+  env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+**Guide:** [docs/integrations/CLOUD_STORAGE.md](docs/integrations/CLOUD_STORAGE.md)
 
 ## 📋 Common Workflows
 
@@ -971,28 +1493,40 @@ This section helps you quickly locate the right files when implementing common c
 **Files to modify:**
 1. **Create adaptor:** `src/skill_seekers/cli/adaptors/my_platform_adaptor.py`
    ```python
-   from .base_adaptor import BaseAdaptor
+   from .base import BaseAdaptor
 
    class MyPlatformAdaptor(BaseAdaptor):
-       def package(self, skill_dir, output_path):
+       def package(self, skill_dir, output_path, **kwargs):
            # Platform-specific packaging
+           pass
 
-       def upload(self, package_path, api_key):
-           # Platform-specific upload
+       def upload(self, package_path, api_key=None, **kwargs):
+           # Platform-specific upload (optional for some platforms)
+           pass
 
-       def enhance(self, skill_dir, mode):
-           # Platform-specific AI enhancement
+       def export(self, skill_dir, format, **kwargs):
+           # For RAG/vector DB adaptors: export to specific format
+           pass
    ```
 
 2. **Register in factory:** `src/skill_seekers/cli/adaptors/__init__.py`
    ```python
-   def get_adaptor(target):
-       adaptors = {
+   def get_adaptor(target=None, format=None):
+       # For LLM platforms (--target flag)
+       target_adaptors = {
            'claude': ClaudeAdaptor,
            'gemini': GeminiAdaptor,
            'openai': OpenAIAdaptor,
            'markdown': MarkdownAdaptor,
            'myplatform': MyPlatformAdaptor,  # ADD THIS
+       }
+
+       # For RAG/vector DBs (--format flag)
+       format_adaptors = {
+           'langchain': LangChainAdaptor,
+           'llama-index': LlamaIndexAdaptor,
+           'chroma': ChromaAdaptor,
+           # ... etc
        }
    ```
 
@@ -1003,8 +1537,14 @@ This section helps you quickly locate the right files when implementing common c
    ```
 
 4. **Add tests:** `tests/test_adaptors/test_my_platform_adaptor.py`
+   - Test export format
+   - Test upload (if applicable)
+   - Test with real data
 
-5. **Update README:** Add to platform comparison table
+5. **Update documentation:**
+   - README.md - Platform comparison table
+   - docs/integrations/MY_PLATFORM.md - Integration guide
+   - examples/my-platform-example/ - Working example
 
 ### Adding a New Config Preset
 
@@ -1068,6 +1608,18 @@ This section helps you quickly locate the right files when implementing common c
 3. **Add tests:** `tests/test_mcp_fastmcp.py`
 
 4. **Update count:** README.md (currently 18 tools)
+
+## 📍 Key Files Quick Reference
+
+| Task | File(s) | What to Modify |
+|------|---------|----------------|
+| Add new CLI command | `src/skill_seekers/cli/my_cmd.py`<br>`pyproject.toml` | Create `main()` function<br>Add entry point |
+| Add platform adaptor | `src/skill_seekers/cli/adaptors/my_platform.py`<br>`adaptors/__init__.py` | Inherit `BaseAdaptor`<br>Register in factory |
+| Fix scraping logic | `src/skill_seekers/cli/doc_scraper.py` | `scrape_all()`, `extract_content()` |
+| Add MCP tool | `src/skill_seekers/mcp/server_fastmcp.py` | Add `@mcp.tool()` function |
+| Fix tests | `tests/test_{feature}.py` | Add/modify test functions |
+| Add config preset | `configs/{framework}.json` | Create JSON config |
+| Update CI | `.github/workflows/tests.yml` | Modify workflow steps |
 
 ## 📚 Key Code Locations
 
@@ -1154,15 +1706,84 @@ This section helps you quickly locate the right files when implementing common c
   - `--profile` flag to select GitHub profile from config
   - Config supports `interactive` and `github_profile` keys
 
+**RAG & Vector Database Adaptors** (NEW: v3.0.0 - `src/skill_seekers/cli/adaptors/`):
+- `langchain.py` - LangChain Documents export (~250 lines)
+  - Exports to LangChain Document format
+  - Preserves metadata (source, category, type, url)
+  - Smart chunking with overlap
+- `llama_index.py` - LlamaIndex TextNodes export (~280 lines)
+  - Exports to TextNode format with unique IDs
+  - Relationship mapping between documents
+  - Metadata preservation
+- `haystack.py` - Haystack Documents export (~230 lines)
+  - Pipeline-ready document format
+  - Supports embeddings and filters
+- `chroma.py` - ChromaDB integration (~350 lines)
+  - Direct collection creation
+  - Batch upsert with embeddings
+  - Query interface
+- `weaviate.py` - Weaviate vector search (~320 lines)
+  - Schema creation with auto-detection
+  - Batch import with error handling
+- `faiss_helpers.py` - FAISS index generation (~280 lines)
+  - Index building with metadata
+  - Search utilities
+- `qdrant.py` - Qdrant vector database (~300 lines)
+  - Collection management
+  - Payload indexing
+- `streaming_adaptor.py` - Streaming data ingest (~200 lines)
+  - Real-time data processing
+  - Incremental updates
+
+**Cloud Storage & Infrastructure** (NEW: v3.0.0 - `src/skill_seekers/cli/`):
+- `cloud_storage_cli.py` - S3/GCS/Azure upload/download (~450 lines)
+  - Multi-provider abstraction
+  - Parallel uploads for large files
+  - Retry logic with exponential backoff
+- `embedding_pipeline.py` - Embedding generation for vectors (~320 lines)
+  - Sentence-transformers integration
+  - Batch processing
+  - Multiple embedding models
+- `sync_cli.py` - Continuous sync & monitoring (~380 lines)
+  - File watching for changes
+  - Automatic re-scraping
+  - Smart diff detection
+- `incremental_updater.py` - Smart incremental updates (~350 lines)
+  - Change detection algorithms
+  - Partial skill updates
+  - Version tracking
+- `streaming_ingest.py` - Real-time data streaming (~290 lines)
+  - Stream processing pipelines
+  - WebSocket support
+- `benchmark_cli.py` - Performance benchmarking (~280 lines)
+  - Scraping performance tests
+  - Comparison reports
+  - CI/CD integration
+- `quality_metrics.py` - Quality analysis & reporting (~340 lines)
+  - Completeness scoring
+  - Link checking
+  - Content quality metrics
+- `multilang_support.py` - Internationalization support (~260 lines)
+  - Language detection
+  - Translation integration
+  - Multi-locale skills
+- `setup_wizard.py` - Interactive setup wizard (~220 lines)
+  - Configuration management
+  - Profile creation
+  - First-time setup
+
 ## 🎯 Project-Specific Best Practices
 
 1. **Always use platform adaptors** - Never hardcode platform-specific logic
-2. **Test all platforms** - Changes must work for all 4 platforms
-3. **Maintain backward compatibility** - Legacy configs must still work
+2. **Test all platforms** - Changes must work for all 16 platforms (was 4 in v2.x)
+3. **Maintain backward compatibility** - Legacy configs and v2.x workflows must still work
 4. **Document API changes** - Update CHANGELOG.md for every release
-5. **Keep dependencies optional** - Platform-specific deps are optional
+5. **Keep dependencies optional** - Platform-specific deps are optional (RAG, cloud, etc.)
 6. **Use src/ layout** - Proper package structure with `pip install -e .`
-7. **Run tests before commits** - Per user instructions, never skip tests
+7. **Run tests before commits** - Per user instructions, never skip tests (1,852 tests must pass)
+8. **RAG-first mindset** - v3.0.0 is the universal preprocessor for AI systems
+9. **Export format clarity** - Use `--format` for RAG/vector DBs, `--target` for LLM platforms
+10. **Test with real integrations** - Verify exports work with actual LangChain, ChromaDB, etc.
 
 ## 🐛 Debugging Tips
 
@@ -1422,6 +2043,20 @@ The `scripts/` directory contains utility scripts:
 
 ## 🎉 Recent Achievements
 
+**v3.0.0 (February 10, 2026) - "Universal Intelligence Platform":**
+- 🚀 **16 Platform Adaptors** - RAG frameworks (LangChain, LlamaIndex, Haystack), vector DBs (Chroma, FAISS, Weaviate, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), LLM platforms (Claude, Gemini, OpenAI)
+- 🛠️ **26 MCP Tools** (up from 18) - Complete automation for any AI system
+- ✅ **1,852 Tests Passing** (up from 700+) - Production-grade reliability
+- ☁️ **Cloud Storage** - S3, GCS, Azure Blob Storage integration
+- 🎯 **AI Coding Assistants** - Persistent context for Cursor, Windsurf, Cline, Continue.dev
+- 📊 **Quality Metrics** - Automated completeness scoring and content analysis
+- 🌐 **Multilingual Support** - Language detection and translation
+- 🔄 **Streaming Ingest** - Real-time data processing pipelines
+- 📈 **Benchmarking Tools** - Performance comparison and CI/CD integration
+- 🔧 **Setup Wizard** - Interactive first-time configuration
+- 📦 **12 Example Projects** - Complete working examples for every integration
+- 📚 **18 Integration Guides** - Comprehensive documentation for all platforms
+
 **v2.9.0 (February 3, 2026):**
 - **C3.10: Signal Flow Analysis** - Complete signal flow analysis for Godot projects
 - Comprehensive Godot 4.x support (GDScript, .tscn, .tres, .gdshader files)
@@ -1448,7 +2083,7 @@ The `scripts/` directory contains utility scripts:
 
 **v2.6.0 (January 14, 2026):**
 - **C3.x Codebase Analysis Suite Complete** (C3.1-C3.8)
-- Multi-platform support with platform adaptor architecture
+- Multi-platform support with platform adaptor architecture (4 platforms)
 - 18 MCP tools fully functional
 - 700+ tests passing
 - Unified multi-source scraping maturity

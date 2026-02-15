@@ -1,6 +1,11 @@
-"""GitHub subcommand parser."""
+"""GitHub subcommand parser.
+
+Uses shared argument definitions from arguments.github to ensure
+consistency with the standalone github_scraper module.
+"""
 
 from .base import SubcommandParser
+from skill_seekers.cli.arguments.github import add_github_arguments
 
 
 class GitHubParser(SubcommandParser):
@@ -19,17 +24,12 @@ class GitHubParser(SubcommandParser):
         return "Scrape GitHub repository and generate skill"
 
     def add_arguments(self, parser):
-        """Add github-specific arguments."""
-        parser.add_argument("--config", help="Config JSON file")
-        parser.add_argument("--repo", help="GitHub repo (owner/repo)")
-        parser.add_argument("--name", help="Skill name")
-        parser.add_argument("--description", help="Skill description")
-        parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
-        parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
-        parser.add_argument("--api-key", type=str, help="Anthropic API key for --enhance")
-        parser.add_argument(
-            "--non-interactive",
-            action="store_true",
-            help="Non-interactive mode (fail fast on rate limits)",
-        )
-        parser.add_argument("--profile", type=str, help="GitHub profile name from config")
+        """Add github-specific arguments.
+        
+        Uses shared argument definitions to ensure consistency
+        with github_scraper.py (standalone scraper).
+        """
+        # Add all github arguments from shared definitions
+        # This ensures the unified CLI has exactly the same arguments
+        # as the standalone scraper - they CANNOT drift out of sync
+        add_github_arguments(parser)

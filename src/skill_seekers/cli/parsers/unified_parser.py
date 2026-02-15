@@ -1,6 +1,11 @@
-"""Unified subcommand parser."""
+"""Unified subcommand parser.
+
+Uses shared argument definitions from arguments.unified to ensure
+consistency with the standalone unified_scraper module.
+"""
 
 from .base import SubcommandParser
+from skill_seekers.cli.arguments.unified import add_unified_arguments
 
 
 class UnifiedParser(SubcommandParser):
@@ -19,10 +24,9 @@ class UnifiedParser(SubcommandParser):
         return "Combine multiple sources into one skill"
 
     def add_arguments(self, parser):
-        """Add unified-specific arguments."""
-        parser.add_argument("--config", required=True, help="Unified config JSON file")
-        parser.add_argument("--merge-mode", help="Merge mode (rule-based, claude-enhanced)")
-        parser.add_argument(
-            "--fresh", action="store_true", help="Clear existing data and start fresh"
-        )
-        parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+        """Add unified-specific arguments.
+        
+        Uses shared argument definitions to ensure consistency
+        with unified_scraper.py (standalone scraper).
+        """
+        add_unified_arguments(parser)

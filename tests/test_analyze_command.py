@@ -48,10 +48,10 @@ class TestAnalyzeSubcommand(unittest.TestCase):
         self.assertTrue(args.comprehensive)
         # Note: Runtime will catch this and return error code 1
 
-    def test_enhance_flag(self):
-        """Test --enhance flag parsing."""
-        args = self.parser.parse_args(["analyze", "--directory", ".", "--enhance"])
-        self.assertTrue(args.enhance)
+    def test_enhance_level_flag(self):
+        """Test --enhance-level flag parsing."""
+        args = self.parser.parse_args(["analyze", "--directory", ".", "--enhance-level", "2"])
+        self.assertEqual(args.enhance_level, 2)
 
     def test_skip_flags_passed_through(self):
         """Test that skip flags are recognized."""
@@ -173,10 +173,10 @@ class TestAnalyzePresetBehavior(unittest.TestCase):
         self.assertTrue(args.comprehensive)
         # Note: Depth transformation happens in dispatch handler
 
-    def test_enhance_flag_standalone(self):
-        """Test --enhance flag can be used without presets."""
-        args = self.parser.parse_args(["analyze", "--directory", ".", "--enhance"])
-        self.assertTrue(args.enhance)
+    def test_enhance_level_standalone(self):
+        """Test --enhance-level can be used without presets."""
+        args = self.parser.parse_args(["analyze", "--directory", ".", "--enhance-level", "3"])
+        self.assertEqual(args.enhance_level, 3)
         self.assertFalse(args.quick)
         self.assertFalse(args.comprehensive)
 

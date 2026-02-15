@@ -24,12 +24,12 @@ class TestParserRegistry:
 
     def test_all_parsers_registered(self):
         """Test that all 19 parsers are registered."""
-        assert len(PARSERS) == 19, f"Expected 19 parsers, got {len(PARSERS)}"
+        assert len(PARSERS) == 20, f"Expected 19 parsers, got {len(PARSERS)}"
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 19
+        assert len(names) == 20
         assert "scrape" in names
         assert "github" in names
         assert "package" in names
@@ -147,8 +147,8 @@ class TestSpecificParsers:
         args = main_parser.parse_args(["scrape", "--config", "test.json", "--max-pages", "100"])
         assert args.max_pages == 100
 
-        args = main_parser.parse_args(["scrape", "--enhance"])
-        assert args.enhance is True
+        args = main_parser.parse_args(["scrape", "--enhance-level", "2"])
+        assert args.enhance_level == 2
 
     def test_github_parser_arguments(self):
         """Test GitHubParser has correct arguments."""
@@ -241,9 +241,9 @@ class TestBackwardCompatibility:
             assert cmd in names, f"Command '{cmd}' not found in parser registry!"
 
     def test_command_count_matches(self):
-        """Test that we have exactly 19 commands (same as original)."""
-        assert len(PARSERS) == 19
-        assert len(get_parser_names()) == 19
+        """Test that we have exactly 20 commands (includes new create command)."""
+        assert len(PARSERS) == 20
+        assert len(get_parser_names()) == 20
 
 
 if __name__ == "__main__":

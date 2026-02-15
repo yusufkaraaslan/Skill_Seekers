@@ -1,0 +1,65 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.2, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers
+configfile: pyproject.toml
+plugins: anyio-4.12.1, hypothesis-6.150.0, cov-6.1.1, typeguard-4.4.4
+collecting ... collected 1940 items / 1 error
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_preset_system.py _________________
+ImportError while importing test module '/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/tests/test_preset_system.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.14/site-packages/_pytest/python.py:498: in importtestmodule
+    mod = import_path(
+/usr/lib/python3.14/site-packages/_pytest/pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+/usr/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1398: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+/usr/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:186: in exec_module
+    exec(co, module.__dict__)
+tests/test_preset_system.py:9: in <module>
+    from skill_seekers.cli.presets import PresetManager, PRESETS, AnalysisPreset
+E   ImportError: cannot import name 'PresetManager' from 'skill_seekers.cli.presets' (/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/src/skill_seekers/cli/presets/__init__.py)
+=============================== warnings summary ===============================
+../../../../usr/lib/python3.14/site-packages/_pytest/config/__init__.py:1474
+  /usr/lib/python3.14/site-packages/_pytest/config/__init__.py:1474: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../usr/lib/python3.14/site-packages/_pytest/config/__init__.py:1474
+  /usr/lib/python3.14/site-packages/_pytest/config/__init__.py:1474: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests/test_mcp_fastmcp.py:21
+  /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/tests/test_mcp_fastmcp.py:21: DeprecationWarning: The legacy server.py is deprecated and will be removed in v3.0.0. Please update your MCP configuration to use 'server_fastmcp' instead:
+    OLD: python -m skill_seekers.mcp.server
+    NEW: python -m skill_seekers.mcp.server_fastmcp
+  The new server provides the same functionality with improved performance.
+    from mcp.server import FastMCP
+
+src/skill_seekers/cli/test_example_extractor.py:50
+  /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/src/skill_seekers/cli/test_example_extractor.py:50: PytestCollectionWarning: cannot collect test class 'TestExample' because it has a __init__ constructor (from: tests/test_test_example_extractor.py)
+    @dataclass
+
+src/skill_seekers/cli/test_example_extractor.py:920
+  /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/src/skill_seekers/cli/test_example_extractor.py:920: PytestCollectionWarning: cannot collect test class 'TestExampleExtractor' because it has a __init__ constructor (from: tests/test_test_example_extractor.py)
+    class TestExampleExtractor:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_preset_system.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 5 warnings, 1 error in 1.11s =========================

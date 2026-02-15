@@ -870,10 +870,9 @@ def main():
 
     # AI Enhancement (if requested)
     enhance_mode = args.ai_mode
-    if args.enhance:
-        enhance_mode = "api"
-    elif args.enhance_local:
-        enhance_mode = "local"
+    if getattr(args, 'enhance_level', 0) > 0:
+        # Auto-detect mode if enhance_level is set
+        enhance_mode = "auto"  # ConfigEnhancer will auto-detect API vs LOCAL
 
     if enhance_mode != "none":
         try:

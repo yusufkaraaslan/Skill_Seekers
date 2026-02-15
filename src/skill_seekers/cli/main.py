@@ -42,6 +42,7 @@ from skill_seekers.cli import __version__
 
 # Command module mapping (command name -> module path)
 COMMAND_MODULES = {
+    "create": "skill_seekers.cli.create_command",  # NEW: Unified create command
     "config": "skill_seekers.cli.config_command",
     "scrape": "skill_seekers.cli.doc_scraper",
     "github": "skill_seekers.cli.github_scraper",
@@ -251,21 +252,10 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
     elif args.depth:
         sys.argv.extend(["--depth", args.depth])
 
-    # Determine enhance_level
-    if args.enhance_level is not None:
-        enhance_level = args.enhance_level
-    elif args.quick:
-        enhance_level = 0
-    elif args.enhance:
-        try:
-            from skill_seekers.cli.config_manager import get_config_manager
-
-            config = get_config_manager()
-            enhance_level = config.get_default_enhance_level()
-        except Exception:
-            enhance_level = 1
-    else:
-        enhance_level = 0
+    # Determine enhance_level (simplified - use default or override)
+    enhance_level = getattr(args, 'enhance_level', 2)  # Default is 2
+    if getattr(args, 'quick', False):
+        enhance_level = 0  # Quick mode disables enhancement
 
     sys.argv.extend(["--enhance-level", str(enhance_level)])
 

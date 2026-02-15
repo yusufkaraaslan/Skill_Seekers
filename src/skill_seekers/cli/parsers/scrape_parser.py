@@ -1,6 +1,11 @@
-"""Scrape subcommand parser."""
+"""Scrape subcommand parser.
+
+Uses shared argument definitions from arguments.scrape to ensure
+consistency with the standalone doc_scraper module.
+"""
 
 from .base import SubcommandParser
+from skill_seekers.cli.arguments.scrape import add_scrape_arguments
 
 
 class ScrapeParser(SubcommandParser):
@@ -19,24 +24,12 @@ class ScrapeParser(SubcommandParser):
         return "Scrape documentation website and generate skill"
 
     def add_arguments(self, parser):
-        """Add scrape-specific arguments."""
-        parser.add_argument("url", nargs="?", help="Documentation URL (positional argument)")
-        parser.add_argument("--config", help="Config JSON file")
-        parser.add_argument("--name", help="Skill name")
-        parser.add_argument("--description", help="Skill description")
-        parser.add_argument(
-            "--max-pages",
-            type=int,
-            dest="max_pages",
-            help="Maximum pages to scrape (override config)",
-        )
-        parser.add_argument(
-            "--skip-scrape", action="store_true", help="Skip scraping, use cached data"
-        )
-        parser.add_argument("--enhance", action="store_true", help="AI enhancement (API)")
-        parser.add_argument("--enhance-local", action="store_true", help="AI enhancement (local)")
-        parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
-        parser.add_argument(
-            "--async", dest="async_mode", action="store_true", help="Use async scraping"
-        )
-        parser.add_argument("--workers", type=int, help="Number of async workers")
+        """Add scrape-specific arguments.
+        
+        Uses shared argument definitions to ensure consistency
+        with doc_scraper.py (standalone scraper).
+        """
+        # Add all scrape arguments from shared definitions
+        # This ensures the unified CLI has exactly the same arguments
+        # as the standalone scraper - they CANNOT drift out of sync
+        add_scrape_arguments(parser)

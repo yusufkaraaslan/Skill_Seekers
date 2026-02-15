@@ -1,6 +1,11 @@
-"""Enhance subcommand parser."""
+"""Enhance subcommand parser.
+
+Uses shared argument definitions from arguments.enhance to ensure
+consistency with the standalone enhance_skill_local module.
+"""
 
 from .base import SubcommandParser
+from skill_seekers.cli.arguments.enhance import add_enhance_arguments
 
 
 class EnhanceParser(SubcommandParser):
@@ -19,20 +24,9 @@ class EnhanceParser(SubcommandParser):
         return "Enhance SKILL.md using a local coding agent"
 
     def add_arguments(self, parser):
-        """Add enhance-specific arguments."""
-        parser.add_argument("skill_directory", help="Skill directory path")
-        parser.add_argument(
-            "--agent",
-            choices=["claude", "codex", "copilot", "opencode", "custom"],
-            help="Local coding agent to use (default: claude or SKILL_SEEKER_AGENT)",
-        )
-        parser.add_argument(
-            "--agent-cmd",
-            help="Override agent command template (use {prompt_file} or stdin).",
-        )
-        parser.add_argument("--background", action="store_true", help="Run in background")
-        parser.add_argument("--daemon", action="store_true", help="Run as daemon")
-        parser.add_argument(
-            "--no-force", action="store_true", help="Disable force mode (enable confirmations)"
-        )
-        parser.add_argument("--timeout", type=int, default=600, help="Timeout in seconds")
+        """Add enhance-specific arguments.
+        
+        Uses shared argument definitions to ensure consistency
+        with enhance_skill_local.py (standalone enhancer).
+        """
+        add_enhance_arguments(parser)

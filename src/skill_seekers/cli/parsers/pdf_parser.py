@@ -1,6 +1,11 @@
-"""PDF subcommand parser."""
+"""PDF subcommand parser.
+
+Uses shared argument definitions from arguments.pdf to ensure
+consistency with the standalone pdf_scraper module.
+"""
 
 from .base import SubcommandParser
+from skill_seekers.cli.arguments.pdf import add_pdf_arguments
 
 
 class PDFParser(SubcommandParser):
@@ -19,9 +24,9 @@ class PDFParser(SubcommandParser):
         return "Extract content from PDF and generate skill"
 
     def add_arguments(self, parser):
-        """Add pdf-specific arguments."""
-        parser.add_argument("--config", help="Config JSON file")
-        parser.add_argument("--pdf", help="PDF file path")
-        parser.add_argument("--name", help="Skill name")
-        parser.add_argument("--description", help="Skill description")
-        parser.add_argument("--from-json", help="Build from extracted JSON")
+        """Add pdf-specific arguments.
+        
+        Uses shared argument definitions to ensure consistency
+        with pdf_scraper.py (standalone scraper).
+        """
+        add_pdf_arguments(parser)

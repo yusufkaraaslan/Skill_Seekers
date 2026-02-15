@@ -177,6 +177,7 @@ Documentation = "https://skillseekersweb.com/"
 skill-seekers = "skill_seekers.cli.main:main"
 
 # Individual tool entry points
+skill-seekers-create = "skill_seekers.cli.create_command:main"  # NEW: Unified create command
 skill-seekers-config = "skill_seekers.cli.config_command:main"
 skill-seekers-resume = "skill_seekers.cli.resume_command:main"
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"

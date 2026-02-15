@@ -7,6 +7,7 @@ function to create them.
 from .base import SubcommandParser
 
 # Import all parser classes
+from .create_parser import CreateParser  # NEW: Unified create command
 from .config_parser import ConfigParser
 from .scrape_parser import ScrapeParser
 from .github_parser import GitHubParser
@@ -30,6 +31,7 @@ from .quality_parser import QualityParser
 
 # Registry of all parsers (in order of usage frequency)
 PARSERS = [
+    CreateParser(),  # NEW: Unified create command (placed first for prominence)
     ConfigParser(),
     ScrapeParser(),
     GitHubParser(),
