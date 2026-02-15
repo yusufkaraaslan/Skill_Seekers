@@ -22,7 +22,7 @@ class TestCreateCommandBasic:
             text=True
         )
         assert result.returncode == 0
-        assert 'Create skill from' in result.stdout
+        assert 'Auto-detects source type' in result.stdout
         assert 'auto-detected' in result.stdout
         assert '--help-web' in result.stdout
 
