@@ -6,10 +6,9 @@ import and use these definitions.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-ENHANCE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "skill_directory": {
         "flags": ("skill_directory",),
@@ -68,7 +67,6 @@ ENHANCE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
-
 
 def add_enhance_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all enhance command arguments to a parser."""

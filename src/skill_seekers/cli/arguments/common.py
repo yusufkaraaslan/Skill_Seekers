@@ -5,12 +5,11 @@ and provide consistent behavior for configuration, output control, and help.
 """
 
 import argparse
-from typing import Dict, Any
-
+from typing import Any
 
 # Common argument definitions as data structure
 # These are arguments that appear in MULTIPLE commands
-COMMON_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
     "config": {
         "flags": ("--config", "-c"),
         "kwargs": {
@@ -67,10 +66,9 @@ COMMON_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 # RAG (Retrieval-Augmented Generation) arguments
 # These are shared across commands that support RAG chunking
-RAG_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+RAG_ARGUMENTS: dict[str, dict[str, Any]] = {
     "chunk_for_rag": {
         "flags": ("--chunk-for-rag",),
         "kwargs": {
@@ -98,15 +96,14 @@ RAG_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add common arguments to a parser.
-    
+
     These arguments are shared across most commands for consistent UX.
-    
+
     Args:
         parser: The ArgumentParser to add arguments to
-        
+
     Example:
         >>> parser = argparse.ArgumentParser()
         >>> add_common_arguments(parser)
@@ -117,7 +114,6 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
-
 def get_common_argument_names() -> set:
     """Get the set of common argument destination names.
 
@@ -125,7 +121,6 @@ def get_common_argument_names() -> set:
         Set of argument dest names (e.g., {'config', 'name', 'description', ...})
     """
     return set(COMMON_ARGUMENTS.keys())
-
 
 def add_rag_arguments(parser: argparse.ArgumentParser) -> None:
     """Add RAG (Retrieval-Augmented Generation) arguments to a parser.
@@ -145,7 +140,6 @@ def add_rag_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
-
 def get_rag_argument_names() -> set:
     """Get the set of RAG argument destination names.
 
@@ -154,16 +148,15 @@ def get_rag_argument_names() -> set:
     """
     return set(RAG_ARGUMENTS.keys())
 
-
 def get_argument_help(arg_name: str) -> str:
     """Get the help text for a common argument.
-    
+
     Args:
         arg_name: Name of the argument (e.g., 'config')
-        
+
     Returns:
         Help text string
-        
+
     Raises:
         KeyError: If argument doesn't exist
     """

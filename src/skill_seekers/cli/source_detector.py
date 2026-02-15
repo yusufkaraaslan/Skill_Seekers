@@ -7,12 +7,11 @@ local directory, PDF file, or config file based on patterns.
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class SourceInfo:
@@ -25,10 +24,9 @@ class SourceInfo:
         raw_input: Original user input
     """
     type: str
-    parsed: Dict[str, Any]
+    parsed: dict[str, Any]
     suggested_name: str
     raw_input: str
-
 
 class SourceDetector:
     """Detects source type from user input and extracts relevant information."""
@@ -124,7 +122,7 @@ class SourceDetector:
         )
 
     @classmethod
-    def _detect_github(cls, source: str) -> Optional[SourceInfo]:
+    def _detect_github(cls, source: str) -> SourceInfo | None:
         """Detect GitHub repository source.
 
         Supports patterns:

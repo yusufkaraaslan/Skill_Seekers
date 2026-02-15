@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class UpdateParser(SubcommandParser):
     """Parser for update subcommand."""
 

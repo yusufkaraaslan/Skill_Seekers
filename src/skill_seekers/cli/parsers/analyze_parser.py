@@ -9,7 +9,6 @@ Includes preset system support (Issue #268).
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.analyze import add_analyze_arguments
 
-
 class AnalyzeParser(SubcommandParser):
     """Parser for analyze subcommand."""
 
@@ -27,10 +26,10 @@ class AnalyzeParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add analyze-specific arguments.
-        
+
         Uses shared argument definitions to ensure consistency
         with codebase_scraper.py (standalone scraper).
-        
+
         Includes preset system for simplified UX.
         """
         add_analyze_arguments(parser)

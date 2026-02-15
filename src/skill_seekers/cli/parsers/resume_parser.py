@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class ResumeParser(SubcommandParser):
     """Parser for resume subcommand."""
 

@@ -5,10 +5,6 @@ and routes to the correct scrapers without actually scraping.
 """
 
 import pytest
-import tempfile
-import os
-from pathlib import Path
-
 
 class TestCreateCommandBasic:
     """Basic integration tests for create command (dry-run mode)."""
@@ -123,7 +119,6 @@ class TestCreateCommandBasic:
         assert '--chunk-for-rag' in result.stdout
         assert '--preset' in result.stdout
         assert '--dry-run' in result.stdout
-
 
 class TestBackwardCompatibility:
     """Test that old commands still work."""

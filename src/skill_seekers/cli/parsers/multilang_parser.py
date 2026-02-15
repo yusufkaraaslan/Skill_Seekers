@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class MultilangParser(SubcommandParser):
     """Parser for multilang subcommand."""
 

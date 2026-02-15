@@ -21,7 +21,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     from github import Github, GithubException, Repository
@@ -99,7 +99,6 @@ EXCLUDED_DIRS = {
     "tmp",
     ".tmp",
 }
-
 
 def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
     """
@@ -180,7 +179,6 @@ def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
     # Improved fallback
     project_name = repo_name.split("/")[-1]
     return f"Use when working with {project_name}"
-
 
 class GitHubScraper:
     """
@@ -563,7 +561,7 @@ class GitHubScraper:
 
         return False
 
-    def _load_gitignore(self) -> Optional["pathspec.PathSpec"]:
+    def _load_gitignore(self) -> "pathspec.PathSpec" | None:
         """
         Load .gitignore file and create pathspec matcher (C2.1).
 
@@ -893,7 +891,6 @@ class GitHubScraper:
             json.dump(self.extracted_data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Data saved to: {self.data_file}")
-
 
 class GitHubToSkillConverter:
     """
@@ -1350,14 +1347,13 @@ Use this skill when you need to:
             f.write(content)
         logger.info(f"Generated: {structure_path}")
 
-
 def setup_argument_parser() -> argparse.ArgumentParser:
     """Setup and configure command-line argument parser.
-    
+
     Creates an ArgumentParser with all CLI options for the github scraper.
     All arguments are defined in skill_seekers.cli.arguments.github to ensure
     consistency between the standalone scraper and unified CLI.
-    
+
     Returns:
         argparse.ArgumentParser: Configured argument parser
     """
@@ -1377,7 +1373,6 @@ Examples:
     add_github_arguments(parser)
 
     return parser
-
 
 def main():
     """C1.10: CLI tool entry point."""
@@ -1475,7 +1470,6 @@ def main():
     except Exception as e:
         logger.error(f"Error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

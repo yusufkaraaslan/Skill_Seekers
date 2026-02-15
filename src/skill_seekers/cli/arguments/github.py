@@ -8,11 +8,10 @@ This ensures the parsers NEVER drift out of sync.
 """
 
 import argparse
-from typing import Dict, Any
-
+from typing import Any
 
 # GitHub-specific argument definitions as data structure
-GITHUB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Core GitHub options
     "repo": {
         "flags": ("--repo",),
@@ -134,18 +133,17 @@ GITHUB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 def add_github_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all github command arguments to a parser.
-    
+
     This is the SINGLE SOURCE OF TRUTH for github arguments.
     Used by:
     - github_scraper.py (standalone scraper)
     - parsers/github_parser.py (unified CLI)
-    
+
     Args:
         parser: The ArgumentParser to add arguments to
-        
+
     Example:
         >>> parser = argparse.ArgumentParser()
         >>> add_github_arguments(parser)  # Adds all github args
@@ -155,19 +153,17 @@ def add_github_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
-
 def get_github_argument_names() -> set:
     """Get the set of github argument destination names.
-    
+
     Returns:
         Set of argument dest names
     """
     return set(GITHUB_ARGUMENTS.keys())
 
-
 def get_github_argument_count() -> int:
     """Get the total number of github arguments.
-    
+
     Returns:
         Number of arguments
     """

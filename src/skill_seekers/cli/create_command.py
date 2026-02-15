@@ -7,7 +7,6 @@ to appropriate scraper while maintaining full backward compatibility.
 import sys
 import logging
 import argparse
-from typing import List, Optional
 
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.arguments.create import (
@@ -16,7 +15,6 @@ from skill_seekers.cli.arguments.create import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 class CreateCommand:
     """Unified create command implementation."""
@@ -28,7 +26,7 @@ class CreateCommand:
             args: Parsed command-line arguments
         """
         self.args = args
-        self.source_info: Optional[SourceInfo] = None
+        self.source_info: SourceInfo | None = None
 
     def execute(self) -> int:
         """Execute the create command.
@@ -311,7 +309,7 @@ class CreateCommand:
         finally:
             sys.argv = original_argv
 
-    def _add_common_args(self, argv: List[str]) -> None:
+    def _add_common_args(self, argv: list[str]) -> None:
         """Add common/universal arguments to argv list.
 
         Args:
@@ -366,7 +364,6 @@ class CreateCommand:
             argv.append('--no-preserve-paragraphs')
         if getattr(self.args, 'interactive_enhancement', False):
             argv.append('--interactive-enhancement')
-
 
 def main() -> int:
     """Entry point for create command.
@@ -509,7 +506,6 @@ Common Workflows:
     # Execute create command
     command = CreateCommand(args)
     return command.execute()
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -6,7 +6,6 @@ Tests the three-tier argument system:
 3. Advanced arguments
 """
 
-import pytest
 from skill_seekers.cli.arguments.create import (
     UNIVERSAL_ARGUMENTS,
     WEB_ARGUMENTS,
@@ -19,7 +18,6 @@ from skill_seekers.cli.arguments.create import (
     get_compatible_arguments,
     add_create_arguments,
 )
-
 
 class TestUniversalArguments:
     """Test universal argument definitions."""
@@ -50,7 +48,6 @@ class TestUniversalArguments:
         for arg_name, arg_def in UNIVERSAL_ARGUMENTS.items():
             assert 'kwargs' in arg_def
             assert 'help' in arg_def['kwargs']
-
 
 class TestSourceSpecificArguments:
     """Test source-specific argument definitions."""
@@ -96,7 +93,6 @@ class TestSourceSpecificArguments:
                         assert flag not in all_flags, f"Duplicate flag: {flag}"
                         all_flags.add(flag)
 
-
 class TestAdvancedArguments:
     """Test advanced/rare argument definitions."""
 
@@ -105,7 +101,6 @@ class TestAdvancedArguments:
         assert len(ADVANCED_ARGUMENTS) > 0
         assert 'no_rate_limit' in ADVANCED_ARGUMENTS
         assert 'interactive_enhancement' in ADVANCED_ARGUMENTS
-
 
 class TestArgumentHelpers:
     """Test helper functions."""
@@ -147,7 +142,6 @@ class TestArgumentHelpers:
         """Unknown source should return empty dict."""
         args = get_source_specific_arguments('unknown')
         assert args == {}
-
 
 class TestCompatibleArguments:
     """Test compatible argument detection."""
@@ -217,7 +211,6 @@ class TestCompatibleArguments:
         assert 'repo' not in compatible
         assert 'directory' not in compatible
 
-
 class TestAddCreateArguments:
     """Test add_create_arguments function."""
 
@@ -284,7 +277,6 @@ class TestAddCreateArguments:
             args = parser.parse_args(['some_source'])
             assert args.source == 'some_source'
 
-
 class TestNoDuplicates:
     """Test that there are no duplicate arguments across tiers."""
 
@@ -319,7 +311,6 @@ class TestNoDuplicates:
         assert len(github_flags & local_flags) == 0
         assert len(github_flags & pdf_flags) == 0
         assert len(local_flags & pdf_flags) == 0
-
 
 class TestArgumentQuality:
     """Test argument definition quality."""

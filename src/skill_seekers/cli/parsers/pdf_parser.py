@@ -7,7 +7,6 @@ consistency with the standalone pdf_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.pdf import add_pdf_arguments
 
-
 class PDFParser(SubcommandParser):
     """Parser for pdf subcommand."""
 
@@ -25,7 +24,7 @@ class PDFParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add pdf-specific arguments.
-        
+
         Uses shared argument definitions to ensure consistency
         with pdf_scraper.py (standalone scraper).
         """

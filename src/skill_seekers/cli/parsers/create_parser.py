@@ -13,7 +13,6 @@ import argparse
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.create import add_create_arguments
 
-
 class CreateParser(SubcommandParser):
     """Parser for create subcommand with multi-mode help."""
 

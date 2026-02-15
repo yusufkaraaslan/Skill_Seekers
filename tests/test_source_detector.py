@@ -9,12 +9,9 @@ Tests the SourceDetector class's ability to identify and parse:
 """
 
 import os
-import tempfile
 import pytest
-from pathlib import Path
 
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
-
 
 class TestWebDetection:
     """Test web URL detection."""
@@ -58,7 +55,6 @@ class TestWebDetection:
         assert info.type == 'web'
         assert info.suggested_name == 'vue'
 
-
 class TestGitHubDetection:
     """Test GitHub repository detection."""
 
@@ -96,7 +92,6 @@ class TestGitHubDetection:
         assert info.type == 'github'
         assert info.parsed['repo'] == "microsoft/vscode-python"
         assert info.suggested_name == 'vscode-python'
-
 
 class TestLocalDetection:
     """Test local directory detection."""
@@ -136,7 +131,6 @@ class TestLocalDetection:
         assert info.type == 'local'
         assert info.parsed['directory'] == cwd
 
-
 class TestPDFDetection:
     """Test PDF file detection."""
 
@@ -160,7 +154,6 @@ class TestPDFDetection:
         assert info.type == 'pdf'
         assert info.suggested_name == 'my-awesome-guide'
 
-
 class TestConfigDetection:
     """Test config file detection."""
 
@@ -177,7 +170,6 @@ class TestConfigDetection:
         assert info.type == 'config'
         assert info.parsed['config_path'] == "configs/django.json"
         assert info.suggested_name == 'django'
-
 
 class TestValidation:
     """Test source validation."""
@@ -246,7 +238,6 @@ class TestValidation:
             )
             SourceDetector.validate_source(info)
 
-
 class TestAmbiguousCases:
     """Test handling of ambiguous inputs."""
 
@@ -277,7 +268,6 @@ class TestAmbiguousCases:
         # Should detect as local directory, not web
         assert info.type == 'local'
 
-
 class TestRawInputPreservation:
     """Test that raw_input is preserved correctly."""
 
@@ -301,7 +291,6 @@ class TestRawInputPreservation:
         original = str(test_dir)
         info = SourceDetector.detect(original)
         assert info.raw_input == original
-
 
 class TestEdgeCases:
     """Test edge cases and corner cases."""

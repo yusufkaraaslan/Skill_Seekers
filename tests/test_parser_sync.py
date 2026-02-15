@@ -6,8 +6,6 @@ the same arguments as the standalone scraper modules. This prevents the
 """
 
 import argparse
-import pytest
-
 
 class TestScrapeParserSync:
     """Ensure scrape_parser has all arguments from doc_scraper."""
@@ -87,7 +85,6 @@ class TestScrapeParserSync:
         for arg in required_args:
             assert arg in arg_dests, f"Required argument '{arg}' missing from scrape parser"
 
-
 class TestGitHubParserSync:
     """Ensure github_parser has all arguments from github_scraper."""
 
@@ -130,7 +127,6 @@ class TestGitHubParserSync:
 
         assert not missing, f"github_parser missing arguments: {missing}"
         assert not extra, f"github_parser has extra arguments not in github_scraper: {extra}"
-
 
 class TestUnifiedCLI:
     """Test the unified CLI main parser."""

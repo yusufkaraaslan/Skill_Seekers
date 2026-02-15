@@ -10,18 +10,17 @@ This enables progressive disclosure in help text while maintaining
 """
 
 import argparse
-from typing import Dict, Any, Set, List
+from typing import Any
 
 from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
 from .common import RAG_ARGUMENTS
-
 
 # =============================================================================
 # TIER 1: UNIVERSAL ARGUMENTS (15 flags)
 # =============================================================================
 # These arguments work for ALL source types
 
-UNIVERSAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Identity arguments
     "name": {
         "flags": ("--name",),
@@ -118,13 +117,12 @@ UNIVERSAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
 # Merge RAG arguments from common.py into universal arguments
 UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
-
 # =============================================================================
 # TIER 2: SOURCE-SPECIFIC ARGUMENTS
 # =============================================================================
 
 # Web scraping specific (from scrape.py)
-WEB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+WEB_ARGUMENTS: dict[str, dict[str, Any]] = {
     "url": {
         "flags": ("--url",),
         "kwargs": {
@@ -189,7 +187,7 @@ WEB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
 }
 
 # GitHub repository specific (from github.py)
-GITHUB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
     "repo": {
         "flags": ("--repo",),
         "kwargs": {
@@ -261,7 +259,7 @@ GITHUB_ARGUMENTS: Dict[str, Dict[str, Any]] = {
 }
 
 # Local codebase specific (from analyze.py)
-LOCAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+LOCAL_ARGUMENTS: dict[str, dict[str, Any]] = {
     "directory": {
         "flags": ("--directory",),
         "kwargs": {
@@ -324,7 +322,7 @@ LOCAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
 }
 
 # PDF specific (from pdf.py)
-PDF_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
     "pdf": {
         "flags": ("--pdf",),
         "kwargs": {
@@ -350,13 +348,12 @@ PDF_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 # =============================================================================
 # TIER 3: ADVANCED/RARE ARGUMENTS
 # =============================================================================
 # Hidden from default help, shown only with --help-advanced
 
-ADVANCED_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+ADVANCED_ARGUMENTS: dict[str, dict[str, Any]] = {
     "no_rate_limit": {
         "flags": ("--no-rate-limit",),
         "kwargs": {
@@ -387,17 +384,15 @@ ADVANCED_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
-def get_universal_argument_names() -> Set[str]:
+def get_universal_argument_names() -> set[str]:
     """Get set of universal argument names."""
     return set(UNIVERSAL_ARGUMENTS.keys())
 
-
-def get_source_specific_arguments(source_type: str) -> Dict[str, Dict[str, Any]]:
+def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]:
     """Get source-specific arguments for a given source type.
 
     Args:
@@ -406,21 +401,16 @@ def get_source_specific_arguments(source_type: str) -> Dict[str, Dict[str, Any]]
     Returns:
         Dict of argument definitions
     """
-    if source_type == 'web':
-        return WEB_ARGUMENTS
-    elif source_type == 'github':
-        return GITHUB_ARGUMENTS
-    elif source_type == 'local':
-        return LOCAL_ARGUMENTS
-    elif source_type == 'pdf':
-        return PDF_ARGUMENTS
-    elif source_type == 'config':
-        return {}  # Config files don't have extra args
-    else:
-        return {}
+    source_args = {
+        'web': WEB_ARGUMENTS,
+        'github': GITHUB_ARGUMENTS,
+        'local': LOCAL_ARGUMENTS,
+        'pdf': PDF_ARGUMENTS,
+        'config': {},  # Config files don't have extra args
+    }
+    return source_args.get(source_type, {})
 
-
-def get_compatible_arguments(source_type: str) -> List[str]:
+def get_compatible_arguments(source_type: str) -> list[str]:
     """Get list of compatible argument names for a source type.
 
     Args:
@@ -440,7 +430,6 @@ def get_compatible_arguments(source_type: str) -> List[str]:
     compatible.extend(ADVANCED_ARGUMENTS.keys())
 
     return compatible
-
 
 def add_create_arguments(parser: argparse.ArgumentParser, mode: str = 'default') -> None:
     """Add create command arguments to parser.

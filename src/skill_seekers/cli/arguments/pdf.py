@@ -6,10 +6,9 @@ import and use these definitions.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-PDF_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
     "config": {
         "flags": ("--config",),
         "kwargs": {
@@ -51,7 +50,6 @@ PDF_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
-
 
 def add_pdf_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all pdf command arguments to a parser."""

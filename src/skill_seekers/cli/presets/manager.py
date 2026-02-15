@@ -6,7 +6,6 @@ between speed and comprehensiveness.
 
 from dataclasses import dataclass
 
-
 @dataclass
 class AnalysisPreset:
     """Analysis preset configuration.
@@ -22,7 +21,6 @@ class AnalysisPreset:
     enhance_level: int  # 0=none, 1=SKILL.md, 2=+Arch+Config, 3=full
     estimated_time: str
     icon: str
-
 
 # Preset definitions
 PRESETS = {
@@ -78,7 +76,6 @@ PRESETS = {
         icon="🚀",
     ),
 }
-
 
 class PresetManager:
     """Manages analysis presets and applies them to CLI arguments."""
@@ -166,7 +163,6 @@ class PresetManager:
             Default preset name ("standard")
         """
         return "standard"
-
 
 # Public API
 __all__ = [

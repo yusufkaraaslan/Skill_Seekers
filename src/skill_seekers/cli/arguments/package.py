@@ -6,10 +6,9 @@ import and use these definitions.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-PACKAGE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "skill_directory": {
         "flags": ("skill_directory",),
@@ -123,7 +122,6 @@ PACKAGE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
-
 
 def add_package_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all package command arguments to a parser."""

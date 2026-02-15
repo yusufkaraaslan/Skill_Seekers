@@ -6,10 +6,9 @@ import and use these definitions.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-UNIFIED_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
     "config": {
         "flags": ("--config", "-c"),
         "kwargs": {
@@ -42,7 +41,6 @@ UNIFIED_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
-
 
 def add_unified_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all unified command arguments to a parser."""

@@ -12,9 +12,6 @@ These tests verify that the unified CLI architecture works correctly:
 import pytest
 import subprocess
 import argparse
-import sys
-from pathlib import Path
-
 
 class TestParserSync:
     """E2E tests for parser synchronization (Issue #285)."""
@@ -76,7 +73,6 @@ class TestParserSync:
         ]
         for flag in expected_flags:
             assert flag in result.stdout, f"Help should show {flag} flag"
-
 
 class TestPresetSystem:
     """E2E tests for preset system (Issue #268)."""
@@ -141,7 +137,6 @@ class TestPresetSystem:
         assert "DEPRECATED" in output, "Should show deprecation warning"
         assert "--preset comprehensive" in output, "Should suggest alternative"
 
-
 class TestBackwardCompatibility:
     """E2E tests for backward compatibility."""
 
@@ -185,7 +180,6 @@ class TestBackwardCompatibility:
             assert flag in unified_result.stdout, f"Unified should have {flag}"
             assert flag in standalone_result.stdout, f"Standalone should have {flag}"
 
-
 class TestProgrammaticAPI:
     """Test that the shared argument functions work programmatically."""
 
@@ -226,7 +220,6 @@ class TestProgrammaticAPI:
         assert quick.depth == "surface"
         # Note: enhance_level is not part of AnalysisPreset anymore.
         # It's controlled separately via --enhance-level flag (default 2)
-
 
 class TestIntegration:
     """Integration tests for the complete flow."""
@@ -278,7 +271,6 @@ class TestIntegration:
         assert "--preset" in result.stdout, "Should show --preset flag"
         assert "DEFAULT" in result.stdout or "default" in result.stdout, "Should indicate default preset"
 
-
 class TestE2EWorkflow:
     """End-to-end workflow tests."""
 
@@ -321,7 +313,6 @@ class TestE2EWorkflow:
         # Verify preset flag exists
         assert "--preset" in result.stdout, "Should have --preset flag"
         assert "unrecognized arguments" not in result.stderr.lower()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

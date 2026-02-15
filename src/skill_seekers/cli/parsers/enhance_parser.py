@@ -7,7 +7,6 @@ consistency with the standalone enhance_skill_local module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.enhance import add_enhance_arguments
 
-
 class EnhanceParser(SubcommandParser):
     """Parser for enhance subcommand."""
 
@@ -25,7 +24,7 @@ class EnhanceParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add enhance-specific arguments.
-        
+
         Uses shared argument definitions to ensure consistency
         with enhance_skill_local.py (standalone enhancer).
         """

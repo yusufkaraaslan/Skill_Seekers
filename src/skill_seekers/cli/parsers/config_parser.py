@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class ConfigParser(SubcommandParser):
     """Parser for config subcommand."""
 

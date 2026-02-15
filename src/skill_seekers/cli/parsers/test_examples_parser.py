@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class TestExamplesParser(SubcommandParser):
     """Parser for extract-test-examples subcommand."""
 

@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class QualityParser(SubcommandParser):
     """Parser for quality subcommand."""
 

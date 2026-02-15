@@ -20,7 +20,6 @@ from .manager import (
 
 # Analyze presets
 from .analyze_presets import (
-    AnalysisPreset as AnalyzeAnalysisPreset,  # Alternative version (without enhance_level)
     ANALYZE_PRESETS,
     apply_analyze_preset,
     get_preset_help_text,

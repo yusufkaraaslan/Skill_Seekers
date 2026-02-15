@@ -6,10 +6,9 @@ import and use these definitions.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-UPLOAD_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+UPLOAD_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "package_file": {
         "flags": ("package_file",),
@@ -98,7 +97,6 @@ UPLOAD_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
-
 
 def add_upload_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all upload command arguments to a parser."""

@@ -7,7 +7,6 @@ consistency with the standalone unified_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.unified import add_unified_arguments
 
-
 class UnifiedParser(SubcommandParser):
     """Parser for unified subcommand."""
 
@@ -25,7 +24,7 @@ class UnifiedParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add unified-specific arguments.
-        
+
         Uses shared argument definitions to ensure consistency
         with unified_scraper.py (standalone scraper).
         """

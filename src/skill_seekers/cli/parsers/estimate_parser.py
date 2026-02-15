@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class EstimateParser(SubcommandParser):
     """Parser for estimate subcommand."""
 

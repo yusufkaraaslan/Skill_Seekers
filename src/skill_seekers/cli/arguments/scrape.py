@@ -8,15 +8,14 @@ This ensures the parsers NEVER drift out of sync.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
 from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
 from .common import RAG_ARGUMENTS
 
-
 # Scrape-specific argument definitions as data structure
 # This enables introspection for UI generation and testing
-SCRAPE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "url_positional": {
         "flags": ("url",),
@@ -199,18 +198,17 @@ SCRAPE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
 # Merge RAG arguments from common.py
 SCRAPE_ARGUMENTS.update(RAG_ARGUMENTS)
 
-
 def add_scrape_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all scrape command arguments to a parser.
-    
+
     This is the SINGLE SOURCE OF TRUTH for scrape arguments.
     Used by:
     - doc_scraper.py (standalone scraper)
     - parsers/scrape_parser.py (unified CLI)
-    
+
     Args:
         parser: The ArgumentParser to add arguments to
-        
+
     Example:
         >>> parser = argparse.ArgumentParser()
         >>> add_scrape_arguments(parser)  # Adds all 26 scrape args
@@ -220,19 +218,17 @@ def add_scrape_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
-
 def get_scrape_argument_names() -> set:
     """Get the set of scrape argument destination names.
-    
+
     Returns:
         Set of argument dest names
     """
     return set(SCRAPE_ARGUMENTS.keys())
 
-
 def get_scrape_argument_count() -> int:
     """Get the total number of scrape arguments.
-    
+
     Returns:
         Number of arguments
     """

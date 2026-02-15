@@ -8,10 +8,9 @@ Includes preset system support for #268.
 """
 
 import argparse
-from typing import Dict, Any
+from typing import Any
 
-
-ANALYZE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
+ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Core options
     "directory": {
         "flags": ("--directory",),
@@ -172,14 +171,12 @@ ANALYZE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-
 def add_analyze_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all analyze command arguments to a parser."""
     for arg_name, arg_def in ANALYZE_ARGUMENTS.items():
         flags = arg_def["flags"]
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
-
 
 def get_analyze_argument_names() -> set:
     """Get the set of analyze argument destination names."""

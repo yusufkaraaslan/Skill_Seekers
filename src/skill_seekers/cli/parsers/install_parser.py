@@ -2,7 +2,6 @@
 
 from .base import SubcommandParser
 
-
 class InstallParser(SubcommandParser):
     """Parser for install subcommand."""
 
