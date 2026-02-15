@@ -13,6 +13,7 @@ import argparse
 from typing import Dict, Any, Set, List
 
 from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
+from .common import RAG_ARGUMENTS
 
 
 # =============================================================================
@@ -91,32 +92,8 @@ UNIVERSAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
             "help": "Minimize output (WARNING level only)",
         },
     },
-    # RAG features (NEW - universal for all sources!)
-    "chunk_for_rag": {
-        "flags": ("--chunk-for-rag",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Enable semantic chunking for RAG pipelines (all sources)",
-        },
-    },
-    "chunk_size": {
-        "flags": ("--chunk-size",),
-        "kwargs": {
-            "type": int,
-            "default": 512,
-            "metavar": "TOKENS",
-            "help": "Chunk size in tokens for RAG (default: 512)",
-        },
-    },
-    "chunk_overlap": {
-        "flags": ("--chunk-overlap",),
-        "kwargs": {
-            "type": int,
-            "default": 50,
-            "metavar": "TOKENS",
-            "help": "Overlap between chunks in tokens (default: 50)",
-        },
-    },
+    # RAG features (imported from common.py - see RAG_ARGUMENTS)
+    # Note: RAG arguments are merged into UNIVERSAL_ARGUMENTS at runtime
     # Preset system
     "preset": {
         "flags": ("--preset",),
@@ -137,6 +114,9 @@ UNIVERSAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
+
+# Merge RAG arguments from common.py into universal arguments
+UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
 
 # =============================================================================

@@ -11,6 +11,7 @@ import argparse
 from typing import Dict, Any
 
 from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
+from .common import RAG_ARGUMENTS
 
 
 # Scrape-specific argument definitions as data structure
@@ -177,32 +178,8 @@ SCRAPE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
             "help": "Minimize output (WARNING level logging only)",
         },
     },
-    # RAG chunking options (v2.10.0)
-    "chunk_for_rag": {
-        "flags": ("--chunk-for-rag",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Enable semantic chunking for RAG pipelines (generates rag_chunks.json)",
-        },
-    },
-    "chunk_size": {
-        "flags": ("--chunk-size",),
-        "kwargs": {
-            "type": int,
-            "default": 512,
-            "metavar": "TOKENS",
-            "help": "Target chunk size in tokens for RAG (default: 512)",
-        },
-    },
-    "chunk_overlap": {
-        "flags": ("--chunk-overlap",),
-        "kwargs": {
-            "type": int,
-            "default": 50,
-            "metavar": "TOKENS",
-            "help": "Overlap size between chunks in tokens (default: 50)",
-        },
-    },
+    # RAG chunking options (imported from common.py - see RAG_ARGUMENTS)
+    # Note: RAG arguments will be merged at runtime
     "no_preserve_code_blocks": {
         "flags": ("--no-preserve-code-blocks",),
         "kwargs": {
@@ -218,6 +195,9 @@ SCRAPE_ARGUMENTS: Dict[str, Dict[str, Any]] = {
         },
     },
 }
+
+# Merge RAG arguments from common.py
+SCRAPE_ARGUMENTS.update(RAG_ARGUMENTS)
 
 
 def add_scrape_arguments(parser: argparse.ArgumentParser) -> None:

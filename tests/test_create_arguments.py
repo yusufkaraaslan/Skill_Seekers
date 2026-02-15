@@ -25,16 +25,16 @@ class TestUniversalArguments:
     """Test universal argument definitions."""
 
     def test_universal_count(self):
-        """Should have exactly 15 universal arguments."""
-        assert len(UNIVERSAL_ARGUMENTS) == 15
+        """Should have exactly 13 universal arguments (after Phase 1 consolidation)."""
+        assert len(UNIVERSAL_ARGUMENTS) == 13
 
     def test_universal_argument_names(self):
         """Universal arguments should have expected names."""
         expected_names = {
             'name', 'description', 'output',
-            'enhance', 'enhance_local', 'enhance_level', 'api_key',
+            'enhance_level', 'api_key',  # Phase 1: consolidated from enhance + enhance_local
             'dry_run', 'verbose', 'quiet',
-            'chunk_for_rag', 'chunk_size', 'chunk_overlap',
+            'chunk_for_rag', 'chunk_size', 'chunk_overlap',  # Phase 2: RAG args from common.py
             'preset', 'config'
         }
         assert set(UNIVERSAL_ARGUMENTS.keys()) == expected_names
@@ -114,9 +114,9 @@ class TestArgumentHelpers:
         """Should return set of universal argument names."""
         names = get_universal_argument_names()
         assert isinstance(names, set)
-        assert len(names) == 15
+        assert len(names) == 13
         assert 'name' in names
-        assert 'enhance' in names
+        assert 'enhance_level' in names  # Phase 1: consolidated flag
 
     def test_get_source_specific_web(self):
         """Should return web-specific arguments."""
@@ -158,7 +158,7 @@ class TestCompatibleArguments:
 
         # Should include universal arguments
         assert 'name' in compatible
-        assert 'enhance' in compatible
+        assert 'enhance_level' in compatible  # Phase 1: consolidated flag
 
         # Should include web-specific arguments
         assert 'max_pages' in compatible
@@ -232,7 +232,7 @@ class TestAddCreateArguments:
 
         # Should have universal arguments
         assert 'name' in args
-        assert 'enhance' in args
+        assert 'enhance_level' in args
         assert 'chunk_for_rag' in args
 
         # Should not have source-specific arguments (they're not added in default mode)
@@ -351,7 +351,7 @@ class TestArgumentQuality:
         }
 
         boolean_args = [
-            'enhance', 'enhance_local', 'dry_run', 'verbose', 'quiet',
+            'dry_run', 'verbose', 'quiet',
             'chunk_for_rag', 'skip_scrape', 'resume', 'fresh', 'async_mode',
             'no_issues', 'no_changelog', 'no_releases', 'scrape_only',
             'skip_patterns', 'skip_test_examples', 'ocr', 'no_rate_limit'
