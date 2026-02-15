@@ -9,6 +9,7 @@ Implements progressive disclosure:
 Follows existing SubcommandParser pattern for consistency.
 """
 
+import argparse
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.create import add_create_arguments
 
@@ -26,29 +27,22 @@ class CreateParser(SubcommandParser):
 
     @property
     def description(self) -> str:
-        return """Create skill from web docs, GitHub repos, local code, PDFs, or config files.
+        return """Auto-detects source type and creates skill.
 
-Source type is auto-detected from the input:
-  - Web:    https://docs.react.dev/ or docs.react.dev
-  - GitHub: facebook/react or github.com/facebook/react
-  - Local:  ./my-project or /path/to/repo
-  - PDF:    tutorial.pdf
-  - Config: configs/react.json
+Quick Examples:
+  skill-seekers create https://docs.react.dev/ -p quick
+  skill-seekers create facebook/react -p standard
+  skill-seekers create ./my-project -p comprehensive
 
-Examples:
-  skill-seekers create https://docs.react.dev/ --preset quick
-  skill-seekers create facebook/react --preset standard
-  skill-seekers create ./my-project --preset comprehensive
-  skill-seekers create tutorial.pdf --ocr
-  skill-seekers create configs/react.json
+Source Types (auto-detected):
+  URLs → web docs | owner/repo → GitHub | ./path → local code
+  file.pdf → PDF | file.json → config (multi-source)
 
-For source-specific options, use:
-  --help-web      Show web scraping options
-  --help-github   Show GitHub repository options
-  --help-local    Show local codebase options
-  --help-pdf      Show PDF extraction options
-  --help-advanced Show advanced/rare options
-  --help-all      Show all 120+ options
+Progressive Help (NEW -p shortcut):
+  Default help shows 13 flags. For more: --help-web, --help-github,
+  --help-local, --help-pdf, --help-advanced, --help-all (120+ flags)
+
+Presets: -p quick (1-2min) | -p standard (5-10min) | -p comprehensive (20-60min)
 """
 
     def add_arguments(self, parser):
@@ -101,3 +95,26 @@ For source-specific options, use:
             help='Show all available options (120+ flags)',
             dest='_help_all'
         )
+
+    def register(self, subparsers):
+        """Register this parser with custom formatter to prevent text wrapping.
+
+        Args:
+            subparsers: Subparsers object from main parser
+
+        Returns:
+            Configured ArgumentParser for this subcommand
+        """
+        # Custom formatter that preserves line breaks
+        class NoWrapFormatter(argparse.RawDescriptionHelpFormatter):
+            def _split_lines(self, text, width):
+                return text.splitlines()
+
+        parser = subparsers.add_parser(
+            self.name,
+            help=self.help,
+            description=self.description,
+            formatter_class=NoWrapFormatter
+        )
+        self.add_arguments(parser)
+        return parser

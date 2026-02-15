@@ -96,7 +96,7 @@ UNIVERSAL_ARGUMENTS: Dict[str, Dict[str, Any]] = {
     # Note: RAG arguments are merged into UNIVERSAL_ARGUMENTS at runtime
     # Preset system
     "preset": {
-        "flags": ("--preset",),
+        "flags": ("--preset", "-p"),
         "kwargs": {
             "type": str,
             "choices": ["quick", "standard", "comprehensive"],

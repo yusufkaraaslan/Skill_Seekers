@@ -374,65 +374,52 @@ def main() -> int:
     Returns:
         Exit code (0 for success, non-zero for error)
     """
+    import textwrap
     from skill_seekers.cli.arguments.create import add_create_arguments
 
     # Parse arguments
+    # Custom formatter to prevent line wrapping in epilog
+    class NoWrapFormatter(argparse.RawDescriptionHelpFormatter):
+        def _split_lines(self, text, width):
+            return text.splitlines()
+
     parser = argparse.ArgumentParser(
         prog='skill-seekers create',
         description='Create skill from any source (auto-detects type)',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        formatter_class=NoWrapFormatter,
+        epilog=textwrap.dedent("""\
 Examples:
-  Web documentation:
-    skill-seekers create https://docs.react.dev/
-    skill-seekers create docs.vue.org --preset quick
+  Web:      skill-seekers create https://docs.react.dev/
+  GitHub:   skill-seekers create facebook/react -p standard
+  Local:    skill-seekers create ./my-project -p comprehensive
+  PDF:      skill-seekers create tutorial.pdf --ocr
+  Config:   skill-seekers create configs/react.json
 
-  GitHub repository:
-    skill-seekers create facebook/react
-    skill-seekers create github.com/vuejs/vue --preset standard
+Source Auto-Detection:
+  • URLs/domains → web scraping
+  • owner/repo → GitHub analysis
+  • ./path → local codebase
+  • file.pdf → PDF extraction
+  • file.json → multi-source config
 
-  Local codebase:
-    skill-seekers create ./my-project
-    skill-seekers create /path/to/repo --preset comprehensive
+Progressive Help (13 → 120+ flags):
+  --help-web       Web scraping options
+  --help-github    GitHub repository options
+  --help-local     Local codebase analysis
+  --help-pdf       PDF extraction options
+  --help-advanced  Rare/advanced options
+  --help-all       All options + compatibility
 
-  PDF file:
-    skill-seekers create tutorial.pdf --ocr
-    skill-seekers create guide.pdf --pages 1-10
-
-  Config file (multi-source):
-    skill-seekers create configs/react.json
-
-Source Detection:
-  Source type is auto-detected from input:
-    • URLs (https://... or domain.com) → web scraping
-    • owner/repo or github.com/... → GitHub analysis
-    • ./path or /absolute/path → local codebase
-    • file.pdf → PDF extraction
-    • file.json → config file (multi-source)
-
-Need More Options?
-  The default help shows universal arguments only (13 flags).
-  For source-specific options, use:
-    --help-web       Web scraping options (max-pages, rate-limit, workers, etc.)
-    --help-github    GitHub options (token, max-issues, no-changelog, etc.)
-    --help-local     Local codebase options (languages, patterns, skip-*, etc.)
-    --help-pdf       PDF extraction options (ocr, pages, etc.)
-    --help-advanced  Advanced/rare options (no-rate-limit, interactive-*, etc.)
-    --help-all       All 120+ options with compatibility matrix
+Presets (NEW: Use -p shortcut):
+  -p quick              Fast (1-2 min, basic features)
+  -p standard           Balanced (5-10 min, recommended)
+  -p comprehensive      Full (20-60 min, all features)
 
 Common Workflows:
-  Quick exploration (1-2 min):
-    skill-seekers create <source> --preset quick
-
-  Production skill (5-10 min):
-    skill-seekers create <source> --preset standard --enhance-level 2
-
-  Comprehensive analysis (20-60 min):
-    skill-seekers create <source> --preset comprehensive --enhance-level 3
-
-  RAG pipeline ready:
-    skill-seekers create <source> --chunk-for-rag --chunk-size 512
-        """
+  skill-seekers create <source> -p quick
+  skill-seekers create <source> -p standard --enhance-level 2
+  skill-seekers create <source> --chunk-for-rag
+        """)
     )
 
     # Add arguments in default mode (universal only)
