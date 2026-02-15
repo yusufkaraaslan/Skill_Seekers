@@ -5,7 +5,7 @@ Defines preset configurations for the github command.
 Presets:
     quick:          Fast scraping with minimal data
     standard:       Balanced scraping (DEFAULT)
-    full:           Comprehensive scraping with all data
+    comprehensive:  Comprehensive scraping with all data
 """
 
 from dataclasses import dataclass, field
@@ -57,8 +57,8 @@ GITHUB_PRESETS = {
         estimated_time="5-15 minutes"
     ),
     
-    "full": GitHubPreset(
-        name="Full",
+    "comprehensive": GitHubPreset(
+        name="Comprehensive",
         description="Comprehensive scraping with all available data",
         max_issues=500,
         features={

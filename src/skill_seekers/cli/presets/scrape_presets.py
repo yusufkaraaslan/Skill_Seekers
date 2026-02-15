@@ -5,7 +5,7 @@ Defines preset configurations for the scrape command.
 Presets:
     quick:          Fast scraping with minimal depth
     standard:       Balanced scraping (DEFAULT)
-    deep:           Comprehensive scraping with all features
+    comprehensive:  Comprehensive scraping with all features
 """
 
 from dataclasses import dataclass, field
@@ -63,8 +63,8 @@ SCRAPE_PRESETS = {
         estimated_time="10-30 minutes"
     ),
     
-    "deep": ScrapePreset(
-        name="Deep",
+    "comprehensive": ScrapePreset(
+        name="Comprehensive",
         description="Comprehensive scraping with all features",
         rate_limit=1.0,
         features={
