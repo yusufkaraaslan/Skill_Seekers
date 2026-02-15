@@ -703,12 +703,74 @@ def process_markdown_docs(
             if depth == "surface":
                 processed_docs.append(doc_data)
             else:
-                # Deep/Full: extract structure and summary
-                # Use appropriate parser based on file extension
-                if md_path.suffix.lower() in RST_EXTENSIONS:
-                    structure = extract_rst_structure(content)
-                else:
-                    structure = extract_markdown_structure(content)
+                # Deep/Full: extract structure and summary using unified parsers
+                structure = None
+                parsed_doc = None
+
+                try:
+                    from skill_seekers.cli.parsers.extractors import RstParser, MarkdownParser
+
+                    # Use appropriate unified parser based on file extension
+                    if md_path.suffix.lower() in RST_EXTENSIONS:
+                        parser = RstParser()
+                        result = parser.parse_string(content, str(md_path))
+                        if result.success:
+                            parsed_doc = result.document
+                            # Convert to legacy structure format for backward compatibility
+                            structure = {
+                                "title": parsed_doc.title,
+                                "headers": [
+                                    {"level": h.level, "text": h.text, "line": h.source_line}
+                                    for h in parsed_doc.headings
+                                ],
+                                "code_blocks": [
+                                    {"language": cb.language, "code": cb.code[:500]}
+                                    for cb in parsed_doc.code_blocks
+                                ],
+                                "tables": len(parsed_doc.tables),
+                                "cross_refs": len(parsed_doc.internal_links),
+                                "directives": len([b for b in parsed_doc.blocks if b.type.value == "admonition"]),
+                                "word_count": parsed_doc.stats.total_blocks if parsed_doc.stats else 0,
+                                "line_count": len(content.split("\n")),
+                            }
+                    else:
+                        parser = MarkdownParser()
+                        result = parser.parse_string(content, str(md_path))
+                        if result.success:
+                            parsed_doc = result.document
+                            # Convert to legacy structure format
+                            structure = {
+                                "title": parsed_doc.title,
+                                "headers": [
+                                    {"level": h.level, "text": h.text, "line": h.source_line}
+                                    for h in parsed_doc.headings
+                                ],
+                                "code_blocks": [
+                                    {"language": cb.language, "code": cb.code[:500]}
+                                    for cb in parsed_doc.code_blocks
+                                ],
+                                "tables": len(parsed_doc.tables),
+                                "images": len(parsed_doc.images),
+                                "links": len(parsed_doc.external_links),
+                                "word_count": parsed_doc.stats.total_blocks if parsed_doc.stats else 0,
+                                "line_count": len(content.split("\n")),
+                            }
+                except ImportError:
+                    # Fallback to old parsers if unified parsers not available
+                    logger.debug("Unified parsers not available, using legacy parsers")
+                    if md_path.suffix.lower() in RST_EXTENSIONS:
+                        structure = extract_rst_structure(content)
+                    else:
+                        structure = extract_markdown_structure(content)
+
+                # Generate summary
+                if structure is None:
+                    # Fallback if parsing failed
+                    if md_path.suffix.lower() in RST_EXTENSIONS:
+                        structure = extract_rst_structure(content)
+                    else:
+                        structure = extract_markdown_structure(content)
+
                 summary = generate_markdown_summary(content, structure)
 
                 doc_data.update(
@@ -717,8 +779,22 @@ def process_markdown_docs(
                         "structure": structure,
                         "summary": summary,
                         "content": content if depth == "full" else None,
+                        "_enhanced": parsed_doc is not None,  # Mark if enhanced parser was used
                     }
                 )
+
+                # If we have rich parsed data, save it
+                if parsed_doc:
+                    doc_data["parsed_data"] = {
+                        "tables": len(parsed_doc.tables),
+                        "cross_references": len(parsed_doc.internal_links),
+                        "code_blocks": len(parsed_doc.code_blocks),
+                        "images": len(getattr(parsed_doc, 'images', [])),
+                        "quality_scores": {
+                            "avg_code_quality": sum(cb.quality_score or 0 for cb in parsed_doc.code_blocks) / len(parsed_doc.code_blocks) if parsed_doc.code_blocks else 0,
+                        }
+                    }
+
                 processed_docs.append(doc_data)
 
             # Track categories
@@ -769,6 +845,34 @@ def process_markdown_docs(
     index_json = docs_output_dir / "documentation_index.json"
     with open(index_json, "w", encoding="utf-8") as f:
         json.dump(index_data, f, indent=2, default=str)
+
+    # Save extraction summary (tables, cross-refs, etc.)
+    enhanced_count = sum(1 for doc in processed_docs if doc.get("_enhanced", False))
+    if enhanced_count > 0:
+        total_tables = sum(doc.get("parsed_data", {}).get("tables", 0) for doc in processed_docs)
+        total_xrefs = sum(doc.get("parsed_data", {}).get("cross_references", 0) for doc in processed_docs)
+        total_code_blocks = sum(doc.get("parsed_data", {}).get("code_blocks", 0) for doc in processed_docs)
+
+        extraction_summary = {
+            "enhanced_files": enhanced_count,
+            "total_files": len(processed_docs),
+            "extraction_stats": {
+                "tables": total_tables,
+                "cross_references": total_xrefs,
+                "code_blocks": total_code_blocks,
+            },
+            "parser_version": "unified_v1.0.0",
+        }
+
+        summary_json = docs_output_dir / "extraction_summary.json"
+        with open(summary_json, "w", encoding="utf-8") as f:
+            json.dump(extraction_summary, f, indent=2)
+
+        logger.info(f"📊 Extraction Summary:")
+        logger.info(f"   - Enhanced files: {enhanced_count}/{len(processed_docs)}")
+        logger.info(f"   - Tables extracted: {total_tables}")
+        logger.info(f"   - Cross-references: {total_xrefs}")
+        logger.info(f"   - Code blocks: {total_code_blocks}")
 
     logger.info(
         f"✅ Processed {len(processed_docs)} documentation files in {len(categories)} categories"
