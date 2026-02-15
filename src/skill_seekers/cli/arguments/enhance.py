@@ -68,6 +68,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_enhance_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all enhance command arguments to a parser."""
     for arg_name, arg_def in ENHANCE_ARGUMENTS.items():

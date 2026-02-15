@@ -133,6 +133,7 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_github_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all github command arguments to a parser.
 
@@ -153,6 +154,7 @@ def add_github_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
+
 def get_github_argument_names() -> set:
     """Get the set of github argument destination names.
 
@@ -160,6 +162,7 @@ def get_github_argument_names() -> set:
         Set of argument dest names
     """
     return set(GITHUB_ARGUMENTS.keys())
+
 
 def get_github_argument_count() -> int:
     """Get the total number of github arguments.

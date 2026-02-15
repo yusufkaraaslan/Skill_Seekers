@@ -2,6 +2,7 @@
 
 from .base import SubcommandParser
 
+
 class InstallAgentParser(SubcommandParser):
     """Parser for install-agent subcommand."""
 

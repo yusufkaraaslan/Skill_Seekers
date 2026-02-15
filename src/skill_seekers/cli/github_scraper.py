@@ -100,6 +100,7 @@ EXCLUDED_DIRS = {
     ".tmp",
 }
 
+
 def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
     """
     Extract a meaningful description from README content for skill description.
@@ -179,6 +180,7 @@ def extract_description_from_readme(readme_content: str, repo_name: str) -> str:
     # Improved fallback
     project_name = repo_name.split("/")[-1]
     return f"Use when working with {project_name}"
+
 
 class GitHubScraper:
     """
@@ -892,6 +894,7 @@ class GitHubScraper:
 
         logger.info(f"Data saved to: {self.data_file}")
 
+
 class GitHubToSkillConverter:
     """
     Convert extracted GitHub data to Claude skill format (C1.10).
@@ -1347,6 +1350,7 @@ Use this skill when you need to:
             f.write(content)
         logger.info(f"Generated: {structure_path}")
 
+
 def setup_argument_parser() -> argparse.ArgumentParser:
     """Setup and configure command-line argument parser.
 
@@ -1373,6 +1377,7 @@ Examples:
     add_github_arguments(parser)
 
     return parser
+
 
 def main():
     """C1.10: CLI tool entry point."""
@@ -1421,14 +1426,16 @@ def main():
         skill_dir = f"output/{skill_name}"
 
         # Phase 3: Optional enhancement with auto-detected mode
-        if getattr(args, 'enhance_level', 0) > 0:
+        if getattr(args, "enhance_level", 0) > 0:
             import os
 
             # Auto-detect mode based on API key availability
             api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
-            logger.info(f"\n📝 Enhancing SKILL.md with Claude ({mode} mode, level {args.enhance_level})...")
+            logger.info(
+                f"\n📝 Enhancing SKILL.md with Claude ({mode} mode, level {args.enhance_level})..."
+            )
 
             if api_key:
                 # API-based enhancement
@@ -1438,9 +1445,7 @@ def main():
                     enhance_skill_md(skill_dir, api_key)
                     logger.info("✅ API enhancement complete!")
                 except ImportError:
-                    logger.error(
-                        "❌ API enhancement not available. Install: pip install anthropic"
-                    )
+                    logger.error("❌ API enhancement not available. Install: pip install anthropic")
                     logger.info("💡 Falling back to LOCAL mode...")
                     # Fall back to LOCAL mode
                     from pathlib import Path
@@ -1460,7 +1465,7 @@ def main():
 
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
 
-        if getattr(args, 'enhance_level', 0) == 0:
+        if getattr(args, "enhance_level", 0) == 0:
             logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
@@ -1470,6 +1475,7 @@ def main():
     except Exception as e:
         logger.error(f"Error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

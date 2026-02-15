@@ -9,6 +9,7 @@ Includes preset system support (Issue #268).
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.analyze import add_analyze_arguments
 
+
 class AnalyzeParser(SubcommandParser):
     """Parser for analyze subcommand."""
 

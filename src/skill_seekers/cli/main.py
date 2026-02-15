@@ -133,7 +133,7 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
         if key.startswith("_help_"):
             if value:
                 # Convert _help_web -> --help-web
-                help_flag = key.replace('_help_', 'help-')
+                help_flag = key.replace("_help_", "help-")
                 argv.append(f"--{help_flag}")
             continue
 
@@ -181,6 +181,7 @@ def main(argv: list[str] | None = None) -> int:
         argv = sys.argv[1:]
     if len(argv) >= 2 and argv[0] == "analyze" and "--preset-list" in argv:
         from skill_seekers.cli.codebase_scraper import main as analyze_main
+
         original_argv = sys.argv.copy()
         sys.argv = ["codebase_scraper.py", "--preset-list"]
         try:
@@ -274,8 +275,8 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
         sys.argv.extend(["--depth", args.depth])
 
     # Determine enhance_level (simplified - use default or override)
-    enhance_level = getattr(args, 'enhance_level', 2)  # Default is 2
-    if getattr(args, 'quick', False):
+    enhance_level = getattr(args, "enhance_level", 2)  # Default is 2
+    if getattr(args, "quick", False):
         enhance_level = 0  # Quick mode disables enhancement
 
     sys.argv.extend(["--enhance-level", str(enhance_level)])

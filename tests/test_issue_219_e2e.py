@@ -167,7 +167,8 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             "test/test",
             "--name",
             "test",
-            "--enhance-level", "2",
+            "--enhance-level",
+            "2",
         ]
 
         with (

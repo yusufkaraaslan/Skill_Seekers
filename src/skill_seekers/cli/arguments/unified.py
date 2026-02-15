@@ -42,6 +42,7 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_unified_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all unified command arguments to a parser."""
     for arg_name, arg_def in UNIFIED_ARGUMENTS.items():

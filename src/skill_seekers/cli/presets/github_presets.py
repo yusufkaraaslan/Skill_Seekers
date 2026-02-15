@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 
 import argparse
 
+
 @dataclass(frozen=True)
 class GitHubPreset:
     """Definition of a GitHub preset.
@@ -23,11 +24,13 @@ class GitHubPreset:
         features: Dict of feature flags (feature_name -> enabled)
         estimated_time: Human-readable time estimate
     """
+
     name: str
     description: str
     max_issues: int
     features: dict[str, bool] = field(default_factory=dict)
     estimated_time: str = ""
+
 
 # Preset definitions
 GITHUB_PRESETS = {
@@ -40,9 +43,8 @@ GITHUB_PRESETS = {
             "include_changelog": True,
             "include_releases": False,
         },
-        estimated_time="1-3 minutes"
+        estimated_time="1-3 minutes",
     ),
-
     "standard": GitHubPreset(
         name="Standard",
         description="Balanced scraping with issues and releases (recommended)",
@@ -52,9 +54,8 @@ GITHUB_PRESETS = {
             "include_changelog": True,
             "include_releases": True,
         },
-        estimated_time="5-15 minutes"
+        estimated_time="5-15 minutes",
     ),
-
     "comprehensive": GitHubPreset(
         name="Comprehensive",
         description="Comprehensive scraping with all available data",
@@ -64,9 +65,10 @@ GITHUB_PRESETS = {
             "include_changelog": True,
             "include_releases": True,
         },
-        estimated_time="20-60 minutes"
+        estimated_time="20-60 minutes",
     ),
 }
+
 
 def apply_github_preset(args: argparse.Namespace, preset_name: str) -> None:
     """Apply a GitHub preset to the args namespace.
@@ -89,6 +91,7 @@ def apply_github_preset(args: argparse.Namespace, preset_name: str) -> None:
         skip_attr = f"no_{feature}"
         if not hasattr(args, skip_attr) or not getattr(args, skip_attr):
             setattr(args, skip_attr, not enabled)
+
 
 def show_github_preset_list() -> None:
     """Print the list of available GitHub presets to stdout."""

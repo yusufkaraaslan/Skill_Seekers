@@ -7,6 +7,7 @@ consistency with the standalone package_skill module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.package import add_package_arguments
 
+
 class PackageParser(SubcommandParser):
     """Parser for package subcommand."""
 

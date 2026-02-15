@@ -7,6 +7,7 @@ consistency with the standalone doc_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.scrape import add_scrape_arguments
 
+
 class ScrapeParser(SubcommandParser):
     """Parser for scrape subcommand."""
 

@@ -96,6 +96,7 @@ RAG_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add common arguments to a parser.
 
@@ -114,6 +115,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
+
 def get_common_argument_names() -> set:
     """Get the set of common argument destination names.
 
@@ -121,6 +123,7 @@ def get_common_argument_names() -> set:
         Set of argument dest names (e.g., {'config', 'name', 'description', ...})
     """
     return set(COMMON_ARGUMENTS.keys())
+
 
 def add_rag_arguments(parser: argparse.ArgumentParser) -> None:
     """Add RAG (Retrieval-Augmented Generation) arguments to a parser.
@@ -140,6 +143,7 @@ def add_rag_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
+
 def get_rag_argument_names() -> set:
     """Get the set of RAG argument destination names.
 
@@ -147,6 +151,7 @@ def get_rag_argument_names() -> set:
         Set of argument dest names (e.g., {'chunk_for_rag', 'chunk_size', 'chunk_overlap'})
     """
     return set(RAG_ARGUMENTS.keys())
+
 
 def get_argument_help(arg_name: str) -> str:
     """Get the help text for a common argument.

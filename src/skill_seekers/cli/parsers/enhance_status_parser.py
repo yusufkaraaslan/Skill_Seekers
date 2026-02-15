@@ -2,6 +2,7 @@
 
 from .base import SubcommandParser
 
+
 class EnhanceStatusParser(SubcommandParser):
     """Parser for enhance-status subcommand."""
 

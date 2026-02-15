@@ -7,6 +7,7 @@ consistency with the standalone upload_skill module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.upload import add_upload_arguments
 
+
 class UploadParser(SubcommandParser):
     """Parser for upload subcommand."""
 

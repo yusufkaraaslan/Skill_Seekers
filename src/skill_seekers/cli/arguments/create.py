@@ -388,9 +388,11 @@ ADVANCED_ARGUMENTS: dict[str, dict[str, Any]] = {
 # HELPER FUNCTIONS
 # =============================================================================
 
+
 def get_universal_argument_names() -> set[str]:
     """Get set of universal argument names."""
     return set(UNIVERSAL_ARGUMENTS.keys())
+
 
 def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]:
     """Get source-specific arguments for a given source type.
@@ -402,13 +404,14 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         Dict of argument definitions
     """
     source_args = {
-        'web': WEB_ARGUMENTS,
-        'github': GITHUB_ARGUMENTS,
-        'local': LOCAL_ARGUMENTS,
-        'pdf': PDF_ARGUMENTS,
-        'config': {},  # Config files don't have extra args
+        "web": WEB_ARGUMENTS,
+        "github": GITHUB_ARGUMENTS,
+        "local": LOCAL_ARGUMENTS,
+        "pdf": PDF_ARGUMENTS,
+        "config": {},  # Config files don't have extra args
     }
     return source_args.get(source_type, {})
+
 
 def get_compatible_arguments(source_type: str) -> list[str]:
     """Get list of compatible argument names for a source type.
@@ -431,7 +434,8 @@ def get_compatible_arguments(source_type: str) -> list[str]:
 
     return compatible
 
-def add_create_arguments(parser: argparse.ArgumentParser, mode: str = 'default') -> None:
+
+def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default") -> None:
     """Add create command arguments to parser.
 
     Supports multiple help modes for progressive disclosure:
@@ -449,10 +453,10 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = 'default')
     """
     # Positional argument for source
     parser.add_argument(
-        'source',
-        nargs='?',
+        "source",
+        nargs="?",
         type=str,
-        help='Source to create skill from (URL, GitHub repo, directory, PDF, or config file)'
+        help="Source to create skill from (URL, GitHub repo, directory, PDF, or config file)",
     )
 
     # Always add universal arguments
@@ -460,23 +464,23 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = 'default')
         parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     # Add source-specific arguments based on mode
-    if mode in ['web', 'all']:
+    if mode in ["web", "all"]:
         for arg_name, arg_def in WEB_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
-    if mode in ['github', 'all']:
+    if mode in ["github", "all"]:
         for arg_name, arg_def in GITHUB_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
-    if mode in ['local', 'all']:
+    if mode in ["local", "all"]:
         for arg_name, arg_def in LOCAL_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
-    if mode in ['pdf', 'all']:
+    if mode in ["pdf", "all"]:
         for arg_name, arg_def in PDF_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     # Add advanced arguments if requested
-    if mode in ['advanced', 'all']:
+    if mode in ["advanced", "all"]:
         for arg_name, arg_def in ADVANCED_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])

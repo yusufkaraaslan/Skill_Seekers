@@ -2,6 +2,7 @@
 
 from .base import SubcommandParser
 
+
 class StreamParser(SubcommandParser):
     """Parser for stream subcommand."""
 

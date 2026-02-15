@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 import argparse
 
+
 class SubcommandParser(ABC):
     """Base class for subcommand parsers.
 

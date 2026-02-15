@@ -52,6 +52,7 @@ PARSERS = [
     QualityParser(),
 ]
 
+
 def register_parsers(subparsers):
     """Register all subcommand parsers.
 
@@ -64,6 +65,7 @@ def register_parsers(subparsers):
     for parser_instance in PARSERS:
         parser_instance.create_parser(subparsers)
 
+
 def get_parser_names():
     """Get list of all subcommand names.
 
@@ -71,6 +73,7 @@ def get_parser_names():
         List of subcommand names (strings)
     """
     return [p.name for p in PARSERS]
+
 
 __all__ = [
     "SubcommandParser",

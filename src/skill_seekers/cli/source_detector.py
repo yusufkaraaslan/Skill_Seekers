@@ -13,6 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class SourceInfo:
     """Information about a detected source.
@@ -23,18 +24,20 @@ class SourceInfo:
         suggested_name: Auto-suggested name for the skill
         raw_input: Original user input
     """
+
     type: str
     parsed: dict[str, Any]
     suggested_name: str
     raw_input: str
 
+
 class SourceDetector:
     """Detects source type from user input and extracts relevant information."""
 
     # GitHub repo patterns
-    GITHUB_REPO_PATTERN = re.compile(r'^([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)$')
+    GITHUB_REPO_PATTERN = re.compile(r"^([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)$")
     GITHUB_URL_PATTERN = re.compile(
-        r'(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)(?:\.git)?'
+        r"(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)(?:\.git)?"
     )
 
     @classmethod
@@ -51,10 +54,10 @@ class SourceDetector:
             ValueError: If source type cannot be determined
         """
         # 1. File extension detection
-        if source.endswith('.json'):
+        if source.endswith(".json"):
             return cls._detect_config(source)
 
-        if source.endswith('.pdf'):
+        if source.endswith(".pdf"):
             return cls._detect_pdf(source)
 
         # 2. Directory detection
@@ -67,12 +70,12 @@ class SourceDetector:
             return github_info
 
         # 4. URL detection
-        if source.startswith('http://') or source.startswith('https://'):
+        if source.startswith("http://") or source.startswith("https://"):
             return cls._detect_web(source)
 
         # 5. Domain inference (add https://)
-        if '.' in source and not source.startswith('/'):
-            return cls._detect_web(f'https://{source}')
+        if "." in source and not source.startswith("/"):
+            return cls._detect_web(f"https://{source}")
 
         # 6. Error - cannot determine
         raise ValueError(
@@ -90,10 +93,7 @@ class SourceDetector:
         """Detect config file source."""
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
-            type='config',
-            parsed={'config_path': source},
-            suggested_name=name,
-            raw_input=source
+            type="config", parsed={"config_path": source}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -101,10 +101,7 @@ class SourceDetector:
         """Detect PDF file source."""
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
-            type='pdf',
-            parsed={'file_path': source},
-            suggested_name=name,
-            raw_input=source
+            type="pdf", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -115,10 +112,7 @@ class SourceDetector:
         name = os.path.basename(directory)
 
         return SourceInfo(
-            type='local',
-            parsed={'directory': directory},
-            suggested_name=name,
-            raw_input=source
+            type="local", parsed={"directory": directory}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -135,10 +129,10 @@ class SourceDetector:
         if match:
             owner, repo = match.groups()
             return SourceInfo(
-                type='github',
-                parsed={'repo': f'{owner}/{repo}'},
+                type="github",
+                parsed={"repo": f"{owner}/{repo}"},
                 suggested_name=repo,
-                raw_input=source
+                raw_input=source,
             )
 
         # Try GitHub URL pattern
@@ -146,13 +140,13 @@ class SourceDetector:
         if match:
             owner, repo = match.groups()
             # Clean up repo name (remove .git suffix if present)
-            if repo.endswith('.git'):
+            if repo.endswith(".git"):
                 repo = repo[:-4]
             return SourceInfo(
-                type='github',
-                parsed={'repo': f'{owner}/{repo}'},
+                type="github",
+                parsed={"repo": f"{owner}/{repo}"},
                 suggested_name=repo,
-                raw_input=source
+                raw_input=source,
             )
 
         return None
@@ -167,15 +161,10 @@ class SourceDetector:
         # Clean up domain for name suggestion
         # docs.react.dev -> react
         # reactjs.org -> react
-        name = domain.replace('www.', '').replace('docs.', '')
-        name = name.split('.')[0]  # Take first part before TLD
+        name = domain.replace("www.", "").replace("docs.", "")
+        name = name.split(".")[0]  # Take first part before TLD
 
-        return SourceInfo(
-            type='web',
-            parsed={'url': source},
-            suggested_name=name,
-            raw_input=source
-        )
+        return SourceInfo(type="web", parsed={"url": source}, suggested_name=name, raw_input=source)
 
     @classmethod
     def validate_source(cls, source_info: SourceInfo) -> None:
@@ -187,22 +176,22 @@ class SourceDetector:
         Raises:
             ValueError: If source is not accessible
         """
-        if source_info.type == 'local':
-            directory = source_info.parsed['directory']
+        if source_info.type == "local":
+            directory = source_info.parsed["directory"]
             if not os.path.exists(directory):
                 raise ValueError(f"Directory does not exist: {directory}")
             if not os.path.isdir(directory):
                 raise ValueError(f"Path is not a directory: {directory}")
 
-        elif source_info.type == 'pdf':
-            file_path = source_info.parsed['file_path']
+        elif source_info.type == "pdf":
+            file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
                 raise ValueError(f"PDF file does not exist: {file_path}")
             if not os.path.isfile(file_path):
                 raise ValueError(f"Path is not a file: {file_path}")
 
-        elif source_info.type == 'config':
-            config_path = source_info.parsed['config_path']
+        elif source_info.type == "config":
+            config_path = source_info.parsed["config_path"]
             if not os.path.exists(config_path):
                 raise ValueError(f"Config file does not exist: {config_path}")
             if not os.path.isfile(config_path):

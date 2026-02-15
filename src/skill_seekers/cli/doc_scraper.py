@@ -2231,8 +2231,9 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
     import subprocess
 
     # Optional enhancement with auto-detected mode (API or LOCAL)
-    if getattr(args, 'enhance_level', 0) > 0:
+    if getattr(args, "enhance_level", 0) > 0:
         import os
+
         has_api_key = bool(os.environ.get("ANTHROPIC_API_KEY") or args.api_key)
         mode = "API" if has_api_key else "LOCAL"
 
@@ -2246,7 +2247,7 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
 
             if args.api_key:
                 enhance_cmd.extend(["--api-key", args.api_key])
-            if getattr(args, 'interactive_enhancement', False):
+            if getattr(args, "interactive_enhancement", False):
                 enhance_cmd.append("--interactive-enhancement")
 
             result = subprocess.run(enhance_cmd, check=True)
@@ -2256,14 +2257,18 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
             logger.warning("\n⚠ Enhancement failed, but skill was still built")
         except FileNotFoundError:
             logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
-            logger.info("  skill-seekers-enhance output/%s/ --enhance-level %d", config["name"], args.enhance_level)
+            logger.info(
+                "  skill-seekers-enhance output/%s/ --enhance-level %d",
+                config["name"],
+                args.enhance_level,
+            )
 
     # Print packaging instructions
     logger.info("\n📦 Package your skill:")
     logger.info("  skill-seekers-package output/%s/", config["name"])
 
     # Suggest enhancement if not done
-    if getattr(args, 'enhance_level', 0) == 0:
+    if getattr(args, "enhance_level", 0) == 0:
         logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
         logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
         logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 
 import argparse
 
+
 @dataclass(frozen=True)
 class ScrapePreset:
     """Definition of a scrape preset.
@@ -25,6 +26,7 @@ class ScrapePreset:
         workers: Number of parallel workers
         estimated_time: Human-readable time estimate
     """
+
     name: str
     description: str
     rate_limit: float
@@ -32,6 +34,7 @@ class ScrapePreset:
     async_mode: bool = False
     workers: int = 1
     estimated_time: str = ""
+
 
 # Preset definitions
 SCRAPE_PRESETS = {
@@ -45,9 +48,8 @@ SCRAPE_PRESETS = {
         },
         async_mode=True,
         workers=5,
-        estimated_time="2-5 minutes"
+        estimated_time="2-5 minutes",
     ),
-
     "standard": ScrapePreset(
         name="Standard",
         description="Balanced scraping with good coverage (recommended)",
@@ -58,9 +60,8 @@ SCRAPE_PRESETS = {
         },
         async_mode=True,
         workers=3,
-        estimated_time="10-30 minutes"
+        estimated_time="10-30 minutes",
     ),
-
     "comprehensive": ScrapePreset(
         name="Comprehensive",
         description="Comprehensive scraping with all features",
@@ -71,9 +72,10 @@ SCRAPE_PRESETS = {
         },
         async_mode=True,
         workers=2,
-        estimated_time="1-3 hours"
+        estimated_time="1-3 hours",
     ),
 }
+
 
 def apply_scrape_preset(args: argparse.Namespace, preset_name: str) -> None:
     """Apply a scrape preset to the args namespace.
@@ -100,8 +102,11 @@ def apply_scrape_preset(args: argparse.Namespace, preset_name: str) -> None:
 
     # Apply feature flags
     for feature, enabled in preset.features.items():
-        if feature == "rag_chunking" and (not hasattr(args, 'chunk_for_rag') or not args.chunk_for_rag):
+        if feature == "rag_chunking" and (
+            not hasattr(args, "chunk_for_rag") or not args.chunk_for_rag
+        ):
             args.chunk_for_rag = enabled
+
 
 def show_scrape_preset_list() -> None:
     """Print the list of available scrape presets to stdout."""

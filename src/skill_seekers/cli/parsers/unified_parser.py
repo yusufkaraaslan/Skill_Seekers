@@ -7,6 +7,7 @@ consistency with the standalone unified_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.unified import add_unified_arguments
 
+
 class UnifiedParser(SubcommandParser):
     """Parser for unified subcommand."""
 

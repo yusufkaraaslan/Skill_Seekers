@@ -7,6 +7,7 @@ consistency with the standalone github_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.github import add_github_arguments
 
+
 class GitHubParser(SubcommandParser):
     """Parser for github subcommand."""
 

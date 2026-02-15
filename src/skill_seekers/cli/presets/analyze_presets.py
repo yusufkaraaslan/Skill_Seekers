@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 
 import argparse
 
+
 @dataclass(frozen=True)
 class AnalysisPreset:
     """Definition of an analysis preset.
@@ -29,11 +30,13 @@ class AnalysisPreset:
         features: Dict of feature flags (feature_name -> enabled)
         estimated_time: Human-readable time estimate
     """
+
     name: str
     description: str
     depth: str
     features: dict[str, bool] = field(default_factory=dict)
     estimated_time: str = ""
+
 
 # Preset definitions
 ANALYZE_PRESETS = {
@@ -49,9 +52,8 @@ ANALYZE_PRESETS = {
             "how_to_guides": False,
             "config_patterns": False,
         },
-        estimated_time="1-2 minutes"
+        estimated_time="1-2 minutes",
     ),
-
     "standard": AnalysisPreset(
         name="Standard",
         description="Balanced analysis with core features (recommended)",
@@ -64,9 +66,8 @@ ANALYZE_PRESETS = {
             "how_to_guides": False,
             "config_patterns": True,
         },
-        estimated_time="5-10 minutes"
+        estimated_time="5-10 minutes",
     ),
-
     "comprehensive": AnalysisPreset(
         name="Comprehensive",
         description="Full analysis with all features",
@@ -79,9 +80,10 @@ ANALYZE_PRESETS = {
             "how_to_guides": True,
             "config_patterns": True,
         },
-        estimated_time="20-60 minutes"
+        estimated_time="20-60 minutes",
     ),
 }
+
 
 def apply_analyze_preset(args: argparse.Namespace, preset_name: str) -> None:
     """Apply an analysis preset to the args namespace.
@@ -113,6 +115,7 @@ def apply_analyze_preset(args: argparse.Namespace, preset_name: str) -> None:
         skip_attr = f"skip_{feature}"
         setattr(args, skip_attr, not enabled)
 
+
 def get_preset_help_text(preset_name: str) -> str:
     """Get formatted help text for a preset.
 
@@ -128,6 +131,7 @@ def get_preset_help_text(preset_name: str) -> str:
         f"  Time: {preset.estimated_time}\n"
         f"  Depth: {preset.depth}"
     )
+
 
 def show_preset_list() -> None:
     """Print the list of available presets to stdout.
@@ -161,6 +165,7 @@ def show_preset_list() -> None:
     print("  skill-seekers analyze --directory <dir> --preset comprehensive --enhance-level 2")
     print()
 
+
 def resolve_enhance_level(args: argparse.Namespace) -> int:
     """Determine the enhance level based on user arguments.
 
@@ -185,6 +190,7 @@ def resolve_enhance_level(args: argparse.Namespace) -> int:
 
     # Default is no enhancement
     return 0
+
 
 def apply_preset_with_warnings(args: argparse.Namespace) -> str:
     """Apply preset with deprecation warnings for legacy flags.
@@ -239,6 +245,7 @@ def apply_preset_with_warnings(args: argparse.Namespace) -> str:
     args.enhance_level = resolve_enhance_level(args)
 
     return preset_name
+
 
 def print_deprecation_warning(old_flag: str, new_flag: str) -> None:
     """Print a deprecation warning for legacy flags.

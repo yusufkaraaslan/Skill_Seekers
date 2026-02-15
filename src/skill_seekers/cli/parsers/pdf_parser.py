@@ -7,6 +7,7 @@ consistency with the standalone pdf_scraper module.
 from .base import SubcommandParser
 from skill_seekers.cli.arguments.pdf import add_pdf_arguments
 
+
 class PDFParser(SubcommandParser):
     """Parser for pdf subcommand."""
 

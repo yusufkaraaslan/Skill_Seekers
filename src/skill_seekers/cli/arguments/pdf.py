@@ -51,6 +51,7 @@ PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_pdf_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all pdf command arguments to a parser."""
     for arg_name, arg_def in PDF_ARGUMENTS.items():

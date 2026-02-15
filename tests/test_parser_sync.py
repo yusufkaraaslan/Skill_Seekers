@@ -7,6 +7,7 @@ the same arguments as the standalone scraper modules. This prevents the
 
 import argparse
 
+
 class TestScrapeParserSync:
     """Ensure scrape_parser has all arguments from doc_scraper."""
 
@@ -17,12 +18,12 @@ class TestScrapeParserSync:
 
         # Get source arguments from doc_scraper
         source_parser = setup_argument_parser()
-        source_count = len([a for a in source_parser._actions if a.dest != 'help'])
+        source_count = len([a for a in source_parser._actions if a.dest != "help"])
 
         # Get target arguments from unified CLI parser
         target_parser = argparse.ArgumentParser()
         ScrapeParser().add_arguments(target_parser)
-        target_count = len([a for a in target_parser._actions if a.dest != 'help'])
+        target_count = len([a for a in target_parser._actions if a.dest != "help"])
 
         assert source_count == target_count, (
             f"Argument count mismatch: doc_scraper has {source_count}, "
@@ -36,12 +37,12 @@ class TestScrapeParserSync:
 
         # Get source arguments from doc_scraper
         source_parser = setup_argument_parser()
-        source_dests = {a.dest for a in source_parser._actions if a.dest != 'help'}
+        source_dests = {a.dest for a in source_parser._actions if a.dest != "help"}
 
         # Get target arguments from unified CLI parser
         target_parser = argparse.ArgumentParser()
         ScrapeParser().add_arguments(target_parser)
-        target_dests = {a.dest for a in target_parser._actions if a.dest != 'help'}
+        target_dests = {a.dest for a in target_parser._actions if a.dest != "help"}
 
         # Check for missing arguments
         missing = source_dests - target_dests
@@ -64,26 +65,27 @@ class TestScrapeParserSync:
                 break
 
         assert subparsers_action is not None, "No subparsers found"
-        assert 'scrape' in subparsers_action.choices, "scrape subparser not found"
+        assert "scrape" in subparsers_action.choices, "scrape subparser not found"
 
-        scrape_parser = subparsers_action.choices['scrape']
-        arg_dests = {a.dest for a in scrape_parser._actions if a.dest != 'help'}
+        scrape_parser = subparsers_action.choices["scrape"]
+        arg_dests = {a.dest for a in scrape_parser._actions if a.dest != "help"}
 
         # Check key arguments that were missing in Issue #285
         required_args = [
-            'interactive',
-            'url',
-            'verbose',
-            'quiet',
-            'resume',
-            'fresh',
-            'rate_limit',
-            'no_rate_limit',
-            'chunk_for_rag',
+            "interactive",
+            "url",
+            "verbose",
+            "quiet",
+            "resume",
+            "fresh",
+            "rate_limit",
+            "no_rate_limit",
+            "chunk_for_rag",
         ]
 
         for arg in required_args:
             assert arg in arg_dests, f"Required argument '{arg}' missing from scrape parser"
+
 
 class TestGitHubParserSync:
     """Ensure github_parser has all arguments from github_scraper."""
@@ -95,12 +97,12 @@ class TestGitHubParserSync:
 
         # Get source arguments from github_scraper
         source_parser = setup_argument_parser()
-        source_count = len([a for a in source_parser._actions if a.dest != 'help'])
+        source_count = len([a for a in source_parser._actions if a.dest != "help"])
 
         # Get target arguments from unified CLI parser
         target_parser = argparse.ArgumentParser()
         GitHubParser().add_arguments(target_parser)
-        target_count = len([a for a in target_parser._actions if a.dest != 'help'])
+        target_count = len([a for a in target_parser._actions if a.dest != "help"])
 
         assert source_count == target_count, (
             f"Argument count mismatch: github_scraper has {source_count}, "
@@ -114,12 +116,12 @@ class TestGitHubParserSync:
 
         # Get source arguments from github_scraper
         source_parser = setup_argument_parser()
-        source_dests = {a.dest for a in source_parser._actions if a.dest != 'help'}
+        source_dests = {a.dest for a in source_parser._actions if a.dest != "help"}
 
         # Get target arguments from unified CLI parser
         target_parser = argparse.ArgumentParser()
         GitHubParser().add_arguments(target_parser)
-        target_dests = {a.dest for a in target_parser._actions if a.dest != 'help'}
+        target_dests = {a.dest for a in target_parser._actions if a.dest != "help"}
 
         # Check for missing arguments
         missing = source_dests - target_dests
@@ -127,6 +129,7 @@ class TestGitHubParserSync:
 
         assert not missing, f"github_parser missing arguments: {missing}"
         assert not extra, f"github_parser has extra arguments not in github_scraper: {extra}"
+
 
 class TestUnifiedCLI:
     """Test the unified CLI main parser."""
@@ -154,7 +157,7 @@ class TestUnifiedCLI:
         assert subparsers_action is not None, "No subparsers found"
 
         # Check expected subcommands
-        expected_commands = ['scrape', 'github']
+        expected_commands = ["scrape", "github"]
         for cmd in expected_commands:
             assert cmd in subparsers_action.choices, f"Subcommand '{cmd}' not found"
 
@@ -166,7 +169,7 @@ class TestUnifiedCLI:
 
         # This should not raise an exception
         try:
-            parser.parse_args(['scrape', '--help'])
+            parser.parse_args(["scrape", "--help"])
         except SystemExit as e:
             # --help causes SystemExit(0) which is expected
             assert e.code == 0
@@ -179,7 +182,7 @@ class TestUnifiedCLI:
 
         # This should not raise an exception
         try:
-            parser.parse_args(['github', '--help'])
+            parser.parse_args(["github", "--help"])
         except SystemExit as e:
             # --help causes SystemExit(0) which is expected
             assert e.code == 0

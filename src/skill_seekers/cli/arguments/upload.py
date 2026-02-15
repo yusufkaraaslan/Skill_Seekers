@@ -98,6 +98,7 @@ UPLOAD_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+
 def add_upload_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all upload command arguments to a parser."""
     for arg_name, arg_def in UPLOAD_ARGUMENTS.items():
