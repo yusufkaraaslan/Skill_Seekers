@@ -68,13 +68,15 @@ mypy src/skill_seekers  # Type check
 
 **Common workflows:**
 ```bash
-# Documentation scraping
+# NEW unified create command (auto-detects source type)
+skill-seekers create https://docs.react.dev/ -p quick
+skill-seekers create facebook/react -p standard
+skill-seekers create ./my-project -p comprehensive
+skill-seekers create tutorial.pdf
+
+# Legacy commands (still supported)
 skill-seekers scrape --config configs/react.json
-
-# GitHub analysis
 skill-seekers github --repo facebook/react
-
-# Local codebase analysis
 skill-seekers analyze --directory . --comprehensive
 
 # Package for LLM platforms
@@ -288,8 +290,9 @@ pytest tests/test_mcp_fastmcp.py -v
 **Test Architecture:**
 - 46 test files covering all features
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.13
-- **1,852 tests passing** (up from 700+ in v2.x)
+- **1,765 tests passing** (current), up from 700+ in v2.x, growing to 1,852+ in v3.1.0
 - Must run `pip install -e .` before tests (src/ layout requirement)
+- Tests include create command integration tests, CLI refactor E2E tests
 
 ### Building & Publishing
 
@@ -391,9 +394,45 @@ The unified CLI modifies `sys.argv` and calls existing `main()` functions to mai
 # Transforms to: doc_scraper.main() with modified sys.argv
 ```
 
-**Subcommands:** scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
+**Subcommands:** create, scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
+
+### NEW: Unified `create` Command
+
+**The recommended way to create skills** - Auto-detects source type and provides progressive help disclosure:
+
+```bash
+# Auto-detection examples
+skill-seekers create https://docs.react.dev/         # → Web scraping
+skill-seekers create facebook/react                  # → GitHub analysis
+skill-seekers create ./my-project                    # → Local codebase
+skill-seekers create tutorial.pdf                    # → PDF extraction
+skill-seekers create configs/react.json              # → Multi-source
+
+# Progressive help system
+skill-seekers create --help           # Shows universal args only (13 flags)
+skill-seekers create --help-web       # Shows web-specific options
+skill-seekers create --help-github    # Shows GitHub-specific options
+skill-seekers create --help-local     # Shows local analysis options
+skill-seekers create --help-pdf       # Shows PDF extraction options
+skill-seekers create --help-advanced  # Shows advanced/rare options
+skill-seekers create --help-all       # Shows all 120+ flags
+
+# Universal flags work for ALL sources
+skill-seekers create <source> -p quick                    # Preset (-p shortcut)
+skill-seekers create <source> --enhance-level 2           # AI enhancement (0-3)
+skill-seekers create <source> --chunk-for-rag             # RAG chunking
+skill-seekers create <source> --dry-run                   # Preview
+```
+
+**Key improvements:**
+- **Single command** replaces scrape/github/analyze for most use cases
+- **Smart detection** - No need to specify source type
+- **Progressive disclosure** - Default help shows 13 flags, detailed help available
+- **-p shortcut** - Quick preset selection (`-p quick|standard|comprehensive`)
+- **Universal features** - RAG chunking, dry-run, presets work everywhere
 
 **Recent Additions:**
+- `create` - **NEW:** Unified command with auto-detection and progressive help
 - `codebase` - Local codebase analysis without GitHub API (C2.x + C3.x features)
 - `enhance-status` - Monitor background/daemon enhancement processes
 - `patterns` - Detect design patterns in code (C3.1)
@@ -761,9 +800,10 @@ pip install -e .
 ### Never Skip Tests
 
 Per user instructions in `~/.claude/CLAUDE.md`:
-- "never skipp any test. always make sure all test pass"
-- All 1,852 tests must pass before commits
+- "never skip any test. always make sure all test pass"
+- All 1,765+ tests must pass before commits (1,852+ in upcoming v3.1.0)
 - Run full test suite: `pytest tests/ -v`
+- New tests added for create command and CLI refactor work
 
 ### Platform-Specific Dependencies
 
@@ -812,25 +852,49 @@ AI enhancement transforms basic skills (2-3/10) into production-ready skills (8-
 - Status monitoring: `skill-seekers enhance-status output/react/ --watch`
 - Timeout configuration: `--timeout 300` (seconds)
 
-**Force Mode** (default ON since v2.5.2):
-- Skip all confirmations automatically
-- Perfect for CI/CD, batch processing
-- Use `--no-force` to enable prompts if needed
+### Enhancement Flag Consolidation (Phase 1)
 
+**IMPORTANT CHANGE:** Three enhancement flags have been unified into a single granular control:
+
+**Old flags (deprecated):**
+- `--enhance` - Enable AI enhancement
+- `--enhance-local` - Use LOCAL mode (Claude Code)
+- `--api-key KEY` - Anthropic API key
+
+**New unified flag:**
+- `--enhance-level LEVEL` - Granular AI enhancement control (0-3, default: 2)
+  - `0` - Disabled, no AI enhancement
+  - `1` - SKILL.md only (core documentation)
+  - `2` - + Architecture + Config + Docs (default, balanced)
+  - `3` - Full enhancement (all features, comprehensive)
+
+**Auto-detection:** Mode (API vs LOCAL) is auto-detected:
+- If `ANTHROPIC_API_KEY` is set → API mode
+- Otherwise → LOCAL mode (Claude Code Max)
+
+**Examples:**
 ```bash
-# API mode (if ANTHROPIC_API_KEY is set)
-skill-seekers enhance output/react/
+# Auto-detect mode, default enhancement level (2)
+skill-seekers create https://docs.react.dev/
 
-# LOCAL mode (no API key needed)
-skill-seekers enhance output/react/ --mode LOCAL
+# Disable enhancement
+skill-seekers create facebook/react --enhance-level 0
+
+# SKILL.md only (fast)
+skill-seekers create ./my-project --enhance-level 1
+
+# Full enhancement (comprehensive)
+skill-seekers create tutorial.pdf --enhance-level 3
+
+# Force LOCAL mode with specific level
+skill-seekers enhance output/react/ --mode LOCAL --enhance-level 2
 
 # Background with status monitoring
 skill-seekers enhance output/react/ --background
 skill-seekers enhance-status output/react/ --watch
-
-# Force mode OFF (enable prompts)
-skill-seekers enhance output/react/ --no-force
 ```
+
+**Migration:** Old flags still work with deprecation warnings, will be removed in v4.0.0.
 
 See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
 
@@ -993,6 +1057,33 @@ skill-seekers github --repo owner/repo --profile work
 # Test all configured tokens
 skill-seekers config --test
 ```
+
+### 8. Confused About Command Options
+**Problem:** "Too many flags!" or "Which flags work with which sources?"
+
+**Solution:** Use the progressive disclosure help system in the `create` command:
+```bash
+# Start with universal options (13 flags)
+skill-seekers create --help
+
+# Need web scraping options?
+skill-seekers create --help-web
+
+# GitHub-specific flags?
+skill-seekers create --help-github
+
+# See ALL options (120+ flags)?
+skill-seekers create --help-all
+
+# Quick preset shortcut
+skill-seekers create <source> -p quick
+skill-seekers create <source> -p standard
+skill-seekers create <source> -p comprehensive
+```
+
+**Why:** The create command shows only relevant flags by default to reduce cognitive load.
+
+**Legacy commands** (scrape, github, analyze) show all flags in one help screen - use them if you prefer that style.
 
 ## 🔌 MCP Integration
 
@@ -1592,6 +1683,51 @@ This section helps you quickly locate the right files when implementing common c
 
 **Always add tests when modifying core logic!**
 
+### Modifying the Unified Create Command
+
+**The create command uses a modular argument system:**
+
+**Files involved:**
+1. **Parser:** `src/skill_seekers/cli/parsers/create_parser.py`
+   - Defines help text and formatter
+   - Registers help mode flags (`--help-web`, `--help-github`, etc.)
+   - Uses custom `NoWrapFormatter` for better help display
+
+2. **Arguments:** `src/skill_seekers/cli/arguments/create.py`
+   - Three tiers of arguments:
+     - `UNIVERSAL_ARGUMENTS` (13 flags) - Work for all sources
+     - Source-specific dicts (`WEB_ARGUMENTS`, `GITHUB_ARGUMENTS`, etc.)
+     - `ADVANCED_ARGUMENTS` - Rare/advanced options
+   - `add_create_arguments(parser, mode)` - Multi-mode argument addition
+
+3. **Source Detection:** `src/skill_seekers/cli/source_detector.py` (if implemented)
+   - Auto-detect source type from input
+   - Pattern matching (URLs, GitHub repos, file extensions)
+
+4. **Main Logic:** `src/skill_seekers/cli/create_command.py` (if implemented)
+   - Route to appropriate scraper based on detected type
+   - Argument validation and compatibility checking
+
+**When adding new arguments:**
+- Universal args → `UNIVERSAL_ARGUMENTS` in `arguments/create.py`
+- Source-specific → Appropriate dict (`WEB_ARGUMENTS`, etc.)
+- Always update help text and add tests
+
+**Example: Adding a new universal flag:**
+```python
+# In arguments/create.py
+UNIVERSAL_ARGUMENTS = {
+    # ... existing args ...
+    "my_flag": {
+        "flags": ("--my-flag", "-m"),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Description of my flag",
+        },
+    },
+}
+```
+
 ### Adding MCP Tools
 
 **Files to modify:**
@@ -1774,16 +1910,18 @@ This section helps you quickly locate the right files when implementing common c
 
 ## 🎯 Project-Specific Best Practices
 
-1. **Always use platform adaptors** - Never hardcode platform-specific logic
-2. **Test all platforms** - Changes must work for all 16 platforms (was 4 in v2.x)
-3. **Maintain backward compatibility** - Legacy configs and v2.x workflows must still work
-4. **Document API changes** - Update CHANGELOG.md for every release
-5. **Keep dependencies optional** - Platform-specific deps are optional (RAG, cloud, etc.)
-6. **Use src/ layout** - Proper package structure with `pip install -e .`
-7. **Run tests before commits** - Per user instructions, never skip tests (1,852 tests must pass)
-8. **RAG-first mindset** - v3.0.0 is the universal preprocessor for AI systems
-9. **Export format clarity** - Use `--format` for RAG/vector DBs, `--target` for LLM platforms
-10. **Test with real integrations** - Verify exports work with actual LangChain, ChromaDB, etc.
+1. **Prefer the unified `create` command** - Use `skill-seekers create <source>` over legacy commands for consistency
+2. **Always use platform adaptors** - Never hardcode platform-specific logic
+3. **Test all platforms** - Changes must work for all 16 platforms (was 4 in v2.x)
+4. **Maintain backward compatibility** - Legacy commands (scrape, github, analyze) must still work
+5. **Document API changes** - Update CHANGELOG.md for every release
+6. **Keep dependencies optional** - Platform-specific deps are optional (RAG, cloud, etc.)
+7. **Use src/ layout** - Proper package structure with `pip install -e .`
+8. **Run tests before commits** - Per user instructions, never skip tests (1,765+ tests must pass)
+9. **RAG-first mindset** - v3.0.0 is the universal preprocessor for AI systems
+10. **Export format clarity** - Use `--format` for RAG/vector DBs, `--target` for LLM platforms
+11. **Test with real integrations** - Verify exports work with actual LangChain, ChromaDB, etc.
+12. **Progressive disclosure** - When adding flags, categorize as universal/source-specific/advanced
 
 ## 🐛 Debugging Tips
 
@@ -2042,6 +2180,15 @@ The `scripts/` directory contains utility scripts:
 | Packaging | 5-10 sec | Final .zip creation |
 
 ## 🎉 Recent Achievements
+
+**v3.1.0 (In Development) - "Unified CLI & Developer Experience":**
+- 🎯 **Unified `create` Command** - Auto-detects source type (web/GitHub/local/PDF/config)
+- 📋 **Progressive Disclosure Help** - Default shows 13 universal flags, detailed help available per source
+- ⚡ **-p Shortcut** - Quick preset selection (`-p quick|standard|comprehensive`)
+- 🔧 **Enhancement Flag Consolidation** - `--enhance-level` (0-3) replaces 3 separate flags
+- 🎨 **Smart Source Detection** - No need to specify whether input is URL, repo, or directory
+- ✅ **1,765 Tests Passing** - All CLI refactor work verified
+- 📚 **Improved Documentation** - CLAUDE.md enhanced with CLI refactor details
 
 **v3.0.0 (February 10, 2026) - "Universal Intelligence Platform":**
 - 🚀 **16 Platform Adaptors** - RAG frameworks (LangChain, LlamaIndex, Haystack), vector DBs (Chroma, FAISS, Weaviate, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), LLM platforms (Claude, Gemini, OpenAI)

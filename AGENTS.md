@@ -12,7 +12,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 | Attribute | Value |
 |-----------|-------|
-| **Current Version** | 2.9.0 |
+| **Current Version** | 3.0.0 |
 | **Python Version** | 3.10+ (tested on 3.10, 3.11, 3.12, 3.13) |
 | **License** | MIT |
 | **Package Name** | `skill-seekers` (PyPI) |
@@ -76,7 +76,10 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   │   ├── gcs_storage.py      # Google Cloud Storage
 │   │   │   └── azure_storage.py    # Azure Blob Storage
 │   │   ├── parsers/                # CLI argument parsers
+│   │   ├── arguments/              # CLI argument definitions
+│   │   ├── presets/                # Preset configuration management
 │   │   ├── main.py                 # Unified CLI entry point
+│   │   ├── create_command.py       # NEW: Unified create command
 │   │   ├── doc_scraper.py          # Documentation scraper
 │   │   ├── github_scraper.py       # GitHub repository scraper
 │   │   ├── pdf_scraper.py          # PDF extraction
@@ -105,7 +108,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │       └── vector_db_tools.py  # Vector database tools
 │   ├── sync/                       # Sync monitoring module
 │   │   ├── detector.py             # Change detection
-│   │   ├── models.py               # Data models
+│   │   ├── models.py               # Data models (Pydantic)
 │   │   ├── monitor.py              # Monitoring logic
 │   │   └── notifier.py             # Notification system
 │   ├── benchmark/                  # Benchmarking framework
@@ -117,9 +120,9 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── generator.py            # Embedding generation
 │   │   ├── cache.py                # Embedding cache
 │   │   └── models.py               # Embedding models
-│   ├── _version.py                 # Version information
+│   ├── _version.py                 # Version information (reads from pyproject.toml)
 │   └── __init__.py                 # Package init
-├── tests/                          # Test suite (89 test files)
+├── tests/                          # Test suite (94 test files)
 ├── configs/                        # Preset configuration files
 ├── docs/                           # Documentation (80+ markdown files)
 │   ├── integrations/               # Platform integration guides
@@ -254,7 +257,7 @@ pytest tests/ -v -m "not slow and not integration"
 
 ### Test Architecture
 
-- **89 test files** covering all features
+- **94 test files** covering all features
 - **1200+ tests** passing
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.12
 - Test markers defined in `pyproject.toml`:
@@ -383,6 +386,7 @@ The CLI uses subcommands that delegate to existing modules:
 ```
 
 **Available subcommands:**
+- `create` - NEW: Unified create command
 - `config` - Configuration wizard
 - `scrape` - Documentation scraping
 - `github` - GitHub repository scraping
@@ -401,6 +405,8 @@ The CLI uses subcommands that delegate to existing modules:
 - `update` - Incremental updates
 - `multilang` - Multi-language support
 - `quality` - Quality metrics
+- `resume` - Resume interrupted jobs
+- `estimate` - Estimate page counts
 
 ### MCP Server Architecture
 
@@ -428,10 +434,18 @@ python -m skill_seekers.mcp.server_fastmcp --http --port 8765
 ### Cloud Storage Architecture
 
 Abstract base class pattern for cloud providers:
-- `base_storage.py` - Defines `CloudStorage` interface
+- `base_storage.py` - Defines `BaseStorageAdaptor` interface
 - `s3_storage.py` - AWS S3 implementation
 - `gcs_storage.py` - Google Cloud Storage implementation
 - `azure_storage.py` - Azure Blob Storage implementation
+
+### Sync Monitoring Architecture
+
+Pydantic-based models in `src/skill_seekers/sync/`:
+- `models.py` - Data models (SyncConfig, ChangeReport, SyncState)
+- `detector.py` - Change detection logic
+- `monitor.py` - Monitoring daemon
+- `notifier.py` - Notification system (webhook, email, slack)
 
 ---
 
@@ -564,7 +578,8 @@ export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
    skill-seekers-my-command = "skill_seekers.cli.my_command:main"
    ```
 4. Add subcommand handler in `src/skill_seekers/cli/main.py`
-5. Add tests in `tests/test_my_command.py`
+5. Add argument parser in `src/skill_seekers/cli/parsers/`
+6. Add tests in `tests/test_my_command.py`
 
 ### Adding a New Platform Adaptor
 
@@ -584,8 +599,8 @@ export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
 ### Adding Cloud Storage Provider
 
 1. Create module in `src/skill_seekers/cli/storage/my_storage.py`
-2. Inherit from `CloudStorage` base class
-3. Implement required methods: `upload()`, `download()`, `list()`, `delete()`
+2. Inherit from `BaseStorageAdaptor` base class
+3. Implement required methods: `upload_file()`, `download_file()`, `list_files()`, `delete_file()`
 4. Register in `src/skill_seekers/cli/storage/__init__.py`
 5. Add optional dependencies in `pyproject.toml`
 
@@ -672,6 +687,12 @@ Preset configs are in `configs/` directory:
 | `coverage` | >=7.11.0 | Coverage reporting |
 | `ruff` | >=0.14.13 | Linting/formatting |
 | `mypy` | >=1.19.1 | Type checking |
+| `psutil` | >=5.9.0 | Process utilities for testing |
+| `numpy` | >=1.24.0 | Numerical operations |
+| `starlette` | >=0.31.0 | HTTP transport testing |
+| `boto3` | >=1.26.0 | AWS S3 testing |
+| `google-cloud-storage` | >=2.10.0 | GCS testing |
+| `azure-storage-blob` | >=12.17.0 | Azure testing |
 
 ---
 
@@ -732,6 +753,21 @@ Preset configs are in `configs/` directory:
 
 ---
 
+## Version Management
+
+The version is defined in `pyproject.toml` and dynamically read by `src/skill_seekers/_version.py`:
+
+```python
+# _version.py reads from pyproject.toml
+__version__ = get_version()  # Returns version from pyproject.toml
+```
+
+**To update version:**
+1. Edit `version` in `pyproject.toml`
+2. The `_version.py` file will automatically pick up the new version
+
+---
+
 *This document is maintained for AI coding agents. For human contributors, see README.md and CONTRIBUTING.md.*
 
-*Last updated: 2026-02-08*
+*Last updated: 2026-02-15*
