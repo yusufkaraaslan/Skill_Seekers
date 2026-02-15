@@ -438,19 +438,19 @@ Common Workflows:
     # Add arguments in default mode (universal only)
     add_create_arguments(parser, mode='default')
 
-    # Add hidden help mode flags
-    parser.add_argument('--help-web', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--help-github', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--help-local', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--help-pdf', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--help-advanced', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--help-all', action='store_true', help=argparse.SUPPRESS)
+    # Add hidden help mode flags (use underscore prefix to match CreateParser)
+    parser.add_argument('--help-web', action='store_true', help=argparse.SUPPRESS, dest='_help_web')
+    parser.add_argument('--help-github', action='store_true', help=argparse.SUPPRESS, dest='_help_github')
+    parser.add_argument('--help-local', action='store_true', help=argparse.SUPPRESS, dest='_help_local')
+    parser.add_argument('--help-pdf', action='store_true', help=argparse.SUPPRESS, dest='_help_pdf')
+    parser.add_argument('--help-advanced', action='store_true', help=argparse.SUPPRESS, dest='_help_advanced')
+    parser.add_argument('--help-all', action='store_true', help=argparse.SUPPRESS, dest='_help_all')
 
     # Parse arguments
     args = parser.parse_args()
 
     # Handle source-specific help modes
-    if args.help_web:
+    if args._help_web:
         # Recreate parser with web-specific arguments
         parser_web = argparse.ArgumentParser(
             prog='skill-seekers create',
@@ -460,7 +460,7 @@ Common Workflows:
         add_create_arguments(parser_web, mode='web')
         parser_web.print_help()
         return 0
-    elif args.help_github:
+    elif args._help_github:
         parser_github = argparse.ArgumentParser(
             prog='skill-seekers create',
             description='Create skill from GitHub repository',
@@ -469,7 +469,7 @@ Common Workflows:
         add_create_arguments(parser_github, mode='github')
         parser_github.print_help()
         return 0
-    elif args.help_local:
+    elif args._help_local:
         parser_local = argparse.ArgumentParser(
             prog='skill-seekers create',
             description='Create skill from local codebase',
@@ -478,7 +478,7 @@ Common Workflows:
         add_create_arguments(parser_local, mode='local')
         parser_local.print_help()
         return 0
-    elif args.help_pdf:
+    elif args._help_pdf:
         parser_pdf = argparse.ArgumentParser(
             prog='skill-seekers create',
             description='Create skill from PDF file',
@@ -487,7 +487,7 @@ Common Workflows:
         add_create_arguments(parser_pdf, mode='pdf')
         parser_pdf.print_help()
         return 0
-    elif args.help_advanced:
+    elif args._help_advanced:
         parser_advanced = argparse.ArgumentParser(
             prog='skill-seekers create',
             description='Create skill - advanced options',
@@ -496,7 +496,7 @@ Common Workflows:
         add_create_arguments(parser_advanced, mode='advanced')
         parser_advanced.print_help()
         return 0
-    elif args.help_all:
+    elif args._help_all:
         parser_all = argparse.ArgumentParser(
             prog='skill-seekers create',
             description='Create skill - all options',

@@ -128,6 +128,15 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
         if key == "command":
             continue
 
+        # Handle internal/progressive help flags for create command
+        # Convert _help_web to --help-web etc.
+        if key.startswith("_help_"):
+            if value:
+                # Convert _help_web -> --help-web
+                help_flag = key.replace('_help_', 'help-')
+                argv.append(f"--{help_flag}")
+            continue
+
         # Handle positional arguments (no -- prefix)
         if key in [
             "url",
