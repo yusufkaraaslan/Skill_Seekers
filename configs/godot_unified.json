@@ -32,7 +32,7 @@
       "name": "source_code",
       "description": "Godot Engine C++ source code + GDScript core",
       "weight": 0.6,
-      "languages": ["cpp", "gdscript", "python", "glsl"],
+      "languages": ["C++", "GDScript", "Python", "GodotShader"],
       "skip_patterns": [
         ".git/",
         "thirdparty/",
