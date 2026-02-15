@@ -73,10 +73,11 @@ class UnifiedScraper:
             "documentation": [],  # List of doc sources
             "github": [],  # List of github sources
             "pdf": [],  # List of pdf sources
+            "local": [],  # List of local sources (docs or code)
         }
 
         # Track source index for unique naming (multi-source support)
-        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0}
+        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "local": 0}
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
@@ -150,6 +151,8 @@ class UnifiedScraper:
                     self._scrape_github(source)
                 elif source_type == "pdf":
                     self._scrape_pdf(source)
+                elif source_type == "local":
+                    self._scrape_local(source)
                 else:
                     logger.warning(f"Unknown source type: {source_type}")
             except Exception as e:
@@ -510,6 +513,140 @@ class UnifiedScraper:
             logger.warning(f"⚠️  Failed to build standalone PDF SKILL.md: {e}")
 
         logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
+
+    def _scrape_local(self, source: dict[str, Any]):
+        """
+        Scrape local directory (documentation files or source code).
+
+        Handles both:
+        - Local documentation files (RST, Markdown, etc.)
+        - Local source code for C3.x analysis
+        """
+        try:
+            from skill_seekers.cli.codebase_scraper import analyze_codebase
+        except ImportError:
+            logger.error("codebase_scraper.py not found")
+            return
+
+        # Multi-source support: Get unique index for this local source
+        idx = self._source_counters.get("local", 0)
+        self._source_counters["local"] = idx + 1
+
+        # Extract path and create identifier
+        local_path = source["path"]
+        path_id = os.path.basename(local_path.rstrip("/"))
+        source_name = source.get("name", path_id)
+
+        logger.info(f"Analyzing local directory: {local_path}")
+
+        # Create temp output dir for local source analysis
+        temp_output = Path(self.data_dir) / f"local_analysis_{idx}_{path_id}"
+        temp_output.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Map source config to analyze_codebase parameters
+            analysis_depth = source.get("analysis_depth", "deep")
+            languages = source.get("languages")
+            file_patterns = source.get("file_patterns")
+            # Note: skip_patterns is not supported by analyze_codebase()
+            # It's a config validator field but not used in codebase analysis
+
+            # Map feature flags (default all ON for unified configs)
+            build_api_reference = source.get("api_reference", True)
+            build_dependency_graph = source.get("dependency_graph", True)
+            detect_patterns = source.get("extract_patterns", True)
+            extract_test_examples = source.get("extract_tests", True)
+            build_how_to_guides = source.get("how_to_guides", True)
+            extract_config_patterns = source.get("extract_config", True)
+            extract_docs = source.get("extract_docs", True)
+            # Note: Signal flow analysis is automatic for Godot projects (C3.10)
+
+            # AI enhancement settings
+            enhance_level = source.get("enhance_level", 0)
+
+            # Run codebase analysis
+            logger.info(f"   Analysis depth: {analysis_depth}")
+            if languages:
+                logger.info(f"   Languages: {', '.join(languages)}")
+            if file_patterns:
+                logger.info(f"   File patterns: {', '.join(file_patterns)}")
+
+            results = analyze_codebase(
+                directory=Path(local_path),
+                output_dir=temp_output,
+                depth=analysis_depth,
+                languages=languages,
+                file_patterns=file_patterns,
+                build_api_reference=build_api_reference,
+                extract_comments=False,  # Not needed for unified configs
+                build_dependency_graph=build_dependency_graph,
+                detect_patterns=detect_patterns,
+                extract_test_examples=extract_test_examples,
+                build_how_to_guides=build_how_to_guides,
+                extract_config_patterns=extract_config_patterns,
+                extract_docs=extract_docs,
+                enhance_level=enhance_level,
+            )
+
+            # Load analysis outputs into memory
+            local_data = {
+                "source_id": f"{self.name}_local_{idx}_{path_id}",
+                "path": local_path,
+                "name": source_name,
+                "description": source.get("description", f"Local analysis of {path_id}"),
+                "weight": source.get("weight", 1.0),
+                "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
+                "test_examples": self._load_json(
+                    temp_output / "test_examples" / "test_examples.json"
+                ),
+                "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
+                "config_patterns": self._load_json(
+                    temp_output / "config_patterns" / "config_patterns.json"
+                ),
+                "architecture": self._load_json(temp_output / "ARCHITECTURE.json"),
+                "api_reference": self._load_api_reference(temp_output / "api_reference"),
+                "dependency_graph": self._load_json(
+                    temp_output / "dependencies" / "dependency_graph.json"
+                ),
+            }
+
+            # Handle signal flow analysis for Godot projects (C3.10)
+            # Signal analysis is automatic for Godot files
+            signal_flow_file = temp_output / "signals" / "signal_flow.json"
+            if signal_flow_file.exists():
+                local_data["signal_flow"] = self._load_json(signal_flow_file)
+                logger.info("✅ Signal flow analysis included (Godot)")
+
+            # Load SKILL.md if it exists
+            skill_md_path = temp_output / "SKILL.md"
+            if skill_md_path.exists():
+                local_data["skill_md"] = skill_md_path.read_text(encoding="utf-8")
+                logger.info(f"✅ Local: SKILL.md loaded ({len(local_data['skill_md'])} chars)")
+
+            # Save local data to cache
+            local_data_file = os.path.join(self.data_dir, f"local_data_{idx}_{path_id}.json")
+            with open(local_data_file, "w", encoding="utf-8") as f:
+                # Don't save skill_md in JSON (too large), keep it in local_data dict
+                json_data = {k: v for k, v in local_data.items() if k != "skill_md"}
+                json.dump(json_data, f, indent=2, ensure_ascii=False)
+
+            # Move SKILL.md to cache if it exists
+            skill_cache_dir = os.path.join(self.sources_dir, f"local_{idx}_{path_id}")
+            os.makedirs(skill_cache_dir, exist_ok=True)
+            if skill_md_path.exists():
+                shutil.copy(skill_md_path, os.path.join(skill_cache_dir, "SKILL.md"))
+
+            # Append to local sources list
+            self.scraped_data["local"].append(local_data)
+
+            logger.info(f"✅ Local: Analysis complete for {path_id}")
+
+        except Exception as e:
+            logger.error(f"❌ Local analysis failed: {e}")
+            import traceback
+
+            logger.debug(f"Traceback: {traceback.format_exc()}")
+            raise
 
     def _load_json(self, file_path: Path) -> dict:
         """
