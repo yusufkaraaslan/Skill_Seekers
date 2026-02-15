@@ -252,17 +252,17 @@ Examples:
     )
 
     parser.add_argument(
-        "--chunk-size",
+        "--streaming-chunk-size",
         type=int,
         default=4000,
-        help="Maximum characters per chunk (streaming mode, default: 4000)",
+        help="Maximum characters per chunk (streaming mode only, default: 4000)",
     )
 
     parser.add_argument(
-        "--chunk-overlap",
+        "--streaming-overlap",
         type=int,
         default=200,
-        help="Overlap between chunks for context (streaming mode, default: 200)",
+        help="Character overlap between chunks (streaming mode only, default: 200)",
     )
 
     parser.add_argument(
@@ -300,8 +300,8 @@ Examples:
         skip_quality_check=args.skip_quality_check,
         target=args.target,
         streaming=args.streaming,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
+        chunk_size=args.streaming_chunk_size,
+        chunk_overlap=args.streaming_overlap,
         batch_size=args.batch_size,
         enable_chunking=args.chunk,
         chunk_max_tokens=args.chunk_tokens,
