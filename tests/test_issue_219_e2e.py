@@ -120,7 +120,7 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
     """E2E Test: Problem #2 - CLI flags working through main.py dispatcher"""
 
     def test_github_command_has_enhancement_flags(self):
-        """E2E: Verify --enhance-local flag exists in github command help"""
+        """E2E: Verify --enhance-level flag exists in github command help"""
         result = subprocess.run(
             ["skill-seekers", "github", "--help"], capture_output=True, text=True
         )
@@ -128,13 +128,12 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
         # VERIFY: Command succeeds
         self.assertEqual(result.returncode, 0, "github --help should succeed")
 
-        # VERIFY: All enhancement flags present
-        self.assertIn("--enhance", result.stdout, "Missing --enhance flag")
-        self.assertIn("--enhance-local", result.stdout, "Missing --enhance-local flag")
+        # VERIFY: Enhancement flags present
+        self.assertIn("--enhance-level", result.stdout, "Missing --enhance-level flag")
         self.assertIn("--api-key", result.stdout, "Missing --api-key flag")
 
-    def test_github_command_accepts_enhance_local_flag(self):
-        """E2E: Verify --enhance-local flag doesn't cause 'unrecognized arguments' error"""
+    def test_github_command_accepts_enhance_level_flag(self):
+        """E2E: Verify --enhance-level flag doesn't cause 'unrecognized arguments' error"""
         # Strategy: Parse arguments directly without executing to avoid network hangs on CI
         # This tests that the CLI accepts the flag without actually running the command
         import argparse
@@ -143,15 +142,14 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
         parser = argparse.ArgumentParser()
         # Add the same arguments as github_scraper.main()
         parser.add_argument("--repo", required=True)
-        parser.add_argument("--enhance-local", action="store_true")
-        parser.add_argument("--enhance", action="store_true")
+        parser.add_argument("--enhance-level", type=int, choices=[0, 1, 2, 3], default=2)
         parser.add_argument("--api-key")
 
         # VERIFY: Parsing succeeds without "unrecognized arguments" error
         try:
-            args = parser.parse_args(["--repo", "test/test", "--enhance-local"])
+            args = parser.parse_args(["--repo", "test/test", "--enhance-level", "2"])
             # If we get here, argument parsing succeeded
-            self.assertTrue(args.enhance_local, "Flag should be parsed as True")
+            self.assertEqual(args.enhance_level, 2, "Flag should be parsed as 2")
             self.assertEqual(args.repo, "test/test")
         except SystemExit as e:
             # Argument parsing failed
@@ -169,7 +167,7 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             "test/test",
             "--name",
             "test",
-            "--enhance-local",
+            "--enhance-level", "2",
         ]
 
         with (
@@ -185,13 +183,13 @@ class TestIssue219Problem2CLIFlags(unittest.TestCase):
             # VERIFY: github_scraper.main was called
             mock_github_main.assert_called_once()
 
-            # VERIFY: sys.argv contains --enhance-local flag
+            # VERIFY: sys.argv contains --enhance-level flag
             # (main.py should have added it before calling github_scraper)
             called_with_enhance = any(
-                "--enhance-local" in str(call) for call in mock_github_main.call_args_list
+                "--enhance-level" in str(call) for call in mock_github_main.call_args_list
             )
             self.assertTrue(
-                called_with_enhance or "--enhance-local" in sys.argv,
+                called_with_enhance or "--enhance-level" in sys.argv,
                 "Flag should be forwarded to github_scraper",
             )
 
@@ -339,7 +337,7 @@ class TestIssue219IntegrationAll(unittest.TestCase):
     def test_all_fixes_work_together(self):
         """E2E: Verify all 3 fixes work in combination"""
         # This test verifies the complete workflow:
-        # 1. CLI accepts --enhance-local
+        # 1. CLI accepts --enhance-level
         # 2. Large files are downloaded
         # 3. Custom API endpoints work
 
@@ -347,9 +345,8 @@ class TestIssue219IntegrationAll(unittest.TestCase):
             ["skill-seekers", "github", "--help"], capture_output=True, text=True
         )
 
-        # All flags present
-        self.assertIn("--enhance", result.stdout)
-        self.assertIn("--enhance-local", result.stdout)
+        # Enhancement flags present
+        self.assertIn("--enhance-level", result.stdout)
         self.assertIn("--api-key", result.stdout)
 
         # Verify we can import all fixed modules

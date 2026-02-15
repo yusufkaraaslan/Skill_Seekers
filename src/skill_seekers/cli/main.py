@@ -176,6 +176,18 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Exit code (0 for success, non-zero for error)
     """
+    # Special handling for analyze --preset-list (no directory required)
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) >= 2 and argv[0] == "analyze" and "--preset-list" in argv:
+        from skill_seekers.cli.codebase_scraper import main as analyze_main
+        original_argv = sys.argv.copy()
+        sys.argv = ["codebase_scraper.py", "--preset-list"]
+        try:
+            return analyze_main() or 0
+        finally:
+            sys.argv = original_argv
+
     parser = create_parser()
     args = parser.parse_args(argv)
 
