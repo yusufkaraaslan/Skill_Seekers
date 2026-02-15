@@ -21,7 +21,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 try:
     from github import Github, GithubException, Repository
@@ -563,7 +563,7 @@ class GitHubScraper:
 
         return False
 
-    def _load_gitignore(self) -> "pathspec.PathSpec" | None:
+    def _load_gitignore(self) -> Optional["pathspec.PathSpec"]:
         """
         Load .gitignore file and create pathspec matcher (C2.1).
 
