@@ -139,13 +139,13 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
 
         # Handle positional arguments (no -- prefix)
         if key in [
+            "source",  # create command
             "url",
             "directory",
             "file",
             "job_id",
             "skill_directory",
             "zip_file",
-            "config",
             "input_file",
         ]:
             if value is not None and value != "":

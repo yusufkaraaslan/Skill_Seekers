@@ -1,0 +1,106 @@
+{
+  "name": "godot",
+  "description": "Godot Engine 4.x - Complete open source game engine (documentation + source code + signal flow analysis)",
+  "output_dir": "output/godot-unified/",
+
+  "sources": [
+    {
+      "type": "local",
+      "path": "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/godot-docs",
+      "name": "documentation",
+      "description": "Official Godot 4.x documentation (RST + Markdown)",
+      "weight": 0.4,
+      "file_patterns": ["*.rst", "*.md"],
+      "skip_patterns": [
+        "build/",
+        "_build/",
+        ".git/",
+        "node_modules/",
+        "__pycache__/"
+      ],
+      "categories": {
+        "getting_started": ["getting_started", "introduction", "tutorial"],
+        "core_concepts": ["classes", "nodes", "scenes", "signals"],
+        "api": ["api", "reference", "class_reference"],
+        "tutorials": ["tutorials", "how_to", "examples"],
+        "advanced": ["advanced", "performance", "optimization"]
+      }
+    },
+    {
+      "type": "local",
+      "path": "/mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/godot",
+      "name": "source_code",
+      "description": "Godot Engine C++ source code + GDScript core",
+      "weight": 0.6,
+      "languages": ["cpp", "gdscript", "python", "glsl"],
+      "skip_patterns": [
+        ".git/",
+        "thirdparty/",
+        "tests/",
+        "doc/",
+        "misc/",
+        "drivers/",
+        "platform/android/",
+        "platform/ios/",
+        "platform/web/",
+        "*.obj",
+        "*.o",
+        "*.a",
+        "*.so"
+      ],
+      "focus_dirs": [
+        "core/",
+        "scene/",
+        "servers/",
+        "modules/gdscript/",
+        "editor/"
+      ],
+      "analysis_depth": "full",
+      "extract_patterns": true,
+      "extract_tests": true,
+      "extract_signals": true,
+      "extract_config": true
+    }
+  ],
+
+  "merge_strategy": "unified",
+  "conflict_resolution": "code_first",
+  "detect_conflicts": true,
+
+  "analysis_features": {
+    "pattern_detection": true,
+    "test_extraction": true,
+    "how_to_guides": true,
+    "config_extraction": true,
+    "architecture_overview": true,
+    "signal_flow_analysis": true,
+    "api_reference": true,
+    "dependency_graph": true
+  },
+
+  "enhancement": {
+    "enabled": true,
+    "level": 3,
+    "mode": "LOCAL"
+  },
+
+  "chunking": {
+    "enabled": true,
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+
+  "output_formats": [
+    "claude",
+    "markdown"
+  ],
+
+  "metadata": {
+    "version": "4.x",
+    "framework": "godot",
+    "language": "cpp+gdscript",
+    "tags": ["game-engine", "godot", "cpp", "gdscript", "signals", "nodes"],
+    "documentation_url": "https://docs.godotengine.org/",
+    "repository_url": "https://github.com/godotengine/godot"
+  }
+}

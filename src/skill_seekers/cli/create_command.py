@@ -298,8 +298,16 @@ class CreateCommand:
         config_path = self.source_info.parsed["config_path"]
         argv.extend(["--config", config_path])
 
-        # Add universal arguments (unified scraper supports most)
-        self._add_common_args(argv)
+        # Add only the arguments that unified_scraper actually supports
+        # unified_scraper has its own config format that includes:
+        # name, description, output_dir, enhancement, etc.
+        # So we only pass behavioral flags here:
+
+        if self.args.dry_run:
+            argv.append("--dry-run")
+
+        # Note: unified_scraper gets name, output, enhancement from config file
+        # not from CLI args. The config format includes these fields.
 
         # Call unified_scraper with modified argv
         logger.debug(f"Calling unified_scraper with argv: {argv}")
