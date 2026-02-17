@@ -55,7 +55,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 ```
 /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/
 ├── src/skill_seekers/              # Main source code (src/ layout)
-│   ├── cli/                        # CLI tools and commands (70+ modules, ~40k lines)
+│   ├── cli/                        # CLI tools and commands (~40k lines)
 │   │   ├── adaptors/               # Platform adaptors (Strategy pattern)
 │   │   │   ├── base.py             # Abstract base class
 │   │   │   ├── claude.py           # Claude AI adaptor
@@ -79,7 +79,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── arguments/              # CLI argument definitions
 │   │   ├── presets/                # Preset configuration management
 │   │   ├── main.py                 # Unified CLI entry point
-│   │   ├── create_command.py       # NEW: Unified create command
+│   │   ├── create_command.py       # Unified create command
 │   │   ├── doc_scraper.py          # Documentation scraper
 │   │   ├── github_scraper.py       # GitHub repository scraper
 │   │   ├── pdf_scraper.py          # PDF extraction
@@ -122,7 +122,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   └── models.py               # Embedding models
 │   ├── _version.py                 # Version information (reads from pyproject.toml)
 │   └── __init__.py                 # Package init
-├── tests/                          # Test suite (94 test files)
+├── tests/                          # Test suite (109 test files)
 ├── configs/                        # Preset configuration files
 ├── docs/                           # Documentation (80+ markdown files)
 │   ├── integrations/               # Platform integration guides
@@ -257,8 +257,8 @@ pytest tests/ -v -m "not slow and not integration"
 
 ### Test Architecture
 
-- **94 test files** covering all features
-- **1200+ tests** passing
+- **109 test files** covering all features
+- **~42,000 lines** of test code
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.12
 - Test markers defined in `pyproject.toml`:
 
@@ -386,7 +386,7 @@ The CLI uses subcommands that delegate to existing modules:
 ```
 
 **Available subcommands:**
-- `create` - NEW: Unified create command
+- `create` - Unified create command
 - `config` - Configuration wizard
 - `scrape` - Documentation scraping
 - `github` - GitHub repository scraping
@@ -768,6 +768,15 @@ __version__ = get_version()  # Returns version from pyproject.toml
 
 ---
 
+## Code Statistics
+
+- **Source Code:** ~40,000 lines (CLI modules)
+- **Test Code:** ~42,000 lines (109 test files)
+- **Documentation:** 80+ markdown files
+- **Examples:** 11 complete integration examples
+
+---
+
 *This document is maintained for AI coding agents. For human contributors, see README.md and CONTRIBUTING.md.*
 
-*Last updated: 2026-02-15*
+*Last updated: 2026-02-16*

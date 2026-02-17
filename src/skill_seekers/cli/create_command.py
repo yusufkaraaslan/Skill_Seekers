@@ -374,6 +374,18 @@ class CreateCommand:
         if getattr(self.args, "interactive_enhancement", False):
             argv.append("--interactive-enhancement")
 
+        # Enhancement Workflow arguments (NEW - Phase 2)
+        if getattr(self.args, "enhance_workflow", None):
+            argv.extend(["--enhance-workflow", self.args.enhance_workflow])
+        if getattr(self.args, "enhance_stage", None):
+            for stage in self.args.enhance_stage:
+                argv.extend(["--enhance-stage", stage])
+        if getattr(self.args, "var", None):
+            for var in self.args.var:
+                argv.extend(["--var", var])
+        if getattr(self.args, "workflow_dry_run", False):
+            argv.append("--workflow-dry-run")
+
 
 def main() -> int:
     """Entry point for create command.

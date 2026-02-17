@@ -10,6 +10,7 @@
       "name": "documentation",
       "description": "Official Godot 4.x documentation (RST + Markdown)",
       "weight": 0.4,
+      "enhance_level": 3,
       "file_patterns": ["*.rst", "*.md"],
       "skip_patterns": [
         "build/",
@@ -32,6 +33,7 @@
       "name": "source_code",
       "description": "Godot Engine C++ source code + GDScript core",
       "weight": 0.6,
+      "enhance_level": 3,
       "languages": ["C++", "GDScript", "Python", "GodotShader"],
       "skip_patterns": [
         ".git/",
