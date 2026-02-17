@@ -1250,7 +1250,8 @@ def analyze_codebase(
         logger.info("Detecting design patterns...")
         from skill_seekers.cli.pattern_recognizer import PatternRecognizer
 
-        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=enhance_patterns)
+        # Step 1: Detect patterns WITHOUT enhancement (collect all first)
+        pattern_recognizer = PatternRecognizer(depth=depth, enhance_with_ai=False)
         pattern_results = []
 
         for file_path in files:
@@ -1266,6 +1267,31 @@ def analyze_codebase(
             except Exception as e:
                 logger.warning(f"Pattern detection failed for {file_path}: {e}")
                 continue
+
+        # Step 2: Enhance ALL patterns at once (batched across all files)
+        if enhance_patterns and pattern_results:
+            logger.info("🤖 Enhancing patterns with AI (batched)...")
+            from skill_seekers.cli.ai_enhancer import PatternEnhancer
+
+            enhancer = PatternEnhancer()
+
+            # Flatten all patterns from all files
+            all_patterns = []
+            pattern_map = []  # Track (report_idx, pattern_idx) for each pattern
+
+            for report_idx, report in enumerate(pattern_results):
+                for pattern_idx, pattern in enumerate(report.get("patterns", [])):
+                    all_patterns.append(pattern)
+                    pattern_map.append((report_idx, pattern_idx))
+
+            if all_patterns:
+                # Enhance all patterns in batches (this is where batching happens!)
+                enhanced_patterns = enhancer.enhance_patterns(all_patterns)
+
+                # Map enhanced patterns back to their reports
+                for i, (report_idx, pattern_idx) in enumerate(pattern_map):
+                    if i < len(enhanced_patterns):
+                        pattern_results[report_idx]["patterns"][pattern_idx] = enhanced_patterns[i]
 
         # Save pattern results with multi-level filtering (Issue #240)
         if pattern_results:
@@ -2365,6 +2391,45 @@ Examples:
         ),
     )
 
+    # Workflow enhancement arguments
+    parser.add_argument(
+        "--enhance-workflow",
+        type=str,
+        help=(
+            "Enhancement workflow to use (name or path to YAML file). "
+            "Examples: 'security-focus', 'architecture-comprehensive', "
+            "'.skill-seekers/my-workflow.yaml'. "
+            "Overrides --enhance-level when provided."
+        ),
+        metavar="WORKFLOW",
+    )
+    parser.add_argument(
+        "--enhance-stage",
+        type=str,
+        action="append",
+        help=(
+            "Add inline enhancement stage. Format: 'name:prompt'. "
+            "Can be used multiple times. Example: "
+            "--enhance-stage 'security:Analyze for security issues'"
+        ),
+        metavar="NAME:PROMPT",
+    )
+    parser.add_argument(
+        "--var",
+        type=str,
+        action="append",
+        help=(
+            "Override workflow variable. Format: 'key=value'. "
+            "Can be used multiple times. Example: --var focus_area=performance"
+        ),
+        metavar="KEY=VALUE",
+    )
+    parser.add_argument(
+        "--workflow-dry-run",
+        action="store_true",
+        help="Show workflow stages without executing (dry run mode)",
+    )
+
     # Check for deprecated flags
     deprecated_flags = {
         "--build-api-reference": "--skip-api-reference",
@@ -2473,14 +2538,25 @@ Examples:
             enhance_level=args.enhance_level,  # AI enhancement level (0-3)
         )
 
+        # ============================================================
+        # WORKFLOW SYSTEM INTEGRATION (Phase 2)
+        # ============================================================
+        from skill_seekers.cli.workflow_runner import run_workflows
+
+        workflow_executed, workflow_names = run_workflows(args)
+
         # Print summary
         print(f"\n{'=' * 60}")
         print("CODEBASE ANALYSIS COMPLETE")
+        if workflow_executed:
+            print(f" + {len(workflow_names)} ENHANCEMENT WORKFLOW(S) EXECUTED")
         print(f"{'=' * 60}")
         print(f"Files analyzed: {len(results['files'])}")
         print(f"Output directory: {args.output}")
         if not args.skip_api_reference:
             print(f"API reference: {Path(args.output) / 'api_reference'}")
+        if workflow_executed:
+            print(f"Workflows applied: {', '.join(workflow_names)}")
         print(f"{'=' * 60}\n")
 
         return 0

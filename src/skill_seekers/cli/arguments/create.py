@@ -16,9 +16,10 @@ from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
 from .common import RAG_ARGUMENTS
 
 # =============================================================================
-# TIER 1: UNIVERSAL ARGUMENTS (15 flags)
+# TIER 1: UNIVERSAL ARGUMENTS (19 flags)
 # =============================================================================
 # These arguments work for ALL source types
+# Includes: 11 core + 4 workflow + 4 RAG (merged from common.py)
 
 UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Identity arguments
@@ -110,6 +111,38 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "help": "Load additional settings from JSON file",
             "metavar": "FILE",
+        },
+    },
+    # Enhancement Workflow arguments (NEW - Phase 2)
+    "enhance_workflow": {
+        "flags": ("--enhance-workflow",),
+        "kwargs": {
+            "action": "append",
+            "help": "Apply enhancement workflow (file path or preset: security-focus, minimal, api-documentation, architecture-comprehensive). Can use multiple times to chain workflows.",
+            "metavar": "WORKFLOW",
+        },
+    },
+    "enhance_stage": {
+        "flags": ("--enhance-stage",),
+        "kwargs": {
+            "action": "append",
+            "help": "Add inline enhancement stage (format: 'name:prompt'). Can be used multiple times.",
+            "metavar": "STAGE",
+        },
+    },
+    "var": {
+        "flags": ("--var",),
+        "kwargs": {
+            "action": "append",
+            "help": "Override workflow variable (format: 'key=value'). Can be used multiple times.",
+            "metavar": "VAR",
+        },
+    },
+    "workflow_dry_run": {
+        "flags": ("--workflow-dry-run",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Preview workflow stages without executing (requires --enhance-workflow)",
         },
     },
 }

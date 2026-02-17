@@ -1425,7 +1425,23 @@ def main():
         skill_name = config.get("name", config["repo"].split("/")[-1])
         skill_dir = f"output/{skill_name}"
 
+        # ============================================================
+        # WORKFLOW SYSTEM INTEGRATION (Phase 2 - github_scraper)
+        # ============================================================
+        from skill_seekers.cli.workflow_runner import run_workflows
+
+        # Pass GitHub-specific context to workflows
+        github_context = {
+            "repo": config.get("repo", ""),
+            "name": skill_name,
+            "description": config.get("description", ""),
+        }
+
+        workflow_executed, workflow_names = run_workflows(args, context=github_context)
+        workflow_name = ", ".join(workflow_names) if workflow_names else None
+
         # Phase 3: Optional enhancement with auto-detected mode
+        # Note: Runs independently of workflow system (they complement each other)
         if getattr(args, "enhance_level", 0) > 0:
             import os
 
@@ -1433,9 +1449,13 @@ def main():
             api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
-            logger.info(
-                f"\n📝 Enhancing SKILL.md with Claude ({mode} mode, level {args.enhance_level})..."
-            )
+            logger.info("\n" + "=" * 80)
+            logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            logger.info("=" * 80)
+            if workflow_executed:
+                logger.info(f"   Running after workflow: {workflow_name}")
+                logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+            logger.info("")
 
             if api_key:
                 # API-based enhancement
@@ -1465,10 +1485,13 @@ def main():
 
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
 
-        if getattr(args, "enhance_level", 0) == 0:
+        # Only suggest enhancement if neither workflow nor traditional enhancement was done
+        if not workflow_executed and getattr(args, "enhance_level", 0) == 0:
             logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
+            logger.info("\n💡 Or use a workflow:")
+            logger.info(f"  skill-seekers github --repo {config['repo']} --enhance-workflow architecture-comprehensive")
 
         logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
 

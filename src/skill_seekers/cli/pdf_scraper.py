@@ -693,6 +693,31 @@ def main():
         # Build skill
         converter.build_skill()
 
+        # ═══════════════════════════════════════════════════════════════════════════
+        # Enhancement Workflow Integration (Phase 2 - PDF Support)
+        # ═══════════════════════════════════════════════════════════════════════════
+        from skill_seekers.cli.workflow_runner import run_workflows
+
+        workflow_executed, workflow_names = run_workflows(args)
+        workflow_name = ", ".join(workflow_names) if workflow_names else None
+
+        # ═══════════════════════════════════════════════════════════════════════════
+        # Traditional Enhancement (complements workflow system)
+        # ═══════════════════════════════════════════════════════════════════════════
+        # Note: Runs independently of workflow system (they complement each other)
+        if getattr(args, "enhance_level", 0) > 0:
+            # Traditional AI enhancement (API or LOCAL mode)
+            logger.info("\n" + "=" * 80)
+            logger.info("🤖 Traditional AI Enhancement")
+            logger.info("=" * 80)
+            if workflow_executed:
+                logger.info(f"   Running after workflow: {workflow_name}")
+                logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+            logger.info("   (Use --enhance-workflow for more control)")
+            logger.info("")
+            # Note: PDF scraper uses enhance_level instead of enhance/enhance_local
+            # This is consistent with the new unified enhancement system
+
     except RuntimeError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)

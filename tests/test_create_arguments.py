@@ -24,8 +24,8 @@ class TestUniversalArguments:
     """Test universal argument definitions."""
 
     def test_universal_count(self):
-        """Should have exactly 13 universal arguments (after Phase 1 consolidation)."""
-        assert len(UNIVERSAL_ARGUMENTS) == 13
+        """Should have exactly 17 universal arguments (after Phase 2 workflow integration)."""
+        assert len(UNIVERSAL_ARGUMENTS) == 17
 
     def test_universal_argument_names(self):
         """Universal arguments should have expected names."""
@@ -43,6 +43,11 @@ class TestUniversalArguments:
             "chunk_overlap",  # Phase 2: RAG args from common.py
             "preset",
             "config",
+            # Phase 2: Workflow arguments (universal workflow support)
+            "enhance_workflow",
+            "enhance_stage",
+            "var",
+            "workflow_dry_run",
         }
         assert set(UNIVERSAL_ARGUMENTS.keys()) == expected_names
 
@@ -123,9 +128,13 @@ class TestArgumentHelpers:
         """Should return set of universal argument names."""
         names = get_universal_argument_names()
         assert isinstance(names, set)
-        assert len(names) == 13
+        assert len(names) == 17  # Phase 2: added 4 workflow arguments
         assert "name" in names
         assert "enhance_level" in names  # Phase 1: consolidated flag
+        assert "enhance_workflow" in names  # Phase 2: workflow support
+        assert "enhance_stage" in names
+        assert "var" in names
+        assert "workflow_dry_run" in names
 
     def test_get_source_specific_web(self):
         """Should return web-specific arguments."""

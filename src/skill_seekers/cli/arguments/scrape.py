@@ -73,6 +73,38 @@ SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "KEY",
         },
     },
+    # Enhancement Workflow arguments (NEW - Phase 2)
+    "enhance_workflow": {
+        "flags": ("--enhance-workflow",),
+        "kwargs": {
+            "action": "append",
+            "help": "Apply enhancement workflow (file path or preset: security-focus, minimal, api-documentation, architecture-comprehensive). Can use multiple times to chain workflows.",
+            "metavar": "WORKFLOW",
+        },
+    },
+    "enhance_stage": {
+        "flags": ("--enhance-stage",),
+        "kwargs": {
+            "action": "append",
+            "help": "Add inline enhancement stage ('name:prompt'). Can use multiple times.",
+            "metavar": "STAGE",
+        },
+    },
+    "var": {
+        "flags": ("--var",),
+        "kwargs": {
+            "action": "append",
+            "help": "Override workflow variable ('key=value'). Can use multiple times.",
+            "metavar": "VAR",
+        },
+    },
+    "workflow_dry_run": {
+        "flags": ("--workflow-dry-run",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Preview workflow without executing (requires --enhance-workflow)",
+        },
+    },
     # Scrape-specific options
     "interactive": {
         "flags": ("--interactive", "-i"),

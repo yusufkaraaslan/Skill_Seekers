@@ -2194,6 +2194,10 @@ def execute_scraping_and_building(
     # Create converter
     converter = DocToSkillConverter(config, resume=args.resume)
 
+    # Initialize workflow tracking (will be updated if workflow runs)
+    converter.workflow_executed = False
+    converter.workflow_name = None
+
     # Handle fresh start (clear checkpoint)
     if args.fresh:
         converter.clear_checkpoint()
@@ -2257,10 +2261,28 @@ def execute_scraping_and_building(
         logger.info(f"💡 Use with LangChain: --target langchain")
         logger.info(f"💡 Use with LlamaIndex: --target llama-index")
 
+    # ============================================================
+    # WORKFLOW SYSTEM INTEGRATION (Phase 2 - doc_scraper)
+    # ============================================================
+    from skill_seekers.cli.workflow_runner import run_workflows
+
+    # Pass doc-scraper-specific context to workflows
+    doc_context = {
+        "name": config["name"],
+        "base_url": config.get("base_url", ""),
+        "description": config.get("description", ""),
+    }
+
+    workflow_executed, workflow_names = run_workflows(args, context=doc_context)
+
+    # Store workflow execution status on converter for execute_enhancement() to access
+    converter.workflow_executed = workflow_executed
+    converter.workflow_name = ", ".join(workflow_names) if workflow_names else None
+
     return converter
 
 
-def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> None:
+def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, converter=None) -> None:
     """Execute optional SKILL.md enhancement with Claude.
 
     Supports two enhancement modes:
@@ -2273,6 +2295,7 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
     Args:
         config (dict): Configuration dictionary with skill name
         args: Parsed command-line arguments with enhancement flags
+        converter: Optional DocToSkillConverter instance (to check workflow status)
 
     Example:
         >>> execute_enhancement(config, args)
@@ -2280,16 +2303,29 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace) -> Non
     """
     import subprocess
 
+    # Check if workflow was already executed (for logging context)
+    workflow_executed = (
+        converter
+        and hasattr(converter, 'workflow_executed')
+        and converter.workflow_executed
+    )
+    workflow_name = converter.workflow_name if workflow_executed else None
+
     # Optional enhancement with auto-detected mode (API or LOCAL)
+    # Note: Runs independently of workflow system (they complement each other)
     if getattr(args, "enhance_level", 0) > 0:
         import os
 
         has_api_key = bool(os.environ.get("ANTHROPIC_API_KEY") or args.api_key)
         mode = "API" if has_api_key else "LOCAL"
 
-        logger.info("\n" + "=" * 60)
-        logger.info(f"ENHANCING SKILL.MD WITH CLAUDE ({mode} mode, level {args.enhance_level})")
-        logger.info("=" * 60 + "\n")
+        logger.info("\n" + "=" * 80)
+        logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+        logger.info("=" * 80)
+        if workflow_executed:
+            logger.info(f"   Running after workflow: {workflow_name}")
+            logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+        logger.info("")
 
         try:
             enhance_cmd = ["skill-seekers-enhance", f"output/{config['name']}/"]
@@ -2348,8 +2384,8 @@ def main() -> None:
     if converter is None:
         return
 
-    # Execute enhancement and print instructions
-    execute_enhancement(config, args)
+    # Execute enhancement and print instructions (pass converter for workflow status check)
+    execute_enhancement(config, args, converter)
 
 
 if __name__ == "__main__":
