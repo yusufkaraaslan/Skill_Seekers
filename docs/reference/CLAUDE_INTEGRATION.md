@@ -25,9 +25,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **🌐 Multi-LLM Support**: Full support for 4 platforms - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
 - **🔄 Complete Feature Parity**: All skill modes work with all platforms
 - **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
-- **✨ 18 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)
+- **✨ 26 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)
 - **📚 Comprehensive Documentation**: Complete guides for all platforms
-- **🧪 Test Coverage**: 1200+ tests passing, extensive platform compatibility testing
+- **🧪 Test Coverage**: 1,880+ tests passing, extensive platform compatibility testing
 
 **🚀 NEW: Three-Stream GitHub Architecture (v2.6.0)**
 - **📊 Three-Stream Fetcher**: Split GitHub repos into Code, Docs, and Insights streams
@@ -194,7 +194,7 @@ The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) ope
 "Package skill at output/react/"
 ```
 
-18 MCP tools available with multi-platform support: list_configs, generate_config, validate_config, fetch_config, estimate_pages, scrape_docs, scrape_github, scrape_pdf, package_skill, upload_skill, enhance_skill (NEW), install_skill, split_config, generate_router, add_config_source, list_config_sources, remove_config_source, submit_config
+26 MCP tools available with multi-platform support: list_configs, generate_config, validate_config, fetch_config, estimate_pages, scrape_docs, scrape_github, scrape_pdf, package_skill, upload_skill, enhance_skill (NEW), install_skill, split_config, generate_router, add_config_source, list_config_sources, remove_config_source, submit_config
 
 ### Test with limited pages (edit config first)
 Set `"max_pages": 20` in the config file to test with fewer pages.

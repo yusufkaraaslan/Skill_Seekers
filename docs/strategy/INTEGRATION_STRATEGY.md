@@ -30,7 +30,7 @@ We can replicate this positioning with dozens of other tools/platforms to create
 | Aspect | Their Use | Our Capability | Gap |
 |--------|-----------|---------------|-----|
 | **GitHub scraping** | ✅ Basic | ✅ Advanced (C3.x) | **Large** |
-| **MCP integration** | ✅ Aware | ✅ 18 tools available | **Medium** |
+| **MCP integration** | ✅ Aware | ✅ 26 tools available | **Medium** |
 | **Context limits** | ⚠️ Problem | ✅ Router skills solve | **Large** |
 | **AI enhancement** | ❌ Not mentioned | ✅ Dual mode (API/LOCAL) | **Large** |
 | **Multi-platform** | ❌ Claude only | ✅ 4 platforms | **Medium** |

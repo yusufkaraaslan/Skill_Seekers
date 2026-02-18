@@ -292,7 +292,7 @@ In Cline panel, check "Available Tools" - you should see:
 - `list_configs` - List preset configurations
 - `scrape_docs` - Scrape documentation dynamically
 - `package_skill` - Package skills for Cline
-- ... (18 total MCP tools)
+- ... (26 total MCP tools)
 
 **Using MCP Tools**
 

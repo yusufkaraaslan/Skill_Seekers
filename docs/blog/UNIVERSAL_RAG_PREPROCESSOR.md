@@ -551,7 +551,7 @@ RAG systems are powerful, but they're only as good as their data. Until now, dat
 **Skill Seekers changes the game:**
 
 - ⚡ Fast (15-45 minutes)
-- ✅ Reliable (700+ tests, battle-tested)
+- ✅ Reliable (1,880+ tests, battle-tested)
 - 💰 Free (open source)
 - 😊 Delightful (single command)
 - 🔄 Maintainable (re-run one command)

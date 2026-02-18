@@ -1,7 +1,7 @@
 # API Reference - Programmatic Usage
 
-**Version:** 2.7.0
-**Last Updated:** 2026-01-18
+**Version:** 3.1.0-dev
+**Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready
 
 ---
@@ -970,6 +970,6 @@ monitor_enhancement('output/react/', watch=True)
 
 ---
 
-**Version:** 2.7.0
-**Last Updated:** 2026-01-18
+**Version:** 3.1.0-dev
+**Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready
