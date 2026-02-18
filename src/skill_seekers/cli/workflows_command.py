@@ -80,9 +80,7 @@ def _list_user_workflow_names() -> list[str]:
     """Return names of user workflows (without extension) from USER_WORKFLOWS_DIR."""
     if not USER_WORKFLOWS_DIR.exists():
         return []
-    return sorted(
-        p.stem for p in USER_WORKFLOWS_DIR.iterdir() if p.suffix in (".yaml", ".yml")
-    )
+    return sorted(p.stem for p in USER_WORKFLOWS_DIR.iterdir() if p.suffix in (".yaml", ".yml"))
 
 
 def cmd_list() -> int:
@@ -155,7 +153,9 @@ def cmd_copy(names: list[str]) -> int:
 
         dest.write_text(text, encoding="utf-8")
         print(f"Copied '{name}' to: {dest}")
-        print(f"Edit it with your favourite editor, then reference it as '--enhance-workflow {name}'")
+        print(
+            f"Edit it with your favourite editor, then reference it as '--enhance-workflow {name}'"
+        )
 
     return rc
 

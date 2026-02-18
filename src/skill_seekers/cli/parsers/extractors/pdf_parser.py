@@ -25,6 +25,7 @@ try:
 except ImportError:
     # Fallback for relative import
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from pdf_extractor_poc import PDFExtractor
 
@@ -75,9 +76,7 @@ class PdfParser(BaseParser):
         This method is mainly for API compatibility.
         """
         # For PDF, we need to use parse_file
-        raise NotImplementedError(
-            "PDF parsing requires file path. Use parse_file() instead."
-        )
+        raise NotImplementedError("PDF parsing requires file path. Use parse_file() instead.")
 
     def parse_file(self, path: str | Path) -> ParseResult:
         """

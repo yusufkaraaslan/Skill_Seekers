@@ -222,7 +222,7 @@ class TestMarkdownParser:
 
     @pytest.fixture
     def md_content(self):
-        return '''---
+        return """---
 title: Test Document
 description: A test markdown file
 ---
@@ -271,7 +271,7 @@ def hello_world():
 ## Image
 
 ![Alt text](image.png)
-'''
+"""
 
     @pytest.fixture
     def parsed_doc(self, md_content):

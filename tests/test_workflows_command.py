@@ -80,6 +80,7 @@ def sample_yaml_file(tmp_path):
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _mock_bundled(names=("default", "minimal", "security-focus")):
     """Patch list_bundled_workflows on the captured module object."""
     return patch.object(_wf_cmd, "list_bundled_workflows", return_value=list(names))
@@ -87,14 +88,17 @@ def _mock_bundled(names=("default", "minimal", "security-focus")):
 
 def _mock_bundled_text(name_to_text: dict):
     """Patch _bundled_yaml_text on the captured module object."""
+
     def _bundled_yaml_text(name):
         return name_to_text.get(name)
+
     return patch.object(_wf_cmd, "_bundled_yaml_text", side_effect=_bundled_yaml_text)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # cmd_list
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestCmdList:
     def test_shows_bundled_and_user(self, capsys, tmp_user_dir):
@@ -131,6 +135,7 @@ class TestCmdList:
 # cmd_show
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestCmdShow:
     def test_show_bundled(self, capsys):
         with patch.object(_wf_cmd, "_workflow_yaml_text", return_value=MINIMAL_YAML):
@@ -154,6 +159,7 @@ class TestCmdShow:
 # ─────────────────────────────────────────────────────────────────────────────
 # cmd_copy
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestCmdCopy:
     def test_copy_bundled_to_user_dir(self, capsys, tmp_user_dir):
@@ -205,6 +211,7 @@ class TestCmdCopy:
 # ─────────────────────────────────────────────────────────────────────────────
 # cmd_add
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestCmdAdd:
     def test_add_valid_yaml(self, capsys, tmp_user_dir, sample_yaml_file):
@@ -287,6 +294,7 @@ class TestCmdAdd:
 # cmd_remove
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestCmdRemove:
     def test_remove_user_workflow(self, capsys, tmp_user_dir):
         wf = tmp_user_dir / "my-wf.yaml"
@@ -349,6 +357,7 @@ class TestCmdRemove:
 # cmd_validate
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestCmdValidate:
     def test_validate_bundled_by_name(self, capsys):
         with patch.object(_wf_cmd, "WorkflowEngine") as mock_engine_cls:
@@ -388,6 +397,7 @@ class TestCmdValidate:
 # main() entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestMain:
     def test_main_no_action_exits_0(self):
         from skill_seekers.cli.workflows_command import main
@@ -419,7 +429,10 @@ class TestMain:
         assert "name: test-workflow" in capsys.readouterr().out
 
     def test_main_show_not_found_exits_1(self, capsys, tmp_user_dir):
-        with patch.object(_wf_cmd, "_workflow_yaml_text", return_value=None), pytest.raises(SystemExit) as exc:
+        with (
+            patch.object(_wf_cmd, "_workflow_yaml_text", return_value=None),
+            pytest.raises(SystemExit) as exc,
+        ):
             _wf_cmd.main(["show", "ghost"])
         assert exc.value.code == 1
 
@@ -505,12 +518,14 @@ class TestMain:
 # Parser argument binding
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestWorkflowsParserArgumentBinding:
     """Verify nargs='+' parsers produce lists with correct attribute names."""
 
     def _parse(self, argv):
         """Parse argv through the standalone main() parser by capturing args."""
         import argparse
+
         parser = argparse.ArgumentParser()
         subparsers = parser.add_subparsers(dest="action")
 

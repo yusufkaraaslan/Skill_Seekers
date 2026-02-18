@@ -1454,7 +1454,9 @@ def main():
             logger.info("=" * 80)
             if workflow_executed:
                 logger.info(f"   Running after workflow: {workflow_name}")
-                logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+                logger.info(
+                    "   (Workflow provides specialized analysis, enhancement provides general improvements)"
+                )
             logger.info("")
 
             if api_key:
@@ -1491,7 +1493,9 @@ def main():
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
             logger.info("\n💡 Or use a workflow:")
-            logger.info(f"  skill-seekers github --repo {config['repo']} --enhance-workflow architecture-comprehensive")
+            logger.info(
+                f"  skill-seekers github --repo {config['repo']} --enhance-workflow architecture-comprehensive"
+            )
 
         logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
 

@@ -80,6 +80,4 @@ class WorkflowsParser(SubcommandParser):
             "validate",
             help="Parse and validate a workflow by name or file path",
         )
-        validate_p.add_argument(
-            "workflow_name", help="Workflow name or path to YAML file"
-        )
+        validate_p.add_argument("workflow_name", help="Workflow name or path to YAML file")

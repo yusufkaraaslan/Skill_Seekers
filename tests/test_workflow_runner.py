@@ -337,10 +337,13 @@ class TestRunWorkflowsDryRun:
         mock_engine.workflow.description = "desc"
         mock_engine.workflow.stages = []
 
-        with patch(
-            "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
-            return_value=mock_engine,
-        ), pytest.raises(SystemExit) as exc:
+        with (
+            patch(
+                "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
+                return_value=mock_engine,
+            ),
+            pytest.raises(SystemExit) as exc,
+        ):
             run_workflows(args)
 
         assert exc.value.code == 0
@@ -361,10 +364,13 @@ class TestRunWorkflowsDryRun:
             m.workflow.stages = []
             engines.append(m)
 
-        with patch(
-            "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
-            side_effect=engines,
-        ), pytest.raises(SystemExit):
+        with (
+            patch(
+                "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
+                side_effect=engines,
+            ),
+            pytest.raises(SystemExit),
+        ):
             run_workflows(args)
 
         for engine in engines:

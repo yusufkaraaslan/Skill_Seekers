@@ -122,6 +122,7 @@ class TestCreateCommandArgvForwarding:
 
     def _make_args(self, **kwargs):
         import argparse
+
         defaults = {
             "enhance_workflow": None,
             "enhance_stage": None,
@@ -149,6 +150,7 @@ class TestCreateCommandArgvForwarding:
 
     def _collect_argv(self, args):
         from skill_seekers.cli.create_command import CreateCommand
+
         cmd = CreateCommand(args)
         argv = []
         cmd._add_common_args(argv)

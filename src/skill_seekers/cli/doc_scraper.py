@@ -426,8 +426,7 @@ class DocToSkillConverter:
                     "url": url,
                     "title": doc.title or "",
                     "content": "\n\n".join(
-                        p for p in doc._extract_content_text().split("\n\n")
-                        if len(p.strip()) >= 20
+                        p for p in doc._extract_content_text().split("\n\n") if len(p.strip()) >= 20
                     ),
                     "headings": [
                         {"level": f"h{h.level}", "text": h.text, "id": h.id or ""}
@@ -2309,9 +2308,7 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
 
     # Check if workflow was already executed (for logging context)
     workflow_executed = (
-        converter
-        and hasattr(converter, 'workflow_executed')
-        and converter.workflow_executed
+        converter and hasattr(converter, "workflow_executed") and converter.workflow_executed
     )
     workflow_name = converter.workflow_name if workflow_executed else None
 
@@ -2328,7 +2325,9 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
         logger.info("=" * 80)
         if workflow_executed:
             logger.info(f"   Running after workflow: {workflow_name}")
-            logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+            logger.info(
+                "   (Workflow provides specialized analysis, enhancement provides general improvements)"
+            )
         logger.info("")
 
         try:

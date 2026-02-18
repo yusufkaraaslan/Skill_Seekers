@@ -114,11 +114,7 @@ def run_workflows(
         logger.info(f"\n🔗 Chaining {total} workflow(s) in sequence")
 
     for idx, workflow_name in enumerate(named_workflows, 1):
-        header = (
-            f"\n{'=' * 80}\n"
-            f"🔄 Workflow {idx}/{total}: {workflow_name}\n"
-            f"{'=' * 80}"
-        )
+        header = f"\n{'=' * 80}\n🔄 Workflow {idx}/{total}: {workflow_name}\n{'=' * 80}"
         logger.info(header)
 
         try:
@@ -143,6 +139,7 @@ def run_workflows(
         except Exception as exc:
             logger.error(f"❌ Workflow '{workflow_name}' failed: {exc}")
             import traceback
+
             traceback.print_exc()
 
     # ── Inline workflow ────────────────────────────────────────────────────
@@ -171,6 +168,7 @@ def run_workflows(
                 except Exception as exc:
                     logger.error(f"❌ Inline workflow failed: {exc}")
                     import traceback
+
                     traceback.print_exc()
 
     if dry_run:

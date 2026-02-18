@@ -712,7 +712,9 @@ def main():
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
-                print("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+                print(
+                    "   (Workflow provides specialized analysis, enhancement provides general improvements)"
+                )
             print("   (Use --enhance-workflow for more control)")
             print("")
             # Note: PDF scraper uses enhance_level instead of enhance/enhance_local

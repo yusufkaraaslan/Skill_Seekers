@@ -17,107 +17,133 @@ class QualityScorer:
 
     # Language patterns for detection and validation
     LANGUAGE_PATTERNS = {
-        'python': {
-            'keywords': ['def ', 'class ', 'import ', 'from ', 'return ', 'if ', 'for ', 'while'],
-            'syntax_checks': [
-                (r':\s*$', 'colon_ending'),  # Python uses colons for blocks
-                (r'def\s+\w+\s*\([^)]*\)\s*:', 'function_def'),
-                (r'class\s+\w+', 'class_def'),
+        "python": {
+            "keywords": ["def ", "class ", "import ", "from ", "return ", "if ", "for ", "while"],
+            "syntax_checks": [
+                (r":\s*$", "colon_ending"),  # Python uses colons for blocks
+                (r"def\s+\w+\s*\([^)]*\)\s*:", "function_def"),
+                (r"class\s+\w+", "class_def"),
             ],
         },
-        'javascript': {
-            'keywords': ['function', 'const ', 'let ', 'var ', '=>', 'return ', 'if(', 'for('],
-            'syntax_checks': [
-                (r'function\s+\w+\s*\(', 'function_def'),
-                (r'const\s+\w+\s*=', 'const_decl'),
-                (r'=>', 'arrow_function'),
+        "javascript": {
+            "keywords": ["function", "const ", "let ", "var ", "=>", "return ", "if(", "for("],
+            "syntax_checks": [
+                (r"function\s+\w+\s*\(", "function_def"),
+                (r"const\s+\w+\s*=", "const_decl"),
+                (r"=>", "arrow_function"),
             ],
         },
-        'typescript': {
-            'keywords': ['interface ', 'type ', ': string', ': number', ': boolean', 'implements'],
-            'syntax_checks': [
-                (r'interface\s+\w+', 'interface_def'),
-                (r':\s*(string|number|boolean|any)', 'type_annotation'),
+        "typescript": {
+            "keywords": ["interface ", "type ", ": string", ": number", ": boolean", "implements"],
+            "syntax_checks": [
+                (r"interface\s+\w+", "interface_def"),
+                (r":\s*(string|number|boolean|any)", "type_annotation"),
             ],
         },
-        'java': {
-            'keywords': ['public ', 'private ', 'class ', 'void ', 'String ', 'int ', 'return '],
-            'syntax_checks': [
-                (r'public\s+class\s+\w+', 'class_def'),
-                (r'public\s+\w+\s+\w+\s*\(', 'method_def'),
+        "java": {
+            "keywords": ["public ", "private ", "class ", "void ", "String ", "int ", "return "],
+            "syntax_checks": [
+                (r"public\s+class\s+\w+", "class_def"),
+                (r"public\s+\w+\s+\w+\s*\(", "method_def"),
             ],
         },
-        'cpp': {
-            'keywords': ['#include', 'using namespace', 'std::', 'cout', 'cin', 'public:', 'private:'],
-            'syntax_checks': [
-                (r'#include\s*[<"]', 'include'),
-                (r'std::', 'std_namespace'),
+        "cpp": {
+            "keywords": [
+                "#include",
+                "using namespace",
+                "std::",
+                "cout",
+                "cin",
+                "public:",
+                "private:",
+            ],
+            "syntax_checks": [
+                (r'#include\s*[<"]', "include"),
+                (r"std::", "std_namespace"),
             ],
         },
-        'csharp': {
-            'keywords': ['namespace ', 'public class', 'private ', 'void ', 'string ', 'int '],
-            'syntax_checks': [
-                (r'namespace\s+\w+', 'namespace'),
-                (r'public\s+class\s+\w+', 'class_def'),
+        "csharp": {
+            "keywords": ["namespace ", "public class", "private ", "void ", "string ", "int "],
+            "syntax_checks": [
+                (r"namespace\s+\w+", "namespace"),
+                (r"public\s+class\s+\w+", "class_def"),
             ],
         },
-        'go': {
-            'keywords': ['package ', 'func ', 'import ', 'return ', 'if ', 'for ', 'range '],
-            'syntax_checks': [
-                (r'func\s+\w+\s*\(', 'function_def'),
-                (r'package\s+\w+', 'package_decl'),
+        "go": {
+            "keywords": ["package ", "func ", "import ", "return ", "if ", "for ", "range "],
+            "syntax_checks": [
+                (r"func\s+\w+\s*\(", "function_def"),
+                (r"package\s+\w+", "package_decl"),
             ],
         },
-        'rust': {
-            'keywords': ['fn ', 'let ', 'mut ', 'impl ', 'struct ', 'enum ', 'match ', 'use '],
-            'syntax_checks': [
-                (r'fn\s+\w+\s*\(', 'function_def'),
-                (r'impl\s+\w+', 'impl_block'),
+        "rust": {
+            "keywords": ["fn ", "let ", "mut ", "impl ", "struct ", "enum ", "match ", "use "],
+            "syntax_checks": [
+                (r"fn\s+\w+\s*\(", "function_def"),
+                (r"impl\s+\w+", "impl_block"),
             ],
         },
-        'gdscript': {  # Godot
-            'keywords': ['extends ', 'class_name ', 'func ', 'var ', 'const ', 'signal ', 'export', 'onready'],
-            'syntax_checks': [
-                (r'extends\s+\w+', 'extends'),
-                (r'func\s+_\w+', 'built_in_method'),
-                (r'signal\s+\w+', 'signal_def'),
-                (r'@export', 'export_annotation'),
+        "gdscript": {  # Godot
+            "keywords": [
+                "extends ",
+                "class_name ",
+                "func ",
+                "var ",
+                "const ",
+                "signal ",
+                "export",
+                "onready",
+            ],
+            "syntax_checks": [
+                (r"extends\s+\w+", "extends"),
+                (r"func\s+_\w+", "built_in_method"),
+                (r"signal\s+\w+", "signal_def"),
+                (r"@export", "export_annotation"),
             ],
         },
-        'yaml': {
-            'keywords': [],
-            'syntax_checks': [
-                (r'^\w+:\s*', 'key_value'),
-                (r'^-\s+\w+', 'list_item'),
+        "yaml": {
+            "keywords": [],
+            "syntax_checks": [
+                (r"^\w+:\s*", "key_value"),
+                (r"^-\s+\w+", "list_item"),
             ],
         },
-        'json': {
-            'keywords': [],
-            'syntax_checks': [
-                (r'["\']\w+["\']\s*:', 'key_value'),
-                (r'\{[^}]*\}', 'object'),
-                (r'\[[^\]]*\]', 'array'),
+        "json": {
+            "keywords": [],
+            "syntax_checks": [
+                (r'["\']\w+["\']\s*:', "key_value"),
+                (r"\{[^}]*\}", "object"),
+                (r"\[[^\]]*\]", "array"),
             ],
         },
-        'xml': {
-            'keywords': [],
-            'syntax_checks': [
-                (r'<\w+[^>]*>', 'opening_tag'),
-                (r'</\w+>', 'closing_tag'),
+        "xml": {
+            "keywords": [],
+            "syntax_checks": [
+                (r"<\w+[^>]*>", "opening_tag"),
+                (r"</\w+>", "closing_tag"),
             ],
         },
-        'sql': {
-            'keywords': ['SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TABLE'],
-            'syntax_checks': [
-                (r'SELECT\s+.+\s+FROM', 'select_statement'),
-                (r'CREATE\s+TABLE', 'create_table'),
+        "sql": {
+            "keywords": [
+                "SELECT",
+                "FROM",
+                "WHERE",
+                "INSERT",
+                "UPDATE",
+                "DELETE",
+                "CREATE",
+                "TABLE",
+            ],
+            "syntax_checks": [
+                (r"SELECT\s+.+\s+FROM", "select_statement"),
+                (r"CREATE\s+TABLE", "create_table"),
             ],
         },
-        'bash': {
-            'keywords': ['#!/bin/', 'echo ', 'if [', 'then', 'fi', 'for ', 'do', 'done'],
-            'syntax_checks': [
-                (r'#!/bin/\w+', 'shebang'),
-                (r'\$\w+', 'variable'),
+        "bash": {
+            "keywords": ["#!/bin/", "echo ", "if [", "then", "fi", "for ", "do", "done"],
+            "syntax_checks": [
+                (r"#!/bin/\w+", "shebang"),
+                (r"\$\w+", "variable"),
             ],
         },
     }
@@ -139,7 +165,7 @@ class QualityScorer:
             return 0.0
 
         code = code.strip()
-        lines = [line for line in code.split('\n') if line.strip()]
+        lines = [line for line in code.split("\n") if line.strip()]
 
         # Factor 1: Length appropriateness
         code_len = len(code)
@@ -161,13 +187,14 @@ class QualityScorer:
             lang_patterns = self.LANGUAGE_PATTERNS[language]
 
             # Check for keywords
-            keyword_matches = sum(1 for kw in lang_patterns['keywords'] if kw in code)
+            keyword_matches = sum(1 for kw in lang_patterns["keywords"] if kw in code)
             if keyword_matches >= 2:
                 score += 1.0
 
             # Check for syntax patterns
             syntax_matches = sum(
-                1 for pattern, _ in lang_patterns['syntax_checks']
+                1
+                for pattern, _ in lang_patterns["syntax_checks"]
                 if re.search(pattern, code, re.MULTILINE)
             )
             if syntax_matches >= 1:
@@ -175,11 +202,11 @@ class QualityScorer:
 
         # Factor 4: Structural quality
         # Check for function/class definitions
-        if re.search(r'\b(def|function|func|fn|class|public class)\b', code):
+        if re.search(r"\b(def|function|func|fn|class|public class)\b", code):
             score += 1.5
 
         # Check for meaningful variable names (not just x, y, i)
-        meaningful_vars = re.findall(r'\b[a-z_][a-z0-9_]{3,}\b', code.lower())
+        meaningful_vars = re.findall(r"\b[a-z_][a-z0-9_]{3,}\b", code.lower())
         if len(meaningful_vars) >= 3:
             score += 0.5
 
@@ -192,8 +219,7 @@ class QualityScorer:
 
         # Factor 6: Comment/code ratio
         comment_lines = sum(
-            1 for line in lines
-            if line.strip().startswith(('#', '//', '/*', '*', '--', '<!--'))
+            1 for line in lines if line.strip().startswith(("#", "//", "/*", "*", "--", "<!--"))
         )
         if len(lines) > 0:
             comment_ratio = comment_lines / len(lines)
@@ -210,7 +236,7 @@ class QualityScorer:
         issues = []
 
         # Check for balanced braces/brackets
-        pairs = [('{', '}'), ('[', ']'), ('(', ')')]
+        pairs = [("{", "}"), ("[", "]"), ("(", ")")]
         for open_char, close_char in pairs:
             open_count = code.count(open_char)
             close_count = code.count(close_char)
@@ -218,26 +244,27 @@ class QualityScorer:
                 issues.append(f"Unbalanced {open_char}{close_char}")
 
         # Check for common natural language indicators
-        common_words = ['the', 'and', 'for', 'with', 'this', 'that', 'have', 'from', 'they']
-        word_count = sum(1 for word in common_words if f' {word} ' in code.lower())
+        common_words = ["the", "and", "for", "with", "this", "that", "have", "from", "they"]
+        word_count = sum(1 for word in common_words if f" {word} " in code.lower())
         if word_count > 5 and len(code.split()) < 100:
             issues.append("May be natural language")
 
         # Language-specific checks
-        if language == 'python':
+        if language == "python":
             # Check for mixed indentation
             indent_chars = set()
-            for line in code.split('\n'):
-                if line.startswith(' '):
-                    indent_chars.add('space')
-                elif line.startswith('\t'):
-                    indent_chars.add('tab')
+            for line in code.split("\n"):
+                if line.startswith(" "):
+                    indent_chars.add("space")
+                elif line.startswith("\t"):
+                    indent_chars.add("tab")
             if len(indent_chars) > 1:
                 issues.append("Mixed tabs and spaces")
 
-        elif language == 'json':
+        elif language == "json":
             try:
                 import json
+
                 json.loads(code)
             except Exception as e:
                 issues.append(f"Invalid JSON: {str(e)[:50]}")
@@ -311,7 +338,7 @@ class QualityScorer:
             score += 0.5
 
         # Structure check
-        if '.' in content:  # Has sentences
+        if "." in content:  # Has sentences
             score += 0.5
         if content[0].isupper():  # Starts with capital
             score += 0.5
@@ -327,7 +354,7 @@ class QualityScorer:
         """
         code = code.strip()
         if not code:
-            return 'unknown', 0.0
+            return "unknown", 0.0
 
         scores = {}
 
@@ -335,18 +362,18 @@ class QualityScorer:
             score = 0.0
 
             # Check keywords
-            keyword_hits = sum(1 for kw in patterns['keywords'] if kw in code)
+            keyword_hits = sum(1 for kw in patterns["keywords"] if kw in code)
             score += keyword_hits * 0.5
 
             # Check syntax patterns
-            for pattern, _ in patterns['syntax_checks']:
+            for pattern, _ in patterns["syntax_checks"]:
                 if re.search(pattern, code, re.MULTILINE):
                     score += 1.0
 
             scores[lang] = score
 
         if not scores:
-            return 'unknown', 0.0
+            return "unknown", 0.0
 
         best_lang = max(scores, key=scores.get)
         best_score = scores[best_lang]

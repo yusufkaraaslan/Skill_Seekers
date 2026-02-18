@@ -485,8 +485,7 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
             structure = {
                 "title": doc.title,
                 "headers": [
-                    {"level": h.level, "text": h.text, "line": h.source_line}
-                    for h in doc.headings
+                    {"level": h.level, "text": h.text, "line": h.source_line} for h in doc.headings
                 ],
                 "code_blocks": [
                     {
@@ -508,12 +507,10 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
                     for t in doc.tables
                 ],
                 "links": [
-                    {"text": x.text or x.target, "url": x.target}
-                    for x in doc.external_links
+                    {"text": x.text or x.target, "url": x.target} for x in doc.external_links
                 ],
                 "cross_references": [
-                    {"type": x.ref_type.value, "target": x.target}
-                    for x in doc.internal_links
+                    {"type": x.ref_type.value, "target": x.target} for x in doc.internal_links
                 ],
                 "word_count": len(content.split()),
                 "line_count": len(content.split("\n")),
@@ -569,7 +566,9 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
                 structure["title"] = text
 
     # Basic code block extraction
-    code_block_pattern = re.compile(r"\.\.\s+code-block::\s+(\w+)\s*\n\s+(.*?)(?=\n\S|\Z)", re.DOTALL)
+    code_block_pattern = re.compile(
+        r"\.\.\s+code-block::\s+(\w+)\s*\n\s+(.*?)(?=\n\S|\Z)", re.DOTALL
+    )
     for match in code_block_pattern.finditer(content):
         language = match.group(1) or "text"
         code = match.group(2).strip()
@@ -585,9 +584,7 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
     # Basic link extraction
     link_pattern = re.compile(r"`([^<`]+)\s+<([^>]+)>`_")
     for match in link_pattern.finditer(content):
-        structure["links"].append(
-            {"text": match.group(1).strip(), "url": match.group(2)}
-        )
+        structure["links"].append({"text": match.group(1).strip(), "url": match.group(2)})
 
     return structure
 
@@ -729,8 +726,12 @@ def process_markdown_docs(
                                 ],
                                 "tables": len(parsed_doc.tables),
                                 "cross_refs": len(parsed_doc.internal_links),
-                                "directives": len([b for b in parsed_doc.blocks if b.type.value == "admonition"]),
-                                "word_count": parsed_doc.stats.total_blocks if parsed_doc.stats else 0,
+                                "directives": len(
+                                    [b for b in parsed_doc.blocks if b.type.value == "admonition"]
+                                ),
+                                "word_count": parsed_doc.stats.total_blocks
+                                if parsed_doc.stats
+                                else 0,
                                 "line_count": len(content.split("\n")),
                             }
                     else:
@@ -752,7 +753,9 @@ def process_markdown_docs(
                                 "tables": len(parsed_doc.tables),
                                 "images": len(parsed_doc.images),
                                 "links": len(parsed_doc.external_links),
-                                "word_count": parsed_doc.stats.total_blocks if parsed_doc.stats else 0,
+                                "word_count": parsed_doc.stats.total_blocks
+                                if parsed_doc.stats
+                                else 0,
                                 "line_count": len(content.split("\n")),
                             }
                 except ImportError:
@@ -789,10 +792,15 @@ def process_markdown_docs(
                         "tables": len(parsed_doc.tables),
                         "cross_references": len(parsed_doc.internal_links),
                         "code_blocks": len(parsed_doc.code_blocks),
-                        "images": len(getattr(parsed_doc, 'images', [])),
+                        "images": len(getattr(parsed_doc, "images", [])),
                         "quality_scores": {
-                            "avg_code_quality": sum(cb.quality_score or 0 for cb in parsed_doc.code_blocks) / len(parsed_doc.code_blocks) if parsed_doc.code_blocks else 0,
-                        }
+                            "avg_code_quality": sum(
+                                cb.quality_score or 0 for cb in parsed_doc.code_blocks
+                            )
+                            / len(parsed_doc.code_blocks)
+                            if parsed_doc.code_blocks
+                            else 0,
+                        },
                     }
 
                 processed_docs.append(doc_data)
@@ -850,8 +858,12 @@ def process_markdown_docs(
     enhanced_count = sum(1 for doc in processed_docs if doc.get("_enhanced", False))
     if enhanced_count > 0:
         total_tables = sum(doc.get("parsed_data", {}).get("tables", 0) for doc in processed_docs)
-        total_xrefs = sum(doc.get("parsed_data", {}).get("cross_references", 0) for doc in processed_docs)
-        total_code_blocks = sum(doc.get("parsed_data", {}).get("code_blocks", 0) for doc in processed_docs)
+        total_xrefs = sum(
+            doc.get("parsed_data", {}).get("cross_references", 0) for doc in processed_docs
+        )
+        total_code_blocks = sum(
+            doc.get("parsed_data", {}).get("code_blocks", 0) for doc in processed_docs
+        )
 
         extraction_summary = {
             "enhanced_files": enhanced_count,

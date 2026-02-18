@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParseResult:
     """Result of parsing a document."""
+
     document: Document | None = None
     success: bool = False
     errors: list[str] = field(default_factory=list)
@@ -56,11 +57,11 @@ class BaseParser(ABC):
                 - encoding: str = 'utf-8'
         """
         self.options = options or {}
-        self._include_comments = self.options.get('include_comments', False)
-        self._extract_metadata = self.options.get('extract_metadata', True)
-        self._quality_scoring = self.options.get('quality_scoring', True)
-        self._max_file_size = self.options.get('max_file_size_mb', 50.0) * 1024 * 1024
-        self._encoding = self.options.get('encoding', 'utf-8')
+        self._include_comments = self.options.get("include_comments", False)
+        self._extract_metadata = self.options.get("extract_metadata", True)
+        self._quality_scoring = self.options.get("quality_scoring", True)
+        self._max_file_size = self.options.get("max_file_size_mb", 50.0) * 1024 * 1024
+        self._encoding = self.options.get("encoding", "utf-8")
 
     @property
     @abstractmethod
@@ -149,15 +150,19 @@ class BaseParser(ABC):
 
     def parse_string(self, content: str, source_path: str = "<string>") -> ParseResult:
         """Parse content from string."""
+
         # Create a wrapper that looks like a path
         class StringSource:
             def __init__(self, content: str, path: str):
                 self._content = content
                 self._path = path
-            def read_text(self, encoding: str = 'utf-8') -> str:
+
+            def read_text(self, encoding: str = "utf-8") -> str:
                 return self._content
+
             def exists(self) -> bool:
                 return True
+
             def __str__(self):
                 return self._path
 
@@ -238,17 +243,20 @@ class BaseParser(ABC):
         document.stats.code_blocks = len(document.code_blocks)
         document.stats.tables = len(document.tables)
         document.stats.headings = len(document.headings)
-        document.stats.cross_references = len(document.internal_links) + len(document.external_links)
+        document.stats.cross_references = len(document.internal_links) + len(
+            document.external_links
+        )
 
         return document
 
     def _extract_headings(self, document: Document) -> list:
         """Extract headings from content blocks."""
         from .unified_structure import ContentBlockType
+
         headings = []
         for block in document.blocks:
             if block.type == ContentBlockType.HEADING:
-                heading_data = block.metadata.get('heading_data')
+                heading_data = block.metadata.get("heading_data")
                 if heading_data:
                     headings.append(heading_data)
         return headings
@@ -257,22 +265,23 @@ class BaseParser(ABC):
         """Extract code blocks from content blocks."""
         code_blocks = []
         for block in document.blocks:
-            if block.metadata.get('code_data'):
-                code_blocks.append(block.metadata['code_data'])
+            if block.metadata.get("code_data"):
+                code_blocks.append(block.metadata["code_data"])
         return code_blocks
 
     def _extract_tables(self, document: Document) -> list:
         """Extract tables from content blocks."""
         tables = []
         for block in document.blocks:
-            if block.metadata.get('table_data'):
-                tables.append(block.metadata['table_data'])
+            if block.metadata.get("table_data"):
+                tables.append(block.metadata["table_data"])
         return tables
 
     def _create_quality_scorer(self):
         """Create a quality scorer if enabled."""
         if self._quality_scoring:
             from .quality_scorer import QualityScorer
+
             return QualityScorer()
         return None
 
@@ -292,12 +301,14 @@ def get_parser_for_file(path: str | Path) -> BaseParser | None:
 
     # Try RST parser
     from .rst_parser import RstParser
+
     rst_parser = RstParser()
     if suffix in rst_parser.supported_extensions:
         return rst_parser
 
     # Try Markdown parser
     from .markdown_parser import MarkdownParser
+
     md_parser = MarkdownParser()
     if suffix in md_parser.supported_extensions:
         return md_parser
@@ -320,11 +331,13 @@ def parse_document(source: str | Path, format_hint: str | None = None) -> ParseR
     """
     # Use format hint if provided
     if format_hint:
-        if format_hint.lower() in ('rst', 'rest', 'restructuredtext'):
+        if format_hint.lower() in ("rst", "rest", "restructuredtext"):
             from .rst_parser import RstParser
+
             return RstParser().parse(source)
-        elif format_hint.lower() in ('md', 'markdown'):
+        elif format_hint.lower() in ("md", "markdown"):
             from .markdown_parser import MarkdownParser
+
             return MarkdownParser().parse(source)
 
     # Auto-detect from file extension
@@ -336,11 +349,13 @@ def parse_document(source: str | Path, format_hint: str | None = None) -> ParseR
     content = source if isinstance(source, str) else Path(source).read_text()
 
     # Check for RST indicators
-    rst_indicators = ['.. ', '::\n', ':ref:`', '.. toctree::', '.. code-block::']
+    rst_indicators = [".. ", "::\n", ":ref:`", ".. toctree::", ".. code-block::"]
     if any(ind in content for ind in rst_indicators):
         from .rst_parser import RstParser
+
         return RstParser().parse_string(content)
 
     # Default to Markdown
     from .markdown_parser import MarkdownParser
+
     return MarkdownParser().parse_string(content)

@@ -21,8 +21,17 @@ from typing import Any
 
 from .base_parser import BaseParser
 from .unified_structure import (
-    Document, ContentBlock, ContentBlockType, CrossReference, CrossRefType,
-    AdmonitionType, Heading, CodeBlock, Table, Image, ListType
+    Document,
+    ContentBlock,
+    ContentBlockType,
+    CrossReference,
+    CrossRefType,
+    AdmonitionType,
+    Heading,
+    CodeBlock,
+    Table,
+    Image,
+    ListType,
 )
 from .quality_scorer import QualityScorer
 
@@ -36,14 +45,14 @@ class MarkdownParser(BaseParser):
 
     # Admonition types for GitHub-style callouts
     ADMONITION_TYPES = {
-        'note': AdmonitionType.NOTE,
-        'warning': AdmonitionType.WARNING,
-        'tip': AdmonitionType.TIP,
-        'hint': AdmonitionType.HINT,
-        'important': AdmonitionType.IMPORTANT,
-        'caution': AdmonitionType.CAUTION,
-        'danger': AdmonitionType.DANGER,
-        'attention': AdmonitionType.ATTENTION,
+        "note": AdmonitionType.NOTE,
+        "warning": AdmonitionType.WARNING,
+        "tip": AdmonitionType.TIP,
+        "hint": AdmonitionType.HINT,
+        "important": AdmonitionType.IMPORTANT,
+        "caution": AdmonitionType.CAUTION,
+        "danger": AdmonitionType.DANGER,
+        "attention": AdmonitionType.ATTENTION,
     }
 
     def __init__(self, options: dict[str, Any] | None = None):
@@ -54,32 +63,32 @@ class MarkdownParser(BaseParser):
 
     @property
     def format_name(self) -> str:
-        return 'markdown'
+        return "markdown"
 
     @property
     def supported_extensions(self) -> list[str]:
-        return ['.md', '.markdown', '.mdown', '.mkd']
+        return [".md", ".markdown", ".mdown", ".mkd"]
 
     def _detect_format(self, content: str) -> bool:
         """Detect if content is Markdown."""
         md_indicators = [
-            r'^#{1,6}\s+\S',  # ATX headers
-            r'^\[.*?\]\(.*?\)',  # Links
-            r'^```',  # Code fences
-            r'^\|.+\|',  # Tables
-            r'^\s*[-*+]\s+\S',  # Lists
-            r'^>\s+\S',  # Blockquotes
+            r"^#{1,6}\s+\S",  # ATX headers
+            r"^\[.*?\]\(.*?\)",  # Links
+            r"^```",  # Code fences
+            r"^\|.+\|",  # Tables
+            r"^\s*[-*+]\s+\S",  # Lists
+            r"^>\s+\S",  # Blockquotes
         ]
         return any(re.search(pattern, content, re.MULTILINE) for pattern in md_indicators)
 
     def _parse_content(self, content: str, source_path: str) -> Document:
         """Parse Markdown content into Document."""
-        self._lines = content.split('\n')
+        self._lines = content.split("\n")
         self._current_line = 0
 
         document = Document(
-            title='',
-            format='markdown',
+            title="",
+            format="markdown",
             source_path=source_path,
         )
 
@@ -96,12 +105,12 @@ class MarkdownParser(BaseParser):
             self._current_line += 1
 
         # Extract title from first h1 or frontmatter
-        if document.meta.get('title'):
-            document.title = document.meta['title']
+        if document.meta.get("title"):
+            document.title = document.meta["title"]
         else:
             for block in document.blocks:
                 if block.type == ContentBlockType.HEADING:
-                    heading_data = block.metadata.get('heading_data')
+                    heading_data = block.metadata.get("heading_data")
                     if heading_data and heading_data.level == 1:
                         document.title = heading_data.text
                         break
@@ -117,13 +126,13 @@ class MarkdownParser(BaseParser):
             return None
 
         first_line = self._lines[self._current_line].strip()
-        if first_line != '---':
+        if first_line != "---":
             return None
 
         # Find closing ---
         end_line = None
         for i in range(self._current_line + 1, len(self._lines)):
-            if self._lines[i].strip() == '---':
+            if self._lines[i].strip() == "---":
                 end_line = i
                 break
 
@@ -131,8 +140,8 @@ class MarkdownParser(BaseParser):
             return None
 
         # Extract frontmatter content
-        frontmatter_lines = self._lines[self._current_line + 1:end_line]
-        '\n'.join(frontmatter_lines)
+        frontmatter_lines = self._lines[self._current_line + 1 : end_line]
+        "\n".join(frontmatter_lines)
 
         # Simple key: value parsing (not full YAML)
         meta = {}
@@ -145,11 +154,11 @@ class MarkdownParser(BaseParser):
                 continue
 
             # Check for new key
-            match = re.match(r'^(\w+):\s*(.*)$', stripped)
+            match = re.match(r"^(\w+):\s*(.*)$", stripped)
             if match:
                 # Save previous key
                 if current_key:
-                    meta[current_key] = '\n'.join(current_value).strip()
+                    meta[current_key] = "\n".join(current_value).strip()
 
                 current_key = match.group(1)
                 value = match.group(2)
@@ -157,27 +166,27 @@ class MarkdownParser(BaseParser):
                 # Handle inline value
                 if value:
                     # Check if it's a list
-                    if value.startswith('[') and value.endswith(']'):
+                    if value.startswith("[") and value.endswith("]"):
                         # Parse list
-                        items = [item.strip().strip('"\'') for item in value[1:-1].split(',')]
+                        items = [item.strip().strip("\"'") for item in value[1:-1].split(",")]
                         meta[current_key] = items
                     else:
                         current_value = [value]
                 else:
                     current_value = []
-            elif current_key and stripped.startswith('- '):
+            elif current_key and stripped.startswith("- "):
                 # List item
                 if current_key not in meta:
                     meta[current_key] = []
                 if not isinstance(meta[current_key], list):
                     meta[current_key] = [meta[current_key]]
-                meta[current_key].append(stripped[2:].strip().strip('"\''))
+                meta[current_key].append(stripped[2:].strip().strip("\"'"))
             elif current_key:
                 current_value.append(stripped)
 
         # Save last key
         if current_key:
-            meta[current_key] = '\n'.join(current_value).strip()
+            meta[current_key] = "\n".join(current_value).strip()
 
         # Advance past frontmatter
         self._current_line = end_line + 1
@@ -198,11 +207,11 @@ class MarkdownParser(BaseParser):
             return None
 
         # Skip HTML comments
-        if stripped.startswith('<!--'):
+        if stripped.startswith("<!--"):
             return self._parse_html_comment()
 
         # ATX Headers
-        if stripped.startswith('#'):
+        if stripped.startswith("#"):
             return self._parse_atx_header()
 
         # Setext headers (underline style)
@@ -210,23 +219,23 @@ class MarkdownParser(BaseParser):
             return self._parse_setext_header()
 
         # Code fence
-        if stripped.startswith('```'):
+        if stripped.startswith("```"):
             return self._parse_code_fence()
 
         # Indented code block
-        if current.startswith('    ') or current.startswith('\t'):
+        if current.startswith("    ") or current.startswith("\t"):
             return self._parse_indented_code()
 
         # Table
-        if '|' in stripped and self._is_table(line):
+        if "|" in stripped and self._is_table(line):
             return self._parse_table()
 
         # Blockquote (check for admonition)
-        if stripped.startswith('>'):
+        if stripped.startswith(">"):
             return self._parse_blockquote()
 
         # Horizontal rule
-        if re.match(r'^[\-*_]{3,}\s*$', stripped):
+        if re.match(r"^[\-*_]{3,}\s*$", stripped):
             return self._parse_horizontal_rule()
 
         # List
@@ -249,18 +258,18 @@ class MarkdownParser(BaseParser):
             return False
 
         # H1: ===, H2: ---
-        return re.match(r'^[=-]+$', next_line) is not None
+        return re.match(r"^[=-]+$", next_line) is not None
 
     def _parse_atx_header(self) -> ContentBlock:
         """Parse ATX style header (# Header)."""
         line = self._lines[self._current_line]
-        match = re.match(r'^(#{1,6})\s+(.+)$', line.strip())
+        match = re.match(r"^(#{1,6})\s+(.+)$", line.strip())
 
         if match:
             level = len(match.group(1))
             text = match.group(2).strip()
             # Remove trailing hashes
-            text = re.sub(r'\s+#+$', '', text)
+            text = re.sub(r"\s+#+$", "", text)
 
             anchor = self._create_anchor(text)
 
@@ -274,7 +283,7 @@ class MarkdownParser(BaseParser):
             return ContentBlock(
                 type=ContentBlockType.HEADING,
                 content=text,
-                metadata={'heading_data': heading},
+                metadata={"heading_data": heading},
                 source_line=self._current_line + 1,
             )
 
@@ -285,7 +294,7 @@ class MarkdownParser(BaseParser):
         text = self._lines[self._current_line].strip()
         underline = self._lines[self._current_line + 1].strip()
 
-        level = 1 if underline[0] == '=' else 2
+        level = 1 if underline[0] == "=" else 2
         anchor = self._create_anchor(text)
 
         heading = Heading(
@@ -301,14 +310,14 @@ class MarkdownParser(BaseParser):
         return ContentBlock(
             type=ContentBlockType.HEADING,
             content=text,
-            metadata={'heading_data': heading},
+            metadata={"heading_data": heading},
             source_line=self._current_line,
         )
 
     def _parse_code_fence(self) -> ContentBlock:
         """Parse fenced code block."""
         line = self._lines[self._current_line]
-        match = re.match(r'^```(\w+)?\s*$', line.strip())
+        match = re.match(r"^```(\w+)?\s*$", line.strip())
         language = match.group(1) if match else None
 
         start_line = self._current_line
@@ -317,19 +326,19 @@ class MarkdownParser(BaseParser):
         code_lines = []
         while self._current_line < len(self._lines):
             current_line = self._lines[self._current_line]
-            if current_line.strip() == '```':
+            if current_line.strip() == "```":
                 break
             code_lines.append(current_line)
             self._current_line += 1
 
-        code = '\n'.join(code_lines)
+        code = "\n".join(code_lines)
 
         # Detect language if not specified
         detected_lang, confidence = self.quality_scorer.detect_language(code)
         if not language and confidence > 0.6:
             language = detected_lang
         elif not language:
-            language = 'text'
+            language = "text"
 
         # Score code quality
         quality = self.quality_scorer.score_code_block(code, language)
@@ -346,8 +355,8 @@ class MarkdownParser(BaseParser):
             type=ContentBlockType.CODE_BLOCK,
             content=code,
             metadata={
-                'code_data': code_block,
-                'language': language,
+                "code_data": code_block,
+                "language": language,
             },
             source_line=start_line + 1,
             quality_score=quality,
@@ -361,13 +370,13 @@ class MarkdownParser(BaseParser):
         while self._current_line < len(self._lines):
             line = self._lines[self._current_line]
             if not line.strip():
-                code_lines.append('')
+                code_lines.append("")
                 self._current_line += 1
                 continue
 
-            if line.startswith('    '):
+            if line.startswith("    "):
                 code_lines.append(line[4:])
-            elif line.startswith('\t'):
+            elif line.startswith("\t"):
                 code_lines.append(line[1:])
             else:
                 self._current_line -= 1
@@ -375,7 +384,7 @@ class MarkdownParser(BaseParser):
 
             self._current_line += 1
 
-        code = '\n'.join(code_lines).rstrip()
+        code = "\n".join(code_lines).rstrip()
 
         # Detect language
         detected_lang, confidence = self.quality_scorer.detect_language(code)
@@ -383,7 +392,7 @@ class MarkdownParser(BaseParser):
 
         code_block = CodeBlock(
             code=code,
-            language=detected_lang if confidence > 0.6 else 'text',
+            language=detected_lang if confidence > 0.6 else "text",
             quality_score=quality,
             confidence=confidence,
             source_line=start_line + 1,
@@ -393,8 +402,8 @@ class MarkdownParser(BaseParser):
             type=ContentBlockType.CODE_BLOCK,
             content=code,
             metadata={
-                'code_data': code_block,
-                'language': detected_lang,
+                "code_data": code_block,
+                "language": detected_lang,
             },
             source_line=start_line + 1,
             quality_score=quality,
@@ -409,7 +418,7 @@ class MarkdownParser(BaseParser):
         next_line = self._lines[line + 1].strip()
 
         # Check for table separator line
-        return bool(re.match(r'^[\|:-]+$', next_line) and '|' in current)
+        return bool(re.match(r"^[\|:-]+$", next_line) and "|" in current)
 
     def _parse_table(self) -> ContentBlock:
         """Parse a GFM table."""
@@ -419,7 +428,7 @@ class MarkdownParser(BaseParser):
 
         # Parse header row
         header_line = self._lines[self._current_line].strip()
-        headers = [cell.strip() for cell in header_line.split('|')]
+        headers = [cell.strip() for cell in header_line.split("|")]
         headers = [h for h in headers if h]  # Remove empty
         self._current_line += 1
 
@@ -431,11 +440,11 @@ class MarkdownParser(BaseParser):
         while self._current_line < len(self._lines):
             line = self._lines[self._current_line].strip()
 
-            if not line or '|' not in line:
+            if not line or "|" not in line:
                 self._current_line -= 1
                 break
 
-            cells = [cell.strip() for cell in line.split('|')]
+            cells = [cell.strip() for cell in line.split("|")]
             cells = [c for c in cells if c]
             if cells:
                 rows.append(cells)
@@ -446,7 +455,7 @@ class MarkdownParser(BaseParser):
             rows=rows,
             headers=headers,
             caption=None,
-            source_format='markdown',
+            source_format="markdown",
             source_line=start_line + 1,
         )
 
@@ -455,7 +464,7 @@ class MarkdownParser(BaseParser):
         return ContentBlock(
             type=ContentBlockType.TABLE,
             content=f"[Table: {len(rows)} rows]",
-            metadata={'table_data': table},
+            metadata={"table_data": table},
             source_line=start_line + 1,
             quality_score=quality,
         )
@@ -471,15 +480,15 @@ class MarkdownParser(BaseParser):
             line = self._lines[self._current_line]
             stripped = line.strip()
 
-            if not stripped.startswith('>'):
+            if not stripped.startswith(">"):
                 self._current_line -= 1
                 break
 
             # Remove > prefix
-            content = line[1:].strip() if line.startswith('> ') else line[1:].strip()
+            content = line[1:].strip() if line.startswith("> ") else line[1:].strip()
 
             # Check for GitHub-style admonition: > [!NOTE]
-            admonition_match = re.match(r'^\[!([\w]+)\]\s*(.*)$', content)
+            admonition_match = re.match(r"^\[!([\w]+)\]\s*(.*)$", content)
             if admonition_match and not admonition_type:
                 type_name = admonition_match.group(1).lower()
                 admonition_type = self.ADMONITION_TYPES.get(type_name)
@@ -497,17 +506,17 @@ class MarkdownParser(BaseParser):
         if admonition_type:
             return ContentBlock(
                 type=ContentBlockType.ADMONITION,
-                content='\n'.join(admonition_content),
-                metadata={'admonition_type': admonition_type},
+                content="\n".join(admonition_content),
+                metadata={"admonition_type": admonition_type},
                 source_line=start_line + 1,
             )
 
         # Regular blockquote
-        content = '\n'.join(lines)
+        content = "\n".join(lines)
         return ContentBlock(
             type=ContentBlockType.RAW,
             content=f"> {content}",
-            metadata={'block_type': 'blockquote'},
+            metadata={"block_type": "blockquote"},
             source_line=start_line + 1,
         )
 
@@ -519,7 +528,7 @@ class MarkdownParser(BaseParser):
             line = self._lines[self._current_line]
             content_lines.append(line)
 
-            if '-->' in line:
+            if "-->" in line:
                 break
 
             self._current_line += 1
@@ -531,16 +540,16 @@ class MarkdownParser(BaseParser):
         """Parse horizontal rule."""
         return ContentBlock(
             type=ContentBlockType.RAW,
-            content='---',
-            metadata={'element': 'horizontal_rule'},
+            content="---",
+            metadata={"element": "horizontal_rule"},
             source_line=self._current_line + 1,
         )
 
     def _detect_list_type(self, stripped: str) -> ListType | None:
         """Detect if line starts a list and which type."""
-        if re.match(r'^[-*+]\s+', stripped):
+        if re.match(r"^[-*+]\s+", stripped):
             return ListType.BULLET
-        if re.match(r'^\d+\.\s+', stripped):
+        if re.match(r"^\d+\.\s+", stripped):
             return ListType.NUMBERED
         return None
 
@@ -559,13 +568,13 @@ class MarkdownParser(BaseParser):
 
             # Check if still in list
             if list_type == ListType.BULLET:
-                match = re.match(r'^[-*+]\s+(.+)$', stripped)
+                match = re.match(r"^[-*+]\s+(.+)$", stripped)
                 if not match:
                     self._current_line -= 1
                     break
                 items.append(match.group(1))
             else:  # NUMBERED
-                match = re.match(r'^\d+\.\s+(.+)$', stripped)
+                match = re.match(r"^\d+\.\s+(.+)$", stripped)
                 if not match:
                     self._current_line -= 1
                     break
@@ -577,8 +586,8 @@ class MarkdownParser(BaseParser):
             type=ContentBlockType.LIST,
             content=f"{len(items)} items",
             metadata={
-                'list_type': list_type,
-                'items': items,
+                "list_type": list_type,
+                "items": items,
             },
             source_line=start_line + 1,
         )
@@ -597,15 +606,15 @@ class MarkdownParser(BaseParser):
                 break
 
             # Check for block-level elements
-            if stripped.startswith('#'):
+            if stripped.startswith("#"):
                 break
-            if stripped.startswith('```'):
+            if stripped.startswith("```"):
                 break
-            if stripped.startswith('>'):
+            if stripped.startswith(">"):
                 break
-            if stripped.startswith('---') or stripped.startswith('***'):
+            if stripped.startswith("---") or stripped.startswith("***"):
                 break
-            if stripped.startswith('|') and self._is_table(self._current_line):
+            if stripped.startswith("|") and self._is_table(self._current_line):
                 break
             if self._detect_list_type(stripped):
                 break
@@ -615,7 +624,7 @@ class MarkdownParser(BaseParser):
             lines.append(stripped)
             self._current_line += 1
 
-        content = ' '.join(lines)
+        content = " ".join(lines)
 
         # Process inline elements
         content = self._process_inline(content)
@@ -629,60 +638,60 @@ class MarkdownParser(BaseParser):
     def _process_inline(self, text: str) -> str:
         """Process inline Markdown elements."""
         # Links [text](url)
-        text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'[\1](\2)', text)
+        text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"[\1](\2)", text)
 
         # Images ![alt](url)
-        text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'![\1](\2)', text)
+        text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r"![\1](\2)", text)
 
         # Code `code`
-        text = re.sub(r'`([^`]+)`', r'`\1`', text)
+        text = re.sub(r"`([^`]+)`", r"`\1`", text)
 
         # Bold **text** or __text__
-        text = re.sub(r'\*\*([^*]+)\*\*', r'**\1**', text)
-        text = re.sub(r'__([^_]+)__', r'**\1**', text)
+        text = re.sub(r"\*\*([^*]+)\*\*", r"**\1**", text)
+        text = re.sub(r"__([^_]+)__", r"**\1**", text)
 
         # Italic *text* or _text_
-        text = re.sub(r'(?<!\*)\*([^*]+)\*(?!\*)', r'*\1*', text)
-        text = re.sub(r'(?<!_)_([^_]+)_(?!_)', r'*\1*', text)
+        text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"*\1*", text)
+        text = re.sub(r"(?<!_)_([^_]+)_(?!_)", r"*\1*", text)
 
         # Strikethrough ~~text~~
-        text = re.sub(r'~~([^~]+)~~', r'~~\1~~', text)
+        text = re.sub(r"~~([^~]+)~~", r"~~\1~~", text)
 
         return text
 
     def _create_anchor(self, text: str) -> str:
         """Create URL anchor from heading text."""
         anchor = text.lower()
-        anchor = re.sub(r'[^\w\s-]', '', anchor)
-        anchor = anchor.replace(' ', '-')
-        anchor = re.sub(r'-+', '-', anchor)
-        return anchor.strip('-')
+        anchor = re.sub(r"[^\w\s-]", "", anchor)
+        anchor = anchor.replace(" ", "-")
+        anchor = re.sub(r"-+", "-", anchor)
+        return anchor.strip("-")
 
     def _extract_specialized_content(self, document: Document):
         """Extract specialized content lists from blocks."""
         for block in document.blocks:
             # Extract headings
             if block.type == ContentBlockType.HEADING:
-                heading_data = block.metadata.get('heading_data')
+                heading_data = block.metadata.get("heading_data")
                 if heading_data:
                     document.headings.append(heading_data)
 
             # Extract code blocks
             elif block.type == ContentBlockType.CODE_BLOCK:
-                code_data = block.metadata.get('code_data')
+                code_data = block.metadata.get("code_data")
                 if code_data:
                     document.code_blocks.append(code_data)
 
             # Extract tables
             elif block.type == ContentBlockType.TABLE:
-                table_data = block.metadata.get('table_data')
+                table_data = block.metadata.get("table_data")
                 if table_data:
                     document.tables.append(table_data)
 
             # Extract images from paragraphs (simplified)
             elif block.type == ContentBlockType.PARAGRAPH:
                 content = block.content
-                img_matches = re.findall(r'!\[([^\]]*)\]\(([^)]+)\)', content)
+                img_matches = re.findall(r"!\[([^\]]*)\]\(([^)]+)\)", content)
                 for alt, src in img_matches:
                     image = Image(
                         source=src,
@@ -692,12 +701,12 @@ class MarkdownParser(BaseParser):
                     document.images.append(image)
 
                 # Extract links
-                link_matches = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', content)
+                link_matches = re.findall(r"\[([^\]]+)\]\(([^)]+)\)", content)
                 for text, url in link_matches:
                     # Determine if internal or external
-                    if url.startswith('#'):
+                    if url.startswith("#"):
                         ref_type = CrossRefType.INTERNAL
-                    elif url.startswith('http'):
+                    elif url.startswith("http"):
                         ref_type = CrossRefType.EXTERNAL
                     else:
                         ref_type = CrossRefType.INTERNAL

@@ -81,9 +81,7 @@ class UnifiedEnhancer:
         if config:
             self.config = config
         else:
-            self.config = EnhancementConfig(
-                mode=mode, api_key=api_key, enabled=enabled
-            )
+            self.config = EnhancementConfig(mode=mode, api_key=api_key, enabled=enabled)
 
         # Get settings from config manager
         if CONFIG_AVAILABLE:
@@ -115,9 +113,7 @@ class UnifiedEnhancer:
                 self.client = anthropic.Anthropic(**client_kwargs)
                 logger.info("✅ AI enhancement enabled (using Claude API)")
             except ImportError:
-                logger.warning(
-                    "⚠️  anthropic package not installed, falling back to LOCAL mode"
-                )
+                logger.warning("⚠️  anthropic package not installed, falling back to LOCAL mode")
                 self.config.mode = "local"
             except Exception as e:
                 logger.warning(
@@ -170,13 +166,9 @@ class UnifiedEnhancer:
 
         # Batch processing
         batch_size = (
-            self.config.batch_size
-            if self.config.mode == "local"
-            else 5  # API uses smaller batches
+            self.config.batch_size if self.config.mode == "local" else 5  # API uses smaller batches
         )
-        parallel_workers = (
-            self.config.parallel_workers if self.config.mode == "local" else 1
-        )
+        parallel_workers = self.config.parallel_workers if self.config.mode == "local" else 1
 
         logger.info(
             f"🤖 Enhancing {len(items)} {enhancement_type}s with AI "
@@ -200,9 +192,7 @@ class UnifiedEnhancer:
         logger.info(f"✅ Enhanced {len(enhanced)} {enhancement_type}s")
         return enhanced
 
-    def _enhance_parallel(
-        self, batches: list[list[dict]], prompt_template: str
-    ) -> list[dict]:
+    def _enhance_parallel(self, batches: list[list[dict]], prompt_template: str) -> list[dict]:
         """Process batches in parallel using ThreadPoolExecutor."""
         results = [None] * len(batches)  # Preserve order
 
@@ -234,9 +224,7 @@ class UnifiedEnhancer:
                 enhanced.extend(batch_result)
         return enhanced
 
-    def _enhance_batch(
-        self, items: list[dict], prompt_template: str
-    ) -> list[dict]:
+    def _enhance_batch(self, items: list[dict], prompt_template: str) -> list[dict]:
         """Enhance a batch of items."""
         # Prepare prompt
         item_descriptions = []
@@ -244,9 +232,7 @@ class UnifiedEnhancer:
             desc = self._format_item_for_prompt(idx, item)
             item_descriptions.append(desc)
 
-        prompt = prompt_template.format(
-            items="\n".join(item_descriptions), count=len(items)
-        )
+        prompt = prompt_template.format(items="\n".join(item_descriptions), count=len(items))
 
         # Call AI
         response = self._call_claude(prompt, max_tokens=3000)
@@ -267,9 +253,7 @@ class UnifiedEnhancer:
                     if "confidence_boost" in analysis and "confidence" in item:
                         boost = analysis["confidence_boost"]
                         if -0.2 <= boost <= 0.2:
-                            item["confidence"] = min(
-                                1.0, max(0.0, item["confidence"] + boost)
-                            )
+                            item["confidence"] = min(1.0, max(0.0, item["confidence"] + boost))
 
             return items
 

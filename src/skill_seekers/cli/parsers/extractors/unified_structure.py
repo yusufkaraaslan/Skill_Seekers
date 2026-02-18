@@ -13,6 +13,7 @@ from enum import Enum
 
 class ContentBlockType(Enum):
     """Standardized content block types across all formats."""
+
     HEADING = "heading"
     PARAGRAPH = "paragraph"
     CODE_BLOCK = "code_block"
@@ -33,6 +34,7 @@ class ContentBlockType(Enum):
 
 class CrossRefType(Enum):
     """Types of cross-references (mainly RST but useful for others)."""
+
     REF = "ref"  # :ref:`label`
     DOC = "doc"  # :doc:`path`
     CLASS = "class"  # :class:`ClassName`
@@ -50,6 +52,7 @@ class CrossRefType(Enum):
 
 class AdmonitionType(Enum):
     """Types of admonitions/callouts."""
+
     NOTE = "note"
     WARNING = "warning"
     TIP = "tip"
@@ -66,6 +69,7 @@ class AdmonitionType(Enum):
 
 class ListType(Enum):
     """Types of lists."""
+
     BULLET = "bullet"
     NUMBERED = "numbered"
     DEFINITION = "definition"  # Term/definition pairs
@@ -74,6 +78,7 @@ class ListType(Enum):
 @dataclass
 class Heading:
     """A document heading/section title."""
+
     level: int  # 1-6 for h1-h6, or 1+ for RST underline levels
     text: str
     id: str | None = None  # Anchor ID
@@ -83,6 +88,7 @@ class Heading:
 @dataclass
 class CodeBlock:
     """A code block with metadata."""
+
     code: str
     language: str | None = None
     quality_score: float | None = None  # 0-10
@@ -96,6 +102,7 @@ class CodeBlock:
 @dataclass
 class Table:
     """A table with rows and cells."""
+
     rows: list[list[str]]  # 2D array of cell content
     headers: list[str] | None = None
     caption: str | None = None
@@ -118,6 +125,7 @@ class Table:
 @dataclass
 class CrossReference:
     """A cross-reference link."""
+
     ref_type: CrossRefType
     target: str  # Target ID, URL, or path
     text: str | None = None  # Display text (if different from target)
@@ -128,6 +136,7 @@ class CrossReference:
 @dataclass
 class Field:
     """A field in a field list (RST :param:, :returns:, etc.)."""
+
     name: str  # Field name (e.g., 'param', 'returns', 'type')
     arg: str | None = None  # Field argument (e.g., parameter name)
     content: str = ""  # Field content
@@ -137,6 +146,7 @@ class Field:
 @dataclass
 class DefinitionItem:
     """A definition list item (term + definition)."""
+
     term: str
     definition: str
     classifier: str | None = None  # RST classifier (term : classifier)
@@ -146,6 +156,7 @@ class DefinitionItem:
 @dataclass
 class Image:
     """An image reference or embedded image."""
+
     source: str  # URL, path, or base64 data
     alt_text: str | None = None
     width: int | None = None
@@ -157,6 +168,7 @@ class Image:
 @dataclass
 class ContentBlock:
     """Universal content block - used by ALL parsers."""
+
     type: ContentBlockType
     content: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -176,6 +188,7 @@ class ContentBlock:
 @dataclass
 class ExtractionStats:
     """Statistics about document extraction."""
+
     total_blocks: int = 0
     code_blocks: int = 0
     tables: int = 0
@@ -194,6 +207,7 @@ class Document:
     This class provides a standardized representation of document content
     regardless of the source format (RST, Markdown, PDF, HTML).
     """
+
     title: str = ""
     format: str = ""  # 'markdown', 'rst', 'pdf', 'html', 'unknown'
     source_path: str = ""
@@ -241,6 +255,7 @@ class Document:
             Markdown-formatted string
         """
         from .formatters import MarkdownFormatter
+
         formatter = MarkdownFormatter(options or {})
         return formatter.format(self)
 
@@ -256,10 +271,7 @@ class Document:
             "source_path": self.source_path,
             "format": self.format,
             "content": self._extract_content_text(),
-            "headings": [
-                {"level": h.level, "text": h.text, "id": h.id}
-                for h in self.headings
-            ],
+            "headings": [{"level": h.level, "text": h.text, "id": h.id} for h in self.headings],
             "code_samples": [
                 {
                     "code": cb.code,
@@ -290,7 +302,7 @@ class Document:
                 "code_blocks": self.stats.code_blocks,
                 "tables": self.stats.tables,
                 "headings": self.stats.headings,
-            }
+            },
         }
 
     def _extract_content_text(self) -> str:
@@ -317,7 +329,7 @@ class Document:
 
         for block in self.blocks:
             if block.type == ContentBlockType.HEADING:
-                heading_data = block.metadata.get('heading_data')
+                heading_data = block.metadata.get("heading_data")
                 if heading_data and heading_data.text == heading_text:
                     in_section = True
                     section_level = heading_data.level
@@ -342,6 +354,7 @@ class Document:
     def find_tables_by_caption(self, pattern: str) -> list[Table]:
         """Find tables with captions matching a pattern."""
         import re
+
         return [t for t in self.tables if t.caption and re.search(pattern, t.caption, re.I)]
 
     def get_api_summary(self) -> dict[str, Any]:
@@ -359,11 +372,11 @@ class Document:
         for table in self.tables:
             if table.caption:
                 cap_lower = table.caption.lower()
-                if 'property' in cap_lower:
+                if "property" in cap_lower:
                     properties_table = table
-                elif 'method' in cap_lower:
+                elif "method" in cap_lower:
                     methods_table = table
-                elif 'signal' in cap_lower:
+                elif "signal" in cap_lower:
                     signals_table = table
 
         return {
@@ -385,7 +398,7 @@ class Document:
                 item = {"name": row[0]}
                 for i, header in enumerate(headers[1:], 1):
                     if i < len(row):
-                        item[header.lower().replace(' ', '_')] = row[i]
+                        item[header.lower().replace(" ", "_")] = row[i]
                 results.append(item)
 
         return results

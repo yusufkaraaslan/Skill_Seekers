@@ -197,9 +197,7 @@ class WorkflowEngine:
             extends=data.get("extends"),
         )
 
-    def _merge_workflows(
-        self, parent: EnhancementWorkflow, child_data: dict
-    ) -> dict:
+    def _merge_workflows(self, parent: EnhancementWorkflow, child_data: dict) -> dict:
         """Merge child workflow with parent (inheritance)."""
         # Start with parent as dict
         merged = {
@@ -239,12 +237,8 @@ class WorkflowEngine:
         parent_post = parent.post_process
         child_post = child_data.get("post_process", {})
         merged["post_process"] = {
-            "remove_sections": child_post.get(
-                "remove_sections", parent_post.remove_sections
-            ),
-            "reorder_sections": child_post.get(
-                "reorder_sections", parent_post.reorder_sections
-            ),
+            "remove_sections": child_post.get("remove_sections", parent_post.remove_sections),
+            "reorder_sections": child_post.get("reorder_sections", parent_post.reorder_sections),
             "add_metadata": {
                 **parent_post.add_metadata,
                 **child_post.get("add_metadata", {}),
@@ -285,9 +279,7 @@ class WorkflowEngine:
             logger.info(f"🔄 Running stage {idx}/{len(self.workflow.stages)}: {stage.name}")
 
             # Build stage context
-            stage_context = self._build_stage_context(
-                stage, current_results, context
-            )
+            stage_context = self._build_stage_context(stage, current_results, context)
 
             # Run stage
             try:
@@ -408,9 +400,7 @@ class WorkflowEngine:
 
         return result
 
-    def _merge_stage_results(
-        self, current: dict, stage_results: dict, target: str
-    ) -> dict:
+    def _merge_stage_results(self, current: dict, stage_results: dict, target: str) -> dict:
         """Merge stage results into current results."""
         if target == "all":
             # Merge everything

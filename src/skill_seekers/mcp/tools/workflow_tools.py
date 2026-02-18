@@ -24,6 +24,7 @@ except ImportError:
             self.type = type
             self.text = text
 
+
 USER_WORKFLOWS_DIR = Path.home() / ".config" / "skill-seekers" / "workflows"
 
 
@@ -50,9 +51,7 @@ def _bundled_names() -> list[str]:
 def _user_names() -> list[str]:
     if not USER_WORKFLOWS_DIR.exists():
         return []
-    return sorted(
-        p.stem for p in USER_WORKFLOWS_DIR.iterdir() if p.suffix in (".yaml", ".yml")
-    )
+    return sorted(p.stem for p in USER_WORKFLOWS_DIR.iterdir() if p.suffix in (".yaml", ".yml"))
 
 
 def _read_bundled(name: str) -> str | None:

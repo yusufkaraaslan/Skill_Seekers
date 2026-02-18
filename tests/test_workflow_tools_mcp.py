@@ -45,14 +45,13 @@ INVALID_YAML_NO_STAGES = textwrap.dedent("""\
 # Fixtures & helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def tmp_user_dir(tmp_path, monkeypatch):
     """Redirect USER_WORKFLOWS_DIR in workflow_tools to a temp dir."""
     fake_dir = tmp_path / "workflows"
     fake_dir.mkdir()
-    monkeypatch.setattr(
-        "skill_seekers.mcp.tools.workflow_tools.USER_WORKFLOWS_DIR", fake_dir
-    )
+    monkeypatch.setattr("skill_seekers.mcp.tools.workflow_tools.USER_WORKFLOWS_DIR", fake_dir)
     return fake_dir
 
 
@@ -66,6 +65,7 @@ def _mock_bundled_names(names=("default", "security-focus")):
 def _mock_bundled_text(mapping: dict):
     def _read(name):
         return mapping.get(name)
+
     return patch(
         "skill_seekers.mcp.tools.workflow_tools._read_bundled",
         side_effect=_read,
@@ -83,6 +83,7 @@ def _text(result) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # list_workflows_tool
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestListWorkflowsTool:
     def test_lists_bundled_and_user(self, tmp_user_dir):
@@ -115,6 +116,7 @@ class TestListWorkflowsTool:
 # ─────────────────────────────────────────────────────────────────────────────
 # get_workflow_tool
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestGetWorkflowTool:
     def test_get_bundled(self):
@@ -155,6 +157,7 @@ class TestGetWorkflowTool:
 # create_workflow_tool
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestCreateWorkflowTool:
     def test_create_new_workflow(self, tmp_user_dir):
         from skill_seekers.mcp.tools.workflow_tools import create_workflow_tool
@@ -174,9 +177,7 @@ class TestCreateWorkflowTool:
     def test_create_invalid_yaml(self, tmp_user_dir):
         from skill_seekers.mcp.tools.workflow_tools import create_workflow_tool
 
-        result = create_workflow_tool(
-            {"name": "bad", "content": INVALID_YAML_NO_STAGES}
-        )
+        result = create_workflow_tool({"name": "bad", "content": INVALID_YAML_NO_STAGES})
         assert "invalid" in _text(result).lower() or "stages" in _text(result).lower()
 
     def test_create_missing_name(self):
@@ -196,6 +197,7 @@ class TestCreateWorkflowTool:
 # update_workflow_tool
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestUpdateWorkflowTool:
     def test_update_user_workflow(self, tmp_user_dir):
         from skill_seekers.mcp.tools.workflow_tools import update_workflow_tool
@@ -203,9 +205,7 @@ class TestUpdateWorkflowTool:
         (tmp_user_dir / "my-wf.yaml").write_text("old content", encoding="utf-8")
 
         with _mock_bundled_names([]):
-            result = update_workflow_tool(
-                {"name": "my-wf", "content": MINIMAL_YAML}
-            )
+            result = update_workflow_tool({"name": "my-wf", "content": MINIMAL_YAML})
 
         text = _text(result)
         assert "Updated" in text or "updated" in text.lower()
@@ -215,9 +215,7 @@ class TestUpdateWorkflowTool:
         from skill_seekers.mcp.tools.workflow_tools import update_workflow_tool
 
         with _mock_bundled_names(["default"]):
-            result = update_workflow_tool(
-                {"name": "default", "content": MINIMAL_YAML}
-            )
+            result = update_workflow_tool({"name": "default", "content": MINIMAL_YAML})
 
         assert "bundled" in _text(result).lower()
 
@@ -227,9 +225,7 @@ class TestUpdateWorkflowTool:
         (tmp_user_dir / "my-wf.yaml").write_text(MINIMAL_YAML, encoding="utf-8")
 
         with _mock_bundled_names([]):
-            result = update_workflow_tool(
-                {"name": "my-wf", "content": INVALID_YAML_NO_STAGES}
-            )
+            result = update_workflow_tool({"name": "my-wf", "content": INVALID_YAML_NO_STAGES})
 
         assert "invalid" in _text(result).lower() or "stages" in _text(result).lower()
 
@@ -240,9 +236,7 @@ class TestUpdateWorkflowTool:
         (tmp_user_dir / "default.yaml").write_text("old", encoding="utf-8")
 
         with _mock_bundled_names(["default"]):
-            result = update_workflow_tool(
-                {"name": "default", "content": MINIMAL_YAML}
-            )
+            result = update_workflow_tool({"name": "default", "content": MINIMAL_YAML})
 
         text = _text(result)
         # User has a file named 'default', so it should succeed
@@ -252,6 +246,7 @@ class TestUpdateWorkflowTool:
 # ─────────────────────────────────────────────────────────────────────────────
 # delete_workflow_tool
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestDeleteWorkflowTool:
     def test_delete_user_workflow(self, tmp_user_dir):
