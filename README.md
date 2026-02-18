@@ -1,14 +1,14 @@
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
 
-# Skill Seeker
+# Skill Seekers
 
 English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Version](https://img.shields.io/badge/version-3.1.0--dev-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-1852%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-1880%2B%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -136,9 +136,9 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Universal Scraper** - Works with ANY documentation website
 - ✅ **Smart Categorization** - Automatically organizes content by topic
 - ✅ **Code Language Detection** - Recognizes Python, JavaScript, C++, GDScript, etc.
-- ✅ **8 Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
+- ✅ **24+ Ready-to-Use Presets** - Godot, React, Vue, Django, FastAPI, and more
 
-### 📄 PDF Support (**v1.2.0**)
+### 📄 PDF Support
 - ✅ **Basic PDF Extraction** - Extract text, code, and images from PDF files
 - ✅ **OCR for Scanned PDFs** - Extract text from scanned documents
 - ✅ **Password-Protected PDFs** - Handle encrypted PDFs
@@ -146,7 +146,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Parallel Processing** - 3x faster for large PDFs
 - ✅ **Intelligent Caching** - 50% faster on re-runs
 
-### 🐙 GitHub Repository Scraping (**v2.0.0**)
+### 🐙 GitHub Repository Analysis
 - ✅ **Deep Code Analysis** - AST parsing for Python, JavaScript, TypeScript, Java, C++, Go
 - ✅ **API Extraction** - Functions, classes, methods with parameters and types
 - ✅ **Repository Metadata** - README, file tree, language breakdown, stars/forks
@@ -155,7 +155,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Conflict Detection** - Compare documented APIs vs actual code implementation
 - ✅ **MCP Integration** - Natural language: "Scrape GitHub repo facebook/react"
 
-### 🔄 Unified Multi-Source Scraping (**NEW - v2.0.0**)
+### 🔄 Unified Multi-Source Scraping
 - ✅ **Combine Multiple Sources** - Mix documentation + GitHub + PDF in one skill
 - ✅ **Conflict Detection** - Automatically finds discrepancies between docs and code
 - ✅ **Intelligent Merging** - Rule-based or AI-powered conflict resolution
@@ -164,7 +164,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Single Source of Truth** - One skill showing both intent (docs) and reality (code)
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
-### 🤖 Multi-LLM Platform Support (**NEW - v2.5.0**)
+### 🤖 Multi-LLM Platform Support
 - ✅ **4 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
 - ✅ **Universal Scraping** - Same documentation works for all platforms
 - ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
@@ -233,7 +233,7 @@ pip install skill-seekers[openai]
 pip install skill-seekers[all-llms]
 ```
 
-### 🔗 RAG Framework Integrations (**NEW - v2.9.0**)
+### 🔗 RAG Framework Integrations
 
 - ✅ **LangChain Documents** - Direct export to `Document` format with `page_content` + metadata
   - Perfect for: QA chains, retrievers, vector stores, agents
@@ -249,14 +249,6 @@ pip install skill-seekers[all-llms]
   - Perfect for: Production vector search, semantic search, hybrid search
   - Example: [Pinecone Upsert](examples/pinecone-upsert/)
   - Guide: [Pinecone Integration](docs/integrations/PINECONE.md)
-
-- ✅ **AI Coding Assistants** - Expert context for 4+ IDE AI tools
-  - **Cursor IDE** - `.cursorrules` format for VS Code fork | [Guide](docs/integrations/CURSOR.md)
-  - **Windsurf** - `.windsurfrules` format for Codeium IDE | [Guide](docs/integrations/WINDSURF.md)
-  - **Cline** - `.clinerules` + MCP for VS Code extension | [Guide](docs/integrations/CLINE.md)
-  - **Continue.dev** - HTTP context providers for any IDE | [Guide](docs/integrations/CONTINUE_DEV.md)
-  - Perfect for: Framework-specific code generation, consistent team patterns
-  - Hub: [All AI Coding Integrations](docs/integrations/INTEGRATIONS.md)
 
 **Quick Export:**
 ```bash
@@ -277,7 +269,7 @@ skill-seekers package output/django --target markdown
 
 ---
 
-### 🧠 AI Coding Assistant Integrations (**NEW - v2.10.0**)
+### 🧠 AI Coding Assistant Integrations
 
 Transform any framework documentation into expert coding context for 4+ AI assistants:
 
@@ -294,7 +286,7 @@ Transform any framework documentation into expert coding context for 4+ AI assis
   - Example: [Windsurf FastAPI Context](examples/windsurf-fastapi-context/)
 
 - ✅ **Cline (VS Code)** - System prompts + MCP for VS Code agent
-  - Perfect for: Agentic code generation in VS Code, Cursor Composer equivalent
+  - Perfect for: Agentic code generation in VS Code
   - Works with: Cline extension for VS Code
   - Guide: [Cline Integration](docs/integrations/CLINE.md)
   - Example: [Cline Django Assistant](examples/cline-django-assistant/)
@@ -309,45 +301,33 @@ Transform any framework documentation into expert coding context for 4+ AI assis
 ```bash
 # For any AI coding assistant (Cursor, Windsurf, Cline, Continue.dev)
 skill-seekers scrape --config configs/django.json
-skill-seekers package output/django --target markdown  # or --target claude
+skill-seekers package output/django --target claude  # or --target markdown
 
 # Copy to your project (example for Cursor)
-cp output/django-markdown/SKILL.md my-project/.cursorrules
+cp output/django-claude/SKILL.md my-project/.cursorrules
 
 # Or for Windsurf
-cp output/django-markdown/SKILL.md my-project/.windsurf/rules/django.md
+cp output/django-claude/SKILL.md my-project/.windsurf/rules/django.md
 
 # Or for Cline
-cp output/django-markdown/SKILL.md my-project/.clinerules
+cp output/django-claude/SKILL.md my-project/.clinerules
 
 # Or for Continue.dev (HTTP server)
 python examples/continue-dev-universal/context_server.py
 # Configure in ~/.continue/config.json
 ```
 
-**Multi-IDE Team Consistency:**
-```bash
-# Use Continue.dev for teams with mixed IDEs
-skill-seekers scrape --config configs/react.json
-python context_server.py --host 0.0.0.0 --port 8765
-
-# Team members configure Continue.dev (same config works in ALL IDEs):
-# VS Code, IntelliJ, PyCharm, WebStorm, Vim...
-# Result: Identical AI suggestions across all environments!
-```
-
 **Integration Hub:** [All AI System Integrations](docs/integrations/INTEGRATIONS.md)
 
 ---
 
-### 🌊 Three-Stream GitHub Architecture (**NEW - v2.6.0**)
+### 🌊 Three-Stream GitHub Architecture
 - ✅ **Triple-Stream Analysis** - Split GitHub repos into Code, Docs, and Insights streams
 - ✅ **Unified Codebase Analyzer** - Works with GitHub URLs AND local paths
 - ✅ **C3.x as Analysis Depth** - Choose 'basic' (1-2 min) or 'c3x' (20-60 min) analysis
 - ✅ **Enhanced Router Generation** - GitHub metadata, README quick start, common issues
 - ✅ **Issue Integration** - Top problems and solutions from GitHub issues
 - ✅ **Smart Routing Keywords** - GitHub labels weighted 2x for better topic detection
-- ✅ **81 Tests Passing** - Comprehensive E2E validation (0.44 seconds)
 
 **Three Streams Explained:**
 - **Stream 1: Code** - Deep C3.x analysis (patterns, examples, guides, configs, architecture)
@@ -379,7 +359,7 @@ print(f"Common issues: {len(result.github_insights['common_problems'])}")
 
 **See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
-### 🔐 Smart Rate Limit Management & Configuration (**NEW - v2.7.0**)
+### 🔐 Smart Rate Limit Management & Configuration
 - ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
   - Secure config storage at `~/.config/skill-seekers/config.json` (600 permissions)
   - Per-profile rate limit strategies: `prompt`, `wait`, `switch`, `fail`
@@ -404,29 +384,17 @@ print(f"Common issues: {len(result.github_insights['common_problems'])}")
   - `--non-interactive` flag fails fast without prompts
   - `--profile` flag to select specific GitHub account
   - Clear error messages for pipeline logs
-  - Exit codes for automation integration
 
 **Quick Setup:**
 ```bash
 # One-time configuration (5 minutes)
 skill-seekers config --github
 
-# Add multiple GitHub profiles
-skill-seekers config
-# → Select "1. GitHub Token Setup"
-# → Add profiles for personal, work, OSS accounts
-
 # Use specific profile for private repos
 skill-seekers github --repo mycompany/private-repo --profile work
 
 # CI/CD mode (fail fast, no prompts)
 skill-seekers github --repo owner/repo --non-interactive
-
-# View current configuration
-skill-seekers config --show
-
-# Test connections
-skill-seekers config --test
 
 # Resume interrupted job
 skill-seekers resume --list
@@ -439,9 +407,7 @@ skill-seekers resume github_react_20260117_143022
 - **switch** - Automatically try next available profile (for multi-account setups)
 - **fail** - Fail immediately with clear error (perfect for CI/CD)
 
-**See complete documentation**: [Configuration Guide](docs/guides/CONFIGURATION.md) (coming soon)
-
-### 🎯 Bootstrap Skill - Self-Hosting (**NEW - v2.7.0**)
+### 🎯 Bootstrap Skill - Self-Hosting
 
 Generate skill-seekers as a Claude Code skill to use within Claude:
 
@@ -451,9 +417,6 @@ Generate skill-seekers as a Claude Code skill to use within Claude:
 
 # Install to Claude Code
 cp -r output/skill-seekers ~/.claude/skills/
-
-# Verify
-ls ~/.claude/skills/skill-seekers/SKILL.md
 ```
 
 **What you get:**
@@ -461,18 +424,8 @@ ls ~/.claude/skills/skill-seekers/SKILL.md
 - ✅ **CLI command reference** - Every tool and its options documented
 - ✅ **Quick start examples** - Common workflows and best practices
 - ✅ **Auto-generated API docs** - Code analysis, patterns, and examples
-- ✅ **Robust validation** - YAML frontmatter and required fields checked
-- ✅ **One-command bootstrap** - Combines manual header with auto-generated analysis
 
-**How it works:**
-1. Runs codebase analysis on skill-seekers itself (dogfooding!)
-2. Combines handcrafted header (prerequisites, commands) with auto-generated content
-3. Validates SKILL.md structure (frontmatter, required fields)
-4. Outputs ready-to-use skill directory
-
-**Result:** Use skill-seekers to create skills, from within Claude Code!
-
-### 🔐 Private Config Repositories (**NEW - v2.2.0**)
+### 🔐 Private Config Repositories
 - ✅ **Git-Based Config Sources** - Fetch configs from private/team git repositories
 - ✅ **Multi-Source Management** - Register unlimited GitHub, GitLab, Bitbucket repos
 - ✅ **Team Collaboration** - Share custom configs across 3-5 person teams
@@ -480,36 +433,25 @@ ls ~/.claude/skills/skill-seekers/SKILL.md
 - ✅ **Secure Authentication** - Environment variable tokens (GITHUB_TOKEN, GITLAB_TOKEN)
 - ✅ **Intelligent Caching** - Clone once, pull updates automatically
 - ✅ **Offline Mode** - Work with cached configs when offline
-- ✅ **Backward Compatible** - Existing API-based configs still work
 
-### 🤖 Codebase Analysis & AI Enhancement (**C3.x - NEW!**)
+### 🤖 Codebase Analysis (C3.x)
 
 **C3.4: Configuration Pattern Extraction with AI Enhancement**
 - ✅ **9 Config Formats** - JSON, YAML, TOML, ENV, INI, Python, JavaScript, Dockerfile, Docker Compose
 - ✅ **7 Pattern Types** - Database, API, logging, cache, email, auth, server configurations
-- ✅ **AI Enhancement (NEW!)** - Optional dual-mode AI analysis (API + LOCAL, like C3.3)
+- ✅ **AI Enhancement** - Optional dual-mode AI analysis (API + LOCAL)
   - Explains what each config does
   - Suggests best practices and improvements
   - **Security analysis** - Finds hardcoded secrets, exposed credentials
-  - Migration suggestions - Consolidation opportunities
-  - Context-aware documentation
 - ✅ **Auto-Documentation** - Generates JSON + Markdown documentation of all configs
-- ✅ **Type Inference** - Automatically detects setting types and environment variables
 - ✅ **MCP Integration** - `extract_config_patterns` tool with enhancement support
 
 **C3.3: AI-Enhanced How-To Guides**
-- ✅ **Comprehensive AI Enhancement** - Transforms basic guides (⭐⭐) into professional tutorials (⭐⭐⭐⭐⭐)
+- ✅ **Comprehensive AI Enhancement** - Transforms basic guides into professional tutorials
 - ✅ **5 Automatic Improvements** - Step descriptions, troubleshooting, prerequisites, next steps, use cases
 - ✅ **Dual-Mode Support** - API mode (Claude API) or LOCAL mode (Claude Code CLI)
 - ✅ **No API Costs with LOCAL Mode** - FREE enhancement using your Claude Code Max plan
 - ✅ **Quality Transformation** - 75-line templates → 500+ line comprehensive guides
-
-**What Gets Enhanced:**
-- 🔍 **Step Descriptions** - Natural language explanations (not just syntax!)
-- 🔧 **Troubleshooting** - Diagnostic flows + solutions for common errors
-- 📋 **Prerequisites** - Why needed + setup instructions
-- 🔗 **Next Steps** - Related guides, variations, learning paths
-- 💡 **Use Cases** - Real-world scenarios showing when to use guide
 
 **Usage:**
 ```bash
@@ -525,7 +467,7 @@ skill-seekers analyze --directory tests/ --enhance
 
 **Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
 
-### 🔄 Enhancement Workflow Presets (**NEW!**)
+### 🔄 Enhancement Workflow Presets
 
 Reusable YAML-defined enhancement pipelines that control how AI transforms your raw documentation into a polished skill.
 
@@ -585,56 +527,24 @@ stages:
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 1200+ tests with comprehensive coverage
+- ✅ **Fully Tested** - 1,880+ tests with comprehensive coverage
 
 ---
 
-## 📦 Now Available on PyPI!
-
-**Skill Seekers is now published on the Python Package Index!** Install with a single command:
+## 📦 Installation
 
 ```bash
-pip install skill-seekers
-```
-
-### Installation Options
-
-Choose your installation profile based on which features you need:
-
-```bash
-# 1️⃣ CLI Only (Skill Generation)
+# Basic install (documentation scraping, GitHub analysis, PDF, packaging)
 pip install skill-seekers
 
-# Features:
-# • Scrape documentation websites
-# • Analyze GitHub repositories
-# • Extract from PDFs
-# • Package skills for all platforms
-
-# 2️⃣ MCP Integration (Claude Code, Cursor, Windsurf)
-pip install skill-seekers[mcp]
-
-# Features:
-# • Everything from CLI Only
-# • MCP server for Claude Code
-# • One-command skill installation
-# • HTTP/stdio transport modes
-
-# 3️⃣ Multi-LLM Support (Gemini, OpenAI)
+# With all LLM platform support
 pip install skill-seekers[all-llms]
 
-# Features:
-# • Everything from CLI Only
-# • Google Gemini support
-# • OpenAI ChatGPT support
-# • Enhanced AI features
+# With MCP server
+pip install skill-seekers[mcp]
 
-# 4️⃣ Everything
+# Everything
 pip install skill-seekers[all]
-
-# Features:
-# • All features enabled
-# • Maximum flexibility
 ```
 
 **Need help choosing?** Run the setup wizard:
@@ -642,92 +552,20 @@ pip install skill-seekers[all]
 skill-seekers-setup
 ```
 
-The wizard shows all options with detailed feature lists and guides you through configuration.
+### Installation Options
 
-Get started in seconds. No cloning, no setup - just install and run. See installation options below.
-
----
-
-## Quick Start
-
-### Option 1: Install from PyPI (Recommended)
-
-```bash
-# Install from PyPI (easiest method!)
-pip install skill-seekers
-
-# Use the unified CLI
-skill-seekers scrape --config configs/react.json
-skill-seekers github --repo facebook/react
-skill-seekers enhance output/react/
-skill-seekers package output/react/
-```
-
-**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
-
-📖 **New to Skill Seekers?** Check out our [Quick Start Guide](QUICKSTART.md) or [Bulletproof Guide](BULLETPROOF_QUICKSTART.md)
-
-### Option 2: Install via uv (Modern Python Tool)
-
-```bash
-# Install with uv (fast, modern alternative)
-uv tool install skill-seekers
-
-# Or run directly without installing
-uv tool run --from skill-seekers skill-seekers scrape --config https://raw.githubusercontent.com/yusufkaraaslan/Skill_Seekers/main/configs/react.json
-
-# Unified CLI - simple commands
-skill-seekers scrape --config configs/react.json
-skill-seekers github --repo facebook/react
-skill-seekers package output/react/
-```
-
-**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
-
-### Option 3: Development Install (From Source)
-
-```bash
-# Clone and install in editable mode
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
-pip install -e .
-
-# Use the unified CLI
-skill-seekers scrape --config configs/react.json
-```
-
-### Option 4: Use from Claude Code & 4 Other AI Agents (MCP Integration)
-
-```bash
-# One-time setup (5 minutes) - Auto-configures 5 AI agents!
-./setup_mcp.sh
-
-# Then in Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA, just ask:
-"Generate a React skill from https://react.dev/"
-"Scrape PDF at docs/manual.pdf and create skill"
-```
-
-**Time:** Automated | **Quality:** Production-ready | **Cost:** Free
-
-**NEW in v2.4.0:** MCP server now supports 5 AI coding agents with automatic configuration!
-
-### Option 5: Legacy CLI (Backwards Compatible)
-
-```bash
-# Install dependencies
-pip3 install requests beautifulsoup4
-
-# Run scripts directly (old method)
-python3 src/skill_seekers/cli/doc_scraper.py --config configs/react.json
-
-# Upload output/react.zip to Claude - Done!
-```
-
-**Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
+| Install | Features |
+|---------|----------|
+| `pip install skill-seekers` | Scraping, GitHub analysis, PDF, all platforms |
+| `pip install skill-seekers[gemini]` | + Google Gemini support |
+| `pip install skill-seekers[openai]` | + OpenAI ChatGPT support |
+| `pip install skill-seekers[all-llms]` | + All LLM platforms |
+| `pip install skill-seekers[mcp]` | + MCP server for Claude Code, Cursor, etc. |
+| `pip install skill-seekers[all]` | Everything enabled |
 
 ---
 
-## 🚀 **NEW!** One-Command Install Workflow (v2.1.1)
+## 🚀 One-Command Install Workflow
 
 **The fastest way to go from config to uploaded skill - complete automation:**
 
@@ -741,32 +579,13 @@ skill-seekers install --config configs/custom.json
 # Install without uploading (package only)
 skill-seekers install --config django --no-upload
 
-# Unlimited scraping (no page limits)
-skill-seekers install --config godot --unlimited
-
 # Preview workflow without executing
 skill-seekers install --config react --dry-run
 ```
 
 **Time:** 20-45 minutes total | **Quality:** Production-ready (9/10) | **Cost:** Free
 
-### What it does automatically:
-
-1. ✅ **Fetches config** from API (if config name provided)
-2. ✅ **Scrapes documentation** (respects rate limits, handles pagination)
-3. ✅ **AI Enhancement (MANDATORY)** - 30-60 sec, quality boost from 3/10 → 9/10
-4. ✅ **Packages skill** to .zip file
-5. ✅ **Uploads to Claude** (if ANTHROPIC_API_KEY set)
-
-### Why use this?
-
-- **Zero friction** - One command instead of 5 separate steps
-- **Quality guaranteed** - Enhancement is mandatory, ensures professional output
-- **Complete automation** - From config name to uploaded skill in Claude
-- **Time savings** - Fully automated end-to-end workflow
-
-### Phases executed:
-
+**Phases executed:**
 ```
 📥 PHASE 1: Fetch Config (if config name provided)
 📖 PHASE 2: Scrape Documentation
@@ -779,22 +598,11 @@ skill-seekers install --config react --dry-run
 - ANTHROPIC_API_KEY environment variable (for auto-upload)
 - Claude Code Max plan (for local AI enhancement)
 
-**Example:**
-```bash
-# Set API key once
-export ANTHROPIC_API_KEY=sk-ant-your-key-here
-
-# Run one command - sit back and relax!
-skill-seekers install --config react
-
-# Result: React skill uploaded to Claude in 20-45 minutes
-```
-
 ---
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **4 platforms** and **5 skill modes** with full feature parity.
+Skill Seekers supports **4 LLM platforms** and **5 skill modes** with full feature parity.
 
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
 **Skill Modes:** Documentation, GitHub, PDF, Unified Multi-Source, Local Repository
@@ -809,19 +617,6 @@ See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and 
 | Upload | ✅ API | ✅ API | ✅ API | ❌ Manual |
 | Enhancement | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ None |
 | All Skill Modes | ✅ | ✅ | ✅ | ✅ |
-
-**Examples:**
-```bash
-# Package for all platforms (same skill)
-skill-seekers package output/react/ --target claude
-skill-seekers package output/react/ --target gemini
-skill-seekers package output/react/ --target openai
-skill-seekers package output/react/ --target markdown
-
-# Install for specific platform
-skill-seekers install --config django --target gemini
-skill-seekers install --config fastapi --target openai
-```
 
 ---
 
@@ -854,21 +649,13 @@ skill-seekers pdf --pdf docs/manual.pdf --name myskill \
 
 # Scanned PDFs (requires: pip install pytesseract Pillow)
 skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
-
-# Password-protected PDFs
-skill-seekers pdf --pdf docs/encrypted.pdf --name myskill --password mypassword
 ```
 
-**Time:** ~5-15 minutes (or 2-5 minutes with parallel) | **Quality:** Production-ready | **Cost:** Free
-
-### GitHub Repository Scraping
+### GitHub Repository Analysis
 
 ```bash
 # Basic repository scraping
 skill-seekers github --repo facebook/react
-
-# Using a config file
-skill-seekers github --config configs/react_github.json
 
 # With authentication (higher rate limits)
 export GITHUB_TOKEN=ghp_your_token_here
@@ -878,105 +665,54 @@ skill-seekers github --repo facebook/react
 skill-seekers github --repo django/django \
     --include-issues \        # Extract GitHub Issues
     --max-issues 100 \        # Limit issue count
-    --include-changelog \     # Extract CHANGELOG.md
-    --include-releases        # Extract GitHub Releases
+    --include-changelog       # Extract CHANGELOG.md
 ```
 
-**Time:** ~5-10 minutes | **Quality:** Production-ready | **Cost:** Free
+### Unified Multi-Source Scraping
 
-### Unified Multi-Source Scraping (**NEW - v2.0.0**)
-
-**The Problem:** Documentation and code often drift apart. Docs might be outdated, missing features that exist in code, or documenting features that were removed.
-
-**The Solution:** Combine documentation + GitHub + PDF into one unified skill that shows BOTH what's documented AND what actually exists, with clear warnings about discrepancies.
+**Combine documentation + GitHub + PDF into one unified skill with conflict detection:**
 
 ```bash
 # Use existing unified configs
 skill-seekers unified --config configs/react_unified.json
 skill-seekers unified --config configs/django_unified.json
 
-# Or create unified config (mix documentation + GitHub)
+# Or create unified config
 cat > configs/myframework_unified.json << 'EOF'
 {
   "name": "myframework",
-  "description": "Complete framework knowledge from docs + code",
   "merge_mode": "rule-based",
   "sources": [
     {
       "type": "documentation",
       "base_url": "https://docs.myframework.com/",
-      "extract_api": true,
       "max_pages": 200
     },
     {
       "type": "github",
       "repo": "owner/myframework",
-      "include_code": true,
       "code_analysis_depth": "surface"
     }
   ]
 }
 EOF
 
-# Run unified scraper
 skill-seekers unified --config configs/myframework_unified.json
-
-# Package and upload
-skill-seekers package output/myframework/
-# Upload output/myframework.zip to Claude - Done!
 ```
 
-**Time:** ~30-45 minutes | **Quality:** Production-ready with conflict detection | **Cost:** Free
-
-**What Makes It Special:**
-
-✅ **Conflict Detection** - Automatically finds 4 types of discrepancies:
+**Conflict Detection automatically finds:**
 - 🔴 **Missing in code** (high): Documented but not implemented
 - 🟡 **Missing in docs** (medium): Implemented but not documented
 - ⚠️ **Signature mismatch**: Different parameters/types
 - ℹ️ **Description mismatch**: Different explanations
 
-✅ **Transparent Reporting** - Shows both versions side-by-side:
-```markdown
-#### `move_local_x(delta: float)`
-
-⚠️ **Conflict**: Documentation signature differs from implementation
-
-**Documentation says:**
-```
-def move_local_x(delta: float)
-```
-
-**Code implementation:**
-```python
-def move_local_x(delta: float, snap: bool = False) -> None
-```
-```
-
-✅ **Advantages:**
-- **Identifies documentation gaps** - Find outdated or missing docs automatically
-- **Catches code changes** - Know when APIs change without docs being updated
-- **Single source of truth** - One skill showing intent (docs) AND reality (code)
-- **Actionable insights** - Get suggestions for fixing each conflict
-- **Development aid** - See what's actually in the codebase vs what's documented
-
-**Example Unified Configs:**
-- `configs/react_unified.json` - React docs + GitHub repo
-- `configs/django_unified.json` - Django docs + GitHub repo
-- `configs/fastapi_unified.json` - FastAPI docs + GitHub repo
-
 **Full Guide:** See [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) for complete documentation.
 
-### Private Config Repositories (**NEW - v2.2.0**)
+### Private Config Repositories
 
-**The Problem:** Teams need to share custom configs for internal documentation, but don't want to publish them publicly.
-
-**The Solution:** Register private git repositories as config sources. Fetch configs from team repos just like the public API, with full authentication support.
+**Share custom configs across teams using private git repositories:**
 
 ```bash
-# Setup: Set your GitHub token (one-time)
-export GITHUB_TOKEN=ghp_your_token_here
-
 # Option 1: Using MCP tools (recommended)
 # Register your team's private repo
 add_config_source(
@@ -987,93 +723,10 @@ add_config_source(
 
 # Fetch config from team repo
 fetch_config(source="team", config_name="internal-api")
-
-# List all registered sources
-list_config_sources()
-
-# Remove source when no longer needed
-remove_config_source(name="team")
-```
-
-**Direct Git URL mode** (no registration):
-```bash
-# Fetch directly from git URL
-fetch_config(
-    git_url="https://github.com/mycompany/configs.git",
-    config_name="react-custom",
-    token="ghp_your_token_here"
-)
 ```
 
 **Supported Platforms:**
-- GitHub (token env: `GITHUB_TOKEN`)
-- GitLab (token env: `GITLAB_TOKEN`)
-- Gitea (token env: `GITEA_TOKEN`)
-- Bitbucket (token env: `BITBUCKET_TOKEN`)
-- Any git server (token env: `GIT_TOKEN`)
-
-**Use Cases:**
-
-📋 **Small Teams (3-5 people)**
-```bash
-# Team lead creates repo
-gh repo create myteam/skill-configs --private
-
-# Add configs to repo
-cd myteam-skill-configs
-cp ../Skill_Seekers/configs/react.json ./react-custom.json
-# Edit selectors, categories for your internal docs...
-git add . && git commit -m "Add custom React config" && git push
-
-# Team members register (one-time)
-add_config_source(name="team", git_url="https://github.com/myteam/skill-configs.git")
-
-# Everyone can now fetch
-fetch_config(source="team", config_name="react-custom")
-```
-
-🏢 **Enterprise (500+ developers)**
-```bash
-# IT pre-configures sources for everyone
-add_config_source(name="platform", git_url="gitlab.company.com/platform/configs", priority=1)
-add_config_source(name="mobile", git_url="gitlab.company.com/mobile/configs", priority=2)
-add_config_source(name="official", git_url="api.skillseekersweb.com", priority=3)
-
-# Developers use transparently
-fetch_config(config_name="internal-platform")  # Finds in platform source
-fetch_config(config_name="react")              # Falls back to official API
-```
-
-**Storage Locations:**
-- Registry: `~/.skill-seekers/sources.json`
-- Cache: `$SKILL_SEEKERS_CACHE_DIR` (default: `~/.skill-seekers/cache/`)
-
-**Features:**
-- ✅ **Shallow clone** - 10-50x faster, minimal disk space
-- ✅ **Auto-pull** - Fetches latest changes automatically
-- ✅ **Offline mode** - Works with cached repos when offline
-- ✅ **Priority resolution** - Multiple sources with conflict resolution
-- ✅ **Secure** - Tokens via environment variables only
-
-**Example Team Repository:**
-
-Try the included example:
-```bash
-# Test with file:// URL (no auth needed)
-cd /path/to/Skill_Seekers
-
-# Run the E2E test
-python3 configs/example-team/test_e2e.py
-
-# Or test manually
-add_config_source(
-    name="example",
-    git_url="file://$(pwd)/configs/example-team",
-    branch="master"
-)
-
-fetch_config(source="example", config_name="react-custom")
-```
+- GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
 **Full Guide:** See [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) for complete documentation.
 
@@ -1081,7 +734,7 @@ fetch_config(source="example", config_name="react-custom")
 
 ```mermaid
 graph LR
-    A[Documentation Website] --> B[Skill Seeker]
+    A[Documentation Website] --> B[Skill Seekers]
     B --> C[Scraper]
     B --> D[AI Enhancement]
     B --> E[Packager]
@@ -1108,120 +761,7 @@ graph LR
 
 **First time user?** → **[Start Here: Bulletproof Quick Start Guide](BULLETPROOF_QUICKSTART.md)** 🎯
 
-This guide walks you through EVERYTHING step-by-step (Python install, git clone, first skill creation).
-
 ---
-
-## 🚀 Quick Start
-
-### Method 1: MCP Server for 5 AI Agents (Easiest - **NEW v2.4.0!**)
-
-Use Skill Seeker directly from **Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA** with natural language!
-
-```bash
-# Clone repository
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
-
-# One-time setup (5 minutes) - Auto-configures ALL 5 agents!
-./setup_mcp.sh
-
-# Restart your AI agent, then just ask:
-```
-
-**In Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA:**
-```
-List all available configs
-Generate config for Tailwind at https://tailwindcss.com/docs
-Scrape docs using configs/react.json
-Package skill at output/react/
-```
-
-**Benefits:**
-- ✅ No manual CLI commands
-- ✅ Natural language interface
-- ✅ Integrated with your workflow
-- ✅ **18 tools** available instantly (up from 9!)
-- ✅ **5 AI agents supported** - auto-configured with one command
-- ✅ **Tested and working** in production
-
-**NEW in v2.4.0:**
-- ✅ **Upgraded to MCP SDK v1.25.0** - Latest features and performance
-- ✅ **FastMCP Framework** - Modern, maintainable MCP implementation
-- ✅ **HTTP + stdio transport** - Works with more AI agents
-- ✅ **18 tools** (up from 9) - More capabilities
-- ✅ **Multi-agent auto-configuration** - Setup all agents with one command
-
-**Full guides:**
-- 📘 [MCP Setup Guide](docs/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](docs/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
-- 📦 [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
-- 📤 [Upload Guide](docs/UPLOAD_GUIDE.md) - How to upload skills to Claude
-
-### Method 2: CLI (Traditional)
-
-#### One-Time Setup: Create Virtual Environment
-
-```bash
-# Clone repository
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
-
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-# OR on Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install requests beautifulsoup4 pytest
-
-# Save dependencies
-pip freeze > requirements.txt
-
-# Optional: Install anthropic for API-based enhancement (not needed for LOCAL enhancement)
-# pip install anthropic
-```
-
-**Always activate the virtual environment before using Skill Seeker:**
-```bash
-source venv/bin/activate  # Run this each time you start a new terminal session
-```
-
-#### Easiest: Use a Preset
-
-```bash
-# Make sure venv is activated (you should see (venv) in your prompt)
-source venv/bin/activate
-
-# Optional: Estimate pages first (fast, 1-2 minutes)
-skill-seekers estimate configs/godot.json
-
-# Use Godot preset
-skill-seekers scrape --config configs/godot.json
-
-# Use React preset
-skill-seekers scrape --config configs/react.json
-
-# See all presets
-ls configs/
-```
-
-### Interactive Mode
-
-```bash
-skill-seekers scrape --interactive
-```
-
-### Quick Mode
-
-```bash
-skill-seekers scrape \
-  --name react \
-  --url https://react.dev/ \
-  --description "React framework for UIs"
-```
 
 ## 📤 Uploading Skills to Claude
 
@@ -1240,59 +780,25 @@ skill-seekers package output/react/ --upload
 skill-seekers upload output/react.zip
 ```
 
-**Benefits:**
-- ✅ Fully automatic
-- ✅ No manual steps
-- ✅ Works from command line
-
-**Requirements:**
-- Anthropic API key (get from https://console.anthropic.com/)
-
 ### Option 2: Manual Upload (No API Key)
 
 ```bash
 # Package skill
 skill-seekers package output/react/
-
-# This will:
-# 1. Create output/react.zip
-# 2. Open the output/ folder automatically
-# 3. Show upload instructions
+# → Creates output/react.zip
 
 # Then manually upload:
 # - Go to https://claude.ai/skills
 # - Click "Upload Skill"
 # - Select output/react.zip
-# - Done!
 ```
 
-**Benefits:**
-- ✅ No API key needed
-- ✅ Works for everyone
-- ✅ Folder opens automatically
-
-### Option 3: Claude Code (MCP) - Smart & Automatic
+### Option 3: MCP (Claude Code)
 
 ```
 In Claude Code, just ask:
 "Package and upload the React skill"
-
-# With API key set:
-# - Packages the skill
-# - Uploads to Claude automatically
-# - Done! ✅
-
-# Without API key:
-# - Packages the skill
-# - Shows where to find the .zip
-# - Provides manual upload instructions
 ```
-
-**Benefits:**
-- ✅ Natural language
-- ✅ Smart auto-detection (uploads if API key available)
-- ✅ Works with or without API key
-- ✅ No errors or failures
 
 ---
 
@@ -1300,17 +806,12 @@ In Claude Code, just ask:
 
 Skill Seekers can automatically install skills to 10+ AI coding agents.
 
-### Quick Start
-
 ```bash
 # Install to specific agent
 skill-seekers install-agent output/react/ --agent cursor
 
 # Install to all agents at once
 skill-seekers install-agent output/react/ --agent all
-
-# Overwrite existing installation
-skill-seekers install-agent output/react/ --agent claude --force
 
 # Preview without installing
 skill-seekers install-agent output/react/ --agent cursor --dry-run
@@ -1326,770 +827,65 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Amp** | `~/.amp/skills/` | Global |
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
-| **Letta** | `~/.letta/skills/` | Global |
-| **Aide** | `~/.aide/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
-| **Neovate Code** | `~/.neovate/skills/` | Global |
-
-**Global paths** install to user's home directory (~/).
-**Project paths** install to current project's root directory.
-
-### Complete Workflow
-
-```bash
-# 1. Scrape documentation
-skill-seekers scrape --config configs/react.json --enhance-local
-
-# 2. Package skill
-skill-seekers package output/react/
-
-# 3. Install to your agent
-skill-seekers install-agent output/react/ --agent cursor
-
-# 4. Restart Cursor to load the skill
-```
 
 ---
 
-## 🤖 Multi-Agent MCP Support (NEW in v2.4.0)
+## 🔌 MCP Integration (26 Tools)
 
-**Skill Seekers MCP server now works with 5 leading AI coding agents!**
-
-### Supported AI Agents
-
-| Agent | Transport | Setup Difficulty | Auto-Configured |
-|-------|-----------|------------------|-----------------|
-| **Claude Code** | stdio | Easy | ✅ Yes |
-| **VS Code + Cline** | stdio | Easy | ✅ Yes |
-| **Cursor** | HTTP | Medium | ✅ Yes |
-| **Windsurf** | HTTP | Medium | ✅ Yes |
-| **IntelliJ IDEA** | HTTP | Medium | ✅ Yes |
-
-### Quick Setup - All Agents at Once
+Skill Seekers ships an MCP server for use from Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA.
 
 ```bash
-# Clone repository
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
+# stdio mode (Claude Code, VS Code + Cline)
+python -m skill_seekers.mcp.server_fastmcp
 
-# Run one command - auto-configures ALL 5 agents!
+# HTTP mode (Cursor, Windsurf, IntelliJ)
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
+
+# Auto-configure all agents at once
 ./setup_mcp.sh
-
-# Restart your AI agent and start using natural language:
-"List all available configs"
-"Generate a React skill from https://react.dev/"
-"Package the skill at output/react/"
 ```
 
-**What `setup_mcp.sh` does:**
-1. ✅ Installs MCP server dependencies
-2. ✅ Configures Claude Code (stdio transport)
-3. ✅ Configures VS Code + Cline (stdio transport)
-4. ✅ Configures Cursor (HTTP transport)
-5. ✅ Configures Windsurf (HTTP transport)
-6. ✅ Configures IntelliJ IDEA (HTTP transport)
-7. ✅ Shows next steps for each agent
+**All 26 tools available:**
+- **Core (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
+- **Extended (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
+- **Vector DB (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
+- **Cloud (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**Time:** 5 minutes | **Result:** All agents configured and ready to use
-
-### Transport Modes
-
-Skill Seekers MCP server supports 2 transport modes:
-
-#### stdio Transport (Claude Code, VS Code + Cline)
-
-**How it works:** Agent launches MCP server as subprocess and communicates via stdin/stdout
-
-**Benefits:**
-- ✅ More secure (no network ports)
-- ✅ Automatic lifecycle management
-- ✅ Simpler configuration
-- ✅ Better for single-user development
-
-**Configuration example (Claude Code):**
-```json
-{
-  "mcpServers": {
-    "skill-seeker": {
-      "command": "python3",
-      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
-      "cwd": "/path/to/Skill_Seekers"
-    }
-  }
-}
-```
-
-#### HTTP Transport (Cursor, Windsurf, IntelliJ IDEA)
-
-**How it works:** MCP server runs as HTTP service, agents connect as clients
-
-**Benefits:**
-- ✅ Multi-agent support (one server, multiple clients)
-- ✅ Server can run independently
-- ✅ Better for team collaboration
-- ✅ Easier debugging and monitoring
-
-**Configuration example (Cursor):**
-```json
-{
-  "mcpServers": {
-    "skill-seeker": {
-      "url": "http://localhost:8765/sse"
-    }
-  }
-}
-```
-
-**Starting HTTP server:**
-```bash
-# Start server manually (runs in background)
-cd /path/to/Skill_Seekers
-python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
-
-# Or use auto-start script
-./scripts/start_mcp_server.sh
-```
-
-### Agent-Specific Instructions
-
-#### Claude Code (stdio)
-
-```bash
-# Already configured by setup_mcp.sh!
-# Just restart Claude Code
-
-# Config location: ~/.claude/claude_code_config.json
-```
-
-**Usage:**
-```
-In Claude Code:
-"List all available configs"
-"Scrape React docs at https://react.dev/"
-```
-
-#### VS Code + Cline Extension (stdio)
-
-```bash
-# Already configured by setup_mcp.sh!
-# Just restart VS Code
-
-# Config location: ~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
-```
-
-**Usage:**
-```
-In Cline:
-"Generate config for Tailwind"
-"Package skill at output/tailwind/"
-```
-
-#### Cursor (HTTP)
-
-```bash
-# 1. Setup already configured HTTP settings
-# Config location: ~/.cursor/mcp_settings.json
-
-# 2. Start HTTP server (one-time per session)
-./scripts/start_mcp_server.sh
-
-# 3. Restart Cursor
-```
-
-**Usage:**
-```
-In Cursor:
-"Show me all skill-seeker configs"
-"Create Django skill from docs"
-```
-
-#### Windsurf (HTTP)
-
-```bash
-# 1. Setup already configured HTTP settings
-# Config location: ~/.windsurf/mcp_settings.json
-
-# 2. Start HTTP server (one-time per session)
-./scripts/start_mcp_server.sh
-
-# 3. Restart Windsurf
-```
-
-**Usage:**
-```
-In Windsurf:
-"Estimate pages for Godot config"
-"Build unified skill for FastAPI"
-```
-
-#### IntelliJ IDEA (HTTP)
-
-```bash
-# 1. Setup already configured HTTP settings
-# Config location: ~/.intellij/mcp_settings.json
-
-# 2. Start HTTP server (one-time per session)
-./scripts/start_mcp_server.sh
-
-# 3. Restart IntelliJ IDEA
-```
-
-**Usage:**
-```
-In IntelliJ IDEA:
-"Validate my config file"
-"Split large Godot config"
-```
-
-### Available MCP Tools (18 Total)
-
-All agents have access to these 18 tools:
-
-**Core Tools (9):**
-1. `list_configs` - List all available preset configurations
-2. `generate_config` - Generate new config for any docs site
-3. `validate_config` - Validate config structure
-4. `estimate_pages` - Estimate page count before scraping
-5. `scrape_docs` - Scrape and build skill
-6. `package_skill` - Package skill into .zip
-7. `upload_skill` - Upload .zip to Claude
-8. `split_config` - Split large documentation configs
-9. `generate_router` - Generate router/hub skills
-
-**Extended Tools (8 - NEW!):**
-10. `scrape_github` - Scrape GitHub repositories
-11. `scrape_pdf` - Extract content from PDFs
-12. `unified_scrape` - Combine multiple sources
-13. `merge_sources` - Merge documentation + code
-14. `detect_conflicts` - Find doc/code discrepancies
-15. `add_config_source` - Register private git repos
-16. `fetch_config` - Fetch configs from git
-17. `list_config_sources` - List registered sources
-
-### What's New in v2.4.0
-
-**MCP Infrastructure:**
-- ✅ **Upgraded to MCP SDK v1.25.0** - Latest stable version
-- ✅ **FastMCP Framework** - Modern, maintainable implementation
-- ✅ **Dual Transport** - stdio + HTTP support
-- ✅ **18 Tools** - Up from 9 (exactly 2x!)
-- ✅ **Auto-Configuration** - One script configures all agents
-
-**Agent Support:**
-- ✅ **5 Agents Supported** - Claude Code, VS Code + Cline, Cursor, Windsurf, IntelliJ IDEA
-- ✅ **Automatic Setup** - `./setup_mcp.sh` configures everything
-- ✅ **Transport Detection** - Auto-selects stdio vs HTTP per agent
-- ✅ **Config Management** - Handles all agent-specific config formats
-
-**Developer Experience:**
-- ✅ **One Setup Command** - Works for all agents
-- ✅ **Natural Language** - Use plain English in any agent
-- ✅ **No CLI Required** - All features via MCP tools
-- ✅ **Full Testing** - All 18 tools tested and working
-
-### Troubleshooting Multi-Agent Setup
-
-**HTTP server not starting?**
-```bash
-# Check if port 8765 is in use
-lsof -i :8765
-
-# Use different port
-python3 -m skill_seekers.mcp.server_fastmcp --transport http --port 9000
-
-# Update agent config with new port
-```
-
-**Agent not finding MCP server?**
-```bash
-# Verify config file exists
-cat ~/.claude/claude_code_config.json
-cat ~/.cursor/mcp_settings.json
-
-# Re-run setup
-./setup_mcp.sh
-
-# Check server logs
-tail -f logs/mcp_server.log
-```
-
-**Tools not appearing in agent?**
-```bash
-# Restart agent completely (quit and relaunch)
-# For HTTP transport, ensure server is running:
-ps aux | grep "skill_seekers.mcp.server_fastmcp"
-
-# Test server directly
-curl http://localhost:8765/health
-```
-
-### Complete Multi-Agent Workflow
-
-```bash
-# 1. One-time setup (5 minutes)
-git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
-cd Skill_Seekers
-./setup_mcp.sh
-
-# 2. For HTTP agents (Cursor/Windsurf/IntelliJ), start server
-./scripts/start_mcp_server.sh
-
-# 3. Restart your AI agent
-
-# 4. Use natural language in ANY agent:
-"List all available configs"
-"Generate React skill from https://react.dev/"
-"Estimate pages for Godot config"
-"Package and upload skill at output/react/"
-
-# 5. Result: Skills created without touching CLI!
-```
-
-**Full Guide:** See [docs/MCP_SETUP.md](docs/MCP_SETUP.md) for detailed multi-agent setup instructions.
+**Full Guide:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
 
 ---
 
-## 📁 Simple Structure
+## ⚙️ Configuration
 
-```
-doc-to-skill/
-├── cli/
-│   ├── doc_scraper.py      # Main scraping tool
-│   ├── package_skill.py    # Package to .zip
-│   ├── upload_skill.py     # Auto-upload (API)
-│   └── enhance_skill.py    # AI enhancement
-├── mcp/                    # MCP server for 5 AI agents
-│   └── server.py           # 18 MCP tools (v2.7.0)
-├── configs/                # Preset configurations
-│   ├── godot.json         # Godot Engine
-│   ├── react.json         # React
-│   ├── vue.json           # Vue.js
-│   ├── django.json        # Django
-│   └── fastapi.json       # FastAPI
-└── output/                 # All output (auto-created)
-    ├── godot_data/        # Scraped data
-    ├── godot/             # Built skill
-    └── godot.zip          # Packaged skill
-```
-
-## ✨ Features
-
-### 1. Fast Page Estimation (NEW!)
+### Available Presets (24+)
 
 ```bash
-skill-seekers estimate configs/react.json
-
-# Output:
-📊 ESTIMATION RESULTS
-✅ Pages Discovered: 180
-📈 Estimated Total: 230
-⏱️  Time Elapsed: 1.2 minutes
-💡 Recommended max_pages: 280
+# List all presets
+skill-seekers list-configs
 ```
 
-**Benefits:**
-- Know page count BEFORE scraping (saves time)
-- Validates URL patterns work correctly
-- Estimates total scraping time
-- Recommends optimal `max_pages` setting
-- Fast (1-2 minutes vs 20-40 minutes full scrape)
+| Category | Presets |
+|----------|---------|
+| **Web Frameworks** | `react`, `vue`, `angular`, `svelte`, `nextjs` |
+| **Python** | `django`, `flask`, `fastapi`, `sqlalchemy`, `pytest` |
+| **Game Development** | `godot`, `pygame`, `unity` |
+| **Tools & DevOps** | `docker`, `kubernetes`, `terraform`, `ansible` |
+| **Unified (Docs + GitHub)** | `react-unified`, `vue-unified`, `nextjs-unified`, and more |
 
-### 2. Auto-Detect Existing Data
+### Creating Your Own Config
 
 ```bash
-skill-seekers scrape --config configs/godot.json
-
-# If data exists:
-✓ Found existing data: 245 pages
-Use existing data? (y/n): y
-⏭️  Skipping scrape, using existing data
-```
-
-### 3. Knowledge Generation
-
-**Automatic pattern extraction:**
-- Extracts common code patterns from docs
-- Detects programming language
-- Creates quick reference with real examples
-- Smarter categorization with scoring
-
-**Enhanced SKILL.md:**
-- Real code examples from documentation
-- Language-annotated code blocks
-- Common patterns section
-- Quick reference from actual usage examples
-
-### 4. Smart Categorization
-
-Automatically infers categories from:
-- URL structure
-- Page titles
-- Content keywords
-- With scoring for better accuracy
-
-### 5. Code Language Detection
-
-```python
-# Automatically detects:
-- Python (def, import, from)
-- JavaScript (const, let, =>)
-- GDScript (func, var, extends)
-- C++ (#include, int main)
-- And more...
-```
-
-### 5. Skip Scraping
-
-```bash
-# Scrape once
-skill-seekers scrape --config configs/react.json
-
-# Later, just rebuild (instant)
-skill-seekers scrape --config configs/react.json --skip-scrape
-```
-
-### 6. Async Mode for Faster Scraping (2-3x Speed!)
-
-```bash
-# Enable async mode with 8 workers (recommended for large docs)
-skill-seekers scrape --config configs/react.json --async --workers 8
-
-# Small docs (~100-500 pages)
-skill-seekers scrape --config configs/mydocs.json --async --workers 4
-
-# Large docs (2000+ pages) with no rate limiting
-skill-seekers scrape --config configs/largedocs.json --async --workers 8 --no-rate-limit
-```
-
-**Performance Comparison:**
-- **Sync mode (threads):** ~18 pages/sec, 120 MB memory
-- **Async mode:** ~55 pages/sec, 40 MB memory
-- **Result:** 3x faster, 66% less memory!
-
-**When to use:**
-- ✅ Large documentation (500+ pages)
-- ✅ Network latency is high
-- ✅ Memory is constrained
-- ❌ Small docs (< 100 pages) - overhead not worth it
-
-**See full guide:** [ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
-
-### 7. AI-Powered SKILL.md Enhancement
-
-```bash
-# Option 1: During scraping (API-based, requires API key)
-pip3 install anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers scrape --config configs/react.json --enhance
-
-# Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-skill-seekers scrape --config configs/react.json --enhance-local
-
-# Option 3: After scraping (API-based, standalone)
-skill-seekers enhance output/react/
-
-# Option 4: After scraping (LOCAL, no API key, standalone)
-skill-seekers enhance output/react/
-```
-
-**What it does:**
-- Reads your reference documentation
-- Uses Claude to generate an excellent SKILL.md
-- Extracts best code examples (5-10 practical examples)
-- Creates comprehensive quick reference
-- Adds domain-specific key concepts
-- Provides navigation guidance for different skill levels
-- Automatically backs up original
-- **Quality:** Transforms 75-line templates into 500+ line comprehensive guides
-
-**LOCAL Enhancement (Recommended):**
-- Uses your local coding agent (no API costs)
-- **Multiple Agent Support:**
-  - Claude Code (default) - Your Claude Code Max plan
-  - Codex CLI - OpenAI Codex CLI
-  - Copilot CLI - GitHub Copilot CLI
-  - OpenCode CLI - OpenCode CLI
-  - Custom agents - Use any CLI tool
-- Choose agent with `--agent` flag:
-  ```bash
-  skill-seekers enhance output/react/ --agent codex
-  skill-seekers enhance output/react/ --agent copilot
-  skill-seekers enhance output/react/ --agent custom --agent-cmd "my-agent {prompt_file}"
-  ```
-- Environment variables for CI/CD:
-  ```bash
-  export SKILL_SEEKER_AGENT=codex
-  export SKILL_SEEKER_AGENT_CMD="my-agent {prompt_file}"
-  ```
-- Analyzes reference files automatically
-- Takes 30-60 seconds
-- Quality: 9/10 (comparable to API version)
-
-### 7. Large Documentation Support (10K-40K+ Pages)
-
-**For massive documentation sites like Godot (40K pages), AWS, or Microsoft Docs:**
-
-```bash
-# 1. Estimate first (discover page count)
-skill-seekers estimate configs/godot.json
-
-# 2. Auto-split into focused sub-skills
-python3 -m skill_seekers.cli.split_config configs/godot.json --strategy router
-
-# Creates:
-# - godot-scripting.json (5K pages)
-# - godot-2d.json (8K pages)
-# - godot-3d.json (10K pages)
-# - godot-physics.json (6K pages)
-# - godot-shaders.json (11K pages)
-
-# 3. Scrape all in parallel (4-8 hours instead of 20-40!)
-for config in configs/godot-*.json; do
-  skill-seekers scrape --config $config &
-done
-wait
-
-# 4. Generate intelligent router/hub skill
-python3 -m skill_seekers.cli.generate_router configs/godot-*.json
-
-# 5. Package all skills
-python3 -m skill_seekers.cli.package_multi output/godot*/
-
-# 6. Upload all .zip files to Claude
-# Users just ask questions naturally!
-# Router automatically directs to the right sub-skill!
-```
-
-**Split Strategies:**
-- **auto** - Intelligently detects best strategy based on page count
-- **category** - Split by documentation categories (scripting, 2d, 3d, etc.)
-- **router** - Create hub skill + specialized sub-skills (RECOMMENDED)
-- **size** - Split every N pages (for docs without clear categories)
-
-**Benefits:**
-- ✅ Faster scraping (parallel execution)
-- ✅ More focused skills (better Claude performance)
-- ✅ Easier maintenance (update one topic at a time)
-- ✅ Natural user experience (router handles routing)
-- ✅ Avoids context window limits
-
-**Configuration:**
-```json
-{
-  "name": "godot",
-  "max_pages": 40000,
-  "split_strategy": "router",
-  "split_config": {
-    "target_pages_per_skill": 5000,
-    "create_router": true,
-    "split_by_categories": ["scripting", "2d", "3d", "physics"]
-  }
-}
-```
-
-**Full Guide:** [Large Documentation Guide](docs/LARGE_DOCUMENTATION.md)
-
-### 8. Checkpoint/Resume for Long Scrapes
-
-**Never lose progress on long-running scrapes:**
-
-```bash
-# Enable in config
-{
-  "checkpoint": {
-    "enabled": true,
-    "interval": 1000  // Save every 1000 pages
-  }
-}
-
-# If scrape is interrupted (Ctrl+C or crash)
-skill-seekers scrape --config configs/godot.json --resume
-
-# Resume from last checkpoint
-✅ Resuming from checkpoint (12,450 pages scraped)
-⏭️  Skipping 12,450 already-scraped pages
-🔄 Continuing from where we left off...
-
-# Start fresh (clear checkpoint)
-skill-seekers scrape --config configs/godot.json --fresh
-```
-
-**Benefits:**
-- ✅ Auto-saves every 1000 pages (configurable)
-- ✅ Saves on interruption (Ctrl+C)
-- ✅ Resume with `--resume` flag
-- ✅ Never lose hours of scraping progress
-
-## 🎯 Complete Workflows
-
-### First Time (With Scraping + Enhancement)
-
-```bash
-# 1. Scrape + Build + AI Enhancement (LOCAL, no API key)
-skill-seekers scrape --config configs/godot.json --enhance-local
-
-# 2. Wait for new terminal to close (enhancement completes)
-# Check the enhanced SKILL.md:
-cat output/godot/SKILL.md
-
-# 3. Package
-skill-seekers package output/godot/
-
-# 4. Done! You have godot.zip with excellent SKILL.md
-```
-
-**Time:** 20-40 minutes (scraping) + 60 seconds (enhancement) = ~21-41 minutes
-
-### Using Existing Data (Fast!)
-
-```bash
-# 1. Use cached data + Local Enhancement
-skill-seekers scrape --config configs/godot.json --skip-scrape
-skill-seekers enhance output/godot/
-
-# 2. Package
-skill-seekers package output/godot/
-
-# 3. Done!
-```
-
-**Time:** 1-3 minutes (build) + 60 seconds (enhancement) = ~2-4 minutes total
-
-### Without Enhancement (Basic)
-
-```bash
-# 1. Scrape + Build (no enhancement)
-skill-seekers scrape --config configs/godot.json
-
-# 2. Package
-skill-seekers package output/godot/
-
-# 3. Done! (SKILL.md will be basic template)
-```
-
-**Time:** 20-40 minutes
-**Note:** SKILL.md will be generic - enhancement strongly recommended!
-
-## 📋 Available Presets
-
-| Config | Framework | Description |
-|--------|-----------|-------------|
-| `godot.json` | Godot Engine | Game development |
-| `react.json` | React | UI framework |
-| `vue.json` | Vue.js | Progressive framework |
-| `django.json` | Django | Python web framework |
-| `fastapi.json` | FastAPI | Modern Python API |
-| `ansible-core.json` | Ansible Core 2.19 | Automation & configuration |
-
-### Using Presets
-
-```bash
-# Godot
-skill-seekers scrape --config configs/godot.json
-
-# React
-skill-seekers scrape --config configs/react.json
-
-# Vue
-skill-seekers scrape --config configs/vue.json
-
-# Django
-skill-seekers scrape --config configs/django.json
-
-# FastAPI
-skill-seekers scrape --config configs/fastapi.json
-
-# Ansible
-skill-seekers scrape --config configs/ansible-core.json
-```
-
-## 🎨 Creating Your Own Config
-
-### Option 1: Interactive
-
-```bash
+# Option 1: Interactive
 skill-seekers scrape --interactive
-# Follow prompts, it will create the config for you
-```
 
-### Option 2: Copy and Edit
-
-```bash
-# Copy a preset
+# Option 2: Copy and edit a preset
 cp configs/react.json configs/myframework.json
-
-# Edit it
 nano configs/myframework.json
-
-# Use it
 skill-seekers scrape --config configs/myframework.json
 ```
 
-### Where to Place Custom Configs
-
-You have **three options** for placing your custom config files:
-
-#### Option A: User Config Directory (Recommended for Personal Configs)
-
-```bash
-# Create your config in your home directory
-mkdir -p ~/.config/skill-seekers/configs
-cat > ~/.config/skill-seekers/configs/myproject.json << 'EOF'
-{
-  "name": "myproject",
-  "base_url": "https://docs.myproject.com/",
-  "max_pages": 50
-}
-EOF
-
-# Use it (tool automatically finds it)
-skill-seekers scrape --config myproject.json
-# or
-skill-seekers scrape --config configs/myproject.json
-```
-
-**Benefits:**
-- ✅ Configs persist across project directories
-- ✅ Separate from your project code
-- ✅ Easy to manage personal configurations
-
-#### Option B: Current Directory (Good for Project-Specific Configs)
-
-```bash
-# Create configs in your project folder
-mkdir -p configs
-cat > configs/myproject.json << 'EOF'
-{
-  "name": "myproject",
-  "base_url": "https://docs.myproject.com/"
-}
-EOF
-
-# Use it
-skill-seekers scrape --config configs/myproject.json
-```
-
-**Benefits:**
-- ✅ Config lives with your project
-- ✅ Easy to commit to version control
-- ✅ Team members can use the same config
-
-#### Option C: Absolute Path (For Configs Stored Elsewhere)
-
-```bash
-# Use any file path
-skill-seekers scrape --config /full/path/to/myconfig.json
-```
-
-**Config Resolution Order:**
-
-The tool searches for configs in this order:
-1. Exact path as provided
-2. `./configs/` (current directory)
-3. `~/.config/skill-seekers/configs/` (user config directory)
-4. SkillSeekersWeb.com API (preset configs)
-
-### Config Structure
+### Config File Structure
 
 ```json
 {
@@ -2114,6 +910,16 @@ The tool searches for configs in this order:
 }
 ```
 
+### Where to Store Configs
+
+The tool searches in this order:
+1. Exact path as provided
+2. `./configs/` (current directory)
+3. `~/.config/skill-seekers/configs/` (user config directory)
+4. SkillSeekersWeb.com API (preset configs)
+
+---
+
 ## 📊 What Gets Created
 
 ```
@@ -2133,73 +939,7 @@ output/
     └── assets/             # Empty (add your own)
 ```
 
-## 🎯 Command Line Options
-
-```bash
-# Interactive mode
-skill-seekers scrape --interactive
-
-# Use config file
-skill-seekers scrape --config configs/godot.json
-
-# Quick mode
-skill-seekers scrape --name react --url https://react.dev/
-
-# Skip scraping (use existing data)
-skill-seekers scrape --config configs/godot.json --skip-scrape
-
-# With description
-skill-seekers scrape \
-  --name react \
-  --url https://react.dev/ \
-  --description "React framework for building UIs"
-```
-
-## 💡 Tips
-
-### 1. Test Small First
-
-Edit `max_pages` in config to test:
-```json
-{
-  "max_pages": 20  // Test with just 20 pages
-}
-```
-
-### 2. Reuse Scraped Data
-
-```bash
-# Scrape once
-skill-seekers scrape --config configs/react.json
-
-# Rebuild multiple times (instant)
-skill-seekers scrape --config configs/react.json --skip-scrape
-skill-seekers scrape --config configs/react.json --skip-scrape
-```
-
-### 3. Finding Selectors
-
-```python
-# Test in Python
-from bs4 import BeautifulSoup
-import requests
-
-url = "https://docs.example.com/page"
-soup = BeautifulSoup(requests.get(url).content, 'html.parser')
-
-# Try different selectors
-print(soup.select_one('article'))
-print(soup.select_one('main'))
-print(soup.select_one('div[role="main"]'))
-```
-
-### 4. Check Output Quality
-
-```bash
-# After building, check:
-cat output/godot/SKILL.md  # Should have real examples
-cat output/godot/references/index.md  # Categories
-```
+---
 
 ## 🐛 Troubleshooting
 
@@ -2219,43 +959,47 @@ Edit the config `categories` section with better keywords.
 
 ### Want to Update Docs?
 ```bash
-# Delete old data
+# Delete old data and re-scrape
 rm -rf output/godot_data/
-
-# Re-scrape
 skill-seekers scrape --config configs/godot.json
 ```
+
+### Enhancement Not Working?
+```bash
+# Check if API key is set
+echo $ANTHROPIC_API_KEY
+
+# Try LOCAL mode instead (uses Claude Code Max, no API key needed)
+skill-seekers enhance output/react/ --mode LOCAL
+
+# Monitor background enhancement status
+skill-seekers enhance-status output/react/ --watch
+```
+
+### GitHub Rate Limit Issues?
+```bash
+# Set a GitHub token (5000 req/hour vs 60/hour anonymous)
+export GITHUB_TOKEN=ghp_your_token_here
+
+# Or configure multiple profiles
+skill-seekers config --github
+```
+
+---
 
 ## 📈 Performance
 
 | Task | Time | Notes |
 |------|------|-------|
 | Scraping (sync) | 15-45 min | First time only, thread-based |
-| Scraping (async) | 5-15 min | 2-3x faster with --async flag |
-| Building | 1-3 min | Fast! |
-| Re-building | <1 min | With --skip-scrape |
-| Packaging | 5-10 sec | Final zip |
+| Scraping (async) | 5-15 min | 2-3x faster with `--async` flag |
+| Building | 1-3 min | Fast rebuild from cache |
+| Re-building | <1 min | With `--skip-scrape` |
+| Enhancement (LOCAL) | 30-60 sec | Uses Claude Code Max |
+| Enhancement (API) | 20-40 sec | Requires API key |
+| Packaging | 5-10 sec | Final .zip creation |
 
-## ✅ Summary
-
-**One tool does everything:**
-1. ✅ Scrapes documentation
-2. ✅ Auto-detects existing data
-3. ✅ Generates better knowledge
-4. ✅ Creates enhanced skills
-5. ✅ Works with presets or custom configs
-6. ✅ Supports skip-scraping for fast iteration
-
-**Simple structure:**
-- `doc_scraper.py` - The tool
-- `configs/` - Presets
-- `output/` - Everything else
-
-**Better output:**
-- Real code examples with language detection
-- Common patterns extracted from docs
-- Smart categorization
-- Enhanced SKILL.md with actual examples
+---
 
 ## 📚 Documentation
 
@@ -2263,31 +1007,23 @@ skill-seekers scrape --config configs/godot.json
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **START HERE** if you're new!
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start for experienced users
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - One-page cheat sheet
 
 ### Guides
 - **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
 - **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
-- **[docs/ENHANCEMENT.md](docs/ENHANCEMENT.md)** - AI enhancement guide
-- **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - Configure terminal app for local enhancement
-- **[docs/UPLOAD_GUIDE.md](docs/UPLOAD_GUIDE.md)** - How to upload skills to Claude
+- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI enhancement modes guide
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
+- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Multi-source scraping
 
-### Technical
-- **[docs/CLAUDE.md](docs/CLAUDE.md)** - Technical architecture
-- **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
+### Integration Guides
+- **[docs/integrations/LANGCHAIN.md](docs/integrations/LANGCHAIN.md)** - LangChain RAG
+- **[docs/integrations/CURSOR.md](docs/integrations/CURSOR.md)** - Cursor IDE
+- **[docs/integrations/WINDSURF.md](docs/integrations/WINDSURF.md)** - Windsurf IDE
+- **[docs/integrations/CLINE.md](docs/integrations/CLINE.md)** - Cline (VS Code)
+- **[docs/integrations/RAG_PIPELINES.md](docs/integrations/RAG_PIPELINES.md)** - All RAG pipelines
 
-## 🎮 Ready?
-
-```bash
-# Try Godot
-skill-seekers scrape --config configs/godot.json
-
-# Try React
-skill-seekers scrape --config configs/react.json
-
-# Or go interactive
-skill-seekers scrape --interactive
-```
+---
 
 ## 📝 License
 
