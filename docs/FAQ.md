@@ -1,7 +1,7 @@
 # Frequently Asked Questions (FAQ)
 
-**Version:** 2.7.0
-**Last Updated:** 2026-01-18
+**Version:** 3.1.0-dev
+**Last Updated:** 2026-02-18
 
 ---
 
@@ -9,7 +9,7 @@
 
 ### What is Skill Seekers?
 
-Skill Seekers is a Python tool that converts documentation websites, GitHub repositories, and PDF files into AI skills for Claude AI, Google Gemini, OpenAI ChatGPT, and generic Markdown format.
+Skill Seekers is a Python tool that converts documentation websites, GitHub repositories, and PDF files into AI-ready formats for 16+ platforms: LLM platforms (Claude, Gemini, OpenAI), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev).
 
 **Use Cases:**
 - Create custom documentation skills for your favorite frameworks
@@ -19,11 +19,31 @@ Skill Seekers is a Python tool that converts documentation websites, GitHub repo
 
 ### Which platforms are supported?
 
-**Supported Platforms (4):**
+**Supported Platforms (16+):**
+
+*LLM Platforms:*
 1. **Claude AI** - ZIP format with YAML frontmatter
 2. **Google Gemini** - tar.gz format for Grounded Generation
 3. **OpenAI ChatGPT** - ZIP format for Vector Stores
 4. **Generic Markdown** - ZIP format with markdown files
+
+*RAG Frameworks:*
+5. **LangChain** - Document objects for QA chains and agents
+6. **LlamaIndex** - TextNodes for query engines
+7. **Haystack** - Document objects for enterprise RAG
+
+*Vector Databases:*
+8. **ChromaDB** - Direct collection upload
+9. **FAISS** - Index files for local similarity search
+10. **Weaviate** - Vector objects with schema creation
+11. **Qdrant** - Points with payload indexing
+12. **Pinecone** - Ready-to-upsert format
+
+*AI Coding Assistants:*
+13. **Cursor** - .cursorrules persistent context
+14. **Windsurf** - .windsurfrules AI coding rules
+15. **Cline** - .clinerules + MCP integration
+16. **Continue.dev** - HTTP context server (all IDEs)
 
 Each platform has a dedicated adaptor for optimal formatting and upload.
 
@@ -472,16 +492,20 @@ skill-seekers-mcp --transport http --port 8765
 
 ### What MCP tools are available?
 
-**18 MCP tools:**
+**26 MCP tools:**
+
+*Core Tools (9):*
 1. `list_configs` - List preset configurations
 2. `generate_config` - Generate config from docs URL
 3. `validate_config` - Validate config structure
 4. `estimate_pages` - Estimate page count
 5. `scrape_docs` - Scrape documentation
-6. `package_skill` - Package to .zip
-7. `upload_skill` - Upload to platform
+6. `package_skill` - Package to .zip (supports `--format` and `--target`)
+7. `upload_skill` - Upload to platform (supports `--target`)
 8. `enhance_skill` - AI enhancement
 9. `install_skill` - Complete workflow
+
+*Extended Tools (10):*
 10. `scrape_github` - GitHub analysis
 11. `scrape_pdf` - PDF extraction
 12. `unified_scrape` - Multi-source scraping
@@ -491,6 +515,18 @@ skill-seekers-mcp --transport http --port 8765
 16. `generate_router` - Generate router skills
 17. `add_config_source` - Register git repos
 18. `fetch_config` - Fetch configs from git
+19. `list_config_sources` - List registered sources
+20. `remove_config_source` - Remove config source
+
+*Vector DB Tools (4):*
+21. `export_to_chroma` - Export to ChromaDB
+22. `export_to_weaviate` - Export to Weaviate
+23. `export_to_faiss` - Export to FAISS
+24. `export_to_qdrant` - Export to Qdrant
+
+*Cloud Tools (3):*
+25. `cloud_upload` - Upload to S3/GCS/Azure
+26. `cloud_download` - Download from cloud storage
 
 ### How do I configure MCP for Claude Code?
 
@@ -650,6 +686,6 @@ Yes!
 
 ---
 
-**Version:** 2.7.0
-**Last Updated:** 2026-01-18
+**Version:** 3.1.0-dev
+**Last Updated:** 2026-02-18
 **Questions? Ask on [GitHub Discussions](https://github.com/yusufkaraaslan/Skill_Seekers/discussions)**

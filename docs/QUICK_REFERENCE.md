@@ -239,7 +239,7 @@ skill-seekers-mcp
 skill-seekers-mcp --transport http --port 8765
 ```
 
-### MCP Tools (18 total)
+### MCP Tools (26 total)
 
 **Core Tools:**
 1. `list_configs` - List preset configurations
@@ -286,7 +286,7 @@ export GITHUB_TOKEN=ghp_...
 ## Testing
 
 ```bash
-# Run all tests (1200+)
+# Run all tests (1,880+)
 pytest tests/ -v
 
 # Run with coverage
@@ -463,4 +463,4 @@ skill-seekers validate-config configs/my-config.json
 
 ---
 
-**Version:** 3.1.0-dev | **Test Count:** 1880+ | **Platforms:** Claude, Gemini, OpenAI, Markdown
+**Version:** 3.1.0-dev | **Test Count:** 1,880+ | **MCP Tools:** 26 | **Platforms:** 16+ (Claude, Gemini, OpenAI, LangChain, LlamaIndex, ChromaDB, FAISS, Cursor, Windsurf, and more)
