@@ -425,10 +425,14 @@ class DocToSkillConverter:
                 return {
                     "url": url,
                     "title": doc.title or "",
-                    "content": doc._extract_content_text(),
+                    "content": "\n\n".join(
+                        p for p in doc._extract_content_text().split("\n\n")
+                        if len(p.strip()) >= 20
+                    ),
                     "headings": [
                         {"level": f"h{h.level}", "text": h.text, "id": h.id or ""}
                         for h in doc.headings
+                        if h.level > 1
                     ],
                     "code_samples": [
                         {"code": cb.code, "language": cb.language or "unknown"}
