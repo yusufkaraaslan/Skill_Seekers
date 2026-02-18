@@ -27,6 +27,7 @@ from .stream_parser import StreamParser
 from .update_parser import UpdateParser
 from .multilang_parser import MultilangParser
 from .quality_parser import QualityParser
+from .workflows_parser import WorkflowsParser
 
 # Registry of all parsers (in order of usage frequency)
 PARSERS = [
@@ -50,6 +51,7 @@ PARSERS = [
     UpdateParser(),
     MultilangParser(),
     QualityParser(),
+    WorkflowsParser(),
 ]
 
 

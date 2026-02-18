@@ -17,117 +17,117 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🚀 v3.0.0 "Universal Intelligence Platform" - The universal preprocessor for any AI system. Convert documentation, GitHub repos, and PDFs into 16 production-ready formats: LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Windsurf, Cline, Continue.dev, Claude, and any RAG pipeline—in minutes, not hours.**
+**🧠 The data layer for AI systems.** Skill Seekers turns any documentation, GitHub repo, or PDF into structured knowledge assets—ready to power AI Skills (Claude, Gemini, OpenAI), RAG pipelines (LangChain, LlamaIndex, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline) in minutes, not hours.
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
 > 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tasks across 10 categories, pick any to contribute!
 
-## 🚀 **NEW: Universal RAG Preprocessor**
+## 🧠 The Data Layer for AI Systems
 
-**Skill Seekers is now the data layer for AI systems.** 70% of RAG development time is spent on data preprocessing—scraping, cleaning, chunking, and structuring documentation. **We automate all of it.**
+**Skill Seekers is the universal preprocessing layer** that sits between raw documentation and every AI system that consumes it. Whether you are building Claude skills, a LangChain RAG pipeline, or a Cursor `.cursorrules` file — the data preparation is identical. You do it once, and export to all targets.
 
 ```bash
-# One command → Production-ready RAG data
-skill-seekers scrape --config configs/react.json
-skill-seekers package output/react --target langchain  # or llama-index, pinecone, cursor
+# One command → structured knowledge asset
+skill-seekers create https://docs.react.dev/
+# or: skill-seekers create facebook/react
+# or: skill-seekers create ./my-project
 
-# 15 minutes → Ready for: LangChain, LlamaIndex, Haystack, Pinecone, Cursor, Custom RAG
+# Export to any AI system
+skill-seekers package output/react --target claude      # → Claude AI Skill (ZIP)
+skill-seekers package output/react --target langchain   # → LangChain Documents
+skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
+skill-seekers package output/react --target cursor      # → .cursorrules
 ```
 
-### Supported Integrations
+### What gets built
 
-| Integration | Format | Use Case | Guide |
-|------------|--------|----------|-------|
-| **LangChain** | `Documents` | QA chains, agents, retrievers | [Guide](docs/integrations/LANGCHAIN.md) |
-| **LlamaIndex** | `TextNodes` | Query engines, chat engines | [Guide](docs/integrations/LLAMA_INDEX.md) |
-| **Haystack** | `Documents` | Enterprise RAG pipelines | [Guide](docs/integrations/HAYSTACK.md) |
-| **Pinecone** | Ready for upsert | Production vector search | [Guide](docs/integrations/PINECONE.md) |
-| **Cursor IDE** | `.cursorrules` | AI coding (VS Code fork) | [Guide](docs/integrations/CURSOR.md) |
-| **Windsurf** | `.windsurfrules` | AI coding (Codeium IDE) | [Guide](docs/integrations/WINDSURF.md) |
-| **Cline** | `.clinerules` + MCP | AI coding (VS Code ext) | [Guide](docs/integrations/CLINE.md) |
-| **Continue.dev** | HTTP context | AI coding (any IDE) | [Guide](docs/integrations/CONTINUE_DEV.md) |
-| **Claude AI** | Skills (ZIP) | Claude Code skills | Default |
-| **Gemini** | tar.gz | Google Gemini skills | `--target gemini` |
-| **OpenAI** | ChatGPT format | Custom GPTs | `--target openai` |
+| Output | Target | What it powers |
+|--------|--------|---------------|
+| **Claude Skill** (ZIP + YAML) | `--target claude` | Claude Code, Claude API |
+| **Gemini Skill** (tar.gz) | `--target gemini` | Google Gemini |
+| **OpenAI / Custom GPT** (ZIP) | `--target openai` | GPT-4o, custom assistants |
+| **LangChain Documents** | `--target langchain` | QA chains, agents, retrievers |
+| **LlamaIndex TextNodes** | `--target llama-index` | Query engines, chat engines |
+| **Haystack Documents** | `--target haystack` | Enterprise RAG pipelines |
+| **Pinecone-ready** (Markdown) | `--target markdown` | Vector upsert |
+| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | Local vector DBs |
+| **Cursor** `.cursorrules` | `--target claude` → copy | Cursor IDE AI context |
+| **Windsurf / Cline / Continue** | `--target claude` → copy | VS Code, IntelliJ, Vim |
 
-**Why Skill Seekers for RAG?**
+### Why it matters
 
-- ⚡ **99% faster preprocessing** - Days → 15-45 minutes
-- ✅ **Production quality** - 700+ tests, battle-tested on 24+ frameworks
-- 🎯 **Smart chunking** - Preserves code blocks, maintains context
-- 📊 **Rich metadata** - Categories, sources, types for filtering
-- 🔄 **Multi-source** - Combine docs + GitHub + PDFs seamlessly
-- 🌐 **Platform-agnostic** - One preprocessing, export anywhere
+- ⚡ **99% faster** — Days of manual data prep → 15–45 minutes
+- 🎯 **AI Skill quality** — 500+ line SKILL.md files with examples, patterns, and guides
+- 📊 **RAG-ready chunks** — Smart chunking preserves code blocks and maintains context
+- 🔄 **Multi-source** — Combine docs + GitHub + PDFs into one knowledge asset
+- 🌐 **One prep, every target** — Export the same asset to 16 platforms without re-scraping
+- ✅ **Battle-tested** — 1,880+ tests, 24+ framework presets, production-ready
 
-**Read the full story:** [Blog: Universal RAG Preprocessor](docs/blog/UNIVERSAL_RAG_PREPROCESSOR.md)
-
-## Quick Start: RAG Pipeline
+## Quick Start
 
 ```bash
-# 1. Install
 pip install skill-seekers
 
-# 2. Generate documentation (Django example)
-skill-seekers scrape --config configs/django.json  # 15 min
+# Build an AI skill from any source
+skill-seekers create https://docs.django.com/    # web docs
+skill-seekers create django/django               # GitHub repo
+skill-seekers create ./my-codebase               # local project
+skill-seekers create manual.pdf                  # PDF
 
-# 3. Export for your RAG stack
-skill-seekers package output/django --target langchain  # For LangChain
-skill-seekers package output/django --target llama-index  # For LlamaIndex
-
-# 4. Use in your RAG pipeline
-python your_rag_pipeline.py  # Load and query!
+# Export for your use case
+skill-seekers package output/django --target claude     # Claude AI Skill
+skill-seekers package output/django --target langchain  # LangChain RAG
+skill-seekers package output/django --target cursor     # Cursor IDE context
 ```
 
 **Complete examples:**
+- [Claude AI Skill](examples/claude-skill/) - Skills for Claude Code
 - [LangChain RAG Pipeline](examples/langchain-rag-pipeline/) - QA chain with Chroma
-- [LlamaIndex Query Engine](examples/llama-index-query-engine/) - Chat with memory
-- [Pinecone Upsert](examples/pinecone-upsert/) - Production vector search
+- [Cursor IDE Context](examples/cursor-react-skill/) - Framework-aware AI coding
 
-## What is Skill Seeker?
+## What is Skill Seekers?
 
-Skill Seeker is the **universal preprocessing layer for AI systems**. It transforms documentation websites, GitHub repositories, and PDF files into production-ready formats for:
+Skill Seekers is the **data layer for AI systems**. It transforms documentation websites, GitHub repositories, and PDF files into structured knowledge assets for every AI target:
 
-- **RAG Pipelines** - LangChain, LlamaIndex, Pinecone, Weaviate, Chroma, FAISS
-- **AI Coding Assistants** - Cursor IDE, VS Code, custom tools
-- **Claude AI Skills** - [Claude Code](https://www.anthropic.com/news/skills) and Claude API
-- **Custom GPTs** - OpenAI, Gemini, and other LLM platforms
+| Use Case | What you get | Examples |
+|----------|-------------|---------|
+| **AI Skills** | Comprehensive SKILL.md + references | Claude Code, Gemini, GPT |
+| **RAG Pipelines** | Chunked documents with rich metadata | LangChain, LlamaIndex, Haystack |
+| **Vector Databases** | Pre-formatted data ready for upsert | Pinecone, Chroma, Weaviate, FAISS |
+| **AI Coding Assistants** | Context files your IDE AI reads automatically | Cursor, Windsurf, Cline, Continue.dev |
 
-Instead of spending days on manual preprocessing, Skill Seeker:
+Instead of spending days on manual preprocessing, Skill Seekers:
 
-1. **Scrapes** multiple sources (docs, GitHub repos, PDFs) automatically
-2. **Analyzes** code repositories with deep AST parsing
-3. **Detects** conflicts between documentation and code implementation
-4. **Organizes** content into categorized reference files
-5. **Enhances** with AI to extract best examples and key concepts
-6. **Packages** everything into an uploadable `.zip` file for Claude
-
-**Result:** Get comprehensive Claude skills for any framework, API, or tool in 20-40 minutes instead of hours of manual work.
+1. **Ingests** — docs, GitHub repos, local codebases, PDFs
+2. **Analyzes** — deep AST parsing, pattern detection, API extraction
+3. **Structures** — categorized reference files with metadata
+4. **Enhances** — AI-powered SKILL.md generation (Claude, Gemini, or local)
+5. **Exports** — 16 platform-specific formats from one asset
 
 ## Why Use This?
 
+### For AI Skill Builders (Claude, Gemini, OpenAI)
+
+- 🎯 **Production-grade Skills** — 500+ line SKILL.md files with code examples, patterns, and guides
+- 🔄 **Enhancement Workflows** — Apply `security-focus`, `architecture-comprehensive`, or custom YAML presets
+- 🎮 **Any Domain** — Game engines (Godot, Unity), frameworks (React, Django), internal tools
+- 🔧 **Teams** — Combine internal docs + code into a single source of truth
+- 📚 **Quality** — AI-enhanced with examples, quick reference, and navigation guidance
+
 ### For RAG Builders & AI Engineers
 
-- 🤖 **RAG Systems**: Build production-grade Q&A bots, chatbots, documentation portals
-- 🚀 **99% Faster**: Days of preprocessing → 15-45 minutes
-- ✅ **Battle-Tested**: 700+ tests, 24+ framework presets, production-ready
-- 🔄 **Multi-Source**: Combine docs + GitHub + PDFs automatically
-- 🌐 **Platform-Agnostic**: Export to LangChain, LlamaIndex, Pinecone, or custom
-- 📊 **Smart Metadata**: Categories, sources, types → Better retrieval accuracy
+- 🤖 **RAG-ready data** — Pre-chunked LangChain `Documents`, LlamaIndex `TextNodes`, Haystack `Documents`
+- 🚀 **99% faster** — Days of preprocessing → 15–45 minutes
+- 📊 **Smart metadata** — Categories, sources, types → better retrieval accuracy
+- 🔄 **Multi-source** — Combine docs + GitHub + PDFs in one pipeline
+- 🌐 **Platform-agnostic** — Export to any vector DB or framework without re-scraping
 
 ### For AI Coding Assistant Users
 
-- 💻 **Cursor IDE**: Generate .cursorrules for framework-specific AI assistance
-- 🎯 **Persistent Context**: AI "knows" your frameworks without manual prompting
-- 📚 **Always Current**: Update docs in 5 minutes, not hours
-
-### For Claude Code Users
-
-- 🎯 **Skills**: Create comprehensive Claude Code skills from any documentation
-- 🎮 **Game Dev**: Generate skills for game engines (Godot, Unity, Unreal)
-- 🔧 **Teams**: Combine internal docs + code into single source of truth
-- 📚 **Learning**: Build skills from docs, code examples, and PDFs
-- 🔍 **Open Source**: Analyze repos to find documentation gaps
+- 💻 **Cursor / Windsurf / Cline** — Generate `.cursorrules` / `.windsurfrules` / `.clinerules` automatically
+- 🎯 **Persistent context** — AI "knows" your frameworks without repeated prompting
+- 📚 **Always current** — Update context in minutes when docs change
 
 ## Key Features
 
@@ -524,6 +524,57 @@ skill-seekers analyze --directory tests/ --enhance
 ```
 
 **Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+
+### 🔄 Enhancement Workflow Presets (**NEW!**)
+
+Reusable YAML-defined enhancement pipelines that control how AI transforms your raw documentation into a polished skill.
+
+- ✅ **5 Bundled Presets** — `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+- ✅ **User-Defined Presets** — add custom workflows to `~/.config/skill-seekers/workflows/`
+- ✅ **Multiple Workflows** — chain two or more workflows in one command
+- ✅ **Fully Managed CLI** — list, inspect, copy, add, remove, and validate workflows
+
+```bash
+# Apply a single workflow
+skill-seekers create ./my-project --enhance-workflow security-focus
+
+# Chain multiple workflows (applied in order)
+skill-seekers create ./my-project \
+  --enhance-workflow security-focus \
+  --enhance-workflow minimal
+
+# Manage presets
+skill-seekers workflows list                          # List all (bundled + user)
+skill-seekers workflows show security-focus           # Print YAML content
+skill-seekers workflows copy security-focus           # Copy to user dir for editing
+skill-seekers workflows add ./my-workflow.yaml        # Install a custom preset
+skill-seekers workflows remove my-workflow            # Remove a user preset
+skill-seekers workflows validate security-focus       # Validate preset structure
+
+# Copy multiple at once
+skill-seekers workflows copy security-focus minimal api-documentation
+
+# Add multiple files at once
+skill-seekers workflows add ./wf-a.yaml ./wf-b.yaml
+
+# Remove multiple at once
+skill-seekers workflows remove my-wf-a my-wf-b
+```
+
+**YAML preset format:**
+```yaml
+name: security-focus
+description: "Security-focused review: vulnerabilities, auth, data handling"
+version: "1.0"
+stages:
+  - name: vulnerabilities
+    type: custom
+    prompt: "Review for OWASP top 10 and common security vulnerabilities..."
+  - name: auth-review
+    type: custom
+    prompt: "Examine authentication and authorisation patterns..."
+    uses_history: true
+```
 
 ### ⚡ Performance & Scale
 - ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)

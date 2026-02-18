@@ -62,6 +62,7 @@ COMMAND_MODULES = {
     "update": "skill_seekers.cli.incremental_updater",
     "multilang": "skill_seekers.cli.multilang_support",
     "quality": "skill_seekers.cli.quality_metrics",
+    "workflows": "skill_seekers.cli.workflows_command",
 }
 
 

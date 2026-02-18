@@ -103,6 +103,12 @@ try:
         submit_config_impl,
         upload_skill_impl,
         validate_config_impl,
+        # Workflow tools
+        list_workflows_impl,
+        get_workflow_impl,
+        create_workflow_impl,
+        update_workflow_impl,
+        delete_workflow_impl,
     )
 except ImportError:
     # Fallback for direct script execution
@@ -137,6 +143,11 @@ except ImportError:
         submit_config_impl,
         upload_skill_impl,
         validate_config_impl,
+        list_workflows_impl,
+        get_workflow_impl,
+        create_workflow_impl,
+        update_workflow_impl,
+        delete_workflow_impl,
     )
 
 # Initialize FastMCP server
@@ -1173,6 +1184,100 @@ async def export_to_qdrant(
         args["output_dir"] = output_dir
 
     result = await export_to_qdrant_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+# ============================================================================
+# WORKFLOW TOOLS (5 tools)
+# ============================================================================
+
+
+@safe_tool_decorator(
+    description="List all available enhancement workflows (bundled defaults + user-created). Returns name, description, and source (bundled/user) for each."
+)
+async def list_workflows() -> str:
+    """List all available enhancement workflow presets."""
+    result = list_workflows_impl({})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Get the full YAML content of a named enhancement workflow. Searches user dir first, then bundled defaults."
+)
+async def get_workflow(name: str) -> str:
+    """
+    Get full YAML content of a workflow.
+
+    Args:
+        name: Workflow name (e.g. 'security-focus', 'default')
+
+    Returns:
+        YAML content of the workflow, or error message if not found.
+    """
+    result = get_workflow_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Create a new user workflow from YAML content. The workflow is saved to ~/.config/skill-seekers/workflows/."
+)
+async def create_workflow(name: str, content: str) -> str:
+    """
+    Create a new user workflow.
+
+    Args:
+        name: Workflow name (becomes the filename stem, e.g. 'my-custom')
+        content: Full YAML content of the workflow
+
+    Returns:
+        Success message with file path, or error message.
+    """
+    result = create_workflow_impl({"name": name, "content": content})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Update (overwrite) an existing user workflow. Cannot update bundled workflows."
+)
+async def update_workflow(name: str, content: str) -> str:
+    """
+    Update an existing user workflow.
+
+    Args:
+        name: Workflow name to update
+        content: New YAML content
+
+    Returns:
+        Success message, or error if workflow is bundled or invalid.
+    """
+    result = update_workflow_impl({"name": name, "content": content})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Delete a user workflow by name. Bundled workflows cannot be deleted."
+)
+async def delete_workflow(name: str) -> str:
+    """
+    Delete a user workflow.
+
+    Args:
+        name: Workflow name to delete
+
+    Returns:
+        Success message, or error if workflow is bundled or not found.
+    """
+    result = delete_workflow_impl({"name": name})
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

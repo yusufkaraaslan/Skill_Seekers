@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Enhancement Workflow Preset Management (`skill-seekers workflows`)
+- New `workflows` CLI subcommand to manage enhancement workflow presets
+- Bundled presets shipped as YAML files inside the package (`skill_seekers/workflows/`)
+  - `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+- User presets stored in `~/.config/skill-seekers/workflows/`
+- Subcommands:
+  - `skill-seekers workflows list` — List all bundled + user workflows with descriptions
+  - `skill-seekers workflows show <name>` — Print YAML content of a workflow
+  - `skill-seekers workflows copy <name> [name ...]` — Copy bundled workflow(s) to user dir
+  - `skill-seekers workflows add <file.yaml> [file ...]` — Install custom YAML file(s) into user dir
+  - `skill-seekers workflows remove <name> [name ...]` — Delete user workflow(s)
+  - `skill-seekers workflows validate <name|path>` — Parse and validate a workflow
+- `copy`, `add`, `remove` all accept multiple names/files in one command (partial-failure: continues processing, returns non-zero exit if any item fails)
+- `add --name` flag override is restricted to single-file operations
+- New entry point: `skill-seekers-workflows`
+
+#### Multiple `--enhance-workflow` flags from CLI
+- `skill-seekers create <source> --enhance-workflow security-focus --enhance-workflow minimal` — apply multiple workflows in a single command
+- All workflow management commands (`copy`, `add`, `remove`) now accept multiple names/files in one invocation
+
+### Fixed
+- `create` command `_add_common_args()` now correctly forwards each workflow as a separate `--enhance-workflow` flag to sub-scrapers (previously passed the whole list as a single argument, causing all workflows to be ignored)
+
+### Changed
+- `workflows copy` now accepts one or more workflow names: `skill-seekers workflows copy wf-a wf-b`
+- `workflows add` now accepts one or more YAML files: `skill-seekers workflows add a.yaml b.yaml`
+- `workflows remove` now accepts one or more workflow names: `skill-seekers workflows remove wf-a wf-b`
+
 ## [3.0.0] - 2026-02-10
 
 ### 🚀 "Universal Intelligence Platform" - Major Release

@@ -1,0 +1,27 @@
+name: minimal
+description: Lightweight enhancement - SKILL.md only, no heavy analysis
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - doc_scraping
+  - github_analysis
+variables:
+  depth: surface
+stages:
+  - name: skill_md_polish
+    type: custom
+    target: skill_md
+    uses_history: false
+    enabled: true
+    prompt: >
+      Review the following SKILL.md content and make minimal improvements:
+      - Fix obvious formatting issues
+      - Ensure the overview section is clear and concise
+      - Remove duplicate or redundant information
+
+      Return the improved content as plain text without extra commentary.
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: minimal

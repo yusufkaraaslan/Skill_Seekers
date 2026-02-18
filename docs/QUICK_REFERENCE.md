@@ -1,6 +1,6 @@
 # Quick Reference - Skill Seekers Cheat Sheet
 
-**Version:** 2.7.0 | **Quick Commands** | **One-Page Reference**
+**Version:** 3.1.0-dev | **Quick Commands** | **One-Page Reference**
 
 ---
 
@@ -91,7 +91,53 @@ skill-seekers enhance output/react/ --background
 
 # Monitor background enhancement
 skill-seekers enhance-status output/react/ --watch
+
+# Apply a workflow preset during create
+skill-seekers create ./my-project --enhance-workflow security-focus
+
+# Chain multiple workflow presets
+skill-seekers create ./my-project \
+  --enhance-workflow security-focus \
+  --enhance-workflow minimal
 ```
+
+### Enhancement Workflow Presets
+
+```bash
+# List all available workflows (bundled + user)
+skill-seekers workflows list
+
+# Show the YAML content of a workflow
+skill-seekers workflows show security-focus
+
+# Copy a bundled workflow to user dir for editing
+skill-seekers workflows copy security-focus
+
+# Copy multiple bundled workflows at once
+skill-seekers workflows copy security-focus minimal api-documentation
+
+# Install a custom YAML file as a user workflow
+skill-seekers workflows add ./my-workflow.yaml
+
+# Install multiple YAML files at once
+skill-seekers workflows add ./wf-a.yaml ./wf-b.yaml
+
+# Install with a custom name (single file only)
+skill-seekers workflows add ./my-workflow.yaml --name my-custom-name
+
+# Remove a user workflow (bundled presets cannot be removed)
+skill-seekers workflows remove my-workflow
+
+# Remove multiple user workflows at once
+skill-seekers workflows remove wf-a wf-b
+
+# Validate a workflow by name or file path
+skill-seekers workflows validate security-focus
+skill-seekers workflows validate ./my-workflow.yaml
+```
+
+**Bundled presets:** `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+**User presets dir:** `~/.config/skill-seekers/workflows/`
 
 ### Packaging & Upload
 
@@ -417,4 +463,4 @@ skill-seekers validate-config configs/my-config.json
 
 ---
 
-**Version:** 2.7.0 | **Test Count:** 1200+ | **Platforms:** Claude, Gemini, OpenAI, Markdown
+**Version:** 3.1.0-dev | **Test Count:** 1880+ | **Platforms:** Claude, Gemini, OpenAI, Markdown

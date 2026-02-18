@@ -3,6 +3,7 @@
 Covers:
 - run_workflows() with no workflow flags → (False, [])
 - run_workflows() with a single named workflow
+- WorkflowEngine loads bundled presets by name (integration)
 - run_workflows() with multiple named workflows (chaining)
 - run_workflows() with inline --enhance-stage flags
 - run_workflows() with both named and inline workflows
@@ -372,3 +373,70 @@ class TestRunWorkflowsDryRun:
         for engine in engines:
             engine.preview.assert_called_once()
             engine.run.assert_not_called()
+
+
+# ────────────────── bundled preset loading (integration) ─────────────────────
+
+
+class TestBundledPresetsLoad:
+    """Verify WorkflowEngine can load each bundled preset by name.
+
+    These are real integration tests – they actually read the YAML files
+    shipped inside the package via importlib.resources.
+    """
+
+    BUNDLED_NAMES = [
+        "default",
+        "minimal",
+        "security-focus",
+        "architecture-comprehensive",
+        "api-documentation",
+    ]
+
+    @pytest.mark.parametrize("preset_name", BUNDLED_NAMES)
+    def test_bundled_preset_loads(self, preset_name):
+        from skill_seekers.cli.enhancement_workflow import WorkflowEngine
+
+        engine = WorkflowEngine(preset_name)
+        wf = engine.workflow
+        assert wf.name, f"Workflow '{preset_name}' has no name"
+        assert isinstance(wf.stages, list), "stages must be a list"
+        assert len(wf.stages) > 0, f"Workflow '{preset_name}' has no stages"
+
+    @pytest.mark.parametrize("preset_name", BUNDLED_NAMES)
+    def test_bundled_preset_stages_have_required_fields(self, preset_name):
+        from skill_seekers.cli.enhancement_workflow import WorkflowEngine
+
+        engine = WorkflowEngine(preset_name)
+        for stage in engine.workflow.stages:
+            assert stage.name, f"Stage in '{preset_name}' has no name"
+            assert stage.type in ("builtin", "custom"), (
+                f"Stage '{stage.name}' in '{preset_name}' has unknown type '{stage.type}'"
+            )
+
+    def test_unknown_preset_raises_file_not_found(self):
+        from skill_seekers.cli.enhancement_workflow import WorkflowEngine
+
+        with pytest.raises(FileNotFoundError):
+            WorkflowEngine("completely-nonexistent-preset-xyz")
+
+    def test_list_bundled_workflows_returns_all(self):
+        from skill_seekers.cli.enhancement_workflow import list_bundled_workflows
+
+        names = list_bundled_workflows()
+        for expected in self.BUNDLED_NAMES:
+            assert expected in names, f"'{expected}' not in bundled workflows: {names}"
+
+    def test_list_user_workflows_empty_when_no_user_dir(self, tmp_path, monkeypatch):
+        """list_user_workflows returns [] when ~/.config/skill-seekers/workflows/ does not exist."""
+        from skill_seekers.cli import enhancement_workflow as ew_mod
+        import pathlib
+
+        fake_home = tmp_path / "fake_home"
+        fake_home.mkdir()
+        monkeypatch.setenv("HOME", str(fake_home))
+        # Also patch Path.home() used inside the module
+        monkeypatch.setattr(pathlib.Path, "home", staticmethod(lambda: fake_home))
+
+        names = ew_mod.list_user_workflows()
+        assert names == []

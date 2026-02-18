@@ -1,0 +1,59 @@
+name: security-focus
+description: "Security-focused review: vulnerabilities, auth, data handling"
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - python
+  - javascript
+  - typescript
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+  - name: vulnerabilities
+    type: custom
+    target: security
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze this codebase for OWASP Top 10 and common security vulnerabilities.
+
+      Focus on:
+      1. Injection flaws (SQL, command, LDAP injection)
+      2. Broken authentication and session management
+      3. Sensitive data exposure (secrets in code, logging PII)
+      4. Security misconfigurations
+      5. Cross-site scripting (XSS) risks
+      6. Insecure direct object references
+
+      Output JSON with a "findings" array where each item has:
+      - "category": vulnerability category
+      - "severity": "critical" | "high" | "medium" | "low"
+      - "description": what the issue is
+      - "recommendation": how to fix it
+  - name: auth_review
+    type: custom
+    target: auth
+    uses_history: true
+    enabled: true
+    prompt: >
+      Examine authentication and authorisation patterns in this codebase.
+
+      Review:
+      1. Token handling and storage
+      2. Password hashing mechanisms
+      3. Session expiry and invalidation
+      4. Role-based access control implementation
+      5. OAuth/JWT usage correctness
+
+      Output JSON with an "auth_analysis" object containing "strengths" and "weaknesses" arrays.
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: security-focus
+    security_reviewed: true

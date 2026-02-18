@@ -1,0 +1,24 @@
+name: default
+description: Standard AI enhancement with all features enabled
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - doc_scraping
+  - github_analysis
+variables: {}
+stages:
+  - name: base_analysis
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+  - name: test_examples
+    type: builtin
+    target: examples
+    enabled: true
+    uses_history: false
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: default

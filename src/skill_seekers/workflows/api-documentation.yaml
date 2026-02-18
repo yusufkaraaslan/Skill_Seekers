@@ -1,0 +1,71 @@
+name: api-documentation
+description: Generate comprehensive API documentation from code analysis
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+  - name: api_extraction
+    type: custom
+    target: api
+    uses_history: false
+    enabled: true
+    prompt: >
+      Extract and document all public API endpoints, functions, and interfaces
+      from this codebase.
+
+      For each API element include:
+      1. Name and signature
+      2. Purpose and description
+      3. Parameters (name, type, required/optional, description)
+      4. Return value (type, description)
+      5. Exceptions that may be raised
+      6. Usage example
+
+      Output JSON with an "api_reference" array of API elements.
+  - name: usage_examples
+    type: custom
+    target: examples
+    uses_history: true
+    enabled: true
+    prompt: >
+      Based on the API reference, create practical usage examples that demonstrate
+      common integration patterns.
+
+      Create examples for:
+      1. Basic getting-started scenario
+      2. Common use case (most frequently used APIs)
+      3. Advanced integration pattern
+      4. Error handling example
+
+      Output JSON with a "usage_examples" array where each item has
+      "title", "description", and "code" fields.
+  - name: integration_guide
+    type: custom
+    target: integration
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a concise integration guide based on the API documentation and examples.
+
+      Include:
+      1. Prerequisites and installation
+      2. Authentication setup (if applicable)
+      3. Quick start in 5 minutes
+      4. Common gotchas and how to avoid them
+      5. Links to further resources
+
+      Output JSON with an "integration_guide" object.
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: api-documentation
+    has_api_docs: true

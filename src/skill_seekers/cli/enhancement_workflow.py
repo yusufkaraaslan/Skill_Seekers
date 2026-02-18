@@ -27,6 +27,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
+from importlib.resources import files as importlib_files
 from pathlib import Path
 from typing import Any, Literal
 
@@ -99,25 +100,63 @@ class WorkflowEngine:
         self.history: list[dict[str, Any]] = []
         self.enhancer = None  # Lazy load UnifiedEnhancer
 
-    def _load_workflow(self, workflow_path: str | Path) -> EnhancementWorkflow:
-        """Load workflow from YAML file."""
-        workflow_path = Path(workflow_path)
+    def _load_workflow(self, workflow_ref: str | Path) -> EnhancementWorkflow:
+        """Load workflow from YAML file using 3-level search order.
 
-        # Resolve path (support both absolute and relative)
-        if not workflow_path.is_absolute():
-            # Try relative to CWD first
-            if not workflow_path.exists():
-                # Try in config directory
-                config_dir = Path.home() / ".config" / "skill-seekers" / "workflows"
-                workflow_path = config_dir / workflow_path
+        Search order:
+        1. Raw file path (absolute or relative) — existing behaviour
+        2. ~/.config/skill-seekers/workflows/{name}.yaml — user overrides/custom
+        3. skill_seekers/workflows/{name}.yaml via importlib.resources — bundled defaults
+        """
+        workflow_ref = Path(workflow_ref)
 
-        if not workflow_path.exists():
-            raise FileNotFoundError(f"Workflow not found: {workflow_path}")
+        # Add .yaml extension for bare names
+        name_str = str(workflow_ref)
+        if not name_str.endswith((".yaml", ".yml")):
+            yaml_ref = Path(name_str + ".yaml")
+        else:
+            yaml_ref = workflow_ref
 
-        logger.info(f"📋 Loading workflow: {workflow_path}")
+        resolved_path: Path | None = None
+        yaml_text: str | None = None
 
-        with open(workflow_path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+        # Level 1: absolute path or relative-to-CWD
+        if yaml_ref.is_absolute():
+            if yaml_ref.exists():
+                resolved_path = yaml_ref
+        else:
+            cwd_path = Path.cwd() / yaml_ref
+            if cwd_path.exists():
+                resolved_path = cwd_path
+            elif yaml_ref.exists():
+                resolved_path = yaml_ref
+
+        # Level 2: user config directory
+        if resolved_path is None:
+            user_dir = Path.home() / ".config" / "skill-seekers" / "workflows"
+            user_path = user_dir / yaml_ref.name
+            if user_path.exists():
+                resolved_path = user_path
+
+        # Level 3: bundled package workflows via importlib.resources
+        if resolved_path is None:
+            bare_name = yaml_ref.name  # e.g. "security-focus.yaml"
+            try:
+                pkg_ref = importlib_files("skill_seekers.workflows").joinpath(bare_name)
+                yaml_text = pkg_ref.read_text(encoding="utf-8")
+                logger.info(f"📋 Loading bundled workflow: {bare_name}")
+            except (FileNotFoundError, TypeError, ModuleNotFoundError):
+                raise FileNotFoundError(
+                    f"Workflow '{yaml_ref.stem}' not found. "
+                    "Use 'skill-seekers workflows list' to see available workflows."
+                )
+
+        if resolved_path is not None:
+            logger.info(f"📋 Loading workflow: {resolved_path}")
+            with open(resolved_path, encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        else:
+            data = yaml.safe_load(yaml_text)
 
         # Handle inheritance (extends)
         if "extends" in data and data["extends"]:
@@ -430,103 +469,27 @@ class WorkflowEngine:
         logger.info(f"💾 Saved workflow history: {output_path}")
 
 
-def create_default_workflows():
-    """Create default workflow templates in user config directory."""
-    config_dir = Path.home() / ".config" / "skill-seekers" / "workflows"
-    config_dir.mkdir(parents=True, exist_ok=True)
-
-    # Default workflow
-    default_workflow = {
-        "name": "Default Enhancement",
-        "description": "Standard AI enhancement with all features",
-        "version": "1.0",
-        "applies_to": ["codebase_analysis", "doc_scraping", "github_analysis"],
-        "stages": [
-            {
-                "name": "base_analysis",
-                "type": "builtin",
-                "target": "patterns",
-                "enabled": True,
-            },
-            {
-                "name": "test_examples",
-                "type": "builtin",
-                "target": "examples",
-                "enabled": True,
-            },
-        ],
-        "post_process": {
-            "add_metadata": {"enhanced": True, "workflow": "default"}
-        },
-    }
-
-    # Security-focused workflow
-    security_workflow = {
-        "name": "Security-Focused Analysis",
-        "description": "Emphasize security patterns and vulnerabilities",
-        "version": "1.0",
-        "applies_to": ["codebase_analysis"],
-        "variables": {"focus_area": "security"},
-        "stages": [
-            {
-                "name": "base_patterns",
-                "type": "builtin",
-                "target": "patterns",
-            },
-            {
-                "name": "security_analysis",
-                "type": "custom",
-                "target": "security",
-                "uses_history": True,
-                "prompt": """Based on the patterns detected: {previous_results}
-
-Perform deep security analysis:
-
-1. **Authentication/Authorization**:
-   - Auth bypass risks?
-   - Token handling secure?
-   - Session management issues?
-
-2. **Input Validation**:
-   - User input sanitized?
-   - SQL injection risks?
-   - XSS vulnerabilities?
-
-3. **Data Exposure**:
-   - Sensitive data in logs?
-   - Secrets in config?
-   - PII handling?
-
-4. **Cryptography**:
-   - Weak algorithms?
-   - Hardcoded keys?
-   - Insecure RNG?
-
-Output as JSON with 'findings' array.""",
-            },
-        ],
-        "post_process": {
-            "add_metadata": {"security_reviewed": True},
-        },
-    }
-
-    # Save workflows
-    workflows = {
-        "default.yaml": default_workflow,
-        "security-focus.yaml": security_workflow,
-    }
-
-    for filename, workflow_data in workflows.items():
-        workflow_file = config_dir / filename
-        if not workflow_file.exists():
-            with open(workflow_file, "w", encoding="utf-8") as f:
-                yaml.dump(workflow_data, f, default_flow_style=False, sort_keys=False)
-            logger.info(f"✅ Created workflow: {workflow_file}")
-
-    return config_dir
+def list_bundled_workflows() -> list[str]:
+    """Return names of all bundled default workflows (without .yaml extension)."""
+    try:
+        pkg = importlib_files("skill_seekers.workflows")
+        names = []
+        for item in pkg.iterdir():
+            name = str(item.name)
+            if name.endswith((".yaml", ".yml")):
+                names.append(name.removesuffix(".yaml").removesuffix(".yml"))
+        return sorted(names)
+    except Exception:
+        return []
 
 
-if __name__ == "__main__":
-    # Create default workflows
-    create_default_workflows()
-    print("✅ Default workflows created!")
+def list_user_workflows() -> list[str]:
+    """Return names of all user-defined workflows (without .yaml extension)."""
+    user_dir = Path.home() / ".config" / "skill-seekers" / "workflows"
+    if not user_dir.exists():
+        return []
+    names = []
+    for p in user_dir.iterdir():
+        if p.suffix in (".yaml", ".yml"):
+            names.append(p.stem)
+    return sorted(names)

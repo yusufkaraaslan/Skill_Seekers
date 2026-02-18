@@ -1,0 +1,72 @@
+name: architecture-comprehensive
+description: Deep architectural analysis including patterns, dependencies, and design quality
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+  - name: architecture_overview
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyse the architectural patterns and design decisions in this codebase.
+
+      Identify:
+      1. Overall architectural style (MVC, microservices, layered, hexagonal, etc.)
+      2. Key design patterns used and their purpose
+      3. Component boundaries and responsibilities
+      4. Data flow between components
+      5. External dependencies and integration points
+
+      Output JSON with an "architecture" object containing:
+      - "style": primary architectural style
+      - "patterns": list of design patterns detected
+      - "components": list of key components with descriptions
+      - "data_flow": description of data flow
+      - "quality_score": 1-10 rating with justification
+  - name: dependency_analysis
+    type: custom
+    target: dependencies
+    uses_history: true
+    enabled: true
+    prompt: >
+      Based on the architectural overview, analyse the dependency structure.
+
+      Identify:
+      1. Circular dependencies (red flags)
+      2. High coupling between modules
+      3. Opportunities for dependency injection
+      4. Third-party dependency risks (outdated, unmaintained)
+      5. Suggested refactoring priorities
+
+      Output JSON with a "dependency_analysis" object.
+  - name: improvement_roadmap
+    type: custom
+    target: roadmap
+    uses_history: true
+    enabled: true
+    prompt: >
+      Based on the full architectural analysis, create an improvement roadmap.
+
+      Provide:
+      1. Top 3 quick wins (low effort, high impact)
+      2. Medium-term improvements (1-3 months)
+      3. Long-term architectural goals
+      4. Technical debt prioritisation
+
+      Output JSON with a "roadmap" object containing "quick_wins", "medium_term", and "long_term" arrays.
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: architecture-comprehensive
+    deep_analysis: true

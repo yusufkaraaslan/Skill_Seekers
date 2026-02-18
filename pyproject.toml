@@ -203,6 +203,7 @@ skill-seekers-stream = "skill_seekers.cli.streaming_ingest:main"
 skill-seekers-update = "skill_seekers.cli.incremental_updater:main"
 skill-seekers-multilang = "skill_seekers.cli.multilang_support:main"
 skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"
+skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -213,7 +214,7 @@ include = ["skill_seekers*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-skill_seekers = ["py.typed"]
+skill_seekers = ["py.typed", "workflows/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

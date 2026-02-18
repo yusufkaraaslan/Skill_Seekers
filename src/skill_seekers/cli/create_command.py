@@ -376,7 +376,8 @@ class CreateCommand:
 
         # Enhancement Workflow arguments (NEW - Phase 2)
         if getattr(self.args, "enhance_workflow", None):
-            argv.extend(["--enhance-workflow", self.args.enhance_workflow])
+            for wf in self.args.enhance_workflow:
+                argv.extend(["--enhance-workflow", wf])
         if getattr(self.args, "enhance_stage", None):
             for stage in self.args.enhance_stage:
                 argv.extend(["--enhance-stage", stage])

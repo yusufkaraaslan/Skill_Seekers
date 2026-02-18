@@ -290,7 +290,7 @@ pytest tests/test_mcp_fastmcp.py -v
 **Test Architecture:**
 - 46 test files covering all features
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.13
-- **1,765 tests passing** (current), up from 700+ in v2.x, growing to 1,852+ in v3.1.0
+- **1,880+ tests passing** (current), up from 700+ in v2.x, growing to 1,952+ in v3.1.0
 - Must run `pip install -e .` before tests (src/ layout requirement)
 - Tests include create command integration tests, CLI refactor E2E tests
 
@@ -749,6 +749,7 @@ skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"         # C3.1 Pattern detection
 skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main" # C3.3 Guide generation
+skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"         # NEW: Workflow preset management
 
 # New v3.0.0 Entry Points
 skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"                  # NEW: v3.0.0 Setup wizard
@@ -801,7 +802,7 @@ pip install -e .
 
 Per user instructions in `~/.claude/CLAUDE.md`:
 - "never skip any test. always make sure all test pass"
-- All 1,765+ tests must pass before commits (1,852+ in upcoming v3.1.0)
+- All 1,880+ tests must pass before commits (1,952+ in upcoming v3.1.0)
 - Run full test suite: `pytest tests/ -v`
 - New tests added for create command and CLI refactor work
 
@@ -2187,8 +2188,11 @@ The `scripts/` directory contains utility scripts:
 - ⚡ **-p Shortcut** - Quick preset selection (`-p quick|standard|comprehensive`)
 - 🔧 **Enhancement Flag Consolidation** - `--enhance-level` (0-3) replaces 3 separate flags
 - 🎨 **Smart Source Detection** - No need to specify whether input is URL, repo, or directory
-- ✅ **1,765 Tests Passing** - All CLI refactor work verified
-- 📚 **Improved Documentation** - CLAUDE.md enhanced with CLI refactor details
+- 🔄 **Enhancement Workflow Presets** - YAML-based presets; `skill-seekers workflows list/show/copy/add/remove/validate`; bundled presets: `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+- 🔀 **Multiple Workflows from CLI** - `--enhance-workflow wf-a --enhance-workflow wf-b` chains presets in a single command; `workflows copy/add/remove` all accept multiple names/files at once
+- 🐛 **Bug Fix** - `create` command now correctly forwards multiple `--enhance-workflow` flags to sub-scrapers
+- ✅ **1,880+ Tests Passing** - All CLI refactor + workflow preset work verified
+- 📚 **Improved Documentation** - CLAUDE.md, README, QUICK_REFERENCE updated with workflow preset details
 
 **v3.0.0 (February 10, 2026) - "Universal Intelligence Platform":**
 - 🚀 **16 Platform Adaptors** - RAG frameworks (LangChain, LlamaIndex, Haystack), vector DBs (Chroma, FAISS, Weaviate, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), LLM platforms (Claude, Gemini, OpenAI)
