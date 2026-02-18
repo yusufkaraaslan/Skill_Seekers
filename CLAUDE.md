@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is the **universal documentation preprocessor** for AI systems. It transforms documentation websites, GitHub repositories, and PDFs into production-ready formats for **16+ platforms**: RAG pipelines (LangChain, LlamaIndex, Haystack), vector databases (Pinecone, Chroma, Weaviate, FAISS, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), and LLM platforms (Claude, Gemini, OpenAI).
 
-**Current Version:** v3.0.0
+**Current Version:** v3.1.0-dev
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install -e .
 
 # 2. Verify installation
-python -c "import skill_seekers; print(skill_seekers.__version__)"  # Should print: 3.0.0
+python -c "import skill_seekers; print(skill_seekers.__version__)"  # Should print: 3.1.0-dev
 
 # 3. Run a quick test
 pytest tests/test_scraper_features.py::test_detect_language -v

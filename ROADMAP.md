@@ -4,29 +4,33 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 
 ---
 
-## 🎯 Current Status: v2.7.0 ✅
+## 🎯 Current Status: v3.1.0-dev ✅
 
-**Latest Release:** v2.7.0 (January 18, 2026)
+**Latest Release:** v3.0.0 (February 10, 2026) | In Development: v3.1.0-dev
 
 **What Works:**
 - ✅ Documentation scraping (HTML websites with llms.txt support)
 - ✅ GitHub repository scraping with C3.x codebase analysis
 - ✅ PDF extraction with OCR and image support
 - ✅ Unified multi-source scraping (docs + GitHub + PDF)
-- ✅ 18 MCP tools fully functional
-- ✅ Multi-platform support (Claude, Gemini, OpenAI, Markdown)
+- ✅ 26 MCP tools fully functional
+- ✅ Multi-platform support (16 platforms: Claude, Gemini, OpenAI, LangChain, LlamaIndex, Haystack, ChromaDB, FAISS, Weaviate, Qdrant, Cursor, Windsurf, Cline, Continue.dev, Pinecone, Markdown)
 - ✅ Auto-upload to all platforms
 - ✅ 24 preset configs (including 7 unified configs)
 - ✅ Large docs support (40K+ pages with router skills)
-- ✅ C3.x codebase analysis suite (C3.1-C3.8)
+- ✅ C3.x codebase analysis suite (C3.1-C3.10)
 - ✅ Bootstrap skill feature - self-hosting capability
-- ✅ 1200+ tests passing (improved from 700+)
+- ✅ 1,880+ tests passing
+- ✅ Unified `create` command with auto-detection and progressive help
+- ✅ Enhancement workflow presets (5 bundled: default, minimal, security-focus, architecture-comprehensive, api-documentation)
+- ✅ Cloud storage integration (S3, GCS, Azure)
 
-**Recent Improvements (v2.7.0):**
-- ✅ **Code Quality**: Fixed all 21 ruff linting errors across codebase
-- ✅ **Version Sync**: Synchronized version numbers across all package files
-- ✅ **Bug Fixes**: Resolved case-sensitivity and test fixture issues
-- ✅ **Documentation**: Comprehensive documentation updates and new guides
+**Recent Improvements (v3.1.0-dev):**
+- ✅ **Unified CLI**: `create` command auto-detects web/GitHub/local/PDF sources
+- ✅ **Workflow Presets**: YAML-based enhancement presets with CLI management
+- ✅ **Progressive Disclosure**: Default help shows 13 universal flags, detailed help per source
+- ✅ **Bug Fixes**: Markdown parser h1 filtering, paragraph length filtering
+- ✅ **Docs Cleanup**: Removed 47 stale planning/QA/release markdown files
 
 ---
 

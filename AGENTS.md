@@ -12,7 +12,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 | Attribute | Value |
 |-----------|-------|
-| **Current Version** | 3.0.0 |
+| **Current Version** | 3.1.0-dev |
 | **Python Version** | 3.10+ (tested on 3.10, 3.11, 3.12, 3.13) |
 | **License** | MIT |
 | **Package Name** | `skill-seekers` (PyPI) |
