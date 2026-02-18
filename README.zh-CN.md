@@ -10,11 +10,11 @@
 >
 > 欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 帮助改进翻译！您的反馈对我们非常宝贵。
 
-[![版本](https://img.shields.io/badge/version-2.7.4-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.4)
+[![版本](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 集成](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![测试通过](https://img.shields.io/badge/Tests-1200+%20Passing-brightgreen.svg)](tests/)
+[![测试通过](https://img.shields.io/badge/Tests-1880+%20Passing-brightgreen.svg)](tests/)
 [![项目看板](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 版本](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 下载量](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -23,32 +23,112 @@
 [![关注 Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**几分钟内自动将文档网站、GitHub 仓库和 PDF 文件转换为 Claude AI 技能。**
+**🧠 AI 系统的数据层。** Skill Seekers 将任何文档、GitHub 仓库或 PDF 转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
 
 > 🌐 **[访问 SkillSeekersWeb.com](https://skillseekersweb.com/)** - 浏览 24+ 个预设配置，分享您的配置，访问完整文档！
 
 > 📋 **[查看开发路线图和任务](https://github.com/users/yusufkaraaslan/projects/2)** - 10 个类别的 134 个任务，选择任意一个参与贡献！
 
-## 什么是 Skill Seeker？
+## 🧠 AI 系统的数据层
 
-Skill Seeker 是一个自动化工具，可将文档网站、GitHub 仓库和 PDF 文件转换为生产就绪的 [Claude AI 技能](https://www.anthropic.com/news/skills)。无需手动阅读和总结文档，Skill Seeker 可以：
+**Skill Seekers 是通用预处理层**，位于原始文档和所有使用它的 AI 系统之间。无论您是在构建 Claude 技能、LangChain RAG 流水线，还是 Cursor `.cursorrules` 文件——数据准备工作完全相同。只需执行一次，即可导出到所有目标平台。
 
-1. **抓取**多个来源（文档、GitHub 仓库、PDF）的内容
-2. **分析**代码仓库，进行深度 AST 解析
-3. **检测**文档和代码实现之间的冲突
-4. **组织**内容到分类的参考文件中
-5. **增强**使用 AI 提取最佳示例和关键概念
-6. **打包**所有内容为可上传的 `.zip` 文件供 Claude 使用
+```bash
+# 一条命令 → 结构化知识资产
+skill-seekers create https://docs.react.dev/
+# 或: skill-seekers create facebook/react
+# 或: skill-seekers create ./my-project
 
-**结果**：20-40 分钟内获得任何框架、API 或工具的全面 Claude 技能，而不是数小时的手动工作。
+# 导出到任意 AI 系统
+skill-seekers package output/react --target claude      # → Claude AI 技能 (ZIP)
+skill-seekers package output/react --target langchain   # → LangChain Documents
+skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
+skill-seekers package output/react --target cursor      # → .cursorrules
+```
 
-## 为什么使用 Skill Seeker？
+### 可构建的输出
 
-- 🎯 **面向开发者**：从文档 + GitHub 仓库创建技能，带冲突检测
-- 🎮 **面向游戏开发者**：为游戏引擎生成技能（Godot 文档 + GitHub、Unity 等）
-- 🔧 **面向团队**：将内部文档 + 代码仓库合并为单一真相来源
-- 📚 **面向学习者**：从文档、代码示例和 PDF 构建全面技能
-- 🔍 **面向开源项目**：分析仓库以发现文档空白和过时示例
+| 输出 | 目标 | 应用场景 |
+|------|------|---------|
+| **Claude 技能** (ZIP + YAML) | `--target claude` | Claude Code、Claude API |
+| **Gemini 技能** (tar.gz) | `--target gemini` | Google Gemini |
+| **OpenAI / Custom GPT** (ZIP) | `--target openai` | GPT-4o、自定义助手 |
+| **LangChain Documents** | `--target langchain` | QA 链、智能体、检索器 |
+| **LlamaIndex TextNodes** | `--target llama-index` | 查询引擎、对话引擎 |
+| **Haystack Documents** | `--target haystack` | 企业级 RAG 流水线 |
+| **Pinecone 就绪** (Markdown) | `--target markdown` | 向量上传 |
+| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | 本地向量数据库 |
+| **Cursor** `.cursorrules` | `--target claude` → 复制 | Cursor IDE AI 上下文 |
+| **Windsurf / Cline / Continue** | `--target claude` → 复制 | VS Code、IntelliJ、Vim |
+
+### 为什么选择 Skill Seekers
+
+- ⚡ **快 99%** — 数天的手动数据准备 → 15–45 分钟
+- 🎯 **AI 技能质量** — 500+ 行的 SKILL.md 文件，包含示例、模式和指南
+- 📊 **RAG 就绪的分块** — 智能分块保留代码块并维护上下文
+- 🔄 **多源支持** — 将文档 + GitHub + PDF 合并为一个知识资产
+- 🌐 **一次准备，导出所有目标** — 无需重新抓取即可导出到 16 个平台
+- ✅ **久经考验** — 1,880+ 测试，24+ 框架预设，生产就绪
+
+## 快速开始
+
+```bash
+pip install skill-seekers
+
+# 从任意来源构建 AI 技能
+skill-seekers create https://docs.django.com/    # 文档网站
+skill-seekers create django/django               # GitHub 仓库
+skill-seekers create ./my-codebase               # 本地项目
+skill-seekers create manual.pdf                  # PDF 文件
+
+# 根据用途导出
+skill-seekers package output/django --target claude     # Claude AI 技能
+skill-seekers package output/django --target langchain  # LangChain RAG
+skill-seekers package output/django --target cursor     # Cursor IDE 上下文
+```
+
+## 什么是 Skill Seekers？
+
+Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库和 PDF 文件转换为适用于所有 AI 目标的结构化知识资产：
+
+| 使用场景 | 获得的内容 | 示例 |
+|---------|-----------|------|
+| **AI 技能** | 完整的 SKILL.md + 参考文件 | Claude Code、Gemini、GPT |
+| **RAG 流水线** | 带丰富元数据的分块文档 | LangChain、LlamaIndex、Haystack |
+| **向量数据库** | 预格式化的待上传数据 | Pinecone、Chroma、Weaviate、FAISS |
+| **AI 编程助手** | IDE AI 自动读取的上下文文件 | Cursor、Windsurf、Cline、Continue.dev |
+
+Skill Seekers 的处理流程：
+
+1. **采集** — 文档、GitHub 仓库、本地代码库、PDF
+2. **分析** — 深度 AST 解析、模式检测、API 提取
+3. **结构化** — 带元数据的分类参考文件
+4. **增强** — AI 驱动的 SKILL.md 生成（Claude、Gemini 或本地）
+5. **导出** — 从一个资产生成 16 种平台特定格式
+
+## 为什么使用 Skill Seekers？
+
+### 面向 AI 技能构建者（Claude、Gemini、OpenAI）
+
+- 🎯 **生产级技能** — 500+ 行的 SKILL.md 文件，包含代码示例、模式和指南
+- 🔄 **增强工作流** — 应用 `security-focus`、`architecture-comprehensive` 或自定义 YAML 预设
+- 🎮 **任意领域** — 游戏引擎（Godot、Unity）、框架（React、Django）、内部工具
+- 🔧 **团队协作** — 将内部文档 + 代码合并为单一真相来源
+- 📚 **高质量** — 包含示例、快速参考和导航指南的 AI 增强输出
+
+### 面向 RAG 构建者和 AI 工程师
+
+- 🤖 **RAG 就绪数据** — 预分块的 LangChain `Documents`、LlamaIndex `TextNodes`、Haystack `Documents`
+- 🚀 **快 99%** — 数天的预处理 → 15–45 分钟
+- 📊 **智能元数据** — 类别、来源、类型 → 更好的检索准确率
+- 🔄 **多源支持** — 在一个流水线中组合文档 + GitHub + PDF
+- 🌐 **平台无关** — 无需重新抓取即可导出到任意向量数据库或框架
+
+### 面向 AI 编程助手用户
+
+- 💻 **Cursor / Windsurf / Cline** — 自动生成 `.cursorrules` / `.windsurfrules` / `.clinerules`
+- 🎯 **持久上下文** — AI 无需重复提示即可"了解"您的框架
+- 📚 **始终最新** — 几分钟内更新上下文
 
 ## 核心功能
 
@@ -320,6 +400,39 @@ skill-seekers analyze --directory tests/ --skip-how-to-guides
 
 **完整文档：**[docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
 
+### 🔄 增强工作流预设 (**全新！**)
+
+可重复使用的 YAML 定义增强流水线，控制 AI 如何将原始文档转换为精良的技能。
+
+- ✅ **5 个内置预设** — `default`、`minimal`、`security-focus`、`architecture-comprehensive`、`api-documentation`
+- ✅ **用户自定义预设** — 将自定义工作流添加到 `~/.config/skill-seekers/workflows/`
+- ✅ **多工作流串联** — 在一条命令中应用多个工作流
+- ✅ **完整 CLI 管理** — 列表、查看、复制、添加、删除和验证工作流
+
+```bash
+# 应用单个工作流预设
+skill-seekers create ./my-project --enhance-workflow security-focus
+
+# 串联多个工作流（按顺序应用）
+skill-seekers create ./my-project \
+  --enhance-workflow security-focus \
+  --enhance-workflow minimal
+
+# 管理预设
+skill-seekers workflows list                          # 列出所有（内置 + 用户）
+skill-seekers workflows show security-focus           # 打印 YAML 内容
+skill-seekers workflows copy security-focus           # 复制到用户目录以便编辑
+skill-seekers workflows add ./my-workflow.yaml        # 安装自定义预设
+skill-seekers workflows remove my-workflow            # 删除用户预设
+skill-seekers workflows validate security-focus       # 验证预设结构
+
+# 一次复制多个
+skill-seekers workflows copy security-focus minimal api-documentation
+
+# 一次删除多个
+skill-seekers workflows remove my-wf-a my-wf-b
+```
+
 ### ⚡ 性能和规模
 - ✅ **异步模式** - 使用 async/await 实现 2-3 倍更快的抓取（使用 `--async` 标志）
 - ✅ **大型文档支持** - 使用智能拆分处理 10K-40K+ 页文档
@@ -329,7 +442,7 @@ skill-seekers analyze --directory tests/ --skip-how-to-guides
 - ✅ **缓存系统** - 抓取一次，即时重建
 
 ### ✅ 质量保证
-- ✅ **完全测试** - 1200+ 个测试，全面覆盖
+- ✅ **完全测试** - 1,880+ 个测试，全面覆盖
 
 ---
 
