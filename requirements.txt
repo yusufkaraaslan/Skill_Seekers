@@ -17,6 +17,7 @@ jsonschema==4.25.1
 jsonschema-specifications==2025.9.1
 mcp>=1.25,<2
 packaging==25.0
+PyYAML>=6.0
 pluggy==1.6.0
 pydantic==2.12.3
 pydantic-settings==2.11.0

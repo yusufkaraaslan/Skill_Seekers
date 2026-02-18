@@ -63,6 +63,7 @@ dependencies = [
     "networkx>=3.0",
     "tomli>=2.0.0; python_version < '3.11'",  # TOML parser for version reading
     "schedule>=1.2.0",  # Required for sync monitoring
+    "PyYAML>=6.0",  # Required for workflow preset management
 ]
 
 [project.optional-dependencies]
