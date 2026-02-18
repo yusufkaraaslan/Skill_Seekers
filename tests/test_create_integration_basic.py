@@ -122,28 +122,28 @@ class TestCreateCommandArgvForwarding:
 
     def _make_args(self, **kwargs):
         import argparse
-        defaults = dict(
-            enhance_workflow=None,
-            enhance_stage=None,
-            var=None,
-            workflow_dry_run=False,
-            enhance_level=0,
-            output=None,
-            name=None,
-            description=None,
-            config=None,
-            api_key=None,
-            dry_run=False,
-            verbose=False,
-            quiet=False,
-            chunk_for_rag=False,
-            chunk_size=512,
-            chunk_overlap=50,
-            preset=None,
-            no_preserve_code_blocks=False,
-            no_preserve_paragraphs=False,
-            interactive_enhancement=False,
-        )
+        defaults = {
+            "enhance_workflow": None,
+            "enhance_stage": None,
+            "var": None,
+            "workflow_dry_run": False,
+            "enhance_level": 0,
+            "output": None,
+            "name": None,
+            "description": None,
+            "config": None,
+            "api_key": None,
+            "dry_run": False,
+            "verbose": False,
+            "quiet": False,
+            "chunk_for_rag": False,
+            "chunk_size": 512,
+            "chunk_overlap": 50,
+            "preset": None,
+            "no_preserve_code_blocks": False,
+            "no_preserve_paragraphs": False,
+            "interactive_enhancement": False,
+        }
         defaults.update(kwargs)
         return argparse.Namespace(**defaults)
 

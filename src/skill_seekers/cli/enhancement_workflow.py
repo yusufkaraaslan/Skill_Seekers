@@ -24,7 +24,6 @@ Usage:
 
 import json
 import logging
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from importlib.resources import files as importlib_files
@@ -145,11 +144,11 @@ class WorkflowEngine:
                 pkg_ref = importlib_files("skill_seekers.workflows").joinpath(bare_name)
                 yaml_text = pkg_ref.read_text(encoding="utf-8")
                 logger.info(f"📋 Loading bundled workflow: {bare_name}")
-            except (FileNotFoundError, TypeError, ModuleNotFoundError):
+            except (FileNotFoundError, TypeError, ModuleNotFoundError) as exc:
                 raise FileNotFoundError(
                     f"Workflow '{yaml_ref.stem}' not found. "
                     "Use 'skill-seekers workflows list' to see available workflows."
-                )
+                ) from exc
 
         if resolved_path is not None:
             logger.info(f"📋 Loading workflow: {resolved_path}")

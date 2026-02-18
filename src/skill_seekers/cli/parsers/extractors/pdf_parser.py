@@ -5,7 +5,7 @@ Wraps PDFExtractor to provide unified Document output.
 """
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .base_parser import BaseParser, ParseResult
 from .quality_scorer import QualityScorer
@@ -14,7 +14,6 @@ from .unified_structure import (
     ContentBlock,
     ContentBlockType,
     Document,
-    ExtractionStats,
     Heading,
     Image,
     Table,
@@ -33,13 +32,13 @@ except ImportError:
 class PdfParser(BaseParser):
     """
     Parser for PDF documents.
-    
+
     Wraps the existing PDFExtractor to provide unified Document output
     while maintaining all PDF-specific features (OCR, image extraction,
     table extraction, etc.).
     """
 
-    def __init__(self, options: Optional[dict[str, Any]] = None):
+    def __init__(self, options: dict[str, Any] | None = None):
         super().__init__(options)
         self.pdf_options = {
             "verbose": self.options.get("verbose", False),
@@ -71,7 +70,7 @@ class PdfParser(BaseParser):
     def _parse_content(self, content: str, source_path: str) -> Document:
         """
         Parse PDF content into Document.
-        
+
         Note: For PDF, we need the file path, not content string.
         This method is mainly for API compatibility.
         """
@@ -83,10 +82,10 @@ class PdfParser(BaseParser):
     def parse_file(self, path: str | Path) -> ParseResult:
         """
         Parse a PDF file.
-        
+
         Args:
             path: Path to PDF file
-            
+
         Returns:
             ParseResult with Document or error info
         """
@@ -97,7 +96,7 @@ class PdfParser(BaseParser):
             result.errors.append(f"File not found: {path}")
             return result
 
-        if not path.suffix.lower() == ".pdf":
+        if path.suffix.lower() != ".pdf":
             result.errors.append(f"Not a PDF file: {path}")
             return result
 
@@ -127,7 +126,7 @@ class PdfParser(BaseParser):
 
             # Convert to unified Document
             document = self._convert_to_document(extraction_result, str(path))
-            
+
             result.document = document
             result.success = True
             result.warnings.extend(document.stats.warnings)
@@ -157,13 +156,13 @@ class PdfParser(BaseParser):
 
         # Process pages
         pages = extraction_result.get("pages", [])
-        
+
         for page_num, page_data in enumerate(pages):
             # Add page heading
             page_heading = f"Page {page_num + 1}"
             if page_data.get("headings"):
                 page_heading = page_data["headings"][0].get("text", page_heading)
-            
+
             document.blocks.append(
                 ContentBlock(
                     type=ContentBlockType.HEADING,
@@ -200,7 +199,7 @@ class PdfParser(BaseParser):
                     source_line=page_num + 1,
                 )
                 document.code_blocks.append(code_block)
-                
+
                 document.blocks.append(
                     ContentBlock(
                         type=ContentBlockType.CODE_BLOCK,
@@ -224,7 +223,7 @@ class PdfParser(BaseParser):
                     source_line=page_num + 1,
                 )
                 document.tables.append(table)
-                
+
                 quality = self.quality_scorer.score_table(table)
                 document.blocks.append(
                     ContentBlock(
@@ -268,7 +267,7 @@ class PdfParser(BaseParser):
     def parse(self, source: str | Path) -> ParseResult:
         """
         Parse PDF from source.
-        
+
         For PDF files, source should be a file path.
         """
         if isinstance(source, str) and Path(source).exists():

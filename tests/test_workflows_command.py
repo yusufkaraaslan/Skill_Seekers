@@ -10,11 +10,9 @@ Covers:
 """
 
 import textwrap
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
-import yaml
 
 # Import the MODULE object (not just individual symbols) so we can patch it
 # directly via patch.object(). This survives any sys.modules manipulation by
@@ -168,9 +166,8 @@ class TestCmdCopy:
         assert dest.read_text(encoding="utf-8") == MINIMAL_YAML
 
     def test_copy_nonexistent(self, capsys, tmp_user_dir):
-        with _mock_bundled_text({}):
-            with _mock_bundled([]):
-                rc = cmd_copy(["ghost-workflow"])
+        with _mock_bundled_text({}), _mock_bundled([]):
+            rc = cmd_copy(["ghost-workflow"])
         assert rc == 1
         assert "not found" in capsys.readouterr().err.lower()
 
@@ -403,9 +400,8 @@ class TestMain:
         from skill_seekers.cli.workflows_command import main
 
         # tmp_user_dir is empty; mock bundled to return nothing
-        with _mock_bundled([]):
-            with pytest.raises(SystemExit) as exc:
-                main(["list"])
+        with _mock_bundled([]), pytest.raises(SystemExit) as exc:
+            main(["list"])
         assert exc.value.code == 0
 
     def test_main_validate_success(self, capsys, sample_yaml_file):
@@ -423,31 +419,27 @@ class TestMain:
         assert "name: test-workflow" in capsys.readouterr().out
 
     def test_main_show_not_found_exits_1(self, capsys, tmp_user_dir):
-        with patch.object(_wf_cmd, "_workflow_yaml_text", return_value=None):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["show", "ghost"])
+        with patch.object(_wf_cmd, "_workflow_yaml_text", return_value=None), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["show", "ghost"])
         assert exc.value.code == 1
 
     def test_main_copy_single(self, capsys, tmp_user_dir):
-        with _mock_bundled_text({"default": MINIMAL_YAML}):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["copy", "default"])
+        with _mock_bundled_text({"default": MINIMAL_YAML}), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["copy", "default"])
         assert exc.value.code == 0
         assert (tmp_user_dir / "default.yaml").exists()
 
     def test_main_copy_multiple(self, capsys, tmp_user_dir):
         texts = {"default": MINIMAL_YAML, "minimal": MINIMAL_YAML}
-        with _mock_bundled_text(texts):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["copy", "default", "minimal"])
+        with _mock_bundled_text(texts), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["copy", "default", "minimal"])
         assert exc.value.code == 0
         assert (tmp_user_dir / "default.yaml").exists()
         assert (tmp_user_dir / "minimal.yaml").exists()
 
     def test_main_copy_not_found_exits_1(self, capsys, tmp_user_dir):
-        with _mock_bundled_text({}), _mock_bundled([]):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["copy", "ghost"])
+        with _mock_bundled_text({}), _mock_bundled([]), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["copy", "ghost"])
         assert exc.value.code == 1
 
     def test_main_add_single_file(self, capsys, tmp_user_dir, sample_yaml_file):
@@ -484,32 +476,28 @@ class TestMain:
 
     def test_main_remove_single(self, capsys, tmp_user_dir):
         (tmp_user_dir / "my-wf.yaml").write_text(MINIMAL_YAML, encoding="utf-8")
-        with _mock_bundled([]):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["remove", "my-wf"])
+        with _mock_bundled([]), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["remove", "my-wf"])
         assert exc.value.code == 0
         assert not (tmp_user_dir / "my-wf.yaml").exists()
 
     def test_main_remove_multiple(self, capsys, tmp_user_dir):
         (tmp_user_dir / "wf-a.yaml").write_text(MINIMAL_YAML, encoding="utf-8")
         (tmp_user_dir / "wf-b.yaml").write_text(MINIMAL_YAML, encoding="utf-8")
-        with _mock_bundled([]):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["remove", "wf-a", "wf-b"])
+        with _mock_bundled([]), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["remove", "wf-a", "wf-b"])
         assert exc.value.code == 0
         assert not (tmp_user_dir / "wf-a.yaml").exists()
         assert not (tmp_user_dir / "wf-b.yaml").exists()
 
     def test_main_remove_bundled_refused(self, capsys, tmp_user_dir):
-        with _mock_bundled(["default"]):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["remove", "default"])
+        with _mock_bundled(["default"]), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["remove", "default"])
         assert exc.value.code == 1
 
     def test_main_remove_not_found_exits_1(self, capsys, tmp_user_dir):
-        with _mock_bundled([]):
-            with pytest.raises(SystemExit) as exc:
-                _wf_cmd.main(["remove", "ghost"])
+        with _mock_bundled([]), pytest.raises(SystemExit) as exc:
+            _wf_cmd.main(["remove", "ghost"])
         assert exc.value.code == 1
 
 

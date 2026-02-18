@@ -25,7 +25,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -166,10 +166,7 @@ class UnifiedEnhancer:
             return items
 
         # Get appropriate prompt
-        if custom_prompt:
-            prompt_template = custom_prompt
-        else:
-            prompt_template = self._get_default_prompt(enhancement_type)
+        prompt_template = custom_prompt or self._get_default_prompt(enhancement_type)
 
         # Batch processing
         batch_size = (

@@ -12,8 +12,7 @@ Covers:
 """
 
 import argparse
-import sys
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -186,7 +185,7 @@ class TestRunWorkflowsMultiple:
             m.workflow.description = "desc"
             m.workflow.stages = []
             # Track call order
-            m.run.side_effect = lambda *a, _n=wf_name, **kw: run_order.append(_n)
+            m.run.side_effect = lambda *_a, _n=wf_name, **_kw: run_order.append(_n)
             engines.append(m)
 
         with patch(
@@ -208,7 +207,7 @@ class TestRunWorkflowsMultiple:
         good_engine.workflow.description = "desc"
         good_engine.workflow.stages = []
 
-        def side_effect(name, **kwargs):
+        def side_effect(name, **_kwargs):
             if name == "bad-workflow":
                 raise FileNotFoundError("not found")
             return good_engine
@@ -341,9 +340,8 @@ class TestRunWorkflowsDryRun:
         with patch(
             "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
             return_value=mock_engine,
-        ):
-            with pytest.raises(SystemExit) as exc:
-                run_workflows(args)
+        ), pytest.raises(SystemExit) as exc:
+            run_workflows(args)
 
         assert exc.value.code == 0
         mock_engine.preview.assert_called_once()
@@ -366,9 +364,8 @@ class TestRunWorkflowsDryRun:
         with patch(
             "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
             side_effect=engines,
-        ):
-            with pytest.raises(SystemExit):
-                run_workflows(args)
+        ), pytest.raises(SystemExit):
+            run_workflows(args)
 
         for engine in engines:
             engine.preview.assert_called_once()

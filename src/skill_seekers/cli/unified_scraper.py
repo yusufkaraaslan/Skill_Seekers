@@ -571,7 +571,7 @@ class UnifiedScraper:
             if file_patterns:
                 logger.info(f"   File patterns: {', '.join(file_patterns)}")
 
-            results = analyze_codebase(
+            analyze_codebase(
                 directory=Path(local_path),
                 output_dir=temp_output,
                 depth=analysis_depth,

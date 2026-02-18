@@ -6,20 +6,20 @@ a standardized Document structure.
 
 Usage:
     from skill_seekers.cli.parsers.extractors import RstParser, MarkdownParser
-    
+
     # Parse RST file
     parser = RstParser()
     result = parser.parse_file("docs/class_node.rst")
-    
+
     if result.success:
         doc = result.document
         print(f"Title: {doc.title}")
         print(f"Tables: {len(doc.tables)}")
         print(f"Code blocks: {len(doc.code_blocks)}")
-        
+
         # Convert to markdown
         markdown = doc.to_markdown()
-        
+
         # Convert to skill format
         skill_data = doc.to_skill_format()
 
@@ -29,7 +29,7 @@ Available Parsers:
 
 Auto-Detection:
     from skill_seekers.cli.parsers.extractors import parse_document
-    
+
     # Automatically detects format
     result = parse_document("file.rst")
 """

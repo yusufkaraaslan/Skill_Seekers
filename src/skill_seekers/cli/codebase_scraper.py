@@ -444,7 +444,7 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
 def extract_rst_structure(content: str) -> dict[str, Any]:
     """
     Extract structure from ReStructuredText (RST) content.
-    
+
     Uses the enhanced unified RST parser for comprehensive extraction.
 
     RST uses underline-style headers:
@@ -474,13 +474,13 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
     # Use the enhanced unified RST parser
     try:
         from skill_seekers.cli.parsers.extractors import RstParser
-        
+
         parser = RstParser()
         result = parser.parse_string(content, "<string>")
-        
+
         if result.success and result.document:
             doc = result.document
-            
+
             # Convert to legacy structure format for backward compatibility
             structure = {
                 "title": doc.title,
@@ -531,7 +531,7 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
     except Exception as e:
         # Fall back to basic extraction if unified parser fails
         logger.warning(f"Enhanced RST parser failed: {e}, using basic parser")
-    
+
     # Legacy basic extraction (fallback)
     import re
 

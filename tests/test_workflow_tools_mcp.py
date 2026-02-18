@@ -9,7 +9,6 @@ Covers:
 """
 
 import textwrap
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -290,7 +289,7 @@ class TestDeleteWorkflowTool:
         wf.write_text(MINIMAL_YAML, encoding="utf-8")
 
         with _mock_bundled_names([]):
-            result = delete_workflow_tool({"name": "my-wf"})
+            delete_workflow_tool({"name": "my-wf"})
 
         assert not wf.exists()
 

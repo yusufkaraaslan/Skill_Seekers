@@ -91,7 +91,7 @@ def _validate_yaml(text: str) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def list_workflows_tool(args: dict) -> list:
+def list_workflows_tool(_args: dict) -> list:
     """Return all workflows with name, description, and source."""
     result: list[dict[str, str]] = []
 

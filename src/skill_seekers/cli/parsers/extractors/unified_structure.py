@@ -7,8 +7,8 @@ with a consistent structure.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
-from enum import Enum, auto
+from typing import Any
+from enum import Enum
 
 
 class ContentBlockType(Enum):
@@ -76,20 +76,20 @@ class Heading:
     """A document heading/section title."""
     level: int  # 1-6 for h1-h6, or 1+ for RST underline levels
     text: str
-    id: Optional[str] = None  # Anchor ID
-    source_line: Optional[int] = None
+    id: str | None = None  # Anchor ID
+    source_line: int | None = None
 
 
 @dataclass
 class CodeBlock:
     """A code block with metadata."""
     code: str
-    language: Optional[str] = None
-    quality_score: Optional[float] = None  # 0-10
-    confidence: Optional[float] = None  # Language detection confidence
-    is_valid: Optional[bool] = None  # Syntax validation result
+    language: str | None = None
+    quality_score: float | None = None  # 0-10
+    confidence: float | None = None  # Language detection confidence
+    is_valid: bool | None = None  # Syntax validation result
     validation_issues: list[str] = field(default_factory=list)
-    source_line: Optional[int] = None
+    source_line: int | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -97,11 +97,11 @@ class CodeBlock:
 class Table:
     """A table with rows and cells."""
     rows: list[list[str]]  # 2D array of cell content
-    headers: Optional[list[str]] = None
-    caption: Optional[str] = None
-    col_widths: Optional[list[int]] = None
+    headers: list[str] | None = None
+    caption: str | None = None
+    col_widths: list[int] | None = None
     source_format: str = "unknown"  # 'simple', 'grid', 'list-table', 'markdown', 'pdf'
-    source_line: Optional[int] = None
+    source_line: int | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -120,8 +120,8 @@ class CrossReference:
     """A cross-reference link."""
     ref_type: CrossRefType
     target: str  # Target ID, URL, or path
-    text: Optional[str] = None  # Display text (if different from target)
-    source_line: Optional[int] = None
+    text: str | None = None  # Display text (if different from target)
+    source_line: int | None = None
     resolved: bool = False  # Whether target was resolved
 
 
@@ -129,9 +129,9 @@ class CrossReference:
 class Field:
     """A field in a field list (RST :param:, :returns:, etc.)."""
     name: str  # Field name (e.g., 'param', 'returns', 'type')
-    arg: Optional[str] = None  # Field argument (e.g., parameter name)
+    arg: str | None = None  # Field argument (e.g., parameter name)
     content: str = ""  # Field content
-    source_line: Optional[int] = None
+    source_line: int | None = None
 
 
 @dataclass
@@ -139,19 +139,19 @@ class DefinitionItem:
     """A definition list item (term + definition)."""
     term: str
     definition: str
-    classifier: Optional[str] = None  # RST classifier (term : classifier)
-    source_line: Optional[int] = None
+    classifier: str | None = None  # RST classifier (term : classifier)
+    source_line: int | None = None
 
 
 @dataclass
 class Image:
     """An image reference or embedded image."""
     source: str  # URL, path, or base64 data
-    alt_text: Optional[str] = None
-    width: Optional[int] = None
-    height: Optional[int] = None
+    alt_text: str | None = None
+    width: int | None = None
+    height: int | None = None
     is_embedded: bool = False  # True if data is embedded
-    source_line: Optional[int] = None
+    source_line: int | None = None
 
 
 @dataclass
@@ -160,8 +160,8 @@ class ContentBlock:
     type: ContentBlockType
     content: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
-    source_line: Optional[int] = None
-    quality_score: Optional[float] = None  # 0-10
+    source_line: int | None = None
+    quality_score: float | None = None  # 0-10
 
     # Type-specific data (stored in metadata for flexibility)
     # For CODE_BLOCK: 'code_data' -> CodeBlock
@@ -183,71 +183,71 @@ class ExtractionStats:
     cross_references: int = 0
     images: int = 0
     warnings: list[str] = field(default_factory=list)
-    processing_time_ms: Optional[float] = None
+    processing_time_ms: float | None = None
 
 
 @dataclass
 class Document:
     """
     Unified document structure - output of ALL parsers.
-    
+
     This class provides a standardized representation of document content
     regardless of the source format (RST, Markdown, PDF, HTML).
     """
     title: str = ""
     format: str = ""  # 'markdown', 'rst', 'pdf', 'html', 'unknown'
     source_path: str = ""
-    
+
     # Core content as blocks
     blocks: list[ContentBlock] = field(default_factory=list)
-    
+
     # Navigation/Structure (derived from blocks for convenience)
     headings: list[Heading] = field(default_factory=list)
     sections: list[dict] = field(default_factory=list)  # Hierarchical structure
-    
+
     # References
     internal_links: list[CrossReference] = field(default_factory=list)
     external_links: list[CrossReference] = field(default_factory=list)
-    
+
     # Specialized content (also in blocks, but extracted for easy access)
     code_blocks: list[CodeBlock] = field(default_factory=list)
     tables: list[Table] = field(default_factory=list)
     images: list[Image] = field(default_factory=list)
-    
+
     # RST-specific (may be empty for other formats)
     field_lists: list[list[Field]] = field(default_factory=list)
     definition_lists: list[list[DefinitionItem]] = field(default_factory=list)
     substitutions: dict[str, str] = field(default_factory=dict)
     toc_trees: list[list[str]] = field(default_factory=list)
-    
+
     # Metadata
     meta: dict[str, Any] = field(default_factory=dict)
-    
+
     # Extraction info
     stats: ExtractionStats = field(default_factory=ExtractionStats)
-    
-    def to_markdown(self, options: Optional[dict] = None) -> str:
+
+    def to_markdown(self, options: dict | None = None) -> str:
         """
         Convert unified structure to markdown output.
-        
+
         Args:
             options: Optional formatting options
                 - include_toc: bool = False
                 - max_heading_level: int = 6
                 - code_block_style: str = 'fenced'  # or 'indented'
                 - table_style: str = 'github'  # or 'simple'
-                
+
         Returns:
             Markdown-formatted string
         """
         from .formatters import MarkdownFormatter
         formatter = MarkdownFormatter(options or {})
         return formatter.format(self)
-    
+
     def to_skill_format(self) -> dict[str, Any]:
         """
         Convert to skill-seekers internal format.
-        
+
         Returns:
             Dictionary compatible with existing skill-seekers pipelines
         """
@@ -292,7 +292,7 @@ class Document:
                 "headings": self.stats.headings,
             }
         }
-    
+
     def _extract_content_text(self) -> str:
         """Extract plain text content from paragraphs."""
         paragraphs = []
@@ -300,21 +300,21 @@ class Document:
             if block.type == ContentBlockType.PARAGRAPH:
                 paragraphs.append(block.content)
         return "\n\n".join(paragraphs)
-    
+
     def get_section_content(self, heading_text: str) -> list[ContentBlock]:
         """
         Get all content blocks under a specific section heading.
-        
+
         Args:
             heading_text: The section heading to find
-            
+
         Returns:
             List of ContentBlock objects in that section
         """
         result = []
         in_section = False
         section_level = None
-        
+
         for block in self.blocks:
             if block.type == ContentBlockType.HEADING:
                 heading_data = block.metadata.get('heading_data')
@@ -325,29 +325,29 @@ class Document:
                 elif in_section and heading_data.level <= section_level:
                     # New section at same or higher level
                     break
-            
+
             if in_section:
                 result.append(block)
-        
+
         return result
-    
+
     def find_blocks_by_type(self, block_type: ContentBlockType) -> list[ContentBlock]:
         """Find all blocks of a specific type."""
         return [b for b in self.blocks if b.type == block_type]
-    
+
     def find_code_by_language(self, language: str) -> list[CodeBlock]:
         """Find all code blocks in a specific language."""
         return [cb for cb in self.code_blocks if cb.language == language]
-    
+
     def find_tables_by_caption(self, pattern: str) -> list[Table]:
         """Find tables with captions matching a pattern."""
         import re
         return [t for t in self.tables if t.caption and re.search(pattern, t.caption, re.I)]
-    
+
     def get_api_summary(self) -> dict[str, Any]:
         """
         Extract API summary if this is API documentation.
-        
+
         Returns:
             Dictionary with 'properties', 'methods', 'signals', etc.
         """
@@ -355,7 +355,7 @@ class Document:
         properties_table = None
         methods_table = None
         signals_table = None
-        
+
         for table in self.tables:
             if table.caption:
                 cap_lower = table.caption.lower()
@@ -365,21 +365,21 @@ class Document:
                     methods_table = table
                 elif 'signal' in cap_lower:
                     signals_table = table
-        
+
         return {
             "properties": self._parse_api_table(properties_table) if properties_table else [],
             "methods": self._parse_api_table(methods_table) if methods_table else [],
             "signals": self._parse_api_table(signals_table) if signals_table else [],
         }
-    
-    def _parse_api_table(self, table: Optional[Table]) -> list[dict]:
+
+    def _parse_api_table(self, table: Table | None) -> list[dict]:
         """Parse an API table into structured data."""
         if not table or not table.rows:
             return []
-        
+
         results = []
         headers = table.headers or []
-        
+
         for row in table.rows:
             if len(row) >= 2:
                 item = {"name": row[0]}
@@ -387,25 +387,25 @@ class Document:
                     if i < len(row):
                         item[header.lower().replace(' ', '_')] = row[i]
                 results.append(item)
-        
+
         return results
 
 
 def merge_documents(docs: list[Document]) -> Document:
     """
     Merge multiple documents into one.
-    
+
     Useful for combining multiple source files into a single skill.
     """
     if not docs:
         return Document()
-    
+
     merged = Document(
         title=docs[0].title,
         format=docs[0].format,
         source_path="merged",
     )
-    
+
     for doc in docs:
         merged.blocks.extend(doc.blocks)
         merged.headings.extend(doc.headings)
@@ -418,12 +418,12 @@ def merge_documents(docs: list[Document]) -> Document:
         merged.definition_lists.extend(doc.definition_lists)
         merged.toc_trees.extend(doc.toc_trees)
         merged.meta.update(doc.meta)
-    
+
     # Merge stats
     merged.stats.total_blocks = sum(d.stats.total_blocks for d in docs)
     merged.stats.code_blocks = sum(d.stats.code_blocks for d in docs)
     merged.stats.tables = sum(d.stats.tables for d in docs)
     merged.stats.headings = sum(d.stats.headings for d in docs)
     merged.stats.cross_references = sum(d.stats.cross_references for d in docs)
-    
+
     return merged

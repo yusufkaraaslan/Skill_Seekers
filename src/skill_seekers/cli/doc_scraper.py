@@ -401,13 +401,13 @@ class DocToSkillConverter:
         # Try enhanced unified parser first
         try:
             from skill_seekers.cli.parsers.extractors import MarkdownParser
-            
+
             parser = MarkdownParser()
             result = parser.parse_string(content, url)
-            
+
             if result.success and result.document:
                 doc = result.document
-                
+
                 # Extract links from the document
                 links = []
                 for link in doc.external_links:
@@ -421,7 +421,7 @@ class DocToSkillConverter:
                     full_url = full_url.split("#")[0]
                     if ".md" in full_url and self.is_valid_url(full_url) and full_url not in links:
                         links.append(full_url)
-                
+
                 return {
                     "url": url,
                     "title": doc.title or "",

@@ -707,14 +707,14 @@ def main():
         # Note: Runs independently of workflow system (they complement each other)
         if getattr(args, "enhance_level", 0) > 0:
             # Traditional AI enhancement (API or LOCAL mode)
-            logger.info("\n" + "=" * 80)
-            logger.info("🤖 Traditional AI Enhancement")
-            logger.info("=" * 80)
+            print("\n" + "=" * 80)
+            print("🤖 Traditional AI Enhancement")
+            print("=" * 80)
             if workflow_executed:
-                logger.info(f"   Running after workflow: {workflow_name}")
-                logger.info("   (Workflow provides specialized analysis, enhancement provides general improvements)")
-            logger.info("   (Use --enhance-workflow for more control)")
-            logger.info("")
+                print(f"   Running after workflow: {workflow_name}")
+                print("   (Workflow provides specialized analysis, enhancement provides general improvements)")
+            print("   (Use --enhance-workflow for more control)")
+            print("")
             # Note: PDF scraper uses enhance_level instead of enhance/enhance_local
             # This is consistent with the new unified enhancement system
 
