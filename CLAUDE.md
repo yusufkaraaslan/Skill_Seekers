@@ -290,7 +290,7 @@ pytest tests/test_mcp_fastmcp.py -v
 **Test Architecture:**
 - 46 test files covering all features
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.13
-- **1,880+ tests passing** (current), up from 700+ in v2.x, growing to 1,952+ in v3.1.0
+- **2,121 tests passing** (current v3.1.0), up from 700+ in v2.x
 - Must run `pip install -e .` before tests (src/ layout requirement)
 - Tests include create command integration tests, CLI refactor E2E tests
 
@@ -802,7 +802,7 @@ pip install -e .
 
 Per user instructions in `~/.claude/CLAUDE.md`:
 - "never skip any test. always make sure all test pass"
-- All 1,880+ tests must pass before commits (1,952+ in upcoming v3.1.0)
+- All 2,121 tests must pass before commits (v3.1.0)
 - Run full test suite: `pytest tests/ -v`
 - New tests added for create command and CLI refactor work
 
@@ -944,9 +944,11 @@ The project has GitHub Actions workflows in `.github/workflows/`:
 Run the same checks as CI before pushing:
 
 ```bash
-# 1. Code quality (matches lint job)
-ruff check src/ tests/
-ruff format --check src/ tests/
+# 1. Code quality (matches lint job) - WITH AUTO-FIX
+uvx ruff check --fix --unsafe-fixes src/ tests/  # Auto-fix issues
+uvx ruff format src/ tests/                      # Auto-format
+uvx ruff check src/ tests/                       # Verify clean
+uvx ruff format --check src/ tests/              # Verify formatted
 mypy src/skill_seekers
 
 # 2. Tests (matches test job)
@@ -954,12 +956,49 @@ pip install -e .
 pytest tests/ -v --cov=src/skill_seekers --cov-report=term
 
 # 3. If all pass, you're good to push!
+git add -A  # Stage any auto-fixes
+git commit --amend --no-edit  # Add fixes to commit (or new commit)
 git push origin feature/my-feature
 ```
 
 **Branch Protection Rules:**
 - **main:** Requires tests + 1 review, only maintainers merge
 - **development:** Requires tests to pass, default target for PRs
+
+**Common CI Failure Patterns and Fixes**
+
+If CI fails after your changes, follow this debugging checklist:
+
+```bash
+# 1. Fix linting errors automatically
+uvx ruff check --fix --unsafe-fixes src/ tests/
+
+# 2. Fix formatting issues
+uvx ruff format src/ tests/
+
+# 3. Check for remaining issues
+uvx ruff check src/ tests/
+uvx ruff format --check src/ tests/
+
+# 4. Verify tests pass locally
+pip install -e .
+pytest tests/ -v
+
+# 5. Push fixes
+git add -A
+git commit -m "fix: resolve CI linting/formatting issues"
+git push
+```
+
+**Critical dependency patterns to check:**
+- **MCP version mismatch**: Ensure `requirements.txt` and `pyproject.toml` have matching MCP versions
+- **Missing module-level imports**: If a tool file imports a module at top level (e.g., `import yaml`), that module MUST be in core dependencies
+- **Try/except ImportError**: Silent failures in try/except blocks can hide missing dependencies
+
+**Timing-sensitive tests:**
+- Benchmark tests may fail on slower CI runners (macOS)
+- If a test times out or exceeds threshold only in CI, consider relaxing the threshold
+- Local passing doesn't guarantee CI passing for performance tests
 
 ## 🚨 Common Pitfalls & Solutions
 
@@ -1085,6 +1124,41 @@ skill-seekers create <source> -p comprehensive
 **Why:** The create command shows only relevant flags by default to reduce cognitive load.
 
 **Legacy commands** (scrape, github, analyze) show all flags in one help screen - use them if you prefer that style.
+
+### 9. CI Passes Locally But Fails in GitHub Actions
+**Problem:** Ruff check/format or tests pass locally but fail in CI
+
+**Common causes:**
+1. **Dependency version mismatch** - `requirements.txt` vs `pyproject.toml` conflicts
+   ```bash
+   # Check both files have matching versions for core deps
+   grep "mcp" requirements.txt pyproject.toml
+   grep "PyYAML" requirements.txt pyproject.toml
+   ```
+
+2. **Module imported but not declared** - File imports module at top level but it's not in dependencies
+   ```bash
+   # Search for imports that might not be in dependencies
+   grep -r "^import yaml" src/
+   grep -r "^from yaml" src/
+   # Ensure PyYAML is in pyproject.toml core dependencies
+   ```
+
+3. **Ruff version differences** - Local ruff vs CI ruff may have different rules
+   ```bash
+   # Use uvx to match CI's ruff version
+   uvx ruff check src/ tests/
+   uvx ruff format src/ tests/
+   ```
+
+**Solution:**
+```bash
+# Run CI validation commands exactly as CI does
+pip install -e .  # Fresh install
+uvx ruff check src/ tests/  # Use uvx, not local ruff
+uvx ruff format --check src/ tests/
+pytest tests/ -v
+```
 
 ## 🔌 MCP Integration
 
@@ -2191,8 +2265,14 @@ The `scripts/` directory contains utility scripts:
 - 🔄 **Enhancement Workflow Presets** - YAML-based presets; `skill-seekers workflows list/show/copy/add/remove/validate`; bundled presets: `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
 - 🔀 **Multiple Workflows from CLI** - `--enhance-workflow wf-a --enhance-workflow wf-b` chains presets in a single command; `workflows copy/add/remove` all accept multiple names/files at once
 - 🐛 **Bug Fix** - `create` command now correctly forwards multiple `--enhance-workflow` flags to sub-scrapers
-- ✅ **1,880+ Tests Passing** - All CLI refactor + workflow preset work verified
+- ✅ **2,121 Tests Passing** - All CLI refactor + workflow preset work verified
 - 📚 **Improved Documentation** - CLAUDE.md, README, QUICK_REFERENCE updated with workflow preset details
+
+**v3.1.0 CI Stability (February 20, 2026):**
+- 🔧 **Dependency Alignment** - Fixed MCP version mismatch between requirements.txt (was 1.18.0) and pyproject.toml (>=1.25)
+- 📦 **PyYAML Core Dependency** - Added PyYAML>=6.0 to core dependencies (required by workflow_tools.py module-level import)
+- ⚡ **Benchmark Stability** - Relaxed timing-sensitive test thresholds for CI environment variability
+- ✅ **2,121 Tests Passing** - All CI matrix jobs passing (ubuntu 3.10/3.11/3.12, macos 3.11/3.12)
 
 **v3.0.0 (February 10, 2026) - "Universal Intelligence Platform":**
 - 🚀 **16 Platform Adaptors** - RAG frameworks (LangChain, LlamaIndex, Haystack), vector DBs (Chroma, FAISS, Weaviate, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), LLM platforms (Claude, Gemini, OpenAI)
