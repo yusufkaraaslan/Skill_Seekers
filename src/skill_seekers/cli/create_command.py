@@ -209,6 +209,8 @@ class CreateCommand:
             argv.extend(["--max-issues", str(self.args.max_issues)])
         if getattr(self.args, "scrape_only", False):
             argv.append("--scrape-only")
+        if getattr(self.args, "local_repo_path", None):
+            argv.extend(["--local-repo-path", self.args.local_repo_path])
 
         # Call github_scraper with modified argv
         logger.debug(f"Calling github_scraper with argv: {argv}")

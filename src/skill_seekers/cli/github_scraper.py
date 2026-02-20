@@ -212,7 +212,14 @@ class GitHubScraper:
         self.local_repo_path = local_repo_path or config.get("local_repo_path")
         if self.local_repo_path:
             self.local_repo_path = os.path.expanduser(self.local_repo_path)
-            logger.info(f"Local repository mode enabled: {self.local_repo_path}")
+            if not os.path.isdir(self.local_repo_path):
+                logger.warning(
+                    f"local_repo_path does not exist or is not a directory: {self.local_repo_path}"
+                )
+                logger.warning("Falling back to GitHub API mode (local_repo_path ignored)")
+                self.local_repo_path = None
+            else:
+                logger.info(f"Local repository mode enabled: {self.local_repo_path}")
 
         # Configure directory exclusions (smart defaults + optional customization)
         self.excluded_dirs = set(EXCLUDED_DIRS)  # Start with smart defaults
@@ -1405,6 +1412,7 @@ def main():
             "max_issues": args.max_issues,
             "interactive": not args.non_interactive,
             "github_profile": args.profile,
+            "local_repo_path": getattr(args, "local_repo_path", None),
         }
     else:
         parser.error("Either --repo or --config is required")

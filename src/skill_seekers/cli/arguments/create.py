@@ -145,6 +145,14 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Preview workflow stages without executing (requires --enhance-workflow)",
         },
     },
+    "local_repo_path": {
+        "flags": ("--local-repo-path",),
+        "kwargs": {
+            "type": str,
+            "help": "Path to local clone of a GitHub repository for unlimited C3.x analysis (bypasses GitHub API file limits)",
+            "metavar": "PATH",
+        },
+    },
 }
 
 # Merge RAG arguments from common.py into universal arguments
