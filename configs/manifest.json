@@ -1,0 +1,101 @@
+{
+  "name": "manifest",
+  "description": "Use this skill when working with Manifest, an AI agent observability platform. Manifest monitors costs, tokens, messages, and performance of your AI agents in real time via an OTLP-based telemetry plugin.",
+  "version": "1.0.0",
+  "base_url": "https://manifest.build/",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://manifest.build/",
+      "selectors": {
+        "main_content": "main, article, .content",
+        "title": "h1",
+        "code_blocks": "pre code"
+      }
+    },
+    {
+      "type": "github",
+      "repo": "mnfst/manifest",
+      "code_analysis_depth": "deep",
+      "enable_codebase_analysis": true,
+      "fetch_issues": true,
+      "fetch_changelog": true,
+      "fetch_releases": true,
+      "max_issues": 30
+    }
+  ],
+  "selectors": {
+    "main_content": "main, article, .content",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": [
+      "/"
+    ],
+    "exclude": [
+      "/register",
+      "/login",
+      "/app"
+    ]
+  },
+  "categories": {
+    "getting_started": [
+      "quickstart",
+      "install",
+      "getting-started",
+      "setup"
+    ],
+    "configuration": [
+      "config",
+      "env",
+      "environment",
+      "settings",
+      "api-key"
+    ],
+    "telemetry": [
+      "otlp",
+      "telemetry",
+      "observability",
+      "tracing",
+      "monitoring"
+    ],
+    "plugin": [
+      "plugin",
+      "gateway",
+      "openclaw-plugin",
+      "integration"
+    ],
+    "deployment": [
+      "self-hosted",
+      "docker",
+      "railway",
+      "production"
+    ],
+    "api_reference": [
+      "api",
+      "endpoints",
+      "authentication",
+      "rate-limit"
+    ]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 50,
+  "metadata": {
+    "author": "mnfst",
+    "language": "TypeScript",
+    "framework_type": "Observability Platform",
+    "use_cases": [
+      "AI agent cost monitoring",
+      "Token usage tracking",
+      "Agent performance observability",
+      "OTLP telemetry collection",
+      "Self-hosted agent monitoring"
+    ],
+    "related_skills": [
+      "observability-engineer",
+      "prometheus",
+      "opentelemetry"
+    ]
+  }
+}
