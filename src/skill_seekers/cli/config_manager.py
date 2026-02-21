@@ -14,14 +14,28 @@ from pathlib import Path
 from typing import Any
 
 
+def _get_config_dir() -> Path:
+    """Return platform-appropriate config directory."""
+    if sys.platform == "win32":
+        return Path(os.environ.get("APPDATA", Path.home())) / "skill-seekers"
+    return Path.home() / ".config" / "skill-seekers"
+
+
+def _get_progress_dir() -> Path:
+    """Return platform-appropriate progress/data directory."""
+    if sys.platform == "win32":
+        return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "skill-seekers" / "progress"
+    return Path.home() / ".local" / "share" / "skill-seekers" / "progress"
+
+
 class ConfigManager:
     """Manages Skill Seekers configuration with multi-token support."""
 
-    # Default paths
-    CONFIG_DIR = Path.home() / ".config" / "skill-seekers"
+    # Default paths (computed at runtime for cross-platform support)
+    CONFIG_DIR = _get_config_dir()
     CONFIG_FILE = CONFIG_DIR / "config.json"
     WELCOME_FLAG = CONFIG_DIR / ".welcomed"
-    PROGRESS_DIR = Path.home() / ".local" / "share" / "skill-seekers" / "progress"
+    PROGRESS_DIR = _get_progress_dir()
 
     # Default configuration
     DEFAULT_CONFIG = {
@@ -44,9 +58,9 @@ class ConfigManager:
 
     def __init__(self):
         """Initialize configuration manager."""
-        self.config_dir = self.CONFIG_DIR
-        self.config_file = self.CONFIG_FILE
-        self.progress_dir = self.PROGRESS_DIR
+        self.config_dir = _get_config_dir()
+        self.config_file = self.config_dir / "config.json"
+        self.progress_dir = _get_progress_dir()
         self._ensure_directories()
 
         # Check if config file exists before loading
@@ -62,13 +76,15 @@ class ConfigManager:
         # Create main config and progress directories
         for directory in [self.config_dir, self.progress_dir]:
             directory.mkdir(parents=True, exist_ok=True)
-            # Set directory permissions to 700 (rwx------)
-            directory.chmod(stat.S_IRWXU)
+            # Set directory permissions to 700 (rwx------) - Unix only
+            if sys.platform != "win32":
+                directory.chmod(stat.S_IRWXU)
 
         # Also create configs subdirectory for user custom configs
         configs_dir = self.config_dir / "configs"
         configs_dir.mkdir(exist_ok=True)
-        configs_dir.chmod(stat.S_IRWXU)
+        if sys.platform != "win32":
+            configs_dir.chmod(stat.S_IRWXU)
 
     def _load_config(self) -> dict[str, Any]:
         """Load configuration from file or create default."""
@@ -107,8 +123,9 @@ class ConfigManager:
             with open(self.config_file, "w") as f:
                 json.dump(self.config, f, indent=2)
 
-            # Set file permissions to 600 (rw-------)
-            self.config_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
+            # Set file permissions to 600 (rw-------) - Unix only
+            if sys.platform != "win32":
+                self.config_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
         except OSError as e:
             print(f"❌ Error saving config: {e}")
@@ -319,8 +336,9 @@ class ConfigManager:
         with open(progress_file, "w") as f:
             json.dump(progress_data, f, indent=2)
 
-        # Set file permissions to 600
-        progress_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        # Set file permissions to 600 - Unix only
+        if sys.platform != "win32":
+            progress_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
     def load_progress(self, job_id: str) -> dict[str, Any] | None:
         """Load progress for a job."""
@@ -433,12 +451,14 @@ class ConfigManager:
 
     def should_show_welcome(self) -> bool:
         """Check if we should show welcome message."""
-        return not self.WELCOME_FLAG.exists()
+        return not (self.config_dir / ".welcomed").exists()
 
     def mark_welcome_shown(self):
         """Mark welcome message as shown."""
-        self.WELCOME_FLAG.touch()
-        self.WELCOME_FLAG.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        welcome_flag = self.config_dir / ".welcomed"
+        welcome_flag.touch()
+        if sys.platform != "win32":
+            welcome_flag.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
     # Display Helpers
 
