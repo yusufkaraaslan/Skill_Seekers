@@ -56,9 +56,13 @@ class LlmsTxtParser:
 
     def _clean_url(self, url: str) -> str:
         """
-        Clean and validate URL, removing invalid anchor patterns.
+        Clean and validate URL, removing invalid anchor patterns and encoding
+        square brackets in the URL path.
 
         Detects and strips malformed anchors that contain path separators.
+        Percent-encodes [ and ] characters in the path so that httpx/urllib3
+        do not misinterpret them as IPv6 address literals (fixes #284).
+
         Valid: https://example.com/page.md#section
         Invalid: https://example.com/page#section/index.html.md
 
@@ -66,7 +70,7 @@ class LlmsTxtParser:
             url: URL to clean (absolute or relative)
 
         Returns:
-            Cleaned URL with malformed anchors stripped.
+            Cleaned URL with malformed anchors stripped and brackets encoded.
             Returns base URL if anchor contains '/' (malformed).
             Returns original URL if anchor is valid or no anchor present.
 
@@ -75,6 +79,8 @@ class LlmsTxtParser:
             "https://ex.com/page"
             >>> parser._clean_url("https://ex.com/page.md#section")
             "https://ex.com/page.md#section"
+            >>> parser._clean_url("https://ex.com/api/[v1]/users")
+            "https://ex.com/api/%5Bv1%5D/users"
         """
         # Skip URLs with path after anchor (e.g., #section/index.html.md)
         # These are malformed and return duplicate HTML content
@@ -84,7 +90,19 @@ class LlmsTxtParser:
             # If there's a path separator after anchor, it's invalid
             if "/" in after_anchor:
                 # Extract the base URL without the malformed anchor
-                return url[:anchor_pos]
+                url = url[:anchor_pos]
+
+        # Percent-encode square brackets in the path — they are only valid in
+        # the host portion of a URL (IPv6 literals). Leaving them unencoded
+        # causes httpx to raise "Invalid IPv6 URL" when the URL is fetched.
+        if "[" in url or "]" in url:
+            from urllib.parse import urlparse, urlunparse
+            parsed = urlparse(url)
+            # Only encode brackets in the path/query/fragment, not in the host
+            encoded_path = parsed.path.replace("[", "%5B").replace("]", "%5D")
+            encoded_query = parsed.query.replace("[", "%5B").replace("]", "%5D")
+            url = urlunparse(parsed._replace(path=encoded_path, query=encoded_query))
+
         return url
 
     def parse(self) -> list[dict]:
