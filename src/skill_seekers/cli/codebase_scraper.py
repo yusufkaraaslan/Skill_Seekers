@@ -2406,9 +2406,10 @@ Examples:
     # Workflow enhancement arguments
     parser.add_argument(
         "--enhance-workflow",
-        type=str,
+        action="append",
         help=(
             "Enhancement workflow to use (name or path to YAML file). "
+            "Can be used multiple times to chain workflows. "
             "Examples: 'security-focus', 'architecture-comprehensive', "
             "'.skill-seekers/my-workflow.yaml'. "
             "Overrides --enhance-level when provided."

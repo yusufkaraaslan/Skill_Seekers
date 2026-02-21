@@ -72,6 +72,28 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Preview workflow stages without executing (requires --enhance-workflow)",
         },
     },
+    # API key and enhance-level (parity with scrape/github/analyze/pdf)
+    "api_key": {
+        "flags": ("--api-key",),
+        "kwargs": {
+            "type": str,
+            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+            "metavar": "KEY",
+        },
+    },
+    "enhance_level": {
+        "flags": ("--enhance-level",),
+        "kwargs": {
+            "type": int,
+            "choices": [0, 1, 2, 3],
+            "default": None,
+            "help": (
+                "Global AI enhancement level override (0=off, 1=SKILL.md, "
+                "2=+arch/config, 3=full). Overrides per-source enhance_level in config."
+            ),
+            "metavar": "LEVEL",
+        },
+    },
 }
 
 

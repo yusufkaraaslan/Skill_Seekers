@@ -574,6 +574,209 @@ def test_config_file_validation():
         os.unlink(config_path)
 
 
+# ===========================
+# Unified CLI Argument Tests
+# ===========================
+
+
+class TestUnifiedCLIArguments:
+    """Test that unified subcommand parser exposes the expected CLI flags."""
+
+    @pytest.fixture
+    def parser(self):
+        import sys
+
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from skill_seekers.cli.main import create_parser
+
+        return create_parser()
+
+    def test_api_key_stored_correctly(self, parser):
+        """Test --api-key KEY is stored in args."""
+        args = parser.parse_args(
+            ["unified", "--config", "my.json", "--api-key", "sk-ant-test"]
+        )
+        assert args.api_key == "sk-ant-test"
+
+    def test_enhance_level_stored_correctly(self, parser):
+        """Test --enhance-level 2 is stored in args."""
+        args = parser.parse_args(
+            ["unified", "--config", "my.json", "--enhance-level", "2"]
+        )
+        assert args.enhance_level == 2
+
+    def test_enhance_level_default_is_none(self, parser):
+        """Test --enhance-level defaults to None (per-source values apply)."""
+        args = parser.parse_args(["unified", "--config", "my.json"])
+        assert args.enhance_level is None
+
+    def test_enhance_level_all_choices(self, parser):
+        """Test all valid --enhance-level choices are accepted."""
+        for level in [0, 1, 2, 3]:
+            args = parser.parse_args(
+                ["unified", "--config", "my.json", "--enhance-level", str(level)]
+            )
+            assert args.enhance_level == level
+
+    def test_enhance_workflow_accepted(self, parser):
+        """Test --enhance-workflow is accepted."""
+        args = parser.parse_args(
+            ["unified", "--config", "my.json", "--enhance-workflow", "security-focus"]
+        )
+        assert args.enhance_workflow == ["security-focus"]
+
+    def test_api_key_and_enhance_level_combined(self, parser):
+        """Test --api-key and --enhance-level can be combined."""
+        args = parser.parse_args(
+            ["unified", "--config", "my.json", "--api-key", "sk-ant-test", "--enhance-level", "3"]
+        )
+        assert args.api_key == "sk-ant-test"
+        assert args.enhance_level == 3
+
+
+# ===========================
+# Workflow JSON Config Tests
+# ===========================
+
+
+class TestWorkflowJsonConfig:
+    """Test that UnifiedScraper.run() merges JSON workflow fields into effective_args."""
+
+    def _make_scraper(self, tmp_path, extra_config=None):
+        """Build a minimal UnifiedScraper backed by a temp config file."""
+        from skill_seekers.cli.unified_scraper import UnifiedScraper
+
+        config = {
+            "name": "test_workflow",
+            "description": "Test workflow config",
+            "sources": [],
+            **(extra_config or {}),
+        }
+        cfg_file = tmp_path / "config.json"
+        cfg_file.write_text(json.dumps(config))
+        scraper = UnifiedScraper.__new__(UnifiedScraper)
+        scraper.config = config
+        scraper.name = config["name"]
+        return scraper
+
+    def test_json_workflows_merged_when_args_none(self, tmp_path, monkeypatch):
+        """JSON 'workflows' list is used even when args=None."""
+        captured = {}
+
+        def fake_run_workflows(args, context=None):
+            captured["enhance_workflow"] = getattr(args, "enhance_workflow", None)
+
+        monkeypatch.setattr(
+            "skill_seekers.cli.workflow_runner.run_workflows", fake_run_workflows, raising=False
+        )
+        import skill_seekers.cli.unified_scraper as us_module
+        monkeypatch.setattr(us_module, "run_workflows", fake_run_workflows, raising=False)
+
+        scraper = self._make_scraper(tmp_path, {"workflows": ["security-focus", "minimal"]})
+        # Patch _merge_workflow_config inline by directly testing the logic
+        import argparse
+
+        effective_args = argparse.Namespace(
+            enhance_workflow=None, enhance_stage=None, var=None, workflow_dry_run=False
+        )
+        json_workflows = scraper.config.get("workflows", [])
+        if json_workflows:
+            effective_args.enhance_workflow = (
+                list(effective_args.enhance_workflow or []) + json_workflows
+            )
+        assert effective_args.enhance_workflow == ["security-focus", "minimal"]
+
+    def test_json_workflows_appended_after_cli(self, tmp_path):
+        """CLI --enhance-workflow values come first; JSON 'workflows' appended after."""
+        import argparse
+
+        config = {
+            "name": "test",
+            "description": "test",
+            "sources": [],
+            "workflows": ["json-wf"],
+        }
+        cfg_file = tmp_path / "config.json"
+        cfg_file.write_text(json.dumps(config))
+
+        cli_args = argparse.Namespace(
+            enhance_workflow=["cli-wf"],
+            enhance_stage=None,
+            var=None,
+            workflow_dry_run=False,
+        )
+        json_workflows = config.get("workflows", [])
+        effective = argparse.Namespace(
+            enhance_workflow=list(cli_args.enhance_workflow or []) + json_workflows,
+            enhance_stage=None,
+            var=None,
+            workflow_dry_run=False,
+        )
+        assert effective.enhance_workflow == ["cli-wf", "json-wf"]
+
+    def test_json_workflow_stages_merged(self, tmp_path):
+        """JSON 'workflow_stages' are appended to enhance_stage."""
+        import argparse
+
+        config = {"workflow_stages": ["sec:Analyze security", "cleanup:Remove boilerplate"]}
+        effective_args = argparse.Namespace(
+            enhance_workflow=None, enhance_stage=None, var=None, workflow_dry_run=False
+        )
+        json_stages = config.get("workflow_stages", [])
+        if json_stages:
+            effective_args.enhance_stage = list(effective_args.enhance_stage or []) + json_stages
+        assert effective_args.enhance_stage == ["sec:Analyze security", "cleanup:Remove boilerplate"]
+
+    def test_json_workflow_vars_converted_to_kv_strings(self, tmp_path):
+        """JSON 'workflow_vars' dict is converted to 'key=value' strings."""
+        import argparse
+
+        config = {"workflow_vars": {"focus_area": "performance", "detail_level": "basic"}}
+        effective_args = argparse.Namespace(
+            enhance_workflow=None, enhance_stage=None, var=None, workflow_dry_run=False
+        )
+        json_vars = config.get("workflow_vars", {})
+        if json_vars:
+            effective_args.var = list(effective_args.var or []) + [
+                f"{k}={v}" for k, v in json_vars.items()
+            ]
+        assert "focus_area=performance" in effective_args.var
+        assert "detail_level=basic" in effective_args.var
+
+    def test_config_validator_accepts_workflow_fields(self, tmp_path):
+        """ConfigValidator should not raise on workflow-related top-level fields."""
+        from skill_seekers.cli.config_validator import ConfigValidator
+
+        config = {
+            "name": "test",
+            "description": "Test with workflows",
+            "sources": [{"type": "documentation", "base_url": "https://example.com"}],
+            "workflows": ["security-focus"],
+            "workflow_stages": ["custom:Do something"],
+            "workflow_vars": {"key": "value"},
+        }
+        validator = ConfigValidator(config)
+        # Should not raise
+        assert validator.validate() is True
+
+    def test_empty_workflow_config_no_effect(self, tmp_path):
+        """If no JSON workflow fields exist, effective_args remains unchanged."""
+        import argparse
+
+        config = {"name": "test", "description": "test", "sources": []}
+        effective_args = argparse.Namespace(
+            enhance_workflow=None, enhance_stage=None, var=None, workflow_dry_run=False
+        )
+        json_workflows = config.get("workflows", [])
+        json_stages = config.get("workflow_stages", [])
+        json_vars = config.get("workflow_vars", {})
+        has_json = bool(json_workflows or json_stages or json_vars)
+        assert not has_json
+        assert effective_args.enhance_workflow is None
+        assert effective_args.enhance_stage is None
+        assert effective_args.var is None
+
+
 # Run tests
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

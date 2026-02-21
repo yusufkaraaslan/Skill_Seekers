@@ -10,6 +10,8 @@ Includes preset system support for #268.
 import argparse
 from typing import Any
 
+from .workflow import WORKFLOW_ARGUMENTS
+
 ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Core options
     "directory": {
@@ -169,7 +171,26 @@ ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Enable verbose logging",
         },
     },
+    # Dry-run and API key (parity with scrape/github/pdf)
+    "dry_run": {
+        "flags": ("--dry-run",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Preview what will be analyzed without creating output",
+        },
+    },
+    "api_key": {
+        "flags": ("--api-key",),
+        "kwargs": {
+            "type": str,
+            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+            "metavar": "KEY",
+        },
+    },
 }
+
+# Add workflow arguments (enhance_workflow, enhance_stage, var, workflow_dry_run, workflow_history)
+ANALYZE_ARGUMENTS.update(WORKFLOW_ARGUMENTS)
 
 
 def add_analyze_arguments(parser: argparse.ArgumentParser) -> None:

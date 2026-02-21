@@ -58,9 +58,9 @@ class ConfigManager:
 
     def __init__(self):
         """Initialize configuration manager."""
-        self.config_dir = _get_config_dir()
-        self.config_file = self.config_dir / "config.json"
-        self.progress_dir = _get_progress_dir()
+        self.config_dir = self.CONFIG_DIR
+        self.config_file = self.CONFIG_FILE
+        self.progress_dir = self.PROGRESS_DIR
         self._ensure_directories()
 
         # Check if config file exists before loading

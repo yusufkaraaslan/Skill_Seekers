@@ -561,8 +561,9 @@ class UnifiedScraper:
             extract_docs = source.get("extract_docs", True)
             # Note: Signal flow analysis is automatic for Godot projects (C3.10)
 
-            # AI enhancement settings
-            enhance_level = source.get("enhance_level", 0)
+            # AI enhancement settings (CLI --enhance-level overrides per-source config)
+            cli_enhance_level = getattr(args, "enhance_level", None) if args is not None else None
+            enhance_level = cli_enhance_level if cli_enhance_level is not None else source.get("enhance_level", 0)
 
             # Run codebase analysis
             logger.info(f"   Analysis depth: {analysis_depth}")
@@ -972,14 +973,47 @@ class UnifiedScraper:
             self.build_skill(merged_data)
 
             # Phase 5: Enhancement Workflow Integration
-            if args is not None:
+            # Support workflow fields in JSON config as well as CLI args.
+            # JSON fields: "workflows" (list), "workflow_stages" (list), "workflow_vars" (dict)
+            # CLI args always take precedence; JSON fields are appended after.
+            json_workflows = self.config.get("workflows", [])
+            json_stages = self.config.get("workflow_stages", [])
+            json_vars = self.config.get("workflow_vars", {})
+            has_json_workflows = bool(json_workflows or json_stages or json_vars)
+
+            if args is not None or has_json_workflows:
+                import argparse
+
                 from skill_seekers.cli.workflow_runner import run_workflows
+
+                # Build effective args: use CLI args when provided, otherwise empty namespace
+                effective_args = args if args is not None else argparse.Namespace(
+                    enhance_workflow=None,
+                    enhance_stage=None,
+                    var=None,
+                    workflow_dry_run=False,
+                )
+
+                # Merge JSON workflow config into effective_args (JSON appended after CLI)
+                if json_workflows:
+                    effective_args.enhance_workflow = (
+                        list(effective_args.enhance_workflow or []) + json_workflows
+                    )
+                if json_stages:
+                    effective_args.enhance_stage = (
+                        list(effective_args.enhance_stage or []) + json_stages
+                    )
+                if json_vars:
+                    effective_args.var = (
+                        list(effective_args.var or [])
+                        + [f"{k}={v}" for k, v in json_vars.items()]
+                    )
 
                 unified_context = {
                     "name": self.config.get("name", ""),
                     "description": self.config.get("description", ""),
                 }
-                run_workflows(args, context=unified_context)
+                run_workflows(effective_args, context=unified_context)
 
             logger.info("\n" + "✅ " * 20)
             logger.info("Unified scraping complete!")
@@ -1066,6 +1100,24 @@ Examples:
         action="store_true",
         dest="workflow_dry_run",
         help="Preview workflow stages without executing (requires --enhance-workflow)",
+    )
+    parser.add_argument(
+        "--api-key",
+        type=str,
+        metavar="KEY",
+        help="Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+    )
+    parser.add_argument(
+        "--enhance-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=None,
+        metavar="LEVEL",
+        help=(
+            "Global AI enhancement level override for all sources "
+            "(0=off, 1=SKILL.md, 2=+arch/config, 3=full). "
+            "Overrides per-source enhance_level in config."
+        ),
     )
 
     args = parser.parse_args()

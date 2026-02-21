@@ -519,5 +519,40 @@ class TestJSONWorkflow(unittest.TestCase):
         self.assertEqual(converter.extracted_data["total_pages"], 1)
 
 
+class TestPDFCLIArguments(unittest.TestCase):
+    """Test PDF subcommand CLI argument parsing via the main CLI."""
+
+    def setUp(self):
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from skill_seekers.cli.main import create_parser
+
+        self.parser = create_parser()
+
+    def test_api_key_stored_correctly(self):
+        """Test --api-key is accepted and stored correctly after switching to add_pdf_arguments."""
+        args = self.parser.parse_args(["pdf", "--pdf", "test.pdf", "--api-key", "sk-ant-test"])
+        self.assertEqual(args.api_key, "sk-ant-test")
+
+    def test_enhance_level_accepted(self):
+        """Test --enhance-level is accepted for pdf subcommand."""
+        args = self.parser.parse_args(["pdf", "--pdf", "test.pdf", "--enhance-level", "1"])
+        self.assertEqual(args.enhance_level, 1)
+
+    def test_enhance_workflow_accepted(self):
+        """Test --enhance-workflow is accepted and stores a list."""
+        args = self.parser.parse_args(
+            ["pdf", "--pdf", "test.pdf", "--enhance-workflow", "minimal"]
+        )
+        self.assertEqual(args.enhance_workflow, ["minimal"])
+
+    def test_workflow_dry_run_accepted(self):
+        """Test --workflow-dry-run is accepted."""
+        args = self.parser.parse_args(["pdf", "--pdf", "test.pdf", "--workflow-dry-run"])
+        self.assertTrue(args.workflow_dry_run)
+
+
 if __name__ == "__main__":
     unittest.main()

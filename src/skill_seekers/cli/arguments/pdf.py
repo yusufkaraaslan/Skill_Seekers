@@ -81,6 +81,15 @@ PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Preview workflow without executing (requires --enhance-workflow)",
         },
     },
+    # API key (parity with scrape/github/analyze)
+    "api_key": {
+        "flags": ("--api-key",),
+        "kwargs": {
+            "type": str,
+            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+            "metavar": "KEY",
+        },
+    },
     # Enhancement level
     "enhance_level": {
         "flags": ("--enhance-level",),

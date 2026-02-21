@@ -633,16 +633,14 @@ class PDFToSkillConverter:
 
 
 def main():
+    from .arguments.pdf import add_pdf_arguments
+
     parser = argparse.ArgumentParser(
         description="Convert PDF documentation to Claude skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("--config", help="PDF config JSON file")
-    parser.add_argument("--pdf", help="Direct PDF file path")
-    parser.add_argument("--name", help="Skill name (with --pdf)")
-    parser.add_argument("--from-json", help="Build skill from extracted JSON")
-    parser.add_argument("--description", help="Skill description")
+    add_pdf_arguments(parser)
 
     args = parser.parse_args()
 
