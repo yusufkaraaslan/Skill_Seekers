@@ -50,6 +50,7 @@ class ConfigManager:
         "api_keys": {"anthropic": None, "google": None, "openai": None},
         "ai_enhancement": {
             "default_enhance_level": 1,  # Default AI enhancement level (0-3)
+            "default_agent": None,  # "claude", "gemini", "openai", or None (auto-detect)
             "local_batch_size": 20,  # Patterns per Claude CLI call (default was 5)
             "local_parallel_workers": 3,  # Concurrent Claude CLI calls
         },
@@ -436,6 +437,25 @@ class ConfigManager:
         if "ai_enhancement" not in self.config:
             self.config["ai_enhancement"] = {}
         self.config["ai_enhancement"]["local_parallel_workers"] = workers
+        self.save_config()
+
+    def get_default_agent(self) -> str | None:
+        """Get preferred AI agent/platform for enhancement.
+
+        Returns:
+            "claude", "gemini", "openai", or None (auto-detect from env vars).
+        """
+        return self.config.get("ai_enhancement", {}).get("default_agent")
+
+    def set_default_agent(self, agent: str | None):
+        """Set preferred AI agent/platform for enhancement.
+
+        Args:
+            agent: "claude", "gemini", "openai", or None to auto-detect.
+        """
+        if "ai_enhancement" not in self.config:
+            self.config["ai_enhancement"] = {}
+        self.config["ai_enhancement"]["default_agent"] = agent
         self.save_config()
 
     # First Run Experience

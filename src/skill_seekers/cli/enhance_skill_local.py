@@ -889,7 +889,22 @@ rm {prompt_file}
             else:
                 print(f"❌ {self.agent_display} returned error (exit code: {result.returncode})")
                 if result.stderr:
-                    print(f"   Error: {result.stderr[:200]}")
+                    stderr_lines = result.stderr.strip().split("\n")
+                    for line in stderr_lines[:20]:
+                        print(f"   | {line}")
+                    if len(stderr_lines) > 20:
+                        print(f"   ... ({len(stderr_lines) - 20} more lines)")
+                    # Hint for root/permission errors
+                    stderr_lower = result.stderr.lower()
+                    if result.returncode in (1, 126) and (
+                        "root" in stderr_lower or "permission" in stderr_lower
+                    ):
+                        print()
+                        print("   ⚠️  This looks like a root/permission error.")
+                        print("   Claude Code CLI refuses to run as root (security policy).")
+                        print("   Use API mode instead:")
+                        print("     export ANTHROPIC_API_KEY=sk-ant-...")
+                        print(f"     skill-seekers enhance {self.skill_dir} --target claude")
                 return False
 
         except subprocess.TimeoutExpired:

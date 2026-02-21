@@ -17,11 +17,15 @@ class EnhanceParser(SubcommandParser):
 
     @property
     def help(self) -> str:
-        return "AI-powered enhancement (local, no API key)"
+        return "AI-powered enhancement (auto: API or LOCAL mode)"
 
     @property
     def description(self) -> str:
-        return "Enhance SKILL.md using a local coding agent"
+        return (
+            "Enhance SKILL.md using AI. "
+            "Automatically uses API mode (Gemini/OpenAI/Claude) when an API key is "
+            "available, or falls back to LOCAL mode (Claude Code CLI)."
+        )
 
     def add_arguments(self, parser):
         """Add enhance-specific arguments.

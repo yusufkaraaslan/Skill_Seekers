@@ -14,7 +14,7 @@ Commands:
     pdf                  Extract from PDF file
     unified              Multi-source scraping (docs + GitHub + PDF)
     analyze              Analyze local codebase and extract code knowledge
-    enhance              AI-powered enhancement (local, no API key)
+    enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
     upload               Upload skill to Claude
@@ -48,7 +48,7 @@ COMMAND_MODULES = {
     "github": "skill_seekers.cli.github_scraper",
     "pdf": "skill_seekers.cli.pdf_scraper",
     "unified": "skill_seekers.cli.unified_scraper",
-    "enhance": "skill_seekers.cli.enhance_skill_local",
+    "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",
     "package": "skill_seekers.cli.package_skill",
     "upload": "skill_seekers.cli.upload_skill",
@@ -320,10 +320,39 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                 print("=" * 60 + "\n")
 
                 try:
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+                    from skill_seekers.cli.enhance_command import (
+                        _is_root,
+                        _pick_mode,
+                        _run_api_mode,
+                        _run_local_mode,
+                    )
+                    import argparse as _ap
 
-                    enhancer = LocalSkillEnhancer(str(skill_dir), force=True)
-                    success = enhancer.run(headless=True, timeout=600)
+                    _fake_args = _ap.Namespace(
+                        skill_directory=str(skill_dir),
+                        target=None,
+                        api_key=None,
+                        dry_run=False,
+                        agent=None,
+                        agent_cmd=None,
+                        interactive_enhancement=False,
+                        background=False,
+                        daemon=False,
+                        no_force=False,
+                        timeout=600,
+                    )
+                    _mode, _target = _pick_mode(_fake_args)
+
+                    if _mode == "api":
+                        print(f"\n🤖 Enhancement mode: API ({_target})")
+                        success = _run_api_mode(_fake_args, _target) == 0
+                    elif _is_root():
+                        print("\n⚠️  Skipping SKILL.md enhancement: running as root")
+                        print("   Set ANTHROPIC_API_KEY / GOOGLE_API_KEY to enable API mode")
+                        success = False
+                    else:
+                        print("\n🤖 Enhancement mode: LOCAL (Claude Code CLI)")
+                        success = _run_local_mode(_fake_args) == 0
 
                     if success:
                         print("\n✅ SKILL.md enhancement complete!")
