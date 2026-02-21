@@ -84,6 +84,12 @@ Presets: -p quick (1-2min) | -p standard (5-10min) | -p comprehensive (20-60min)
             dest="_help_pdf",
         )
         parser.add_argument(
+            "--help-config",
+            action="store_true",
+            help="Show multi-source config file specific options",
+            dest="_help_config",
+        )
+        parser.add_argument(
             "--help-advanced",
             action="store_true",
             help="Show advanced/rare options",

@@ -300,16 +300,31 @@ class CreateCommand:
         config_path = self.source_info.parsed["config_path"]
         argv.extend(["--config", config_path])
 
-        # Add only the arguments that unified_scraper actually supports
-        # unified_scraper has its own config format that includes:
-        # name, description, output_dir, enhancement, etc.
-        # So we only pass behavioral flags here:
-
+        # Behavioral flags supported by unified_scraper
+        # Note: name/output/enhance-level come from the JSON config file, not CLI
         if self.args.dry_run:
             argv.append("--dry-run")
+        if getattr(self.args, "fresh", False):
+            argv.append("--fresh")
 
-        # Note: unified_scraper gets name, output, enhancement from config file
-        # not from CLI args. The config format includes these fields.
+        # Config-specific flags (--merge-mode, --skip-codebase-analysis)
+        if getattr(self.args, "merge_mode", None):
+            argv.extend(["--merge-mode", self.args.merge_mode])
+        if getattr(self.args, "skip_codebase_analysis", False):
+            argv.append("--skip-codebase-analysis")
+
+        # Enhancement workflow flags (unified_scraper now supports these)
+        if getattr(self.args, "enhance_workflow", None):
+            for wf in self.args.enhance_workflow:
+                argv.extend(["--enhance-workflow", wf])
+        if getattr(self.args, "enhance_stage", None):
+            for stage in self.args.enhance_stage:
+                argv.extend(["--enhance-stage", stage])
+        if getattr(self.args, "var", None):
+            for var in self.args.var:
+                argv.extend(["--var", var])
+        if getattr(self.args, "workflow_dry_run", False):
+            argv.append("--workflow-dry-run")
 
         # Call unified_scraper with modified argv
         logger.debug(f"Calling unified_scraper with argv: {argv}")
@@ -457,6 +472,9 @@ Common Workflows:
     )
     parser.add_argument("--help-pdf", action="store_true", help=argparse.SUPPRESS, dest="_help_pdf")
     parser.add_argument(
+        "--help-config", action="store_true", help=argparse.SUPPRESS, dest="_help_config"
+    )
+    parser.add_argument(
         "--help-advanced", action="store_true", help=argparse.SUPPRESS, dest="_help_advanced"
     )
     parser.add_argument("--help-all", action="store_true", help=argparse.SUPPRESS, dest="_help_all")
@@ -501,6 +519,15 @@ Common Workflows:
         )
         add_create_arguments(parser_pdf, mode="pdf")
         parser_pdf.print_help()
+        return 0
+    elif args._help_config:
+        parser_config = argparse.ArgumentParser(
+            prog="skill-seekers create",
+            description="Create skill from multi-source config file (unified scraper)",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_create_arguments(parser_config, mode="config")
+        parser_config.print_help()
         return 0
     elif args._help_advanced:
         parser_advanced = argparse.ArgumentParser(

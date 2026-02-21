@@ -12,6 +12,7 @@ from skill_seekers.cli.arguments.create import (
     GITHUB_ARGUMENTS,
     LOCAL_ARGUMENTS,
     PDF_ARGUMENTS,
+    CONFIG_ARGUMENTS,
     ADVANCED_ARGUMENTS,
     get_universal_argument_names,
     get_source_specific_arguments,
@@ -158,9 +159,11 @@ class TestArgumentHelpers:
         assert args == PDF_ARGUMENTS
 
     def test_get_source_specific_config(self):
-        """Config should return empty dict (no extra args)."""
+        """Config should return CONFIG_ARGUMENTS (merge-mode, skip-codebase-analysis)."""
         args = get_source_specific_arguments("config")
-        assert args == {}
+        assert args == CONFIG_ARGUMENTS
+        assert "merge_mode" in args
+        assert "skip_codebase_analysis" in args
 
     def test_get_source_specific_unknown(self):
         """Unknown source should return empty dict."""
@@ -223,16 +226,20 @@ class TestCompatibleArguments:
         assert "ocr" in compatible
 
     def test_config_compatible_arguments(self):
-        """Config source should include universal + advanced only."""
+        """Config source should include universal + config-specific + advanced."""
         compatible = get_compatible_arguments("config")
 
         # Should include universal arguments
         assert "config" in compatible
 
+        # Should include config-specific arguments
+        assert "merge_mode" in compatible
+        assert "skip_codebase_analysis" in compatible
+
         # Should include advanced arguments
         assert "no_preserve_code_blocks" in compatible
 
-        # Should not include source-specific arguments
+        # Should not include other source-specific arguments
         assert "repo" not in compatible
         assert "directory" not in compatible
 

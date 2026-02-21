@@ -389,6 +389,28 @@ PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Multi-source config specific (from unified_scraper.py)
+CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "merge_mode": {
+        "flags": ("--merge-mode",),
+        "kwargs": {
+            "type": str,
+            "choices": ["rule-based", "claude-enhanced"],
+            "help": "Override merge mode from config (rule-based or claude-enhanced)",
+            "metavar": "MODE",
+        },
+    },
+    "skip_codebase_analysis": {
+        "flags": ("--skip-codebase-analysis",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Skip C3.x codebase analysis for GitHub sources in unified config",
+        },
+    },
+    # Note: --fresh is intentionally omitted here — it already lives in WEB_ARGUMENTS.
+    # For unified config files, use `skill-seekers unified --fresh` directly.
+}
+
 # =============================================================================
 # TIER 3: ADVANCED/RARE ARGUMENTS
 # =============================================================================
@@ -449,7 +471,7 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         "github": GITHUB_ARGUMENTS,
         "local": LOCAL_ARGUMENTS,
         "pdf": PDF_ARGUMENTS,
-        "config": {},  # Config files don't have extra args
+        "config": CONFIG_ARGUMENTS,
     }
     return source_args.get(source_type, {})
 
@@ -519,6 +541,10 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
 
     if mode in ["pdf", "all"]:
         for arg_name, arg_def in PDF_ARGUMENTS.items():
+            parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    if mode in ["config", "all"]:
+        for arg_name, arg_def in CONFIG_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     # Add advanced arguments if requested
