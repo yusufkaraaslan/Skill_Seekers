@@ -40,6 +40,38 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Dry run mode",
         },
     },
+    # Enhancement Workflow arguments (mirrors scrape/github/pdf/codebase scrapers)
+    "enhance_workflow": {
+        "flags": ("--enhance-workflow",),
+        "kwargs": {
+            "action": "append",
+            "help": "Apply enhancement workflow (file path or preset: security-focus, minimal, api-documentation, architecture-comprehensive). Can use multiple times to chain workflows.",
+            "metavar": "WORKFLOW",
+        },
+    },
+    "enhance_stage": {
+        "flags": ("--enhance-stage",),
+        "kwargs": {
+            "action": "append",
+            "help": "Add inline enhancement stage (format: 'name:prompt'). Can be used multiple times.",
+            "metavar": "STAGE",
+        },
+    },
+    "var": {
+        "flags": ("--var",),
+        "kwargs": {
+            "action": "append",
+            "help": "Override workflow variable (format: 'key=value'). Can be used multiple times.",
+            "metavar": "VAR",
+        },
+    },
+    "workflow_dry_run": {
+        "flags": ("--workflow-dry-run",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Preview workflow stages without executing (requires --enhance-workflow)",
+        },
+    },
 }
 
 

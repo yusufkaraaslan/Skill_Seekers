@@ -943,9 +943,14 @@ class UnifiedScraper:
 
         logger.info(f"✅ Unified skill built: {self.output_dir}/")
 
-    def run(self):
+    def run(self, args=None):
         """
         Execute complete unified scraping workflow.
+
+        Args:
+            args: Optional parsed CLI arguments for workflow integration.
+                  When provided, enhancement workflows (--enhance-workflow,
+                  --enhance-stage) are executed after the skill is built.
         """
         logger.info("\n" + "🚀 " * 20)
         logger.info(f"Unified Scraper: {self.config['name']}")
@@ -965,6 +970,16 @@ class UnifiedScraper:
 
             # Phase 4: Build skill
             self.build_skill(merged_data)
+
+            # Phase 5: Enhancement Workflow Integration
+            if args is not None:
+                from skill_seekers.cli.workflow_runner import run_workflows
+
+                unified_context = {
+                    "name": self.config.get("name", ""),
+                    "description": self.config.get("description", ""),
+                }
+                run_workflows(args, context=unified_context)
 
             logger.info("\n" + "✅ " * 20)
             logger.info("Unified scraping complete!")
@@ -1024,6 +1039,34 @@ Examples:
         action="store_true",
         help="Preview what will be scraped without actually scraping",
     )
+    # Enhancement Workflow arguments (mirrors scrape/github/pdf/codebase scrapers)
+    parser.add_argument(
+        "--enhance-workflow",
+        action="append",
+        dest="enhance_workflow",
+        help="Apply enhancement workflow (file path or preset). Can use multiple times to chain workflows.",
+        metavar="WORKFLOW",
+    )
+    parser.add_argument(
+        "--enhance-stage",
+        action="append",
+        dest="enhance_stage",
+        help="Add inline enhancement stage (format: 'name:prompt'). Can be used multiple times.",
+        metavar="STAGE",
+    )
+    parser.add_argument(
+        "--var",
+        action="append",
+        dest="var",
+        help="Override workflow variable (format: 'key=value'). Can be used multiple times.",
+        metavar="VAR",
+    )
+    parser.add_argument(
+        "--workflow-dry-run",
+        action="store_true",
+        dest="workflow_dry_run",
+        help="Preview workflow stages without executing (requires --enhance-workflow)",
+    )
 
     args = parser.parse_args()
 
@@ -1068,8 +1111,8 @@ Examples:
         logger.info(f"Merge mode: {scraper.merge_mode}")
         return
 
-    # Run scraper
-    scraper.run()
+    # Run scraper (pass args for workflow integration)
+    scraper.run(args=args)
 
 
 if __name__ == "__main__":
