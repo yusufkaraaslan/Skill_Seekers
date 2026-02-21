@@ -53,10 +53,11 @@ python3 cli/unified_scraper.py --config configs/react_unified.json
 ```
 
 The tool will:
-1. ✅ **Phase 1**: Scrape all sources (docs + GitHub)
+1. ✅ **Phase 1**: Scrape all sources (docs + GitHub + PDF + local)
 2. ✅ **Phase 2**: Detect conflicts between sources
 3. ✅ **Phase 3**: Merge conflicts intelligently
 4. ✅ **Phase 4**: Build unified skill with conflict transparency
+5. ✅ **Phase 5**: Apply enhancement workflows (optional)
 
 ### 3. Package and Upload
 
@@ -414,14 +415,87 @@ useEffect(callback: () => void | (() => void), deps?: readonly any[])
 
 ```bash
 # Basic usage
-python3 cli/unified_scraper.py --config configs/react_unified.json
+skill-seekers unified --config configs/react_unified.json
 
 # Override merge mode
-python3 cli/unified_scraper.py --config configs/react_unified.json --merge-mode claude-enhanced
+skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
 
-# Use cached data (skip re-scraping)
-python3 cli/unified_scraper.py --config configs/react_unified.json --skip-scrape
+# Fresh start (clear cached data)
+skill-seekers unified --config configs/react_unified.json --fresh
+
+# Dry run (preview without executing)
+skill-seekers unified --config configs/react_unified.json --dry-run
 ```
+
+### Enhancement Workflow Options
+
+All workflow flags are now supported:
+
+```bash
+# Apply workflow preset
+skill-seekers unified --config configs/react_unified.json --enhance-workflow security-focus
+
+# Multiple workflows (chained)
+skill-seekers unified --config configs/react_unified.json \
+  --enhance-workflow security-focus \
+  --enhance-workflow api-documentation
+
+# Custom enhancement stage
+skill-seekers unified --config configs/react_unified.json \
+  --enhance-stage "cleanup:Remove boilerplate content"
+
+# Workflow variables
+skill-seekers unified --config configs/react_unified.json \
+  --enhance-workflow my-workflow \
+  --var focus_area=performance \
+  --var detail_level=high
+
+# Preview workflows without executing
+skill-seekers unified --config configs/react_unified.json \
+  --enhance-workflow security-focus \
+  --workflow-dry-run
+```
+
+### Global Enhancement Override
+
+Override enhancement settings from CLI:
+
+```bash
+# Override enhance level for all sources
+skill-seekers unified --config configs/react_unified.json --enhance-level 3
+
+# Provide API key (or use ANTHROPIC_API_KEY env var)
+skill-seekers unified --config configs/react_unified.json --api-key YOUR_API_KEY
+```
+
+### Workflow Configuration in JSON
+
+Define workflows directly in your unified config:
+
+```json
+{
+  "name": "react-complete",
+  "description": "React with security focus",
+  "merge_mode": "claude-enhanced",
+  "workflows": ["security-focus"],
+  "workflow_stages": [
+    {
+      "name": "cleanup",
+      "prompt": "Remove boilerplate and standardize formatting"
+    }
+  ],
+  "workflow_vars": {
+    "focus_area": "security",
+    "detail_level": "comprehensive"
+  },
+  "sources": [
+    {"type": "documentation", "base_url": "https://react.dev/"},
+    {"type": "github", "repo": "facebook/react"}
+  ]
+}
+```
+
+**Priority:** CLI flags override config values.
 
 ### Validate Config
 
@@ -515,6 +589,7 @@ UnifiedScraper.run()
 │  - Documentation → doc_scraper     │
 │  - GitHub → github_scraper         │
 │  - PDF → pdf_scraper               │
+│  - Local → codebase_scraper        │
 └────────────────────────────────────┘
      ↓
 ┌────────────────────────────────────┐
@@ -537,6 +612,13 @@ UnifiedScraper.run()
 │  - Generate SKILL.md with conflicts│
 │  - Create reference structure      │
 │  - Generate conflicts report       │
+└────────────────────────────────────┘
+     ↓
+┌────────────────────────────────────┐
+│ Phase 5: Enhancement Workflows      │
+│  - Apply workflow presets          │
+│  - Run custom enhancement stages   │
+│  - Variable substitution           │
 └────────────────────────────────────┘
      ↓
 Unified Skill (.zip ready)
@@ -620,6 +702,13 @@ For issues, questions, or suggestions:
 - Documentation: https://github.com/yusufkaraaslan/Skill_Seekers/docs
 
 ## Changelog
+
+**v3.1.0 (February 2026)**: Enhancement workflow support
+- ✅ Full workflow system integration (Phase 5)
+- ✅ All workflow flags supported (--enhance-workflow, --enhance-stage, --var, --workflow-dry-run)
+- ✅ Workflow configuration in JSON configs
+- ✅ Global --enhance-level and --api-key CLI overrides
+- ✅ Local source type support (codebase analysis)
 
 **v2.0 (October 2025)**: Unified multi-source scraping feature complete
 - ✅ Config validation for unified format

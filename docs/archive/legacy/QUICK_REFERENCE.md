@@ -1,3 +1,14 @@
+> ⚠️ **DEPRECATED**: This document contains phantom commands and outdated patterns.
+> 
+> For up-to-date documentation, please see:
+> - [Quick Start Guide](getting-started/02-quick-start.md) - 3 commands to first skill
+> - [CLI Reference](reference/CLI_REFERENCE.md) - Complete command reference
+> - [Documentation Hub](README.md) - All documentation
+>
+> *This file is kept for historical reference only.*
+
+---
+
 # Quick Reference - Skill Seekers Cheat Sheet
 
 **Version:** 3.1.0-dev | **Quick Commands** | **One-Page Reference**

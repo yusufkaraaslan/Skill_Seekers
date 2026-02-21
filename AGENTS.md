@@ -12,7 +12,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 | Attribute | Value |
 |-----------|-------|
-| **Current Version** | 3.1.0-dev |
+| **Current Version** | 3.0.0 |
 | **Python Version** | 3.10+ (tested on 3.10, 3.11, 3.12, 3.13) |
 | **License** | MIT |
 | **Package Name** | `skill-seekers` (PyPI) |
@@ -55,9 +55,9 @@ This file provides essential guidance for AI coding agents working with the Skil
 ```
 /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/
 ├── src/skill_seekers/              # Main source code (src/ layout)
-│   ├── cli/                        # CLI tools and commands (~40k lines)
+│   ├── cli/                        # CLI tools and commands (~42k lines)
 │   │   ├── adaptors/               # Platform adaptors (Strategy pattern)
-│   │   │   ├── base.py             # Abstract base class
+│   │   │   ├── base.py             # Abstract base class (SkillAdaptor)
 │   │   │   ├── claude.py           # Claude AI adaptor
 │   │   │   ├── gemini.py           # Google Gemini adaptor
 │   │   │   ├── openai.py           # OpenAI ChatGPT adaptor
@@ -91,9 +91,9 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── cloud_storage_cli.py    # Cloud storage CLI
 │   │   ├── benchmark_cli.py        # Benchmarking CLI
 │   │   ├── sync_cli.py             # Sync monitoring CLI
-│   │   └── ...                     # Additional CLI modules
+│   │   └── workflows_command.py    # Workflow management CLI
 │   ├── mcp/                        # MCP server integration
-│   │   ├── server_fastmcp.py       # FastMCP server (main, ~708 lines)
+│   │   ├── server_fastmcp.py       # FastMCP server (~708 lines)
 │   │   ├── server_legacy.py        # Legacy server implementation
 │   │   ├── server.py               # Server entry point
 │   │   ├── agent_detector.py       # AI agent detection
@@ -105,7 +105,8 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │       ├── packaging_tools.py  # Packaging tools
 │   │       ├── source_tools.py     # Source management tools
 │   │       ├── splitting_tools.py  # Config splitting tools
-│   │       └── vector_db_tools.py  # Vector database tools
+│   │       ├── vector_db_tools.py  # Vector database tools
+│   │       └── workflow_tools.py   # Workflow management tools
 │   ├── sync/                       # Sync monitoring module
 │   │   ├── detector.py             # Change detection
 │   │   ├── models.py               # Data models (Pydantic)
@@ -120,9 +121,10 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── generator.py            # Embedding generation
 │   │   ├── cache.py                # Embedding cache
 │   │   └── models.py               # Embedding models
+│   ├── workflows/                  # YAML workflow presets
 │   ├── _version.py                 # Version information (reads from pyproject.toml)
 │   └── __init__.py                 # Package init
-├── tests/                          # Test suite (109 test files)
+├── tests/                          # Test suite (98 test files)
 ├── configs/                        # Preset configuration files
 ├── docs/                           # Documentation (80+ markdown files)
 │   ├── integrations/               # Platform integration guides
@@ -257,8 +259,8 @@ pytest tests/ -v -m "not slow and not integration"
 
 ### Test Architecture
 
-- **109 test files** covering all features
-- **~42,000 lines** of test code
+- **98 test files** covering all features
+- **1880+ tests** passing
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.12
 - Test markers defined in `pyproject.toml`:
 
@@ -407,6 +409,7 @@ The CLI uses subcommands that delegate to existing modules:
 - `quality` - Quality metrics
 - `resume` - Resume interrupted jobs
 - `estimate` - Estimate page counts
+- `workflows` - Workflow management
 
 ### MCP Server Architecture
 
@@ -416,11 +419,12 @@ Two implementations:
 
 Tools are organized by category:
 - Config tools (3 tools): generate_config, list_configs, validate_config
-- Scraping tools (8 tools): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides
+- Scraping tools (9 tools): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
 - Packaging tools (4 tools): package_skill, upload_skill, enhance_skill, install_skill
 - Source tools (5 tools): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
 - Splitting tools (2 tools): split_config, generate_router
 - Vector Database tools (4 tools): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
+- Workflow tools (5 tools): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
 
 **Running MCP Server:**
 ```bash
@@ -508,6 +512,7 @@ All workflows are in `.github/workflows/`:
 
 **`docker-publish.yml`:**
 - Builds and publishes Docker images
+- Multi-architecture support (linux/amd64, linux/arm64)
 
 **`vector-db-export.yml`:**
 - Tests vector database exports
@@ -608,22 +613,54 @@ export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
 
 ## Documentation
 
-### Project Documentation
+### Project Documentation (New Structure - v3.1.0+)
 
-- **README.md** - Main project documentation
-- **README.zh-CN.md** - Chinese translation
-- **CLAUDE.md** - Detailed implementation guidance
-- **QUICKSTART.md** - Quick start guide
-- **CONTRIBUTING.md** - Contribution guidelines
-- **TROUBLESHOOTING.md** - Common issues and solutions
+**Entry Points:**
+- **README.md** - Main project documentation with navigation
+- **docs/README.md** - Documentation hub
 - **AGENTS.md** - This file, for AI coding agents
-- **docs/** - Comprehensive documentation (80+ files)
-  - `docs/integrations/` - Integration guides for each platform
-  - `docs/guides/` - User guides
-  - `docs/reference/` - API reference
-  - `docs/features/` - Feature documentation
-  - `docs/blog/` - Blog posts and articles
-  - `docs/roadmap/` - Roadmap documents
+
+**Getting Started (for new users):**
+- `docs/getting-started/01-installation.md` - Installation guide
+- `docs/getting-started/02-quick-start.md` - 3 commands to first skill
+- `docs/getting-started/03-your-first-skill.md` - Complete walkthrough
+- `docs/getting-started/04-next-steps.md` - Where to go from here
+
+**User Guides (common tasks):**
+- `docs/user-guide/01-core-concepts.md` - How Skill Seekers works
+- `docs/user-guide/02-scraping.md` - All scraping options
+- `docs/user-guide/03-enhancement.md` - AI enhancement explained
+- `docs/user-guide/04-packaging.md` - Export to platforms
+- `docs/user-guide/05-workflows.md` - Enhancement workflows
+- `docs/user-guide/06-troubleshooting.md` - Common issues
+
+**Reference (technical details):**
+- `docs/reference/CLI_REFERENCE.md` - Complete command reference (20 commands)
+- `docs/reference/MCP_REFERENCE.md` - MCP tools reference (26 tools)
+- `docs/reference/CONFIG_FORMAT.md` - JSON configuration specification
+- `docs/reference/ENVIRONMENT_VARIABLES.md` - All environment variables
+
+**Advanced (power user topics):**
+- `docs/advanced/mcp-server.md` - MCP server setup
+- `docs/advanced/mcp-tools.md` - Advanced MCP usage
+- `docs/advanced/custom-workflows.md` - Creating custom workflows
+- `docs/advanced/multi-source.md` - Multi-source scraping
+
+**Legacy (being phased out):**
+- `QUICKSTART.md` - Old quick start (see docs/getting-started/)
+- `docs/guides/USAGE.md` - Old usage guide (see docs/user-guide/)
+- `docs/QUICK_REFERENCE.md` - Old reference (see docs/reference/)
+
+### Configuration Documentation
+
+Preset configs are in `configs/` directory:
+- `godot.json` - Godot Engine
+- `blender.json` / `blender-unified.json` - Blender Engine
+- `claude-code.json` - Claude Code
+- `httpx_comprehensive.json` - HTTPX library
+- `medusa-mercurjs.json` - Medusa/MercurJS
+- `astrovalley_unified.json` - Astrovalley
+- `configs/integrations/` - Integration-specific configs
 
 ### Configuration Documentation
 
@@ -662,6 +699,7 @@ Preset configs are in `configs/` directory:
 | `schedule` | >=1.2.0 | Scheduled tasks |
 | `python-dotenv` | >=1.1.1 | Environment variables |
 | `jsonschema` | >=4.25.1 | JSON validation |
+| `PyYAML` | >=6.0 | YAML parsing |
 
 ### Optional Dependencies
 
@@ -768,12 +806,47 @@ __version__ = get_version()  # Returns version from pyproject.toml
 
 ---
 
-## Code Statistics
+## Configuration File Format
 
-- **Source Code:** ~40,000 lines (CLI modules)
-- **Test Code:** ~42,000 lines (109 test files)
-- **Documentation:** 80+ markdown files
-- **Examples:** 11 complete integration examples
+Skill Seekers uses JSON configuration files to define scraping targets. Example structure:
+
+```json
+{
+  "name": "godot",
+  "description": "Godot Engine documentation",
+  "merge_mode": "claude-enhanced",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.godotengine.org/en/stable/",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "div[role='main']",
+        "title": "title",
+        "code_blocks": "pre"
+      },
+      "url_patterns": {
+        "include": [],
+        "exclude": ["/search.html", "/_static/"]
+      },
+      "categories": {
+        "getting_started": ["introduction", "getting_started"],
+        "scripting": ["scripting", "gdscript"]
+      },
+      "rate_limit": 0.5,
+      "max_pages": 500
+    },
+    {
+      "type": "github",
+      "repo": "godotengine/godot",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+      "fetch_issues": true,
+      "max_issues": 100
+    }
+  ]
+}
+```
 
 ---
 

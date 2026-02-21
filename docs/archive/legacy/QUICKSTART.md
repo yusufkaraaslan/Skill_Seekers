@@ -1,3 +1,14 @@
+> ⚠️ **DEPRECATED**: This document is outdated and uses old CLI patterns.
+> 
+> For up-to-date documentation, please see:
+> - [Quick Start Guide](docs/getting-started/02-quick-start.md) - 3 commands to first skill
+> - [Installation Guide](docs/getting-started/01-installation.md) - Complete installation
+> - [Documentation Hub](docs/README.md) - All documentation
+>
+> *This file is kept for historical reference only.*
+
+---
+
 # Quick Start Guide
 
 ## 🚀 3 Steps to Create a Skill

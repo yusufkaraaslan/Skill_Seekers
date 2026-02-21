@@ -64,27 +64,42 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🌐 **One prep, every target** — Export the same asset to 16 platforms without re-scraping
 - ✅ **Battle-tested** — 1,880+ tests, 24+ framework presets, production-ready
 
-## Quick Start
+## 🚀 Quick Start (3 Commands)
 
 ```bash
+# 1. Install
 pip install skill-seekers
 
-# Build an AI skill from any source
-skill-seekers create https://docs.django.com/    # web docs
-skill-seekers create django/django               # GitHub repo
-skill-seekers create ./my-codebase               # local project
-skill-seekers create manual.pdf                  # PDF
+# 2. Create skill from any source
+skill-seekers create https://docs.django.com/
 
-# Export for your use case
-skill-seekers package output/django --target claude     # Claude AI Skill
-skill-seekers package output/django --target langchain  # LangChain RAG
-skill-seekers package output/django --target cursor     # Cursor IDE context
+# 3. Package for your AI platform
+skill-seekers package output/django --target claude
 ```
 
-**Complete examples:**
-- [Claude AI Skill](examples/claude-skill/) - Skills for Claude Code
-- [LangChain RAG Pipeline](examples/langchain-rag-pipeline/) - QA chain with Chroma
-- [Cursor IDE Context](examples/cursor-react-skill/) - Framework-aware AI coding
+**That's it!** You now have `output/django-claude.zip` ready to use.
+
+### Other Sources
+
+```bash
+# GitHub repository
+skill-seekers create facebook/react
+
+# Local project
+skill-seekers create ./my-project
+
+# PDF document
+skill-seekers create manual.pdf
+```
+
+### Export Everywhere
+
+```bash
+# Package for multiple platforms
+for platform in claude gemini openai langchain; do
+  skill-seekers package output/django --target $platform
+done
+```
 
 ## What is Skill Seekers?
 
@@ -96,6 +111,21 @@ Skill Seekers is the **data layer for AI systems**. It transforms documentation 
 | **RAG Pipelines** | Chunked documents with rich metadata | LangChain, LlamaIndex, Haystack |
 | **Vector Databases** | Pre-formatted data ready for upsert | Pinecone, Chroma, Weaviate, FAISS |
 | **AI Coding Assistants** | Context files your IDE AI reads automatically | Cursor, Windsurf, Cline, Continue.dev |
+
+## 📚 Documentation
+
+| I want to... | Read this |
+|--------------|-----------|
+| **Get started quickly** | [Quick Start](docs/getting-started/02-quick-start.md) - 3 commands to first skill |
+| **Understand concepts** | [Core Concepts](docs/user-guide/01-core-concepts.md) - How it works |
+| **Scrape sources** | [Scraping Guide](docs/user-guide/02-scraping.md) - All source types |
+| **Enhance skills** | [Enhancement Guide](docs/user-guide/03-enhancement.md) - AI enhancement |
+| **Export skills** | [Packaging Guide](docs/user-guide/04-packaging.md) - Platform export |
+| **Look up commands** | [CLI Reference](docs/reference/CLI_REFERENCE.md) - All 20 commands |
+| **Configure** | [Config Format](docs/reference/CONFIG_FORMAT.md) - JSON specification |
+| **Fix issues** | [Troubleshooting](docs/user-guide/06-troubleshooting.md) - Common problems |
+
+**Complete documentation:** [docs/README.md](docs/README.md)
 
 Instead of spending days on manual preprocessing, Skill Seekers:
 
