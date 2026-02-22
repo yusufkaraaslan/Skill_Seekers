@@ -338,7 +338,7 @@ See the references directory for complete documentation with examples and best p
         try:
             genai.configure(api_key=api_key)
 
-            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            model = genai.GenerativeModel("gemini-3-flash-preview")
 
             response = model.generate_content(prompt)
 
