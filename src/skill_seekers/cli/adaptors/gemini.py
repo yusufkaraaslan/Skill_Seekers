@@ -3,7 +3,7 @@
 Google Gemini Adaptor
 
 Implements platform-specific handling for Google Gemini skills.
-Uses Gemini Files API for grounding and Gemini 2.0 Flash for enhancement.
+Uses Gemini Files API for grounding and Gemini 3 Flash Preview for enhancement.
 """
 
 import json
@@ -23,7 +23,7 @@ class GeminiAdaptor(SkillAdaptor):
     - Plain markdown format (no YAML frontmatter)
     - tar.gz packaging for Gemini Files API
     - Upload to Google AI Studio / Files API
-    - AI enhancement using Gemini 2.0 Flash
+    - AI enhancement using Gemini 3 Flash Preview
     """
 
     PLATFORM = "gemini"
@@ -279,7 +279,7 @@ See the references directory for complete documentation with examples and best p
 
     def supports_enhancement(self) -> bool:
         """
-        Gemini supports AI enhancement via Gemini 2.0 Flash.
+        Gemini supports AI enhancement via Gemini 3 Flash Preview.
 
         Returns:
             True
@@ -288,7 +288,7 @@ See the references directory for complete documentation with examples and best p
 
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
         """
-        Enhance SKILL.md using Gemini 2.0 Flash API.
+        Enhance SKILL.md using Gemini 3 Flash Preview API.
 
         Args:
             skill_dir: Path to skill directory
