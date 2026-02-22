@@ -28,6 +28,7 @@ from pathlib import Path
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _is_root() -> bool:
     """Return True if the current process is running as root (UID 0)."""
     try:
@@ -39,10 +40,7 @@ def _is_root() -> bool:
 def _get_api_keys() -> dict[str, str | None]:
     """Collect API keys from environment."""
     return {
-        "claude": (
-            os.environ.get("ANTHROPIC_API_KEY")
-            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-        ),
+        "claude": (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")),
         "gemini": os.environ.get("GOOGLE_API_KEY"),
         "openai": os.environ.get("OPENAI_API_KEY"),
     }
@@ -95,6 +93,7 @@ def _pick_mode(args) -> tuple[str, str | None]:
 # API mode runner
 # ---------------------------------------------------------------------------
 
+
 def _run_api_mode(args, target: str) -> int:
     """Delegate to enhance_skill.py (platform adaptor path)."""
     from skill_seekers.cli.enhance_skill import main as enhance_api_main
@@ -137,6 +136,7 @@ def _run_api_mode(args, target: str) -> int:
 # LOCAL mode runner
 # ---------------------------------------------------------------------------
 
+
 def _run_local_mode(args) -> int:
     """Delegate to LocalSkillEnhancer from enhance_skill_local.py."""
     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
@@ -166,6 +166,7 @@ def _run_local_mode(args) -> int:
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     import argparse

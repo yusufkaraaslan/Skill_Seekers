@@ -10,6 +10,7 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_args(**kwargs):
     """Build a fake Namespace with sensible defaults."""
     defaults = {
@@ -40,35 +41,44 @@ def _make_skill_dir(tmp_path):
 # _is_root
 # ---------------------------------------------------------------------------
 
+
 class TestIsRoot:
     def test_returns_bool(self):
         from skill_seekers.cli.enhance_command import _is_root
+
         assert isinstance(_is_root(), bool)
 
     def test_not_root_when_monkeypatched(self, monkeypatch):
         import os
+
         monkeypatch.setattr(os, "getuid", lambda: 1000)
         from skill_seekers.cli.enhance_command import _is_root
+
         assert _is_root() is False
 
     def test_root_when_uid_zero(self, monkeypatch):
         import os
+
         monkeypatch.setattr(os, "getuid", lambda: 0)
         from skill_seekers.cli.enhance_command import _is_root
+
         assert _is_root() is True
 
     def test_windows_no_getuid(self, monkeypatch):
         """On Windows (no os.getuid), _is_root should return False."""
         import os
+
         if hasattr(os, "getuid"):
             monkeypatch.delattr(os, "getuid")
         from skill_seekers.cli.enhance_command import _is_root
+
         assert _is_root() is False
 
 
 # ---------------------------------------------------------------------------
 # _pick_mode — explicit --target flag
 # ---------------------------------------------------------------------------
+
 
 class TestPickModeExplicitTarget:
     def test_target_gemini_forces_api(self, monkeypatch):
@@ -77,6 +87,7 @@ class TestPickModeExplicitTarget:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         args = _make_args(target="gemini")
         mode, target = _pick_mode(args)
         assert mode == "api"
@@ -86,6 +97,7 @@ class TestPickModeExplicitTarget:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         args = _make_args(target="openai")
         mode, target = _pick_mode(args)
         assert mode == "api"
@@ -95,6 +107,7 @@ class TestPickModeExplicitTarget:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         args = _make_args(target="claude")
         mode, target = _pick_mode(args)
         assert mode == "api"
@@ -105,6 +118,7 @@ class TestPickModeExplicitTarget:
 # _pick_mode — auto-detection from env vars
 # ---------------------------------------------------------------------------
 
+
 class TestPickModeAutoDetect:
     def test_anthropic_key_selects_claude(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
@@ -112,6 +126,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "claude"
@@ -123,6 +138,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "gemini"
@@ -134,6 +150,7 @@ class TestPickModeAutoDetect:
         monkeypatch.setenv("OPENAI_API_KEY", "sk-proj-test")
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "openai"
@@ -145,6 +162,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "local"
         assert target is None
@@ -156,6 +174,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "claude"
@@ -164,6 +183,7 @@ class TestPickModeAutoDetect:
 # ---------------------------------------------------------------------------
 # _pick_mode — config default_agent
 # ---------------------------------------------------------------------------
+
 
 class TestPickModeConfigAgent:
     def _patch_config(self, monkeypatch, agent: str | None):
@@ -180,6 +200,7 @@ class TestPickModeConfigAgent:
         monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "gemini"
@@ -193,6 +214,7 @@ class TestPickModeConfigAgent:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         mode, target = _pick_mode(_make_args())
         assert mode == "local"
 
@@ -202,6 +224,7 @@ class TestPickModeConfigAgent:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
+
         args = _make_args(target="openai")
         mode, target = _pick_mode(args)
         assert mode == "api"
@@ -211,6 +234,7 @@ class TestPickModeConfigAgent:
 # ---------------------------------------------------------------------------
 # CLI argument parsing
 # ---------------------------------------------------------------------------
+
 
 class TestEnhanceArgumentParsing:
     """Test that the enhance parser exposes all expected arguments."""
@@ -257,6 +281,7 @@ class TestEnhanceArgumentParsing:
 # main() CLI integration — dry-run + root detection
 # ---------------------------------------------------------------------------
 
+
 class TestEnhanceCommandMain:
     def test_dry_run_no_ai_call(self, tmp_path):
         skill_dir = _make_skill_dir(tmp_path)
@@ -264,6 +289,7 @@ class TestEnhanceCommandMain:
         sys.argv = ["enhance_command.py", str(skill_dir), "--dry-run"]
         try:
             from skill_seekers.cli.enhance_command import main
+
             rc = main()
             assert rc == 0
         finally:
@@ -274,6 +300,7 @@ class TestEnhanceCommandMain:
         sys.argv = ["enhance_command.py", str(tmp_path / "nonexistent")]
         try:
             from skill_seekers.cli.enhance_command import main
+
             rc = main()
             assert rc == 1
         finally:
@@ -293,6 +320,7 @@ class TestEnhanceCommandMain:
         sys.argv = ["enhance_command.py", str(skill_dir)]
         try:
             from skill_seekers.cli.enhance_command import main
+
             rc = main()
             assert rc == 1
         finally:
@@ -316,6 +344,7 @@ class TestEnhanceCommandMain:
         sys.argv = ["enhance_command.py", str(skill_dir)]
         try:
             from skill_seekers.cli.enhance_command import main
+
             rc = main()
             assert rc == 0
         finally:
@@ -325,6 +354,7 @@ class TestEnhanceCommandMain:
 # ---------------------------------------------------------------------------
 # Config manager — get_default_agent
 # ---------------------------------------------------------------------------
+
 
 class TestConfigManagerDefaultAgent:
     def test_get_default_agent_none_by_default(self, tmp_path, monkeypatch):

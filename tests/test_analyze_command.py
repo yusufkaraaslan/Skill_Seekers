@@ -219,23 +219,17 @@ class TestAnalyzeWorkflowFlags(unittest.TestCase):
 
     def test_var_accepted_as_list(self):
         """Test --var is accepted with action=append (dest is 'var')."""
-        args = self.parser.parse_args(
-            ["analyze", "--directory", ".", "--var", "focus=performance"]
-        )
+        args = self.parser.parse_args(["analyze", "--directory", ".", "--var", "focus=performance"])
         self.assertEqual(args.var, ["focus=performance"])
 
     def test_workflow_dry_run_flag(self):
         """Test --workflow-dry-run sets the flag."""
-        args = self.parser.parse_args(
-            ["analyze", "--directory", ".", "--workflow-dry-run"]
-        )
+        args = self.parser.parse_args(["analyze", "--directory", ".", "--workflow-dry-run"])
         self.assertTrue(args.workflow_dry_run)
 
     def test_api_key_stored_correctly(self):
         """Test --api-key is stored in args."""
-        args = self.parser.parse_args(
-            ["analyze", "--directory", ".", "--api-key", "sk-ant-test"]
-        )
+        args = self.parser.parse_args(["analyze", "--directory", ".", "--api-key", "sk-ant-test"])
         self.assertEqual(args.api_key, "sk-ant-test")
 
     def test_dry_run_stored_correctly(self):

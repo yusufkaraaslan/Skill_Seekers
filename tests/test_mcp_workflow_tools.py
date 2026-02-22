@@ -423,7 +423,9 @@ class TestDeleteWorkflowTool:
         assert "Error" in _text(result)
         assert "bundled" in _text(result)
 
-    def test_not_found_user_workflow_returns_error(self, user_dir, bundled_names_empty, monkeypatch):
+    def test_not_found_user_workflow_returns_error(
+        self, user_dir, bundled_names_empty, monkeypatch
+    ):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
             lambda _name: None,

@@ -97,6 +97,7 @@ class LlmsTxtParser:
         # causes httpx to raise "Invalid IPv6 URL" when the URL is fetched.
         if "[" in url or "]" in url:
             from urllib.parse import urlparse, urlunparse
+
             parsed = urlparse(url)
             # Only encode brackets in the path/query/fragment, not in the host
             encoded_path = parsed.path.replace("[", "%5B").replace("]", "%5D")

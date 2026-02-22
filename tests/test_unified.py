@@ -593,16 +593,12 @@ class TestUnifiedCLIArguments:
 
     def test_api_key_stored_correctly(self, parser):
         """Test --api-key KEY is stored in args."""
-        args = parser.parse_args(
-            ["unified", "--config", "my.json", "--api-key", "sk-ant-test"]
-        )
+        args = parser.parse_args(["unified", "--config", "my.json", "--api-key", "sk-ant-test"])
         assert args.api_key == "sk-ant-test"
 
     def test_enhance_level_stored_correctly(self, parser):
         """Test --enhance-level 2 is stored in args."""
-        args = parser.parse_args(
-            ["unified", "--config", "my.json", "--enhance-level", "2"]
-        )
+        args = parser.parse_args(["unified", "--config", "my.json", "--enhance-level", "2"])
         assert args.enhance_level == 2
 
     def test_enhance_level_default_is_none(self, parser):
@@ -670,6 +666,7 @@ class TestWorkflowJsonConfig:
             "skill_seekers.cli.workflow_runner.run_workflows", fake_run_workflows, raising=False
         )
         import skill_seekers.cli.unified_scraper as us_module
+
         monkeypatch.setattr(us_module, "run_workflows", fake_run_workflows, raising=False)
 
         scraper = self._make_scraper(tmp_path, {"workflows": ["security-focus", "minimal"]})
@@ -725,7 +722,10 @@ class TestWorkflowJsonConfig:
         json_stages = config.get("workflow_stages", [])
         if json_stages:
             effective_args.enhance_stage = list(effective_args.enhance_stage or []) + json_stages
-        assert effective_args.enhance_stage == ["sec:Analyze security", "cleanup:Remove boilerplate"]
+        assert effective_args.enhance_stage == [
+            "sec:Analyze security",
+            "cleanup:Remove boilerplate",
+        ]
 
     def test_json_workflow_vars_converted_to_kv_strings(self, tmp_path):
         """JSON 'workflow_vars' dict is converted to 'key=value' strings."""

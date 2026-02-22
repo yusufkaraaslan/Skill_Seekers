@@ -103,7 +103,9 @@ class TestInstallSkillE2E:
         # Mock the subprocess calls for scraping and enhancement
         with (
             patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch(
+                "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+            ) as mock_enhance,
             patch("skill_seekers.mcp.tools.packaging_tools.package_skill_tool") as mock_package,
         ):
             # Mock scrape_docs to return success
@@ -166,7 +168,9 @@ class TestInstallSkillE2E:
         with (
             patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch,
             patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch(
+                "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+            ) as mock_enhance,
             patch("skill_seekers.mcp.tools.packaging_tools.package_skill_tool") as mock_package,
             patch("builtins.open", create=True) as mock_file_open,
             patch("os.environ.get") as mock_env,
@@ -283,7 +287,9 @@ class TestInstallSkillE2E:
 
         with (
             patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch(
+                "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+            ) as mock_enhance,
         ):
             # Mock successful scrape
             mock_scrape.return_value = [
@@ -483,7 +489,9 @@ class TestInstallSkillE2E_RealFiles:
 
         # Only mock enhancement and upload (let scraping run for real)
         with (
-            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch(
+                "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+            ) as mock_enhance,
             patch("skill_seekers.mcp.tools.packaging_tools.upload_skill_tool") as mock_upload,
             patch("os.environ.get") as mock_env,
         ):

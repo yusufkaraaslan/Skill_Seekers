@@ -543,9 +543,7 @@ class TestPDFCLIArguments(unittest.TestCase):
 
     def test_enhance_workflow_accepted(self):
         """Test --enhance-workflow is accepted and stores a list."""
-        args = self.parser.parse_args(
-            ["pdf", "--pdf", "test.pdf", "--enhance-workflow", "minimal"]
-        )
+        args = self.parser.parse_args(["pdf", "--pdf", "test.pdf", "--enhance-workflow", "minimal"])
         self.assertEqual(args.enhance_workflow, ["minimal"])
 
     def test_workflow_dry_run_accepted(self):

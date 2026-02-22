@@ -1342,7 +1342,11 @@ class TestSwiftErrorHandling:
             # Mock empty SWIFT_PATTERNS during import
             with patch.dict(
                 "sys.modules",
-                {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})},
+                {
+                    "skill_seekers.cli.swift_patterns": type(
+                        "MockModule", (), {"SWIFT_PATTERNS": {}}
+                    )
+                },
             ):
                 from skill_seekers.cli.language_detector import LanguageDetector
 

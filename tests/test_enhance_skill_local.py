@@ -2,7 +2,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skill_seekers.cli.enhance_skill_local import AGENT_PRESETS, LocalSkillEnhancer, detect_terminal_app
+from skill_seekers.cli.enhance_skill_local import (
+    AGENT_PRESETS,
+    LocalSkillEnhancer,
+    detect_terminal_app,
+)
 
 
 def _make_skill_dir(tmp_path):
@@ -441,7 +445,9 @@ class TestRunHeadless:
         skill_dir = self._make_skill_with_md(tmp_path)
         enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
 
-        with patch.object(enhancer, "_run_agent_command", return_value=(None, "Command not found: claude")):
+        with patch.object(
+            enhancer, "_run_agent_command", return_value=(None, "Command not found: claude")
+        ):
             result = enhancer._run_headless(str(tmp_path / "prompt.txt"), timeout=10)
         assert result is False
 
@@ -484,10 +490,9 @@ class TestRunHeadless:
         def _fake_run(prompt_file, timeout, include_permissions_flag, quiet=False):  # noqa: ARG001
             # Simulate agent updating SKILL.md with more content
             import time
+
             time.sleep(0.01)
-            (skill_dir / "SKILL.md").write_text(
-                "# Enhanced\n" + "A" * 500, encoding="utf-8"
-            )
+            (skill_dir / "SKILL.md").write_text("# Enhanced\n" + "A" * 500, encoding="utf-8")
             return mock_result, None
 
         with patch.object(enhancer, "_run_agent_command", side_effect=_fake_run):
@@ -564,6 +569,7 @@ class TestRunBackground:
 
         # Give background thread a moment
         import time
+
         time.sleep(0.1)
 
         # Status file should exist (written by the worker)

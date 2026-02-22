@@ -563,8 +563,14 @@ class UnifiedScraper:
 
             # AI enhancement settings (CLI --enhance-level overrides per-source config)
             cli_args = getattr(self, "_cli_args", None)
-            cli_enhance_level = getattr(cli_args, "enhance_level", None) if cli_args is not None else None
-            enhance_level = cli_enhance_level if cli_enhance_level is not None else source.get("enhance_level", 0)
+            cli_enhance_level = (
+                getattr(cli_args, "enhance_level", None) if cli_args is not None else None
+            )
+            enhance_level = (
+                cli_enhance_level
+                if cli_enhance_level is not None
+                else source.get("enhance_level", 0)
+            )
 
             # Run codebase analysis
             logger.info(f"   Analysis depth: {analysis_depth}")
@@ -991,11 +997,15 @@ class UnifiedScraper:
                 from skill_seekers.cli.workflow_runner import run_workflows
 
                 # Build effective args: use CLI args when provided, otherwise empty namespace
-                effective_args = args if args is not None else argparse.Namespace(
-                    enhance_workflow=None,
-                    enhance_stage=None,
-                    var=None,
-                    workflow_dry_run=False,
+                effective_args = (
+                    args
+                    if args is not None
+                    else argparse.Namespace(
+                        enhance_workflow=None,
+                        enhance_stage=None,
+                        var=None,
+                        workflow_dry_run=False,
+                    )
                 )
 
                 # Merge JSON workflow config into effective_args (JSON appended after CLI)
@@ -1008,10 +1018,9 @@ class UnifiedScraper:
                         list(effective_args.enhance_stage or []) + json_stages
                     )
                 if json_vars:
-                    effective_args.var = (
-                        list(effective_args.var or [])
-                        + [f"{k}={v}" for k, v in json_vars.items()]
-                    )
+                    effective_args.var = list(effective_args.var or []) + [
+                        f"{k}={v}" for k, v in json_vars.items()
+                    ]
 
                 unified_context = {
                     "name": self.config.get("name", ""),

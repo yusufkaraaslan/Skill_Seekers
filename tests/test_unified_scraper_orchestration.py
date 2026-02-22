@@ -82,10 +82,20 @@ class TestScrapeAllSourcesRouting:
 
         calls = {"documentation": 0, "github": 0, "pdf": 0, "local": 0}
 
-        monkeypatch.setattr(scraper, "_scrape_documentation", lambda _s: calls.__setitem__("documentation", calls["documentation"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_github", lambda _s: calls.__setitem__("github", calls["github"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_pdf", lambda _s: calls.__setitem__("pdf", calls["pdf"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_local", lambda _s: calls.__setitem__("local", calls["local"] + 1))
+        monkeypatch.setattr(
+            scraper,
+            "_scrape_documentation",
+            lambda _s: calls.__setitem__("documentation", calls["documentation"] + 1),
+        )
+        monkeypatch.setattr(
+            scraper, "_scrape_github", lambda _s: calls.__setitem__("github", calls["github"] + 1)
+        )
+        monkeypatch.setattr(
+            scraper, "_scrape_pdf", lambda _s: calls.__setitem__("pdf", calls["pdf"] + 1)
+        )
+        monkeypatch.setattr(
+            scraper, "_scrape_local", lambda _s: calls.__setitem__("local", calls["local"] + 1)
+        )
 
         scraper.scrape_all_sources()
         return calls
@@ -100,31 +110,23 @@ class TestScrapeAllSourcesRouting:
         assert calls["local"] == 0
 
     def test_github_source_routes_to_scrape_github(self, monkeypatch):
-        calls = self._run_with_sources(
-            [{"type": "github", "repo": "user/repo"}], monkeypatch
-        )
+        calls = self._run_with_sources([{"type": "github", "repo": "user/repo"}], monkeypatch)
         assert calls["github"] == 1
         assert calls["documentation"] == 0
 
     def test_pdf_source_routes_to_scrape_pdf(self, monkeypatch):
-        calls = self._run_with_sources(
-            [{"type": "pdf", "path": "/tmp/doc.pdf"}], monkeypatch
-        )
+        calls = self._run_with_sources([{"type": "pdf", "path": "/tmp/doc.pdf"}], monkeypatch)
         assert calls["pdf"] == 1
         assert calls["documentation"] == 0
 
     def test_local_source_routes_to_scrape_local(self, monkeypatch):
-        calls = self._run_with_sources(
-            [{"type": "local", "path": "/tmp/project"}], monkeypatch
-        )
+        calls = self._run_with_sources([{"type": "local", "path": "/tmp/project"}], monkeypatch)
         assert calls["local"] == 1
         assert calls["documentation"] == 0
 
     def test_unknown_source_type_is_skipped(self, monkeypatch):
         """Unknown types are logged as warnings but do not crash or call any scraper."""
-        calls = self._run_with_sources(
-            [{"type": "unsupported_xyz"}], monkeypatch
-        )
+        calls = self._run_with_sources([{"type": "unsupported_xyz"}], monkeypatch)
         assert all(v == 0 for v in calls.values())
 
     def test_multiple_sources_each_scraper_called_once(self, monkeypatch):
@@ -214,7 +216,10 @@ class TestScrapeDocumentation:
 
         with (
             patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, _f, **_kw: written_configs.append(obj)),
+            patch(
+                "skill_seekers.cli.unified_scraper.json.dump",
+                side_effect=lambda obj, _f, **_kw: written_configs.append(obj),
+            ),
         ):
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
@@ -234,7 +239,10 @@ class TestScrapeDocumentation:
 
         with (
             patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, _f, **_kw: written_configs.append(obj)),
+            patch(
+                "skill_seekers.cli.unified_scraper.json.dump",
+                side_effect=lambda obj, _f, **_kw: written_configs.append(obj),
+            ),
         ):
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
