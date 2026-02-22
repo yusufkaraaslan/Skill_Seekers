@@ -1,0 +1,124 @@
+name: microservices-patterns
+description: Document distributed system patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: service_boundaries
+    type: custom
+    target: boundaries
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document service boundaries and domain decomposition.
+      
+      Identify:
+      1. Service boundaries and responsibilities
+      2. Domain boundaries (DDD bounded contexts)
+      3. Data ownership per service
+      4. API surface between services
+      
+      Output JSON with:
+      - "services": array of services with boundaries
+      - "domains": domain contexts
+      - "data_ownership": which service owns what data
+      - "api_contracts": inter-service APIs
+
+  - name: inter_service_comm
+    type: custom
+    target: communication
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document inter-service communication patterns.
+      
+      Cover:
+      1. Synchronous communication (HTTP/gRPC)
+      2. Asynchronous messaging (queues, events)
+      3. When to use sync vs async
+      4. Service discovery patterns
+      5. Load balancing strategies
+      
+      Output JSON with:
+      - "sync_patterns": synchronous patterns
+      - "async_patterns": messaging patterns
+      - "decision_tree": when to use which
+      - "service_discovery": discovery mechanisms
+
+  - name: data_consistency
+    type: custom
+    target: consistency
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document distributed data consistency patterns.
+      
+      Include:
+      1. Saga pattern (orchestration vs choreography)
+      2. Event sourcing considerations
+      3. CQRS patterns
+      4. Eventual consistency handling
+      5. Transaction outbox pattern
+      
+      Output JSON with:
+      - "consistency_patterns": patterns used
+      - "saga_implementation": saga details
+      - "event_sourcing": event sourcing approach
+      - "handling_inconsistency": dealing with eventual consistency
+
+  - name: resilience_patterns
+    type: custom
+    target: resilience
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document resilience and fault tolerance patterns.
+      
+      Cover:
+      1. Circuit breaker pattern
+      2. Retry strategies (exponential backoff)
+      3. Fallback mechanisms
+      4. Bulkhead pattern
+      5. Timeout configurations
+      
+      Output JSON with:
+      - "circuit_breakers": implementation details
+      - "retry_policies": retry configuration
+      - "fallbacks": fallback strategies
+      - "timeout_management": timeout settings
+
+  - name: observability
+    type: custom
+    target: observability
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document observability in distributed systems.
+      
+      Include:
+      1. Distributed tracing
+      2. Correlation IDs
+      3. Centralized logging
+      4. Health checks per service
+      5. Metrics and alerting
+      
+      Output JSON with:
+      - "tracing": distributed tracing setup
+      - "logging": centralized logging approach
+      - "health_checks": service health verification
+      - "metrics": key metrics to track
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: microservices-patterns
+    architecture: microservices

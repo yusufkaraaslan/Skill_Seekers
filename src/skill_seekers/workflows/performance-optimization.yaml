@@ -1,0 +1,100 @@
+name: performance-optimization
+description: Identify bottlenecks and optimization opportunities
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: bottleneck_detection
+    type: custom
+    target: bottlenecks
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze this codebase for performance bottlenecks.
+      
+      Look for:
+      1. Nested loops and O(n²) or worse algorithms
+      2. Synchronous I/O operations blocking execution
+      3. Memory-intensive operations (large data structures)
+      4. Repeated computations that could be cached
+      5. N+1 query problems in database operations
+      6. Unnecessary object allocations in hot paths
+      
+      Output JSON with "bottlenecks" array, each having:
+      - location (file/function)
+      - severity (critical/high/medium/low)
+      - current_complexity (Big-O notation)
+      - description of the issue
+
+  - name: complexity_analysis
+    type: custom
+    target: complexity
+    uses_history: false
+    enabled: true
+    prompt: >
+      Calculate Big-O complexity for key functions and algorithms.
+      
+      For each significant function:
+      1. Time complexity (best/average/worst case)
+      2. Space complexity
+      3. Identify if complexity can be improved
+      
+      Output JSON with:
+      - "complexity_analysis": array of functions with their complexity
+      - "optimization_opportunities": functions where complexity can be reduced
+
+  - name: caching_strategies
+    type: custom
+    target: caching
+    uses_history: true
+    enabled: true
+    prompt: >
+      Based on the bottlenecks identified, suggest caching strategies.
+      
+      Recommend:
+      1. Memoization candidates (pure functions with expensive computations)
+      2. Response caching for API endpoints
+      3. Database query result caching
+      4. Static asset caching strategies
+      5. Cache invalidation approaches
+      
+      Output JSON with:
+      - "memoization_candidates": functions to memoize
+      - "cache_layers": recommended caching layers
+      - "invalidation_strategy": how to keep caches fresh
+
+  - name: optimization_recommendations
+    type: custom
+    target: optimizations
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create actionable performance optimization recommendations.
+      
+      Provide:
+      1. Quick wins (low effort, high impact)
+      2. Medium-term improvements (significant effort, good ROI)
+      3. Long-term architectural changes
+      4. Performance monitoring recommendations
+      
+      Output JSON with:
+      - "quick_wins": array of immediate optimizations
+      - "medium_term": improvements for next sprint
+      - "long_term": architectural improvements
+      - "monitoring": key metrics to track
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: performance-optimization
+    has_performance_analysis: true

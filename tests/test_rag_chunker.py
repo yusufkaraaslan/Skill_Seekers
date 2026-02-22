@@ -370,7 +370,10 @@ class TestRAGChunkerIntegration:
         """Test that chunks can be loaded by LangChain."""
         pytest.importorskip("langchain")  # Skip if LangChain not installed
 
-        from langchain.schema import Document
+        try:
+            from langchain.schema import Document
+        except ImportError:
+            from langchain_core.documents import Document
 
         # Create test skill
         skill_dir = tmp_path / "test_skill"

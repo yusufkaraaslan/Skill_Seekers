@@ -1,0 +1,166 @@
+name: grpc-services
+description: Document gRPC service implementation with Protocol Buffers
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: protobuf_schema
+    type: custom
+    target: protobuf
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze Protocol Buffers schema design.
+      
+      Identify:
+      1. Proto file organization
+      2. Message structure and naming
+      3. Field numbering and reservation
+      4. Enum definitions
+      5. Oneof usage
+      6. Import dependencies
+      7. Package structure
+      
+      Output JSON with:
+      - "organization": proto file layout
+      - "messages": message design
+      - "field_numbers": numbering strategy
+      - "enums": enum patterns
+      - "oneof": oneof usage
+      - "dependencies": import management
+      - "packages": package structure
+
+  - name: service_definitions
+    type: custom
+    target: services
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gRPC service definitions.
+      
+      Cover:
+      1. Service and RPC naming
+      2. Unary vs streaming RPCs
+      3. Request/response patterns
+      4. Error handling with status codes
+      5. Deadlines and timeouts
+      6. Metadata and headers
+      
+      Output JSON with:
+      - "naming": service naming
+      - "rpc_types": unary/streaming
+      - "patterns": request/response
+      - "errors": error handling
+      - "deadlines": timeout config
+      - "metadata": header usage
+
+  - name: code_generation
+    type: custom
+    target: codegen
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document protobuf code generation.
+      
+      Include:
+      1. Protobuf compiler setup
+      2. Language-specific plugins
+      3. Generated code organization
+      4. Version compatibility
+      5. Build integration
+      6. CI/CD for proto changes
+      
+      Output JSON with:
+      - "compiler": protoc setup
+      - "plugins": language plugins
+      - "code_org": generated file layout
+      - "versioning": proto versioning
+      - "build": build integration
+      - "cicd": proto CI/CD
+
+  - name: server_implementation
+    type: custom
+    target: server
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gRPC server implementation.
+      
+      Cover:
+      1. Server setup and configuration
+      2. Interceptor/middleware patterns
+      3. Authentication and authorization
+      4. TLS configuration
+      5. Health checking
+      6. Graceful shutdown
+      
+      Output JSON with:
+      - "setup": server configuration
+      - "interceptors": middleware
+      - "auth": authentication
+      - "tls": encryption setup
+      - "health": health checks
+      - "shutdown": graceful stop
+
+  - name: client_patterns
+    type: custom
+    target: client
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gRPC client patterns.
+      
+      Include:
+      1. Client connection management
+      2. Load balancing
+      3. Retry policies
+      4. Circuit breaker integration
+      5. Client-side streaming
+      6. Connection pooling
+      
+      Output JSON with:
+      - "connection_mgmt": connection handling
+      - "load_balancing": LB strategies
+      - "retries": retry config
+      - "circuit_breaker": failure handling
+      - "streaming": client streaming
+      - "pooling": connection pools
+
+  - name: grpc_web_gateway
+    type: custom
+    target: web
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gRPC-Web and gateway patterns.
+      
+      Cover:
+      1. gRPC-Web proxy setup
+      2. REST gateway (grpc-gateway)
+      3. Transcoding configuration
+      4. Browser client support
+      5. Streaming limitations
+      
+      Output JSON with:
+      - "grpc_web": web proxy
+      - "rest_gateway": HTTP gateway
+      - "transcoding": HTTP mapping
+      - "browser": browser support
+      - "limitations": web constraints
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: grpc-services
+    domain: backend
+    has_grpc_docs: true

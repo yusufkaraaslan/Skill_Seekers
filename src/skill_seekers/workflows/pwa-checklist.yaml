@@ -1,0 +1,97 @@
+name: pwa-checklist
+description: Progressive Web App implementation checklist and patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: pwa_requirements
+    type: custom
+    target: requirements
+    uses_history: false
+    enabled: true
+    prompt: >
+      Check PWA core requirements compliance.
+      
+      Verify:
+      1. HTTPS usage
+      2. Web App Manifest presence
+      3. Service Worker registration
+      4. Icons and splash screens
+      5. Responsive design
+      
+      Output JSON with:
+      - "requirements_met": checklist of completed items
+      - "missing": requirements not yet implemented
+      - "manifest_config": manifest details
+
+  - name: service_worker
+    type: custom
+    target: sw
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document Service Worker implementation.
+      
+      Cover:
+      1. Registration and lifecycle
+      2. Caching strategies (Cache First, Network First, etc.)
+      3. Background sync
+      4. Push notifications setup
+      5. Service Worker updates
+      
+      Output JSON with:
+      - "registration": SW registration code
+      - "caching_strategies": cache patterns
+      - "background_sync": sync implementation
+      - "update_flow": handling SW updates
+
+  - name: offline_strategy
+    type: custom
+    target: offline
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document offline functionality and fallbacks.
+      
+      Include:
+      1. Offline page design
+      2. Asset precaching
+      3. Runtime caching
+      4. Queueing requests when offline
+      5. Connection status detection
+      
+      Output JSON with:
+      - "offline_page": offline experience
+      - "precaching": assets to precache
+      - "queueing": request queueing
+      - "connection_detection": online/offline detection
+
+  - name: install_prompt
+    type: custom
+    target: install
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document PWA install experience.
+      
+      Cover:
+      1. BeforeInstallPrompt event handling
+      2. Custom install UI
+      3. Standalone display mode
+      4. App-like navigation
+      5. Platform-specific behaviors (iOS Safari)
+      
+      Output JSON with:
+      - "install_prompt": prompting users to install
+      - "custom_ui": install button implementation
+      - "standalone_mode": display mode handling
+      - "ios_notes": iOS-specific considerations
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: pwa-checklist
+    domain: frontend

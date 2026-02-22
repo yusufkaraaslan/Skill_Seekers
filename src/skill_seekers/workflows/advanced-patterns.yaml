@@ -1,0 +1,109 @@
+name: advanced-patterns
+description: Expert-level design patterns and architecture
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: expert
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: pattern_catalog
+    type: custom
+    target: advanced_patterns
+    uses_history: false
+    enabled: true
+    prompt: >
+      Catalog advanced design patterns used in this codebase.
+      
+      Identify patterns like:
+      1. Structural patterns (decorator, adapter, proxy, facade)
+      2. Behavioral patterns (observer, strategy, command, state)
+      3. Creational patterns (factory, builder, singleton alternatives)
+      4. Concurrency patterns (worker pools, futures, async patterns)
+      5. Domain-driven design patterns (aggregate, repository, domain events)
+      
+      For each pattern:
+      - When to apply it
+      - Implementation example from this codebase
+      - Trade-offs and considerations
+      
+      Output JSON with "patterns" array of:
+      {name, category, use_case, implementation, trade_offs}
+
+  - name: anti_patterns
+    type: custom
+    target: anti_patterns
+    uses_history: false
+    enabled: true
+    prompt: >
+      Identify anti-patterns and how to avoid them.
+      
+      Look for:
+      1. God objects / classes doing too much
+      2. Tight coupling examples
+      3. Premature abstraction
+      4. Leaky abstractions
+      5. Circular dependencies
+      
+      For each anti-pattern:
+      - What it looks like
+      - Why it's problematic
+      - Refactoring approach
+      
+      Output JSON with "anti_patterns" array of:
+      {name, symptoms, problems, solution, refactoring_steps}
+
+  - name: optimization_techniques
+    type: custom
+    target: optimizations
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document advanced optimization techniques.
+      
+      Cover:
+      1. Lazy loading and eager loading strategies
+      2. Connection pooling
+      3. Batch processing patterns
+      4. Streaming for large datasets
+      5. Memory optimization techniques
+      6. Async/await patterns for I/O
+      
+      Output JSON with:
+      - "techniques": array of optimization approaches
+      - "when_to_apply": context for each technique
+      - "code_examples": implementation samples
+
+  - name: custom_extensions
+    type: custom
+    target: extensions
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document how to extend and customize this codebase.
+      
+      Include:
+      1. Plugin architecture (if exists)
+      2. Hook points for customization
+      3. Middleware patterns
+      4. Creating custom adapters
+      5. Contributing extensions back
+      
+      Output JSON with:
+      - "extension_points": where to hook custom code
+      - "plugin_guide": how to create plugins
+      - "middleware": middleware patterns
+      - "best_practices": extension guidelines
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: advanced-patterns
+    audience: advanced

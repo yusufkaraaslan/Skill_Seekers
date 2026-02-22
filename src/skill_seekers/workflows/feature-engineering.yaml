@@ -1,0 +1,77 @@
+name: feature-engineering
+description: Document feature engineering patterns and pipelines
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: feature_pipeline
+    type: custom
+    target: pipeline
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document feature engineering pipeline architecture.
+      
+      Identify:
+      1. Feature store usage (Feast, Tecton, etc.)
+      2. Online vs offline features
+      3. Feature transformation pipeline
+      4. Feature validation
+      5. Feature lineage
+      
+      Output JSON with:
+      - "feature_store": feature store setup
+      - "online_offline": online vs offline distinction
+      - "transformations": transformation steps
+      - "validation": feature validation
+
+  - name: feature_types
+    type: custom
+    target: types
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document types of features and their handling.
+      
+      Cover:
+      1. Numerical features (scaling, normalization)
+      2. Categorical features (encoding strategies)
+      3. Text features (embedding, TF-IDF)
+      4. Temporal features (datetime engineering)
+      5. Geospatial features
+      
+      Output JSON with:
+      - "numerical": numerical handling
+      - "categorical": encoding methods
+      - "text": text processing
+      - "temporal": datetime features
+
+  - name: feature_selection
+    type: custom
+    target: selection
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document feature selection strategies.
+      
+      Include:
+      1. Correlation analysis
+      2. Feature importance (tree-based)
+      3. Statistical tests
+      4. Dimensionality reduction (PCA, etc.)
+      5. Recursive feature elimination
+      
+      Output JSON with:
+      - "correlation": correlation analysis
+      - "importance": importance methods
+      - "dimensionality": reduction techniques
+      - "selection_pipeline": selection process
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: feature-engineering
+    domain: ml

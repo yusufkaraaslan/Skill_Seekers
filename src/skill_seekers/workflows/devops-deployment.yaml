@@ -1,0 +1,125 @@
+name: devops-deployment
+description: Document deployment, CI/CD, and infrastructure
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: deployment_options
+    type: custom
+    target: deployment
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document all deployment options for this application.
+      
+      Cover:
+      1. Cloud platforms (AWS, GCP, Azure)
+      2. Container deployment (Docker, Kubernetes)
+      3. Platform-as-a-Service (Heroku, Vercel, etc.)
+      4. Bare metal/VM deployment
+      5. Serverless options
+      
+      For each option:
+      - When to choose it
+      - High-level steps
+      - Pros/cons
+      
+      Output JSON with "deployment_options" array of:
+      {platform, use_case, steps[], pros[], cons[]}
+
+  - name: environment_config
+    type: custom
+    target: environment
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document environment variable and configuration management.
+      
+      Include:
+      1. Required environment variables
+      2. Optional configuration with defaults
+      3. Secret management (don't hardcode!)
+      4. Environment-specific configs (dev/staging/prod)
+      5. Configuration validation
+      
+      Output JSON with:
+      - "required_vars": must-have variables
+      - "optional_vars": nice-to-have variables
+      - "secrets_management": how to handle secrets
+      - "validation": config validation approach
+
+  - name: ci_cd_templates
+    type: custom
+    target: cicd
+    uses_history: true
+    enabled: true
+    prompt: >
+      Provide CI/CD pipeline templates.
+      
+      Include:
+      1. GitHub Actions workflow
+      2. GitLab CI configuration
+      3. Jenkins pipeline (if applicable)
+      4. Azure DevOps pipeline
+      
+      Each template should include:
+      - Lint/test stages
+      - Build stage
+      - Deploy stages (staging/production)
+      - Rollback capability
+      
+      Output JSON with:
+      - "github_actions": workflow YAML content
+      - "gitlab_ci": .gitlab-ci.yml content
+      - "best_practices": CI/CD recommendations
+
+  - name: monitoring_setup
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document monitoring, logging, and alerting setup.
+      
+      Cover:
+      1. Health check endpoints
+      2. Application metrics to track
+      3. Log aggregation (structured logging)
+      4. Alerting rules and thresholds
+      5. Dashboard recommendations
+      
+      Output JSON with:
+      - "health_checks": endpoint definitions
+      - "key_metrics": what to monitor
+      - "logging": log format and aggregation
+      - "alerts": critical alert conditions
+
+  - name: scaling_guide
+    type: custom
+    target: scaling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document horizontal and vertical scaling strategies.
+      
+      Include:
+      1. Horizontal scaling (more instances)
+      2. Vertical scaling (bigger instances)
+      3. Auto-scaling configuration
+      4. Database scaling (read replicas, sharding)
+      5. Caching strategies for scale
+      6. Load balancing approaches
+      
+      Output JSON with:
+      - "scaling_strategies": approaches by use case
+      - "bottlenecks": what will limit scaling
+      - "auto_scaling": configuration examples
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: devops-deployment
+    has_devops_docs: true

@@ -1,0 +1,98 @@
+name: kubernetes-deployment
+description: Document Kubernetes deployment patterns and manifests
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: k8s_architecture
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document Kubernetes architecture.
+      
+      Identify:
+      1. Workload types (Deployment, StatefulSet, DaemonSet, Job)
+      2. Service types (ClusterIP, NodePort, LoadBalancer, Ingress)
+      3. Namespace organization
+      4. ConfigMaps and Secrets usage
+      5. Persistent storage (PVCs, PVs)
+      
+      Output JSON with:
+      - "workloads": workload configurations
+      - "services": service definitions
+      - "namespaces": namespace strategy
+      - "storage": storage configuration
+
+  - name: deployment_patterns
+    type: custom
+    target: deployments
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document deployment strategies.
+      
+      Cover:
+      1. Rolling updates
+      2. Blue-green deployment
+      3. Canary deployment
+      4. Helm chart structure
+      5. Kustomize overlays
+      
+      Output JSON with:
+      - "rolling_updates": rolling deployment config
+      - "blue_green": blue-green setup
+      - "canary": canary deployment
+      - "helm_charts": Helm configuration
+
+  - name: scaling_hpa
+    type: custom
+    target: scaling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document autoscaling configuration.
+      
+      Include:
+      1. Horizontal Pod Autoscaler (HPA)
+      2. Vertical Pod Autoscaler (VPA)
+      3. Cluster Autoscaler
+      4. Custom metrics scaling
+      5. Scaling thresholds and behavior
+      
+      Output JSON with:
+      - "hpa": horizontal pod autoscaling
+      - "vpa": vertical pod autoscaling
+      - "cluster_autoscaler": node scaling
+      - "custom_metrics": custom metric scaling
+
+  - name: observability_k8s
+    type: custom
+    target: observability
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Kubernetes observability.
+      
+      Cover:
+      1. Liveness and readiness probes
+      2. Resource monitoring
+      3. Log aggregation (Fluentd, Fluent Bit)
+      4. Metrics (Prometheus)
+      5. Distributed tracing
+      
+      Output JSON with:
+      - "health_probes": probe configuration
+      - "logging": log aggregation
+      - "metrics": Prometheus metrics
+      - "tracing": trace collection
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: kubernetes-deployment
+    domain: devops

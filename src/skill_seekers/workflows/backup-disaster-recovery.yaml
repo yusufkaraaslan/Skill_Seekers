@@ -1,0 +1,142 @@
+name: backup-disaster-recovery
+description: Document backup strategies and disaster recovery planning
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: backup_strategy
+    type: custom
+    target: backup
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document backup strategy and implementation.
+      
+      Identify:
+      1. Backup types (full, incremental, differential)
+      2. Backup frequency and scheduling
+      3. Data classification (critical, important, archival)
+      4. Backup retention policies
+      5. Backup storage locations (on-prem, cloud, multi-region)
+      6. Encryption at rest and in transit
+      
+      Output JSON with:
+      - "types": backup types
+      - "frequency": backup schedule
+      - "classification": data tiers
+      - "retention": retention periods
+      - "storage": backup locations
+      - "encryption": security measures
+
+  - name: database_backups
+    type: custom
+    target: database
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document database-specific backup procedures.
+      
+      Cover:
+      1. Database backup methods (snapshots, dumps, replication)
+      2. Point-in-time recovery (PITR)
+      3. Transaction log backups
+      4. Consistency checks
+      5. Backup verification
+      6. Cross-region replication
+      
+      Output JSON with:
+      - "methods": backup techniques
+      - "pitr": point-in-time recovery
+      - "log_backups": transaction logs
+      - "consistency": integrity checks
+      - "verification": backup validation
+      - "replication": geo-replication
+
+  - name: disaster_recovery
+    type: custom
+    target: dr
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document disaster recovery planning.
+      
+      Include:
+      1. RTO (Recovery Time Objective) definition
+      2. RPO (Recovery Point Objective) definition
+      3. DR site configuration (hot, warm, cold)
+      4. Failover procedures
+      5. Failback procedures
+      6. DR testing schedule
+      
+      Output JSON with:
+      - "rto": time objectives
+      - "rpo": data loss tolerance
+      - "dr_site": site configuration
+      - "failover": failover steps
+      - "failback": restoration steps
+      - "testing": DR drills
+
+  - name: business_continuity
+    type: custom
+    target: bc
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document business continuity planning.
+      
+      Cover:
+      1. Critical systems identification
+      2. Service dependencies mapping
+      3. Communication plan
+      4. Escalation procedures
+      5. Vendor dependencies
+      6. Regulatory compliance requirements
+      
+      Output JSON with:
+      - "critical_systems": priority services
+      - "dependencies": service graph
+      - "communication": notification plan
+      - "escalation": response hierarchy
+      - "vendors": third-party dependencies
+      - "compliance": regulatory needs
+
+  - name: recovery_procedures
+    type: custom
+    target: procedures
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document specific recovery procedures.
+      
+      Include:
+      1. Runbook documentation
+      2. Step-by-step recovery instructions
+      3. Required resources and access
+      4. Validation and testing post-recovery
+      5. Rollback procedures
+      6. Post-incident review process
+      
+      Output JSON with:
+      - "runbooks": procedure docs
+      - "instructions": recovery steps
+      - "resources": required assets
+      - "validation": post-recovery checks
+      - "rollback": reversal steps
+      - "post_mortem": incident review
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: backup-disaster-recovery
+    domain: devops
+    has_dr_docs: true

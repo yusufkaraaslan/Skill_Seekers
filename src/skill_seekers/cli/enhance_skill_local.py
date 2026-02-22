@@ -56,9 +56,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-# Add parent directory to path for imports when run as script
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import contextlib
 
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT

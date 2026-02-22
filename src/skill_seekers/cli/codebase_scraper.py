@@ -32,9 +32,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.config_extractor import ConfigExtractor

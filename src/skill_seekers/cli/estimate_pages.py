@@ -14,9 +14,6 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-# Add parent directory to path for imports when run as script
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from skill_seekers.cli.constants import (
     DEFAULT_MAX_DISCOVERY,
     DEFAULT_RATE_LIMIT,

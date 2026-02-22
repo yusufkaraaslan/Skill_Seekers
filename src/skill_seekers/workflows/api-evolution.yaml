@@ -1,0 +1,93 @@
+name: api-evolution
+description: Track API changes and versioning strategy
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: version_history
+    type: custom
+    target: versions
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document the API evolution history.
+      
+      Identify:
+      1. Major version milestones
+      2. Key changes in each version
+      3. Deprecation timeline
+      4. Long-term support (LTS) versions
+      
+      Output JSON with:
+      - "version_history": array of major releases
+      - "breaking_changes_by_version": what changed when
+      - "lts_versions": supported versions
+
+  - name: deprecation_policy
+    type: custom
+    target: deprecation
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document the deprecation policy and practices.
+      
+      Include:
+      1. Deprecation notice timeline (how far in advance)
+      2. Warning mechanisms (deprecation warnings, docs)
+      3. Migration path documentation
+      4. End-of-life process
+      
+      Output JSON with:
+      - "deprecation_timeline": notice periods
+      - "warning_strategies": how users are notified
+      - "current_deprecations": currently deprecated features
+
+  - name: stability_index
+    type: custom
+    target: stability
+    uses_history: true
+    enabled: true
+    prompt: >
+      Mark API stability levels for different features.
+      
+      Categorize features as:
+      1. Stable (won't change without major version)
+      2. Experimental (may change in minor versions)
+      3. Deprecated (will be removed)
+      4. Beta/Alpha (new, seeking feedback)
+      
+      Output JSON with:
+      - "stable_features": core API that won't change
+      - "experimental_features": subject to change
+      - "deprecated_features": scheduled for removal
+      - "beta_features": new and evolving
+
+  - name: changelog_summary
+    type: custom
+    target: changelog
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a human-readable changelog summary.
+      
+      Summarize:
+      1. Latest version highlights
+      2. Migration effort for recent changes
+      3. Security fixes (priority upgrades)
+      4. Performance improvements
+      5. New feature highlights
+      
+      Output JSON with:
+      - "latest_highlights": what's new in latest version
+      - "upgrade_guides": version-to-version migration help
+      - "security_notices": critical security updates
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: api-evolution
+    has_versioning_info: true

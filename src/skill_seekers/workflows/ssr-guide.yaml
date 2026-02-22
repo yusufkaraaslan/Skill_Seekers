@@ -1,0 +1,97 @@
+name: ssr-guide
+description: Document server-side rendering patterns and setup
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: ssr_architecture
+    type: custom
+    target: ssr_arch
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document the SSR architecture and framework setup.
+      
+      Identify:
+      1. SSR framework used (Next.js, Nuxt, SvelteKit, etc.)
+      2. Rendering strategies (SSR, SSG, ISR)
+      3. Server setup and configuration
+      4. Routing with SSR
+      
+      Output JSON with:
+      - "framework": SSR solution
+      - "strategies": rendering modes used
+      - "server_config": server setup
+      - "routing": SSR routing patterns
+
+  - name: data_fetching
+    type: custom
+    target: data_fetch
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document data fetching in SSR context.
+      
+      Cover:
+      1. Server-side data fetching patterns
+      2. Client vs server data fetching
+      3. Hydration and data serialization
+      4. Loading states and streaming
+      5. Error handling on server
+      
+      Output JSON with:
+      - "server_fetching": data fetch on server
+      - "hydration": client hydration patterns
+      - "streaming": streaming SSR
+      - "error_handling": server error strategies
+
+  - name: hydration_patterns
+    type: custom
+    target: hydration
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document hydration patterns and pitfalls.
+      
+      Include:
+      1. Hydration mismatch causes and fixes
+      2. Browser-only code handling
+      3. Lazy hydration strategies
+      4. Progressive hydration
+      5. Hydration debugging
+      
+      Output JSON with:
+      - "mismatch_fixes": resolving mismatches
+      - "browser_only": handling window/document
+      - "lazy_hydration": selective hydration
+      - "debugging": debugging tips
+
+  - name: ssr_optimization
+    type: custom
+    target: ssr_opt
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document SSR performance optimization.
+      
+      Cover:
+      1. Bundle splitting for SSR
+      2. Critical CSS extraction
+      3. Preloading and prefetching
+      4. Edge rendering (CDN)
+      5. Caching strategies
+      
+      Output JSON with:
+      - "bundle_splitting": code splitting for SSR
+      - "critical_css": CSS optimization
+      - "preloading": resource hints
+      - "edge_rendering": edge/cdn rendering
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: ssr-guide
+    domain: frontend

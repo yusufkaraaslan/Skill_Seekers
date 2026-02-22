@@ -1,0 +1,98 @@
+name: testing-focus
+description: Generate comprehensive testing documentation and examples
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+  test_framework: auto-detect
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: testing_strategy
+    type: custom
+    target: testing_strategy
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze this codebase and create a comprehensive testing strategy.
+      
+      Include:
+      1. Test pyramid recommendations (unit/integration/e2e ratios)
+      2. Testing frameworks best suited for this codebase
+      3. Critical paths that MUST be tested
+      4. Test organization recommendations
+      
+      Output JSON with:
+      - "test_strategy": overall approach
+      - "framework_recommendations": array of suggested frameworks
+      - "critical_paths": array of high-priority test areas
+      - "pyramid_ratios": {unit, integration, e2e} percentages
+
+  - name: test_examples
+    type: custom
+    target: test_examples
+    uses_history: true
+    enabled: true
+    prompt: >
+      Based on the patterns and testing strategy, create practical test examples.
+      
+      For each major component/pattern:
+      1. Unit test example (isolated, fast)
+      2. Integration test example (with dependencies)
+      3. Edge case tests (boundary conditions, errors)
+      
+      Include mocking examples for external dependencies.
+      
+      Output JSON with "test_examples" array, each having:
+      - component, test_type, code, description
+
+  - name: mocking_guide
+    type: custom
+    target: mocking
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a comprehensive mocking guide for this codebase.
+      
+      Document:
+      1. External dependencies that should be mocked
+      2. Mocking patterns for each type (API calls, database, file system)
+      3. Fixture setup and teardown best practices
+      4. Common mocking pitfalls to avoid
+      
+      Output JSON with:
+      - "mockable_dependencies": array of items to mock
+      - "mocking_patterns": array of patterns with code examples
+      - "fixtures": recommended fixture structure
+
+  - name: coverage_analysis
+    type: custom
+    target: coverage
+    uses_history: true
+    enabled: true
+    prompt: >
+      Analyze what parts of the codebase should have priority for test coverage.
+      
+      Identify:
+      1. Business-critical logic needing 100% coverage
+      2. Complex algorithms that are hard to test
+      3. Integration points requiring contract tests
+      4. Low-priority areas (boilerplate, configs)
+      
+      Output JSON with:
+      - "high_priority": areas needing immediate coverage
+      - "medium_priority": nice-to-have coverage
+      - "challenging_areas": complex parts with testing recommendations
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: testing-focus
+    has_testing_guide: true

@@ -102,9 +102,9 @@ class TestInstallSkillE2E:
 
         # Mock the subprocess calls for scraping and enhancement
         with (
-            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
-            patch("skill_seekers.mcp.server.package_skill_tool") as mock_package,
+            patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.tools.packaging_tools.package_skill_tool") as mock_package,
         ):
             # Mock scrape_docs to return success
             mock_scrape.return_value = [
@@ -164,10 +164,10 @@ class TestInstallSkillE2E:
         """E2E test: config_name mode with fetch phase"""
 
         with (
-            patch("skill_seekers.mcp.server.fetch_config_tool") as mock_fetch,
-            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
-            patch("skill_seekers.mcp.server.package_skill_tool") as mock_package,
+            patch("skill_seekers.mcp.tools.source_tools.fetch_config_tool") as mock_fetch,
+            patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.tools.packaging_tools.package_skill_tool") as mock_package,
             patch("builtins.open", create=True) as mock_file_open,
             patch("os.environ.get") as mock_env,
         ):
@@ -259,7 +259,7 @@ class TestInstallSkillE2E:
     async def test_e2e_error_handling_scrape_failure(self, test_config_file):
         """E2E test: error handling when scrape fails"""
 
-        with patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape:
+        with patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape:
             # Mock scrape failure
             mock_scrape.return_value = [
                 TextContent(type="text", text="❌ Scraping failed: Network timeout")
@@ -282,8 +282,8 @@ class TestInstallSkillE2E:
         """E2E test: error handling when enhancement fails"""
 
         with (
-            patch("skill_seekers.mcp.server.scrape_docs_tool") as mock_scrape,
-            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool") as mock_scrape,
+            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
         ):
             # Mock successful scrape
             mock_scrape.return_value = [
@@ -384,9 +384,9 @@ class TestInstallSkillCLI_E2E:
         assert "--no-upload" in output
 
     @pytest.mark.asyncio
-    @patch("skill_seekers.mcp.server.scrape_docs_tool")
-    @patch("skill_seekers.mcp.server.run_subprocess_with_streaming")
-    @patch("skill_seekers.mcp.server.package_skill_tool")
+    @patch("skill_seekers.mcp.tools.scraping_tools.scrape_docs_tool")
+    @patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming")
+    @patch("skill_seekers.mcp.tools.packaging_tools.package_skill_tool")
     async def test_cli_full_workflow_mocked(
         self, mock_package, mock_enhance, mock_scrape, test_config_file, tmp_path
     ):
@@ -423,16 +423,8 @@ class TestInstallSkillCLI_E2E:
         assert "Enhancement" in output or "MANDATORY" in output
         assert "WORKFLOW COMPLETE" in output or "✅" in output
 
-    @pytest.mark.skip(
-        reason="Subprocess-based CLI test has asyncio issues; functionality tested in test_cli_full_workflow_mocked"
-    )
     def test_cli_via_unified_command(self, test_config_file):
-        """E2E test: Using 'skill-seekers install' unified CLI
-
-        Note: Skipped because subprocess execution has asyncio.run() issues.
-        The functionality is already tested in test_cli_full_workflow_mocked
-        via direct function calls.
-        """
+        """E2E test: Using 'skill-seekers install' unified CLI (dry-run mode)."""
 
         # Test the unified CLI entry point
         result = subprocess.run(
@@ -442,10 +434,11 @@ class TestInstallSkillCLI_E2E:
             timeout=30,
         )
 
-        # Should work if command is available
-        assert result.returncode == 0 or "DRY RUN" in result.stdout, (
+        # Should succeed and show dry-run output
+        assert result.returncode == 0, (
             f"Unified CLI failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         )
+        assert "DRY RUN" in result.stdout
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
@@ -460,16 +453,21 @@ class TestInstallSkillE2E_RealFiles:
         if test_config_path.exists():
             return str(test_config_path.absolute())
 
-        # Fallback: create minimal config
+        # Fallback: create minimal config (new unified format with sources array)
         config = {
             "name": "test-real-e2e",
             "description": "Real E2E test",
-            "base_url": "https://httpbin.org/html",  # Simple HTML endpoint
-            "selectors": {"main_content": "body", "title": "title", "code_blocks": "code"},
-            "url_patterns": {"include": [], "exclude": []},
-            "categories": {},
-            "rate_limit": 0.5,
-            "max_pages": 1,  # Just one page for speed
+            "sources": [
+                {
+                    "type": "documentation",
+                    "base_url": "https://httpbin.org/html",  # Simple HTML endpoint
+                    "selectors": {"main_content": "body", "title": "title", "code_blocks": "code"},
+                    "url_patterns": {"include": [], "exclude": []},
+                    "categories": {},
+                    "rate_limit": 0.5,
+                    "max_pages": 1,  # Just one page for speed
+                }
+            ],
         }
 
         config_path = tmp_path / "test-real-e2e.json"
@@ -485,8 +483,8 @@ class TestInstallSkillE2E_RealFiles:
 
         # Only mock enhancement and upload (let scraping run for real)
         with (
-            patch("skill_seekers.mcp.server.run_subprocess_with_streaming") as mock_enhance,
-            patch("skill_seekers.mcp.server.upload_skill_tool") as mock_upload,
+            patch("skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming") as mock_enhance,
+            patch("skill_seekers.mcp.tools.packaging_tools.upload_skill_tool") as mock_upload,
             patch("os.environ.get") as mock_env,
         ):
             # Mock enhancement (avoid needing Claude Code)

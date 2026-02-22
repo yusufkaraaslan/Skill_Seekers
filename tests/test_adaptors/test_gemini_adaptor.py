@@ -93,7 +93,6 @@ class TestGeminiAdaptor(unittest.TestCase):
                 # Should have references
                 self.assertTrue(any("references" in name for name in names))
 
-    @unittest.skip("Complex mocking - integration test needed with real API")
     def test_upload_success(self):
         """Test successful upload to Gemini - skipped (needs real API for integration test)"""
         pass
@@ -123,7 +122,6 @@ class TestGeminiAdaptor(unittest.TestCase):
             self.assertFalse(result["success"])
             self.assertIn("not a tar.gz", result["message"].lower())
 
-    @unittest.skip("Complex mocking - integration test needed with real API")
     def test_enhance_success(self):
         """Test successful enhancement - skipped (needs real API for integration test)"""
         pass

@@ -1,0 +1,101 @@
+name: accessibility-a11y
+description: Ensure and document accessibility best practices
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: a11y_audit
+    type: custom
+    target: accessibility_audit
+    uses_history: false
+    enabled: true
+    prompt: >
+      Audit this codebase for accessibility (a11y) compliance.
+      
+      Check for:
+      1. Missing alt text on images
+      2. Form inputs without labels
+      3. Insufficient color contrast
+      4. Missing focus indicators
+      5. Improper heading hierarchy
+      6. Missing skip links
+      7. Non-semantic HTML usage
+      8. Interactive elements without keyboard support
+      
+      Reference WCAG 2.1 AA guidelines.
+      
+      Output JSON with:
+      - "violations": array of issues found
+      - "severity": critical/serious/moderate/minor
+      - "wcag_criterion": relevant WCAG guideline
+      - "remediation": how to fix
+
+  - name: aria_patterns
+    type: custom
+    target: aria
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document proper ARIA usage patterns for this codebase.
+      
+      For each component/pattern:
+      1. Required ARIA attributes
+      2. Roles and their purposes
+      3. State management (aria-expanded, aria-selected, etc.)
+      4. Live regions for dynamic content
+      5. Common ARIA mistakes to avoid
+      
+      Output JSON with:
+      - "aria_patterns": array of patterns
+      - "anti_patterns": common mistakes
+      - "best_practices": recommended approaches
+
+  - name: keyboard_navigation
+    type: custom
+    target: keyboard
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document keyboard accessibility requirements.
+      
+      Include:
+      1. Tab order and focus management
+      2. Keyboard shortcuts (and how to make them discoverable)
+      3. Focus trapping for modals/dropdowns
+      4. Escape key behavior
+      5. Arrow key navigation patterns
+      
+      Output JSON with:
+      - "tab_order": expected navigation flow
+      - "shortcuts": keyboard shortcuts
+      - "focus_management": focus handling code
+      - "testing": how to test keyboard navigation
+
+  - name: screen_reader_support
+    type: custom
+    target: screen_readers
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document screen reader testing and support.
+      
+      Include:
+      1. Screen reader announcements for dynamic content
+      2. Alternative text strategies
+      3. Complex component descriptions
+      4. Testing with NVDA, JAWS, VoiceOver
+      5. Common screen reader quirks
+      
+      Output JSON with:
+      - "announcement_patterns": how to announce changes
+      - "testing_guide": screen reader testing steps
+      - "compatibility": known issues with specific readers
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: accessibility-a11y
+    has_a11y_docs: true

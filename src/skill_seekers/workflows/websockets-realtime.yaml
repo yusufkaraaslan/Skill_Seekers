@@ -1,0 +1,162 @@
+name: websockets-realtime
+description: Document WebSocket implementation and real-time communication patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+  protocol: auto-detect
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: websocket_architecture
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the WebSocket/real-time architecture in this codebase.
+      
+      Identify:
+      1. WebSocket library/framework used (Socket.io, ws, native WebSocket, etc.)
+      2. Connection lifecycle management (connect, reconnect, disconnect)
+      3. Message protocol and structure
+      4. Authentication over WebSocket (JWT, session cookies)
+      5. Scalability approach (Redis adapter, sticky sessions)
+      6. Fallback mechanisms (long-polling, SSE)
+      
+      Output JSON with:
+      - "library": WebSocket library and version
+      - "connection_mgmt": connection handling strategy
+      - "message_protocol": message format and structure
+      - "auth_strategy": authentication mechanism
+      - "scalability": scaling approach for multiple servers
+      - "fallbacks": fallback transport methods
+
+  - name: room_channel_patterns
+    type: custom
+    target: rooms
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document room/channel management patterns.
+      
+      Cover:
+      1. Room/channel naming conventions
+      2. Join/leave room patterns
+      3. Private vs public rooms
+      4. Room authorization (who can join)
+      5. Broadcasting strategies (room, namespace, global)
+      6. Presence tracking (who's online)
+      
+      Output JSON with:
+      - "naming_conventions": room naming patterns
+      - "join_leave": room membership management
+      - "authorization": room access control
+      - "broadcasting": message broadcasting patterns
+      - "presence": online status tracking
+
+  - name: message_handling
+    type: custom
+    target: messages
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document message handling and event patterns.
+      
+      Include:
+      1. Message event naming conventions
+      2. Acknowledgment patterns (request/response)
+      3. Message validation schemas
+      4. Error handling in WebSocket context
+      5. Binary data handling (if applicable)
+      6. Message ordering and delivery guarantees
+      
+      Output JSON with:
+      - "event_naming": naming conventions
+      - "ack_patterns": acknowledgment/response patterns
+      - "validation": message validation approach
+      - "error_handling": error propagation
+      - "delivery_guarantees": at-least-once, exactly-once, etc.
+
+  - name: client_implementation
+    type: custom
+    target: client
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document client-side WebSocket implementation.
+      
+      Cover:
+      1. Connection initialization
+      2. Reconnection strategies (exponential backoff, max retries)
+      3. Connection state management (Redux, Context, etc.)
+      4. Subscription/unsubscription patterns
+      5. Handling disconnections gracefully
+      6. React hooks or framework-specific patterns
+      
+      Output JSON with:
+      - "initialization": client connection setup
+      - "reconnection": reconnection strategy
+      - "state_mgmt": connection state management
+      - "subscriptions": subscribe/unsubscribe patterns
+      - "framework_patterns": React/Vue/Angular specific code
+
+  - name: performance_scaling
+    type: custom
+    target: scaling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document WebSocket performance and scaling considerations.
+      
+      Include:
+      1. Connection limits per server
+      2. Memory usage per connection
+      3. Message batching strategies
+      4. Heartbeat/ping-pong configuration
+      5. Load balancing with WebSockets
+      6. Monitoring connection metrics
+      
+      Output JSON with:
+      - "connection_limits": server capacity
+      - "memory_profile": memory considerations
+      - "batching": message batching approach
+      - "heartbeats": keepalive configuration
+      - "load_balancing": LB strategy
+      - "monitoring": key metrics to track
+
+  - name: testing_debugging
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document WebSocket testing and debugging strategies.
+      
+      Cover:
+      1. Unit testing WebSocket handlers
+      2. Integration testing real-time features
+      3. Load testing concurrent connections
+      4. Debugging tools (browser DevTools, Wireshark)
+      5. Logging WebSocket events
+      
+      Output JSON with:
+      - "unit_tests": testing individual handlers
+      - "integration_tests": end-to-end testing
+      - "load_testing": concurrent connection testing
+      - "debugging": debugging techniques
+      - "logging": event logging strategy
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: websockets-realtime
+    domain: backend
+    has_realtime_docs: true

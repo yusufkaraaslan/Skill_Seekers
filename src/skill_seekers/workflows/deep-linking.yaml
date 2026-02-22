@@ -1,0 +1,142 @@
+name: deep-linking
+description: Document mobile deep linking, universal links, and app scheme routing
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: deep_link_types
+    type: custom
+    target: types
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the deep linking implementation types.
+      
+      Identify:
+      1. URL scheme deep links (myapp://)
+      2. Universal Links (iOS)
+      3. Android App Links
+      4. Deferred deep links (branch.io, etc.)
+      5. Firebase Dynamic Links (if applicable)
+      6. Custom domain configuration
+      
+      Output JSON with:
+      - "url_schemes": custom scheme setup
+      - "universal_links": iOS universal links
+      - "app_links": Android app links
+      - "deferred_links": deferred deep linking
+      - "dynamic_links": Firebase setup
+      - "domain_config": domain verification
+
+  - name: link_handling
+    type: custom
+    target: handling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document deep link handling in app.
+      
+      Cover:
+      1. Link parsing and routing
+      2. Navigation to specific screens
+      3. Pass-through parameters
+      4. Authentication state handling
+      5. Fallback behavior (web vs app)
+      6. Link validation and security
+      
+      Output JSON with:
+      - "parsing": link parsing logic
+      - "routing": screen navigation
+      - "parameters": data extraction
+      - "auth_handling": auth state
+      - "fallbacks": fallback behavior
+      - "security": link validation
+
+  - name: platform_setup
+    type: custom
+    target: platform
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document platform-specific setup.
+      
+      Include:
+      1. iOS entitlements configuration
+      2. iOS associated domains
+      3. Android intent filters
+      4. Android asset links verification
+      5. Info.plist modifications
+      6. AndroidManifest.xml changes
+      
+      Output JSON with:
+      - "ios_entitlements": iOS setup
+      - "ios_domains": associated domains
+      - "android_intents": intent filters
+      - "android_assetlinks": verification
+      - "info_plist": plist config
+      - "manifest": Android manifest
+
+  - name: marketing_analytics
+    type: custom
+    target: analytics
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document deep link analytics and attribution.
+      
+      Cover:
+      1. Link click tracking
+      2. Attribution source capture
+      3. Campaign parameter handling
+      4. Conversion tracking
+      5. User journey analysis
+      6. A/B testing via deep links
+      
+      Output JSON with:
+      - "click_tracking": tracking clicks
+      - "attribution": source tracking
+      - "campaigns": UTM parameters
+      - "conversions": conversion events
+      - "journey_analysis": user flows
+      - "ab_testing": link-based testing
+
+  - name: testing_deeplinks
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document deep link testing strategies.
+      
+      Include:
+      1. Simulator/emulator testing
+      2. Real device testing
+      3. ADB and xcrun commands
+      4. Testing deferred links
+      5. Platform edge cases
+      6. Automated testing
+      
+      Output JSON with:
+      - "simulator_testing": emulator tests
+      - "device_testing": real device
+      - "cli_commands": ADB/xcrun
+      - "deferred_testing": deferred link tests
+      - "edge_cases": platform quirks
+      - "automation": automated tests
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: deep-linking
+    domain: mobile
+    has_deep_link_docs: true

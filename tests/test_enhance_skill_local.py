@@ -1,6 +1,12 @@
+import json
+import os
+import threading
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from skill_seekers.cli.enhance_skill_local import AGENT_PRESETS, LocalSkillEnhancer
+from skill_seekers.cli.enhance_skill_local import AGENT_PRESETS, LocalSkillEnhancer, detect_terminal_app
 
 
 def _make_skill_dir(tmp_path):
@@ -161,3 +167,430 @@ class TestMultiAgentSupport:
                 agent="custom",
                 agent_cmd="missing-agent {prompt_file}",
             )
+
+
+# ---------------------------------------------------------------------------
+# Helpers shared by new test classes
+# ---------------------------------------------------------------------------
+
+
+def _make_skill_dir_with_refs(tmp_path, ref_content="# Ref\nSome reference content.\n"):
+    """Create a skill dir with SKILL.md and one reference file."""
+    skill_dir = tmp_path / "my_skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text("# My Skill\nInitial content.", encoding="utf-8")
+    refs_dir = skill_dir / "references"
+    refs_dir.mkdir()
+    (refs_dir / "api.md").write_text(ref_content, encoding="utf-8")
+    return skill_dir
+
+
+# ---------------------------------------------------------------------------
+# detect_terminal_app
+# ---------------------------------------------------------------------------
+
+
+class TestDetectTerminalApp:
+    def test_skill_seeker_terminal_takes_priority(self, monkeypatch):
+        monkeypatch.setenv("SKILL_SEEKER_TERMINAL", "Ghostty")
+        monkeypatch.delenv("TERM_PROGRAM", raising=False)
+        terminal, method = detect_terminal_app()
+        assert terminal == "Ghostty"
+        assert method == "SKILL_SEEKER_TERMINAL"
+
+    def test_term_program_iterm_mapped(self, monkeypatch):
+        monkeypatch.delenv("SKILL_SEEKER_TERMINAL", raising=False)
+        monkeypatch.setenv("TERM_PROGRAM", "iTerm.app")
+        terminal, method = detect_terminal_app()
+        assert terminal == "iTerm"
+        assert method == "TERM_PROGRAM"
+
+    def test_term_program_apple_terminal_mapped(self, monkeypatch):
+        monkeypatch.delenv("SKILL_SEEKER_TERMINAL", raising=False)
+        monkeypatch.setenv("TERM_PROGRAM", "Apple_Terminal")
+        terminal, method = detect_terminal_app()
+        assert terminal == "Terminal"
+
+    def test_term_program_ghostty_mapped(self, monkeypatch):
+        monkeypatch.delenv("SKILL_SEEKER_TERMINAL", raising=False)
+        monkeypatch.setenv("TERM_PROGRAM", "ghostty")
+        terminal, method = detect_terminal_app()
+        assert terminal == "Ghostty"
+
+    def test_unknown_term_program_falls_back_to_terminal(self, monkeypatch):
+        monkeypatch.delenv("SKILL_SEEKER_TERMINAL", raising=False)
+        monkeypatch.setenv("TERM_PROGRAM", "some-unknown-terminal")
+        terminal, method = detect_terminal_app()
+        assert terminal == "Terminal"
+        assert "unknown" in method
+
+    def test_no_env_defaults_to_terminal(self, monkeypatch):
+        monkeypatch.delenv("SKILL_SEEKER_TERMINAL", raising=False)
+        monkeypatch.delenv("TERM_PROGRAM", raising=False)
+        terminal, method = detect_terminal_app()
+        assert terminal == "Terminal"
+        assert method == "default"
+
+    def test_skill_seeker_overrides_term_program(self, monkeypatch):
+        monkeypatch.setenv("SKILL_SEEKER_TERMINAL", "WezTerm")
+        monkeypatch.setenv("TERM_PROGRAM", "Apple_Terminal")
+        terminal, method = detect_terminal_app()
+        assert terminal == "WezTerm"
+        assert method == "SKILL_SEEKER_TERMINAL"
+
+
+# ---------------------------------------------------------------------------
+# write_status / read_status
+# ---------------------------------------------------------------------------
+
+
+class TestStatusReadWrite:
+    def test_write_and_read_status(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.write_status("running", message="In progress", progress=0.5)
+        data = enhancer.read_status()
+
+        assert data is not None
+        assert data["status"] == "running"
+        assert data["message"] == "In progress"
+        assert data["progress"] == 0.5
+        assert data["skill_dir"] == str(skill_dir)
+
+    def test_write_status_creates_file(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.write_status("pending")
+        assert enhancer.status_file.exists()
+
+    def test_read_status_returns_none_if_no_file(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+        assert enhancer.read_status() is None
+
+    def test_write_status_includes_timestamp(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.write_status("completed")
+        data = enhancer.read_status()
+        assert "timestamp" in data
+        assert data["timestamp"]  # non-empty
+
+    def test_write_status_error_field(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.write_status("failed", error="Something went wrong")
+        data = enhancer.read_status()
+        assert data["status"] == "failed"
+        assert data["error"] == "Something went wrong"
+
+    def test_read_status_returns_none_on_corrupt_file(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.status_file.write_text("{not valid json}", encoding="utf-8")
+        assert enhancer.read_status() is None
+
+    def test_multiple_writes_last_wins(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+
+        enhancer.write_status("pending")
+        enhancer.write_status("running")
+        enhancer.write_status("completed")
+
+        data = enhancer.read_status()
+        assert data["status"] == "completed"
+
+
+# ---------------------------------------------------------------------------
+# summarize_reference
+# ---------------------------------------------------------------------------
+
+
+class TestSummarizeReference:
+    def _enhancer(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        return LocalSkillEnhancer(skill_dir)
+
+    def test_short_content_unchanged_intro(self, tmp_path):
+        """Very short content - intro lines == all lines."""
+        enhancer = self._enhancer(tmp_path)
+        content = "Line 1\nLine 2\nLine 3\n"
+        result = enhancer.summarize_reference(content, target_ratio=0.3)
+        # Should still produce something
+        assert result
+        assert "intelligently summarized" in result.lower()
+
+    def test_extracts_code_blocks(self, tmp_path):
+        enhancer = self._enhancer(tmp_path)
+        content = "\n".join(["Intro line"] * 20) + "\n"
+        content += "```python\nprint('hello')\n```\n"
+        content += "\n".join(["Other line"] * 20)
+        result = enhancer.summarize_reference(content)
+        assert "```python" in result
+        assert "print('hello')" in result
+
+    def test_preserves_headings(self, tmp_path):
+        enhancer = self._enhancer(tmp_path)
+        content = "\n".join(["Intro line"] * 20) + "\n"
+        content += "## My Heading\n\nFirst paragraph.\nSecond paragraph.\n"
+        content += "\n".join(["Other line"] * 20)
+        result = enhancer.summarize_reference(content)
+        assert "## My Heading" in result
+
+    def test_adds_truncation_notice(self, tmp_path):
+        enhancer = self._enhancer(tmp_path)
+        content = "Some content line\n" * 100
+        result = enhancer.summarize_reference(content)
+        assert "intelligently summarized" in result.lower()
+
+    def test_target_ratio_applied(self, tmp_path):
+        enhancer = self._enhancer(tmp_path)
+        content = "A line of content.\n" * 500
+        result = enhancer.summarize_reference(content, target_ratio=0.1)
+        # Result should be significantly shorter than original
+        assert len(result) < len(content)
+
+    def test_code_blocks_capped_at_five(self, tmp_path):
+        enhancer = self._enhancer(tmp_path)
+        content = "\n".join(["Intro line"] * 20) + "\n"
+        for i in range(10):
+            content += f"```python\ncode_block_{i}()\n```\n"
+        result = enhancer.summarize_reference(content)
+        # Should have at most 5 code blocks
+        assert result.count("```python") <= 5
+
+
+# ---------------------------------------------------------------------------
+# create_enhancement_prompt
+# ---------------------------------------------------------------------------
+
+
+class TestCreateEnhancementPrompt:
+    def test_returns_string_with_references(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt()
+        assert prompt is not None
+        assert isinstance(prompt, str)
+        assert len(prompt) > 100
+
+    def test_prompt_contains_skill_name(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt()
+        assert skill_dir.name in prompt
+
+    def test_prompt_contains_current_skill_md(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        (skill_dir / "SKILL.md").write_text("# ExistingContent MARKER", encoding="utf-8")
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt()
+        assert "ExistingContent MARKER" in prompt
+
+    def test_prompt_contains_reference_content(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path, ref_content="UNIQUE_REF_MARKER\n")
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt()
+        assert "UNIQUE_REF_MARKER" in prompt
+
+    def test_returns_none_when_no_references(self, tmp_path):
+        """If there are no reference files, create_enhancement_prompt returns None."""
+        skill_dir = tmp_path / "empty_skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Empty", encoding="utf-8")
+        # No references dir at all
+        enhancer = LocalSkillEnhancer(skill_dir)
+        result = enhancer.create_enhancement_prompt()
+        assert result is None
+
+    def test_summarization_applied_when_requested(self, tmp_path):
+        """When use_summarization=True, result should be smaller (or contain marker)."""
+        # Create very large reference content
+        big_content = ("Reference line with lots of content.\n") * 1000
+        skill_dir = _make_skill_dir_with_refs(tmp_path, ref_content=big_content)
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt(use_summarization=True)
+        assert prompt is not None
+        # Summarization should have kicked in
+        assert "intelligently summarized" in prompt.lower()
+
+    def test_prompt_includes_task_instructions(self, tmp_path):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir)
+        prompt = enhancer.create_enhancement_prompt()
+        assert "SKILL.md" in prompt
+        # Should have save instructions
+        assert "SAVE" in prompt.upper() or "write" in prompt.lower()
+
+
+# ---------------------------------------------------------------------------
+# _run_headless — mocked subprocess
+# ---------------------------------------------------------------------------
+
+
+class TestRunHeadless:
+    def _make_skill_with_md(self, tmp_path, md_content="# Original\nInitial."):
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        (skill_dir / "SKILL.md").write_text(md_content, encoding="utf-8")
+        return skill_dir
+
+    def test_returns_false_when_agent_not_found(self, tmp_path):
+        """FileNotFoundError → returns False."""
+        skill_dir = self._make_skill_with_md(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        with patch.object(enhancer, "_run_agent_command", return_value=(None, "Command not found: claude")):
+            result = enhancer._run_headless(str(tmp_path / "prompt.txt"), timeout=10)
+        assert result is False
+
+    def test_returns_false_on_nonzero_exit(self, tmp_path):
+        skill_dir = self._make_skill_with_md(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = "some error"
+        mock_result.stdout = ""
+        with patch.object(enhancer, "_run_agent_command", return_value=(mock_result, None)):
+            result = enhancer._run_headless(str(tmp_path / "prompt.txt"), timeout=10)
+        assert result is False
+
+    def test_returns_false_when_skill_md_not_updated(self, tmp_path):
+        """Agent exits 0 but SKILL.md mtime/size unchanged → returns False."""
+        skill_dir = self._make_skill_with_md(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""
+        mock_result.stderr = ""
+        with patch.object(enhancer, "_run_agent_command", return_value=(mock_result, None)):
+            # No change to SKILL.md → should return False
+            result = enhancer._run_headless(str(tmp_path / "prompt.txt"), timeout=10)
+        assert result is False
+
+    def test_returns_true_when_skill_md_updated(self, tmp_path):
+        """Agent exits 0 AND SKILL.md is larger → returns True."""
+        skill_dir = self._make_skill_with_md(tmp_path, md_content="# Short")
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""
+        mock_result.stderr = ""
+
+        def _fake_run(prompt_file, timeout, include_permissions_flag, quiet=False):
+            # Simulate agent updating SKILL.md with more content
+            import time
+            time.sleep(0.01)
+            (skill_dir / "SKILL.md").write_text(
+                "# Enhanced\n" + "A" * 500, encoding="utf-8"
+            )
+            return mock_result, None
+
+        with patch.object(enhancer, "_run_agent_command", side_effect=_fake_run):
+            result = enhancer._run_headless(str(tmp_path / "prompt.txt"), timeout=10)
+        assert result is True
+
+
+# ---------------------------------------------------------------------------
+# run() orchestration
+# ---------------------------------------------------------------------------
+
+
+class TestRunOrchestration:
+    def test_run_returns_false_for_missing_skill_dir(self, tmp_path):
+        nonexistent = tmp_path / "does_not_exist"
+        enhancer = LocalSkillEnhancer(nonexistent, agent="claude")
+        result = enhancer.run(headless=True, timeout=5)
+        assert result is False
+
+    def test_run_returns_false_when_no_references(self, tmp_path):
+        skill_dir = tmp_path / "empty_skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Empty", encoding="utf-8")
+        # No references dir
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+        result = enhancer.run(headless=True, timeout=5)
+        assert result is False
+
+    def test_run_delegates_to_background(self, tmp_path):
+        """run(background=True) should delegate to _run_background."""
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        with patch.object(enhancer, "_run_background", return_value=True) as mock_bg:
+            result = enhancer.run(background=True, timeout=5)
+        mock_bg.assert_called_once()
+        assert result is True
+
+    def test_run_delegates_to_daemon(self, tmp_path):
+        """run(daemon=True) should delegate to _run_daemon."""
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        with patch.object(enhancer, "_run_daemon", return_value=True) as mock_dm:
+            result = enhancer.run(daemon=True, timeout=5)
+        mock_dm.assert_called_once()
+        assert result is True
+
+    def test_run_calls_run_headless_in_headless_mode(self, tmp_path):
+        """run(headless=True) should ultimately call _run_headless."""
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        with patch.object(enhancer, "_run_headless", return_value=True) as mock_hl:
+            result = enhancer.run(headless=True, timeout=5)
+        mock_hl.assert_called_once()
+        assert result is True
+
+
+# ---------------------------------------------------------------------------
+# _run_background status transitions
+# ---------------------------------------------------------------------------
+
+
+class TestRunBackground:
+    def test_background_writes_pending_status(self, tmp_path):
+        """_run_background writes 'pending' status before spawning thread."""
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        # Patch _run_headless so the thread finishes quickly without real subprocess
+        with patch.object(enhancer, "_run_headless", return_value=True):
+            enhancer._run_background(headless=True, timeout=5)
+
+        # Give background thread a moment
+        import time
+        time.sleep(0.1)
+
+        # Status file should exist (written by the worker)
+        data = enhancer.read_status()
+        assert data is not None
+
+    def test_background_returns_true_immediately(self, tmp_path):
+        """_run_background should return True after starting thread, not after completion."""
+        skill_dir = _make_skill_dir_with_refs(tmp_path)
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        # Delay the headless run to confirm we don't block
+        import time
+
+        def _slow_run(*args, **kwargs):
+            time.sleep(0.5)
+            return True
+
+        with patch.object(enhancer, "_run_headless", side_effect=_slow_run):
+            start = time.time()
+            result = enhancer._run_background(headless=True, timeout=10)
+            elapsed = time.time() - start
+
+        # Should have returned quickly (not waited for the slow thread)
+        assert result is True
+        assert elapsed < 0.4, f"_run_background took {elapsed:.2f}s - should return immediately"

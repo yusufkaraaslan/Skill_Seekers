@@ -1,0 +1,191 @@
+name: aws-services
+description: Document AWS service integration and best practices
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: aws_overview
+    type: custom
+    target: overview
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze AWS service usage in this codebase.
+      
+      Identify:
+      1. AWS SDK version and configuration
+      2. AWS region configuration
+      3. Authentication methods (IAM roles, access keys, SSO)
+      4. Services used (S3, DynamoDB, Lambda, etc.)
+      5. Multi-region vs single-region setup
+      6. AWS Organizations/Accounts structure
+      
+      Output JSON with:
+      - "sdk_version": AWS SDK details
+      - "region_config": region setup
+      - "authentication": auth methods
+      - "services": list of services used
+      - "topology": deployment topology
+
+  - name: compute_services
+    type: custom
+    target: compute
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS compute service integration.
+      
+      Cover:
+      1. EC2/ECS/EKS usage (if applicable)
+      2. Lambda function configuration
+      3. Auto Scaling configuration
+      4. Load balancer setup (ALB, NLB)
+      5. Container registry (ECR)
+      6. Compute optimization
+      
+      Output JSON with:
+      - "ec2_ecs_eks": container/compute setup
+      - "lambda": function configuration
+      - "autoscaling": scaling policies
+      - "load_balancers": LB configuration
+      - "ecr": container registry
+      - "optimization": cost/performance
+
+  - name: storage_services
+    type: custom
+    target: storage
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS storage service integration.
+      
+      Include:
+      1. S3 bucket configuration and policies
+      2. S3 storage classes usage
+      3. DynamoDB table design
+      4. RDS/Aurora configuration
+      5. ElastiCache (Redis/Memcached)
+      6. EFS usage (if applicable)
+      
+      Output JSON with:
+      - "s3": S3 configuration
+      - "s3_lifecycle": storage lifecycle
+      - "dynamodb": table design
+      - "rds": relational database
+      - "elasticache": caching setup
+      - "efs": file storage
+
+  - name: networking_security
+    type: custom
+    target: networking
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS networking and security configuration.
+      
+      Cover:
+      1. VPC and subnet configuration
+      2. Security groups and NACLs
+      3. IAM roles and policies
+      4. Secrets Manager usage
+      5. KMS encryption configuration
+      6. CloudFront distribution
+      7. WAF and Shield
+      
+      Output JSON with:
+      - "vpc": network setup
+      - "security_groups": firewall rules
+      - "iam": identity management
+      - "secrets": secret storage
+      - "kms": encryption keys
+      - "cloudfront": CDN config
+      - "waf": web application firewall
+
+  - name: integration_services
+    type: custom
+    target: integration
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS integration and messaging services.
+      
+      Include:
+      1. API Gateway configuration
+      2. SQS queue setup
+      3. SNS topic configuration
+      4. EventBridge rules
+      5. Step Functions workflows
+      6. AppSync (if using GraphQL)
+      
+      Output JSON with:
+      - "api_gateway": API management
+      - "sqs": message queuing
+      - "sns": notifications
+      - "eventbridge": event routing
+      - "step_functions": workflows
+      - "appsync": GraphQL API
+
+  - name: monitoring_services
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS monitoring and observability.
+      
+      Cover:
+      1. CloudWatch metrics and logs
+      2. CloudWatch alarms
+      3. X-Ray distributed tracing
+      4. CloudTrail audit logging
+      5. AWS Config rules
+      6. Cost Explorer and budgets
+      
+      Output JSON with:
+      - "cloudwatch": metrics/logging
+      - "alarms": alerting setup
+      - "xray": distributed tracing
+      - "cloudtrail": audit logs
+      - "config": compliance monitoring
+      - "cost_management": budget tracking
+
+  - name: aws_best_practices
+    type: custom
+    target: best_practices
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document AWS Well-Architected best practices.
+      
+      Include:
+      1. Cost optimization strategies
+      2. Performance efficiency
+      3. Reliability patterns (multi-AZ, backups)
+      4. Security best practices
+      5. Sustainability considerations
+      6. Disaster recovery planning
+      
+      Output JSON with:
+      - "cost_optimization": saving strategies
+      - "performance": efficiency tips
+      - "reliability": HA patterns
+      - "security": security checklist
+      - "sustainability": green practices
+      - "disaster_recovery": DR planning
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: aws-services
+    domain: devops
+    has_aws_docs: true

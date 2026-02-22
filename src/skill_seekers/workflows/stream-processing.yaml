@@ -1,0 +1,142 @@
+name: stream-processing
+description: Document real-time stream processing with Kafka, Flink, and similar
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: streaming_platform
+    type: custom
+    target: platform
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the stream processing platform.
+      
+      Identify:
+      1. Stream platform (Kafka, Kinesis, Pulsar, etc.)
+      2. Processing framework (Flink, Spark Streaming, Kafka Streams)
+      3. Deployment mode (managed, self-hosted)
+      4. Stream topology
+      5. Partitioning strategy
+      6. Schema registry integration
+      
+      Output JSON with:
+      - "stream_platform": message streaming
+      - "processing": processing engine
+      - "deployment": hosting model
+      - "topology": stream layout
+      - "partitioning": partition strategy
+      - "schema_registry": schema management
+
+  - name: processing_patterns
+    type: custom
+    target: processing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document stream processing patterns.
+      
+      Cover:
+      1. Stateless vs stateful processing
+      2. Windowing (tumbling, sliding, session)
+      3. Join patterns (stream-stream, stream-table)
+      4. Aggregations and grouping
+      5. Filter and transformation
+      6. Enrichment patterns
+      
+      Output JSON with:
+      - "state_management": state handling
+      - "windowing": window types
+      - "joins": join strategies
+      - "aggregations": aggregation methods
+      - "transformations": data transforms
+      - "enrichment": data enhancement
+
+  - name: fault_tolerance
+    type: custom
+    target: fault_tolerance
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document stream processing fault tolerance.
+      
+      Include:
+      1. Exactly-once processing semantics
+      2. Checkpointing and savepoints
+      3. State backend configuration
+      4. Failure recovery procedures
+      5. Replay capabilities
+      6. Backpressure handling
+      
+      Output JSON with:
+      - "semantics": processing guarantees
+      - "checkpointing": state snapshots
+      - "state_backend": state storage
+      - "recovery": failure recovery
+      - "replay": message replay
+      - "backpressure": flow control
+
+  - name: stream_monitoring
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document stream processing observability.
+      
+      Cover:
+      1. Lag monitoring
+      2. Throughput metrics
+      3. Processing latency tracking
+      4. Consumer group monitoring
+      5. Watermark tracking
+      6. Alerting on anomalies
+      
+      Output JSON with:
+      - "lag": consumer lag
+      - "throughput": message rate
+      - "latency": processing time
+      - "consumer_groups": group health
+      - "watermarks": event time tracking
+      - "alerting": anomaly alerts
+
+  - name: use_cases
+    type: custom
+    target: use_cases
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document stream processing use cases.
+      
+      Include:
+      1. Real-time analytics
+      2. Event sourcing
+      3. Change Data Capture (CDC)
+      4. Recommendation engines
+      5. Fraud detection
+      6. IoT data processing
+      
+      Output JSON with:
+      - "analytics": real-time analysis
+      - "event_sourcing": event streams
+      - "cdc": data capture
+      - "recommendations": ML inference
+      - "fraud_detection": anomaly detection
+      - "iot": sensor processing
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: stream-processing
+    domain: data
+    has_stream_docs: true

@@ -1,0 +1,122 @@
+name: sdk-integration
+description: Document integration with external services and SDKs
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: auth_setup
+    type: custom
+    target: authentication
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document all authentication methods supported by this SDK.
+      
+      For each auth method:
+      1. When to use it (use case)
+      2. Setup steps
+      3. Code example
+      4. Security best practices
+      5. Common pitfalls
+      
+      Cover:
+      - API keys
+      - OAuth 2.0 flows
+      - JWT tokens
+      - Environment-based auth
+      
+      Output JSON with "auth_methods" array of:
+      {name, use_case, setup_steps[], code_example, security_notes}
+
+  - name: endpoint_documentation
+    type: custom
+    target: endpoints
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document all API endpoints exposed by this SDK.
+      
+      For each endpoint/method:
+      1. Purpose and description
+      2. Required and optional parameters
+      3. Return type and structure
+      4. Possible errors/exceptions
+      5. Usage example
+      
+      Output JSON with "endpoints" array of:
+      {name, description, params[], returns, errors[], example}
+
+  - name: rate_limiting
+    type: custom
+    target: rate_limits
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document rate limiting behavior and best practices.
+      
+      Include:
+      1. Rate limit tiers (free vs paid)
+      2. How limits are enforced
+      3. Headers indicating rate status
+      4. Exponential backoff strategies
+      5. Request batching recommendations
+      
+      Output JSON with:
+      - "rate_limits": tier information
+      - "handling_strategies": code for handling limits
+      - "best_practices": optimization tips
+
+  - name: webhook_handling
+    type: custom
+    target: webhooks
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document webhook integration patterns.
+      
+      Cover:
+      1. Webhook setup and configuration
+      2. Event types and payloads
+      3. Signature verification for security
+      4. Idempotency handling
+      5. Retry logic for failed deliveries
+      
+      Output JSON with:
+      - "webhook_setup": configuration steps
+      - "event_types": supported events
+      - "security": verification code
+      - "handling": webhook handler patterns
+
+  - name: error_handling
+    type: custom
+    target: sdk_errors
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document SDK-specific error handling.
+      
+      Include:
+      1. Exception hierarchy
+      2. Retryable vs non-retryable errors
+      3. Circuit breaker patterns
+      4. Fallback strategies
+      
+      Output JSON with:
+      - "exception_types": error classes
+      - "retry_logic": when and how to retry
+      - "fallbacks": graceful degradation
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: sdk-integration
+    has_sdk_docs: true

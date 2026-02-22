@@ -1,0 +1,166 @@
+name: localization-i18n
+description: Document internationalization, localization, and translation workflows
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: i18n_framework
+    type: custom
+    target: framework
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the internationalization framework setup.
+      
+      Identify:
+      1. i18n library (react-i18next, vue-i18n, FormatJS, etc.)
+      2. Locale detection strategy
+      3. Supported locales and fallback
+      4. Translation file organization
+      5. Formatting (dates, numbers, plurals)
+      6. ICU message format usage
+      
+      Output JSON with:
+      - "library": i18n library and config
+      - "locale_detection": how locale is determined
+      - "supported_locales": language list
+      - "file_organization": translation structure
+      - "formatting": formatting rules
+      - "icu_format": ICU usage
+
+  - name: translation_workflow
+    type: custom
+    target: workflow
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document the translation management workflow.
+      
+      Cover:
+      1. Translation key naming conventions
+      2. Translation management platform (Crowdin, Lokalise, etc.)
+      3. Source string extraction
+      4. Translation file synchronization
+      5. Translation review process
+      6. Missing translation handling
+      
+      Output JSON with:
+      - "key_naming": naming patterns
+      - "tms_platform": translation platform
+      - "extraction": string extraction
+      - "sync": file synchronization
+      - "review": review process
+      - "missing_handling": fallback behavior
+
+  - name: rtl_support
+    type: custom
+    target: rtl
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document RTL (Right-to-Left) language support.
+      
+      Include:
+      1. Layout mirroring strategies
+      2. CSS logical properties usage
+      3. Icon and image flipping
+      4. Text alignment handling
+      5. Bidirectional text support
+      6. Testing RTL layouts
+      
+      Output JSON with:
+      - "layout_mirroring": RTL layout
+      - "logical_properties": CSS approach
+      - "asset_flipping": image handling
+      - "text_alignment": alignment rules
+      - "bidirectional": mixed text
+      - "testing": RTL verification
+
+  - name: formatting_localization
+    type: custom
+    target: formatting
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document locale-specific formatting.
+      
+      Cover:
+      1. Date and time formatting
+      2. Number and currency formatting
+      3. Relative time ("2 hours ago")
+      4. List formatting
+      5. Display names (weekdays, months)
+      6. Collation and sorting
+      
+      Output JSON with:
+      - "dates": date formatting
+      - "numbers": number formatting
+      - "currency": money display
+      - "relative_time": time ago
+      - "lists": list formatting
+      - "sorting": locale sorting
+
+  - name: content_localization
+    type: custom
+    target: content
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document content and feature localization.
+      
+      Include:
+      1. Locale-specific content variations
+      2. Feature flagging by locale
+      3. Image and asset localization
+      4. SEO for multiple locales
+      5. Legal/privacy content localization
+      6. Cultural adaptation considerations
+      
+      Output JSON with:
+      - "content_variations": locale content
+      - "feature_flags": locale features
+      - "asset_localization": images/media
+      - "seo_i18n": multilingual SEO
+      - "legal_content": legal adaptation
+      - "cultural": cultural considerations
+
+  - name: i18n_testing
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document internationalization testing.
+      
+      Cover:
+      1. Pseudo-localization testing
+      2. String length variations
+      3. Hardcoded string detection
+      4. Layout breaking tests
+      5. Translation completeness
+      6. Functional testing per locale
+      
+      Output JSON with:
+      - "pseudo_locale": pseudo-localization
+      - "string_length": length testing
+      - "hardcoded_detection": finding untranslated
+      - "layout_tests": UI breaking
+      - "completeness": coverage checking
+      - "functional": per-locale testing
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: localization-i18n
+    domain: frontend
+    has_i18n_docs: true

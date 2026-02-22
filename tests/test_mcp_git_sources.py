@@ -64,7 +64,7 @@ class TestFetchConfigModes:
         """Test API mode - listing available configs."""
         from skill_seekers.mcp.server import fetch_config_tool
 
-        with patch("skill_seekers.mcp.server.httpx.AsyncClient") as mock_client:
+        with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             # Mock API response
             mock_response = MagicMock()
             mock_response.json.return_value = {
@@ -98,13 +98,14 @@ class TestFetchConfigModes:
         """Test API mode - downloading specific config."""
         from skill_seekers.mcp.server import fetch_config_tool
 
-        with patch("skill_seekers.mcp.server.httpx.AsyncClient") as mock_client:
+        with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             # Mock API responses
             mock_detail_response = MagicMock()
             mock_detail_response.json.return_value = {
                 "name": "react",
                 "category": "web-frameworks",
                 "description": "React framework",
+                "download_url": "https://api.skillseekersweb.com/api/configs/react/download",
             }
 
             mock_download_response = MagicMock()
@@ -127,7 +128,7 @@ class TestFetchConfigModes:
             config_file = temp_dirs["dest"] / "react.json"
             assert config_file.exists()
 
-    @patch("skill_seekers.mcp.server.GitConfigRepo")
+    @patch("skill_seekers.mcp.git_repo.GitConfigRepo")
     async def test_fetch_config_git_url_mode(self, mock_git_repo_class, temp_dirs):
         """Test Git URL mode - direct git clone."""
         from skill_seekers.mcp.server import fetch_config_tool
@@ -164,8 +165,8 @@ class TestFetchConfigModes:
         config_file = temp_dirs["dest"] / "react.json"
         assert config_file.exists()
 
-    @patch("skill_seekers.mcp.server.GitConfigRepo")
-    @patch("skill_seekers.mcp.server.SourceManager")
+    @patch("skill_seekers.mcp.git_repo.GitConfigRepo")
+    @patch("skill_seekers.mcp.source_manager.SourceManager")
     async def test_fetch_config_source_mode(
         self, mock_source_manager_class, mock_git_repo_class, temp_dirs
     ):
@@ -213,7 +214,7 @@ class TestFetchConfigModes:
         """Test error when source doesn't exist."""
         from skill_seekers.mcp.server import fetch_config_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.get_source.side_effect = KeyError("Source 'nonexistent' not found")
             mock_sm_class.return_value = mock_sm
@@ -225,7 +226,7 @@ class TestFetchConfigModes:
             assert "❌" in result[0].text
             assert "not found" in result[0].text
 
-    @patch("skill_seekers.mcp.server.GitConfigRepo")
+    @patch("skill_seekers.mcp.git_repo.GitConfigRepo")
     async def test_fetch_config_config_not_found_in_repo(self, mock_git_repo_class, temp_dirs):
         """Test error when config doesn't exist in repository."""
         from skill_seekers.mcp.server import fetch_config_tool
@@ -249,7 +250,7 @@ class TestFetchConfigModes:
         assert "not found" in result[0].text
         assert "Available configs" in result[0].text
 
-    @patch("skill_seekers.mcp.server.GitConfigRepo")
+    @patch("skill_seekers.mcp.git_repo.GitConfigRepo")
     async def test_fetch_config_invalid_git_url(self, mock_git_repo_class):
         """Test error handling for invalid git URL."""
         from skill_seekers.mcp.server import fetch_config_tool
@@ -272,11 +273,11 @@ class TestFetchConfigModes:
 class TestSourceManagementTools:
     """Test add/list/remove config source tools."""
 
-    async def test_add_config_source(self, _temp_dirs):
+    async def test_add_config_source(self, temp_dirs):
         """Test adding a new config source."""
         from skill_seekers.mcp.server import add_config_source_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.add_source.return_value = {
                 "name": "team",
@@ -329,7 +330,7 @@ class TestSourceManagementTools:
         """Test error when source name is invalid."""
         from skill_seekers.mcp.server import add_config_source_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.add_source.side_effect = ValueError(
                 "Invalid source name 'team@company'. Must be alphanumeric with optional hyphens/underscores."
@@ -347,7 +348,7 @@ class TestSourceManagementTools:
         """Test listing config sources."""
         from skill_seekers.mcp.server import list_config_sources_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.list_sources.return_value = [
                 {
@@ -386,7 +387,7 @@ class TestSourceManagementTools:
         """Test listing when no sources registered."""
         from skill_seekers.mcp.server import list_config_sources_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.list_sources.return_value = []
             mock_sm_class.return_value = mock_sm
@@ -401,7 +402,7 @@ class TestSourceManagementTools:
         """Test listing only enabled sources."""
         from skill_seekers.mcp.server import list_config_sources_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.list_sources.return_value = [
                 {
@@ -430,7 +431,7 @@ class TestSourceManagementTools:
         """Test removing a config source."""
         from skill_seekers.mcp.server import remove_config_source_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.remove_source.return_value = True
             mock_sm_class.return_value = mock_sm
@@ -450,7 +451,7 @@ class TestSourceManagementTools:
         """Test removing non-existent source."""
         from skill_seekers.mcp.server import remove_config_source_tool
 
-        with patch("skill_seekers.mcp.server.SourceManager") as mock_sm_class:
+        with patch("skill_seekers.mcp.source_manager.SourceManager") as mock_sm_class:
             mock_sm = MagicMock()
             mock_sm.remove_source.return_value = False
             mock_sm.list_sources.return_value = [
@@ -485,8 +486,8 @@ class TestSourceManagementTools:
 class TestCompleteWorkflow:
     """Test complete workflow of add → fetch → remove."""
 
-    @patch("skill_seekers.mcp.server.GitConfigRepo")
-    @patch("skill_seekers.mcp.server.SourceManager")
+    @patch("skill_seekers.mcp.git_repo.GitConfigRepo")
+    @patch("skill_seekers.mcp.source_manager.SourceManager")
     async def test_add_fetch_remove_workflow(self, mock_sm_class, mock_git_repo_class, temp_dirs):
         """Test complete workflow: add source → fetch config → remove source."""
         from skill_seekers.mcp.server import (

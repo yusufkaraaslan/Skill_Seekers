@@ -1,0 +1,94 @@
+name: responsive-design
+description: Document responsive design patterns and breakpoints
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: breakpoint_strategy
+    type: custom
+    target: breakpoints
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document the responsive breakpoint strategy.
+      
+      Identify:
+      1. Breakpoint definitions (mobile, tablet, desktop, wide)
+      2. Breakpoint naming conventions
+      3. Mobile-first vs desktop-first approach
+      4. Container query usage (if applicable)
+      
+      Output JSON with:
+      - "breakpoints": array of {name, min_width, max_width, description}
+      - "approach": mobile-first or desktop-first
+      - "container_queries": container query patterns
+
+  - name: layout_patterns
+    type: custom
+    target: layouts
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document responsive layout patterns used.
+      
+      Cover:
+      1. Grid system usage
+      2. Flexbox patterns
+      3. Sidebar navigation adaptations
+      4. Card grid responsiveness
+      5. Table responsiveness strategies
+      
+      Output JSON with:
+      - "grid_patterns": grid implementations
+      - "flexbox_patterns": flexbox approaches
+      - "component_adaptations": how components adapt
+      - "table_strategies": responsive table patterns
+
+  - name: image_media_handling
+    type: custom
+    target: media
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document responsive image and media handling.
+      
+      Include:
+      1. Image srcset and sizes
+      2. Art direction (picture element)
+      3. Lazy loading implementation
+      4. Video embed responsiveness
+      5. Performance considerations
+      
+      Output JSON with:
+      - "image_patterns": responsive image techniques
+      - "lazy_loading": lazy load implementation
+      - "performance": media optimization
+
+  - name: touch_interactions
+    type: custom
+    target: touch
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document touch-friendly interaction patterns.
+      
+      Cover:
+      1. Touch target sizing (minimum 44px)
+      2. Gesture support (swipe, pinch, etc.)
+      3. Hover fallback for touch devices
+      4. Virtual keyboard handling
+      5. Touch-specific event handling
+      
+      Output JSON with:
+      - "touch_targets": sizing guidelines
+      - "gestures": gesture implementations
+      - "hover_alternatives": touch-friendly interactions
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: responsive-design
+    domain: frontend

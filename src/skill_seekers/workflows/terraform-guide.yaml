@@ -1,0 +1,98 @@
+name: terraform-guide
+description: Document Infrastructure as Code with Terraform
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: terraform_structure
+    type: custom
+    target: structure
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document Terraform project structure.
+      
+      Identify:
+      1. Directory organization (modules, environments)
+      2. State management (S3 backend, locking)
+      3. Module design patterns
+      4. Variable and output organization
+      5. Workspace strategy
+      
+      Output JSON with:
+      - "directory_structure": folder organization
+      - "state_mgmt": state backend config
+      - "modules": module structure
+      - "workspaces": workspace usage
+
+  - name: resource_patterns
+    type: custom
+    target: resources
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document Terraform resource patterns.
+      
+      Cover:
+      1. Resource naming conventions
+      2. Resource dependencies (implicit vs explicit)
+      3. Data sources usage
+      4. Dynamic blocks
+      5. Conditional resources (count, for_each)
+      
+      Output JSON with:
+      - "naming": resource naming
+      - "dependencies": dependency management
+      - "dynamic": dynamic block usage
+      - "conditionals": conditional resources
+
+  - name: cicd_terraform
+    type: custom
+    target: cicd
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Terraform CI/CD pipeline.
+      
+      Include:
+      1. Terraform plan in CI
+      2. Automated validation (fmt, validate, tflint)
+      3. State locking in CI
+      4. Approval gates for apply
+      5. Drift detection
+      
+      Output JSON with:
+      - "ci_pipeline": CI configuration
+      - "validation": validation steps
+      - "approval": approval workflows
+      - "drift_detection": drift monitoring
+
+  - name: security_iac
+    type: custom
+    target: security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document IaC security practices.
+      
+      Cover:
+      1. Sensitive data handling (state encryption)
+      2. Secret management (Vault, AWS Secrets Manager)
+      3. Security scanning (Checkov, tfsec)
+      4. Least privilege IAM
+      5. Security group rules
+      
+      Output JSON with:
+      - "state_encryption": securing state
+      - "secrets_mgmt": secret handling
+      - "scanning": security scanning
+      - "iam": IAM best practices
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: terraform-guide
+    domain: devops

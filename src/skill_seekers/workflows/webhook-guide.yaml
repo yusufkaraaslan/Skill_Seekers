@@ -1,0 +1,142 @@
+name: webhook-guide
+description: Document webhook design, verification, retries, and best practices
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: webhook_design
+    type: custom
+    target: design
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze webhook design patterns.
+      
+      Identify:
+      1. Webhook payload structure
+      2. Event types and naming
+      3. Event versioning strategy
+      4. Delivery guarantees (at-least-once)
+      5. Event ordering guarantees
+      6. Payload size limits
+      
+      Output JSON with:
+      - "payload_structure": JSON schema
+      - "event_types": event catalog
+      - "versioning": schema evolution
+      - "delivery_guarantees": delivery semantics
+      - "ordering": sequence guarantees
+      - "size_limits": payload limits
+
+  - name: security_verification
+    type: custom
+    target: security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document webhook security and verification.
+      
+      Cover:
+      1. Signature verification (HMAC)
+      2. Timestamp validation (replay protection)
+      3. IP allowlisting
+      4. TLS requirements
+      5. Secret rotation
+      6. Webhook secret management
+      
+      Output JSON with:
+      - "signature_verification": HMAC checking
+      - "timestamp_validation": replay prevention
+      - "ip_allowlist": IP restrictions
+      - "tls": encryption requirements
+      - "secret_rotation": key rotation
+      - "secret_mgmt": secret storage
+
+  - name: delivery_handling
+    type: custom
+    target: delivery
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document webhook delivery handling.
+      
+      Include:
+      1. Retry strategies (exponential backoff)
+      2. Retry limits and timeouts
+      3. Dead letter queue for failures
+      4. Delivery status tracking
+      5. Idempotency handling
+      6. Concurrent delivery handling
+      
+      Output JSON with:
+      - "retry_strategy": backoff config
+      - "retry_limits": max attempts
+      - "dlq": failed delivery queue
+      - "status_tracking": delivery monitoring
+      - "idempotency": duplicate handling
+      - "concurrency": parallel delivery
+
+  - name: consumer_implementation
+    type: custom
+    target: consumer
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document webhook consumer implementation.
+      
+      Cover:
+      1. Endpoint design and routing
+      2. Request parsing and validation
+      3. Async processing patterns
+      4. Response requirements (2xx status)
+      5. Error response handling
+      6. Webhook testing strategies
+      
+      Output JSON with:
+      - "endpoint": URL design
+      - "parsing": request handling
+      - "async_processing": background jobs
+      - "responses": status codes
+      - "errors": error handling
+      - "testing": local testing
+
+  - name: webhook_management
+    type: custom
+    target: management
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document webhook subscription management.
+      
+      Include:
+      1. Subscription registration
+      2. Event type filtering
+      3. Endpoint validation (challenge-response)
+      4. Subscription status monitoring
+      5. Unsubscribe mechanisms
+      6. Webhook logs and debugging
+      
+      Output JSON with:
+      - "registration": signup flow
+      - "filtering": event selection
+      - "validation": endpoint verification
+      - "monitoring": health checks
+      - "unsubscribe": removal process
+      - "logging": debugging logs
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: webhook-guide
+    domain: backend
+    has_webhook_docs: true

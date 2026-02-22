@@ -1,0 +1,107 @@
+name: migration-guide
+description: Help users migrate from older versions or alternative tools
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - doc_scraping
+variables:
+  depth: comprehensive
+  from_version: "detect"
+  to_version: "latest"
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: breaking_changes
+    type: custom
+    target: breaking_changes
+    uses_history: false
+    enabled: true
+    prompt: >
+      Identify all breaking changes between versions.
+      
+      Analyze:
+      1. Removed or renamed functions/methods
+      2. Changed function signatures
+      3. Modified default behaviors
+      4. Deprecated features
+      5. Configuration format changes
+      
+      For each breaking change:
+      - Old way vs new way
+      - Migration effort estimate
+      - Automated migration possibility
+      
+      Output JSON with:
+      - "breaking_changes": array of changes
+      - "deprecated_features": soon-to-be-removed items
+      - "migration_effort": overall difficulty rating
+
+  - name: migration_steps
+    type: custom
+    target: migration_steps
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a step-by-step migration guide.
+      
+      Include:
+      1. Pre-migration checklist (backups, tests)
+      2. Migration order (which files/modules first)
+      3. Code transformation examples
+      4. Testing strategy during migration
+      5. Rollback plan if issues occur
+      
+      Make it actionable with specific commands/code.
+      
+      Output JSON with:
+      - "preparation_steps": before starting
+      - "migration_steps": ordered array of steps
+      - "testing_strategy": how to verify at each stage
+      - "rollback_plan": how to revert if needed
+
+  - name: compatibility_layer
+    type: custom
+    target: compatibility
+    uses_history: true
+    enabled: true
+    prompt: >
+      Suggest compatibility patterns for gradual migration.
+      
+      Provide:
+      1. Adapter patterns to support both old and new APIs
+      2. Feature flags for gradual rollout
+      3. Shim/polyfill examples
+      4. How to maintain backward compatibility during transition
+      
+      Output JSON with:
+      - "adapter_patterns": code for bridging old/new
+      - "feature_flags": example flag implementation
+      - "gradual_migration": strategy for large codebases
+
+  - name: deprecated_replacements
+    type: custom
+    target: replacements
+    uses_history: true
+    enabled: true
+    prompt: >
+      Map all deprecated APIs to their replacements.
+      
+      Create a comprehensive mapping:
+      - Old API → New API
+      - Before/after code examples
+      - Behavior differences to watch for
+      - Performance implications
+      
+      Output JSON with "replacements" array of:
+      {old_api, new_api, before_code, after_code, notes}
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: migration-guide
+    has_migration_info: true

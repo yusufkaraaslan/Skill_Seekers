@@ -1,0 +1,98 @@
+name: state-management
+description: Document state management architecture and patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: state_architecture
+    type: custom
+    target: state_arch
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document the state management architecture.
+      
+      Identify:
+      1. State management library used (Redux, Zustand, Context, etc.)
+      2. State structure and organization
+      3. Local vs global state boundaries
+      4. Server state vs client state separation
+      5. State normalization patterns
+      
+      Output JSON with:
+      - "library": state management solution
+      - "structure": state tree organization
+      - "boundaries": local vs global rules
+      - "normalization": state shape patterns
+
+  - name: state_operations
+    type: custom
+    target: operations
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document state operations and mutations.
+      
+      Cover:
+      1. Actions/events and their payloads
+      2. Reducers or state updaters
+      3. Selectors for derived state
+      4. Async state handling (thunks, sagas, etc.)
+      5. Immutable update patterns
+      
+      Output JSON with:
+      - "actions": action definitions
+      - "reducers": reducer patterns
+      - "selectors": selector implementations
+      - "async_patterns": handling async state
+
+  - name: state_sync
+    type: custom
+    target: sync
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document state synchronization patterns.
+      
+      Include:
+      1. Server state synchronization (React Query, SWR, etc.)
+      2. Optimistic updates
+      3. Conflict resolution
+      4. Offline state handling
+      5. Real-time updates (WebSockets)
+      
+      Output JSON with:
+      - "server_sync": server state patterns
+      - "optimistic_updates": optimistic UI patterns
+      - "offline_handling": offline strategies
+      - "real_time": WebSocket/real-time patterns
+
+  - name: state_performance
+    type: custom
+    target: state_perf
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document state performance optimization.
+      
+      Cover:
+      1. Memoization strategies (useMemo, reselect)
+      2. Preventing unnecessary re-renders
+      3. State splitting/code splitting
+      4. Large list virtualization
+      5. State hydration (SSR)
+      
+      Output JSON with:
+      - "memoization": memo patterns
+      - "render_optimization": preventing re-renders
+      - "code_splitting": splitting state
+      - "ssr_hydration": server-side rendering
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: state-management
+    domain: frontend

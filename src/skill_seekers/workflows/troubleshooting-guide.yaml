@@ -1,0 +1,102 @@
+name: troubleshooting-guide
+description: Document common errors and debugging steps
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: error_catalog
+    type: custom
+    target: errors
+    uses_history: false
+    enabled: true
+    prompt: >
+      Catalog all common errors users might encounter.
+      
+      For each error:
+      1. Error message or code
+      2. Root cause explanation
+      3. Immediate fix
+      4. Prevention strategies
+      
+      Categorize by:
+      - Setup/installation errors
+      - Configuration errors
+      - Runtime errors
+      - Integration errors
+      
+      Output JSON with "errors" array of:
+      {category, error_message, cause, fix, prevention}
+
+  - name: debug_strategies
+    type: custom
+    target: debugging
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document systematic debugging approaches.
+      
+      Include:
+      1. Debugging configuration (flags, env vars)
+      2. Log interpretation guide
+      3. Common debugging tools/workflows
+      4. How to enable verbose output
+      5. Diagnostic command reference
+      
+      Output JSON with:
+      - "debug_modes": how to enable debugging
+      - "log_guide": interpreting log output
+      - "diagnostic_commands": useful commands
+      - "debugging_workflow": step-by-step process
+
+  - name: faq_generation
+    type: custom
+    target: faq
+    uses_history: true
+    enabled: true
+    prompt: >
+      Generate frequently asked questions based on common issues.
+      
+      For each FAQ:
+      - Clear question
+      - Concise answer
+      - Related documentation links
+      - Example if helpful
+      
+      Output JSON with "faq" array of {question, answer, related_links}
+
+  - name: support_resources
+    type: custom
+    target: support
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document where to get additional help.
+      
+      Include:
+      1. Official documentation links
+      2. Community forums/Discord/Slack
+      3. Issue tracker guidelines (how to report bugs)
+      4. Stack Overflow tags
+      5. Professional support options
+      
+      Output JSON with:
+      - "documentation": key doc links
+      - "community": community resources
+      - "issue_tracking": how to file good issues
+      - "professional_support": enterprise support info
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: troubleshooting-guide
+    has_troubleshooting: true

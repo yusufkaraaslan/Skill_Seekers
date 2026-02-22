@@ -1,0 +1,98 @@
+name: mlops-pipeline
+description: Document MLOps pipeline automation and practices
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: pipeline_architecture
+    type: custom
+    target: pipeline
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document ML pipeline architecture.
+      
+      Identify:
+      1. Orchestration tool (Airflow, Kubeflow, Prefect, etc.)
+      2. Pipeline stages (data ingestion, training, evaluation, deployment)
+      3. Data validation steps
+      4. Model validation gates
+      5. Automated retraining triggers
+      
+      Output JSON with:
+      - "orchestrator": orchestration tool
+      - "stages": pipeline stages
+      - "validation_gates": validation checkpoints
+      - "retraining": retraining triggers
+
+  - name: cicd_ml
+    type: custom
+    target: cicd
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document CI/CD for ML models.
+      
+      Cover:
+      1. Automated testing (unit, integration)
+      2. Model testing in CI
+      3. Data validation in CI
+      4. Continuous training setup
+      5. Model promotion pipeline
+      
+      Output JSON with:
+      - "testing": ML testing strategy
+      - "continuous_training": CT setup
+      - "promotion": model promotion
+      - "ci_configuration": CI pipeline config
+
+  - name: experiment_tracking
+    type: custom
+    target: experiments
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document experiment tracking practices.
+      
+      Include:
+      1. Experiment tracking tool (MLflow, W&B, etc.)
+      2. What to log (params, metrics, artifacts)
+      3. Experiment naming conventions
+      4. Reproducibility requirements
+      5. Experiment comparison
+      
+      Output JSON with:
+      - "tracking_tool": experiment tracking setup
+      - "logging_standards": what to log
+      - "naming": naming conventions
+      - "reproducibility": reproducibility practices
+
+  - name: data_drift_monitoring
+    type: custom
+    target: drift
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document data and concept drift monitoring.
+      
+      Cover:
+      1. Data drift detection methods
+      2. Concept drift detection
+      3. Statistical tests used
+      4. Alert thresholds
+      5. Response to drift
+      
+      Output JSON with:
+      - "detection_methods": drift detection
+      - "thresholds": alert thresholds
+      - "monitoring_dashboard": monitoring setup
+      - "response_plan": drift response
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: mlops-pipeline
+    domain: ml

@@ -1,0 +1,99 @@
+name: database-schema
+description: Document data models and relationships
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: entity_extraction
+    type: custom
+    target: entities
+    uses_history: false
+    enabled: true
+    prompt: >
+      Identify all data models/entities in this codebase.
+      
+      Look for:
+      1. ORM model classes
+      2. Database table definitions
+      3. Schema definitions
+      4. DTO/Entity classes
+      5. Type definitions for data structures
+      
+      For each entity:
+      - Name and purpose
+      - Key attributes/fields
+      - Data types
+      - Constraints (nullable, unique, etc.)
+      
+      Output JSON with "entities" array of:
+      {name, description, fields[], primary_key, indexes}
+
+  - name: relationship_mapping
+    type: custom
+    target: relationships
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document relationships between entities.
+      
+      Identify:
+      1. One-to-One relationships
+      2. One-to-Many relationships
+      3. Many-to-Many relationships (with join tables)
+      4. Foreign key mappings
+      5. Cascade behaviors (delete, update)
+      
+      Visualize the entity relationship diagram conceptually.
+      
+      Output JSON with:
+      - "relationships": array of {from, to, type, cascade}
+      - "erd_description": textual ERD representation
+
+  - name: migration_guide
+    type: custom
+    target: migrations
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document database migration strategies.
+      
+      Include:
+      1. Migration framework used
+      2. Creating new migrations
+      3. Running migrations (up/down)
+      4. Migration best practices
+      5. Handling migration conflicts
+      
+      Output JSON with:
+      - "migration_commands": key commands
+      - "best_practices": do's and don'ts
+      - "rollback_strategy": handling failed migrations
+
+  - name: query_optimization
+    type: custom
+    target: queries
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document efficient query patterns.
+      
+      Cover:
+      1. N+1 query problem and solutions
+      2. Eager loading strategies
+      3. Index usage and optimization
+      4. Query caching opportunities
+      5. Complex query patterns (aggregation, subqueries)
+      
+      Output JSON with:
+      - "common_patterns": query examples
+      - "optimization_tips": performance advice
+      - "anti_patterns": inefficient queries to avoid
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: database-schema
+    has_db_docs: true

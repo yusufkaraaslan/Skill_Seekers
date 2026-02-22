@@ -1,0 +1,188 @@
+name: serverless-architecture
+description: Document serverless function implementation and patterns (Lambda, Cloud Functions)
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: serverless_platform
+    type: custom
+    target: platform
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the serverless platform and configuration.
+      
+      Identify:
+      1. Cloud provider (AWS Lambda, Azure Functions, GCP Cloud Functions)
+      2. Runtime and version (Node.js, Python, Go, Java)
+      3. Deployment framework (Serverless Framework, SAM, Terraform)
+      4. Function trigger types (HTTP, S3, SQS, EventBridge, etc.)
+      5. Infrastructure as Code configuration
+      6. Multi-region deployment strategy
+      
+      Output JSON with:
+      - "provider": serverless platform
+      - "runtime": language runtime
+      - "deployment_framework": deployment tool
+      - "triggers": trigger configurations
+      - "iac": infrastructure definition
+      - "regions": deployment topology
+
+  - name: function_design
+    type: custom
+    target: functions
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document function design patterns and best practices.
+      
+      Cover:
+      1. Single-purpose function design
+      2. Function composition patterns
+      3. Handler structure and middleware
+      4. Input validation and parsing
+      5. Response formatting
+      6. Error handling strategies
+      
+      Output JSON with:
+      - "design_principles": function design
+      - "composition": composing functions
+      - "handler_structure": code organization
+      - "validation": input validation
+      - "responses": response patterns
+      - "error_handling": error strategies
+
+  - name: cold_start_optimization
+    type: custom
+    target: cold_starts
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document cold start optimization techniques.
+      
+      Include:
+      1. Dependency optimization (tree shaking, bundling)
+      2. Runtime selection impact (Node.js vs Python vs Go)
+      3. Memory allocation tuning
+      4. Provisioned concurrency configuration
+      5. Initialization code optimization
+      6. Lazy loading patterns
+      
+      Output JSON with:
+      - "dependency_opt": dependency management
+      - "runtime_selection": runtime comparison
+      - "memory_tuning": memory configuration
+      - "provisioned_concurrency": warm instances
+      - "init_optimization": startup code
+      - "lazy_loading": deferred loading
+
+  - name: state_management
+    type: custom
+    target: state
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document state management in stateless functions.
+      
+      Cover:
+      1. External state storage (DynamoDB, Redis, S3)
+      2. Caching layers (ElastiCache, DAX)
+      3. Session management strategies
+      4. Connection pooling (RDS Proxy, MongoDB)
+      5. State machine orchestration (Step Functions)
+      
+      Output JSON with:
+      - "external_storage": state persistence
+      - "caching": cache strategies
+      - "sessions": session handling
+      - "connection_pooling": database connections
+      - "step_functions": workflow orchestration
+
+  - name: security_serverless
+    type: custom
+    target: security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document serverless security patterns.
+      
+      Include:
+      1. IAM role configuration (least privilege)
+      2. VPC and network isolation
+      3. Secrets management (Secrets Manager, Parameter Store)
+      4. API Gateway security (throttling, WAF)
+      5. Environment variable encryption
+      6. Function-level authentication
+      
+      Output JSON with:
+      - "iam_roles": permission configuration
+      - "network_isolation": VPC setup
+      - "secrets": secret handling
+      - "api_security": API protection
+      - "encryption": data encryption
+      - "auth": function authentication
+
+  - name: observability_serverless
+    type: custom
+    target: observability
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document serverless observability patterns.
+      
+      Cover:
+      1. Structured logging (JSON format)
+      2. Distributed tracing (X-Ray, OpenTelemetry)
+      3. Custom metrics and alarms
+      4. Log aggregation and analysis
+      5. Cost monitoring and optimization
+      6. Dead letter queue monitoring
+      
+      Output JSON with:
+      - "logging": structured logging
+      - "tracing": trace collection
+      - "metrics": custom metrics
+      - "log_aggregation": log analysis
+      - "cost_monitoring": spend tracking
+      - "dlq_monitoring": failure tracking
+
+  - name: testing_serverless
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document serverless testing strategies.
+      
+      Include:
+      1. Local development (SAM, Serverless Offline)
+      2. Unit testing handler functions
+      3. Integration testing with cloud resources
+      4. Mocking cloud services
+      5. Load testing serverless apps
+      6. CI/CD for serverless deployments
+      
+      Output JSON with:
+      - "local_dev": local emulation
+      - "unit_tests": handler testing
+      - "integration_tests": cloud testing
+      - "mocking": service mocking
+      - "load_testing": performance testing
+      - "cicd": deployment pipeline
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: serverless-architecture
+    domain: devops
+    has_serverless_docs: true

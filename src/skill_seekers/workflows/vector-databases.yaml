@@ -1,0 +1,142 @@
+name: vector-databases
+description: Document vector database integration for embeddings and similarity search
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: vector_platform
+    type: custom
+    target: platform
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the vector database platform.
+      
+      Identify:
+      1. Vector database (Pinecone, Weaviate, Qdrant, Chroma, etc.)
+      2. Deployment mode (cloud, self-hosted, embedded)
+      3. Dimension size and configuration
+      4. Distance metric (cosine, euclidean, dot product)
+      5. Indexing algorithm (HNSW, IVF, etc.)
+      6. Scaling approach
+      
+      Output JSON with:
+      - "database": vector DB technology
+      - "deployment": hosting approach
+      - "dimensions": vector dimensions
+      - "distance_metric": similarity metric
+      - "indexing": index algorithm
+      - "scaling": scale strategy
+
+  - name: embedding_generation
+    type: custom
+    target: embeddings
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document embedding generation and management.
+      
+      Cover:
+      1. Embedding model (OpenAI, HuggingFace, custom)
+      2. Text chunking strategies
+      3. Embedding caching
+      4. Batch vs real-time generation
+      5. Embedding versioning
+      6. Multi-modal embeddings (if applicable)
+      
+      Output JSON with:
+      - "model": embedding model
+      - "chunking": text splitting
+      - "caching": embedding cache
+      - "generation_mode": batch vs streaming
+      - "versioning": model versioning
+      - "multimodal": image/audio embeddings
+
+  - name: vector_operations
+    type: custom
+    target: operations
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document vector database operations.
+      
+      Include:
+      1. Upsert patterns and batching
+      2. Query/search patterns
+      3. Metadata filtering
+      4. Hybrid search (vector + keyword)
+      5. Re-ranking strategies
+      6. Pagination in vector search
+      
+      Output JSON with:
+      - "upsert": insert/update patterns
+      - "search": similarity search
+      - "metadata_filter": filter by metadata
+      - "hybrid_search": combined search
+      - "reranking": result ranking
+      - "pagination": paging results
+
+  - name: rag_patterns
+    type: custom
+    target: rag
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document RAG (Retrieval Augmented Generation) patterns.
+      
+      Cover:
+      1. Document ingestion pipeline
+      2. Context window management
+      3. Relevance scoring
+      4. Source attribution
+      5. Query rewriting/expansion
+      6. RAG evaluation metrics
+      
+      Output JSON with:
+      - "ingestion": document pipeline
+      - "context_mgmt": window management
+      - "relevance": scoring methods
+      - "attribution": source tracking
+      - "query_enhancement": query processing
+      - "evaluation": RAG metrics
+
+  - name: vector_monitoring
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document vector database monitoring.
+      
+      Include:
+      1. Query latency tracking
+      2. Index performance metrics
+      3. Storage utilization
+      4. Recall/precision metrics
+      5. Embedding drift detection
+      6. Cost monitoring
+      
+      Output JSON with:
+      - "latency": query performance
+      - "index_perf": indexing metrics
+      - "storage": space usage
+      - "quality": search quality
+      - "drift": embedding drift
+      - "cost": spend tracking
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: vector-databases
+    domain: ml
+    has_vector_db_docs: true

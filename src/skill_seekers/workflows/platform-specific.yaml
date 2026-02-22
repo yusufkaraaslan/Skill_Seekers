@@ -1,0 +1,77 @@
+name: platform-specific
+description: Document iOS/Android platform-specific implementations
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: platform_abstraction
+    type: custom
+    target: abstraction
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document platform abstraction patterns.
+      
+      Identify:
+      1. Abstraction layer architecture
+      2. Platform-specific implementations
+      3. Shared business logic
+      4. Code sharing strategy
+      5. Platform detection
+      
+      Output JSON with:
+      - "architecture": abstraction approach
+      - "implementations": platform-specific code
+      - "shared_logic": common code
+      - "detection": platform detection
+
+  - name: native_modules
+    type: custom
+    target: native
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document native module integration.
+      
+      Cover:
+      1. Native module structure (iOS/Android)
+      2. Bridging patterns
+      3. FFI/Native calls
+      4. Native UI components
+      5. Third-party native SDKs
+      
+      Output JSON with:
+      - "module_structure": native module org
+      - "bridging": bridge implementation
+      - "ui_components": native UI
+      - "third_party": SDK integration
+
+  - name: platform_guides
+    type: custom
+    target: guides
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document platform-specific guidelines.
+      
+      Include:
+      1. iOS Human Interface Guidelines compliance
+      2. Android Material Design compliance
+      3. Platform navigation patterns
+      4. Platform permissions
+      5. Store submission requirements
+      
+      Output JSON with:
+      - "ios_guidelines": iOS-specific
+      - "android_guidelines": Android-specific
+      - "navigation": platform navigation
+      - "store_requirements": app store prep
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: platform-specific
+    domain: mobile

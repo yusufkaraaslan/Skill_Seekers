@@ -1,0 +1,142 @@
+name: iam-identity
+description: Document Identity and Access Management patterns and implementation
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: identity_providers
+    type: custom
+    target: providers
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze identity provider integration.
+      
+      Identify:
+      1. Identity providers (IdP) used (Auth0, Okta, Cognito, etc.)
+      2. SSO/SAML configuration
+      3. Social login providers (Google, GitHub, etc.)
+      4. Enterprise identity (Active Directory, LDAP)
+      5. Multi-factor authentication setup
+      6. Passwordless authentication
+      
+      Output JSON with:
+      - "idp": primary identity provider
+      - "sso": SSO configuration
+      - "social_login": social providers
+      - "enterprise_id": enterprise identity
+      - "mfa": MFA setup
+      - "passwordless": passwordless auth
+
+  - name: rbac_abac
+    type: custom
+    target: authorization
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document authorization models in detail.
+      
+      Cover:
+      1. Role-Based Access Control (RBAC) hierarchy
+      2. Attribute-Based Access Control (ABAC)
+      3. Resource-based permissions
+      4. Permission inheritance
+      5. Dynamic authorization (policy engine)
+      6. Cross-organization access
+      
+      Output JSON with:
+      - "rbac": role definitions
+      - "abac": attribute rules
+      - "resource_permissions": resource-level auth
+      - "inheritance": permission inheritance
+      - "policy_engine": dynamic policies
+      - "cross_org": multi-tenant auth
+
+  - name: identity_lifecycle
+    type: custom
+    target: lifecycle
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document identity lifecycle management.
+      
+      Include:
+      1. User provisioning and deprovisioning
+      2. Just-in-time (JIT) provisioning
+      3. Account linking (multiple identities)
+      4. Profile management
+      5. Account recovery
+      6. Offboarding workflows
+      
+      Output JSON with:
+      - "provisioning": user creation
+      - "jit": JIT provisioning
+      - "account_linking": identity linking
+      - "profile_mgmt": profile updates
+      - "recovery": account recovery
+      - "offboarding": account deletion
+
+  - name: access_reviews
+    type: custom
+    target: reviews
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document access review and audit processes.
+      
+      Cover:
+      1. Periodic access reviews
+      2. Automated access certification
+      3. Privileged access management (PAM)
+      4. Access request workflows
+      5. Audit logging and reporting
+      6. Compliance attestation
+      
+      Output JSON with:
+      - "access_reviews": review process
+      - "certification": automated reviews
+      - "pam": privileged access
+      - "request_workflows": access requests
+      - "audit_logs": audit trail
+      - "compliance": compliance reports
+
+  - name: identity_security
+    type: custom
+    target: security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document identity security best practices.
+      
+      Include:
+      1. Session management and timeouts
+      2. Concurrent session control
+      3. Anomaly detection
+      4. Step-up authentication
+      5. Risk-based authentication
+      6. Identity threat detection
+      
+      Output JSON with:
+      - "session_mgmt": session handling
+      - "concurrent_sessions": session limits
+      - "anomaly_detection": unusual activity
+      - "step_up": elevated auth
+      - "risk_based": risk analysis
+      - "threat_detection": security monitoring
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: iam-identity
+    domain: security
+    has_iam_docs: true

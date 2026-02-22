@@ -1,0 +1,168 @@
+name: caching-strategies
+description: Comprehensive caching implementation from application to CDN layer
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: cache_hierarchy
+    type: custom
+    target: hierarchy
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the caching hierarchy and layers in this codebase.
+      
+      Identify all cache layers:
+      1. Browser cache (Cache-Control headers)
+      2. CDN cache (CloudFront, Cloudflare, Fastly)
+      3. Reverse proxy cache (Nginx, Varnish)
+      4. Application cache (in-memory, Redis)
+      5. Database cache (query cache, buffer pool)
+      6. Distributed cache (Redis Cluster, Memcached)
+      
+      For each layer:
+      - TTL/time-to-live configuration
+      - Cache key strategy
+      - Invalidation approach
+      - Storage limits
+      
+      Output JSON with:
+      - "layers": array of cache layers with configuration
+      - "ttl_strategy": TTL configuration per layer
+      - "key_strategy": cache key generation
+      - "invalidation": invalidation patterns
+
+  - name: application_caching
+    type: custom
+    target: app_cache
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document application-level caching patterns.
+      
+      Cover:
+      1. In-memory caching (Node.js Map, Python dict, etc.)
+      2. Redis integration patterns
+      3. Cache-aside vs read-through vs write-through
+      4. Cache warming strategies
+      5. Cache stampede prevention (locks, early expiration)
+      6. Serialization formats (JSON, MessagePack, Protobuf)
+      
+      Output JSON with:
+      - "in_memory": in-memory caching patterns
+      - "redis_patterns": Redis usage patterns
+      - "strategies": cache-aside, read-through, write-through
+      - "warming": cache warming approach
+      - "stampede_prevention": thundering herd protection
+      - "serialization": data serialization format
+
+  - name: http_caching
+    type: custom
+    target: http_cache
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document HTTP caching implementation.
+      
+      Include:
+      1. Cache-Control header configuration
+      2. ETag generation and validation
+      3. Last-Modified headers
+      4. Vary header usage
+      5. Conditional requests (If-None-Match, If-Modified-Since)
+      6. Cache busting strategies (query params, filename hashing)
+      
+      Output JSON with:
+      - "cache_control": Cache-Control directives
+      - "etag_strategy": ETag generation
+      - "conditional_requests": 304 handling
+      - "cache_busting": cache invalidation techniques
+      - "vary_header": content negotiation
+
+  - name: database_caching
+    type: custom
+    target: db_cache
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document database query caching strategies.
+      
+      Cover:
+      1. Query result caching
+      2. ORM-level caching (Django ORM, SQLAlchemy, Prisma)
+      3. Materialized views for complex queries
+      4. Second-level cache (Hibernate, etc.)
+      5. Connection pooling configuration
+      6. Prepared statement caching
+      
+      Output JSON with:
+      - "query_caching": query result caching
+      - "orm_caching": ORM cache configuration
+      - "materialized_views": view usage
+      - "connection_pooling": pool configuration
+      - "prepared_statements": statement caching
+
+  - name: cache_invalidation
+    type: custom
+    target: invalidation
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document cache invalidation strategies.
+      
+      Include:
+      1. Time-based expiration (TTL)
+      2. Event-driven invalidation (pub/sub)
+      3. Manual invalidation endpoints
+      4. Version-based invalidation
+      5. Selective vs full cache flush
+      6. Cache warming after invalidation
+      
+      Output JSON with:
+      - "ttl_expiration": automatic expiration
+      - "event_driven": pub/sub invalidation
+      - "manual_invalidation": admin endpoints
+      - "versioning": cache versioning
+      - "selective_flush": targeted invalidation
+      - "warming": post-invalidation warming
+
+  - name: performance_monitoring
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document cache performance monitoring.
+      
+      Cover:
+      1. Cache hit/miss ratio tracking
+      2. Latency metrics (cache vs source)
+      3. Memory usage monitoring
+      4. Eviction rate tracking
+      5. Cache size and capacity planning
+      6. Alerting on cache degradation
+      
+      Output JSON with:
+      - "hit_ratio": hit/miss metrics
+      - "latency": response time tracking
+      - "memory": memory monitoring
+      - "evictions": eviction tracking
+      - "capacity": size planning
+      - "alerts": cache-related alerts
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: caching-strategies
+    domain: backend
+    has_caching_docs: true

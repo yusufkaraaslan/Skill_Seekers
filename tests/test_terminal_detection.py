@@ -11,9 +11,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer, detect_terminal_app
 
 
@@ -138,12 +135,10 @@ class TestDetectTerminalApp(unittest.TestCase):
         self.assertEqual(terminal_app, "Ghostty")
         self.assertEqual(detection_method, "SKILL_SEEKER_TERMINAL")
 
+    @patch("skill_seekers.cli.enhance_skill_local.sys.platform", "darwin")
     @patch("subprocess.Popen")
     def test_subprocess_popen_called_with_correct_args(self, mock_popen):
         """Test that subprocess.Popen is called with correct arguments on macOS."""
-        # Only test on macOS
-        if sys.platform != "darwin":
-            self.skipTest("This test only runs on macOS")
 
         # Setup
         os.environ["SKILL_SEEKER_TERMINAL"] = "Ghostty"
@@ -214,12 +209,10 @@ class TestDetectTerminalApp(unittest.TestCase):
         # Empty TERM_PROGRAM should be treated as not set
         self.assertEqual(detection_method, "default")
 
+    @patch("skill_seekers.cli.enhance_skill_local.sys.platform", "darwin")
     @patch("subprocess.Popen")
     def test_terminal_launch_error_handling(self, mock_popen):
         """Test error handling when terminal launch fails."""
-        # Only test on macOS
-        if sys.platform != "darwin":
-            self.skipTest("This test only runs on macOS")
 
         # Setup Popen to raise exception
         mock_popen.side_effect = Exception("Terminal not found")
@@ -255,10 +248,9 @@ class TestDetectTerminalApp(unittest.TestCase):
             output = captured_output.getvalue()
             self.assertIn("Error launching", output)
 
+    @patch("skill_seekers.cli.enhance_skill_local.sys.platform", "darwin")
     def test_output_message_unknown_terminal(self):
         """Test that unknown terminal prints warning message."""
-        if sys.platform != "darwin":
-            self.skipTest("This test only runs on macOS")
 
         os.environ["TERM_PROGRAM"] = "vscode"
         if "SKILL_SEEKER_TERMINAL" in os.environ:

@@ -1,0 +1,168 @@
+name: background-jobs
+description: Document async task processing, job queues, and worker patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: job_system_architecture
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the background job system architecture.
+      
+      Identify:
+      1. Job queue library (Bull, Agenda, Celery, Sidekiq, etc.)
+      2. Queue backend (Redis, RabbitMQ, database)
+      3. Worker process configuration
+      4. Job scheduling capabilities
+      5. Delayed job support
+      6. Recurring job patterns (cron)
+      
+      Output JSON with:
+      - "library": job queue library
+      - "backend": queue storage
+      - "workers": worker configuration
+      - "scheduling": job scheduling
+      - "delayed": delayed execution
+      - "recurring": cron patterns
+
+  - name: job_definitions
+    type: custom
+    target: jobs
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document job definition patterns.
+      
+      Cover:
+      1. Job class/function structure
+      2. Job payload and serialization
+      3. Job naming conventions
+      4. Job priorities
+      5. Job timeouts and TTL
+      6. Job idempotency
+      
+      Output JSON with:
+      - "structure": job code organization
+      - "payload": data serialization
+      - "naming": naming patterns
+      - "priorities": priority levels
+      - "timeouts": timeout configuration
+      - "idempotency": duplicate handling
+
+  - name: worker_patterns
+    type: custom
+    target: workers
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document worker implementation patterns.
+      
+      Include:
+      1. Worker startup and shutdown
+      2. Concurrency configuration
+      3. Rate limiting
+      4. Job processing middleware
+      5. Progress tracking
+      6. Job cleanup and archiving
+      
+      Output JSON with:
+      - "lifecycle": worker management
+      - "concurrency": parallel processing
+      - "rate_limiting": throttling
+      - "middleware": processing hooks
+      - "progress": status tracking
+      - "cleanup": job retention
+
+  - name: error_retry_handling
+    type: custom
+    target: errors
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document error handling and retry strategies.
+      
+      Cover:
+      1. Retry policies (exponential backoff)
+      2. Max retry configuration
+      3. Dead letter queues
+      4. Error notification (Slack, email)
+      5. Manual retry mechanisms
+      6. Partial failure handling
+      
+      Output JSON with:
+      - "retry_policy": backoff strategy
+      - "max_retries": retry limits
+      - "dead_letter": DLQ configuration
+      - "notifications": alert setup
+      - "manual_retry": admin retry
+      - "partial_failures": handling partial errors
+
+  - name: job_monitoring
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document job monitoring and observability.
+      
+      Include:
+      1. Job queue dashboard (Bull Board, etc.)
+      2. Job success/failure metrics
+      3. Processing time tracking
+      4. Queue depth monitoring
+      5. Worker health checks
+      6. Alerting configuration
+      
+      Output JSON with:
+      - "dashboard": monitoring UI
+      - "metrics": success/failure rates
+      - "performance": processing times
+      - "queue_depth": backlog monitoring
+      - "health": worker health
+      - "alerts": notification rules
+
+  - name: job_patterns
+    type: custom
+    target: patterns
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document common job patterns and use cases.
+      
+      Cover:
+      1. Email sending jobs
+      2. Image/video processing
+      3. Data import/export
+      4. Report generation
+      5. Cache warming
+      6. Webhook delivery
+      7. Database maintenance
+      
+      Output JSON with:
+      - "email_jobs": email processing
+      - "media_processing": file handling
+      - "data_transfer": import/export
+      - "reports": report generation
+      - "cache_jobs": cache management
+      - "webhooks": webhook delivery
+      - "maintenance": DB tasks
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: background-jobs
+    domain: backend
+    has_job_docs: true

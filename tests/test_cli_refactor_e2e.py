@@ -98,24 +98,22 @@ class TestPresetSystem:
         assert "comprehensive" in result.stdout, "Should show comprehensive preset"
         assert "1-2 minutes" in result.stdout, "Should show time estimates"
 
-    @pytest.mark.skip(reason="Deprecation warnings not implemented in analyze command yet")
-    def test_deprecated_quick_flag_shows_warning(self):
+    def test_deprecated_quick_flag_shows_warning(self, tmp_path):
         """Test that --quick flag shows deprecation warning."""
         result = subprocess.run(
-            ["skill-seekers", "analyze", "--directory", ".", "--quick"],
+            ["skill-seekers", "analyze", "--directory", str(tmp_path), "--quick"],
             capture_output=True,
             text=True,
         )
-        # Note: Deprecation warnings go to stderr
+        # Note: Deprecation warnings go to stderr or stdout
         output = result.stdout + result.stderr
         assert "DEPRECATED" in output, "Should show deprecation warning"
         assert "--preset quick" in output, "Should suggest alternative"
 
-    @pytest.mark.skip(reason="Deprecation warnings not implemented in analyze command yet")
-    def test_deprecated_comprehensive_flag_shows_warning(self):
+    def test_deprecated_comprehensive_flag_shows_warning(self, tmp_path):
         """Test that --comprehensive flag shows deprecation warning."""
         result = subprocess.run(
-            ["skill-seekers", "analyze", "--directory", ".", "--comprehensive"],
+            ["skill-seekers", "analyze", "--directory", str(tmp_path), "--comprehensive"],
             capture_output=True,
             text=True,
         )

@@ -1,0 +1,98 @@
+name: graphql-schema
+description: Document GraphQL schema design and patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: schema_design
+    type: custom
+    target: schema
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document GraphQL schema design principles.
+      
+      Identify:
+      1. Type system (Objects, Interfaces, Unions, Enums)
+      2. Query and Mutation organization
+      3. Schema stitching/federation approach
+      4. Input types best practices
+      5. Custom scalars usage
+      
+      Output JSON with:
+      - "type_organization": how types are structured
+      - "query_structure": query organization
+      - "mutation_patterns": mutation design
+      - "federation": federation approach if used
+
+  - name: resolver_patterns
+    type: custom
+    target: resolvers
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document resolver implementation patterns.
+      
+      Cover:
+      1. Resolver structure and organization
+      2. DataLoader for N+1 problem
+      3. Error handling in resolvers
+      4. Authorization in resolvers
+      5. Field-level resolvers
+      
+      Output JSON with:
+      - "resolver_structure": resolver organization
+      - "dataloader": DataLoader usage
+      - "error_handling": error patterns
+      - "authorization": auth in resolvers
+
+  - name: queries_mutations
+    type: custom
+    target: operations
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document query and mutation patterns.
+      
+      Include:
+      1. Complex query examples
+      2. Mutation input validation
+      3. Subscription setup (if used)
+      4. Fragment usage patterns
+      5. Variables and arguments
+      
+      Output JSON with:
+      - "query_examples": example queries
+      - "mutation_patterns": mutation best practices
+      - "fragments": fragment usage
+      - "variables": variable patterns
+
+  - name: performance_opt
+    type: custom
+    target: gql_perf
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document GraphQL performance optimization.
+      
+      Cover:
+      1. Query complexity analysis
+      2. Depth limiting
+      3. Persisted queries
+      4. Query response caching
+      5. Tracing and monitoring
+      
+      Output JSON with:
+      - "complexity_analysis": query cost analysis
+      - "depth_limiting": depth restrictions
+      - "caching": response caching strategies
+      - "monitoring": performance tracking
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: graphql-schema
+    domain: backend

@@ -38,9 +38,14 @@ except ImportError:
 
         TOML_AVAILABLE = True
     except ImportError:
-        toml_lib = None
-        TOML_AVAILABLE = False
-        logger.debug("toml/tomli not available - TOML parsing disabled")
+        try:
+            import tomllib as toml_lib  # noqa: F401 - Python 3.11+ stdlib
+
+            TOML_AVAILABLE = True
+        except ImportError:
+            toml_lib = None
+            TOML_AVAILABLE = False
+            logger.debug("toml/tomli not available - TOML parsing disabled")
 
 
 @dataclass

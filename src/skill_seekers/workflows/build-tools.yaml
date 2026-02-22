@@ -1,0 +1,190 @@
+name: build-tools
+description: Document build tool configuration (Vite, Webpack, esbuild, Rollup)
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: build_tool_setup
+    type: custom
+    target: setup
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the build tool configuration.
+      
+      Identify:
+      1. Primary build tool (Vite, Webpack, esbuild, Rollup, Parcel)
+      2. Configuration file structure
+      3. Build modes (development, production)
+      4. Entry points and output configuration
+      5. Dev server configuration
+      6. Plugin ecosystem
+      
+      Output JSON with:
+      - "build_tool": primary tool and version
+      - "config_structure": configuration files
+      - "build_modes": mode differences
+      - "entry_output": input/output setup
+      - "dev_server": development server
+      - "plugins": key plugins used
+
+  - name: bundling_optimization
+    type: custom
+    target: bundling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document bundling and code splitting strategies.
+      
+      Cover:
+      1. Entry chunk configuration
+      2. Code splitting (dynamic imports)
+      3. Vendor chunk separation
+      4. Tree shaking configuration
+      5. Module federation (if used)
+      6. Chunk naming and preload
+      
+      Output JSON with:
+      - "entry_chunks": entry configuration
+      - "code_splitting": dynamic imports
+      - "vendor_chunks": dependency separation
+      - "tree_shaking": dead code elimination
+      - "module_federation": micro-frontends
+      - "preload_prefetch": resource hints
+
+  - name: asset_handling
+    type: custom
+    target: assets
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document static asset handling.
+      
+      Include:
+      1. CSS processing (PostCSS, Sass, Less)
+      2. Image optimization
+      3. Font loading strategies
+      4. Asset inlining thresholds
+      5. Copy plugin configuration
+      6. Public directory handling
+      
+      Output JSON with:
+      - "css_processing": CSS pipeline
+      - "image_optimization": image handling
+      - "fonts": font loading
+      - "inlining": inline thresholds
+      - "copy_plugin": static copying
+      - "public_dir": public assets
+
+  - name: transpilation
+    type: custom
+    target: transpilation
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document transpilation and language support.
+      
+      Cover:
+      1. TypeScript compilation
+      2. JSX/TSX transformation
+      3. Babel configuration
+      4. Target browser support
+      5. Polyfill injection
+      6. SWC integration (if used)
+      
+      Output JSON with:
+      - "typescript": TS compilation
+      - "jsx": JSX transform
+      - "babel": Babel config
+      - "browser_targets": supported browsers
+      - "polyfills": polyfill strategy
+      - "swc": SWC usage
+
+  - name: development_experience
+    type: custom
+    target: dx
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document development experience optimizations.
+      
+      Include:
+      1. Hot Module Replacement (HMR)
+      2. Source map configuration
+      3. Fast refresh setup
+      4. Error overlay
+      5. Dependency pre-bundling
+      6. Build caching strategies
+      
+      Output JSON with:
+      - "hmr": hot reloading
+      - "source_maps": debugging maps
+      - "fast_refresh": component refresh
+      - "error_overlay": error display
+      - "pre_bundling": dependency optimization
+      - "caching": build caching
+
+  - name: production_optimization
+    type: custom
+    target: production
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document production build optimizations.
+      
+      Cover:
+      1. Minification (Terser, ESBuild)
+      2. Compression (gzip, brotli)
+      3. Environment variable handling
+      4. Content hashing
+      5. CSS extraction and minification
+      6. Bundle analysis
+      
+      Output JSON with:
+      - "minification": code minification
+      - "compression": asset compression
+      - "env_vars": environment config
+      - "content_hashing": cache busting
+      - "css_extraction": CSS optimization
+      - "bundle_analysis": size analysis
+
+  - name: build_testing
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document build testing and validation.
+      
+      Include:
+      1. Build success verification
+      2. Bundle size monitoring
+      3. Circular dependency detection
+      4. Type checking integration
+      5. Linting in build process
+      6. Build reproducibility
+      
+      Output JSON with:
+      - "build_verification": success checks
+      - "size_monitoring": bundle tracking
+      - "circular_deps": cycle detection
+      - "type_checking": TS validation
+      - "linting": code quality
+      - "reproducibility": consistent builds
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: build-tools
+    domain: frontend
+    has_build_docs: true

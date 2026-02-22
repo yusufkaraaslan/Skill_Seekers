@@ -1,0 +1,98 @@
+name: observability-stack
+description: Document observability implementation with logs, metrics, and traces
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: observability_arch
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document observability architecture.
+      
+      Identify:
+      1. Three pillars: logs, metrics, traces
+      2. Observability backend (Datadog, Grafana, etc.)
+      3. Data collection agents
+      4. Sampling strategies
+      5. Retention policies
+      
+      Output JSON with:
+      - "pillars": implementation of each pillar
+      - "backend": observability platform
+      - "agents": data collection
+      - "retention": data retention
+
+  - name: logging_standards
+    type: custom
+    target: logging
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document logging standards and practices.
+      
+      Cover:
+      1. Structured logging (JSON)
+      2. Log levels and when to use them
+      3. Correlation IDs
+      4. Sensitive data redaction
+      5. Log aggregation architecture
+      
+      Output JSON with:
+      - "structured_logging": log format
+      - "levels": log level usage
+      - "correlation_ids": trace correlation
+      - "redaction": sensitive data handling
+
+  - name: metrics_collection
+    type: custom
+    target: metrics
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document metrics collection.
+      
+      Include:
+      1. RED metrics (Rate, Errors, Duration)
+      2. USE metrics (Utilization, Saturation, Errors)
+      3. Business/custom metrics
+      4. Metric naming conventions
+      5. Histogram vs Summary vs Counter vs Gauge
+      
+      Output JSON with:
+      - "red_metrics": request metrics
+      - "use_metrics": resource metrics
+      - "business_metrics": custom metrics
+      - "metric_types": type selection guide
+
+  - name: distributed_tracing
+    type: custom
+    target: tracing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document distributed tracing implementation.
+      
+      Cover:
+      1. Trace context propagation (W3C, B3)
+      2. Span naming conventions
+      3. Sampling strategies (head-based, tail-based)
+      4. Baggage for cross-cutting concerns
+      5. Trace analysis
+      
+      Output JSON with:
+      - "propagation": context propagation
+      - "sampling": sampling configuration
+      - "span_naming": naming conventions
+      - "analysis": trace analysis
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: observability-stack
+    domain: devops

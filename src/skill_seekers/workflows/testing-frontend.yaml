@@ -1,0 +1,142 @@
+name: testing-frontend
+description: Document frontend testing strategy including component, E2E, and visual testing
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: testing_strategy
+    type: custom
+    target: strategy
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the frontend testing strategy.
+      
+      Identify:
+      1. Testing pyramid implementation
+      2. Unit testing framework (Jest, Vitest)
+      3. Component testing library (React Testing Library, Vue Test Utils)
+      4. E2E testing framework (Cypress, Playwright)
+      5. Visual regression testing (Chromatic, Percy)
+      6. Test coverage targets
+      
+      Output JSON with:
+      - "pyramid": test distribution
+      - "unit_framework": unit testing tool
+      - "component_library": component testing
+      - "e2e_framework": E2E testing
+      - "visual_regression": visual testing
+      - "coverage_targets": coverage goals
+
+  - name: component_testing
+    type: custom
+    target: component
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document component testing patterns.
+      
+      Cover:
+      1. Component render and query patterns
+      2. User event simulation
+      3. Mocking strategies (API, router, etc.)
+      4. Testing async operations
+      5. Accessibility testing (jest-axe)
+      6. Snapshot testing guidelines
+      
+      Output JSON with:
+      - "rendering": render patterns
+      - "user_events": interaction testing
+      - "mocking": mock strategies
+      - "async_testing": async patterns
+      - "a11y_testing": accessibility
+      - "snapshots": snapshot guidelines
+
+  - name: e2e_testing
+    type: custom
+    target: e2e
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document end-to-end testing implementation.
+      
+      Include:
+      1. Test organization (page object model, etc.)
+      2. Authentication in E2E tests
+      3. Test data management
+      4. Environment configuration
+      5. Parallel execution setup
+      6. CI/CD integration
+      
+      Output JSON with:
+      - "organization": test structure
+      - "auth": login handling
+      - "test_data": data management
+      - "environments": env config
+      - "parallel": parallel runs
+      - "cicd": CI integration
+
+  - name: visual_testing
+    type: custom
+    target: visual
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document visual regression testing.
+      
+      Cover:
+      1. Visual testing tool setup
+      2. Baseline management
+      3. Component-level visual tests
+      4. Page-level visual tests
+      5. Responsive visual testing
+      6. Flaky test handling
+      
+      Output JSON with:
+      - "tool_setup": visual testing config
+      - "baselines": baseline management
+      - "component_tests": component visuals
+      - "page_tests": page visuals
+      - "responsive": breakpoint testing
+      - "flakiness": stability improvement
+
+  - name: testing_best_practices
+    type: custom
+    target: best_practices
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document frontend testing best practices.
+      
+      Include:
+      1. Test naming conventions
+      2. Arrange-Act-Assert pattern
+      3. Testing implementation details (avoid)
+      4. Test independence and isolation
+      5. Debugging failing tests
+      6. Test maintenance strategies
+      
+      Output JSON with:
+      - "naming": naming conventions
+      - "aaa_pattern": AAA structure
+      - "implementation_details": what to avoid
+      - "isolation": test independence
+      - "debugging": troubleshooting
+      - "maintenance": keeping tests healthy
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: testing-frontend
+    domain: frontend
+    has_testing_docs: true

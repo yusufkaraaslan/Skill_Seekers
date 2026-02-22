@@ -1,0 +1,171 @@
+name: forms-validation
+description: Document form handling, validation patterns, and error management
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: form_architecture
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the form handling architecture.
+      
+      Identify:
+      1. Form library used (React Hook Form, Formik, React Final Form)
+      2. Controlled vs uncontrolled component approach
+      3. Form state management (local, global, URL)
+      4. Field component patterns
+      5. Form layout and composition
+      6. Multi-step form patterns (wizards)
+      
+      Output JSON with:
+      - "library": form library and version
+      - "component_approach": controlled/uncontrolled
+      - "state_management": state location
+      - "field_patterns": field component design
+      - "layout": form structure
+      - "wizards": multi-step patterns
+
+  - name: validation_strategy
+    type: custom
+    target: validation
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document form validation implementation.
+      
+      Cover:
+      1. Validation library (Yup, Zod, Joi, Validator)
+      2. Schema-based vs function validation
+      3. Field-level vs form-level validation
+      4. Async validation patterns
+      5. Cross-field validation
+      6. Validation timing (onChange, onBlur, onSubmit)
+      
+      Output JSON with:
+      - "library": validation library
+      - "schema": schema definition
+      - "validation_levels": field vs form
+      - "async_validation": async patterns
+      - "cross_field": dependent validation
+      - "timing": when to validate
+
+  - name: error_handling
+    type: custom
+    target: errors
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document error display and management.
+      
+      Include:
+      1. Error message formatting
+      2. Field-level error display
+      3. Form-level error summary
+      4. Error message accessibility
+      5. Real-time vs submit-time errors
+      6. Server error handling
+      7. Error recovery patterns
+      
+      Output JSON with:
+      - "message_format": error text
+      - "field_errors": per-field display
+      - "form_errors": global errors
+      - "a11y": accessible errors
+      - "server_errors": API error handling
+      - "recovery": fixing errors
+
+  - name: form_ux_patterns
+    type: custom
+    target: ux
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document form UX best practices.
+      
+      Cover:
+      1. Required field indicators
+      2. Helper text and descriptions
+      3. Placeholder usage guidelines
+      4. Loading and submitting states
+      5. Success confirmation
+      6. Auto-save and draft patterns
+      7. Dirty form warnings (unsaved changes)
+      
+      Output JSON with:
+      - "required_indicators": marking required fields
+      - "helper_text": guidance text
+      - "placeholders": placeholder usage
+      - "states": loading/submitting UI
+      - "confirmation": success feedback
+      - "autosave": auto-save implementation
+      - "dirty_warnings": unsaved change alerts
+
+  - name: complex_inputs
+    type: custom
+    target: complex
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document complex form input patterns.
+      
+      Include:
+      1. Dynamic form fields (add/remove)
+      2. Nested form structures
+      3. Array field handling
+      4. File upload integration
+      5. Rich text editors
+      6. Date/time pickers
+      7. Search and autocomplete
+      
+      Output JSON with:
+      - "dynamic_fields": runtime field modification
+      - "nested_forms": nested structures
+      - "arrays": array handling
+      - "file_uploads": file inputs
+      - "rich_text": WYSIWYG integration
+      - "dates": date/time handling
+      - "autocomplete": search inputs
+
+  - name: form_testing
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document form testing strategies.
+      
+      Cover:
+      1. Unit testing form components
+      2. Integration testing form submission
+      3. Validation testing
+      4. User interaction simulation
+      5. Accessibility testing forms
+      6. Testing error scenarios
+      
+      Output JSON with:
+      - "unit_tests": component testing
+      - "integration": end-to-end form tests
+      - "validation_tests": verifying validation
+      - "interactions": user simulation
+      - "a11y_tests": form accessibility
+      - "error_tests": error scenarios
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: forms-validation
+    domain: frontend
+    has_form_docs: true

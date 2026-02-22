@@ -1,0 +1,92 @@
+name: cli-tooling
+description: Document command-line tools and scripts
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: command_reference
+    type: custom
+    target: commands
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document all CLI commands and their options.
+      
+      For each command:
+      1. Command name and description
+      2. Required and optional arguments
+      3. Flag options (short and long form)
+      4. Default values
+      5. Examples of common usage
+      
+      Output JSON with "commands" array of:
+      {name, description, args[], options[], examples[]}
+
+  - name: configuration_guide
+    type: custom
+    target: cli_config
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document CLI configuration options.
+      
+      Include:
+      1. Configuration file formats (JSON, YAML, TOML)
+      2. Environment variables
+      3. Global vs local configuration
+      4. Configuration validation
+      5. Default configuration values
+      
+      Output JSON with:
+      - "config_formats": supported formats
+      - "options": configuration options reference
+      - "env_vars": environment variable mapping
+      - "example_configs": sample configurations
+
+  - name: scripting_examples
+    type: custom
+    target: scripting
+    uses_history: true
+    enabled: true
+    prompt: >
+      Provide automation and scripting examples.
+      
+      Include:
+      1. Bash scripting examples
+      2. NPM/package.json scripts
+      3. Makefile integration
+      4. CI/CD pipeline usage
+      5. Chaining multiple commands
+      
+      Output JSON with:
+      - "bash_examples": shell script patterns
+      - "ci_examples": CI/CD integration
+      - "automation": common automation tasks
+
+  - name: shell_integration
+    type: custom
+    target: shell
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document shell integration features.
+      
+      Cover:
+      1. Tab completion setup (bash, zsh, fish)
+      2. Shell aliases recommendations
+      3. Prompt customization
+      4. Auto-suggestion integration
+      
+      Output JSON with:
+      - "completion_setup": installation instructions per shell
+      - "recommended_aliases": useful aliases
+      - "prompt_integration": customizing shell prompt
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: cli-tooling
+    has_cli_docs: true

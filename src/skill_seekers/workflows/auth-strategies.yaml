@@ -1,0 +1,102 @@
+name: auth-strategies
+description: Document authentication and authorization patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: auth_methods
+    type: custom
+    target: auth_methods
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document authentication methods supported.
+      
+      Identify:
+      1. Session-based authentication
+      2. JWT token authentication
+      3. OAuth 2.0 / OpenID Connect
+      4. API key authentication
+      5. MFA/2FA support
+      
+      For each method:
+      - When to use it
+      - Security considerations
+      - Implementation overview
+      
+      Output JSON with:
+      - "methods": array of auth methods
+      - "recommendations": when to use each
+      - "security_notes": security considerations
+
+  - name: authorization_patterns
+    type: custom
+    target: authorization
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document authorization patterns.
+      
+      Cover:
+      1. Role-Based Access Control (RBAC)
+      2. Attribute-Based Access Control (ABAC)
+      3. Policy-based authorization
+      4. Resource-level permissions
+      5. Middleware/guard patterns
+      
+      Output JSON with:
+      - "rbac": role-based patterns
+      - "abac": attribute-based patterns
+      - "implementation": authorization code
+      - "middleware": auth middleware
+
+  - name: token_management
+    type: custom
+    target: tokens
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document token lifecycle management.
+      
+      Include:
+      1. Token generation and signing
+      2. Token expiration and refresh
+      3. Token revocation (logout)
+      4. Secure token storage
+      5. Token validation
+      
+      Output JSON with:
+      - "lifecycle": token lifecycle
+      - "refresh_strategy": refresh token handling
+      - "revocation": logout/token invalidation
+      - "storage": secure storage recommendations
+
+  - name: security_best_practices
+    type: custom
+    target: auth_security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document authentication security best practices.
+      
+      Cover:
+      1. Password hashing (bcrypt, Argon2)
+      2. Brute force protection (rate limiting)
+      3. Secure session management
+      4. CORS configuration for auth
+      5. Audit logging
+      
+      Output JSON with:
+      - "password_security": hashing and storage
+      - "rate_limiting": brute force protection
+      - "session_security": session management
+      - "audit": audit logging
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: auth-strategies
+    domain: backend

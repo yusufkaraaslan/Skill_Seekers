@@ -27,9 +27,6 @@ import httpx
 import requests
 from bs4 import BeautifulSoup
 
-# Add parent directory to path for imports when run as script
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from skill_seekers.cli.config_fetcher import (
     get_last_searched_paths,
     list_available_configs,

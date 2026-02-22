@@ -1,0 +1,142 @@
+name: computer-vision
+description: Document computer vision implementation and image processing patterns
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: cv_framework
+    type: custom
+    target: framework
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the computer vision framework and models.
+      
+      Identify:
+      1. CV library/framework (OpenCV, Pillow, torchvision, etc.)
+      2. Model architecture (YOLO, ResNet, ViT, etc.)
+      3. Pre-trained vs custom models
+      4. Model serving approach (on-device, API, edge)
+      5. Hardware acceleration (GPU, TPU, NPU)
+      6. Model format (ONNX, TensorRT, Core ML)
+      
+      Output JSON with:
+      - "library": CV framework
+      - "architecture": model architecture
+      - "model_source": pre-trained/custom
+      - "serving": deployment method
+      - "hardware": acceleration
+      - "format": model format
+
+  - name: image_processing
+    type: custom
+    target: processing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document image preprocessing and augmentation.
+      
+      Cover:
+      1. Image loading and format handling
+      2. Resizing and normalization
+      3. Data augmentation techniques
+      4. Batch processing
+      5. Quality optimization
+      6. EXIF data handling
+      
+      Output JSON with:
+      - "loading": image I/O
+      - "preprocessing": transformations
+      - "augmentation": augmentation pipeline
+      - "batching": batch processing
+      - "optimization": quality tuning
+      - "exif": metadata handling
+
+  - name: inference_patterns
+    type: custom
+    target: inference
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document inference and prediction patterns.
+      
+      Include:
+      1. Single image inference
+      2. Batch inference optimization
+      3. Real-time vs batch processing
+      4. Confidence thresholds
+      5. NMS (Non-Maximum Suppression)
+      6. Multi-stage pipelines
+      
+      Output JSON with:
+      - "single_inference": one image
+      - "batch_inference": multiple images
+      - "realtime": streaming inference
+      - "thresholds": confidence config
+      - "nms": post-processing
+      - "pipelines": multi-stage flow
+
+  - name: deployment_cv
+    type: custom
+    target: deployment
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document CV model deployment strategies.
+      
+      Cover:
+      1. Cloud API deployment
+      2. Edge/device deployment
+      3. Model quantization (INT8, FP16)
+      4. Model optimization (pruning, distillation)
+      5. Containerized deployment
+      6. Serverless inference
+      
+      Output JSON with:
+      - "cloud_api": API deployment
+      - "edge": device deployment
+      - "quantization": model compression
+      - "optimization": model tuning
+      - "containers": Docker/K8s
+      - "serverless": Lambda/Functions
+
+  - name: cv_use_cases
+    type: custom
+    target: use_cases
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document specific computer vision use cases implemented.
+      
+      Include:
+      1. Object detection
+      2. Image classification
+      3. Face detection/recognition
+      4. OCR (text extraction)
+      5. Image segmentation
+      6. Similarity search
+      
+      Output JSON with:
+      - "object_detection": detection details
+      - "classification": classification setup
+      - "face_recognition": face processing
+      - "ocr": text extraction
+      - "segmentation": segmentation
+      - "similarity": image search
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: computer-vision
+    domain: ml
+    has_cv_docs: true

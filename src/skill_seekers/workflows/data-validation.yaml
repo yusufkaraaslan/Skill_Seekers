@@ -1,0 +1,168 @@
+name: data-validation
+description: Document data validation, quality checks, and schema enforcement
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: validation_framework
+    type: custom
+    target: framework
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the data validation framework.
+      
+      Identify:
+      1. Validation libraries (Zod, Yup, Joi, Pydantic, Cerberus)
+      2. Schema definition patterns
+      3. Runtime type checking
+      4. Compile-time type checking (TypeScript, mypy)
+      5. Validation timing (input, processing, output)
+      6. Cross-field validation support
+      
+      Output JSON with:
+      - "libraries": validation tools used
+      - "schema_patterns": schema definition style
+      - "runtime_checks": runtime validation
+      - "compile_time": static type checking
+      - "validation_timing": when validation occurs
+      - "cross_field": complex validation
+
+  - name: data_quality_checks
+    type: custom
+    target: quality
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document data quality validation patterns.
+      
+      Cover:
+      1. Null/undefined handling
+      2. Type coercion and strictness
+      3. Range and boundary validation
+      4. Format validation (email, phone, regex)
+      5. Enum and constrained values
+      6. String length and content validation
+      7. Date/time validation
+      
+      Output JSON with:
+      - "null_handling": nullable field rules
+      - "type_strictness": coercion policies
+      - "boundaries": min/max validation
+      - "format_validation": pattern matching
+      - "enums": allowed values
+      - "string_validation": text constraints
+      - "datetime": temporal validation
+
+  - name: schema_evolution
+    type: custom
+    target: evolution
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document schema evolution and versioning strategies.
+      
+      Include:
+      1. Backward compatibility rules
+      2. Forward compatibility considerations
+      3. Breaking change detection
+      4. Migration strategies
+      5. Schema versioning (v1, v2, etc.)
+      6. Deprecation policies
+      
+      Output JSON with:
+      - "backward_compat": backward rules
+      - "forward_compat": forward rules
+      - "breaking_changes": change detection
+      - "migrations": schema migration
+      - "versioning": version strategy
+      - "deprecation": deprecation policy
+
+  - name: validation_integration
+    type: custom
+    target: integration
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document validation integration points.
+      
+      Cover:
+      1. API request/response validation
+      2. Database model validation
+      3. Form input validation
+      4. Configuration validation
+      5. External API response validation
+      6. File upload validation
+      
+      Output JSON with:
+      - "api_validation": request/response
+      - "db_validation": model validation
+      - "form_validation": user input
+      - "config_validation": settings
+      - "external_validation": API responses
+      - "file_validation": upload handling
+
+  - name: error_reporting
+    type: custom
+    target: errors
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document validation error handling and reporting.
+      
+      Include:
+      1. Error message formatting
+      2. Localization of error messages
+      3. Error aggregation (multiple errors)
+      4. Error path tracking (nested fields)
+      5. Custom error codes
+      6. Error logging and monitoring
+      
+      Output JSON with:
+      - "message_format": error text
+      - "localization": i18n support
+      - "aggregation": multiple errors
+      - "error_paths": nested paths
+      - "error_codes": custom codes
+      - "monitoring": error tracking
+
+  - name: testing_validation
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document validation testing strategies.
+      
+      Cover:
+      1. Unit testing validators
+      2. Property-based testing
+      3. Fuzzing and edge case testing
+      4. Schema compliance testing
+      5. Mutation testing
+      6. Performance testing validation
+      
+      Output JSON with:
+      - "unit_tests": validator testing
+      - "property_tests": generative testing
+      - "fuzzing": edge case discovery
+      - "compliance": schema testing
+      - "mutation": mutation testing
+      - "performance": validation speed
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: data-validation
+    domain: ml
+    has_validation_docs: true

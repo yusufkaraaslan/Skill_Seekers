@@ -1,0 +1,92 @@
+name: rate-limiting
+description: Document rate limiting and throttling strategies
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: rate_limit_strategy
+    type: custom
+    target: strategy
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document rate limiting strategy and algorithms.
+      
+      Identify:
+      1. Algorithm used (token bucket, sliding window, fixed window)
+      2. Rate limit tiers (anonymous, authenticated, premium)
+      3. Per-endpoint vs global limits
+      4. Rate limit headers (X-RateLimit-*, Retry-After)
+      
+      Output JSON with:
+      - "algorithm": rate limiting algorithm
+      - "tiers": limit tiers configuration
+      - "scope": per-endpoint or global
+      - "headers": rate limit header format
+
+  - name: implementation
+    type: custom
+    target: implementation
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document rate limiting implementation.
+      
+      Cover:
+      1. Storage backend (Redis, in-memory, etc.)
+      2. Middleware/decorator patterns
+      3. Distributed rate limiting
+      4. Key generation (by IP, user, API key)
+      
+      Output JSON with:
+      - "storage": backend configuration
+      - "middleware": implementation code
+      - "distributed": distributed rate limiting
+      - "key_generation": how limit keys are formed
+
+  - name: client_handling
+    type: custom
+    target: client
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document client-side rate limit handling.
+      
+      Include:
+      1. Reading rate limit headers
+      2. Exponential backoff strategies
+      3. Queueing requests
+      4. Graceful degradation
+      
+      Output JSON with:
+      - "header_parsing": reading limit headers
+      - "backoff": retry strategies
+      - "client_patterns": client implementation
+
+  - name: bypass_exceptions
+    type: custom
+    target: exceptions
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document rate limit exceptions and bypasses.
+      
+      Cover:
+      1. Whitelist scenarios (health checks, internal)
+      2. Different limits for different clients
+      3. Burst allowances
+      4. Admin/debug endpoints
+      
+      Output JSON with:
+      - "whitelists": whitelisted scenarios
+      - "client_tiers": different limits per client
+      - "burst": burst configuration
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: rate-limiting
+    domain: backend

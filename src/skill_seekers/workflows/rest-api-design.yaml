@@ -1,0 +1,96 @@
+name: rest-api-design
+description: Document REST API design patterns and best practices
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: resource_modeling
+    type: custom
+    target: resources
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document REST resource modeling.
+      
+      Identify:
+      1. Resource naming conventions (nouns, plural)
+      2. Resource hierarchy and nesting
+      3. Resource representations
+      4. Sub-resources vs query params
+      5. Resource relationships
+      
+      Output JSON with:
+      - "resources": array of resource definitions
+      - "naming_conventions": naming rules
+      - "hierarchy": resource nesting patterns
+
+  - name: http_semantics
+    type: custom
+    target: http
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document HTTP method and status code usage.
+      
+      Cover:
+      1. GET, POST, PUT, PATCH, DELETE usage
+      2. Idempotency and safety
+      3. Status code selection guide
+      4. Error response format
+      5. Headers usage (Accept, Content-Type, etc.)
+      
+      Output JSON with:
+      - "method_guide": when to use each method
+      - "status_codes": response code reference
+      - "error_format": error response structure
+      - "headers": important header usage
+
+  - name: versioning_strategy
+    type: custom
+    target: versioning
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document API versioning approach.
+      
+      Include:
+      1. URL path versioning (/v1/, /v2/)
+      2. Header versioning (Accept-Version)
+      3. Query param versioning (?version=1)
+      4. Breaking change management
+      5. Deprecation timeline
+      
+      Output JSON with:
+      - "versioning_method": chosen approach
+      - "versioning_examples": example requests
+      - "deprecation_policy": deprecation process
+
+  - name: pagination_filtering
+    type: custom
+    target: pagination
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document pagination and filtering patterns.
+      
+      Cover:
+      1. Pagination strategies (offset, cursor, keyset)
+      2. Filtering syntax (?status=active&type=x)
+      3. Sorting parameters
+      4. Field selection (sparse fieldsets)
+      5. Bulk operations
+      
+      Output JSON with:
+      - "pagination": pagination implementation
+      - "filtering": filter syntax
+      - "sorting": sort parameter format
+      - "field_selection": sparse fieldsets
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: rest-api-design
+    domain: backend

@@ -436,7 +436,7 @@ app.use('*', cors())
         from unittest.mock import MagicMock, patch
 
         # Mock the requests.get call for downloading llms.txt
-        with patch("cli.llms_txt_downloader.requests.get") as mock_get:
+        with patch("skill_seekers.cli.llms_txt_downloader.requests.get") as mock_get:
             # Configure mock response
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -532,8 +532,8 @@ app.use('*', cors())
         sample_small = "# Small\n" + "x" * 500
 
         with (
-            patch("cli.llms_txt_detector.requests.head") as mock_head,
-            patch("cli.llms_txt_downloader.requests.get") as mock_get,
+            patch("skill_seekers.cli.llms_txt_detector.requests.head") as mock_head,
+            patch("skill_seekers.cli.llms_txt_downloader.requests.get") as mock_get,
         ):
             # Mock detection (all exist)
             mock_head_response = Mock()

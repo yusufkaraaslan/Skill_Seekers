@@ -855,6 +855,8 @@ export default {
             import chromadb
         except ImportError:
             self.skipTest("chromadb not installed")
+        except Exception as e:
+            self.skipTest(f"chromadb not compatible with this environment: {e}")
 
         # Package
         adaptor = get_adaptor("chroma")

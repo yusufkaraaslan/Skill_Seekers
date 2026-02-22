@@ -279,8 +279,8 @@ class TestChromaIntegration:
         # Check if ChromaDB is installed
         try:
             import chromadb
-        except ImportError:
-            pytest.skip("chromadb not installed (pip install chromadb)")
+        except (ImportError, Exception) as e:
+            pytest.skip(f"chromadb not available: {e}")
 
         # Check if Chroma is running
         if not check_service_available("http://localhost:8000/api/v1/heartbeat"):
@@ -358,8 +358,8 @@ class TestChromaIntegration:
         """Test metadata filtering in ChromaDB queries."""
         try:
             import chromadb
-        except ImportError:
-            pytest.skip("chromadb not installed")
+        except (ImportError, Exception) as e:
+            pytest.skip(f"chromadb not available: {e}")
 
         if not check_service_available("http://localhost:8000/api/v1/heartbeat"):
             pytest.skip("ChromaDB not running")

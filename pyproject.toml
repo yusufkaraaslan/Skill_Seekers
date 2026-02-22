@@ -48,8 +48,8 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
-    "httpx>=0.28.1",  # Required for async scraping (core feature)
-    "anthropic>=0.76.0",  # Required for AI enhancement (core feature)
+    "httpx>=0.28.1", # Required for async scraping (core feature)
+    "anthropic>=0.76.0", # Required for AI enhancement (core feature)
     "PyMuPDF>=1.24.14",
     "Pillow>=11.0.0",
     "pytesseract>=0.3.13",
@@ -61,9 +61,11 @@ dependencies = [
     "Pygments>=2.19.2",
     "pathspec>=0.12.1",
     "networkx>=3.0",
-    "tomli>=2.0.0; python_version < '3.11'",  # TOML parser for version reading
-    "schedule>=1.2.0",  # Required for sync monitoring
-    "PyYAML>=6.0",  # Required for workflow preset management
+    "tomli>=2.0.0; python_version < '3.11'", # TOML parser for version reading
+    "schedule>=1.2.0", # Required for sync monitoring
+    "PyYAML>=6.0", # Required for workflow preset management
+    "langchain>=1.2.10",
+    "llama-index>=0.14.15",
 ]
 
 [project.optional-dependencies]

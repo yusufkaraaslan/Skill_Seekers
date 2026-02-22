@@ -1,0 +1,142 @@
+name: design-system
+description: Document design tokens, themes, and design-to-code workflow
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: design_tokens
+    type: custom
+    target: tokens
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the design token architecture.
+      
+      Identify:
+      1. Token structure (W3C, Style Dictionary, etc.)
+      2. Token categories (colors, typography, spacing, etc.)
+      3. Token naming conventions
+      4. Theme variations (light, dark, brand)
+      5. Token platforms (web, iOS, Android)
+      6. Token generation pipeline
+      
+      Output JSON with:
+      - "format": token format
+      - "categories": token types
+      - "naming": naming scheme
+      - "themes": theme support
+      - "platforms": multi-platform
+      - "pipeline": generation flow
+
+  - name: figma_integration
+    type: custom
+    target: figma
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Figma integration and design handoff.
+      
+      Cover:
+      1. Figma plugin usage (Tokens Studio, etc.)
+      2. Design-to-token extraction
+      3. Component mapping
+      4. Design spec generation
+      5. Asset export automation
+      6. Design review workflow
+      
+      Output JSON with:
+      - "plugins": Figma plugins
+      - "extraction": token extraction
+      - "component_mapping": design-to-code
+      - "specs": specification generation
+      - "asset_export": image export
+      - "review": review process
+
+  - name: theming_strategy
+    type: custom
+    target: theming
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document theming implementation.
+      
+      Include:
+      1. Theme provider setup
+      2. CSS variables vs JS themes
+      3. Theme switching (runtime)
+      4. Component-level theming
+      5. Brand customization
+      6. Accessibility in themes (contrast)
+      
+      Output JSON with:
+      - "provider": theme provider
+      - "implementation": CSS/JS approach
+      - "switching": theme toggle
+      - "component_themes": component styling
+      - "branding": brand customization
+      - "a11y": accessible themes
+
+  - name: component_primitives
+    type: custom
+    target: primitives
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document primitive component architecture.
+      
+      Cover:
+      1. Primitive component set (Box, Text, Stack, etc.)
+      2. Style props API
+      3. Responsive prop patterns
+      4. Variants API
+      5. Composition patterns
+      6. Primitive documentation
+      
+      Output JSON with:
+      - "primitives": base components
+      - "style_props": styling API
+      - "responsive": responsive props
+      - "variants": variant system
+      - "composition": combining primitives
+      - "documentation": primitive docs
+
+  - name: documentation_site
+    type: custom
+    target: docs
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document design system documentation.
+      
+      Include:
+      1. Documentation platform (Storybook, Docusaurus)
+      2. Component documentation template
+      3. Usage guidelines
+      4. Design principles
+      5. Contribution guidelines
+      6. Versioning strategy
+      
+      Output JSON with:
+      - "platform": docs tool
+      - "template": doc structure
+      - "guidelines": usage docs
+      - "principles": design principles
+      - "contribution": contributing
+      - "versioning": version management
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: design-system
+    domain: frontend
+    has_design_system_docs: true

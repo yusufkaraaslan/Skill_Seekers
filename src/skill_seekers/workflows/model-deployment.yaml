@@ -1,0 +1,98 @@
+name: model-deployment
+description: Document ML model deployment patterns and infrastructure
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: deployment_architecture
+    type: custom
+    target: arch
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document model deployment architecture.
+      
+      Identify:
+      1. Deployment patterns (REST API, batch, edge, embedded)
+      2. Serving infrastructure (TensorFlow Serving, TorchServe, etc.)
+      3. Model packaging (Docker, MLflow, BentoML)
+      4. Scaling strategies (horizontal, vertical)
+      5. A/B testing setup
+      
+      Output JSON with:
+      - "deployment_patterns": patterns used
+      - "serving_infra": serving infrastructure
+      - "packaging": model packaging approach
+      - "scaling": scaling strategy
+
+  - name: model_versioning
+    type: custom
+    target: versioning
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document model versioning and registry.
+      
+      Cover:
+      1. Model registry usage (MLflow, Weights & Biases, etc.)
+      2. Version naming conventions
+      3. Model artifact storage
+      4. Rollback strategies
+      5. Model lineage tracking
+      
+      Output JSON with:
+      - "registry": model registry setup
+      - "versioning": version scheme
+      - "storage": artifact storage
+      - "rollback": rollback process
+
+  - name: inference_optimization
+    type: custom
+    target: inference
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document inference optimization techniques.
+      
+      Include:
+      1. Model quantization (INT8, FP16)
+      2. Model pruning
+      3. ONNX conversion
+      4. Batching strategies
+      5. GPU optimization
+      
+      Output JSON with:
+      - "quantization": quantization approach
+      - "onnx": ONNX conversion
+      - "batching": batching strategy
+      - "gpu_optimization": GPU usage
+
+  - name: monitoring_observability
+    type: custom
+    target: monitoring
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document model monitoring in production.
+      
+      Cover:
+      1. Prediction logging
+      2. Model drift detection
+      3. Performance metrics tracking
+      4. Alerting on degradation
+      5. Explainability/logging predictions
+      
+      Output JSON with:
+      - "logging": prediction logging
+      - "drift_detection": drift monitoring
+      - "metrics": key metrics
+      - "alerting": alert configuration
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: model-deployment
+    domain: ml

@@ -1,0 +1,98 @@
+name: push-notifications
+description: Document push notification implementation
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: push_architecture
+    type: custom
+    target: arch
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document push notification architecture.
+      
+      Identify:
+      1. Push service (FCM, APNs, OneSignal, etc.)
+      2. Token management
+      3. Payload structure
+      4. Backend integration
+      5. Notification categories/types
+      
+      Output JSON with:
+      - "push_service": service provider
+      - "token_mgmt": token handling
+      - "payload": notification payload
+      - "categories": notification types
+
+  - name: permission_handling
+    type: custom
+    target: permissions
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document notification permission handling.
+      
+      Cover:
+      1. Permission request timing
+      2. Pre-permission prompts
+      3. Handling denials gracefully
+      4. Re-requesting permissions
+      5. Platform differences (iOS vs Android)
+      
+      Output JSON with:
+      - "request_timing": when to ask
+      - "pre_prompts": pre-permission UI
+      - "denial_handling": handling rejections
+      - "platform_diffs": iOS vs Android
+
+  - name: notification_handling
+    type: custom
+    target: handling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document notification handling in app.
+      
+      Include:
+      1. Foreground notification display
+      2. Background/killed state handling
+      3. Notification actions/buttons
+      4. Deep linking from notifications
+      5. Notification grouping
+      
+      Output JSON with:
+      - "foreground_handling": in-app handling
+      - "background_handling": background processing
+      - "actions": action buttons
+      - "deep_linking": navigation from pushes
+
+  - name: rich_notifications
+    type: custom
+    target: rich
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document rich notification features.
+      
+      Cover:
+      1. Images/media in notifications
+      2. Notification extensions (iOS)
+      3. Interactive notifications
+      4. Progress notifications
+      5. Custom UI in notifications
+      
+      Output JSON with:
+      - "media": image/video support
+      - "interactive": user interaction
+      - "progress": progress notifications
+      - "custom_ui": custom notification UI
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: push-notifications
+    domain: mobile

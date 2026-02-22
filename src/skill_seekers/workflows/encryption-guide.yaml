@@ -1,0 +1,98 @@
+name: encryption-guide
+description: Document encryption implementation and key management
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: encryption_strategy
+    type: custom
+    target: strategy
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document encryption strategy.
+      
+      Identify:
+      1. Encryption at rest (database, files)
+      2. Encryption in transit (TLS, mTLS)
+      3. End-to-end encryption (if applicable)
+      4. Client-side encryption
+      5. Field-level encryption
+      
+      Output JSON with:
+      - "at_rest": rest encryption
+      - "in_transit": transit encryption
+      - "e2e": end-to-end encryption
+      - "field_level": column/field encryption
+
+  - name: key_management
+    type: custom
+    target: keys
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document encryption key management.
+      
+      Cover:
+      1. Key generation standards
+      2. Key storage (HSM, KMS)
+      3. Key rotation policies
+      4. Key access control
+      5. Key backup and recovery
+      
+      Output JSON with:
+      - "generation": key creation
+      - "storage": secure storage
+      - "rotation": key rotation
+      - "recovery": backup procedures
+
+  - name: algorithm_selection
+    type: custom
+    target: algorithms
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document cipher and algorithm selection.
+      
+      Include:
+      1. Symmetric encryption (AES-256-GCM)
+      2. Asymmetric encryption (RSA, ECC)
+      3. Hashing (bcrypt, Argon2, SHA-256)
+      4. When to use each algorithm
+      5. Deprecated algorithms to avoid
+      
+      Output JSON with:
+      - "symmetric": symmetric algorithms
+      - "asymmetric": asymmetric algorithms
+      - "hashing": hashing standards
+      - "avoid": deprecated algorithms
+
+  - name: implementation_patterns
+    type: custom
+    target: implementation
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document encryption implementation patterns.
+      
+      Cover:
+      1. Envelope encryption
+      2. Transparent Data Encryption (TDE)
+      3. Application-layer encryption
+      4. Encryption performance considerations
+      5. Search on encrypted data (if applicable)
+      
+      Output JSON with:
+      - "envelope": envelope encryption
+      - "tde": transparent encryption
+      - "app_layer": application encryption
+      - "performance": performance tuning
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: encryption-guide
+    domain: security

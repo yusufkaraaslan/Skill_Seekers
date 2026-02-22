@@ -203,7 +203,6 @@ This is existing skill content that should be preserved.
             self.assertFalse(result["success"])
             self.assertIn("not a zip", result["message"].lower())
 
-    @unittest.skip("Complex mocking - integration test needed with real API")
     def test_enhance_success(self):
         """Test successful enhancement - skipped (needs real API for integration test)"""
         pass

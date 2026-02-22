@@ -1,0 +1,170 @@
+name: component-library
+description: Document UI component library structure, patterns, and Storybook integration
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: library_structure
+    type: custom
+    target: structure
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the component library architecture.
+      
+      Identify:
+      1. Component organization (atomic design, feature-based)
+      2. Component categories (primitives, composites, layouts)
+      3. File structure and naming conventions
+      4. Component composition patterns
+      5. TypeScript interfaces and prop definitions
+      6. Component documentation standards
+      
+      Output JSON with:
+      - "organization": folder structure
+      - "categories": component types
+      - "naming": naming conventions
+      - "composition": composition patterns
+      - "typescript": type definitions
+      - "documentation": doc standards
+
+  - name: storybook_integration
+    type: custom
+    target: storybook
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Storybook configuration and patterns.
+      
+      Cover:
+      1. Storybook setup and addons
+      2. Story writing patterns (CSF, MDX)
+      3. Controls and argTypes configuration
+      4. Documentation pages
+      5. Component documentation template
+      6. Design token integration
+      7. Viewport and theme configuration
+      
+      Output JSON with:
+      - "setup": Storybook configuration
+      - "story_patterns": story writing
+      - "controls": argTypes setup
+      - "docs_pages": documentation
+      - "design_tokens": token integration
+      - "viewports": responsive testing
+
+  - name: component_api
+    type: custom
+    target: api
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document component API design patterns.
+      
+      Include:
+      1. Props naming and typing conventions
+      2. Compound component patterns
+      3. Render props vs hooks vs HOCs
+      4. Forward refs and imperative handles
+      5. Event handler naming (onX vs handleX)
+      6. Children and slot patterns
+      7. Polymorphic components (as prop)
+      
+      Output JSON with:
+      - "props": prop conventions
+      - "compound": compound patterns
+      - "patterns": render props/hooks
+      - "refs": ref forwarding
+      - "events": event handling
+      - "polymorphic": polymorphic support
+
+  - name: styling_patterns
+    type: custom
+    target: styling
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document component styling approaches.
+      
+      Cover:
+      1. CSS-in-JS libraries (Styled Components, Emotion)
+      2. CSS Modules
+      3. Utility-first CSS (Tailwind)
+      4. Design token integration
+      5. Theming and dark mode
+      6. Style overrides and customization
+      7. Responsive design within components
+      
+      Output JSON with:
+      - "approach": styling methodology
+      - "tokens": design tokens
+      - "theming": theme configuration
+      - "overrides": customization
+      - "responsive": responsive patterns
+
+  - name: accessibility_components
+    type: custom
+    target: a11y
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document component accessibility patterns.
+      
+      Include:
+      1. ARIA attributes and roles
+      2. Keyboard navigation support
+      3. Focus management
+      4. Screen reader announcements
+      5. Color contrast requirements
+      6. Reduced motion support
+      7. Accessibility testing
+      
+      Output JSON with:
+      - "aria": ARIA implementation
+      - "keyboard": keyboard support
+      - "focus": focus management
+      - "screen_readers": SR compatibility
+      - "contrast": visual accessibility
+      - "testing": a11y verification
+
+  - name: testing_components
+    type: custom
+    target: testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document component testing strategies.
+      
+      Cover:
+      1. Unit testing with React Testing Library
+      2. Snapshot testing best practices
+      3. Visual regression testing (Chromatic, Loki)
+      4. Interaction testing in Storybook
+      5. Accessibility testing (jest-axe)
+      6. Mocking strategies
+      7. Test coverage requirements
+      
+      Output JSON with:
+      - "unit_tests": component testing
+      - "snapshots": snapshot guidelines
+      - "visual_regression": visual testing
+      - "interactions": interaction tests
+      - "a11y_tests": accessibility testing
+      - "coverage": coverage standards
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: component-library
+    domain: frontend
+    has_component_docs: true

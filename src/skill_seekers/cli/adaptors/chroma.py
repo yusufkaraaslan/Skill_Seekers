@@ -226,7 +226,7 @@ class ChromaAdaptor(SkillAdaptor):
         """
         try:
             import chromadb
-        except ImportError:
+        except (ImportError, Exception):
             return {
                 "success": False,
                 "message": "chromadb not installed. Run: pip install chromadb",

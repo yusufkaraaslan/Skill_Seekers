@@ -1,0 +1,97 @@
+name: offline-first
+description: Document offline-first architecture and data sync
+version: "1.0"
+applies_to:
+  - codebase_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: offline_architecture
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document offline-first architecture.
+      
+      Identify:
+      1. Local database (SQLite, Realm, Core Data, etc.)
+      2. Data synchronization strategy
+      3. Conflict resolution approach
+      4. Network state detection
+      5. Caching layers
+      
+      Output JSON with:
+      - "local_db": local database choice
+      - "sync_strategy": synchronization approach
+      - "conflict_resolution": conflict handling
+      - "network_detection": connectivity monitoring
+
+  - name: data_sync
+    type: custom
+    target: sync
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document data synchronization patterns.
+      
+      Cover:
+      1. Bidirectional sync
+      2. Delta sync (only changed data)
+      3. Sync queue management
+      4. Retry mechanisms
+      5. Background sync triggers
+      
+      Output JSON with:
+      - "sync_patterns": sync implementations
+      - "delta_sync": delta implementation
+      - "queue_management": queue handling
+      - "background_sync": background triggers
+
+  - name: conflict_resolution
+    type: custom
+    target: conflicts
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document conflict resolution strategies.
+      
+      Include:
+      1. Last-write-wins strategy
+      2. Operational Transform (OT)
+      3. Conflict-free Replicated Data Types (CRDTs)
+      4. Custom merge logic
+      5. User conflict resolution UI
+      
+      Output JSON with:
+      - "strategies": conflict strategies
+      - "implementation": merge logic code
+      - "user_resolution": UI for conflicts
+
+  - name: offline_ux
+    type: custom
+    target: ux
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document offline user experience patterns.
+      
+      Cover:
+      1. Visual indicators (online/offline status)
+      2. Queued action feedback
+      3. Optimistic UI updates
+      4. Sync progress indicators
+      5. Error handling when offline
+      
+      Output JSON with:
+      - "indicators": status indicators
+      - "feedback": user feedback patterns
+      - "optimistic_ui": optimistic updates
+      - "error_handling": offline errors
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: offline-first
+    domain: mobile

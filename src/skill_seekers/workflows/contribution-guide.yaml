@@ -1,0 +1,117 @@
+name: contribution-guide
+description: Help contributors understand and contribute to the codebase
+version: "1.0"
+applies_to:
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: codebase_tour
+    type: custom
+    target: tour
+    uses_history: false
+    enabled: true
+    prompt: >
+      Provide a guided tour of the codebase for new contributors.
+      
+      Include:
+      1. Directory structure overview
+      2. Key files and their purposes
+      3. Module/component relationships
+      4. Where to find different types of code
+      
+      Output JSON with:
+      - "directory_structure": map of folders
+      - "key_files": important files explained
+      - "architecture_overview": how pieces fit together
+
+  - name: development_setup
+    type: custom
+    target: dev_setup
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document local development environment setup.
+      
+      Include:
+      1. Prerequisites and dependencies
+      2. Repository clone and setup steps
+      3. Dependency installation
+      4. Environment configuration
+      5. Verification steps (run tests, start app)
+      
+      Output JSON with:
+      - "prerequisites": required tools
+      - "setup_steps": ordered installation steps
+      - "verification": how to confirm it works
+      - "troubleshooting": common setup issues
+
+  - name: testing_guide
+    type: custom
+    target: contrib_testing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document how to run and write tests.
+      
+      Cover:
+      1. Running the test suite
+      2. Test structure and organization
+      3. Writing new tests
+      4. Test coverage requirements
+      5. Debugging failing tests
+      
+      Output JSON with:
+      - "test_commands": how to run tests
+      - "test_structure": how tests are organized
+      - "writing_tests": guide for new tests
+      - "coverage": coverage requirements
+
+  - name: pr_checklist
+    type: custom
+    target: pr_guide
+    uses_history: true
+    enabled: true
+    prompt: >
+      Define contribution requirements and PR guidelines.
+      
+      Include:
+      1. PR checklist (tests, docs, etc.)
+      2. Commit message conventions
+      3. Code review process
+      4. Issue linking
+      5. CLA/sign-off requirements
+      
+      Output JSON with:
+      - "pr_template": PR description template
+      - "checklist": items to verify before submitting
+      - "commit_conventions": commit message format
+      - "review_process": what to expect
+
+  - name: code_style
+    type: custom
+    target: style
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document code style and conventions.
+      
+      Cover:
+      1. Linting tools and configuration
+      2. Formatting rules
+      3. Naming conventions
+      4. Documentation requirements
+      5. Code organization patterns
+      
+      Output JSON with:
+      - "linting": lint tools and commands
+      - "formatting": formatter configuration
+      - "naming": naming conventions
+      - "patterns": code organization guidelines
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: contribution-guide
+    for_contributors: true

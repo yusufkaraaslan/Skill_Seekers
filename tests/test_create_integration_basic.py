@@ -24,9 +24,16 @@ class TestCreateCommandBasic:
 
     def test_create_detects_web_url(self):
         """Test that web URLs are detected and routed correctly."""
-        # Skip this test for now - requires actual implementation
-        # The command structure needs refinement for subprocess calls
-        pytest.skip("Requires full end-to-end implementation")
+        from skill_seekers.cli.source_detector import SourceDetector
+
+        info = SourceDetector.detect("https://docs.react.dev/")
+        assert info.type == "web"
+        assert info.parsed["url"] == "https://docs.react.dev/"
+        assert info.suggested_name  # non-empty
+
+        # Plain domain should also be treated as web
+        info2 = SourceDetector.detect("docs.example.com")
+        assert info2.type == "web"
 
     def test_create_detects_github_repo(self):
         """Test that GitHub repos are detected."""
@@ -95,10 +102,16 @@ class TestCreateCommandBasic:
         assert result.returncode in [0, 2]
 
     def test_create_invalid_source_shows_error(self):
-        """Test that invalid sources show helpful error."""
-        # Skip this test for now - requires actual implementation
-        # The error handling needs to be integrated with the unified CLI
-        pytest.skip("Requires full end-to-end implementation")
+        """Test that invalid sources raise a helpful ValueError."""
+        from skill_seekers.cli.source_detector import SourceDetector
+
+        with pytest.raises(ValueError) as exc_info:
+            SourceDetector.detect("not_a_valid_source_123_xyz")
+
+        error_message = str(exc_info.value)
+        assert "Cannot determine source type" in error_message
+        # Error should include helpful examples
+        assert "https://" in error_message or "github" in error_message.lower()
 
     def test_create_supports_universal_flags(self):
         """Test that universal flags are accepted."""

@@ -1,0 +1,194 @@
+name: api-gateway
+description: Document API gateway configuration, routing, and management
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+variables:
+  depth: comprehensive
+stages:
+  - name: base_patterns
+    type: builtin
+    target: patterns
+    enabled: true
+    uses_history: false
+
+  - name: gateway_platform
+    type: custom
+    target: platform
+    uses_history: false
+    enabled: true
+    prompt: >
+      Analyze the API gateway platform and configuration.
+      
+      Identify:
+      1. Gateway technology (Kong, AWS API Gateway, Nginx, Envoy, etc.)
+      2. Deployment mode (managed, self-hosted, Kubernetes)
+      3. Configuration method (declarative, UI, API)
+      4. Multi-region or edge deployment
+      5. High availability setup
+      6. Version being used
+      
+      Output JSON with:
+      - "technology": gateway platform
+      - "deployment_mode": hosting approach
+      - "configuration": config method
+      - "topology": deployment layout
+      - "ha_setup": availability config
+      - "version": gateway version
+
+  - name: routing_configuration
+    type: custom
+    target: routing
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document routing and traffic management.
+      
+      Cover:
+      1. Route matching rules (path, method, host)
+      2. Upstream service definitions
+      3. Load balancing algorithms
+      4. Path rewriting and transformation
+      5. Header manipulation
+      6. Redirect and forwarding rules
+      
+      Output JSON with:
+      - "route_rules": matching configuration
+      - "upstreams": backend services
+      - "load_balancing": LB strategy
+      - "path_rewrite": URL transformation
+      - "headers": header rules
+      - "redirects": redirect config
+
+  - name: security_policies
+    type: custom
+    target: security
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gateway security policies.
+      
+      Include:
+      1. Authentication methods (JWT, API keys, OAuth)
+      2. Rate limiting and throttling
+      3. IP allowlisting/blocklisting
+      4. CORS configuration
+      5. SSL/TLS termination
+      6. WAF integration
+      7. Bot protection
+      
+      Output JSON with:
+      - "authentication": auth methods
+      - "rate_limiting": throttling rules
+      - "ip_policies": IP restrictions
+      - "cors": CORS setup
+      - "tls": encryption config
+      - "waf": WAF rules
+      - "bot_protection": bot defense
+
+  - name: traffic_management
+    type: custom
+    target: traffic
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document advanced traffic management.
+      
+      Cover:
+      1. Canary deployments
+      2. Blue-green deployments
+      3. A/B testing configuration
+      4. Circuit breaker patterns
+      5. Retry policies
+      6. Timeout configuration
+      7. Request buffering
+      
+      Output JSON with:
+      - "canary": canary release config
+      - "blue_green": blue-green setup
+      - "ab_testing": A/B routing
+      - "circuit_breaker": failure handling
+      - "retries": retry logic
+      - "timeouts": timeout settings
+      - "buffering": request buffering
+
+  - name: observability_gateway
+    type: custom
+    target: observability
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gateway observability.
+      
+      Include:
+      1. Access logging configuration
+      2. Metrics collection (latency, throughput, errors)
+      3. Distributed tracing integration
+      4. Health check endpoints
+      5. Alerting rules
+      6. Dashboard setup
+      
+      Output JSON with:
+      - "access_logs": logging config
+      - "metrics": key metrics
+      - "tracing": trace integration
+      - "health_checks": health endpoints
+      - "alerts": alerting rules
+      - "dashboards": monitoring UI
+
+  - name: plugin_extensions
+    type: custom
+    target: plugins
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document gateway plugins and extensions.
+      
+      Cover:
+      1. Built-in plugins used
+      2. Custom plugin development
+      3. Plugin configuration
+      4. Plugin ordering and precedence
+      5. Serverless/Lambda integration
+      6. Request/response transformation
+      
+      Output JSON with:
+      - "built_in": standard plugins
+      - "custom_plugins": custom extensions
+      - "configuration": plugin config
+      - "ordering": execution order
+      - "serverless": function integration
+      - "transformations": data transformation
+
+  - name: developer_portal
+    type: custom
+    target: portal
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document developer experience and portal.
+      
+      Include:
+      1. API documentation generation
+      2. Developer portal setup
+      3. API key management
+      4. Usage analytics for consumers
+      5. Onboarding flows
+      6. Sandbox/testing environment
+      
+      Output JSON with:
+      - "documentation": API docs
+      - "portal": developer portal
+      - "key_management": API key handling
+      - "analytics": usage tracking
+      - "onboarding": getting started
+      - "sandbox": test environment
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: api-gateway
+    domain: backend
+    has_gateway_docs: true

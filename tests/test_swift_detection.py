@@ -1325,28 +1325,52 @@ class TestSwiftErrorHandling:
         import sys
         from unittest.mock import patch
 
-        # Remove module from cache
-        for mod in list(sys.modules.keys()):
-            if "skill_seekers.cli" in mod:
-                del sys.modules[mod]
+        # Save all existing skill_seekers.cli modules so we can restore them afterward.
+        # Deleting them is necessary to force a fresh import of language_detector with the
+        # mocked swift_patterns, but leaving them deleted would break other tests that rely
+        # on the original module objects (e.g. @patch decorators in test_unified_analyzer.py
+        # patch the module in sys.modules, but methods on already-imported classes still use
+        # the original module's globals).
+        saved_cli_modules = {k: v for k, v in sys.modules.items() if "skill_seekers.cli" in k}
 
-        # Mock empty SWIFT_PATTERNS during import
-        with patch.dict(
-            "sys.modules",
-            {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})},
-        ):
-            from skill_seekers.cli.language_detector import LanguageDetector
+        try:
+            # Remove module from cache to force fresh import
+            for mod in list(sys.modules.keys()):
+                if "skill_seekers.cli" in mod:
+                    del sys.modules[mod]
 
-            # Create detector - should handle empty patterns gracefully
-            detector = LanguageDetector()
+            # Mock empty SWIFT_PATTERNS during import
+            with patch.dict(
+                "sys.modules",
+                {"skill_seekers.cli.swift_patterns": type("MockModule", (), {"SWIFT_PATTERNS": {}})},
+            ):
+                from skill_seekers.cli.language_detector import LanguageDetector
 
-            # Swift code should not crash detection
-            code = "import SwiftUI\nstruct MyView: View { }"
-            lang, confidence = detector.detect_from_code(code)
+                # Create detector - should handle empty patterns gracefully
+                detector = LanguageDetector()
 
-            # Just verify it didn't crash - result may vary
-            assert isinstance(lang, str)
-            assert isinstance(confidence, (int, float))
+                # Swift code should not crash detection
+                code = "import SwiftUI\nstruct MyView: View { }"
+                lang, confidence = detector.detect_from_code(code)
+
+                # Just verify it didn't crash - result may vary
+                assert isinstance(lang, str)
+                assert isinstance(confidence, (int, float))
+        finally:
+            # Remove the freshly imported skill_seekers.cli modules from sys.modules
+            for mod in list(sys.modules.keys()):
+                if "skill_seekers.cli" in mod:
+                    del sys.modules[mod]
+            # Restore the original module objects so subsequent tests work correctly
+            sys.modules.update(saved_cli_modules)
+            # Python's import system also sets submodule references as attributes on
+            # parent packages (e.g. skill_seekers.cli.language_detector gets set as
+            # an attribute on skill_seekers.cli). Restore those attributes too so that
+            # dotted-import statements resolve to the original module objects.
+            for key, mod in saved_cli_modules.items():
+                parent_key, _, attr = key.rpartition(".")
+                if parent_key and parent_key in sys.modules:
+                    setattr(sys.modules[parent_key], attr, mod)
 
     def test_non_string_pattern_handled_during_compilation(self):
         """Test that non-string patterns are caught during compilation"""

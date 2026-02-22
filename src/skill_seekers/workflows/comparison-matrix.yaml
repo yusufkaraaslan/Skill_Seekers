@@ -1,0 +1,96 @@
+name: comparison-matrix
+description: Compare with alternative tools and libraries
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - doc_scraping
+variables:
+  depth: comprehensive
+  alternatives: []
+stages:
+  - name: feature_comparison
+    type: custom
+    target: comparison
+    uses_history: false
+    enabled: true
+    prompt: >
+      Create a comprehensive feature comparison matrix.
+      
+      Compare this tool with alternatives in these categories:
+      1. Core features
+      2. Performance characteristics
+      3. Learning curve
+      4. Ecosystem size
+      5. Maintenance/Community activity
+      6. Enterprise readiness
+      
+      Be objective - acknowledge where alternatives excel.
+      
+      Output JSON with:
+      - "feature_matrix": table of features vs tools
+      - "strengths": this tool's unique advantages
+      - "weaknesses": areas where alternatives are better
+
+  - name: when_to_use
+    type: custom
+    target: decision_tree
+    uses_history: false
+    enabled: true
+    prompt: >
+      Create a decision framework for choosing this tool.
+      
+      Include:
+      1. "Choose this tool when..." criteria
+      2. "Consider alternatives when..." criteria
+      3. Decision flowchart logic
+      4. Team/project fit assessment
+      
+      Output JSON with:
+      - "ideal_for": scenarios where this tool shines
+      - "not_ideal_for": scenarios to consider alternatives
+      - "decision_criteria": questions to ask when choosing
+
+  - name: migration_from_alternatives
+    type: custom
+    target: migration_comparison
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document migration paths from competing tools.
+      
+      For each major alternative:
+      1. Concept mapping (X in Tool A = Y in This Tool)
+      2. Migration effort estimate
+      3. Step-by-step migration guide
+      4. Common pitfalls during migration
+      
+      Output JSON with:
+      - "migration_guides": array of alternative→this guides
+      - "concept_mapping": dictionary of equivalents
+      - "effort_estimates": rough migration timelines
+
+  - name: ecosystem_overview
+    type: custom
+    target: ecosystem
+    uses_history: true
+    enabled: true
+    prompt: >
+      Map the broader ecosystem around this tool.
+      
+      Document:
+      1. Complementary tools that work well together
+      2. Integration plugins/extensions
+      3. Related tools in the same space
+      4. Community resources (boilerplates, starters)
+      
+      Output JSON with:
+      - "complementary_tools": tools that enhance this one
+      - "integrations": plugins and extensions
+      - "community_resources": useful community projects
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: comparison-matrix
+    has_comparison: true

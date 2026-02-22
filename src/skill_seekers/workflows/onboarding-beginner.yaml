@@ -1,0 +1,123 @@
+name: onboarding-beginner
+description: Create beginner-friendly documentation for new developers
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - doc_scraping
+  - github_analysis
+variables:
+  depth: beginner
+stages:
+  - name: prerequisite_checker
+    type: custom
+    target: prerequisites
+    uses_history: false
+    enabled: true
+    prompt: >
+      Identify the knowledge prerequisites for using this codebase/tool.
+      
+      Categorize as:
+      1. MUST know (required to use this tool)
+      2. SHOULD know (recommended for effective use)
+      3. NICE to know (helps with advanced usage)
+      
+      For each prerequisite:
+      - Name and why it's needed
+      - Resources to learn (if not common knowledge)
+      
+      Output JSON with:
+      - "required_knowledge": array of MUST know items
+      - "recommended_knowledge": array of SHOULD know items
+      - "advanced_knowledge": array of NICE to know items
+
+  - name: glossary
+    type: custom
+    target: glossary
+    uses_history: false
+    enabled: true
+    prompt: >
+      Create a beginner-friendly glossary of technical terms used in this codebase.
+      
+      For each term:
+      - Simple definition (avoid jargon)
+      - Why it matters to beginners
+      - Example or analogy if helpful
+      
+      Focus on:
+      - Domain-specific terminology
+      - Abbreviations and acronyms
+      - Concepts unique to this tool/framework
+      
+      Output JSON with "glossary" array of {term, definition, example}
+
+  - name: first_5_minutes
+    type: custom
+    target: quickstart
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create an absolute minimal quickstart for complete beginners.
+      
+      The user should have something working in 5 minutes.
+      
+      Include:
+      1. One-line installation (if possible)
+      2. Minimal code example that runs
+      3. Expected output they should see
+      4. "It worked!" confirmation signal
+      
+      Avoid:
+      - Configuration options
+      - Advanced features
+      - Background explanations (link to docs instead)
+      
+      Output JSON with:
+      - "steps": array of simple steps
+      - "code_example": runnable minimal code
+      - "expected_output": what success looks like
+
+  - name: common_confusions
+    type: custom
+    target: pitfalls
+    uses_history: true
+    enabled: true
+    prompt: >
+      Identify common beginner mistakes and confusions.
+      
+      For each pitfall:
+      - The mistake beginners make
+      - Why it's confusing (root cause)
+      - How to avoid it
+      - What error/message indicates this problem
+      
+      Output JSON with "common_confusions" array of:
+      {mistake, why_confusing, solution, warning_signs}
+
+  - name: learning_path
+    type: custom
+    target: learning_path
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a structured learning path from beginner to advanced.
+      
+      Organize into milestones:
+      1. Hello World (absolute basics)
+      2. Core Concepts (essential patterns)
+      3. Building Projects (practical application)
+      4. Advanced Techniques (power user features)
+      5. Expert Mastery (contributing, extending)
+      
+      Each milestone should have:
+      - Topics to learn
+      - Practice projects/exercises
+      - Time estimate
+      
+      Output JSON with "learning_path" as array of milestones
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: onboarding-beginner
+    audience: beginners
