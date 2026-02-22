@@ -105,8 +105,9 @@ class ConfigAnalyzer:
             # Get primary source (base_url or repo)
             primary_source = self._get_primary_source(config_data, config_type)
 
-            # Auto-categorize
-            category = self._categorize_config(name, description, config_data)
+            # Use directory name as category (official/{category}/{name}.json)
+            # Fall back to keyword-based categorization if not in a named subdirectory
+            category = self._categorize_config(name, description, config_data, config_path)
 
             # Extract tags
             tags = self._extract_tags(name, description, config_data)
@@ -212,26 +213,42 @@ class ConfigAnalyzer:
 
         return "Unknown"
 
-    def _categorize_config(self, name: str, description: str, config_data: dict[str, Any]) -> str:
+    def _categorize_config(
+        self,
+        name: str,
+        description: str,
+        config_data: dict[str, Any],
+        config_path: Path | None = None,
+    ) -> str:
         """
-        Auto-categorize config based on name and content
+        Categorize config using directory structure first, then keyword fallback.
+
+        The configs_repo organizes files as official/{category}/{name}.json so the
+        parent directory name is the authoritative category.
 
         Args:
             name: Config name
             description: Config description
             config_data: Full config data
+            config_path: Path to config file (used to read directory-based category)
 
         Returns:
             Category name
         """
-        name_lower = name.lower()
+        # Primary: use directory structure (official/{category}/{name}.json)
+        if config_path is not None:
+            parent = config_path.parent.name
+            # Exclude generic/root directories from being used as categories
+            if parent not in ("official", "community", "configs", "configs_repo", "."):
+                return parent
 
-        # Check against category mapping
+        # Fallback: keyword matching against config name
+        name_lower = name.lower()
         for category, keywords in self.CATEGORY_MAPPING.items():
             if any(keyword in name_lower for keyword in keywords):
                 return category
 
-        # Check description for hints
+        # Fallback: description hints
         desc_lower = description.lower()
         if "framework" in desc_lower or "library" in desc_lower:
             if any(word in desc_lower for word in ["web", "frontend", "backend", "api"]):
@@ -243,7 +260,6 @@ class ConfigAnalyzer:
         if "devops" in desc_lower or "deployment" in desc_lower or "infrastructure" in desc_lower:
             return "devops"
 
-        # Default to uncategorized
         return "uncategorized"
 
     def _extract_tags(self, name: str, description: str, config_data: dict[str, Any]) -> list[str]:
