@@ -11,11 +11,8 @@ Covers:
 """
 
 import json
-import os
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from skill_seekers.cli.unified_scraper import UnifiedScraper
 
@@ -85,10 +82,10 @@ class TestScrapeAllSourcesRouting:
 
         calls = {"documentation": 0, "github": 0, "pdf": 0, "local": 0}
 
-        monkeypatch.setattr(scraper, "_scrape_documentation", lambda s: calls.__setitem__("documentation", calls["documentation"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_github", lambda s: calls.__setitem__("github", calls["github"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_pdf", lambda s: calls.__setitem__("pdf", calls["pdf"] + 1))
-        monkeypatch.setattr(scraper, "_scrape_local", lambda s: calls.__setitem__("local", calls["local"] + 1))
+        monkeypatch.setattr(scraper, "_scrape_documentation", lambda _s: calls.__setitem__("documentation", calls["documentation"] + 1))
+        monkeypatch.setattr(scraper, "_scrape_github", lambda _s: calls.__setitem__("github", calls["github"] + 1))
+        monkeypatch.setattr(scraper, "_scrape_pdf", lambda _s: calls.__setitem__("pdf", calls["pdf"] + 1))
+        monkeypatch.setattr(scraper, "_scrape_local", lambda _s: calls.__setitem__("local", calls["local"] + 1))
 
         scraper.scrape_all_sources()
         return calls
@@ -149,10 +146,10 @@ class TestScrapeAllSourcesRouting:
         ]
         calls = {"documentation": 0, "github": 0}
 
-        def raise_on_doc(s):
+        def raise_on_doc(_s):
             raise RuntimeError("simulated doc failure")
 
-        def count_github(s):
+        def count_github(_s):
             calls["github"] += 1
 
         monkeypatch.setattr(scraper, "_scrape_documentation", raise_on_doc)
@@ -217,7 +214,7 @@ class TestScrapeDocumentation:
 
         with (
             patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, f, **kw: written_configs.append(obj)),
+            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, _f, **_kw: written_configs.append(obj)),
         ):
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
@@ -237,7 +234,7 @@ class TestScrapeDocumentation:
 
         with (
             patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, f, **kw: written_configs.append(obj)),
+            patch("skill_seekers.cli.unified_scraper.json.dump", side_effect=lambda obj, _f, **_kw: written_configs.append(obj)),
         ):
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
@@ -275,12 +272,13 @@ class TestScrapeGithub:
 
         mock_cls, mock_inst = self._mock_github_scraper(monkeypatch)
 
-        with patch("skill_seekers.cli.unified_scraper.json.dump"):
-            with patch("skill_seekers.cli.unified_scraper.json.dumps", return_value="{}"):
-                # Need output dir for the converter data file write
-                (tmp_path / "output").mkdir(parents=True, exist_ok=True)
-                with patch("builtins.open", MagicMock()):
-                    scraper._scrape_github(source)
+        (tmp_path / "output").mkdir(parents=True, exist_ok=True)
+        with (
+            patch("skill_seekers.cli.unified_scraper.json.dump"),
+            patch("skill_seekers.cli.unified_scraper.json.dumps", return_value="{}"),
+            patch("builtins.open", MagicMock()),
+        ):
+            scraper._scrape_github(source)
 
         mock_cls.assert_called_once()
         init_call_config = mock_cls.call_args[0][0]
@@ -427,37 +425,44 @@ class TestScrapePdf:
 
 
 class TestScrapeLocal:
-    """
-    _scrape_local() contains a known bug: it references `args` which is not in
-    scope (it belongs to run()). The except block logs the error then re-raises it
-    (line 650: `raise`), so the NameError propagates to the caller.
-    These tests document that behaviour.
-    """
+    """_scrape_local() delegates to analyze_codebase and populates scraped_data."""
 
-    def test_args_name_error_propagates(self, tmp_path):
-        """
-        Without patching, calling _scrape_local() raises NameError on 'args'.
-        The except block logs and re-raises the exception.
-        """
-        scraper = _make_scraper(tmp_path=tmp_path)
-        source = {"type": "local", "path": str(tmp_path)}
-
-        with pytest.raises(NameError, match="args"):
-            scraper._scrape_local(source)
-
-    def test_source_counter_incremented_before_failure(self, tmp_path):
-        """
-        Counter increment happens BEFORE the try block that raises, so the
-        counter is incremented even when the NameError propagates.
-        """
+    def test_source_counter_incremented(self, tmp_path, monkeypatch):
+        """Counter is incremented when _scrape_local() is called."""
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {"type": "local", "path": str(tmp_path)}
         assert scraper._source_counters["local"] == 0
 
-        with pytest.raises(NameError):
-            scraper._scrape_local(source)
+        monkeypatch.setattr(
+            "skill_seekers.cli.codebase_scraper.analyze_codebase",
+            MagicMock(),
+        )
+
+        scraper._scrape_local(source)
 
         assert scraper._source_counters["local"] == 1
+
+    def test_enhance_level_uses_cli_args_override(self, tmp_path, monkeypatch):
+        """CLI --enhance-level overrides per-source enhance_level."""
+        import argparse
+
+        scraper = _make_scraper(tmp_path=tmp_path)
+        source = {"type": "local", "path": str(tmp_path), "enhance_level": 1}
+        scraper._cli_args = argparse.Namespace(enhance_level=3)
+
+        captured_kwargs = {}
+
+        def fake_analyze(**kwargs):
+            captured_kwargs.update(kwargs)
+
+        monkeypatch.setattr(
+            "skill_seekers.cli.codebase_scraper.analyze_codebase",
+            fake_analyze,
+        )
+
+        scraper._scrape_local(source)
+
+        assert captured_kwargs.get("enhance_level") == 3
 
 
 # ===========================================================================
@@ -541,8 +546,10 @@ class TestRunOrchestration:
 
         captured = {}
 
-        def fake_run_workflows(args, context=None):
+        def fake_run_workflows(args, context=None):  # noqa: ARG001
             captured["workflows"] = getattr(args, "enhance_workflow", None)
+
+        import contextlib
 
         import skill_seekers.cli.unified_scraper as us_mod
         import skill_seekers.cli.workflow_runner as wr_mod
@@ -556,18 +563,14 @@ class TestRunOrchestration:
             scraper.run(args=None)
         finally:
             if orig_us is None:
-                try:
+                with contextlib.suppress(AttributeError):
                     delattr(us_mod, "run_workflows")
-                except AttributeError:
-                    pass
             else:
                 us_mod.run_workflows = orig_us
 
             if orig_wr is None:
-                try:
+                with contextlib.suppress(AttributeError):
                     delattr(wr_mod, "run_workflows")
-                except AttributeError:
-                    pass
             else:
                 wr_mod.run_workflows = orig_wr
 

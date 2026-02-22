@@ -10,9 +10,6 @@ Covers all 5 tools:
 
 from __future__ import annotations
 
-from pathlib import Path
-from unittest.mock import patch
-
 import pytest
 import yaml
 
@@ -83,7 +80,7 @@ def bundled_fixture(monkeypatch):
     )
     monkeypatch.setattr(
         "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-        lambda name: bundled.get(name),
+        lambda _name: bundled.get(_name),
     )
 
 
@@ -96,7 +93,7 @@ class TestListWorkflowsTool:
     def test_empty_returns_empty_list(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import list_workflows_tool
 
@@ -125,7 +122,7 @@ class TestListWorkflowsTool:
     def test_returns_user_workflows(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         (user_dir / "my-workflow.yaml").write_text(VALID_WORKFLOW_YAML, encoding="utf-8")
@@ -159,7 +156,7 @@ class TestListWorkflowsTool:
     def test_ignores_args_parameter(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import list_workflows_tool
 
@@ -177,7 +174,7 @@ class TestGetWorkflowTool:
     def test_missing_name_returns_error(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import get_workflow_tool
 
@@ -188,7 +185,7 @@ class TestGetWorkflowTool:
     def test_empty_name_returns_error(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import get_workflow_tool
 
@@ -213,7 +210,7 @@ class TestGetWorkflowTool:
     def test_returns_user_workflow_content(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         (user_dir / "my-wf.yaml").write_text(VALID_WORKFLOW_YAML, encoding="utf-8")
@@ -237,7 +234,7 @@ class TestGetWorkflowTool:
     def test_not_found_no_available_shows_none(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import get_workflow_tool
 
@@ -362,7 +359,7 @@ class TestUpdateWorkflowTool:
     def test_updates_existing_user_workflow(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         (user_dir / "existing.yaml").write_text(VALID_WORKFLOW_YAML, encoding="utf-8")
@@ -389,7 +386,7 @@ class TestUpdateWorkflowTool:
     def test_success_message_contains_name(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         (user_dir / "my-wf.yaml").write_text(VALID_WORKFLOW_YAML, encoding="utf-8")
@@ -429,7 +426,7 @@ class TestDeleteWorkflowTool:
     def test_not_found_user_workflow_returns_error(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import delete_workflow_tool
 
@@ -440,7 +437,7 @@ class TestDeleteWorkflowTool:
     def test_deletes_user_yaml_file(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         wf_file = user_dir / "to-delete.yaml"
@@ -455,7 +452,7 @@ class TestDeleteWorkflowTool:
     def test_deletes_user_yml_extension(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         wf_file = user_dir / "to-delete.yml"
@@ -470,7 +467,7 @@ class TestDeleteWorkflowTool:
     def test_success_message_contains_path(self, user_dir, bundled_names_empty, monkeypatch):
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         user_dir.mkdir(parents=True)
         (user_dir / "bye.yaml").write_text(VALID_WORKFLOW_YAML, encoding="utf-8")
@@ -491,7 +488,7 @@ class TestWorkflowRoundTrip:
         """Create → list → get → update → delete a workflow end-to-end."""
         monkeypatch.setattr(
             "skill_seekers.mcp.tools.workflow_tools._read_bundled",
-            lambda name: None,
+            lambda _name: None,
         )
         from skill_seekers.mcp.tools.workflow_tools import (
             create_workflow_tool,

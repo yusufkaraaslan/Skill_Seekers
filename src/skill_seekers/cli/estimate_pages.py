@@ -5,7 +5,6 @@ Quickly estimates how many pages a config will scrape without downloading conten
 """
 
 import json
-import os
 import sys
 import time
 from pathlib import Path

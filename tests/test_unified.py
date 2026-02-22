@@ -663,7 +663,7 @@ class TestWorkflowJsonConfig:
         """JSON 'workflows' list is used even when args=None."""
         captured = {}
 
-        def fake_run_workflows(args, context=None):
+        def fake_run_workflows(args, context=None):  # noqa: ARG001
             captured["enhance_workflow"] = getattr(args, "enhance_workflow", None)
 
         monkeypatch.setattr(

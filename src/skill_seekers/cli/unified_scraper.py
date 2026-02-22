@@ -562,7 +562,8 @@ class UnifiedScraper:
             # Note: Signal flow analysis is automatic for Godot projects (C3.10)
 
             # AI enhancement settings (CLI --enhance-level overrides per-source config)
-            cli_enhance_level = getattr(args, "enhance_level", None) if args is not None else None
+            cli_args = getattr(self, "_cli_args", None)
+            cli_enhance_level = getattr(cli_args, "enhance_level", None) if cli_args is not None else None
             enhance_level = cli_enhance_level if cli_enhance_level is not None else source.get("enhance_level", 0)
 
             # Run codebase analysis
@@ -953,6 +954,9 @@ class UnifiedScraper:
                   When provided, enhancement workflows (--enhance-workflow,
                   --enhance-stage) are executed after the skill is built.
         """
+        # Store CLI args so _scrape_local() can access --enhance-level override
+        self._cli_args = args
+
         logger.info("\n" + "🚀 " * 20)
         logger.info(f"Unified Scraper: {self.config['name']}")
         logger.info("🚀 " * 20 + "\n")

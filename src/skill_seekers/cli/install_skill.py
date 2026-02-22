@@ -29,7 +29,6 @@ Examples:
 import argparse
 import asyncio
 import sys
-from pathlib import Path
 
 # Import the MCP tool function (with lazy loading)
 try:

@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-import types
 
 import pytest
 
@@ -13,19 +12,19 @@ import pytest
 
 def _make_args(**kwargs):
     """Build a fake Namespace with sensible defaults."""
-    defaults = dict(
-        skill_directory="output/react",
-        target=None,
-        api_key=None,
-        dry_run=False,
-        agent=None,
-        agent_cmd=None,
-        interactive_enhancement=False,
-        background=False,
-        daemon=False,
-        no_force=False,
-        timeout=600,
-    )
+    defaults = {
+        "skill_directory": "output/react",
+        "target": None,
+        "api_key": None,
+        "dry_run": False,
+        "agent": None,
+        "agent_cmd": None,
+        "interactive_enhancement": False,
+        "background": False,
+        "daemon": False,
+        "no_force": False,
+        "timeout": 600,
+    }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
 
@@ -169,8 +168,6 @@ class TestPickModeAutoDetect:
 class TestPickModeConfigAgent:
     def _patch_config(self, monkeypatch, agent: str | None):
         """Patch get_config_manager to return a stub with get_default_agent()."""
-        stub = types.SimpleNamespace(get_default_agent=lambda: agent)
-
         monkeypatch.setattr(
             "skill_seekers.cli.enhance_command._get_config_default_agent",
             lambda: agent,
@@ -312,7 +309,7 @@ class TestEnhanceCommandMain:
         # Patch _run_api_mode to avoid real API call
         monkeypatch.setattr(
             "skill_seekers.cli.enhance_command._run_api_mode",
-            lambda args, target: 0,
+            lambda *_: 0,
         )
 
         sys_argv_backup = sys.argv.copy()

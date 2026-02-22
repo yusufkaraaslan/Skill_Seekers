@@ -1,7 +1,3 @@
-import json
-import os
-import threading
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -485,7 +481,7 @@ class TestRunHeadless:
         mock_result.stdout = ""
         mock_result.stderr = ""
 
-        def _fake_run(prompt_file, timeout, include_permissions_flag, quiet=False):
+        def _fake_run(prompt_file, timeout, include_permissions_flag, quiet=False):  # noqa: ARG001
             # Simulate agent updating SKILL.md with more content
             import time
             time.sleep(0.01)
@@ -582,7 +578,7 @@ class TestRunBackground:
         # Delay the headless run to confirm we don't block
         import time
 
-        def _slow_run(*args, **kwargs):
+        def _slow_run(*_args, **_kwargs):
             time.sleep(0.5)
             return True
 
