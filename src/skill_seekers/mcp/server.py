@@ -15,7 +15,7 @@ import warnings
 
 # Show deprecation warning (can be disabled with PYTHONWARNINGS=ignore)
 warnings.warn(
-    "The legacy server.py is deprecated and will be removed in v3.0.0. "
+    "The legacy server.py is deprecated and will be removed in v4.0.0. "
     "Please update your MCP configuration to use 'server_fastmcp' instead:\n"
     "  OLD: python -m skill_seekers.mcp.server\n"
     "  NEW: python -m skill_seekers.mcp.server_fastmcp\n"

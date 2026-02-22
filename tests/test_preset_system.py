@@ -223,7 +223,7 @@ class TestDeprecationWarnings:
         assert "DEPRECATED" in captured.out
         assert "--quick" in captured.out
         assert "--preset quick" in captured.out
-        assert "v3.0.0" in captured.out
+        assert "v4.0.0" in captured.out
 
     def test_check_deprecated_flags_comprehensive(self, capsys):
         """Test deprecation warning for --comprehensive flag."""
@@ -238,7 +238,7 @@ class TestDeprecationWarnings:
         assert "DEPRECATED" in captured.out
         assert "--comprehensive" in captured.out
         assert "--preset comprehensive" in captured.out
-        assert "v3.0.0" in captured.out
+        assert "v4.0.0" in captured.out
 
     def test_check_deprecated_flags_depth(self, capsys):
         """Test deprecation warning for --depth flag."""
@@ -253,7 +253,7 @@ class TestDeprecationWarnings:
         assert "DEPRECATED" in captured.out
         assert "--depth full" in captured.out
         assert "--preset comprehensive" in captured.out
-        assert "v3.0.0" in captured.out
+        assert "v4.0.0" in captured.out
 
     def test_check_deprecated_flags_ai_mode(self, capsys):
         """Test deprecation warning for --ai-mode flag."""
@@ -268,7 +268,7 @@ class TestDeprecationWarnings:
         assert "DEPRECATED" in captured.out
         assert "--ai-mode api" in captured.out
         assert "--enhance-level" in captured.out
-        assert "v3.0.0" in captured.out
+        assert "v4.0.0" in captured.out
 
     def test_check_deprecated_flags_multiple(self, capsys):
         """Test deprecation warnings for multiple flags."""
@@ -285,7 +285,7 @@ class TestDeprecationWarnings:
         assert "--ai-mode local" in captured.out
         assert "--quick" in captured.out
         assert "MIGRATION TIP" in captured.out
-        assert "v3.0.0" in captured.out
+        assert "v4.0.0" in captured.out
 
     def test_check_deprecated_flags_none(self, capsys):
         """Test no warnings when no deprecated flags used."""
@@ -298,7 +298,7 @@ class TestDeprecationWarnings:
 
         captured = capsys.readouterr()
         assert "DEPRECATED" not in captured.out
-        assert "v3.0.0" not in captured.out
+        assert "v4.0.0" not in captured.out
 
 
 class TestBackwardCompatibility:

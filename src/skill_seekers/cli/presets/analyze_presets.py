@@ -254,6 +254,6 @@ def print_deprecation_warning(old_flag: str, new_flag: str) -> None:
         old_flag: The old/deprecated flag name
         new_flag: The new recommended flag/preset
     """
-    print(f"\n⚠️  DEPRECATED: {old_flag} is deprecated and will be removed in v3.0.0")
+    print(f"\n⚠️  DEPRECATED: {old_flag} is deprecated and will be removed in v4.0.0")
     print(f"   Use: {new_flag}")
     print()

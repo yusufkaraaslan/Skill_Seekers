@@ -7,12 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.0] - 2026-02-22
 
+### 🎯 "Unified CLI & Developer Experience" — Feature Release
+
+**Theme:** One command for everything. Better developer tooling. 2115 tests passing.
+
 ### Added
 
-#### Enhancement Workflow Preset Management (`skill-seekers workflows`)
-- New `workflows` CLI subcommand to manage enhancement workflow presets
-- Bundled presets shipped as YAML files inside the package (`skill_seekers/workflows/`)
-  - `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+#### Unified `create` Command
+- **Single command for all source types** — auto-detects URL, GitHub repo (`owner/repo`), local directory, PDF file, or multi-source config JSON
+  ```bash
+  skill-seekers create https://docs.react.dev/
+  skill-seekers create facebook/react
+  skill-seekers create ./my-project
+  skill-seekers create tutorial.pdf
+  ```
+- **Progressive help disclosure** — default `--help` shows 13 universal flags; detailed help per source:
+  - `--help-web`, `--help-github`, `--help-local`, `--help-pdf`, `--help-advanced`, `--help-all`
+- **`-p` shortcut** for preset selection: `skill-seekers create <source> -p quick|standard|comprehensive`
+- **`--local-repo-path`** flag for specifying local clone path in create command with validation
+- Supports multi-source config files as input (routes to unified scraper)
+
+#### Enhancement Workflow Preset System
+- **New `workflows` CLI subcommand** to manage enhancement workflow presets
+- **65 bundled workflow presets** shipped as YAML files in `skill_seekers/workflows/`:
+  - Core: `default`, `minimal`, `security-focus`, `architecture-comprehensive`, `api-documentation`
+  - Domain-specific: `rest-api-design`, `graphql-schema`, `grpc-services`, `websockets-realtime`, `event-driven`, `message-queues`, `stream-processing`
+  - Architecture: `microservices-patterns`, `serverless-architecture`, `kubernetes-deployment`, `devops-deployment`, `terraform-guide`
+  - Frontend: `responsive-design`, `component-library`, `forms-validation`, `design-system`, `pwa-checklist`, `ssr-guide`, `deep-linking`, `state-management`
+  - Quality: `testing-focus`, `testing-frontend`, `performance-optimization`, `observability-stack`, `troubleshooting-guide`, `accessibility-a11y`
+  - Data: `database-schema`, `data-validation`, `feature-engineering`, `vector-databases`, `mlops-pipeline`, `model-deployment`, `computer-vision`
+  - Security: `encryption-guide`, `iam-identity`, `secrets-management`, `compliance-gdpr`, `auth-strategies`
+  - Cloud: `aws-services`, `backup-disaster-recovery`
+  - Patterns: `advanced-patterns`, `api-evolution`, `migration-guide`, `contribution-guide`, `onboarding-beginner`, `comparison-matrix`, `sdk-integration`, `platform-specific`, `cli-tooling`, `build-tools`
+  - Mobile: `push-notifications`, `offline-first`, `localization-i18n`
+  - Background: `background-jobs`, `rate-limiting`, `caching-strategies`, `webhook-guide`, `api-gateway`
 - User presets stored in `~/.config/skill-seekers/workflows/`
 - Subcommands:
   - `skill-seekers workflows list` — List all bundled + user workflows with descriptions
@@ -21,21 +49,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `skill-seekers workflows add <file.yaml> [file ...]` — Install custom YAML file(s) into user dir
   - `skill-seekers workflows remove <name> [name ...]` — Delete user workflow(s)
   - `skill-seekers workflows validate <name|path>` — Parse and validate a workflow
-- `copy`, `add`, `remove` all accept multiple names/files in one command (partial-failure: continues processing, returns non-zero exit if any item fails)
-- `add --name` flag override is restricted to single-file operations
+- `copy`, `add`, `remove` all accept multiple names/files in one command (partial-failure: continues processing, returns non-zero if any item fails)
 - New entry point: `skill-seekers-workflows`
 
-#### Multiple `--enhance-workflow` flags from CLI
-- `skill-seekers create <source> --enhance-workflow security-focus --enhance-workflow minimal` — apply multiple workflows in a single command
-- All workflow management commands (`copy`, `add`, `remove`) now accept multiple names/files in one invocation
+#### Multiple `--enhance-workflow` Flags from CLI
+- Chain workflows in a single command: `skill-seekers create <source> --enhance-workflow security-focus --enhance-workflow minimal`
+- Supported across all scrapers: `scrape`, `github`, `analyze`, `pdf`, `unified`
+
+#### Smart Enhancement Dispatcher (`skill-seekers enhance`)
+- Auto-routes to API mode (Claude/Gemini/OpenAI) when API key is available, LOCAL mode (Claude Code CLI) otherwise
+- Decision priority: `--target` flag → config `default_agent` → env vars (`ANTHROPIC_API_KEY` → claude, `GOOGLE_API_KEY` → gemini, `OPENAI_API_KEY` → openai) → LOCAL fallback
+- **Blocks LOCAL mode when running as root** (Docker/VPS) with clear error message + API mode instructions (fixes #286, #289)
+- New flags: `--target`, `--api-key`, `--dry-run`, `--interactive-enhancement`
+
+#### Unified Document Parser System
+- New `parsers/extractors.py` module with `RstParser`, `MarkdownParser` classes
+- **ReStructuredText (RST) support** — parses class references, code blocks, tables, cross-references
+- Shared `parse_document()` factory function for RST/Markdown/PDF input
+- Integrated into documentation extraction pipeline for richer content
+- `ContentBlockType` and `CrossRefType` enums for structured parsing output
+
+#### Local Source Support in Unified Scraper
+- `"type": "local"` source type in unified config JSONs — analyze local codebases alongside web/GitHub/PDF sources
+- `--local-repo-path` CLI flag in unified scraper for per-source path override
+
+#### CLI Flag Parity Across All Commands
+- `analyze`, `pdf`, and `unified` commands now have full flag parity with `scrape`/`github`:
+  - `--api-key` on `pdf` and `unified`
+  - `--enhance-level` on `unified`
+  - `--dry-run` on `analyze`
+  - All workflow flags (`--enhance-workflow`, `--enhance-stage`, `--var`, `--workflow-dry-run`) on `analyze`
+- Workflow JSON config fields (`workflows`, `workflow_stages`, `workflow_vars`) now merged with CLI flags in `unified` scraper
 
 ### Fixed
-- `create` command `_add_common_args()` now correctly forwards each workflow as a separate `--enhance-workflow` flag to sub-scrapers (previously passed the whole list as a single argument, causing all workflows to be ignored)
+- **Percent-encode brackets in llms.txt URLs** — prevent "Invalid IPv6 URL" errors when scraping sites with bracket characters (fixes #284)
+- **Platform-appropriate config paths on Windows** — use `%APPDATA%` instead of `~/.config` (fixes #283)
+- **`create` command multi-source config** — now correctly routes to unified scraper when input is a `.json` config file
+- **`create` command `_add_common_args()`** — correctly forwards each `--enhance-workflow` value as a separate flag to sub-scrapers (previously collapsed list to single string, causing workflows to be ignored)
+- **`_extract_markdown_content`** — filter out bare `h1` headings and short stub paragraphs that polluted extracted content
+- **Godot unified config language names** — corrected `gdscript`/`gds` to proper names in `godot_unified.json`
+- **Python 3.10 type union compatibility** — use `Optional[X]` instead of `X | None` in forward-reference positions
+- **`_route_config` in unified scraper** — correctly handles all source types when routing config-driven scraping
+- **CONFIG_ARGUMENTS** — added to ensure unified CLI has full argument visibility for config-based sources
+- **Test suite isolation** — `test_swift_detection.py` now saves/restores `sys.modules` and parent package attributes; prevents `@patch` decorators in downstream files from targeting stale module objects
+- **Python 3.14 chromadb compatibility** — catch `pydantic.v1.errors.ConfigError` (not just `ImportError`) when chromadb is installed
+- **langchain import path** — updated `langchain.schema` → `langchain_core.documents` for langchain 1.x
+- **Removed legacy `sys.path.insert()` calls** from `codebase_scraper.py`, `doc_scraper.py`, `enhance_skill.py`, `enhance_skill_local.py`, `estimate_pages.py`, `install_skill.py` (unnecessary with `pip install -e .`)
+- **Benchmark timing threshold** — relaxed metadata overhead assertion from 10% to 50% for CI runner variability
 
 ### Changed
-- `workflows copy` now accepts one or more workflow names: `skill-seekers workflows copy wf-a wf-b`
-- `workflows add` now accepts one or more YAML files: `skill-seekers workflows add a.yaml b.yaml`
-- `workflows remove` now accepts one or more workflow names: `skill-seekers workflows remove wf-a wf-b`
+- **Enhancement flags consolidated** — `--enhance-level` (0-3) replaces three separate flags (`--enhance`, `--enhance-local`, `--api-key`). Old flags still accepted with deprecation warnings until v4.0.0
+- **`workflows copy/add/remove`** now accept multiple names/files in one invocation
+- **`pyproject.toml`** — PyYAML added as core dependency (required by workflow preset management); langchain and llama-index added as dependencies; MCP version requirement updated to `>=1.25`
+
+### Tests
+- **2115 tests passing** (up from 1852 in v3.0.0), 158 skipped (external services), 0 failures
+- Added `TestAnalyzeWorkflowFlags`, `TestUnifiedCLIArguments`, `TestPDFCLIArguments` classes
+- Added `tests/test_mcp_workflow_tools.py` — 5 MCP workflow tool tests
+- Added `tests/test_unified_scraper_orchestration.py` — UnifiedScraper orchestration tests
+- Removed `@unittest.skip` from gemini/openai/claude adaptor tests that were ready
+- Removed `@requires_github` from 5 unified_analyzer tests that fully mock their dependencies
+- Macros-specific tests now use `@patch(sys.platform)` instead of runtime `skipTest()` for platform portability
 
 ## [3.0.0] - 2026-02-10
 

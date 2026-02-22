@@ -2251,7 +2251,7 @@ def _check_deprecated_flags(args):
         print("   --preset standard       (5-10 min, core features, DEFAULT)")
         print("   --preset comprehensive  (20-60 min, all features + AI)")
         print("   --enhance-level 0-3     (granular AI enhancement control)")
-        print("\n⚠️  Deprecated flags will be removed in v3.0.0")
+        print("\n⚠️  Deprecated flags will be removed in v4.0.0")
         print("=" * 70 + "\n")
 
 
