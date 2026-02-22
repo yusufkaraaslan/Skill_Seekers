@@ -5,11 +5,11 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.0] - 2026-02-22
+## [3.1.0] - 2026-02-23
 
 ### 🎯 "Unified CLI & Developer Experience" — Feature Release
 
-**Theme:** One command for everything. Better developer tooling. 2115 tests passing.
+**Theme:** One command for everything. Better developer tooling. 2280+ tests passing.
 
 ### Added
 
@@ -103,13 +103,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`pyproject.toml`** — PyYAML added as core dependency (required by workflow preset management); langchain and llama-index added as dependencies; MCP version requirement updated to `>=1.25`
 
 ### Tests
-- **2115 tests passing** (up from 1852 in v3.0.0), 158 skipped (external services), 0 failures
+- **2280+ tests passing** (2158 non-MCP + ~122 MCP, up from 1852 in v3.0.0), 11 skipped (external services), 0 failures
 - Added `TestAnalyzeWorkflowFlags`, `TestUnifiedCLIArguments`, `TestPDFCLIArguments` classes
 - Added `tests/test_mcp_workflow_tools.py` — 5 MCP workflow tool tests
 - Added `tests/test_unified_scraper_orchestration.py` — UnifiedScraper orchestration tests
 - Removed `@unittest.skip` from gemini/openai/claude adaptor tests that were ready
 - Removed `@requires_github` from 5 unified_analyzer tests that fully mock their dependencies
 - Macros-specific tests now use `@patch(sys.platform)` instead of runtime `skipTest()` for platform portability
+
+### Config Repository (skill-seekers-configs)
+- **178 production configs reviewed and enhanced** across all 22 categories — brought to v1.1.0 quality standard
+- **Removed all `max_pages` fields** from production configs (deprecated, defaults apply automatically)
+- **Fixed outdated URLs**: `astro.json` (Astro v3 restructure: `/en/core-concepts/` → `/en/basics/`), `laravel.json` (11.x → 12.x throughout)
+- **Fixed structural bug** in `httpx_comprehensive.json` — `url_patterns`, `categories`, `rate_limit` moved from top-level into `sources[0]` (required for unified format)
+- **Removed hash-fragment start_urls** from `zod.json` (scrapers don't follow `?id=` anchors)
+- **Improved category/selector quality** across all 22 categories: 5-13 categories per config, 3-6 keywords each, semantic selector fallback chains
+- **README.md**: corrected config count from outdated "50+" to accurate 178 production / 182 total; all category counts verified
+- **CONTRIBUTING.md, QUALITY_GUIDELINES.md, AGENTS.md**: aligned with production standards; removed all `max_pages` guidance
+- **`scripts/validate-config.py`**: fixed two bugs — unified config categories lookup (was always reporting "no categories" for multi-source configs) and `max_pages` warning logic (was warning when absent, now correctly warns when present)
+- **Deleted** `.github/ISSUE_TEMPLATE/submit-config.md` (old duplicate of `submit-config.yml` with outdated content)
 
 ## [3.0.0] - 2026-02-10
 
