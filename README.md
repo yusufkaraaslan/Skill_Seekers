@@ -2,8 +2,6 @@
   <img src="docs/assets/logo.png" alt="Skill Seekers" width="200"/>
 </p>
 
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
-
 # Skill Seekers
 
 English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
@@ -1066,3 +1064,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 ---
 
 Happy skill building! 🚀
+
+---
+
+## 🔒 Security
+
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
