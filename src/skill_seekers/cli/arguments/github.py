@@ -5,12 +5,20 @@ Both github_scraper.py (standalone) and parsers/github_parser.py (unified CLI)
 import and use these definitions.
 
 This ensures the parsers NEVER drift out of sync.
+
+Shared arguments (name, description, output, enhance-level, api-key,
+dry-run, verbose, quiet, workflow args) come from common.py / workflow.py
+via ``add_all_standard_arguments()``.
 """
 
 import argparse
 from typing import Any
 
+from .common import add_all_standard_arguments
+
 # GitHub-specific argument definitions as data structure
+# NOTE: Shared args (name, description, enhance_level, api_key, dry_run,
+#       verbose, quiet, workflow args) are registered by add_all_standard_arguments().
 GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Core GitHub options
     "repo": {
@@ -35,22 +43,6 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "help": "GitHub personal access token",
             "metavar": "TOKEN",
-        },
-    },
-    "name": {
-        "flags": ("--name",),
-        "kwargs": {
-            "type": str,
-            "help": "Skill name (default: repo name)",
-            "metavar": "NAME",
-        },
-    },
-    "description": {
-        "flags": ("--description",),
-        "kwargs": {
-            "type": str,
-            "help": "Skill description",
-            "metavar": "TEXT",
         },
     },
     # Content options
@@ -92,61 +84,6 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Only scrape, don't build skill",
         },
     },
-    # Enhancement options
-    "enhance_level": {
-        "flags": ("--enhance-level",),
-        "kwargs": {
-            "type": int,
-            "choices": [0, 1, 2, 3],
-            "default": 2,
-            "help": (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code)"
-            ),
-            "metavar": "LEVEL",
-        },
-    },
-    "api_key": {
-        "flags": ("--api-key",),
-        "kwargs": {
-            "type": str,
-            "help": "Anthropic API key for --enhance (or set ANTHROPIC_API_KEY)",
-            "metavar": "KEY",
-        },
-    },
-    # Enhancement Workflow arguments (NEW - Phase 2)
-    "enhance_workflow": {
-        "flags": ("--enhance-workflow",),
-        "kwargs": {
-            "action": "append",
-            "help": "Apply enhancement workflow (file path or preset: security-focus, minimal, api-documentation, architecture-comprehensive). Can use multiple times to chain workflows.",
-            "metavar": "WORKFLOW",
-        },
-    },
-    "enhance_stage": {
-        "flags": ("--enhance-stage",),
-        "kwargs": {
-            "action": "append",
-            "help": "Add inline enhancement stage ('name:prompt'). Can use multiple times.",
-            "metavar": "STAGE",
-        },
-    },
-    "var": {
-        "flags": ("--var",),
-        "kwargs": {
-            "action": "append",
-            "help": "Override workflow variable ('key=value'). Can use multiple times.",
-            "metavar": "VAR",
-        },
-    },
-    "workflow_dry_run": {
-        "flags": ("--workflow-dry-run",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Preview workflow without executing (requires --enhance-workflow)",
-        },
-    },
     # Mode options
     "non_interactive": {
         "flags": ("--non-interactive",),
@@ -182,6 +119,10 @@ def add_github_arguments(parser: argparse.ArgumentParser) -> None:
     - github_scraper.py (standalone scraper)
     - parsers/github_parser.py (unified CLI)
 
+    Registers shared args (name, description, output, enhance-level, api-key,
+    dry-run, verbose, quiet, workflow args) via add_all_standard_arguments(),
+    then adds GitHub-specific args on top.
+
     Args:
         parser: The ArgumentParser to add arguments to
 
@@ -189,6 +130,10 @@ def add_github_arguments(parser: argparse.ArgumentParser) -> None:
         >>> parser = argparse.ArgumentParser()
         >>> add_github_arguments(parser)  # Adds all github args
     """
+    # Shared universal args first
+    add_all_standard_arguments(parser)
+
+    # GitHub-specific args
     for arg_name, arg_def in GITHUB_ARGUMENTS.items():
         flags = arg_def["flags"]
         kwargs = arg_def["kwargs"]
@@ -199,9 +144,11 @@ def get_github_argument_names() -> set:
     """Get the set of github argument destination names.
 
     Returns:
-        Set of argument dest names
+        Set of argument dest names (includes shared + github-specific)
     """
-    return set(GITHUB_ARGUMENTS.keys())
+    from .common import get_all_standard_argument_names
+
+    return get_all_standard_argument_names() | set(GITHUB_ARGUMENTS.keys())
 
 
 def get_github_argument_count() -> int:
@@ -210,4 +157,12 @@ def get_github_argument_count() -> int:
     Returns:
         Number of arguments
     """
-    return len(GITHUB_ARGUMENTS)
+    from .common import COMMON_ARGUMENTS, BEHAVIOR_ARGUMENTS
+    from .workflow import WORKFLOW_ARGUMENTS
+
+    return (
+        len(GITHUB_ARGUMENTS)
+        + len(COMMON_ARGUMENTS)
+        + len(BEHAVIOR_ARGUMENTS)
+        + len(WORKFLOW_ARGUMENTS)
+    )

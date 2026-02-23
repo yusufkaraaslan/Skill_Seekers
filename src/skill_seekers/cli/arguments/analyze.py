@@ -5,13 +5,21 @@ Both codebase_scraper.py (standalone) and parsers/analyze_parser.py (unified CLI
 import and use these definitions.
 
 Includes preset system support for #268.
+
+Shared arguments (name, description, output, enhance-level, api-key,
+dry-run, verbose, quiet, workflow args) come from common.py / workflow.py
+via ``add_all_standard_arguments()``.
 """
 
 import argparse
 from typing import Any
 
-from .workflow import WORKFLOW_ARGUMENTS
+from .common import add_all_standard_arguments
 
+# Analyze-specific argument definitions as data structure
+# NOTE: Shared args (name, description, output, enhance_level, api_key, dry_run,
+#       verbose, quiet, workflow args) are registered by add_all_standard_arguments().
+#       The default enhance_level for analyze is 0 (overridden after registration).
 ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Core options
     "directory": {
@@ -20,15 +28,6 @@ ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "required": True,
             "help": "Directory to analyze",
-            "metavar": "DIR",
-        },
-    },
-    "output": {
-        "flags": ("--output",),
-        "kwargs": {
-            "type": str,
-            "default": "output/codebase/",
-            "help": "Output directory (default: output/codebase/)",
             "metavar": "DIR",
         },
     },
@@ -91,21 +90,6 @@ ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "PATTERNS",
         },
     },
-    # Enhancement options
-    "enhance_level": {
-        "flags": ("--enhance-level",),
-        "kwargs": {
-            "type": int,
-            "choices": [0, 1, 2, 3],
-            "default": 2,
-            "help": (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code)"
-            ),
-            "metavar": "LEVEL",
-        },
-    },
     # Feature skip options
     "skip_api_reference": {
         "flags": ("--skip-api-reference",),
@@ -163,38 +147,32 @@ ANALYZE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Skip comment extraction",
         },
     },
-    # Output options
-    "verbose": {
-        "flags": ("--verbose",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Enable verbose logging",
-        },
-    },
-    # Dry-run and API key (parity with scrape/github/pdf)
-    "dry_run": {
-        "flags": ("--dry-run",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Preview what will be analyzed without creating output",
-        },
-    },
-    "api_key": {
-        "flags": ("--api-key",),
-        "kwargs": {
-            "type": str,
-            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
-            "metavar": "KEY",
-        },
-    },
 }
-
-# Add workflow arguments (enhance_workflow, enhance_stage, var, workflow_dry_run, workflow_history)
-ANALYZE_ARGUMENTS.update(WORKFLOW_ARGUMENTS)
 
 
 def add_analyze_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add all analyze command arguments to a parser."""
+    """Add all analyze command arguments to a parser.
+
+    Registers shared args (name, description, output, enhance-level, api-key,
+    dry-run, verbose, quiet, workflow args) via add_all_standard_arguments(),
+    then adds analyze-specific args on top.
+
+    The default for --enhance-level is overridden to 0 (off) for analyze,
+    and --output default is set to 'output/codebase/'.
+    """
+    # Shared universal args first
+    add_all_standard_arguments(parser)
+
+    # Override defaults that differ for the analyze command
+    # enhance-level defaults to 0 (off) for codebase analysis
+    for action in parser._actions:
+        if hasattr(action, "dest"):
+            if action.dest == "enhance_level":
+                action.default = 0
+            elif action.dest == "output":
+                action.default = "output/codebase/"
+
+    # Analyze-specific args
     for arg_name, arg_def in ANALYZE_ARGUMENTS.items():
         flags = arg_def["flags"]
         kwargs = arg_def["kwargs"]
@@ -203,4 +181,6 @@ def add_analyze_arguments(parser: argparse.ArgumentParser) -> None:
 
 def get_analyze_argument_names() -> set:
     """Get the set of analyze argument destination names."""
-    return set(ANALYZE_ARGUMENTS.keys())
+    from .common import get_all_standard_argument_names
+
+    return get_all_standard_argument_names() | set(ANALYZE_ARGUMENTS.keys())

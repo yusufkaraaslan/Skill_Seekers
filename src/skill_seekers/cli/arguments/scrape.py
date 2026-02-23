@@ -5,16 +5,21 @@ Both doc_scraper.py (standalone) and parsers/scrape_parser.py (unified CLI)
 import and use these definitions.
 
 This ensures the parsers NEVER drift out of sync.
+
+Shared arguments (name, description, output, enhance-level, api-key,
+dry-run, verbose, quiet, workflow args) come from common.py / workflow.py
+via ``add_all_standard_arguments()``.
 """
 
 import argparse
 from typing import Any
 
 from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT
-from .common import RAG_ARGUMENTS
+from .common import add_all_standard_arguments, RAG_ARGUMENTS
 
 # Scrape-specific argument definitions as data structure
-# This enables introspection for UI generation and testing
+# NOTE: Shared args (name, description, enhance_level, api_key, dry_run,
+#       verbose, quiet, workflow args) are registered by add_all_standard_arguments().
 SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "url_positional": {
@@ -25,84 +30,13 @@ SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Base documentation URL (alternative to --url)",
         },
     },
-    # Common arguments (also defined in common.py for other commands)
+    # Config file (scrape-specific — loads selectors, categories, etc.)
     "config": {
         "flags": ("--config", "-c"),
         "kwargs": {
             "type": str,
             "help": "Load configuration from JSON file (e.g., configs/react.json)",
             "metavar": "FILE",
-        },
-    },
-    "name": {
-        "flags": ("--name",),
-        "kwargs": {
-            "type": str,
-            "help": "Skill name (used for output directory and filenames)",
-            "metavar": "NAME",
-        },
-    },
-    "description": {
-        "flags": ("--description", "-d"),
-        "kwargs": {
-            "type": str,
-            "help": "Skill description (used in SKILL.md)",
-            "metavar": "TEXT",
-        },
-    },
-    # Enhancement arguments
-    "enhance_level": {
-        "flags": ("--enhance-level",),
-        "kwargs": {
-            "type": int,
-            "choices": [0, 1, 2, 3],
-            "default": 2,
-            "help": (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code)"
-            ),
-            "metavar": "LEVEL",
-        },
-    },
-    "api_key": {
-        "flags": ("--api-key",),
-        "kwargs": {
-            "type": str,
-            "help": "Anthropic API key for --enhance (or set ANTHROPIC_API_KEY env var)",
-            "metavar": "KEY",
-        },
-    },
-    # Enhancement Workflow arguments (NEW - Phase 2)
-    "enhance_workflow": {
-        "flags": ("--enhance-workflow",),
-        "kwargs": {
-            "action": "append",
-            "help": "Apply enhancement workflow (file path or preset: security-focus, minimal, api-documentation, architecture-comprehensive). Can use multiple times to chain workflows.",
-            "metavar": "WORKFLOW",
-        },
-    },
-    "enhance_stage": {
-        "flags": ("--enhance-stage",),
-        "kwargs": {
-            "action": "append",
-            "help": "Add inline enhancement stage ('name:prompt'). Can use multiple times.",
-            "metavar": "STAGE",
-        },
-    },
-    "var": {
-        "flags": ("--var",),
-        "kwargs": {
-            "action": "append",
-            "help": "Override workflow variable ('key=value'). Can use multiple times.",
-            "metavar": "VAR",
-        },
-    },
-    "workflow_dry_run": {
-        "flags": ("--workflow-dry-run",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Preview workflow without executing (requires --enhance-workflow)",
         },
     },
     # Scrape-specific options
@@ -134,13 +68,6 @@ SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "action": "store_true",
             "help": "Skip scraping, use existing data",
-        },
-    },
-    "dry_run": {
-        "flags": ("--dry-run",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Preview what will be scraped without actually scraping",
         },
     },
     "resume": {
@@ -195,20 +122,6 @@ SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Open terminal window for enhancement (use with --enhance-local)",
         },
     },
-    "verbose": {
-        "flags": ("--verbose", "-v"),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Enable verbose output (DEBUG level logging)",
-        },
-    },
-    "quiet": {
-        "flags": ("--quiet", "-q"),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Minimize output (WARNING level logging only)",
-        },
-    },
     # RAG chunking options (imported from common.py - see RAG_ARGUMENTS)
     # Note: RAG arguments will be merged at runtime
     "no_preserve_code_blocks": {
@@ -239,13 +152,21 @@ def add_scrape_arguments(parser: argparse.ArgumentParser) -> None:
     - doc_scraper.py (standalone scraper)
     - parsers/scrape_parser.py (unified CLI)
 
+    Registers shared args (name, description, output, enhance-level, api-key,
+    dry-run, verbose, quiet, workflow args) via add_all_standard_arguments(),
+    then adds scrape-specific args on top.
+
     Args:
         parser: The ArgumentParser to add arguments to
 
     Example:
         >>> parser = argparse.ArgumentParser()
-        >>> add_scrape_arguments(parser)  # Adds all 26 scrape args
+        >>> add_scrape_arguments(parser)
     """
+    # Shared universal args first
+    add_all_standard_arguments(parser)
+
+    # Scrape-specific args
     for arg_name, arg_def in SCRAPE_ARGUMENTS.items():
         flags = arg_def["flags"]
         kwargs = arg_def["kwargs"]
@@ -256,9 +177,11 @@ def get_scrape_argument_names() -> set:
     """Get the set of scrape argument destination names.
 
     Returns:
-        Set of argument dest names
+        Set of argument dest names (includes shared + scrape-specific)
     """
-    return set(SCRAPE_ARGUMENTS.keys())
+    from .common import get_all_standard_argument_names
+
+    return get_all_standard_argument_names() | set(SCRAPE_ARGUMENTS.keys())
 
 
 def get_scrape_argument_count() -> int:
@@ -267,4 +190,12 @@ def get_scrape_argument_count() -> int:
     Returns:
         Number of arguments
     """
-    return len(SCRAPE_ARGUMENTS)
+    from .common import COMMON_ARGUMENTS, BEHAVIOR_ARGUMENTS
+    from .workflow import WORKFLOW_ARGUMENTS
+
+    return (
+        len(SCRAPE_ARGUMENTS)
+        + len(COMMON_ARGUMENTS)
+        + len(BEHAVIOR_ARGUMENTS)
+        + len(WORKFLOW_ARGUMENTS)
+    )
