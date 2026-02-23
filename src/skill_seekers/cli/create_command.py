@@ -152,7 +152,7 @@ class CreateCommand:
         self._add_common_args(argv)
 
         # Add web-specific arguments
-        if self.args.max_pages:
+        if getattr(self.args, "max_pages", None):
             argv.extend(["--max-pages", str(self.args.max_pages)])
         if getattr(self.args, "skip_scrape", False):
             argv.append("--skip-scrape")
