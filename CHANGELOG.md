@@ -5,7 +5,9 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.1.3] - 2026-02-24
+
+### 🐛 Hotfix — Explicit Chunk Flags & Argument Pipeline Cleanup
 
 ### Fixed
 - **Issue #299: `skill-seekers package --target claude` unrecognised argument crash** — `_reconstruct_argv()` in `main.py` emits default flag values back into argv when routing subcommands. `package_skill.py` had a 105-line inline argparser that used different flag names to those in `arguments/package.py`, so forwarded flags were rejected. Fixed by replacing the inline block with a call to `add_package_arguments(parser)` — the single source of truth.

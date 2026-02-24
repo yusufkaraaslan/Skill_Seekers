@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** is the **universal documentation preprocessor** for AI systems. It transforms documentation websites, GitHub repositories, and PDFs into production-ready formats for **16+ platforms**: RAG pipelines (LangChain, LlamaIndex, Haystack), vector databases (Pinecone, Chroma, Weaviate, FAISS, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), and LLM platforms (Claude, Gemini, OpenAI).
 
-**Current Version:** v3.1.2-dev
+**Current Version:** v3.1.3
 **Python Version:** 3.10+ required
 **Status:** Production-ready, published on PyPI
 **Website:** https://skillseekersweb.com/ - Browse configs, share, and access documentation
@@ -2256,7 +2256,7 @@ The `scripts/` directory contains utility scripts:
 
 ## 🎉 Recent Achievements
 
-**v3.1.2 (In Development) - "Unified Argument Interface":**
+**v3.1.3 (Released) - "Unified Argument Interface":**
 - 🔧 **Unified Scraper Arguments** - All scrapers (scrape, github, analyze, pdf) now share a common argument contract via `add_all_standard_arguments(parser)` in `arguments/common.py`
 - 🐛 **Fix `create` Argument Forwarding** - `create <url> --dry-run`, `create owner/repo --dry-run`, `create ./path --dry-run` all work now (previously crashed)
 - 🏗️ **Argument Deduplication** - Removed duplicated arg definitions from github.py, scrape.py, analyze.py, pdf.py; all import shared args
