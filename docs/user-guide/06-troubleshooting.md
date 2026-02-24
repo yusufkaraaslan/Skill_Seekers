@@ -295,7 +295,7 @@ skill-seekers package output/my-skill/ --streaming
 # Reduce chunk size
 skill-seekers package output/my-skill/ \
   --streaming \
-  --chunk-size 1000
+  --streaming-chunk-chars 1000
 ```
 
 ---

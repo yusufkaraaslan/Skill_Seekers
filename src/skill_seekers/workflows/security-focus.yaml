@@ -3,9 +3,7 @@ description: "Security-focused review: vulnerabilities, auth, data handling"
 version: "1.0"
 applies_to:
   - codebase_analysis
-  - python
-  - javascript
-  - typescript
+  - github_analysis
 variables:
   depth: comprehensive
 stages:

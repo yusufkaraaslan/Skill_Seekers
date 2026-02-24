@@ -14,12 +14,17 @@ stages:
     uses_history: false
     enabled: true
     prompt: >
-      Review the following SKILL.md content and make minimal improvements:
-      - Fix obvious formatting issues
-      - Ensure the overview section is clear and concise
-      - Remove duplicate or redundant information
+      Review the SKILL.md content and make minimal targeted improvements.
 
-      Return the improved content as plain text without extra commentary.
+      Fix only:
+      1. Obvious formatting issues (broken lists, inconsistent headers)
+      2. Unclear overview section (make it one clear paragraph)
+      3. Duplicate or redundant information (remove repeats)
+
+      Output JSON with:
+      - "improved_overview": rewritten overview paragraph (plain markdown)
+      - "removed_sections": list of section names that were removed as duplicates
+      - "formatting_fixes": list of specific formatting issues corrected
 post_process:
   reorder_sections: []
   add_metadata:

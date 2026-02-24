@@ -5,6 +5,18 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Explicit chunk flag names** — All `--chunk-*` flags now include unit suffixes to eliminate ambiguity:
+  - `--chunk-size` (RAG tokens) → `--chunk-tokens`
+  - `--chunk-overlap` (RAG tokens) → `--chunk-overlap-tokens`
+  - `--chunk` (enable RAG chunking) → `--chunk-for-rag`
+  - `--streaming-chunk-size` (chars) → `--streaming-chunk-chars`
+  - `--streaming-overlap` (chars) → `--streaming-overlap-chars`
+  - `--chunk-size` in PDF extractor (pages) → `--pdf-pages-per-chunk`
+- **`setup_logging()` centralized** — Removed duplicate `logging.basicConfig()` calls in `github_scraper.py`, `codebase_scraper.py`, `unified_scraper.py`; all now use shared `setup_logging()` from `utils.py`
+
 ## [3.1.2] - 2026-02-24
 
 ### 🔧 Fix `create` Command Argument Forwarding, Gemini Model, and Enhance Dispatcher

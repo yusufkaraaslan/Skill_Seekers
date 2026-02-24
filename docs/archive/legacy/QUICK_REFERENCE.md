@@ -71,7 +71,7 @@ skill-seekers pdf manual.pdf --name product-manual
 skill-seekers pdf scanned.pdf --enable-ocr
 
 # Large PDF (chunked processing)
-skill-seekers pdf large.pdf --chunk-size 50
+skill-seekers pdf large.pdf --pdf-pages-per-chunk 50
 ```
 
 ### Multi-Source Scraping

@@ -158,8 +158,8 @@ skill-seekers package output/large-skill/ --streaming
 # Custom chunk size
 skill-seekers package output/large-skill/ \
   --streaming \
-  --chunk-size 2000 \
-  --chunk-overlap 100
+  --streaming-chunk-chars 2000 \
+  --streaming-overlap-chars 100
 ```
 
 **When to use:**
@@ -177,23 +177,23 @@ Optimize for Retrieval-Augmented Generation:
 # Enable semantic chunking
 skill-seekers package output/my-skill/ \
   --target langchain \
-  --chunk \
+  --chunk-for-rag \
   --chunk-tokens 512
 
 # Custom chunk size
 skill-seekers package output/my-skill/ \
   --target chroma \
   --chunk-tokens 256 \
-  --chunk-overlap 50
+  --chunk-overlap-tokens 50
 ```
 
 **Chunking Options:**
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--chunk` | auto | Enable chunking |
+| `--chunk-for-rag` | auto | Enable chunking |
 | `--chunk-tokens` | 512 | Tokens per chunk |
-| `--chunk-overlap` | 50 | Overlap between chunks |
+| `--chunk-overlap-tokens` | 50 | Overlap between chunks (tokens) |
 | `--no-preserve-code` | - | Allow splitting code blocks |
 
 ---
@@ -449,7 +449,7 @@ skill-seekers upload output/my-skill-claude.zip --target claude
 skill-seekers package output/my-skill/ --streaming
 
 # Smaller chunks
-skill-seekers package output/my-skill/ --streaming --chunk-size 1000
+skill-seekers package output/my-skill/ --streaming --streaming-chunk-chars 1000
 ```
 
 ---

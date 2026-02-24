@@ -17,6 +17,46 @@ stages:
     target: examples
     enabled: true
     uses_history: false
+  - name: architecture_overview
+    type: custom
+    target: architecture
+    uses_history: false
+    enabled: true
+    prompt: >
+      Provide a concise architectural overview of this codebase.
+
+      Cover:
+      1. Overall architecture style (MVC, microservices, layered, etc.)
+      2. Key components and their responsibilities
+      3. Data flow between components
+      4. External dependencies and integrations
+      5. Entry points (CLI, API, web, etc.)
+
+      Output JSON with:
+      - "architecture_style": main architectural pattern
+      - "components": array of {name, responsibility}
+      - "data_flow": how data moves through the system
+      - "external_deps": third-party services and libraries
+      - "entry_points": how users interact with the system
+  - name: skill_polish
+    type: custom
+    target: skill_md
+    uses_history: true
+    enabled: true
+    prompt: >
+      Review the SKILL.md content generated so far and improve it.
+
+      Fix:
+      1. Unclear or overly technical descriptions
+      2. Missing quick-start examples
+      3. Gaps in the overview section
+      4. Redundant or duplicate information
+      5. Formatting inconsistencies
+
+      Output JSON with:
+      - "improved_overview": rewritten overview section
+      - "quick_start": concise getting-started snippet
+      - "key_concepts": 3-5 essential concepts a developer needs to know
 post_process:
   reorder_sections: []
   add_metadata:

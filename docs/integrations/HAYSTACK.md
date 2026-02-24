@@ -318,8 +318,8 @@ print(response["llm"]["replies"][0])
 # Enable semantic chunking (preserves code blocks, respects paragraphs)
 skill-seekers scrape --config configs/django.json \
   --chunk-for-rag \
-  --chunk-size 512 \
-  --chunk-overlap 50
+  --chunk-tokens 512 \
+  --chunk-overlap-tokens 50
 
 # Package chunked output
 skill-seekers package output/django --target haystack
@@ -439,8 +439,8 @@ python scripts/merge_documents.py \
 # Enable chunking for frameworks with long pages
 skill-seekers scrape --config configs/django.json \
   --chunk-for-rag \
-  --chunk-size 512 \
-  --chunk-overlap 50
+  --chunk-tokens 512 \
+  --chunk-overlap-tokens 50
 ```
 
 ### 2. Choose Right Document Store
@@ -506,8 +506,8 @@ Complete example of building a FastAPI documentation chatbot:
 # Scrape FastAPI docs with chunking
 skill-seekers scrape --config configs/fastapi.json \
   --chunk-for-rag \
-  --chunk-size 512 \
-  --chunk-overlap 50 \
+  --chunk-tokens 512 \
+  --chunk-overlap-tokens 50 \
   --max-pages 200
 
 # Package for Haystack
@@ -698,8 +698,8 @@ skill-seekers scrape --config configs/fastapi.json --chunk-for-rag
 # 2. Adjust chunk size
 skill-seekers scrape --config configs/fastapi.json \
   --chunk-for-rag \
-  --chunk-size 768 \  # Larger chunks for more context
-  --chunk-overlap 100  # More overlap for continuity
+  --chunk-tokens 768 \  # Larger chunks for more context
+  --chunk-overlap-tokens 100  # More overlap for continuity
 
 # 3. Use hybrid search (BM25 + embeddings)
 # See Advanced Usage section

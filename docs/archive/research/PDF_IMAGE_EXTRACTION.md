@@ -122,7 +122,7 @@ python3 cli/pdf_extractor_poc.py documentation.pdf \
   --extract-images \
   --min-image-size 150 \
   --min-quality 6.0 \
-  --chunk-size 20 \
+  --pdf-pages-per-chunk 20 \
   --output documentation.json \
   --verbose \
   --pretty
@@ -477,7 +477,7 @@ python3 cli/pdf_extractor_poc.py manual.pdf \
   --image-dir assets/images/ \
   --min-image-size 200 \
   --min-quality 7.0 \
-  --chunk-size 15 \
+  --pdf-pages-per-chunk 15 \
   --output manual.json \
   --verbose \
   --pretty

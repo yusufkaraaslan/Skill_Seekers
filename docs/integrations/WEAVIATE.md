@@ -210,7 +210,7 @@ skill-seekers package output/codebase --target langchain
 
 **Option D: RAG-Optimized Chunking**
 ```bash
-skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-size 512
+skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
 skill-seekers package output/fastapi --target langchain
 ```
 
@@ -960,7 +960,7 @@ print(schema.get("multiTenancyConfig", {}).get("enabled"))  # Should be True
 
 2. **Implement Semantic Chunking:**
    ```bash
-   skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-size 512
+   skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
    ```
 
 3. **Set Up Multi-Tenancy:**

@@ -139,8 +139,8 @@ skill-seekers scrape --format confluence     # Confluence storage format
 ```bash
 # New flag for embedding-optimized chunking
 skill-seekers scrape --chunk-for-rag \
-    --chunk-size 512 \
-    --chunk-overlap 50 \
+    --chunk-tokens 512 \
+    --chunk-overlap-tokens 50 \
     --add-metadata
 
 # Output: chunks with metadata for embedding

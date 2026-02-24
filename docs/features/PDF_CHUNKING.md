@@ -25,10 +25,10 @@ Break large PDFs into smaller, manageable chunks:
 python3 cli/pdf_extractor_poc.py input.pdf
 
 # Custom chunk size (20 pages per chunk)
-python3 cli/pdf_extractor_poc.py input.pdf --chunk-size 20
+python3 cli/pdf_extractor_poc.py input.pdf --pdf-pages-per-chunk 20
 
 # Disable chunking (single chunk with all pages)
-python3 cli/pdf_extractor_poc.py input.pdf --chunk-size 0
+python3 cli/pdf_extractor_poc.py input.pdf --pdf-pages-per-chunk 0
 ```
 
 ### ✅ 2. Chapter/Section Detection
@@ -272,7 +272,7 @@ cat manual.json | jq '.total_chunks'
 
 ```bash
 # Large PDF with bigger chunks (50 pages each)
-python3 cli/pdf_extractor_poc.py large_manual.pdf --chunk-size 50 -o output.json -v
+python3 cli/pdf_extractor_poc.py large_manual.pdf --pdf-pages-per-chunk 50 -o output.json -v
 
 # Verbose output shows:
 # 📦 Creating chunks (chunk_size=50)...
@@ -286,7 +286,7 @@ python3 cli/pdf_extractor_poc.py large_manual.pdf --chunk-size 50 -o output.json
 
 ```bash
 # Process all pages as single chunk
-python3 cli/pdf_extractor_poc.py small_doc.pdf --chunk-size 0 -o output.json
+python3 cli/pdf_extractor_poc.py small_doc.pdf --pdf-pages-per-chunk 0 -o output.json
 ```
 
 ---
@@ -369,7 +369,7 @@ Create a test PDF with chapters:
 3. Page 30: "Chapter 3: API Reference"
 
 ```bash
-python3 cli/pdf_extractor_poc.py test.pdf -o test.json --chunk-size 20 -v
+python3 cli/pdf_extractor_poc.py test.pdf -o test.json --pdf-pages-per-chunk 20 -v
 
 # Verify chapters detected
 cat test.json | jq '.chapters'
@@ -441,7 +441,7 @@ The chunking feature lays groundwork for:
 **Example workflow:**
 ```bash
 # Extract large manual with chapters
-python3 cli/pdf_extractor_poc.py large_manual.pdf --chunk-size 25 -o manual.json
+python3 cli/pdf_extractor_poc.py large_manual.pdf --pdf-pages-per-chunk 25 -o manual.json
 
 # Future: Build skill from chunks
 python3 cli/build_skill_from_pdf.py manual.json

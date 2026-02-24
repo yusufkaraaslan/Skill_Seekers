@@ -252,8 +252,8 @@ skill-seekers create [source] [options]
 | | `--workflow-dry-run` | | Preview workflow without executing |
 | | `--dry-run` | | Preview without creating |
 | | `--chunk-for-rag` | | Enable RAG chunking |
-| | `--chunk-size` | 512 | Chunk size in tokens |
-| | `--chunk-overlap` | 50 | Chunk overlap in tokens |
+| | `--chunk-tokens` | 512 | Chunk size in tokens |
+| | `--chunk-overlap-tokens` | 50 | Chunk overlap in tokens |
 | | `--help-web` | | Show web scraping options |
 | | `--help-github` | | Show GitHub options |
 | | `--help-local` | | Show local analysis options |
@@ -615,10 +615,10 @@ skill-seekers package SKILL_DIRECTORY [options]
 | | `--skip-quality-check` | | Skip quality checks |
 | | `--upload` | | Auto-upload after packaging |
 | | `--streaming` | | Streaming mode for large docs |
-| | `--chunk-size` | 4000 | Max chars per chunk (streaming) |
-| | `--chunk-overlap` | 200 | Overlap between chunks |
+| | `--streaming-chunk-chars` | 4000 | Max chars per chunk (streaming) |
+| | `--streaming-overlap-chars` | 200 | Overlap between chunks (chars) |
 | | `--batch-size` | 100 | Chunks per batch |
-| | `--chunk` | | Enable RAG chunking |
+| | `--chunk-for-rag` | | Enable RAG chunking |
 | | `--chunk-tokens` | 512 | Max tokens per chunk |
 | | `--no-preserve-code` | | Allow code block splitting |
 
@@ -877,7 +877,7 @@ skill-seekers stream --config CONFIG [options]
 | Short | Long | Description |
 |-------|------|-------------|
 | `-c` | `--config` | Config JSON file |
-| | `--chunk-size` | Size of each chunk |
+| | `--streaming-chunk-chars` | Maximum characters per chunk (default: 4000) |
 | | `--output` | Output directory |
 
 **Examples:**
@@ -887,7 +887,7 @@ skill-seekers stream --config CONFIG [options]
 skill-seekers stream --config configs/large-docs.json
 
 # Custom chunk size
-skill-seekers stream --config configs/large-docs.json --chunk-size 1000
+skill-seekers stream --config configs/large-docs.json --streaming-chunk-chars 1000
 ```
 
 ---

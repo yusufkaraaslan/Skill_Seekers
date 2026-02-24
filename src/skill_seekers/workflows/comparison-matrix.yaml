@@ -6,7 +6,6 @@ applies_to:
   - doc_scraping
 variables:
   depth: comprehensive
-  alternatives: []
 stages:
   - name: feature_comparison
     type: custom

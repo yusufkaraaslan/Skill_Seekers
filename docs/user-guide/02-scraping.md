@@ -385,7 +385,7 @@ skill-seekers create <url> --max-pages 100
 skill-seekers create <url> --streaming
 
 # Or smaller chunks
-skill-seekers create <url> --chunk-size 500
+skill-seekers create <url> --chunk-tokens 500
 ```
 
 ---

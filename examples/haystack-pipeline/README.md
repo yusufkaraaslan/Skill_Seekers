@@ -132,7 +132,7 @@ For better retrieval quality, use semantic chunking:
 
 ```bash
 # Generate with chunking
-skill-seekers scrape --config configs/react.json --max-pages 100 --chunk-for-rag --chunk-size 512 --chunk-overlap 50
+skill-seekers scrape --config configs/react.json --max-pages 100 --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
 
 # Use chunked output
 python quickstart.py --chunked

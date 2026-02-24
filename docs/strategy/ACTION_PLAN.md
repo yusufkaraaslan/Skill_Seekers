@@ -365,8 +365,8 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
 2. **Implement Chunking for RAG** (8-12 hours)
    ```bash
    skill-seekers scrape --chunk-for-rag \
-       --chunk-size 512 \
-       --chunk-overlap 50 \
+       --chunk-tokens 512 \
+       --chunk-overlap-tokens 50 \
        --preserve-code-blocks
    ```
 
