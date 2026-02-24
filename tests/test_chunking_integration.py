@@ -291,7 +291,7 @@ class TestChunkingCLIIntegration:
     """Test chunking via CLI arguments."""
 
     def test_chunk_flag(self, tmp_path):
-        """Test --chunk flag enables chunking."""
+        """Test --chunk-for-rag flag enables chunking."""
         from skill_seekers.cli.package_skill import package_skill
 
         skill_dir = create_test_skill(tmp_path, large_doc=True)
@@ -301,7 +301,7 @@ class TestChunkingCLIIntegration:
             open_folder_after=False,
             skip_quality_check=True,
             target="langchain",
-            enable_chunking=True,  # --chunk flag
+            enable_chunking=True,  # --chunk-for-rag flag
             chunk_max_tokens=512,
             preserve_code_blocks=True,
         )

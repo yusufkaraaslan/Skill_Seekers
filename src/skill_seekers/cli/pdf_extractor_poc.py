@@ -44,7 +44,7 @@ Usage:
 
 Example:
     python3 pdf_extractor_poc.py docs/manual.pdf -o output.json -v \
-        --chunk-size 15 --min-quality 6.0 --extract-images \
+        --pdf-pages-per-chunk 15 --min-quality 6.0 --extract-images \
         --extract-tables --parallel
 """
 
@@ -1079,7 +1079,7 @@ Examples:
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
     parser.add_argument(
-        "--chunk-size", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)"
+        "--pdf-pages-per-chunk", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)"
     )
     parser.add_argument(
         "--no-merge", action="store_true", help="Disable merging code blocks across pages"
@@ -1138,7 +1138,7 @@ Examples:
     extractor = PDFExtractor(
         args.pdf_file,
         verbose=args.verbose,
-        chunk_size=args.chunk_size,
+        chunk_size=args.pdf_pages_per_chunk,
         min_quality=args.min_quality,
         extract_images=args.extract_images,
         image_dir=args.image_dir,

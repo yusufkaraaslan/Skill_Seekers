@@ -221,10 +221,10 @@ Examples:
         skip_quality_check=args.skip_quality_check,
         target=args.target,
         streaming=args.streaming,
-        chunk_size=args.streaming_chunk_size,
-        chunk_overlap=args.streaming_overlap,
+        chunk_size=args.streaming_chunk_chars,
+        chunk_overlap=args.streaming_overlap_chars,
         batch_size=args.batch_size,
-        enable_chunking=args.chunk,
+        enable_chunking=args.chunk_for_rag,
         chunk_max_tokens=args.chunk_tokens,
         preserve_code_blocks=not args.no_preserve_code,
     )

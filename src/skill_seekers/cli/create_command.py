@@ -106,8 +106,8 @@ class CreateCommand:
         # Check against common defaults
         defaults = {
             "max_issues": 100,
-            "chunk_size": 512,
-            "chunk_overlap": 50,
+            "chunk_tokens": 512,
+            "chunk_overlap_tokens": 50,
             "output": None,
         }
 
@@ -158,10 +158,10 @@ class CreateCommand:
         # RAG arguments (web scraper only)
         if getattr(self.args, "chunk_for_rag", False):
             argv.append("--chunk-for-rag")
-        if getattr(self.args, "chunk_size", None) and self.args.chunk_size != 512:
-            argv.extend(["--chunk-size", str(self.args.chunk_size)])
-        if getattr(self.args, "chunk_overlap", None) and self.args.chunk_overlap != 50:
-            argv.extend(["--chunk-overlap", str(self.args.chunk_overlap)])
+        if getattr(self.args, "chunk_tokens", None) and self.args.chunk_tokens != 512:
+            argv.extend(["--chunk-tokens", str(self.args.chunk_tokens)])
+        if getattr(self.args, "chunk_overlap_tokens", None) and self.args.chunk_overlap_tokens != 50:
+            argv.extend(["--chunk-overlap-tokens", str(self.args.chunk_overlap_tokens)])
 
         # Advanced web-specific arguments
         if getattr(self.args, "no_preserve_code_blocks", False):

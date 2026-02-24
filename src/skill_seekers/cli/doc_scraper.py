@@ -2227,8 +2227,8 @@ def execute_scraping_and_building(
         from skill_seekers.cli.rag_chunker import RAGChunker
 
         chunker = RAGChunker(
-            chunk_size=args.chunk_size,
-            chunk_overlap=args.chunk_overlap,
+            chunk_size=args.chunk_tokens,
+            chunk_overlap=args.chunk_overlap_tokens,
             preserve_code_blocks=not args.no_preserve_code_blocks,
             preserve_paragraphs=not args.no_preserve_paragraphs,
         )

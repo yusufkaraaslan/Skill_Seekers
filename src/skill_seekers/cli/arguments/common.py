@@ -101,8 +101,8 @@ RAG_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Enable semantic chunking for RAG pipelines",
         },
     },
-    "chunk_size": {
-        "flags": ("--chunk-size",),
+    "chunk_tokens": {
+        "flags": ("--chunk-tokens",),
         "kwargs": {
             "type": int,
             "default": 512,
@@ -110,8 +110,8 @@ RAG_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Chunk size in tokens for RAG (default: 512)",
         },
     },
-    "chunk_overlap": {
-        "flags": ("--chunk-overlap",),
+    "chunk_overlap_tokens": {
+        "flags": ("--chunk-overlap-tokens",),
         "kwargs": {
             "type": int,
             "default": 50,
@@ -183,7 +183,7 @@ def add_rag_arguments(parser: argparse.ArgumentParser) -> None:
     Example:
         >>> parser = argparse.ArgumentParser()
         >>> add_rag_arguments(parser)
-        >>> # Now parser has --chunk-for-rag, --chunk-size, --chunk-overlap
+        >>> # Now parser has --chunk-for-rag, --chunk-tokens, --chunk-overlap-tokens
     """
     for arg_name, arg_def in RAG_ARGUMENTS.items():
         flags = arg_def["flags"]
@@ -195,7 +195,7 @@ def get_rag_argument_names() -> set:
     """Get the set of RAG argument destination names.
 
     Returns:
-        Set of argument dest names (e.g., {'chunk_for_rag', 'chunk_size', 'chunk_overlap'})
+        Set of argument dest names (e.g., {'chunk_for_rag', 'chunk_tokens', 'chunk_overlap_tokens'})
     """
     return set(RAG_ARGUMENTS.keys())
 

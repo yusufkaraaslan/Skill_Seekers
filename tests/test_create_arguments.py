@@ -40,8 +40,8 @@ class TestUniversalArguments:
             "verbose",
             "quiet",
             "chunk_for_rag",
-            "chunk_size",
-            "chunk_overlap",  # Phase 2: RAG args from common.py
+            "chunk_tokens",
+            "chunk_overlap_tokens",  # Phase 2: RAG args from common.py
             "preset",
             "config",
             # Phase 2: Workflow arguments (universal workflow support)

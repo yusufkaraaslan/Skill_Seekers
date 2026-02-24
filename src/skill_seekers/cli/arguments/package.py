@@ -70,8 +70,8 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Use streaming ingestion for large docs (memory-efficient)",
         },
     },
-    "streaming_chunk_size": {
-        "flags": ("--streaming-chunk-size",),
+    "streaming_chunk_chars": {
+        "flags": ("--streaming-chunk-chars",),
         "kwargs": {
             "type": int,
             "default": 4000,
@@ -79,8 +79,8 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "N",
         },
     },
-    "streaming_overlap": {
-        "flags": ("--streaming-overlap",),
+    "streaming_overlap_chars": {
+        "flags": ("--streaming-overlap-chars",),
         "kwargs": {
             "type": int,
             "default": 200,
@@ -98,8 +98,8 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
         },
     },
     # RAG chunking options
-    "chunk": {
-        "flags": ("--chunk",),
+    "chunk_for_rag": {
+        "flags": ("--chunk-for-rag",),
         "kwargs": {
             "action": "store_true",
             "help": "Enable intelligent chunking for RAG platforms (auto-enabled for RAG adaptors)",
