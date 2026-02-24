@@ -5,13 +5,15 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.2] - 2026-02-23
+## [3.1.2] - 2026-02-24
 
-### 🔧 Fix `create` Command Argument Forwarding & Unify Scraper Interface
+### 🔧 Fix `create` Command Argument Forwarding, Gemini Model, and Enhance Dispatcher
 
 ### Fixed
 - **`create` command argument forwarding** — Universal flags (`--dry-run`, `--verbose`, `--quiet`, `--name`, `--description`) now work correctly across all source types. Previously, `create <url> -p quick --dry-run`, `create owner/repo --dry-run`, and `create ./path --dry-run` would crash because sub-scrapers didn't accept those flags
 - **`skill-seekers analyze --dry-run`** — Fixed `_handle_analyze_command()` in `main.py` not forwarding `--dry-run`, `--preset`, `--quiet`, `--name`, `--description`, `--api-key`, and workflow flags to codebase_scraper
+- **Gemini model 404 errors** — Replaced retired `gemini-2.0-flash-exp` with `gemini-2.5-flash` (stable GA) in the Gemini adaptor. Users attempting Gemini enhancement were getting 404 Not Found errors
+- **`skill-seekers enhance` auto-detection** — The documented behaviour of auto-detecting API vs LOCAL mode was never implemented. `enhance` now correctly routes to the platform API when a key is present: `ANTHROPIC_API_KEY` → Claude API, `GOOGLE_API_KEY` → Gemini API, `OPENAI_API_KEY` → OpenAI API, no key → LOCAL mode (Claude Code Max, free). Use `--mode LOCAL` to force local mode regardless
 
 ### Added
 - **Shared argument contract** — New `add_all_standard_arguments(parser)` in `arguments/common.py` registers common + behavior + workflow args on any parser as a single call
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`--dry-run` for PDF scraper** — `skill-seekers pdf --name test --dry-run` now previews the operation
 - **`--verbose`/`--quiet` for GitHub and PDF scrapers** — Logging level control now works consistently across all scrapers
 - **`--name`/`--description` for codebase analyzer** — Custom skill name and description can now be passed to `skill-seekers analyze`
+- **`--mode LOCAL` flag for `skill-seekers enhance`** — Explicitly forces LOCAL mode even when API keys are present
 
 ### Changed
 - **Argument deduplication** — Removed duplicated argument definitions from `arguments/github.py`, `arguments/scrape.py`, `arguments/analyze.py`, `arguments/pdf.py`; all now import shared args from `arguments/common.py`
