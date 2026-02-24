@@ -683,9 +683,7 @@ class TestEnhanceDispatcher:
             called_with["target"] = target
             called_with["api_key"] = api_key
 
-        monkeypatch.setattr(
-            "skill_seekers.cli.enhance_skill_local._run_api_enhance", fake_run_api
-        )
+        monkeypatch.setattr("skill_seekers.cli.enhance_skill_local._run_api_enhance", fake_run_api)
         main()
         assert called_with == {"target": "gemini", "api_key": "AIza-test"}
 

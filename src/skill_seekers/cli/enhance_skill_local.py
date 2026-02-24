@@ -1214,9 +1214,7 @@ def _detect_api_target() -> tuple[str, str] | None:
     Returns:
         (target, api_key) tuple if an API key is found, else None.
     """
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get(
-        "ANTHROPIC_AUTH_TOKEN"
-    )
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
     if anthropic_key:
         return ("claude", anthropic_key)
 
