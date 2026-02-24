@@ -384,7 +384,9 @@ def main():
     parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
     parser.add_argument("--chunk-tokens", type=int, default=512, help="Target chunk size in tokens")
-    parser.add_argument("--chunk-overlap-tokens", type=int, default=50, help="Overlap size in tokens")
+    parser.add_argument(
+        "--chunk-overlap-tokens", type=int, default=50, help="Overlap size in tokens"
+    )
     parser.add_argument("--no-code-blocks", action="store_true", help="Don't preserve code blocks")
     parser.add_argument("--no-paragraphs", action="store_true", help="Don't preserve paragraphs")
 

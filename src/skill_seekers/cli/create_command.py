@@ -160,7 +160,10 @@ class CreateCommand:
             argv.append("--chunk-for-rag")
         if getattr(self.args, "chunk_tokens", None) and self.args.chunk_tokens != 512:
             argv.extend(["--chunk-tokens", str(self.args.chunk_tokens)])
-        if getattr(self.args, "chunk_overlap_tokens", None) and self.args.chunk_overlap_tokens != 50:
+        if (
+            getattr(self.args, "chunk_overlap_tokens", None)
+            and self.args.chunk_overlap_tokens != 50
+        ):
             argv.extend(["--chunk-overlap-tokens", str(self.args.chunk_overlap_tokens)])
 
         # Advanced web-specific arguments

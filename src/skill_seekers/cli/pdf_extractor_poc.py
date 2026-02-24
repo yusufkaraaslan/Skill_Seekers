@@ -1079,7 +1079,10 @@ Examples:
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
     parser.add_argument(
-        "--pdf-pages-per-chunk", type=int, default=10, help="Pages per chunk (0 = no chunking, default: 10)"
+        "--pdf-pages-per-chunk",
+        type=int,
+        default=10,
+        help="Pages per chunk (0 = no chunking, default: 10)",
     )
     parser.add_argument(
         "--no-merge", action="store_true", help="Disable merging code blocks across pages"

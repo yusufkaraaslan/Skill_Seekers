@@ -21,5 +21,10 @@ class StreamParser(SubcommandParser):
     def add_arguments(self, parser):
         """Add stream-specific arguments."""
         parser.add_argument("input_file", help="Large file to stream")
-        parser.add_argument("--streaming-chunk-chars", type=int, default=4000, help="Maximum characters per chunk (default: 4000)")
+        parser.add_argument(
+            "--streaming-chunk-chars",
+            type=int,
+            default=4000,
+            help="Maximum characters per chunk (default: 4000)",
+        )
         parser.add_argument("--output", help="Output directory")

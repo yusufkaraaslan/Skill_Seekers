@@ -33,7 +33,9 @@ class TestParserSync:
         )
         assert "--chunk-for-rag" in result.stdout, "Help should show --chunk-for-rag flag"
         assert "--chunk-tokens" in result.stdout, "Help should show --chunk-tokens flag"
-        assert "--chunk-overlap-tokens" in result.stdout, "Help should show --chunk-overlap-tokens flag"
+        assert "--chunk-overlap-tokens" in result.stdout, (
+            "Help should show --chunk-overlap-tokens flag"
+        )
 
     def test_scrape_verbose_flag_works(self):
         """Test that --verbose flag (previously missing) now works."""
