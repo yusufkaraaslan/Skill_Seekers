@@ -7,15 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Issue #299: `skill-seekers package --target claude` unrecognised argument crash** — `_reconstruct_argv()` in `main.py` emits default flag values back into argv when routing subcommands. `package_skill.py` had a 105-line inline argparser that used different flag names to those in `arguments/package.py`, so forwarded flags were rejected. Fixed by replacing the inline block with a call to `add_package_arguments(parser)` — the single source of truth.
+
 ### Changed
-- **Explicit chunk flag names** — All `--chunk-*` flags now include unit suffixes to eliminate ambiguity:
+- **`package_skill.py` argparser refactored** — Replaced ~105 lines of inline argparse duplication with a single `add_package_arguments(parser)` call. Flag names are now guaranteed consistent with `_reconstruct_argv()` output, preventing future argument-name drift.
+- **Explicit chunk flag names** — All `--chunk-*` flags now include unit suffixes to eliminate ambiguity between RAG tokens and streaming characters:
   - `--chunk-size` (RAG tokens) → `--chunk-tokens`
   - `--chunk-overlap` (RAG tokens) → `--chunk-overlap-tokens`
   - `--chunk` (enable RAG chunking) → `--chunk-for-rag`
   - `--streaming-chunk-size` (chars) → `--streaming-chunk-chars`
   - `--streaming-overlap` (chars) → `--streaming-overlap-chars`
   - `--chunk-size` in PDF extractor (pages) → `--pdf-pages-per-chunk`
-- **`setup_logging()` centralized** — Removed duplicate `logging.basicConfig()` calls in `github_scraper.py`, `codebase_scraper.py`, `unified_scraper.py`; all now use shared `setup_logging()` from `utils.py`
+- **`setup_logging()` centralized** — Added `setup_logging(verbose, quiet)` to `utils.py` and removed 4 duplicate module-level `logging.basicConfig()` calls from `doc_scraper.py`, `github_scraper.py`, `codebase_scraper.py`, and `unified_scraper.py`
 
 ## [3.1.2] - 2026-02-24
 
