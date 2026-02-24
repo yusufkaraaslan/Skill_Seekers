@@ -661,7 +661,7 @@ def main():
         print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
         print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
         print(f"\n✅ Dry run complete")
-        return
+        return 0
 
     # Validate inputs
     if not (args.config or args.pdf or args.from_json):
