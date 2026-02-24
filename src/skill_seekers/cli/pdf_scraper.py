@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import json
+import logging
 import os
 import re
 import sys
@@ -643,6 +644,24 @@ def main():
     add_pdf_arguments(parser)
 
     args = parser.parse_args()
+
+    # Set logging level from behavior args
+    if getattr(args, "quiet", False):
+        logging.getLogger().setLevel(logging.WARNING)
+    elif getattr(args, "verbose", False):
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    # Handle --dry-run
+    if getattr(args, "dry_run", False):
+        source = args.pdf or args.config or args.from_json or "(none)"
+        print(f"\n{'=' * 60}")
+        print(f"DRY RUN: PDF Extraction")
+        print(f"{'=' * 60}")
+        print(f"Source:         {source}")
+        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
+        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"\n✅ Dry run complete")
+        return
 
     # Validate inputs
     if not (args.config or args.pdf or args.from_json):

@@ -1056,6 +1056,8 @@ def analyze_codebase(
     extract_config_patterns: bool = True,
     extract_docs: bool = True,
     enhance_level: int = 0,
+    skill_name: str | None = None,
+    skill_description: str | None = None,
 ) -> dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -1075,6 +1077,8 @@ def analyze_codebase(
         extract_config_patterns: Extract configuration patterns from config files (C3.4)
         extract_docs: Extract and process markdown documentation files (default: True)
         enhance_level: AI enhancement level (0=off, 1=SKILL.md only, 2=+config+arch+docs, 3=full)
+        skill_name: Optional override for skill name (default: directory name)
+        skill_description: Optional override for skill description
 
     Returns:
         Analysis results dictionary
@@ -1598,6 +1602,8 @@ def analyze_codebase(
         extract_config_patterns=extract_config_patterns,
         extract_docs=extract_docs,
         docs_data=docs_data,
+        skill_name=skill_name,
+        skill_description=skill_description,
     )
 
     return results
@@ -1615,6 +1621,8 @@ def _generate_skill_md(
     extract_config_patterns: bool,
     extract_docs: bool = True,
     docs_data: dict[str, Any] | None = None,
+    skill_name: str | None = None,
+    skill_description: str | None = None,
 ):
     """
     Generate rich SKILL.md from codebase analysis results.
@@ -1633,10 +1641,14 @@ def _generate_skill_md(
     repo_name = directory.name
 
     # Generate skill name (lowercase, hyphens only, max 64 chars)
-    skill_name = repo_name.lower().replace("_", "-").replace(" ", "-")[:64]
+    # Use CLI override if provided, otherwise derive from directory name
+    if skill_name:
+        skill_name = skill_name.lower().replace("_", "-").replace(" ", "-")[:64]
+    else:
+        skill_name = repo_name.lower().replace("_", "-").replace(" ", "-")[:64]
 
-    # Generate description
-    description = f"Local codebase analysis for {repo_name}"
+    # Generate description (use CLI override if provided)
+    description = skill_description or f"Local codebase analysis for {repo_name}"
 
     # Count files by language
     language_stats = _get_language_stats(results.get("files", []))
@@ -2257,6 +2269,8 @@ def _check_deprecated_flags(args):
 
 def main():
     """Command-line interface for codebase analysis."""
+    from skill_seekers.cli.arguments.analyze import add_analyze_arguments
+
     parser = argparse.ArgumentParser(
         description="Analyze local codebases and extract code knowledge",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -2285,92 +2299,10 @@ Examples:
 """,
     )
 
-    parser.add_argument("--directory", required=True, help="Directory to analyze")
-    parser.add_argument(
-        "--output", default="output/codebase/", help="Output directory (default: output/codebase/)"
-    )
+    # Register all args from the shared definitions module
+    add_analyze_arguments(parser)
 
-    # Preset selection (NEW - recommended way)
-    parser.add_argument(
-        "--preset",
-        choices=["quick", "standard", "comprehensive"],
-        help="Analysis preset: quick (1-2 min), standard (5-10 min, DEFAULT), comprehensive (20-60 min)",
-    )
-    parser.add_argument(
-        "--preset-list", action="store_true", help="Show available presets and exit"
-    )
-
-    # Legacy preset flags (kept for backward compatibility)
-    parser.add_argument(
-        "--quick",
-        action="store_true",
-        help="[DEPRECATED] Quick analysis - use '--preset quick' instead",
-    )
-    parser.add_argument(
-        "--comprehensive",
-        action="store_true",
-        help="[DEPRECATED] Comprehensive analysis - use '--preset comprehensive' instead",
-    )
-
-    parser.add_argument(
-        "--depth",
-        choices=["surface", "deep", "full"],
-        default=None,  # Don't set default here - let preset system handle it
-        help=(
-            "[DEPRECATED] Analysis depth - use --preset instead. "
-            "surface (basic code structure, ~1-2 min), "
-            "deep (code + patterns + tests, ~5-10 min, DEFAULT), "
-            "full (everything + AI enhancement, ~20-60 min)"
-        ),
-    )
-    parser.add_argument(
-        "--languages", help="Comma-separated languages to analyze (e.g., Python,JavaScript,C++)"
-    )
-    parser.add_argument(
-        "--file-patterns", help="Comma-separated file patterns (e.g., *.py,src/**/*.js)"
-    )
-    parser.add_argument(
-        "--skip-api-reference",
-        action="store_true",
-        default=False,
-        help="Skip API reference markdown documentation generation (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-dependency-graph",
-        action="store_true",
-        default=False,
-        help="Skip dependency graph and circular dependency detection (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-patterns",
-        action="store_true",
-        default=False,
-        help="Skip design pattern detection (Singleton, Factory, Observer, etc.) (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-test-examples",
-        action="store_true",
-        default=False,
-        help="Skip test example extraction (instantiation, method calls, configs, etc.) (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-how-to-guides",
-        action="store_true",
-        default=False,
-        help="Skip how-to guide generation from workflow examples (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-config-patterns",
-        action="store_true",
-        default=False,
-        help="Skip configuration pattern extraction from config files (JSON, YAML, TOML, ENV, etc.) (default: enabled)",
-    )
-    parser.add_argument(
-        "--skip-docs",
-        action="store_true",
-        default=False,
-        help="Skip project documentation extraction from markdown files (README, docs/, etc.) (default: enabled)",
-    )
+    # Extra legacy arg only used by standalone CLI (not in arguments/analyze.py)
     parser.add_argument(
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
@@ -2383,61 +2315,6 @@ Examples:
             "none (disable AI enhancement). "
             "💡 TIP: Use --enhance flag instead for simpler UX!"
         ),
-    )
-    parser.add_argument("--no-comments", action="store_true", help="Skip comment extraction")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--enhance-level",
-        type=int,
-        choices=[0, 1, 2, 3],
-        default=0,
-        help=(
-            "AI enhancement level: "
-            "0=off (default), "
-            "1=SKILL.md only, "
-            "2=SKILL.md+Architecture+Config, "
-            "3=full (patterns, tests, config, architecture, SKILL.md)"
-        ),
-    )
-
-    # Workflow enhancement arguments
-    parser.add_argument(
-        "--enhance-workflow",
-        action="append",
-        help=(
-            "Enhancement workflow to use (name or path to YAML file). "
-            "Can be used multiple times to chain workflows. "
-            "Examples: 'security-focus', 'architecture-comprehensive', "
-            "'.skill-seekers/my-workflow.yaml'. "
-            "Overrides --enhance-level when provided."
-        ),
-        metavar="WORKFLOW",
-    )
-    parser.add_argument(
-        "--enhance-stage",
-        type=str,
-        action="append",
-        help=(
-            "Add inline enhancement stage. Format: 'name:prompt'. "
-            "Can be used multiple times. Example: "
-            "--enhance-stage 'security:Analyze for security issues'"
-        ),
-        metavar="NAME:PROMPT",
-    )
-    parser.add_argument(
-        "--var",
-        type=str,
-        action="append",
-        help=(
-            "Override workflow variable. Format: 'key=value'. "
-            "Can be used multiple times. Example: --var focus_area=performance"
-        ),
-        metavar="KEY=VALUE",
-    )
-    parser.add_argument(
-        "--workflow-dry-run",
-        action="store_true",
-        help="Show workflow stages without executing (dry run mode)",
     )
 
     # Check for deprecated flags
@@ -2506,8 +2383,39 @@ Examples:
         args.depth = "deep"  # Default depth
 
     # Set logging level
-    if args.verbose:
+    if getattr(args, "quiet", False):
+        logging.getLogger().setLevel(logging.WARNING)
+    elif args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Handle --dry-run
+    if getattr(args, "dry_run", False):
+        directory = Path(args.directory)
+        print(f"\n{'=' * 60}")
+        print(f"DRY RUN: Codebase Analysis")
+        print(f"{'=' * 60}")
+        print(f"Directory:    {directory.resolve()}")
+        print(f"Output:       {args.output}")
+        print(f"Preset:       {preset_name}")
+        print(f"Depth:        {args.depth or 'deep (default)'}")
+        print(f"Name:         {getattr(args, 'name', None) or directory.name}")
+        print(f"Enhance:      level {args.enhance_level}")
+        print(f"Skip flags:   ", end="")
+        skips = []
+        for flag in [
+            "skip_api_reference",
+            "skip_dependency_graph",
+            "skip_patterns",
+            "skip_test_examples",
+            "skip_how_to_guides",
+            "skip_config_patterns",
+            "skip_docs",
+        ]:
+            if getattr(args, flag, False):
+                skips.append(f"--{flag.replace('_', '-')}")
+        print(", ".join(skips) if skips else "(none)")
+        print(f"\n✅ Dry run complete")
+        return 0
 
     # Validate directory
     directory = Path(args.directory)
@@ -2546,6 +2454,8 @@ Examples:
             extract_config_patterns=not args.skip_config_patterns,
             extract_docs=not args.skip_docs,
             enhance_level=args.enhance_level,  # AI enhancement level (0-3)
+            skill_name=getattr(args, "name", None),
+            skill_description=getattr(args, "description", None),
         )
 
         # ============================================================

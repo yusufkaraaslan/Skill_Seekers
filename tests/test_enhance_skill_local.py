@@ -596,3 +596,146 @@ class TestRunBackground:
         # Should have returned quickly (not waited for the slow thread)
         assert result is True
         assert elapsed < 0.4, f"_run_background took {elapsed:.2f}s - should return immediately"
+
+
+class TestEnhanceDispatcher:
+    """Test auto-detection of API vs LOCAL mode in enhance main()."""
+
+    def test_detect_api_target_anthropic(self, monkeypatch):
+        """ANTHROPIC_API_KEY detected as claude target."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        result = _detect_api_target()
+        assert result == ("claude", "sk-ant-test")
+
+    def test_detect_api_target_google(self, monkeypatch):
+        """GOOGLE_API_KEY detected as gemini target when no Anthropic key."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        result = _detect_api_target()
+        assert result == ("gemini", "AIza-test")
+
+    def test_detect_api_target_openai(self, monkeypatch):
+        """OPENAI_API_KEY detected as openai target when no higher-priority key."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-test")
+        result = _detect_api_target()
+        assert result == ("openai", "sk-openai-test")
+
+    def test_detect_api_target_none(self, monkeypatch):
+        """Returns None when no API keys are set."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        result = _detect_api_target()
+        assert result is None
+
+    def test_detect_api_target_anthropic_priority(self, monkeypatch):
+        """ANTHROPIC_API_KEY takes priority over GOOGLE_API_KEY."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-test")
+        result = _detect_api_target()
+        assert result == ("claude", "sk-ant-test")
+
+    def test_detect_api_target_auth_token_fallback(self, monkeypatch):
+        """ANTHROPIC_AUTH_TOKEN is used when ANTHROPIC_API_KEY is absent."""
+        from skill_seekers.cli.enhance_skill_local import _detect_api_target
+
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "sk-auth-test")
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        result = _detect_api_target()
+        assert result == ("claude", "sk-auth-test")
+
+    def test_main_delegates_to_api_when_key_set(self, monkeypatch, tmp_path):
+        """main() calls _run_api_enhance when an API key is detected."""
+        import sys
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir)])
+
+        called_with = {}
+
+        def fake_run_api(target, api_key):
+            called_with["target"] = target
+            called_with["api_key"] = api_key
+
+        monkeypatch.setattr("skill_seekers.cli.enhance_skill_local._run_api_enhance", fake_run_api)
+        main()
+        assert called_with == {"target": "gemini", "api_key": "AIza-test"}
+
+    def test_main_uses_local_when_mode_local(self, monkeypatch, tmp_path):
+        """main() stays in LOCAL mode when --mode LOCAL is passed."""
+        import sys
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir), "--mode", "LOCAL"])
+
+        api_called = []
+        monkeypatch.setattr(
+            "skill_seekers.cli.enhance_skill_local._run_api_enhance",
+            lambda *a: api_called.append(a),
+        )
+
+        # LocalSkillEnhancer.run will fail without a real agent, just verify
+        # _run_api_enhance was NOT called
+        with patch("skill_seekers.cli.enhance_skill_local.LocalSkillEnhancer") as mock_enhancer:
+            mock_instance = MagicMock()
+            mock_instance.run.return_value = True
+            mock_enhancer.return_value = mock_instance
+            with pytest.raises(SystemExit):
+                main()
+
+        assert api_called == [], "_run_api_enhance should not be called in LOCAL mode"
+
+    def test_main_uses_local_when_no_api_keys(self, monkeypatch, tmp_path):
+        """main() uses LOCAL mode when no API keys are present."""
+        import sys
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir)])
+
+        api_called = []
+        monkeypatch.setattr(
+            "skill_seekers.cli.enhance_skill_local._run_api_enhance",
+            lambda *a: api_called.append(a),
+        )
+
+        with patch("skill_seekers.cli.enhance_skill_local.LocalSkillEnhancer") as mock_enhancer:
+            mock_instance = MagicMock()
+            mock_instance.run.return_value = True
+            mock_enhancer.return_value = mock_instance
+            with pytest.raises(SystemExit):
+                main()
+
+        assert api_called == [], "_run_api_enhance should not be called without API keys"

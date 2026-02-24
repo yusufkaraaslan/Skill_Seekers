@@ -1205,45 +1205,116 @@ except Exception as e:
             return False
 
 
+def _detect_api_target() -> tuple[str, str] | None:
+    """
+    Auto-detect which API platform to use for enhancement based on env vars.
+
+    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY
+
+    Returns:
+        (target, api_key) tuple if an API key is found, else None.
+    """
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+    if anthropic_key:
+        return ("claude", anthropic_key)
+
+    google_key = os.environ.get("GOOGLE_API_KEY")
+    if google_key:
+        return ("gemini", google_key)
+
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if openai_key:
+        return ("openai", openai_key)
+
+    return None
+
+
+def _run_api_enhance(target: str, api_key: str) -> None:
+    """Delegate to enhance_skill.main() for API-mode enhancement."""
+    import sys
+
+    from skill_seekers.cli.enhance_skill import main as api_main
+
+    # Find the skill_directory positional arg (first non-flag arg after argv[0])
+    skill_dir = None
+    dry_run = False
+    i = 1
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg == "--dry-run":
+            dry_run = True
+        elif arg in ("--mode",):
+            i += 1  # skip value
+        elif not arg.startswith("-") and skill_dir is None:
+            skill_dir = arg
+        i += 1
+
+    if not skill_dir:
+        print("❌ Error: skill_directory is required")
+        sys.exit(1)
+
+    new_argv = [sys.argv[0], skill_dir, "--target", target, "--api-key", api_key]
+    if dry_run:
+        new_argv.append("--dry-run")
+    sys.argv = new_argv
+    api_main()
+
+
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Enhance a skill with a local coding agent (no API key)",
+        description="Enhance a skill using AI (auto-detects API or local agent mode)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Auto-detection (no flags needed):
+  If ANTHROPIC_API_KEY is set  → Claude API mode
+  If GOOGLE_API_KEY is set     → Gemini API mode
+  If OPENAI_API_KEY is set     → OpenAI API mode
+  Otherwise                    → LOCAL mode (Claude Code Max, free)
+
 Examples:
-  # Headless mode (default - runs in foreground, waits for completion, auto-force)
+  # Auto-detect mode based on env vars (recommended)
   skill-seekers enhance output/react/
 
-  # Background mode (runs in background, returns immediately)
-  skill-seekers enhance output/react/ --background
+  # Force LOCAL mode even if API keys are set
+  skill-seekers enhance output/react/ --mode LOCAL
 
-  # Daemon mode (persistent background process, fully detached)
-  skill-seekers enhance output/react/ --daemon
+  # LOCAL: background mode (runs in background, returns immediately)
+  skill-seekers enhance output/react/ --mode LOCAL --background
 
-  # Disable force mode (ask for confirmations)
-  skill-seekers enhance output/react/ --no-force
+  # LOCAL: daemon mode (persistent background process, fully detached)
+  skill-seekers enhance output/react/ --mode LOCAL --daemon
 
-  # Interactive mode (opens terminal window)
-  skill-seekers enhance output/react/ --interactive-enhancement
+  # LOCAL: interactive mode (opens terminal window)
+  skill-seekers enhance output/react/ --mode LOCAL --interactive-enhancement
 
-  # Custom timeout
-  skill-seekers enhance output/react/ --timeout 1200
+  # LOCAL: custom timeout
+  skill-seekers enhance output/react/ --mode LOCAL --timeout 1200
 
-Mode Comparison:
+LOCAL Mode Comparison:
   - headless:    Runs local agent CLI directly, BLOCKS until done (default)
   - background:  Runs in background thread, returns immediately
   - daemon:      Fully detached process, continues after parent exits
   - terminal:    Opens new terminal window (interactive)
 
-Force Mode (Default ON):
-  By default, all modes skip confirmations (auto-yes).
+Force Mode (LOCAL only, Default ON):
+  By default, all LOCAL modes skip confirmations (auto-yes).
   Use --no-force to enable confirmation prompts.
 """,
     )
 
     parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
+
+    parser.add_argument(
+        "--mode",
+        choices=["LOCAL", "API"],
+        help=(
+            "Force enhancement mode. LOCAL uses a local coding agent (free). "
+            "API uses the platform API (requires API key). "
+            "Default: auto-detect from environment variables."
+        ),
+    )
 
     parser.add_argument(
         "--agent",
@@ -1289,6 +1360,14 @@ Force Mode (Default ON):
     )
 
     args = parser.parse_args()
+
+    # Auto-detect API mode unless --mode LOCAL is explicitly set
+    if getattr(args, "mode", None) != "LOCAL":
+        api_target = _detect_api_target()
+        if api_target is not None:
+            target, api_key = api_target
+            _run_api_enhance(target, api_key)
+            return
 
     # Validate mutually exclusive options
     mode_count = sum([args.interactive_enhancement, args.background, args.daemon])
