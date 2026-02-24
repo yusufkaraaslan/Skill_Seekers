@@ -1,7 +1,7 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.1.0  
-> **Last Updated:** 2026-02-16  
+> **Version:** 3.1.2
+> **Last Updated:** 2026-02-23
 > **Complete reference for all 20 CLI commands**
 
 ---
@@ -63,15 +63,21 @@ skill-seekers --version
 
 ### Global Flags
 
-These flags work with most commands:
+These flags work with **all scraper commands** (scrape, github, analyze, pdf, create):
 
 | Flag | Description |
 |------|-------------|
 | `-h, --help` | Show help message and exit |
 | `--version` | Show version number and exit |
+| `-n, --name` | Skill name |
+| `-d, --description` | Skill description |
+| `-o, --output` | Output directory |
+| `--enhance-level` | AI enhancement level (0-3) |
+| `--api-key` | Anthropic API key |
 | `-v, --verbose` | Enable verbose (DEBUG) output |
 | `-q, --quiet` | Minimize output (WARNING only) |
 | `--dry-run` | Preview without executing |
+| `--enhance-workflow` | Apply enhancement workflow preset |
 
 ### Environment Variables
 
@@ -116,17 +122,21 @@ skill-seekers analyze --directory DIR [options]
 
 | Short | Long | Default | Description |
 |-------|------|---------|-------------|
+| `-n` | `--name` | auto | Skill name (defaults to directory name) |
+| `-d` | `--description` | auto | Skill description |
 | | `--preset` | standard | Analysis preset: quick, standard, comprehensive |
 | | `--preset-list` | | Show available presets and exit |
 | | `--languages` | auto | Comma-separated languages (Python,JavaScript,C++) |
 | | `--file-patterns` | | Comma-separated file patterns |
-| | `--enhance-level` | 2 | AI enhancement: 0=off, 1=SKILL.md, 2=+config, 3=full |
+| | `--enhance-level` | 0 | AI enhancement: 0=off (default), 1=SKILL.md, 2=+config, 3=full |
 | | `--api-key` | | Anthropic API key (or ANTHROPIC_API_KEY env) |
 | | `--enhance-workflow` | | Apply workflow preset (can use multiple) |
 | | `--enhance-stage` | | Add inline enhancement stage (name:prompt) |
 | | `--var` | | Override workflow variable (key=value) |
 | | `--workflow-dry-run` | | Preview workflow without executing |
 | | `--dry-run` | | Preview analysis without creating output |
+| `-v` | `--verbose` | | Enable verbose (DEBUG) logging |
+| `-q` | `--quiet` | | Minimize output (WARNING only) |
 | | `--skip-api-reference` | | Skip API docs generation |
 | | `--skip-dependency-graph` | | Skip dependency graph |
 | | `--skip-patterns` | | Skip pattern detection |
@@ -135,7 +145,6 @@ skill-seekers analyze --directory DIR [options]
 | | `--skip-config-patterns` | | Skip config pattern extraction |
 | | `--skip-docs` | | Skip project docs (README) |
 | | `--no-comments` | | Skip comment extraction |
-| `-v` | `--verbose` | | Enable verbose logging |
 
 **Examples:**
 
@@ -427,6 +436,7 @@ skill-seekers github [options]
 | | `--token` | | GitHub personal access token |
 | `-n` | `--name` | auto | Skill name |
 | `-d` | `--description` | auto | Description |
+| `-o` | `--output` | auto | Output directory |
 | | `--no-issues` | | Skip GitHub issues |
 | | `--no-changelog` | | Skip CHANGELOG |
 | | `--no-releases` | | Skip releases |
@@ -437,6 +447,9 @@ skill-seekers github [options]
 | | `--enhance-workflow` | | Apply workflow preset |
 | | `--non-interactive` | | CI/CD mode (fail fast) |
 | | `--profile` | | GitHub profile from config |
+| | `--dry-run` | | Preview without executing |
+| `-v` | `--verbose` | | Enable verbose (DEBUG) logging |
+| `-q` | `--quiet` | | Minimize output (WARNING only) |
 
 **Examples:**
 
@@ -449,6 +462,9 @@ skill-seekers github --repo facebook/react --token $GITHUB_TOKEN
 
 # Skip issues for faster scraping
 skill-seekers github --repo facebook/react --no-issues
+
+# Dry run to preview
+skill-seekers github --repo facebook/react --dry-run
 
 # Scrape only, build later
 skill-seekers github --repo facebook/react --scrape-only
@@ -659,18 +675,23 @@ skill-seekers pdf [options]
 
 **Flags:**
 
-| Short | Long | Description |
-|-------|------|-------------|
-| `-c` | `--config` | PDF config JSON file |
-| | `--pdf` | Direct PDF file path |
-| `-n` | `--name` | Skill name |
-| `-d` | `--description` | Description |
-| | `--from-json` | Build from extracted JSON |
-| | `--enhance-workflow` | Apply workflow preset |
-| | `--enhance-stage` | Add inline stage |
-| | `--var` | Override workflow variable |
-| | `--workflow-dry-run` | Preview workflow |
+| Short | Long | Default | Description |
+|-------|------|---------|-------------|
+| `-c` | `--config` | | PDF config JSON file |
+| | `--pdf` | | Direct PDF file path |
+| `-n` | `--name` | auto | Skill name |
+| `-d` | `--description` | auto | Description |
+| `-o` | `--output` | auto | Output directory |
+| | `--from-json` | | Build from extracted JSON |
 | | `--enhance-level` | 0 | AI enhancement (default: 0 for PDF) |
+| | `--api-key` | | Anthropic API key |
+| | `--enhance-workflow` | | Apply workflow preset |
+| | `--enhance-stage` | | Add inline stage |
+| | `--var` | | Override workflow variable |
+| | `--workflow-dry-run` | | Preview workflow |
+| | `--dry-run` | | Preview without executing |
+| `-v` | `--verbose` | | Enable verbose (DEBUG) logging |
+| `-q` | `--quiet` | | Minimize output (WARNING only) |
 
 **Examples:**
 
@@ -683,6 +704,9 @@ skill-seekers pdf --config configs/manual.json
 
 # Enable enhancement
 skill-seekers pdf --pdf manual.pdf --enhance-level 2
+
+# Dry run to preview
+skill-seekers pdf --pdf manual.pdf --name test --dry-run
 ```
 
 ---

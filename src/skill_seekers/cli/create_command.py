@@ -151,7 +151,27 @@ class CreateCommand:
         # Add universal arguments
         self._add_common_args(argv)
 
-        # Add web-specific arguments
+        # Config file (web-specific — loads selectors, categories, etc.)
+        if self.args.config:
+            argv.extend(["--config", self.args.config])
+
+        # RAG arguments (web scraper only)
+        if getattr(self.args, "chunk_for_rag", False):
+            argv.append("--chunk-for-rag")
+        if getattr(self.args, "chunk_size", None) and self.args.chunk_size != 512:
+            argv.extend(["--chunk-size", str(self.args.chunk_size)])
+        if getattr(self.args, "chunk_overlap", None) and self.args.chunk_overlap != 50:
+            argv.extend(["--chunk-overlap", str(self.args.chunk_overlap)])
+
+        # Advanced web-specific arguments
+        if getattr(self.args, "no_preserve_code_blocks", False):
+            argv.append("--no-preserve-code-blocks")
+        if getattr(self.args, "no_preserve_paragraphs", False):
+            argv.append("--no-preserve-paragraphs")
+        if getattr(self.args, "interactive_enhancement", False):
+            argv.append("--interactive-enhancement")
+
+        # Web-specific arguments
         if getattr(self.args, "max_pages", None):
             argv.extend(["--max-pages", str(self.args.max_pages)])
         if getattr(self.args, "skip_scrape", False):
@@ -191,6 +211,10 @@ class CreateCommand:
 
         # Add universal arguments
         self._add_common_args(argv)
+
+        # Config file (github-specific)
+        if self.args.config:
+            argv.extend(["--config", self.args.config])
 
         # Add GitHub-specific arguments
         if getattr(self.args, "token", None):
@@ -234,6 +258,10 @@ class CreateCommand:
 
         # Add universal arguments
         self._add_common_args(argv)
+
+        # Preset (local codebase scraper has preset support)
+        if getattr(self.args, "preset", None):
+            argv.extend(["--preset", self.args.preset])
 
         # Add local-specific arguments
         if getattr(self.args, "languages", None):
@@ -336,10 +364,15 @@ class CreateCommand:
             sys.argv = original_argv
 
     def _add_common_args(self, argv: list[str]) -> None:
-        """Add common/universal arguments to argv list.
+        """Add truly universal arguments to argv list.
 
-        Args:
-            argv: Argument list to append to
+        These flags are accepted by ALL scrapers (doc, github, codebase, pdf)
+        because each scraper calls ``add_all_standard_arguments(parser)``
+        which registers: name, description, output, enhance-level, api-key,
+        dry-run, verbose, quiet, and workflow args.
+
+        Route-specific flags (preset, config, RAG, preserve, etc.) are
+        forwarded only by the _route_*() method that needs them.
         """
         # Identity arguments
         if self.args.name:
@@ -367,31 +400,7 @@ class CreateCommand:
         if self.args.quiet:
             argv.append("--quiet")
 
-        # RAG arguments (NEW - universal!)
-        if getattr(self.args, "chunk_for_rag", False):
-            argv.append("--chunk-for-rag")
-        if getattr(self.args, "chunk_size", None) and self.args.chunk_size != 512:
-            argv.extend(["--chunk-size", str(self.args.chunk_size)])
-        if getattr(self.args, "chunk_overlap", None) and self.args.chunk_overlap != 50:
-            argv.extend(["--chunk-overlap", str(self.args.chunk_overlap)])
-
-        # Preset argument
-        if getattr(self.args, "preset", None):
-            argv.extend(["--preset", self.args.preset])
-
-        # Config file
-        if self.args.config:
-            argv.extend(["--config", self.args.config])
-
-        # Advanced arguments
-        if getattr(self.args, "no_preserve_code_blocks", False):
-            argv.append("--no-preserve-code-blocks")
-        if getattr(self.args, "no_preserve_paragraphs", False):
-            argv.append("--no-preserve-paragraphs")
-        if getattr(self.args, "interactive_enhancement", False):
-            argv.append("--interactive-enhancement")
-
-        # Enhancement Workflow arguments (NEW - Phase 2)
+        # Enhancement Workflow arguments
         if getattr(self.args, "enhance_workflow", None):
             for wf in self.args.enhance_workflow:
                 argv.extend(["--enhance-workflow", wf])

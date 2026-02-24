@@ -1391,6 +1391,29 @@ def main():
     parser = setup_argument_parser()
     args = parser.parse_args()
 
+    # Set logging level from behavior args
+    if getattr(args, "quiet", False):
+        logging.getLogger().setLevel(logging.WARNING)
+    elif getattr(args, "verbose", False):
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    # Handle --dry-run
+    if getattr(args, "dry_run", False):
+        repo = args.repo or (args.config and "(from config)")
+        print(f"\n{'=' * 60}")
+        print(f"DRY RUN: GitHub Repository Analysis")
+        print(f"{'=' * 60}")
+        print(f"Repository:     {repo}")
+        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
+        print(f"Include issues: {not getattr(args, 'no_issues', False)}")
+        print(f"Include releases: {not getattr(args, 'no_releases', False)}")
+        print(f"Include changelog: {not getattr(args, 'no_changelog', False)}")
+        print(f"Max issues:     {getattr(args, 'max_issues', 100)}")
+        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Profile:        {getattr(args, 'profile', None) or '(default)'}")
+        print(f"\n✅ Dry run complete")
+        return 0
+
     # Build config from args or file
     if args.config:
         with open(args.config, encoding="utf-8") as f:

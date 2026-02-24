@@ -305,6 +305,30 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
         sys.argv.append("--no-comments")
     if args.verbose:
         sys.argv.append("--verbose")
+    if getattr(args, "quiet", False):
+        sys.argv.append("--quiet")
+    if getattr(args, "dry_run", False):
+        sys.argv.append("--dry-run")
+    if getattr(args, "preset", None):
+        sys.argv.extend(["--preset", args.preset])
+    if getattr(args, "name", None):
+        sys.argv.extend(["--name", args.name])
+    if getattr(args, "description", None):
+        sys.argv.extend(["--description", args.description])
+    if getattr(args, "api_key", None):
+        sys.argv.extend(["--api-key", args.api_key])
+    # Enhancement Workflow arguments
+    if getattr(args, "enhance_workflow", None):
+        for wf in args.enhance_workflow:
+            sys.argv.extend(["--enhance-workflow", wf])
+    if getattr(args, "enhance_stage", None):
+        for stage in args.enhance_stage:
+            sys.argv.extend(["--enhance-stage", stage])
+    if getattr(args, "workflow_var", None):
+        for var in args.workflow_var:
+            sys.argv.extend(["--var", var])
+    if getattr(args, "workflow_dry_run", False):
+        sys.argv.append("--workflow-dry-run")
 
     try:
         result = analyze_main() or 0
