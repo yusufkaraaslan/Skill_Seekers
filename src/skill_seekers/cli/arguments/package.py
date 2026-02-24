@@ -70,8 +70,8 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Use streaming ingestion for large docs (memory-efficient)",
         },
     },
-    "chunk_size": {
-        "flags": ("--chunk-size",),
+    "streaming_chunk_size": {
+        "flags": ("--streaming-chunk-size",),
         "kwargs": {
             "type": int,
             "default": 4000,
@@ -79,12 +79,12 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "N",
         },
     },
-    "chunk_overlap": {
-        "flags": ("--chunk-overlap",),
+    "streaming_overlap": {
+        "flags": ("--streaming-overlap",),
         "kwargs": {
             "type": int,
             "default": 200,
-            "help": "Overlap between chunks (streaming mode, default: 200)",
+            "help": "Character overlap between chunks (streaming mode, default: 200)",
             "metavar": "N",
         },
     },

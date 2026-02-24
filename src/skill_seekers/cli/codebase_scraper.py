@@ -37,6 +37,7 @@ from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.config_extractor import ConfigExtractor
 from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
 from skill_seekers.cli.signal_flow_analyzer import SignalFlowAnalyzer
+from skill_seekers.cli.utils import setup_logging
 
 # Try to import pathspec for .gitignore support
 try:
@@ -46,8 +47,6 @@ try:
 except ImportError:
     PATHSPEC_AVAILABLE = False
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -2382,11 +2381,7 @@ Examples:
     if args.depth is None:
         args.depth = "deep"  # Default depth
 
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+    setup_logging(verbose=args.verbose, quiet=getattr(args, "quiet", False))
 
     # Handle --dry-run
     if getattr(args, "dry_run", False):

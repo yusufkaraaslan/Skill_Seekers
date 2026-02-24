@@ -17,6 +17,22 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
+def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
+    """Configure root logging level based on verbosity flags.
+
+    Args:
+        verbose: Enable DEBUG level logging
+        quiet: Enable WARNING level logging only (suppress INFO)
+    """
+    if quiet:
+        level = logging.WARNING
+    elif verbose:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    logging.basicConfig(level=level, format="%(message)s", force=True)
+
+
 def open_folder(folder_path: str | Path) -> bool:
     """
     Open a folder in the system file browser

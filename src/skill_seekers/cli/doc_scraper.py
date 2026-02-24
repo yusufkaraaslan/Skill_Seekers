@@ -47,26 +47,10 @@ from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
 from skill_seekers.cli.arguments.scrape import add_scrape_arguments
+from skill_seekers.cli.utils import setup_logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-
-def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
-    """Configure logging based on verbosity level.
-
-    Args:
-        verbose: Enable DEBUG level logging
-        quiet: Enable WARNING level logging only
-    """
-    if quiet:
-        level = logging.WARNING
-    elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    logging.basicConfig(level=level, format="%(message)s", force=True)
 
 
 def infer_description_from_docs(

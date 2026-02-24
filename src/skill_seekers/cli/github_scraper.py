@@ -31,6 +31,7 @@ except ImportError:
     sys.exit(1)
 
 from skill_seekers.cli.arguments.github import add_github_arguments
+from skill_seekers.cli.utils import setup_logging
 
 # Try to import pathspec for .gitignore support
 try:
@@ -40,8 +41,6 @@ try:
 except ImportError:
     PATHSPEC_AVAILABLE = False
 
-# Configure logging FIRST (before using logger)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Import code analyzer for deep code analysis
@@ -1391,11 +1390,7 @@ def main():
     parser = setup_argument_parser()
     args = parser.parse_args()
 
-    # Set logging level from behavior args
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
+    setup_logging(verbose=getattr(args, "verbose", False), quiet=getattr(args, "quiet", False))
 
     # Handle --dry-run
     if getattr(args, "dry_run", False):

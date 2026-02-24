@@ -28,12 +28,12 @@ try:
     from skill_seekers.cli.conflict_detector import ConflictDetector
     from skill_seekers.cli.merge_sources import ClaudeEnhancedMerger, RuleBasedMerger
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+    from skill_seekers.cli.utils import setup_logging
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running from the project root directory")
     sys.exit(1)
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -1134,6 +1134,7 @@ Examples:
     )
 
     args = parser.parse_args()
+    setup_logging()
 
     # Create scraper
     scraper = UnifiedScraper(args.config, args.merge_mode)

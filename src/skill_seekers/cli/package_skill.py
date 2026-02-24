@@ -188,6 +188,8 @@ def package_skill(
 
 
 def main():
+    from skill_seekers.cli.arguments.package import add_package_arguments
+
     parser = argparse.ArgumentParser(
         description="Package a skill directory into a .zip file for Claude",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -210,92 +212,11 @@ Examples:
         """,
     )
 
-    parser.add_argument("skill_dir", help="Path to skill directory (e.g., output/react/)")
-
-    parser.add_argument(
-        "--no-open", action="store_true", help="Do not open the output folder after packaging"
-    )
-
-    parser.add_argument(
-        "--skip-quality-check", action="store_true", help="Skip quality checks before packaging"
-    )
-
-    parser.add_argument(
-        "--target",
-        choices=[
-            "claude",
-            "gemini",
-            "openai",
-            "markdown",
-            "langchain",
-            "llama-index",
-            "haystack",
-            "weaviate",
-            "chroma",
-            "faiss",
-            "qdrant",
-        ],
-        default="claude",
-        help="Target LLM platform (default: claude)",
-    )
-
-    parser.add_argument(
-        "--upload",
-        action="store_true",
-        help="Automatically upload after packaging (requires platform API key)",
-    )
-
-    parser.add_argument(
-        "--streaming",
-        action="store_true",
-        help="Use streaming ingestion for large docs (memory-efficient, with chunking)",
-    )
-
-    parser.add_argument(
-        "--streaming-chunk-size",
-        type=int,
-        default=4000,
-        help="Maximum characters per chunk (streaming mode only, default: 4000)",
-    )
-
-    parser.add_argument(
-        "--streaming-overlap",
-        type=int,
-        default=200,
-        help="Character overlap between chunks (streaming mode only, default: 200)",
-    )
-
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=100,
-        help="Number of chunks per batch (streaming mode, default: 100)",
-    )
-
-    # Chunking parameters (for RAG platforms)
-    parser.add_argument(
-        "--chunk",
-        action="store_true",
-        help="Enable intelligent chunking for RAG platforms (auto-enabled for RAG adaptors)",
-    )
-
-    parser.add_argument(
-        "--chunk-tokens",
-        type=int,
-        default=512,
-        help="Maximum tokens per chunk (default: 512, recommended for OpenAI embeddings)",
-    )
-
-    parser.add_argument(
-        "--no-preserve-code",
-        action="store_true",
-        help="Allow code block splitting (default: false, code blocks preserved)",
-    )
-
+    add_package_arguments(parser)
     args = parser.parse_args()
 
     success, package_path = package_skill(
-        args.skill_dir,
+        args.skill_directory,
         open_folder_after=not args.no_open,
         skip_quality_check=args.skip_quality_check,
         target=args.target,
