@@ -389,6 +389,18 @@ PDF_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Word document specific (from word.py)
+WORD_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "docx": {
+        "flags": ("--docx",),
+        "kwargs": {
+            "type": str,
+            "help": "DOCX file path",
+            "metavar": "PATH",
+        },
+    },
+}
+
 # Multi-source config specific (from unified_scraper.py)
 CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
     "merge_mode": {
@@ -471,6 +483,7 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         "github": GITHUB_ARGUMENTS,
         "local": LOCAL_ARGUMENTS,
         "pdf": PDF_ARGUMENTS,
+        "word": WORD_ARGUMENTS,
         "config": CONFIG_ARGUMENTS,
     }
     return source_args.get(source_type, {})
@@ -507,12 +520,13 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
     - 'github': Universal + github-specific
     - 'local': Universal + local-specific
     - 'pdf': Universal + pdf-specific
+    - 'word': Universal + word-specific
     - 'advanced': Advanced/rare arguments
     - 'all': All 120+ arguments
 
     Args:
         parser: ArgumentParser to add arguments to
-        mode: Help mode (default, web, github, local, pdf, advanced, all)
+        mode: Help mode (default, web, github, local, pdf, word, advanced, all)
     """
     # Positional argument for source
     parser.add_argument(
@@ -541,6 +555,10 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
 
     if mode in ["pdf", "all"]:
         for arg_name, arg_def in PDF_ARGUMENTS.items():
+            parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    if mode in ["word", "all"]:
+        for arg_name, arg_def in WORD_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     if mode in ["config", "all"]:

@@ -1296,14 +1296,14 @@ Use this skill when you need to:
         closed_issues = [i for i in issues if i["state"] == "closed"]
 
         content += f"## Open Issues ({len(open_issues)})\n\n"
-        for issue in open_issues[:20]:
+        for issue in open_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
             content += f"### #{issue['number']}: {issue['title']}\n"
             content += f"**Labels:** {labels} | **Created:** {issue['created_at'][:10]}\n"
             content += f"[View on GitHub]({issue['url']})\n\n"
 
         content += f"\n## Recently Closed Issues ({len(closed_issues)})\n\n"
-        for issue in closed_issues[:10]:
+        for issue in closed_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
             content += f"### #{issue['number']}: {issue['title']}\n"
             content += f"**Labels:** {labels} | **Closed:** {issue['closed_at'][:10]}\n"

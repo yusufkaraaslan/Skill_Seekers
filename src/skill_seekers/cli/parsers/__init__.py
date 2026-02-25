@@ -12,6 +12,7 @@ from .config_parser import ConfigParser
 from .scrape_parser import ScrapeParser
 from .github_parser import GitHubParser
 from .pdf_parser import PDFParser
+from .word_parser import WordParser
 from .unified_parser import UnifiedParser
 from .enhance_parser import EnhanceParser
 from .enhance_status_parser import EnhanceStatusParser
@@ -41,6 +42,7 @@ PARSERS = [
     EnhanceParser(),
     EnhanceStatusParser(),
     PDFParser(),
+    WordParser(),
     UnifiedParser(),
     EstimateParser(),
     InstallParser(),

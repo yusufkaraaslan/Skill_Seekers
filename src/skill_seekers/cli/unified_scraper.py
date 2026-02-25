@@ -73,11 +73,12 @@ class UnifiedScraper:
             "documentation": [],  # List of doc sources
             "github": [],  # List of github sources
             "pdf": [],  # List of pdf sources
+            "word": [],  # List of word sources
             "local": [],  # List of local sources (docs or code)
         }
 
         # Track source index for unique naming (multi-source support)
-        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "local": 0}
+        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "word": 0, "local": 0}
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
@@ -151,6 +152,8 @@ class UnifiedScraper:
                     self._scrape_github(source)
                 elif source_type == "pdf":
                     self._scrape_pdf(source)
+                elif source_type == "word":
+                    self._scrape_word(source)
                 elif source_type == "local":
                     self._scrape_local(source)
                 else:
@@ -513,6 +516,65 @@ class UnifiedScraper:
             logger.warning(f"⚠️  Failed to build standalone PDF SKILL.md: {e}")
 
         logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
+
+    def _scrape_word(self, source: dict[str, Any]):
+        """Scrape Word document (.docx)."""
+        try:
+            from skill_seekers.cli.word_scraper import WordToSkillConverter
+        except ImportError:
+            logger.error("word_scraper.py not found")
+            return
+
+        # Multi-source support: Get unique index for this Word source
+        idx = self._source_counters["word"]
+        self._source_counters["word"] += 1
+
+        # Extract Word identifier for unique naming (filename without extension)
+        docx_path = source["path"]
+        docx_id = os.path.splitext(os.path.basename(docx_path))[0]
+
+        # Create config for Word scraper
+        word_config = {
+            "name": f"{self.name}_word_{idx}_{docx_id}",
+            "docx_path": source["path"],
+            "description": f"{source.get('name', docx_id)} documentation",
+        }
+
+        # Scrape
+        logger.info(f"Scraping Word document: {source['path']}")
+        converter = WordToSkillConverter(word_config)
+
+        # Extract Word content
+        converter.extract_docx()
+
+        # Load extracted data from file
+        word_data_file = converter.data_file
+        with open(word_data_file, encoding="utf-8") as f:
+            word_data = json.load(f)
+
+        # Copy data file to cache
+        cache_word_data = os.path.join(self.data_dir, f"word_data_{idx}_{docx_id}.json")
+        shutil.copy(word_data_file, cache_word_data)
+
+        # Append to list
+        self.scraped_data["word"].append(
+            {
+                "docx_path": docx_path,
+                "docx_id": docx_id,
+                "idx": idx,
+                "data": word_data,
+                "data_file": cache_word_data,
+            }
+        )
+
+        # Build standalone SKILL.md for synthesis
+        try:
+            converter.build_skill()
+            logger.info("✅ Word: Standalone SKILL.md created")
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to build standalone Word SKILL.md: {e}")
+
+        logger.info(f"✅ Word: {len(word_data.get('pages', []))} sections extracted")
 
     def _scrape_local(self, source: dict[str, Any]):
         """

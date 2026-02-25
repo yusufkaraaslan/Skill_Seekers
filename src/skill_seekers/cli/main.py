@@ -47,6 +47,7 @@ COMMAND_MODULES = {
     "scrape": "skill_seekers.cli.doc_scraper",
     "github": "skill_seekers.cli.github_scraper",
     "pdf": "skill_seekers.cli.pdf_scraper",
+    "word": "skill_seekers.cli.word_scraper",
     "unified": "skill_seekers.cli.unified_scraper",
     "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",

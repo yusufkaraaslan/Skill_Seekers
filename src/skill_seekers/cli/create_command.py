@@ -131,6 +131,8 @@ class CreateCommand:
             return self._route_local()
         elif self.source_info.type == "pdf":
             return self._route_pdf()
+        elif self.source_info.type == "word":
+            return self._route_word()
         elif self.source_info.type == "config":
             return self._route_config()
         else:
@@ -320,6 +322,29 @@ class CreateCommand:
         finally:
             sys.argv = original_argv
 
+    def _route_word(self) -> int:
+        """Route to Word document scraper (word_scraper.py)."""
+        from skill_seekers.cli import word_scraper
+
+        # Reconstruct argv for word_scraper
+        argv = ["word_scraper"]
+
+        # Add DOCX file
+        file_path = self.source_info.parsed["file_path"]
+        argv.extend(["--docx", file_path])
+
+        # Add universal arguments
+        self._add_common_args(argv)
+
+        # Call word_scraper with modified argv
+        logger.debug(f"Calling word_scraper with argv: {argv}")
+        original_argv = sys.argv
+        try:
+            sys.argv = argv
+            return word_scraper.main()
+        finally:
+            sys.argv = original_argv
+
     def _route_config(self) -> int:
         """Route to unified scraper for config files (unified_scraper.py)."""
         from skill_seekers.cli import unified_scraper
@@ -442,6 +467,7 @@ Examples:
   GitHub:   skill-seekers create facebook/react -p standard
   Local:    skill-seekers create ./my-project -p comprehensive
   PDF:      skill-seekers create tutorial.pdf --ocr
+  DOCX:     skill-seekers create document.docx
   Config:   skill-seekers create configs/react.json
 
 Source Auto-Detection:
@@ -449,6 +475,7 @@ Source Auto-Detection:
   • owner/repo → GitHub analysis
   • ./path → local codebase
   • file.pdf → PDF extraction
+  • file.docx → Word document extraction
   • file.json → multi-source config
 
 Progressive Help (13 → 120+ flags):
@@ -483,6 +510,9 @@ Common Workflows:
         "--help-local", action="store_true", help=argparse.SUPPRESS, dest="_help_local"
     )
     parser.add_argument("--help-pdf", action="store_true", help=argparse.SUPPRESS, dest="_help_pdf")
+    parser.add_argument(
+        "--help-word", action="store_true", help=argparse.SUPPRESS, dest="_help_word"
+    )
     parser.add_argument(
         "--help-config", action="store_true", help=argparse.SUPPRESS, dest="_help_config"
     )
@@ -531,6 +561,15 @@ Common Workflows:
         )
         add_create_arguments(parser_pdf, mode="pdf")
         parser_pdf.print_help()
+        return 0
+    elif args._help_word:
+        parser_word = argparse.ArgumentParser(
+            prog="skill-seekers create",
+            description="Create skill from Word document (.docx)",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_create_arguments(parser_word, mode="word")
+        parser_word.print_help()
         return 0
     elif args._help_config:
         parser_config = argparse.ArgumentParser(

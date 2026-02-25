@@ -21,6 +21,7 @@ from .common import add_common_arguments, COMMON_ARGUMENTS
 from .scrape import add_scrape_arguments, SCRAPE_ARGUMENTS
 from .github import add_github_arguments, GITHUB_ARGUMENTS
 from .pdf import add_pdf_arguments, PDF_ARGUMENTS
+from .word import add_word_arguments, WORD_ARGUMENTS
 from .analyze import add_analyze_arguments, ANALYZE_ARGUMENTS
 from .unified import add_unified_arguments, UNIFIED_ARGUMENTS
 from .package import add_package_arguments, PACKAGE_ARGUMENTS
@@ -38,11 +39,13 @@ __all__ = [
     "add_package_arguments",
     "add_upload_arguments",
     "add_enhance_arguments",
+    "add_word_arguments",
     # Data
     "COMMON_ARGUMENTS",
     "SCRAPE_ARGUMENTS",
     "GITHUB_ARGUMENTS",
     "PDF_ARGUMENTS",
+    "WORD_ARGUMENTS",
     "ANALYZE_ARGUMENTS",
     "UNIFIED_ARGUMENTS",
     "PACKAGE_ARGUMENTS",

@@ -12,10 +12,12 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 | Attribute | Value |
 |-----------|-------|
-| **Current Version** | 3.0.0 |
+| **Current Version** | 3.1.3 |
 | **Python Version** | 3.10+ (tested on 3.10, 3.11, 3.12, 3.13) |
 | **License** | MIT |
 | **Package Name** | `skill-seekers` (PyPI) |
+| **Source Files** | 169 Python files |
+| **Test Files** | 101 test files |
 | **Website** | https://skillseekersweb.com/ |
 | **Repository** | https://github.com/yusufkaraaslan/Skill_Seekers |
 
@@ -55,7 +57,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 ```
 /mnt/1ece809a-2821-4f10-aecb-fcdf34760c0b/Git/Skill_Seekers/
 ├── src/skill_seekers/              # Main source code (src/ layout)
-│   ├── cli/                        # CLI tools and commands (~42k lines)
+│   ├── cli/                        # CLI tools and commands (~70 modules)
 │   │   ├── adaptors/               # Platform adaptors (Strategy pattern)
 │   │   │   ├── base.py             # Abstract base class (SkillAdaptor)
 │   │   │   ├── claude.py           # Claude AI adaptor
@@ -70,12 +72,6 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   │   ├── qdrant.py           # Qdrant vector DB adaptor
 │   │   │   ├── weaviate.py         # Weaviate vector DB adaptor
 │   │   │   └── streaming_adaptor.py # Streaming output adaptor
-│   │   ├── storage/                # Cloud storage backends
-│   │   │   ├── base_storage.py     # Storage interface
-│   │   │   ├── s3_storage.py       # AWS S3 support
-│   │   │   ├── gcs_storage.py      # Google Cloud Storage
-│   │   │   └── azure_storage.py    # Azure Blob Storage
-│   │   ├── parsers/                # CLI argument parsers
 │   │   ├── arguments/              # CLI argument definitions
 │   │   ├── presets/                # Preset configuration management
 │   │   ├── main.py                 # Unified CLI entry point
@@ -85,6 +81,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── pdf_scraper.py          # PDF extraction
 │   │   ├── unified_scraper.py      # Multi-source scraping
 │   │   ├── codebase_scraper.py     # Local codebase analysis
+│   │   ├── enhance_command.py      # AI enhancement command
 │   │   ├── enhance_skill_local.py  # AI enhancement (local mode)
 │   │   ├── package_skill.py        # Skill packager
 │   │   ├── upload_skill.py         # Upload to platforms
@@ -101,8 +98,8 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── source_manager.py       # Config source management
 │   │   └── tools/                  # MCP tool implementations
 │   │       ├── config_tools.py     # Configuration tools
-│   │       ├── scraping_tools.py   # Scraping tools
 │   │       ├── packaging_tools.py  # Packaging tools
+│   │       ├── scraping_tools.py   # Scraping tools
 │   │       ├── source_tools.py     # Source management tools
 │   │       ├── splitting_tools.py  # Config splitting tools
 │   │       ├── vector_db_tools.py  # Vector database tools
@@ -124,7 +121,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   ├── workflows/                  # YAML workflow presets
 │   ├── _version.py                 # Version information (reads from pyproject.toml)
 │   └── __init__.py                 # Package init
-├── tests/                          # Test suite (98 test files)
+├── tests/                          # Test suite (101 test files)
 ├── configs/                        # Preset configuration files
 ├── docs/                           # Documentation (80+ markdown files)
 │   ├── integrations/               # Platform integration guides
@@ -134,17 +131,6 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   ├── blog/                       # Blog posts
 │   └── roadmap/                    # Roadmap documents
 ├── examples/                       # Usage examples
-│   ├── langchain-rag-pipeline/     # LangChain example
-│   ├── llama-index-query-engine/   # LlamaIndex example
-│   ├── pinecone-upsert/            # Pinecone example
-│   ├── chroma-example/             # Chroma example
-│   ├── weaviate-example/           # Weaviate example
-│   ├── qdrant-example/             # Qdrant example
-│   ├── faiss-example/              # FAISS example
-│   ├── haystack-pipeline/          # Haystack example
-│   ├── cursor-react-skill/         # Cursor IDE example
-│   ├── windsurf-fastapi-context/   # Windsurf example
-│   └── continue-dev-universal/     # Continue.dev example
 ├── .github/workflows/              # CI/CD workflows
 ├── pyproject.toml                  # Main project configuration
 ├── requirements.txt                # Pinned dependencies
@@ -259,7 +245,7 @@ pytest tests/ -v -m "not slow and not integration"
 
 ### Test Architecture
 
-- **98 test files** covering all features
+- **101 test files** covering all features
 - **1880+ tests** passing
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.12
 - Test markers defined in `pyproject.toml`:
@@ -316,22 +302,19 @@ mypy src/skill_seekers --show-error-codes --pretty
 - **Ignored rules:** E501, F541, ARG002, B007, I001, SIM114
 - **Import sorting:** isort style with `skill_seekers` as first-party
 
-### MyPy Configuration (from mypy.ini)
+### MyPy Configuration (from pyproject.toml)
 
-```ini
-[mypy]
-python_version = 3.10
-warn_return_any = False
-warn_unused_configs = True
-disallow_untyped_defs = False
-check_untyped_defs = True
-ignore_missing_imports = True
-no_implicit_optional = True
-show_error_codes = True
-
-# Gradual typing - be lenient for now
-disallow_incomplete_defs = False
-disallow_untyped_calls = False
+```toml
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
 ```
 
 ### Code Conventions
@@ -662,17 +645,6 @@ Preset configs are in `configs/` directory:
 - `astrovalley_unified.json` - Astrovalley
 - `configs/integrations/` - Integration-specific configs
 
-### Configuration Documentation
-
-Preset configs are in `configs/` directory:
-- `godot.json` - Godot Engine
-- `blender.json` / `blender-unified.json` - Blender Engine
-- `claude-code.json` - Claude Code
-- `httpx_comprehensive.json` - HTTPX library
-- `medusa-mercurjs.json` - Medusa/MercurJS
-- `astrovalley_unified.json` - Astrovalley
-- `configs/integrations/` - Integration-specific configs
-
 ---
 
 ## Key Dependencies
@@ -700,6 +672,8 @@ Preset configs are in `configs/` directory:
 | `python-dotenv` | >=1.1.1 | Environment variables |
 | `jsonschema` | >=4.25.1 | JSON validation |
 | `PyYAML` | >=6.0 | YAML parsing |
+| `langchain` | >=1.2.10 | LangChain integration |
+| `llama-index` | >=0.14.15 | LlamaIndex integration |
 
 ### Optional Dependencies
 
@@ -852,4 +826,4 @@ Skill Seekers uses JSON configuration files to define scraping targets. Example 
 
 *This document is maintained for AI coding agents. For human contributors, see README.md and CONTRIBUTING.md.*
 
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-24*

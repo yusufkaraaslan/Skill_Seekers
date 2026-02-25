@@ -24,12 +24,12 @@ class TestParserRegistry:
 
     def test_all_parsers_registered(self):
         """Test that all parsers are registered."""
-        assert len(PARSERS) == 21, f"Expected 21 parsers, got {len(PARSERS)}"
+        assert len(PARSERS) == 22, f"Expected 22 parsers, got {len(PARSERS)}"
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 21
+        assert len(names) == 22
         assert "scrape" in names
         assert "github" in names
         assert "package" in names
@@ -242,9 +242,9 @@ class TestBackwardCompatibility:
             assert cmd in names, f"Command '{cmd}' not found in parser registry!"
 
     def test_command_count_matches(self):
-        """Test that we have exactly 21 commands (includes new create and workflows commands)."""
-        assert len(PARSERS) == 21
-        assert len(get_parser_names()) == 21
+        """Test that we have exactly 22 commands (includes new create, workflows, and word commands)."""
+        assert len(PARSERS) == 22
+        assert len(get_parser_names()) == 22
 
 
 if __name__ == "__main__":

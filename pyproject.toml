@@ -109,6 +109,12 @@ azure = [
     "azure-storage-blob>=12.19.0",
 ]
 
+# Word document (.docx) support
+docx = [
+    "mammoth>=1.6.0",
+    "python-docx>=1.1.0",
+]
+
 # RAG vector database upload support
 chroma = [
     "chromadb>=0.4.0",
@@ -146,6 +152,8 @@ embedding = [
 
 # All optional dependencies combined (dev dependencies now in [dependency-groups])
 all = [
+    "mammoth>=1.6.0",
+    "python-docx>=1.1.0",
     "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
@@ -186,6 +194,7 @@ skill-seekers-resume = "skill_seekers.cli.resume_command:main"
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
+skill-seekers-word = "skill_seekers.cli.word_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
 skill-seekers-enhance = "skill_seekers.cli.enhance_command:main"
 skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"

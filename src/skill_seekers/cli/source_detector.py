@@ -60,6 +60,9 @@ class SourceDetector:
         if source.endswith(".pdf"):
             return cls._detect_pdf(source)
 
+        if source.endswith(".docx"):
+            return cls._detect_word(source)
+
         # 2. Directory detection
         if os.path.isdir(source):
             return cls._detect_local(source)
@@ -85,6 +88,7 @@ class SourceDetector:
             "  GitHub: skill-seekers create facebook/react\n"
             "  Local:  skill-seekers create ./my-project\n"
             "  PDF:    skill-seekers create tutorial.pdf\n"
+            "  DOCX:   skill-seekers create document.docx\n"
             "  Config: skill-seekers create configs/react.json"
         )
 
@@ -102,6 +106,14 @@ class SourceDetector:
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
             type="pdf", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_word(cls, source: str) -> SourceInfo:
+        """Detect Word document (.docx) source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="word", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -187,6 +199,13 @@ class SourceDetector:
             file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
                 raise ValueError(f"PDF file does not exist: {file_path}")
+            if not os.path.isfile(file_path):
+                raise ValueError(f"Path is not a file: {file_path}")
+
+        elif source_info.type == "word":
+            file_path = source_info.parsed["file_path"]
+            if not os.path.exists(file_path):
+                raise ValueError(f"Word document does not exist: {file_path}")
             if not os.path.isfile(file_path):
                 raise ValueError(f"Path is not a file: {file_path}")
 

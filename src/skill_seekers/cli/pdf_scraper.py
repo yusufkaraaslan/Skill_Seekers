@@ -319,7 +319,7 @@ class PDFToSkillConverter:
                 code_list = page.get("code_samples") or page.get("code_blocks")
                 if code_list:
                     f.write("### Code Examples\n\n")
-                    for code in code_list[:3]:  # Limit to top 3
+                    for code in code_list:
                         lang = code.get("language", "")
                         f.write(f"```{lang}\n{code['code']}\n```\n\n")
 
@@ -721,21 +721,44 @@ def main():
         # ═══════════════════════════════════════════════════════════════════════════
         # Traditional Enhancement (complements workflow system)
         # ═══════════════════════════════════════════════════════════════════════════
-        # Note: Runs independently of workflow system (they complement each other)
         if getattr(args, "enhance_level", 0) > 0:
-            # Traditional AI enhancement (API or LOCAL mode)
+            import os
+
+            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+            mode = "API" if api_key else "LOCAL"
+
             print("\n" + "=" * 80)
-            print("🤖 Traditional AI Enhancement")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
                 print(
                     "   (Workflow provides specialized analysis, enhancement provides general improvements)"
                 )
-            print("   (Use --enhance-workflow for more control)")
             print("")
-            # Note: PDF scraper uses enhance_level instead of enhance/enhance_local
-            # This is consistent with the new unified enhancement system
+
+            skill_dir = converter.skill_dir
+            if api_key:
+                try:
+                    from skill_seekers.cli.enhance_skill import enhance_skill_md
+
+                    enhance_skill_md(skill_dir, api_key)
+                    print("✅ API enhancement complete!")
+                except ImportError:
+                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
+                    from pathlib import Path
+                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    enhancer.run(headless=True)
+                    print("✅ Local enhancement complete!")
+            else:
+                from pathlib import Path
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                enhancer.run(headless=True)
+                print("✅ Local enhancement complete!")
 
     except RuntimeError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
