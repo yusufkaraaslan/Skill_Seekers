@@ -5,6 +5,39 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 📄 B2: Microsoft Word (.docx) Support & Stage 1 Quality Improvements
+
+### Added
+- **Microsoft Word (.docx) support** — New `skill-seekers word --docx <file>` command and `skill-seekers create document.docx` auto-detection. Full pipeline: mammoth → HTML → BeautifulSoup → sections → SKILL.md + references/
+  - `word_scraper.py` — `WordToSkillConverter` class (~600 lines) with heading/code/table/image/metadata extraction
+  - `arguments/word.py` — `add_word_arguments()` + `WORD_ARGUMENTS` dict
+  - `parsers/word_parser.py` — WordParser for unified CLI parser registry
+  - `tests/test_word_scraper.py` — comprehensive test suite (~300 lines)
+- **`.docx` auto-detection** in `source_detector.py` — `create document.docx` routes to word scraper
+- **`--help-word`** flag in create command for Word-specific help
+- **Word support in unified scraper** — `_scrape_word()` method for multi-source scraping
+- **`skill-seekers-word`** entry point in pyproject.toml
+- **`docx` optional dependency group** — `pip install skill-seekers[docx]` (mammoth + python-docx)
+
+### Fixed
+- **Reference file code truncation removed** — `codebase_scraper.py` no longer truncates code blocks to 500 chars in reference files (5 locations fixed)
+- **Enhancement code block limit replaced with token budget** — `enhance_skill_local.py` `summarize_reference()` now uses character-budget approach instead of arbitrary `[:5]` code block cap
+- **Dead variable removed** — `_target_lines` in `enhance_skill_local.py:309` was assigned but never used
+- **Intro boundary code block desync fixed** — `summarize_reference()` intro section could split inside a code block, desynchronizing the parser; now tracks code block state and ensures safe boundary
+- **Test assertion corrected** — `test_code_blocks_not_arbitrarily_capped` now correctly counts code blocks (```count // 2) instead of raw marker count
+- **Hardcoded `python` language in unified_skill_builder.py** — Test examples now use detected language (`ex["language"]`) instead of always `python`; code snippets no longer truncated to 300 chars
+- **Hardcoded `python` language in how_to_guide_builder.py** — Added `language` field to `HowToGuide` dataclass, flows from test extractor → workflow → guide → AI prompt
+- **GitHub reference file limits removed** — `unified_skill_builder.py` no longer caps issues at 20, releases at 10, or release bodies at 500 chars in reference files
+- **GitHub scraper reference limits removed** — `github_scraper.py` no longer caps open_issues at 20 or closed_issues at 10
+- **PDF scraper fixes** — Real API/LOCAL enhancement (was stub); removed `[:3]` reference file limit
+- **Word scraper code detection** — Detect mammoth monospace `<p><br>` blocks as code (not `<pre>/<code>`)
+- **Language detector method** — Fixed `detect_from_text` → `detect_from_code` in word scraper
+
+### Changed
+- **Enhancement summarizer architecture** — Character-budget approach respects `target_ratio` for both code blocks and heading chunks, replacing hard limits with proportional allocation
+
 ## [3.1.3] - 2026-02-24
 
 ### 🐛 Hotfix — Explicit Chunk Flags & Argument Pipeline Cleanup

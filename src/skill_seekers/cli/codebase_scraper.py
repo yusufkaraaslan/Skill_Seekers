@@ -419,7 +419,7 @@ def extract_markdown_structure(content: str) -> dict[str, Any]:
             structure["code_blocks"].append(
                 {
                     "language": language,
-                    "code": code[:500],  # Truncate long code blocks
+                    "code": code,  # Full code - no truncation
                     "full_length": len(code),
                 }
             )
@@ -486,7 +486,7 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
                 "code_blocks": [
                     {
                         "language": cb.language or "text",
-                        "code": cb.code[:500] if len(cb.code) > 500 else cb.code,
+                        "code": cb.code,  # Full code - no truncation
                         "full_length": len(cb.code),
                         "quality_score": cb.quality_score,
                     }
@@ -572,7 +572,7 @@ def extract_rst_structure(content: str) -> dict[str, Any]:
             structure["code_blocks"].append(
                 {
                     "language": language,
-                    "code": code[:500],
+                    "code": code,  # Full code - no truncation
                     "full_length": len(code),
                 }
             )
@@ -717,7 +717,7 @@ def process_markdown_docs(
                                     for h in parsed_doc.headings
                                 ],
                                 "code_blocks": [
-                                    {"language": cb.language, "code": cb.code[:500]}
+                                    {"language": cb.language, "code": cb.code}  # Full code
                                     for cb in parsed_doc.code_blocks
                                 ],
                                 "tables": len(parsed_doc.tables),
@@ -743,7 +743,7 @@ def process_markdown_docs(
                                     for h in parsed_doc.headings
                                 ],
                                 "code_blocks": [
-                                    {"language": cb.language, "code": cb.code[:500]}
+                                    {"language": cb.language, "code": cb.code}  # Full code
                                     for cb in parsed_doc.code_blocks
                                 ],
                                 "tables": len(parsed_doc.tables),

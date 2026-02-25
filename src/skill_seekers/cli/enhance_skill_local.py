@@ -306,10 +306,19 @@ class LocalSkillEnhancer:
             Summarized content
         """
         lines = content.split("\n")
-        _target_lines = int(len(lines) * target_ratio)
 
         # Priority 1: Keep introduction (first 20%)
         intro_lines = int(len(lines) * 0.2)
+
+        # Ensure intro doesn't cut inside a code block
+        in_block = False
+        safe_end = 0
+        for i in range(intro_lines):
+            if lines[i].strip().startswith("```"):
+                in_block = not in_block
+            if not in_block:
+                safe_end = i + 1
+        intro_lines = safe_end
         result_lines = lines[:intro_lines]
 
         # Priority 2: Extract code blocks
@@ -334,13 +343,21 @@ class LocalSkillEnhancer:
             elif in_code_block:
                 current_block.append(line)
 
-        # Combine: intro + code blocks + headings
+        # Combine: intro + code blocks + headings with token budget
         result = result_lines.copy()
+        # Budget is target_ratio of original content length
+        content_chars = len(content)
+        max_chars = int(content_chars * target_ratio)
+        current_chars = sum(len(line) for line in result)
 
-        # Add code blocks first (prioritize code examples)
-        for _idx, block in code_blocks[:5]:  # Max 5 code blocks
+        # Priority 2: Add code blocks first (prioritize code examples) - no arbitrary limit
+        for _idx, block in code_blocks:
+            block_chars = sum(len(line) for line in block) + 1  # +1 for blank line
+            if current_chars + block_chars > max_chars:
+                break
             result.append("")  # Add blank line before code block
             result.extend(block)
+            current_chars += block_chars
 
         # Priority 3: Keep headings with first paragraph
         i = intro_lines
@@ -350,8 +367,12 @@ class LocalSkillEnhancer:
             if line.startswith("#"):
                 # Found heading - keep it and next 3 lines
                 chunk = lines[i : min(i + 4, len(lines))]
+                chunk_chars = sum(len(l) for l in chunk)
+                if current_chars + chunk_chars > max_chars:
+                    break
                 result.extend(chunk)
                 headings_added += 1
+                current_chars += chunk_chars
                 i += 4
             else:
                 i += 1

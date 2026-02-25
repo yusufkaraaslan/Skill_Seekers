@@ -356,14 +356,17 @@ class TestSummarizeReference:
         # Result should be significantly shorter than original
         assert len(result) < len(content)
 
-    def test_code_blocks_capped_at_five(self, tmp_path):
+    def test_code_blocks_not_arbitrarily_capped(self, tmp_path):
+        """Code blocks should not be arbitrarily capped at 5 - should use token budget."""
         enhancer = self._enhancer(tmp_path)
-        content = "\n".join(["Intro line"] * 20) + "\n"
+        content = "\n".join(["Intro line"] * 10) + "\n"  # Shorter intro
         for i in range(10):
-            content += f"```python\ncode_block_{i}()\n```\n"
-        result = enhancer.summarize_reference(content)
-        # Should have at most 5 code blocks
-        assert result.count("```python") <= 5
+            content += f"```\ncode_block_{i}()\n```\n"  # Short code blocks
+        # Use high ratio to ensure budget fits well beyond 5 blocks
+        result = enhancer.summarize_reference(content, target_ratio=0.9)
+        # Each block has opening + closing ```, so divide by 2 for actual block count
+        code_block_count = result.count("```") // 2
+        assert code_block_count > 5, f"Expected >5 code blocks, got {code_block_count}"
 
 
 # ---------------------------------------------------------------------------

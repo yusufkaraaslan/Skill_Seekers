@@ -907,7 +907,7 @@ This skill combines knowledge from multiple sources:
                     f.write(f"# GitHub Issues: {repo}\n\n")
                     f.write(f"{len(github_data['issues'])} recent issues.\n\n")
 
-                    for issue in github_data["issues"][:20]:
+                    for issue in github_data["issues"]:  # All issues, no arbitrary limit
                         f.write(f"## #{issue['number']}: {issue['title']}\n\n")
                         f.write(f"**State**: {issue['state']}\n")
                         if issue.get("labels"):
@@ -920,11 +920,11 @@ This skill combines knowledge from multiple sources:
                 with open(releases_path, "w", encoding="utf-8") as f:
                     f.write(f"# Releases: {repo}\n\n")
 
-                    for release in github_data["releases"][:10]:
+                    for release in github_data["releases"]:  # All releases, no arbitrary limit
                         f.write(f"## {release['tag_name']}: {release.get('name', 'N/A')}\n\n")
                         f.write(f"**Published**: {release.get('published_at', 'N/A')[:10]}\n\n")
                         if release.get("body"):
-                            f.write(release["body"][:500])
+                            f.write(release["body"])  # Full release notes
                             f.write("\n\n")
 
             # Create index for this repo
@@ -1295,7 +1295,8 @@ This skill combines knowledge from multiple sources:
                     f.write(f"- **Confidence**: {ex.get('confidence', 0):.2f}\n")
                     f.write(f"- **File**: `{ex.get('file_path', 'N/A')}`\n")
                     if ex.get("code_snippet"):
-                        f.write(f"\n```python\n{ex['code_snippet'][:300]}\n```\n")
+                        lang = ex.get("language", "text")
+                        f.write(f"\n```{lang}\n{ex['code_snippet']}\n```\n")  # Full code, no truncation
                     f.write("\n")
 
         logger.info(f"   ✓ Test examples: {total} total, {high_value} high-value")

@@ -105,6 +105,7 @@ class HowToGuide:
     tags: list[str] = field(default_factory=list)
     estimated_time: str = "10 minutes"
     source_files: list[str] = field(default_factory=list)
+    language: str = "python"  # Source file language
 
     # Optional AI enhancement (basic)
     common_pitfalls: list[str] = field(default_factory=list)
@@ -966,6 +967,7 @@ class HowToGuideBuilder:
             tags=tags,
             estimated_time=metadata.get("estimated_time", "10 minutes"),
             source_files=source_files,
+            language=primary_workflow.get("language", "python"),
         )
 
         # Add AI enhancements if enhancer is available
@@ -1015,7 +1017,7 @@ class HowToGuideBuilder:
         guide_data = {
             "title": guide.title,
             "steps": [{"description": step.description, "code": step.code} for step in guide.steps],
-            "language": "python",  # TODO: Detect from code
+            "language": guide.language,
             "prerequisites": guide.prerequisites,
             "description": guide.overview,
         }
