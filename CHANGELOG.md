@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`docx` optional dependency group** — `pip install skill-seekers[docx]` (mammoth + python-docx)
 
 ### Fixed
+- **Issue #301: `setup.sh` fails on macOS with mismatched Python/pip** — `pip3` can point to a different Python than `python3` (e.g. pip3 → 3.9, python3 → 3.14), causing "no matching distribution" errors. Changed `setup.sh` to use `python3 -m pip` instead of bare `pip3` to guarantee the correct interpreter.
 - **Issue #300: Selector fallback & dry-run link discovery** — `create https://reactflow.dev/` now finds 20+ pages (was 1). Root causes:
   - `extract_content()` extracted links after the early-return when no content selector matched, so they were never discovered. Moved link extraction before the early return.
   - Dry-run extracted links from `main.find_all("a")` (main content only) instead of `soup.find_all("a")` (full page), missing navigation links. Fixed both sync and async dry-run paths.
