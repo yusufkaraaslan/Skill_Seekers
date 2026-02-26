@@ -65,15 +65,16 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Installing skill-seekers..."
 
-    # Try pip3 install first
-    if pip3 install skill-seekers 2>/dev/null; then
-        echo -e "${GREEN}✓${NC} Installed successfully via pip3"
+    # Use python3 -m pip to ensure pip matches the python3 that passed the
+    # version check. Bare 'pip3' can point to a different Python installation.
+    if python3 -m pip install skill-seekers 2>/dev/null; then
+        echo -e "${GREEN}✓${NC} Installed successfully via python3 -m pip"
     else
-        # Fallback to pip3 with --break-system-packages (for system Python)
+        # Fallback with --break-system-packages (for system Python)
         echo "Standard install failed, trying with --break-system-packages..."
-        pip3 install skill-seekers --break-system-packages || {
+        python3 -m pip install skill-seekers --break-system-packages || {
             echo -e "${RED}❌ Failed to install skill-seekers${NC}"
-            echo "Try manually: pip3 install skill-seekers"
+            echo "Try manually: python3 -m pip install skill-seekers"
             exit 1
         }
         echo -e "${GREEN}✓${NC} Installed successfully with --break-system-packages"
