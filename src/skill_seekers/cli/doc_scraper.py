@@ -52,6 +52,18 @@ from skill_seekers.cli.utils import setup_logging
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Shared fallback selectors for finding main content across all code paths.
+# No 'body' — it matches everything and hides real selector failures.
+FALLBACK_MAIN_SELECTORS = [
+    "main",
+    'div[role="main"]',
+    "article",
+    '[role="main"]',
+    ".content",
+    ".doc-content",
+    "#main-content",
+]
+
 
 def infer_description_from_docs(
     base_url: str, first_page_content: str | None = None, name: str = ""
@@ -275,6 +287,35 @@ class DocToSkillConverter:
             except Exception as e:
                 logger.warning("⚠️  Failed to clear checkpoint: %s", e)
 
+    def _find_main_content(self, soup: Any) -> tuple[Any, str | None]:
+        """Find the main content element using config selector with fallbacks.
+
+        Tries the config-specified selector first, then falls back through
+        FALLBACK_MAIN_SELECTORS. Does NOT fall back to <body> since that
+        matches everything and hides real selector failures.
+
+        Args:
+            soup: BeautifulSoup parsed page
+
+        Returns:
+            Tuple of (element, selector_used) or (None, None) if nothing matched
+        """
+        selectors = self.config.get("selectors", {})
+        main_selector = selectors.get("main_content")
+
+        if main_selector:
+            main = soup.select_one(main_selector)
+            if main:
+                return main, main_selector
+            # Config selector didn't match — fall through to fallbacks
+
+        for selector in FALLBACK_MAIN_SELECTORS:
+            main = soup.select_one(selector)
+            if main:
+                return main, selector
+
+        return None, None
+
     def extract_content(self, soup: Any, url: str) -> dict[str, Any]:
         """Extract content with improved code and pattern detection"""
         page = {
@@ -294,9 +335,17 @@ class DocToSkillConverter:
         if title_elem:
             page["title"] = self.clean_text(title_elem.get_text())
 
-        # Find main content
-        main_selector = selectors.get("main_content", 'div[role="main"]')
-        main = soup.select_one(main_selector)
+        # Extract links from entire page (always, even if main content not found).
+        # This allows discovery of navigation links outside the main content area.
+        for link in soup.find_all("a", href=True):
+            href = urljoin(url, link["href"])
+            # Strip anchor fragments to avoid treating #anchors as separate pages
+            href = href.split("#")[0]
+            if self.is_valid_url(href) and href not in page["links"]:
+                page["links"].append(href)
+
+        # Find main content using shared fallback logic
+        main, _selector_used = self._find_main_content(soup)
 
         if not main:
             logger.warning("⚠ No content: %s", url)
@@ -328,15 +377,6 @@ class DocToSkillConverter:
                 paragraphs.append(text)
 
         page["content"] = "\n\n".join(paragraphs)
-
-        # Extract links from entire page (not just main content)
-        # This allows discovery of navigation links outside the main content area
-        for link in soup.find_all("a", href=True):
-            href = urljoin(url, link["href"])
-            # Strip anchor fragments to avoid treating #anchors as separate pages
-            href = href.split("#")[0]
-            if self.is_valid_url(href) and href not in page["links"]:
-                page["links"].append(href)
 
         return page
 
@@ -1070,16 +1110,13 @@ class DocToSkillConverter:
                         response = requests.get(url, headers=headers, timeout=10)
                         soup = BeautifulSoup(response.content, "html.parser")
 
-                        main_selector = self.config.get("selectors", {}).get(
-                            "main_content", 'div[role="main"]'
-                        )
-                        main = soup.select_one(main_selector)
-
-                        if main:
-                            for link in main.find_all("a", href=True):
-                                href = urljoin(url, link["href"])
-                                if self.is_valid_url(href) and href not in self.visited_urls:
-                                    self.pending_urls.append(href)
+                        # Discover links from full page (not just main content)
+                        # to match real scrape path behaviour in extract_content()
+                        for link in soup.find_all("a", href=True):
+                            href = urljoin(url, link["href"])
+                            href = href.split("#")[0]
+                            if self.is_valid_url(href) and href not in self.visited_urls:
+                                self.pending_urls.append(href)
                     except Exception as e:
                         # Failed to extract links in fast mode, continue anyway
                         logger.warning("⚠️  Warning: Could not extract links from %s: %s", url, e)
@@ -1249,6 +1286,25 @@ class DocToSkillConverter:
                     if unlimited or len(self.visited_urls) <= preview_limit:
                         if self.dry_run:
                             logger.info("  [Preview] %s", url)
+                            # Discover links from full page (async dry-run)
+                            try:
+                                response = await client.get(
+                                    url,
+                                    headers={
+                                        "User-Agent": "Mozilla/5.0 (Documentation Scraper - Dry Run)"
+                                    },
+                                    timeout=10,
+                                )
+                                soup = BeautifulSoup(response.content, "html.parser")
+                                for link in soup.find_all("a", href=True):
+                                    href = urljoin(url, link["href"])
+                                    href = href.split("#")[0]
+                                    if self.is_valid_url(href) and href not in self.visited_urls:
+                                        self.pending_urls.append(href)
+                            except Exception as e:
+                                logger.warning(
+                                    "⚠️  Warning: Could not extract links from %s: %s", url, e
+                                )
                         else:
                             task = asyncio.create_task(
                                 self.scrape_page_async(url, semaphore, client)
@@ -2039,7 +2095,6 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             "description": args.description or f"Use when working with {args.name}",
             "base_url": effective_url,
             "selectors": {
-                "main_content": "div[role='main']",
                 "title": "title",
                 "code_blocks": "pre code",
             },

@@ -265,16 +265,16 @@ class TestResolveConfigPath:
     @patch("skill_seekers.cli.config_fetcher.fetch_config_from_api")
     def test_auto_fetch_enabled(self, mock_fetch, tmp_path):
         """Test that auto-fetch runs when enabled."""
-        # Mock fetch to return a path
-        mock_config = tmp_path / "configs" / "react.json"
+        # Use a name that does NOT exist locally (react.json exists in configs/)
+        mock_config = tmp_path / "configs" / "obscure_framework.json"
         mock_config.parent.mkdir(exist_ok=True)
-        mock_config.write_text('{"name": "react"}')
+        mock_config.write_text('{"name": "obscure_framework"}')
         mock_fetch.return_value = mock_config
 
-        result = resolve_config_path("react.json", auto_fetch=True)
+        result = resolve_config_path("obscure_framework.json", auto_fetch=True)
 
         # Verify fetch was called
-        mock_fetch.assert_called_once_with("react", destination="configs")
+        mock_fetch.assert_called_once_with("obscure_framework", destination="configs")
         assert result is not None
         assert result.exists()
 

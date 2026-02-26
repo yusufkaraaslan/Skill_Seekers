@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`docx` optional dependency group** — `pip install skill-seekers[docx]` (mammoth + python-docx)
 
 ### Fixed
+- **Issue #300: Selector fallback & dry-run link discovery** — `create https://reactflow.dev/` now finds 20+ pages (was 1). Root causes:
+  - `extract_content()` extracted links after the early-return when no content selector matched, so they were never discovered. Moved link extraction before the early return.
+  - Dry-run extracted links from `main.find_all("a")` (main content only) instead of `soup.find_all("a")` (full page), missing navigation links. Fixed both sync and async dry-run paths.
+  - Async dry-run had no link extraction at all — only logged URLs.
+  - `get_configuration()` default used a CSS comma selector string that conflicted with the fallback loop. Removed `main_content` from defaults so `_find_main_content()` fallback kicks in.
+  - `create --config` with a simple web config (has `base_url`, no `sources`) incorrectly routed to `unified_scraper` which rejected it. Now peeks at JSON: routes `"sources"` configs to unified_scraper, `"base_url"` configs to doc_scraper.
+  - Selector fallback logic was duplicated in 3 places with `body` as ultimate fallback (masks failures). Extracted `FALLBACK_MAIN_SELECTORS` constant and `_find_main_content()` helper (no `body`).
 - **Reference file code truncation removed** — `codebase_scraper.py` no longer truncates code blocks to 500 chars in reference files (5 locations fixed)
 - **Enhancement code block limit replaced with token budget** — `enhance_skill_local.py` `summarize_reference()` now uses character-budget approach instead of arbitrary `[:5]` code block cap
 - **Dead variable removed** — `_target_lines` in `enhance_skill_local.py:309` was assigned but never used

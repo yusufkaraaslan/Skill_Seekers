@@ -1,6 +1,6 @@
 # Scraping Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.1.4**
 > **Complete guide to all scraping options**
 
 ---
@@ -50,29 +50,39 @@ skill-seekers create --config fastapi
 
 ### Custom Configuration
 
+All configs must use the unified format with a `sources` array (since v2.11.0):
+
 ```bash
 # Create config file
 cat > configs/my-docs.json << 'EOF'
 {
   "name": "my-framework",
-  "base_url": "https://docs.example.com/",
   "description": "My framework documentation",
-  "max_pages": 200,
-  "rate_limit": 0.5,
-  "selectors": {
-    "main_content": "article",
-    "title": "h1"
-  },
-  "url_patterns": {
-    "include": ["/docs/", "/api/"],
-    "exclude": ["/blog/", "/search"]
-  }
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.example.com/",
+      "max_pages": 200,
+      "rate_limit": 0.5,
+      "selectors": {
+        "main_content": "article",
+        "title": "h1"
+      },
+      "url_patterns": {
+        "include": ["/docs/", "/api/"],
+        "exclude": ["/blog/", "/search"]
+      }
+    }
+  ]
 }
 EOF
 
 # Use config
 skill-seekers create --config configs/my-docs.json
 ```
+
+> **Note:** Omit `main_content` from `selectors` to let Skill Seekers auto-detect
+> the best content element (`main`, `article`, `div[role="main"]`, etc.).
 
 See [Config Format](../reference/CONFIG_FORMAT.md) for all options.
 
@@ -331,14 +341,22 @@ skill-seekers resume <job-id>
 
 **Solution:**
 ```bash
-# Find correct selectors
+# First, try without a main_content selector (auto-detection)
+# The scraper tries: main, div[role="main"], article, .content, etc.
+skill-seekers create <url> --dry-run
+
+# If auto-detection fails, find the correct selector:
 curl -s <url> | grep -i 'article\|main\|content'
 
-# Update config
+# Then specify it in your config's source:
 {
-  "selectors": {
-    "main_content": "div.content"  // or "article", "main", etc.
-  }
+  "sources": [{
+    "type": "documentation",
+    "base_url": "https://...",
+    "selectors": {
+      "main_content": "div.content"
+    }
+  }]
 }
 ```
 

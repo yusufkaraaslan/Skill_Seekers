@@ -1,7 +1,7 @@
 # Config Format Reference - Skill Seekers
 
-> **Version:** 3.1.0  
-> **Last Updated:** 2026-02-16  
+> **Version:** 3.1.4
+> **Last Updated:** 2026-02-26
 > **Complete JSON configuration specification**
 
 ---
@@ -25,16 +25,20 @@
 
 ## Overview
 
-Skill Seekers uses JSON configuration files to define scraping targets. There are two types:
+Skill Seekers uses JSON configuration files with a unified format. All configs use a `sources` array, even for single-source scraping.
 
-| Type | Use Case | File |
-|------|----------|------|
-| **Single-Source** | One source (docs, GitHub, PDF, or local) | `*.json` |
-| **Unified** | Multiple sources combined | `*-unified.json` |
+> **Important:** Legacy configs without `sources` were removed in v2.11.0. All configs must use the unified format shown below.
+
+| Use Case | Example |
+|----------|---------|
+| **Single source** | `"sources": [{ "type": "documentation", ... }]` |
+| **Multiple sources** | `"sources": [{ "type": "documentation", ... }, { "type": "github", ... }]` |
 
 ---
 
 ## Single-Source Config
+
+Even for a single source, wrap it in a `sources` array.
 
 ### Documentation Source
 
@@ -43,33 +47,37 @@ For scraping documentation websites.
 ```json
 {
   "name": "react",
-  "base_url": "https://react.dev/",
   "description": "React - JavaScript library for building UIs",
-  
-  "start_urls": [
-    "https://react.dev/learn",
-    "https://react.dev/reference/react"
-  ],
-  
-  "selectors": {
-    "main_content": "article",
-    "title": "h1",
-    "code_blocks": "pre code"
-  },
-  
-  "url_patterns": {
-    "include": ["/learn/", "/reference/"],
-    "exclude": ["/blog/", "/community/"]
-  },
-  
-  "categories": {
-    "getting_started": ["learn", "tutorial", "intro"],
-    "api": ["reference", "api", "hooks"]
-  },
-  
-  "rate_limit": 0.5,
-  "max_pages": 300,
-  "merge_mode": "claude-enhanced"
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://react.dev/",
+
+      "start_urls": [
+        "https://react.dev/learn",
+        "https://react.dev/reference/react"
+      ],
+
+      "selectors": {
+        "main_content": "article",
+        "title": "h1",
+        "code_blocks": "pre code"
+      },
+
+      "url_patterns": {
+        "include": ["/learn/", "/reference/"],
+        "exclude": ["/blog/", "/community/"]
+      },
+
+      "categories": {
+        "getting_started": ["learn", "tutorial", "intro"],
+        "api": ["reference", "api", "hooks"]
+      },
+
+      "rate_limit": 0.5,
+      "max_pages": 300
+    }
+  ]
 }
 ```
 
@@ -99,27 +107,31 @@ For analyzing GitHub repositories.
 ```json
 {
   "name": "react-github",
-  "type": "github",
-  "repo": "facebook/react",
   "description": "React GitHub repository analysis",
-  
-  "enable_codebase_analysis": true,
-  "code_analysis_depth": "deep",
-  
-  "fetch_issues": true,
-  "max_issues": 100,
-  "issue_labels": ["bug", "enhancement"],
-  
-  "fetch_releases": true,
-  "max_releases": 20,
-  
-  "fetch_changelog": true,
-  "analyze_commit_history": true,
-  
-  "file_patterns": ["*.js", "*.ts", "*.tsx"],
-  "exclude_patterns": ["*.test.js", "node_modules/**"],
-  
-  "rate_limit": 1.0
+  "sources": [
+    {
+      "type": "github",
+      "repo": "facebook/react",
+
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+
+      "fetch_issues": true,
+      "max_issues": 100,
+      "issue_labels": ["bug", "enhancement"],
+
+      "fetch_releases": true,
+      "max_releases": 20,
+
+      "fetch_changelog": true,
+      "analyze_commit_history": true,
+
+      "file_patterns": ["*.js", "*.ts", "*.tsx"],
+      "exclude_patterns": ["*.test.js", "node_modules/**"],
+
+      "rate_limit": 1.0
+    }
+  ]
 }
 ```
 
@@ -152,24 +164,28 @@ For extracting content from PDF files.
 ```json
 {
   "name": "product-manual",
-  "type": "pdf",
-  "pdf_path": "docs/manual.pdf",
   "description": "Product documentation manual",
-  
-  "enable_ocr": false,
-  "password": "",
-  
-  "extract_images": true,
-  "image_output_dir": "output/images/",
-  
-  "extract_tables": true,
-  "table_format": "markdown",
-  
-  "page_range": [1, 100],
-  "split_by_chapters": true,
-  
-  "chunk_size": 1000,
-  "chunk_overlap": 100
+  "sources": [
+    {
+      "type": "pdf",
+      "pdf_path": "docs/manual.pdf",
+
+      "enable_ocr": false,
+      "password": "",
+
+      "extract_images": true,
+      "image_output_dir": "output/images/",
+
+      "extract_tables": true,
+      "table_format": "markdown",
+
+      "page_range": [1, 100],
+      "split_by_chapters": true,
+
+      "chunk_size": 1000,
+      "chunk_overlap": 100
+    }
+  ]
 }
 ```
 
@@ -201,25 +217,29 @@ For analyzing local codebases.
 ```json
 {
   "name": "my-project",
-  "type": "local",
-  "directory": "./my-project",
   "description": "Local project analysis",
-  
-  "languages": ["Python", "JavaScript"],
-  "file_patterns": ["*.py", "*.js"],
-  "exclude_patterns": ["*.pyc", "node_modules/**", ".git/**"],
-  
-  "analysis_depth": "comprehensive",
-  
-  "extract_api": true,
-  "extract_patterns": true,
-  "extract_test_examples": true,
-  "extract_how_to_guides": true,
-  "extract_config_patterns": true,
-  
-  "include_comments": true,
-  "include_docstrings": true,
-  "include_readme": true
+  "sources": [
+    {
+      "type": "local",
+      "directory": "./my-project",
+
+      "languages": ["Python", "JavaScript"],
+      "file_patterns": ["*.py", "*.js"],
+      "exclude_patterns": ["*.pyc", "node_modules/**", ".git/**"],
+
+      "analysis_depth": "comprehensive",
+
+      "extract_api": true,
+      "extract_patterns": true,
+      "extract_test_examples": true,
+      "extract_how_to_guides": true,
+      "extract_config_patterns": true,
+
+      "include_comments": true,
+      "include_docstrings": true,
+      "include_readme": true
+    }
+  ]
 }
 ```
 
@@ -406,14 +426,25 @@ CSS selectors for content extraction from HTML:
 
 ### Default Selectors
 
-If not specified, these defaults are used:
+If `main_content` is not specified, the scraper tries these selectors in order until one matches:
+
+1. `main`
+2. `div[role="main"]`
+3. `article`
+4. `[role="main"]`
+5. `.content`
+6. `.doc-content`
+7. `#main-content`
+
+> **Tip:** Omit `main_content` from your config to let auto-detection work.
+> Only specify it when auto-detection picks the wrong element.
+
+Other defaults:
 
 | Element | Default Selector |
 |---------|-----------------|
-| `main_content` | `article, main, .content, #content, [role='main']` |
-| `title` | `h1, .page-title, title` |
-| `code_blocks` | `pre code, code[class*="language-"]` |
-| `navigation` | `nav, .sidebar, .toc` |
+| `title` | `title` |
+| `code_blocks` | `pre code` |
 
 ---
 
@@ -494,29 +525,33 @@ Control which URLs are included or excluded:
 ```json
 {
   "name": "react",
-  "base_url": "https://react.dev/",
   "description": "React - JavaScript library for building UIs",
-  "start_urls": [
-    "https://react.dev/learn",
-    "https://react.dev/reference/react",
-    "https://react.dev/reference/react-dom"
-  ],
-  "selectors": {
-    "main_content": "article",
-    "title": "h1",
-    "code_blocks": "pre code"
-  },
-  "url_patterns": {
-    "include": ["/learn/", "/reference/", "/blog/"],
-    "exclude": ["/community/", "/search"]
-  },
-  "categories": {
-    "getting_started": ["learn", "tutorial"],
-    "api": ["reference", "api"],
-    "blog": ["blog"]
-  },
-  "rate_limit": 0.5,
-  "max_pages": 300
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://react.dev/",
+      "start_urls": [
+        "https://react.dev/learn",
+        "https://react.dev/reference/react",
+        "https://react.dev/reference/react-dom"
+      ],
+      "selectors": {
+        "main_content": "article",
+        "title": "h1",
+        "code_blocks": "pre code"
+      },
+      "url_patterns": {
+        "include": ["/learn/", "/reference/"],
+        "exclude": ["/community/", "/search"]
+      },
+      "categories": {
+        "getting_started": ["learn", "tutorial"],
+        "api": ["reference", "api"]
+      },
+      "rate_limit": 0.5,
+      "max_pages": 300
+    }
+  ]
 }
 ```
 
@@ -525,16 +560,20 @@ Control which URLs are included or excluded:
 ```json
 {
   "name": "django-github",
-  "type": "github",
-  "repo": "django/django",
   "description": "Django web framework source code",
-  "enable_codebase_analysis": true,
-  "code_analysis_depth": "deep",
-  "fetch_issues": true,
-  "max_issues": 100,
-  "fetch_releases": true,
-  "file_patterns": ["*.py"],
-  "exclude_patterns": ["tests/**", "docs/**"]
+  "sources": [
+    {
+      "type": "github",
+      "repo": "django/django",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+      "fetch_issues": true,
+      "max_issues": 100,
+      "fetch_releases": true,
+      "file_patterns": ["*.py"],
+      "exclude_patterns": ["tests/**", "docs/**"]
+    }
+  ]
 }
 ```
 
@@ -572,15 +611,19 @@ Control which URLs are included or excluded:
 ```json
 {
   "name": "my-api",
-  "type": "local",
-  "directory": "./my-api-project",
   "description": "My REST API implementation",
-  "languages": ["Python"],
-  "file_patterns": ["*.py"],
-  "exclude_patterns": ["tests/**", "migrations/**"],
-  "analysis_depth": "comprehensive",
-  "extract_api": true,
-  "extract_test_examples": true
+  "sources": [
+    {
+      "type": "local",
+      "directory": "./my-api-project",
+      "languages": ["Python"],
+      "file_patterns": ["*.py"],
+      "exclude_patterns": ["tests/**", "migrations/**"],
+      "analysis_depth": "comprehensive",
+      "extract_api": true,
+      "extract_test_examples": true
+    }
+  ]
 }
 ```
 

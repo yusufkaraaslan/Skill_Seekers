@@ -1835,15 +1835,17 @@ UNIVERSAL_ARGUMENTS = {
 ## 📚 Key Code Locations
 
 **Documentation Scraper** (`src/skill_seekers/cli/doc_scraper.py`):
+- `FALLBACK_MAIN_SELECTORS` - Shared fallback CSS selectors for finding main content (no `body`)
+- `_find_main_content()` - Centralized selector fallback: config selector → fallback list
 - `is_valid_url()` - URL validation
-- `extract_content()` - Content extraction
+- `extract_content()` - Content extraction (links extracted from full page before early return)
 - `detect_language()` - Code language detection
 - `extract_patterns()` - Pattern extraction
 - `smart_categorize()` - Smart categorization
 - `infer_categories()` - Category inference
 - `generate_quick_reference()` - Quick reference generation
 - `create_enhanced_skill_md()` - SKILL.md generation
-- `scrape_all()` - Main scraping loop
+- `scrape_all()` - Main scraping loop (dry-run extracts links from full page)
 - `main()` - Entry point
 
 **Codebase Analysis** (`src/skill_seekers/cli/`):
@@ -2255,6 +2257,15 @@ The `scripts/` directory contains utility scripts:
 | Packaging | 5-10 sec | Final .zip creation |
 
 ## 🎉 Recent Achievements
+
+**v3.1.4 (Unreleased) - "Selector Fallback & Dry-Run Fix":**
+- 🐛 **Issue #300: `create https://reactflow.dev/` only found 1 page** — Now finds 20+ pages
+- 🔧 **Centralized selector fallback** — `FALLBACK_MAIN_SELECTORS` constant + `_find_main_content()` helper replace 3 duplicated fallback loops
+- 🔗 **Link extraction before early return** — `extract_content()` now discovers links even when no content selector matches
+- 🔍 **Dry-run full-page link discovery** — Both sync and async dry-run paths extract links from the full page (was main-content-only or missing entirely)
+- 🛣️ **Smart `create --config` routing** — Peeks at JSON to route `base_url` configs to doc_scraper and `sources` configs to unified_scraper
+- 🧹 **Removed `body` fallback** — `body` matched everything, hiding real selector failures
+- ✅ **Pre-existing test fixes** — `test_auto_fetch_enabled` (react.json exists locally) and `test_mcp_validate_legacy_config` (react.json is now unified format)
 
 **v3.1.3 (Released) - "Unified Argument Interface":**
 - 🔧 **Unified Scraper Arguments** - All scrapers (scrape, github, analyze, pdf) now share a common argument contract via `add_all_standard_arguments(parser)` in `arguments/common.py`

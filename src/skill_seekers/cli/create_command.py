@@ -603,9 +603,30 @@ Common Workflows:
     log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
-    # Validate source provided
-    if not args.source:
-        parser.error("source is required")
+    # Validate source provided (config file can serve as source)
+    if not args.source and not args.config:
+        parser.error("source is required (or use --config to specify a config file)")
+
+    # If config is provided but no source, peek at the JSON to route correctly
+    if not args.source and args.config:
+        import json
+
+        try:
+            with open(args.config) as f:
+                config_peek = json.load(f)
+            if "sources" in config_peek:
+                # Unified format → route to unified_scraper via config type detection
+                args.source = args.config
+            elif "base_url" in config_peek:
+                # Simple web config → route to doc_scraper by using the base_url
+                args.source = config_peek["base_url"]
+                # source will be detected as web URL; --config is already set
+            else:
+                parser.error("Config file must contain 'sources' (unified) or 'base_url' (web)")
+        except json.JSONDecodeError as e:
+            parser.error(f"Cannot parse config file as JSON: {e}")
+        except FileNotFoundError:
+            parser.error(f"Config file not found: {args.config}")
 
     # Execute create command
     command = CreateCommand(args)

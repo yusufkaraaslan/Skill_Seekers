@@ -67,22 +67,30 @@ async def test_mcp_validate_legacy_config():
     """Test that MCP can validate legacy configs"""
     print("\n✓ Testing MCP validate_config_tool with legacy config...")
 
-    # Use existing legacy config
-    config_path = "configs/react.json"
+    # Create a truly legacy config (no "sources" key — just base_url + selectors)
+    legacy_config = {
+        "name": "test-legacy",
+        "base_url": "https://example.com/",
+        "selectors": {"main_content": "main", "title": "h1", "code_blocks": "pre code"},
+        "url_patterns": {"include": [], "exclude": []},
+        "rate_limit": 0.5,
+    }
 
-    if not Path(config_path).exists():
-        print(f"  ⚠️  Skipping: {config_path} not found")
-        return
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(legacy_config, f)
+        config_path = f.name
 
-    args = {"config_path": config_path}
-    result = await validate_config_tool(args)
+    try:
+        args = {"config_path": config_path}
+        result = await validate_config_tool(args)
 
-    # Check result
-    text = result[0].text
-    assert "✅" in text, f"Expected success, got: {text}"
-    assert "Legacy" in text, f"Expected legacy format detected, got: {text}"
+        # Legacy configs are rejected since v2.11.0 — validator should detect the format
+        text = result[0].text
+        assert "LEGACY" in text.upper(), f"Expected legacy format detected, got: {text}"
 
-    print("  ✅ MCP correctly validates legacy config")
+        print("  ✅ MCP correctly detects legacy config format")
+    finally:
+        os.unlink(config_path)
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
