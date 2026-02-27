@@ -2289,10 +2289,11 @@ def execute_scraping_and_building(
         )
 
         # Chunk the skill
-        chunks = chunker.chunk_skill(converter.output_dir)
+        skill_dir = Path(converter.skill_dir)
+        chunks = chunker.chunk_skill(skill_dir)
 
         # Save chunks
-        chunks_path = converter.output_dir / "rag_chunks.json"
+        chunks_path = skill_dir / "rag_chunks.json"
         chunker.save_chunks(chunks, chunks_path)
 
         logger.info(f"✅ Generated {len(chunks)} RAG chunks")
