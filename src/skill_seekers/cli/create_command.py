@@ -133,6 +133,8 @@ class CreateCommand:
             return self._route_pdf()
         elif self.source_info.type == "word":
             return self._route_word()
+        elif self.source_info.type == "video":
+            return self._route_video()
         elif self.source_info.type == "config":
             return self._route_config()
         else:
@@ -345,6 +347,55 @@ class CreateCommand:
         finally:
             sys.argv = original_argv
 
+    def _route_video(self) -> int:
+        """Route to video scraper (video_scraper.py)."""
+        from skill_seekers.cli import video_scraper
+
+        # Reconstruct argv for video_scraper
+        argv = ["video_scraper"]
+
+        # Add video source (URL or file)
+        parsed = self.source_info.parsed
+        if parsed.get("source_kind") == "file":
+            argv.extend(["--video-file", parsed["file_path"]])
+        elif parsed.get("url"):
+            url = parsed["url"]
+            # Detect playlist vs single video
+            if "playlist" in url.lower():
+                argv.extend(["--playlist", url])
+            else:
+                argv.extend(["--url", url])
+
+        # Add universal arguments
+        self._add_common_args(argv)
+
+        # Add video-specific arguments
+        video_langs = getattr(self.args, "video_languages", None) or getattr(self.args, "languages", None)
+        if video_langs:
+            argv.extend(["--languages", video_langs])
+        if getattr(self.args, "visual", False):
+            argv.append("--visual")
+        if getattr(self.args, "whisper_model", None) and self.args.whisper_model != "base":
+            argv.extend(["--whisper-model", self.args.whisper_model])
+        vi = getattr(self.args, "visual_interval", None)
+        if vi is not None and vi != 0.7:
+            argv.extend(["--visual-interval", str(vi)])
+        vmg = getattr(self.args, "visual_min_gap", None)
+        if vmg is not None and vmg != 0.5:
+            argv.extend(["--visual-min-gap", str(vmg)])
+        vs = getattr(self.args, "visual_similarity", None)
+        if vs is not None and vs != 3.0:
+            argv.extend(["--visual-similarity", str(vs)])
+
+        # Call video_scraper with modified argv
+        logger.debug(f"Calling video_scraper with argv: {argv}")
+        original_argv = sys.argv
+        try:
+            sys.argv = argv
+            return video_scraper.main()
+        finally:
+            sys.argv = original_argv
+
     def _route_config(self) -> int:
         """Route to unified scraper for config files (unified_scraper.py)."""
         from skill_seekers.cli import unified_scraper
@@ -468,6 +519,8 @@ Examples:
   Local:    skill-seekers create ./my-project -p comprehensive
   PDF:      skill-seekers create tutorial.pdf --ocr
   DOCX:     skill-seekers create document.docx
+  Video:    skill-seekers create https://youtube.com/watch?v=...
+  Video:    skill-seekers create recording.mp4
   Config:   skill-seekers create configs/react.json
 
 Source Auto-Detection:
@@ -476,6 +529,8 @@ Source Auto-Detection:
   • ./path → local codebase
   • file.pdf → PDF extraction
   • file.docx → Word document extraction
+  • youtube.com/... → Video transcript extraction
+  • file.mp4 → Video file extraction
   • file.json → multi-source config
 
 Progressive Help (13 → 120+ flags):
@@ -483,6 +538,7 @@ Progressive Help (13 → 120+ flags):
   --help-github    GitHub repository options
   --help-local     Local codebase analysis
   --help-pdf       PDF extraction options
+  --help-video     Video extraction options
   --help-advanced  Rare/advanced options
   --help-all       All options + compatibility
 
@@ -512,6 +568,9 @@ Common Workflows:
     parser.add_argument("--help-pdf", action="store_true", help=argparse.SUPPRESS, dest="_help_pdf")
     parser.add_argument(
         "--help-word", action="store_true", help=argparse.SUPPRESS, dest="_help_word"
+    )
+    parser.add_argument(
+        "--help-video", action="store_true", help=argparse.SUPPRESS, dest="_help_video"
     )
     parser.add_argument(
         "--help-config", action="store_true", help=argparse.SUPPRESS, dest="_help_config"
@@ -570,6 +629,15 @@ Common Workflows:
         )
         add_create_arguments(parser_word, mode="word")
         parser_word.print_help()
+        return 0
+    elif args._help_video:
+        parser_video = argparse.ArgumentParser(
+            prog="skill-seekers create",
+            description="Create skill from video (YouTube, Vimeo, local files)",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_create_arguments(parser_video, mode="video")
+        parser_video.print_help()
         return 0
     elif args._help_config:
         parser_config = argparse.ArgumentParser(

@@ -98,6 +98,7 @@ try:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_video_impl,
         # Splitting tools
         split_config_impl,
         submit_config_impl,
@@ -415,6 +416,55 @@ async def scrape_pdf(
         args["from_json"] = from_json
 
     result = await scrape_pdf_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Extract transcripts and metadata from videos (YouTube, Vimeo, local files) and build Claude skill."
+)
+async def scrape_video(
+    url: str | None = None,
+    video_file: str | None = None,
+    playlist: str | None = None,
+    name: str | None = None,
+    description: str | None = None,
+    languages: str | None = None,
+    from_json: str | None = None,
+) -> str:
+    """
+    Scrape video content and build Claude skill.
+
+    Args:
+        url: Video URL (YouTube, Vimeo)
+        video_file: Local video file path
+        playlist: Playlist URL
+        name: Skill name
+        description: Skill description
+        languages: Transcript language preferences (comma-separated)
+        from_json: Build from extracted JSON file
+
+    Returns:
+        Video scraping results with file paths.
+    """
+    args = {}
+    if url:
+        args["url"] = url
+    if video_file:
+        args["video_file"] = video_file
+    if playlist:
+        args["playlist"] = playlist
+    if name:
+        args["name"] = name
+    if description:
+        args["description"] = description
+    if languages:
+        args["languages"] = languages
+    if from_json:
+        args["from_json"] = from_json
+
+    result = await scrape_video_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

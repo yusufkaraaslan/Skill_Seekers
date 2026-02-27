@@ -97,8 +97,16 @@ class SkillEnhancer:
             print(f"❌ Error calling Claude API: {e}")
             return None
 
+    def _is_video_source(self, references):
+        """Check if the references come from video tutorial extraction."""
+        return any(meta["source"] == "video_tutorial" for meta in references.values())
+
     def _build_enhancement_prompt(self, references, current_skill_md):
         """Build the prompt for Claude with multi-source awareness"""
+
+        # Dispatch to video-specific prompt if video source detected
+        if self._is_video_source(references):
+            return self._build_video_enhancement_prompt(references, current_skill_md)
 
         # Extract skill name and description
         skill_name = self.skill_dir.name
@@ -274,6 +282,148 @@ OUTPUT:
 Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
 """
 
+        return prompt
+
+    def _build_video_enhancement_prompt(self, references, current_skill_md):
+        """Build a video-specific enhancement prompt.
+
+        Video tutorial references contain transcript text, OCR'd code panels,
+        code timelines with edits, and audio-visual alignment pairs. This prompt
+        is tailored to reconstruct clean code from noisy OCR, detect programming
+        languages from context, and synthesize a coherent tutorial skill.
+        """
+        skill_name = self.skill_dir.name
+
+        prompt = f"""You are enhancing a Claude skill built from VIDEO TUTORIAL extraction. This skill is about: {skill_name}
+
+The raw data was extracted from video tutorials using:
+1. **Transcript** (speech-to-text) — HIGH quality, this is the primary signal
+2. **OCR on code panels** — NOISY, may contain line numbers, UI chrome, garbled text
+3. **Code Timeline** — Tracks code evolution across frames with diffs
+4. **Audio-Visual Alignment** — Pairs of on-screen code + narrator explanation
+
+CURRENT SKILL.MD:
+{"```markdown" if current_skill_md else "(none - create from scratch)"}
+{current_skill_md or "No existing SKILL.md"}
+{"```" if current_skill_md else ""}
+
+REFERENCE FILES:
+"""
+
+        # Add all reference content
+        for filename, metadata in references.items():
+            content = metadata["content"]
+            if len(content) > 30000:
+                content = content[:30000] + "\n\n[Content truncated for size...]"
+            prompt += f"\n#### {filename}\n"
+            prompt += f"*Source: {metadata['source']}, Confidence: {metadata['confidence']}*\n\n"
+            prompt += f"```markdown\n{content}\n```\n"
+
+        prompt += """
+
+VIDEO-SPECIFIC ENHANCEMENT INSTRUCTIONS:
+
+You are working with data extracted from programming tutorial videos. The data has
+specific characteristics you MUST handle:
+
+## 1. OCR Code Reconstruction (CRITICAL)
+
+The OCR'd code blocks are NOISY. Common issues you MUST fix:
+- **Line numbers in code**: OCR captures line numbers (1, 2, 3...) as part of the code — STRIP THEM
+- **UI chrome contamination**: Tab bars, file names, button text appear in code blocks — REMOVE
+- **Garbled characters**: OCR errors like `l` → `1`, `O` → `0`, `rn` → `m` — FIX using context
+- **Duplicate fragments**: Same code appears across multiple frames with minor OCR variations — DEDUPLICATE
+- **Incomplete lines**: Lines cut off at panel edges — RECONSTRUCT from transcript context
+- **Animation/timeline numbers**: Frame counters or timeline numbers in code — REMOVE
+
+When reconstructing code:
+- The TRANSCRIPT is the ground truth for WHAT the code does
+- The OCR is the ground truth for HOW the code looks (syntax, structure)
+- Combine both: use transcript to understand intent, OCR for actual code structure
+- If OCR is too garbled, reconstruct the code based on what the narrator describes
+
+## 2. Language Detection
+
+The OCR-based language detection is often WRONG. Fix it by:
+- Reading the transcript for language mentions ("in GDScript", "this Python function", "our C# class")
+- Using code patterns: `extends`, `func`, `var`, `signal` = GDScript; `def`, `class`, `import` = Python;
+  `function`, `const`, `let` = JavaScript/TypeScript; `using`, `namespace` = C#
+- Looking at file extensions mentioned in the transcript or visible in tab bars
+- Using proper language tags in all code fences (```gdscript, ```python, etc.)
+
+## 3. Code Timeline Processing
+
+The "Code Timeline" section shows how code EVOLVES during the tutorial. Use it to:
+- Show the FINAL version of each code block (not intermediate states)
+- Optionally show key intermediate steps if the tutorial is about building up code progressively
+- The edit diffs show exactly what changed between frames — use these to understand the tutorial flow
+
+## 4. Audio-Visual Alignment
+
+These are the MOST VALUABLE pairs: each links on-screen code with the narrator's explanation.
+- Use these to create annotated code examples with inline comments
+- The narrator text explains WHY each piece of code exists
+- Cross-reference these pairs to build the "how-to" sections
+
+## 5. Tutorial Structure
+
+Transform the raw chronological data into a LOGICAL tutorial structure:
+- Group by TOPIC, not by timestamp (e.g., "Setting Up the State Machine" not "Segment 3")
+- Create clear section headers that describe what is being TAUGHT
+- Build a progressive learning path: concepts build on each other
+- Include prerequisite knowledge mentioned by the narrator
+
+YOUR TASK — Create an enhanced SKILL.md:
+
+1. **Clean Overview Section**
+   - What does this tutorial teach? (from transcript, NOT generic)
+   - Prerequisites mentioned by the narrator
+   - Key technologies/frameworks used (from actual code, not guesses)
+
+2. **"When to Use This Skill" Section**
+   - Specific trigger conditions based on what the tutorial covers
+   - Use cases directly from the tutorial content
+   - Reference the framework/library/tool being taught
+
+3. **Quick Reference Section** (MOST IMPORTANT)
+   - Extract 5-10 CLEAN, reconstructed code examples
+   - Each example must be:
+     a. Denoised (no line numbers, no UI chrome, no garbled text)
+     b. Complete (not cut off mid-line)
+     c. Properly language-tagged
+     d. Annotated with a description from the transcript
+   - Prefer code from Audio-Visual Alignment pairs (they have narrator context)
+   - Show the FINAL working version of each code block
+
+4. **Step-by-Step Tutorial Section**
+   - Follow the tutorial's teaching flow
+   - Each step includes: clean code + explanation from transcript
+   - Use narrator's explanations as the descriptions (paraphrase, don't copy verbatim)
+   - Show code evolution where the tutorial builds up code incrementally
+
+5. **Key Concepts Section**
+   - Extract terminology and concepts the narrator explains
+   - Define them using the narrator's own explanations
+   - Link concepts to specific code examples
+
+6. **Reference Files Description**
+   - Explain what each reference file contains
+   - Note that OCR data is raw and may contain errors
+   - Point to the most useful sections (Audio-Visual Alignment, Code Timeline)
+
+7. **Keep the frontmatter** (---\\nname: ...\\n---) intact if present
+
+CRITICAL RULES:
+- NEVER include raw OCR text with line numbers or UI chrome — always clean it first
+- ALWAYS use correct language tags (detect from context, not from OCR metadata)
+- The transcript is your BEST source for understanding content — trust it over garbled OCR
+- Extract REAL code from the references, reconstruct where needed, but never invent code
+- Keep code examples SHORT and focused (5-30 lines max per example)
+- Make the skill actionable: someone reading it should be able to implement what the tutorial teaches
+
+OUTPUT:
+Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
+"""
         return prompt
 
     def save_enhanced_skill_md(self, content):

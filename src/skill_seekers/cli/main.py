@@ -48,6 +48,7 @@ COMMAND_MODULES = {
     "github": "skill_seekers.cli.github_scraper",
     "pdf": "skill_seekers.cli.pdf_scraper",
     "word": "skill_seekers.cli.word_scraper",
+    "video": "skill_seekers.cli.video_scraper",
     "unified": "skill_seekers.cli.unified_scraper",
     "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",
@@ -142,7 +143,6 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
         # Handle positional arguments (no -- prefix)
         if key in [
             "source",  # create command
-            "url",
             "directory",
             "file",
             "job_id",

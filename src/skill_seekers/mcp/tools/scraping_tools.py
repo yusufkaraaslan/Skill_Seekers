@@ -356,6 +356,81 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
+async def scrape_video_tool(args: dict) -> list[TextContent]:
+    """
+    Scrape video content (YouTube, local files) and build Claude skill.
+
+    Extracts transcripts, metadata, and optionally visual content from videos
+    to create skills.
+
+    Args:
+        args: Dictionary containing:
+            - url (str, optional): Video URL (YouTube, Vimeo)
+            - video_file (str, optional): Local video file path
+            - playlist (str, optional): Playlist URL
+            - name (str, optional): Skill name
+            - description (str, optional): Skill description
+            - languages (str, optional): Language preferences (comma-separated)
+            - from_json (str, optional): Build from extracted JSON file
+
+    Returns:
+        List[TextContent]: Tool execution results
+    """
+    url = args.get("url")
+    video_file = args.get("video_file")
+    playlist = args.get("playlist")
+    name = args.get("name")
+    description = args.get("description")
+    languages = args.get("languages")
+    from_json = args.get("from_json")
+
+    # Build command
+    cmd = [sys.executable, str(CLI_DIR / "video_scraper.py")]
+
+    if from_json:
+        cmd.extend(["--from-json", from_json])
+    elif url:
+        cmd.extend(["--url", url])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+        if languages:
+            cmd.extend(["--languages", languages])
+    elif video_file:
+        cmd.extend(["--video-file", video_file])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+    elif playlist:
+        cmd.extend(["--playlist", playlist])
+        if name:
+            cmd.extend(["--name", name])
+    else:
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: Must specify --url, --video-file, --playlist, or --from-json",
+            )
+        ]
+
+    # Run video_scraper.py with streaming
+    timeout = 600  # 10 minutes for video extraction
+
+    progress_msg = "🎬 Scraping video content...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
 async def scrape_github_tool(args: dict) -> list[TextContent]:
     """
     Scrape GitHub repository and build Claude skill.

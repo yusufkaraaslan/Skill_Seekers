@@ -289,6 +289,10 @@ def read_reference_files(
             else:
                 return "codebase_analysis", "medium", repo_id
 
+        # Video tutorial sources (video_*.md from video scraper)
+        elif relative_path.name.startswith("video_"):
+            return "video_tutorial", "high", None
+
         # Conflicts report (discrepancy detection)
         elif "conflicts" in path_str:
             return "conflicts", "medium", None

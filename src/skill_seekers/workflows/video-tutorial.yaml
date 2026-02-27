@@ -1,0 +1,111 @@
+name: video-tutorial
+description: >
+  Video tutorial enhancement workflow. Cleans OCR noise, reconstructs code from
+  transcript + visual data, detects programming languages, and synthesizes a
+  coherent tutorial skill from raw video extraction output.
+version: "1.0"
+applies_to:
+  - video_scraping
+variables: {}
+stages:
+  - name: ocr_code_cleanup
+    type: custom
+    target: skill_md
+    enabled: true
+    uses_history: false
+    prompt: >
+      You are reviewing code blocks extracted from video tutorial OCR.
+      The OCR output is noisy — it contains line numbers, UI chrome text,
+      garbled characters, and incomplete lines.
+
+      Clean each code block by:
+      1. Remove line numbers that OCR captured (leading digits like "1 ", "2 ", "23 ")
+      2. Remove UI elements (tab bar text, file names, button labels)
+      3. Fix common OCR errors (l/1, O/0, rn/m confusions)
+      4. Remove animation timeline numbers or frame counters
+      5. Strip trailing whitespace and normalize indentation
+
+      Output JSON with:
+      - "cleaned_blocks": array of cleaned code strings
+      - "languages_detected": map of block index to detected language
+      - "confidence": overall confidence in the cleanup (0-1)
+
+  - name: language_detection
+    type: custom
+    target: skill_md
+    enabled: true
+    uses_history: true
+    prompt: >
+      Based on the previous OCR cleanup results and the transcript content,
+      determine the programming language for each code block.
+
+      Detection strategy (in priority order):
+      1. Narrator mentions: "in GDScript", "this Python function", "our C# class"
+      2. Code patterns: extends/func/signal=GDScript, def/import=Python,
+         function/const/let=JavaScript, using/namespace=C#
+      3. File extensions visible in OCR (.gd, .py, .js, .cs)
+      4. Framework context from transcript (Godot=GDScript, Unity=C#, Django=Python)
+
+      Output JSON with:
+      - "language_map": map of block index to language identifier
+      - "primary_language": the main language used in the tutorial
+      - "framework": detected framework/engine if any
+
+  - name: tutorial_synthesis
+    type: custom
+    target: skill_md
+    enabled: true
+    uses_history: true
+    prompt: >
+      Synthesize the cleaned code blocks, detected languages, and transcript
+      into a coherent tutorial structure.
+
+      Group content by TOPIC rather than timestamp:
+      1. Identify the main concepts taught in the tutorial
+      2. Group related code blocks under concept headings
+      3. Use narrator explanations as descriptions for each code block
+      4. Build a progressive learning path where concepts build on each other
+      5. Show final working code for each concept, not intermediate OCR states
+
+      Use the Audio-Visual Alignment pairs (code + narrator text) as the
+      primary source for creating annotated examples.
+
+      Output JSON with:
+      - "sections": array of tutorial sections with title, description, code examples
+      - "prerequisites": what the viewer should know beforehand
+      - "key_concepts": important terms and their definitions from the tutorial
+      - "learning_path": ordered list of concept names
+
+  - name: skill_polish
+    type: custom
+    target: skill_md
+    enabled: true
+    uses_history: true
+    prompt: >
+      Using all previous stage results, polish the SKILL.md for this video tutorial.
+
+      Create:
+      1. Clear "When to Use This Skill" with specific trigger conditions
+      2. Quick Reference with 5-10 clean, annotated code examples
+      3. Step-by-step guide following the tutorial flow
+      4. Key concepts with definitions from the narrator
+      5. Proper language tags on all code fences
+
+      Rules:
+      - Never include raw OCR artifacts (line numbers, UI chrome)
+      - Always use correct language tags
+      - Keep code examples short and focused (5-30 lines)
+      - Make it actionable for someone implementing what the tutorial teaches
+
+      Output JSON with:
+      - "improved_overview": enhanced overview section
+      - "quick_start": concise getting-started snippet
+      - "key_concepts": essential concepts with definitions
+      - "code_examples": array of clean, annotated code examples
+
+post_process:
+  reorder_sections: []
+  add_metadata:
+    enhanced: true
+    workflow: video-tutorial
+    source_type: video

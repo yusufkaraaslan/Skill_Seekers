@@ -63,24 +63,34 @@ class SourceDetector:
         if source.endswith(".docx"):
             return cls._detect_word(source)
 
-        # 2. Directory detection
+        # Video file extensions
+        VIDEO_EXTENSIONS = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv")
+        if source.lower().endswith(VIDEO_EXTENSIONS):
+            return cls._detect_video_file(source)
+
+        # 2. Video URL detection (before directory check)
+        video_url_info = cls._detect_video_url(source)
+        if video_url_info:
+            return video_url_info
+
+        # 3. Directory detection
         if os.path.isdir(source):
             return cls._detect_local(source)
 
-        # 3. GitHub patterns
+        # 4. GitHub patterns
         github_info = cls._detect_github(source)
         if github_info:
             return github_info
 
-        # 4. URL detection
+        # 5. URL detection
         if source.startswith("http://") or source.startswith("https://"):
             return cls._detect_web(source)
 
-        # 5. Domain inference (add https://)
+        # 6. Domain inference (add https://)
         if "." in source and not source.startswith("/"):
             return cls._detect_web(f"https://{source}")
 
-        # 6. Error - cannot determine
+        # 7. Error - cannot determine
         raise ValueError(
             f"Cannot determine source type for: {source}\n\n"
             "Examples:\n"
@@ -89,6 +99,8 @@ class SourceDetector:
             "  Local:  skill-seekers create ./my-project\n"
             "  PDF:    skill-seekers create tutorial.pdf\n"
             "  DOCX:   skill-seekers create document.docx\n"
+            "  Video:  skill-seekers create https://youtube.com/watch?v=...\n"
+            "  Video:  skill-seekers create recording.mp4\n"
             "  Config: skill-seekers create configs/react.json"
         )
 
@@ -115,6 +127,55 @@ class SourceDetector:
         return SourceInfo(
             type="word", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
+
+    @classmethod
+    def _detect_video_file(cls, source: str) -> SourceInfo:
+        """Detect local video file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="video",
+            parsed={"file_path": source, "source_kind": "file"},
+            suggested_name=name,
+            raw_input=source,
+        )
+
+    @classmethod
+    def _detect_video_url(cls, source: str) -> SourceInfo | None:
+        """Detect video platform URL (YouTube, Vimeo).
+
+        Returns SourceInfo if the source is a video URL, None otherwise.
+        """
+        lower = source.lower()
+
+        # YouTube patterns
+        youtube_keywords = ["youtube.com/watch", "youtu.be/", "youtube.com/playlist",
+                            "youtube.com/@", "youtube.com/channel/", "youtube.com/c/",
+                            "youtube.com/shorts/", "youtube.com/embed/"]
+        if any(kw in lower for kw in youtube_keywords):
+            # Determine suggested name
+            if "playlist" in lower:
+                name = "youtube_playlist"
+            elif "/@" in lower or "/channel/" in lower or "/c/" in lower:
+                name = "youtube_channel"
+            else:
+                name = "youtube_video"
+            return SourceInfo(
+                type="video",
+                parsed={"url": source, "source_kind": "url"},
+                suggested_name=name,
+                raw_input=source,
+            )
+
+        # Vimeo patterns
+        if "vimeo.com/" in lower:
+            return SourceInfo(
+                type="video",
+                parsed={"url": source, "source_kind": "url"},
+                suggested_name="vimeo_video",
+                raw_input=source,
+            )
+
+        return None
 
     @classmethod
     def _detect_local(cls, source: str) -> SourceInfo:
@@ -208,6 +269,15 @@ class SourceDetector:
                 raise ValueError(f"Word document does not exist: {file_path}")
             if not os.path.isfile(file_path):
                 raise ValueError(f"Path is not a file: {file_path}")
+
+        elif source_info.type == "video":
+            if source_info.parsed.get("source_kind") == "file":
+                file_path = source_info.parsed["file_path"]
+                if not os.path.exists(file_path):
+                    raise ValueError(f"Video file does not exist: {file_path}")
+                if not os.path.isfile(file_path):
+                    raise ValueError(f"Path is not a file: {file_path}")
+            # URL-based video sources are validated during processing
 
         elif source_info.type == "config":
             config_path = source_info.parsed["config_path"]
