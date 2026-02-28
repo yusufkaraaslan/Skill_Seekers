@@ -16,6 +16,7 @@ Tests cover:
 """
 
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -455,6 +456,37 @@ class TestWordErrorHandling(unittest.TestCase):
         """Config without 'name' raises KeyError."""
         with self.assertRaises((KeyError, TypeError)):
             self.WordToSkillConverter({"docx_path": "test.docx"})
+
+    def test_non_docx_file_raises_value_error(self):
+        """extract_docx raises ValueError for non-.docx files."""
+        # Create a real file with wrong extension
+        txt_path = os.path.join(self.temp_dir, "test.txt")
+        with open(txt_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": txt_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
+
+    def test_doc_file_raises_value_error(self):
+        """extract_docx raises ValueError for .doc (old Word format)."""
+        doc_path = os.path.join(self.temp_dir, "test.doc")
+        with open(doc_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": doc_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
+
+    def test_no_extension_file_raises_value_error(self):
+        """extract_docx raises ValueError for file with no extension."""
+        no_ext_path = os.path.join(self.temp_dir, "document")
+        with open(no_ext_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": no_ext_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
 
 
 class TestWordJSONWorkflow(unittest.TestCase):

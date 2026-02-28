@@ -14,6 +14,8 @@ import os
 import sys
 from pathlib import Path
 
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+
 # Import utilities
 try:
     from quality_checker import SkillQualityChecker, print_report
@@ -45,8 +47,9 @@ def package_skill(
     chunk_overlap=200,
     batch_size=100,
     enable_chunking=False,
-    chunk_max_tokens=512,
+    chunk_max_tokens=DEFAULT_CHUNK_TOKENS,
     preserve_code_blocks=True,
+    chunk_overlap_tokens=DEFAULT_CHUNK_OVERLAP_TOKENS,
 ):
     """
     Package a skill directory into platform-specific format
@@ -121,6 +124,7 @@ def package_skill(
         "chroma",
         "faiss",
         "qdrant",
+        "pinecone",
     ]
 
     if target in RAG_PLATFORMS and not enable_chunking:
@@ -156,6 +160,7 @@ def package_skill(
                 enable_chunking=enable_chunking,
                 chunk_max_tokens=chunk_max_tokens,
                 preserve_code_blocks=preserve_code_blocks,
+                chunk_overlap_tokens=chunk_overlap_tokens,
             )
         else:
             package_path = adaptor.package(
@@ -164,6 +169,7 @@ def package_skill(
                 enable_chunking=enable_chunking,
                 chunk_max_tokens=chunk_max_tokens,
                 preserve_code_blocks=preserve_code_blocks,
+                chunk_overlap_tokens=chunk_overlap_tokens,
             )
 
         print(f"   Output: {package_path}")
@@ -226,7 +232,8 @@ Examples:
         batch_size=args.batch_size,
         enable_chunking=args.chunk_for_rag,
         chunk_max_tokens=args.chunk_tokens,
-        preserve_code_blocks=not args.no_preserve_code,
+        preserve_code_blocks=not args.no_preserve_code_blocks,
+        chunk_overlap_tokens=args.chunk_overlap_tokens,
     )
 
     if not success:

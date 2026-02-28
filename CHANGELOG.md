@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`docx` optional dependency group** — `pip install skill-seekers[docx]` (mammoth + python-docx)
 
 ### Fixed
+- **`--var` flag silently dropped in `create` routing** — `main.py` checked `args.workflow_var` but argparse stores the flag as `args.var`. Workflow variable overrides via `--var KEY=VALUE` were silently ignored. Fixed to read `args.var`.
+- **Double `_score_code_quality()` call in word scraper** — `word_scraper.py` called `_score_code_quality(raw_text)` twice for every code-like paragraph (once to check threshold, once to assign). Consolidated to a single call.
+- **`.docx` file extension validation** — `WordToSkillConverter` now validates the file has a `.docx` extension before attempting to parse. Non-`.docx` files (`.doc`, `.txt`, no extension) raise `ValueError` with a clear message instead of cryptic parse errors.
+- **`--no-preserve-code` renamed to `--no-preserve-code-blocks`** — Flag name now matches the parameter it controls (`preserve_code_blocks`). Backward-compatible alias `--no-preserve-code` kept (hidden, removed in v4.0.0).
+- **`--chunk-overlap-tokens` missing from `package` command** — Flag was defined in `create` and `scrape` but not `package`. Added to `PACKAGE_ARGUMENTS` and wired through `package_skill()` → `adaptor.package()` → `format_skill_md()` → `_maybe_chunk_content()` → `RAGChunker`.
+- **Chunk overlap auto-scaling** — When `--chunk-tokens` is non-default but `--chunk-overlap-tokens` is default, overlap now auto-scales to `max(50, chunk_tokens // 10)` for better context preservation with large chunks.
+- **Weaviate `ImportError` masked by generic handler** — `upload()` caught `Exception` before `ImportError`, so missing `sentence-transformers` produced a generic "Upload failed" message instead of the specific install instruction. Added `except ImportError` before `except Exception`.
+- **Hardcoded chunk defaults in 12 adaptors** — All concrete adaptors (claude, gemini, openai, markdown, langchain, llama_index, haystack, chroma, faiss, qdrant, weaviate, pinecone) used hardcoded `512`/`50` for chunk token/overlap defaults. Replaced with `DEFAULT_CHUNK_TOKENS` and `DEFAULT_CHUNK_OVERLAP_TOKENS` constants from `arguments/common.py`.
 - **RAG chunking crash (`AttributeError: output_dir`)** — `execute_scraping_and_building()` used `converter.output_dir` which doesn't exist on `DocToSkillConverter`. Changed to `Path(converter.skill_dir)`. Affected `--chunk-for-rag` flag on `scrape` command.
 - **Issue #301: `setup.sh` fails on macOS with mismatched Python/pip** — `pip3` can point to a different Python than `python3` (e.g. pip3 → 3.9, python3 → 3.14), causing "no matching distribution" errors. Changed `setup.sh` to use `python3 -m pip` instead of bare `pip3` to guarantee the correct interpreter.
 - **Issue #300: Selector fallback & dry-run link discovery** — `create https://reactflow.dev/` now finds 20+ pages (was 1). Root causes:
@@ -45,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Language detector method** — Fixed `detect_from_text` → `detect_from_code` in word scraper
 
 ### Changed
+- **Shared embedding methods consolidated to base class** — `_generate_openai_embeddings()` and `_generate_st_embeddings()` moved from chroma/weaviate/pinecone adaptors into `SkillAdaptor` base class. All 3 adaptors now inherit these methods, eliminating ~150 lines of duplicated code.
+- **Chunk constants centralized** — Added `DEFAULT_CHUNK_TOKENS = 512` and `DEFAULT_CHUNK_OVERLAP_TOKENS = 50` in `arguments/common.py`. Used across `rag_chunker.py`, `base.py`, `package_skill.py`, `create_command.py`, and all 12 concrete adaptors. No more magic numbers for chunk defaults.
 - **Enhancement summarizer architecture** — Character-budget approach respects `target_ratio` for both code blocks and heading chunks, replacing hard limits with proportional allocation
 
 ## [3.1.3] - 2026-02-24

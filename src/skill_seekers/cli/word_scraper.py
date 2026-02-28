@@ -109,6 +109,11 @@ class WordToSkillConverter:
         if not os.path.exists(self.docx_path):
             raise FileNotFoundError(f"Word document not found: {self.docx_path}")
 
+        if not self.docx_path.lower().endswith(".docx"):
+            raise ValueError(
+                f"Not a Word document (expected .docx): {self.docx_path}"
+            )
+
         # --- Extract metadata via python-docx ---
         doc = python_docx.Document(self.docx_path)
         core_props = doc.core_properties
@@ -825,8 +830,8 @@ def _build_section(
             raw_text = elem.get_text(separator="\n").strip()
             # Exclude bullet-point / prose lists (•, *, -)
             if raw_text and not re.search(r"^[•\-\*]\s", raw_text, re.MULTILINE):
-                if _score_code_quality(raw_text) >= 5.5:
-                    quality_score = _score_code_quality(raw_text)
+                quality_score = _score_code_quality(raw_text)
+                if quality_score >= 5.5:
                     code_samples.append(
                         {"code": raw_text, "language": "", "quality_score": quality_score}
                     )

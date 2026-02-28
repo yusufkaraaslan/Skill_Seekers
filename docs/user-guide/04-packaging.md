@@ -194,7 +194,9 @@ skill-seekers package output/my-skill/ \
 | `--chunk-for-rag` | auto | Enable chunking |
 | `--chunk-tokens` | 512 | Tokens per chunk |
 | `--chunk-overlap-tokens` | 50 | Overlap between chunks (tokens) |
-| `--no-preserve-code` | - | Allow splitting code blocks |
+| `--no-preserve-code-blocks` | - | Allow splitting code blocks |
+
+> **Auto-scaling overlap:** When `--chunk-tokens` is set to a non-default value but `--chunk-overlap-tokens` is left at default (50), the overlap automatically scales to `max(50, chunk_tokens / 10)` for better context preservation with larger chunks.
 
 ---
 

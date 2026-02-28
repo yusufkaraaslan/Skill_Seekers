@@ -598,7 +598,8 @@ skill-seekers package SKILL_DIRECTORY [options]
 | | `--batch-size` | 100 | Chunks per batch |
 | | `--chunk-for-rag` | | Enable RAG chunking |
 | | `--chunk-tokens` | 512 | Max tokens per chunk |
-| | `--no-preserve-code` | | Allow code block splitting |
+| | `--chunk-overlap-tokens` | 50 | Overlap between chunks (tokens) |
+| | `--no-preserve-code-blocks` | | Allow code block splitting |
 
 **Supported Platforms:**
 

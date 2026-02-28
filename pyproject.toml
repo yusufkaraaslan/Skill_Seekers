@@ -128,10 +128,15 @@ sentence-transformers = [
     "sentence-transformers>=2.2.0",
 ]
 
+pinecone = [
+    "pinecone>=5.0.0",
+]
+
 rag-upload = [
     "chromadb>=0.4.0",
     "weaviate-client>=3.25.0",
     "sentence-transformers>=2.2.0",
+    "pinecone>=5.0.0",
 ]
 
 # All cloud storage providers combined
@@ -167,6 +172,7 @@ all = [
     "azure-storage-blob>=12.19.0",
     "chromadb>=0.4.0",
     "weaviate-client>=3.25.0",
+    "pinecone>=5.0.0",
     "fastapi>=0.109.0",
     "sentence-transformers>=2.3.0",
     "numpy>=1.24.0",

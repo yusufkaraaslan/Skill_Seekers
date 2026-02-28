@@ -1057,6 +1057,7 @@ def analyze_codebase(
     enhance_level: int = 0,
     skill_name: str | None = None,
     skill_description: str | None = None,
+    doc_version: str = "",
 ) -> dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -1603,6 +1604,7 @@ def analyze_codebase(
         docs_data=docs_data,
         skill_name=skill_name,
         skill_description=skill_description,
+        doc_version=doc_version,
     )
 
     return results
@@ -1622,6 +1624,7 @@ def _generate_skill_md(
     docs_data: dict[str, Any] | None = None,
     skill_name: str | None = None,
     skill_description: str | None = None,
+    doc_version: str = "",
 ):
     """
     Generate rich SKILL.md from codebase analysis results.
@@ -1657,6 +1660,7 @@ def _generate_skill_md(
     skill_content = f"""---
 name: {skill_name}
 description: {description}
+doc_version: {doc_version}
 ---
 
 # {repo_name} Codebase
@@ -2197,12 +2201,10 @@ def _generate_references(output_dir: Path):
 
         if source_dir.exists() and source_dir.is_dir():
             # Copy directory to references/ (not symlink, for portability)
-            if target_dir.exists():
-                import shutil
-
-                shutil.rmtree(target_dir)
-
             import shutil
+
+            if target_dir.exists():
+                shutil.rmtree(target_dir)
 
             shutil.copytree(source_dir, target_dir)
             logger.debug(f"Copied {source} → references/{target}")
@@ -2451,6 +2453,7 @@ Examples:
             enhance_level=args.enhance_level,  # AI enhancement level (0-3)
             skill_name=getattr(args, "name", None),
             skill_description=getattr(args, "description", None),
+            doc_version=getattr(args, "doc_version", ""),
         )
 
         # ============================================================

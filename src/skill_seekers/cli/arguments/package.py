@@ -8,6 +8,8 @@ import and use these definitions.
 import argparse
 from typing import Any
 
+from .common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+
 PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
     # Positional argument
     "skill_directory": {
@@ -49,6 +51,7 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "chroma",
                 "faiss",
                 "qdrant",
+                "pinecone",
             ],
             "default": "claude",
             "help": "Target LLM platform (default: claude)",
@@ -109,13 +112,22 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--chunk-tokens",),
         "kwargs": {
             "type": int,
-            "default": 512,
-            "help": "Maximum tokens per chunk (default: 512)",
+            "default": DEFAULT_CHUNK_TOKENS,
+            "help": f"Maximum tokens per chunk (default: {DEFAULT_CHUNK_TOKENS})",
             "metavar": "N",
         },
     },
-    "no_preserve_code": {
-        "flags": ("--no-preserve-code",),
+    "chunk_overlap_tokens": {
+        "flags": ("--chunk-overlap-tokens",),
+        "kwargs": {
+            "type": int,
+            "default": DEFAULT_CHUNK_OVERLAP_TOKENS,
+            "help": f"Overlap between chunks in tokens (default: {DEFAULT_CHUNK_OVERLAP_TOKENS})",
+            "metavar": "N",
+        },
+    },
+    "no_preserve_code_blocks": {
+        "flags": ("--no-preserve-code-blocks",),
         "kwargs": {
             "action": "store_true",
             "help": "Allow code block splitting (default: code blocks preserved)",
@@ -130,3 +142,11 @@ def add_package_arguments(parser: argparse.ArgumentParser) -> None:
         flags = arg_def["flags"]
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
+
+    # Deprecated alias for backward compatibility (removed in v4.0.0)
+    parser.add_argument(
+        "--no-preserve-code",
+        dest="no_preserve_code_blocks",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )

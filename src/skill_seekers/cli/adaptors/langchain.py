@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
 class LangChainAdaptor(SkillAdaptor):
@@ -62,6 +63,7 @@ class LangChainAdaptor(SkillAdaptor):
                     "file": "SKILL.md",
                     "type": "documentation",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -69,9 +71,10 @@ class LangChainAdaptor(SkillAdaptor):
                     content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file="SKILL.md",
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks to documents
@@ -90,6 +93,7 @@ class LangChainAdaptor(SkillAdaptor):
                     "file": ref_file.name,
                     "type": "reference",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -97,9 +101,10 @@ class LangChainAdaptor(SkillAdaptor):
                     ref_content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file=ref_file.name,
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks to documents
@@ -114,8 +119,9 @@ class LangChainAdaptor(SkillAdaptor):
         skill_dir: Path,
         output_path: Path,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
         Package skill into JSON file for LangChain.
@@ -139,12 +145,8 @@ class LangChainAdaptor(SkillAdaptor):
         output_path = self._format_output_path(skill_dir, Path(output_path), "-langchain.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Read metadata
-        metadata = SkillMetadata(
-            name=skill_dir.name,
-            description=f"LangChain documents for {skill_dir.name}",
-            version="1.0.0",
-        )
+        # Read metadata from SKILL.md frontmatter
+        metadata = self._build_skill_metadata(skill_dir)
 
         # Generate LangChain documents with chunking
         documents_json = self.format_skill_md(
@@ -153,6 +155,7 @@ class LangChainAdaptor(SkillAdaptor):
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
             preserve_code_blocks=preserve_code_blocks,
+            chunk_overlap_tokens=chunk_overlap_tokens,
         )
 
         # Write to file

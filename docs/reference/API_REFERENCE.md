@@ -309,6 +309,15 @@ package_path = adaptor.package(
 )
 ```
 
+#### Shared Embedding Methods
+
+The base `SkillAdaptor` class provides two shared embedding methods inherited by all vector database adaptors (chroma, weaviate, pinecone):
+
+- `_generate_openai_embeddings(texts, model)` -- Generate embeddings via the OpenAI API.
+- `_generate_st_embeddings(texts, model)` -- Generate embeddings using a local sentence-transformers model.
+
+These methods are available on any adaptor instance returned by `get_adaptor()` for vector database targets, so you do not need to implement embedding logic per-adaptor.
+
 ---
 
 ### 6. Skill Upload API

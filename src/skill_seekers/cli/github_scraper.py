@@ -968,10 +968,13 @@ class GitHubToSkillConverter:
         # Truncate description to 1024 chars if needed
         desc = self.description[:1024] if len(self.description) > 1024 else self.description
 
+        doc_version = self.config.get("doc_version", "")
+
         # Build skill content
         skill_content = f"""---
 name: {skill_name}
 description: {desc}
+doc_version: {doc_version}
 ---
 
 # {repo_info.get("name", self.name)}
@@ -1003,10 +1006,11 @@ Use this skill when you need to:
 
         # Repository info
         skill_content += "### Repository Info\n"
-        skill_content += f"- **Homepage:** {repo_info.get('homepage', 'N/A')}\n"
+        skill_content += f"- **Homepage:** {repo_info.get('homepage') or 'N/A'}\n"
         skill_content += f"- **Topics:** {', '.join(repo_info.get('topics', []))}\n"
         skill_content += f"- **Open Issues:** {repo_info.get('open_issues', 0)}\n"
-        skill_content += f"- **Last Updated:** {repo_info.get('updated_at', 'N/A')[:10]}\n\n"
+        updated_at = repo_info.get('updated_at') or 'N/A'
+        skill_content += f"- **Last Updated:** {updated_at[:10]}\n\n"
 
         # Languages
         skill_content += "### Languages\n"
@@ -1101,8 +1105,10 @@ Use this skill when you need to:
 
         lines = []
         for release in releases[:3]:
+            published_at = release.get('published_at') or 'N/A'
+            release_name = release.get('name') or release['tag_name']
             lines.append(
-                f"- **{release['tag_name']}** ({release['published_at'][:10]}): {release['name']}"
+                f"- **{release['tag_name']}** ({published_at[:10]}): {release_name}"
             )
 
         return "\n".join(lines)
@@ -1298,15 +1304,17 @@ Use this skill when you need to:
         content += f"## Open Issues ({len(open_issues)})\n\n"
         for issue in open_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
+            created_at = issue.get('created_at') or 'N/A'
             content += f"### #{issue['number']}: {issue['title']}\n"
-            content += f"**Labels:** {labels} | **Created:** {issue['created_at'][:10]}\n"
+            content += f"**Labels:** {labels} | **Created:** {created_at[:10]}\n"
             content += f"[View on GitHub]({issue['url']})\n\n"
 
         content += f"\n## Recently Closed Issues ({len(closed_issues)})\n\n"
         for issue in closed_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
+            closed_at = issue.get('closed_at') or 'N/A'
             content += f"### #{issue['number']}: {issue['title']}\n"
-            content += f"**Labels:** {labels} | **Closed:** {issue['closed_at'][:10]}\n"
+            content += f"**Labels:** {labels} | **Closed:** {closed_at[:10]}\n"
             content += f"[View on GitHub]({issue['url']})\n\n"
 
         issues_path = f"{self.skill_dir}/references/issues.md"
@@ -1323,11 +1331,14 @@ Use this skill when you need to:
         )
 
         for release in releases:
-            content += f"## {release['tag_name']}: {release['name']}\n"
-            content += f"**Published:** {release['published_at'][:10]}\n"
+            published_at = release.get('published_at') or 'N/A'
+            release_name = release.get('name') or release['tag_name']
+            release_body = release.get('body') or ''
+            content += f"## {release['tag_name']}: {release_name}\n"
+            content += f"**Published:** {published_at[:10]}\n"
             if release["prerelease"]:
                 content += "**Pre-release**\n"
-            content += f"\n{release['body']}\n\n"
+            content += f"\n{release_body}\n\n"
             content += f"[View on GitHub]({release['url']})\n\n---\n\n"
 
         releases_path = f"{self.skill_dir}/references/releases.md"

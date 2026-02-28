@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
 class WeaviateAdaptor(SkillAdaptor):
@@ -96,7 +97,14 @@ class WeaviateAdaptor(SkillAdaptor):
                 {
                     "name": "version",
                     "dataType": ["text"],
-                    "description": "Documentation version",
+                    "description": "Skill package version",
+                    "indexFilterable": True,
+                    "indexSearchable": False,
+                },
+                {
+                    "name": "doc_version",
+                    "dataType": ["text"],
+                    "description": "Documentation version (e.g., 16.2)",
                     "indexFilterable": True,
                     "indexSearchable": False,
                 },
@@ -137,6 +145,7 @@ class WeaviateAdaptor(SkillAdaptor):
                     "file": "SKILL.md",
                     "type": "documentation",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -144,9 +153,10 @@ class WeaviateAdaptor(SkillAdaptor):
                     content,
                     obj_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file="SKILL.md",
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks as objects
@@ -161,6 +171,7 @@ class WeaviateAdaptor(SkillAdaptor):
                                 "file": chunk_meta.get("file", "SKILL.md"),
                                 "type": chunk_meta.get("type", "documentation"),
                                 "version": chunk_meta.get("version", metadata.version),
+                                "doc_version": chunk_meta.get("doc_version", ""),
                             },
                         }
                     )
@@ -177,6 +188,7 @@ class WeaviateAdaptor(SkillAdaptor):
                     "file": ref_file.name,
                     "type": "reference",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -184,9 +196,10 @@ class WeaviateAdaptor(SkillAdaptor):
                     ref_content,
                     obj_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file=ref_file.name,
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks as objects
@@ -201,6 +214,7 @@ class WeaviateAdaptor(SkillAdaptor):
                                 "file": chunk_meta.get("file", ref_file.name),
                                 "type": chunk_meta.get("type", "reference"),
                                 "version": chunk_meta.get("version", metadata.version),
+                                "doc_version": chunk_meta.get("doc_version", ""),
                             },
                         }
                     )
@@ -221,8 +235,9 @@ class WeaviateAdaptor(SkillAdaptor):
         skill_dir: Path,
         output_path: Path,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
         Package skill into JSON file for Weaviate.
@@ -245,12 +260,8 @@ class WeaviateAdaptor(SkillAdaptor):
         output_path = self._format_output_path(skill_dir, Path(output_path), "-weaviate.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Read metadata
-        metadata = SkillMetadata(
-            name=skill_dir.name,
-            description=f"Weaviate objects for {skill_dir.name}",
-            version="1.0.0",
-        )
+        # Read metadata from SKILL.md frontmatter
+        metadata = self._build_skill_metadata(skill_dir)
 
         # Generate Weaviate objects
         weaviate_json = self.format_skill_md(
@@ -259,6 +270,7 @@ class WeaviateAdaptor(SkillAdaptor):
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
             preserve_code_blocks=preserve_code_blocks,
+            chunk_overlap_tokens=chunk_overlap_tokens,
         )
 
         # Write to file
@@ -288,7 +300,7 @@ class WeaviateAdaptor(SkillAdaptor):
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str = None, **kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str | None = None, **kwargs) -> dict[str, Any]:
         """
         Upload packaged skill to Weaviate.
 
@@ -382,31 +394,20 @@ class WeaviateAdaptor(SkillAdaptor):
                             print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
 
                 elif embedding_function == "sentence-transformers":
-                    # Use sentence-transformers
-                    print("🔄 Generating sentence-transformer embeddings and uploading...")
-                    try:
-                        from sentence_transformers import SentenceTransformer
+                    # Use sentence-transformers (via shared base method)
+                    contents = [obj["properties"]["content"] for obj in data["objects"]]
+                    embeddings = self._generate_st_embeddings(contents)
 
-                        model = SentenceTransformer("all-MiniLM-L6-v2")
-                        contents = [obj["properties"]["content"] for obj in data["objects"]]
-                        embeddings = model.encode(contents, show_progress_bar=True).tolist()
+                    for i, obj in enumerate(data["objects"]):
+                        batch.add_data_object(
+                            data_object=obj["properties"],
+                            class_name=data["class_name"],
+                            uuid=obj["id"],
+                            vector=embeddings[i],
+                        )
 
-                        for i, obj in enumerate(data["objects"]):
-                            batch.add_data_object(
-                                data_object=obj["properties"],
-                                class_name=data["class_name"],
-                                uuid=obj["id"],
-                                vector=embeddings[i],
-                            )
-
-                            if (i + 1) % 100 == 0:
-                                print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
-
-                    except ImportError:
-                        return {
-                            "success": False,
-                            "message": "sentence-transformers not installed. Run: pip install sentence-transformers",
-                        }
+                        if (i + 1) % 100 == 0:
+                            print(f"  ✓ Uploaded {i + 1}/{len(data['objects'])} objects")
 
                 else:
                     # No embeddings - Weaviate will use its configured vectorizer
@@ -427,60 +428,15 @@ class WeaviateAdaptor(SkillAdaptor):
             return {
                 "success": True,
                 "message": f"Uploaded {count} objects to Weaviate class '{data['class_name']}'",
+                "url": None,
                 "class_name": data["class_name"],
                 "count": count,
             }
 
+        except ImportError as e:
+            return {"success": False, "message": str(e)}
         except Exception as e:
             return {"success": False, "message": f"Upload failed: {e}"}
-
-    def _generate_openai_embeddings(
-        self, documents: list[str], api_key: str = None
-    ) -> list[list[float]]:
-        """
-        Generate embeddings using OpenAI API.
-
-        Args:
-            documents: List of document texts
-            api_key: OpenAI API key (or uses OPENAI_API_KEY env var)
-
-        Returns:
-            List of embedding vectors
-        """
-        import os
-
-        try:
-            from openai import OpenAI
-        except ImportError:
-            raise ImportError("openai not installed. Run: pip install openai") from None
-
-        api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
-
-        client = OpenAI(api_key=api_key)
-
-        # Batch process (OpenAI allows up to 2048 inputs)
-        embeddings = []
-        batch_size = 100
-
-        print(f"  Generating embeddings for {len(documents)} documents...")
-
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i : i + batch_size]
-            try:
-                response = client.embeddings.create(
-                    input=batch,
-                    model="text-embedding-3-small",  # Cheapest, fastest
-                )
-                embeddings.extend([item.embedding for item in response.data])
-                print(
-                    f"  ✓ Generated {min(i + batch_size, len(documents))}/{len(documents)} embeddings"
-                )
-            except Exception as e:
-                raise Exception(f"OpenAI embedding generation failed: {e}") from e
-
-        return embeddings
 
     def validate_api_key(self, _api_key: str) -> bool:
         """

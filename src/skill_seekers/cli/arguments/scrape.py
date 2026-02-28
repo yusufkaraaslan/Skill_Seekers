@@ -172,6 +172,14 @@ def add_scrape_arguments(parser: argparse.ArgumentParser) -> None:
         kwargs = arg_def["kwargs"]
         parser.add_argument(*flags, **kwargs)
 
+    # Deprecated alias for backward compatibility (removed in v4.0.0)
+    parser.add_argument(
+        "--no-preserve-code",
+        dest="no_preserve_code_blocks",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+
 
 def get_scrape_argument_names() -> set:
     """Get the set of scrape argument destination names.

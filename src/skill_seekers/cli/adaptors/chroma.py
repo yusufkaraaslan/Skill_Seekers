@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
 class ChromaAdaptor(SkillAdaptor):
@@ -79,6 +80,7 @@ class ChromaAdaptor(SkillAdaptor):
                     "file": "SKILL.md",
                     "type": "documentation",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -86,9 +88,10 @@ class ChromaAdaptor(SkillAdaptor):
                     content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file="SKILL.md",
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks to parallel arrays
@@ -109,6 +112,7 @@ class ChromaAdaptor(SkillAdaptor):
                     "file": ref_file.name,
                     "type": "reference",
                     "version": metadata.version,
+                    "doc_version": metadata.doc_version,
                 }
 
                 # Chunk if enabled
@@ -116,9 +120,10 @@ class ChromaAdaptor(SkillAdaptor):
                     ref_content,
                     doc_metadata,
                     enable_chunking=enable_chunking,
-                    chunk_max_tokens=kwargs.get("chunk_max_tokens", 512),
+                    chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file=ref_file.name,
+                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
                 )
 
                 # Add all chunks to parallel arrays
@@ -144,8 +149,9 @@ class ChromaAdaptor(SkillAdaptor):
         skill_dir: Path,
         output_path: Path,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
         Package skill into JSON file for Chroma.
@@ -166,12 +172,8 @@ class ChromaAdaptor(SkillAdaptor):
         output_path = self._format_output_path(skill_dir, Path(output_path), "-chroma.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Read metadata
-        metadata = SkillMetadata(
-            name=skill_dir.name,
-            description=f"Chroma collection data for {skill_dir.name}",
-            version="1.0.0",
-        )
+        # Read metadata from SKILL.md frontmatter
+        metadata = self._build_skill_metadata(skill_dir)
 
         # Generate Chroma data
         chroma_json = self.format_skill_md(
@@ -180,6 +182,7 @@ class ChromaAdaptor(SkillAdaptor):
             enable_chunking=enable_chunking,
             chunk_max_tokens=chunk_max_tokens,
             preserve_code_blocks=preserve_code_blocks,
+            chunk_overlap_tokens=chunk_overlap_tokens,
         )
 
         # Write to file
@@ -206,7 +209,7 @@ class ChromaAdaptor(SkillAdaptor):
 
         return output_path
 
-    def upload(self, package_path: Path, api_key: str = None, **kwargs) -> dict[str, Any]:
+    def upload(self, package_path: Path, api_key: str | None = None, **kwargs) -> dict[str, Any]:
         """
         Upload packaged skill to ChromaDB.
 
@@ -250,9 +253,7 @@ class ChromaAdaptor(SkillAdaptor):
                 print(f"🌐 Connecting to ChromaDB at: {chroma_url}")
                 # Parse URL
                 if "://" in chroma_url:
-                    parts = chroma_url.split("://")
-                    parts[0]
-                    host_port = parts[1]
+                    _scheme, host_port = chroma_url.split("://", 1)
                 else:
                     host_port = chroma_url
 
@@ -351,52 +352,6 @@ class ChromaAdaptor(SkillAdaptor):
 
         except Exception as e:
             return {"success": False, "message": f"Upload failed: {e}"}
-
-    def _generate_openai_embeddings(
-        self, documents: list[str], api_key: str = None
-    ) -> list[list[float]]:
-        """
-        Generate embeddings using OpenAI API.
-
-        Args:
-            documents: List of document texts
-            api_key: OpenAI API key (or uses OPENAI_API_KEY env var)
-
-        Returns:
-            List of embedding vectors
-        """
-        import os
-
-        try:
-            from openai import OpenAI
-        except ImportError:
-            raise ImportError("openai not installed. Run: pip install openai") from None
-
-        api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
-
-        client = OpenAI(api_key=api_key)
-
-        # Batch process (OpenAI allows up to 2048 inputs)
-        embeddings = []
-        batch_size = 100
-
-        print(f"  Generating embeddings for {len(documents)} documents...")
-
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i : i + batch_size]
-            try:
-                response = client.embeddings.create(
-                    input=batch,
-                    model="text-embedding-3-small",  # Cheapest, fastest
-                )
-                embeddings.extend([item.embedding for item in response.data])
-                print(f"  ✓ Processed {min(i + batch_size, len(documents))}/{len(documents)}")
-            except Exception as e:
-                raise Exception(f"OpenAI embedding generation failed: {e}") from e
-
-        return embeddings
 
     def validate_api_key(self, _api_key: str) -> bool:
         """

@@ -64,6 +64,11 @@ try:
 except ImportError:
     HaystackAdaptor = None
 
+try:
+    from .pinecone_adaptor import PineconeAdaptor
+except ImportError:
+    PineconeAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -91,6 +96,8 @@ if QdrantAdaptor:
     ADAPTORS["qdrant"] = QdrantAdaptor
 if HaystackAdaptor:
     ADAPTORS["haystack"] = HaystackAdaptor
+if PineconeAdaptor:
+    ADAPTORS["pinecone"] = PineconeAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
