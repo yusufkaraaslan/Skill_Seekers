@@ -131,7 +131,9 @@ class TestArgumentHelpers:
         """Should return set of universal argument names."""
         names = get_universal_argument_names()
         assert isinstance(names, set)
-        assert len(names) == 19  # Phase 2: added 4 workflow arguments + local_repo_path + doc_version
+        assert (
+            len(names) == 19
+        )  # Phase 2: added 4 workflow arguments + local_repo_path + doc_version
         assert "name" in names
         assert "enhance_level" in names  # Phase 1: consolidated flag
         assert "enhance_workflow" in names  # Phase 2: workflow support

@@ -4,11 +4,10 @@ Tests for Pinecone adaptor and doc_version metadata flow.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
-from skill_seekers.cli.adaptors.base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.adaptors.base import SkillMetadata
 
 
 # ---------------------------------------------------------------------------
@@ -40,9 +39,7 @@ Get started quickly.
 
     refs_dir = skill_dir / "references"
     refs_dir.mkdir()
-    (refs_dir / "api_reference.md").write_text(
-        "# API Reference\n\nSome API docs.\n"
-    )
+    (refs_dir / "api_reference.md").write_text("# API Reference\n\nSome API docs.\n")
     (refs_dir / "getting_started.md").write_text(
         "# Getting Started\n\nSome getting started docs.\n"
     )
@@ -330,13 +327,17 @@ class TestPineconeAdaptor:
         if vectors is None:
             vectors = [{"id": "a", "metadata": {"text": "hello world"}}]
         pkg = tmp_path / "test-pinecone.json"
-        pkg.write_text(json.dumps({
-            "vectors": vectors,
-            "index_name": "test",
-            "namespace": "test",
-            "metric": "cosine",
-            "dimension": 1536,
-        }))
+        pkg.write_text(
+            json.dumps(
+                {
+                    "vectors": vectors,
+                    "index_name": "test",
+                    "namespace": "test",
+                    "metric": "cosine",
+                    "dimension": 1536,
+                }
+            )
+        )
         return pkg
 
     def test_upload_success_has_url_key(self, tmp_path, monkeypatch):
@@ -346,7 +347,8 @@ class TestPineconeAdaptor:
         adaptor = PineconeAdaptor()
         mock_pc, _mock_index = self._make_mock_pinecone(monkeypatch)
         monkeypatch.setattr(
-            adaptor, "_generate_openai_embeddings",
+            adaptor,
+            "_generate_openai_embeddings",
             lambda docs: [[0.0] * 1536] * len(docs),
         )
         pkg = self._make_package(tmp_path)
@@ -364,13 +366,16 @@ class TestPineconeAdaptor:
         adaptor = PineconeAdaptor()
         mock_pc, _mock_index = self._make_mock_pinecone(monkeypatch)
         monkeypatch.setattr(
-            adaptor, "_generate_st_embeddings",
+            adaptor,
+            "_generate_st_embeddings",
             lambda docs: [[0.0] * 384] * len(docs),
         )
         pkg = self._make_package(tmp_path)
 
         result = adaptor.upload(
-            pkg, api_key="fake-key", embedding_function="sentence-transformers",
+            pkg,
+            api_key="fake-key",
+            embedding_function="sentence-transformers",
         )
         assert result["success"] is True
         # Verify create_index was called with dimension=384
@@ -385,13 +390,16 @@ class TestPineconeAdaptor:
         adaptor = PineconeAdaptor()
         mock_pc, _mock_index = self._make_mock_pinecone(monkeypatch)
         monkeypatch.setattr(
-            adaptor, "_generate_openai_embeddings",
+            adaptor,
+            "_generate_openai_embeddings",
             lambda docs: [[0.0] * 1536] * len(docs),
         )
         pkg = self._make_package(tmp_path)
 
         result = adaptor.upload(
-            pkg, api_key="fake-key", embedding_function="openai",
+            pkg,
+            api_key="fake-key",
+            embedding_function="openai",
         )
         assert result["success"] is True
         mock_pc.create_index.assert_called_once()
@@ -405,7 +413,7 @@ class TestPineconeAdaptor:
         adaptor = PineconeAdaptor()
         mock_pc, _mock_index = self._make_mock_pinecone(monkeypatch)
 
-        def fail_embeddings(docs):
+        def fail_embeddings(_docs):
             raise RuntimeError("OPENAI_API_KEY not set")
 
         monkeypatch.setattr(adaptor, "_generate_openai_embeddings", fail_embeddings)
@@ -423,13 +431,17 @@ class TestPineconeAdaptor:
         adaptor = PineconeAdaptor()
         mock_pc, _mock_index = self._make_mock_pinecone(monkeypatch)
         monkeypatch.setattr(
-            adaptor, "_generate_openai_embeddings",
+            adaptor,
+            "_generate_openai_embeddings",
             lambda docs: [[0.0] * 768] * len(docs),
         )
         pkg = self._make_package(tmp_path)
 
         result = adaptor.upload(
-            pkg, api_key="fake-key", embedding_function="openai", dimension=768,
+            pkg,
+            api_key="fake-key",
+            embedding_function="openai",
+            dimension=768,
         )
         assert result["success"] is True
         mock_pc.create_index.assert_called_once()

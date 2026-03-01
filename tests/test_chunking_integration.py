@@ -358,7 +358,6 @@ class TestChunkingCLIIntegration:
             f"Small chunks ({len(data_small)}) should be more than large chunks ({len(data_large)})"
         )
 
-
     def test_chunk_overlap_tokens_parameter(self, tmp_path):
         """Test --chunk-overlap-tokens controls RAGChunker overlap."""
         from skill_seekers.cli.package_skill import package_skill
@@ -406,17 +405,21 @@ class TestChunkingCLIIntegration:
 
     def test_chunk_overlap_scales_with_chunk_size(self, tmp_path):
         """Test that overlap auto-scales when chunk_tokens is non-default but overlap is default."""
-        from skill_seekers.cli.adaptors.base import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+        from skill_seekers.cli.adaptors.base import (
+            DEFAULT_CHUNK_TOKENS,
+            DEFAULT_CHUNK_OVERLAP_TOKENS,
+        )
 
         adaptor = get_adaptor("langchain")
 
         skill_dir = create_test_skill(tmp_path, large_doc=True)
-        metadata = adaptor._build_skill_metadata(skill_dir)
+        adaptor._build_skill_metadata(skill_dir)
         content = (skill_dir / "SKILL.md").read_text()
 
         # With default chunk size (512) and default overlap (50), overlap should be 50
         chunks_default = adaptor._maybe_chunk_content(
-            content, {"source": "test"},
+            content,
+            {"source": "test"},
             enable_chunking=True,
             chunk_max_tokens=DEFAULT_CHUNK_TOKENS,
             chunk_overlap_tokens=DEFAULT_CHUNK_OVERLAP_TOKENS,
@@ -425,7 +428,8 @@ class TestChunkingCLIIntegration:
         # With large chunk size (1024) and default overlap (50),
         # overlap should auto-scale to max(50, 1024//10) = 102
         chunks_large = adaptor._maybe_chunk_content(
-            content, {"source": "test"},
+            content,
+            {"source": "test"},
             enable_chunking=True,
             chunk_max_tokens=1024,
             chunk_overlap_tokens=DEFAULT_CHUNK_OVERLAP_TOKENS,
