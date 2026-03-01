@@ -52,7 +52,6 @@ dependencies = [
     "anthropic>=0.76.0", # Required for AI enhancement (core feature)
     "PyMuPDF>=1.24.14",
     "Pillow>=11.0.0",
-    "pytesseract>=0.3.13",
     "pydantic>=2.12.3",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
@@ -115,6 +114,24 @@ docx = [
     "python-docx>=1.1.0",
 ]
 
+# Video processing (lightweight: YouTube transcripts + metadata)
+video = [
+    "yt-dlp>=2024.12.0",
+    "youtube-transcript-api>=1.2.0",
+]
+
+# Video processing (full: + Whisper + visual extraction)
+# NOTE: easyocr removed — it pulls torch with the wrong GPU variant.
+# Use: skill-seekers video --setup  (auto-detects GPU, installs correct PyTorch + easyocr)
+video-full = [
+    "yt-dlp>=2024.12.0",
+    "youtube-transcript-api>=1.2.0",
+    "faster-whisper>=1.0.0",
+    "scenedetect[opencv]>=0.6.4",
+    "opencv-python-headless>=4.9.0",
+    "pytesseract>=0.3.13",
+]
+
 # RAG vector database upload support
 chroma = [
     "chromadb>=0.4.0",
@@ -156,9 +173,13 @@ embedding = [
 ]
 
 # All optional dependencies combined (dev dependencies now in [dependency-groups])
+# Note: video-full deps (opencv, easyocr, faster-whisper) excluded due to heavy
+# native dependencies. Install separately: pip install skill-seekers[video-full]
 all = [
     "mammoth>=1.6.0",
     "python-docx>=1.1.0",
+    "yt-dlp>=2024.12.0",
+    "youtube-transcript-api>=1.2.0",
     "mcp>=1.25,<2",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.3",
@@ -201,6 +222,7 @@ skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
 skill-seekers-word = "skill_seekers.cli.word_scraper:main"
+skill-seekers-video = "skill_seekers.cli.video_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
 skill-seekers-enhance = "skill_seekers.cli.enhance_command:main"
 skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"

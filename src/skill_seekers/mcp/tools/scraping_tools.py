@@ -356,6 +356,124 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
 
 
+async def scrape_video_tool(args: dict) -> list[TextContent]:
+    """
+    Scrape video content (YouTube, local files) and build Claude skill.
+
+    Extracts transcripts, metadata, and optionally visual content from videos
+    to create skills.
+
+    Args:
+        args: Dictionary containing:
+            - url (str, optional): Video URL (YouTube, Vimeo)
+            - video_file (str, optional): Local video file path
+            - playlist (str, optional): Playlist URL
+            - name (str, optional): Skill name
+            - description (str, optional): Skill description
+            - languages (str, optional): Language preferences (comma-separated)
+            - from_json (str, optional): Build from extracted JSON file
+            - visual (bool, optional): Enable visual frame extraction (default: False)
+            - whisper_model (str, optional): Whisper model size (default: base)
+            - visual_interval (float, optional): Seconds between frame captures (default: 5.0)
+            - visual_min_gap (float, optional): Minimum seconds between kept frames (default: 2.0)
+            - visual_similarity (float, optional): Similarity threshold to skip duplicate frames (default: 0.95)
+            - vision_ocr (bool, optional): Use vision model for OCR on frames (default: False)
+            - start_time (str, optional): Start time for extraction (seconds, MM:SS, or HH:MM:SS)
+            - end_time (str, optional): End time for extraction (seconds, MM:SS, or HH:MM:SS)
+            - setup (bool, optional): Auto-detect GPU and install visual extraction deps
+
+    Returns:
+        List[TextContent]: Tool execution results
+    """
+    # Handle --setup early exit
+    if args.get("setup", False):
+        from skill_seekers.cli.video_setup import run_setup
+
+        rc = run_setup(interactive=False)
+        msg = "Setup completed successfully." if rc == 0 else "Setup failed. Check logs."
+        return [TextContent(type="text", text=msg)]
+
+    url = args.get("url")
+    video_file = args.get("video_file")
+    playlist = args.get("playlist")
+    name = args.get("name")
+    description = args.get("description")
+    languages = args.get("languages")
+    from_json = args.get("from_json")
+    visual = args.get("visual", False)
+    whisper_model = args.get("whisper_model")
+    visual_interval = args.get("visual_interval")
+    visual_min_gap = args.get("visual_min_gap")
+    visual_similarity = args.get("visual_similarity")
+    vision_ocr = args.get("vision_ocr", False)
+    start_time = args.get("start_time")
+    end_time = args.get("end_time")
+
+    # Build command
+    cmd = [sys.executable, str(CLI_DIR / "video_scraper.py")]
+
+    if from_json:
+        cmd.extend(["--from-json", from_json])
+    elif url:
+        cmd.extend(["--url", url])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+        if languages:
+            cmd.extend(["--languages", languages])
+    elif video_file:
+        cmd.extend(["--video-file", video_file])
+        if name:
+            cmd.extend(["--name", name])
+        if description:
+            cmd.extend(["--description", description])
+    elif playlist:
+        cmd.extend(["--playlist", playlist])
+        if name:
+            cmd.extend(["--name", name])
+    else:
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: Must specify --url, --video-file, --playlist, or --from-json",
+            )
+        ]
+
+    # Visual extraction parameters
+    if visual:
+        cmd.append("--visual")
+    if whisper_model:
+        cmd.extend(["--whisper-model", whisper_model])
+    if visual_interval is not None:
+        cmd.extend(["--visual-interval", str(visual_interval)])
+    if visual_min_gap is not None:
+        cmd.extend(["--visual-min-gap", str(visual_min_gap)])
+    if visual_similarity is not None:
+        cmd.extend(["--visual-similarity", str(visual_similarity)])
+    if vision_ocr:
+        cmd.append("--vision-ocr")
+    if start_time:
+        cmd.extend(["--start-time", str(start_time)])
+    if end_time:
+        cmd.extend(["--end-time", str(end_time)])
+
+    # Run video_scraper.py with streaming
+    timeout = 600  # 10 minutes for video extraction
+
+    progress_msg = "🎬 Scraping video content...\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+
+
 async def scrape_github_tool(args: dict) -> list[TextContent]:
     """
     Scrape GitHub repository and build Claude skill.

@@ -3,20 +3,21 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 25 tools for generating Claude AI skills from documentation.
+Provides 33 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 25 tools organized into 6 categories:
+- 33 tools organized into 7 categories:
   * Config tools (3): generate_config, list_configs, validate_config
-  * Scraping tools (8): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
+  * Scraping tools (10): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_video, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
-  * Source tools (4): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
   * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
+  * Workflow tools (5): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
 
 **Usage:**
   # Stdio transport (default, backward compatible)
@@ -98,6 +99,7 @@ try:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_video_impl,
         # Splitting tools
         split_config_impl,
         submit_config_impl,
@@ -139,6 +141,7 @@ except ImportError:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_video_impl,
         split_config_impl,
         submit_config_impl,
         upload_skill_impl,
@@ -249,7 +252,7 @@ async def validate_config(config_path: str) -> str:
 
 
 # ============================================================================
-# SCRAPING TOOLS (4 tools)
+# SCRAPING TOOLS (10 tools)
 # ============================================================================
 
 
@@ -415,6 +418,95 @@ async def scrape_pdf(
         args["from_json"] = from_json
 
     result = await scrape_pdf_impl(args)
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Extract transcripts and metadata from videos (YouTube, Vimeo, local files) and build Claude skill."
+)
+async def scrape_video(
+    url: str | None = None,
+    video_file: str | None = None,
+    playlist: str | None = None,
+    name: str | None = None,
+    description: str | None = None,
+    languages: str | None = None,
+    from_json: str | None = None,
+    visual: bool = False,
+    whisper_model: str | None = None,
+    visual_interval: float | None = None,
+    visual_min_gap: float | None = None,
+    visual_similarity: float | None = None,
+    vision_ocr: bool = False,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    setup: bool = False,
+) -> str:
+    """
+    Scrape video content and build Claude skill.
+
+    Args:
+        url: Video URL (YouTube, Vimeo)
+        video_file: Local video file path
+        playlist: Playlist URL
+        name: Skill name
+        description: Skill description
+        languages: Transcript language preferences (comma-separated)
+        from_json: Build from extracted JSON file
+        visual: Enable visual frame extraction (requires video-full extras)
+        whisper_model: Whisper model size for local transcription (e.g., base, small, medium, large)
+        visual_interval: Seconds between frame captures (default: 5.0)
+        visual_min_gap: Minimum seconds between kept frames (default: 2.0)
+        visual_similarity: Similarity threshold to skip duplicate frames 0.0-1.0 (default: 0.95)
+        vision_ocr: Use vision model for OCR on extracted frames
+        start_time: Start time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
+        end_time: End time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
+        setup: Auto-detect GPU and install visual extraction deps (PyTorch, easyocr, etc.)
+
+    Returns:
+        Video scraping results with file paths.
+    """
+    if setup:
+        from skill_seekers.cli.video_setup import run_setup
+
+        rc = run_setup(interactive=False)
+        return "Setup completed successfully." if rc == 0 else "Setup failed. Check logs."
+
+    args = {}
+    if url:
+        args["url"] = url
+    if video_file:
+        args["video_file"] = video_file
+    if playlist:
+        args["playlist"] = playlist
+    if name:
+        args["name"] = name
+    if description:
+        args["description"] = description
+    if languages:
+        args["languages"] = languages
+    if from_json:
+        args["from_json"] = from_json
+    if start_time:
+        args["start_time"] = start_time
+    if end_time:
+        args["end_time"] = end_time
+    if visual:
+        args["visual"] = visual
+    if whisper_model:
+        args["whisper_model"] = whisper_model
+    if visual_interval is not None:
+        args["visual_interval"] = visual_interval
+    if visual_min_gap is not None:
+        args["visual_min_gap"] = visual_min_gap
+    if visual_similarity is not None:
+        args["visual_similarity"] = visual_similarity
+    if vision_ocr:
+        args["vision_ocr"] = vision_ocr
+
+    result = await scrape_video_impl(args)
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)

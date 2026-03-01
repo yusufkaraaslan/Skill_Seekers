@@ -74,11 +74,19 @@ class UnifiedScraper:
             "github": [],  # List of github sources
             "pdf": [],  # List of pdf sources
             "word": [],  # List of word sources
+            "video": [],  # List of video sources
             "local": [],  # List of local sources (docs or code)
         }
 
         # Track source index for unique naming (multi-source support)
-        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "word": 0, "local": 0}
+        self._source_counters = {
+            "documentation": 0,
+            "github": 0,
+            "pdf": 0,
+            "word": 0,
+            "video": 0,
+            "local": 0,
+        }
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
@@ -154,6 +162,8 @@ class UnifiedScraper:
                     self._scrape_pdf(source)
                 elif source_type == "word":
                     self._scrape_word(source)
+                elif source_type == "video":
+                    self._scrape_video(source)
                 elif source_type == "local":
                     self._scrape_local(source)
                 else:
@@ -575,6 +585,66 @@ class UnifiedScraper:
             logger.warning(f"⚠️  Failed to build standalone Word SKILL.md: {e}")
 
         logger.info(f"✅ Word: {len(word_data.get('pages', []))} sections extracted")
+
+    def _scrape_video(self, source: dict[str, Any]):
+        """Scrape video source (YouTube, local file, etc.)."""
+        try:
+            from skill_seekers.cli.video_scraper import VideoToSkillConverter
+        except ImportError as e:
+            logger.error(
+                f"Video scraper dependencies not installed: {e}\n"
+                "  Install with: pip install skill-seekers[video]\n"
+                "  For visual extraction (frame analysis, OCR): pip install skill-seekers[video-full]"
+            )
+            return
+
+        # Multi-source support: Get unique index for this video source
+        idx = self._source_counters["video"]
+        self._source_counters["video"] += 1
+
+        # Determine video identifier
+        video_url = source.get("url", "")
+        video_id = video_url or source.get("path", f"video_{idx}")
+
+        # Create config for video scraper
+        video_config = {
+            "name": f"{self.name}_video_{idx}",
+            "url": source.get("url"),
+            "video_file": source.get("path"),
+            "playlist": source.get("playlist"),
+            "description": source.get("description", ""),
+            "languages": ",".join(source.get("languages", ["en"])),
+            "visual": source.get("visual_extraction", False),
+            "whisper_model": source.get("whisper_model", "base"),
+        }
+
+        # Process video
+        logger.info(f"Scraping video: {video_id}")
+        converter = VideoToSkillConverter(video_config)
+
+        try:
+            result = converter.process()
+            converter.save_extracted_data()
+
+            # Append to list
+            self.scraped_data["video"].append(
+                {
+                    "video_id": video_id,
+                    "idx": idx,
+                    "data": result.to_dict(),
+                    "data_file": converter.data_file,
+                }
+            )
+
+            # Build standalone SKILL.md for synthesis
+            converter.build_skill()
+            logger.info("✅ Video: Standalone SKILL.md created")
+
+            logger.info(
+                f"✅ Video: {len(result.videos)} videos, {result.total_segments} segments extracted"
+            )
+        except Exception as e:
+            logger.error(f"Failed to process video source: {e}")
 
     def _scrape_local(self, source: dict[str, Any]):
         """

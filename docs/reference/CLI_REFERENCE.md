@@ -32,6 +32,7 @@
   - [unified](#unified) - Multi-source scraping
   - [update](#update) - Incremental updates
   - [upload](#upload) - Upload to platform
+  - [video](#video) - Video extraction & setup
   - [workflows](#workflows) - Manage workflow presets
 - [Common Workflows](#common-workflows)
 - [Exit Codes](#exit-codes)
@@ -1032,6 +1033,44 @@ skill-seekers upload output/react-chroma.zip --target chroma
 skill-seekers upload output/react-weaviate.zip --target weaviate \
   --use-cloud --cluster-url https://xxx.weaviate.network
 ```
+
+---
+
+### video
+
+Extract skills from video tutorials (YouTube, Vimeo, or local files).
+
+### Usage
+
+```bash
+# Setup (first time — auto-detects GPU, installs PyTorch + visual deps)
+skill-seekers video --setup
+
+# Extract from YouTube
+skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID --name my-skill
+
+# With visual frame extraction (requires --setup first)
+skill-seekers video --url VIDEO_URL --name my-skill --visual
+
+# Local video file
+skill-seekers video --url /path/to/video.mp4 --name my-skill
+```
+
+### Key Flags
+
+| Flag | Description |
+|------|-------------|
+| `--setup` | Auto-detect GPU and install visual extraction dependencies |
+| `--url URL` | Video URL (YouTube, Vimeo) or local file path |
+| `--name NAME` | Skill name for output |
+| `--visual` | Enable visual frame extraction (OCR on keyframes) |
+| `--vision-api` | Use Claude Vision API as OCR fallback for low-confidence frames |
+
+### Notes
+
+- `--setup` detects NVIDIA (CUDA), AMD (ROCm), or CPU-only and installs the correct PyTorch variant
+- Requires `pip install skill-seekers[video]` (transcripts) or `skill-seekers[video-full]` (+ whisper + scene detection)
+- EasyOCR is NOT included in pip extras — it is installed by `--setup` with the correct GPU backend
 
 ---
 

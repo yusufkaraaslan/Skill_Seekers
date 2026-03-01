@@ -63,6 +63,9 @@ from .scraping_tools import (
 from .scraping_tools import (
     scrape_pdf_tool as scrape_pdf_impl,
 )
+from .scraping_tools import (
+    scrape_video_tool as scrape_video_impl,
+)
 from .source_tools import (
     add_config_source_tool as add_config_source_impl,
 )
@@ -123,6 +126,7 @@ __all__ = [
     "scrape_docs_impl",
     "scrape_github_impl",
     "scrape_pdf_impl",
+    "scrape_video_impl",
     "scrape_codebase_impl",
     "detect_patterns_impl",
     "extract_test_examples_impl",

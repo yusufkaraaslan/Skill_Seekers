@@ -1,12 +1,12 @@
 # AGENTS.md - Skill Seekers
 
-This file provides essential guidance for AI coding agents working with the Skill Seekers codebase.
+Essential guidance for AI coding agents working with the Skill Seekers codebase.
 
 ---
 
 ## Project Overview
 
-**Skill Seekers** is a Python CLI tool that converts documentation websites, GitHub repositories, and PDF files into AI-ready skills for LLM platforms and RAG (Retrieval-Augmented Generation) pipelines. It serves as the universal preprocessing layer for AI systems.
+**Skill Seekers** is a Python CLI tool that converts documentation websites, GitHub repositories, PDF files, and videos into AI-ready skills for LLM platforms and RAG (Retrieval-Augmented Generation) pipelines. It serves as the universal preprocessing layer for AI systems.
 
 ### Key Facts
 
@@ -16,8 +16,8 @@ This file provides essential guidance for AI coding agents working with the Skil
 | **Python Version** | 3.10+ (tested on 3.10, 3.11, 3.12, 3.13) |
 | **License** | MIT |
 | **Package Name** | `skill-seekers` (PyPI) |
-| **Source Files** | 169 Python files |
-| **Test Files** | 101 test files |
+| **Source Files** | 182 Python files |
+| **Test Files** | 105+ test files |
 | **Website** | https://skillseekersweb.com/ |
 | **Repository** | https://github.com/yusufkaraaslan/Skill_Seekers |
 
@@ -44,7 +44,7 @@ This file provides essential guidance for AI coding agents working with the Skil
 
 ### Core Workflow
 
-1. **Scrape Phase** - Crawl documentation/GitHub/PDF sources
+1. **Scrape Phase** - Crawl documentation/GitHub/PDF/video sources
 2. **Build Phase** - Organize content into categorized references
 3. **Enhancement Phase** - AI-powered quality improvements (optional)
 4. **Package Phase** - Create platform-specific packages
@@ -73,12 +73,18 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   │   ├── weaviate.py         # Weaviate vector DB adaptor
 │   │   │   └── streaming_adaptor.py # Streaming output adaptor
 │   │   ├── arguments/              # CLI argument definitions
+│   │   ├── parsers/                # Argument parsers
+│   │   │   └── extractors/         # Content extractors
 │   │   ├── presets/                # Preset configuration management
+│   │   ├── storage/                # Cloud storage adaptors
 │   │   ├── main.py                 # Unified CLI entry point
 │   │   ├── create_command.py       # Unified create command
 │   │   ├── doc_scraper.py          # Documentation scraper
 │   │   ├── github_scraper.py       # GitHub repository scraper
 │   │   ├── pdf_scraper.py          # PDF extraction
+│   │   ├── word_scraper.py         # Word document scraper
+│   │   ├── video_scraper.py        # Video extraction
+│   │   ├── video_setup.py          # GPU detection & dependency installation
 │   │   ├── unified_scraper.py      # Multi-source scraping
 │   │   ├── codebase_scraper.py     # Local codebase analysis
 │   │   ├── enhance_command.py      # AI enhancement command
@@ -118,10 +124,10 @@ This file provides essential guidance for AI coding agents working with the Skil
 │   │   ├── generator.py            # Embedding generation
 │   │   ├── cache.py                # Embedding cache
 │   │   └── models.py               # Embedding models
-│   ├── workflows/                  # YAML workflow presets
+│   ├── workflows/                  # YAML workflow presets (66 presets)
 │   ├── _version.py                 # Version information (reads from pyproject.toml)
 │   └── __init__.py                 # Package init
-├── tests/                          # Test suite (101 test files)
+├── tests/                          # Test suite (105+ test files)
 ├── configs/                        # Preset configuration files
 ├── docs/                           # Documentation (80+ markdown files)
 │   ├── integrations/               # Platform integration guides
@@ -245,9 +251,8 @@ pytest tests/ -v -m "not slow and not integration"
 
 ### Test Architecture
 
-- **101 test files** covering all features
-- **1880+ tests** passing
-- CI Matrix: Ubuntu + macOS, Python 3.10-3.12
+- **105+ test files** covering all features
+- **CI Matrix:** Ubuntu + macOS, Python 3.10-3.12
 - Test markers defined in `pyproject.toml`:
 
 | Marker | Description |
@@ -376,6 +381,8 @@ The CLI uses subcommands that delegate to existing modules:
 - `scrape` - Documentation scraping
 - `github` - GitHub repository scraping
 - `pdf` - PDF extraction
+- `word` - Word document extraction
+- `video` - Video extraction (YouTube or local). Use `--setup` to auto-detect GPU and install visual deps.
 - `unified` - Multi-source scraping
 - `analyze` / `codebase` - Local codebase analysis
 - `enhance` - AI enhancement
@@ -402,7 +409,7 @@ Two implementations:
 
 Tools are organized by category:
 - Config tools (3 tools): generate_config, list_configs, validate_config
-- Scraping tools (9 tools): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
+- Scraping tools (10 tools): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_video (supports `setup` parameter for GPU detection and visual dep installation), scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
 - Packaging tools (4 tools): package_skill, upload_skill, enhance_skill, install_skill
 - Source tools (5 tools): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
 - Splitting tools (2 tools): split_config, generate_router
@@ -619,7 +626,7 @@ export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
 
 **Reference (technical details):**
 - `docs/reference/CLI_REFERENCE.md` - Complete command reference (20 commands)
-- `docs/reference/MCP_REFERENCE.md` - MCP tools reference (26 tools)
+- `docs/reference/MCP_REFERENCE.md` - MCP tools reference (33 tools)
 - `docs/reference/CONFIG_FORMAT.md` - JSON configuration specification
 - `docs/reference/ENVIRONMENT_VARIABLES.md` - All environment variables
 
@@ -629,20 +636,16 @@ export ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
 - `docs/advanced/custom-workflows.md` - Creating custom workflows
 - `docs/advanced/multi-source.md` - Multi-source scraping
 
-**Legacy (being phased out):**
-- `QUICKSTART.md` - Old quick start (see docs/getting-started/)
-- `docs/guides/USAGE.md` - Old usage guide (see docs/user-guide/)
-- `docs/QUICK_REFERENCE.md` - Old reference (see docs/reference/)
-
 ### Configuration Documentation
 
 Preset configs are in `configs/` directory:
-- `godot.json` - Godot Engine
+- `godot.json` / `godot_unified.json` - Godot Engine
 - `blender.json` / `blender-unified.json` - Blender Engine
 - `claude-code.json` - Claude Code
 - `httpx_comprehensive.json` - HTTPX library
 - `medusa-mercurjs.json` - Medusa/MercurJS
 - `astrovalley_unified.json` - Astrovalley
+- `react.json` - React documentation
 - `configs/integrations/` - Integration-specific configs
 
 ---
@@ -685,8 +688,13 @@ Preset configs are in `configs/` directory:
 | AWS S3 | `boto3>=1.34.0` | `pip install -e ".[s3]"` |
 | Google Cloud Storage | `google-cloud-storage>=2.10.0` | `pip install -e ".[gcs]"` |
 | Azure Blob Storage | `azure-storage-blob>=12.19.0` | `pip install -e ".[azure]"` |
+| Word Documents | `mammoth>=1.6.0`, `python-docx>=1.1.0` | `pip install -e ".[docx]"` |
+| Video (lightweight) | `yt-dlp>=2024.12.0`, `youtube-transcript-api>=1.2.0` | `pip install -e ".[video]"` |
+| Video (full) | +`faster-whisper`, `scenedetect`, `opencv-python-headless` (`easyocr` now installed via `--setup`) | `pip install -e ".[video-full]"` |
+| Video (GPU setup) | Auto-detects GPU, installs PyTorch + easyocr + all visual deps | `skill-seekers video --setup` |
 | Chroma DB | `chromadb>=0.4.0` | `pip install -e ".[chroma]"` |
 | Weaviate | `weaviate-client>=3.25.0` | `pip install -e ".[weaviate]"` |
+| Pinecone | `pinecone>=5.0.0` | `pip install -e ".[pinecone]"` |
 | Embedding Server | `fastapi>=0.109.0`, `uvicorn>=0.27.0`, `sentence-transformers>=2.3.0` | `pip install -e ".[embedding]"` |
 
 ### Dev Dependencies (in dependency-groups)
@@ -702,6 +710,7 @@ Preset configs are in `configs/` directory:
 | `psutil` | >=5.9.0 | Process utilities for testing |
 | `numpy` | >=1.24.0 | Numerical operations |
 | `starlette` | >=0.31.0 | HTTP transport testing |
+| `httpx` | >=0.24.0 | HTTP client for testing |
 | `boto3` | >=1.26.0 | AWS S3 testing |
 | `google-cloud-storage` | >=2.10.0 | GCS testing |
 | `azure-storage-blob` | >=12.17.0 | Azure testing |
@@ -824,6 +833,34 @@ Skill Seekers uses JSON configuration files to define scraping targets. Example 
 
 ---
 
+## Workflow Presets
+
+Skill Seekers includes 66 YAML workflow presets for AI enhancement in `src/skill_seekers/workflows/`:
+
+**Built-in presets:**
+- `default.yaml` - Standard enhancement workflow
+- `minimal.yaml` - Fast, minimal enhancement
+- `security-focus.yaml` - Security-focused review
+- `architecture-comprehensive.yaml` - Deep architecture analysis
+- `api-documentation.yaml` - API documentation focus
+- And 61 more specialized presets...
+
+**Usage:**
+```bash
+# Apply a preset
+skill-seekers create ./my-project --enhance-workflow security-focus
+
+# Chain multiple presets
+skill-seekers create ./my-project --enhance-workflow security-focus --enhance-workflow minimal
+
+# Manage presets
+skill-seekers workflows list
+skill-seekers workflows show security-focus
+skill-seekers workflows copy security-focus
+```
+
+---
+
 *This document is maintained for AI coding agents. For human contributors, see README.md and CONTRIBUTING.md.*
 
-*Last updated: 2026-02-24*
+*Last updated: 2026-03-01*

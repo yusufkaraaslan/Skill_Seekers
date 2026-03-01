@@ -124,9 +124,13 @@ pip install skill-seekers[dev]
 | `gcs` | Google Cloud Storage | `pip install skill-seekers[gcs]` |
 | `azure` | Azure Blob Storage | `pip install skill-seekers[azure]` |
 | `embedding` | Embedding server | `pip install skill-seekers[embedding]` |
+| `video` | YouTube/video transcript extraction | `pip install skill-seekers[video]` |
+| `video-full` | + Whisper transcription, scene detection | `pip install skill-seekers[video-full]` |
 | `all-llms` | All LLM platforms | `pip install skill-seekers[all-llms]` |
 | `all` | Everything | `pip install skill-seekers[all]` |
 | `dev` | Development tools | `pip install skill-seekers[dev]` |
+
+> **Video visual deps:** After installing `skill-seekers[video-full]`, run `skill-seekers video --setup` to auto-detect your GPU (NVIDIA/AMD/CPU) and install the correct PyTorch variant + easyocr.
 
 ---
 

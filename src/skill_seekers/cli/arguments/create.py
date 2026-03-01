@@ -410,6 +410,111 @@ WORD_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Video specific (from video.py)
+VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "video_url": {
+        "flags": ("--video-url",),
+        "kwargs": {
+            "type": str,
+            "help": "Video URL (YouTube, Vimeo)",
+            "metavar": "URL",
+        },
+    },
+    "video_file": {
+        "flags": ("--video-file",),
+        "kwargs": {
+            "type": str,
+            "help": "Local video file path",
+            "metavar": "PATH",
+        },
+    },
+    "video_playlist": {
+        "flags": ("--video-playlist",),
+        "kwargs": {
+            "type": str,
+            "help": "Playlist URL",
+            "metavar": "URL",
+        },
+    },
+    "video_languages": {
+        "flags": ("--video-languages",),
+        "kwargs": {
+            "type": str,
+            "default": "en",
+            "help": "Transcript language preference (comma-separated)",
+            "metavar": "LANGS",
+        },
+    },
+    "visual": {
+        "flags": ("--visual",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Enable visual extraction (requires video-full deps)",
+        },
+    },
+    "whisper_model": {
+        "flags": ("--whisper-model",),
+        "kwargs": {
+            "type": str,
+            "default": "base",
+            "help": "Whisper model size (default: base)",
+            "metavar": "MODEL",
+        },
+    },
+    "visual_interval": {
+        "flags": ("--visual-interval",),
+        "kwargs": {
+            "type": float,
+            "default": 0.7,
+            "help": "Visual scan interval in seconds (default: 0.7)",
+            "metavar": "SECS",
+        },
+    },
+    "visual_min_gap": {
+        "flags": ("--visual-min-gap",),
+        "kwargs": {
+            "type": float,
+            "default": 0.5,
+            "help": "Min gap between extracted frames in seconds (default: 0.5)",
+            "metavar": "SECS",
+        },
+    },
+    "visual_similarity": {
+        "flags": ("--visual-similarity",),
+        "kwargs": {
+            "type": float,
+            "default": 3.0,
+            "help": "Pixel-diff threshold for duplicate detection; lower = more frames (default: 3.0)",
+            "metavar": "THRESH",
+        },
+    },
+    "vision_ocr": {
+        "flags": ("--vision-ocr",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Use Claude Vision API as fallback for low-confidence code frames (requires ANTHROPIC_API_KEY, ~$0.004/frame)",
+        },
+    },
+    "start_time": {
+        "flags": ("--start-time",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "metavar": "TIME",
+            "help": "Start time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.",
+        },
+    },
+    "end_time": {
+        "flags": ("--end-time",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "metavar": "TIME",
+            "help": "End time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.",
+        },
+    },
+}
+
 # Multi-source config specific (from unified_scraper.py)
 CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
     "merge_mode": {
@@ -493,6 +598,7 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         "local": LOCAL_ARGUMENTS,
         "pdf": PDF_ARGUMENTS,
         "word": WORD_ARGUMENTS,
+        "video": VIDEO_ARGUMENTS,
         "config": CONFIG_ARGUMENTS,
     }
     return source_args.get(source_type, {})
@@ -530,6 +636,7 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
     - 'local': Universal + local-specific
     - 'pdf': Universal + pdf-specific
     - 'word': Universal + word-specific
+    - 'video': Universal + video-specific
     - 'advanced': Advanced/rare arguments
     - 'all': All 120+ arguments
 
@@ -568,6 +675,10 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
 
     if mode in ["word", "all"]:
         for arg_name, arg_def in WORD_ARGUMENTS.items():
+            parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    if mode in ["video", "all"]:
+        for arg_name, arg_def in VIDEO_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     if mode in ["config", "all"]:

@@ -59,6 +59,24 @@ Each platform has a dedicated adaptor for optimal formatting and upload.
 
 **Recommendation:** Use LOCAL mode for free AI enhancement or skip enhancement entirely.
 
+### How do I set up video extraction?
+
+**Quick setup:**
+```bash
+# 1. Install video support
+pip install skill-seekers[video-full]
+
+# 2. Auto-detect GPU and install visual deps
+skill-seekers video --setup
+```
+
+The `--setup` command auto-detects your GPU vendor (NVIDIA CUDA, AMD ROCm, or CPU-only) and installs the correct PyTorch variant along with easyocr and other visual extraction dependencies. This avoids the ~2GB NVIDIA CUDA download that would happen if easyocr were installed via pip on non-NVIDIA systems.
+
+**What it detects:**
+- **NVIDIA:** Uses `nvidia-smi` to find CUDA version → installs matching `cu124`/`cu121`/`cu118` PyTorch
+- **AMD:** Uses `rocminfo` to find ROCm version → installs matching ROCm PyTorch
+- **CPU-only:** Installs lightweight CPU-only PyTorch
+
 ### How long does it take to create a skill?
 
 **Typical Times:**

@@ -27,7 +27,7 @@ class ConfigValidator:
     """
 
     # Valid source types
-    VALID_SOURCE_TYPES = {"documentation", "github", "pdf", "local"}
+    VALID_SOURCE_TYPES = {"documentation", "github", "pdf", "local", "word", "video"}
 
     # Valid merge modes
     VALID_MERGE_MODES = {"rule-based", "claude-enhanced"}

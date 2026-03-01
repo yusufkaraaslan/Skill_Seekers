@@ -92,6 +92,11 @@ skill-seekers create ./my-project
 
 # PDF document
 skill-seekers create manual.pdf
+
+# Video (YouTube, Vimeo, or local file — requires skill-seekers[video])
+skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+# First time? Auto-install GPU-aware visual deps:
+skill-seekers video --setup
 ```
 
 ### Export Everywhere
@@ -593,7 +598,13 @@ skill-seekers-setup
 | `pip install skill-seekers[openai]` | + OpenAI ChatGPT support |
 | `pip install skill-seekers[all-llms]` | + All LLM platforms |
 | `pip install skill-seekers[mcp]` | + MCP server for Claude Code, Cursor, etc. |
+| `pip install skill-seekers[video]` | + YouTube/Vimeo transcript & metadata extraction |
+| `pip install skill-seekers[video-full]` | + Whisper transcription & visual frame extraction |
 | `pip install skill-seekers[all]` | Everything enabled |
+
+> **Video visual deps (GPU-aware):** After installing `skill-seekers[video-full]`, run
+> `skill-seekers video --setup` to auto-detect your GPU and install the correct PyTorch
+> variant + easyocr. This is the recommended way to install visual extraction dependencies.
 
 ---
 
@@ -681,6 +692,29 @@ skill-seekers pdf --pdf docs/manual.pdf --name myskill \
 
 # Scanned PDFs (requires: pip install pytesseract Pillow)
 skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+```
+
+### Video Extraction
+
+```bash
+# Install video support
+pip install skill-seekers[video]        # Transcripts + metadata
+pip install skill-seekers[video-full]   # + Whisper + visual frame extraction
+
+# Auto-detect GPU and install visual deps (PyTorch + easyocr)
+skill-seekers video --setup
+
+# Extract from YouTube video
+skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+
+# Extract from a YouTube playlist
+skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+
+# Extract from a local video file
+skill-seekers video --video-file recording.mp4 --name myrecording
+
+# Extract with visual frame analysis (requires video-full deps)
+skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
 ```
 
 ### GitHub Repository Analysis
