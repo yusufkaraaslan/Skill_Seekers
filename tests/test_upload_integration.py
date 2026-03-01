@@ -151,6 +151,45 @@ class TestWeaviateUploadBasics:
         assert hasattr(adaptor, "_generate_openai_embeddings")
 
 
+class TestEmbeddingMethodInheritance:
+    """Test that shared embedding methods are properly inherited from base."""
+
+    def test_chroma_inherits_openai_embeddings(self):
+        """Test chroma adaptor gets _generate_openai_embeddings from base."""
+        adaptor = get_adaptor("chroma")
+        assert hasattr(adaptor, "_generate_openai_embeddings")
+        # Verify it's the base class method, not a local override
+        from skill_seekers.cli.adaptors.base import SkillAdaptor
+
+        assert (
+            adaptor._generate_openai_embeddings.__func__ is SkillAdaptor._generate_openai_embeddings
+        )
+
+    def test_weaviate_inherits_both_embedding_methods(self):
+        """Test weaviate adaptor gets both embedding methods from base."""
+        adaptor = get_adaptor("weaviate")
+        assert hasattr(adaptor, "_generate_openai_embeddings")
+        assert hasattr(adaptor, "_generate_st_embeddings")
+        from skill_seekers.cli.adaptors.base import SkillAdaptor
+
+        assert (
+            adaptor._generate_openai_embeddings.__func__ is SkillAdaptor._generate_openai_embeddings
+        )
+        assert adaptor._generate_st_embeddings.__func__ is SkillAdaptor._generate_st_embeddings
+
+    def test_pinecone_inherits_both_embedding_methods(self):
+        """Test pinecone adaptor gets both embedding methods from base."""
+        adaptor = get_adaptor("pinecone")
+        assert hasattr(adaptor, "_generate_openai_embeddings")
+        assert hasattr(adaptor, "_generate_st_embeddings")
+        from skill_seekers.cli.adaptors.base import SkillAdaptor
+
+        assert (
+            adaptor._generate_openai_embeddings.__func__ is SkillAdaptor._generate_openai_embeddings
+        )
+        assert adaptor._generate_st_embeddings.__func__ is SkillAdaptor._generate_st_embeddings
+
+
 class TestPackageStructure:
     """Test that packages are correctly structured for upload."""
 

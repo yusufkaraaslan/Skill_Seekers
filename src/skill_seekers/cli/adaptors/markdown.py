@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
 class MarkdownAdaptor(SkillAdaptor):
@@ -86,8 +87,9 @@ Browse the reference files for detailed information on each topic. All files are
         skill_dir: Path,
         output_path: Path,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
         Package skill into ZIP file with markdown documentation.

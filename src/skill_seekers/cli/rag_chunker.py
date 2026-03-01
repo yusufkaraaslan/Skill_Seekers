@@ -14,6 +14,8 @@ Usage:
     chunks = chunker.chunk_skill(Path("output/react"))
 """
 
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+
 import re
 from pathlib import Path
 import json
@@ -35,8 +37,8 @@ class RAGChunker:
 
     def __init__(
         self,
-        chunk_size: int = 512,
-        chunk_overlap: int = 50,
+        chunk_size: int = DEFAULT_CHUNK_TOKENS,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
         preserve_code_blocks: bool = True,
         preserve_paragraphs: bool = True,
         min_chunk_size: int = 100,
@@ -383,9 +385,14 @@ def main():
     )
     parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
-    parser.add_argument("--chunk-tokens", type=int, default=512, help="Target chunk size in tokens")
     parser.add_argument(
-        "--chunk-overlap-tokens", type=int, default=50, help="Overlap size in tokens"
+        "--chunk-tokens", type=int, default=DEFAULT_CHUNK_TOKENS, help="Target chunk size in tokens"
+    )
+    parser.add_argument(
+        "--chunk-overlap-tokens",
+        type=int,
+        default=DEFAULT_CHUNK_OVERLAP_TOKENS,
+        help="Overlap size in tokens",
     )
     parser.add_argument("--no-code-blocks", action="store_true", help="Don't preserve code blocks")
     parser.add_argument("--no-paragraphs", action="store_true", help="Don't preserve paragraphs")

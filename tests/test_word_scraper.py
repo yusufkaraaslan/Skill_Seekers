@@ -16,6 +16,7 @@ Tests cover:
 """
 
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -30,8 +31,9 @@ except ImportError:
     WORD_AVAILABLE = False
 
 
-def _make_sample_extracted_data(num_sections=2, include_code=False, include_tables=False,
-                                include_images=False):
+def _make_sample_extracted_data(
+    num_sections=2, include_code=False, include_tables=False, include_images=False
+):
     """Helper to build a minimal extracted_data dict for testing."""
     mock_image_bytes = (
         b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
@@ -53,23 +55,29 @@ def _make_sample_extracted_data(num_sections=2, include_code=False, include_tabl
         }
         if include_code:
             section["code_samples"] = [
-                {"code": f"def hello_{i}():\n    return 'world'", "language": "python",
-                 "quality_score": 7.5}
+                {
+                    "code": f"def hello_{i}():\n    return 'world'",
+                    "language": "python",
+                    "quality_score": 7.5,
+                }
             ]
         if include_tables:
             section["tables"] = [
                 {"headers": ["Col A", "Col B"], "rows": [["val1", "val2"], ["val3", "val4"]]}
             ]
         if include_images:
-            section["images"] = [
-                {"index": 0, "data": mock_image_bytes, "width": 100, "height": 80}
-            ]
+            section["images"] = [{"index": 0, "data": mock_image_bytes, "width": 100, "height": 80}]
         pages.append(section)
 
     return {
         "source_file": "test.docx",
-        "metadata": {"title": "Test Doc", "author": "Test Author", "created": "", "modified": "",
-                     "subject": ""},
+        "metadata": {
+            "title": "Test Doc",
+            "author": "Test Author",
+            "created": "",
+            "modified": "",
+            "subject": "",
+        },
         "total_sections": num_sections,
         "total_code_blocks": num_sections if include_code else 0,
         "total_images": num_sections if include_images else 0,
@@ -85,6 +93,7 @@ class TestWordToSkillConverterInit(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -130,6 +139,7 @@ class TestWordToSkillConverterInit(unittest.TestCase):
     def test_name_auto_detected_from_filename(self):
         """Test name can be extracted from filename via infer_description_from_word."""
         from skill_seekers.cli.word_scraper import infer_description_from_word
+
         desc = infer_description_from_word({}, name="my_doc")
         self.assertIn("my_doc", desc)
 
@@ -141,6 +151,7 @@ class TestWordCategorization(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -174,10 +185,22 @@ class TestWordCategorization(unittest.TestCase):
         converter.docx_path = ""
         converter.extracted_data = {
             "pages": [
-                {"section_number": 1, "heading": "API Reference", "text": "api reference docs",
-                 "code_samples": [], "tables": [], "images": []},
-                {"section_number": 2, "heading": "Getting Started", "text": "getting started guide",
-                 "code_samples": [], "tables": [], "images": []},
+                {
+                    "section_number": 1,
+                    "heading": "API Reference",
+                    "text": "api reference docs",
+                    "code_samples": [],
+                    "tables": [],
+                    "images": [],
+                },
+                {
+                    "section_number": 2,
+                    "heading": "Getting Started",
+                    "text": "getting started guide",
+                    "code_samples": [],
+                    "tables": [],
+                    "images": [],
+                },
             ]
         }
 
@@ -204,6 +227,7 @@ class TestWordSkillBuilding(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -296,6 +320,7 @@ class TestWordCodeBlocks(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -350,6 +375,7 @@ class TestWordTables(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -392,6 +418,7 @@ class TestWordImages(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -433,6 +460,7 @@ class TestWordErrorHandling(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 
@@ -456,6 +484,37 @@ class TestWordErrorHandling(unittest.TestCase):
         with self.assertRaises((KeyError, TypeError)):
             self.WordToSkillConverter({"docx_path": "test.docx"})
 
+    def test_non_docx_file_raises_value_error(self):
+        """extract_docx raises ValueError for non-.docx files."""
+        # Create a real file with wrong extension
+        txt_path = os.path.join(self.temp_dir, "test.txt")
+        with open(txt_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": txt_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
+
+    def test_doc_file_raises_value_error(self):
+        """extract_docx raises ValueError for .doc (old Word format)."""
+        doc_path = os.path.join(self.temp_dir, "test.doc")
+        with open(doc_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": doc_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
+
+    def test_no_extension_file_raises_value_error(self):
+        """extract_docx raises ValueError for file with no extension."""
+        no_ext_path = os.path.join(self.temp_dir, "document")
+        with open(no_ext_path, "w") as f:
+            f.write("not a docx")
+        config = {"name": "test", "docx_path": no_ext_path}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises(ValueError):
+            converter.extract_docx()
+
 
 class TestWordJSONWorkflow(unittest.TestCase):
     """Test building skills from extracted JSON."""
@@ -464,6 +523,7 @@ class TestWordJSONWorkflow(unittest.TestCase):
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         from skill_seekers.cli.word_scraper import WordToSkillConverter
+
         self.WordToSkillConverter = WordToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
 

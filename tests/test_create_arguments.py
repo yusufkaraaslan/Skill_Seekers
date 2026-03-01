@@ -25,8 +25,8 @@ class TestUniversalArguments:
     """Test universal argument definitions."""
 
     def test_universal_count(self):
-        """Should have exactly 18 universal arguments (after Phase 2 workflow integration + local_repo_path)."""
-        assert len(UNIVERSAL_ARGUMENTS) == 18
+        """Should have exactly 19 universal arguments (after Phase 2 workflow integration + local_repo_path + doc_version)."""
+        assert len(UNIVERSAL_ARGUMENTS) == 19
 
     def test_universal_argument_names(self):
         """Universal arguments should have expected names."""
@@ -50,6 +50,7 @@ class TestUniversalArguments:
             "var",
             "workflow_dry_run",
             "local_repo_path",  # GitHub local clone path for unlimited C3.x analysis
+            "doc_version",  # Documentation version tag for RAG metadata
         }
         assert set(UNIVERSAL_ARGUMENTS.keys()) == expected_names
 
@@ -130,7 +131,9 @@ class TestArgumentHelpers:
         """Should return set of universal argument names."""
         names = get_universal_argument_names()
         assert isinstance(names, set)
-        assert len(names) == 18  # Phase 2: added 4 workflow arguments + local_repo_path
+        assert (
+            len(names) == 19
+        )  # Phase 2: added 4 workflow arguments + local_repo_path + doc_version
         assert "name" in names
         assert "enhance_level" in names  # Phase 1: consolidated flag
         assert "enhance_workflow" in names  # Phase 2: workflow support

@@ -325,8 +325,8 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
     if getattr(args, "enhance_stage", None):
         for stage in args.enhance_stage:
             sys.argv.extend(["--enhance-stage", stage])
-    if getattr(args, "workflow_var", None):
-        for var in args.workflow_var:
+    if getattr(args, "var", None):
+        for var in args.var:
             sys.argv.extend(["--var", var])
     if getattr(args, "workflow_dry_run", False):
         sys.argv.append("--workflow-dry-run")

@@ -1565,9 +1565,11 @@ class DocToSkillConverter:
             if len(example_codes) >= 10:
                 break
 
+        doc_version = self.config.get("doc_version", "")
         content = f"""---
 name: {self.name}
 description: {description}
+doc_version: {doc_version}
 ---
 
 # {self.name.title()} Skill
@@ -2102,6 +2104,11 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             "rate_limit": DEFAULT_RATE_LIMIT,
             "max_pages": DEFAULT_MAX_PAGES,
         }
+
+    # Apply CLI override for doc_version (works for all config modes)
+    cli_doc_version = getattr(args, "doc_version", "")
+    if cli_doc_version:
+        config["doc_version"] = cli_doc_version
 
     # Apply CLI overrides for rate limiting
     if args.no_rate_limit:

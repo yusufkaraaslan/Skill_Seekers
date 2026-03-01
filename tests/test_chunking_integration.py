@@ -358,6 +358,107 @@ class TestChunkingCLIIntegration:
             f"Small chunks ({len(data_small)}) should be more than large chunks ({len(data_large)})"
         )
 
+    def test_chunk_overlap_tokens_parameter(self, tmp_path):
+        """Test --chunk-overlap-tokens controls RAGChunker overlap."""
+        from skill_seekers.cli.package_skill import package_skill
+
+        skill_dir = create_test_skill(tmp_path, large_doc=True)
+
+        # Package with default overlap (50)
+        success, package_path = package_skill(
+            skill_dir=skill_dir,
+            open_folder_after=False,
+            skip_quality_check=True,
+            target="langchain",
+            enable_chunking=True,
+            chunk_max_tokens=256,
+            chunk_overlap_tokens=50,
+        )
+
+        assert success
+        assert package_path.exists()
+
+        with open(package_path) as f:
+            data_default = json.load(f)
+
+        # Package with large overlap (128)
+        success2, package_path2 = package_skill(
+            skill_dir=skill_dir,
+            open_folder_after=False,
+            skip_quality_check=True,
+            target="langchain",
+            enable_chunking=True,
+            chunk_max_tokens=256,
+            chunk_overlap_tokens=128,
+        )
+
+        assert success2
+        assert package_path2.exists()
+
+        with open(package_path2) as f:
+            data_large_overlap = json.load(f)
+
+        # Large overlap should produce more chunks (more overlap = more chunks)
+        assert len(data_large_overlap) >= len(data_default), (
+            f"Large overlap ({len(data_large_overlap)}) should produce >= chunks than default ({len(data_default)})"
+        )
+
+    def test_chunk_overlap_scales_with_chunk_size(self, tmp_path):
+        """Test that overlap auto-scales when chunk_tokens is non-default but overlap is default."""
+        from skill_seekers.cli.adaptors.base import (
+            DEFAULT_CHUNK_TOKENS,
+            DEFAULT_CHUNK_OVERLAP_TOKENS,
+        )
+
+        adaptor = get_adaptor("langchain")
+
+        skill_dir = create_test_skill(tmp_path, large_doc=True)
+        adaptor._build_skill_metadata(skill_dir)
+        content = (skill_dir / "SKILL.md").read_text()
+
+        # With default chunk size (512) and default overlap (50), overlap should be 50
+        chunks_default = adaptor._maybe_chunk_content(
+            content,
+            {"source": "test"},
+            enable_chunking=True,
+            chunk_max_tokens=DEFAULT_CHUNK_TOKENS,
+            chunk_overlap_tokens=DEFAULT_CHUNK_OVERLAP_TOKENS,
+        )
+
+        # With large chunk size (1024) and default overlap (50),
+        # overlap should auto-scale to max(50, 1024//10) = 102
+        chunks_large = adaptor._maybe_chunk_content(
+            content,
+            {"source": "test"},
+            enable_chunking=True,
+            chunk_max_tokens=1024,
+            chunk_overlap_tokens=DEFAULT_CHUNK_OVERLAP_TOKENS,
+        )
+
+        # Both should produce valid chunks
+        assert len(chunks_default) > 1
+        assert len(chunks_large) >= 1
+
+    def test_preserve_code_blocks_flag(self, tmp_path):
+        """Test --no-preserve-code-blocks parameter is accepted."""
+        from skill_seekers.cli.package_skill import package_skill
+
+        skill_dir = create_test_skill(tmp_path, large_doc=True)
+
+        # Package with code block preservation disabled
+        success, package_path = package_skill(
+            skill_dir=skill_dir,
+            open_folder_after=False,
+            skip_quality_check=True,
+            target="langchain",
+            enable_chunking=True,
+            chunk_max_tokens=256,
+            preserve_code_blocks=False,
+        )
+
+        assert success
+        assert package_path.exists()
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

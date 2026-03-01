@@ -153,6 +153,15 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "PATH",
         },
     },
+    "doc_version": {
+        "flags": ("--doc-version",),
+        "kwargs": {
+            "type": str,
+            "default": "",
+            "help": "Documentation version tag for RAG metadata (e.g., '16.2')",
+            "metavar": "VERSION",
+        },
+    },
 }
 
 # Merge RAG arguments from common.py into universal arguments
@@ -655,3 +664,11 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
     if mode in ["advanced", "all"]:
         for arg_name, arg_def in ADVANCED_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    # Deprecated alias for backward compatibility (removed in v4.0.0)
+    parser.add_argument(
+        "--no-preserve-code",
+        dest="no_preserve_code_blocks",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )

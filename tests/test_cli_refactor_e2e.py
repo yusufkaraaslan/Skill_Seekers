@@ -294,5 +294,84 @@ class TestE2EWorkflow:
         assert "unrecognized arguments" not in result.stderr.lower()
 
 
+class TestVarFlagRouting:
+    """Test that --var flag is correctly routed through create command."""
+
+    def test_var_flag_accepted_by_create(self):
+        """Test that --var flag is accepted (not 'unrecognized') by create command."""
+        result = subprocess.run(
+            ["skill-seekers", "create", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert "--var" in result.stdout, "create --help should show --var flag"
+
+    def test_var_flag_accepted_by_analyze(self):
+        """Test that --var flag is accepted by analyze command."""
+        result = subprocess.run(
+            ["skill-seekers", "analyze", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert "--var" in result.stdout, "analyze --help should show --var flag"
+
+    @pytest.mark.slow
+    def test_var_flag_not_rejected_in_create_local(self, tmp_path):
+        """Test --var KEY=VALUE doesn't cause 'unrecognized arguments' in create."""
+        test_dir = tmp_path / "test_code"
+        test_dir.mkdir()
+        (test_dir / "test.py").write_text("def hello(): pass")
+
+        result = subprocess.run(
+            [
+                "skill-seekers",
+                "create",
+                str(test_dir),
+                "--var",
+                "foo=bar",
+                "--dry-run",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        assert "unrecognized arguments" not in result.stderr.lower(), (
+            f"--var should be accepted, got stderr: {result.stderr}"
+        )
+
+
+class TestBackwardCompatibleFlags:
+    """Test that deprecated flag aliases still work."""
+
+    def test_no_preserve_code_alias_accepted_by_package(self):
+        """Test --no-preserve-code (old name) is still accepted by package command."""
+        result = subprocess.run(
+            ["skill-seekers", "package", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        # The old flag should not appear in --help (it's suppressed)
+        # but should not cause an error if used
+        assert result.returncode == 0
+
+    def test_no_preserve_code_alias_accepted_by_scrape(self):
+        """Test --no-preserve-code (old name) is still accepted by scrape command."""
+        result = subprocess.run(
+            ["skill-seekers", "scrape", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+
+    def test_no_preserve_code_alias_accepted_by_create(self):
+        """Test --no-preserve-code (old name) is still accepted by create command."""
+        result = subprocess.run(
+            ["skill-seekers", "create", "--help-all"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

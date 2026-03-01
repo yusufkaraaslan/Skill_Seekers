@@ -79,7 +79,9 @@ class WordToSkillConverter:
         self.config = config
         self.name = config["name"]
         self.docx_path = config.get("docx_path", "")
-        self.description = config.get("description") or f"Use when referencing {self.name} documentation"
+        self.description = (
+            config.get("description") or f"Use when referencing {self.name} documentation"
+        )
 
         # Paths
         self.skill_dir = f"output/{self.name}"
@@ -108,6 +110,9 @@ class WordToSkillConverter:
 
         if not os.path.exists(self.docx_path):
             raise FileNotFoundError(f"Word document not found: {self.docx_path}")
+
+        if not self.docx_path.lower().endswith(".docx"):
+            raise ValueError(f"Not a Word document (expected .docx): {self.docx_path}")
 
         # --- Extract metadata via python-docx ---
         doc = python_docx.Document(self.docx_path)
@@ -728,12 +733,13 @@ class WordToSkillConverter:
 # HTML-to-sections helper (module-level for clarity)
 # ---------------------------------------------------------------------------
 
+
 def _build_section(
     section_number: int,
     heading: str | None,
     heading_level: str | None,
     elements: list,
-    doc,
+    doc,  # noqa: ARG001
 ) -> dict:
     """Build a section dict from a list of BeautifulSoup elements.
 
@@ -769,10 +775,7 @@ def _build_section(
         # Code blocks
         if tag == "pre" or (tag == "code" and elem.find_parent("pre") is None):
             code_elem = elem.find("code") if tag == "pre" else elem
-            if code_elem:
-                code_text = code_elem.get_text()
-            else:
-                code_text = elem.get_text()
+            code_text = code_elem.get_text() if code_elem else elem.get_text()
 
             code_text = code_text.strip()
             if code_text:
@@ -825,8 +828,8 @@ def _build_section(
             raw_text = elem.get_text(separator="\n").strip()
             # Exclude bullet-point / prose lists (•, *, -)
             if raw_text and not re.search(r"^[•\-\*]\s", raw_text, re.MULTILINE):
-                if _score_code_quality(raw_text) >= 5.5:
-                    quality_score = _score_code_quality(raw_text)
+                quality_score = _score_code_quality(raw_text)
+                if quality_score >= 5.5:
                     code_samples.append(
                         {"code": raw_text, "language": "", "quality_score": quality_score}
                     )
@@ -956,7 +959,8 @@ def main():
         name = Path(args.from_json).stem.replace("_extracted", "")
         config = {
             "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None) or f"Use when referencing {name} documentation",
+            "description": getattr(args, "description", None)
+            or f"Use when referencing {name} documentation",
         }
         try:
             converter = WordToSkillConverter(config)
@@ -1044,6 +1048,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Unexpected error during Word processing: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

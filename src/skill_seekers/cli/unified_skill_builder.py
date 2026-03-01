@@ -1296,7 +1296,9 @@ This skill combines knowledge from multiple sources:
                     f.write(f"- **File**: `{ex.get('file_path', 'N/A')}`\n")
                     if ex.get("code_snippet"):
                         lang = ex.get("language", "text")
-                        f.write(f"\n```{lang}\n{ex['code_snippet']}\n```\n")  # Full code, no truncation
+                        f.write(
+                            f"\n```{lang}\n{ex['code_snippet']}\n```\n"
+                        )  # Full code, no truncation
                     f.write("\n")
 
         logger.info(f"   ✓ Test examples: {total} total, {high_value} high-value")

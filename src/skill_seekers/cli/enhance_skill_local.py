@@ -367,7 +367,7 @@ class LocalSkillEnhancer:
             if line.startswith("#"):
                 # Found heading - keep it and next 3 lines
                 chunk = lines[i : min(i + 4, len(lines))]
-                chunk_chars = sum(len(l) for l in chunk)
+                chunk_chars = sum(len(line_text) for line_text in chunk)
                 if current_chars + chunk_chars > max_chars:
                     break
                 result.extend(chunk)

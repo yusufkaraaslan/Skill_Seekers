@@ -10,7 +10,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-1880%2B%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-2283%2B%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)

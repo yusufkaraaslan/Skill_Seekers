@@ -13,6 +13,7 @@ from skill_seekers.cli.arguments.create import (
     get_compatible_arguments,
     get_universal_argument_names,
 )
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +107,8 @@ class CreateCommand:
         # Check against common defaults
         defaults = {
             "max_issues": 100,
-            "chunk_tokens": 512,
-            "chunk_overlap_tokens": 50,
+            "chunk_tokens": DEFAULT_CHUNK_TOKENS,
+            "chunk_overlap_tokens": DEFAULT_CHUNK_OVERLAP_TOKENS,
             "output": None,
         }
 
@@ -162,11 +163,14 @@ class CreateCommand:
         # RAG arguments (web scraper only)
         if getattr(self.args, "chunk_for_rag", False):
             argv.append("--chunk-for-rag")
-        if getattr(self.args, "chunk_tokens", None) and self.args.chunk_tokens != 512:
+        if (
+            getattr(self.args, "chunk_tokens", None)
+            and self.args.chunk_tokens != DEFAULT_CHUNK_TOKENS
+        ):
             argv.extend(["--chunk-tokens", str(self.args.chunk_tokens)])
         if (
             getattr(self.args, "chunk_overlap_tokens", None)
-            and self.args.chunk_overlap_tokens != 50
+            and self.args.chunk_overlap_tokens != DEFAULT_CHUNK_OVERLAP_TOKENS
         ):
             argv.extend(["--chunk-overlap-tokens", str(self.args.chunk_overlap_tokens)])
 
@@ -478,6 +482,10 @@ class CreateCommand:
             argv.append("--verbose")
         if self.args.quiet:
             argv.append("--quiet")
+
+        # Documentation version metadata
+        if getattr(self.args, "doc_version", ""):
+            argv.extend(["--doc-version", self.args.doc_version])
 
         # Enhancement Workflow arguments
         if getattr(self.args, "enhance_workflow", None):

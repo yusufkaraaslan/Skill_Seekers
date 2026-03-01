@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+
 
 @dataclass
 class SkillMetadata:
@@ -19,6 +21,7 @@ class SkillMetadata:
     name: str
     description: str
     version: str = "1.0.0"
+    doc_version: str = ""  # Documentation version (e.g., "16.2") for RAG metadata filtering
     author: str | None = None
     tags: list[str] = field(default_factory=list)
 
@@ -73,8 +76,9 @@ class SkillAdaptor(ABC):
         skill_dir: Path,
         output_path: Path,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
         Package skill for platform (ZIP, tar.gz, etc.).
@@ -228,6 +232,47 @@ class SkillAdaptor(ABC):
 
         return skill_md_path.read_text(encoding="utf-8")
 
+    def _read_frontmatter(self, skill_dir: Path) -> dict[str, str]:
+        """Read YAML frontmatter from SKILL.md.
+
+        Args:
+            skill_dir: Path to skill directory
+
+        Returns:
+            Dict of key-value pairs from the frontmatter block.
+        """
+        content = self._read_skill_md(skill_dir)
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                frontmatter: dict[str, str] = {}
+                for line in parts[1].strip().splitlines():
+                    if ":" in line:
+                        key, _, value = line.partition(":")
+                        frontmatter[key.strip()] = value.strip()
+                return frontmatter
+        return {}
+
+    def _build_skill_metadata(self, skill_dir: Path) -> SkillMetadata:
+        """Build SkillMetadata from SKILL.md frontmatter.
+
+        Reads name, description, version, and doc_version from frontmatter
+        instead of using hardcoded defaults.
+
+        Args:
+            skill_dir: Path to skill directory
+
+        Returns:
+            SkillMetadata populated from frontmatter values.
+        """
+        fm = self._read_frontmatter(skill_dir)
+        return SkillMetadata(
+            name=skill_dir.name,
+            description=fm.get("description", f"Documentation for {skill_dir.name}"),
+            version=fm.get("version", "1.0.0"),
+            doc_version=fm.get("doc_version", ""),
+        )
+
     def _iterate_references(self, skill_dir: Path):
         """
         Iterate over all reference files in skill directory.
@@ -266,6 +311,7 @@ class SkillAdaptor(ABC):
         base_meta = {
             "source": metadata.name,
             "version": metadata.version,
+            "doc_version": metadata.doc_version,
             "description": metadata.description,
         }
         if metadata.author:
@@ -280,9 +326,10 @@ class SkillAdaptor(ABC):
         content: str,
         metadata: dict,
         enable_chunking: bool = False,
-        chunk_max_tokens: int = 512,
+        chunk_max_tokens: int = DEFAULT_CHUNK_TOKENS,
         preserve_code_blocks: bool = True,
         source_file: str = None,
+        chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> list[tuple[str, dict]]:
         """
         Optionally chunk content for RAG platforms.
@@ -321,9 +368,18 @@ class SkillAdaptor(ABC):
             return [(content, metadata)]
 
         # RAGChunker uses TOKENS (it converts to chars internally)
+        # If overlap is at the default value but chunk size was customized,
+        # scale overlap proportionally (10% of chunk size, min DEFAULT_CHUNK_OVERLAP_TOKENS)
+        effective_overlap = chunk_overlap_tokens
+        if (
+            chunk_overlap_tokens == DEFAULT_CHUNK_OVERLAP_TOKENS
+            and chunk_max_tokens != DEFAULT_CHUNK_TOKENS
+        ):
+            effective_overlap = max(DEFAULT_CHUNK_OVERLAP_TOKENS, chunk_max_tokens // 10)
+
         chunker = RAGChunker(
             chunk_size=chunk_max_tokens,
-            chunk_overlap=max(50, chunk_max_tokens // 10),  # 10% overlap
+            chunk_overlap=effective_overlap,
             preserve_code_blocks=preserve_code_blocks,
             preserve_paragraphs=True,
             min_chunk_size=100,  # 100 tokens minimum
@@ -432,6 +488,67 @@ class SkillAdaptor(ABC):
         else:  # format == "hex"
             # Plain hex digest
             return hash_hex
+
+    def _generate_openai_embeddings(
+        self, documents: list[str], api_key: str | None = None
+    ) -> list[list[float]]:
+        """Generate embeddings using OpenAI text-embedding-3-small.
+
+        Args:
+            documents: List of document texts
+            api_key: OpenAI API key (or uses OPENAI_API_KEY env var)
+
+        Returns:
+            List of embedding vectors
+        """
+        import os
+
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("openai not installed. Run: pip install openai") from None
+
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not set. Set via env var or --openai-api-key")
+
+        client = OpenAI(api_key=api_key)
+        embeddings: list[list[float]] = []
+        batch_size = 100
+
+        print(f"  Generating OpenAI embeddings for {len(documents)} documents...")
+
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i : i + batch_size]
+            try:
+                response = client.embeddings.create(input=batch, model="text-embedding-3-small")
+                embeddings.extend([item.embedding for item in response.data])
+                print(f"  ✓ Embedded {min(i + batch_size, len(documents))}/{len(documents)}")
+            except Exception as e:
+                raise Exception(f"OpenAI embedding generation failed: {e}") from e
+
+        return embeddings
+
+    def _generate_st_embeddings(self, documents: list[str]) -> list[list[float]]:
+        """Generate embeddings using sentence-transformers (all-MiniLM-L6-v2).
+
+        Args:
+            documents: List of document texts
+
+        Returns:
+            List of embedding vectors
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError(
+                "sentence-transformers not installed. Run: pip install sentence-transformers"
+            ) from None
+
+        print(f"  Generating sentence-transformer embeddings for {len(documents)} documents...")
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        embeddings = model.encode(documents, show_progress_bar=True)
+        return [emb.tolist() for emb in embeddings]
 
     def _generate_toc(self, skill_dir: Path) -> str:
         """

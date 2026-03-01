@@ -15,6 +15,10 @@ Hierarchy:
 import argparse
 from typing import Any
 
+# Default chunking constants used by RAG and package arguments
+DEFAULT_CHUNK_TOKENS = 512
+DEFAULT_CHUNK_OVERLAP_TOKENS = 50
+
 # Common argument definitions as data structure
 # These are arguments that appear in MULTIPLE commands
 COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
@@ -64,6 +68,15 @@ COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "KEY",
         },
     },
+    "doc_version": {
+        "flags": ("--doc-version",),
+        "kwargs": {
+            "type": str,
+            "default": "",
+            "help": "Documentation version tag for RAG metadata (e.g., '16.2')",
+            "metavar": "VERSION",
+        },
+    },
 }
 
 # Behavior arguments — runtime flags shared by every scraper
@@ -105,18 +118,18 @@ RAG_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--chunk-tokens",),
         "kwargs": {
             "type": int,
-            "default": 512,
+            "default": DEFAULT_CHUNK_TOKENS,
             "metavar": "TOKENS",
-            "help": "Chunk size in tokens for RAG (default: 512)",
+            "help": f"Chunk size in tokens for RAG (default: {DEFAULT_CHUNK_TOKENS})",
         },
     },
     "chunk_overlap_tokens": {
         "flags": ("--chunk-overlap-tokens",),
         "kwargs": {
             "type": int,
-            "default": 50,
+            "default": DEFAULT_CHUNK_OVERLAP_TOKENS,
             "metavar": "TOKENS",
-            "help": "Overlap between chunks in tokens (default: 50)",
+            "help": f"Overlap between chunks in tokens (default: {DEFAULT_CHUNK_OVERLAP_TOKENS})",
         },
     },
 }
