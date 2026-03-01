@@ -371,7 +371,10 @@ class SkillAdaptor(ABC):
         # If overlap is at the default value but chunk size was customized,
         # scale overlap proportionally (10% of chunk size, min DEFAULT_CHUNK_OVERLAP_TOKENS)
         effective_overlap = chunk_overlap_tokens
-        if chunk_overlap_tokens == DEFAULT_CHUNK_OVERLAP_TOKENS and chunk_max_tokens != DEFAULT_CHUNK_TOKENS:
+        if (
+            chunk_overlap_tokens == DEFAULT_CHUNK_OVERLAP_TOKENS
+            and chunk_max_tokens != DEFAULT_CHUNK_TOKENS
+        ):
             effective_overlap = max(DEFAULT_CHUNK_OVERLAP_TOKENS, chunk_max_tokens // 10)
 
         chunker = RAGChunker(
@@ -518,9 +521,7 @@ class SkillAdaptor(ABC):
         for i in range(0, len(documents), batch_size):
             batch = documents[i : i + batch_size]
             try:
-                response = client.embeddings.create(
-                    input=batch, model="text-embedding-3-small"
-                )
+                response = client.embeddings.create(input=batch, model="text-embedding-3-small")
                 embeddings.extend([item.embedding for item in response.data])
                 print(f"  ✓ Embedded {min(i + batch_size, len(documents))}/{len(documents)}")
             except Exception as e:

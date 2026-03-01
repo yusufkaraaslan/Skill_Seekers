@@ -161,7 +161,10 @@ class CreateCommand:
         # RAG arguments (web scraper only)
         if getattr(self.args, "chunk_for_rag", False):
             argv.append("--chunk-for-rag")
-        if getattr(self.args, "chunk_tokens", None) and self.args.chunk_tokens != DEFAULT_CHUNK_TOKENS:
+        if (
+            getattr(self.args, "chunk_tokens", None)
+            and self.args.chunk_tokens != DEFAULT_CHUNK_TOKENS
+        ):
             argv.extend(["--chunk-tokens", str(self.args.chunk_tokens)])
         if (
             getattr(self.args, "chunk_overlap_tokens", None)

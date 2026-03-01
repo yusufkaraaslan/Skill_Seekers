@@ -324,8 +324,11 @@ class TestVarFlagRouting:
 
         result = subprocess.run(
             [
-                "skill-seekers", "create", str(test_dir),
-                "--var", "foo=bar",
+                "skill-seekers",
+                "create",
+                str(test_dir),
+                "--var",
+                "foo=bar",
                 "--dry-run",
             ],
             capture_output=True,

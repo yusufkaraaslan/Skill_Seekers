@@ -38,7 +38,9 @@ class PineconeAdaptor(SkillAdaptor):
         """Generate deterministic ID from content and metadata."""
         return self._generate_deterministic_id(content, metadata, format="hex")
 
-    def _truncate_text_for_metadata(self, text: str, max_bytes: int = PINECONE_METADATA_BYTES_LIMIT) -> str:
+    def _truncate_text_for_metadata(
+        self, text: str, max_bytes: int = PINECONE_METADATA_BYTES_LIMIT
+    ) -> str:
         """Truncate text to fit within Pinecone's metadata byte limit.
 
         Pinecone limits metadata to 40KB per vector. This truncates
@@ -120,7 +122,9 @@ class PineconeAdaptor(SkillAdaptor):
                     chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file="SKILL.md",
-                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
+                    chunk_overlap_tokens=kwargs.get(
+                        "chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS
+                    ),
                 )
 
                 for chunk_text, chunk_meta in chunks:
@@ -155,7 +159,9 @@ class PineconeAdaptor(SkillAdaptor):
                     chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file=ref_file.name,
-                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
+                    chunk_overlap_tokens=kwargs.get(
+                        "chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS
+                    ),
                 )
 
                 for chunk_text, chunk_meta in chunks:
@@ -281,10 +287,7 @@ class PineconeAdaptor(SkillAdaptor):
         if not api_key:
             return {
                 "success": False,
-                "message": (
-                    "PINECONE_API_KEY not set. "
-                    "Set via env var or pass api_key parameter."
-                ),
+                "message": ("PINECONE_API_KEY not set. Set via env var or pass api_key parameter."),
             }
 
         # Load package
@@ -332,7 +335,9 @@ class PineconeAdaptor(SkillAdaptor):
             # Create index if it doesn't exist
             existing_indexes = [idx.name for idx in pc.list_indexes()]
             if index_name not in existing_indexes:
-                print(f"🔧 Creating Pinecone index: {index_name} (dimension={dimension}, metric={metric})")
+                print(
+                    f"🔧 Creating Pinecone index: {index_name} (dimension={dimension}, metric={metric})"
+                )
                 pc.create_index(
                     name=index_name,
                     dimension=dimension,

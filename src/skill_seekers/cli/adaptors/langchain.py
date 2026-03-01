@@ -74,7 +74,9 @@ class LangChainAdaptor(SkillAdaptor):
                     chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file="SKILL.md",
-                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
+                    chunk_overlap_tokens=kwargs.get(
+                        "chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS
+                    ),
                 )
 
                 # Add all chunks to documents
@@ -104,7 +106,9 @@ class LangChainAdaptor(SkillAdaptor):
                     chunk_max_tokens=kwargs.get("chunk_max_tokens", DEFAULT_CHUNK_TOKENS),
                     preserve_code_blocks=kwargs.get("preserve_code_blocks", True),
                     source_file=ref_file.name,
-                    chunk_overlap_tokens=kwargs.get("chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS),
+                    chunk_overlap_tokens=kwargs.get(
+                        "chunk_overlap_tokens", DEFAULT_CHUNK_OVERLAP_TOKENS
+                    ),
                 )
 
                 # Add all chunks to documents

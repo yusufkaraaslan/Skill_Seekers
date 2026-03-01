@@ -1009,7 +1009,7 @@ Use this skill when you need to:
         skill_content += f"- **Homepage:** {repo_info.get('homepage') or 'N/A'}\n"
         skill_content += f"- **Topics:** {', '.join(repo_info.get('topics', []))}\n"
         skill_content += f"- **Open Issues:** {repo_info.get('open_issues', 0)}\n"
-        updated_at = repo_info.get('updated_at') or 'N/A'
+        updated_at = repo_info.get("updated_at") or "N/A"
         skill_content += f"- **Last Updated:** {updated_at[:10]}\n\n"
 
         # Languages
@@ -1105,11 +1105,9 @@ Use this skill when you need to:
 
         lines = []
         for release in releases[:3]:
-            published_at = release.get('published_at') or 'N/A'
-            release_name = release.get('name') or release['tag_name']
-            lines.append(
-                f"- **{release['tag_name']}** ({published_at[:10]}): {release_name}"
-            )
+            published_at = release.get("published_at") or "N/A"
+            release_name = release.get("name") or release["tag_name"]
+            lines.append(f"- **{release['tag_name']}** ({published_at[:10]}): {release_name}")
 
         return "\n".join(lines)
 
@@ -1304,7 +1302,7 @@ Use this skill when you need to:
         content += f"## Open Issues ({len(open_issues)})\n\n"
         for issue in open_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
-            created_at = issue.get('created_at') or 'N/A'
+            created_at = issue.get("created_at") or "N/A"
             content += f"### #{issue['number']}: {issue['title']}\n"
             content += f"**Labels:** {labels} | **Created:** {created_at[:10]}\n"
             content += f"[View on GitHub]({issue['url']})\n\n"
@@ -1312,7 +1310,7 @@ Use this skill when you need to:
         content += f"\n## Recently Closed Issues ({len(closed_issues)})\n\n"
         for issue in closed_issues:
             labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
-            closed_at = issue.get('closed_at') or 'N/A'
+            closed_at = issue.get("closed_at") or "N/A"
             content += f"### #{issue['number']}: {issue['title']}\n"
             content += f"**Labels:** {labels} | **Closed:** {closed_at[:10]}\n"
             content += f"[View on GitHub]({issue['url']})\n\n"
@@ -1331,9 +1329,9 @@ Use this skill when you need to:
         )
 
         for release in releases:
-            published_at = release.get('published_at') or 'N/A'
-            release_name = release.get('name') or release['tag_name']
-            release_body = release.get('body') or ''
+            published_at = release.get("published_at") or "N/A"
+            release_name = release.get("name") or release["tag_name"]
+            release_body = release.get("body") or ""
             content += f"## {release['tag_name']}: {release_name}\n"
             content += f"**Published:** {published_at[:10]}\n"
             if release["prerelease"]:
