@@ -81,6 +81,11 @@ skill-seekers create django/django               # GitHub 仓库
 skill-seekers create ./my-codebase               # 本地项目
 skill-seekers create manual.pdf                  # PDF 文件
 
+# 视频（YouTube、Vimeo 或本地文件 — 需要 skill-seekers[video]）
+skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+# 首次使用？自动安装 GPU 感知的视觉依赖：
+skill-seekers video --setup
+
 # 根据用途导出
 skill-seekers package output/django --target claude     # Claude AI 技能
 skill-seekers package output/django --target langchain  # LangChain RAG
@@ -151,6 +156,14 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 - ✅ **表格提取** - 提取复杂表格
 - ✅ **并行处理** - 大型 PDF 快 3 倍
 - ✅ **智能缓存** - 重复运行快 50%
+
+### 🎬 视频教程提取
+- ✅ **YouTube 和本地视频** - 从视频教程提取字幕、代码和结构化知识
+- ✅ **视觉帧分析** - 屏幕 OCR 提取代码编辑器、终端和幻灯片内容
+- ✅ **GPU 自动检测** - 自动安装正确的 PyTorch 版本（CUDA/ROCm/MPS/CPU）
+- ✅ **AI 增强** - 两阶段增强：清理 OCR + 生成精美 SKILL.md
+- ✅ **时间裁剪** - 提取视频的特定片段（`--start-time`、`--end-time`）
+- ✅ **播放列表支持** - 批量处理 YouTube 播放列表中的所有视频
 
 ### 🐙 GitHub 仓库分析
 - ✅ **深度代码分析** - 支持 Python、JavaScript、TypeScript、Java、C++、Go 的 AST 解析
@@ -510,7 +523,13 @@ skill-seekers-setup
 | `pip install skill-seekers[openai]` | + OpenAI ChatGPT 支持 |
 | `pip install skill-seekers[all-llms]` | + 所有 LLM 平台 |
 | `pip install skill-seekers[mcp]` | + MCP 服务器 |
+| `pip install skill-seekers[video]` | + YouTube/Vimeo 字幕和元数据提取 |
+| `pip install skill-seekers[video-full]` | + Whisper 转录和视觉帧提取 |
 | `pip install skill-seekers[all]` | 全部功能 |
+
+> **视频视觉依赖（GPU 感知）：** 安装 `skill-seekers[video-full]` 后，运行
+> `skill-seekers video --setup` 自动检测您的 GPU 并安装正确的 PyTorch
+> 版本 + easyocr。这是安装视觉提取依赖的推荐方式。
 
 ---
 
@@ -593,6 +612,44 @@ skill-seekers pdf --pdf docs/manual.pdf --name myskill \
 # 扫描 PDF（需要: pip install pytesseract Pillow）
 skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
 ```
+
+### 视频教程提取
+
+```bash
+# 安装视频支持
+pip install skill-seekers[video]        # 字幕 + 元数据
+pip install skill-seekers[video-full]   # + Whisper 转录 + 视觉帧提取
+
+# 自动检测 GPU 并安装视觉依赖（PyTorch + easyocr）
+skill-seekers video --setup
+
+# 从 YouTube 视频提取
+skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+
+# 从 YouTube 播放列表提取
+skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+
+# 从本地视频文件提取
+skill-seekers video --video-file recording.mp4 --name myrecording
+
+# 使用视觉帧分析提取（需要 video-full 依赖）
+skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+
+# 使用 AI 增强（清理 OCR + 生成精美 SKILL.md）
+skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+
+# 裁剪视频的特定片段（支持秒数、MM:SS、HH:MM:SS 格式）
+skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+
+# 使用 Vision API 处理低置信度 OCR 帧（需要 ANTHROPIC_API_KEY）
+skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+
+# 从之前提取的数据重建技能（跳过下载）
+skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+```
+
+> **完整指南：** 参见 [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) 了解完整 CLI 参考、
+> 视觉流水线详情、AI 增强选项和故障排除。
 
 ### GitHub 仓库分析
 
@@ -956,6 +1013,7 @@ skill-seekers config --github
 - **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI 增强模式指南
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 集成设置
 - **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - 多源抓取
+- **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 视频教程提取完整指南
 
 ### 集成指南
 - **[docs/integrations/LANGCHAIN.md](docs/integrations/LANGCHAIN.md)** - LangChain RAG

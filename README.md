@@ -715,7 +715,22 @@ skill-seekers video --video-file recording.mp4 --name myrecording
 
 # Extract with visual frame analysis (requires video-full deps)
 skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+
+# With AI enhancement (cleans OCR + generates polished SKILL.md)
+skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+
+# Clip a specific section of a video (supports seconds, MM:SS, HH:MM:SS)
+skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+
+# Use Vision API for low-confidence OCR frames (requires ANTHROPIC_API_KEY)
+skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+
+# Re-build skill from previously extracted data (skip download)
+skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
+
+> **Full guide:** See [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) for complete CLI reference,
+> visual pipeline details, AI enhancement options, and troubleshooting.
 
 ### GitHub Repository Analysis
 
