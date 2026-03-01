@@ -4,6 +4,15 @@
 **Document:** 07 of 07
 **Status:** Planning
 
+> **Status: IMPLEMENTED** — `skill-seekers video --setup` (see `video_setup.py`, 835 lines, 60 tests)
+> - GPU auto-detection: NVIDIA (nvidia-smi/CUDA), AMD (rocminfo/ROCm), CPU fallback
+> - Correct PyTorch index URL selection per GPU vendor
+> - EasyOCR removed from pip extras, installed at runtime via --setup
+> - ROCm configuration (MIOPEN_FIND_MODE, HSA_OVERRIDE_GFX_VERSION)
+> - Virtual environment detection with --force override
+> - System dependency checks (tesseract, ffmpeg)
+> - Non-interactive mode for MCP/CI usage
+
 ---
 
 ## Table of Contents

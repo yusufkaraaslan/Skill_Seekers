@@ -621,6 +621,11 @@ class VideoInfo:
     transcript_confidence: float = 0.0
     content_richness_score: float = 0.0
 
+    # Time-clipping metadata (None when full video is used)
+    original_duration: float | None = None
+    clip_start: float | None = None
+    clip_end: float | None = None
+
     # Consensus-based text tracking (Phase A-D)
     text_group_timeline: TextGroupTimeline | None = None
     audio_visual_alignments: list[AudioVisualAlignment] = field(default_factory=list)
@@ -657,6 +662,9 @@ class VideoInfo:
             "extracted_at": self.extracted_at,
             "transcript_confidence": self.transcript_confidence,
             "content_richness_score": self.content_richness_score,
+            "original_duration": self.original_duration,
+            "clip_start": self.clip_start,
+            "clip_end": self.clip_end,
             "text_group_timeline": self.text_group_timeline.to_dict()
             if self.text_group_timeline
             else None,
@@ -698,6 +706,9 @@ class VideoInfo:
             extracted_at=data.get("extracted_at", ""),
             transcript_confidence=data.get("transcript_confidence", 0.0),
             content_richness_score=data.get("content_richness_score", 0.0),
+            original_duration=data.get("original_duration"),
+            clip_start=data.get("clip_start"),
+            clip_end=data.get("clip_end"),
             text_group_timeline=timeline,
             audio_visual_alignments=[
                 AudioVisualAlignment.from_dict(a) for a in data.get("audio_visual_alignments", [])
@@ -739,6 +750,10 @@ class VideoSourceConfig:
     # Subtitle files
     subtitle_patterns: list[str] | None = None
 
+    # Time-clipping (single video only)
+    clip_start: float | None = None
+    clip_end: float | None = None
+
     @classmethod
     def from_dict(cls, data: dict) -> VideoSourceConfig:
         return cls(
@@ -758,6 +773,8 @@ class VideoSourceConfig:
             max_segment_duration=data.get("max_segment_duration", 600.0),
             categories=data.get("categories"),
             subtitle_patterns=data.get("subtitle_patterns"),
+            clip_start=data.get("clip_start"),
+            clip_end=data.get("clip_end"),
         )
 
     def validate(self) -> list[str]:
@@ -774,6 +791,23 @@ class VideoSourceConfig:
             )
         if sources_set > 1:
             errors.append("Video source must specify exactly one source type")
+
+        # Clip range validation
+        has_clip = self.clip_start is not None or self.clip_end is not None
+        if has_clip and self.playlist is not None:
+            errors.append(
+                "--start-time/--end-time cannot be used with --playlist. "
+                "Clip range is for single videos only."
+            )
+        if (
+            self.clip_start is not None
+            and self.clip_end is not None
+            and self.clip_start >= self.clip_end
+        ):
+            errors.append(
+                f"--start-time ({self.clip_start}s) must be before --end-time ({self.clip_end}s)"
+            )
+
         return errors
 
 

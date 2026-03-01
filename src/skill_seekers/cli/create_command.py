@@ -398,6 +398,12 @@ class CreateCommand:
         vs = getattr(self.args, "visual_similarity", None)
         if vs is not None and vs != 3.0:
             argv.extend(["--visual-similarity", str(vs)])
+        st = getattr(self.args, "start_time", None)
+        if st is not None:
+            argv.extend(["--start-time", str(st)])
+        et = getattr(self.args, "end_time", None)
+        if et is not None:
+            argv.extend(["--end-time", str(et)])
 
         # Call video_scraper with modified argv
         logger.debug(f"Calling video_scraper with argv: {argv}")

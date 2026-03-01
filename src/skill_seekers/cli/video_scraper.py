@@ -83,9 +83,15 @@ def check_video_dependencies(require_full: bool = False) -> None:
     if missing:
         deps = ", ".join(missing)
         extra = "[video-full]" if require_full else "[video]"
+        setup_hint = (
+            "\nFor visual deps (GPU-aware): skill-seekers video --setup"
+            if require_full
+            else ""
+        )
         raise RuntimeError(
             f"Missing video dependencies: {deps}\n"
-            f'Install with: pip install "skill-seekers{extra}"\n'
+            f'Install with: pip install "skill-seekers{extra}"'
+            f"{setup_hint}\n"
             f"Or: pip install {' '.join(missing)}"
         )
 
@@ -103,6 +109,45 @@ def _sanitize_filename(title: str, max_length: int = 60) -> str:
     name = re.sub(r"-+", "-", name)
     name = name.strip("-")
     return name[:max_length]
+
+
+def parse_time_to_seconds(time_str: str) -> float:
+    """Parse a time string into seconds.
+
+    Accepted formats:
+        - Plain seconds: ``"330"`` or ``"330.5"``
+        - MM:SS: ``"5:30"``
+        - HH:MM:SS: ``"00:05:30"``
+
+    Args:
+        time_str: Time string in one of the accepted formats.
+
+    Returns:
+        Time in seconds as a float.
+
+    Raises:
+        ValueError: If *time_str* cannot be parsed.
+    """
+    time_str = time_str.strip()
+    if not time_str:
+        raise ValueError("Empty time string")
+
+    parts = time_str.split(":")
+    try:
+        if len(parts) == 1:
+            return float(parts[0])
+        if len(parts) == 2:
+            minutes, seconds = float(parts[0]), float(parts[1])
+            return minutes * 60 + seconds
+        if len(parts) == 3:
+            hours, minutes, seconds = float(parts[0]), float(parts[1]), float(parts[2])
+            return hours * 3600 + minutes * 60 + seconds
+    except ValueError:
+        pass
+    raise ValueError(
+        f"Invalid time format: '{time_str}'. "
+        "Use seconds (330), MM:SS (5:30), or HH:MM:SS (00:05:30)"
+    )
 
 
 def _format_duration(seconds: float) -> str:
@@ -221,6 +266,10 @@ class VideoToSkillConverter:
         self.visual_similarity = config.get("visual_similarity", 3.0)
         self.vision_ocr = config.get("vision_ocr", False)
 
+        # Time-clipping (seconds, None = full video)
+        self.start_time: float | None = config.get("start_time")
+        self.end_time: float | None = config.get("end_time")
+
         # Paths
         self.skill_dir = config.get("output") or f"output/{self.name}"
         self.data_file = f"output/{self.name}_video_extracted.json"
@@ -265,6 +314,8 @@ class VideoToSkillConverter:
             languages=self.languages,
             visual_extraction=self.visual,
             whisper_model=self.whisper_model,
+            clip_start=self.start_time,
+            clip_end=self.end_time,
         )
 
         videos: list[VideoInfo] = []
@@ -317,6 +368,37 @@ class VideoToSkillConverter:
                     if transcript_source == TranscriptSource.YOUTUBE_AUTO:
                         video_info.transcript_confidence *= 0.8
 
+                # Apply time clipping to transcript and chapters
+                clip_start = self.start_time
+                clip_end = self.end_time
+                if clip_start is not None or clip_end is not None:
+                    cs = clip_start or 0.0
+                    ce = clip_end or float("inf")
+
+                    # Store original duration before clipping
+                    video_info.original_duration = video_info.duration
+                    video_info.clip_start = cs
+                    video_info.clip_end = clip_end  # keep None if not set
+
+                    # Filter transcript segments to clip range
+                    original_count = len(transcript_segments)
+                    transcript_segments = [
+                        seg for seg in transcript_segments if seg.end > cs and seg.start < ce
+                    ]
+                    video_info.raw_transcript = transcript_segments
+                    logger.info(
+                        f"  Clipped transcript: {len(transcript_segments)}/{original_count} "
+                        f"segments in range {_format_duration(cs)}-{_format_duration(ce) if clip_end else 'end'}"
+                    )
+
+                    # Filter chapters to clip range
+                    if video_info.chapters:
+                        video_info.chapters = [
+                            ch
+                            for ch in video_info.chapters
+                            if ch.end_time > cs and ch.start_time < ce
+                        ]
+
                 # Segment video
                 segments = segment_video(video_info, transcript_segments, source_config)
                 video_info.segments = segments
@@ -336,7 +418,12 @@ class VideoToSkillConverter:
                         import tempfile as _tmpmod
 
                         temp_video_dir = _tmpmod.mkdtemp(prefix="ss_video_")
-                        video_path = download_video(source, temp_video_dir)
+                        video_path = download_video(
+                            source,
+                            temp_video_dir,
+                            clip_start=self.start_time,
+                            clip_end=self.end_time,
+                        )
 
                     if video_path and os.path.exists(video_path):
                         keyframes, code_blocks, timeline = extract_visual_data(
@@ -347,6 +434,8 @@ class VideoToSkillConverter:
                             min_gap=self.visual_min_gap,
                             similarity_threshold=self.visual_similarity,
                             use_vision_api=self.vision_ocr,
+                            clip_start=self.start_time,
+                            clip_end=self.end_time,
                         )
                         # Attach keyframes to segments
                         for kf in keyframes:
@@ -510,7 +599,13 @@ class VideoToSkillConverter:
             else:
                 meta_parts.append(f"**Source:** {video.channel_name}")
         if video.duration > 0:
-            meta_parts.append(f"**Duration:** {_format_duration(video.duration)}")
+            dur_str = _format_duration(video.duration)
+            if video.clip_start is not None or video.clip_end is not None:
+                orig = _format_duration(video.original_duration) if video.original_duration else "?"
+                cs = _format_duration(video.clip_start) if video.clip_start is not None else "0:00"
+                ce = _format_duration(video.clip_end) if video.clip_end is not None else orig
+                dur_str = f"{cs} - {ce} (of {orig})"
+            meta_parts.append(f"**Duration:** {dur_str}")
         if video.upload_date:
             meta_parts.append(f"**Published:** {video.upload_date}")
 
@@ -737,7 +832,21 @@ class VideoToSkillConverter:
                 else:
                     meta.append(video.channel_name)
             if video.duration > 0:
-                meta.append(_format_duration(video.duration))
+                dur_str = _format_duration(video.duration)
+                if video.clip_start is not None or video.clip_end is not None:
+                    orig = (
+                        _format_duration(video.original_duration)
+                        if video.original_duration
+                        else "?"
+                    )
+                    cs = (
+                        _format_duration(video.clip_start)
+                        if video.clip_start is not None
+                        else "0:00"
+                    )
+                    ce = _format_duration(video.clip_end) if video.clip_end is not None else orig
+                    dur_str = f"Clip {cs}-{ce} (of {orig})"
+                meta.append(dur_str)
             if video.view_count is not None:
                 meta.append(f"{_format_count(video.view_count)} views")
             if meta:
@@ -817,6 +926,12 @@ Examples:
     add_video_arguments(parser)
     args = parser.parse_args()
 
+    # --setup: run GPU detection + dependency installation, then exit
+    if getattr(args, "setup", False):
+        from skill_seekers.cli.video_setup import run_setup
+
+        return run_setup(interactive=True)
+
     # Setup logging
     log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
@@ -834,6 +949,29 @@ Examples:
     if not has_source and not has_json:
         parser.error("Must specify --url, --video-file, --playlist, or --from-json")
 
+    # Parse and validate time clipping
+    raw_start = getattr(args, "start_time", None)
+    raw_end = getattr(args, "end_time", None)
+    clip_start: float | None = None
+    clip_end: float | None = None
+
+    if raw_start is not None:
+        try:
+            clip_start = parse_time_to_seconds(raw_start)
+        except ValueError as exc:
+            parser.error(f"--start-time: {exc}")
+    if raw_end is not None:
+        try:
+            clip_end = parse_time_to_seconds(raw_end)
+        except ValueError as exc:
+            parser.error(f"--end-time: {exc}")
+
+    if clip_start is not None or clip_end is not None:
+        if getattr(args, "playlist", None):
+            parser.error("--start-time/--end-time cannot be used with --playlist")
+        if clip_start is not None and clip_end is not None and clip_start >= clip_end:
+            parser.error(f"--start-time ({clip_start}s) must be before --end-time ({clip_end}s)")
+
     # Build config
     config = {
         "name": args.name or "video_skill",
@@ -849,6 +987,8 @@ Examples:
         "visual_min_gap": getattr(args, "visual_min_gap", 0.5),
         "visual_similarity": getattr(args, "visual_similarity", 3.0),
         "vision_ocr": getattr(args, "vision_ocr", False),
+        "start_time": clip_start,
+        "end_time": clip_end,
     }
 
     converter = VideoToSkillConverter(config)
@@ -862,6 +1002,10 @@ Examples:
         logger.info(f"  name: {config['name']}")
         logger.info(f"  languages: {config['languages']}")
         logger.info(f"  visual: {config['visual']}")
+        if clip_start is not None or clip_end is not None:
+            start_str = _format_duration(clip_start) if clip_start is not None else "start"
+            end_str = _format_duration(clip_end) if clip_end is not None else "end"
+            logger.info(f"  clip range: {start_str} - {end_str}")
         return 0
 
     # Workflow 1: Build from JSON

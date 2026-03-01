@@ -3115,5 +3115,286 @@ class TestVideoWorkflowAutoInjection(unittest.TestCase):
             self.assertTrue(yaml_path.exists(), "video-tutorial.yaml not found")
 
 
+# =============================================================================
+# Test: Time Clipping (--start-time / --end-time)
+# =============================================================================
+
+
+class TestTimeClipping(unittest.TestCase):
+    """Test --start-time / --end-time clipping support."""
+
+    # ---- parse_time_to_seconds() ----
+
+    def test_parse_time_seconds_integer(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertEqual(parse_time_to_seconds("330"), 330.0)
+
+    def test_parse_time_seconds_float(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertAlmostEqual(parse_time_to_seconds("90.5"), 90.5)
+
+    def test_parse_time_mmss(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertEqual(parse_time_to_seconds("5:30"), 330.0)
+
+    def test_parse_time_hhmmss(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertEqual(parse_time_to_seconds("1:05:30"), 3930.0)
+
+    def test_parse_time_zero(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertEqual(parse_time_to_seconds("0"), 0.0)
+        self.assertEqual(parse_time_to_seconds("0:00"), 0.0)
+        self.assertEqual(parse_time_to_seconds("0:00:00"), 0.0)
+
+    def test_parse_time_decimal_mmss(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        self.assertAlmostEqual(parse_time_to_seconds("1:30.5"), 90.5)
+
+    def test_parse_time_invalid_raises(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        with self.assertRaises(ValueError):
+            parse_time_to_seconds("abc")
+
+    def test_parse_time_empty_raises(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        with self.assertRaises(ValueError):
+            parse_time_to_seconds("")
+
+    def test_parse_time_too_many_colons_raises(self):
+        from skill_seekers.cli.video_scraper import parse_time_to_seconds
+
+        with self.assertRaises(ValueError):
+            parse_time_to_seconds("1:2:3:4")
+
+    # ---- Argument registration ----
+
+    def test_video_arguments_include_start_end_time(self):
+        from skill_seekers.cli.arguments.video import VIDEO_ARGUMENTS
+
+        self.assertIn("start_time", VIDEO_ARGUMENTS)
+        self.assertIn("end_time", VIDEO_ARGUMENTS)
+
+    def test_create_arguments_include_start_end_time(self):
+        from skill_seekers.cli.arguments.create import VIDEO_ARGUMENTS
+
+        self.assertIn("start_time", VIDEO_ARGUMENTS)
+        self.assertIn("end_time", VIDEO_ARGUMENTS)
+
+    def test_argument_parsing_defaults_none(self):
+        import argparse
+        from skill_seekers.cli.arguments.video import add_video_arguments
+
+        parser = argparse.ArgumentParser()
+        add_video_arguments(parser)
+        args = parser.parse_args(["--url", "https://example.com"])
+        self.assertIsNone(args.start_time)
+        self.assertIsNone(args.end_time)
+
+    def test_argument_parsing_with_values(self):
+        import argparse
+        from skill_seekers.cli.arguments.video import add_video_arguments
+
+        parser = argparse.ArgumentParser()
+        add_video_arguments(parser)
+        args = parser.parse_args(
+            ["--url", "https://example.com", "--start-time", "2:00", "--end-time", "5:00"]
+        )
+        self.assertEqual(args.start_time, "2:00")
+        self.assertEqual(args.end_time, "5:00")
+
+    # ---- Transcript filtering ----
+
+    def test_transcript_clip_filters_segments(self):
+        """Verify transcript segments are filtered to clip range."""
+        from skill_seekers.cli.video_models import TranscriptSegment
+
+        segments = [
+            TranscriptSegment(text="intro", start=0.0, end=30.0),
+            TranscriptSegment(text="part1", start=30.0, end=90.0),
+            TranscriptSegment(text="part2", start=90.0, end=150.0),
+            TranscriptSegment(text="outro", start=150.0, end=200.0),
+        ]
+
+        clip_start, clip_end = 60.0, 120.0
+        filtered = [s for s in segments if s.end > clip_start and s.start < clip_end]
+        # part1 (30-90) overlaps with 60-120, part2 (90-150) overlaps with 60-120
+        self.assertEqual(len(filtered), 2)
+        self.assertEqual(filtered[0].text, "part1")
+        self.assertEqual(filtered[1].text, "part2")
+
+    def test_transcript_clip_start_only(self):
+        """Verify only clip_start filters correctly."""
+        from skill_seekers.cli.video_models import TranscriptSegment
+
+        segments = [
+            TranscriptSegment(text="before", start=0.0, end=50.0),
+            TranscriptSegment(text="after", start=50.0, end=100.0),
+        ]
+        clip_start = 50.0
+        clip_end = float("inf")
+        filtered = [s for s in segments if s.end > clip_start and s.start < clip_end]
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0].text, "after")
+
+    # ---- Validation ----
+
+    def test_playlist_plus_clip_rejected(self):
+        from skill_seekers.cli.video_models import VideoSourceConfig
+
+        config = VideoSourceConfig(
+            playlist="https://youtube.com/playlist?list=x",
+            clip_start=60.0,
+        )
+        errors = config.validate()
+        self.assertTrue(any("--start-time" in e for e in errors))
+
+    def test_start_gte_end_rejected(self):
+        from skill_seekers.cli.video_models import VideoSourceConfig
+
+        config = VideoSourceConfig(
+            url="https://youtube.com/watch?v=x", clip_start=300.0, clip_end=120.0
+        )
+        errors = config.validate()
+        self.assertTrue(any("must be before" in e for e in errors))
+
+    def test_valid_clip_no_errors(self):
+        from skill_seekers.cli.video_models import VideoSourceConfig
+
+        config = VideoSourceConfig(
+            url="https://youtube.com/watch?v=x", clip_start=60.0, clip_end=300.0
+        )
+        errors = config.validate()
+        self.assertEqual(errors, [])
+
+    # ---- VideoInfo clip metadata serialization ----
+
+    def test_video_info_clip_roundtrip(self):
+        from skill_seekers.cli.video_models import VideoInfo, VideoSourceType
+
+        info = VideoInfo(
+            video_id="test",
+            source_type=VideoSourceType.YOUTUBE,
+            duration=300.0,
+            original_duration=600.0,
+            clip_start=120.0,
+            clip_end=420.0,
+        )
+        data = info.to_dict()
+        self.assertEqual(data["original_duration"], 600.0)
+        self.assertEqual(data["clip_start"], 120.0)
+        self.assertEqual(data["clip_end"], 420.0)
+
+        restored = VideoInfo.from_dict(data)
+        self.assertEqual(restored.original_duration, 600.0)
+        self.assertEqual(restored.clip_start, 120.0)
+        self.assertEqual(restored.clip_end, 420.0)
+
+    def test_video_info_no_clip_roundtrip(self):
+        from skill_seekers.cli.video_models import VideoInfo, VideoSourceType
+
+        info = VideoInfo(video_id="test", source_type=VideoSourceType.YOUTUBE)
+        data = info.to_dict()
+        self.assertIsNone(data["original_duration"])
+        self.assertIsNone(data["clip_start"])
+        self.assertIsNone(data["clip_end"])
+
+        restored = VideoInfo.from_dict(data)
+        self.assertIsNone(restored.original_duration)
+        self.assertIsNone(restored.clip_start)
+
+    # ---- VideoSourceConfig clip fields ----
+
+    def test_source_config_clip_fields(self):
+        from skill_seekers.cli.video_models import VideoSourceConfig
+
+        config = VideoSourceConfig.from_dict(
+            {
+                "url": "https://example.com",
+                "clip_start": 10.0,
+                "clip_end": 60.0,
+            }
+        )
+        self.assertEqual(config.clip_start, 10.0)
+        self.assertEqual(config.clip_end, 60.0)
+
+    def test_source_config_clip_defaults_none(self):
+        from skill_seekers.cli.video_models import VideoSourceConfig
+
+        config = VideoSourceConfig.from_dict({"url": "https://example.com"})
+        self.assertIsNone(config.clip_start)
+        self.assertIsNone(config.clip_end)
+
+    # ---- Converter init ----
+
+    def test_converter_init_with_clip_times(self):
+        from skill_seekers.cli.video_scraper import VideoToSkillConverter
+
+        config = {
+            "name": "test",
+            "url": "https://youtube.com/watch?v=x",
+            "start_time": 120.0,
+            "end_time": 300.0,
+        }
+        converter = VideoToSkillConverter(config)
+        self.assertEqual(converter.start_time, 120.0)
+        self.assertEqual(converter.end_time, 300.0)
+
+    def test_converter_init_without_clip_times(self):
+        from skill_seekers.cli.video_scraper import VideoToSkillConverter
+
+        config = {"name": "test", "url": "https://youtube.com/watch?v=x"}
+        converter = VideoToSkillConverter(config)
+        self.assertIsNone(converter.start_time)
+        self.assertIsNone(converter.end_time)
+
+    # ---- Segmenter start_offset / end_limit ----
+
+    def test_segmenter_time_window_with_offset(self):
+        from skill_seekers.cli.video_segmenter import segment_by_time_window
+        from skill_seekers.cli.video_models import VideoInfo, VideoSourceType
+
+        info = VideoInfo(video_id="test", source_type=VideoSourceType.YOUTUBE, duration=600.0)
+        # Use 120s windows starting at 120s, ending at 360s
+        segments = segment_by_time_window(
+            info, [], window_seconds=120.0, start_offset=120.0, end_limit=360.0
+        )
+        # No transcript segments so no segments generated, but verify no crash
+        self.assertEqual(len(segments), 0)
+
+    def test_segmenter_time_window_offset_with_transcript(self):
+        from skill_seekers.cli.video_segmenter import segment_by_time_window
+        from skill_seekers.cli.video_models import (
+            VideoInfo,
+            VideoSourceType,
+            TranscriptSegment,
+        )
+
+        info = VideoInfo(video_id="test", source_type=VideoSourceType.YOUTUBE, duration=600.0)
+        transcript = [
+            TranscriptSegment(text="before clip", start=0.0, end=60.0),
+            TranscriptSegment(text="in clip part1", start=120.0, end=180.0),
+            TranscriptSegment(text="in clip part2", start=200.0, end=300.0),
+            TranscriptSegment(text="after clip", start=400.0, end=500.0),
+        ]
+        segments = segment_by_time_window(
+            info, transcript, window_seconds=120.0, start_offset=120.0, end_limit=360.0
+        )
+        # Should have segments starting at 120, 240
+        self.assertTrue(len(segments) >= 1)
+        # All segments should be within clip range
+        for seg in segments:
+            self.assertGreaterEqual(seg.start_time, 120.0)
+            self.assertLessEqual(seg.end_time, 360.0)
+
+
 if __name__ == "__main__":
     unittest.main()

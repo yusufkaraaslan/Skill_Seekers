@@ -378,10 +378,21 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
             - visual_min_gap (float, optional): Minimum seconds between kept frames (default: 2.0)
             - visual_similarity (float, optional): Similarity threshold to skip duplicate frames (default: 0.95)
             - vision_ocr (bool, optional): Use vision model for OCR on frames (default: False)
+            - start_time (str, optional): Start time for extraction (seconds, MM:SS, or HH:MM:SS)
+            - end_time (str, optional): End time for extraction (seconds, MM:SS, or HH:MM:SS)
+            - setup (bool, optional): Auto-detect GPU and install visual extraction deps
 
     Returns:
         List[TextContent]: Tool execution results
     """
+    # Handle --setup early exit
+    if args.get("setup", False):
+        from skill_seekers.cli.video_setup import run_setup
+
+        rc = run_setup(interactive=False)
+        msg = "Setup completed successfully." if rc == 0 else "Setup failed. Check logs."
+        return [TextContent(type="text", text=msg)]
+
     url = args.get("url")
     video_file = args.get("video_file")
     playlist = args.get("playlist")
@@ -395,6 +406,8 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
     visual_min_gap = args.get("visual_min_gap")
     visual_similarity = args.get("visual_similarity")
     vision_ocr = args.get("vision_ocr", False)
+    start_time = args.get("start_time")
+    end_time = args.get("end_time")
 
     # Build command
     cmd = [sys.executable, str(CLI_DIR / "video_scraper.py")]
@@ -440,6 +453,10 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
         cmd.extend(["--visual-similarity", str(visual_similarity)])
     if vision_ocr:
         cmd.append("--vision-ocr")
+    if start_time:
+        cmd.extend(["--start-time", str(start_time)])
+    if end_time:
+        cmd.extend(["--end-time", str(end_time)])
 
     # Run video_scraper.py with streaming
     timeout = 600  # 10 minutes for video extraction

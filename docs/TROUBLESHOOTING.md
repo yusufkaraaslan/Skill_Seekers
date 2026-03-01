@@ -90,6 +90,35 @@ pyenv install 3.12
 pyenv global 3.12
 ```
 
+### Issue: Video Visual Dependencies Missing
+
+**Symptoms:**
+```
+Missing video dependencies: easyocr
+RuntimeError: Required video visual dependencies not installed
+```
+
+**Solutions:**
+
+```bash
+# Run the GPU-aware setup command
+skill-seekers video --setup
+
+# This auto-detects your GPU and installs:
+# - PyTorch (correct CUDA/ROCm/CPU variant)
+# - easyocr, opencv, pytesseract, scenedetect, faster-whisper
+# - yt-dlp, youtube-transcript-api
+
+# Verify installation
+python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+python -c "import easyocr; print('easyocr OK')"
+```
+
+**Common issues:**
+- Running outside a virtual environment → `--setup` will warn you; create a venv first
+- Missing system packages → Install `tesseract-ocr` and `ffmpeg` for your OS
+- AMD GPU without ROCm → Install ROCm first, then re-run `--setup`
+
 ## Configuration Issues
 
 ### Issue: API Keys Not Recognized

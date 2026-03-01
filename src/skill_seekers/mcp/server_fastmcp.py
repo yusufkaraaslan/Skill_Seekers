@@ -440,6 +440,9 @@ async def scrape_video(
     visual_min_gap: float | None = None,
     visual_similarity: float | None = None,
     vision_ocr: bool = False,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    setup: bool = False,
 ) -> str:
     """
     Scrape video content and build Claude skill.
@@ -458,10 +461,19 @@ async def scrape_video(
         visual_min_gap: Minimum seconds between kept frames (default: 2.0)
         visual_similarity: Similarity threshold to skip duplicate frames 0.0-1.0 (default: 0.95)
         vision_ocr: Use vision model for OCR on extracted frames
+        start_time: Start time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
+        end_time: End time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
+        setup: Auto-detect GPU and install visual extraction deps (PyTorch, easyocr, etc.)
 
     Returns:
         Video scraping results with file paths.
     """
+    if setup:
+        from skill_seekers.cli.video_setup import run_setup
+
+        rc = run_setup(interactive=False)
+        return "Setup completed successfully." if rc == 0 else "Setup failed. Check logs."
+
     args = {}
     if url:
         args["url"] = url
@@ -477,6 +489,10 @@ async def scrape_video(
         args["languages"] = languages
     if from_json:
         args["from_json"] = from_json
+    if start_time:
+        args["start_time"] = start_time
+    if end_time:
+        args["end_time"] = end_time
     if visual:
         args["visual"] = visual
     if whisper_model:

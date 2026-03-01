@@ -113,7 +113,7 @@ All languages supported by:
 | [`04_VIDEO_INTEGRATION.md`](./04_VIDEO_INTEGRATION.md) | CLI, config, source detection, unified scraper integration |
 | [`05_VIDEO_OUTPUT.md`](./05_VIDEO_OUTPUT.md) | Output structure, SKILL.md integration, reference file format |
 | [`06_VIDEO_TESTING.md`](./06_VIDEO_TESTING.md) | Test strategy, mocking, fixtures, CI considerations |
-| [`07_VIDEO_DEPENDENCIES.md`](./07_VIDEO_DEPENDENCIES.md) | Dependency tiers, optional installs, system requirements |
+| [`07_VIDEO_DEPENDENCIES.md`](./07_VIDEO_DEPENDENCIES.md) | Dependency tiers, optional installs, system requirements — **IMPLEMENTED** (`video_setup.py`, GPU auto-detection, `--setup`) |
 
 ---
 

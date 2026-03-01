@@ -132,6 +132,8 @@ def segment_by_time_window(
     video_info: VideoInfo,
     transcript_segments: list[TranscriptSegment],
     window_seconds: float = 120.0,
+    start_offset: float = 0.0,
+    end_limit: float | None = None,
 ) -> list[VideoSegment]:
     """Segment video using fixed time windows.
 
@@ -139,6 +141,8 @@ def segment_by_time_window(
         video_info: Video metadata.
         transcript_segments: Raw transcript segments.
         window_seconds: Duration of each window in seconds.
+        start_offset: Start segmentation at this time (seconds).
+        end_limit: Stop segmentation at this time (seconds). None = full duration.
 
     Returns:
         List of VideoSegment objects.
@@ -149,10 +153,13 @@ def segment_by_time_window(
     if duration <= 0 and transcript_segments:
         duration = max(seg.end for seg in transcript_segments)
 
+    if end_limit is not None:
+        duration = min(duration, end_limit)
+
     if duration <= 0:
         return segments
 
-    current_time = 0.0
+    current_time = start_offset
     index = 0
 
     while current_time < duration:
@@ -215,4 +222,10 @@ def segment_video(
     # Fallback to time-window
     window = config.time_window_seconds
     logger.info(f"Using time-window segmentation ({window}s windows)")
-    return segment_by_time_window(video_info, transcript_segments, window)
+    return segment_by_time_window(
+        video_info,
+        transcript_segments,
+        window,
+        start_offset=config.clip_start or 0.0,
+        end_limit=config.clip_end,
+    )

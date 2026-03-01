@@ -121,12 +121,13 @@ video = [
 ]
 
 # Video processing (full: + Whisper + visual extraction)
+# NOTE: easyocr removed — it pulls torch with the wrong GPU variant.
+# Use: skill-seekers video --setup  (auto-detects GPU, installs correct PyTorch + easyocr)
 video-full = [
     "yt-dlp>=2024.12.0",
     "youtube-transcript-api>=1.2.0",
     "faster-whisper>=1.0.0",
     "scenedetect[opencv]>=0.6.4",
-    "easyocr>=1.7.0",
     "opencv-python-headless>=4.9.0",
     "pytesseract>=0.3.13",
 ]

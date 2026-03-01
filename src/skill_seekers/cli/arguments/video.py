@@ -109,6 +109,31 @@ VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Use Claude Vision API as fallback for low-confidence code frames (requires ANTHROPIC_API_KEY, ~$0.004/frame)",
         },
     },
+    "start_time": {
+        "flags": ("--start-time",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "metavar": "TIME",
+            "help": "Start time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.",
+        },
+    },
+    "end_time": {
+        "flags": ("--end-time",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "metavar": "TIME",
+            "help": "End time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.",
+        },
+    },
+    "setup": {
+        "flags": ("--setup",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Auto-detect GPU and install visual extraction deps (PyTorch, easyocr, etc.)",
+        },
+    },
 }
 
 

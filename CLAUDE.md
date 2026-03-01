@@ -341,6 +341,9 @@ skill-seekers how-to-guides output/test_examples.json --output output/guides/
 # Test enhancement status monitoring
 skill-seekers enhance-status output/react/ --watch
 
+# Video setup (auto-detect GPU and install deps)
+skill-seekers video --setup
+
 # Test multi-platform packaging
 skill-seekers package output/react/ --target gemini --dry-run
 
@@ -750,6 +753,7 @@ skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"         # C3.1 Pattern detection
 skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main" # C3.3 Guide generation
 skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"         # NEW: Workflow preset management
+skill-seekers-video = "skill_seekers.cli.video_scraper:main"                  # Video scraping pipeline (use --setup to install deps)
 
 # New v3.0.0 Entry Points
 skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"                  # NEW: v3.0.0 Setup wizard
@@ -770,6 +774,8 @@ skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"             # N
 - Dev dependencies: `[dependency-groups] dev = [...]` in pyproject.toml
 - Install with: `pip install -e .` (installs only core deps)
 - Install dev deps: See CI workflow or manually install pytest, ruff, mypy
+
+**Note on video dependencies:** `easyocr` and GPU-specific PyTorch builds are **not** included in the `video-full` optional dependency group. They are installed at runtime by `skill-seekers video --setup`, which auto-detects the GPU (CUDA/ROCm/MPS/CPU) and installs the correct builds.
 
 ```toml
 [project.optional-dependencies]
@@ -1984,6 +1990,13 @@ UNIVERSAL_ARGUMENTS = {
   - Configuration management
   - Profile creation
   - First-time setup
+
+**Video Scraper** (`src/skill_seekers/cli/`):
+- `video_scraper.py` - Main video scraping pipeline CLI
+- `video_setup.py` - GPU auto-detection, PyTorch installation, visual dependency setup (~835 lines)
+  - Detects CUDA/ROCm/MPS/CPU and installs matching PyTorch build
+  - Installs `easyocr` and other visual processing deps at runtime via `--setup`
+  - Run `skill-seekers video --setup` before first use
 
 ## 🎯 Project-Specific Best Practices
 

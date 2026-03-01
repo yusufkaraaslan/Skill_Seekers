@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import difflib
+import gc
 import logging
 import os
 import tempfile
@@ -31,6 +32,18 @@ from skill_seekers.cli.video_models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Set ROCm/MIOpen env vars BEFORE importing torch (via easyocr).
+# Without MIOPEN_FIND_MODE=FAST, MIOpen tries to allocate huge workspace
+# buffers (300MB+), gets 0 bytes, and silently falls back to CPU kernels.
+import os as _os
+
+if "MIOPEN_FIND_MODE" not in _os.environ:
+    _os.environ["MIOPEN_FIND_MODE"] = "FAST"
+if "MIOPEN_USER_DB_PATH" not in _os.environ:
+    _miopen_db = _os.path.expanduser("~/.config/miopen")
+    _os.makedirs(_miopen_db, exist_ok=True)
+    _os.environ["MIOPEN_USER_DB_PATH"] = _miopen_db
 
 # Tier 2 dependency flags
 try:
@@ -65,23 +78,46 @@ except ImportError:
     pytesseract = None  # type: ignore[assignment]
     HAS_PYTESSERACT = False
 
+# Circuit breaker: after first tesseract failure, disable it for the session.
+# Prevents wasting time spawning subprocesses that always fail.
+_tesseract_broken = False
+
 
 _INSTALL_MSG = (
     "Visual extraction requires additional dependencies.\n"
-    'Install with: pip install "skill-seekers[video-full]"\n'
-    "Or: pip install opencv-python-headless scenedetect easyocr"
+    "Recommended: skill-seekers video --setup  (auto-detects GPU, installs correct PyTorch)\n"
+    'Alternative:  pip install "skill-seekers[video-full]"  (may install wrong PyTorch variant)'
 )
 
 # Lazy-initialized EasyOCR reader (heavy, only load once)
 _ocr_reader = None
 
 
+def _detect_gpu() -> bool:
+    """Check if a CUDA or ROCm GPU is available for EasyOCR/PyTorch."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return True
+        # ROCm exposes GPU via torch.version.hip
+        if hasattr(torch.version, "hip") and torch.version.hip is not None:
+            return True
+        return False
+    except ImportError:
+        return False
+
+
 def _get_ocr_reader():
     """Get or create the EasyOCR reader (lazy singleton)."""
     global _ocr_reader
     if _ocr_reader is None:
-        logger.info("Initializing OCR engine (first run may download models)...")
-        _ocr_reader = easyocr.Reader(["en"], gpu=False)
+        use_gpu = _detect_gpu()
+        logger.info(
+            f"Initializing OCR engine ({'GPU' if use_gpu else 'CPU'} mode, "
+            "first run may download models)..."
+        )
+        _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu)
     return _ocr_reader
 
 
@@ -296,11 +332,15 @@ def _run_tesseract_ocr(preprocessed_path: str, frame_type: FrameType) -> list[tu
     Returns results in the same format as EasyOCR: list of (bbox, text, confidence).
     Groups words into lines by y-coordinate.
 
+    Uses a circuit breaker: if tesseract fails once, it's disabled for the
+    rest of the session to avoid wasting time on repeated subprocess failures.
+
     Args:
         preprocessed_path: Path to the preprocessed grayscale image.
         frame_type: Frame classification (reserved for future per-type tuning).
     """
-    if not HAS_PYTESSERACT:
+    global _tesseract_broken
+    if not HAS_PYTESSERACT or _tesseract_broken:
         return []
 
     # Produce clean binary for Tesseract
@@ -312,7 +352,11 @@ def _run_tesseract_ocr(preprocessed_path: str, frame_type: FrameType) -> list[tu
             output_type=pytesseract.Output.DICT,
         )
     except Exception:  # noqa: BLE001
-        logger.debug("pytesseract failed, returning empty results")
+        _tesseract_broken = True
+        logger.warning(
+            "pytesseract failed — disabling for this session. "
+            "Install tesseract binary: skill-seekers video --setup"
+        )
         return []
     finally:
         if binary_path != preprocessed_path and os.path.exists(binary_path):
@@ -897,6 +941,25 @@ def _crop_code_region(frame_path: str, bbox: tuple[int, int, int, int], suffix: 
     return cropped_path
 
 
+def _frame_type_from_regions(
+    regions: list[tuple[int, int, int, int, FrameType]],
+) -> FrameType:
+    """Derive the dominant frame type from pre-computed regions.
+
+    Same logic as ``classify_frame`` but avoids re-loading the image.
+    """
+    for _x1, _y1, _x2, _y2, ft in regions:
+        if ft == FrameType.TERMINAL:
+            return FrameType.TERMINAL
+        if ft == FrameType.CODE_EDITOR:
+            return FrameType.CODE_EDITOR
+
+    from collections import Counter
+
+    type_counts = Counter(ft for _, _, _, _, ft in regions)
+    return type_counts.most_common(1)[0][0] if type_counts else FrameType.OTHER
+
+
 def classify_frame(frame_path: str) -> FrameType:
     """Classify a video frame by its visual content.
 
@@ -1114,6 +1177,8 @@ def _compute_frame_timestamps(
     duration: float,
     sample_interval: float = 0.7,
     min_gap: float = 0.5,
+    start_offset: float = 0.0,
+    end_limit: float | None = None,
 ) -> list[float]:
     """Build a deduplicated list of timestamps to extract frames at.
 
@@ -1126,10 +1191,13 @@ def _compute_frame_timestamps(
         duration: Total video duration in seconds.
         sample_interval: Seconds between interval samples.
         min_gap: Minimum gap between kept timestamps.
+        start_offset: Start sampling at this time (seconds).
+        end_limit: Stop sampling at this time (seconds). None = full duration.
 
     Returns:
         Sorted, deduplicated list of timestamps (seconds).
     """
+    effective_end = end_limit if end_limit is not None else duration
     timestamps: set[float] = set()
 
     # 1. Scene detection — catches cuts, slide transitions, editor switches
@@ -1138,19 +1206,21 @@ def _compute_frame_timestamps(
             scenes = detect_scenes(video_path)
             for start, _end in scenes:
                 # Take frame 0.5s after the scene starts (avoids transition blur)
-                timestamps.add(round(start + 0.5, 1))
+                ts = round(start + 0.5, 1)
+                if ts >= start_offset and ts < effective_end:
+                    timestamps.add(ts)
         except Exception as exc:  # noqa: BLE001
             logger.warning(f"Scene detection failed, falling back to interval: {exc}")
 
     # 2. Regular interval sampling — fills gaps between scene cuts
-    t = 0.5  # start slightly after 0 to avoid black intro frames
-    while t < duration:
+    t = max(0.5, start_offset)
+    while t < effective_end:
         timestamps.add(round(t, 1))
         t += sample_interval
 
     # Always include near the end
-    if duration > 2.0:
-        timestamps.add(round(duration - 1.0, 1))
+    if effective_end > 2.0:
+        timestamps.add(round(effective_end - 1.0, 1))
 
     # 3. Sort and deduplicate (merge timestamps closer than min_gap)
     sorted_ts = sorted(timestamps)
@@ -1876,6 +1946,8 @@ def extract_visual_data(
     min_gap: float = 0.5,
     similarity_threshold: float = 3.0,
     use_vision_api: bool = False,
+    clip_start: float | None = None,
+    clip_end: float | None = None,
 ) -> tuple[list[KeyFrame], list[CodeBlock], TextGroupTimeline | None]:
     """Run continuous visual extraction on a video.
 
@@ -1899,6 +1971,8 @@ def extract_visual_data(
         similarity_threshold: Pixel-diff threshold for duplicate detection (default 3.0).
         use_vision_api: If True, use Claude Vision API as fallback for low-confidence
             code frames (requires ANTHROPIC_API_KEY).
+        clip_start: Start of clip range in seconds (None = beginning).
+        clip_end: End of clip range in seconds (None = full duration).
 
     Returns:
         Tuple of (keyframes, code_blocks, text_group_timeline).
@@ -1937,7 +2011,12 @@ def extract_visual_data(
 
     # Build candidate timestamps
     timestamps = _compute_frame_timestamps(
-        video_path, duration, sample_interval=sample_interval, min_gap=min_gap
+        video_path,
+        duration,
+        sample_interval=sample_interval,
+        min_gap=min_gap,
+        start_offset=clip_start or 0.0,
+        end_limit=clip_end,
     )
     logger.info(f"  {len(timestamps)} candidate timestamps after dedup")
 
@@ -1961,17 +2040,21 @@ def extract_visual_data(
             skipped_similar += 1
             continue
         prev_frame = frame.copy()
+        frame_h, frame_w = frame.shape[:2]
 
         # Save frame
         idx = len(keyframes)
         frame_filename = f"frame_{idx:03d}_{ts:.0f}s.jpg"
         frame_path = os.path.join(frames_dir, frame_filename)
         cv2.imwrite(frame_path, frame)
+        del frame  # Free the numpy array early — saved to disk
 
         # Classify using region-based panel detection
         regions = classify_frame_regions(frame_path)
         code_panels = _get_code_panels(regions)
-        frame_type = classify_frame(frame_path)  # dominant type for metadata
+        # Derive frame_type from already-computed regions (avoids loading
+        # the image a second time — classify_frame() would repeat the work).
+        frame_type = _frame_type_from_regions(regions)
         is_code_frame = frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
 
         # Per-panel OCR: each code/terminal panel is OCR'd independently
@@ -1982,11 +2065,13 @@ def extract_visual_data(
         ocr_confidence = 0.0
 
         if is_code_frame and code_panels and (HAS_EASYOCR or HAS_PYTESSERACT):
-            full_area = frame.shape[0] * frame.shape[1]
+            full_area = frame_h * frame_w
 
             if len(code_panels) > 1:
                 # Parallel OCR — each panel is independent
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(code_panels)) as pool:
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=min(2, len(code_panels))
+                ) as pool:
                     futures = {
                         pool.submit(
                             _ocr_single_panel,
@@ -2084,8 +2169,8 @@ def extract_visual_data(
             ocr_text=ocr_text,
             ocr_regions=ocr_regions,
             ocr_confidence=ocr_confidence,
-            width=frame.shape[1],
-            height=frame.shape[0],
+            width=frame_w,
+            height=frame_h,
             sub_sections=sub_sections,
         )
         keyframes.append(kf)
@@ -2100,6 +2185,10 @@ def extract_visual_data(
                 else ""
             )
         )
+
+        # Periodically collect to free PyTorch/numpy memory
+        if idx % 10 == 9:
+            gc.collect()
 
     cap.release()
 
@@ -2131,7 +2220,12 @@ def extract_visual_data(
     return keyframes, code_blocks, timeline
 
 
-def download_video(url: str, output_dir: str) -> str | None:
+def download_video(
+    url: str,
+    output_dir: str,
+    clip_start: float | None = None,
+    clip_end: float | None = None,
+) -> str | None:
     """Download a video using yt-dlp for visual processing.
 
     Downloads the best quality up to 1080p. Uses separate video+audio streams
@@ -2142,6 +2236,8 @@ def download_video(url: str, output_dir: str) -> str | None:
     Args:
         url: Video URL.
         output_dir: Directory to save the downloaded file.
+        clip_start: Download from this time (seconds). None = beginning.
+        clip_end: Download until this time (seconds). None = full video.
 
     Returns:
         Path to downloaded video file, or None on failure.
@@ -2156,12 +2252,29 @@ def download_video(url: str, output_dir: str) -> str | None:
     output_template = os.path.join(output_dir, "video.%(ext)s")
 
     opts = {
-        "format": "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
+        "format": (
+            "bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[height<=1080][vcodec^=avc1]/"
+            "bestvideo[height<=1080][vcodec^=h264]+bestaudio/best[height<=1080][vcodec^=h264]/"
+            "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+        ),
         "merge_output_format": "mp4",
         "outtmpl": output_template,
         "quiet": True,
         "no_warnings": True,
     }
+
+    # Apply download_ranges for clip support (yt-dlp 2023.01.02+)
+    if clip_start is not None or clip_end is not None:
+        try:
+            from yt_dlp.utils import download_range_func
+
+            ranges = [(clip_start or 0, clip_end or float("inf"))]
+            opts["download_ranges"] = download_range_func(None, ranges)
+        except (ImportError, TypeError):
+            logger.warning(
+                "yt-dlp version does not support download_ranges; "
+                "downloading full video and relying on frame timestamp filtering"
+            )
 
     logger.info(f"Downloading video for visual extraction...")
     try:

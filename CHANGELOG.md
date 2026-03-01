@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🎬 Video `--setup`: GPU Auto-Detection & Dependency Installation
+
+### Added
+- **`skill-seekers video --setup`** — One-command GPU auto-detection and dependency installation for the video scraper pipeline
+  - `video_setup.py` (~835 lines) — New module with complete setup orchestration
+  - **GPU auto-detection** — Detects NVIDIA (nvidia-smi → CUDA version), AMD (rocminfo → ROCm version), or CPU-only without requiring PyTorch
+  - **Correct PyTorch variant** — Installs from the right index URL: `cu124`/`cu121`/`cu118` for NVIDIA, `rocm6.3`/`rocm6.2.4` for AMD, `cpu` for CPU-only
+  - **ROCm configuration** — Sets `MIOPEN_FIND_MODE=FAST` and `HSA_OVERRIDE_GFX_VERSION` for AMD GPUs (fixes MIOpen workspace allocation issues)
+  - **Virtual environment detection** — Warns users outside a venv with opt-in `--force` override
+  - **System dependency checks** — Validates `tesseract` and `ffmpeg` binaries, provides OS-specific install instructions
+  - **Module selection** — `SetupModules` dataclass for optional component selection (easyocr, opencv, tesseract, scenedetect, whisper)
+  - **Base video deps always included** — `yt-dlp` and `youtube-transcript-api` installed automatically so video pipeline is fully ready after setup
+  - **Verification step** — Post-install import checks for all deps including `torch.cuda.is_available()` and `torch.version.hip`
+  - **Non-interactive mode** — `run_setup(interactive=False)` for MCP server and CI/CD use
+- **`--setup` flag** in `arguments/video.py` — Added to `VIDEO_ARGUMENTS` dict
+- **Early-exit in `video_scraper.py`** — `--setup` runs before source validation (no `--url` required)
+- **MCP `scrape_video` setup parameter** — `setup: bool = False` param in `server_fastmcp.py` and `scraping_tools.py`
+- **`create` command routing** — `create_command.py` forwards `--setup` to video scraper
+- **`tests/test_video_setup.py`** (60 tests) — GPU detection, CUDA/ROCm version mapping, installation, verification, venv checks, system deps, module selection, argument parsing
+
+### Changed
+- **`easyocr` removed from `video-full` optional deps** — Was pulling ~2GB of NVIDIA CUDA packages regardless of GPU vendor. Now installed via `--setup` with correct PyTorch variant.
+- **Video dependency error messages** — `video_scraper.py` and `video_visual.py` now suggest `skill-seekers video --setup` as the primary fix
+- **Multi-engine OCR** — `video_visual.py` uses EasyOCR + pytesseract ensemble for code frames (per-line confidence merge with code-token preference), EasyOCR only for non-code frames
+- **Tesseract circuit breaker** — `_tesseract_broken` flag disables pytesseract for the session after first failure, avoiding repeated subprocess errors
+- **`video_models.py`** — Added `SetupModules` dataclass for granular dependency control
+- **`video_segmenter.py`** — Updated dependency check messages to reference `--setup`
+
 ### 📄 B2: Microsoft Word (.docx) Support & Stage 1 Quality Improvements
 
 ### Added
