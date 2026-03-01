@@ -14,7 +14,7 @@
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 集成](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![测试通过](https://img.shields.io/badge/Tests-1880%2B%20Passing-brightgreen.svg)](tests/)
+[![测试通过](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
 [![项目看板](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 版本](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 下载量](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -23,7 +23,7 @@
 [![关注 Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 AI 系统的数据层。** Skill Seekers 将任何文档、GitHub 仓库或 PDF 转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
+**🧠 AI 系统的数据层。** Skill Seekers 将任何文档、GitHub 仓库、PDF 或视频转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
 
 > 🌐 **[访问 SkillSeekersWeb.com](https://skillseekersweb.com/)** - 浏览 24+ 个预设配置，分享您的配置，访问完整文档！
 
@@ -68,7 +68,8 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 📊 **RAG 就绪的分块** — 智能分块保留代码块并维护上下文
 - 🔄 **多源支持** — 将文档 + GitHub + PDF 合并为一个知识资产
 - 🌐 **一次准备，导出所有目标** — 无需重新抓取即可导出到 16 个平台
-- ✅ **久经考验** — 1,880+ 测试，24+ 框架预设，生产就绪
+- 🎬 **视频** — 从 YouTube 和本地视频提取代码、字幕和结构化知识
+- ✅ **久经考验** — 2,540+ 测试，24+ 框架预设，生产就绪
 
 ## 快速开始
 
@@ -99,7 +100,7 @@ skill-seekers package output/django --target cursor     # Cursor IDE 上下文
 
 ## 什么是 Skill Seekers？
 
-Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库和 PDF 文件转换为适用于所有 AI 目标的结构化知识资产：
+Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库、PDF 文件和视频转换为适用于所有 AI 目标的结构化知识资产：
 
 | 使用场景 | 获得的内容 | 示例 |
 |---------|-----------|------|
@@ -110,7 +111,7 @@ Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库和
 
 Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 
-1. **采集** — 文档、GitHub 仓库、本地代码库、PDF
+1. **采集** — 文档、GitHub 仓库、本地代码库、PDF、视频
 2. **分析** — 深度 AST 解析、模式检测、API 提取
 3. **结构化** — 带元数据的分类参考文件
 4. **增强** — AI 驱动的 SKILL.md 生成（Claude、Gemini 或本地）
@@ -157,8 +158,8 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 - ✅ **并行处理** - 大型 PDF 快 3 倍
 - ✅ **智能缓存** - 重复运行快 50%
 
-### 🎬 视频教程提取
-- ✅ **YouTube 和本地视频** - 从视频教程提取字幕、代码和结构化知识
+### 🎬 视频提取
+- ✅ **YouTube 和本地视频** - 从视频提取字幕、代码和结构化知识
 - ✅ **视觉帧分析** - 屏幕 OCR 提取代码编辑器、终端和幻灯片内容
 - ✅ **GPU 自动检测** - 自动安装正确的 PyTorch 版本（CUDA/ROCm/MPS/CPU）
 - ✅ **AI 增强** - 两阶段增强：清理 OCR + 生成精美 SKILL.md
@@ -489,7 +490,7 @@ stages:
 - ✅ **缓存系统** - 抓取一次，即时重建
 
 ### ✅ 质量保证
-- ✅ **全面测试** - 1,880+ 测试，全面覆盖
+- ✅ **全面测试** - 2,540+ 测试，全面覆盖
 
 ---
 
@@ -613,7 +614,7 @@ skill-seekers pdf --pdf docs/manual.pdf --name myskill \
 skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
-### 视频教程提取
+### 视频提取
 
 ```bash
 # 安装视频支持
@@ -1013,7 +1014,7 @@ skill-seekers config --github
 - **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI 增强模式指南
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 集成设置
 - **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - 多源抓取
-- **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 视频教程提取完整指南
+- **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 视频提取完整指南
 
 ### 集成指南
 - **[docs/integrations/LANGCHAIN.md](docs/integrations/LANGCHAIN.md)** - LangChain RAG

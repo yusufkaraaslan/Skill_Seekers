@@ -10,7 +10,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-2283%2B%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -19,7 +19,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 The data layer for AI systems.** Skill Seekers turns any documentation, GitHub repo, or PDF into structured knowledge assets—ready to power AI Skills (Claude, Gemini, OpenAI), RAG pipelines (LangChain, LlamaIndex, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline) in minutes, not hours.
+**🧠 The data layer for AI systems.** Skill Seekers turns any documentation, GitHub repo, PDF, or video into structured knowledge assets—ready to power AI Skills (Claude, Gemini, OpenAI), RAG pipelines (LangChain, LlamaIndex, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline) in minutes, not hours.
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
@@ -62,9 +62,10 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - ⚡ **99% faster** — Days of manual data prep → 15–45 minutes
 - 🎯 **AI Skill quality** — 500+ line SKILL.md files with examples, patterns, and guides
 - 📊 **RAG-ready chunks** — Smart chunking preserves code blocks and maintains context
-- 🔄 **Multi-source** — Combine docs + GitHub + PDFs into one knowledge asset
+- 🎬 **Videos** — Extract code, transcripts, and structured knowledge from YouTube and local videos
+- 🔄 **Multi-source** — Combine docs + GitHub + PDFs + videos into one knowledge asset
 - 🌐 **One prep, every target** — Export the same asset to 16 platforms without re-scraping
-- ✅ **Battle-tested** — 1,880+ tests, 24+ framework presets, production-ready
+- ✅ **Battle-tested** — 2,540+ tests, 24+ framework presets, production-ready
 
 ## 🚀 Quick Start (3 Commands)
 
@@ -110,7 +111,7 @@ done
 
 ## What is Skill Seekers?
 
-Skill Seekers is the **data layer for AI systems**. It transforms documentation websites, GitHub repositories, and PDF files into structured knowledge assets for every AI target:
+Skill Seekers is the **data layer for AI systems**. It transforms documentation websites, GitHub repositories, PDF files, and videos into structured knowledge assets for every AI target:
 
 | Use Case | What you get | Examples |
 |----------|-------------|---------|
@@ -136,7 +137,7 @@ Skill Seekers is the **data layer for AI systems**. It transforms documentation 
 
 Instead of spending days on manual preprocessing, Skill Seekers:
 
-1. **Ingests** — docs, GitHub repos, local codebases, PDFs
+1. **Ingests** — docs, GitHub repos, local codebases, PDFs, videos
 2. **Analyzes** — deep AST parsing, pattern detection, API extraction
 3. **Structures** — categorized reference files with metadata
 4. **Enhances** — AI-powered SKILL.md generation (Claude, Gemini, or local)
@@ -157,7 +158,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - 🤖 **RAG-ready data** — Pre-chunked LangChain `Documents`, LlamaIndex `TextNodes`, Haystack `Documents`
 - 🚀 **99% faster** — Days of preprocessing → 15–45 minutes
 - 📊 **Smart metadata** — Categories, sources, types → better retrieval accuracy
-- 🔄 **Multi-source** — Combine docs + GitHub + PDFs in one pipeline
+- 🔄 **Multi-source** — Combine docs + GitHub + PDFs + videos in one pipeline
 - 🌐 **Platform-agnostic** — Export to any vector DB or framework without re-scraping
 
 ### For AI Coding Assistant Users
@@ -182,6 +183,15 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Table Extraction** - Extract complex tables from PDFs
 - ✅ **Parallel Processing** - 3x faster for large PDFs
 - ✅ **Intelligent Caching** - 50% faster on re-runs
+
+### 🎬 Video Extraction
+- ✅ **YouTube & Local Videos** - Extract transcripts, on-screen code, and structured knowledge from videos
+- ✅ **Visual Frame Analysis** - OCR extraction from code editors, terminals, slides, and diagrams
+- ✅ **GPU Auto-Detection** - Automatically installs correct PyTorch build (CUDA/ROCm/MPS/CPU)
+- ✅ **AI Enhancement** - Two-pass: clean OCR artifacts + generate polished SKILL.md
+- ✅ **Time Clipping** - Extract specific sections with `--start-time` and `--end-time`
+- ✅ **Playlist Support** - Batch process all videos in a YouTube playlist
+- ✅ **Vision API Fallback** - Use Claude Vision for low-confidence OCR frames
 
 ### 🐙 GitHub Repository Analysis
 - ✅ **Deep Code Analysis** - AST parsing for Python, JavaScript, TypeScript, Java, C++, Go
@@ -564,7 +574,7 @@ stages:
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 1,880+ tests with comprehensive coverage
+- ✅ **Fully Tested** - 2,540+ tests with comprehensive coverage
 
 ---
 
@@ -645,10 +655,10 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **4 LLM platforms** and **5 skill modes** with full feature parity.
+Skill Seekers supports **4 LLM platforms** and **6 skill modes** with full feature parity.
 
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
-**Skill Modes:** Documentation, GitHub, PDF, Unified Multi-Source, Local Repository
+**Skill Modes:** Documentation, GitHub, PDF, Video, Unified Multi-Source, Local Repository
 
 See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
 
@@ -1078,6 +1088,8 @@ skill-seekers config --github
 | Re-building | <1 min | With `--skip-scrape` |
 | Enhancement (LOCAL) | 30-60 sec | Uses Claude Code Max |
 | Enhancement (API) | 20-40 sec | Requires API key |
+| Video (transcript) | 1-3 min | YouTube/local, transcript only |
+| Video (visual) | 5-15 min | + OCR frame extraction |
 | Packaging | 5-10 sec | Final .zip creation |
 
 ---
@@ -1096,6 +1108,7 @@ skill-seekers config --github
 - **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI enhancement modes guide
 - **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
 - **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Multi-source scraping
+- **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - Video extraction guide
 
 ### Integration Guides
 - **[docs/integrations/LANGCHAIN.md](docs/integrations/LANGCHAIN.md)** - LangChain RAG
