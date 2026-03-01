@@ -5,9 +5,9 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.2.0] - 2026-03-01
 
-**Theme:** Video source support (BETA), Word document support, and quality improvements. 94 files changed, +23,500 lines since v3.1.3. **2,540 tests passing.**
+**Theme:** Video source support, Word document support, Pinecone adaptor, and quality improvements. 94 files changed, +23,500 lines since v3.1.3. **2,540 tests passing.**
 
 ### 🎬 Video Tutorial Scraping Pipeline (BETA)
 
