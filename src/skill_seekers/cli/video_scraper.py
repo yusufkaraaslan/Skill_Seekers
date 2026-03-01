@@ -84,9 +84,7 @@ def check_video_dependencies(require_full: bool = False) -> None:
         deps = ", ".join(missing)
         extra = "[video-full]" if require_full else "[video]"
         setup_hint = (
-            "\nFor visual deps (GPU-aware): skill-seekers video --setup"
-            if require_full
-            else ""
+            "\nFor visual deps (GPU-aware): skill-seekers video --setup" if require_full else ""
         )
         raise RuntimeError(
             f"Missing video dependencies: {deps}\n"

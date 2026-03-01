@@ -129,9 +129,7 @@ class TestGPUDetection(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.subprocess.run")
     def test_nvidia_smi_error(self, mock_run, mock_which):
         """nvidia-smi returns non-zero → skip to next check."""
-        mock_which.side_effect = lambda cmd: (
-            "/usr/bin/nvidia-smi" if cmd == "nvidia-smi" else None
-        )
+        mock_which.side_effect = lambda cmd: "/usr/bin/nvidia-smi" if cmd == "nvidia-smi" else None
         mock_run.return_value = MagicMock(returncode=1, stdout="")
         gpu = detect_gpu()
         assert gpu.vendor == GPUVendor.NONE
@@ -140,9 +138,7 @@ class TestGPUDetection(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.subprocess.run")
     def test_nvidia_smi_timeout(self, mock_run, mock_which):
         """nvidia-smi times out → skip to next check."""
-        mock_which.side_effect = lambda cmd: (
-            "/usr/bin/nvidia-smi" if cmd == "nvidia-smi" else None
-        )
+        mock_which.side_effect = lambda cmd: "/usr/bin/nvidia-smi" if cmd == "nvidia-smi" else None
         mock_run.side_effect = subprocess.TimeoutExpired(cmd="nvidia-smi", timeout=10)
         gpu = detect_gpu()
         assert gpu.vendor == GPUVendor.NONE
@@ -218,13 +214,11 @@ class TestVenv(unittest.TestCase):
 
     def test_is_in_venv_detects_prefix_mismatch(self):
         # If sys.prefix != sys.base_prefix, we're in a venv
-        with patch.object(sys, "prefix", "/some/venv"), \
-             patch.object(sys, "base_prefix", "/usr"):
+        with patch.object(sys, "prefix", "/some/venv"), patch.object(sys, "base_prefix", "/usr"):
             assert is_in_venv() is True
 
     def test_is_in_venv_detects_no_venv(self):
-        with patch.object(sys, "prefix", "/usr"), \
-             patch.object(sys, "base_prefix", "/usr"):
+        with patch.object(sys, "prefix", "/usr"), patch.object(sys, "base_prefix", "/usr"):
             assert is_in_venv() is False
 
     def test_create_venv_in_tempdir(self):
@@ -376,14 +370,20 @@ class TestModuleSelection(unittest.TestCase):
     def test_build_no_optional_deps(self):
         """Even with all optional modules off, base video deps are included."""
         m = SetupModules(
-            torch=False, easyocr=False, opencv=False,
-            tesseract=False, scenedetect=False, whisper=False,
+            torch=False,
+            easyocr=False,
+            opencv=False,
+            tesseract=False,
+            scenedetect=False,
+            whisper=False,
         )
         deps = _build_visual_deps(m)
         assert deps == list(_BASE_VIDEO_DEPS)
 
     def test_build_partial_deps(self):
-        m = SetupModules(easyocr=True, opencv=True, tesseract=False, scenedetect=False, whisper=False)
+        m = SetupModules(
+            easyocr=True, opencv=True, tesseract=False, scenedetect=False, whisper=False
+        )
         deps = _build_visual_deps(m)
         assert "yt-dlp" in deps
         assert "youtube-transcript-api" in deps
@@ -454,7 +454,9 @@ class TestInstallation(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.subprocess.run")
     def test_install_visual_deps_partial_modules(self, mock_run):
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-        modules = SetupModules(easyocr=True, opencv=False, tesseract=False, scenedetect=False, whisper=False)
+        modules = SetupModules(
+            easyocr=True, opencv=False, tesseract=False, scenedetect=False, whisper=False
+        )
         install_visual_deps(modules)
         call_args = mock_run.call_args[0][0]
         assert "easyocr" in call_args
@@ -464,7 +466,9 @@ class TestInstallation(unittest.TestCase):
     def test_install_visual_deps_base_only(self, mock_run):
         """Even with all optional modules off, base video deps get installed."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-        modules = SetupModules(easyocr=False, opencv=False, tesseract=False, scenedetect=False, whisper=False)
+        modules = SetupModules(
+            easyocr=False, opencv=False, tesseract=False, scenedetect=False, whisper=False
+        )
         result = install_visual_deps(modules)
         assert result is True
         call_args = mock_run.call_args[0][0]
@@ -488,7 +492,15 @@ class TestVerification(unittest.TestCase):
 
     def test_expected_keys(self):
         results = verify_installation()
-        for key in ("yt-dlp", "youtube-transcript-api", "torch", "torch.cuda", "torch.rocm", "easyocr", "opencv"):
+        for key in (
+            "yt-dlp",
+            "youtube-transcript-api",
+            "torch",
+            "torch.cuda",
+            "torch.rocm",
+            "easyocr",
+            "opencv",
+        ):
             assert key in results, f"Missing key: {key}"
 
 
@@ -505,15 +517,29 @@ class TestRunSetup(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.install_torch", return_value=True)
     @patch("skill_seekers.cli.video_setup.check_tesseract")
     @patch("skill_seekers.cli.video_setup.detect_gpu")
-    def test_non_interactive_success(self, mock_detect, mock_tess, mock_torch, mock_deps, mock_verify):
+    def test_non_interactive_success(
+        self, mock_detect, mock_tess, mock_torch, mock_deps, mock_verify
+    ):
         mock_detect.return_value = GPUInfo(
-            vendor=GPUVendor.NONE, name="CPU-only", index_url=f"{_PYTORCH_BASE}/cpu",
+            vendor=GPUVendor.NONE,
+            name="CPU-only",
+            index_url=f"{_PYTORCH_BASE}/cpu",
         )
-        mock_tess.return_value = {"installed": True, "has_eng": True, "install_cmd": "", "version": "5.3.0"}
+        mock_tess.return_value = {
+            "installed": True,
+            "has_eng": True,
+            "install_cmd": "",
+            "version": "5.3.0",
+        }
         mock_verify.return_value = {
-            "torch": True, "torch.cuda": False, "torch.rocm": False,
-            "easyocr": True, "opencv": True, "pytesseract": True,
-            "scenedetect": True, "faster-whisper": True,
+            "torch": True,
+            "torch.cuda": False,
+            "torch.rocm": False,
+            "easyocr": True,
+            "opencv": True,
+            "pytesseract": True,
+            "scenedetect": True,
+            "faster-whisper": True,
         }
         rc = run_setup(interactive=False)
         assert rc == 0
@@ -525,9 +551,16 @@ class TestRunSetup(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.detect_gpu")
     def test_failure_returns_nonzero(self, mock_detect, mock_tess, mock_torch):
         mock_detect.return_value = GPUInfo(
-            vendor=GPUVendor.NONE, name="CPU-only", index_url=f"{_PYTORCH_BASE}/cpu",
+            vendor=GPUVendor.NONE,
+            name="CPU-only",
+            index_url=f"{_PYTORCH_BASE}/cpu",
         )
-        mock_tess.return_value = {"installed": True, "has_eng": True, "install_cmd": "", "version": "5.3.0"}
+        mock_tess.return_value = {
+            "installed": True,
+            "has_eng": True,
+            "install_cmd": "",
+            "version": "5.3.0",
+        }
         rc = run_setup(interactive=False)
         assert rc == 1
 
@@ -537,9 +570,16 @@ class TestRunSetup(unittest.TestCase):
     @patch("skill_seekers.cli.video_setup.detect_gpu")
     def test_visual_deps_failure(self, mock_detect, mock_tess, mock_deps, mock_torch):
         mock_detect.return_value = GPUInfo(
-            vendor=GPUVendor.NONE, name="CPU-only", index_url=f"{_PYTORCH_BASE}/cpu",
+            vendor=GPUVendor.NONE,
+            name="CPU-only",
+            index_url=f"{_PYTORCH_BASE}/cpu",
         )
-        mock_tess.return_value = {"installed": True, "has_eng": True, "install_cmd": "", "version": "5.3.0"}
+        mock_tess.return_value = {
+            "installed": True,
+            "has_eng": True,
+            "install_cmd": "",
+            "version": "5.3.0",
+        }
         rc = run_setup(interactive=False)
         assert rc == 1
 
@@ -551,13 +591,25 @@ class TestRunSetup(unittest.TestCase):
     def test_rocm_configures_env(self, mock_detect, mock_tess, mock_torch, mock_deps, mock_verify):
         """AMD GPU → configure_rocm_env called and env vars set."""
         mock_detect.return_value = GPUInfo(
-            vendor=GPUVendor.AMD, name="RX 7900", index_url=f"{_PYTORCH_BASE}/rocm6.3",
+            vendor=GPUVendor.AMD,
+            name="RX 7900",
+            index_url=f"{_PYTORCH_BASE}/rocm6.3",
         )
-        mock_tess.return_value = {"installed": True, "has_eng": True, "install_cmd": "", "version": "5.3.0"}
+        mock_tess.return_value = {
+            "installed": True,
+            "has_eng": True,
+            "install_cmd": "",
+            "version": "5.3.0",
+        }
         mock_verify.return_value = {
-            "torch": True, "torch.cuda": False, "torch.rocm": True,
-            "easyocr": True, "opencv": True, "pytesseract": True,
-            "scenedetect": True, "faster-whisper": True,
+            "torch": True,
+            "torch.cuda": False,
+            "torch.rocm": True,
+            "easyocr": True,
+            "opencv": True,
+            "pytesseract": True,
+            "scenedetect": True,
+            "faster-whisper": True,
         }
         rc = run_setup(interactive=False)
         assert rc == 0
@@ -574,6 +626,7 @@ class TestTesseractCircuitBreaker(unittest.TestCase):
 
     def test_circuit_breaker_flag_exists(self):
         import skill_seekers.cli.video_visual as vv
+
         assert hasattr(vv, "_tesseract_broken")
 
     def test_circuit_breaker_skips_after_failure(self):

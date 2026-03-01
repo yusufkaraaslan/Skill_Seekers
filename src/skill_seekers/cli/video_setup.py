@@ -463,9 +463,7 @@ def install_torch(gpu_info: GPUInfo, python_exe: str | None = None) -> bool:
         return False
 
 
-def install_visual_deps(
-    modules: SetupModules | None = None, python_exe: str | None = None
-) -> bool:
+def install_visual_deps(modules: SetupModules | None = None, python_exe: str | None = None) -> bool:
     """Install visual extraction dependencies.
 
     Returns True on success, False on failure.
@@ -672,9 +670,7 @@ def run_setup(interactive: bool = True) -> int:
         venv_path = ".venv"
         if interactive:
             try:
-                answer = input(
-                    f"  Create venv at ./{venv_path}? [Y/n] "
-                ).strip().lower()
+                answer = input(f"  Create venv at ./{venv_path}? [Y/n] ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 print("\nSetup cancelled.")
                 return 1
@@ -785,7 +781,9 @@ def run_setup(interactive: bool = True) -> int:
         print("  Installing PyTorch...")
         if not install_torch(gpu_info, python_exe):
             print("  FAILED: PyTorch installation failed.")
-            print(f"  Try: {python_exe} -m pip install torch torchvision --index-url {gpu_info.index_url}")
+            print(
+                f"  Try: {python_exe} -m pip install torch torchvision --index-url {gpu_info.index_url}"
+            )
             return 1
         print("  PyTorch installed.")
 

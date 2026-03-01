@@ -148,9 +148,16 @@ class SourceDetector:
         lower = source.lower()
 
         # YouTube patterns
-        youtube_keywords = ["youtube.com/watch", "youtu.be/", "youtube.com/playlist",
-                            "youtube.com/@", "youtube.com/channel/", "youtube.com/c/",
-                            "youtube.com/shorts/", "youtube.com/embed/"]
+        youtube_keywords = [
+            "youtube.com/watch",
+            "youtu.be/",
+            "youtube.com/playlist",
+            "youtube.com/@",
+            "youtube.com/channel/",
+            "youtube.com/c/",
+            "youtube.com/shorts/",
+            "youtube.com/embed/",
+        ]
         if any(kw in lower for kw in youtube_keywords):
             # Determine suggested name
             if "playlist" in lower:
