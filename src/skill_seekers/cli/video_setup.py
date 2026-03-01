@@ -229,7 +229,7 @@ def _read_rocm_version() -> str:
     try:
         with open("/opt/rocm/.info/version") as f:
             return f.read().strip().split("-")[0]
-    except (OSError, IOError):
+    except OSError:
         return ""
 
 

@@ -36,14 +36,12 @@ logger = logging.getLogger(__name__)
 # Set ROCm/MIOpen env vars BEFORE importing torch (via easyocr).
 # Without MIOPEN_FIND_MODE=FAST, MIOpen tries to allocate huge workspace
 # buffers (300MB+), gets 0 bytes, and silently falls back to CPU kernels.
-import os as _os
-
-if "MIOPEN_FIND_MODE" not in _os.environ:
-    _os.environ["MIOPEN_FIND_MODE"] = "FAST"
-if "MIOPEN_USER_DB_PATH" not in _os.environ:
-    _miopen_db = _os.path.expanduser("~/.config/miopen")
-    _os.makedirs(_miopen_db, exist_ok=True)
-    _os.environ["MIOPEN_USER_DB_PATH"] = _miopen_db
+if "MIOPEN_FIND_MODE" not in os.environ:
+    os.environ["MIOPEN_FIND_MODE"] = "FAST"
+if "MIOPEN_USER_DB_PATH" not in os.environ:
+    _miopen_db = os.path.expanduser("~/.config/miopen")
+    os.makedirs(_miopen_db, exist_ok=True)
+    os.environ["MIOPEN_USER_DB_PATH"] = _miopen_db
 
 # Tier 2 dependency flags
 try:
@@ -98,12 +96,9 @@ def _detect_gpu() -> bool:
     try:
         import torch
 
-        if torch.cuda.is_available():
-            return True
-        # ROCm exposes GPU via torch.version.hip
-        if hasattr(torch.version, "hip") and torch.version.hip is not None:
-            return True
-        return False
+        return torch.cuda.is_available() or (
+            hasattr(torch.version, "hip") and torch.version.hip is not None
+        )
     except ImportError:
         return False
 
