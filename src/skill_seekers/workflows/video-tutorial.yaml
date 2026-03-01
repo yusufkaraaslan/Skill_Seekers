@@ -18,12 +18,21 @@ stages:
       The OCR output is noisy — it contains line numbers, UI chrome text,
       garbled characters, and incomplete lines.
 
+      NOTE: The reference files may have already been AI-cleaned in a first
+      pass (Code Timeline reconstruction). If code blocks already look clean,
+      focus on verifying correctness rather than re-cleaning.
+
+      Also check the reference files in the references/ directory for
+      Code Timeline context — the transcript sections provide clues about
+      what the code SHOULD be.
+
       Clean each code block by:
       1. Remove line numbers that OCR captured (leading digits like "1 ", "2 ", "23 ")
       2. Remove UI elements (tab bar text, file names, button labels)
       3. Fix common OCR errors (l/1, O/0, rn/m confusions)
       4. Remove animation timeline numbers or frame counters
       5. Strip trailing whitespace and normalize indentation
+      6. Remove intra-line duplications (same tokens repeated from multi-engine OCR)
 
       Output JSON with:
       - "cleaned_blocks": array of cleaned code strings
@@ -39,12 +48,17 @@ stages:
       Based on the previous OCR cleanup results and the transcript content,
       determine the programming language for each code block.
 
+      NOTE: Text groups may already have a detected_language field set by
+      the LanguageDetector. Use those as hints but verify against transcript
+      and code patterns.
+
       Detection strategy (in priority order):
       1. Narrator mentions: "in GDScript", "this Python function", "our C# class"
       2. Code patterns: extends/func/signal=GDScript, def/import=Python,
          function/const/let=JavaScript, using/namespace=C#
       3. File extensions visible in OCR (.gd, .py, .js, .cs)
       4. Framework context from transcript (Godot=GDScript, Unity=C#, Django=Python)
+      5. detected_language from text groups (pre-filled by LanguageDetector)
 
       Output JSON with:
       - "language_map": map of block index to language identifier

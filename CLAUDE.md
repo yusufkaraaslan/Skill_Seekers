@@ -290,7 +290,7 @@ pytest tests/test_mcp_fastmcp.py -v
 **Test Architecture:**
 - 46 test files covering all features
 - CI Matrix: Ubuntu + macOS, Python 3.10-3.13
-- **2,121 tests passing** (current v3.1.0), up from 700+ in v2.x
+- **2,540 tests passing** (current), up from 700+ in v2.x
 - Must run `pip install -e .` before tests (src/ layout requirement)
 - Tests include create command integration tests, CLI refactor E2E tests
 
@@ -808,7 +808,7 @@ pip install -e .
 
 Per user instructions in `~/.claude/CLAUDE.md`:
 - "never skip any test. always make sure all test pass"
-- All 2,121 tests must pass before commits (v3.1.0)
+- All 2,540 tests must pass before commits
 - Run full test suite: `pytest tests/ -v`
 - New tests added for create command and CLI refactor work
 

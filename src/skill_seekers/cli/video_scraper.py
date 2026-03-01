@@ -234,6 +234,86 @@ def _build_audio_visual_alignments(
 
 
 # =============================================================================
+# OCR Quality Filters
+# =============================================================================
+
+
+_RE_CODE_TOKENS = re.compile(
+    r"[=(){};]|(?:def|class|function|import|return|var|let|const|public|private|void|static|override|virtual|protected)\b"
+)
+_RE_UI_PATTERNS = re.compile(
+    r"\b(?:Inspector|Hierarchy|Project|Console|Image Type|Sorting Layer|Button|Canvas|Scene|Game)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_likely_code(text: str) -> bool:
+    """Return True if text likely contains programming code, not UI junk."""
+    if not text or len(text.strip()) < 10:
+        return False
+    code_tokens = _RE_CODE_TOKENS.findall(text)
+    ui_patterns = _RE_UI_PATTERNS.findall(text)
+    return len(code_tokens) >= 2 and len(code_tokens) > len(ui_patterns)
+
+
+# =============================================================================
+# Two-Pass AI Reference Enhancement
+# =============================================================================
+
+
+def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None) -> None:
+    """Use AI to clean Code Timeline section in a reference file.
+
+    Sends the reference file content to Claude with a focused prompt
+    to reconstruct the Code Timeline from noisy OCR + transcript context.
+    """
+    try:
+        import anthropic
+    except ImportError:
+        return
+
+    key = api_key or os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+    if not key:
+        return
+
+    base_url = os.environ.get("ANTHROPIC_BASE_URL")
+    client_kwargs: dict = {"api_key": key}
+    if base_url:
+        client_kwargs["base_url"] = base_url
+
+    prompt = (
+        "You are cleaning a video tutorial reference file. The Code Timeline section "
+        "contains OCR-extracted code that is noisy (duplicated lines, garbled characters, "
+        "UI decorations mixed in). The transcript sections above provide context about "
+        "what the code SHOULD be.\n\n"
+        "Tasks:\n"
+        "1. Reconstruct each code block in the file using transcript context\n"
+        "2. Fix OCR errors (l/1, O/0, rn/m confusions)\n"
+        "3. Remove any UI text (Inspector, Hierarchy, button labels)\n"
+        "4. Set correct language tags on code fences\n"
+        "5. Keep the document structure but clean the code text\n\n"
+        "Return the COMPLETE reference file with cleaned code blocks. "
+        "Do NOT modify the transcript or metadata sections.\n\n"
+        f"Reference file:\n{content}"
+    )
+
+    try:
+        client = anthropic.Anthropic(**client_kwargs)
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=8000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        result = response.content[0].text
+        if result and len(result) > len(content) * 0.5:
+            with open(ref_path, "w", encoding="utf-8") as f:
+                f.write(result)
+            logger.info(f"AI-cleaned reference: {os.path.basename(ref_path)}")
+    except Exception as e:
+        logger.debug(f"Reference enhancement failed: {e}")
+
+
+# =============================================================================
 # Main Converter Class
 # =============================================================================
 
@@ -675,6 +755,7 @@ class VideoToSkillConverter:
                             if (
                                 ss.frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
                                 and ss.ocr_text
+                                and _is_likely_code(ss.ocr_text)
                             ):
                                 lines.append(f"\n```{lang_hint}")
                                 lines.append(ss.ocr_text)
@@ -683,15 +764,16 @@ class VideoToSkillConverter:
                         from skill_seekers.cli.video_models import FrameType
 
                         if kf.frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL):
-                            lang_hint = ""
-                            if seg.detected_code_blocks:
-                                for cb in seg.detected_code_blocks:
-                                    if cb.language:
-                                        lang_hint = cb.language
-                                        break
-                            lines.append(f"\n```{lang_hint}")
-                            lines.append(kf.ocr_text)
-                            lines.append("```")
+                            if _is_likely_code(kf.ocr_text):
+                                lang_hint = ""
+                                if seg.detected_code_blocks:
+                                    for cb in seg.detected_code_blocks:
+                                        if cb.language:
+                                            lang_hint = cb.language
+                                            break
+                                lines.append(f"\n```{lang_hint}")
+                                lines.append(kf.ocr_text)
+                                lines.append("```")
                         elif kf.frame_type == FrameType.SLIDE:
                             for text_line in kf.ocr_text.split("\n"):
                                 if text_line.strip():
@@ -778,6 +860,44 @@ class VideoToSkillConverter:
             lines.append(f"*Confidence: {video.transcript_confidence:.0%}*")
 
         return "\n".join(lines)
+
+    def _enhance_reference_files(self, enhance_level: int, args) -> None:
+        """First-pass: AI-clean reference files before SKILL.md enhancement.
+
+        When enhance_level >= 2 and an API key is available, sends each
+        reference file to Claude to reconstruct noisy Code Timeline
+        sections using transcript context.
+        """
+        has_api_key = bool(
+            os.environ.get("ANTHROPIC_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+            or getattr(args, "api_key", None)
+        )
+        if not has_api_key or enhance_level < 2:
+            return
+
+        refs_dir = os.path.join(self.skill_dir, "references")
+        if not os.path.isdir(refs_dir):
+            return
+
+        logger.info("\n📝 Pass 1: AI-cleaning reference files (Code Timeline reconstruction)...")
+        api_key = getattr(args, "api_key", None)
+
+        for ref_file in sorted(os.listdir(refs_dir)):
+            if not ref_file.endswith(".md"):
+                continue
+            ref_path = os.path.join(refs_dir, ref_file)
+            try:
+                with open(ref_path, encoding="utf-8") as f:
+                    content = f.read()
+            except OSError:
+                continue
+
+            # Only enhance if there are code fences to clean
+            if "```" not in content:
+                continue
+
+            _ai_clean_reference(ref_path, content, api_key)
 
     def _generate_skill_md(self) -> str:
         """Generate the main SKILL.md file."""
@@ -1044,11 +1164,14 @@ Examples:
     # Enhancement
     enhance_level = getattr(args, "enhance_level", 0)
     if enhance_level > 0:
+        # Pass 1: Clean reference files (Code Timeline reconstruction)
+        converter._enhance_reference_files(enhance_level, args)
+
         # Auto-inject video-tutorial workflow if no workflow specified
         if not getattr(args, "enhance_workflow", None):
             args.enhance_workflow = ["video-tutorial"]
 
-        # Run workflow stages (specialized video analysis)
+        # Pass 2: Run workflow stages (specialized video analysis)
         try:
             from skill_seekers.cli.workflow_runner import run_workflows
 

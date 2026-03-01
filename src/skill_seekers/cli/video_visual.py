@@ -16,6 +16,7 @@ import difflib
 import gc
 import logging
 import os
+import re
 import tempfile
 from dataclasses import dataclass, field
 
@@ -1126,6 +1127,92 @@ def _cluster_ocr_into_lines(
     return regions
 
 
+# ── OCR line cleaning ────────────────────────────────────────────────
+
+
+def _fuzzy_word_match(a: str, b: str) -> bool:
+    """Check if two words are likely the same despite OCR noise.
+
+    Allows single-char prefix/suffix noise (e.g. 'gpublic' vs 'public')
+    and common OCR confusions (l/1, O/0, rn/m).
+    """
+    if a == b:
+        return True
+    # Strip single-char OCR prefix noise (e.g. 'Jpublic' → 'public')
+    a_stripped = a.lstrip("gGjJlLiI|") if len(a) > 2 else a
+    b_stripped = b.lstrip("gGjJlLiI|") if len(b) > 2 else b
+    if a_stripped == b_stripped:
+        return True
+    # Allow edit distance ≤ 1 for short words
+    if abs(len(a) - len(b)) <= 1 and len(a) >= 3:
+        diffs = sum(1 for x, y in zip(a, b, strict=False) if x != y)
+        diffs += abs(len(a) - len(b))
+        return diffs <= 1
+    return False
+
+
+def _fix_intra_line_duplication(line: str) -> str:
+    """Fix lines where OCR duplicated content.
+
+    Detects when the same token sequence appears twice adjacent,
+    e.g. 'public class Card public class Card : MonoBehaviour'
+    → 'public class Card : MonoBehaviour'.
+    """
+    words = line.split()
+    if len(words) < 4:
+        return line
+    half = len(words) // 2
+    for split_point in range(max(2, half - 2), min(len(words) - 1, half + 3)):
+        prefix = words[:split_point]
+        suffix = words[split_point:]
+        # Check if suffix starts with same sequence as prefix
+        match_len = 0
+        for i, w in enumerate(prefix):
+            if i < len(suffix) and _fuzzy_word_match(w, suffix[i]):
+                match_len += 1
+            else:
+                break
+        if match_len >= len(prefix) * 0.7 and match_len >= 2:
+            # Keep the longer/cleaner half (suffix usually has trailing content)
+            return (
+                " ".join(suffix)
+                if len(" ".join(suffix)) >= len(" ".join(prefix))
+                else " ".join(prefix)
+            )
+    return line
+
+
+# Compiled patterns for _clean_ocr_line
+_RE_LEADING_LINE_NUMBER = re.compile(r"^\s*\d{1,4}(?:\s+|\t)")
+_RE_COLLAPSE_MARKERS = re.compile(r"[▶▼►◄…⋯⋮]")
+_RE_IDE_TAB_BAR = re.compile(
+    r"^\s*(?:File|Edit|Assets|Window|Help|View|Tools|Debug|Run|Terminal)\s+",
+    re.IGNORECASE,
+)
+_RE_UNITY_INSPECTOR = re.compile(
+    r"^\s*(?:Inspector|Hierarchy|Project|Console|Scene|Game)\b.*$",
+    re.IGNORECASE,
+)
+
+
+def _clean_ocr_line(line: str) -> str:
+    """Remove IDE decorations and OCR artifacts from a single line."""
+    if not line:
+        return line
+    # Remove full-line UI chrome
+    if _RE_UNITY_INSPECTOR.match(line):
+        return ""
+    if _RE_IDE_TAB_BAR.match(line):
+        return ""
+    # Strip leading line numbers (e.g. '23  public class Card')
+    line = _RE_LEADING_LINE_NUMBER.sub("", line)
+    # Remove collapse markers / VS Code decorations
+    line = _RE_COLLAPSE_MARKERS.sub("", line)
+    # Fix intra-line duplication from multi-engine overlap
+    line = _fix_intra_line_duplication(line)
+    return line.strip()
+
+
 def _assemble_structured_text(regions: list[OCRRegion], frame_type: FrameType) -> str:
     """Join OCR line regions into structured text.
 
@@ -1148,7 +1235,7 @@ def _assemble_structured_text(regions: list[OCRRegion], frame_type: FrameType) -
             return ""
         # Estimate indentation from x-offset relative to leftmost region
         min_x = min(r.bbox[0] for r in regions)
-        lines = []
+        raw_lines = []
         for r in regions:
             indent_px = r.bbox[0] - min_x
             # Estimate character width from the region
@@ -1158,13 +1245,21 @@ def _assemble_structured_text(regions: list[OCRRegion], frame_type: FrameType) -
             indent_chars = int(indent_px / max(char_width, 1))
             # Round to nearest 4-space indent
             indent_level = round(indent_chars / 4)
-            lines.append("    " * indent_level + r.text)
-        return "\n".join(lines)
+            raw_lines.append("    " * indent_level + r.text)
+        # Clean IDE decorations and OCR artifacts from each line
+        cleaned = []
+        for line in raw_lines:
+            c = _clean_ocr_line(line)
+            if c:
+                cleaned.append(c)
+        return "\n".join(cleaned)
 
     if frame_type == FrameType.SLIDE:
-        return "\n\n".join(r.text for r in regions)
+        cleaned = [_clean_ocr_line(r.text) for r in regions]
+        return "\n\n".join(c for c in cleaned if c)
 
-    return " ".join(r.text for r in regions)
+    cleaned = [_clean_ocr_line(r.text) for r in regions]
+    return " ".join(c for c in cleaned if c)
 
 
 def _compute_frame_timestamps(
@@ -1788,7 +1883,32 @@ class TextBlockTracker:
         return list(self._completed_blocks)
 
     def get_text_groups(self) -> list[TextGroup]:
-        """Return all text groups after finalize()."""
+        """Return all text groups after finalize().
+
+        Also runs language detection on groups that don't already have
+        a detected_language set.
+        """
+        # Run language detection on each group
+        try:
+            from skill_seekers.cli.language_detector import LanguageDetector
+
+            detector = LanguageDetector()
+        except ImportError:
+            detector = None
+
+        if detector is not None:
+            for group in self._text_groups:
+                if group.detected_language:
+                    continue  # Already detected
+                text = group.full_text
+                if text and len(text) >= 20:
+                    try:
+                        lang, _conf = detector.detect_from_code(text)
+                        if lang:
+                            group.detected_language = lang
+                    except Exception:
+                        pass
+
         return list(self._text_groups)
 
 
@@ -2143,8 +2263,8 @@ def extract_visual_data(
 
             tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
 
-        elif HAS_EASYOCR:
-            # Standard EasyOCR for non-code frames
+        elif HAS_EASYOCR and frame_type not in (FrameType.WEBCAM, FrameType.OTHER):
+            # Standard EasyOCR for slide/diagram frames (skip webcam/other)
             raw_ocr_results, _flat_text = extract_text_from_frame(frame_path, frame_type)
             if raw_ocr_results:
                 ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**Theme:** Video source support (BETA), Word document support, and quality improvements. 94 files changed, +23,037 lines since v3.1.3. **2,523 tests passing.**
+**Theme:** Video source support (BETA), Word document support, and quality improvements. 94 files changed, +23,500 lines since v3.1.3. **2,540 tests passing.**
 
 ### 🎬 Video Tutorial Scraping Pipeline (BETA)
 
@@ -23,7 +23,7 @@ Complete video tutorial extraction system that converts YouTube videos and local
 - **`video_metadata.py`** (~270 lines) — YouTube metadata extraction (title, channel, views, chapters, duration) via yt-dlp; local file metadata via ffprobe
 - **`video_transcript.py`** (~370 lines) — Multi-source transcript extraction with 3-tier fallback: YouTube Transcript API → yt-dlp subtitles → faster-whisper local transcription
 - **`video_segmenter.py`** (~220 lines) — Chapter-based and time-window segmentation with configurable overlap
-- **`video_visual.py`** (~2,290 lines) — Visual extraction pipeline:
+- **`video_visual.py`** (~2,410 lines) — Visual extraction pipeline:
   - Keyframe detection via scene change (scenedetect) with configurable threshold
   - Frame classification (code editor, slides, terminal, browser, other)
   - Panel detection — splits IDE screenshots into independent sub-sections (code, terminal, file tree)
@@ -37,11 +37,13 @@ Complete video tutorial extraction system that converts YouTube videos and local
   - Tesseract circuit breaker (`_tesseract_broken` flag) — disables pytesseract after first failure
 - **Audio-visual alignment** — Code blocks paired with narrator transcript for context
 - **Video-specific AI enhancement** — Custom prompt for OCR denoising, code reconstruction, and tutorial narrative synthesis
+- **Two-pass AI enhancement** — Pass 1 cleans reference files (Code Timeline reconstruction from transcript context), Pass 2 generates SKILL.md from cleaned references
+- **`_ai_clean_reference()`** — Sends reference file to Claude to reconstruct code blocks using transcript context, fixing OCR noise before SKILL.md generation
 - **`video-tutorial.yaml`** workflow preset — 4-stage enhancement pipeline (OCR cleanup → language detection → tutorial synthesis → skill polish)
 - **Video arguments** — `arguments/video.py` with `VIDEO_ARGUMENTS` dict: `--url`, `--video-file`, `--playlist`, `--vision-ocr`, `--keyframe-threshold`, `--max-keyframes`, `--whisper-model`, `--setup`, etc.
 - **Video parser** — `parsers/video_parser.py` for unified CLI parser registry
 - **MCP `scrape_video` tool** — Full video scraping from MCP server with 6 visual params, setup mode, and playlist support
-- **`tests/test_video_scraper.py`** (180 tests) — Comprehensive coverage: models, metadata, transcript, segmenter, visual extraction, OCR, panel detection, scraper integration, CLI arguments
+- **`tests/test_video_scraper.py`** (197 tests) — Comprehensive coverage: models, metadata, transcript, segmenter, visual extraction, OCR, panel detection, scraper integration, CLI arguments, OCR cleaning, code filtering
 
 #### Video `--setup`: GPU Auto-Detection & Dependency Installation
 - **`skill-seekers video --setup`** — One-command GPU auto-detection and dependency installation
@@ -79,6 +81,14 @@ Complete video tutorial extraction system that converts YouTube videos and local
 - **Video plan documents** — 8 design documents in `docs/plans/video/` (research, data models, pipeline, integration, output, testing, dependencies, overview)
 
 ### Fixed
+
+#### Video Pipeline OCR Quality Fixes (6)
+- **Webcam/OTHER frames skip OCR** — WEBCAM and OTHER frame types no longer get OCR'd, eliminating ~64 junk OCR results per video
+- **`_clean_ocr_line()` helper** — Strips leading line numbers, IDE tab bar text, Unity Inspector labels, and VS Code collapse markers from OCR output
+- **`_fix_intra_line_duplication()`** — Detects and removes token sequence repetition from multi-engine OCR overlap (e.g., `gpublic class Card Jpublic class Card` → `public class Card`)
+- **`_is_likely_code()` filter** — Reference file code fences now filtered to reject UI junk (Inspector, Hierarchy, Canvas labels) that passed frame classification
+- **Language detection on text groups** — `get_text_groups()` now runs `LanguageDetector.detect_from_code()` on each group, filling the previously-always-None `detected_language` field
+- **OCR cleaning in text assembly** — `_assemble_structured_text()` applies `_clean_ocr_line()` to every line before joining
 
 #### Video Pipeline Fixes (15)
 - **`extract_visual_data` returning 2-tuple instead of 3** — Caused `ValueError` crash when unpacking results

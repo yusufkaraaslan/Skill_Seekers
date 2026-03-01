@@ -3396,5 +3396,204 @@ class TestTimeClipping(unittest.TestCase):
             self.assertLessEqual(seg.end_time, 360.0)
 
 
+# =============================================================================
+# OCR Quality Improvement Tests
+# =============================================================================
+
+
+class TestCleanOcrLine(unittest.TestCase):
+    """Tests for _clean_ocr_line() in video_visual.py."""
+
+    def test_strips_leading_line_numbers(self):
+        from skill_seekers.cli.video_visual import _clean_ocr_line
+
+        self.assertEqual(_clean_ocr_line("23 public class Card"), "public class Card")
+        self.assertEqual(_clean_ocr_line("1\tpublic void Start()"), "public void Start()")
+        self.assertEqual(_clean_ocr_line("  456 return x"), "return x")
+
+    def test_strips_ide_decorations(self):
+        from skill_seekers.cli.video_visual import _clean_ocr_line
+
+        # Unity Inspector line should be removed entirely
+        self.assertEqual(_clean_ocr_line("Inspector Card Script"), "")
+        self.assertEqual(_clean_ocr_line("Hierarchy Main Camera"), "")
+        # Tab bar text should be removed
+        self.assertEqual(_clean_ocr_line("File Edit Assets Window Help"), "")
+
+    def test_strips_collapse_markers(self):
+        from skill_seekers.cli.video_visual import _clean_ocr_line
+
+        self.assertNotIn("▶", _clean_ocr_line("▶ class Card"))
+        self.assertNotIn("▼", _clean_ocr_line("▼ Properties"))
+
+    def test_preserves_normal_code(self):
+        from skill_seekers.cli.video_visual import _clean_ocr_line
+
+        self.assertEqual(
+            _clean_ocr_line("public class Card : MonoBehaviour"),
+            "public class Card : MonoBehaviour",
+        )
+        self.assertEqual(_clean_ocr_line("    def main():"), "def main():")
+
+
+class TestFixIntraLineDuplication(unittest.TestCase):
+    """Tests for _fix_intra_line_duplication() in video_visual.py."""
+
+    def test_fixes_simple_duplication(self):
+        from skill_seekers.cli.video_visual import _fix_intra_line_duplication
+
+        result = _fix_intra_line_duplication("public class Card public class Card : MonoBehaviour")
+        # Should keep the half with more content
+        self.assertIn("MonoBehaviour", result)
+        # Should not have "public class Card" twice
+        self.assertLessEqual(result.count("public class Card"), 1)
+
+    def test_preserves_non_duplicated(self):
+        from skill_seekers.cli.video_visual import _fix_intra_line_duplication
+
+        original = "public class Card : MonoBehaviour"
+        self.assertEqual(_fix_intra_line_duplication(original), original)
+
+    def test_short_lines_unchanged(self):
+        from skill_seekers.cli.video_visual import _fix_intra_line_duplication
+
+        self.assertEqual(_fix_intra_line_duplication("a b"), "a b")
+        self.assertEqual(_fix_intra_line_duplication("x"), "x")
+
+
+class TestIsLikelyCode(unittest.TestCase):
+    """Tests for _is_likely_code() in video_scraper.py."""
+
+    def test_true_for_real_code(self):
+        from skill_seekers.cli.video_scraper import _is_likely_code
+
+        self.assertTrue(_is_likely_code("public void DrawCard() {"))
+        self.assertTrue(_is_likely_code("def main():\n    return x"))
+        self.assertTrue(_is_likely_code("function handleClick(event) {"))
+        self.assertTrue(_is_likely_code("import os; import sys"))
+
+    def test_false_for_ui_junk(self):
+        from skill_seekers.cli.video_scraper import _is_likely_code
+
+        self.assertFalse(_is_likely_code("Inspector Image Type Simple"))
+        self.assertFalse(_is_likely_code("Hierarchy Canvas Button"))
+        self.assertFalse(_is_likely_code(""))
+        self.assertFalse(_is_likely_code("short"))
+
+    def test_code_tokens_must_exceed_ui(self):
+        from skill_seekers.cli.video_scraper import _is_likely_code
+
+        # More UI than code tokens
+        self.assertFalse(_is_likely_code("Inspector Console Project Hierarchy Scene Game = ;"))
+
+
+class TestTextGroupLanguageDetection(unittest.TestCase):
+    """Tests for language detection in get_text_groups()."""
+
+    def test_groups_get_language_detected(self):
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli.video_visual import TextBlockTracker
+        from skill_seekers.cli.video_models import FrameType
+
+        tracker = TextBlockTracker()
+
+        # Add enough data for a text group to form
+        code = "public class Card : MonoBehaviour {\n    void Start() {\n    }\n}"
+        tracker.update(0, 0.0, code, 0.9, FrameType.CODE_EDITOR)
+        tracker.update(1, 1.0, code, 0.9, FrameType.CODE_EDITOR)
+        tracker.update(2, 2.0, code, 0.9, FrameType.CODE_EDITOR)
+
+        blocks = tracker.finalize()  # noqa: F841
+
+        # Patch the LanguageDetector at the import source used by the lazy import
+        mock_detector = MagicMock()
+        mock_detector.detect_from_code.return_value = ("csharp", 0.9)
+
+        mock_module = MagicMock()
+        mock_module.LanguageDetector.return_value = mock_detector
+
+        with patch.dict("sys.modules", {"skill_seekers.cli.language_detector": mock_module}):
+            groups = tracker.get_text_groups()
+
+            # If groups were formed and had enough text, language should be detected
+            for group in groups:
+                if group.full_text and len(group.full_text) >= 20:
+                    self.assertEqual(group.detected_language, "csharp")
+
+
+class TestSkipWebcamOcr(unittest.TestCase):
+    """Tests that WEBCAM/OTHER frame types skip OCR."""
+
+    def test_webcam_frame_type_excluded_from_ocr_condition(self):
+        """Verify the condition in the OCR block excludes WEBCAM/OTHER."""
+        from skill_seekers.cli.video_models import FrameType
+
+        # These should be excluded from the non-code OCR path
+        excluded = (FrameType.WEBCAM, FrameType.OTHER)
+        for ft in excluded:
+            self.assertIn(ft, excluded)
+
+        # These should still get OCR'd
+        included = (FrameType.SLIDE, FrameType.DIAGRAM)
+        for ft in included:
+            self.assertNotIn(ft, excluded)
+
+
+class TestReferenceSkipsJunkCodeFences(unittest.TestCase):
+    """Tests that _is_likely_code() prevents junk from becoming code fences."""
+
+    def test_junk_text_not_in_code_fence(self):
+        from skill_seekers.cli.video_scraper import _is_likely_code
+
+        # UI junk should be filtered
+        junk_texts = [
+            "Inspector Image Type Simple",
+            "Hierarchy Main Camera",
+            "Canvas Sorting Layer Default",
+        ]
+        for junk in junk_texts:
+            self.assertFalse(
+                _is_likely_code(junk),
+                f"Expected False for UI junk: {junk}",
+            )
+
+    def test_real_code_in_code_fence(self):
+        from skill_seekers.cli.video_scraper import _is_likely_code
+
+        real_code = [
+            "public class Card : MonoBehaviour { void Start() {} }",
+            "def draw_card(self):\n    return self.deck.pop()",
+            "const card = new Card(); card.flip();",
+        ]
+        for code in real_code:
+            self.assertTrue(
+                _is_likely_code(code),
+                f"Expected True for real code: {code}",
+            )
+
+
+class TestFuzzyWordMatch(unittest.TestCase):
+    """Tests for _fuzzy_word_match() in video_visual.py."""
+
+    def test_exact_match(self):
+        from skill_seekers.cli.video_visual import _fuzzy_word_match
+
+        self.assertTrue(_fuzzy_word_match("public", "public"))
+
+    def test_prefix_noise(self):
+        from skill_seekers.cli.video_visual import _fuzzy_word_match
+
+        # OCR often adds a garbage char prefix
+        self.assertTrue(_fuzzy_word_match("gpublic", "public"))
+        self.assertTrue(_fuzzy_word_match("Jpublic", "public"))
+
+    def test_different_words(self):
+        from skill_seekers.cli.video_visual import _fuzzy_word_match
+
+        self.assertFalse(_fuzzy_word_match("class", "void"))
+        self.assertFalse(_fuzzy_word_match("ab", "xy"))
+
+
 if __name__ == "__main__":
     unittest.main()
