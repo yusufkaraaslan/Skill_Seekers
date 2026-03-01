@@ -70,10 +70,36 @@ def extract_youtube_transcript(
 
     try:
         ytt_api = YouTubeTranscriptApi()
-        transcript = ytt_api.fetch(video_id, languages=languages)
+
+        # Use list_transcripts to detect whether the transcript is auto-generated
+        source = TranscriptSource.YOUTUBE_MANUAL
+        try:
+            transcript_list = ytt_api.list(video_id)
+            # Prefer manually created transcripts; fall back to auto-generated
+            try:
+                transcript_entry = transcript_list.find_manually_created_transcript(languages)
+                source = TranscriptSource.YOUTUBE_MANUAL
+            except Exception:
+                try:
+                    transcript_entry = transcript_list.find_generated_transcript(languages)
+                    source = TranscriptSource.YOUTUBE_AUTO
+                except Exception:
+                    # Fall back to any available transcript
+                    transcript_entry = transcript_list.find_transcript(languages)
+                    source = (
+                        TranscriptSource.YOUTUBE_AUTO
+                        if transcript_entry.is_generated
+                        else TranscriptSource.YOUTUBE_MANUAL
+                    )
+            transcript = transcript_entry.fetch()
+        except Exception:
+            # Fall back to direct fetch if list fails (older API versions)
+            transcript = ytt_api.fetch(video_id, languages=languages)
+            # Check is_generated on the FetchedTranscript if available
+            if getattr(transcript, "is_generated", False):
+                source = TranscriptSource.YOUTUBE_AUTO
 
         segments = []
-        source = TranscriptSource.YOUTUBE_MANUAL
         for snippet in transcript.snippets:
             text = snippet.text.strip()
             if not text:

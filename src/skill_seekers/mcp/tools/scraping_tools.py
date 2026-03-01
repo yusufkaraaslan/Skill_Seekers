@@ -372,6 +372,12 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
             - description (str, optional): Skill description
             - languages (str, optional): Language preferences (comma-separated)
             - from_json (str, optional): Build from extracted JSON file
+            - visual (bool, optional): Enable visual frame extraction (default: False)
+            - whisper_model (str, optional): Whisper model size (default: base)
+            - visual_interval (float, optional): Seconds between frame captures (default: 5.0)
+            - visual_min_gap (float, optional): Minimum seconds between kept frames (default: 2.0)
+            - visual_similarity (float, optional): Similarity threshold to skip duplicate frames (default: 0.95)
+            - vision_ocr (bool, optional): Use vision model for OCR on frames (default: False)
 
     Returns:
         List[TextContent]: Tool execution results
@@ -383,6 +389,12 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
     description = args.get("description")
     languages = args.get("languages")
     from_json = args.get("from_json")
+    visual = args.get("visual", False)
+    whisper_model = args.get("whisper_model")
+    visual_interval = args.get("visual_interval")
+    visual_min_gap = args.get("visual_min_gap")
+    visual_similarity = args.get("visual_similarity")
+    vision_ocr = args.get("vision_ocr", False)
 
     # Build command
     cmd = [sys.executable, str(CLI_DIR / "video_scraper.py")]
@@ -414,6 +426,20 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
                 text="❌ Error: Must specify --url, --video-file, --playlist, or --from-json",
             )
         ]
+
+    # Visual extraction parameters
+    if visual:
+        cmd.append("--visual")
+    if whisper_model:
+        cmd.extend(["--whisper-model", whisper_model])
+    if visual_interval is not None:
+        cmd.extend(["--visual-interval", str(visual_interval)])
+    if visual_min_gap is not None:
+        cmd.extend(["--visual-min-gap", str(visual_min_gap)])
+    if visual_similarity is not None:
+        cmd.extend(["--visual-similarity", str(visual_similarity)])
+    if vision_ocr:
+        cmd.append("--vision-ocr")
 
     # Run video_scraper.py with streaming
     timeout = 600  # 10 minutes for video extraction

@@ -52,7 +52,6 @@ dependencies = [
     "anthropic>=0.76.0", # Required for AI enhancement (core feature)
     "PyMuPDF>=1.24.14",
     "Pillow>=11.0.0",
-    "pytesseract>=0.3.13",
     "pydantic>=2.12.3",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
@@ -129,6 +128,7 @@ video-full = [
     "scenedetect[opencv]>=0.6.4",
     "easyocr>=1.7.0",
     "opencv-python-headless>=4.9.0",
+    "pytesseract>=0.3.13",
 ]
 
 # RAG vector database upload support
@@ -172,6 +172,8 @@ embedding = [
 ]
 
 # All optional dependencies combined (dev dependencies now in [dependency-groups])
+# Note: video-full deps (opencv, easyocr, faster-whisper) excluded due to heavy
+# native dependencies. Install separately: pip install skill-seekers[video-full]
 all = [
     "mammoth>=1.6.0",
     "python-docx>=1.1.0",

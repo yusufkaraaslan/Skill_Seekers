@@ -12,6 +12,8 @@ Commands:
     scrape               Scrape documentation website
     github               Scrape GitHub repository
     pdf                  Extract from PDF file
+    word                 Extract from Word (.docx) file
+    video                Extract from video (YouTube or local)
     unified              Multi-source scraping (docs + GitHub + PDF)
     analyze              Analyze local codebase and extract code knowledge
     enhance              AI-powered enhancement (auto: API or LOCAL mode)

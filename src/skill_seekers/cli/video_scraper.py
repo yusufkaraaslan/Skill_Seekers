@@ -469,7 +469,12 @@ class VideoToSkillConverter:
 
         # Generate reference files for each video
         for video in self.result.videos:
-            ref_filename = f"video_{_sanitize_filename(video.title)}.md"
+            sanitized = (
+                _sanitize_filename(video.title)
+                or video.video_id
+                or f"video_{hash(video.title) % 10000:04d}"
+            )
+            ref_filename = f"video_{sanitized}.md"
             ref_path = os.path.join(refs_dir, ref_filename)
             ref_content = self._generate_reference_md(video)
             with open(ref_path, "w", encoding="utf-8") as f:
@@ -750,7 +755,12 @@ class VideoToSkillConverter:
                     preview += "..."
                 lines.append(f"{preview}\n")
 
-            ref_filename = f"video_{_sanitize_filename(video.title)}.md"
+            sanitized = (
+                _sanitize_filename(video.title)
+                or video.video_id
+                or f"video_{hash(video.title) % 10000:04d}"
+            )
+            ref_filename = f"video_{sanitized}.md"
             lines.append(
                 f"> Full transcript: [references/{ref_filename}](references/{ref_filename})\n"
             )
@@ -766,7 +776,12 @@ class VideoToSkillConverter:
         # References
         lines.append("## References\n")
         for video in self.result.videos:
-            ref_filename = f"video_{_sanitize_filename(video.title)}.md"
+            sanitized = (
+                _sanitize_filename(video.title)
+                or video.video_id
+                or f"video_{hash(video.title) % 10000:04d}"
+            )
+            ref_filename = f"video_{sanitized}.md"
             lines.append(f"- [{video.title}](references/{ref_filename})")
 
         return "\n".join(lines)
@@ -940,11 +955,25 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
         if api_key:
             enhance_cmd.extend(["--api-key", api_key])
 
-        result = subprocess.run(enhance_cmd, check=True)
-        if result.returncode == 0:
-            logger.info("✅ Video skill enhancement complete!")
-    except subprocess.CalledProcessError:
-        logger.warning("⚠ Enhancement failed, but skill was still built")
+        logger.info(
+            "Starting video skill enhancement (this may take 10+ minutes "
+            "for large videos with AI enhancement)..."
+        )
+        subprocess.run(enhance_cmd, check=True, timeout=1800)
+        logger.info("Video skill enhancement complete!")
+    except subprocess.TimeoutExpired:
+        logger.warning(
+            "⚠ Enhancement timed out after 30 minutes. "
+            "The skill was still built without enhancement. "
+            "You can retry manually with:\n"
+            f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}"
+        )
+    except subprocess.CalledProcessError as exc:
+        logger.warning(
+            f"⚠ Enhancement failed (exit code {exc.returncode}), "
+            "but skill was still built. You can retry manually with:\n"
+            f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}"
+        )
     except FileNotFoundError:
         logger.warning("⚠ skill-seekers-enhance not found. Run manually:")
         logger.info(f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}")

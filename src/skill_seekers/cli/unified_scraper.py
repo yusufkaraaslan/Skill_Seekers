@@ -79,7 +79,14 @@ class UnifiedScraper:
         }
 
         # Track source index for unique naming (multi-source support)
-        self._source_counters = {"documentation": 0, "github": 0, "pdf": 0, "word": 0, "video": 0, "local": 0}
+        self._source_counters = {
+            "documentation": 0,
+            "github": 0,
+            "pdf": 0,
+            "word": 0,
+            "video": 0,
+            "local": 0,
+        }
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
@@ -583,8 +590,12 @@ class UnifiedScraper:
         """Scrape video source (YouTube, local file, etc.)."""
         try:
             from skill_seekers.cli.video_scraper import VideoToSkillConverter
-        except ImportError:
-            logger.error("video_scraper.py not found")
+        except ImportError as e:
+            logger.error(
+                f"Video scraper dependencies not installed: {e}\n"
+                "  Install with: pip install skill-seekers[video]\n"
+                "  For visual extraction (frame analysis, OCR): pip install skill-seekers[video-full]"
+            )
             return
 
         # Multi-source support: Get unique index for this video source
@@ -630,8 +641,7 @@ class UnifiedScraper:
             logger.info("✅ Video: Standalone SKILL.md created")
 
             logger.info(
-                f"✅ Video: {len(result.videos)} videos, "
-                f"{result.total_segments} segments extracted"
+                f"✅ Video: {len(result.videos)} videos, {result.total_segments} segments extracted"
             )
         except Exception as e:
             logger.error(f"Failed to process video source: {e}")

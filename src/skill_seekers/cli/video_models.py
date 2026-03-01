@@ -222,6 +222,7 @@ class FrameSubSection:
     ocr_regions: list[OCRRegion] = field(default_factory=list)
     ocr_confidence: float = 0.0
     panel_id: str = ""  # e.g. "panel_0_0" (row_col)
+    _vision_used: bool = False  # Whether Vision API was used for OCR
 
     def to_dict(self) -> dict:
         return {

@@ -360,8 +360,12 @@ class CreateCommand:
 
         # Add video source (URL or file)
         parsed = self.source_info.parsed
+        video_playlist = getattr(self.args, "video_playlist", None)
         if parsed.get("source_kind") == "file":
             argv.extend(["--video-file", parsed["file_path"]])
+        elif video_playlist:
+            # Explicit --video-playlist flag takes precedence
+            argv.extend(["--playlist", video_playlist])
         elif parsed.get("url"):
             url = parsed["url"]
             # Detect playlist vs single video
@@ -374,11 +378,15 @@ class CreateCommand:
         self._add_common_args(argv)
 
         # Add video-specific arguments
-        video_langs = getattr(self.args, "video_languages", None) or getattr(self.args, "languages", None)
+        video_langs = getattr(self.args, "video_languages", None) or getattr(
+            self.args, "languages", None
+        )
         if video_langs:
             argv.extend(["--languages", video_langs])
         if getattr(self.args, "visual", False):
             argv.append("--visual")
+        if getattr(self.args, "vision_ocr", False):
+            argv.append("--vision-ocr")
         if getattr(self.args, "whisper_model", None) and self.args.whisper_model != "base":
             argv.extend(["--whisper-model", self.args.whisper_model])
         vi = getattr(self.args, "visual_interval", None)

@@ -488,6 +488,13 @@ VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "THRESH",
         },
     },
+    "vision_ocr": {
+        "flags": ("--vision-ocr",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Use Claude Vision API as fallback for low-confidence code frames (requires ANTHROPIC_API_KEY, ~$0.004/frame)",
+        },
+    },
 }
 
 # Multi-source config specific (from unified_scraper.py)

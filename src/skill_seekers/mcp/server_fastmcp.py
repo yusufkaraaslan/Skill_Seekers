@@ -3,20 +3,21 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 25 tools for generating Claude AI skills from documentation.
+Provides 33 tools for generating Claude AI skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
 
 **Architecture:**
 - FastMCP server with decorator-based tool registration
-- 25 tools organized into 6 categories:
+- 33 tools organized into 7 categories:
   * Config tools (3): generate_config, list_configs, validate_config
-  * Scraping tools (8): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
+  * Scraping tools (10): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_video, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
-  * Source tools (4): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
   * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
+  * Workflow tools (5): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
 
 **Usage:**
   # Stdio transport (default, backward compatible)
@@ -140,6 +141,7 @@ except ImportError:
         scrape_docs_impl,
         scrape_github_impl,
         scrape_pdf_impl,
+        scrape_video_impl,
         split_config_impl,
         submit_config_impl,
         upload_skill_impl,
@@ -250,7 +252,7 @@ async def validate_config(config_path: str) -> str:
 
 
 # ============================================================================
-# SCRAPING TOOLS (4 tools)
+# SCRAPING TOOLS (10 tools)
 # ============================================================================
 
 
@@ -432,6 +434,12 @@ async def scrape_video(
     description: str | None = None,
     languages: str | None = None,
     from_json: str | None = None,
+    visual: bool = False,
+    whisper_model: str | None = None,
+    visual_interval: float | None = None,
+    visual_min_gap: float | None = None,
+    visual_similarity: float | None = None,
+    vision_ocr: bool = False,
 ) -> str:
     """
     Scrape video content and build Claude skill.
@@ -444,6 +452,12 @@ async def scrape_video(
         description: Skill description
         languages: Transcript language preferences (comma-separated)
         from_json: Build from extracted JSON file
+        visual: Enable visual frame extraction (requires video-full extras)
+        whisper_model: Whisper model size for local transcription (e.g., base, small, medium, large)
+        visual_interval: Seconds between frame captures (default: 5.0)
+        visual_min_gap: Minimum seconds between kept frames (default: 2.0)
+        visual_similarity: Similarity threshold to skip duplicate frames 0.0-1.0 (default: 0.95)
+        vision_ocr: Use vision model for OCR on extracted frames
 
     Returns:
         Video scraping results with file paths.
@@ -463,6 +477,18 @@ async def scrape_video(
         args["languages"] = languages
     if from_json:
         args["from_json"] = from_json
+    if visual:
+        args["visual"] = visual
+    if whisper_model:
+        args["whisper_model"] = whisper_model
+    if visual_interval is not None:
+        args["visual_interval"] = visual_interval
+    if visual_min_gap is not None:
+        args["visual_min_gap"] = visual_min_gap
+    if visual_similarity is not None:
+        args["visual_similarity"] = visual_similarity
+    if vision_ocr:
+        args["vision_ocr"] = vision_ocr
 
     result = await scrape_video_impl(args)
     if isinstance(result, list) and result:

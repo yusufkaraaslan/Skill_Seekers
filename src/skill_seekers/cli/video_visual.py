@@ -1864,7 +1864,7 @@ def _ocr_single_panel(
         panel_id=f"panel_{row}_{col}",
     )
     # Stash vision_used flag for the caller to count
-    ss._vision_used = vision_used  # type: ignore[attr-defined]
+    ss._vision_used = vision_used
     return ss
 
 
@@ -1918,7 +1918,7 @@ def extract_visual_data(
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         logger.error(f"Cannot open video: {video_path}")
-        return [], []
+        return [], [], None
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -2003,7 +2003,7 @@ def extract_visual_data(
                     for fut in concurrent.futures.as_completed(futures):
                         ss = fut.result()
                         if ss is not None:
-                            if getattr(ss, "_vision_used", False):
+                            if ss._vision_used:
                                 vision_api_frames += 1
                             sub_sections.append(ss)
             else:
@@ -2018,7 +2018,7 @@ def extract_visual_data(
                     use_vision_api,
                 )
                 if ss is not None:
-                    if getattr(ss, "_vision_used", False):
+                    if ss._vision_used:
                         vision_api_frames += 1
                     sub_sections.append(ss)
 
