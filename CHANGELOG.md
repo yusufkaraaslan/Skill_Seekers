@@ -7,83 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 🎬 Video `--setup`: GPU Auto-Detection & Dependency Installation
+**Theme:** Video source support (BETA), Word document support, and quality improvements. 94 files changed, +23,037 lines since v3.1.3. **2,523 tests passing.**
+
+### 🎬 Video Tutorial Scraping Pipeline (BETA)
+
+Complete video tutorial extraction system that converts YouTube videos and local video files into AI-consumable skills. The pipeline extracts transcripts, performs visual OCR on code editor panels, tracks code evolution across frames, and generates structured SKILL.md output.
 
 ### Added
-- **`skill-seekers video --setup`** — One-command GPU auto-detection and dependency installation for the video scraper pipeline
-  - `video_setup.py` (~835 lines) — New module with complete setup orchestration
+
+#### Video Pipeline Core (`skill-seekers video`)
+- **`skill-seekers video --url <youtube-url>`** — New CLI command for video tutorial scraping. Also supports `--video-file` for local files and `--playlist` for YouTube playlists
+- **`skill-seekers create <youtube-url>`** — Auto-detects YouTube URLs and routes to video scraper
+- **`video_scraper.py`** (~960 lines) — Main orchestrator: metadata → transcript → segmentation → visual extraction → SKILL.md generation
+- **`video_models.py`** (~815 lines) — 20+ dataclasses: `VideoMetadata`, `TranscriptSegment`, `VideoChapter`, `KeyframeData`, `FrameSubSection`, `TextBlock`, `CodeTimeline`, `SetupModules`, etc.
+- **`video_metadata.py`** (~270 lines) — YouTube metadata extraction (title, channel, views, chapters, duration) via yt-dlp; local file metadata via ffprobe
+- **`video_transcript.py`** (~370 lines) — Multi-source transcript extraction with 3-tier fallback: YouTube Transcript API → yt-dlp subtitles → faster-whisper local transcription
+- **`video_segmenter.py`** (~220 lines) — Chapter-based and time-window segmentation with configurable overlap
+- **`video_visual.py`** (~2,290 lines) — Visual extraction pipeline:
+  - Keyframe detection via scene change (scenedetect) with configurable threshold
+  - Frame classification (code editor, slides, terminal, browser, other)
+  - Panel detection — splits IDE screenshots into independent sub-sections (code, terminal, file tree)
+  - **Per-panel OCR** — Each detected panel OCR'd independently with its own bounding box
+  - **Multi-engine OCR ensemble** — EasyOCR + pytesseract for code frames (per-line confidence merge with code-token preference), EasyOCR only for non-code frames
+  - **Parallel OCR** — `ThreadPoolExecutor` for multi-panel frames
+  - Narrow panel filtering (300px min width) to skip UI chrome
+  - Text block tracking with spatial panel position matching across frames
+  - Code timeline with edit tracking (additions, modifications, deletions)
+  - Vision API fallback when OCR confidence < 0.5
+  - Tesseract circuit breaker (`_tesseract_broken` flag) — disables pytesseract after first failure
+- **Audio-visual alignment** — Code blocks paired with narrator transcript for context
+- **Video-specific AI enhancement** — Custom prompt for OCR denoising, code reconstruction, and tutorial narrative synthesis
+- **`video-tutorial.yaml`** workflow preset — 4-stage enhancement pipeline (OCR cleanup → language detection → tutorial synthesis → skill polish)
+- **Video arguments** — `arguments/video.py` with `VIDEO_ARGUMENTS` dict: `--url`, `--video-file`, `--playlist`, `--vision-ocr`, `--keyframe-threshold`, `--max-keyframes`, `--whisper-model`, `--setup`, etc.
+- **Video parser** — `parsers/video_parser.py` for unified CLI parser registry
+- **MCP `scrape_video` tool** — Full video scraping from MCP server with 6 visual params, setup mode, and playlist support
+- **`tests/test_video_scraper.py`** (180 tests) — Comprehensive coverage: models, metadata, transcript, segmenter, visual extraction, OCR, panel detection, scraper integration, CLI arguments
+
+#### Video `--setup`: GPU Auto-Detection & Dependency Installation
+- **`skill-seekers video --setup`** — One-command GPU auto-detection and dependency installation
+  - `video_setup.py` (~835 lines) — Complete setup orchestration module
   - **GPU auto-detection** — Detects NVIDIA (nvidia-smi → CUDA version), AMD (rocminfo → ROCm version), or CPU-only without requiring PyTorch
   - **Correct PyTorch variant** — Installs from the right index URL: `cu124`/`cu121`/`cu118` for NVIDIA, `rocm6.3`/`rocm6.2.4` for AMD, `cpu` for CPU-only
-  - **ROCm configuration** — Sets `MIOPEN_FIND_MODE=FAST` and `HSA_OVERRIDE_GFX_VERSION` for AMD GPUs (fixes MIOpen workspace allocation issues)
+  - **ROCm configuration** — Sets `MIOPEN_FIND_MODE=FAST` and `HSA_OVERRIDE_GFX_VERSION` for AMD GPUs
   - **Virtual environment detection** — Warns users outside a venv with opt-in `--force` override
   - **System dependency checks** — Validates `tesseract` and `ffmpeg` binaries, provides OS-specific install instructions
   - **Module selection** — `SetupModules` dataclass for optional component selection (easyocr, opencv, tesseract, scenedetect, whisper)
-  - **Base video deps always included** — `yt-dlp` and `youtube-transcript-api` installed automatically so video pipeline is fully ready after setup
-  - **Verification step** — Post-install import checks for all deps including `torch.cuda.is_available()` and `torch.version.hip`
+  - **Base video deps always included** — `yt-dlp` and `youtube-transcript-api` installed automatically
+  - **Verification step** — Post-install import checks including `torch.cuda.is_available()` and `torch.version.hip`
   - **Non-interactive mode** — `run_setup(interactive=False)` for MCP server and CI/CD use
-- **`--setup` flag** in `arguments/video.py` — Added to `VIDEO_ARGUMENTS` dict
-- **Early-exit in `video_scraper.py`** — `--setup` runs before source validation (no `--url` required)
-- **MCP `scrape_video` setup parameter** — `setup: bool = False` param in `server_fastmcp.py` and `scraping_tools.py`
-- **`create` command routing** — `create_command.py` forwards `--setup` to video scraper
-- **`tests/test_video_setup.py`** (60 tests) — GPU detection, CUDA/ROCm version mapping, installation, verification, venv checks, system deps, module selection, argument parsing
+- **`--setup` early-exit** — Runs before source validation (no `--url` required)
+- **MCP `scrape_video` setup parameter** — `setup: bool = False` in `server_fastmcp.py` and `scraping_tools.py`
+- **`create` command routing** — Forwards `--setup` to video scraper
+- **`tests/test_video_setup.py`** (60 tests) — GPU detection, CUDA/ROCm version mapping, installation, verification, venv checks, system deps, module selection
 
-### Changed
-- **`easyocr` removed from `video-full` optional deps** — Was pulling ~2GB of NVIDIA CUDA packages regardless of GPU vendor. Now installed via `--setup` with correct PyTorch variant.
-- **Video dependency error messages** — `video_scraper.py` and `video_visual.py` now suggest `skill-seekers video --setup` as the primary fix
-- **Multi-engine OCR** — `video_visual.py` uses EasyOCR + pytesseract ensemble for code frames (per-line confidence merge with code-token preference), EasyOCR only for non-code frames
-- **Tesseract circuit breaker** — `_tesseract_broken` flag disables pytesseract for the session after first failure, avoiding repeated subprocess errors
-- **`video_models.py`** — Added `SetupModules` dataclass for granular dependency control
-- **`video_segmenter.py`** — Updated dependency check messages to reference `--setup`
-
-### 📄 B2: Microsoft Word (.docx) Support & Stage 1 Quality Improvements
-
-### Added
-- **Microsoft Word (.docx) support** — New `skill-seekers word --docx <file>` command and `skill-seekers create document.docx` auto-detection. Full pipeline: mammoth → HTML → BeautifulSoup → sections → SKILL.md + references/
+#### Microsoft Word (.docx) Support
+- **`skill-seekers word --docx <file>`** and `skill-seekers create document.docx` — Full pipeline: mammoth → HTML → BeautifulSoup → sections → SKILL.md + references/
   - `word_scraper.py` — `WordToSkillConverter` class (~600 lines) with heading/code/table/image/metadata extraction
   - `arguments/word.py` — `add_word_arguments()` + `WORD_ARGUMENTS` dict
   - `parsers/word_parser.py` — WordParser for unified CLI parser registry
-  - `tests/test_word_scraper.py` — comprehensive test suite (~300 lines)
-- **`.docx` auto-detection** in `source_detector.py` — `create document.docx` routes to word scraper
+  - `tests/test_word_scraper.py` — Comprehensive test suite (~300 lines)
+- **`.docx` auto-detection** in `source_detector.py` — Routes to word scraper
 - **`--help-word`** flag in create command for Word-specific help
 - **Word support in unified scraper** — `_scrape_word()` method for multi-source scraping
 - **`skill-seekers-word`** entry point in pyproject.toml
 - **`docx` optional dependency group** — `pip install skill-seekers[docx]` (mammoth + python-docx)
 
+#### Other Additions
+- **Pinecone adaptor** — `pinecone_adaptor.py` with full upload support
+- **`video` and `video-full` optional dependency groups** in pyproject.toml
+- **`skill-seekers-video`** entry point in pyproject.toml
+- **Video plan documents** — 8 design documents in `docs/plans/video/` (research, data models, pipeline, integration, output, testing, dependencies, overview)
+
 ### Fixed
-- **`--var` flag silently dropped in `create` routing** — `main.py` checked `args.workflow_var` but argparse stores the flag as `args.var`. Workflow variable overrides via `--var KEY=VALUE` were silently ignored. Fixed to read `args.var`.
-- **Double `_score_code_quality()` call in word scraper** — `word_scraper.py` called `_score_code_quality(raw_text)` twice for every code-like paragraph (once to check threshold, once to assign). Consolidated to a single call.
-- **`.docx` file extension validation** — `WordToSkillConverter` now validates the file has a `.docx` extension before attempting to parse. Non-`.docx` files (`.doc`, `.txt`, no extension) raise `ValueError` with a clear message instead of cryptic parse errors.
-- **`--no-preserve-code` renamed to `--no-preserve-code-blocks`** — Flag name now matches the parameter it controls (`preserve_code_blocks`). Backward-compatible alias `--no-preserve-code` kept (hidden, removed in v4.0.0).
-- **`--chunk-overlap-tokens` missing from `package` command** — Flag was defined in `create` and `scrape` but not `package`. Added to `PACKAGE_ARGUMENTS` and wired through `package_skill()` → `adaptor.package()` → `format_skill_md()` → `_maybe_chunk_content()` → `RAGChunker`.
-- **Chunk overlap auto-scaling** — When `--chunk-tokens` is non-default but `--chunk-overlap-tokens` is default, overlap now auto-scales to `max(50, chunk_tokens // 10)` for better context preservation with large chunks.
-- **Weaviate `ImportError` masked by generic handler** — `upload()` caught `Exception` before `ImportError`, so missing `sentence-transformers` produced a generic "Upload failed" message instead of the specific install instruction. Added `except ImportError` before `except Exception`.
-- **Hardcoded chunk defaults in 12 adaptors** — All concrete adaptors (claude, gemini, openai, markdown, langchain, llama_index, haystack, chroma, faiss, qdrant, weaviate, pinecone) used hardcoded `512`/`50` for chunk token/overlap defaults. Replaced with `DEFAULT_CHUNK_TOKENS` and `DEFAULT_CHUNK_OVERLAP_TOKENS` constants from `arguments/common.py`.
-- **RAG chunking crash (`AttributeError: output_dir`)** — `execute_scraping_and_building()` used `converter.output_dir` which doesn't exist on `DocToSkillConverter`. Changed to `Path(converter.skill_dir)`. Affected `--chunk-for-rag` flag on `scrape` command.
-- **Issue #301: `setup.sh` fails on macOS with mismatched Python/pip** — `pip3` can point to a different Python than `python3` (e.g. pip3 → 3.9, python3 → 3.14), causing "no matching distribution" errors. Changed `setup.sh` to use `python3 -m pip` instead of bare `pip3` to guarantee the correct interpreter.
-- **Issue #300: Selector fallback & dry-run link discovery** — `create https://reactflow.dev/` now finds 20+ pages (was 1). Root causes:
-  - `extract_content()` extracted links after the early-return when no content selector matched, so they were never discovered. Moved link extraction before the early return.
-  - Dry-run extracted links from `main.find_all("a")` (main content only) instead of `soup.find_all("a")` (full page), missing navigation links. Fixed both sync and async dry-run paths.
-  - Async dry-run had no link extraction at all — only logged URLs.
-  - `get_configuration()` default used a CSS comma selector string that conflicted with the fallback loop. Removed `main_content` from defaults so `_find_main_content()` fallback kicks in.
-  - `create --config` with a simple web config (has `base_url`, no `sources`) incorrectly routed to `unified_scraper` which rejected it. Now peeks at JSON: routes `"sources"` configs to unified_scraper, `"base_url"` configs to doc_scraper.
-  - Selector fallback logic was duplicated in 3 places with `body` as ultimate fallback (masks failures). Extracted `FALLBACK_MAIN_SELECTORS` constant and `_find_main_content()` helper (no `body`).
-- **Reference file code truncation removed** — `codebase_scraper.py` no longer truncates code blocks to 500 chars in reference files (5 locations fixed)
-- **Enhancement code block limit replaced with token budget** — `enhance_skill_local.py` `summarize_reference()` now uses character-budget approach instead of arbitrary `[:5]` code block cap
-- **Dead variable removed** — `_target_lines` in `enhance_skill_local.py:309` was assigned but never used
-- **Intro boundary code block desync fixed** — `summarize_reference()` intro section could split inside a code block, desynchronizing the parser; now tracks code block state and ensures safe boundary
-- **Test assertion corrected** — `test_code_blocks_not_arbitrarily_capped` now correctly counts code blocks (```count // 2) instead of raw marker count
-- **Hardcoded `python` language in unified_skill_builder.py** — Test examples now use detected language (`ex["language"]`) instead of always `python`; code snippets no longer truncated to 300 chars
-- **Hardcoded `python` language in how_to_guide_builder.py** — Added `language` field to `HowToGuide` dataclass, flows from test extractor → workflow → guide → AI prompt
-- **GitHub reference file limits removed** — `unified_skill_builder.py` no longer caps issues at 20, releases at 10, or release bodies at 500 chars in reference files
+
+#### Video Pipeline Fixes (15)
+- **`extract_visual_data` returning 2-tuple instead of 3** — Caused `ValueError` crash when unpacking results
+- **pytesseract in core deps** — Moved from core dependencies to `[video-full]` optional group
+- **30-min timeout for video enhancement subprocess** — Previously could hang indefinitely
+- **`scrape_video_impl` missing from MCP server fallback import** — Added to import block
+- **Auto-generated YouTube captions not detected** — Now checks `is_generated` property on transcripts
+- **`--vision-ocr` and `--video-playlist` not forwarded** — `create` command now passes these to video scraper
+- **Filename collision for non-ASCII video titles** — Falls back to `video_id` when title contains non-ASCII characters
+- **`_vision_used` not a proper dataclass field** — Made a proper field on `FrameSubSection` dataclass
+- **6 visual params missing from MCP `scrape_video`** — Exposed keyframe_threshold, max_keyframes, whisper_model, vision_ocr, video_playlist, video_file
+- **Missing video dep install instructions in unified scraper** — Added guidance when video dependencies are not installed
+- **MCP docstring tool counts outdated** — Updated from 25→33 tools across 7 categories
+- **Video and word commands missing from `main.py` docstring** — Added to CLI help text
+- **`video-full` exclusion from `[all]` deps undocumented** — Added comment in pyproject.toml
+- **Parser registry test count wrong** — Updated expected count from 22→23 for video parser
+
+#### Scraper & Quality Fixes
+- **Issue #300: Selector fallback & dry-run link discovery** — `create https://reactflow.dev/` now finds 20+ pages (was 1):
+  - `extract_content()` extracted links after early-return → moved before
+  - Dry-run used `main.find_all("a")` instead of `soup.find_all("a")` → fixed
+  - Async dry-run had no link extraction at all → added
+  - `get_configuration()` CSS comma selector conflicted with fallback loop → removed default
+  - `create --config` with `base_url` config incorrectly routed to unified_scraper → now peeks at JSON
+  - Selector fallback duplicated in 3 places with `body` fallback → extracted `FALLBACK_MAIN_SELECTORS` constant + `_find_main_content()` helper
+- **Issue #301: `setup.sh` fails on macOS** — `pip3` pointed to different Python than `python3`. Changed to `python3 -m pip`.
+- **RAG chunking crash (`AttributeError: output_dir`)** — `converter.output_dir` doesn't exist on `DocToSkillConverter`. Changed to `Path(converter.skill_dir)`.
+- **`--var` flag silently dropped in `create` routing** — `main.py` read `args.workflow_var` instead of `args.var`
+- **`--chunk-overlap-tokens` missing from `package` command** — Wired through entire pipeline: `package_skill()` → `adaptor.package()` → `format_skill_md()` → `_maybe_chunk_content()` → `RAGChunker`
+- **Chunk overlap auto-scaling** — Auto-scales to `max(50, chunk_tokens // 10)` when chunk size is non-default
+- **Weaviate `ImportError` masked by generic handler** — Added `except ImportError` before `except Exception`
+- **Hardcoded chunk defaults in 12 adaptors** — Replaced `512`/`50` with `DEFAULT_CHUNK_TOKENS`/`DEFAULT_CHUNK_OVERLAP_TOKENS` constants
+- **Reference file code truncation** — `codebase_scraper.py` no longer truncates code blocks to 500 chars (5 locations)
+- **Enhancement code block limit** — `summarize_reference()` now uses character-budget approach instead of `[:5]` cap
+- **Intro boundary code block desync** — Tracks code block state to prevent splitting inside code blocks
+- **Hardcoded `python` language** — `unified_skill_builder.py` and `how_to_guide_builder.py` now use detected language
+- **GitHub reference file limits removed** — No more caps on issues (was 20), releases (was 10), or release bodies (was 500 chars)
 - **GitHub scraper reference limits removed** — `github_scraper.py` no longer caps open_issues at 20 or closed_issues at 10
 - **PDF scraper fixes** — Real API/LOCAL enhancement (was stub); removed `[:3]` reference file limit
-- **Word scraper code detection** — Detect mammoth monospace `<p><br>` blocks as code (not `<pre>/<code>`)
+- **Word scraper code detection** — Detect mammoth monospace `<p><br>` blocks as code
 - **Language detector method** — Fixed `detect_from_text` → `detect_from_code` in word scraper
+- **`.docx` file extension validation** — Non-`.docx` files raise `ValueError` with clear message
+- **Double `_score_code_quality()` call** — Consolidated to single call in word scraper
+- **`--no-preserve-code` renamed** — Now `--no-preserve-code-blocks` (backward-compat alias kept)
+- **Dead variable** — Removed unused `_target_lines` in `enhance_skill_local.py`
 
 ### Changed
-- **Shared embedding methods consolidated to base class** — `_generate_openai_embeddings()` and `_generate_st_embeddings()` moved from chroma/weaviate/pinecone adaptors into `SkillAdaptor` base class. All 3 adaptors now inherit these methods, eliminating ~150 lines of duplicated code.
-- **Chunk constants centralized** — Added `DEFAULT_CHUNK_TOKENS = 512` and `DEFAULT_CHUNK_OVERLAP_TOKENS = 50` in `arguments/common.py`. Used across `rag_chunker.py`, `base.py`, `package_skill.py`, `create_command.py`, and all 12 concrete adaptors. No more magic numbers for chunk defaults.
-- **Enhancement summarizer architecture** — Character-budget approach respects `target_ratio` for both code blocks and heading chunks, replacing hard limits with proportional allocation
+- **`easyocr` removed from `video-full` optional deps** — Was pulling ~2GB of NVIDIA CUDA packages regardless of GPU vendor. Now installed via `--setup` with correct PyTorch variant.
+- **Video dependency error messages** — `video_scraper.py` and `video_visual.py` now suggest `skill-seekers video --setup` as primary fix
+- **Shared embedding methods consolidated** — `_generate_openai_embeddings()` and `_generate_st_embeddings()` moved to `SkillAdaptor` base class, eliminating ~150 lines of duplication from chroma/weaviate/pinecone adaptors
+- **Chunk constants centralized** — `DEFAULT_CHUNK_TOKENS = 512` and `DEFAULT_CHUNK_OVERLAP_TOKENS = 50` in `arguments/common.py`, used across all 12 adaptors + rag_chunker + base + package_skill + create_command
+- **Enhancement summarizer architecture** — Character-budget approach with `target_ratio` for both code blocks and heading chunks
 
 ## [3.1.3] - 2026-02-24
 
