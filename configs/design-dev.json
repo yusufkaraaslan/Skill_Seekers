@@ -1,0 +1,25 @@
+{
+  "name": "design-dev",
+  "description": "CSS, HTML, JavaScript implementation guides, design systems, accessibility, and web performance best practices from design.dev - use for technical design implementation and code generation",
+  "base_url": "https://design.dev/guides/",
+  "selectors": {
+    "main_content": "main, article, .content",
+    "title": "h1",
+    "code_blocks": "pre, code"
+  },
+  "url_patterns": {
+    "include": ["/guides/"],
+    "exclude": ["/tools/", "/blog/", "/about/"]
+  },
+  "categories": {
+    "css_layout": ["css-grid", "flexbox", "css-centering", "media-queries"],
+    "css_styling": ["css-variables", "css-animations", "css-functions", "dark-mode", "cascade-layers", "scroll-timeline"],
+    "css_selectors": ["css-selectors", "specificity"],
+    "html": ["html-entities", "html-accessibility", "html-media-elements", "aria"],
+    "javascript": ["javascript-array-methods", "console-commands"],
+    "design_systems": ["design-systems", "typography", "web-performance"],
+    "development": ["git-commands", "cursor-shortcuts", "vscode"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 30
+}

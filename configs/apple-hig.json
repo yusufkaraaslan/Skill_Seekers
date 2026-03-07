@@ -1,0 +1,23 @@
+{
+  "name": "apple-hig",
+  "description": "Apple Human Interface Guidelines - iOS 26 Liquid Glass design system, platform conventions, UI components, and design patterns. Use when designing iOS apps, implementing native-feeling UI, or understanding Apple design principles.",
+  "base_url": "https://developer.apple.com/design/human-interface-guidelines/",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/design/human-interface-guidelines/"],
+    "exclude": ["/videos/", "/news/"]
+  },
+  "categories": {
+    "foundations": ["accessibility", "color", "dark-mode", "icons", "typography", "layout"],
+    "patterns": ["navigation", "modality", "searching", "settings", "onboarding"],
+    "components": ["buttons", "menus", "sheets", "alerts", "controls"],
+    "platforms": ["ios", "ipados", "watchos", "visionos"],
+    "technologies": ["live-activities", "widgets", "app-intents", "siri"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 300
+}

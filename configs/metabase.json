@@ -1,0 +1,24 @@
+{
+  "name": "metabase",
+  "description": "Metabase business intelligence and analytics documentation. Use when working with Metabase BI, creating dashboards, embedding analytics, or querying data.",
+  "base_url": "https://www.metabase.com/docs/latest/",
+  "selectors": {
+    "main_content": "article, main, .content, .markdown-body",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/latest/"],
+    "exclude": ["/login", "/signup", "/learn"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "installation", "setup", "quickstart"],
+    "dashboards": ["dashboard", "visualization", "charts"],
+    "questions": ["questions", "query", "sql"],
+    "embedding": ["embedding", "iframe", "public"],
+    "administration": ["admin", "users", "permissions", "authentication"],
+    "api": ["api", "reference"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

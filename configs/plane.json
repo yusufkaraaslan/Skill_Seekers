@@ -1,0 +1,23 @@
+{
+  "name": "plane",
+  "description": "Plane project management documentation. Use when working with Plane, managing projects, creating issues, or integrating with GitHub.",
+  "base_url": "https://docs.plane.so/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/pricing", "/blog", "https://developers.plane.so", "https://app.plane.so", "https://plane.so/download", "https://discord.com", "https://github.com"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quickstart", "introduction"],
+    "projects": ["projects", "issues", "cycles", "modules"],
+    "integrations": ["integrations", "github", "slack"],
+    "self_hosting": ["self-hosting", "deployment"],
+    "api": ["api", "webhooks"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

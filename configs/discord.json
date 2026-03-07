@@ -1,0 +1,24 @@
+{
+  "name": "discord",
+  "description": "Discord API documentation. Use when working with Discord bots, webhooks, OAuth, slash commands, or integrating Discord features into applications.",
+  "base_url": "https://discord.com/developers/docs",
+  "selectors": {
+    "main_content": ".mdx-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/developers/docs"],
+    "exclude": ["/login", "/register", "/applications"]
+  },
+  "categories": {
+    "getting_started": ["intro", "getting-started", "quick-start"],
+    "authentication": ["oauth2", "authentication", "authorization"],
+    "interactions": ["interactions", "slash-commands", "buttons", "components"],
+    "gateway": ["gateway", "websocket", "events"],
+    "resources": ["resources", "channel", "guild", "user", "message"],
+    "api_reference": ["reference", "endpoints", "api"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 250
+}

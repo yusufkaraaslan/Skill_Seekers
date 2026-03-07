@@ -1,0 +1,34 @@
+{
+  "name": "react-native-reanimated",
+  "description": "React Native Reanimated - High-performance animations for React Native at 120fps. Use when building smooth UI animations, gesture-driven interactions, layout transitions, or sensor-based animations in React Native apps.",
+  "base_url": "https://docs.swmansion.com/react-native-reanimated/",
+  "start_urls": [
+    "https://docs.swmansion.com/react-native-reanimated/",
+    "https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started",
+    "https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/your-first-animation",
+    "https://docs.swmansion.com/react-native-reanimated/docs/core/useSharedValue",
+    "https://docs.swmansion.com/react-native-reanimated/docs/core/useAnimatedStyle",
+    "https://docs.swmansion.com/react-native-reanimated/docs/animations/withSpring",
+    "https://docs.swmansion.com/react-native-reanimated/docs/layout-animations/entering-exiting-animations"
+  ],
+  "selectors": {
+    "main_content": "article, main, .markdown, .theme-doc-markdown, body",
+    "title": "h1, title",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/docs/1.x", "/docs/2.x", "/docs/3.x"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "installation", "fundamentals", "your-first-animation"],
+    "core": ["useSharedValue", "useAnimatedStyle", "useAnimatedProps", "useDerivedValue"],
+    "animations": ["withSpring", "withTiming", "withDecay", "withSequence", "withDelay", "withRepeat"],
+    "gestures": ["gesture", "pan", "tap", "pinch", "rotation", "fling"],
+    "layout_animations": ["entering", "exiting", "layout", "keyframe"],
+    "advanced": ["worklets", "runOnJS", "runOnUI", "measure", "scrollTo"],
+    "components": ["Animated", "AnimatedScrollView", "createAnimatedComponent"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

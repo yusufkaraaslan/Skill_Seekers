@@ -1,0 +1,30 @@
+{
+  "name": "rust-book",
+  "description": "Use when learning Rust programming language. Covers ownership, borrowing, lifetimes, structs, enums, pattern matching, error handling, traits, generics, smart pointers, concurrency, and Rust idioms.",
+  "base_url": "https://doc.rust-lang.org/book/",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/book/"],
+    "exclude": ["/print.html", "/_static/"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "installation", "hello", "guessing-game"],
+    "ownership": ["ownership", "references", "borrowing", "slice"],
+    "structs_enums": ["structs", "enums", "match", "patterns"],
+    "modules": ["modules", "packages", "crates", "paths"],
+    "collections": ["collections", "vector", "string", "hashmap"],
+    "error_handling": ["error", "panic", "Result", "recoverable"],
+    "generics_traits": ["generics", "traits", "lifetimes"],
+    "testing": ["testing", "test", "integration"],
+    "functional": ["closures", "iterators", "functional"],
+    "smart_pointers": ["smart-pointers", "box", "rc", "refcell", "deref"],
+    "concurrency": ["concurrency", "threads", "message-passing", "shared-state"],
+    "advanced": ["advanced", "unsafe", "macros", "patterns"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 300
+}

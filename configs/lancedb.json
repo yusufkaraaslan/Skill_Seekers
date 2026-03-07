@@ -1,0 +1,28 @@
+{
+  "name": "lancedb",
+  "description": "LanceDB - open-source multimodal lakehouse and vector database. Use when building RAG applications, vector search, embedding storage, AI agents, or large-scale ML workflows with Python, TypeScript, or Rust.",
+  "base_url": "https://lancedb.com/docs/",
+  "selectors": {
+    "main_content": "body",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["#", "?", "/blog/", "/pricing/", "github.com", "discord.com", "accounts.lancedb", "cloud.lancedb", ".pdf"]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "overview", "basic-usage", "datasets"],
+    "tables": ["tables", "create", "schema", "update", "delete"],
+    "indexing": ["indexing", "index", "ivf", "hnsw", "btree"],
+    "search": ["search", "query", "vector", "full-text", "hybrid"],
+    "embedding": ["embedding", "embeddings", "openai", "sentence-transformers"],
+    "storage": ["storage", "s3", "gcs", "azure", "local"],
+    "integrations": ["integrations", "langchain", "llamaindex", "dspy"],
+    "api": ["reference", "api", "sdk"],
+    "cloud": ["cloud", "enterprise"],
+    "tutorials": ["tutorials", "rag", "demos"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

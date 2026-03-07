@@ -1,0 +1,24 @@
+{
+  "name": "mitsuba",
+  "description": "Use when working with Mitsuba 3 - a research-oriented rendering system for forward and inverse light transport simulation. Covers differentiable rendering, physically-based rendering, Python/C++ APIs, and plugin development.",
+  "base_url": "https://mitsuba.readthedocs.io/en/stable/",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/_static/", "/_sources/", "/genindex", "/search", "/_modules/"]
+  },
+  "categories": {
+    "getting_started": ["getting_started", "installation", "quickstart", "tutorial", "intro"],
+    "rendering": ["rendering", "integrator", "sensor", "emitter", "film", "sampler"],
+    "differentiable": ["differentiable", "inverse", "optimization", "autodiff", "gradient"],
+    "plugins": ["plugin", "bsdf", "shape", "texture", "medium", "phase"],
+    "api": ["api", "reference", "python", "cpp", "class", "function"],
+    "scenes": ["scene", "xml", "file_format", "loading"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 500
+}

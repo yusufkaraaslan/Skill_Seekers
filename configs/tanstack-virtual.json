@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-virtual",
+  "description": "TanStack Virtual - headless virtualization for large lists and grids at 60fps. Use when rendering large datasets, infinite scroll, virtualized tables, or performance-critical lists.",
+  "base_url": "https://tanstack.com/virtual/latest/docs/introduction",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/virtual/"],
+    "exclude": ["/blog/", "/sponsors"]
+  },
+  "categories": {
+    "getting_started": ["introduction", "installation", "overview"],
+    "core": ["virtualizer", "scroll-element", "measurements", "scrolling"],
+    "patterns": ["lists", "grids", "tables", "dynamic-height", "infinite-scroll"],
+    "performance": ["smooth-scroll", "overscan", "estimateSize"],
+    "examples": ["basic", "grid", "table", "infinite", "dynamic"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}

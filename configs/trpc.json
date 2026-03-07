@@ -1,0 +1,31 @@
+{
+  "name": "trpc",
+  "description": "Use this skill when building end-to-end typesafe APIs with tRPC. Covers server setup, client integration, routers, procedures, middleware, context, error handling, subscriptions, and framework integrations (Next.js, React Query, Express, Fastify). Essential for TypeScript developers building full-stack applications with type inference from backend to frontend.",
+  "base_url": "https://trpc.io/docs/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": [
+      "/docs/v9/",
+      "/docs/v10/",
+      "/blog/",
+      "/community/",
+      "?",
+      "#"
+    ]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "getting-started", "introduction", "setup", "installation"],
+    "server": ["server", "router", "procedure", "context", "middleware", "error-handling", "authorization"],
+    "client": ["client", "react-query", "nextjs", "links", "header", "aborting"],
+    "advanced": ["subscriptions", "inference", "transformer", "streaming", "metadata"],
+    "api_reference": ["api", "reference", "types"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 300,
+  "skip_llms_txt": true
+}

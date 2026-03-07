@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-start",
+  "description": "TanStack Start - full-stack React framework with SSR, streaming, server functions, and type-safe APIs. Use when building full-stack React apps with server rendering, API routes, or streaming.",
+  "base_url": "https://tanstack.com/start/latest/docs/framework/react/overview",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/start/"],
+    "exclude": ["/blog/", "/sponsors"]
+  },
+  "categories": {
+    "getting_started": ["overview", "installation", "quick-start", "project-structure"],
+    "routing": ["file-based-routing", "layouts", "loaders", "actions"],
+    "server": ["server-functions", "api-routes", "middleware", "ssr"],
+    "data": ["data-loading", "mutations", "caching", "streaming"],
+    "deployment": ["build", "deploy", "hosting", "edge"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

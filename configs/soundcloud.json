@@ -1,0 +1,28 @@
+{
+  "name": "soundcloud",
+  "description": "Use when working with the SoundCloud API - includes authentication, uploading, playing, following, search, pagination, and API reference documentation",
+  "base_url": "https://developers.soundcloud.com/docs",
+  "selectors": {
+    "main_content": "#content, .swagger-container",
+    "title": "h1, title",
+    "code_blocks": "pre, code"
+  },
+  "url_patterns": {
+    "include": ["/docs"],
+    "exclude": ["/blog", "/support", ".rss"]
+  },
+  "categories": {
+    "getting_started": ["guide", "getting-started", "introduction"],
+    "authentication": ["authentication", "auth", "oauth"],
+    "api": ["api", "reference", "explorer", "open-api"],
+    "uploading": ["upload", "uploading"],
+    "playing": ["play", "playing", "widget", "html5-widget"],
+    "search": ["search"],
+    "pagination": ["pagination"],
+    "rate_limits": ["rate-limits", "limits"],
+    "oembed": ["oembed"],
+    "resources": ["buttons-logos", "terms-of-use"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 50
+}

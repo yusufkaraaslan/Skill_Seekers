@@ -1,0 +1,50 @@
+{
+  "name": "crawl4ai",
+  "description": "Complete Crawl4AI knowledge base - open-source LLM-friendly web crawler and scraper. Combines official documentation with GitHub codebase for async crawling, browser automation, content extraction, structured data output, and AI-ready web scraping.",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.crawl4ai.com/",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "article",
+        "title": "h1",
+        "code_blocks": "pre"
+      },
+      "url_patterns": {
+        "include": [],
+        "exclude": ["?", "#", "/changelog"]
+      },
+      "categories": {
+        "getting_started": ["quickstart", "installation", "introduction", "getting-started"],
+        "core_features": ["crawling", "extraction", "browser", "async", "content"],
+        "configuration": ["config", "settings", "options", "parameters"],
+        "advanced": ["hooks", "sessions", "proxy", "stealth", "javascript"],
+        "output": ["markdown", "json", "structured", "output", "format"],
+        "api": ["api", "reference", "methods", "classes"]
+      },
+      "rate_limit": 0.3,
+      "max_pages": 300
+    },
+    {
+      "type": "github",
+      "repo": "unclecode/crawl4ai",
+      "include_issues": true,
+      "max_issues": 150,
+      "include_changelog": true,
+      "include_releases": true,
+      "include_code": true,
+      "code_analysis_depth": "deep",
+      "file_patterns": [
+        "crawl4ai/**/*.py",
+        "crawl4ai/extraction/**/*.py",
+        "crawl4ai/browser/**/*.py",
+        "crawl4ai/async_crawler/**/*.py",
+        "examples/**/*.py",
+        "docs/**/*.md",
+        "*.md"
+      ]
+    }
+  ]
+}

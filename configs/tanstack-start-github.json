@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-start",
+  "description": "TanStack Start - full-stack React framework with SSR, streaming, server functions. Use for full-stack React, server rendering, API routes.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/start",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

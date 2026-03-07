@@ -1,0 +1,23 @@
+{
+  "name": "deepwiki",
+  "repo": "AsyncFuncAI/deepwiki-open",
+  "description": "DeepWiki - AI-powered wiki generation from codebases. Use when building documentation generators, code understanding tools, or wiki systems that analyze repositories.",
+  "include_issues": true,
+  "max_issues": 100,
+  "include_changelog": true,
+  "include_releases": true,
+  "include_code": true,
+  "code_analysis_depth": "deep",
+  "file_patterns": [
+    "src/**/*.py",
+    "src/**/*.ts",
+    "api/**/*.py",
+    "api/**/*.ts",
+    "lib/**/*.py",
+    "lib/**/*.ts",
+    "core/**/*.py",
+    "core/**/*.ts",
+    "**/*.md",
+    "docs/**/*"
+  ]
+}

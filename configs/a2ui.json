@@ -1,0 +1,40 @@
+{
+  "name": "a2ui",
+  "description": "A2UI is Google's open standard protocol enabling AI agents to generate rich, interactive UIs declaratively via JSON. Use this skill when building agent-driven interfaces, implementing A2UI renderers, creating agent responses with UI components, or integrating A2UI with React/Flutter/Angular. Covers protocol spec, data binding, catalogs, transports, and renderer development.",
+  "base_url": "https://a2ui.org/",
+  "selectors": {
+    "main_content": "article.md-content__inner",
+    "title": "title",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": [
+      "/introduction/",
+      "/quickstart/",
+      "/concepts/",
+      "/guides/",
+      "/reference/",
+      "/specification/",
+      "/catalogs/",
+      "/transports/",
+      "/renderers/",
+      "/agents/",
+      "/client_to_server_actions/",
+      "/ecosystem/"
+    ],
+    "exclude": [
+      "/community/",
+      "/roadmap/"
+    ]
+  },
+  "categories": {
+    "introduction": ["introduction", "what-is", "who-is", "how-to-use", "where-is-used", "ecosystem"],
+    "quickstart": ["quickstart", "getting-started", "setup"],
+    "concepts": ["concepts", "overview", "data-flow", "components", "data-binding", "catalogs", "transports", "client_to_server"],
+    "guides": ["guides", "client-setup", "agent-development", "renderer-development", "custom-components", "theming"],
+    "specification": ["specification", "protocol", "v0.8", "v0.9", "evolution"],
+    "reference": ["reference", "messages", "renderers", "agents", "components"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

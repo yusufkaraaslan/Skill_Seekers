@@ -1,0 +1,33 @@
+{
+  "name": "expo",
+  "description": "Expo SDK and CLI - managed React Native development. Use when creating new RN projects, configuring builds, using Expo modules, EAS Build/Submit, or debugging Expo-specific issues.",
+  "base_url": "https://docs.expo.dev/",
+  "start_urls": [
+    "https://docs.expo.dev/",
+    "https://docs.expo.dev/get-started/introduction/",
+    "https://docs.expo.dev/workflow/expo-cli/",
+    "https://docs.expo.dev/build/introduction/",
+    "https://docs.expo.dev/submit/introduction/",
+    "https://docs.expo.dev/router/introduction/",
+    "https://docs.expo.dev/develop/development-builds/introduction/"
+  ],
+  "selectors": {
+    "main_content": "article, main, .prose",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/get-started", "/workflow", "/build", "/submit", "/router", "/develop", "/guides", "/versions"],
+    "exclude": ["/archive", "/classic"]
+  },
+  "categories": {
+    "getting_started": ["introduction", "installation", "create", "quickstart"],
+    "cli": ["expo-cli", "eas-cli", "commands", "npx"],
+    "build": ["eas-build", "local", "android", "ios", "credentials"],
+    "submit": ["app-store", "play-store", "testflight"],
+    "router": ["expo-router", "navigation", "file-based", "tabs", "stack"],
+    "modules": ["camera", "location", "notifications", "file-system"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 400
+}

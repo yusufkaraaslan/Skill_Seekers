@@ -1,0 +1,24 @@
+{
+  "name": "tiktok-ads",
+  "description": "TikTok Ads API documentation. Use when working with TikTok Marketing API, creating ad campaigns, managing TikTok ads, or integrating TikTok advertising.",
+  "base_url": "https://ads.tiktok.com/marketing_api/docs",
+  "selectors": {
+    "main_content": "article, main, .docs-content, .markdown-body",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/marketing_api/docs", "/docs"],
+    "exclude": ["/login", "/signup", "/account"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quick-start", "overview", "introduction"],
+    "authentication": ["authentication", "oauth", "access-token", "auth"],
+    "campaigns": ["campaign", "ad-group", "advertiser"],
+    "creative": ["creative", "ad-creative", "video", "image"],
+    "reporting": ["report", "analytics", "metrics", "statistics"],
+    "api_reference": ["api", "endpoint", "reference"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

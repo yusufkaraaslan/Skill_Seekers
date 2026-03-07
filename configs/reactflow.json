@@ -1,0 +1,39 @@
+{
+  "name": "reactflow",
+  "description": "React Flow - powerful library for building node-based UIs, interactive diagrams, workflow editors, and graph visualizations. Use when creating flowcharts, mind maps, data pipelines, state machines, or any interactive node-edge graph interface in React.",
+  "base_url": "https://reactflow.dev/",
+  "start_urls": [
+    "https://reactflow.dev/learn",
+    "https://reactflow.dev/learn/getting-started/installation",
+    "https://reactflow.dev/api-reference",
+    "https://reactflow.dev/api-reference/components",
+    "https://reactflow.dev/api-reference/hooks",
+    "https://reactflow.dev/api-reference/types",
+    "https://reactflow.dev/api-reference/utils",
+    "https://reactflow.dev/examples",
+    "https://reactflow.dev/ui"
+  ],
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/learn", "/api-reference", "/examples", "/ui"],
+    "exclude": ["/blog", "/showcase", "/whats-new", "/contact", "/pro"]
+  },
+  "categories": {
+    "getting_started": ["installation", "quick-start", "getting-started", "introduction"],
+    "core_concepts": ["core-concepts", "nodes", "edges", "handles", "connections", "viewport"],
+    "components": ["components", "background", "controls", "minimap", "panel", "node-toolbar", "node-resizer"],
+    "hooks": ["hooks", "use-nodes", "use-edges", "use-react-flow", "use-store", "use-viewport"],
+    "types": ["types", "node", "edge", "connection", "viewport"],
+    "utils": ["utils", "add-edge", "apply-node-changes", "apply-edge-changes", "get-bezier-path"],
+    "customization": ["custom-nodes", "custom-edges", "theming", "styling"],
+    "layout": ["layout", "dagre", "elkjs", "d3-hierarchy", "auto-layout"],
+    "examples": ["examples", "overview", "interaction", "subflows", "whiteboard"],
+    "ui_components": ["ui", "templates", "pro-examples"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 500
+}

@@ -1,0 +1,37 @@
+{
+  "name": "skia",
+  "description": "Skia - Google's open-source 2D graphics library for drawing text, geometries, and images. Used in Chrome, Android, Flutter, and many other products. Use when working with 2D graphics rendering, canvas APIs, text shaping, image processing, or GPU-accelerated drawing in C++.",
+  "base_url": "https://skia.org/",
+  "start_urls": [
+    "https://skia.org/docs/",
+    "https://skia.org/docs/dev/",
+    "https://skia.org/docs/dev/contrib/",
+    "https://skia.org/docs/dev/tools/",
+    "https://skia.org/docs/dev/testing/",
+    "https://skia.org/docs/dev/design/",
+    "https://skia.org/docs/user/",
+    "https://skia.org/docs/user/api/",
+    "https://skia.org/docs/user/build/"
+  ],
+  "selectors": {
+    "main_content": "main, article, .content, #content, body",
+    "title": "h1, title",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/users", "/_", "/static/"]
+  },
+  "categories": {
+    "getting_started": ["download", "build", "quick", "start", "setup"],
+    "developer": ["dev", "contrib", "submit", "patch", "coding"],
+    "api": ["api", "reference", "class", "skpaint", "skcanvas", "skpath"],
+    "tools": ["tools", "debugger", "trace", "codesearch", "viewer"],
+    "testing": ["testing", "test", "fuzz", "correctness"],
+    "design": ["design", "text", "gradient", "pdf", "architecture"],
+    "build": ["build", "gn", "bazel", "compile", "cmake"],
+    "platforms": ["android", "ios", "chrome", "chromium", "flutter"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

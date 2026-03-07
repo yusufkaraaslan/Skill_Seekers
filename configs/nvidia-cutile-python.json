@@ -1,0 +1,25 @@
+{
+  "name": "nvidia-cutile-python",
+  "description": "Use when working with NVIDIA CuTile Python - Python bindings for tile-based GPU programming. Covers pythonic tile abstractions, JIT compilation, memory management, and high-level GPU kernel development in Python.",
+  "base_url": "https://docs.nvidia.com/cuda/cutile-python/",
+  "selectors": {
+    "main_content": "#main-content",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "skip_llms_txt": true,
+  "url_patterns": {
+    "include": ["/cuda/cutile-python/"],
+    "exclude": ["/_static/", "/_sources/", "/genindex", "/search"]
+  },
+  "categories": {
+    "getting_started": ["getting_started", "installation", "quickstart", "introduction", "overview"],
+    "tiles": ["tile", "collective", "partition", "layout"],
+    "python_api": ["python", "api", "class", "function", "decorator"],
+    "memory": ["memory", "shared", "global", "tensor"],
+    "compilation": ["compile", "jit", "kernel", "launch"],
+    "examples": ["example", "sample", "tutorial", "benchmark"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

@@ -1,0 +1,25 @@
+{
+  "name": "nvidia-tile-ir",
+  "description": "Use when working with NVIDIA Tile-IR - a tile-based intermediate representation for CUDA programming. Covers tile abstractions, memory hierarchies, collective operations, and high-performance GPU kernel development.",
+  "base_url": "https://docs.nvidia.com/cuda/tile-ir/latest/",
+  "selectors": {
+    "main_content": "#main-content",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "skip_llms_txt": true,
+  "url_patterns": {
+    "include": ["/cuda/tile-ir/"],
+    "exclude": ["/_static/", "/_sources/", "/genindex", "/search"]
+  },
+  "categories": {
+    "getting_started": ["getting_started", "installation", "quickstart", "introduction", "overview"],
+    "tiles": ["tile", "collective", "partition", "layout", "memory"],
+    "operations": ["operation", "mma", "copy", "reduce", "transform"],
+    "memory": ["memory", "shared", "global", "register", "hierarchy"],
+    "api": ["api", "reference", "class", "function", "type"],
+    "examples": ["example", "sample", "tutorial", "benchmark"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

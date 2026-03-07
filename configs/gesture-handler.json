@@ -1,0 +1,29 @@
+{
+  "name": "gesture-handler",
+  "description": "React Native Gesture Handler - native gesture recognition. Use when implementing pan, pinch, rotation, tap, long press, or any touch-based interactions.",
+  "base_url": "https://docs.swmansion.com/react-native-gesture-handler/",
+  "start_urls": [
+    "https://docs.swmansion.com/react-native-gesture-handler/docs/",
+    "https://docs.swmansion.com/react-native-gesture-handler/docs/fundamentals/installation",
+    "https://docs.swmansion.com/react-native-gesture-handler/docs/gestures/pan-gesture",
+    "https://docs.swmansion.com/react-native-gesture-handler/docs/gestures/tap-gesture",
+    "https://docs.swmansion.com/react-native-gesture-handler/docs/gestures/pinch-gesture"
+  ],
+  "selectors": {
+    "main_content": "article, main, .markdown",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/docs/1.x", "/blog"]
+  },
+  "categories": {
+    "fundamentals": ["installation", "quickstart", "about-handlers"],
+    "gestures": ["pan", "tap", "pinch", "rotation", "fling", "long-press", "force-touch"],
+    "handlers": ["gesture-detector", "touchables", "buttons"],
+    "advanced": ["manual-gestures", "gesture-composition", "worklets"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

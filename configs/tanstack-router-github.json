@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-router",
+  "description": "TanStack Router - fully type-safe routing with URL state management, search params, loaders, SSR. Use for type-safe navigation, route loaders, file-based routing.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/router",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

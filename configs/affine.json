@@ -1,0 +1,23 @@
+{
+  "name": "affine",
+  "description": "AFFiNE knowledge base and workspace documentation. Use when working with AFFiNE, creating workspaces, managing knowledge bases, or self-hosting.",
+  "base_url": "https://docs.affine.pro/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/community"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quick-start", "introduction"],
+    "workspace": ["workspace", "pages", "blocks"],
+    "self_hosting": ["self-hosting", "deployment", "docker"],
+    "collaboration": ["collaboration", "sharing", "teams"],
+    "features": ["features", "editor", "database"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

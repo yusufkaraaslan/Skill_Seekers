@@ -1,0 +1,23 @@
+{
+  "name": "legend-state",
+  "description": "Legend State - ultra-fast reactive state management for React/React Native. Use when implementing high-performance state, fine-grained reactivity, persistence, or sync patterns.",
+  "base_url": "https://legendapp.com/open-source/state/v3/intro/introduction/",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/state/"],
+    "exclude": []
+  },
+  "categories": {
+    "getting_started": ["introduction", "installation", "quick-start"],
+    "core": ["observable", "reactivity", "computed", "tracking"],
+    "react": ["react-basics", "hooks", "fine-grained", "performance"],
+    "persistence": ["persist", "sync", "local-storage", "mmkv"],
+    "advanced": ["history", "undo", "sync-plugins", "firebase"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

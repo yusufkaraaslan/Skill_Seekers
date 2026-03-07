@@ -1,0 +1,25 @@
+{
+  "name": "windmill",
+  "description": "Windmill workflow automation platform documentation. Use when building workflows, automations, internal tools, or scripts with Windmill.",
+  "base_url": "https://www.windmill.dev/docs/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/changelog"]
+  },
+  "categories": {
+    "getting_started": ["getting_started", "quickstart", "introduction", "tutorial"],
+    "scripts": ["script", "python", "typescript", "bash", "go"],
+    "flows": ["flow", "workflow", "automation"],
+    "apps": ["app", "frontend", "ui"],
+    "core_concepts": ["core_concepts", "architecture", "variables", "resources"],
+    "integrations": ["integration", "hub", "resource_types"],
+    "self_hosting": ["self_host", "deployment", "docker"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 250
+}

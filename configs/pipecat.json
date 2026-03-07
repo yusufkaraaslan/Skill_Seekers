@@ -1,0 +1,23 @@
+{
+  "name": "pipecat",
+  "description": "Pipecat voice AI framework documentation. Use when building voice AI applications, real-time conversational AI, or integrating speech-to-text and text-to-speech.",
+  "base_url": "https://docs.pipecat.ai/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/blog", "/changelog"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quickstart", "introduction", "tutorial"],
+    "core_concepts": ["concepts", "architecture", "pipeline", "frames"],
+    "services": ["services", "transport", "stt", "tts", "llm"],
+    "guides": ["guide", "how-to", "example"],
+    "api_reference": ["api", "reference", "modules"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

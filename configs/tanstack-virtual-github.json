@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-virtual",
+  "description": "TanStack Virtual - headless virtualization at 60fps. Use for large lists, infinite scroll, virtualized tables, performance-critical lists.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/virtual",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

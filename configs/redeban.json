@@ -1,0 +1,42 @@
+{
+  "name": "redeban",
+  "description": "Redeban API documentation for payment processing in Colombia. Use when integrating with Redeban payment gateway, processing card payments, cash payments (Efecty, Baloto), bank transfers (PSE/ACH), electronic wallets, Link To Pay, 3DS authentication, webhooks, or any payment-related operations in Colombia.",
+  "base_url": "https://developers.redeban.com/api/",
+  "start_urls": [
+    "https://developers.redeban.com/api/#introduccion",
+    "https://developers.redeban.com/api/#ambientes",
+    "https://developers.redeban.com/api/#autenticacion",
+    "https://developers.redeban.com/api/#metodos-de-pago",
+    "https://developers.redeban.com/api/#autenticacion-3ds-2",
+    "https://developers.redeban.com/api/#tarjetas-de-prueba",
+    "https://developers.redeban.com/api/#webhook",
+    "https://developers.redeban.com/api/#detalle-de-los-estados",
+    "https://developers.redeban.com/api/#errores",
+    "https://developers.redeban.com/api/#tipos-de-metodos-de-pago"
+  ],
+  "selectors": {
+    "main_content": ".content, .page-wrapper, article, main, body",
+    "title": "h1",
+    "code_blocks": "pre, pre code, .highlight"
+  },
+  "url_patterns": {
+    "include": ["/api/"],
+    "exclude": ["github.com", "discord.com", "/en/"]
+  },
+  "categories": {
+    "introduction": ["introduccion", "ambientes", "introduction", "environment"],
+    "authentication": ["autenticacion", "auth-token", "authentication"],
+    "card_payments": ["tarjeta", "card", "debit", "credit", "3ds"],
+    "cash_payments": ["efectivo", "cash", "payvalida", "oxxo", "efecty", "baloto"],
+    "bank_transfers": ["pse", "ach", "transferencia", "transfer", "bank"],
+    "wallets": ["billetera", "wallet", "nequi", "daviplata"],
+    "link_to_pay": ["link-to-pay", "link_to_pay"],
+    "webhooks": ["webhook", "notification", "callback"],
+    "status_codes": ["estado", "status", "error", "errores"],
+    "test_cards": ["prueba", "test", "sandbox"],
+    "sdk": ["sdk", "javascript", "android", "ios"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 50,
+  "single_page": true
+}

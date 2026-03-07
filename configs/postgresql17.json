@@ -1,0 +1,22 @@
+{
+  "name": "postgresql17",
+  "description": "PostgreSQL 17 changelog and release notes. Use when upgrading from PostgreSQL 16.x to 17, or checking breaking changes and new features in PostgreSQL 17.",
+  "base_url": "https://www.postgresql.org/docs/17/",
+  "selectors": {
+    "main_content": "div#docContent, div.sect1, article, main",
+    "title": "h1, .title",
+    "code_blocks": "pre, pre.programlisting"
+  },
+  "url_patterns": {
+    "include": ["/release", "/appendix-obsolete"],
+    "exclude": ["/docs/16/", "/docs/15/", "/docs/14/", "/docs/13/", "/docs/12/", "/docs/11/", "/docs/10/"]
+  },
+  "categories": {
+    "release_notes": ["release-17", "release"],
+    "migration": ["migration", "upgrade", "compatibility"],
+    "new_features": ["new", "feature", "enhancement"],
+    "breaking_changes": ["incompatibility", "breaking", "change"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 50
+}

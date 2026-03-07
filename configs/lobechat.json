@@ -1,0 +1,23 @@
+{
+  "name": "lobechat",
+  "description": "LobeChat AI chat framework documentation. Use when working with LobeChat, building AI chat applications, configuring providers, or deploying chat systems.",
+  "base_url": "https://lobehub.com/docs/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/discover"]
+  },
+  "categories": {
+    "getting_started": ["usage/start", "getting-started", "introduction"],
+    "deployment": ["deployment", "self-hosting", "docker"],
+    "providers": ["providers", "openai", "anthropic", "ollama"],
+    "features": ["features", "plugins", "knowledge-base", "tts"],
+    "development": ["development", "contributing", "architecture"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

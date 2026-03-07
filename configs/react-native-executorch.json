@@ -1,0 +1,22 @@
+{
+  "name": "react-native-executorch",
+  "description": "React Native ExecuTorch by Software Mansion - on-device ML inference for React Native using Meta's ExecuTorch. Use when implementing LLMs, image classification, object detection, NLP, or any ML model on-device.",
+  "base_url": "https://docs.swmansion.com/react-native-executorch/",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/react-native-executorch/"],
+    "exclude": []
+  },
+  "categories": {
+    "getting_started": ["installation", "quick-start", "models"],
+    "hooks": ["useLLM", "useClassification", "useObjectDetection", "useNLP"],
+    "models": ["llama", "llava", "classification", "detection", "segmentation"],
+    "advanced": ["custom-models", "optimization", "memory", "performance"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}

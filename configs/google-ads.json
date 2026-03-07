@@ -1,0 +1,24 @@
+{
+  "name": "google-ads",
+  "description": "Google Ads API documentation. Use when working with Google Ads API, creating campaigns, managing Google advertising, or integrating Google Ads features.",
+  "base_url": "https://developers.google.com/google-ads/api/docs",
+  "selectors": {
+    "main_content": "article, main, .devsite-article-body",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/google-ads/api/docs"],
+    "exclude": ["/signin", "/accounts"]
+  },
+  "categories": {
+    "getting_started": ["get-started", "quickstart", "introduction", "overview"],
+    "authentication": ["authentication", "oauth", "credentials"],
+    "campaigns": ["campaign", "ad-group", "ads"],
+    "reporting": ["report", "metrics", "performance"],
+    "best_practices": ["best-practices", "optimization", "guidelines"],
+    "api_reference": ["reference", "api", "services"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

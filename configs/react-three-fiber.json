@@ -1,0 +1,31 @@
+{
+  "name": "react-three-fiber",
+  "description": "React Three Fiber (R3F) - React renderer for Three.js. Use when building 3D graphics with React, creating declarative 3D scenes, or integrating Three.js into React applications. Works with Drei, React Spring, and the pmndrs ecosystem.",
+  "base_url": "https://r3f.docs.pmnd.rs/",
+  "start_urls": [
+    "https://r3f.docs.pmnd.rs/",
+    "https://r3f.docs.pmnd.rs/getting-started/introduction",
+    "https://r3f.docs.pmnd.rs/getting-started/installation",
+    "https://r3f.docs.pmnd.rs/api/canvas",
+    "https://r3f.docs.pmnd.rs/api/objects",
+    "https://r3f.docs.pmnd.rs/api/hooks",
+    "https://r3f.docs.pmnd.rs/tutorials/basic-animations"
+  ],
+  "selectors": {
+    "main_content": "article, main, .content, #content, body",
+    "title": "h1, title",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/getting-started", "/api", "/tutorials", "/advanced"],
+    "exclude": []
+  },
+  "categories": {
+    "getting_started": ["introduction", "installation", "your-first-scene", "examples"],
+    "api": ["canvas", "objects", "hooks", "events", "additional-exports"],
+    "tutorials": ["basic-animations", "loading-models", "loading-textures", "using-with-typescript"],
+    "advanced": ["scaling-performance", "pitfalls", "v8-migration"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

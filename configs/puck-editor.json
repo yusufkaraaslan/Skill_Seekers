@@ -1,0 +1,24 @@
+{
+  "name": "puck-editor",
+  "description": "Puck is an open-source visual editor for React. Use this skill when building drag-and-drop page builders, visual editors, or CMS interfaces with React. Covers component configuration, custom fields, plugins, theming, and the Puck AI beta features.",
+  "base_url": "https://puckeditor.com/docs",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs"],
+    "exclude": []
+  },
+  "categories": {
+    "getting_started": ["getting-started", "introduction", "setup"],
+    "integration": ["integrating-puck", "component-configuration", "layouts", "dynamic"],
+    "ai": ["puck-ai", "cloud-client", "generation", "chat"],
+    "extending": ["extending-puck", "custom-fields", "plugins", "theming", "composition"],
+    "api": ["api-reference", "components", "configuration", "data", "fields", "functions"],
+    "guides": ["guides", "migration"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

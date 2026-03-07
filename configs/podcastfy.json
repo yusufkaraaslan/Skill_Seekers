@@ -1,0 +1,20 @@
+{
+  "name": "podcastfy",
+  "repo": "souzatharsis/podcastfy",
+  "description": "Podcastfy - open-source tool to transform content into engaging podcasts using AI. Use when building text-to-podcast systems, audio content generation, or AI-powered podcast creation workflows.",
+  "include_issues": true,
+  "max_issues": 100,
+  "include_changelog": true,
+  "include_releases": true,
+  "include_code": true,
+  "code_analysis_depth": "deep",
+  "file_patterns": [
+    "podcastfy/**/*.py",
+    "src/**/*.py",
+    "api/**/*.py",
+    "core/**/*.py",
+    "examples/**/*.py",
+    "**/*.md",
+    "docs/**/*"
+  ]
+}

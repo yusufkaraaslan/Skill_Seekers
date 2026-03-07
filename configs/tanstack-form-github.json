@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-form",
+  "description": "TanStack Form - headless, performant, type-safe forms. Use for complex forms, validation, field arrays, async validation, form state.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/form",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

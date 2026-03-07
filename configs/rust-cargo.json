@@ -1,0 +1,26 @@
+{
+  "name": "rust-cargo",
+  "description": "Use when working with Cargo - Rust's package manager and build system. Covers Cargo.toml configuration, dependencies, workspaces, publishing crates, build scripts, and cargo commands.",
+  "base_url": "https://doc.rust-lang.org/cargo/",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/cargo/"],
+    "exclude": ["/_static/", "/print.html"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "installation", "first-steps", "guide"],
+    "manifest": ["manifest", "Cargo.toml", "package", "metadata"],
+    "dependencies": ["dependencies", "specifying", "overriding", "features"],
+    "workspaces": ["workspace", "virtual", "members"],
+    "commands": ["commands", "build", "run", "test", "publish", "install"],
+    "build_scripts": ["build-scripts", "build.rs", "links"],
+    "publishing": ["publishing", "crates.io", "registry"],
+    "reference": ["reference", "config", "environment", "profiles"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 200
+}

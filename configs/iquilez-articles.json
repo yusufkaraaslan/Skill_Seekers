@@ -1,0 +1,43 @@
+{
+  "name": "iquilez-articles",
+  "description": "Inigo Quilez's mathematical graphics articles - comprehensive reference for SDFs, ray marching, procedural generation, noise functions, and shader mathematics. Use when writing GLSL/HLSL/WGSL shaders, implementing procedural graphics, creating distance fields, or understanding mathematical foundations of computer graphics.",
+  "base_url": "https://iquilezles.org/articles/",
+  "selectors": {
+    "main_content": "#main",
+    "title": "title",
+    "code_blocks": "pre, code, tt"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": [
+      "/twitter",
+      "/youtube",
+      "/patreon",
+      "/facebook",
+      "/instagram",
+      "/shadertoy",
+      ".png",
+      ".jpg",
+      ".gif",
+      ".mp4",
+      ".pdf"
+    ]
+  },
+  "categories": {
+    "sdf_raymarching": ["sdf", "raymarch", "distfunc", "smin", "smooth", "normalssdf", "rmshadow", "terrain", "repetition", "sdfbound", "interiordist", "roundedbox", "fbmsdf", "binarysearch"],
+    "distance_functions": ["distfunctions", "bboxes", "intersector", "sphere", "box", "ellips", "triangle", "capsule", "bezier", "disk"],
+    "procedural_noise": ["noise", "fbm", "voronoi", "voronoise", "warp", "gradient"],
+    "raytracing": ["raytrac", "pathtracing", "simplegpu", "rtintro", "raypolys", "hackingintersect"],
+    "fractals": ["mandel", "julia", "mset", "menger", "budha", "popcorn", "lyapunov", "icon", "orbit", "ftraps", "ifs"],
+    "texturing_filtering": ["texture", "filter", "checker", "biplanar", "mipmap", "premultipl", "hwinterp", "bandlimit", "tunnel", "seams"],
+    "lighting_rendering": ["light", "shadow", "ambient", "fog", "ssao", "occlusion", "diffuse", "gi", "outdoor"],
+    "useful_math": ["quaternion", "fourier", "smoothstep", "function", "ibilinear", "reflect", "normal", "area", "patched", "trisect", "trigfunc", "sincos", "noatan", "noacos", "inverse", "sfrand", "max", "dice", "arquimedes", "selfdiv", "squares"],
+    "size_coding": ["4k", "64k", "small", "compil", "minipng", "minispline", "float4k", "openfile", "gmdls", "breakpoint"],
+    "compression": ["compress", "wavelet", "genetic", "3dmodel"],
+    "voxels_pointclouds": ["voxel", "volume", "splat"],
+    "oldschool_effects": ["cloud", "water", "deform", "feedback", "game", "qbasic", "cellular"],
+    "engine_renderer": ["frustum", "stereo", "vr", "gamma", "tick", "conditional", "float", "encapsul", "sse", "cputile"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

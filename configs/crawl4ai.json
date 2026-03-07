@@ -1,0 +1,24 @@
+{
+  "name": "crawl4ai",
+  "description": "Crawl4AI - open-source LLM-friendly web crawler and scraper. Use when building async web crawlers, extracting structured data, generating markdown from websites, or integrating web scraping with AI/LLM pipelines.",
+  "base_url": "https://docs.crawl4ai.com/",
+  "selectors": {
+    "main_content": "main",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["#", "?", "/blog/", "github.com", "youtube.com", "discord.gg", "forms.gle"]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "installation", "examples", "quick-start"],
+    "core": ["simple-crawling", "deep-crawling", "adaptive-crawling", "cli", "crawler-result", "markdown-generation", "fit-markdown", "page-interaction", "content-selection", "cache-modes", "local-files", "link-media", "url-seeding", "c4a-script"],
+    "advanced": ["advanced-features", "adaptive-strategies", "virtual-scroll", "file-downloading", "lazy-loading", "hooks-auth", "proxy-security", "undetected-browser", "session-management", "multi-url-crawling", "crawl-dispatcher", "identity-based-crawling", "ssl-certificate", "network-console-capture", "pdf-parsing"],
+    "extraction": ["no-llm-strategies", "llm-strategies", "clustring-strategies", "chunking"],
+    "api": ["async-webcrawler", "arun", "arun_many", "parameters", "crawl-result", "strategies", "c4a-script-reference"],
+    "configuration": ["browser-crawler-config", "config"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}

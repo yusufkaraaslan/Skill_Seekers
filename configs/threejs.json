@@ -1,0 +1,38 @@
+{
+  "name": "threejs",
+  "description": "Three.js - JavaScript 3D library for WebGL and WebGPU rendering. Use when building 3D graphics, games, visualizations, VR/AR experiences, or any 3D web content. Covers geometries, materials, lights, cameras, animations, and loaders.",
+  "base_url": "https://threejs.org/",
+  "start_urls": [
+    "https://threejs.org/docs/",
+    "https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene",
+    "https://threejs.org/docs/index.html#api/en/core/Object3D",
+    "https://threejs.org/docs/index.html#api/en/materials/Material",
+    "https://threejs.org/docs/index.html#api/en/geometries/BoxGeometry",
+    "https://threejs.org/docs/index.html#examples/en/controls/OrbitControls",
+    "https://threejs.org/docs/index.html#examples/en/loaders/GLTFLoader"
+  ],
+  "selectors": {
+    "main_content": "#content, .container, main, body",
+    "title": "h1, title",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/", "/manual/", "/api/", "/examples/"],
+    "exclude": ["/editor/", "/files/", ".json"]
+  },
+  "categories": {
+    "getting_started": ["introduction", "creating-a-scene", "installation", "webgl"],
+    "core": ["object3d", "scene", "group", "raycaster", "clock", "layers"],
+    "cameras": ["camera", "perspective", "orthographic", "cube"],
+    "geometries": ["geometry", "buffer", "box", "sphere", "plane", "cylinder", "torus"],
+    "materials": ["material", "mesh", "standard", "physical", "basic", "phong", "lambert", "shader"],
+    "lights": ["light", "ambient", "directional", "point", "spot", "hemisphere"],
+    "animation": ["animation", "mixer", "clip", "keyframe", "morph"],
+    "loaders": ["loader", "gltf", "fbx", "obj", "texture", "font"],
+    "controls": ["controls", "orbit", "fly", "pointer", "drag"],
+    "math": ["vector", "matrix", "quaternion", "euler", "color", "box3"],
+    "renderers": ["renderer", "webgl", "webgpu", "css", "svg"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 500
+}

@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-table",
+  "description": "TanStack Table - headless tables and datagrids. Use for sortable tables, pagination, filtering, column resizing, row selection, virtualized datasets.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/table",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

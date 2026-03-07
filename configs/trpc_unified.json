@@ -1,0 +1,50 @@
+{
+  "name": "trpc",
+  "description": "Complete tRPC knowledge base - end-to-end typesafe APIs for TypeScript. Combines official documentation with GitHub codebase for server setup, client integration, routers, procedures, middleware, context, error handling, subscriptions, and framework integrations (Next.js, React Query, Express, Fastify).",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://trpc.io/docs/",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "article",
+        "title": "h1",
+        "code_blocks": "pre"
+      },
+      "url_patterns": {
+        "include": ["/docs/"],
+        "exclude": ["/docs/v9/", "/docs/v10/", "/blog/", "/community/", "?", "#"]
+      },
+      "categories": {
+        "getting_started": ["quickstart", "getting-started", "introduction", "setup", "installation"],
+        "server": ["server", "router", "procedure", "context", "middleware", "error-handling", "authorization"],
+        "client": ["client", "react-query", "nextjs", "links", "header", "aborting"],
+        "advanced": ["subscriptions", "inference", "transformer", "streaming", "metadata"],
+        "api_reference": ["api", "reference", "types"]
+      },
+      "rate_limit": 0.3,
+      "max_pages": 400
+    },
+    {
+      "type": "github",
+      "repo": "trpc/trpc",
+      "include_issues": true,
+      "max_issues": 150,
+      "include_changelog": true,
+      "include_releases": true,
+      "include_code": true,
+      "code_analysis_depth": "deep",
+      "file_patterns": [
+        "packages/server/src/**/*.ts",
+        "packages/client/src/**/*.ts",
+        "packages/react-query/src/**/*.ts",
+        "packages/next/src/**/*.ts",
+        "examples/**/*.ts",
+        "examples/**/*.tsx",
+        "docs/**/*.md",
+        "*.md"
+      ]
+    }
+  ]
+}

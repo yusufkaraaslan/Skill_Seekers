@@ -1,0 +1,31 @@
+{
+  "name": "drei",
+  "description": "DREI - React Three Fiber helpers. Use when building 3D scenes with R3F and need abstractions for controls, loaders, shaders, staging, effects, or performance optimization.",
+  "base_url": "https://drei.docs.pmnd.rs/",
+  "selectors": {
+    "main_content": "article, main, [class*='content']",
+    "title": "h1",
+    "code_blocks": "pre code, [class*='code']"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/_next/", "/api/", ".json", ".js", ".css", "/static/"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "introduction"],
+    "abstractions": ["abstractions"],
+    "cameras": ["cameras"],
+    "controls": ["controls"],
+    "gizmos": ["gizmos"],
+    "loaders": ["loaders"],
+    "misc": ["misc"],
+    "modifiers": ["modifiers"],
+    "performances": ["performances"],
+    "portals": ["portals"],
+    "shaders": ["shaders"],
+    "shapes": ["shapes"],
+    "staging": ["staging"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 150
+}

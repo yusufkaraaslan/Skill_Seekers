@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-table",
+  "description": "TanStack Table - headless UI for building powerful tables and datagrids. Use when implementing sortable tables, pagination, filtering, column resizing, row selection, or virtualized large datasets.",
+  "base_url": "https://tanstack.com/table/latest/docs/introduction",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/table/"],
+    "exclude": ["/blog/", "/sponsors"]
+  },
+  "categories": {
+    "getting_started": ["introduction", "installation", "overview", "typescript"],
+    "core": ["columns", "rows", "cells", "headers", "footers"],
+    "features": ["sorting", "filtering", "pagination", "row-selection", "column-ordering"],
+    "virtualization": ["virtualization", "infinite-scroll", "large-datasets"],
+    "examples": ["basic", "sorting", "filtering", "pagination", "full-width"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

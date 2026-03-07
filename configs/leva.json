@@ -1,0 +1,22 @@
+{
+  "name": "leva",
+  "description": "Leva - React GUI controls for designers and developers. Use when adding interactive sliders, color pickers, and parameter controls to 3D scenes or React applications.",
+  "base_url": "https://leva.pmnd.rs/",
+  "selectors": {
+    "main_content": "article, main, [class*='content']",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/_next/", "/api/", ".json", ".js", ".css"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "introduction", "quick-start"],
+    "inputs": ["inputs", "controls", "number", "string", "boolean", "color", "vector", "select"],
+    "api": ["api", "hooks", "useControls"],
+    "advanced": ["advanced", "plugins", "custom", "store"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 50
+}

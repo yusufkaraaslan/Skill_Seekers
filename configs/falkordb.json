@@ -1,0 +1,27 @@
+{
+  "name": "falkordb",
+  "description": "FalkorDB - ultra-fast graph database for GenAI and knowledge graphs. Use when building GraphRAG applications, knowledge graphs, graph-based AI agents, or Cypher queries with LangChain, LlamaIndex, or Graphiti integration.",
+  "base_url": "https://docs.falkordb.com/",
+  "selectors": {
+    "main_content": "#main-content",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["#", "?", "github.com", "discord.com"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "configuration", "quick-start"],
+    "commands": ["commands", "graph.query", "graph.delete", "graph.explain"],
+    "cypher": ["cypher", "match", "where", "create", "merge", "functions", "clauses"],
+    "algorithms": ["algorithms", "pagerank", "bfs", "shortest-path", "centrality"],
+    "genai": ["genai", "graphrag", "langchain", "llamaindex", "sdk"],
+    "operations": ["operations", "docker", "kubernetes", "cluster", "replication"],
+    "integration": ["integration", "kafka", "rest-api"],
+    "data_types": ["datatypes", "data-types"],
+    "migration": ["migration", "neo4j", "memgraph"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

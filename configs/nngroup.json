@@ -1,0 +1,23 @@
+{
+  "name": "nngroup-ux",
+  "description": "UX research methods, usability heuristics, design thinking, user testing, journey mapping, and service blueprints from Nielsen Norman Group - use for UX audits and best practice validation",
+  "base_url": "https://www.nngroup.com/articles/ten-usability-heuristics/",
+  "selectors": {
+    "main_content": "main, article, .article-container, .article-body, [role='main']",
+    "title": "h1",
+    "code_blocks": "pre, code"
+  },
+  "url_patterns": {
+    "include": ["/articles/"],
+    "exclude": ["/courses/", "/events/", "/consulting/", "/about/", "/podcast/", "/videos/", "/reports/", "/ux-certification/", "/ux-conference/", "/people/", "/topic/", "?"]
+  },
+  "categories": {
+    "usability_heuristics": ["usability", "heuristic", "evaluation", "heuristic-evaluation"],
+    "research_methods": ["research", "user-testing", "interviews", "surveys", "methods", "when-to-use"],
+    "design_thinking": ["design-thinking", "empathy", "ideation", "empathy-mapping"],
+    "journey_mapping": ["journey", "mapping", "blueprint", "service-blueprint", "customer-journey"],
+    "ux_fundamentals": ["ux", "user-experience", "101", "introduction", "usability-101"]
+  },
+  "rate_limit": 1.0,
+  "max_pages": 50
+}

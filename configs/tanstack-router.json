@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-router",
+  "description": "TanStack Router - fully type-safe routing for React/Solid with URL state management, search params, loaders, and SSR. Use when implementing type-safe navigation, route loaders, search param state, or file-based routing.",
+  "base_url": "https://tanstack.com/router/latest/docs/framework/react/overview",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/router/"],
+    "exclude": ["/blog/", "/sponsors"]
+  },
+  "categories": {
+    "getting_started": ["overview", "installation", "quick-start", "typescript"],
+    "routing": ["route-trees", "file-based-routing", "code-based-routing", "route-matching"],
+    "data": ["loaders", "search-params", "path-params", "route-context"],
+    "navigation": ["navigation", "links", "redirects", "not-found"],
+    "advanced": ["ssr", "streaming", "preloading", "code-splitting", "devtools"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

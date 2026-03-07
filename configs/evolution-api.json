@@ -1,0 +1,24 @@
+{
+  "name": "evolution-api",
+  "description": "Evolution API for WhatsApp automation documentation. Use when working with WhatsApp automation, building WhatsApp bots, or integrating WhatsApp messaging.",
+  "base_url": "https://doc.evolution-api.com/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/blog", "/community"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quickstart", "introduction", "install"],
+    "authentication": ["authentication", "auth", "token", "api-key"],
+    "messaging": ["message", "send", "receive", "webhook"],
+    "instances": ["instance", "connection", "session"],
+    "integration": ["integration", "webhook", "events"],
+    "api_reference": ["api", "endpoint", "reference"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

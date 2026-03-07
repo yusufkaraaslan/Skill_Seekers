@@ -1,0 +1,31 @@
+{
+  "name": "react-navigation",
+  "description": "React Navigation - routing and navigation for React Native. Use when implementing screen navigation, tabs, drawers, deep linking, or navigation state management.",
+  "base_url": "https://reactnavigation.org/",
+  "start_urls": [
+    "https://reactnavigation.org/docs/getting-started/",
+    "https://reactnavigation.org/docs/stack-navigator/",
+    "https://reactnavigation.org/docs/tab-based-navigation/",
+    "https://reactnavigation.org/docs/drawer-navigator/",
+    "https://reactnavigation.org/docs/nesting-navigators/",
+    "https://reactnavigation.org/docs/deep-linking/",
+    "https://reactnavigation.org/docs/typescript/"
+  ],
+  "selectors": {
+    "main_content": "article, main, .markdown",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/docs/1.x", "/docs/2.x", "/docs/3.x", "/docs/4.x", "/docs/5.x", "/blog"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "hello-react-navigation", "installation"],
+    "navigators": ["stack", "tab", "drawer", "native-stack", "bottom-tabs", "material"],
+    "guides": ["nesting", "params", "header", "deep-linking", "state", "typescript"],
+    "advanced": ["custom", "animation", "gesture", "state-persistence"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

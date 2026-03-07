@@ -1,0 +1,34 @@
+{
+  "name": "react-native-skia",
+  "description": "React Native Skia (Shopify) - GPU-accelerated 2D graphics for React Native. Use when implementing custom drawing, shaders, blur effects, gradients, image filters, path animations, or any graphics that require Skia's rendering power.",
+  "base_url": "https://shopify.github.io/react-native-skia/",
+  "start_urls": [
+    "https://shopify.github.io/react-native-skia/docs/getting-started/installation",
+    "https://shopify.github.io/react-native-skia/docs/canvas/overview",
+    "https://shopify.github.io/react-native-skia/docs/shapes/overview",
+    "https://shopify.github.io/react-native-skia/docs/shaders/overview",
+    "https://shopify.github.io/react-native-skia/docs/image-filters/overview",
+    "https://shopify.github.io/react-native-skia/docs/animations/overview",
+    "https://shopify.github.io/react-native-skia/docs/animations/reanimated"
+  ],
+  "selectors": {
+    "main_content": "article, main, .markdown",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog"]
+  },
+  "categories": {
+    "getting_started": ["installation", "hello-world", "bundle-size"],
+    "canvas": ["canvas", "context", "paint", "snapshot"],
+    "shapes": ["path", "rect", "circle", "rrect", "line", "polygon", "vertices"],
+    "shaders": ["shader", "gradient", "fractal-noise", "perlin-noise", "blend"],
+    "image_filters": ["blur", "color-matrix", "drop-shadow", "morphology", "displacement"],
+    "animations": ["reanimated", "gesture-handler", "animations", "derived-value"],
+    "advanced": ["offscreen", "atlas", "paragraph", "pictures"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

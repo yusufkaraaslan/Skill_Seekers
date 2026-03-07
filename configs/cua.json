@@ -1,0 +1,23 @@
+{
+  "name": "cua",
+  "description": "Cua Computer-Use Agent framework documentation. Use when building AI agents that control computers, automate desktop tasks, or develop agent benchmarks.",
+  "base_url": "https://www.trycua.com/docs/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/changelog"]
+  },
+  "categories": {
+    "getting_started": ["quickstart", "introduction", "getting-started"],
+    "agent_sdk": ["agent-sdk", "sdk", "api"],
+    "deployment": ["deployment", "cloud", "local", "docker"],
+    "integrations": ["integration", "hud", "benchmark"],
+    "examples": ["example", "tutorial", "guide"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}

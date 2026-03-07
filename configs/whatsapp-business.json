@@ -1,0 +1,24 @@
+{
+  "name": "whatsapp-business",
+  "description": "WhatsApp Business Platform API documentation from Meta. Use when working with WhatsApp Cloud API, Business Management API, sending messages, or integrating WhatsApp features.",
+  "base_url": "https://developers.facebook.com/docs/whatsapp",
+  "selectors": {
+    "main_content": "article, main, ._5u5j, .content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/whatsapp"],
+    "exclude": ["/login", "/apps", "/settings"]
+  },
+  "categories": {
+    "getting_started": ["get-started", "quickstart", "overview"],
+    "cloud_api": ["cloud-api", "messages", "webhooks"],
+    "business_management": ["business-management-api", "phone-numbers", "templates"],
+    "messaging": ["send-messages", "receive-messages", "media"],
+    "webhooks": ["webhook", "notifications"],
+    "api_reference": ["reference", "api"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 250
+}

@@ -1,0 +1,31 @@
+{
+  "name": "tailwind4",
+  "description": "Tailwind CSS 4 documentation. Use when working with Tailwind CSS v4, the CSS-first configuration, new @theme directive, or migrating from v3 to v4.",
+  "base_url": "https://tailwindcss.com/docs/",
+  "selectors": {
+    "main_content": "article, main, div.prose, div.content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/blog", "/showcase", "/resources"]
+  },
+  "categories": {
+    "getting_started": ["installation", "editor-setup", "upgrade-guide"],
+    "core_concepts": ["utility-first", "hover-focus-other-states", "responsive-design", "dark-mode"],
+    "customization": ["theme", "configuration", "content", "plugins"],
+    "layout": ["container", "columns", "break", "box-decoration", "box-sizing", "display", "float", "clear", "object-fit", "overflow", "position", "top-right-bottom-left", "visibility", "z-index"],
+    "flexbox": ["flex", "flex-direction", "flex-wrap", "justify-content", "align-items", "align-content", "align-self", "gap"],
+    "grid": ["grid-template-columns", "grid-column", "grid-template-rows", "grid-row", "grid-auto-flow", "grid-auto-columns", "grid-auto-rows", "gap"],
+    "typography": ["font-family", "font-size", "font-weight", "text-align", "text-color", "text-decoration"],
+    "backgrounds": ["background-color", "background-image", "gradient"],
+    "borders": ["border-width", "border-color", "border-style", "border-radius"],
+    "effects": ["box-shadow", "opacity", "mix-blend-mode"],
+    "filters": ["filter", "blur", "brightness", "contrast"],
+    "transitions": ["transition", "animation"],
+    "transforms": ["transform", "scale", "rotate", "translate", "skew"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

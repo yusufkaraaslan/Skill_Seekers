@@ -1,0 +1,29 @@
+{
+  "name": "cognee",
+  "description": "Use this skill when working with Cognee - an open-source framework for building knowledge graphs and RAG pipelines. Covers data ingestion, graph construction, vector stores, LLM integration, custom pipelines, deployment (EC2, Kubernetes, Modal), and API usage. Essential for developers building AI applications with structured knowledge retrieval.",
+  "base_url": "https://docs.cognee.ai/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": [
+      "/changelog",
+      "?",
+      "#"
+    ]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "introduction", "quickstart", "installation"],
+    "core_concepts": ["core-concepts", "building-blocks", "datapoints", "knowledge-graph", "pipelines"],
+    "configuration": ["setup", "configuration", "config", "permissions", "vector", "graph-store"],
+    "guides": ["guides", "examples", "tutorials", "custom-tasks", "custom-pipelines"],
+    "deployment": ["deploy", "self-hosting", "ec2", "kubernetes", "modal", "cloud"],
+    "integrations": ["integrations", "llm-providers", "observability", "evaluation", "agents", "mcp"],
+    "api": ["api-reference", "http-api", "python-api", "auth", "datasets", "search"]
+  },
+  "rate_limit": 0.3,
+  "max_pages": 200
+}

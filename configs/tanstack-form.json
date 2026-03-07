@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-form",
+  "description": "TanStack Form - headless, performant, type-safe form management. Use when implementing complex forms, validation, field arrays, async validation, or form state management.",
+  "base_url": "https://tanstack.com/form/latest/docs/overview",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/form/"],
+    "exclude": ["/blog/", "/sponsors"]
+  },
+  "categories": {
+    "getting_started": ["overview", "installation", "quick-start", "typescript"],
+    "core": ["form-api", "field-api", "validation", "submission"],
+    "validation": ["sync-validation", "async-validation", "schema-validation", "zod", "valibot"],
+    "advanced": ["field-arrays", "linked-fields", "side-effects", "persistence"],
+    "integrations": ["react", "solid", "vue", "angular"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 150
+}

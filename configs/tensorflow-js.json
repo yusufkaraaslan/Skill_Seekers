@@ -1,0 +1,22 @@
+{
+  "name": "tensorflow-js",
+  "description": "TensorFlow.js - ML in JavaScript for browser and Node.js. Use when implementing ML models in web/React Native, image recognition, pose detection, text toxicity, or any client-side ML inference.",
+  "base_url": "https://www.tensorflow.org/js",
+  "selectors": {
+    "main_content": "article",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/js/"],
+    "exclude": ["/community/", "/blog/"]
+  },
+  "categories": {
+    "getting_started": ["setup", "installation", "tutorials"],
+    "models": ["pre-trained", "mobilenet", "coco-ssd", "posenet", "toxicity"],
+    "api": ["tensors", "operations", "layers", "training"],
+    "deployment": ["react-native", "node", "browser", "webgl", "wasm"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 200
+}

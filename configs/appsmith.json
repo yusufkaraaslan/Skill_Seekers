@@ -1,0 +1,24 @@
+{
+  "name": "appsmith",
+  "description": "Appsmith low-code platform documentation. Use when building internal tools, dashboards, admin panels, or CRUD applications with low-code.",
+  "base_url": "https://docs.appsmith.com/",
+  "selectors": {
+    "main_content": "article, main, .content, .docs-content",
+    "title": "h1",
+    "code_blocks": "pre code, pre"
+  },
+  "url_patterns": {
+    "include": [],
+    "exclude": ["/blog", "/community", "/changelog"]
+  },
+  "categories": {
+    "getting_started": ["getting-started", "quickstart", "tutorial", "core-concepts"],
+    "widgets": ["widget", "component", "table", "form", "chart"],
+    "datasources": ["datasource", "database", "api", "query"],
+    "javascript": ["javascript", "js", "code", "function"],
+    "deployment": ["deployment", "self-hosting", "docker"],
+    "reference": ["reference", "api"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

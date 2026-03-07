@@ -1,0 +1,11 @@
+{
+  "name": "tanstack-query",
+  "description": "TanStack Query (React Query) - async state management, data fetching, caching. Use for API data fetching, caching strategies, optimistic updates, infinite scroll, server state.",
+  "source_type": "github",
+  "github": {
+    "repo": "TanStack/query",
+    "branch": "main",
+    "paths": ["docs/"],
+    "file_patterns": ["*.md", "*.mdx"]
+  }
+}

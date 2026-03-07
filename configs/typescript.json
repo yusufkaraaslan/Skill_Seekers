@@ -1,0 +1,25 @@
+{
+  "name": "typescript",
+  "description": "TypeScript language documentation. Use when working with TypeScript, understanding type systems, configuring tsconfig, or learning TypeScript best practices.",
+  "base_url": "https://www.typescriptlang.org/docs/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs/"],
+    "exclude": ["/play/", "/community/"]
+  },
+  "categories": {
+    "getting_started": ["handbook/intro", "get-started", "typescript-from-scratch"],
+    "handbook": ["handbook"],
+    "types": ["types", "type-", "interface", "generics"],
+    "configuration": ["tsconfig", "compiler-options", "project-config"],
+    "modules": ["modules", "module-resolution"],
+    "decorators": ["decorators"],
+    "tooling": ["typescript-tooling", "project-references"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 300
+}

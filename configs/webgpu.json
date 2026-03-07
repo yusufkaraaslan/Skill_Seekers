@@ -1,0 +1,26 @@
+{
+  "name": "webgpu",
+  "description": "Use when working with WebGPU - the modern web graphics API for GPU-accelerated rendering and compute. Covers GPU initialization, buffers, textures, shaders, pipelines, command encoding, and render/compute passes.",
+  "base_url": "https://gpuweb.github.io/gpuweb/",
+  "selectors": {
+    "main_content": "main",
+    "title": "title",
+    "code_blocks": "pre"
+  },
+  "url_patterns": {
+    "include": ["/gpuweb/"],
+    "exclude": ["#", "/issues/", "/pull/"]
+  },
+  "categories": {
+    "getting_started": ["introduction", "initialization", "adapter", "device"],
+    "buffers": ["buffer", "GPUBuffer", "mapping", "memory"],
+    "textures": ["texture", "GPUTexture", "sampler", "view"],
+    "shaders": ["shader", "WGSL", "module", "compilation"],
+    "pipelines": ["pipeline", "render", "compute", "layout", "binding"],
+    "commands": ["command", "encoder", "pass", "submit", "queue"],
+    "rendering": ["render", "rasterization", "fragment", "vertex", "draw"],
+    "compute": ["compute", "dispatch", "workgroup"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 100
+}
