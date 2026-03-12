@@ -15,6 +15,7 @@ Usage:
 """
 
 import argparse
+import fnmatch
 import json
 import logging
 import os
@@ -664,11 +665,13 @@ class GitHubScraper:
     def _extract_file_tree_github(self):
         """Extract file tree from GitHub API (rate-limited)."""
         try:
-            contents = self.repo.get_contents("")
+            from collections import deque
+
+            contents = deque(self.repo.get_contents(""))
             file_tree = []
 
             while contents:
-                file_content = contents.pop(0)
+                file_content = contents.popleft()
 
                 file_info = {
                     "path": file_content.path,
@@ -741,11 +744,10 @@ class GitHubScraper:
                 continue
 
             # Check if file matches patterns (if specified)
-            if self.file_patterns:
-                import fnmatch
-
-                if not any(fnmatch.fnmatch(file_path, pattern) for pattern in self.file_patterns):
-                    continue
+            if self.file_patterns and not any(
+                fnmatch.fnmatch(file_path, pattern) for pattern in self.file_patterns
+            ):
+                continue
 
             # Analyze this file
             try:
