@@ -193,6 +193,7 @@ class DocToSkillConverter:
         # Support multiple starting URLs
         start_urls = config.get("start_urls", [self.base_url])
         self.pending_urls = deque(start_urls)
+        self._pending_set: set[str] = set(start_urls)  # Shadow set for O(1) membership checks
         self.pages: list[dict[str, Any]] = []
         self.pages_scraped = 0
 
@@ -220,6 +221,12 @@ class DocToSkillConverter:
         # Load checkpoint if resuming
         if resume and not dry_run:
             self.load_checkpoint()
+
+    def _enqueue_url(self, url: str) -> None:
+        """Add a URL to the pending queue if not already visited or pending (O(1))."""
+        if url not in self.visited_urls and url not in self._pending_set:
+            self._pending_set.add(url)
+            self.pending_urls.append(url)
 
     def is_valid_url(self, url: str) -> bool:
         """Check if URL should be scraped based on patterns.
@@ -270,7 +277,9 @@ class DocToSkillConverter:
                 checkpoint_data = json.load(f)
 
             self.visited_urls = set(checkpoint_data["visited_urls"])
-            self.pending_urls = deque(checkpoint_data["pending_urls"])
+            pending = checkpoint_data["pending_urls"]
+            self.pending_urls = deque(pending)
+            self._pending_set = set(pending)
             self.pages_scraped = checkpoint_data["pages_scraped"]
 
             logger.info("✅ Resumed from checkpoint")
@@ -706,8 +715,7 @@ class DocToSkillConverter:
                 self.save_page(page)
                 self.pages.append(page)
                 for link in page["links"]:
-                    if link not in self.visited_urls and link not in self.pending_urls:
-                        self.pending_urls.append(link)
+                    self._enqueue_url(link)
 
             if self.workers > 1:
                 with self.lock:
@@ -764,8 +772,7 @@ class DocToSkillConverter:
 
                 # Add new URLs
                 for link in page["links"]:
-                    if link not in self.visited_urls and link not in self.pending_urls:
-                        self.pending_urls.append(link)
+                    self._enqueue_url(link)
 
                 # Rate limiting
                 rate_limit = self.config.get("rate_limit", DEFAULT_RATE_LIMIT)
@@ -922,8 +929,8 @@ class DocToSkillConverter:
 
                     # Filter URLs based on url_patterns config
                     for url in md_urls:
-                        if self.is_valid_url(url) and url not in self.visited_urls:
-                            self.pending_urls.append(url)
+                        if self.is_valid_url(url):
+                            self._enqueue_url(url)
 
                     logger.info(
                         "  📋 %d URLs added to crawl queue after filtering",
@@ -1008,8 +1015,8 @@ class DocToSkillConverter:
 
             # Filter URLs based on url_patterns config
             for url in md_urls:
-                if self.is_valid_url(url) and url not in self.visited_urls:
-                    self.pending_urls.append(url)
+                if self.is_valid_url(url):
+                    self._enqueue_url(url)
 
             logger.info(
                 "  📋 %d URLs added to crawl queue after filtering",
@@ -1113,8 +1120,8 @@ class DocToSkillConverter:
                         for link in soup.find_all("a", href=True):
                             href = urljoin(url, link["href"])
                             href = href.split("#")[0]
-                            if self.is_valid_url(href) and href not in self.visited_urls:
-                                self.pending_urls.append(href)
+                            if self.is_valid_url(href):
+                                self._enqueue_url(href)
                     except Exception as e:
                         # Failed to extract links in fast mode, continue anyway
                         logger.warning("⚠️  Warning: Could not extract links from %s: %s", url, e)
@@ -1297,8 +1304,8 @@ class DocToSkillConverter:
                                 for link in soup.find_all("a", href=True):
                                     href = urljoin(url, link["href"])
                                     href = href.split("#")[0]
-                                    if self.is_valid_url(href) and href not in self.visited_urls:
-                                        self.pending_urls.append(href)
+                                    if self.is_valid_url(href):
+                                        self._enqueue_url(href)
                             except Exception as e:
                                 logger.warning(
                                     "⚠️  Warning: Could not extract links from %s: %s", url, e
@@ -1311,7 +1318,12 @@ class DocToSkillConverter:
 
                 # Wait for batch to complete before continuing
                 if tasks:
-                    await asyncio.gather(*tasks, return_exceptions=True)
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+                    for result in results:
+                        if isinstance(result, Exception):
+                            logger.error(
+                                "  ✗ Async task failed: %s: %s", type(result).__name__, result
+                            )
                     tasks = []
                     self.pages_scraped = len(self.visited_urls)
 
@@ -1329,7 +1341,10 @@ class DocToSkillConverter:
 
             # Wait for any remaining tasks
             if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.error("  ✗ Async task failed: %s: %s", type(result).__name__, result)
 
         if self.dry_run:
             logger.info("\n✅ Dry run complete: would scrape ~%d pages", len(self.visited_urls))
@@ -1354,8 +1369,11 @@ class DocToSkillConverter:
             "pages": [{"title": p["title"], "url": p["url"]} for p in self.pages],
         }
 
-        with open(f"{self.data_dir}/summary.json", "w", encoding="utf-8") as f:
-            json.dump(summary, f, indent=2, ensure_ascii=False)
+        try:
+            with open(f"{self.data_dir}/summary.json", "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
+        except OSError as e:
+            logger.error("  ✗ Failed to save summary: %s", e)
 
     def load_scraped_data(self) -> list[dict[str, Any]]:
         """Load previously scraped data"""
@@ -1393,6 +1411,11 @@ class DocToSkillConverter:
         categories: dict[str, list[dict[str, Any]]] = {cat: [] for cat in category_defs}
         categories["other"] = []
 
+        # Pre-lowercase keywords once instead of per-page per-keyword
+        lowered_defs = {
+            cat: [kw.lower() for kw in keywords] for cat, keywords in category_defs.items()
+        }
+
         for page in pages:
             url = page["url"].lower()
             title = page["title"].lower()
@@ -1402,11 +1425,10 @@ class DocToSkillConverter:
 
             categorized = False
 
-            # Match against keywords
-            for cat, keywords in category_defs.items():
+            # Match against pre-lowercased keywords
+            for cat, keywords in lowered_defs.items():
                 score = 0
                 for keyword in keywords:
-                    keyword = keyword.lower()
                     if keyword in url:
                         score += 3
                     if keyword in title:
