@@ -63,6 +63,9 @@ class SourceDetector:
         if source.endswith(".docx"):
             return cls._detect_word(source)
 
+        if source.endswith(".epub"):
+            return cls._detect_epub(source)
+
         # Video file extensions
         VIDEO_EXTENSIONS = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv")
         if source.lower().endswith(VIDEO_EXTENSIONS):
@@ -99,6 +102,7 @@ class SourceDetector:
             "  Local:  skill-seekers create ./my-project\n"
             "  PDF:    skill-seekers create tutorial.pdf\n"
             "  DOCX:   skill-seekers create document.docx\n"
+            "  EPUB:   skill-seekers create ebook.epub\n"
             "  Video:  skill-seekers create https://youtube.com/watch?v=...\n"
             "  Video:  skill-seekers create recording.mp4\n"
             "  Config: skill-seekers create configs/react.json"
@@ -126,6 +130,14 @@ class SourceDetector:
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
             type="word", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_epub(cls, source: str) -> SourceInfo:
+        """Detect EPUB file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="epub", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -274,6 +286,13 @@ class SourceDetector:
             file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
                 raise ValueError(f"Word document does not exist: {file_path}")
+            if not os.path.isfile(file_path):
+                raise ValueError(f"Path is not a file: {file_path}")
+
+        elif source_info.type == "epub":
+            file_path = source_info.parsed["file_path"]
+            if not os.path.exists(file_path):
+                raise ValueError(f"EPUB file does not exist: {file_path}")
             if not os.path.isfile(file_path):
                 raise ValueError(f"Path is not a file: {file_path}")
 

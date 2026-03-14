@@ -410,6 +410,18 @@ WORD_ARGUMENTS: dict[str, dict[str, Any]] = {
     },
 }
 
+# EPUB specific (from epub.py)
+EPUB_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "epub": {
+        "flags": ("--epub",),
+        "kwargs": {
+            "type": str,
+            "help": "EPUB file path",
+            "metavar": "PATH",
+        },
+    },
+}
+
 # Video specific (from video.py)
 VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
     "video_url": {
@@ -598,6 +610,7 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         "local": LOCAL_ARGUMENTS,
         "pdf": PDF_ARGUMENTS,
         "word": WORD_ARGUMENTS,
+        "epub": EPUB_ARGUMENTS,
         "video": VIDEO_ARGUMENTS,
         "config": CONFIG_ARGUMENTS,
     }
@@ -636,6 +649,7 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
     - 'local': Universal + local-specific
     - 'pdf': Universal + pdf-specific
     - 'word': Universal + word-specific
+    - 'epub': Universal + epub-specific
     - 'video': Universal + video-specific
     - 'advanced': Advanced/rare arguments
     - 'all': All 120+ arguments
@@ -675,6 +689,10 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
 
     if mode in ["word", "all"]:
         for arg_name, arg_def in WORD_ARGUMENTS.items():
+            parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    if mode in ["epub", "all"]:
+        for arg_name, arg_def in EPUB_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     if mode in ["video", "all"]:

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🎯 Project Overview
 
-**Skill Seekers** is the **universal documentation preprocessor** for AI systems. It transforms documentation websites, GitHub repositories, and PDFs into production-ready formats for **16+ platforms**: RAG pipelines (LangChain, LlamaIndex, Haystack), vector databases (Pinecone, Chroma, Weaviate, FAISS, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), and LLM platforms (Claude, Gemini, OpenAI).
+**Skill Seekers** is the **universal documentation preprocessor** for AI systems. It transforms documentation websites, GitHub repositories, PDFs, and EPUBs into production-ready formats for **16+ platforms**: RAG pipelines (LangChain, LlamaIndex, Haystack), vector databases (Pinecone, Chroma, Weaviate, FAISS, Qdrant), AI coding assistants (Cursor, Windsurf, Cline, Continue.dev), and LLM platforms (Claude, Gemini, OpenAI).
 
 **Current Version:** v3.1.3
 **Python Version:** 3.10+ required
@@ -222,6 +222,7 @@ src/skill_seekers/
 │   ├── dependency_analyzer.py        # Dependency graph analysis
 │   ├── signal_flow_analyzer.py       # C3.10 Signal flow analysis (Godot)
 │   ├── pdf_scraper.py                # PDF extraction
+│   ├── epub_scraper.py               # EPUB extraction
 │   └── adaptors/                     # ⭐ Platform adaptor pattern
 │       ├── __init__.py               # Factory: get_adaptor()
 │       ├── base_adaptor.py           # Abstract base
@@ -397,7 +398,7 @@ The unified CLI modifies `sys.argv` and calls existing `main()` functions to mai
 # Transforms to: doc_scraper.main() with modified sys.argv
 ```
 
-**Subcommands:** create, scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
+**Subcommands:** create, scrape, github, pdf, epub, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides
 
 ### NEW: Unified `create` Command
 
@@ -409,6 +410,7 @@ skill-seekers create https://docs.react.dev/         # → Web scraping
 skill-seekers create facebook/react                  # → GitHub analysis
 skill-seekers create ./my-project                    # → Local codebase
 skill-seekers create tutorial.pdf                    # → PDF extraction
+skill-seekers create book.epub                       # → EPUB extraction
 skill-seekers create configs/react.json              # → Multi-source
 
 # Progressive help system
@@ -417,6 +419,7 @@ skill-seekers create --help-web       # Shows web-specific options
 skill-seekers create --help-github    # Shows GitHub-specific options
 skill-seekers create --help-local     # Shows local analysis options
 skill-seekers create --help-pdf       # Shows PDF extraction options
+skill-seekers create --help-epub      # Shows EPUB extraction options
 skill-seekers create --help-advanced  # Shows advanced/rare options
 skill-seekers create --help-all       # Shows all 120+ flags
 
@@ -685,6 +688,7 @@ pytest tests/ -v -m ""
 - `test_unified.py` - Multi-source scraping
 - `test_github_scraper.py` - GitHub analysis
 - `test_pdf_scraper.py` - PDF extraction
+- `test_epub_scraper.py` - EPUB extraction
 - `test_install_multiplatform.py` - Multi-platform packaging
 - `test_integration.py` - End-to-end workflows
 - `test_install_skill.py` - One-command install
@@ -741,6 +745,7 @@ skill-seekers-resume = "skill_seekers.cli.resume_command:main"                # 
 skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
+skill-seekers-epub = "skill_seekers.cli.epub_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
 skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"           # C2.x Local codebase analysis
 skill-seekers-enhance = "skill_seekers.cli.enhance_skill_local:main"
@@ -1754,6 +1759,7 @@ This section helps you quickly locate the right files when implementing common c
 | GitHub scraping | `src/skill_seekers/cli/github_scraper.py` | ~56KB | Repo analysis + metadata |
 | GitHub API | `src/skill_seekers/cli/github_fetcher.py` | ~17KB | Rate limit handling |
 | PDF extraction | `src/skill_seekers/cli/pdf_scraper.py` | Medium | PyMuPDF + OCR |
+| EPUB extraction | `src/skill_seekers/cli/epub_scraper.py` | Medium | ebooklib + BeautifulSoup |
 | Code analysis | `src/skill_seekers/cli/code_analyzer.py` | ~65KB | Multi-language AST parsing |
 | Pattern detection | `src/skill_seekers/cli/pattern_recognizer.py` | Medium | C3.1 - 10 GoF patterns |
 | Test extraction | `src/skill_seekers/cli/test_example_extractor.py` | Medium | C3.2 - 5 categories |
@@ -1777,7 +1783,7 @@ This section helps you quickly locate the right files when implementing common c
 2. **Arguments:** `src/skill_seekers/cli/arguments/create.py`
    - Three tiers of arguments:
      - `UNIVERSAL_ARGUMENTS` (13 flags) - Work for all sources
-     - Source-specific dicts (`WEB_ARGUMENTS`, `GITHUB_ARGUMENTS`, etc.)
+     - Source-specific dicts (`WEB_ARGUMENTS`, `GITHUB_ARGUMENTS`, `EPUB_ARGUMENTS`, etc.)
      - `ADVANCED_ARGUMENTS` - Rare/advanced options
    - `add_create_arguments(parser, mode)` - Multi-mode argument addition
 
