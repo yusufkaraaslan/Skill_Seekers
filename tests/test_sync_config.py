@@ -323,9 +323,9 @@ class TestDiscoverUrls(unittest.TestCase):
             rate_limit=0,
         )
 
-        # The seed URL is added to discovered even though fetch fails
-        # (it's valid per filters, so it's added before the fetch attempt)
-        self.assertIn("https://docs.example.com/", result)
+        # URLs that fail to fetch are NOT added to discovered (they may
+        # have been removed from the live site).
+        self.assertEqual(result, set())
 
     @patch("skill_seekers.cli.sync_config.requests.get")
     def test_fragments_stripped(self, mock_get):

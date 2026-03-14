@@ -97,12 +97,7 @@ def discover_urls(
         if not _is_valid_url(url, base_url, includes, excludes):
             continue
 
-        discovered.add(url)
         logger.debug("  [depth %d] %s", cur_depth, url)
-
-        # Only follow links if we haven't hit the depth limit
-        if cur_depth >= depth:
-            continue
 
         try:
             headers = {"User-Agent": "Mozilla/5.0 (Skill-Seekers sync-config)"}
@@ -112,13 +107,19 @@ def discover_urls(
             logger.warning("  Could not fetch %s: %s", url, e)
             continue
 
-        soup = BeautifulSoup(resp.content, "html.parser")
-        for link in soup.find_all("a", href=True):
-            href = urljoin(url, link["href"])
-            href = href.split("#")[0]  # strip fragment
-            href = sanitize_url(href)
-            if href not in visited and _is_valid_url(href, base_url, includes, excludes):
-                queue.append((href, cur_depth + 1))
+        # Only mark as "discovered" after a successful fetch — 404s and
+        # other errors mean the page no longer exists on the live site.
+        discovered.add(url)
+
+        # Follow links if we haven't hit the depth limit
+        if cur_depth < depth:
+            soup = BeautifulSoup(resp.content, "html.parser")
+            for link in soup.find_all("a", href=True):
+                href = urljoin(url, link["href"])
+                href = href.split("#")[0]  # strip fragment
+                href = sanitize_url(href)
+                if href not in visited and _is_valid_url(href, base_url, includes, excludes):
+                    queue.append((href, cur_depth + 1))
 
         if rate_limit > 0:
             time.sleep(rate_limit)
@@ -215,8 +216,8 @@ def sync_config(
         }
 
     base_url: str = source["base_url"]
-    configured_urls: list[str] = source.get("start_urls", [base_url])
-    seed_urls: list[str] = source.get("nav_seed_urls", configured_urls)
+    configured_urls: list[str] = source.get("start_urls") or []
+    seed_urls: list[str] = source.get("nav_seed_urls") or configured_urls or [base_url]
     url_patterns = source.get("url_patterns", {})
     includes: list[str] = url_patterns.get("include", [])
     excludes: list[str] = url_patterns.get("exclude", [])
