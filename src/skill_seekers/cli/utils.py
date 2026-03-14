@@ -3,6 +3,7 @@
 Utility functions for Skill Seeker CLI tools
 """
 
+import bisect
 import logging
 import os
 import platform
@@ -450,3 +451,36 @@ async def retry_with_backoff_async(
     if last_exception is not None:
         raise last_exception
     raise RuntimeError(f"{operation_name} failed with no exception captured")
+
+
+# ---------------------------------------------------------------------------
+# Line-index utilities for O(log n) offset-to-line-number lookups
+# ---------------------------------------------------------------------------
+
+
+def build_line_index(content: str) -> list[int]:
+    """Build a sorted list of newline byte-offsets for O(log n) line lookups.
+
+    Args:
+        content: Source text whose newline positions to index.
+
+    Returns:
+        Sorted list of character offsets where '\\n' occurs.
+    """
+    return [i for i, ch in enumerate(content) if ch == "\n"]
+
+
+def offset_to_line(newline_offsets: list[int], offset: int) -> int:
+    """Convert a character offset to a 1-based line number.
+
+    Uses ``bisect`` for O(log n) lookup against an index built by
+    :func:`build_line_index`.
+
+    Args:
+        newline_offsets: Sorted newline positions from :func:`build_line_index`.
+        offset: Character offset into the source text.
+
+    Returns:
+        1-based line number corresponding to *offset*.
+    """
+    return bisect.bisect_left(newline_offsets, offset) + 1

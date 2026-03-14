@@ -193,7 +193,9 @@ class DocToSkillConverter:
         # Support multiple starting URLs
         start_urls = config.get("start_urls", [self.base_url])
         self.pending_urls = deque(start_urls)
-        self._pending_set: set[str] = set(start_urls)  # Shadow set for O(1) membership checks
+        self._enqueued_urls: set[str] = set(
+            start_urls
+        )  # Track all ever-enqueued URLs for O(1) dedup
         self.pages: list[dict[str, Any]] = []
         self.pages_scraped = 0
 
@@ -223,9 +225,9 @@ class DocToSkillConverter:
             self.load_checkpoint()
 
     def _enqueue_url(self, url: str) -> None:
-        """Add a URL to the pending queue if not already visited or pending (O(1))."""
-        if url not in self.visited_urls and url not in self._pending_set:
-            self._pending_set.add(url)
+        """Add a URL to the pending queue if not already visited or enqueued (O(1))."""
+        if url not in self.visited_urls and url not in self._enqueued_urls:
+            self._enqueued_urls.add(url)
             self.pending_urls.append(url)
 
     def is_valid_url(self, url: str) -> bool:
@@ -279,7 +281,7 @@ class DocToSkillConverter:
             self.visited_urls = set(checkpoint_data["visited_urls"])
             pending = checkpoint_data["pending_urls"]
             self.pending_urls = deque(pending)
-            self._pending_set = set(pending)
+            self._enqueued_urls = set(pending)
             self.pages_scraped = checkpoint_data["pages_scraped"]
 
             logger.info("✅ Resumed from checkpoint")
@@ -709,19 +711,20 @@ class DocToSkillConverter:
                 soup = BeautifulSoup(response.content, "html.parser")
                 page = self.extract_content(soup, url)
 
-            # Store results (thread-safe when workers > 1)
-            def _store_results():
+            # Thread-safe operations (lock required for workers > 1)
+            if self.workers > 1:
+                with self.lock:
+                    logger.info("  %s", url)
+                    self.save_page(page)
+                    self.pages.append(page)
+                    for link in page["links"]:
+                        self._enqueue_url(link)
+            else:
                 logger.info("  %s", url)
                 self.save_page(page)
                 self.pages.append(page)
                 for link in page["links"]:
                     self._enqueue_url(link)
-
-            if self.workers > 1:
-                with self.lock:
-                    _store_results()
-            else:
-                _store_results()
 
             # Rate limiting
             rate_limit = self.config.get("rate_limit", DEFAULT_RATE_LIMIT)
@@ -1472,7 +1475,7 @@ class DocToSkillConverter:
 
         # Add common defaults (use pre-built URL list to avoid repeated comprehensions)
         all_urls = [p["url"] for p in pages]
-        if "tutorial" not in categories and any("tutorial" in url for url in all_urls):
+        if "tutorials" not in categories and any("tutorial" in url for url in all_urls):
             categories["tutorials"] = ["tutorial", "guide", "getting-started"]
 
         if "api" not in categories and any("api" in url or "reference" in url for url in all_urls):

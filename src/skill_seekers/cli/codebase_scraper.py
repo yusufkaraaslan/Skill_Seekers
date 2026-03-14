@@ -677,14 +677,11 @@ def process_markdown_docs(
     categories = {}
 
     # Pre-import parsers once outside the loop
-    _rst_parser_cls = None
-    _md_parser_cls = None
     try:
         from skill_seekers.cli.parsers.extractors import RstParser, MarkdownParser
-
-        _rst_parser_cls = RstParser
-        _md_parser_cls = MarkdownParser
     except ImportError:
+        RstParser = None  # type: ignore[assignment,misc]
+        MarkdownParser = None  # type: ignore[assignment,misc]
         logger.debug("Unified parsers not available, using legacy parsers")
 
     for md_path in md_files:
@@ -709,8 +706,6 @@ def process_markdown_docs(
                 parsed_doc = None
 
                 try:
-                    RstParser = _rst_parser_cls
-                    MarkdownParser = _md_parser_cls
                     if RstParser is None or MarkdownParser is None:
                         raise ImportError("Parsers not available")
 
