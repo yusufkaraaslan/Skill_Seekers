@@ -23,12 +23,13 @@ consider using dedicated parsers (tree-sitter, language-specific AST libraries).
 """
 
 import ast
-import bisect
 import contextlib
 import logging
 import re
 from dataclasses import asdict, dataclass
 from typing import Any
+
+from skill_seekers.cli.utils import build_line_index, offset_to_line
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -87,14 +88,9 @@ class CodeAnalyzer:
         self.depth = depth
         self._newline_offsets: list[int] = []
 
-    @staticmethod
-    def _build_line_index(content: str) -> list[int]:
-        """Build a sorted list of newline positions for O(log n) line lookups."""
-        return [i for i, ch in enumerate(content) if ch == "\n"]
-
     def _offset_to_line(self, offset: int) -> int:
         """Convert a character offset to a 1-based line number using bisect."""
-        return bisect.bisect_left(self._newline_offsets, offset) + 1
+        return offset_to_line(self._newline_offsets, offset)
 
     def analyze_file(self, file_path: str, content: str, language: str) -> dict[str, Any]:
         """
@@ -287,7 +283,7 @@ class CodeAnalyzer:
         Note: This is a simplified approach. For production, consider using
         a proper JS/TS parser like esprima or ts-morph.
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -463,7 +459,7 @@ class CodeAnalyzer:
         Note: This is a simplified approach focusing on header files.
         For production, consider using libclang or similar.
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -614,7 +610,7 @@ class CodeAnalyzer:
         Regex patterns inspired by C# language specification:
         https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -825,7 +821,7 @@ class CodeAnalyzer:
         Regex patterns based on Go language specification:
         https://go.dev/ref/spec
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []  # Go doesn't have classes, but we'll extract structs
         functions = []
 
@@ -935,7 +931,7 @@ class CodeAnalyzer:
         Regex patterns based on Rust language reference:
         https://doc.rust-lang.org/reference/
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []  # Rust uses structs/enums/traits
         functions = []
 
@@ -1054,7 +1050,7 @@ class CodeAnalyzer:
         Regex patterns based on Java language specification:
         https://docs.oracle.com/javase/specs/
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -1256,7 +1252,7 @@ class CodeAnalyzer:
         Regex patterns based on Ruby language documentation:
         https://ruby-doc.org/
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -1374,7 +1370,7 @@ class CodeAnalyzer:
         Regex patterns based on PHP language reference:
         https://www.php.net/manual/en/langref.php
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
 
@@ -1718,7 +1714,7 @@ class CodeAnalyzer:
         - @export var speed: float = 100.0
         - @onready var sprite = $Sprite2D
         """
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
         classes = []
         functions = []
         signals = []

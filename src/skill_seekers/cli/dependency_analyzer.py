@@ -40,12 +40,13 @@ Credits:
 """
 
 import ast
-import bisect
 import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from skill_seekers.cli.utils import build_line_index, offset_to_line
 
 try:
     import networkx as nx
@@ -98,14 +99,9 @@ class DependencyAnalyzer:
         self.file_nodes: dict[str, FileNode] = {}
         self._newline_offsets: list[int] = []
 
-    @staticmethod
-    def _build_line_index(content: str) -> list[int]:
-        """Build a sorted list of newline positions for O(log n) line lookups."""
-        return [i for i, ch in enumerate(content) if ch == "\n"]
-
     def _offset_to_line(self, offset: int) -> int:
         """Convert a character offset to a 1-based line number using bisect."""
-        return bisect.bisect_left(self._newline_offsets, offset) + 1
+        return offset_to_line(self._newline_offsets, offset)
 
     def analyze_file(self, file_path: str, content: str, language: str) -> list[DependencyInfo]:
         """
@@ -121,7 +117,7 @@ class DependencyAnalyzer:
             List of DependencyInfo objects
         """
         # Build line index once for O(log n) lookups in all extractors
-        self._newline_offsets = self._build_line_index(content)
+        self._newline_offsets = build_line_index(content)
 
         if language == "Python":
             deps = self._extract_python_imports(content, file_path)
