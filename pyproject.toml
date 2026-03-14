@@ -114,6 +114,11 @@ docx = [
     "python-docx>=1.1.0",
 ]
 
+# EPUB (.epub) support
+epub = [
+    "ebooklib>=0.18",
+]
+
 # Video processing (lightweight: YouTube transcripts + metadata)
 video = [
     "yt-dlp>=2024.12.0",
@@ -178,6 +183,7 @@ embedding = [
 all = [
     "mammoth>=1.6.0",
     "python-docx>=1.1.0",
+    "ebooklib>=0.18",
     "yt-dlp>=2024.12.0",
     "youtube-transcript-api>=1.2.0",
     "mcp>=1.25,<2",
@@ -222,6 +228,7 @@ skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
 skill-seekers-github = "skill_seekers.cli.github_scraper:main"
 skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
 skill-seekers-word = "skill_seekers.cli.word_scraper:main"
+skill-seekers-epub = "skill_seekers.cli.epub_scraper:main"
 skill-seekers-video = "skill_seekers.cli.video_scraper:main"
 skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
 skill-seekers-enhance = "skill_seekers.cli.enhance_command:main"

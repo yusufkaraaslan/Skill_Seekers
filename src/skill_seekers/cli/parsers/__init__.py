@@ -13,6 +13,7 @@ from .scrape_parser import ScrapeParser
 from .github_parser import GitHubParser
 from .pdf_parser import PDFParser
 from .word_parser import WordParser
+from .epub_parser import EpubParser
 from .video_parser import VideoParser
 from .unified_parser import UnifiedParser
 from .enhance_parser import EnhanceParser
@@ -45,6 +46,7 @@ PARSERS = [
     EnhanceStatusParser(),
     PDFParser(),
     WordParser(),
+    EpubParser(),
     VideoParser(),
     UnifiedParser(),
     EstimateParser(),

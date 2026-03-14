@@ -134,6 +134,8 @@ class CreateCommand:
             return self._route_pdf()
         elif self.source_info.type == "word":
             return self._route_word()
+        elif self.source_info.type == "epub":
+            return self._route_epub()
         elif self.source_info.type == "video":
             return self._route_video()
         elif self.source_info.type == "config":
@@ -351,6 +353,29 @@ class CreateCommand:
         finally:
             sys.argv = original_argv
 
+    def _route_epub(self) -> int:
+        """Route to EPUB scraper (epub_scraper.py)."""
+        from skill_seekers.cli import epub_scraper
+
+        # Reconstruct argv for epub_scraper
+        argv = ["epub_scraper"]
+
+        # Add EPUB file
+        file_path = self.source_info.parsed["file_path"]
+        argv.extend(["--epub", file_path])
+
+        # Add universal arguments
+        self._add_common_args(argv)
+
+        # Call epub_scraper with modified argv
+        logger.debug(f"Calling epub_scraper with argv: {argv}")
+        original_argv = sys.argv
+        try:
+            sys.argv = argv
+            return epub_scraper.main()
+        finally:
+            sys.argv = original_argv
+
     def _route_video(self) -> int:
         """Route to video scraper (video_scraper.py)."""
         from skill_seekers.cli import video_scraper
@@ -541,6 +566,7 @@ Examples:
   Local:    skill-seekers create ./my-project -p comprehensive
   PDF:      skill-seekers create tutorial.pdf --ocr
   DOCX:     skill-seekers create document.docx
+  EPUB:     skill-seekers create ebook.epub
   Video:    skill-seekers create https://youtube.com/watch?v=...
   Video:    skill-seekers create recording.mp4
   Config:   skill-seekers create configs/react.json
@@ -551,6 +577,7 @@ Source Auto-Detection:
   • ./path → local codebase
   • file.pdf → PDF extraction
   • file.docx → Word document extraction
+  • file.epub → EPUB extraction
   • youtube.com/... → Video transcript extraction
   • file.mp4 → Video file extraction
   • file.json → multi-source config
@@ -560,6 +587,7 @@ Progressive Help (13 → 120+ flags):
   --help-github    GitHub repository options
   --help-local     Local codebase analysis
   --help-pdf       PDF extraction options
+  --help-epub      EPUB extraction options
   --help-video     Video extraction options
   --help-advanced  Rare/advanced options
   --help-all       All options + compatibility
@@ -590,6 +618,9 @@ Common Workflows:
     parser.add_argument("--help-pdf", action="store_true", help=argparse.SUPPRESS, dest="_help_pdf")
     parser.add_argument(
         "--help-word", action="store_true", help=argparse.SUPPRESS, dest="_help_word"
+    )
+    parser.add_argument(
+        "--help-epub", action="store_true", help=argparse.SUPPRESS, dest="_help_epub"
     )
     parser.add_argument(
         "--help-video", action="store_true", help=argparse.SUPPRESS, dest="_help_video"
@@ -651,6 +682,15 @@ Common Workflows:
         )
         add_create_arguments(parser_word, mode="word")
         parser_word.print_help()
+        return 0
+    elif args._help_epub:
+        parser_epub = argparse.ArgumentParser(
+            prog="skill-seekers create",
+            description="Create skill from EPUB e-book (.epub)",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_create_arguments(parser_epub, mode="epub")
+        parser_epub.print_help()
         return 0
     elif args._help_video:
         parser_video = argparse.ArgumentParser(
