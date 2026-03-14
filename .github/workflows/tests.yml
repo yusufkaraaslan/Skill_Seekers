@@ -105,9 +105,13 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  # Summary job that provides a single status check for branch protection
+  # Summary job that provides a single status check for branch protection.
+  # The job name MUST match the required status check in the branch
+  # protection rules.  GitHub reports status checks using job names
+  # (not the workflow name), so the required check "Tests" will only
+  # be satisfied if a job with exactly that name exists and succeeds.
   tests-complete:
-    name: All Checks Complete
+    name: Tests
     needs: [lint, test]
     runs-on: ubuntu-latest
     if: always()
