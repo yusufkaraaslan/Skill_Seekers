@@ -23,6 +23,7 @@ consider using dedicated parsers (tree-sitter, language-specific AST libraries).
 """
 
 import ast
+import bisect
 import contextlib
 import logging
 import re
@@ -84,6 +85,16 @@ class CodeAnalyzer:
             depth: Analysis depth ('surface', 'deep', 'full')
         """
         self.depth = depth
+        self._newline_offsets: list[int] = []
+
+    @staticmethod
+    def _build_line_index(content: str) -> list[int]:
+        """Build a sorted list of newline positions for O(log n) line lookups."""
+        return [i for i, ch in enumerate(content) if ch == "\n"]
+
+    def _offset_to_line(self, offset: int) -> int:
+        """Convert a character offset to a 1-based line number using bisect."""
+        return bisect.bisect_left(self._newline_offsets, offset) + 1
 
     def analyze_file(self, file_path: str, content: str, language: str) -> dict[str, Any]:
         """
@@ -149,35 +160,26 @@ class CodeAnalyzer:
         functions = []
         imports = []
 
+        # Build parent map once (O(n)) instead of walking tree per node (O(n²))
+        class_children: set[int] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and isinstance(node.body, list):
+                for child in node.body:
+                    class_children.add(id(child))
+
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
                 class_sig = self._extract_python_class(node)
                 classes.append(asdict(class_sig))
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                # Only top-level functions (not methods)
-                # Fix AST parser to check isinstance(parent.body, list) before 'in' operator
-                is_method = False
-                try:
-                    is_method = any(
-                        isinstance(parent, ast.ClassDef)
-                        for parent in ast.walk(tree)
-                        if hasattr(parent, "body")
-                        and isinstance(parent.body, list)
-                        and node in parent.body
-                    )
-                except (TypeError, AttributeError):
-                    # If body is not iterable or check fails, assume it's a top-level function
-                    is_method = False
-
-                if not is_method:
+                # Only top-level functions (not methods) - O(1) lookup via pre-built set
+                if id(node) not in class_children:
                     func_sig = self._extract_python_function(node)
                     functions.append(asdict(func_sig))
             elif isinstance(node, ast.Import):
-                # Extract: import foo, bar
                 for alias in node.names:
                     imports.append(alias.name)
             elif isinstance(node, ast.ImportFrom):
-                # Extract: from foo import bar
                 module = node.module or ""
                 imports.append(module)
 
@@ -188,7 +190,7 @@ class CodeAnalyzer:
             "classes": classes,
             "functions": functions,
             "comments": comments,
-            "imports": imports,  # Include imports for framework detection
+            "imports": imports,
         }
 
     def _extract_python_class(self, node: ast.ClassDef) -> ClassSignature:
@@ -285,6 +287,7 @@ class CodeAnalyzer:
         Note: This is a simplified approach. For production, consider using
         a proper JS/TS parser like esprima or ts-morph.
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -310,7 +313,7 @@ class CodeAnalyzer:
                     "base_classes": [base_class] if base_class else [],
                     "methods": methods,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -329,7 +332,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": None,  # JS doesn't have type annotations (unless TS)
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": is_async,
                     "is_method": False,
                     "decorators": [],
@@ -351,7 +354,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": None,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": is_async,
                     "is_method": False,
                     "decorators": [],
@@ -460,6 +463,7 @@ class CodeAnalyzer:
         Note: This is a simplified approach focusing on header files.
         For production, consider using libclang or similar.
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -475,7 +479,7 @@ class CodeAnalyzer:
                     "base_classes": [base_class] if base_class else [],
                     "methods": [],  # Simplified - would need to parse class body
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -498,7 +502,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": False,
                     "is_method": False,
                     "decorators": [],
@@ -577,14 +581,14 @@ class CodeAnalyzer:
 
         # Extract single-line comments (//)
         for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = content[: match.start()].count("\n") + 1
+            line_num = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": line_num, "text": comment_text, "type": "inline"})
 
         # Extract multi-line comments (/* */)
         for match in re.finditer(r"/\*(.+?)\*/", content, re.DOTALL):
-            start_line = content[: match.start()].count("\n") + 1
+            start_line = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": start_line, "text": comment_text, "type": "block"})
@@ -610,6 +614,7 @@ class CodeAnalyzer:
         Regex patterns inspired by C# language specification:
         https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -651,7 +656,7 @@ class CodeAnalyzer:
                     "base_classes": base_classes,
                     "methods": methods,
                     "docstring": None,  # Would need to extract XML doc comments
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -676,7 +681,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": is_async,
                     "is_method": False,
                     "decorators": [],
@@ -791,7 +796,7 @@ class CodeAnalyzer:
 
         # Single-line comments (//)
         for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = content[: match.start()].count("\n") + 1
+            line_num = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             # Distinguish XML doc comments (///)
@@ -803,7 +808,7 @@ class CodeAnalyzer:
 
         # Multi-line comments (/* */)
         for match in re.finditer(r"/\*(.+?)\*/", content, re.DOTALL):
-            start_line = content[: match.start()].count("\n") + 1
+            start_line = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": start_line, "text": comment_text, "type": "block"})
@@ -820,6 +825,7 @@ class CodeAnalyzer:
         Regex patterns based on Go language specification:
         https://go.dev/ref/spec
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []  # Go doesn't have classes, but we'll extract structs
         functions = []
 
@@ -834,7 +840,7 @@ class CodeAnalyzer:
                     "base_classes": [],  # Go uses embedding, not inheritance
                     "methods": [],  # Methods extracted separately
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -867,7 +873,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": False,  # Go uses goroutines differently
                     "is_method": is_method,
                     "decorators": [],
@@ -929,6 +935,7 @@ class CodeAnalyzer:
         Regex patterns based on Rust language reference:
         https://doc.rust-lang.org/reference/
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []  # Rust uses structs/enums/traits
         functions = []
 
@@ -943,7 +950,7 @@ class CodeAnalyzer:
                     "base_classes": [],  # Rust uses traits, not inheritance
                     "methods": [],
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -964,7 +971,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": is_async,
                     "is_method": False,
                     "decorators": [],
@@ -1016,7 +1023,7 @@ class CodeAnalyzer:
 
         # Single-line comments (//)
         for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = content[: match.start()].count("\n") + 1
+            line_num = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             # Distinguish doc comments (/// or //!)
@@ -1030,7 +1037,7 @@ class CodeAnalyzer:
 
         # Multi-line comments (/* */)
         for match in re.finditer(r"/\*(.+?)\*/", content, re.DOTALL):
-            start_line = content[: match.start()].count("\n") + 1
+            start_line = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": start_line, "text": comment_text, "type": "block"})
@@ -1047,6 +1054,7 @@ class CodeAnalyzer:
         Regex patterns based on Java language specification:
         https://docs.oracle.com/javase/specs/
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -1089,7 +1097,7 @@ class CodeAnalyzer:
                     "base_classes": base_classes,
                     "methods": methods,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1112,7 +1120,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": False,
                     "is_method": False,
                     "decorators": [],
@@ -1221,14 +1229,14 @@ class CodeAnalyzer:
 
         # Single-line comments (//)
         for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = content[: match.start()].count("\n") + 1
+            line_num = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": line_num, "text": comment_text, "type": "inline"})
 
         # Multi-line and JavaDoc comments (/* */ and /** */)
         for match in re.finditer(r"/\*\*?(.+?)\*/", content, re.DOTALL):
-            start_line = content[: match.start()].count("\n") + 1
+            start_line = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             # Distinguish JavaDoc (starts with **)
@@ -1248,6 +1256,7 @@ class CodeAnalyzer:
         Regex patterns based on Ruby language documentation:
         https://ruby-doc.org/
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -1265,7 +1274,7 @@ class CodeAnalyzer:
                     "base_classes": base_classes,
                     "methods": [],  # Would need to parse class body
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1284,7 +1293,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": None,  # Ruby has no type annotations (usually)
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": False,
                     "is_method": False,
                     "decorators": [],
@@ -1365,6 +1374,7 @@ class CodeAnalyzer:
         Regex patterns based on PHP language reference:
         https://www.php.net/manual/en/langref.php
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
 
@@ -1406,7 +1416,7 @@ class CodeAnalyzer:
                     "base_classes": base_classes,
                     "methods": methods,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1425,7 +1435,7 @@ class CodeAnalyzer:
                     "parameters": params,
                     "return_type": return_type,
                     "docstring": None,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                     "is_async": False,
                     "is_method": False,
                     "decorators": [],
@@ -1526,14 +1536,14 @@ class CodeAnalyzer:
 
         # Single-line comments (// and #)
         for match in re.finditer(r"(?://|#)(.+)$", content, re.MULTILINE):
-            line_num = content[: match.start()].count("\n") + 1
+            line_num = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             comments.append({"line": line_num, "text": comment_text, "type": "inline"})
 
         # Multi-line and PHPDoc comments (/* */ and /** */)
         for match in re.finditer(r"/\*\*?(.+?)\*/", content, re.DOTALL):
-            start_line = content[: match.start()].count("\n") + 1
+            start_line = self._offset_to_line(match.start())
             comment_text = match.group(1).strip()
 
             # Distinguish PHPDoc (starts with **)
@@ -1708,6 +1718,7 @@ class CodeAnalyzer:
         - @export var speed: float = 100.0
         - @onready var sprite = $Sprite2D
         """
+        self._newline_offsets = self._build_line_index(content)
         classes = []
         functions = []
         signals = []
@@ -1764,7 +1775,7 @@ class CodeAnalyzer:
                     "name": func_name,
                     "parameters": param_list,
                     "return_type": return_type,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1774,7 +1785,7 @@ class CodeAnalyzer:
 
         for match in re.finditer(r"signal\s+(\w+)(?:\(([^)]*)\))?", content):
             signal_name, params = match.groups()
-            line_number = content[: match.start()].count("\n") + 1
+            line_number = self._offset_to_line(match.start())
 
             # Extract documentation comment above signal (## or #)
             doc_comment = None
@@ -1800,7 +1811,7 @@ class CodeAnalyzer:
                 {
                     "signal": signal_path,
                     "handler": handler.strip(),
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1811,7 +1822,7 @@ class CodeAnalyzer:
                 {
                     "signal": signal_path,
                     "arguments": args.strip() if args else "",
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
@@ -1827,7 +1838,7 @@ class CodeAnalyzer:
                     "type": var_type,
                     "default": default,
                     "export_hint": hint,
-                    "line_number": content[: match.start()].count("\n") + 1,
+                    "line_number": self._offset_to_line(match.start()),
                 }
             )
 
