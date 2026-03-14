@@ -13,6 +13,7 @@ Commands:
     github               Scrape GitHub repository
     pdf                  Extract from PDF file
     word                 Extract from Word (.docx) file
+    epub                 Extract from EPUB e-book (.epub)
     video                Extract from video (YouTube or local)
     unified              Multi-source scraping (docs + GitHub + PDF)
     analyze              Analyze local codebase and extract code knowledge
@@ -50,6 +51,7 @@ COMMAND_MODULES = {
     "github": "skill_seekers.cli.github_scraper",
     "pdf": "skill_seekers.cli.pdf_scraper",
     "word": "skill_seekers.cli.word_scraper",
+    "epub": "skill_seekers.cli.epub_scraper",
     "video": "skill_seekers.cli.video_scraper",
     "unified": "skill_seekers.cli.unified_scraper",
     "enhance": "skill_seekers.cli.enhance_command",
