@@ -1177,10 +1177,6 @@ class TestEpubErrorHandling(unittest.TestCase):
             converter.extract_epub()
         self.assertIn("DRM", str(ctx.exception))
 
-    def test_empty_epub_handled(self):
-        """EPUB with no content documents produces empty pages."""
-        # This is tested via test_extract_empty_spine in TestEpubExtraction
-
     def test_ebooklib_not_installed_error(self):
         from skill_seekers.cli.epub_scraper import _check_epub_deps
 
@@ -1213,14 +1209,6 @@ class TestEpubErrorHandling(unittest.TestCase):
         # Should not crash
         result = converter.extract_epub()
         self.assertTrue(result)
-
-    def test_missing_container_xml(self):
-        """Missing container.xml would cause ebooklib to fail, which we catch."""
-        # Covered by test_corrupted_epub_raises_error
-
-    def test_missing_opf_file(self):
-        """Missing OPF would cause ebooklib to fail, which we catch."""
-        # Covered by test_corrupted_epub_raises_error
 
 
 # ============================================================================

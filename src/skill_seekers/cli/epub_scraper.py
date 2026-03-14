@@ -379,19 +379,25 @@ class EpubToSkillConverter:
         Returns count of images found (images are stored in extracted_data sections).
         """
         image_count = 0
+        seen_ids: set[int] = set()  # Track items already counted to avoid duplicates
         try:
             for item in book.get_items_of_type(ebooklib.ITEM_IMAGE):
                 image_count += 1
+                seen_ids.add(id(item))
         except Exception:
             logger.debug("Could not enumerate images in EPUB")
 
-        # Also count SVG items
+        # Also count SVG items not already included in ITEM_IMAGE
         try:
             for item in book.get_items():
-                if hasattr(item, "media_type") and item.media_type == "image/svg+xml":
+                if (
+                    id(item) not in seen_ids
+                    and hasattr(item, "media_type")
+                    and item.media_type == "image/svg+xml"
+                ):
                     image_count += 1
         except Exception:
-            pass
+            logger.debug("Could not enumerate SVG images in EPUB")
 
         return image_count
 
