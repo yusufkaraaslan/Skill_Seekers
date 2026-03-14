@@ -3,6 +3,8 @@
 import re
 from urllib.parse import urljoin
 
+from skill_seekers.cli.utils import sanitize_url
+
 
 class LlmsTxtParser:
     """Parse llms.txt markdown content into page structures"""
@@ -92,19 +94,8 @@ class LlmsTxtParser:
                 # Extract the base URL without the malformed anchor
                 url = url[:anchor_pos]
 
-        # Percent-encode square brackets in the path — they are only valid in
-        # the host portion of a URL (IPv6 literals). Leaving them unencoded
-        # causes httpx to raise "Invalid IPv6 URL" when the URL is fetched.
-        if "[" in url or "]" in url:
-            from urllib.parse import urlparse, urlunparse
-
-            parsed = urlparse(url)
-            # Only encode brackets in the path/query/fragment, not in the host
-            encoded_path = parsed.path.replace("[", "%5B").replace("]", "%5D")
-            encoded_query = parsed.query.replace("[", "%5B").replace("]", "%5D")
-            url = urlunparse(parsed._replace(path=encoded_path, query=encoded_query))
-
-        return url
+        # Percent-encode square brackets in the path/query (see #284).
+        return sanitize_url(url)
 
     def parse(self) -> list[dict]:
         """

@@ -47,7 +47,7 @@ from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
 from skill_seekers.cli.arguments.scrape import add_scrape_arguments
-from skill_seekers.cli.utils import setup_logging
+from skill_seekers.cli.utils import sanitize_url, setup_logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -225,7 +225,12 @@ class DocToSkillConverter:
             self.load_checkpoint()
 
     def _enqueue_url(self, url: str) -> None:
-        """Add a URL to the pending queue if not already visited or enqueued (O(1))."""
+        """Add a URL to the pending queue if not already visited or enqueued (O(1)).
+
+        Applies :func:`sanitize_url` to percent-encode square brackets before
+        enqueueing, preventing ``Invalid IPv6 URL`` errors on fetch (see #284).
+        """
+        url = sanitize_url(url)
         if url not in self.visited_urls and url not in self._enqueued_urls:
             self._enqueued_urls.add(url)
             self.pending_urls.append(url)
@@ -699,6 +704,9 @@ class DocToSkillConverter:
             Supports both HTML pages and Markdown (.md) files
         """
         try:
+            # Sanitise brackets before fetching (safety net for start_urls; see #284)
+            url = sanitize_url(url)
+
             # Scraping part (no lock needed - independent)
             headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
             response = requests.get(url, headers=headers, timeout=30)
@@ -755,6 +763,9 @@ class DocToSkillConverter:
         """
         async with semaphore:  # Limit concurrent requests
             try:
+                # Sanitise brackets before fetching (safety net; see #284)
+                url = sanitize_url(url)
+
                 # Async HTTP request
                 headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
                 response = await client.get(url, headers=headers, timeout=30.0)
@@ -1112,6 +1123,7 @@ class DocToSkillConverter:
 
                 if self.dry_run:
                     # Just show what would be scraped
+                    url = sanitize_url(url)  # encode brackets before fetch (see #284)
                     logger.info("  [Preview] %s", url)
                     try:
                         headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper - Dry Run)"}
@@ -1293,6 +1305,7 @@ class DocToSkillConverter:
                 for url in batch:
                     if unlimited or len(self.visited_urls) <= preview_limit:
                         if self.dry_run:
+                            url = sanitize_url(url)  # encode brackets (see #284)
                             logger.info("  [Preview] %s", url)
                             # Discover links from full page (async dry-run)
                             try:

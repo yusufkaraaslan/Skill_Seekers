@@ -520,5 +520,132 @@ class TestTextCleaning(unittest.TestCase):
         self.assertEqual(cleaned, "Hello world")
 
 
+class TestSanitizeUrl(unittest.TestCase):
+    """Test the shared sanitize_url utility (see issue #284)."""
+
+    def test_no_brackets_unchanged(self):
+        """URLs without brackets should pass through unchanged."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        url = "https://docs.example.com/api/v1/users"
+        self.assertEqual(sanitize_url(url), url)
+
+    def test_brackets_in_path_encoded(self):
+        """Square brackets in path should be percent-encoded."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        result = sanitize_url("https://example.com/api/[v1]/users")
+        self.assertEqual(result, "https://example.com/api/%5Bv1%5D/users")
+
+    def test_brackets_in_query_encoded(self):
+        """Square brackets in query should be percent-encoded."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        result = sanitize_url("https://example.com/search?filter=[active]&sort=[name]")
+        self.assertEqual(result, "https://example.com/search?filter=%5Bactive%5D&sort=%5Bname%5D")
+
+    def test_host_not_affected(self):
+        """Host portion should never be modified (IPv6 literals are valid there)."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        # URL with brackets only in path, host stays intact
+        result = sanitize_url("https://example.com/[v1]/ref")
+        self.assertTrue(result.startswith("https://example.com/"))
+
+    def test_already_encoded_brackets(self):
+        """Already-encoded brackets should not be double-encoded."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        url = "https://example.com/api/%5Bv1%5D/users"
+        # No raw brackets present, should pass through unchanged
+        self.assertEqual(sanitize_url(url), url)
+
+    def test_empty_and_simple_urls(self):
+        """Edge cases: empty string, simple URLs."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        self.assertEqual(sanitize_url(""), "")
+        self.assertEqual(sanitize_url("https://example.com"), "https://example.com")
+        self.assertEqual(sanitize_url("https://example.com/"), "https://example.com/")
+
+
+class TestEnqueueUrlSanitization(unittest.TestCase):
+    """Test that _enqueue_url sanitises bracket URLs before enqueueing (#284)."""
+
+    def setUp(self):
+        """Set up test converter."""
+        self.config = {
+            "name": "test",
+            "base_url": "https://docs.example.com/",
+            "url_patterns": {"include": [], "exclude": []},
+            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+            "rate_limit": 0,
+            "max_pages": 100,
+        }
+        self.converter = DocToSkillConverter(self.config, dry_run=True)
+
+    def test_enqueue_sanitises_brackets(self):
+        """_enqueue_url should percent-encode brackets before adding to queue."""
+        self.converter._enqueue_url("https://docs.example.com/api/[v1]/users")
+
+        # The URL in the queue should have encoded brackets
+        queued_url = list(self.converter.pending_urls)[-1]
+        self.assertNotIn("[", queued_url)
+        self.assertNotIn("]", queued_url)
+        self.assertIn("%5B", queued_url)
+        self.assertIn("%5D", queued_url)
+
+    def test_enqueue_dedup_with_encoded_brackets(self):
+        """Encoded and raw bracket URLs should be treated as the same URL."""
+        self.converter._enqueue_url("https://docs.example.com/api/[v1]/ref")
+        initial_len = len(self.converter.pending_urls)
+
+        # Enqueueing the same URL again (raw brackets) should be a no-op
+        self.converter._enqueue_url("https://docs.example.com/api/[v1]/ref")
+        self.assertEqual(len(self.converter.pending_urls), initial_len)
+
+    def test_enqueue_normal_url_unchanged(self):
+        """Normal URLs without brackets should pass through unchanged."""
+        self.converter._enqueue_url("https://docs.example.com/guide/intro")
+
+        queued_url = list(self.converter.pending_urls)[-1]
+        self.assertEqual(queued_url, "https://docs.example.com/guide/intro")
+
+
+class TestMarkdownLinkBracketSanitization(unittest.TestCase):
+    """Integration test: markdown content with bracket URLs should not crash (#284)."""
+
+    def setUp(self):
+        """Set up test converter."""
+        self.config = {
+            "name": "test",
+            "base_url": "https://docs.example.com/",
+            "url_patterns": {"include": [], "exclude": []},
+            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+            "rate_limit": 0,
+            "max_pages": 100,
+        }
+        self.converter = DocToSkillConverter(self.config, dry_run=True)
+
+    def test_extract_markdown_links_with_brackets(self):
+        """Links with brackets in .md content should be sanitised when enqueued."""
+        # Simulate markdown content containing a link with brackets
+        md_content = """# API Reference
+
+See the [Users Endpoint](https://docs.example.com/api/[v1]/users.md) for details.
+Also check [Guide](https://docs.example.com/guide/intro.md).
+"""
+        page = self.converter._extract_markdown_content(md_content, "https://docs.example.com/")
+
+        # Enqueue all extracted links (this is what scrape_page does)
+        for link in page["links"]:
+            self.converter._enqueue_url(link)
+
+        # All enqueued URLs should have brackets encoded
+        for url in self.converter.pending_urls:
+            self.assertNotIn("[", url, f"Raw bracket found in enqueued URL: {url}")
+            self.assertNotIn("]", url, f"Raw bracket found in enqueued URL: {url}")
+
+
 if __name__ == "__main__":
     unittest.main()
