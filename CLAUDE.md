@@ -7,7 +7,7 @@
 
 ## Project
 
-**Skill Seekers** — universal documentation preprocessor for AI systems. Transforms docs sites, GitHub repos, PDFs into formats for 16+ platforms (RAG, vector DBs, AI coding assistants, LLMs).
+**Skill Seekers** — universal documentation preprocessor for AI systems. Transforms docs sites, GitHub repos, PDFs, EPUBs into formats for 16+ platforms (RAG, vector DBs, AI coding assistants, LLMs).
 
 - **Version:** 3.2.0 | **Python:** 3.10+ | **PyPI:** published
 - **Website:** https://skillseekersweb.com/
@@ -23,13 +23,16 @@ pytest tests/ -v                    # verify
 
 ```bash
 # Preferred: unified create (auto-detects source type)
-skill-seekers create <url|owner/repo|./path|file.pdf> -p quick|standard|comprehensive
+skill-seekers create <url|owner/repo|./path|file.pdf|book.epub> -p quick|standard|comprehensive
 skill-seekers create <source> --enhance-level 0-3 --dry-run --chunk-for-rag
 
 # Legacy (still work)
 skill-seekers scrape --config configs/react.json
 skill-seekers github --repo facebook/react
 skill-seekers analyze --directory . --comprehensive
+
+# Standalone EPUB
+skill-seekers epub --epub book.epub --name myskill
 
 # Package
 skill-seekers package output/react/ --target claude|gemini|openai|markdown
@@ -41,7 +44,7 @@ skill-seekers cloud upload --provider s3|gcs|azure --bucket my-bucket output/rea
 skill-seekers config --show|--github|--test
 ```
 
-Progressive help: `--help`, `--help-web`, `--help-github`, `--help-local`, `--help-pdf`, `--help-all`
+Progressive help: `--help`, `--help-web`, `--help-github`, `--help-local`, `--help-pdf`, `--help-epub`, `--help-all`
 
 ## Development
 
@@ -103,13 +106,13 @@ Base class: `base_adaptor.py` — methods: `package()`, `upload()`, `enhance()`,
 
 Entry point: `src/skill_seekers/cli/main.py` — git-style dispatcher, modifies `sys.argv` and calls sub-module `main()` functions.
 
-Subcommands: create, scrape, github, pdf, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides, config, resume, cloud, embed, sync, update, quality, benchmark, multilang, stream, video, workflows
+Subcommands: create, scrape, github, pdf, epub, unified, codebase, enhance, enhance-status, package, upload, estimate, install, install-agent, patterns, how-to-guides, config, resume, cloud, embed, sync, update, quality, benchmark, multilang, stream, video, workflows
 
 ### Key source files
 
 | Area | Files |
 |------|-------|
-| Core scraping | `cli/doc_scraper.py`, `cli/github_scraper.py`, `cli/pdf_scraper.py`, `cli/codebase_scraper.py` |
+| Core scraping | `cli/doc_scraper.py`, `cli/github_scraper.py`, `cli/pdf_scraper.py`, `cli/epub_scraper.py`, `cli/codebase_scraper.py` |
 | Code analysis | `cli/code_analyzer.py`, `cli/pattern_recognizer.py`, `cli/test_example_extractor.py` |
 | Guides & docs | `cli/how_to_guide_builder.py`, `cli/config_extractor.py`, `cli/generate_router.py` |
 | AI enhancement | `cli/enhance_skill_local.py`, `cli/enhance_skill.py`, `cli/ai_enhancer.py` |
@@ -181,7 +184,7 @@ Enhancement auto-detects mode: API key set → API mode, otherwise → LOCAL (Cl
 
 ### New create command flags
 - Universal → `UNIVERSAL_ARGUMENTS` in `cli/arguments/create.py`
-- Source-specific → `WEB_ARGUMENTS`, `GITHUB_ARGUMENTS`, etc.
+- Source-specific → `WEB_ARGUMENTS`, `GITHUB_ARGUMENTS`, `EPUB_ARGUMENTS`, etc.
 
 ### New MCP tool
 - Add `@mcp.tool()` in `mcp/server_fastmcp.py`

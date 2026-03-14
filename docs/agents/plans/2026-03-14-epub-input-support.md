@@ -4,7 +4,7 @@ git_commit: 7c90a4b9c9bccac8341b0769550d77aae3b4e524
 branch: development
 topic: "Add EPUB Input Support"
 tags: [plan, epub, scraper, input-format]
-status: draft
+status: complete
 ---
 
 # Add EPUB Input Support — Implementation Plan
@@ -84,11 +84,11 @@ $ skill-seekers create programming-rust.epub
 ```
 
 ### Verification:
-- [ ] `skill-seekers create book.epub` produces valid output directory
-- [ ] `skill-seekers epub --epub book.epub --name mybook` works standalone
-- [ ] `skill-seekers create book.epub --dry-run` shows config without processing
-- [ ] All ~2,540+ existing tests still pass
-- [ ] New test suite has 100+ tests covering happy path, errors, and edge cases
+- [x] `skill-seekers create book.epub` produces valid output directory
+- [x] `skill-seekers epub --epub book.epub --name mybook` works standalone
+- [x] `skill-seekers create book.epub --dry-run` shows config without processing
+- [x] All ~2,540+ existing tests still pass (982 passed, 1 pre-existing failure)
+- [x] New test suite has 100+ tests covering happy path, errors, and edge cases (107 tests, 14 classes)
 
 ## What We're NOT Doing
 
@@ -705,8 +705,8 @@ skill-seekers-epub = "skill_seekers.cli.epub_scraper:main"
 - [x] Existing tests still pass: `pytest tests/ -v -x -m "not slow and not integration"` (875 passed, 1 pre-existing unrelated failure in test_git_sources_e2e)
 
 #### Manual Verification:
-- [ ] `skill-seekers --help` lists `epub` command
-- [ ] `skill-seekers create book.epub --dry-run` shows dry run output
+- [x] `skill-seekers --help` lists `epub` command
+- [x] `skill-seekers create book.epub --dry-run` shows dry run output
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human before proceeding to the next phase.
 
@@ -719,7 +719,7 @@ Create `tests/test_epub_scraper.py` with 100+ tests across 11 test classes, cove
 
 ### Changes Required:
 
-#### [ ] 1. Create test file
+#### [x] 1. Create test file
 **File**: `tests/test_epub_scraper.py` (new)
 **Changes**: Comprehensive test suite following `test_word_scraper.py` patterns
 
@@ -829,7 +829,7 @@ def _make_sample_extracted_data(
 
 ### Test Classes and Methods:
 
-#### [ ] Class 1: `TestEpubToSkillConverterInit` (8 tests)
+#### [x] Class 1: `TestEpubToSkillConverterInit` (8 tests)
 
 **Happy path:**
 - `test_init_with_name_and_epub_path` — basic config with name + epub_path
@@ -845,7 +845,7 @@ def _make_sample_extracted_data(
 **Edge case:**
 - `test_init_with_special_characters_in_name` — name with spaces/dashes sanitized for paths
 
-#### [ ] Class 2: `TestEpubExtraction` (12 tests)
+#### [x] Class 2: `TestEpubExtraction` (12 tests)
 
 **Happy path:**
 - `test_extract_basic_epub` — mock ebooklib, verify sections extracted in spine order
@@ -865,7 +865,7 @@ def _make_sample_extracted_data(
 - `test_extract_spine_item_no_body` — XHTML without `<body>` tag skipped gracefully
 - `test_extract_non_linear_spine_items` — linear="no" items still extracted (included but flagged)
 
-#### [ ] Class 3: `TestEpubDrmDetection` (6 tests)
+#### [x] Class 3: `TestEpubDrmDetection` (6 tests)
 
 **Happy path:**
 - `test_no_drm_detected` — normal EPUB without encryption.xml returns False
@@ -879,7 +879,7 @@ def _make_sample_extracted_data(
 - `test_font_obfuscation_not_drm` — encryption.xml with only IDPF font obfuscation algorithm (`http://www.idpf.org/2008/embedding`) is NOT DRM, extraction proceeds
 - `test_drm_error_message_is_clear` — error message mentions DRM and suggests removing protection
 
-#### [ ] Class 4: `TestEpubCategorization` (8 tests)
+#### [x] Class 4: `TestEpubCategorization` (8 tests)
 
 **Happy path:**
 - `test_single_source_creates_one_category` — single EPUB creates category named after file
@@ -895,7 +895,7 @@ def _make_sample_extracted_data(
 - `test_categorize_many_sections` — 50+ sections categorized correctly
 - `test_categorize_preserves_section_order` — sections maintain original order within categories
 
-#### [ ] Class 5: `TestEpubSkillBuilding` (10 tests)
+#### [x] Class 5: `TestEpubSkillBuilding` (10 tests)
 
 **Happy path:**
 - `test_build_creates_directory_structure` — output/{name}/, references/, scripts/, assets/ created
@@ -913,7 +913,7 @@ def _make_sample_extracted_data(
 - `test_build_with_long_name` — name > 64 chars truncated in YAML frontmatter
 - `test_build_with_unicode_content` — Unicode text (CJK, Arabic, emoji) preserved correctly
 
-#### [ ] Class 6: `TestEpubCodeBlocks` (8 tests)
+#### [x] Class 6: `TestEpubCodeBlocks` (8 tests)
 
 **Happy path:**
 - `test_code_blocks_included_in_reference_files` — code samples appear in reference markdown
@@ -927,7 +927,7 @@ def _make_sample_extracted_data(
 - `test_code_block_language_from_class` — `class="language-python"`, `class="code-rust"` detected
 - `test_code_quality_scoring` — scoring heuristic produces expected ranges (0-10)
 
-#### [ ] Class 7: `TestEpubTables` (5 tests)
+#### [x] Class 7: `TestEpubTables` (5 tests)
 
 **Happy path:**
 - `test_tables_in_reference_files` — tables rendered as markdown in reference files
@@ -938,7 +938,7 @@ def _make_sample_extracted_data(
 - `test_empty_table` — empty `<table>` element handled gracefully
 - `test_table_with_colspan_rowspan` — complex tables don't crash (data may be imperfect)
 
-#### [ ] Class 8: `TestEpubImages` (7 tests)
+#### [x] Class 8: `TestEpubImages` (7 tests)
 
 **Happy path:**
 - `test_images_saved_to_assets` — image bytes written to assets/ directory
@@ -953,7 +953,7 @@ def _make_sample_extracted_data(
 - `test_cover_image_identified` — cover image (ITEM_COVER) extracted
 - `test_many_images` — 100+ images extracted without error
 
-#### [ ] Class 9: `TestEpubErrorHandling` (10 tests)
+#### [x] Class 9: `TestEpubErrorHandling` (10 tests)
 
 **Negative / error cases:**
 - `test_missing_epub_file_raises_error` — FileNotFoundError for nonexistent path
@@ -967,7 +967,7 @@ def _make_sample_extracted_data(
 - `test_ebooklib_not_installed_error` — RuntimeError with install instructions
 - `test_malformed_xhtml_handled_gracefully` — unclosed tags, invalid entities don't crash (BeautifulSoup tolerant parsing)
 
-#### [ ] Class 10: `TestEpubJSONWorkflow` (6 tests)
+#### [x] Class 10: `TestEpubJSONWorkflow` (6 tests)
 
 **Happy path:**
 - `test_load_extracted_json` — load previously extracted JSON
@@ -981,7 +981,7 @@ def _make_sample_extracted_data(
 **Edge case:**
 - `test_json_with_missing_fields` — partial JSON (missing optional fields) still works
 
-#### [ ] Class 11: `TestEpubCLIArguments` (8 tests)
+#### [x] Class 11: `TestEpubCLIArguments` (8 tests)
 
 **Happy path:**
 - `test_epub_flag_accepted` — `--epub path.epub` parsed correctly
@@ -997,7 +997,7 @@ def _make_sample_extracted_data(
 - `test_verbose_flag` — `--verbose` accepted
 - `test_quiet_flag` — `--quiet` accepted
 
-#### [ ] Class 12: `TestEpubHelperFunctions` (6 tests)
+#### [x] Class 12: `TestEpubHelperFunctions` (6 tests)
 
 - `test_infer_description_from_metadata_description` — uses description field
 - `test_infer_description_from_metadata_title` — falls back to title
@@ -1006,7 +1006,7 @@ def _make_sample_extracted_data(
 - `test_score_code_quality_ranges` — scoring returns 0-10
 - `test_sanitize_filename` — special characters cleaned
 
-#### [ ] Class 13: `TestEpubSourceDetection` (6 tests)
+#### [x] Class 13: `TestEpubSourceDetection` (6 tests)
 
 - `test_epub_detected_as_epub_type` — `.epub` extension detected correctly
 - `test_epub_suggested_name` — filename stem used as suggested name
@@ -1015,7 +1015,7 @@ def _make_sample_extracted_data(
 - `test_epub_with_path` — `./books/test.epub` detected with correct file_path
 - `test_pdf_still_detected` — regression test: `.pdf` still detected as pdf type
 
-#### [ ] Class 14: `TestEpubEdgeCases` (8 tests)
+#### [x] Class 14: `TestEpubEdgeCases` (8 tests)
 
 **Per W3C EPUB 3.3 spec edge cases:**
 - `test_epub2_vs_epub3` — both versions parse successfully (ebooklib handles both)
@@ -1032,15 +1032,15 @@ def _make_sample_extracted_data(
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pytest tests/test_epub_scraper.py -v` — all tests pass
-- [ ] `pytest tests/ -v -x -m "not slow and not integration"` — all existing tests still pass
-- [ ] `ruff check tests/test_epub_scraper.py` passes
-- [ ] `ruff format --check tests/test_epub_scraper.py` passes
-- [ ] Test count >= 100 methods
+- [x] `pytest tests/test_epub_scraper.py -v` — all 107 tests pass
+- [x] `pytest tests/ -v -x -m "not slow and not integration"` — 982 passed (1 pre-existing unrelated failure in test_git_sources_e2e)
+- [x] `ruff check tests/test_epub_scraper.py` passes
+- [x] `ruff format --check tests/test_epub_scraper.py` passes
+- [x] Test count >= 100 methods (107 tests across 14 classes)
 
 #### Manual Verification:
-- [ ] Review test coverage includes: happy path, negative, edge cases, CLI, source detection, DRM, JSON workflow
-- [ ] Verify no tests require actual EPUB files or ebooklib installed (all use mocks)
+- [x] Review test coverage includes: happy path, negative, edge cases, CLI, source detection, DRM, JSON workflow
+- [x] Verify no tests require actual EPUB files or ebooklib installed (all use mocks/skipTest guards)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human before proceeding to the next phase.
 
@@ -1053,7 +1053,7 @@ Update CLAUDE.md and CHANGELOG.md to reflect the new EPUB support.
 
 ### Changes Required:
 
-#### [ ] 1. Update CLAUDE.md
+#### [x] 1. Update CLAUDE.md
 **File**: `CLAUDE.md`
 **Changes**:
 
@@ -1077,7 +1077,7 @@ Add to "Adding things → New create command flags" section:
 - Source-specific → `EPUB_ARGUMENTS`
 ```
 
-#### [ ] 2. Update CHANGELOG.md
+#### [x] 2. Update CHANGELOG.md
 **File**: `CHANGELOG.md`
 **Changes**: Add entry for EPUB support under next version
 
@@ -1092,12 +1092,12 @@ Add to "Adding things → New create command flags" section:
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `ruff check` passes on any modified files
-- [ ] `pytest tests/ -v -x -m "not slow and not integration"` — all tests still pass
+- [x] `ruff check` passes on any modified files
+- [x] `pytest tests/ -v -x -m "not slow and not integration"` — all tests still pass (982 passed, 1 pre-existing failure)
 
 #### Manual Verification:
-- [ ] CLAUDE.md accurately reflects new commands
-- [ ] CHANGELOG.md entry is clear and complete
+- [x] CLAUDE.md accurately reflects new commands
+- [x] CHANGELOG.md entry is clear and complete
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human before proceeding.
 

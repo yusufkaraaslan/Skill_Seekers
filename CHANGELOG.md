@@ -5,6 +5,18 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **EPUB (.epub) input support** via `skill-seekers create book.epub` or `skill-seekers epub --epub book.epub`
+  - Extracts chapters, metadata (Dublin Core), code blocks, images, and tables from EPUB 2 and EPUB 3 files
+  - DRM detection with clear error messages (Adobe ADEPT, Apple FairPlay, Readium LCP)
+  - Font obfuscation correctly identified as non-DRM
+  - EPUB 3 TOC bug workaround (`ignore_ncx` option)
+  - `--help-epub` flag for EPUB-specific help
+  - Optional dependency: `pip install "skill-seekers[epub]"` (ebooklib)
+  - 107 tests across 14 test classes
+
 ## [3.2.0] - 2026-03-01
 
 **Theme:** Video source support, Word document support, Pinecone adaptor, and quality improvements. 94 files changed, +23,500 lines since v3.1.3. **2,540 tests passing.**
