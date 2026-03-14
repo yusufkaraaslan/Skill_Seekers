@@ -16,6 +16,7 @@ Usage:
 
 import argparse
 import fnmatch
+import itertools
 import json
 import logging
 import os
@@ -812,7 +813,7 @@ class GitHubScraper:
             issues = self.repo.get_issues(state="all", sort="updated", direction="desc")
 
             issue_list = []
-            for issue in issues[: self.max_issues]:
+            for issue in itertools.islice(issues, self.max_issues):
                 # Skip pull requests (they appear in issues)
                 if issue.pull_request:
                     continue
