@@ -30,6 +30,7 @@ from .update_parser import UpdateParser
 from .multilang_parser import MultilangParser
 from .quality_parser import QualityParser
 from .workflows_parser import WorkflowsParser
+from .sync_config_parser import SyncConfigParser
 
 # Registry of all parsers (in order of usage frequency)
 PARSERS = [
@@ -56,6 +57,7 @@ PARSERS = [
     MultilangParser(),
     QualityParser(),
     WorkflowsParser(),
+    SyncConfigParser(),
 ]
 
 

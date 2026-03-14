@@ -103,6 +103,8 @@ try:
         # Splitting tools
         split_config_impl,
         submit_config_impl,
+        # Sync config tools
+        sync_config_impl,
         upload_skill_impl,
         validate_config_impl,
         # Workflow tools
@@ -144,6 +146,7 @@ except ImportError:
         scrape_video_impl,
         split_config_impl,
         submit_config_impl,
+        sync_config_impl,
         upload_skill_impl,
         validate_config_impl,
         list_workflows_impl,
@@ -246,6 +249,52 @@ async def validate_config(config_path: str) -> str:
         Validation result with any errors or success message.
     """
     result = await validate_config_impl({"config_path": config_path})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+# ============================================================================
+# SYNC CONFIG TOOLS (1 tool)
+# ============================================================================
+
+
+@safe_tool_decorator(description="Sync a config's start_urls against what's live on the docs site.")
+async def sync_config(
+    config_path: str,
+    apply: bool = False,
+    depth: int = 2,
+    max_pages: int = 500,
+    rate_limit: float | None = None,
+    source_index: int = 0,
+) -> str:
+    """
+    Sync a config file's start_urls against the live docs site.
+
+    Crawls seed/nav pages, discovers internal links, and diffs against the
+    config's existing start_urls. Optionally writes the update with apply=True.
+
+    Args:
+        config_path: Path to the config JSON file.
+        apply: Write changes back to the config file (default: False).
+        depth: BFS crawl depth from seed pages (default: 2).
+        max_pages: Maximum URLs to discover (default: 500).
+        rate_limit: Override config rate limit (seconds between requests).
+        source_index: Index of the documentation source to sync (default: 0).
+
+    Returns:
+        Report of added/removed URLs.
+    """
+    result = await sync_config_impl(
+        {
+            "config_path": config_path,
+            "apply": apply,
+            "depth": depth,
+            "max_pages": max_pages,
+            "rate_limit": rate_limit,
+            "source_index": source_index,
+        }
+    )
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
