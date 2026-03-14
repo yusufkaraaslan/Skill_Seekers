@@ -289,7 +289,7 @@ skill-seekers quality output/myskill/
 
 **"No code examples found"**
 - Add code blocks to SKILL.md
-- Run enhancement: `python3 cli/enhance_skill_local.py output/myskill/`
+- Run enhancement: `skill-seekers enhance output/myskill/`
 
 **"Generic description"**
 - Rewrite "When to Use" section
@@ -436,9 +436,9 @@ That's it! Follow these practices and your skills will work better with Claude.
 
 ## See Also
 
-- [ENHANCEMENT.md](ENHANCEMENT.md) - AI-powered SKILL.md improvement
-- [UPLOAD_GUIDE.md](UPLOAD_GUIDE.md) - How to upload skills to Claude
-- [USAGE.md](USAGE.md) - Complete command reference
+- [Enhancement Guide](features/ENHANCEMENT.md) - AI-powered SKILL.md improvement
+- [Upload Guide](guides/UPLOAD_GUIDE.md) - How to upload skills to Claude
+- [CLI Reference](reference/CLI_REFERENCE.md) - Complete command reference
 
 ---
 
