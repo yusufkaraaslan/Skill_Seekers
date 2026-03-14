@@ -67,6 +67,7 @@ COMMAND_MODULES = {
     "multilang": "skill_seekers.cli.multilang_support",
     "quality": "skill_seekers.cli.quality_metrics",
     "workflows": "skill_seekers.cli.workflows_command",
+    "sync-config": "skill_seekers.cli.sync_config",
 }
 
 
