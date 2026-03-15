@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-03-16
+
+**Theme:** 10 new source types (17 total), EPUB unified integration, sync-config command, performance optimizations, 12 README translations, and 19 bug fixes. 117 files changed, +41,588 lines since v3.2.0.
+
+### Supported Source Types (17)
+
+| # | Type | CLI Command | Config Type | Auto-Detection |
+|---|------|-------------|-------------|----------------|
+| 1 | Documentation (web) | `scrape` / `create <url>` | `documentation` | HTTP/HTTPS URLs |
+| 2 | GitHub repository | `github` / `create owner/repo` | `github` | `owner/repo` or github.com URLs |
+| 3 | PDF document | `pdf` / `create file.pdf` | `pdf` | `.pdf` extension |
+| 4 | Word document | `word` / `create file.docx` | `word` | `.docx` extension |
+| 5 | EPUB e-book | `epub` / `create file.epub` | `epub` | `.epub` extension |
+| 6 | Video | `video` / `create <url/file>` | `video` | YouTube/Vimeo URLs, video extensions |
+| 7 | Local codebase | `analyze` / `create ./path` | `local` | Directory paths |
+| 8 | Jupyter Notebook | `jupyter` / `create file.ipynb` | `jupyter` | `.ipynb` extension |
+| 9 | Local HTML | `html` / `create file.html` | `html` | `.html`/`.htm` extensions |
+| 10 | OpenAPI/Swagger | `openapi` / `create spec.yaml` | `openapi` | `.yaml`/`.yml` with OpenAPI content |
+| 11 | AsciiDoc | `asciidoc` / `create file.adoc` | `asciidoc` | `.adoc`/`.asciidoc` extensions |
+| 12 | PowerPoint | `pptx` / `create file.pptx` | `pptx` | `.pptx` extension |
+| 13 | RSS/Atom feed | `rss` / `create feed.rss` | `rss` | `.rss`/`.atom` extensions |
+| 14 | Man pages | `manpage` / `create cmd.1` | `manpage` | `.1`–`.8`/`.man` extensions |
+| 15 | Confluence wiki | `confluence` | `confluence` | API or export directory |
+| 16 | Notion pages | `notion` | `notion` | API or export directory |
+| 17 | Slack/Discord chat | `chat` | `chat` | Export directory or API |
+
 ### Added
 
 #### 10 New Skill Source Types (17 total)
@@ -123,10 +149,29 @@ Skill Seekers now supports 17 source types — up from 7. Every new type is full
 - **7 new optional dependency groups** in pyproject.toml — `[jupyter]`, `[asciidoc]`, `[pptx]`, `[confluence]`, `[notion]`, `[rss]`, `[chat]`
 - **`[all]` group updated** — Includes all 7 new optional dependencies
 
+#### Sync Config Command
+- **`skill-seekers sync-config`** — New subcommand that crawls a docs site's navigation, diffs discovered URLs against a config's `start_urls`, and optionally writes the updated list back with `--apply` (#306)
+  - BFS link discovery with configurable depth (default 2), max-pages, rate-limit
+  - Respects `url_patterns.include/exclude` from config
+  - Supports optional `nav_seed_urls` config field
+  - Handles both unified (sources array) and legacy flat config formats
+  - MCP `sync_config` tool included
+  - 57 tests (39 unit + 18 E2E with local HTTP server)
+
 #### Workflow & Documentation
 - **`complex-merge.yaml`** — New 7-stage AI-powered workflow for complex multi-source merging (source inventory → cross-reference → conflict detection → priority merge → gap analysis → synthesis → quality check)
 - **AGENTS.md rewritten** — Updated with all 17 source types, scraper pattern docs, project layout, and key pattern documentation
 - **77 new integration tests** in `test_new_source_types.py` — Source detection, config validation, generic merge, CLI wiring, validation, and create command routing
+- **`docs/BEST_PRACTICES.md`** — Comprehensive guide for creating high-quality skills: SKILL.md structure, code examples, prerequisites, troubleshooting, quality targets, and real-world Grade F to Grade A example (#206)
+- **Documentation updated for 17 source types** — 32 files updated across README, CLI reference, feature matrix, MCP reference, config format, API reference, unified scraping, multi-source guide, installation, quick-start, core concepts, user guide, FAQ, troubleshooting, architecture, and all Chinese (zh-CN) translations
+- **README translations for 10 languages (12 total)** — Added Japanese (日本語), Korean (한국어), Spanish (Español), French (Français), German (Deutsch), Portuguese (Português), Turkish (Türkçe), Arabic (العربية), Hindi (हिन्दी), and Russian (Русский) README translations with language selector bar across all versions
+
+### Performance
+- **Pre-compiled regex and O(1) URL dedup in doc_scraper** — Module-level compiled patterns, `_enqueued_urls` set for O(1) dedup, cached URL patterns, async error logging fix (#309)
+- **Bisect-based line indexing in code_analyzer and dependency_analyzer** — O(log n) `offset_to_line()` via bisect replaces O(n) `count("\n")` across all 10 language analyzers and all import extractors
+- **O(n) parent class map for Python method detection** — Replaces O(n²) repeated AST walks in code_analyzer
+- **O(1) tree traversal in github_scraper** — `deque.popleft()` replaces list `pop(0)`
+- **Shared `build_line_index()` / `offset_to_line()` utilities** in `cli/utils.py` — DRY extraction from code_analyzer and dependency_analyzer
 
 ### Fixed
 - **Config validator missing `word` and `video` dispatch** — `_validate_source()` had no `elif` branches for `word` or `video` types, silently skipping validation. Added dispatch entries and `_validate_word_source()` / `_validate_video_source()` methods.
@@ -142,6 +187,13 @@ Skill Seekers now supports 17 source types — up from 7. Every new type is full
 - **`source_detector.py` module docstring stale** — Described only 5 source types. Updated to describe 14+ detected types.
 - **`manpage_parser.py` docstring referenced wrong file** — Said `manpage_scraper.py` but actual file is `man_scraper.py`. Fixed.
 - **Parser registry test count** — Updated expected count from 25 to 35 for 10 new parsers.
+- **'Invalid IPv6 URL' error on bracket-containing URLs (#284)** — URLs with square brackets (e.g., `/api/[v1]/users`) discovered via BFS crawl or HTML extraction bypassed the original fix in `_clean_url()`. Added shared `sanitize_url()` utility applied at every URL ingestion point. 16 new tests.
+- **GitHub scraper 'list index out of range' on issue extraction (#269)** — PyGithub's `PaginatedList` slicing could fail on some versions or empty repos. Replaced with `itertools.islice()`.
+- **Release workflow version mismatch** — GitHub release showed wrong version (v3.1.3 instead of v3.2.0) because no explicit release name was set and sed regex had unescaped dots. Added explicit `name`/`tag_name`, version consistency check (tag vs pyproject.toml vs package), and empty release notes fallback.
+- **Release workflow Python 3.10 compatibility** — Version consistency check used `tomllib` (Python 3.11+). Replaced with grep/sed for 3.10 compatibility.
+- **`infer_categories()` "tutorial" vs "tutorials" key mismatch** — Guard checked `'tutorial'` but wrote to `'tutorials'` key, risking silent overwrites in category inference.
+- **Flaky `test_benchmark_metadata_overhead`** — Stabilized with 20 iterations, warm-up run, median averaging, and 200% threshold (was failing on CI with 5 iterations and mean).
+- **CI branch protection check permanently pending** — Summary job was named 'All Checks Complete' but branch protection required 'Tests'. PRs were stuck as 'Expected — Waiting for status to be reported'. Renamed job to match.
 
 ## [3.2.0] - 2026-03-01
 
