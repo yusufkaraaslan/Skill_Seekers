@@ -15,7 +15,17 @@ Commands:
     word                 Extract from Word (.docx) file
     epub                 Extract from EPUB e-book (.epub)
     video                Extract from video (YouTube or local)
-    unified              Multi-source scraping (docs + GitHub + PDF)
+    jupyter              Extract from Jupyter Notebook (.ipynb)
+    html                 Extract from local HTML files
+    openapi              Extract from OpenAPI/Swagger spec
+    asciidoc             Extract from AsciiDoc documents (.adoc)
+    pptx                 Extract from PowerPoint (.pptx)
+    rss                  Extract from RSS/Atom feeds
+    manpage              Extract from man pages
+    confluence           Extract from Confluence wiki
+    notion               Extract from Notion pages
+    chat                 Extract from Slack/Discord chat exports
+    unified              Multi-source scraping (docs + GitHub + PDF + more)
     analyze              Analyze local codebase and extract code knowledge
     enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
@@ -70,6 +80,17 @@ COMMAND_MODULES = {
     "quality": "skill_seekers.cli.quality_metrics",
     "workflows": "skill_seekers.cli.workflows_command",
     "sync-config": "skill_seekers.cli.sync_config",
+    # New source types (v3.2.0+)
+    "jupyter": "skill_seekers.cli.jupyter_scraper",
+    "html": "skill_seekers.cli.html_scraper",
+    "openapi": "skill_seekers.cli.openapi_scraper",
+    "asciidoc": "skill_seekers.cli.asciidoc_scraper",
+    "pptx": "skill_seekers.cli.pptx_scraper",
+    "rss": "skill_seekers.cli.rss_scraper",
+    "manpage": "skill_seekers.cli.man_scraper",
+    "confluence": "skill_seekers.cli.confluence_scraper",
+    "notion": "skill_seekers.cli.notion_scraper",
+    "chat": "skill_seekers.cli.chat_scraper",
 }
 
 

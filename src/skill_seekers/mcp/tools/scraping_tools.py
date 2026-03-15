@@ -7,6 +7,8 @@ This module contains all scraping-related MCP tool implementations:
 - scrape_github_tool: Scrape GitHub repositories
 - scrape_pdf_tool: Scrape PDF documentation
 - scrape_codebase_tool: Analyze local codebase and extract code knowledge
+- scrape_generic_tool: Generic scraper for new source types (jupyter, html,
+  openapi, asciidoc, pptx, confluence, notion, rss, manpage, chat)
 
 Extracted from server.py for better modularity and organization.
 """
@@ -1005,3 +1007,155 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=output_text)]
     else:
         return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+
+
+# Valid source types for the generic scraper
+GENERIC_SOURCE_TYPES = (
+    "jupyter",
+    "html",
+    "openapi",
+    "asciidoc",
+    "pptx",
+    "confluence",
+    "notion",
+    "rss",
+    "manpage",
+    "chat",
+)
+
+# Mapping from source type to the CLI flag used for the primary input argument.
+# URL-based types use --url; file/path-based types use --path.
+_URL_BASED_TYPES = {"confluence", "notion", "rss"}
+
+# Friendly emoji labels per source type
+_SOURCE_EMOJIS = {
+    "jupyter": "📓",
+    "html": "🌐",
+    "openapi": "📡",
+    "asciidoc": "📄",
+    "pptx": "📊",
+    "confluence": "🏢",
+    "notion": "📝",
+    "rss": "📰",
+    "manpage": "📖",
+    "chat": "💬",
+}
+
+
+async def scrape_generic_tool(args: dict) -> list[TextContent]:
+    """
+    Generic scraper for new source types.
+
+    Handles all 10 new source types by building the appropriate subprocess
+    command and delegating to the corresponding CLI scraper module.
+
+    Supported source types: jupyter, html, openapi, asciidoc, pptx,
+    confluence, notion, rss, manpage, chat.
+
+    Args:
+        args: Dictionary containing:
+            - source_type (str): One of the supported source types
+            - path (str, optional): File or directory path (for file-based sources)
+            - url (str, optional): URL (for URL-based sources like confluence, notion, rss)
+            - name (str): Skill name for the output
+
+    Returns:
+        List[TextContent]: Tool execution results
+    """
+    source_type = args.get("source_type", "")
+    path = args.get("path")
+    url = args.get("url")
+    name = args.get("name")
+
+    # Validate source_type
+    if source_type not in GENERIC_SOURCE_TYPES:
+        return [
+            TextContent(
+                type="text",
+                text=(
+                    f"❌ Error: Unknown source_type '{source_type}'. "
+                    f"Must be one of: {', '.join(GENERIC_SOURCE_TYPES)}"
+                ),
+            )
+        ]
+
+    # Validate that we have either path or url
+    if not path and not url:
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: Must specify either 'path' (file/directory) or 'url'",
+            )
+        ]
+
+    if not name:
+        return [
+            TextContent(
+                type="text",
+                text="❌ Error: 'name' parameter is required",
+            )
+        ]
+
+    # Build the subprocess command
+    # Map source type to module name (most are <type>_scraper, but some differ)
+    _MODULE_NAMES = {
+        "manpage": "man_scraper",
+    }
+    module_name = _MODULE_NAMES.get(source_type, f"{source_type}_scraper")
+    cmd = [sys.executable, "-m", f"skill_seekers.cli.{module_name}"]
+
+    # Map source type to the correct CLI flag for file/path input and URL input.
+    # Each scraper has its own flag name — using a generic --path or --url would fail.
+    _PATH_FLAGS: dict[str, str] = {
+        "jupyter": "--notebook",
+        "html": "--html-path",
+        "openapi": "--spec",
+        "asciidoc": "--asciidoc-path",
+        "pptx": "--pptx",
+        "manpage": "--man-path",
+        "confluence": "--export-path",
+        "notion": "--export-path",
+        "rss": "--feed-path",
+        "chat": "--export-path",
+    }
+    _URL_FLAGS: dict[str, str] = {
+        "confluence": "--base-url",
+        "notion": "--page-id",
+        "rss": "--feed-url",
+        "openapi": "--spec-url",
+    }
+
+    # Determine the input flag based on source type
+    if source_type in _URL_BASED_TYPES and url:
+        url_flag = _URL_FLAGS.get(source_type, "--url")
+        cmd.extend([url_flag, url])
+    elif path:
+        path_flag = _PATH_FLAGS.get(source_type, "--path")
+        cmd.extend([path_flag, path])
+    elif url:
+        # Allow url fallback for file-based types (some may accept URLs too)
+        url_flag = _URL_FLAGS.get(source_type, "--url")
+        cmd.extend([url_flag, url])
+
+    cmd.extend(["--name", name])
+
+    # Set a reasonable timeout
+    timeout = 600  # 10 minutes
+
+    emoji = _SOURCE_EMOJIS.get(source_type, "🔧")
+    progress_msg = f"{emoji} Scraping {source_type} source...\n"
+    if path:
+        progress_msg += f"📁 Path: {path}\n"
+    if url:
+        progress_msg += f"🔗 URL: {url}\n"
+    progress_msg += f"📛 Name: {name}\n"
+    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+
+    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+
+    output = progress_msg + stdout
+
+    if returncode == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]

@@ -1,7 +1,12 @@
 """Source type detection for unified create command.
 
-Auto-detects whether a source is a web URL, GitHub repository,
-local directory, PDF file, or config file based on patterns.
+Auto-detects source type from user input — supports web URLs, GitHub repos,
+local directories, and 14+ file types (PDF, DOCX, EPUB, IPYNB, HTML, YAML/OpenAPI,
+AsciiDoc, PPTX, RSS/Atom, man pages, video files, and config JSON).
+
+Note: Confluence, Notion, and Slack/Discord chat sources are API/export-based
+and cannot be auto-detected from a single argument. Use their dedicated
+subcommands (``skill-seekers confluence``, ``notion``, ``chat``) instead.
 """
 
 import os
@@ -66,10 +71,48 @@ class SourceDetector:
         if source.endswith(".epub"):
             return cls._detect_epub(source)
 
+        if source.endswith(".ipynb"):
+            return cls._detect_jupyter(source)
+
+        if source.lower().endswith((".html", ".htm")):
+            return cls._detect_html(source)
+
+        if source.endswith(".pptx"):
+            return cls._detect_pptx(source)
+
+        if source.lower().endswith((".adoc", ".asciidoc")):
+            return cls._detect_asciidoc(source)
+
+        # Man page file extensions (.1 through .8, .man)
+        # Only match if the basename looks like a man page (e.g., "git.1", not "log.1")
+        # Require basename without the extension to be a plausible command name
+        if source.lower().endswith(".man"):
+            return cls._detect_manpage(source)
+        MAN_SECTION_EXTENSIONS = (".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8")
+        if source.lower().endswith(MAN_SECTION_EXTENSIONS):
+            # Heuristic: man pages have a simple basename (no dots before extension)
+            # e.g., "git.1" is a man page, "access.log.1" is not
+            basename_no_ext = os.path.splitext(os.path.basename(source))[0]
+            if "." not in basename_no_ext:
+                return cls._detect_manpage(source)
+
         # Video file extensions
         VIDEO_EXTENSIONS = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv")
         if source.lower().endswith(VIDEO_EXTENSIONS):
             return cls._detect_video_file(source)
+
+        # RSS/Atom feed file extensions (only .rss and .atom — .xml is too generic)
+        if source.lower().endswith((".rss", ".atom")):
+            return cls._detect_rss(source)
+
+        # OpenAPI/Swagger spec detection (YAML files with OpenAPI content)
+        # Sniff file content for 'openapi:' or 'swagger:' keys before committing
+        if (
+            source.lower().endswith((".yaml", ".yml"))
+            and os.path.isfile(source)
+            and cls._looks_like_openapi(source)
+        ):
+            return cls._detect_openapi(source)
 
         # 2. Video URL detection (before directory check)
         video_url_info = cls._detect_video_url(source)
@@ -97,15 +140,22 @@ class SourceDetector:
         raise ValueError(
             f"Cannot determine source type for: {source}\n\n"
             "Examples:\n"
-            "  Web:    skill-seekers create https://docs.react.dev/\n"
-            "  GitHub: skill-seekers create facebook/react\n"
-            "  Local:  skill-seekers create ./my-project\n"
-            "  PDF:    skill-seekers create tutorial.pdf\n"
-            "  DOCX:   skill-seekers create document.docx\n"
-            "  EPUB:   skill-seekers create ebook.epub\n"
-            "  Video:  skill-seekers create https://youtube.com/watch?v=...\n"
-            "  Video:  skill-seekers create recording.mp4\n"
-            "  Config: skill-seekers create configs/react.json"
+            "  Web:        skill-seekers create https://docs.react.dev/\n"
+            "  GitHub:     skill-seekers create facebook/react\n"
+            "  Local:      skill-seekers create ./my-project\n"
+            "  PDF:        skill-seekers create tutorial.pdf\n"
+            "  DOCX:       skill-seekers create document.docx\n"
+            "  EPUB:       skill-seekers create ebook.epub\n"
+            "  Jupyter:    skill-seekers create notebook.ipynb\n"
+            "  HTML:       skill-seekers create page.html\n"
+            "  OpenAPI:    skill-seekers create openapi.yaml\n"
+            "  AsciiDoc:   skill-seekers create document.adoc\n"
+            "  PowerPoint: skill-seekers create presentation.pptx\n"
+            "  RSS:        skill-seekers create feed.rss\n"
+            "  Man page:   skill-seekers create command.1\n"
+            "  Video:      skill-seekers create https://youtube.com/watch?v=...\n"
+            "  Video:      skill-seekers create recording.mp4\n"
+            "  Config:     skill-seekers create configs/react.json"
         )
 
     @classmethod
@@ -138,6 +188,90 @@ class SourceDetector:
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
             type="epub", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_jupyter(cls, source: str) -> SourceInfo:
+        """Detect Jupyter Notebook file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="jupyter", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_html(cls, source: str) -> SourceInfo:
+        """Detect local HTML file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="html", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_pptx(cls, source: str) -> SourceInfo:
+        """Detect PowerPoint file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="pptx", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_asciidoc(cls, source: str) -> SourceInfo:
+        """Detect AsciiDoc file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="asciidoc", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_manpage(cls, source: str) -> SourceInfo:
+        """Detect man page file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="manpage", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _detect_rss(cls, source: str) -> SourceInfo:
+        """Detect RSS/Atom feed file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="rss", parsed={"file_path": source}, suggested_name=name, raw_input=source
+        )
+
+    @classmethod
+    def _looks_like_openapi(cls, source: str) -> bool:
+        """Check if a YAML/JSON file looks like an OpenAPI or Swagger spec.
+
+        Reads the first few lines to look for 'openapi:' or 'swagger:' keys.
+
+        Args:
+            source: Path to the file
+
+        Returns:
+            True if the file appears to be an OpenAPI/Swagger spec
+        """
+        try:
+            with open(source, encoding="utf-8", errors="replace") as f:
+                # Read first 20 lines — the openapi/swagger key is always near the top
+                for _ in range(20):
+                    line = f.readline()
+                    if not line:
+                        break
+                    stripped = line.strip().lower()
+                    if stripped.startswith("openapi:") or stripped.startswith("swagger:"):
+                        return True
+                    if stripped.startswith('"openapi"') or stripped.startswith('"swagger"'):
+                        return True
+        except OSError:
+            pass
+        return False
+
+    @classmethod
+    def _detect_openapi(cls, source: str) -> SourceInfo:
+        """Detect OpenAPI/Swagger spec file source."""
+        name = os.path.splitext(os.path.basename(source))[0]
+        return SourceInfo(
+            type="openapi", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
 
     @classmethod
@@ -312,5 +446,19 @@ class SourceDetector:
             if not os.path.isfile(config_path):
                 raise ValueError(f"Path is not a file: {config_path}")
 
-        # For web and github, validation happens during scraping
-        # (URL accessibility, repo existence)
+        elif source_info.type in ("jupyter", "html", "pptx", "asciidoc", "manpage", "openapi"):
+            file_path = source_info.parsed.get("file_path", "")
+            if file_path:
+                type_label = source_info.type.upper()
+                if not os.path.exists(file_path):
+                    raise ValueError(f"{type_label} file does not exist: {file_path}")
+                if not os.path.isfile(file_path) and not os.path.isdir(file_path):
+                    raise ValueError(f"Path is not a file or directory: {file_path}")
+
+        elif source_info.type == "rss":
+            file_path = source_info.parsed.get("file_path", "")
+            if file_path and not os.path.exists(file_path):
+                raise ValueError(f"RSS/Atom file does not exist: {file_path}")
+
+        # For web, github, confluence, notion, chat, rss (URL), validation happens
+        # during scraping (URL accessibility, API auth, etc.)

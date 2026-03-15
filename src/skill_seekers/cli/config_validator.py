@@ -7,6 +7,19 @@ Validates unified config format that supports multiple sources:
 - github (repository scraping)
 - pdf (PDF document scraping)
 - local (local codebase analysis)
+- word (Word .docx document scraping)
+- video (video transcript/visual extraction)
+- epub (EPUB e-book extraction)
+- jupyter (Jupyter Notebook extraction)
+- html (local HTML file extraction)
+- openapi (OpenAPI/Swagger spec extraction)
+- asciidoc (AsciiDoc document extraction)
+- pptx (PowerPoint presentation extraction)
+- confluence (Confluence wiki extraction)
+- notion (Notion page extraction)
+- rss (RSS/Atom feed extraction)
+- manpage (man page extraction)
+- chat (Slack/Discord chat export extraction)
 
 Legacy config format support removed in v2.11.0.
 All configs must use unified format with 'sources' array.
@@ -27,7 +40,25 @@ class ConfigValidator:
     """
 
     # Valid source types
-    VALID_SOURCE_TYPES = {"documentation", "github", "pdf", "local", "word", "video"}
+    VALID_SOURCE_TYPES = {
+        "documentation",
+        "github",
+        "pdf",
+        "local",
+        "word",
+        "video",
+        "epub",
+        "jupyter",
+        "html",
+        "openapi",
+        "asciidoc",
+        "pptx",
+        "confluence",
+        "notion",
+        "rss",
+        "manpage",
+        "chat",
+    }
 
     # Valid merge modes
     VALID_MERGE_MODES = {"rule-based", "claude-enhanced"}
@@ -159,6 +190,32 @@ class ConfigValidator:
             self._validate_pdf_source(source, index)
         elif source_type == "local":
             self._validate_local_source(source, index)
+        elif source_type == "word":
+            self._validate_word_source(source, index)
+        elif source_type == "video":
+            self._validate_video_source(source, index)
+        elif source_type == "epub":
+            self._validate_epub_source(source, index)
+        elif source_type == "jupyter":
+            self._validate_jupyter_source(source, index)
+        elif source_type == "html":
+            self._validate_html_source(source, index)
+        elif source_type == "openapi":
+            self._validate_openapi_source(source, index)
+        elif source_type == "asciidoc":
+            self._validate_asciidoc_source(source, index)
+        elif source_type == "pptx":
+            self._validate_pptx_source(source, index)
+        elif source_type == "confluence":
+            self._validate_confluence_source(source, index)
+        elif source_type == "notion":
+            self._validate_notion_source(source, index)
+        elif source_type == "rss":
+            self._validate_rss_source(source, index)
+        elif source_type == "manpage":
+            self._validate_manpage_source(source, index)
+        elif source_type == "chat":
+            self._validate_chat_source(source, index)
 
     def _validate_documentation_source(self, source: dict[str, Any], index: int):
         """Validate documentation source configuration."""
@@ -253,12 +310,126 @@ class ConfigValidator:
                     f"Source {index} (local): Invalid ai_mode '{ai_mode}'. Must be one of {self.VALID_AI_MODES}"
                 )
 
+    def _validate_word_source(self, source: dict[str, Any], index: int):
+        """Validate Word document (.docx) source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (word): Missing required field 'path'")
+        word_path = source["path"]
+        if not Path(word_path).exists():
+            logger.warning(f"Source {index} (word): File not found: {word_path}")
+
+    def _validate_video_source(self, source: dict[str, Any], index: int):
+        """Validate video source configuration."""
+        has_url = "url" in source
+        has_path = "path" in source
+        has_playlist = "playlist" in source
+        if not has_url and not has_path and not has_playlist:
+            raise ValueError(
+                f"Source {index} (video): Missing required field 'url', 'path', or 'playlist'"
+            )
+
+    def _validate_epub_source(self, source: dict[str, Any], index: int):
+        """Validate EPUB source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (epub): Missing required field 'path'")
+        epub_path = source["path"]
+        if not Path(epub_path).exists():
+            logger.warning(f"Source {index} (epub): File not found: {epub_path}")
+
+    def _validate_jupyter_source(self, source: dict[str, Any], index: int):
+        """Validate Jupyter Notebook source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (jupyter): Missing required field 'path'")
+        nb_path = source["path"]
+        if not Path(nb_path).exists():
+            logger.warning(f"Source {index} (jupyter): Path not found: {nb_path}")
+
+    def _validate_html_source(self, source: dict[str, Any], index: int):
+        """Validate local HTML source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (html): Missing required field 'path'")
+        html_path = source["path"]
+        if not Path(html_path).exists():
+            logger.warning(f"Source {index} (html): Path not found: {html_path}")
+
+    def _validate_openapi_source(self, source: dict[str, Any], index: int):
+        """Validate OpenAPI/Swagger source configuration."""
+        if "path" not in source and "url" not in source:
+            raise ValueError(f"Source {index} (openapi): Missing required field 'path' or 'url'")
+        if "path" in source and not Path(source["path"]).exists():
+            logger.warning(f"Source {index} (openapi): File not found: {source['path']}")
+
+    def _validate_asciidoc_source(self, source: dict[str, Any], index: int):
+        """Validate AsciiDoc source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (asciidoc): Missing required field 'path'")
+        adoc_path = source["path"]
+        if not Path(adoc_path).exists():
+            logger.warning(f"Source {index} (asciidoc): Path not found: {adoc_path}")
+
+    def _validate_pptx_source(self, source: dict[str, Any], index: int):
+        """Validate PowerPoint source configuration."""
+        if "path" not in source:
+            raise ValueError(f"Source {index} (pptx): Missing required field 'path'")
+        pptx_path = source["path"]
+        if not Path(pptx_path).exists():
+            logger.warning(f"Source {index} (pptx): File not found: {pptx_path}")
+
+    def _validate_confluence_source(self, source: dict[str, Any], index: int):
+        """Validate Confluence source configuration."""
+        has_url = "url" in source or "base_url" in source
+        has_path = "path" in source
+        if not has_url and not has_path:
+            raise ValueError(
+                f"Source {index} (confluence): Missing required field 'url'/'base_url' "
+                f"(for API) or 'path' (for export)"
+            )
+        if has_url and "space_key" not in source and "path" not in source:
+            logger.warning(f"Source {index} (confluence): No 'space_key' specified for API mode")
+
+    def _validate_notion_source(self, source: dict[str, Any], index: int):
+        """Validate Notion source configuration."""
+        has_url = "url" in source or "database_id" in source or "page_id" in source
+        has_path = "path" in source
+        if not has_url and not has_path:
+            raise ValueError(
+                f"Source {index} (notion): Missing required field 'url'/'database_id'/'page_id' "
+                f"(for API) or 'path' (for export)"
+            )
+
+    def _validate_rss_source(self, source: dict[str, Any], index: int):
+        """Validate RSS/Atom feed source configuration."""
+        if "url" not in source and "path" not in source:
+            raise ValueError(f"Source {index} (rss): Missing required field 'url' or 'path'")
+
+    def _validate_manpage_source(self, source: dict[str, Any], index: int):
+        """Validate man page source configuration."""
+        if "path" not in source and "names" not in source:
+            raise ValueError(f"Source {index} (manpage): Missing required field 'path' or 'names'")
+        if "path" in source and not Path(source["path"]).exists():
+            logger.warning(f"Source {index} (manpage): Path not found: {source['path']}")
+
+    def _validate_chat_source(self, source: dict[str, Any], index: int):
+        """Validate Slack/Discord chat source configuration."""
+        has_path = "path" in source
+        has_api = "token" in source or "webhook_url" in source
+        has_channel = "channel" in source or "channel_id" in source
+        if not has_path and not has_api:
+            raise ValueError(
+                f"Source {index} (chat): Missing required field 'path' (for export) "
+                f"or 'token' (for API)"
+            )
+        if has_api and not has_channel:
+            logger.warning(
+                f"Source {index} (chat): No 'channel' or 'channel_id' specified for API mode"
+            )
+
     def get_sources_by_type(self, source_type: str) -> list[dict[str, Any]]:
         """
         Get all sources of a specific type.
 
         Args:
-            source_type: 'documentation', 'github', 'pdf', or 'local'
+            source_type: Any valid source type string
 
         Returns:
             List of sources matching the type

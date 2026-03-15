@@ -106,7 +106,9 @@ async def split_config(args: dict) -> list[TextContent]:
 
     Supports both documentation and unified (multi-source) configs:
     - Documentation configs: Split by categories, size, or create router skills
-    - Unified configs: Split by source type (documentation, github, pdf)
+    - Unified configs: Split by source type (documentation, github, pdf,
+      jupyter, html, openapi, asciidoc, pptx, confluence, notion, rss,
+      manpage, chat)
 
     For large documentation sites (10K+ pages), this tool splits the config into
     multiple smaller configs. For unified configs with multiple sources, splits

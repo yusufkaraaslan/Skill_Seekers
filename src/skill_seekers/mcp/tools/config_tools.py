@@ -205,6 +205,18 @@ async def validate_config(args: dict) -> list[TextContent]:
                         )
                     elif source["type"] == "pdf":
                         result += f"    Path: {source.get('path', 'N/A')}\n"
+                    elif source["type"] in (
+                        "jupyter",
+                        "html",
+                        "openapi",
+                        "asciidoc",
+                        "pptx",
+                        "manpage",
+                        "chat",
+                    ):
+                        result += f"    Path: {source.get('path', 'N/A')}\n"
+                    elif source["type"] in ("confluence", "notion", "rss"):
+                        result += f"    URL: {source.get('url', 'N/A')}\n"
 
                 # Show merge settings if applicable
                 if validator.needs_api_merge():

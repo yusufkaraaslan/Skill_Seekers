@@ -64,6 +64,9 @@ from .scraping_tools import (
     scrape_pdf_tool as scrape_pdf_impl,
 )
 from .scraping_tools import (
+    scrape_generic_tool as scrape_generic_impl,
+)
+from .scraping_tools import (
     scrape_video_tool as scrape_video_impl,
 )
 from .source_tools import (
@@ -135,6 +138,7 @@ __all__ = [
     "extract_test_examples_impl",
     "build_how_to_guides_impl",
     "extract_config_patterns_impl",
+    "scrape_generic_impl",
     # Packaging tools
     "package_skill_impl",
     "upload_skill_impl",

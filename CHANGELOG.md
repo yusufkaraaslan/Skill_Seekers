@@ -8,6 +8,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+#### 10 New Skill Source Types (17 total)
+
+Skill Seekers now supports 17 source types — up from 7. Every new type is fully integrated into the CLI (`skill-seekers <type>`), `create` command auto-detection, unified multi-source configs, config validation, the MCP server, and the skill builder.
+
+- **Jupyter Notebook** — `skill-seekers jupyter --notebook file.ipynb` or `skill-seekers create file.ipynb`
+  - Extracts markdown cells, code cells with outputs, kernel metadata, imports, and language detection
+  - Handles single files and directories of notebooks; filters `.ipynb_checkpoints`
+  - Optional dependency: `pip install "skill-seekers[jupyter]"` (nbformat)
+  - Entry point: `skill-seekers-jupyter`
+
+- **Local HTML** — `skill-seekers html --html-path file.html` or `skill-seekers create file.html`
+  - Parses HTML using BeautifulSoup with smart main content detection (`<article>`, `<main>`, `.content`, largest div)
+  - Extracts headings, code blocks, tables (to markdown), images, links; converts inline HTML to markdown
+  - Handles single files and directories; supports `.html`, `.htm`, `.xhtml` extensions
+  - No extra dependencies (BeautifulSoup is a core dep)
+
+- **OpenAPI/Swagger** — `skill-seekers openapi --spec spec.yaml` or `skill-seekers create spec.yaml`
+  - Parses OpenAPI 3.0/3.1 and Swagger 2.0 specs from YAML or JSON (local files or URLs via `--spec-url`)
+  - Extracts endpoints, parameters, request/response schemas, security schemes, tags
+  - Resolves `$ref` references with circular reference protection; handles `allOf`/`oneOf`/`anyOf`
+  - Groups endpoints by tags; generates comprehensive API reference markdown
+  - Source detection sniffs YAML file content for `openapi:` or `swagger:` keys (avoids false positives on non-API YAML files)
+  - Optional dependency: `pip install "skill-seekers[openapi]"` (pyyaml — already a core dep, guard added for safety)
+
+- **AsciiDoc** — `skill-seekers asciidoc --asciidoc-path file.adoc` or `skill-seekers create file.adoc`
+  - Regex-based parser (no external library required) with optional `asciidoc` library support
+  - Extracts headings (= through =====), `[source,lang]` code blocks, `|===` tables, admonitions (NOTE/TIP/WARNING/IMPORTANT/CAUTION), and `include::` directives
+  - Converts AsciiDoc formatting to markdown; handles single files and directories
+  - Optional dependency: `pip install "skill-seekers[asciidoc]"` (asciidoc library for advanced rendering)
+
+- **PowerPoint (.pptx)** — `skill-seekers pptx --pptx file.pptx` or `skill-seekers create file.pptx`
+  - Extracts slide text, speaker notes, tables, images (with alt text), and grouped shapes
+  - Detects code blocks by monospace font analysis (30+ font families)
+  - Groups slides into sections by layout type; handles single files and directories
+  - Optional dependency: `pip install "skill-seekers[pptx]"` (python-pptx)
+
+- **RSS/Atom Feeds** — `skill-seekers rss --feed-url <url>` / `--feed-path file.rss` or `skill-seekers create feed.rss`
+  - Parses RSS 2.0, RSS 1.0, and Atom feeds via feedparser
+  - Optionally follows article links (`--follow-links`, default on) to scrape full page content using BeautifulSoup
+  - Extracts article titles, summaries, authors, dates, categories; configurable `--max-articles` (default 50)
+  - Source detection matches `.rss` and `.atom` extensions (`.xml` excluded to avoid false positives)
+  - Optional dependency: `pip install "skill-seekers[rss]"` (feedparser)
+
+- **Man Pages** — `skill-seekers manpage --man-names git,curl` / `--man-path dir/` or `skill-seekers create git.1`
+  - Extracts man pages by running `man` command via subprocess or reading `.1`–`.8`/`.man` files directly
+  - Handles gzip/bzip2/xz compressed man files; strips troff/groff formatting (backspace overstriking, macros, font escapes)
+  - Parses structured sections (NAME, SYNOPSIS, DESCRIPTION, OPTIONS, EXAMPLES, SEE ALSO)
+  - Source detection uses basename heuristic to avoid false positives on log rotation files (e.g., `access.log.1`)
+  - No external dependencies (stdlib only)
+
+- **Confluence** — `skill-seekers confluence --base-url <url> --space-key <key>` or `--export-path dir/`
+  - API mode: fetches pages from Confluence REST API with pagination (`atlassian-python-api`)
+  - Export mode: parses Confluence HTML/XML export directories
+  - Extracts page content, code/panel/info/warning macros, page hierarchy, tables
+  - Optional dependency: `pip install "skill-seekers[confluence]"` (atlassian-python-api)
+
+- **Notion** — `skill-seekers notion --database-id <id>` / `--page-id <id>` or `--export-path dir/`
+  - API mode: fetches pages via Notion API with support for 20+ block types (paragraph, heading, code, callout, toggle, table, etc.)
+  - Export mode: parses Notion Markdown/CSV export directories
+  - Extracts rich text with annotations (bold, italic, code, links), 16+ property types for database entries
+  - Optional dependency: `pip install "skill-seekers[notion]"` (notion-client)
+
+- **Slack/Discord Chat** — `skill-seekers chat --export-path dir/` or `--token <token> --channel <channel>`
+  - Slack: parses workspace JSON exports or fetches via Slack Web API (`slack_sdk`)
+  - Discord: parses DiscordChatExporter JSON or fetches via Discord HTTP API
+  - Extracts messages, code snippets (fenced blocks), shared URLs, threads, reactions, attachments
+  - Generates per-channel summaries and topic categorization
+  - Optional dependency: `pip install "skill-seekers[chat]"` (slack-sdk)
+
+#### EPUB Unified Pipeline Integration
 - **EPUB (.epub) input support** via `skill-seekers create book.epub` or `skill-seekers epub --epub book.epub`
   - Extracts chapters, metadata (Dublin Core), code blocks, images, and tables from EPUB 2 and EPUB 3 files
   - DRM detection with clear error messages (Adobe ADEPT, Apple FairPlay, Readium LCP)
@@ -16,6 +87,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--help-epub` flag for EPUB-specific help
   - Optional dependency: `pip install "skill-seekers[epub]"` (ebooklib)
   - 107 tests across 14 test classes
+- **EPUB added to unified scraper** — `_scrape_epub()` method, `scraped_data["epub"]`, config validation (`_validate_epub_source`), and dry-run display. Previously EPUB worked standalone but was missing from multi-source configs.
+
+#### Unified Skill Builder — Generic Merge System
+- **`_generic_merge()`** — Priority-based section merge for any combination of source types not covered by existing pairwise synthesis (docs+github, docs+pdf, etc.). Produces YAML frontmatter + source-attributed sections.
+- **`_append_extra_sources()`** — Appends additional source type content (e.g., Jupyter + PPTX) to pairwise-synthesized SKILL.md.
+- **`_generate_generic_references()`** — Generates `references/<type>/index.md` for any source type, with ID resolution fallback chain.
+- **`_SOURCE_LABELS`** dict — Human-readable labels for all 17 source types used in merge attribution.
+
+#### Config Validator Expansion
+- **17 source types in `VALID_SOURCE_TYPES`** — All new types plus `word` and `video` now have per-type validation methods.
+- **`_validate_word_source()`** — Validates `path` field for Word documents (was previously missing).
+- **`_validate_video_source()`** — Validates `url`, `path`, or `playlist` field for video sources (was previously missing).
+- **11 new `_validate_*_source()` methods** — One for each new type with appropriate required-field checks.
+
+#### Source Detection Improvements
+- **7 new file extension detections** in `SourceDetector.detect()` — `.ipynb`, `.html`/`.htm`, `.pptx`, `.adoc`/`.asciidoc`, `.rss`/`.atom`, `.1`–`.8`/`.man`, `.yaml`/`.yml` (with content sniffing)
+- **`_looks_like_openapi()`** — Content sniffing for YAML files: only classifies as OpenAPI if the file contains `openapi:` or `swagger:` key in first 20 lines (prevents false positives on docker-compose, Ansible, Kubernetes manifests, etc.)
+- **Man page basename heuristic** — `.1`–`.8` extensions only detected as man pages if the basename has no dots (e.g., `git.1` matches but `access.log.1` does not)
+- **`.xml` excluded from RSS detection** — Too generic; only `.rss` and `.atom` trigger RSS detection
+
+#### MCP Server Integration
+- **`scrape_generic` tool** — New MCP tool handles all 10 new source types via subprocess with per-type flag mapping
+- **`_PATH_FLAGS` / `_URL_FLAGS` dicts** — Correct flag routing for each source type (e.g., jupyter→`--notebook`, html→`--html-path`, rss→`--feed-url`)
+- **`GENERIC_SOURCE_TYPES` tuple** — Lists all 10 new types for validation
+- **Config validation display** — `validate_config` tool now shows source details for all new types
+- **Tool count updated** — 33 → 34 tools (scraping tools 10 → 11)
+
+#### CLI Wiring
+- **10 new CLI subcommands** — `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `rss`, `manpage`, `confluence`, `notion`, `chat` in `COMMAND_MODULES`
+- **10 new argument modules** — `arguments/{jupyter,html,openapi,asciidoc,pptx,rss,manpage,confluence,notion,chat}.py` with per-type `*_ARGUMENTS` dicts
+- **10 new parser modules** — `parsers/{jupyter,html,openapi,asciidoc,pptx,rss,manpage,confluence,notion,chat}_parser.py` with `SubcommandParser` implementations
+- **`create` command routing** — `_route_generic()` method for all new types with correct module names and CLI flags
+- **10 new entry points** in pyproject.toml — `skill-seekers-{jupyter,html,openapi,asciidoc,pptx,rss,manpage,confluence,notion,chat}`
+- **7 new optional dependency groups** in pyproject.toml — `[jupyter]`, `[asciidoc]`, `[pptx]`, `[confluence]`, `[notion]`, `[rss]`, `[chat]`
+- **`[all]` group updated** — Includes all 7 new optional dependencies
+
+#### Workflow & Documentation
+- **`complex-merge.yaml`** — New 7-stage AI-powered workflow for complex multi-source merging (source inventory → cross-reference → conflict detection → priority merge → gap analysis → synthesis → quality check)
+- **AGENTS.md rewritten** — Updated with all 17 source types, scraper pattern docs, project layout, and key pattern documentation
+- **77 new integration tests** in `test_new_source_types.py` — Source detection, config validation, generic merge, CLI wiring, validation, and create command routing
+
+### Fixed
+- **Config validator missing `word` and `video` dispatch** — `_validate_source()` had no `elif` branches for `word` or `video` types, silently skipping validation. Added dispatch entries and `_validate_word_source()` / `_validate_video_source()` methods.
+- **`openapi_scraper.py` unconditional `import yaml`** — Would crash at import time if pyyaml not installed. Added `try/except ImportError` guard with `YAML_AVAILABLE` flag and `_check_yaml_deps()` helper.
+- **`asciidoc_scraper.py` missing standard arguments** — `main()` manually defined args instead of using `add_asciidoc_arguments()`. Refactored to use shared argument definitions + added enhancement workflow integration.
+- **`pptx_scraper.py` missing standard arguments** — Same issue. Refactored to use `add_pptx_arguments()`.
+- **`chat_scraper.py` missing standard arguments** — Same issue. Refactored to use `add_chat_arguments()`.
+- **`notion_scraper.py` missing `run_workflows` call** — `--enhance-workflow` flags were silently ignored. Added workflow runner integration.
+- **`openapi_scraper.py` return type `None`** — `main()` returned `None` instead of `int`. Fixed to `return 0` on success, matching all other scrapers.
+- **MCP `scrape_generic_tool` flag mismatch** — Was passing `--path`/`--url` as generic flags, but every scraper expects its own flag name (e.g., `--notebook`, `--html-path`, `--spec`). All 10 source types would have failed at runtime. Fixed with per-type `_PATH_FLAGS` and `_URL_FLAGS` mappings.
+- **Word scraper `docx_id` key mismatch** — Unified scraper data dict used `docx_id` but generic reference generation looked for `word_id`. Added `word_id` alias.
+- **`main.py` docstring stale** — Missing all 10 new commands. Updated to list all 27 commands.
+- **`source_detector.py` module docstring stale** — Described only 5 source types. Updated to describe 14+ detected types.
+- **`manpage_parser.py` docstring referenced wrong file** — Said `manpage_scraper.py` but actual file is `man_scraper.py`. Fixed.
+- **Parser registry test count** — Updated expected count from 25 to 35 for 10 new parsers.
 
 ## [3.2.0] - 2026-03-01
 

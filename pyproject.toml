@@ -168,6 +168,35 @@ all-cloud = [
     "azure-storage-blob>=12.19.0",
 ]
 
+# New source type dependencies (v3.2.0+)
+jupyter = [
+    "nbformat>=5.9.0",
+]
+
+asciidoc = [
+    "asciidoc>=10.0.0",
+]
+
+pptx = [
+    "python-pptx>=0.6.21",
+]
+
+confluence = [
+    "atlassian-python-api>=3.41.0",
+]
+
+notion = [
+    "notion-client>=2.0.0",
+]
+
+rss = [
+    "feedparser>=6.0.0",
+]
+
+chat = [
+    "slack-sdk>=3.27.0",
+]
+
 # Embedding server support
 embedding = [
     "fastapi>=0.109.0",
@@ -204,6 +233,14 @@ all = [
     "sentence-transformers>=2.3.0",
     "numpy>=1.24.0",
     "voyageai>=0.2.0",
+    # New source types (v3.2.0+)
+    "nbformat>=5.9.0",
+    "asciidoc>=10.0.0",
+    "python-pptx>=0.6.21",
+    "atlassian-python-api>=3.41.0",
+    "notion-client>=2.0.0",
+    "feedparser>=6.0.0",
+    "slack-sdk>=3.27.0",
 ]
 
 [project.urls]
@@ -252,6 +289,18 @@ skill-seekers-multilang = "skill_seekers.cli.multilang_support:main"
 skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"
 skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"
 skill-seekers-sync-config = "skill_seekers.cli.sync_config:main"
+
+# New source type entry points (v3.2.0+)
+skill-seekers-jupyter = "skill_seekers.cli.jupyter_scraper:main"
+skill-seekers-html = "skill_seekers.cli.html_scraper:main"
+skill-seekers-openapi = "skill_seekers.cli.openapi_scraper:main"
+skill-seekers-asciidoc = "skill_seekers.cli.asciidoc_scraper:main"
+skill-seekers-pptx = "skill_seekers.cli.pptx_scraper:main"
+skill-seekers-rss = "skill_seekers.cli.rss_scraper:main"
+skill-seekers-manpage = "skill_seekers.cli.man_scraper:main"
+skill-seekers-confluence = "skill_seekers.cli.confluence_scraper:main"
+skill-seekers-notion = "skill_seekers.cli.notion_scraper:main"
+skill-seekers-chat = "skill_seekers.cli.chat_scraper:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

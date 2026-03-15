@@ -1,0 +1,222 @@
+name: complex-merge
+description: Intelligent multi-source merging with conflict resolution, priority rules, and gap analysis
+version: "1.0"
+author: Skill Seekers
+tags:
+  - merge
+  - multi-source
+  - conflict-resolution
+  - synthesis
+applies_to:
+  - doc_scraping
+  - codebase_analysis
+  - github_analysis
+variables:
+  merge_strategy: priority
+  source_priority_order: "official_docs,code,community"
+  conflict_resolution: highest_priority
+  min_sources_for_consensus: 2
+stages:
+  - name: source_inventory
+    type: custom
+    target: inventory
+    uses_history: false
+    enabled: true
+    prompt: >
+      Catalog every source that contributed content to this skill extraction.
+      For each source, classify its type and assess its characteristics.
+
+      For each source, determine:
+      1. Source type (official_docs, codebase, github_repo, pdf, video, community, blog)
+      2. Content scope — what topics or areas does this source cover?
+      3. Freshness — how recent is the content? Look for version numbers, dates, deprecation notices
+      4. Authority level — is this an official maintainer, core contributor, or third party?
+      5. Content density — roughly how much substantive information does this source provide?
+      6. Format characteristics — prose, code samples, API reference, tutorial, etc.
+
+      Output JSON with:
+      - "sources": array of {id, type, scope_summary, topics_covered, freshness_estimate, authority, density, format}
+      - "source_type_distribution": count of sources by type
+      - "total_topics_identified": number of unique topics across all sources
+      - "coverage_summary": brief overview of what the combined sources cover
+
+  - name: cross_reference
+    type: custom
+    target: cross_references
+    uses_history: true
+    enabled: true
+    prompt: >
+      Using the source inventory, identify overlapping topics across sources.
+      Find where multiple sources discuss the same concept, API, feature, or pattern.
+
+      For each overlapping topic:
+      1. List which sources cover it and how deeply
+      2. Note whether sources agree, complement each other, or diverge
+      3. Identify the richest source for that topic (most detail, best examples)
+      4. Flag any terminology differences across sources for the same concept
+
+      Output JSON with:
+      - "overlapping_topics": array of {topic, sources_covering, agreement_level, richest_source, terminology_variants}
+      - "high_overlap_topics": topics covered by 3+ sources
+      - "complementary_pairs": pairs of sources that cover different aspects of the same topic well
+      - "terminology_map": dictionary mapping variant terms to a canonical term
+
+  - name: conflict_detection
+    type: custom
+    target: conflicts
+    uses_history: true
+    enabled: true
+    prompt: >
+      Examine the cross-referenced topics and identify genuine contradictions
+      between sources. Distinguish between true conflicts and superficial differences.
+
+      Categories of conflict to detect:
+      1. Factual contradictions — sources state opposite things about the same feature
+      2. Version mismatches — sources describe different versions of an API or behavior
+      3. Best practice disagreements — sources recommend conflicting approaches
+      4. Deprecated vs current — one source shows deprecated usage another shows current
+      5. Scope conflicts — sources disagree on what a feature can or cannot do
+
+      For each conflict:
+      - Identify the specific claim from each source
+      - Assess which source is more likely correct and why
+      - Recommend a resolution strategy
+
+      Output JSON with:
+      - "conflicts": array of {topic, type, source_a_claim, source_b_claim, likely_correct, resolution_rationale}
+      - "conflict_count_by_type": breakdown of conflicts by category
+      - "high_severity_conflicts": conflicts that would mislead users if unresolved
+      - "auto_resolvable": conflicts that can be resolved by version/date alone
+
+  - name: priority_merge
+    type: custom
+    target: merged_content
+    uses_history: true
+    enabled: true
+    prompt: >
+      Merge content from all sources using the following priority hierarchy:
+        1. Official documentation (highest authority)
+        2. Source code and inline comments (ground truth for behavior)
+        3. Community content — tutorials, blog posts, Stack Overflow (practical usage)
+
+      Merging rules:
+      - When sources agree, combine the best explanation with the best examples
+      - When sources conflict, prefer the higher-priority source but note the alternative
+      - When only a lower-priority source covers a topic, include it but flag the authority level
+      - Preserve code examples from any source, annotating their origin
+      - Deduplicate content — do not repeat the same information from multiple sources
+      - Normalize terminology using the canonical terms from cross-referencing
+
+      For each merged topic, produce:
+      1. Authoritative explanation (from highest-priority source)
+      2. Practical examples (best available from any source)
+      3. Source attribution (which sources contributed)
+      4. Confidence level (high if official docs confirm, medium if code-only, low if community-only)
+
+      Output JSON with:
+      - "merged_topics": array of {topic, explanation, examples, sources_used, confidence, notes}
+      - "merge_decisions": array of {topic, decision, rationale} for non-trivial merges
+      - "source_contribution_stats": how much each source contributed to the final output
+
+  - name: gap_analysis
+    type: custom
+    target: gaps
+    uses_history: true
+    enabled: true
+    prompt: >
+      Analyse the merged content to identify gaps — topics or areas that are
+      underrepresented or missing entirely.
+
+      Identify:
+      1. Single-source topics — covered by only one source, making them fragile
+      2. Missing fundamentals — core concepts that should be documented but are not
+      3. Missing examples — topics explained in prose but lacking code samples
+      4. Missing edge cases — common error scenarios or limitations not documented
+      5. Broken references — topics that reference other topics not present in any source
+      6. Audience gaps — content assumes knowledge that is never introduced
+
+      For each gap, assess:
+      - Severity (critical, important, nice-to-have)
+      - Whether the gap can be inferred from existing content
+      - Suggested source type that would best fill this gap
+
+      Output JSON with:
+      - "single_source_topics": array of {topic, sole_source, risk_level}
+      - "missing_fundamentals": topics that should exist but do not
+      - "example_gaps": topics needing code examples
+      - "edge_case_gaps": undocumented error scenarios
+      - "broken_references": internal references with no target
+      - "gap_severity_summary": counts by severity level
+
+  - name: synthesis
+    type: custom
+    target: skill_md
+    uses_history: true
+    enabled: true
+    prompt: >
+      Create a unified, coherent narrative from the merged content. The output
+      should read as if written by a single knowledgeable author, not as a
+      patchwork of multiple sources.
+
+      Synthesis guidelines:
+      1. Structure content logically — concepts build on each other
+      2. Lead with the most important information for each topic
+      3. Integrate code examples naturally within explanations
+      4. Use consistent voice, terminology, and formatting throughout
+      5. Add transition text between topics for narrative flow
+      6. Include a "Sources and Confidence" appendix noting where information came from
+      7. Mark any low-confidence or single-source claims with a caveat
+      8. Fill minor gaps by inference where safe to do so, clearly marking inferred content
+
+      Output JSON with:
+      - "synthesized_sections": array of {title, content, sources_used, confidence}
+      - "section_order": recommended reading order
+      - "inferred_content": content that was inferred rather than directly sourced
+      - "caveats": any warnings about content reliability
+
+  - name: quality_check
+    type: custom
+    target: quality
+    uses_history: true
+    enabled: true
+    prompt: >
+      Perform a final quality review of the synthesized output. Evaluate the
+      merge result against multiple quality dimensions.
+
+      Check for:
+      1. Completeness — does the output cover all topics from all sources?
+      2. Accuracy — are merged claims consistent and non-contradictory?
+      3. Coherence — does the document flow logically as a unified piece?
+      4. Attribution — are source contributions properly tracked?
+      5. Confidence calibration — are confidence levels appropriate?
+      6. Example quality — are code examples correct, runnable, and well-annotated?
+      7. Terminology consistency — is the canonical terminology used throughout?
+      8. Gap acknowledgment — are known gaps clearly communicated?
+
+      Scoring:
+      - Rate each dimension 1-10
+      - Provide specific issues found for any dimension scoring below 7
+      - Suggest concrete fixes for each issue
+
+      Output JSON with:
+      - "quality_scores": {completeness, accuracy, coherence, attribution, confidence_calibration, example_quality, terminology_consistency, gap_acknowledgment}
+      - "overall_score": weighted average (accuracy and completeness weighted 2x)
+      - "issues_found": array of {dimension, description, severity, suggested_fix}
+      - "merge_health": "excellent" | "good" | "needs_review" | "poor" based on overall score
+      - "recommendations": top 3 actions to improve merge quality
+
+post_process:
+  reorder_sections:
+    - overview
+    - core_concepts
+    - api_reference
+    - examples
+    - advanced_topics
+    - troubleshooting
+    - sources_and_confidence
+  add_metadata:
+    enhanced: true
+    workflow: complex-merge
+    multi_source: true
+    conflict_resolution: priority
+    quality_checked: true

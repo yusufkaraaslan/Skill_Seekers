@@ -549,6 +549,121 @@ CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
     # For unified config files, use `skill-seekers unified --fresh` directly.
 }
 
+# New source type arguments (v3.2.0+)
+# These are minimal dicts since most flags are handled by each scraper's own argument module.
+# The create command only needs the primary input flag for routing.
+
+JUPYTER_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "notebook": {
+        "flags": ("--notebook",),
+        "kwargs": {"type": str, "help": "Jupyter Notebook file path (.ipynb)", "metavar": "PATH"},
+    },
+}
+
+HTML_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "html_path": {
+        "flags": ("--html-path",),
+        "kwargs": {"type": str, "help": "Local HTML file or directory path", "metavar": "PATH"},
+    },
+}
+
+OPENAPI_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "spec": {
+        "flags": ("--spec",),
+        "kwargs": {"type": str, "help": "OpenAPI/Swagger spec file path", "metavar": "PATH"},
+    },
+    "spec_url": {
+        "flags": ("--spec-url",),
+        "kwargs": {"type": str, "help": "OpenAPI/Swagger spec URL", "metavar": "URL"},
+    },
+}
+
+ASCIIDOC_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "asciidoc_path": {
+        "flags": ("--asciidoc-path",),
+        "kwargs": {"type": str, "help": "AsciiDoc file or directory path", "metavar": "PATH"},
+    },
+}
+
+PPTX_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "pptx": {
+        "flags": ("--pptx",),
+        "kwargs": {"type": str, "help": "PowerPoint file path (.pptx)", "metavar": "PATH"},
+    },
+}
+
+RSS_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "feed_url": {
+        "flags": ("--feed-url",),
+        "kwargs": {"type": str, "help": "RSS/Atom feed URL", "metavar": "URL"},
+    },
+    "feed_path": {
+        "flags": ("--feed-path",),
+        "kwargs": {"type": str, "help": "RSS/Atom feed file path", "metavar": "PATH"},
+    },
+}
+
+MANPAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "man_names": {
+        "flags": ("--man-names",),
+        "kwargs": {
+            "type": str,
+            "help": "Comma-separated man page names (e.g., 'git,curl')",
+            "metavar": "NAMES",
+        },
+    },
+    "man_path": {
+        "flags": ("--man-path",),
+        "kwargs": {"type": str, "help": "Directory of man page files", "metavar": "PATH"},
+    },
+}
+
+CONFLUENCE_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "conf_base_url": {
+        "flags": ("--conf-base-url",),
+        "kwargs": {"type": str, "help": "Confluence base URL", "metavar": "URL"},
+    },
+    "space_key": {
+        "flags": ("--space-key",),
+        "kwargs": {"type": str, "help": "Confluence space key", "metavar": "KEY"},
+    },
+    "conf_export_path": {
+        "flags": ("--conf-export-path",),
+        "kwargs": {"type": str, "help": "Confluence export directory", "metavar": "PATH"},
+    },
+}
+
+NOTION_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "database_id": {
+        "flags": ("--database-id",),
+        "kwargs": {"type": str, "help": "Notion database ID", "metavar": "ID"},
+    },
+    "page_id": {
+        "flags": ("--page-id",),
+        "kwargs": {"type": str, "help": "Notion page ID", "metavar": "ID"},
+    },
+    "notion_export_path": {
+        "flags": ("--notion-export-path",),
+        "kwargs": {"type": str, "help": "Notion export directory", "metavar": "PATH"},
+    },
+}
+
+CHAT_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "chat_export_path": {
+        "flags": ("--chat-export-path",),
+        "kwargs": {"type": str, "help": "Slack/Discord export directory", "metavar": "PATH"},
+    },
+    "platform": {
+        "flags": ("--platform",),
+        "kwargs": {
+            "type": str,
+            "choices": ["slack", "discord"],
+            "default": "slack",
+            "help": "Chat platform (default: slack)",
+        },
+    },
+}
+
 # =============================================================================
 # TIER 3: ADVANCED/RARE ARGUMENTS
 # =============================================================================
@@ -613,6 +728,17 @@ def get_source_specific_arguments(source_type: str) -> dict[str, dict[str, Any]]
         "epub": EPUB_ARGUMENTS,
         "video": VIDEO_ARGUMENTS,
         "config": CONFIG_ARGUMENTS,
+        # New source types (v3.2.0+)
+        "jupyter": JUPYTER_ARGUMENTS,
+        "html": HTML_ARGUMENTS,
+        "openapi": OPENAPI_ARGUMENTS,
+        "asciidoc": ASCIIDOC_ARGUMENTS,
+        "pptx": PPTX_ARGUMENTS,
+        "rss": RSS_ARGUMENTS,
+        "manpage": MANPAGE_ARGUMENTS,
+        "confluence": CONFLUENCE_ARGUMENTS,
+        "notion": NOTION_ARGUMENTS,
+        "chat": CHAT_ARGUMENTS,
     }
     return source_args.get(source_type, {})
 
@@ -702,6 +828,24 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
     if mode in ["config", "all"]:
         for arg_name, arg_def in CONFIG_ARGUMENTS.items():
             parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
+
+    # New source types (v3.2.0+)
+    _NEW_SOURCE_ARGS = {
+        "jupyter": JUPYTER_ARGUMENTS,
+        "html": HTML_ARGUMENTS,
+        "openapi": OPENAPI_ARGUMENTS,
+        "asciidoc": ASCIIDOC_ARGUMENTS,
+        "pptx": PPTX_ARGUMENTS,
+        "rss": RSS_ARGUMENTS,
+        "manpage": MANPAGE_ARGUMENTS,
+        "confluence": CONFLUENCE_ARGUMENTS,
+        "notion": NOTION_ARGUMENTS,
+        "chat": CHAT_ARGUMENTS,
+    }
+    for stype, sargs in _NEW_SOURCE_ARGS.items():
+        if mode in [stype, "all"]:
+            for arg_name, arg_def in sargs.items():
+                parser.add_argument(*arg_def["flags"], **arg_def["kwargs"])
 
     # Add advanced arguments if requested
     if mode in ["advanced", "all"]:

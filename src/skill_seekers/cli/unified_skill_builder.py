@@ -136,6 +136,44 @@ class UnifiedSkillBuilder:
             skill_mds["pdf"] = "\n\n---\n\n".join(pdf_sources)
             logger.debug(f"Combined {len(pdf_sources)} PDF SKILL.md files")
 
+        # Load additional source types using generic glob pattern
+        # Each source type uses: {name}_{type}_{idx}_*/ or {name}_{type}_*/
+        _extra_types = [
+            "word",
+            "epub",
+            "video",
+            "jupyter",
+            "html",
+            "openapi",
+            "asciidoc",
+            "pptx",
+            "confluence",
+            "notion",
+            "rss",
+            "manpage",
+            "chat",
+        ]
+        for source_type in _extra_types:
+            type_sources = []
+            for type_dir in sources_dir.glob(f"{self.name}_{source_type}_*"):
+                type_skill_path = type_dir / "SKILL.md"
+                if type_skill_path.exists():
+                    try:
+                        content = type_skill_path.read_text(encoding="utf-8")
+                        type_sources.append(content)
+                        logger.debug(
+                            f"Loaded {source_type} SKILL.md from {type_dir.name} "
+                            f"({len(content)} chars)"
+                        )
+                    except OSError as e:
+                        logger.warning(
+                            f"Failed to read {source_type} SKILL.md from {type_dir.name}: {e}"
+                        )
+
+            if type_sources:
+                skill_mds[source_type] = "\n\n---\n\n".join(type_sources)
+                logger.debug(f"Combined {len(type_sources)} {source_type} SKILL.md files")
+
         logger.info(f"Loaded {len(skill_mds)} source SKILL.md files")
         return skill_mds
 
@@ -477,6 +515,18 @@ This skill synthesizes knowledge from multiple sources:
             logger.info("Using PDF SKILL.md as-is")
             content = skill_mds["pdf"]
 
+        # Generic merge for additional source types not covered by pairwise methods
+        if not content and skill_mds:
+            # At least one source SKILL.md exists but not docs/github/pdf
+            logger.info(f"Generic merge for source types: {list(skill_mds.keys())}")
+            content = self._generic_merge(skill_mds)
+        elif content and len(skill_mds) > (int(has_docs) + int(has_github) + int(has_pdf)):
+            # Pairwise synthesis handled the core types; append additional sources
+            extra_types = set(skill_mds.keys()) - {"documentation", "github", "pdf"}
+            if extra_types:
+                logger.info(f"Appending additional sources: {extra_types}")
+                content = self._append_extra_sources(content, skill_mds, extra_types)
+
         # Fallback: generate minimal SKILL.md (legacy behavior)
         if not content:
             logger.warning("No source SKILL.md files found, generating minimal SKILL.md (legacy)")
@@ -574,6 +624,165 @@ This skill synthesizes knowledge from multiple sources:
 
         return "\n".join(lines)
 
+    # ------------------------------------------------------------------
+    # Generic merge system for any combination of source types (v3.2.0+)
+    # ------------------------------------------------------------------
+
+    # Human-readable labels for source types
+    _SOURCE_LABELS: dict[str, str] = {
+        "documentation": "Documentation",
+        "github": "GitHub Repository",
+        "pdf": "PDF Document",
+        "word": "Word Document",
+        "epub": "EPUB E-book",
+        "video": "Video",
+        "local": "Local Codebase",
+        "jupyter": "Jupyter Notebook",
+        "html": "HTML Document",
+        "openapi": "OpenAPI/Swagger Spec",
+        "asciidoc": "AsciiDoc Document",
+        "pptx": "PowerPoint Presentation",
+        "confluence": "Confluence Wiki",
+        "notion": "Notion Page",
+        "rss": "RSS/Atom Feed",
+        "manpage": "Man Page",
+        "chat": "Chat Export",
+    }
+
+    def _generic_merge(self, skill_mds: dict[str, str]) -> str:
+        """Generic merge for any combination of source types.
+
+        Uses a priority-based section ordering approach:
+        1. Parse all source SKILL.md files into sections
+        2. Collect unique sections across all sources
+        3. Merge matching sections with source attribution
+        4. Produce a unified SKILL.md
+
+        This preserves the existing pairwise synthesis for docs+github, docs+pdf, etc.
+        and handles any other combination generically.
+
+        Args:
+            skill_mds: Dict mapping source type to SKILL.md content
+
+        Returns:
+            Merged SKILL.md content string
+        """
+        skill_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
+        desc = self.description[:1024] if len(self.description) > 1024 else self.description
+
+        # Parse all source SKILL.md files into sections
+        all_sections: dict[str, dict[str, str]] = {}
+        for source_type, content in skill_mds.items():
+            all_sections[source_type] = self._parse_skill_md_sections(content)
+
+        # Determine all unique section names in priority order
+        # Sections that appear earlier in sources have higher priority
+        seen_sections: list[str] = []
+        for _source_type, sections in all_sections.items():
+            for section_name in sections:
+                if section_name not in seen_sections:
+                    seen_sections.append(section_name)
+
+        # Build merged content
+        source_labels = ", ".join(self._SOURCE_LABELS.get(t, t.title()) for t in skill_mds)
+        lines = [
+            "---",
+            f"name: {skill_name}",
+            f"description: {desc}",
+            "---",
+            "",
+            f"# {self.name.replace('_', ' ').title()}",
+            "",
+            f"{self.description}",
+            "",
+            f"*Merged from: {source_labels}*",
+            "",
+        ]
+
+        # Emit each section, merging content from all sources that have it
+        for section_name in seen_sections:
+            contributing_sources = [
+                (stype, sections[section_name])
+                for stype, sections in all_sections.items()
+                if section_name in sections
+            ]
+
+            if len(contributing_sources) == 1:
+                # Single source for this section — emit as-is
+                stype, content = contributing_sources[0]
+                label = self._SOURCE_LABELS.get(stype, stype.title())
+                lines.append(f"## {section_name}")
+                lines.append("")
+                lines.append(f"*From {label}*")
+                lines.append("")
+                lines.append(content)
+                lines.append("")
+            else:
+                # Multiple sources — merge with attribution
+                lines.append(f"## {section_name}")
+                lines.append("")
+                for stype, content in contributing_sources:
+                    label = self._SOURCE_LABELS.get(stype, stype.title())
+                    lines.append(f"### From {label}")
+                    lines.append("")
+                    lines.append(content)
+                    lines.append("")
+
+        lines.append("---")
+        lines.append("")
+        lines.append("*Generated by Skill Seeker's unified multi-source scraper*")
+
+        return "\n".join(lines)
+
+    def _append_extra_sources(
+        self,
+        base_content: str,
+        skill_mds: dict[str, str],
+        extra_types: set[str],
+    ) -> str:
+        """Append additional source content to existing pairwise-synthesized SKILL.md.
+
+        Used when the core docs+github+pdf synthesis has run, but there are
+        additional source types (epub, jupyter, etc.) that need to be included.
+
+        Args:
+            base_content: Already-synthesized SKILL.md content
+            skill_mds: All source SKILL.md files
+            extra_types: Set of extra source type keys to append
+
+        Returns:
+            Extended SKILL.md content
+        """
+        lines = base_content.split("\n")
+
+        # Find the final separator (---) or end of file
+        insertion_index = len(lines)
+        for i in range(len(lines) - 1, -1, -1):
+            if lines[i].strip() == "---":
+                insertion_index = i
+                break
+
+        # Build extra content
+        extra_lines = [""]
+        for source_type in sorted(extra_types):
+            if source_type not in skill_mds:
+                continue
+            label = self._SOURCE_LABELS.get(source_type, source_type.title())
+            sections = self._parse_skill_md_sections(skill_mds[source_type])
+
+            extra_lines.append(f"## {label} Content")
+            extra_lines.append("")
+
+            for section_name, content in sections.items():
+                extra_lines.append(f"### {section_name}")
+                extra_lines.append("")
+                extra_lines.append(content)
+                extra_lines.append("")
+
+        lines[insertion_index:insertion_index] = extra_lines
+
+        return "\n".join(lines)
+
     def _generate_minimal_skill_md(self) -> str:
         """Generate minimal SKILL.md (legacy fallback behavior).
 
@@ -597,18 +806,42 @@ This skill combines knowledge from multiple sources:
 
 """
 
+        # Source type display keys: type -> (label, primary_key, extra_keys)
+        _source_detail_map = {
+            "documentation": ("Documentation", "base_url", [("Pages", "max_pages", "unlimited")]),
+            "github": (
+                "GitHub Repository",
+                "repo",
+                [("Code Analysis", "code_analysis_depth", "surface"), ("Issues", "max_issues", 0)],
+            ),
+            "pdf": ("PDF Document", "path", []),
+            "word": ("Word Document", "path", []),
+            "epub": ("EPUB E-book", "path", []),
+            "video": ("Video", "url", []),
+            "local": ("Local Codebase", "path", [("Analysis Depth", "analysis_depth", "surface")]),
+            "jupyter": ("Jupyter Notebook", "path", []),
+            "html": ("HTML Document", "path", []),
+            "openapi": ("OpenAPI Spec", "path", []),
+            "asciidoc": ("AsciiDoc Document", "path", []),
+            "pptx": ("PowerPoint", "path", []),
+            "confluence": ("Confluence Wiki", "base_url", []),
+            "notion": ("Notion Page", "page_id", []),
+            "rss": ("RSS/Atom Feed", "url", []),
+            "manpage": ("Man Page", "names", []),
+            "chat": ("Chat Export", "path", []),
+        }
+
         # List sources
         for source in self.config.get("sources", []):
             source_type = source["type"]
-            if source_type == "documentation":
-                content += f"- ✅ **Documentation**: {source.get('base_url', 'N/A')}\n"
-                content += f"  - Pages: {source.get('max_pages', 'unlimited')}\n"
-            elif source_type == "github":
-                content += f"- ✅ **GitHub Repository**: {source.get('repo', 'N/A')}\n"
-                content += f"  - Code Analysis: {source.get('code_analysis_depth', 'surface')}\n"
-                content += f"  - Issues: {source.get('max_issues', 0)}\n"
-            elif source_type == "pdf":
-                content += f"- ✅ **PDF Document**: {source.get('path', 'N/A')}\n"
+            display = _source_detail_map.get(source_type, (source_type.title(), "path", []))
+            label, primary_key, extras = display
+            primary_val = source.get(primary_key, "N/A")
+            if isinstance(primary_val, list):
+                primary_val = ", ".join(str(v) for v in primary_val)
+            content += f"- ✅ **{label}**: {primary_val}\n"
+            for extra_label, extra_key, extra_default in extras:
+                content += f"  - {extra_label}: {source.get(extra_key, extra_default)}\n"
 
         # C3.x Architecture & Code Analysis section (if available)
         github_data = self.scraped_data.get("github", {})
@@ -796,6 +1029,27 @@ This skill combines knowledge from multiple sources:
         if pdf_list:
             self._generate_pdf_references(pdf_list)
 
+        # Generate references for all additional source types
+        _extra_source_types = [
+            "word",
+            "epub",
+            "video",
+            "jupyter",
+            "html",
+            "openapi",
+            "asciidoc",
+            "pptx",
+            "confluence",
+            "notion",
+            "rss",
+            "manpage",
+            "chat",
+        ]
+        for source_type in _extra_source_types:
+            source_list = self.scraped_data.get(source_type, [])
+            if source_list:
+                self._generate_generic_references(source_type, source_list)
+
         # Generate merged API reference if available
         if self.merged_data:
             self._generate_merged_api_reference()
@@ -976,6 +1230,63 @@ This skill combines knowledge from multiple sources:
             f.write(f"Reference from {len(pdf_list)} PDF document(s).\n\n")
 
         logger.info(f"Created PDF references ({len(pdf_list)} sources)")
+
+    def _generate_generic_references(self, source_type: str, source_list: list[dict]):
+        """Generate references for any source type using a generic approach.
+
+        Creates a references/<source_type>/ directory with an index and
+        copies any data files from the source list.
+
+        Args:
+            source_type: The source type key (e.g., 'epub', 'jupyter')
+            source_list: List of scraped source dicts for this type
+        """
+        if not source_list:
+            return
+
+        label = self._SOURCE_LABELS.get(source_type, source_type.title())
+        type_dir = os.path.join(self.skill_dir, "references", source_type)
+        os.makedirs(type_dir, exist_ok=True)
+
+        # Create index
+        index_path = os.path.join(type_dir, "index.md")
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(f"# {label} References\n\n")
+            f.write(f"Reference from {len(source_list)} {label} source(s).\n\n")
+
+            for i, source_data in enumerate(source_list):
+                # Try common ID fields
+                source_id = (
+                    source_data.get("source_id")
+                    or source_data.get(f"{source_type}_id")
+                    or source_data.get("notebook_id")
+                    or source_data.get("spec_id")
+                    or source_data.get("feed_id")
+                    or source_data.get("man_id")
+                    or source_data.get("chat_id")
+                    or f"source_{i}"
+                )
+                f.write(f"## {source_id}\n\n")
+
+                # Write summary of extracted data
+                data = source_data.get("data", {})
+                if isinstance(data, dict):
+                    for key in ["title", "description", "metadata"]:
+                        if key in data:
+                            val = data[key]
+                            if isinstance(val, str) and val:
+                                f.write(f"**{key.title()}:** {val}\n\n")
+
+                # Copy data file if available
+                data_file = source_data.get("data_file")
+                if data_file and os.path.isfile(data_file):
+                    dest = os.path.join(type_dir, f"{source_id}_data.json")
+                    import contextlib
+
+                    with contextlib.suppress(OSError):
+                        shutil.copy(data_file, dest)
+
+        logger.info(f"Created {label} references ({len(source_list)} sources)")
 
     def _generate_merged_api_reference(self):
         """Generate merged API reference file."""

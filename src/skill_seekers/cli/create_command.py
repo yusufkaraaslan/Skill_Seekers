@@ -140,6 +140,26 @@ class CreateCommand:
             return self._route_video()
         elif self.source_info.type == "config":
             return self._route_config()
+        elif self.source_info.type == "jupyter":
+            return self._route_generic("jupyter_scraper", "--notebook")
+        elif self.source_info.type == "html":
+            return self._route_generic("html_scraper", "--html-path")
+        elif self.source_info.type == "openapi":
+            return self._route_generic("openapi_scraper", "--spec")
+        elif self.source_info.type == "asciidoc":
+            return self._route_generic("asciidoc_scraper", "--asciidoc-path")
+        elif self.source_info.type == "pptx":
+            return self._route_generic("pptx_scraper", "--pptx")
+        elif self.source_info.type == "rss":
+            return self._route_generic("rss_scraper", "--feed-path")
+        elif self.source_info.type == "manpage":
+            return self._route_generic("man_scraper", "--man-path")
+        elif self.source_info.type == "confluence":
+            return self._route_generic("confluence_scraper", "--export-path")
+        elif self.source_info.type == "notion":
+            return self._route_generic("notion_scraper", "--export-path")
+        elif self.source_info.type == "chat":
+            return self._route_generic("chat_scraper", "--export-path")
         else:
             logger.error(f"Unknown source type: {self.source_info.type}")
             return 1
@@ -482,6 +502,40 @@ class CreateCommand:
         try:
             sys.argv = argv
             return unified_scraper.main()
+        finally:
+            sys.argv = original_argv
+
+    def _route_generic(self, module_name: str, file_flag: str) -> int:
+        """Generic routing for new source types.
+
+        Most new source types (jupyter, html, openapi, asciidoc, pptx, rss,
+        manpage, confluence, notion, chat) follow the same pattern:
+        import module, build argv with --flag <file_path>, add common args, call main().
+
+        Args:
+            module_name: Python module name under skill_seekers.cli (e.g., "jupyter_scraper")
+            file_flag: CLI flag for the source file (e.g., "--notebook")
+
+        Returns:
+            Exit code from scraper
+        """
+        import importlib
+
+        module = importlib.import_module(f"skill_seekers.cli.{module_name}")
+
+        argv = [module_name]
+
+        file_path = self.source_info.parsed.get("file_path", "")
+        if file_path:
+            argv.extend([file_flag, file_path])
+
+        self._add_common_args(argv)
+
+        logger.debug(f"Calling {module_name} with argv: {argv}")
+        original_argv = sys.argv
+        try:
+            sys.argv = argv
+            return module.main()
         finally:
             sys.argv = original_argv
 
