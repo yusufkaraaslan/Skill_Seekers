@@ -23,7 +23,7 @@
 [![关注 Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 AI 系统的数据层。** Skill Seekers 将任何文档、GitHub 仓库、PDF 或视频转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
+**🧠 AI 系统的数据层。** Skill Seekers 将文档网站、GitHub 仓库、PDF、视频、Jupyter 笔记本、Wiki 等 17 种以上来源类型转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
 
 > 🌐 **[访问 SkillSeekersWeb.com](https://skillseekersweb.com/)** - 浏览 24+ 个预设配置，分享您的配置，访问完整文档！
 
@@ -66,7 +66,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - ⚡ **快 99%** — 数天的手动数据准备 → 15–45 分钟
 - 🎯 **AI 技能质量** — 500+ 行的 SKILL.md 文件，包含示例、模式和指南
 - 📊 **RAG 就绪的分块** — 智能分块保留代码块并维护上下文
-- 🔄 **多源支持** — 将文档 + GitHub + PDF 合并为一个知识资产
+- 🔄 **17 种来源类型** — 将文档 + GitHub + PDF + 视频 + 笔记本 + Wiki 等合并为一个知识资产
 - 🌐 **一次准备，导出所有目标** — 无需重新抓取即可导出到 16 个平台
 - 🎬 **视频** — 从 YouTube 和本地视频提取代码、字幕和结构化知识
 - ✅ **久经考验** — 2,540+ 测试，24+ 框架预设，生产就绪
@@ -81,6 +81,13 @@ skill-seekers create https://docs.django.com/    # 文档网站
 skill-seekers create django/django               # GitHub 仓库
 skill-seekers create ./my-codebase               # 本地项目
 skill-seekers create manual.pdf                  # PDF 文件
+skill-seekers create manual.docx                 # Word 文档
+skill-seekers create book.epub                   # EPUB 电子书
+skill-seekers create notebook.ipynb              # Jupyter 笔记本
+skill-seekers create page.html                   # 本地 HTML
+skill-seekers create api-spec.yaml               # OpenAPI/Swagger 规范
+skill-seekers create guide.adoc                  # AsciiDoc 文档
+skill-seekers create slides.pptx                 # PowerPoint 演示文稿
 
 # 视频（YouTube、Vimeo 或本地文件 — 需要 skill-seekers[video]）
 skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
@@ -100,7 +107,7 @@ skill-seekers package output/django --target cursor     # Cursor IDE 上下文
 
 ## 什么是 Skill Seekers？
 
-Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库、PDF 文件和视频转换为适用于所有 AI 目标的结构化知识资产：
+Skill Seekers 是 **AI 系统的数据层**，将 17 种来源类型——文档网站、GitHub 仓库、PDF、视频、Jupyter 笔记本、Word/EPUB/AsciiDoc 文档、OpenAPI/Swagger 规范、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录等——转换为适用于所有 AI 目标的结构化知识资产：
 
 | 使用场景 | 获得的内容 | 示例 |
 |---------|-----------|------|
@@ -111,7 +118,7 @@ Skill Seekers 是 **AI 系统的数据层**，将文档网站、GitHub 仓库、
 
 Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 
-1. **采集** — 文档、GitHub 仓库、本地代码库、PDF、视频
+1. **采集** — 文档、GitHub 仓库、本地代码库、PDF、视频、Jupyter 笔记本、Wiki 等 17 种以上来源类型
 2. **分析** — 深度 AST 解析、模式检测、API 提取
 3. **结构化** — 带元数据的分类参考文件
 4. **增强** — AI 驱动的 SKILL.md 生成（Claude、Gemini 或本地）
@@ -526,6 +533,10 @@ skill-seekers-setup
 | `pip install skill-seekers[mcp]` | + MCP 服务器 |
 | `pip install skill-seekers[video]` | + YouTube/Vimeo 字幕和元数据提取 |
 | `pip install skill-seekers[video-full]` | + Whisper 转录和视觉帧提取 |
+| `pip install skill-seekers[jupyter]` | + Jupyter 笔记本提取 |
+| `pip install skill-seekers[ocr]` | + OCR 支持（PDF 扫描件、视觉帧） |
+| `pip install skill-seekers[confluence]` | + Confluence 维基支持 |
+| `pip install skill-seekers[notion]` | + Notion 页面支持 |
 | `pip install skill-seekers[all]` | 全部功能 |
 
 > **视频视觉依赖（GPU 感知）：** 安装 `skill-seekers[video-full]` 后，运行
@@ -565,9 +576,10 @@ skill-seekers install --config react --dry-run
 
 ## 📊 功能矩阵
 
-Skill Seekers 支持 **4 个 LLM 平台**和 **5 种技能模式**，功能完全对等。
+Skill Seekers 支持 **4 个 LLM 平台**、**17 种来源类型**和 **5 种技能模式**，功能完全对等。
 
 **平台：** Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
+**来源类型：** 文档网站、GitHub 仓库、PDF、Word、EPUB、视频、本地代码库、Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录
 **技能模式：** 文档、GitHub、PDF、统一多源、本地仓库
 
 完整信息请查看 [完整功能矩阵](docs/FEATURE_MATRIX.md)。
@@ -830,7 +842,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP 集成（26 个工具）
+## 🔌 MCP 集成（27 个工具）
 
 Skill Seekers 提供 MCP 服务器，可在 Claude Code、Cursor、Windsurf、VS Code + Cline 或 IntelliJ IDEA 中使用。
 
@@ -845,11 +857,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**所有 26 个工具：**
+**所有 27 个工具：**
 - **核心（9 个）：** `list_configs`、`generate_config`、`validate_config`、`estimate_pages`、`scrape_docs`、`package_skill`、`upload_skill`、`enhance_skill`、`install_skill`
-- **扩展（10 个）：** `scrape_github`、`scrape_pdf`、`unified_scrape`、`merge_sources`、`detect_conflicts`、`add_config_source`、`fetch_config`、`list_config_sources`、`remove_config_source`、`split_config`
+- **扩展（11 个）：** `scrape_github`、`scrape_pdf`、`scrape_generic`、`unified_scrape`、`merge_sources`、`detect_conflicts`、`add_config_source`、`fetch_config`、`list_config_sources`、`remove_config_source`、`split_config`
 - **向量数据库（4 个）：** `export_to_chroma`、`export_to_weaviate`、`export_to_faiss`、`export_to_qdrant`
 - **云存储（3 个）：** `cloud_upload`、`cloud_download`、`cloud_list`
+
+> `scrape_generic` 支持 10 种新来源类型：Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录。
 
 **完整指南：** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
 

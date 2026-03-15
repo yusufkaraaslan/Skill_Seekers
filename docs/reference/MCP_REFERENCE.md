@@ -1,8 +1,8 @@
 # MCP Reference - Skill Seekers
 
-> **Version:** 3.1.0  
-> **Last Updated:** 2026-02-16  
-> **Complete reference for 26 MCP tools**
+> **Version:** 3.2.0  
+> **Last Updated:** 2026-03-15  
+> **Complete reference for 27 MCP tools**
 
 ---
 
@@ -79,7 +79,7 @@ Essential tools for basic skill creation workflow:
 | `enhance_skill` | AI enhancement |
 | `install_skill` | Complete workflow |
 
-### Extended Tools (9)
+### Extended Tools (10)
 
 Advanced scraping and analysis tools:
 
@@ -88,6 +88,7 @@ Advanced scraping and analysis tools:
 | `scrape_github` | GitHub repository analysis |
 | `scrape_pdf` | PDF extraction |
 | `scrape_codebase` | Local codebase analysis |
+| `scrape_generic` | Generic scraper for 10 new source types |
 | `unified_scrape` | Multi-source scraping |
 | `detect_patterns` | Pattern detection |
 | `extract_test_examples` | Extract usage examples from tests |
@@ -642,6 +643,65 @@ Find discrepancies between documentation and code.
 
 ---
 
+#### scrape_generic
+
+Scrape content from any of the 10 new source types.
+
+**Purpose:** A generic entry point that delegates to the appropriate CLI scraper module for: jupyter, html, openapi, asciidoc, pptx, confluence, notion, rss, manpage, chat.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `source_type` | string | Yes | One of: `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `confluence`, `notion`, `rss`, `manpage`, `chat` |
+| `name` | string | Yes | Skill name for the output |
+| `path` | string | No | File or directory path (for file-based sources) |
+| `url` | string | No | URL (for URL-based sources like confluence, notion, rss) |
+
+**Note:** Either `path` or `url` must be provided depending on the source type.
+
+**Source Type → Input Mapping:**
+
+| Source Type | Typical Input | CLI Flag Used |
+|-------------|--------------|---------------|
+| `jupyter` | `path` | `--notebook` |
+| `html` | `path` | `--html-path` |
+| `openapi` | `path` | `--spec` |
+| `asciidoc` | `path` | `--asciidoc-path` |
+| `pptx` | `path` | `--pptx` |
+| `manpage` | `path` | `--man-path` |
+| `confluence` | `path` or `url` | `--export-path` / `--base-url` |
+| `notion` | `path` or `url` | `--export-path` / `--database-id` |
+| `rss` | `path` or `url` | `--feed-path` / `--feed-url` |
+| `chat` | `path` | `--export-path` |
+
+**Returns:** Scraping results with file paths and statistics
+
+```json
+{
+  "skill_directory": "output/my-api/",
+  "source_type": "openapi",
+  "status": "success"
+}
+```
+
+**Example:**
+```python
+# Natural language
+"Scrape the OpenAPI spec at api/openapi.yaml"
+"Extract content from my Jupyter notebook analysis.ipynb"
+"Process the Confluence export in ./wiki-export/"
+"Convert the PowerPoint slides.pptx into a skill"
+
+# Explicit tool call
+scrape_generic(source_type="openapi", name="my-api", path="api/openapi.yaml")
+scrape_generic(source_type="jupyter", name="ml-tutorial", path="notebooks/tutorial.ipynb")
+scrape_generic(source_type="rss", name="blog", url="https://blog.example.com/feed.xml")
+scrape_generic(source_type="confluence", name="wiki", path="./confluence-export/")
+```
+
+---
+
 ### Config Source Tools
 
 #### add_config_source
@@ -1030,7 +1090,19 @@ Tools: `list_workflows` → `unified_scrape` → `enhance_skill` → `package_sk
 
 ---
 
-### Pattern 5: Vector Database Export
+### Pattern 5: New Source Type Scraping
+
+```python
+# Natural language sequence:
+"Scrape the OpenAPI spec at api/openapi.yaml"
+"Package the output for Claude"
+```
+
+Tools: `scrape_generic` → `package_skill`
+
+---
+
+### Pattern 6: Vector Database Export
 
 ```python
 # Natural language sequence:

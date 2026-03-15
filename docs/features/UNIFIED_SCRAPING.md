@@ -1,20 +1,21 @@
 # Unified Multi-Source Scraping
 
-**Version:** 2.0 (Feature complete as of October 2025)
+**Version:** 3.2.0 (17 source types supported)
 
 ## Overview
 
-Unified multi-source scraping allows you to combine knowledge from multiple sources into a single comprehensive Claude skill. Instead of choosing between documentation, GitHub repositories, or PDF manuals, you can now extract and intelligently merge information from all of them.
+Unified multi-source scraping allows you to combine knowledge from multiple sources into a single comprehensive skill. Instead of choosing between documentation, GitHub repositories, PDF manuals, or any of the 17 supported source types, you can extract and intelligently merge information from all of them.
 
 ## Why Unified Scraping?
 
 **The Problem**: Documentation and code often drift apart over time. Official docs might be outdated, missing features that exist in code, or documenting features that have been removed. Separately scraping docs and code creates two incomplete skills.
 
 **The Solution**: Unified scraping:
-- Extracts information from multiple sources (documentation, GitHub, PDFs)
+- Extracts information from **17 source types** (documentation, GitHub, PDFs, videos, Word docs, EPUB, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases)
 - **Detects conflicts** between documentation and actual code implementation
 - **Intelligently merges** conflicting information with transparency
-- **Highlights discrepancies** with inline warnings (⚠️)
+- **Generic merge system** combines any combination of source types via pairwise synthesis
+- **Highlights discrepancies** with inline warnings
 - Creates a single, comprehensive skill that shows the complete picture
 
 ## Quick Start
@@ -53,9 +54,9 @@ python3 cli/unified_scraper.py --config configs/react_unified.json
 ```
 
 The tool will:
-1. ✅ **Phase 1**: Scrape all sources (docs + GitHub + PDF + local)
+1. ✅ **Phase 1**: Scrape all sources (any of the 17 supported types)
 2. ✅ **Phase 2**: Detect conflicts between sources
-3. ✅ **Phase 3**: Merge conflicts intelligently
+3. ✅ **Phase 3**: Merge conflicts intelligently (pairwise synthesis or generic merge)
 4. ✅ **Phase 4**: Build unified skill with conflict transparency
 5. ✅ **Phase 5**: Apply enhancement workflows (optional)
 
@@ -76,12 +77,34 @@ python3 cli/package_skill.py output/react/
   "merge_mode": "rule-based|claude-enhanced",
   "sources": [
     {
-      "type": "documentation|github|pdf",
+      "type": "<source-type>",
       ...source-specific fields...
     }
   ]
 }
 ```
+
+#### Supported Source Types
+
+| Type | Config `type` Value | Description |
+|------|-------------------|-------------|
+| Documentation (web) | `documentation` | Web documentation sites |
+| GitHub repo | `github` | GitHub repository analysis |
+| PDF | `pdf` | PDF document extraction |
+| Local codebase | `local` | Local directory analysis |
+| Word (.docx) | `word` | Word document extraction |
+| Video | `video` | YouTube/Vimeo/local video transcription |
+| EPUB | `epub` | EPUB ebook extraction |
+| Jupyter Notebook | `jupyter` | `.ipynb` notebook extraction |
+| Local HTML | `html` | Local HTML file extraction |
+| OpenAPI/Swagger | `openapi` | OpenAPI/Swagger spec parsing |
+| AsciiDoc | `asciidoc` | AsciiDoc document extraction |
+| PowerPoint | `pptx` | PowerPoint presentation extraction |
+| RSS/Atom | `rss` | RSS/Atom feed extraction |
+| Man pages | `manpage` | Unix man page extraction |
+| Confluence | `confluence` | Atlassian Confluence wiki extraction |
+| Notion | `notion` | Notion workspace extraction |
+| Slack/Discord | `chat` | Chat export extraction |
 
 ### Documentation Source
 
@@ -142,6 +165,126 @@ python3 cli/package_skill.py output/react/
   "extract_tables": false,
   "ocr": false,
   "password": "optional-password"
+}
+```
+
+### Video Source
+
+```json
+{
+  "type": "video",
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "language": "en"
+}
+```
+
+### Word Document Source
+
+```json
+{
+  "type": "word",
+  "path": "/path/to/document.docx"
+}
+```
+
+### EPUB Source
+
+```json
+{
+  "type": "epub",
+  "path": "/path/to/book.epub"
+}
+```
+
+### Jupyter Notebook Source
+
+```json
+{
+  "type": "jupyter",
+  "path": "/path/to/notebook.ipynb"
+}
+```
+
+### Local HTML Source
+
+```json
+{
+  "type": "html",
+  "path": "/path/to/page.html"
+}
+```
+
+### OpenAPI/Swagger Source
+
+```json
+{
+  "type": "openapi",
+  "path": "/path/to/openapi.yaml"
+}
+```
+
+### AsciiDoc Source
+
+```json
+{
+  "type": "asciidoc",
+  "path": "/path/to/document.adoc"
+}
+```
+
+### PowerPoint Source
+
+```json
+{
+  "type": "pptx",
+  "path": "/path/to/presentation.pptx"
+}
+```
+
+### RSS/Atom Feed Source
+
+```json
+{
+  "type": "rss",
+  "url": "https://blog.example.com/feed.xml"
+}
+```
+
+### Man Page Source
+
+```json
+{
+  "type": "manpage",
+  "path": "/path/to/command.1"
+}
+```
+
+### Confluence Source
+
+```json
+{
+  "type": "confluence",
+  "base_url": "https://company.atlassian.net/wiki",
+  "space_key": "DOCS"
+}
+```
+
+### Notion Source
+
+```json
+{
+  "type": "notion",
+  "workspace": "my-workspace",
+  "root_page_id": "abc123"
+}
+```
+
+### Slack/Discord Chat Source
+
+```json
+{
+  "type": "chat",
+  "path": "/path/to/export/"
 }
 ```
 
@@ -256,6 +399,14 @@ output/skill-name/
 │   │   ├── issues.md
 │   │   └── releases.md
 │   ├── pdf/                     # PDF references (if applicable)
+│   │   └── index.md
+│   ├── video/                   # Video transcripts (if applicable)
+│   │   └── index.md
+│   ├── openapi/                 # OpenAPI spec (if applicable)
+│   │   └── index.md
+│   ├── jupyter/                 # Notebook content (if applicable)
+│   │   └── index.md
+│   ├── <source-type>/           # Other source type references
 │   │   └── index.md
 │   ├── api/                     # Merged API reference
 │   │   └── merged_api.md
@@ -380,7 +531,61 @@ useEffect(callback: () => void | (() => void), deps?: readonly any[])
 }
 ```
 
-### Example 3: Mixed Sources (Docs + GitHub + PDF)
+### Example 3: API Project (Docs + OpenAPI + Jupyter)
+
+```json
+{
+  "name": "my-api",
+  "description": "Complete API knowledge with spec and notebooks",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://api.example.com/docs/",
+      "extract_api": true,
+      "max_pages": 100
+    },
+    {
+      "type": "openapi",
+      "path": "specs/openapi.yaml"
+    },
+    {
+      "type": "jupyter",
+      "path": "notebooks/api-examples.ipynb"
+    }
+  ]
+}
+```
+
+### Example 4: Enterprise Knowledge (Confluence + GitHub + Video)
+
+```json
+{
+  "name": "internal-platform",
+  "description": "Internal platform knowledge from all sources",
+  "merge_mode": "claude-enhanced",
+  "sources": [
+    {
+      "type": "confluence",
+      "base_url": "https://company.atlassian.net/wiki",
+      "space_key": "PLATFORM"
+    },
+    {
+      "type": "github",
+      "repo": "company/platform",
+      "include_code": true,
+      "code_analysis_depth": "deep"
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/playlist?list=PLexample",
+      "language": "en"
+    }
+  ]
+}
+```
+
+### Example 5: Mixed Sources (Docs + GitHub + PDF)
 
 ```json
 {
@@ -590,6 +795,19 @@ UnifiedScraper.run()
 │  - GitHub → github_scraper         │
 │  - PDF → pdf_scraper               │
 │  - Local → codebase_scraper        │
+│  - Video → video_scraper           │
+│  - Word → word_scraper             │
+│  - EPUB → epub_scraper             │
+│  - Jupyter → jupyter_scraper       │
+│  - HTML → html_scraper             │
+│  - OpenAPI → openapi_scraper       │
+│  - AsciiDoc → asciidoc_scraper     │
+│  - PowerPoint → pptx_scraper       │
+│  - RSS/Atom → rss_scraper          │
+│  - Man pages → manpage_scraper     │
+│  - Confluence → confluence_scraper │
+│  - Notion → notion_scraper         │
+│  - Chat → chat_scraper             │
 └────────────────────────────────────┘
      ↓
 ┌────────────────────────────────────┐
@@ -601,6 +819,10 @@ UnifiedScraper.run()
      ↓
 ┌────────────────────────────────────┐
 │ Phase 3: Merge Sources              │
+│  - Pairwise synthesis (docs+github │
+│    +pdf combos)                    │
+│  - Generic merge (_generic_merge)  │
+│    for all other combinations      │
 │  - RuleBasedMerger (fast)          │
 │  - OR ClaudeEnhancedMerger (AI)    │
 │  - Create unified API reference    │
@@ -702,6 +924,12 @@ For issues, questions, or suggestions:
 - Documentation: https://github.com/yusufkaraaslan/Skill_Seekers/docs
 
 ## Changelog
+
+**v3.2.0 (March 2026)**: 17 source types supported
+- ✅ 13 new source types: Word, EPUB, Video, Jupyter, HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, Man pages, Confluence, Notion, Slack/Discord
+- ✅ Generic merge system (`_generic_merge()`) for combining any source type combination
+- ✅ Pairwise synthesis for docs+github+pdf combos
+- ✅ `complex-merge.yaml` workflow preset for AI-powered multi-source merging
 
 **v3.1.0 (February 2026)**: Enhancement workflow support
 - ✅ Full workflow system integration (Phase 5)

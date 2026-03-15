@@ -1,8 +1,8 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.1.2
-> **Last Updated:** 2026-02-23
-> **Complete reference for all 20 CLI commands**
+> **Version:** 3.2.0
+> **Last Updated:** 2026-03-15
+> **Complete reference for all 30 CLI commands**
 
 ---
 
@@ -14,19 +14,29 @@
   - [Environment Variables](#environment-variables)
 - [Command Reference](#command-reference)
   - [analyze](#analyze) - Analyze local codebase
+  - [asciidoc](#asciidoc) - Extract from AsciiDoc files
+  - [chat](#chat) - Extract from Slack/Discord
   - [config](#config) - Configuration wizard
+  - [confluence](#confluence) - Extract from Confluence
   - [create](#create) - Create skill (auto-detects source)
   - [enhance](#enhance) - AI enhancement (local mode)
   - [enhance-status](#enhance-status) - Monitor enhancement
   - [estimate](#estimate) - Estimate page counts
   - [github](#github) - Scrape GitHub repository
+  - [html](#html) - Extract from local HTML files
   - [install](#install) - One-command complete workflow
   - [install-agent](#install-agent) - Install to AI agent
+  - [jupyter](#jupyter) - Extract from Jupyter notebooks
+  - [manpage](#manpage) - Extract from man pages
   - [multilang](#multilang) - Multi-language docs
+  - [notion](#notion) - Extract from Notion
+  - [openapi](#openapi) - Extract from OpenAPI/Swagger specs
   - [package](#package) - Package skill for platform
   - [pdf](#pdf) - Extract from PDF
+  - [pptx](#pptx) - Extract from PowerPoint files
   - [quality](#quality) - Quality scoring
   - [resume](#resume) - Resume interrupted jobs
+  - [rss](#rss) - Extract from RSS/Atom feeds
   - [scrape](#scrape) - Scrape documentation
   - [stream](#stream) - Stream large files
   - [unified](#unified) - Multi-source scraping
@@ -42,7 +52,7 @@
 
 ## Overview
 
-Skill Seekers provides a unified CLI for converting documentation, GitHub repositories, PDFs, and local codebases into AI-ready skills.
+Skill Seekers provides a unified CLI for converting documentation, GitHub repositories, PDFs, videos, notebooks, wikis, and 17 total source types into AI-ready skills for 16+ LLM platforms and RAG pipelines.
 
 ### Installation
 
@@ -172,6 +182,74 @@ skill-seekers analyze --directory ./my-project --skip-dependency-graph --skip-pa
 
 ---
 
+### asciidoc
+
+Extract content from AsciiDoc files and generate skill.
+
+**Purpose:** Convert `.adoc` / `.asciidoc` documentation into AI-ready skills.
+
+**Syntax:**
+```bash
+skill-seekers asciidoc [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--asciidoc-path PATH` | Path to AsciiDoc file or directory |
+| `-n, --name` | Skill name |
+| `--from-json FILE` | Build from extracted JSON |
+| `--enhance-level` | AI enhancement (default: 0) |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Single file
+skill-seekers asciidoc --asciidoc-path guide.adoc --name my-guide
+
+# Directory of AsciiDoc files
+skill-seekers asciidoc --asciidoc-path ./docs/ --name project-docs
+```
+
+---
+
+### chat
+
+Extract knowledge from Slack or Discord chat exports.
+
+**Purpose:** Convert chat history into searchable AI-ready skills.
+
+**Syntax:**
+```bash
+skill-seekers chat [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--export-path PATH` | Path to chat export directory or file |
+| `--platform {slack,discord}` | Chat platform (default: slack) |
+| `--token TOKEN` | API token for authentication |
+| `--channel CHANNEL` | Channel name or ID to extract from |
+| `--max-messages N` | Max messages to extract (default: 10000) |
+| `-n, --name` | Skill name |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# From Slack export
+skill-seekers chat --export-path ./slack-export/ --name team-knowledge
+
+# From Discord via API
+skill-seekers chat --platform discord --token $DISCORD_TOKEN --channel general --name discord-docs
+```
+
+---
+
 ### config
 
 Interactive configuration wizard for API keys and settings.
@@ -210,6 +288,43 @@ skill-seekers config --test
 
 ---
 
+### confluence
+
+Extract content from Confluence wikis.
+
+**Purpose:** Convert Confluence spaces into AI-ready skills via API or HTML export.
+
+**Syntax:**
+```bash
+skill-seekers confluence [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--base-url URL` | Confluence instance base URL |
+| `--space-key KEY` | Confluence space key |
+| `--export-path PATH` | Path to Confluence HTML/XML export directory |
+| `--username USER` | Confluence username |
+| `--token TOKEN` | Confluence API token |
+| `--max-pages N` | Max pages to extract (default: 500) |
+| `-n, --name` | Skill name |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Via API
+skill-seekers confluence --base-url https://wiki.example.com --space-key DEV \
+  --username user@example.com --token $CONFLUENCE_TOKEN --name dev-wiki
+
+# From export
+skill-seekers confluence --export-path ./confluence-export/ --name team-docs
+```
+
+---
+
 ### create
 
 Create skill from any source. Auto-detects source type.
@@ -234,6 +349,15 @@ skill-seekers create [source] [options]
 | `owner/repo` | GitHub | `facebook/react` |
 | `./path` | Local codebase | `./my-project` |
 | `*.pdf` | PDF | `manual.pdf` |
+| `*.docx` | Word | `report.docx` |
+| `*.epub` | EPUB | `book.epub` |
+| `*.ipynb` | Jupyter Notebook | `analysis.ipynb` |
+| `*.html`/`*.htm` | Local HTML | `docs.html` |
+| `*.yaml`/`*.yml` | OpenAPI/Swagger | `openapi.yaml` |
+| `*.adoc`/`*.asciidoc` | AsciiDoc | `guide.adoc` |
+| `*.pptx` | PowerPoint | `slides.pptx` |
+| `*.rss`/`*.atom` | RSS/Atom feed | `feed.rss` |
+| `*.1`-`*.8`/`*.man` | Man page | `grep.1` |
 | `*.json` | Config file | `config.json` |
 
 **Flags:**
@@ -473,6 +597,39 @@ skill-seekers github --repo facebook/react --scrape-only
 
 ---
 
+### html
+
+Extract content from local HTML files and generate skill.
+
+**Purpose:** Convert local HTML documentation into AI-ready skills (for offline/exported docs).
+
+**Syntax:**
+```bash
+skill-seekers html [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--html-path PATH` | Path to HTML file or directory |
+| `-n, --name` | Skill name |
+| `--from-json FILE` | Build from extracted JSON |
+| `--enhance-level` | AI enhancement (default: 0) |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Single HTML file
+skill-seekers html --html-path docs/index.html --name my-docs
+
+# Directory of HTML files
+skill-seekers html --html-path ./html-export/ --name exported-docs
+```
+
+---
+
 ### install
 
 One-command complete workflow: fetch → scrape → enhance → package → upload.
@@ -558,6 +715,72 @@ skill-seekers install-agent output/react/ --agent cursor --force
 
 ---
 
+### jupyter
+
+Extract content from Jupyter Notebook files and generate skill.
+
+**Purpose:** Convert `.ipynb` notebooks into AI-ready skills with code, markdown, and outputs.
+
+**Syntax:**
+```bash
+skill-seekers jupyter [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--notebook PATH` | Path to .ipynb file or directory |
+| `-n, --name` | Skill name |
+| `--from-json FILE` | Build from extracted JSON |
+| `--enhance-level` | AI enhancement (default: 0) |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Single notebook
+skill-seekers jupyter --notebook analysis.ipynb --name data-analysis
+
+# Directory of notebooks
+skill-seekers jupyter --notebook ./notebooks/ --name ml-tutorials
+```
+
+---
+
+### manpage
+
+Extract content from Unix/Linux man pages and generate skill.
+
+**Purpose:** Convert man pages into AI-ready reference skills.
+
+**Syntax:**
+```bash
+skill-seekers manpage [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--man-names NAMES` | Comma-separated man page names (e.g., `ls,grep,find`) |
+| `--man-path PATH` | Path to directory containing man page files |
+| `--sections SECTIONS` | Comma-separated section numbers (e.g., `1,3,8`) |
+| `-n, --name` | Skill name |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# By name (system man pages)
+skill-seekers manpage --man-names ls,grep,find,awk --name unix-essentials
+
+# From directory
+skill-seekers manpage --man-path /usr/share/man/man1/ --sections 1 --name section1-cmds
+```
+
+---
+
 ### multilang
 
 Multi-language documentation support.
@@ -586,6 +809,75 @@ skill-seekers multilang --config configs/react-i18n.json
 
 # Specific languages
 skill-seekers multilang --config configs/docs.json --languages en,zh,es
+```
+
+---
+
+### notion
+
+Extract content from Notion workspaces.
+
+**Purpose:** Convert Notion pages and databases into AI-ready skills via API or export.
+
+**Syntax:**
+```bash
+skill-seekers notion [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--database-id ID` | Notion database ID to extract from |
+| `--page-id ID` | Notion page ID to extract from |
+| `--export-path PATH` | Path to Notion export directory |
+| `--token TOKEN` | Notion integration token |
+| `--max-pages N` | Max pages to extract (default: 500) |
+| `-n, --name` | Skill name |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Via API
+skill-seekers notion --database-id abc123 --token $NOTION_TOKEN --name team-docs
+
+# From export
+skill-seekers notion --export-path ./notion-export/ --name project-wiki
+```
+
+---
+
+### openapi
+
+Extract content from OpenAPI/Swagger specifications and generate skill.
+
+**Purpose:** Convert API specs into AI-ready reference skills with endpoint documentation.
+
+**Syntax:**
+```bash
+skill-seekers openapi [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--spec PATH` | Path to OpenAPI/Swagger spec file |
+| `--spec-url URL` | URL to OpenAPI/Swagger spec |
+| `-n, --name` | Skill name |
+| `--from-json FILE` | Build from extracted JSON |
+| `--enhance-level` | AI enhancement (default: 0) |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# From local file
+skill-seekers openapi --spec api/openapi.yaml --name my-api
+
+# From URL
+skill-seekers openapi --spec-url https://petstore.swagger.io/v2/swagger.json --name petstore
 ```
 
 ---
@@ -713,6 +1005,39 @@ skill-seekers pdf --pdf manual.pdf --name test --dry-run
 
 ---
 
+### pptx
+
+Extract content from PowerPoint files and generate skill.
+
+**Purpose:** Convert `.pptx` presentations into AI-ready skills.
+
+**Syntax:**
+```bash
+skill-seekers pptx [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--pptx PATH` | Path to PowerPoint file (.pptx) |
+| `-n, --name` | Skill name |
+| `--from-json FILE` | Build from extracted JSON |
+| `--enhance-level` | AI enhancement (default: 0) |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# Extract from presentation
+skill-seekers pptx --pptx training-slides.pptx --name training-material
+
+# With enhancement
+skill-seekers pptx --pptx architecture.pptx --name arch-overview --enhance-level 2
+```
+
+---
+
 ### quality
 
 Analyze and score skill documentation quality.
@@ -787,6 +1112,41 @@ skill-seekers resume job-abc123
 
 # Clean old checkpoints
 skill-seekers resume --clean
+```
+
+---
+
+### rss
+
+Extract content from RSS/Atom feeds and generate skill.
+
+**Purpose:** Convert blog feeds and news sources into AI-ready skills.
+
+**Syntax:**
+```bash
+skill-seekers rss [options]
+```
+
+**Key Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--feed-url URL` | URL of the RSS/Atom feed |
+| `--feed-path PATH` | Path to local RSS/Atom feed file |
+| `--follow-links` | Follow article links for full content (default: true) |
+| `--no-follow-links` | Use feed summary only |
+| `--max-articles N` | Max articles to extract (default: 50) |
+| `-n, --name` | Skill name |
+| `--dry-run` | Preview without executing |
+
+**Examples:**
+
+```bash
+# From URL
+skill-seekers rss --feed-url https://blog.example.com/feed.xml --name blog-knowledge
+
+# From local file, summaries only
+skill-seekers rss --feed-path ./feed.rss --no-follow-links --name feed-summaries
 ```
 
 ---

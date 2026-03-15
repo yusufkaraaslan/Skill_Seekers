@@ -1,28 +1,34 @@
 # Multi-Source Scraping Guide
 
-> **Skill Seekers v3.1.0**  
-> **Combine documentation, code, and PDFs into one skill**
+> **Skill Seekers v3.2.0**  
+> **Combine 17 source types into one unified skill**
 
 ---
 
 ## What is Multi-Source Scraping?
 
-Combine multiple sources into a single, comprehensive skill:
+Combine multiple sources into a single, comprehensive skill. Skill Seekers supports **17 source types** that can be freely mixed and matched:
 
 ```
 ┌──────────────┐
-│  Documentation │──┐
-│  (Web docs)    │  │
-└──────────────┘  │
-                   │
-┌──────────────┐  │     ┌──────────────────┐
-│  GitHub Repo │──┼────▶│  Unified Skill   │
-│  (Source code)│  │     │  (Single source  │
-└──────────────┘  │     │   of truth)      │
-                   │     └──────────────────┘
-┌──────────────┐  │
-│  PDF Manual  │──┘
-│  (Reference) │
+│ Documentation│──┐
+│ (Web docs)   │  │
+├──────────────┤  │
+│ GitHub Repo  │  │
+│ (Source code) │  │
+├──────────────┤  │     ┌──────────────────┐
+│ PDF / Word / │  │     │  Unified Skill   │
+│ EPUB / PPTX  │──┼────▶│  (Single source  │
+├──────────────┤  │     │   of truth)      │
+│ Video /      │  │     └──────────────────┘
+│ Jupyter / HTML│  │
+├──────────────┤  │
+│ OpenAPI /    │  │
+│ AsciiDoc /   │  │
+│ RSS / Man    │  │
+├──────────────┤  │
+│ Confluence / │──┘
+│ Notion / Chat│
 └──────────────┘
 ```
 
@@ -38,6 +44,14 @@ Combine multiple sources into a single, comprehensive skill:
 | Product + API | Docs + OpenAPI spec | Usage + reference |
 | Legacy + Current | PDF + Web docs | Complete history |
 | Internal + External | Local code + Public docs | Full context |
+| Data Science Project | Jupyter + GitHub + Docs | Code + notebooks + docs |
+| Enterprise Wiki | Confluence + GitHub + Video | Wiki + code + tutorials |
+| API-First Product | OpenAPI + Docs + Jupyter | Spec + docs + examples |
+| CLI Tool | Man pages + GitHub + AsciiDoc | Reference + code + docs |
+| Team Knowledge | Notion + Slack/Discord + Docs | Notes + discussions + docs |
+| Book + Code | EPUB + GitHub + PDF | Theory + implementation |
+| Presentations + Code | PowerPoint + GitHub + Docs | Slides + code + reference |
+| Content Feed | RSS/Atom + Docs + GitHub | Updates + docs + code |
 
 ### Benefits
 
@@ -75,9 +89,9 @@ Combine multiple sources into a single, comprehensive skill:
 
 ---
 
-## Source Types
+## Source Types (17 Supported)
 
-### 1. Documentation
+### 1. Documentation (Web)
 
 ```json
 {
@@ -124,6 +138,139 @@ Combine multiple sources into a single, comprehensive skill:
   "name": "internal-tools",
   "directory": "./internal-lib",
   "languages": ["Python", "JavaScript"]
+}
+```
+
+### 5. Word Document (.docx)
+
+```json
+{
+  "type": "word",
+  "name": "product-spec",
+  "path": "docs/specification.docx"
+}
+```
+
+### 6. Video (YouTube/Vimeo/Local)
+
+```json
+{
+  "type": "video",
+  "name": "tutorial-video",
+  "url": "https://www.youtube.com/watch?v=example",
+  "language": "en"
+}
+```
+
+### 7. EPUB
+
+```json
+{
+  "type": "epub",
+  "name": "programming-book",
+  "path": "books/python-guide.epub"
+}
+```
+
+### 8. Jupyter Notebook
+
+```json
+{
+  "type": "jupyter",
+  "name": "analysis-notebooks",
+  "path": "notebooks/data-analysis.ipynb"
+}
+```
+
+### 9. Local HTML
+
+```json
+{
+  "type": "html",
+  "name": "exported-docs",
+  "path": "exports/documentation.html"
+}
+```
+
+### 10. OpenAPI/Swagger
+
+```json
+{
+  "type": "openapi",
+  "name": "api-spec",
+  "path": "specs/openapi.yaml"
+}
+```
+
+### 11. AsciiDoc
+
+```json
+{
+  "type": "asciidoc",
+  "name": "technical-docs",
+  "path": "docs/manual.adoc"
+}
+```
+
+### 12. PowerPoint (.pptx)
+
+```json
+{
+  "type": "pptx",
+  "name": "architecture-deck",
+  "path": "presentations/architecture.pptx"
+}
+```
+
+### 13. RSS/Atom Feed
+
+```json
+{
+  "type": "rss",
+  "name": "release-feed",
+  "url": "https://blog.example.com/releases.xml"
+}
+```
+
+### 14. Man Pages
+
+```json
+{
+  "type": "manpage",
+  "name": "cli-reference",
+  "path": "man/mytool.1"
+}
+```
+
+### 15. Confluence
+
+```json
+{
+  "type": "confluence",
+  "name": "team-wiki",
+  "base_url": "https://company.atlassian.net/wiki",
+  "space_key": "ENGINEERING"
+}
+```
+
+### 16. Notion
+
+```json
+{
+  "type": "notion",
+  "name": "project-docs",
+  "workspace": "my-workspace",
+  "root_page_id": "abc123def456"
+}
+```
+
+### 17. Slack/Discord (Chat)
+
+```json
+{
+  "type": "chat",
+  "name": "team-discussions",
+  "path": "exports/slack-export/"
 }
 ```
 
@@ -240,6 +387,21 @@ Uses defined rules for merging:
 skill-seekers unified --config my-config.json --merge-mode rule-based
 ```
 
+### Generic Merge System
+
+When combining source types beyond the standard docs+github+pdf trio, the **generic merge system** (`_generic_merge()` in `unified_skill_builder.py`) handles any combination automatically. It uses pairwise synthesis for known combos (docs+github, docs+pdf, github+pdf) and falls back to a generic merging strategy for all other source type combinations.
+
+### AI-Powered Multi-Source Merging
+
+For complex multi-source projects, use the `complex-merge.yaml` workflow preset to apply AI-powered merging:
+
+```bash
+skill-seekers unified --config my-config.json \
+  --enhance-workflow complex-merge
+```
+
+This workflow uses Claude to intelligently reconcile content from disparate source types, resolving conflicts and creating coherent cross-references between sources that would otherwise be difficult to merge deterministically.
+
 ---
 
 ## Conflict Detection
@@ -319,7 +481,9 @@ output/react-complete/
   "sources": [
     {"type": "docs", "name": "official-docs"},
     {"type": "github", "name": "source-code"},
-    {"type": "pdf", "name": "legacy-reference"}
+    {"type": "pdf", "name": "legacy-reference"},
+    {"type": "openapi", "name": "api-spec"},
+    {"type": "confluence", "name": "team-wiki"}
   ]
 }
 ```
@@ -406,14 +570,40 @@ skill-seekers unified --config my-config.json --merge-mode rule-based
 }
 ```
 
-### API + Documentation
+### Docs + OpenAPI Spec
 
 ```json
 {
   "name": "stripe-complete",
   "sources": [
     {"type": "docs", "base_url": "https://stripe.com/docs"},
-    {"type": "pdf", "pdf_path": "stripe-api-reference.pdf"}
+    {"type": "openapi", "path": "specs/stripe-openapi.yaml"}
+  ]
+}
+```
+
+### Code + Jupyter Notebooks
+
+```json
+{
+  "name": "ml-project",
+  "sources": [
+    {"type": "github", "repo": "org/ml-pipeline"},
+    {"type": "jupyter", "path": "notebooks/training.ipynb"},
+    {"type": "jupyter", "path": "notebooks/evaluation.ipynb"}
+  ]
+}
+```
+
+### Confluence + GitHub
+
+```json
+{
+  "name": "internal-platform",
+  "sources": [
+    {"type": "confluence", "base_url": "https://company.atlassian.net/wiki", "space_key": "PLATFORM"},
+    {"type": "github", "repo": "company/platform-core"},
+    {"type": "openapi", "path": "specs/platform-api.yaml"}
   ]
 }
 ```
@@ -426,6 +616,32 @@ skill-seekers unified --config my-config.json --merge-mode rule-based
   "sources": [
     {"type": "docs", "base_url": "https://docs.example.com/v2/"},
     {"type": "pdf", "pdf_path": "v1-legacy-manual.pdf"}
+  ]
+}
+```
+
+### CLI Tool (Man Pages + GitHub + AsciiDoc)
+
+```json
+{
+  "name": "mytool-complete",
+  "sources": [
+    {"type": "manpage", "path": "man/mytool.1"},
+    {"type": "github", "repo": "org/mytool"},
+    {"type": "asciidoc", "path": "docs/user-guide.adoc"}
+  ]
+}
+```
+
+### Team Knowledge (Notion + Chat + Video)
+
+```json
+{
+  "name": "onboarding-knowledge",
+  "sources": [
+    {"type": "notion", "workspace": "engineering", "root_page_id": "abc123"},
+    {"type": "chat", "path": "exports/slack-engineering/"},
+    {"type": "video", "url": "https://www.youtube.com/playlist?list=PLonboarding"}
   ]
 }
 ```

@@ -19,7 +19,7 @@ English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/ma
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 The data layer for AI systems.** Skill Seekers turns any documentation, GitHub repo, PDF, or video into structured knowledge assets—ready to power AI Skills (Claude, Gemini, OpenAI), RAG pipelines (LangChain, LlamaIndex, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline) in minutes, not hours.
+**🧠 The data layer for AI systems.** Skill Seekers turns documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and 10+ more source types into structured knowledge assets—ready to power AI Skills (Claude, Gemini, OpenAI), RAG pipelines (LangChain, LlamaIndex, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline) in minutes, not hours.
 
 > 🌐 **[Visit SkillSeekersWeb.com](https://skillseekersweb.com/)** - Browse 24+ preset configs, share your configs, and access complete documentation!
 
@@ -63,7 +63,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **AI Skill quality** — 500+ line SKILL.md files with examples, patterns, and guides
 - 📊 **RAG-ready chunks** — Smart chunking preserves code blocks and maintains context
 - 🎬 **Videos** — Extract code, transcripts, and structured knowledge from YouTube and local videos
-- 🔄 **Multi-source** — Combine docs + GitHub + PDFs + videos into one knowledge asset
+- 🔄 **Multi-source** — Combine 17 source types (docs, GitHub, PDFs, videos, notebooks, wikis, and more) into one knowledge asset
 - 🌐 **One prep, every target** — Export the same asset to 16 platforms without re-scraping
 - ✅ **Battle-tested** — 2,540+ tests, 24+ framework presets, production-ready
 
@@ -82,7 +82,7 @@ skill-seekers package output/django --target claude
 
 **That's it!** You now have `output/django-claude.zip` ready to use.
 
-### Other Sources
+### Other Sources (17 Supported)
 
 ```bash
 # GitHub repository
@@ -94,10 +94,46 @@ skill-seekers create ./my-project
 # PDF document
 skill-seekers create manual.pdf
 
+# Word document
+skill-seekers create report.docx
+
+# EPUB e-book
+skill-seekers create book.epub
+
+# Jupyter Notebook
+skill-seekers create notebook.ipynb
+
+# OpenAPI spec
+skill-seekers create openapi.yaml
+
+# PowerPoint presentation
+skill-seekers create presentation.pptx
+
+# AsciiDoc document
+skill-seekers create guide.adoc
+
+# Local HTML file
+skill-seekers create page.html
+
+# RSS/Atom feed
+skill-seekers create feed.rss
+
+# Man page
+skill-seekers create curl.1
+
 # Video (YouTube, Vimeo, or local file — requires skill-seekers[video])
 skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
 # First time? Auto-install GPU-aware visual deps:
 skill-seekers video --setup
+
+# Confluence wiki
+skill-seekers confluence --space TEAM --name wiki
+
+# Notion pages
+skill-seekers notion --database-id ... --name docs
+
+# Slack/Discord chat export
+skill-seekers chat --export-dir ./slack-export --name team-chat
 ```
 
 ### Export Everywhere
@@ -111,7 +147,7 @@ done
 
 ## What is Skill Seekers?
 
-Skill Seekers is the **data layer for AI systems**. It transforms documentation websites, GitHub repositories, PDF files, and videos into structured knowledge assets for every AI target:
+Skill Seekers is the **data layer for AI systems**. It transforms 17 source types—documentation websites, GitHub repositories, PDFs, videos, Jupyter Notebooks, Word/EPUB/AsciiDoc documents, OpenAPI specs, PowerPoint presentations, RSS feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and more—into structured knowledge assets for every AI target:
 
 | Use Case | What you get | Examples |
 |----------|-------------|---------|
@@ -137,7 +173,7 @@ Skill Seekers is the **data layer for AI systems**. It transforms documentation 
 
 Instead of spending days on manual preprocessing, Skill Seekers:
 
-1. **Ingests** — docs, GitHub repos, local codebases, PDFs, videos
+1. **Ingests** — docs, GitHub repos, local codebases, PDFs, videos, notebooks, wikis, and 10+ more source types
 2. **Analyzes** — deep AST parsing, pattern detection, API extraction
 3. **Structures** — categorized reference files with metadata
 4. **Enhances** — AI-powered SKILL.md generation (Claude, Gemini, or local)
@@ -610,6 +646,13 @@ skill-seekers-setup
 | `pip install skill-seekers[mcp]` | + MCP server for Claude Code, Cursor, etc. |
 | `pip install skill-seekers[video]` | + YouTube/Vimeo transcript & metadata extraction |
 | `pip install skill-seekers[video-full]` | + Whisper transcription & visual frame extraction |
+| `pip install skill-seekers[jupyter]` | + Jupyter Notebook support |
+| `pip install skill-seekers[pptx]` | + PowerPoint support |
+| `pip install skill-seekers[confluence]` | + Confluence wiki support |
+| `pip install skill-seekers[notion]` | + Notion pages support |
+| `pip install skill-seekers[rss]` | + RSS/Atom feed support |
+| `pip install skill-seekers[chat]` | + Slack/Discord chat export support |
+| `pip install skill-seekers[asciidoc]` | + AsciiDoc document support |
 | `pip install skill-seekers[all]` | Everything enabled |
 
 > **Video visual deps (GPU-aware):** After installing `skill-seekers[video-full]`, run
@@ -655,10 +698,10 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **4 LLM platforms** and **6 skill modes** with full feature parity.
+Skill Seekers supports **4 LLM platforms**, **17 source types**, and full feature parity across all targets.
 
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
-**Skill Modes:** Documentation, GitHub, PDF, Video, Unified Multi-Source, Local Repository
+**Source Types:** Documentation websites, GitHub repos, PDFs, Word (.docx), EPUB, Video, Local codebases, Jupyter Notebooks, Local HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom feeds, Man pages, Confluence wikis, Notion pages, Slack/Discord chat exports
 
 See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
 

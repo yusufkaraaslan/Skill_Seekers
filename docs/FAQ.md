@@ -1,7 +1,7 @@
 # Frequently Asked Questions (FAQ)
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
+**Version:** 3.2.0
+**Last Updated:** 2026-03-15
 
 ---
 
@@ -9,13 +9,17 @@
 
 ### What is Skill Seekers?
 
-Skill Seekers is a Python tool that converts documentation websites, GitHub repositories, and PDF files into AI-ready formats for 16+ platforms: LLM platforms (Claude, Gemini, OpenAI), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev).
+Skill Seekers is a Python tool that converts 17 source types — documentation websites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML files, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and local codebases — into AI-ready formats for 16+ platforms: LLM platforms (Claude, Gemini, OpenAI), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev).
 
 **Use Cases:**
 - Create custom documentation skills for your favorite frameworks
 - Analyze GitHub repositories and extract code patterns
 - Convert PDF manuals into searchable AI skills
-- Combine multiple sources (docs + code + PDFs) into unified skills
+- Import knowledge from Confluence, Notion, or Slack/Discord
+- Extract content from videos (YouTube, Vimeo, local files)
+- Convert Jupyter notebooks, EPUB books, or PowerPoint slides into skills
+- Parse OpenAPI/Swagger specs into API reference skills
+- Combine multiple sources (docs + code + PDFs + more) into unified skills
 
 ### Which platforms are supported?
 
@@ -77,12 +81,43 @@ The `--setup` command auto-detects your GPU vendor (NVIDIA CUDA, AMD ROCm, or CP
 - **AMD:** Uses `rocminfo` to find ROCm version → installs matching ROCm PyTorch
 - **CPU-only:** Installs lightweight CPU-only PyTorch
 
+### What source types are supported?
+
+Skill Seekers supports **17 source types**:
+
+| # | Source Type | CLI Command | Auto-Detection |
+|---|------------|-------------|----------------|
+| 1 | Documentation (web) | `scrape` / `create <url>` | HTTP/HTTPS URLs |
+| 2 | GitHub repo | `github` / `create owner/repo` | `owner/repo` or github.com URLs |
+| 3 | PDF | `pdf` / `create file.pdf` | `.pdf` extension |
+| 4 | Word (.docx) | `word` / `create file.docx` | `.docx` extension |
+| 5 | EPUB | `epub` / `create file.epub` | `.epub` extension |
+| 6 | Video | `video` / `create <url/file>` | YouTube/Vimeo URLs, video extensions |
+| 7 | Local codebase | `analyze` / `create ./path` | Directory paths |
+| 8 | Jupyter Notebook | `jupyter` / `create file.ipynb` | `.ipynb` extension |
+| 9 | Local HTML | `html` / `create file.html` | `.html`/`.htm` extensions |
+| 10 | OpenAPI/Swagger | `openapi` / `create spec.yaml` | `.yaml`/`.yml` with OpenAPI content |
+| 11 | AsciiDoc | `asciidoc` / `create file.adoc` | `.adoc`/`.asciidoc` extensions |
+| 12 | PowerPoint | `pptx` / `create file.pptx` | `.pptx` extension |
+| 13 | RSS/Atom | `rss` / `create feed.rss` | `.rss`/`.atom` extensions |
+| 14 | Man pages | `manpage` / `create cmd.1` | `.1`-`.8`/`.man` extensions |
+| 15 | Confluence | `confluence` | API or export directory |
+| 16 | Notion | `notion` | API or export directory |
+| 17 | Slack/Discord | `chat` | Export directory or API |
+
+The `create` command auto-detects the source type from your input, so you often don't need to specify a subcommand.
+
 ### How long does it take to create a skill?
 
 **Typical Times:**
 - Documentation scraping: 5-45 minutes (depends on size)
 - GitHub analysis: 1-5 minutes (basic) or 20-60 minutes (C3.x deep analysis)
 - PDF extraction: 30 seconds - 5 minutes
+- Video extraction: 2-10 minutes (depends on length and visual analysis)
+- Word/EPUB/PPTX: 10-60 seconds
+- Jupyter notebook: 10-30 seconds
+- OpenAPI spec: 5-15 seconds
+- Confluence/Notion import: 1-5 minutes (depends on space size)
 - AI enhancement: 30-60 seconds (LOCAL or API mode)
 - Total workflow: 10-60 minutes
 
@@ -212,6 +247,92 @@ skill-seekers pdf scanned.pdf --enable-ocr
 
 # Extract images and tables
 skill-seekers pdf document.pdf --extract-images --extract-tables
+```
+
+### How do I scrape a Jupyter Notebook?
+
+```bash
+# Extract cells, outputs, and markdown from a notebook
+skill-seekers jupyter analysis.ipynb --name data-analysis
+
+# Or use auto-detection
+skill-seekers create analysis.ipynb
+```
+
+Jupyter extraction preserves code cells, markdown cells, and cell outputs. It works with `.ipynb` files from JupyterLab, Google Colab, and other notebook environments.
+
+### How do I import from Confluence or Notion?
+
+**Confluence:**
+```bash
+# From Confluence Cloud API
+export CONFLUENCE_URL=https://yourorg.atlassian.net
+export CONFLUENCE_TOKEN=your-api-token
+export CONFLUENCE_EMAIL=your-email@example.com
+skill-seekers confluence --space MYSPACE --name my-wiki
+
+# From a Confluence HTML/XML export directory
+skill-seekers confluence --export-dir ./confluence-export --name my-wiki
+```
+
+**Notion:**
+```bash
+# From Notion API
+export NOTION_TOKEN=secret_...
+skill-seekers notion --database DATABASE_ID --name my-notes
+
+# From a Notion HTML/Markdown export directory
+skill-seekers notion --export-dir ./notion-export --name my-notes
+```
+
+### How do I convert Word, EPUB, or PowerPoint files?
+
+```bash
+# Word document
+skill-seekers word report.docx --name quarterly-report
+
+# EPUB book
+skill-seekers epub handbook.epub --name dev-handbook
+
+# PowerPoint presentation
+skill-seekers pptx slides.pptx --name training-deck
+
+# Or use auto-detection for any of them
+skill-seekers create report.docx
+skill-seekers create handbook.epub
+skill-seekers create slides.pptx
+```
+
+### How do I parse an OpenAPI/Swagger spec?
+
+```bash
+# From a local YAML/JSON file
+skill-seekers openapi api-spec.yaml --name my-api
+
+# Auto-detection works too
+skill-seekers create api-spec.yaml
+```
+
+OpenAPI extraction parses endpoints, schemas, parameters, and examples into a structured API reference skill.
+
+### How do I extract content from RSS feeds or man pages?
+
+```bash
+# RSS/Atom feed
+skill-seekers rss https://blog.example.com/feed.xml --name blog-feed
+
+# Man page
+skill-seekers manpage grep.1 --name grep-manual
+```
+
+### How do I import from Slack or Discord?
+
+```bash
+# From a Slack export directory
+skill-seekers chat --platform slack --export-dir ./slack-export --name team-knowledge
+
+# From a Discord export directory
+skill-seekers chat --platform discord --export-dir ./discord-export --name server-archive
 ```
 
 ### Can I combine multiple sources?
@@ -704,6 +825,6 @@ Yes!
 
 ---
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
+**Version:** 3.2.0
+**Last Updated:** 2026-03-15
 **Questions? Ask on [GitHub Discussions](https://github.com/yusufkaraaslan/Skill_Seekers/discussions)**

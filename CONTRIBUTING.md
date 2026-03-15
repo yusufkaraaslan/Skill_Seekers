@@ -441,20 +441,45 @@ def test_config_validation_with_missing_fields():
 
 ```
 Skill_Seekers/
-├── cli/                    # CLI tools
-│   ├── doc_scraper.py     # Main scraper
-│   ├── package_skill.py   # Packager
-│   ├── upload_skill.py    # Uploader
-│   └── utils.py           # Shared utilities
-├── mcp/                   # MCP server
-│   ├── server.py          # MCP implementation
-│   └── requirements.txt   # MCP dependencies
-├── configs/               # Framework configs
-├── docs/                  # Documentation
-├── tests/                 # Test suite
-└── .github/              # GitHub config
-    └── workflows/         # CI/CD workflows
+├── src/skill_seekers/      # Main package (src/ layout)
+│   ├── cli/                # CLI commands and entry points
+│   │   ├── main.py         # Unified CLI entry (COMMAND_MODULES dict)
+│   │   ├── source_detector.py  # Auto-detects source type
+│   │   ├── create_command.py   # Unified `create` command routing
+│   │   ├── config_validator.py # VALID_SOURCE_TYPES set
+│   │   ├── unified_scraper.py  # Multi-source orchestrator
+│   │   ├── unified_skill_builder.py # Pairwise synthesis + generic merge
+│   │   ├── doc_scraper.py      # Documentation (web)
+│   │   ├── github_scraper.py   # GitHub repos
+│   │   ├── pdf_scraper.py      # PDF files
+│   │   ├── word_scraper.py     # Word (.docx)
+│   │   ├── epub_scraper.py     # EPUB books
+│   │   ├── video_scraper.py    # Video (YouTube, Vimeo, local)
+│   │   ├── codebase_scraper.py # Local codebases
+│   │   ├── jupyter_scraper.py  # Jupyter Notebooks
+│   │   ├── html_scraper.py     # Local HTML files
+│   │   ├── openapi_scraper.py  # OpenAPI/Swagger specs
+│   │   ├── asciidoc_scraper.py # AsciiDoc files
+│   │   ├── pptx_scraper.py     # PowerPoint files
+│   │   ├── rss_scraper.py      # RSS/Atom feeds
+│   │   ├── manpage_scraper.py  # Man pages
+│   │   ├── confluence_scraper.py # Confluence wikis
+│   │   ├── notion_scraper.py   # Notion pages
+│   │   ├── chat_scraper.py     # Slack/Discord exports
+│   │   ├── adaptors/          # Platform adaptors (Strategy pattern)
+│   │   ├── arguments/         # CLI argument definitions (one per source)
+│   │   ├── parsers/           # Subcommand parsers (one per source)
+│   │   └── storage/           # Cloud storage adaptors
+│   ├── mcp/                # MCP server + tools
+│   └── sync/               # Sync monitoring
+├── configs/                # Preset JSON scraping configs
+├── docs/                   # Documentation
+├── tests/                  # 115+ test files (pytest)
+└── .github/               # GitHub config
+    └── workflows/          # CI/CD workflows
 ```
+
+**Scraper pattern (17 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
 
 ---
 

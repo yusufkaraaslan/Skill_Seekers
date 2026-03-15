@@ -1,13 +1,13 @@
 # Scraping Guide
 
-> **Skill Seekers v3.1.4**
+> **Skill Seekers v3.2.0**
 > **Complete guide to all scraping options**
 
 ---
 
 ## Overview
 
-Skill Seekers can extract knowledge from four types of sources:
+Skill Seekers can extract knowledge from **17 types of sources**:
 
 | Source | Command | Best For |
 |--------|---------|----------|
@@ -15,6 +15,19 @@ Skill Seekers can extract knowledge from four types of sources:
 | **GitHub** | `create <repo>` | Source code, issues, releases |
 | **PDF** | `create <file.pdf>` | Manuals, papers, reports |
 | **Local** | `create <./path>` | Your projects, internal code |
+| **Word** | `create <file.docx>` | Reports, specifications |
+| **EPUB** | `create <file.epub>` | E-books, long-form docs |
+| **Video** | `create <url/file>` | Tutorials, presentations |
+| **Jupyter** | `create <file.ipynb>` | Data science, experiments |
+| **Local HTML** | `create <file.html>` | Offline docs, saved pages |
+| **OpenAPI** | `create <spec.yaml>` | API specs, Swagger docs |
+| **AsciiDoc** | `create <file.adoc>` | Technical documentation |
+| **PowerPoint** | `create <file.pptx>` | Slide decks, presentations |
+| **RSS/Atom** | `create <feed.rss>` | Blog feeds, news sources |
+| **Man Pages** | `create <cmd.1>` | Unix command documentation |
+| **Confluence** | `confluence` | Team wikis, knowledge bases |
+| **Notion** | `notion` | Workspace docs, databases |
+| **Slack/Discord** | `chat` | Chat history, discussions |
 
 ---
 
@@ -277,6 +290,274 @@ skill-seekers analyze --directory ./my-project \
   --skip-patterns \
   --skip-test-examples
 ```
+
+---
+
+## Video Extraction
+
+### Basic Usage
+
+```bash
+# YouTube video
+skill-seekers create https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Local video file
+skill-seekers create presentation.mp4
+
+# With explicit command
+skill-seekers video --url https://www.youtube.com/watch?v=...
+```
+
+### Visual Analysis
+
+```bash
+# Install full video support (includes Whisper + scene detection)
+pip install skill-seekers[video-full]
+skill-seekers video --setup  # auto-detect GPU and install PyTorch
+
+# Extract with visual analysis
+skill-seekers video --url <url> --visual-analysis
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[video]        # Transcript only
+pip install skill-seekers[video-full]   # + Whisper, scene detection
+```
+
+---
+
+## Word Document Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .docx
+skill-seekers create report.docx --name project-report
+
+# With explicit command
+skill-seekers word --file report.docx
+```
+
+**Handles:** Text, tables, headings, images, embedded metadata.
+
+---
+
+## EPUB Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .epub
+skill-seekers create programming-guide.epub --name guide
+
+# With explicit command
+skill-seekers epub --file programming-guide.epub
+```
+
+**Handles:** Chapters, metadata, table of contents, embedded images.
+
+---
+
+## Jupyter Notebook Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .ipynb
+skill-seekers create analysis.ipynb --name data-analysis
+
+# With explicit command
+skill-seekers jupyter --notebook analysis.ipynb
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[jupyter]
+```
+
+**Extracts:** Markdown cells, code cells, cell outputs, execution order.
+
+---
+
+## Local HTML Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .html
+skill-seekers create docs.html --name offline-docs
+
+# With explicit command
+skill-seekers html --file docs.html
+```
+
+**Handles:** Full HTML parsing, text extraction, link resolution.
+
+---
+
+## OpenAPI/Swagger Extraction
+
+### Basic Usage
+
+```bash
+# Extract from OpenAPI spec
+skill-seekers create api-spec.yaml --name my-api
+
+# With explicit command
+skill-seekers openapi --spec api-spec.yaml
+```
+
+**Extracts:** Endpoints, request/response schemas, authentication info, examples.
+
+---
+
+## AsciiDoc Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .adoc
+skill-seekers create guide.adoc --name dev-guide
+
+# With explicit command
+skill-seekers asciidoc --file guide.adoc
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[asciidoc]
+```
+
+**Handles:** Sections, code blocks, tables, cross-references, includes.
+
+---
+
+## PowerPoint Extraction
+
+### Basic Usage
+
+```bash
+# Extract from .pptx
+skill-seekers create slides.pptx --name presentation
+
+# With explicit command
+skill-seekers pptx --file slides.pptx
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[pptx]
+```
+
+**Extracts:** Slide text, speaker notes, images, tables, slide order.
+
+---
+
+## RSS/Atom Feed Extraction
+
+### Basic Usage
+
+```bash
+# Extract from RSS feed
+skill-seekers create blog.rss --name blog-archive
+
+# Atom feed
+skill-seekers create updates.atom --name updates
+
+# With explicit command
+skill-seekers rss --feed blog.rss
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[rss]
+```
+
+**Extracts:** Articles, titles, dates, authors, categories.
+
+---
+
+## Man Page Extraction
+
+### Basic Usage
+
+```bash
+# Extract from man page
+skill-seekers create curl.1 --name curl-manual
+
+# With explicit command
+skill-seekers manpage --file curl.1
+```
+
+**Handles:** Sections (NAME, SYNOPSIS, DESCRIPTION, OPTIONS, etc.), formatting.
+
+---
+
+## Confluence Wiki Extraction
+
+### Basic Usage
+
+```bash
+# From Confluence API
+skill-seekers confluence \
+  --base-url https://wiki.example.com \
+  --space DEV \
+  --name team-docs
+
+# From Confluence export directory
+skill-seekers confluence --export-dir ./confluence-export/
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[confluence]
+```
+
+**Extracts:** Pages, page trees, attachments, labels, spaces.
+
+---
+
+## Notion Extraction
+
+### Basic Usage
+
+```bash
+# From Notion API
+export NOTION_API_KEY=secret_...
+skill-seekers notion --database abc123 --name product-wiki
+
+# From Notion export directory
+skill-seekers notion --export-dir ./notion-export/
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[notion]
+```
+
+**Extracts:** Pages, databases, blocks, properties, relations.
+
+---
+
+## Slack/Discord Chat Extraction
+
+### Basic Usage
+
+```bash
+# From Slack export
+skill-seekers chat --export slack-export/ --name team-discussions
+
+# From Discord export
+skill-seekers chat --export discord-export/ --name server-archive
+```
+
+**Requirements:**
+```bash
+pip install skill-seekers[chat]
+```
+
+**Extracts:** Messages, threads, channels, reactions, attachments.
 
 ---
 

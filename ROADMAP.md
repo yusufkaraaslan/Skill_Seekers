@@ -4,16 +4,14 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 
 ---
 
-## 🎯 Current Status: v3.1.0-dev ✅
+## 🎯 Current Status: v3.2.0 ✅
 
-**Latest Release:** v3.0.0 (February 10, 2026) | In Development: v3.1.0-dev
+**Latest Release:** v3.2.0 (March 2026)
 
 **What Works:**
-- ✅ Documentation scraping (HTML websites with llms.txt support)
-- ✅ GitHub repository scraping with C3.x codebase analysis
-- ✅ PDF extraction with OCR and image support
-- ✅ Unified multi-source scraping (docs + GitHub + PDF)
-- ✅ 26 MCP tools fully functional
+- ✅ **17 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
+- ✅ Unified multi-source scraping with generic merge for any source combination
+- ✅ 26+ MCP tools fully functional
 - ✅ Multi-platform support (16 platforms: Claude, Gemini, OpenAI, LangChain, LlamaIndex, Haystack, ChromaDB, FAISS, Weaviate, Qdrant, Cursor, Windsurf, Cline, Continue.dev, Pinecone, Markdown)
 - ✅ Auto-upload to all platforms
 - ✅ 24 preset configs (including 7 unified configs)
@@ -21,12 +19,15 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 - ✅ C3.x codebase analysis suite (C3.1-C3.10)
 - ✅ Bootstrap skill feature - self-hosting capability
 - ✅ 1,880+ tests passing
-- ✅ Unified `create` command with auto-detection and progressive help
+- ✅ Unified `create` command with auto-detection for all 17 source types
 - ✅ Enhancement workflow presets (5 bundled: default, minimal, security-focus, architecture-comprehensive, api-documentation)
 - ✅ Cloud storage integration (S3, GCS, Azure)
+- ✅ Source auto-detection via `source_detector.py`
 
-**Recent Improvements (v3.1.0-dev):**
-- ✅ **Unified CLI**: `create` command auto-detects web/GitHub/local/PDF sources
+**Recent Improvements (v3.2.0):**
+- ✅ **10 new source types**: Word, EPUB, video, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord
+- ✅ **Generic merge system**: `_generic_merge()` in `unified_skill_builder.py` handles arbitrary source combinations
+- ✅ **Unified CLI**: `create` command auto-detects all 17 source types
 - ✅ **Workflow Presets**: YAML-based enhancement presets with CLI management
 - ✅ **Progressive Disclosure**: Default help shows 13 universal flags, detailed help per source
 - ✅ **Bug Fixes**: Markdown parser h1 filtering, paragraph length filtering
@@ -105,26 +106,38 @@ Small tasks that build community features incrementally
 ### 🛠️ **Category B: New Input Formats**
 Add support for non-HTML documentation sources
 
-#### B1: PDF Documentation Support
-- [ ] **Task B1.1:** Research PDF parsing libraries
-- [ ] **Task B1.2:** Create simple PDF text extractor (POC)
-- [ ] **Task B1.3:** Add PDF page detection and chunking
-- [ ] **Task B1.4:** Extract code blocks from PDFs
-- [ ] **Task B1.5:** Add PDF image extraction
-- [ ] **Task B1.6:** Create `pdf_scraper.py` CLI tool
-- [ ] **Task B1.7:** Add MCP tool `scrape_pdf`
-- [ ] **Task B1.8:** Create PDF config format
+#### B1: PDF Documentation Support ✅ **COMPLETE (v3.0.0)**
+- [x] **Task B1.1:** Research PDF parsing libraries ✅
+- [x] **Task B1.2:** Create simple PDF text extractor (POC) ✅
+- [x] **Task B1.3:** Add PDF page detection and chunking ✅
+- [x] **Task B1.4:** Extract code blocks from PDFs ✅
+- [x] **Task B1.5:** Add PDF image extraction ✅
+- [x] **Task B1.6:** Create `pdf_scraper.py` CLI tool ✅
+- [x] **Task B1.7:** Add MCP tool `scrape_pdf` ✅
+- [x] **Task B1.8:** Create PDF config format ✅
 
-**Start Small:** Pick B1.1 first (research only)
-
-#### B2: Microsoft Word (.docx) Support
-- [ ] **Task B2.1-B2.7:** Word document parsing and scraping
+#### B2: Microsoft Word (.docx) Support ✅ **COMPLETE (v3.2.0)**
+- [x] **Task B2.1-B2.7:** Word document parsing and scraping ✅
 
 #### B3: Excel/Spreadsheet (.xlsx) Support
 - [ ] **Task B3.1-B3.6:** Spreadsheet parsing and API extraction
 
-#### B4: Markdown Files Support
-- [ ] **Task B4.1-B4.6:** Local markdown directory scraping
+#### B4: Markdown Files Support ✅ **COMPLETE (v3.1.0)**
+- [x] **Task B4.1-B4.6:** Local markdown directory scraping ✅
+
+#### B5: Additional Source Types ✅ **COMPLETE (v3.2.0)**
+- [x] **EPUB** - `epub_scraper.py` ✅
+- [x] **Video** - `video_scraper.py` (YouTube, Vimeo, local files) ✅
+- [x] **Jupyter Notebook** - `jupyter_scraper.py` ✅
+- [x] **Local HTML** - `html_scraper.py` ✅
+- [x] **OpenAPI/Swagger** - `openapi_scraper.py` ✅
+- [x] **AsciiDoc** - `asciidoc_scraper.py` ✅
+- [x] **PowerPoint** - `pptx_scraper.py` ✅
+- [x] **RSS/Atom** - `rss_scraper.py` ✅
+- [x] **Man pages** - `manpage_scraper.py` ✅
+- [x] **Confluence** - `confluence_scraper.py` ✅
+- [x] **Notion** - `notion_scraper.py` ✅
+- [x] **Slack/Discord** - `chat_scraper.py` ✅
 
 ---
 
@@ -347,13 +360,14 @@ Small standalone tools that add value
 
 ## 📈 Metrics & Goals
 
-### Current State (v2.6.0) ✅
+### Current State (v3.2.0) ✅
+- ✅ 17 source types supported
 - ✅ 24 preset configs (14 official + 10 test/examples)
-- ✅ 700+ tests (excellent coverage)
-- ✅ 18 MCP tools
+- ✅ 1,880+ tests (excellent coverage)
+- ✅ 26+ MCP tools
 - ✅ 4 platform adaptors (Claude, Gemini, OpenAI, Markdown)
 - ✅ C3.x codebase analysis suite complete
-- ✅ Multi-source synthesis with conflict detection
+- ✅ Multi-source synthesis with generic merge for any combination
 
 ### Goals for v2.7-v2.9
 - 🎯 Professional website live
@@ -433,7 +447,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
-**Last Updated:** January 14, 2026
+**Last Updated:** March 15, 2026
 **Philosophy:** Small steps → Consistent progress → Compound results
 
 **Together, we're building the future of documentation-to-AI skill conversion!** 🚀

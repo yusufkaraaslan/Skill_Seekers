@@ -1,12 +1,12 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.1.0**
+> **Complete documentation for Skill Seekers v3.2.0**
 
 ---
 
 ## Welcome!
 
-This is the official documentation for **Skill Seekers** - the universal tool for converting documentation, code, and PDFs into AI-ready skills.
+This is the official documentation for **Skill Seekers** - the universal tool for converting 17 source types (documentation, code, PDFs, videos, notebooks, wikis, and more) into AI-ready skills.
 
 ---
 
@@ -36,8 +36,9 @@ Explore our **User Guides**:
 
 Look up specific information:
 
-- [CLI Reference](reference/CLI_REFERENCE.md) - All 20 commands
-- [MCP Reference](reference/MCP_REFERENCE.md) - 26 MCP tools
+- [CLI Reference](reference/CLI_REFERENCE.md) - All 30+ commands
+- [MCP Reference](reference/MCP_REFERENCE.md) - 27 MCP tools
+- [Feature Matrix](reference/FEATURE_MATRIX.md) - 17 source types × 4 platforms
 - [Config Format](reference/CONFIG_FORMAT.md) - JSON specification
 - [Environment Variables](reference/ENVIRONMENT_VARIABLES.md) - All env vars
 
@@ -60,7 +61,7 @@ Power user features:
 # 1. Install
 pip install skill-seekers
 
-# 2. Create skill
+# 2. Create skill from any of 17 source types
 skill-seekers create https://docs.django.com/
 
 # 3. Package for Claude
@@ -81,6 +82,18 @@ skill-seekers pdf manual.pdf --name docs
 
 # Analyze local code
 skill-seekers analyze --directory ./my-project
+
+# New source types (v3.2.0)
+skill-seekers create notebook.ipynb              # Jupyter Notebook
+skill-seekers create page.html                   # Local HTML
+skill-seekers create api-spec.yaml               # OpenAPI/Swagger
+skill-seekers create guide.adoc                  # AsciiDoc
+skill-seekers create slides.pptx                 # PowerPoint
+skill-seekers rss --feed-url https://blog.example.com/feed  # RSS/Atom
+skill-seekers manpage --man-path curl.1           # Man pages
+skill-seekers confluence --space-key DEV          # Confluence
+skill-seekers notion --database-id abc123         # Notion
+skill-seekers chat --export-path ./slack-export/  # Slack/Discord
 
 # Enhance skill
 skill-seekers enhance output/my-skill/
@@ -119,8 +132,8 @@ docs/
 │   └── 06-troubleshooting.md
 │
 ├── reference/               # Technical reference
-│   ├── CLI_REFERENCE.md     # 20 commands
-│   ├── MCP_REFERENCE.md     # 26 MCP tools
+│   ├── CLI_REFERENCE.md     # 30+ commands
+│   ├── MCP_REFERENCE.md     # 27 MCP tools
 │   ├── CONFIG_FORMAT.md     # JSON spec
 │   └── ENVIRONMENT_VARIABLES.md
 │
@@ -163,8 +176,8 @@ For Cursor, Windsurf, Cline:
 
 ## Version Information
 
-- **Current Version:** 3.1.0
-- **Last Updated:** 2026-02-16
+- **Current Version:** 3.2.0
+- **Last Updated:** 2026-03-15
 - **Python Required:** 3.10+
 
 ---

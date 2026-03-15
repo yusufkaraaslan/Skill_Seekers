@@ -2,12 +2,12 @@
 
 ## Overview
 
-The Unified Document Parser system provides a standardized interface for extracting structured content from multiple document formats (RST, Markdown, PDF). It replaces format-specific extraction logic with a common data model and extensible parser framework.
+The Unified Document Parser system provides a standardized interface for extracting structured content from multiple document formats. As of v3.2.0, the system supports **17 source types** through registered parsers and scraper modules. It replaces format-specific extraction logic with a common data model and extensible parser framework.
 
 ## Architecture Goals
 
 1. **Standardization**: All parsers output the same `Document` structure
-2. **Extensibility**: Easy to add new formats (HTML, AsciiDoc, etc.)
+2. **Extensibility**: Easy to add new formats via the scraper pattern (17 source types and growing)
 3. **Quality**: Built-in quality scoring for extracted content
 4. **Backward Compatibility**: Legacy parsers remain functional during migration
 
@@ -163,9 +163,45 @@ class ParseResult:
 - Images and links
 - Frontmatter (YAML metadata)
 
-#### PDF Parser (Future)
+#### PDF Parser
 
-**Status**: Not yet migrated to unified structure
+**File**: `src/skill_seekers/cli/pdf_scraper.py`
+
+**Status**: Integrated. Extracts text, tables, images, and code blocks from PDF files. Supports OCR for scanned documents.
+
+#### Additional Registered Parsers (v3.2.0)
+
+The following source types each have a dedicated scraper module registered in `parsers/__init__.py` (PARSERS list), `main.py` (COMMAND_MODULES dict), and `config_validator.py` (VALID_SOURCE_TYPES set):
+
+| # | Source Type | Scraper Module | Parser Registration |
+|---|------------|---------------|---------------------|
+| 1 | Documentation (web) | `doc_scraper.py` | `documentation` |
+| 2 | GitHub repo | `github_scraper.py` | `github` |
+| 3 | PDF | `pdf_scraper.py` | `pdf` |
+| 4 | Word (.docx) | `word_scraper.py` | `word` |
+| 5 | EPUB | `epub_scraper.py` | `epub` |
+| 6 | Video | `video_scraper.py` | `video` |
+| 7 | Local codebase | `codebase_scraper.py` | `local` |
+| 8 | Jupyter Notebook | `jupyter_scraper.py` | `jupyter` |
+| 9 | Local HTML | `html_scraper.py` | `html` |
+| 10 | OpenAPI/Swagger | `openapi_scraper.py` | `openapi` |
+| 11 | AsciiDoc | `asciidoc_scraper.py` | `asciidoc` |
+| 12 | PowerPoint | `pptx_scraper.py` | `pptx` |
+| 13 | RSS/Atom | `rss_scraper.py` | `rss` |
+| 14 | Man pages | `manpage_scraper.py` | `manpage` |
+| 15 | Confluence | `confluence_scraper.py` | `confluence` |
+| 16 | Notion | `notion_scraper.py` | `notion` |
+| 17 | Slack/Discord | `chat_scraper.py` | `chat` |
+
+Each scraper follows the same pattern: a `<Type>ToSkillConverter` class with a `main()` function, registered in three places (see [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full scraper pattern).
+
+#### Generic Merge System
+
+**File**: `src/skill_seekers/cli/unified_skill_builder.py`
+
+The `unified_skill_builder.py` handles multi-source merging:
+- **Pairwise synthesis**: Optimized merge for common combos (docs+github, docs+pdf, github+pdf)
+- **Generic merge** (`_generic_merge()`): Handles all other source type combinations (e.g., docs+jupyter+confluence) by normalizing each source's `scraped_data` into a common structure and merging sections
 
 ### 4. Quality Scoring Layer
 
@@ -387,13 +423,12 @@ The enhanced `extract_rst_structure()` function:
 
 ## Future Enhancements
 
-1. **PDF Parser**: Migrate to unified structure
-2. **HTML Parser**: Add for web documentation
-3. **Caching Layer**: Redis/disk cache for parsed docs
-4. **Streaming**: Parse large files incrementally
-5. **Validation**: JSON Schema validation for output
+1. **Caching Layer**: Redis/disk cache for parsed docs
+2. **Streaming**: Parse large files incrementally
+3. **Validation**: JSON Schema validation for output
+4. **Additional formats**: As new source types are added, they follow the same parser registration pattern
 
 ---
 
-**Last Updated**: 2026-02-15
-**Version**: 1.0.0
+**Last Updated**: 2026-03-15
+**Version**: 2.0.0 (updated for 17 source types)

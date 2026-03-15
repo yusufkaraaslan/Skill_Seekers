@@ -1,7 +1,7 @@
 # API Reference - Programmatic Usage
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
+**Version:** 3.2.0
+**Last Updated:** 2026-03-15
 **Status:** ✅ Production Ready
 
 ---
@@ -217,7 +217,7 @@ skill_path = scrape_pdf(
 
 ### 4. Unified Multi-Source Scraping API
 
-Combine multiple sources (docs + GitHub + PDF) into a single unified skill.
+Combine multiple sources (any of 17 supported types) into a single unified skill.
 
 #### Unified Scraping
 
@@ -552,27 +552,47 @@ Skill Seekers uses JSON configuration files to define scraping behavior.
 
 ### Unified Config Schema (Multi-Source)
 
+Supports all 17 source types: `documentation`, `github`, `pdf`, `local`, `word`, `video`, `epub`, `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `rss`, `manpage`, `confluence`, `notion`, `chat`.
+
 ```json
 {
   "name": "framework-unified",
   "description": "Complete framework documentation",
-  "sources": {
-    "documentation": {
-      "type": "docs",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
       "base_url": "https://docs.example.com/",
       "selectors": { "main_content": "article" }
     },
-    "github": {
+    {
       "type": "github",
-      "repo_url": "https://github.com/org/repo",
-      "analysis_depth": "c3x"
+      "repo": "org/repo",
+      "include_code": true,
+      "code_analysis_depth": "deep"
     },
-    "pdf": {
+    {
       "type": "pdf",
-      "pdf_path": "manual.pdf",
-      "enable_ocr": true
+      "path": "manual.pdf"
+    },
+    {
+      "type": "openapi",
+      "path": "specs/openapi.yaml"
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/watch?v=example"
+    },
+    {
+      "type": "jupyter",
+      "path": "notebooks/examples.ipynb"
+    },
+    {
+      "type": "confluence",
+      "base_url": "https://company.atlassian.net/wiki",
+      "space_key": "DOCS"
     }
-  },
+  ],
   "conflict_resolution": "prefer_code",
   "merge_strategy": "smart"
 }
@@ -961,7 +981,21 @@ monitor_enhancement('output/react/', watch=True)
 | **Documentation Scraping** | `doc_scraper` | Extract from docs websites |
 | **GitHub Analysis** | `github_scraper` | Analyze code repositories |
 | **PDF Extraction** | `pdf_scraper` | Extract from PDF files |
-| **Unified Scraping** | `unified_scraper` | Multi-source scraping |
+| **Word Extraction** | `word_scraper` | Extract from .docx files |
+| **EPUB Extraction** | `epub_scraper` | Extract from .epub files |
+| **Video Transcription** | `video_scraper` | Extract from YouTube/Vimeo/local videos |
+| **Jupyter Extraction** | `jupyter_scraper` | Extract from .ipynb notebooks |
+| **HTML Extraction** | `html_scraper` | Extract from local HTML files |
+| **OpenAPI Parsing** | `openapi_scraper` | Parse OpenAPI/Swagger specs |
+| **AsciiDoc Extraction** | `asciidoc_scraper` | Extract from .adoc files |
+| **PowerPoint Extraction** | `pptx_scraper` | Extract from .pptx files |
+| **RSS/Atom Extraction** | `rss_scraper` | Extract from RSS/Atom feeds |
+| **Man Page Extraction** | `manpage_scraper` | Extract from Unix man pages |
+| **Confluence Extraction** | `confluence_scraper` | Extract from Confluence wikis |
+| **Notion Extraction** | `notion_scraper` | Extract from Notion workspaces |
+| **Chat Extraction** | `chat_scraper` | Extract from Slack/Discord exports |
+| **Local Codebase Analysis** | `codebase_scraper` | Analyze local directories |
+| **Unified Scraping** | `unified_scraper` | Multi-source scraping (17 types) |
 | **Skill Packaging** | `adaptors` | Package for LLM platforms |
 | **Skill Upload** | `adaptors` | Upload to platforms |
 | **AI Enhancement** | `adaptors` | Improve skill quality |
@@ -979,6 +1013,6 @@ monitor_enhancement('output/react/', watch=True)
 
 ---
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
+**Version:** 3.2.0
+**Last Updated:** 2026-03-15
 **Status:** ✅ Production Ready

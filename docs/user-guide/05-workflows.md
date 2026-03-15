@@ -1,6 +1,6 @@
 # Workflows Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.2.0**  
 > **Enhancement workflow presets for specialized analysis**
 
 ---
@@ -21,7 +21,7 @@ Basic Skill ──▶ Workflow: Security-Focus ──▶ Security-Enhanced Skill
 
 ## Built-in Presets
 
-Skill Seekers includes 5 built-in workflow presets:
+Skill Seekers includes 6 built-in workflow presets:
 
 | Preset | Stages | Best For |
 |--------|--------|----------|
@@ -30,6 +30,7 @@ Skill Seekers includes 5 built-in workflow presets:
 | `security-focus` | 4 | Security analysis |
 | `architecture-comprehensive` | 7 | Deep architecture review |
 | `api-documentation` | 3 | API documentation focus |
+| `complex-merge` | 3 | Merging multiple source types into a unified skill |
 
 ---
 
@@ -229,6 +230,36 @@ stages:
 ```bash
 skill-seekers create https://api.example.com/docs \
   --enhance-workflow api-documentation
+```
+
+---
+
+### Complex-Merge Workflow
+
+**Stages:** 3
+**Purpose:** Merging multiple heterogeneous sources into a unified, coherent skill
+
+```yaml
+stages:
+  - name: source-alignment
+    prompt: Align and deduplicate content from different source types...
+    
+  - name: cross-reference
+    prompt: Build cross-references between sources...
+    
+  - name: unified-synthesis
+    prompt: Synthesize a unified narrative from all sources...
+```
+
+**Use for:**
+- Multi-source unified configs (docs + GitHub + PDF + video)
+- Combining documentation with chat history or wiki pages
+- Any skill built from 3+ different source types
+
+**Example:**
+```bash
+skill-seekers unified --config configs/multi-source.json \
+  --enhance-workflow complex-merge
 ```
 
 ---
@@ -532,7 +563,7 @@ skill-seekers create <source> \
 
 ## Workflow Support Across All Scrapers
 
-Workflows are supported by **all 5 scrapers** in Skill Seekers:
+Workflows are supported by **all 17 source types** in Skill Seekers:
 
 | Scraper | Command | Workflow Support |
 |---------|---------|------------------|
@@ -540,6 +571,19 @@ Workflows are supported by **all 5 scrapers** in Skill Seekers:
 | GitHub | `github` | ✅ Full support |
 | Local Codebase | `analyze` | ✅ Full support |
 | PDF | `pdf` | ✅ Full support |
+| Word | `word` | ✅ Full support |
+| EPUB | `epub` | ✅ Full support |
+| Video | `video` | ✅ Full support |
+| Jupyter Notebook | `jupyter` | ✅ Full support |
+| Local HTML | `html` | ✅ Full support |
+| OpenAPI/Swagger | `openapi` | ✅ Full support |
+| AsciiDoc | `asciidoc` | ✅ Full support |
+| PowerPoint | `pptx` | ✅ Full support |
+| RSS/Atom | `rss` | ✅ Full support |
+| Man Pages | `manpage` | ✅ Full support |
+| Confluence | `confluence` | ✅ Full support |
+| Notion | `notion` | ✅ Full support |
+| Slack/Discord | `chat` | ✅ Full support |
 | Unified/Multi-Source | `unified` | ✅ Full support |
 | Create (Auto-detect) | `create` | ✅ Full support |
 
@@ -609,6 +653,7 @@ skill-seekers unified config.json --enhance-workflow api-documentation
 | **Security-Focus** | Security-sensitive projects |
 | **Architecture** | Large frameworks, systems |
 | **API-Docs** | API frameworks, libraries |
+| **Complex-Merge** | Multi-source skills (3+ source types) |
 | **Custom** | Specialized domains |
 | **Chaining** | Multiple perspectives needed |
 

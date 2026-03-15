@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.2.0**  
 > **Create your first skill in 3 commands**
 
 ---
@@ -24,7 +24,7 @@ skill-seekers package output/django --target claude
 
 ## What You Can Create From
 
-The `create` command auto-detects your source:
+The `create` command auto-detects your source (17 source types supported):
 
 | Source Type | Example Command |
 |-------------|-----------------|
@@ -32,6 +32,15 @@ The `create` command auto-detects your source:
 | **GitHub Repo** | `skill-seekers create facebook/react` |
 | **Local Code** | `skill-seekers create ./my-project` |
 | **PDF File** | `skill-seekers create manual.pdf` |
+| **Word Document** | `skill-seekers create report.docx` |
+| **EPUB Book** | `skill-seekers create book.epub` |
+| **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
+| **Local HTML** | `skill-seekers create page.html` |
+| **OpenAPI/Swagger** | `skill-seekers create api-spec.yaml` |
+| **AsciiDoc** | `skill-seekers create guide.adoc` |
+| **PowerPoint** | `skill-seekers create slides.pptx` |
+| **RSS/Atom Feed** | `skill-seekers create feed.rss` |
+| **Man Page** | `skill-seekers create curl.1` |
 | **Config File** | `skill-seekers create configs/custom.json` |
 
 ---
@@ -85,6 +94,49 @@ skill-seekers package output/product-docs --target claude
 # Research paper
 skill-seekers create paper.pdf --name research
 skill-seekers package output/research --target claude
+```
+
+### Jupyter Notebook
+
+```bash
+# Data analysis notebook
+skill-seekers create analysis.ipynb --name data-analysis
+skill-seekers package output/data-analysis --target claude
+```
+
+### OpenAPI/Swagger Spec
+
+```bash
+# API specification
+skill-seekers create api-spec.yaml --name my-api
+skill-seekers package output/my-api --target claude
+```
+
+### PowerPoint Presentation
+
+```bash
+# Slide deck
+skill-seekers create slides.pptx --name presentation
+skill-seekers package output/presentation --target claude
+```
+
+### Other Source Types
+
+```bash
+# Confluence wiki
+skill-seekers confluence --space-key DEV --name team-wiki
+
+# Notion pages
+skill-seekers notion --database-id abc123 --name my-notes
+
+# RSS/Atom feed
+skill-seekers rss --feed-url https://blog.example.com/feed --name blog
+
+# Man pages
+skill-seekers manpage --man-path curl.1 --name curl-docs
+
+# Slack/Discord export
+skill-seekers chat --export-path ./slack-export/ --name team-chat
 ```
 
 ---

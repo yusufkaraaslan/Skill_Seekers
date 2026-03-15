@@ -1,6 +1,6 @@
 # Installation Guide
 
-> **Skill Seekers v3.1.0**
+> **Skill Seekers v3.2.0**
 
 Get Skill Seekers installed and running in under 5 minutes.
 
@@ -116,6 +116,12 @@ pip install skill-seekers[dev]
 | `gemini` | Google Gemini support | `pip install skill-seekers[gemini]` |
 | `openai` | OpenAI ChatGPT support | `pip install skill-seekers[openai]` |
 | `mcp` | MCP server | `pip install skill-seekers[mcp]` |
+| `video` | YouTube/Vimeo subtitles & metadata | `pip install skill-seekers[video]` |
+| `video-full` | + Whisper transcription & visual frames | `pip install skill-seekers[video-full]` |
+| `jupyter` | Jupyter Notebook extraction | `pip install skill-seekers[jupyter]` |
+| `ocr` | OCR support (scanned PDFs, visual frames) | `pip install skill-seekers[ocr]` |
+| `confluence` | Confluence wiki support | `pip install skill-seekers[confluence]` |
+| `notion` | Notion pages support | `pip install skill-seekers[notion]` |
 | `chroma` | ChromaDB export | `pip install skill-seekers[chroma]` |
 | `weaviate` | Weaviate export | `pip install skill-seekers[weaviate]` |
 | `qdrant` | Qdrant export | `pip install skill-seekers[qdrant]` |

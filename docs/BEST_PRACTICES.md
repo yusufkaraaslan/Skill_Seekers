@@ -434,6 +434,53 @@ That's it! Follow these practices and your skills will work better with Claude.
 
 ---
 
+## 8. Tips for Specific Source Types
+
+Skill Seekers supports **17 source types**. Here are tips for getting the best results from each category:
+
+### Documentation (Web)
+- Always test CSS selectors before large scrapes: `skill-seekers scrape --max-pages 3 --verbose`
+- Use `--async` for large sites (2-3x faster)
+
+### GitHub Repos
+- Use `--analysis-depth c3x` for deep analysis (patterns, tests, architecture)
+- Set `GITHUB_TOKEN` to avoid rate limits
+
+### PDFs & Office Documents (PDF, Word, EPUB, PPTX)
+- Use `--enable-ocr` for scanned PDFs
+- For Word/PPTX, embedded images are extracted automatically; add `--extract-images` for PDFs
+- EPUB works best with DRM-free files
+
+### Video
+- Run `skill-seekers video --setup` first to install GPU-optimized dependencies
+- YouTube and Vimeo URLs are auto-detected; local video files also work
+
+### Jupyter Notebooks
+- Ensure notebooks are saved (unsaved cell outputs won't be captured)
+- Both code cells and markdown cells are extracted
+
+### OpenAPI/Swagger Specs
+- Both YAML and JSON specs are supported (OpenAPI 3.x and Swagger 2.0)
+- Endpoints, schemas, and examples are parsed into structured API reference
+
+### AsciiDoc & Man Pages
+- AsciiDoc requires `asciidoctor` (install via your package manager or gem)
+- Man pages in sections `.1` through `.8` are supported
+
+### RSS/Atom Feeds
+- Useful for converting blog posts and changelogs into skills
+- Set `--max-items` to limit how many entries are extracted
+
+### Confluence & Notion
+- API mode requires authentication tokens (see FAQ for setup)
+- Export directory mode works offline with HTML/Markdown exports
+
+### Slack & Discord
+- Use official export tools (Slack Workspace Export, DiscordChatExporter)
+- Specify `--platform slack` or `--platform discord` explicitly
+
+---
+
 ## See Also
 
 - [Enhancement Guide](features/ENHANCEMENT.md) - AI-powered SKILL.md improvement

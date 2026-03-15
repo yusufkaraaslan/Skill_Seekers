@@ -11,6 +11,28 @@ Complete feature support across all platforms and skill modes.
 | **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
 
+## Source Type Support (17 Types)
+
+| Source Type | CLI Command | Platforms | Detection |
+|-------------|------------|-----------|-----------|
+| **Documentation (web)** | `scrape` / `create <url>` | All 4 | HTTP/HTTPS URLs |
+| **GitHub repo** | `github` / `create owner/repo` | All 4 | `owner/repo` or github.com URLs |
+| **PDF** | `pdf` / `create file.pdf` | All 4 | `.pdf` extension |
+| **Word (.docx)** | `word` / `create file.docx` | All 4 | `.docx` extension |
+| **EPUB** | `epub` / `create file.epub` | All 4 | `.epub` extension |
+| **Video** | `video` / `create <url/file>` | All 4 | YouTube/Vimeo URLs, video extensions |
+| **Local codebase** | `analyze` / `create ./path` | All 4 | Directory paths |
+| **Jupyter Notebook** | `jupyter` / `create file.ipynb` | All 4 | `.ipynb` extension |
+| **Local HTML** | `html` / `create file.html` | All 4 | `.html`/`.htm` extensions |
+| **OpenAPI/Swagger** | `openapi` / `create spec.yaml` | All 4 | `.yaml`/`.yml` with OpenAPI content |
+| **AsciiDoc** | `asciidoc` / `create file.adoc` | All 4 | `.adoc`/`.asciidoc` extensions |
+| **PowerPoint** | `pptx` / `create file.pptx` | All 4 | `.pptx` extension |
+| **RSS/Atom** | `rss` / `create feed.rss` | All 4 | `.rss`/`.atom` extensions |
+| **Man pages** | `manpage` / `create cmd.1` | All 4 | `.1`–`.8`/`.man` extensions |
+| **Confluence** | `confluence` | All 4 | API or export directory |
+| **Notion** | `notion` | All 4 | API or export directory |
+| **Slack/Discord** | `chat` | All 4 | Export directory or API |
+
 ## Skill Mode Support
 
 | Mode | Description | Platforms | Example Configs |
@@ -18,17 +40,31 @@ Complete feature support across all platforms and skill modes.
 | **Documentation** | Scrape HTML docs | All 4 | react.json, django.json (14 total) |
 | **GitHub** | Analyze repositories | All 4 | react_github.json, godot_github.json |
 | **PDF** | Extract from PDFs | All 4 | example_pdf.json |
-| **Unified** | Multi-source (docs+GitHub+PDF) | All 4 | react_unified.json (5 total) |
+| **Unified** | Multi-source (docs+GitHub+PDF+more) | All 4 | react_unified.json (5 total) |
 | **Local Repo** | Unlimited local analysis | All 4 | deck_deck_go_local.json |
 
 ## CLI Command Support
 
-| Command | Platforms | Skill Modes | Multi-Platform Flag |
+| Command | Platforms | Source Types | Multi-Platform Flag |
 |---------|-----------|-------------|---------------------|
 | `scrape` | All | Docs only | No (output is universal) |
 | `github` | All | GitHub only | No (output is universal) |
 | `pdf` | All | PDF only | No (output is universal) |
-| `unified` | All | Unified only | No (output is universal) |
+| `word` | All | Word (.docx) only | No (output is universal) |
+| `epub` | All | EPUB only | No (output is universal) |
+| `video` | All | Video only | No (output is universal) |
+| `jupyter` | All | Jupyter Notebook only | No (output is universal) |
+| `html` | All | Local HTML only | No (output is universal) |
+| `openapi` | All | OpenAPI/Swagger only | No (output is universal) |
+| `asciidoc` | All | AsciiDoc only | No (output is universal) |
+| `pptx` | All | PowerPoint only | No (output is universal) |
+| `rss` | All | RSS/Atom only | No (output is universal) |
+| `manpage` | All | Man pages only | No (output is universal) |
+| `confluence` | All | Confluence only | No (output is universal) |
+| `notion` | All | Notion only | No (output is universal) |
+| `chat` | All | Slack/Discord only | No (output is universal) |
+| `unified` | All | Multi-source | No (output is universal) |
+| `create` | All | Auto-detects all 17 | No (output is universal) |
 | `enhance` | Claude, Gemini, OpenAI | All | ✅ `--target` |
 | `package` | All | All | ✅ `--target` |
 | `upload` | Claude, Gemini, OpenAI | All | ✅ `--target` |
@@ -50,6 +86,7 @@ Complete feature support across all platforms and skill modes.
 | `scrape_docs` | All | Docs + Unified | No (output is universal) |
 | `scrape_github` | All | GitHub only | No (output is universal) |
 | `scrape_pdf` | All | PDF only | No (output is universal) |
+| `scrape_generic` | All | 10 new source types | No (output is universal) |
 | **Packaging Tools** |
 | `package_skill` | All | All | ✅ `target` parameter |
 | `upload_skill` | Claude, Gemini, OpenAI | All | ✅ `target` parameter |
@@ -310,7 +347,7 @@ A: Yes! Enhancement adds platform-specific formatting:
 - OpenAI: Plain text assistant instructions
 
 **Q: Do all skill modes work with all platforms?**
-A: Yes! All 5 skill modes (Docs, GitHub, PDF, Unified, Local Repo) work with all 4 platforms.
+A: Yes! All 17 source types and all 5 skill modes (Docs, GitHub, PDF, Unified, Local Repo) work with all 4 platforms.
 
 ## See Also
 

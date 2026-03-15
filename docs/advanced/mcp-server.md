@@ -1,6 +1,6 @@
 # MCP Server Setup Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.2.0**  
 > **Integrate with AI agents via Model Context Protocol**
 
 ---
@@ -143,7 +143,7 @@ skill-seekers-mcp --transport http --port 8765
 
 ## Available Tools
 
-26 tools organized by category:
+27 tools organized by category:
 
 ### Core Tools (9)
 - `list_configs` - List presets
@@ -156,9 +156,10 @@ skill-seekers-mcp --transport http --port 8765
 - `enhance_skill` - AI enhancement
 - `install_skill` - Complete workflow
 
-### Extended Tools (9)
+### Extended Tools (10)
 - `scrape_github` - GitHub repo
 - `scrape_pdf` - PDF extraction
+- `scrape_generic` - Generic scraper for 10 new source types (see below)
 - `scrape_codebase` - Local code
 - `unified_scrape` - Multi-source
 - `detect_patterns` - Pattern detection
@@ -179,6 +180,37 @@ skill-seekers-mcp --transport http --port 8765
 - `export_to_chroma`
 - `export_to_faiss`
 - `export_to_qdrant`
+
+### scrape_generic Tool
+
+The `scrape_generic` tool is the generic entry point for 10 new source types added in v3.2.0. It delegates to the appropriate CLI scraper module.
+
+**Supported source types:** `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `rss`, `manpage`, `confluence`, `notion`, `chat`
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `source_type` | string | Yes | One of the 10 supported source types |
+| `name` | string | Yes | Skill name for the output |
+| `path` | string | No | File or directory path (for file-based sources) |
+| `url` | string | No | URL (for URL-based sources like confluence, notion, rss) |
+
+**Usage examples:**
+
+```
+"Scrape the Jupyter notebook analysis.ipynb"
+→ scrape_generic(source_type="jupyter", name="analysis", path="analysis.ipynb")
+
+"Extract content from the API spec"
+→ scrape_generic(source_type="openapi", name="my-api", path="api-spec.yaml")
+
+"Process the PowerPoint slides"
+→ scrape_generic(source_type="pptx", name="slides", path="presentation.pptx")
+
+"Scrape the Confluence wiki"
+→ scrape_generic(source_type="confluence", name="wiki", url="https://wiki.example.com")
+```
 
 See [MCP Reference](../reference/MCP_REFERENCE.md) for full details.
 

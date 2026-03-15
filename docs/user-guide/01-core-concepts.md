@@ -1,19 +1,20 @@
 # Core Concepts
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.2.0**  
 > **Understanding how Skill Seekers works**
 
 ---
 
 ## Overview
 
-Skill Seekers transforms documentation, code, and content into **structured knowledge assets** that AI systems can use effectively.
+Skill Seekers transforms documentation, code, and content into **structured knowledge assets** that AI systems can use effectively. It supports **17 source types** including documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more.
 
 ```
 Raw Content → Skill Seekers → AI-Ready Skill
      ↓                              ↓
-  (docs, code,               (SKILL.md +
-   PDFs, repos)                references)
+  (docs, code, PDFs,          (SKILL.md +
+   videos, notebooks,          references)
+   wikis, feeds, etc.)
 ```
 
 ---
@@ -76,7 +77,7 @@ npm install my-framework
 
 ## Source Types
 
-Skill Seekers works with four types of sources:
+Skill Seekers works with **17 types of sources**:
 
 ### 1. Documentation Websites
 
@@ -165,6 +166,157 @@ skill-seekers analyze --directory ./my-project
 - Your own projects
 - Internal tools
 - Code review preparation
+
+---
+
+### 5. Word Documents
+
+**What:** Microsoft Word (.docx) files
+
+**Command:**
+```bash
+skill-seekers create report.docx
+```
+
+---
+
+### 6. EPUB Books
+
+**What:** EPUB e-book files
+
+**Command:**
+```bash
+skill-seekers create book.epub
+```
+
+---
+
+### 7. Videos
+
+**What:** YouTube, Vimeo, or local video files (transcripts + visual analysis)
+
+**Command:**
+```bash
+skill-seekers create https://www.youtube.com/watch?v=...
+skill-seekers video --url https://www.youtube.com/watch?v=...
+```
+
+---
+
+### 8. Jupyter Notebooks
+
+**What:** `.ipynb` notebook files with code, markdown, and outputs
+
+**Command:**
+```bash
+skill-seekers create analysis.ipynb
+skill-seekers jupyter --notebook analysis.ipynb
+```
+
+---
+
+### 9. Local HTML Files
+
+**What:** HTML/HTM files on disk
+
+**Command:**
+```bash
+skill-seekers create page.html
+skill-seekers html --file page.html
+```
+
+---
+
+### 10. OpenAPI/Swagger Specs
+
+**What:** OpenAPI YAML/JSON specifications
+
+**Command:**
+```bash
+skill-seekers create api-spec.yaml
+skill-seekers openapi --spec api-spec.yaml
+```
+
+---
+
+### 11. AsciiDoc
+
+**What:** AsciiDoc (.adoc, .asciidoc) files
+
+**Command:**
+```bash
+skill-seekers create guide.adoc
+skill-seekers asciidoc --file guide.adoc
+```
+
+---
+
+### 12. PowerPoint Presentations
+
+**What:** Microsoft PowerPoint (.pptx) files
+
+**Command:**
+```bash
+skill-seekers create slides.pptx
+skill-seekers pptx --file slides.pptx
+```
+
+---
+
+### 13. RSS/Atom Feeds
+
+**What:** RSS or Atom feed files
+
+**Command:**
+```bash
+skill-seekers create feed.rss
+skill-seekers rss --feed feed.rss
+```
+
+---
+
+### 14. Man Pages
+
+**What:** Unix manual pages (.1 through .8, .man)
+
+**Command:**
+```bash
+skill-seekers create grep.1
+skill-seekers manpage --file grep.1
+```
+
+---
+
+### 15. Confluence Wikis
+
+**What:** Atlassian Confluence spaces (via API or export)
+
+**Command:**
+```bash
+skill-seekers confluence --space DEV --base-url https://wiki.example.com
+```
+
+---
+
+### 16. Notion Workspaces
+
+**What:** Notion pages and databases (via API or export)
+
+**Command:**
+```bash
+skill-seekers notion --database abc123
+```
+
+---
+
+### 17. Slack/Discord Chat
+
+**What:** Chat platform exports or API access
+
+**Command:**
+```bash
+skill-seekers chat --export slack-export/
+```
 
 ---
 

@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.2.0**  
 > **Create your first skill in 3 commands**
 
 ---
@@ -32,6 +32,19 @@ The `create` command auto-detects your source:
 | **GitHub Repo** | `skill-seekers create facebook/react` |
 | **Local Code** | `skill-seekers create ./my-project` |
 | **PDF File** | `skill-seekers create manual.pdf` |
+| **Word Document** | `skill-seekers create report.docx` |
+| **EPUB Book** | `skill-seekers create book.epub` |
+| **Video** | `skill-seekers create https://youtube.com/watch?v=...` |
+| **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
+| **Local HTML** | `skill-seekers create page.html` |
+| **OpenAPI Spec** | `skill-seekers create api-spec.yaml` |
+| **AsciiDoc** | `skill-seekers create guide.adoc` |
+| **PowerPoint** | `skill-seekers create slides.pptx` |
+| **RSS/Atom Feed** | `skill-seekers create feed.rss` |
+| **Man Page** | `skill-seekers create grep.1` |
+| **Confluence** | `skill-seekers confluence --space DEV` |
+| **Notion** | `skill-seekers notion --database abc123` |
+| **Slack/Discord** | `skill-seekers chat --export slack-export/` |
 | **Config File** | `skill-seekers create configs/custom.json` |
 
 ---
@@ -85,6 +98,48 @@ skill-seekers package output/product-docs --target claude
 # Research paper
 skill-seekers create paper.pdf --name research
 skill-seekers package output/research --target claude
+```
+
+### Video
+
+```bash
+# YouTube video transcript
+skill-seekers create https://www.youtube.com/watch?v=dQw4w9WgXcQ --name tutorial
+skill-seekers package output/tutorial --target claude
+```
+
+### Jupyter Notebook
+
+```bash
+# Data science notebook
+skill-seekers create analysis.ipynb --name ml-analysis
+skill-seekers package output/ml-analysis --target claude
+```
+
+### PowerPoint / Word / EPUB
+
+```bash
+# PowerPoint slides
+skill-seekers create presentation.pptx --name quarterly-review
+
+# Word document
+skill-seekers create spec.docx --name api-spec
+
+# EPUB book
+skill-seekers create rust-book.epub --name rust-guide
+```
+
+### Confluence / Notion / Slack
+
+```bash
+# Confluence wiki space
+skill-seekers confluence --space DEV --name team-docs
+
+# Notion workspace
+skill-seekers notion --database abc123 --name product-wiki
+
+# Slack/Discord export
+skill-seekers chat --export slack-export/ --name team-chat
 ```
 
 ---

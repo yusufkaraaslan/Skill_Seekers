@@ -405,6 +405,28 @@ skill-seekers scrape --config configs/vue.json --max-pages 50
 skill-seekers scrape --config configs/django.json --max-pages 50
 ```
 
+### Try Other Source Types (17 Supported!)
+
+```bash
+# Auto-detect source type with the `create` command
+skill-seekers create https://docs.example.com   # Documentation
+skill-seekers create facebook/react              # GitHub repo
+skill-seekers create manual.pdf                  # PDF
+skill-seekers create report.docx                 # Word document
+skill-seekers create book.epub                   # EPUB book
+skill-seekers create analysis.ipynb              # Jupyter Notebook
+skill-seekers create spec.yaml                   # OpenAPI/Swagger spec
+skill-seekers create slides.pptx                 # PowerPoint
+
+# Or use specific subcommands
+skill-seekers video https://youtube.com/watch?v=abc  # Video
+skill-seekers confluence --space DOCS                 # Confluence wiki
+skill-seekers notion --database DB_ID                 # Notion
+skill-seekers rss https://blog.example.com/feed.xml   # RSS feed
+skill-seekers manpage grep.1                          # Man page
+skill-seekers chat --platform slack --export-dir ./export  # Slack/Discord
+```
+
 ### Create Custom Skills
 
 ```bash

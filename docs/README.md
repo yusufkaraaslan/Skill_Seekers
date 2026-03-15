@@ -1,12 +1,12 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.1.0**
+> **Complete documentation for Skill Seekers v3.2.0**
 
 ---
 
 ## Welcome!
 
-This is the official documentation for **Skill Seekers** - the universal tool for converting documentation, code, and PDFs into AI-ready skills.
+This is the official documentation for **Skill Seekers** - the universal tool for converting **17 source types** (documentation sites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases) into AI-ready skills for 16+ platforms.
 
 ---
 
@@ -70,6 +70,12 @@ skill-seekers package output/django --target claude
 ### Common Commands
 
 ```bash
+# Auto-detect any source type
+skill-seekers create https://docs.django.com/
+skill-seekers create facebook/react
+skill-seekers create manual.pdf
+skill-seekers create notebook.ipynb
+
 # Scrape documentation
 skill-seekers scrape --config react
 
@@ -78,6 +84,19 @@ skill-seekers github --repo facebook/react
 
 # Extract PDF
 skill-seekers pdf manual.pdf --name docs
+
+# Convert other formats
+skill-seekers word report.docx --name report
+skill-seekers epub book.epub --name handbook
+skill-seekers jupyter analysis.ipynb --name analysis
+skill-seekers openapi spec.yaml --name my-api
+skill-seekers pptx slides.pptx --name deck
+skill-seekers video https://youtube.com/watch?v=... --name tutorial
+
+# Import from platforms
+skill-seekers confluence --space DOCS --name wiki
+skill-seekers notion --database DB_ID --name notes
+skill-seekers chat --platform slack --export-dir ./export
 
 # Analyze local code
 skill-seekers analyze --directory ./my-project
@@ -163,8 +182,9 @@ For Cursor, Windsurf, Cline:
 
 ## Version Information
 
-- **Current Version:** 3.1.0
-- **Last Updated:** 2026-02-16
+- **Current Version:** 3.2.0
+- **Last Updated:** 2026-03-15
+- **Source Types:** 17
 - **Python Required:** 3.10+
 
 ---

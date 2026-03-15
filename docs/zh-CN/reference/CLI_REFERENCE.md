@@ -1,8 +1,8 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.1.0  
-> **Last Updated:** 2026-02-16  
-> **Complete reference for all 20 CLI commands**
+> **Version:** 3.2.0  
+> **Last Updated:** 2026-03-15  
+> **Complete reference for all 30+ CLI commands**
 
 ---
 
@@ -32,6 +32,19 @@
   - [unified](#unified) - Multi-source scraping
   - [update](#update) - Incremental updates
   - [upload](#upload) - Upload to platform
+  - [video](#video) - Extract from video
+  - [word](#word) - Extract from Word document
+  - [epub](#epub) - Extract from EPUB
+  - [jupyter](#jupyter) - Extract from Jupyter Notebook
+  - [html](#html) - Extract from local HTML
+  - [openapi](#openapi) - Extract from OpenAPI/Swagger spec
+  - [asciidoc](#asciidoc) - Extract from AsciiDoc
+  - [pptx](#pptx) - Extract from PowerPoint
+  - [rss](#rss) - Extract from RSS/Atom feed
+  - [manpage](#manpage) - Extract from man page
+  - [confluence](#confluence) - Extract from Confluence wiki
+  - [notion](#notion) - Extract from Notion pages
+  - [chat](#chat) - Extract from Slack/Discord export
   - [workflows](#workflows) - Manage workflow presets
 - [Common Workflows](#common-workflows)
 - [Exit Codes](#exit-codes)
@@ -41,7 +54,7 @@
 
 ## Overview
 
-Skill Seekers provides a unified CLI for converting documentation, GitHub repositories, PDFs, and local codebases into AI-ready skills.
+Skill Seekers provides a unified CLI for converting 17 source types—documentation, GitHub repositories, PDFs, videos, notebooks, wikis, and more—into AI-ready skills.
 
 ### Installation
 
@@ -218,6 +231,15 @@ skill-seekers create [source] [options]
 | `owner/repo` | GitHub | `facebook/react` |
 | `./path` | Local codebase | `./my-project` |
 | `*.pdf` | PDF | `manual.pdf` |
+| `*.docx` | Word Document | `report.docx` |
+| `*.epub` | EPUB | `book.epub` |
+| `*.ipynb` | Jupyter Notebook | `analysis.ipynb` |
+| `*.html` / `*.htm` | Local HTML | `page.html` |
+| `*.yaml` / `*.yml` (OpenAPI) | OpenAPI/Swagger | `api-spec.yaml` |
+| `*.adoc` / `*.asciidoc` | AsciiDoc | `guide.adoc` |
+| `*.pptx` | PowerPoint | `slides.pptx` |
+| `*.rss` / `*.atom` | RSS/Atom Feed | `feed.rss` |
+| `*.1`–`*.8` / `*.man` | Man Page | `curl.1` |
 | `*.json` | Config file | `config.json` |
 
 **Flags:**
@@ -994,6 +1016,302 @@ skill-seekers upload output/react-chroma.zip --target chroma
 # Upload to Weaviate Cloud
 skill-seekers upload output/react-weaviate.zip --target weaviate \
   --use-cloud --cluster-url https://xxx.weaviate.network
+```
+
+---
+
+### video
+
+Extract content from YouTube, Vimeo, or local video files.
+
+**Syntax:**
+```bash
+skill-seekers video [options]
+```
+
+**Flags:**
+
+| Short | Long | Default | Description |
+|-------|------|---------|-------------|
+| | `--url` | | YouTube/Vimeo URL |
+| | `--video-file` | | Local video file path |
+| | `--playlist` | | YouTube playlist URL |
+| `-n` | `--name` | auto | Skill name |
+| | `--visual` | | Enable visual frame analysis |
+| | `--enhance-level` | 2 | AI enhancement (0-3) |
+| | `--start-time` | | Start time (seconds or MM:SS or HH:MM:SS) |
+| | `--end-time` | | End time |
+| | `--setup` | | Auto-detect GPU and install visual dependencies |
+
+**Examples:**
+
+```bash
+# YouTube video
+skill-seekers video --url https://www.youtube.com/watch?v=... --name tutorial
+
+# Local video with visual analysis
+skill-seekers video --video-file recording.mp4 --name recording --visual
+
+# Setup GPU-aware dependencies
+skill-seekers video --setup
+```
+
+---
+
+### word
+
+Extract content from Word (.docx) documents.
+
+**Syntax:**
+```bash
+skill-seekers word --docx FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers word --docx report.docx --name report
+# Or via create:
+skill-seekers create report.docx
+```
+
+---
+
+### epub
+
+Extract content from EPUB e-books.
+
+**Syntax:**
+```bash
+skill-seekers epub --epub FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers epub --epub book.epub --name book
+# Or via create:
+skill-seekers create book.epub
+```
+
+---
+
+### jupyter
+
+Extract content from Jupyter Notebooks (.ipynb).
+
+**Syntax:**
+```bash
+skill-seekers jupyter --notebook FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers jupyter --notebook analysis.ipynb --name data-analysis
+# Or via create:
+skill-seekers create analysis.ipynb
+```
+
+---
+
+### html
+
+Extract content from local HTML files.
+
+**Syntax:**
+```bash
+skill-seekers html --html-path FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers html --html-path docs/index.html --name local-docs
+# Or via create:
+skill-seekers create page.html
+```
+
+---
+
+### openapi
+
+Extract API documentation from OpenAPI/Swagger specifications.
+
+**Syntax:**
+```bash
+skill-seekers openapi --spec FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers openapi --spec api-spec.yaml --name my-api
+# Or via create:
+skill-seekers create api-spec.yaml
+```
+
+---
+
+### asciidoc
+
+Extract content from AsciiDoc files.
+
+**Syntax:**
+```bash
+skill-seekers asciidoc --asciidoc-path FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers asciidoc --asciidoc-path guide.adoc --name guide
+# Or via create:
+skill-seekers create guide.adoc
+```
+
+---
+
+### pptx
+
+Extract content from PowerPoint (.pptx) presentations.
+
+**Syntax:**
+```bash
+skill-seekers pptx --pptx FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers pptx --pptx slides.pptx --name presentation
+# Or via create:
+skill-seekers create slides.pptx
+```
+
+---
+
+### rss
+
+Extract content from RSS/Atom feeds.
+
+**Syntax:**
+```bash
+skill-seekers rss [options]
+```
+
+**Flags:**
+
+| Short | Long | Description |
+|-------|------|-------------|
+| | `--feed-url` | RSS/Atom feed URL |
+| | `--feed-path` | Local RSS/Atom file path |
+| `-n` | `--name` | Skill name |
+
+**Examples:**
+
+```bash
+skill-seekers rss --feed-url https://blog.example.com/feed --name blog
+skill-seekers rss --feed-path feed.rss --name feed
+# Or via create:
+skill-seekers create feed.rss
+```
+
+---
+
+### manpage
+
+Extract content from Unix man pages.
+
+**Syntax:**
+```bash
+skill-seekers manpage --man-path FILE [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers manpage --man-path curl.1 --name curl-docs
+# Or via create:
+skill-seekers create curl.1
+```
+
+---
+
+### confluence
+
+Extract content from Confluence wikis.
+
+**Syntax:**
+```bash
+skill-seekers confluence [options]
+```
+
+**Flags:**
+
+| Short | Long | Description |
+|-------|------|-------------|
+| | `--space-key` | Confluence space key |
+| | `--base-url` | Confluence base URL |
+| | `--export-path` | Path to Confluence export directory |
+| `-n` | `--name` | Skill name |
+
+**Examples:**
+
+```bash
+# From Confluence API
+skill-seekers confluence --space-key DEV --base-url https://wiki.example.com --name team-wiki
+
+# From Confluence export
+skill-seekers confluence --export-path ./confluence-export/ --name wiki
+```
+
+---
+
+### notion
+
+Extract content from Notion pages and databases.
+
+**Syntax:**
+```bash
+skill-seekers notion [options]
+```
+
+**Flags:**
+
+| Short | Long | Description |
+|-------|------|-------------|
+| | `--database-id` | Notion database ID |
+| | `--page-id` | Notion page ID |
+| | `--export-path` | Path to Notion export directory |
+| `-n` | `--name` | Skill name |
+
+**Examples:**
+
+```bash
+# From Notion API
+skill-seekers notion --database-id abc123 --name my-notes
+
+# From Notion export
+skill-seekers notion --export-path ./notion-export/ --name notes
+```
+
+---
+
+### chat
+
+Extract content from Slack/Discord chat exports.
+
+**Syntax:**
+```bash
+skill-seekers chat --export-path DIR [options]
+```
+
+**Examples:**
+
+```bash
+skill-seekers chat --export-path ./slack-export/ --name team-chat
+skill-seekers chat --export-path ./discord-export/ --name server-archive
 ```
 
 ---

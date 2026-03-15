@@ -14,6 +14,7 @@ Comprehensive guide for diagnosing and resolving common issues with Skill Seeker
 - [Storage Issues](#storage-issues)
 - [Network Issues](#network-issues)
 - [General Debug Techniques](#general-debug-techniques)
+- [Source-Type-Specific Issues](#source-type-specific-issues)
 
 ## Installation Issues
 
@@ -893,6 +894,181 @@ If you're still experiencing issues:
    - Steps to reproduce
    - Diagnostic information (see above)
 
+## Source-Type-Specific Issues
+
+### Issue: Missing Optional Dependencies for New Source Types
+
+**Symptoms:**
+```
+ModuleNotFoundError: No module named 'ebooklib'
+ModuleNotFoundError: No module named 'python-docx'
+ModuleNotFoundError: No module named 'python-pptx'
+ImportError: Missing dependency for jupyter extraction
+```
+
+**Solutions:**
+
+```bash
+# Install all optional dependencies at once
+pip install skill-seekers[all]
+
+# Or install per source type
+pip install python-docx          # Word (.docx) support
+pip install ebooklib              # EPUB support
+pip install python-pptx           # PowerPoint (.pptx) support
+pip install nbformat nbconvert    # Jupyter Notebook support
+pip install pyyaml jsonschema     # OpenAPI/Swagger support
+pip install asciidoctor           # AsciiDoc support (or install system asciidoctor)
+pip install feedparser            # RSS/Atom feed support
+pip install groff                 # Man page support (system package)
+
+# Video support (GPU-aware)
+skill-seekers video --setup
+```
+
+### Issue: Confluence API Authentication Fails
+
+**Symptoms:**
+```
+401 Unauthorized: Confluence API rejected credentials
+Error: CONFLUENCE_TOKEN not found
+```
+
+**Solutions:**
+
+```bash
+# Set Confluence Cloud credentials
+export CONFLUENCE_URL=https://yourorg.atlassian.net
+export CONFLUENCE_EMAIL=your-email@example.com
+export CONFLUENCE_TOKEN=your-api-token
+
+# Generate API token at:
+# https://id.atlassian.com/manage-profile/security/api-tokens
+
+# Test connection
+skill-seekers confluence --space MYSPACE --dry-run
+
+# For Confluence Server/Data Center, use personal access token:
+export CONFLUENCE_TOKEN=your-pat
+```
+
+### Issue: Notion API Authentication Fails
+
+**Symptoms:**
+```
+401 Unauthorized: Notion API rejected credentials
+Error: NOTION_TOKEN not found
+```
+
+**Solutions:**
+
+```bash
+# Set Notion integration token
+export NOTION_TOKEN=secret_...
+
+# Create an integration at:
+# https://www.notion.so/my-integrations
+
+# IMPORTANT: Share the target database/page with your integration
+# (click "..." menu on page → "Add connections" → select your integration)
+
+# Test connection
+skill-seekers notion --database DATABASE_ID --dry-run
+```
+
+### Issue: Jupyter Notebook Extraction Fails
+
+**Symptoms:**
+```
+Error: Cannot read notebook format
+nbformat.reader.NotJSONError
+```
+
+**Solutions:**
+
+```bash
+# Ensure notebook is valid JSON
+python -c "import json; json.load(open('notebook.ipynb'))"
+
+# Install required deps
+pip install nbformat nbconvert
+
+# Try with explicit format version
+skill-seekers jupyter notebook.ipynb --nbformat 4
+```
+
+### Issue: OpenAPI Spec Parsing Fails
+
+**Symptoms:**
+```
+Error: Not a valid OpenAPI specification
+Error: Missing 'openapi' or 'swagger' field
+```
+
+**Solutions:**
+
+```bash
+# Validate your spec first
+pip install openapi-spec-validator
+python -c "
+from openapi_spec_validator import validate
+validate({'openapi': '3.0.0', ...})
+"
+
+# Ensure the file has the 'openapi' or 'swagger' top-level key
+# Supported: OpenAPI 3.x and Swagger 2.0
+
+# For remote specs
+skill-seekers openapi https://api.example.com/openapi.json --name my-api
+```
+
+### Issue: EPUB Extraction Produces Empty Output
+
+**Symptoms:**
+```
+Warning: No content found in EPUB
+0 chapters extracted
+```
+
+**Solutions:**
+
+```bash
+# Check EPUB is valid
+pip install epubcheck
+epubcheck book.epub
+
+# Try with different content extraction
+skill-seekers epub book.epub --extract-images --verbose
+
+# Some DRM-protected EPUBs cannot be extracted
+# Ensure your EPUB is DRM-free
+```
+
+### Issue: Slack/Discord Export Not Recognized
+
+**Symptoms:**
+```
+Error: Cannot detect chat platform from export directory
+Error: No messages found in export
+```
+
+**Solutions:**
+
+```bash
+# Specify platform explicitly
+skill-seekers chat --platform slack --export-dir ./slack-export
+skill-seekers chat --platform discord --export-dir ./discord-export
+
+# For Slack: Export from Workspace Settings → Import/Export
+# For Discord: Use DiscordChatExporter or similar tool
+
+# Check export directory structure
+ls ./slack-export/
+# Should contain: channels/, users.json, etc.
+```
+
+---
+
 ## Common Error Messages Reference
 
 | Error | Cause | Solution |
@@ -907,6 +1083,11 @@ If you're still experiencing issues:
 | `MemoryError` | Out of memory | Reduce batch size |
 | `PermissionError` | Access denied | Check file permissions |
 | `FileNotFoundError` | Missing file | Verify file path |
+| `No module named 'ebooklib'` | EPUB dep missing | `pip install ebooklib` |
+| `No module named 'python-docx'` | Word dep missing | `pip install python-docx` |
+| `No module named 'python-pptx'` | PPTX dep missing | `pip install python-pptx` |
+| `CONFLUENCE_TOKEN not found` | Confluence auth missing | Set env vars (see above) |
+| `NOTION_TOKEN not found` | Notion auth missing | Set env vars (see above) |
 
 ---
 

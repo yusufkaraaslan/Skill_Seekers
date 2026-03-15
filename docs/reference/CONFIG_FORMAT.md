@@ -1,8 +1,8 @@
 # Config Format Reference - Skill Seekers
 
-> **Version:** 3.1.4
-> **Last Updated:** 2026-02-26
-> **Complete JSON configuration specification**
+> **Version:** 3.2.0
+> **Last Updated:** 2026-03-15
+> **Complete JSON configuration specification for 17 source types**
 
 ---
 
@@ -14,6 +14,7 @@
   - [GitHub Source](#github-source)
   - [PDF Source](#pdf-source)
   - [Local Source](#local-source)
+  - [Additional Source Types](#additional-source-types)
 - [Unified (Multi-Source) Config](#unified-multi-source-config)
 - [Common Fields](#common-fields)
 - [Selectors](#selectors)
@@ -266,6 +267,158 @@ For analyzing local codebases.
 
 ---
 
+### Additional Source Types
+
+The following 10 source types were added in v3.2.0. Each can be used as a standalone config or within a unified `sources` array.
+
+#### Jupyter Notebook Source
+
+```json
+{
+  "name": "ml-tutorial",
+  "sources": [{
+    "type": "jupyter",
+    "notebook_path": "notebooks/tutorial.ipynb"
+  }]
+}
+```
+
+#### Local HTML Source
+
+```json
+{
+  "name": "offline-docs",
+  "sources": [{
+    "type": "html",
+    "html_path": "./exported-docs/"
+  }]
+}
+```
+
+#### OpenAPI/Swagger Source
+
+```json
+{
+  "name": "petstore-api",
+  "sources": [{
+    "type": "openapi",
+    "spec_path": "api/openapi.yaml",
+    "spec_url": "https://petstore.swagger.io/v2/swagger.json"
+  }]
+}
+```
+
+#### AsciiDoc Source
+
+```json
+{
+  "name": "project-guide",
+  "sources": [{
+    "type": "asciidoc",
+    "asciidoc_path": "./docs/guide.adoc"
+  }]
+}
+```
+
+#### PowerPoint Source
+
+```json
+{
+  "name": "training-slides",
+  "sources": [{
+    "type": "pptx",
+    "pptx_path": "presentations/training.pptx"
+  }]
+}
+```
+
+#### RSS/Atom Feed Source
+
+```json
+{
+  "name": "engineering-blog",
+  "sources": [{
+    "type": "rss",
+    "feed_url": "https://engineering.example.com/feed.xml",
+    "follow_links": true,
+    "max_articles": 50
+  }]
+}
+```
+
+#### Man Page Source
+
+```json
+{
+  "name": "unix-tools",
+  "sources": [{
+    "type": "manpage",
+    "man_names": "ls,grep,find,awk,sed",
+    "sections": "1,3"
+  }]
+}
+```
+
+#### Confluence Source
+
+```json
+{
+  "name": "team-wiki",
+  "sources": [{
+    "type": "confluence",
+    "base_url": "https://wiki.example.com",
+    "space_key": "DEV",
+    "username": "user@example.com",
+    "max_pages": 500
+  }]
+}
+```
+
+#### Notion Source
+
+```json
+{
+  "name": "product-docs",
+  "sources": [{
+    "type": "notion",
+    "database_id": "abc123def456",
+    "max_pages": 500
+  }]
+}
+```
+
+#### Chat (Slack/Discord) Source
+
+```json
+{
+  "name": "team-knowledge",
+  "sources": [{
+    "type": "chat",
+    "export_path": "./slack-export/",
+    "platform": "slack",
+    "channel": "engineering",
+    "max_messages": 10000
+  }]
+}
+```
+
+#### Additional Source Fields Reference
+
+| Source Type | Required Fields | Optional Fields |
+|-------------|-----------------|-----------------|
+| `jupyter` | `notebook_path` | — |
+| `html` | `html_path` | — |
+| `openapi` | `spec_path` or `spec_url` | — |
+| `asciidoc` | `asciidoc_path` | — |
+| `pptx` | `pptx_path` | — |
+| `rss` | `feed_url` or `feed_path` | `follow_links`, `max_articles` |
+| `manpage` | `man_names` or `man_path` | `sections` |
+| `confluence` | `base_url` + `space_key` or `export_path` | `username`, `token`, `max_pages` |
+| `notion` | `database_id` or `page_id` or `export_path` | `token`, `max_pages` |
+| `chat` | `export_path` | `platform`, `token`, `channel`, `max_messages` |
+
+---
+
 ## Unified (Multi-Source) Config
 
 Combine multiple sources into one skill with conflict detection.
@@ -380,14 +533,27 @@ Unified configs support defining enhancement workflows at the top level:
 
 #### Source Types in Unified Config
 
-Each source in the `sources` array can be:
+Each source in the `sources` array can be any of the 17 supported types:
 
 | Type | Required Fields |
 |------|-----------------|
-| `docs` | `base_url` |
+| `documentation` / `docs` | `base_url` |
 | `github` | `repo` |
 | `pdf` | `pdf_path` |
+| `word` | `docx_path` |
+| `epub` | `epub_path` |
+| `video` | `url` or `video_path` |
 | `local` | `directory` |
+| `jupyter` | `notebook_path` |
+| `html` | `html_path` |
+| `openapi` | `spec_path` or `spec_url` |
+| `asciidoc` | `asciidoc_path` |
+| `pptx` | `pptx_path` |
+| `rss` | `feed_url` or `feed_path` |
+| `manpage` | `man_names` or `man_path` |
+| `confluence` | `base_url` + `space_key` or `export_path` |
+| `notion` | `database_id` or `page_id` or `export_path` |
+| `chat` | `export_path` |
 
 ---
 
@@ -601,6 +767,44 @@ Control which URLs are included or excluded:
       "type": "pdf",
       "name": "godot-manual",
       "pdf_path": "docs/godot-manual.pdf"
+    }
+  ]
+}
+```
+
+### Unified with New Source Types
+
+```json
+{
+  "name": "project-complete",
+  "description": "Full project knowledge from multiple source types",
+  "merge_mode": "claude-enhanced",
+  "sources": [
+    {
+      "type": "docs",
+      "name": "project-docs",
+      "base_url": "https://docs.example.com/",
+      "max_pages": 200
+    },
+    {
+      "type": "github",
+      "name": "project-code",
+      "repo": "example/project"
+    },
+    {
+      "type": "openapi",
+      "name": "project-api",
+      "spec_path": "api/openapi.yaml"
+    },
+    {
+      "type": "confluence",
+      "name": "project-wiki",
+      "export_path": "./confluence-export/"
+    },
+    {
+      "type": "jupyter",
+      "name": "project-notebooks",
+      "notebook_path": "./notebooks/"
     }
   ]
 }
