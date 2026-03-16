@@ -1,0 +1,11 @@
+{
+  "name": "skill-seekers",
+  "description": "Transform 17 source types (docs, GitHub, PDFs, videos, Jupyter, Confluence, Notion, Slack, and more) into AI-ready skills and RAG knowledge for 16+ LLM platforms.",
+  "version": "3.3.0",
+  "author": {
+    "name": "Yusuf Karaaslan"
+  },
+  "homepage": "https://github.com/yusufkaraaslan/Skill_Seekers",
+  "repository": "https://github.com/yusufkaraaslan/Skill_Seekers",
+  "license": "MIT"
+}

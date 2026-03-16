@@ -61,5 +61,6 @@ htmlcov/
 skill-seekers-configs/
 .claude/skills
 .mcp.json
+!distribution/claude-plugin/.mcp.json
 settings.json
 USER_GUIDE.md

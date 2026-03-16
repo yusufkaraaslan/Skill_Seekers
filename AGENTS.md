@@ -1,17 +1,19 @@
 # AGENTS.md - Skill Seekers
 
-Concise reference for AI coding agents. Skill Seekers is a Python CLI tool (v3.2.0) that converts documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more into AI-ready skills for 16+ LLM platforms and RAG pipelines.
+Concise reference for AI coding agents. Skill Seekers is a Python CLI tool (v3.3.0) that converts documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more into AI-ready skills for 16+ LLM platforms and RAG pipelines.
 
 ## Setup
 
 ```bash
-# REQUIRED before running tests (src/ layout — tests fail without this)
+# REQUIRED before running tests (src/ layout — tests hard-exit if package not installed)
 pip install -e .
-# With dev tools
+# With dev tools (pytest, ruff, mypy, coverage)
 pip install -e ".[dev]"
 # With all optional deps
 pip install -e ".[all]"
 ```
+
+Note: `tests/conftest.py` checks that `skill_seekers` is importable and calls `sys.exit(1)` if not. Always install in editable mode first.
 
 ## Build / Test / Lint Commands
 
@@ -46,8 +48,10 @@ ruff format src/ tests/
 mypy src/skill_seekers --show-error-codes --pretty
 ```
 
-**Test markers:** `slow`, `integration`, `e2e`, `venv`, `bootstrap`, `benchmark`
-**Async tests:** use `@pytest.mark.asyncio`; asyncio_mode is `auto`.
+**Pytest config** (from pyproject.toml): `addopts = "-v --tb=short --strict-markers"`, `asyncio_mode = "auto"`, `asyncio_default_fixture_loop_scope = "function"`.
+**Test markers:** `slow`, `integration`, `e2e`, `venv`, `bootstrap`, `benchmark`, `asyncio`.
+**Async tests:** use `@pytest.mark.asyncio`; asyncio_mode is `auto` so the decorator is often implicit.
+**Test count:** 120 test files (107 in `tests/`, 13 in `tests/test_adaptors/`).
 
 ## Code Style
 
@@ -61,61 +65,47 @@ mypy src/skill_seekers --show-error-codes --pretty
 - Sort with isort (via ruff); `skill_seekers` is first-party
 - Standard library → third-party → first-party, separated by blank lines
 - Use `from __future__ import annotations` only if needed for forward refs
-- Guard optional imports with try/except ImportError (see `adaptors/__init__.py` pattern)
+- Guard optional imports with try/except ImportError (see `adaptors/__init__.py` pattern):
+  ```python
+  try:
+      from .claude import ClaudeAdaptor
+  except ImportError:
+      ClaudeAdaptor = None
+  ```
 
 ### Naming Conventions
-- **Files:** `snake_case.py`
-- **Classes:** `PascalCase` (e.g., `SkillAdaptor`, `ClaudeAdaptor`)
-- **Functions/methods:** `snake_case`
-- **Constants:** `UPPER_CASE` (e.g., `ADAPTORS`, `DEFAULT_CHUNK_TOKENS`)
-- **Private:** prefix with `_`
+- **Files:** `snake_case.py` (e.g., `source_detector.py`, `config_validator.py`)
+- **Classes:** `PascalCase` (e.g., `SkillAdaptor`, `ClaudeAdaptor`, `SourceDetector`)
+- **Functions/methods:** `snake_case` (e.g., `get_adaptor()`, `detect_language()`)
+- **Constants:** `UPPER_CASE` (e.g., `ADAPTORS`, `DEFAULT_CHUNK_TOKENS`, `VALID_SOURCE_TYPES`)
+- **Private:** prefix with `_` (e.g., `_read_existing_content()`, `_validate_unified()`)
 
 ### Type Hints
 - Gradual typing — add hints where practical, not enforced everywhere
 - Use modern syntax: `str | None` not `Optional[str]`, `list[str]` not `List[str]`
 - MyPy config: `disallow_untyped_defs = false`, `check_untyped_defs = true`, `ignore_missing_imports = true`
+- Tests are excluded from strict type checking (`disallow_untyped_defs = false`, `check_untyped_defs = false` for `tests.*`)
 
 ### Docstrings
 - Module-level docstring on every file (triple-quoted, describes purpose)
-- Google-style or standard docstrings for public functions/classes
+- Google-style docstrings for public functions/classes
 - Include `Args:`, `Returns:`, `Raises:` sections where useful
 
 ### Error Handling
 - Use specific exceptions, never bare `except:`
-- Provide helpful error messages with context (see `get_adaptor()` in `adaptors/__init__.py`)
+- Provide helpful error messages with context
 - Use `raise ValueError(...)` for invalid arguments, `raise RuntimeError(...)` for state errors
 - Guard optional dependency imports with try/except and give clear install instructions on failure
+- Chain exceptions with `raise ... from e` when wrapping
 
 ### Suppressing Lint Warnings
 - Use inline `# noqa: XXXX` comments (e.g., `# noqa: F401` for re-exports, `# noqa: ARG001` for required but unused params)
-
-## Supported Source Types (17)
-
-| Type | CLI Command | Config Type | Detection |
-|------|------------|-------------|-----------|
-| Documentation (web) | `scrape` / `create <url>` | `documentation` | HTTP/HTTPS URLs |
-| GitHub repo | `github` / `create owner/repo` | `github` | `owner/repo` or github.com URLs |
-| PDF | `pdf` / `create file.pdf` | `pdf` | `.pdf` extension |
-| Word (.docx) | `word` / `create file.docx` | `word` | `.docx` extension |
-| EPUB | `epub` / `create file.epub` | `epub` | `.epub` extension |
-| Video | `video` / `create <url/file>` | `video` | YouTube/Vimeo URLs, video extensions |
-| Local codebase | `analyze` / `create ./path` | `local` | Directory paths |
-| Jupyter Notebook | `jupyter` / `create file.ipynb` | `jupyter` | `.ipynb` extension |
-| Local HTML | `html` / `create file.html` | `html` | `.html`/`.htm` extensions |
-| OpenAPI/Swagger | `openapi` / `create spec.yaml` | `openapi` | `.yaml`/`.yml` with OpenAPI content |
-| AsciiDoc | `asciidoc` / `create file.adoc` | `asciidoc` | `.adoc`/`.asciidoc` extensions |
-| PowerPoint | `pptx` / `create file.pptx` | `pptx` | `.pptx` extension |
-| RSS/Atom | `rss` / `create feed.rss` | `rss` | `.rss`/`.atom` extensions |
-| Man pages | `manpage` / `create cmd.1` | `manpage` | `.1`-`.8`/`.man` extensions |
-| Confluence | `confluence` | `confluence` | API or export directory |
-| Notion | `notion` | `notion` | API or export directory |
-| Slack/Discord | `chat` | `chat` | Export directory or API |
 
 ## Project Layout
 
 ```
 src/skill_seekers/           # Main package (src/ layout)
-  cli/                       # CLI commands and entry points
+  cli/                       # CLI commands and entry points (96 files)
     adaptors/                # Platform adaptors (Strategy pattern, inherit SkillAdaptor)
     arguments/               # CLI argument definitions (one per source type)
     parsers/                 # Subcommand parsers (one per source type)
@@ -127,15 +117,15 @@ src/skill_seekers/           # Main package (src/ layout)
     unified_scraper.py       # Multi-source orchestrator (scraped_data + dispatch)
     unified_skill_builder.py # Pairwise synthesis + generic merge
   mcp/                       # MCP server (FastMCP + legacy)
-    tools/                   # MCP tool implementations by category
+    tools/                   # MCP tool implementations by category (10 files)
   sync/                      # Sync monitoring (Pydantic models)
   benchmark/                 # Benchmarking framework
   embedding/                 # FastAPI embedding server
-  workflows/                 # 67 YAML workflow presets (includes complex-merge.yaml)
+  workflows/                 # 67 YAML workflow presets
   _version.py                # Reads version from pyproject.toml
-tests/                       # 115+ test files (pytest)
+tests/                       # 120 test files (pytest)
 configs/                     # Preset JSON scraping configs
-docs/                        # 80+ markdown doc files
+docs/                        # Documentation (guides, integrations, architecture)
 ```
 
 ## Key Patterns
@@ -149,6 +139,8 @@ docs/                        # 80+ markdown doc files
 **MCP tools** — grouped in `mcp/tools/` by category. `scrape_generic_tool` handles all new source types.
 
 **CLI subcommands** — git-style in `cli/main.py`. Each delegates to a module's `main()` function.
+
+**Supported source types (17):** documentation (web), github, pdf, word, epub, video, local codebase, jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat (slack/discord). Each detected automatically by `source_detector.py`.
 
 ## Git Workflow
 
@@ -168,4 +160,11 @@ Never commit API keys. Use env vars: `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `OPE
 
 ## CI
 
-GitHub Actions (`.github/workflows/tests.yml`): ruff + mypy lint job, then pytest matrix (Ubuntu + macOS, Python 3.10-3.12) with Codecov upload.
+GitHub Actions (7 workflows in `.github/workflows/`):
+- **tests.yml** — ruff + mypy lint job, then pytest matrix (Ubuntu + macOS, Python 3.10-3.12) with Codecov upload
+- **release.yml** — tag-triggered: tests → version verification → PyPI publish via `uv build`
+- **test-vector-dbs.yml** — tests vector DB adaptors (weaviate, chroma, faiss, qdrant)
+- **docker-publish.yml** — multi-platform Docker builds (amd64, arm64) for CLI + MCP images
+- **quality-metrics.yml** — quality analysis with configurable threshold
+- **scheduled-updates.yml** — weekly skill updates for popular frameworks
+- **vector-db-export.yml** — weekly vector DB exports
