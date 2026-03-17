@@ -1,44 +1,41 @@
 ---
-description: One-command skill installation — fetch config, scrape, enhance, package, and install
+description: One-command skill creation and packaging for a target platform
 ---
 
 # Install Skill
 
-Complete end-to-end workflow: fetch a config (from preset or URL), scrape the source, optionally enhance with AI, package for the target platform, and install.
+End-to-end workflow: create a skill from any source, then package it for a target LLM platform.
 
 ## Usage
 
 ```
-/skill-seekers:install-skill <config-or-source> [--target <platform>] [--enhance]
+/skill-seekers:install-skill <source> [--target <platform>] [--preset <level>]
 ```
 
 ## Instructions
 
-When the user provides a source or config via `$ARGUMENTS`:
+When the user provides a source via `$ARGUMENTS`:
 
-1. Determine if the argument is a config preset name, config file path, or a direct source.
-2. Use the `install_skill` MCP tool if available, or run the equivalent CLI commands:
+1. Parse the arguments: extract source, `--target` (default: claude), `--preset` (default: quick).
+2. Run the create command:
    ```bash
-   # For preset configs
-   skill-seekers install --config "$CONFIG" --target "$TARGET"
-
-   # For direct sources
-   skill-seekers create "$SOURCE" --target "$TARGET"
+   skill-seekers create "$SOURCE" --preset "$PRESET" --output ./output
    ```
-3. If `--enhance` is specified, run enhancement after initial scraping:
+3. Find the generated skill directory (look for the directory containing SKILL.md in ./output/).
+4. Run the package command for the target platform:
    ```bash
-   skill-seekers enhance "$SKILL_DIR" --target "$TARGET"
+   skill-seekers package "$SKILL_DIR" --target "$TARGET"
    ```
-4. Report the final skill location and how to use it.
+5. Report what was created and where to find the packaged output.
 
 ## Target Platforms
 
-`claude`, `openai`, `gemini`, `langchain`, `llamaindex`, `haystack`, `cursor`, `windsurf`, `continue`, `cline`, `markdown`
+`claude` (default), `openai`, `gemini`, `langchain`, `llamaindex`, `haystack`, `cursor`, `windsurf`, `continue`, `cline`, `markdown`
 
 ## Examples
 
 ```
-/skill-seekers:install-skill react --target claude
-/skill-seekers:install-skill https://fastapi.tiangolo.com --target langchain --enhance
-/skill-seekers:install-skill pallets/flask
+/skill-seekers:install-skill https://react.dev --target claude
+/skill-seekers:install-skill pallets/flask --target langchain -p standard
+/skill-seekers:install-skill ./docs/api.pdf --target openai
 ```
