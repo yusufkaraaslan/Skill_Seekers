@@ -12,7 +12,7 @@ class InstallParser(SubcommandParser):
 
     @property
     def help(self) -> str:
-        return "Complete workflow: fetch → scrape → enhance → package → upload"
+        return "Complete workflow: fetch -> scrape -> enhance -> package -> upload"
 
     @property
     def description(self) -> str:

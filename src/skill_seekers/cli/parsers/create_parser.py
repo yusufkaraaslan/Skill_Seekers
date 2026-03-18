@@ -35,8 +35,8 @@ Quick Examples:
   skill-seekers create ./my-project -p comprehensive
 
 Source Types (auto-detected):
-  URLs → web docs | owner/repo → GitHub | ./path → local code
-  file.pdf → PDF | file.json → config (multi-source)
+  URLs -> web docs | owner/repo -> GitHub | ./path -> local code
+  file.pdf -> PDF | file.json -> config (multi-source)
 
 Progressive Help (NEW -p shortcut):
   Default help shows 13 flags. For more: --help-web, --help-github,
