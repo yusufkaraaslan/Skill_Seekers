@@ -1970,8 +1970,6 @@ def load_config(config_path: str) -> dict[str, Any]:
         # Log config type
         if validator.is_unified:
             logger.debug("✓ Unified config format detected")
-        else:
-            logger.debug("✓ Legacy config format detected")
     except ValueError as e:
         logger.error("❌ Configuration validation errors in %s:", config_path)
         logger.error("   %s", str(e))
