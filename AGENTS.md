@@ -51,7 +51,7 @@ mypy src/skill_seekers --show-error-codes --pretty
 **Pytest config** (from pyproject.toml): `addopts = "-v --tb=short --strict-markers"`, `asyncio_mode = "auto"`, `asyncio_default_fixture_loop_scope = "function"`.
 **Test markers:** `slow`, `integration`, `e2e`, `venv`, `bootstrap`, `benchmark`, `asyncio`.
 **Async tests:** use `@pytest.mark.asyncio`; asyncio_mode is `auto` so the decorator is often implicit.
-**Test count:** 120 test files (107 in `tests/`, 13 in `tests/test_adaptors/`).
+**Test count:** 123 test files (107 in `tests/`, 16 in `tests/test_adaptors/`).
 
 ## Code Style
 
@@ -69,8 +69,10 @@ mypy src/skill_seekers --show-error-codes --pretty
   ```python
   try:
       from .claude import ClaudeAdaptor
+      from .minimax import MiniMaxAdaptor
   except ImportError:
       ClaudeAdaptor = None
+      MiniMaxAdaptor = None
   ```
 
 ### Naming Conventions

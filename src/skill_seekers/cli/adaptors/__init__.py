@@ -69,6 +69,11 @@ try:
 except ImportError:
     PineconeAdaptor = None
 
+try:
+    from .minimax import MiniMaxAdaptor
+except ImportError:
+    MiniMaxAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -98,6 +103,8 @@ if HaystackAdaptor:
     ADAPTORS["haystack"] = HaystackAdaptor
 if PineconeAdaptor:
     ADAPTORS["pinecone"] = PineconeAdaptor
+if MiniMaxAdaptor:
+    ADAPTORS["minimax"] = MiniMaxAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:

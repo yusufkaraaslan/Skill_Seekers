@@ -9,6 +9,7 @@ Skill Seekers supports multiple LLM platforms through a clean adaptor system. Th
 | **Claude AI** | ✅ Full Support | ZIP + YAML | ✅ Automatic | ✅ Yes | ANTHROPIC_API_KEY |
 | **Google Gemini** | ✅ Full Support | tar.gz | ✅ Automatic | ✅ Yes | GOOGLE_API_KEY |
 | **OpenAI ChatGPT** | ✅ Full Support | ZIP + Vector Store | ✅ Automatic | ✅ Yes | OPENAI_API_KEY |
+| **MiniMax AI** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | MINIMAX_API_KEY |
 | **Generic Markdown** | ✅ Export Only | ZIP | ❌ Manual | ❌ No | None |
 
 ## Quick Start
@@ -300,7 +301,7 @@ from skill_seekers.cli.adaptors import list_platforms, is_platform_available
 
 # List all registered platforms
 platforms = list_platforms()
-print(platforms)  # ['claude', 'gemini', 'openai', 'markdown']
+print(platforms)  # ['claude', 'gemini', 'minimax', 'openai', 'markdown']
 
 # Check if platform is available
 if is_platform_available('gemini'):
@@ -323,6 +324,7 @@ For detailed platform-specific instructions, see:
 - [Claude AI Integration](CLAUDE_INTEGRATION.md) (default)
 - [Google Gemini Integration](GEMINI_INTEGRATION.md)
 - [OpenAI ChatGPT Integration](OPENAI_INTEGRATION.md)
+- [MiniMax AI Integration](MINIMAX_INTEGRATION.md)
 
 ## Troubleshooting
 
@@ -340,6 +342,8 @@ pip install skill-seekers[gemini]
 **Solution:**
 ```bash
 pip install skill-seekers[openai]
+# or for MiniMax (also uses openai library)
+pip install skill-seekers[minimax]
 ```
 
 ### API Key Issues
@@ -350,6 +354,7 @@ pip install skill-seekers[openai]
 - Claude: `sk-ant-...`
 - Gemini: `AIza...`
 - OpenAI: `sk-proj-...` or `sk-...`
+- MiniMax: `eyJ...` (JWT format)
 
 ### Package Format Errors
 
@@ -380,6 +385,7 @@ A: Yes, each platform uses its own enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
+- MiniMax: MiniMax-M2.7
 
 **Q: What if I don't want to upload automatically?**
 

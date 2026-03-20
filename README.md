@@ -248,7 +248,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
 ### 🤖 Multi-LLM Platform Support
-- ✅ **4 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- ✅ **5 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown
 - ✅ **Universal Scraping** - Same documentation works for all platforms
 - ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
 - ✅ **One-Command Export** - `--target` flag selects platform
@@ -260,6 +260,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 | **Claude AI** | ZIP + YAML | ✅ Auto | ✅ Yes | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ Auto | ✅ Yes | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Auto | ✅ Yes | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ Auto | ✅ Yes | MINIMAX_API_KEY | - |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ No | - | - |
 
 ```bash
@@ -276,6 +277,11 @@ skill-seekers upload react-gemini.tar.gz --target gemini
 pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
+
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
 
 # Generic Markdown (universal export)
 skill-seekers package output/react/ --target markdown
@@ -311,6 +317,9 @@ pip install skill-seekers[gemini]
 
 # Install with OpenAI support
 pip install skill-seekers[openai]
+
+# Install with MiniMax support
+pip install skill-seekers[minimax]
 
 # Install with all LLM platforms
 pip install skill-seekers[all-llms]
@@ -698,21 +707,21 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **4 LLM platforms**, **17 source types**, and full feature parity across all targets.
+Skill Seekers supports **5 LLM platforms**, **17 source types**, and full feature parity across all targets.
 
-**Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+**Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown
 **Source Types:** Documentation websites, GitHub repos, PDFs, Word (.docx), EPUB, Video, Local codebases, Jupyter Notebooks, Local HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom feeds, Man pages, Confluence wikis, Notion pages, Slack/Discord chat exports
 
 See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
 
 ### Quick Platform Comparison
 
-| Feature | Claude | Gemini | OpenAI | Markdown |
-|---------|--------|--------|--------|----------|
-| Format | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| Upload | ✅ API | ✅ API | ✅ API | ❌ Manual |
-| Enhancement | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ None |
-| All Skill Modes | ✅ | ✅ | ✅ | ✅ |
+| Feature | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|---------|--------|--------|--------|--------|----------|
+| Format | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| Upload | ✅ API | ✅ API | ✅ API | ✅ API | ❌ Manual |
+| Enhancement | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M2.7 | ❌ None |
+| All Skill Modes | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
