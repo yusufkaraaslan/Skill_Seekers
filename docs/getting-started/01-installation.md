@@ -86,6 +86,7 @@ pip install skill-seekers[all-llms]
 - Claude AI support
 - Google Gemini support
 - OpenAI ChatGPT support
+- MiniMax AI support
 - All vector databases
 - MCP server
 - Cloud storage (S3, GCS, Azure)
@@ -98,6 +99,7 @@ Install only what you need:
 # Specific platform only
 pip install skill-seekers[gemini]      # Google Gemini
 pip install skill-seekers[openai]      # OpenAI
+pip install skill-seekers[minimax]     # MiniMax AI
 pip install skill-seekers[chroma]      # ChromaDB
 
 # Multiple extras
@@ -115,6 +117,7 @@ pip install skill-seekers[dev]
 |-------|-------------|-----------------|
 | `gemini` | Google Gemini support | `pip install skill-seekers[gemini]` |
 | `openai` | OpenAI ChatGPT support | `pip install skill-seekers[openai]` |
+| `minimax` | MiniMax AI support | `pip install skill-seekers[minimax]` |
 | `mcp` | MCP server | `pip install skill-seekers[mcp]` |
 | `chroma` | ChromaDB export | `pip install skill-seekers[chroma]` |
 | `weaviate` | Weaviate export | `pip install skill-seekers[weaviate]` |

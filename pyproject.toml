@@ -89,6 +89,11 @@ openai = [
     "openai>=1.0.0",
 ]
 
+# MiniMax AI support (uses OpenAI-compatible API)
+minimax = [
+    "openai>=1.0.0",
+]
+
 # All LLM platforms combined
 all-llms = [
     "google-generativeai>=0.8.0",
