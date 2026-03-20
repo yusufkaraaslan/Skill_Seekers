@@ -252,6 +252,15 @@ class DocToSkillConverter:
 
         return not any(pattern in url for pattern in self._exclude_patterns)
 
+    @staticmethod
+    def _has_md_extension(url: str) -> bool:
+        """Check if URL path ends with .md extension.
+
+        Uses URL path parsing instead of substring matching to avoid
+        false positives on URLs like /embed/page or /cmd-line.
+        """
+        return urlparse(url).path.endswith(".md")
+
     def save_checkpoint(self) -> None:
         """Save progress checkpoint"""
         if not self.checkpoint_enabled or self.dry_run:
@@ -462,7 +471,7 @@ class DocToSkillConverter:
                     else:
                         continue
                     full_url = full_url.split("#")[0]
-                    if ".md" in full_url and self.is_valid_url(full_url) and full_url not in links:
+                    if self._has_md_extension(full_url) and self.is_valid_url(full_url) and full_url not in links:
                         links.append(full_url)
 
                 return {
@@ -551,7 +560,7 @@ class DocToSkillConverter:
             # Strip anchor fragments
             full_url = full_url.split("#")[0]
             # Only include .md URLs to avoid client-side rendered HTML pages
-            if ".md" in full_url and self.is_valid_url(full_url) and full_url not in page["links"]:
+            if self._has_md_extension(full_url) and self.is_valid_url(full_url) and full_url not in page["links"]:
                 page["links"].append(full_url)
 
         return page
@@ -713,7 +722,7 @@ class DocToSkillConverter:
             response.raise_for_status()
 
             # Check if this is a Markdown file
-            if url.endswith(".md") or ".md" in url:
+            if self._has_md_extension(url):
                 page = self._extract_markdown_content(response.text, url)
             else:
                 soup = BeautifulSoup(response.content, "html.parser")
@@ -772,7 +781,7 @@ class DocToSkillConverter:
                 response.raise_for_status()
 
                 # Check if this is a Markdown file
-                if url.endswith(".md") or ".md" in url:
+                if self._has_md_extension(url):
                     page = self._extract_markdown_content(response.text, url)
                 else:
                     # BeautifulSoup parsing (still synchronous, but fast)
@@ -798,71 +807,45 @@ class DocToSkillConverter:
 
     def _convert_to_md_urls(self, urls: list[str]) -> list[str]:
         """
-        Convert URLs to .md format, trying /index.html.md suffix for non-.md URLs.
-        Strips anchor fragments (#anchor) and deduplicates base URLs to avoid 404 errors.
-        不预先检查 URL 是否存在，直接加入队列，在爬取时再验证。
+        Clean URLs from llms.txt: strip anchor fragments, deduplicate base URLs.
+
+        Previously this method blindly appended /index.html.md to non-.md URLs,
+        which caused 404 errors on sites that don't serve raw markdown files
+        (e.g. Discord docs, see issue #277). Now it preserves original URLs as-is
+        and lets the scraper handle both HTML and markdown content.
 
         Args:
             urls: List of URLs to process
 
         Returns:
-            List of .md URLs (未验证, deduplicated, no anchors)
+            List of cleaned, deduplicated URLs (no anchors)
         """
         from urllib.parse import urlparse, urlunparse
 
         seen_base_urls = set()
-        md_urls = []
+        cleaned_urls = []
 
         for url in urls:
             # Parse URL to extract and remove fragment (anchor)
             parsed = urlparse(url)
             base_url = urlunparse(parsed._replace(fragment=""))  # Remove #anchor
 
-            # Skip if we've already processed this base URL
-            if base_url in seen_base_urls:
-                continue
-            seen_base_urls.add(base_url)
+            # Normalize trailing slashes for dedup (but keep original form)
+            dedup_key = base_url.rstrip("/")
 
-            # Check if URL already ends with .md (not just contains "md")
-            if base_url.endswith(".md"):
-                md_urls.append(base_url)
-            else:
-                # 直接转换为 .md 格式，不发送 HEAD 请求检查
-                base_url = base_url.rstrip("/")
-                md_url = f"{base_url}/index.html.md"
-                md_urls.append(md_url)
+            # Skip if we've already processed this base URL
+            if dedup_key in seen_base_urls:
+                continue
+            seen_base_urls.add(dedup_key)
+
+            cleaned_urls.append(base_url)
 
         logger.info(
-            "  ✓ Converted %d URLs to %d unique .md URLs (anchors stripped, will validate during crawl)",
+            "  ✓ Cleaned %d URLs to %d unique URLs (anchors stripped, will validate during crawl)",
             len(urls),
-            len(md_urls),
+            len(cleaned_urls),
         )
-        return md_urls
-
-    # ORIGINAL _convert_to_md_urls (with HEAD request validation):
-    # def _convert_to_md_urls(self, urls: List[str]) -> List[str]:
-    #     md_urls = []
-    #     non_md_urls = []
-    #     for url in urls:
-    #         if '.md' in url:
-    #             md_urls.append(url)
-    #         else:
-    #             non_md_urls.append(url)
-    #     if non_md_urls:
-    #         logger.info("  🔄 Trying to convert %d non-.md URLs to .md format...", len(non_md_urls))
-    #         converted = 0
-    #         for url in non_md_urls:
-    #             url = url.rstrip('/')
-    #             md_url = f"{url}/index.html.md"
-    #             try:
-    #                 resp = requests.head(md_url, timeout=5, allow_redirects=True)
-    #                 if resp.status_code == 200:
-    #                     md_urls.append(md_url)
-    #                     converted += 1
-    #             except Exception:
-    #                 pass
-    #         logger.info("  ✓ Converted %d URLs to .md format", converted)
-    #     return md_urls
+        return cleaned_urls
 
     def _try_llms_txt(self) -> bool:
         """
@@ -933,16 +916,16 @@ class DocToSkillConverter:
                 # Extract URLs from llms.txt and add to pending_urls for BFS crawling
                 extracted_urls = parser.extract_urls()
                 if extracted_urls:
-                    # Convert non-.md URLs to .md format by trying /index.html.md suffix
-                    md_urls = self._convert_to_md_urls(extracted_urls)
+                    # Clean URLs: strip anchors, deduplicate
+                    cleaned_urls = self._convert_to_md_urls(extracted_urls)
                     logger.info(
-                        "\n🔗 Found %d URLs in llms.txt (%d .md files), starting BFS crawl...",
+                        "\n🔗 Found %d URLs in llms.txt (%d unique), starting BFS crawl...",
                         len(extracted_urls),
-                        len(md_urls),
+                        len(cleaned_urls),
                     )
 
                     # Filter URLs based on url_patterns config
-                    for url in md_urls:
+                    for url in cleaned_urls:
                         if self.is_valid_url(url):
                             self._enqueue_url(url)
 
@@ -1019,16 +1002,16 @@ class DocToSkillConverter:
         # Extract URLs from llms.txt and add to pending_urls for BFS crawling
         extracted_urls = parser.extract_urls()
         if extracted_urls:
-            # Convert non-.md URLs to .md format by trying /index.html.md suffix
-            md_urls = self._convert_to_md_urls(extracted_urls)
+            # Clean URLs: strip anchors, deduplicate
+            cleaned_urls = self._convert_to_md_urls(extracted_urls)
             logger.info(
-                "\n🔗 Found %d URLs in llms.txt (%d .md files), starting BFS crawl...",
+                "\n🔗 Found %d URLs in llms.txt (%d unique), starting BFS crawl...",
                 len(extracted_urls),
-                len(md_urls),
+                len(cleaned_urls),
             )
 
             # Filter URLs based on url_patterns config
-            for url in md_urls:
+            for url in cleaned_urls:
                 if self.is_valid_url(url):
                     self._enqueue_url(url)
 
