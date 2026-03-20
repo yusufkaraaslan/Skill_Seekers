@@ -109,6 +109,9 @@ pip install skill-seekers[gemini]
 # OpenAI ChatGPT support
 pip install skill-seekers[openai]
 
+# MiniMax AI support
+pip install skill-seekers[minimax]
+
 # All LLM platforms
 pip install skill-seekers[all-llms]
 
@@ -151,6 +154,13 @@ pip install -e .[all-llms]
 - API: Assistants API + Vector Store
 - Enhancement: GPT-4o
 
+**MiniMax AI:**
+- Format: ZIP archive
+- SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
+- Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
+- API: OpenAI-compatible chat completions
+- Enhancement: MiniMax-M2.7
+
 **Generic Markdown:**
 - Format: ZIP archive
 - Structure: `README.md`, `references/`, `DOCUMENTATION.md` (combined)
@@ -173,6 +183,11 @@ export GOOGLE_API_KEY=AIzaSy...
 **OpenAI ChatGPT:**
 ```bash
 export OPENAI_API_KEY=sk-proj-...
+```
+
+**MiniMax AI:**
+```bash
+export MINIMAX_API_KEY=your-key
 ```
 
 ## Complete Workflow Examples
@@ -239,7 +254,29 @@ skill-seekers upload react-openai.zip --target openai
 # Access at: https://platform.openai.com/assistants/
 ```
 
-### Workflow 4: Export to All Platforms
+### Workflow 4: MiniMax AI
+
+```bash
+# Setup (one-time)
+pip install skill-seekers[minimax]
+export MINIMAX_API_KEY=your-key
+
+# 1. Scrape (universal)
+skill-seekers scrape --config configs/react.json
+
+# 2. Enhance with MiniMax-M2.7
+skill-seekers enhance output/react/ --target minimax
+
+# 3. Package for MiniMax
+skill-seekers package output/react/ --target minimax
+
+# 4. Upload to MiniMax (validates with API)
+skill-seekers upload react-minimax.zip --target minimax
+
+# Access at: https://platform.minimaxi.com/
+```
+
+### Workflow 5: Export to All Platforms
 
 ```bash
 # Install all platforms
@@ -252,12 +289,14 @@ skill-seekers scrape --config configs/react.json
 skill-seekers package output/react/ --target claude
 skill-seekers package output/react/ --target gemini
 skill-seekers package output/react/ --target openai
+skill-seekers package output/react/ --target minimax
 skill-seekers package output/react/ --target markdown
 
 # Result:
 # - react.zip (Claude)
 # - react-gemini.tar.gz (Gemini)
 # - react-openai.zip (OpenAI)
+# - react-minimax.zip (MiniMax)
 # - react-markdown.zip (Universal)
 ```
 
@@ -354,7 +393,7 @@ pip install skill-seekers[minimax]
 - Claude: `sk-ant-...`
 - Gemini: `AIza...`
 - OpenAI: `sk-proj-...` or `sk-...`
-- MiniMax: `eyJ...` (JWT format)
+- MiniMax: Any valid API key string
 
 ### Package Format Errors
 

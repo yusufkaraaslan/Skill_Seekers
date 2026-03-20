@@ -125,6 +125,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             Path to created ZIP file
         """
         skill_dir = Path(skill_dir)
+        output_path = Path(output_path)
 
         if output_path.is_dir() or str(output_path).endswith("/"):
             output_path = Path(output_path) / f"{skill_dir.name}-minimax.zip"
@@ -136,7 +137,6 @@ Always prioritize accuracy by consulting the attached documentation files before
                 output_str += ".zip"
             output_path = Path(output_str)
 
-        output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -158,7 +158,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 "version": "1.0.0",
                 "created_with": "skill-seekers",
                 "model": "MiniMax-M2.7",
-                "api_base": "https://api.minimax.io/v1",
+                "api_base": self.DEFAULT_API_ENDPOINT,
             }
 
             zf.writestr("minimax_metadata.json", json.dumps(metadata, indent=2))
@@ -199,7 +199,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             }
 
         try:
-            from openai import OpenAI
+            from openai import OpenAI, APITimeoutError, APIConnectionError
         except ImportError:
             return {
                 "success": False,
@@ -245,7 +245,7 @@ Always prioritize accuracy by consulting the attached documentation files before
 
                 client = OpenAI(
                     api_key=api_key,
-                    base_url="https://api.minimax.io/v1",
+                    base_url=self.DEFAULT_API_ENDPOINT,
                 )
 
                 client.chat.completions.create(
@@ -268,34 +268,34 @@ Always prioritize accuracy by consulting the attached documentation files before
                     "message": f"Skill '{skill_name}' validated with MiniMax {model} ({knowledge_count} knowledge files)",
                 }
 
-        except Exception as e:
-            error_msg = str(e)
-            if "timeout" in error_msg.lower():
-                return {
-                    "success": False,
-                    "skill_id": None,
-                    "url": None,
-                    "message": "Upload timed out. Try again.",
-                }
-            elif "connection" in error_msg.lower():
-                return {
-                    "success": False,
-                    "skill_id": None,
-                    "url": None,
-                    "message": "Connection error. Check your internet connection.",
-                }
+        except APITimeoutError:
             return {
                 "success": False,
                 "skill_id": None,
                 "url": None,
-                "message": f"Upload failed: {error_msg}",
+                "message": "Upload timed out. Try again.",
+            }
+        except APIConnectionError:
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": "Connection error. Check your internet connection.",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "skill_id": None,
+                "url": None,
+                "message": f"Upload failed: {str(e)}",
             }
 
     def validate_api_key(self, api_key: str) -> bool:
         """
         Validate MiniMax API key format.
 
-        MiniMax API keys typically start with 'eyJ' (JWT format).
+        MiniMax API keys are opaque strings. We only check for
+        a non-empty key with a reasonable minimum length.
 
         Args:
             api_key: API key to validate
@@ -304,8 +304,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             True if key format appears valid
         """
         key = api_key.strip()
-        # MiniMax uses JWT format keys starting with "eyJ"
-        return key.startswith("eyJ") and len(key) > 20
+        return len(key) > 10
 
     def get_env_var_name(self) -> str:
         """

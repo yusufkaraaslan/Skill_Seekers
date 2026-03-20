@@ -12,6 +12,12 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+try:
+    from openai import APITimeoutError, APIConnectionError
+except ImportError:
+    APITimeoutError = None
+    APIConnectionError = None
+
 from skill_seekers.cli.adaptors import get_adaptor, is_platform_available
 from skill_seekers.cli.adaptors.base import SkillMetadata
 
@@ -35,15 +41,12 @@ class TestMiniMaxAdaptor(unittest.TestCase):
         self.assertTrue(is_platform_available("minimax"))
 
     def test_validate_api_key_valid(self):
-        """Test valid MiniMax API keys"""
-        # Valid JWT format keys (MiniMax uses JWT format starting with "eyJ")
+        """Test valid MiniMax API keys (any string >10 chars)"""
         self.assertTrue(
             self.adaptor.validate_api_key("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.key")
         )
-        self.assertTrue(
-            self.adaptor.validate_api_key("eyJlongvalidjwttokenwithlotsofcharacters123456")
-        )
-        self.assertTrue(self.adaptor.validate_api_key("  eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9  "))
+        self.assertTrue(self.adaptor.validate_api_key("sk-some-long-api-key-string-here"))
+        self.assertTrue(self.adaptor.validate_api_key("  a-valid-key-with-spaces  "))
 
     def test_validate_api_key_invalid(self):
         """Test invalid API keys"""
@@ -216,6 +219,7 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             self.assertFalse(result["success"])
             self.assertIn("not a zip", result["message"].lower())
 
+    @unittest.skip("covered by test_upload_success_mocked")
     def test_upload_success(self):
         """Test successful upload - skipped (needs real API for integration test)"""
         pass
@@ -228,9 +232,32 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             success = self.adaptor.enhance(skill_dir, "test-api-key")
             self.assertFalse(success)
 
-    def test_enhance_success(self):
-        """Test successful enhancement - skipped (needs real API for integration test)"""
-        pass
+    @patch("openai.OpenAI")
+    def test_enhance_success_mocked(self, mock_openai_class):
+        """Test successful enhancement with mocked OpenAI client"""
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Enhanced SKILL.md content"
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            skill_dir = Path(temp_dir)
+            refs_dir = skill_dir / "references"
+            refs_dir.mkdir()
+            (refs_dir / "test.md").write_text("# Test\nContent")
+            (skill_dir / "SKILL.md").write_text("Original content")
+
+            success = self.adaptor.enhance(skill_dir, "test-api-key")
+
+            self.assertTrue(success)
+            new_content = (skill_dir / "SKILL.md").read_text()
+            self.assertEqual(new_content, "Enhanced SKILL.md content")
+            backup = skill_dir / "SKILL.md.backup"
+            self.assertTrue(backup.exists())
+            self.assertEqual(backup.read_text(), "Original content")
+            mock_client.chat.completions.create.assert_called_once()
 
     def test_enhance_missing_library(self):
         """Test enhance when openai library is not installed"""
@@ -240,7 +267,8 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             refs_dir.mkdir()
             (refs_dir / "test.md").write_text("Test content")
 
-            success = self.adaptor.enhance(skill_dir, "test-api-key")
+            with patch.dict(sys.modules, {"openai": None}):
+                success = self.adaptor.enhance(skill_dir, "test-api-key")
 
             self.assertFalse(success)
 
@@ -357,18 +385,19 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             output_dir.mkdir()
 
             package_path = self.adaptor.package(skill_dir, output_dir)
-            result = self.adaptor.upload(package_path, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test")
+            result = self.adaptor.upload(package_path, "test-long-api-key-string")
 
             self.assertTrue(result["success"])
             self.assertIn("validated", result["message"])
             self.assertEqual(result["url"], "https://platform.minimaxi.com/")
             mock_client.chat.completions.create.assert_called_once()
 
+    @unittest.skipUnless(APITimeoutError, "openai library not installed")
     @patch("openai.OpenAI")
     def test_upload_network_error(self, mock_openai_class):
-        """Test upload with network error"""
+        """Test upload with network timeout error"""
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = Exception("Connection timeout")
+        mock_client.chat.completions.create.side_effect = APITimeoutError(request=MagicMock())
         mock_openai_class.return_value = mock_client
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -382,16 +411,17 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             output_dir.mkdir()
 
             package_path = self.adaptor.package(skill_dir, output_dir)
-            result = self.adaptor.upload(package_path, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test")
+            result = self.adaptor.upload(package_path, "test-long-api-key-string")
 
             self.assertFalse(result["success"])
             self.assertIn("timed out", result["message"].lower())
 
+    @unittest.skipUnless(APIConnectionError, "openai library not installed")
     @patch("openai.OpenAI")
     def test_upload_connection_error(self, mock_openai_class):
         """Test upload with connection error"""
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = Exception("Connection refused")
+        mock_client.chat.completions.create.side_effect = APIConnectionError(request=MagicMock())
         mock_openai_class.return_value = mock_client
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -405,19 +435,19 @@ class TestMiniMaxAdaptor(unittest.TestCase):
             output_dir.mkdir()
 
             package_path = self.adaptor.package(skill_dir, output_dir)
-            result = self.adaptor.upload(package_path, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test")
+            result = self.adaptor.upload(package_path, "test-long-api-key-string")
 
             self.assertFalse(result["success"])
             self.assertIn("connection", result["message"].lower())
 
-    def test_validate_api_key_jwt_format(self):
-        """Test that API key validation checks JWT format"""
-        # Valid JWT format
+    def test_validate_api_key_format(self):
+        """Test that API key validation uses length-based check"""
+        # Valid - long enough strings
         self.assertTrue(self.adaptor.validate_api_key("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test"))
-        # Invalid - doesn't start with eyJ
-        self.assertFalse(self.adaptor.validate_api_key("sk-api-abc123"))
+        self.assertTrue(self.adaptor.validate_api_key("sk-api-abc123-long-enough"))
         # Invalid - too short
         self.assertFalse(self.adaptor.validate_api_key("eyJshort"))
+        self.assertFalse(self.adaptor.validate_api_key("short"))
 
 
 class TestMiniMaxAdaptorIntegration(unittest.TestCase):

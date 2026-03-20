@@ -3,7 +3,7 @@
 Multi-LLM Adaptor Registry
 
 Provides factory function to get platform-specific adaptors for skill generation.
-Supports Claude AI, Google Gemini, OpenAI ChatGPT, and generic Markdown export.
+Supports Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, and generic Markdown export.
 """
 
 from .base import SkillAdaptor, SkillMetadata
@@ -112,7 +112,7 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
     Factory function to get platform-specific adaptor instance.
 
     Args:
-        platform: Platform identifier ('claude', 'gemini', 'openai', 'markdown')
+        platform: Platform identifier ('claude', 'gemini', 'openai', 'minimax', 'markdown')
         config: Optional platform-specific configuration
 
     Returns:
@@ -123,6 +123,7 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
 
     Examples:
         >>> adaptor = get_adaptor('claude')
+        >>> adaptor = get_adaptor('minimax')
         >>> adaptor = get_adaptor('gemini', {'api_version': 'v1beta'})
     """
     if platform not in ADAPTORS:
@@ -148,7 +149,7 @@ def list_platforms() -> list[str]:
 
     Examples:
         >>> list_platforms()
-        ['claude', 'gemini', 'openai', 'markdown']
+        ['claude', 'gemini', 'openai', 'minimax', 'markdown']
     """
     return list(ADAPTORS.keys())
 

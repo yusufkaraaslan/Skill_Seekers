@@ -98,7 +98,6 @@ minimax = [
 all-llms = [
     "google-generativeai>=0.8.0",
     "openai>=1.0.0",
-    "minimax",
 ]
 
 # Cloud storage support
