@@ -568,6 +568,27 @@ class TestSanitizeUrl(unittest.TestCase):
         self.assertEqual(sanitize_url("https://example.com"), "https://example.com")
         self.assertEqual(sanitize_url("https://example.com/"), "https://example.com/")
 
+    def test_malformed_ipv6_url_no_crash(self):
+        """URLs with brackets that look like broken IPv6 must not crash (issue #284).
+
+        Python 3.14 raises ValueError from urlparse() on unencoded brackets
+        that look like IPv6 but are malformed (e.g. from documentation examples).
+        """
+        from skill_seekers.cli.utils import sanitize_url
+
+        # Incomplete IPv6 placeholder from docs.openclaw.ai llms-full.txt
+        result = sanitize_url("http://[fdaa:x:x:x:x::x")
+        self.assertNotIn("[", result)
+        self.assertIn("%5B", result)
+
+    def test_unmatched_bracket_no_crash(self):
+        """Unmatched brackets should be encoded, not crash."""
+        from skill_seekers.cli.utils import sanitize_url
+
+        result = sanitize_url("https://example.com/api/[v1/users")
+        self.assertNotIn("[", result)
+        self.assertIn("%5B", result)
+
 
 class TestEnqueueUrlSanitization(unittest.TestCase):
     """Test that _enqueue_url sanitises bracket URLs before enqueueing (#284)."""

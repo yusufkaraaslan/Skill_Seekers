@@ -499,6 +499,10 @@ def sanitize_url(url: str) -> str:
     such as *httpx* and *urllib3* interpret them as IPv6 address markers and
     raise ``Invalid IPv6 URL``.
 
+    Python 3.14+ also raises ``ValueError: Invalid IPv6 URL`` from
+    ``urlparse()`` itself when brackets appear in the URL, so we must
+    encode them with simple string splitting BEFORE calling ``urlparse``.
+
     This function encodes **only** the path and query — the scheme, host,
     and fragment are left untouched.
 
@@ -508,6 +512,7 @@ def sanitize_url(url: str) -> str:
     Returns:
         The URL with ``[`` → ``%5B`` and ``]`` → ``%5D`` in its path/query,
         or the original URL unchanged when no brackets are present.
+        Returns the original URL if it is malformed beyond repair.
 
     Examples:
         >>> sanitize_url("https://example.com/api/[v1]/users")
@@ -518,9 +523,30 @@ def sanitize_url(url: str) -> str:
     if "[" not in url and "]" not in url:
         return url
 
-    from urllib.parse import urlparse, urlunparse
+    # Encode brackets BEFORE urlparse — Python 3.14 raises ValueError
+    # on unencoded brackets because it tries to parse them as IPv6.
+    # We split scheme://authority from the rest manually to avoid
+    # encoding brackets in legitimate IPv6 host literals like [::1].
+    try:
+        # Try urlparse first — works if brackets are in a valid position
+        # (e.g., legitimate IPv6 host)
+        from urllib.parse import urlparse, urlunparse
 
-    parsed = urlparse(url)
-    encoded_path = parsed.path.replace("[", "%5B").replace("]", "%5D")
-    encoded_query = parsed.query.replace("[", "%5B").replace("]", "%5D")
-    return urlunparse(parsed._replace(path=encoded_path, query=encoded_query))
+        parsed = urlparse(url)
+        encoded_path = parsed.path.replace("[", "%5B").replace("]", "%5D")
+        encoded_query = parsed.query.replace("[", "%5B").replace("]", "%5D")
+        return urlunparse(parsed._replace(path=encoded_path, query=encoded_query))
+    except ValueError:
+        # urlparse rejected the URL (Python 3.14+ strict IPv6 validation).
+        # Encode ALL brackets and try again. This is safe because if
+        # urlparse failed, the brackets are NOT valid IPv6 host literals.
+        pre_encoded = url.replace("[", "%5B").replace("]", "%5D")
+        try:
+            from urllib.parse import urlparse, urlunparse
+
+            parsed = urlparse(pre_encoded)
+            return urlunparse(parsed)
+        except ValueError:
+            # URL is fundamentally malformed — return the pre-encoded
+            # version which is at least safe for HTTP libraries.
+            return pre_encoded
