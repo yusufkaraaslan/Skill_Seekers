@@ -6,7 +6,7 @@
 
 ## Welcome!
 
-This is the official documentation for **Skill Seekers** - the universal tool for converting **17 source types** (documentation sites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases) into AI-ready skills for 16+ platforms.
+This is the official documentation for **Skill Seekers** - the universal tool for converting **17 source types** (documentation sites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases) into AI-ready skills for 30+ platforms.
 
 ---
 
@@ -172,7 +172,7 @@ For LangChain, LlamaIndex, vector DBs:
 
 ### I Want AI Coding Assistance
 
-For Cursor, Windsurf, Cline:
+For Cursor, Windsurf, Cline, Roo, Aider, Bolt, Kilo, Continue, Kimi Code:
 
 1. [Your First Skill](getting-started/03-your-first-skill.md)
 2. [Local Codebase Analysis](user-guide/02-scraping.md#local-codebase-analysis)

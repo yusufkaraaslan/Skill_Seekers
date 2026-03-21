@@ -194,7 +194,7 @@ Anstatt tagelange manuelle Vorverarbeitung durchzuführen, erledigt Skill Seeker
 - **Abwärtskompatibel** - Bestehende Einzelquellen-Konfigurationen funktionieren weiterhin
 
 ### Multi-LLM-Plattformunterstützung
-- **4 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, Generisches Markdown
+- **12 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - **Universelles Scraping** - Dieselbe Dokumentation funktioniert für alle Plattformen
 - **Plattformspezifische Paketierung** - Optimierte Formate für jedes LLM
 - **Ein-Befehl-Export** - `--target`-Flag wählt die Plattform
@@ -581,9 +581,9 @@ Phase 5: Zu Claude hochladen (optional, erfordert API Key)
 
 ## Funktionsmatrix
 
-Skill Seekers unterstützt **4 LLM-Plattformen**, **17 Quelltypen** und vollständige Funktionsparität für alle Ziele.
+Skill Seekers unterstützt **12 LLM-Plattformen**, **17 Quelltypen** und vollständige Funktionsparität für alle Ziele.
 
-**Plattformen:** Claude AI, Google Gemini, OpenAI ChatGPT, Generisches Markdown
+**Plattformen:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Quelltypen:** Dokumentationswebsites, GitHub-Repos, PDFs, Word (.docx), EPUB, Video, lokale Codebasen, Jupyter-Notebooks, lokales HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS-/Atom-Feeds, Man-Pages, Confluence-Wikis, Notion-Seiten, Slack-/Discord-Chatexporte
 
 Vollständige Informationen finden Sie in der [vollständigen Funktionsmatrix](docs/FEATURE_MATRIX.md).
@@ -819,7 +819,7 @@ In Claude Code einfach fragen:
 
 ## Installation für KI-Agenten
 
-Skill Seekers kann Skills automatisch für über 10 KI-Programmieragenten installieren.
+Skill Seekers kann Skills automatisch für 18 KI-Programmieragenten installieren.
 
 ```bash
 # Für einen bestimmten Agenten installieren
@@ -843,6 +843,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Roo Code** | `.roo/skills/` | Projekt |
+| **Cline** | `.cline/skills/` | Projekt |
+| **Aider** | `~/.aider/skills/` | Global |
+| **Bolt** | `.bolt/skills/` | Projekt |
+| **Kilo Code** | `.kilo/skills/` | Projekt |
+| **Continue** | `~/.continue/skills/` | Global |
+| **Kimi Code** | `~/.kimi/skills/` | Global |
 
 ---
 

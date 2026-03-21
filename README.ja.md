@@ -192,7 +192,7 @@ Skill Seekers は以下のステップで数日の手動前処理作業を代替
 - ✅ **後方互換性** - レガシーの単一ソース設定は引き続き動作
 
 ### 🤖 マルチ LLM プラットフォームサポート
-- ✅ **4 つの LLM プラットフォーム** - Claude AI、Google Gemini、OpenAI ChatGPT、汎用 Markdown
+- ✅ **12 の LLM プラットフォーム** - Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、汎用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 - ✅ **汎用スクレイピング** - 同じドキュメントがすべてのプラットフォームで使用可能
 - ✅ **プラットフォーム固有のパッケージング** - 各 LLM に最適化されたフォーマット
 - ✅ **ワンコマンドエクスポート** - `--target` フラグでプラットフォームを選択
@@ -576,9 +576,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 機能マトリックス
 
-Skill Seekers は **4 つの LLM プラットフォーム**、**17 種類のソースタイプ**、**5 つのスキルモード**をサポートし、機能は完全に同等です。
+Skill Seekers は **12 の LLM プラットフォーム**、**17 種類のソースタイプ**、**5 つのスキルモード**をサポートし、機能は完全に同等です。
 
-**プラットフォーム：** Claude AI、Google Gemini、OpenAI ChatGPT、汎用 Markdown
+**プラットフォーム：** Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、汎用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 **ソースタイプ：** ドキュメントサイト、GitHub リポジトリ、PDF、Word、EPUB、動画、ローカルコードベース、Jupyter Notebook、ローカル HTML、OpenAPI/Swagger 仕様、AsciiDoc ドキュメント、PowerPoint プレゼンテーション、RSS/Atom フィード、Man ページ、Confluence Wiki、Notion ページ、Slack/Discord チャットエクスポート
 **スキルモード：** ドキュメント、GitHub、PDF、統合マルチソース、ローカルリポジトリ
 
@@ -815,7 +815,7 @@ Claude Code で直接聞くだけ：
 
 ## 🤖 AI エージェントへのインストール
 
-Skill Seekers は 10 以上の AI コーディングエージェントにスキルを自動インストールできます。
+Skill Seekers は 18 の AI コーディングエージェントにスキルを自動インストールできます。
 
 ```bash
 # 特定のエージェントにインストール
@@ -839,6 +839,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | グローバル |
 | **OpenCode** | `~/.opencode/skills/` | グローバル |
 | **Windsurf** | `~/.windsurf/skills/` | グローバル |
+| **Roo Code** | `.roo/skills/` | プロジェクト |
+| **Cline** | `.cline/skills/` | プロジェクト |
+| **Aider** | `~/.aider/skills/` | グローバル |
+| **Bolt** | `.bolt/skills/` | プロジェクト |
+| **Kilo Code** | `.kilo/skills/` | プロジェクト |
+| **Continue** | `~/.continue/skills/` | グローバル |
+| **Kimi Code** | `~/.kimi/skills/` | グローバル |
 
 ---
 

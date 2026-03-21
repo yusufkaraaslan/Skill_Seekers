@@ -194,7 +194,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 - ✅ **하위 호환** - 레거시 단일 소스 설정 계속 작동
 
 ### 🤖 다중 LLM 플랫폼 지원
-- ✅ **4개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, 범용 Markdown
+- ✅ **12개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **범용 스크래핑** - 동일한 문서가 모든 플랫폼에 적용
 - ✅ **플랫폼별 패키징** - 각 LLM에 최적화된 형식
 - ✅ **원커맨드 내보내기** - `--target` 플래그로 플랫폼 선택
@@ -581,9 +581,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 기능 매트릭스
 
-Skill Seekers는 **4개 LLM 플랫폼**, **17가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
+Skill Seekers는 **12개 LLM 플랫폼**, **17가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
 
-**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, 범용 Markdown
+**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **소스 유형:** 문서 사이트, GitHub 저장소, PDF, Word (.docx), EPUB, 동영상, 로컬 코드베이스, Jupyter 노트북, 로컬 HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 채팅 내보내기
 
 전체 내용은 [전체 기능 매트릭스](docs/FEATURE_MATRIX.md)를 참조하세요.
@@ -819,7 +819,7 @@ Claude Code에서 직접 요청:
 
 ## 🤖 AI 에이전트에 설치
 
-Skill Seekers는 10개 이상의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
+Skill Seekers는 18개의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
 
 ```bash
 # 특정 에이전트에 설치
@@ -843,6 +843,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | 전역 |
 | **OpenCode** | `~/.opencode/skills/` | 전역 |
 | **Windsurf** | `~/.windsurf/skills/` | 전역 |
+| **Roo Code** | `.roo/skills/` | 프로젝트 |
+| **Cline** | `.cline/skills/` | 프로젝트 |
+| **Aider** | `~/.aider/skills/` | 전역 |
+| **Bolt** | `.bolt/skills/` | 프로젝트 |
+| **Kilo Code** | `.kilo/skills/` | 프로젝트 |
+| **Continue** | `~/.continue/skills/` | 전역 |
+| **Kimi Code** | `~/.kimi/skills/` | 전역 |
 
 ---
 

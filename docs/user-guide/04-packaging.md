@@ -26,6 +26,14 @@ output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format
 | **Claude AI** | ZIP + YAML | `.zip` | Claude Code, Claude API |
 | **Google Gemini** | tar.gz | `.tar.gz` | Gemini skills |
 | **OpenAI ChatGPT** | ZIP + Vector | `.zip` | Custom GPTs |
+| **MiniMax** | ZIP | `.zip` | MiniMax platform |
+| **OpenCode** | ZIP | `.zip` | OpenCode platform |
+| **Kimi** | ZIP | `.zip` | Kimi platform |
+| **DeepSeek** | ZIP | `.zip` | DeepSeek platform |
+| **Qwen** | ZIP | `.zip` | Qwen platform |
+| **OpenRouter** | ZIP | `.zip` | Multi-model routing |
+| **Together AI** | ZIP | `.zip` | Open-source models |
+| **Fireworks AI** | ZIP | `.zip` | Fast inference |
 | **LangChain** | Documents | directory | RAG pipelines |
 | **LlamaIndex** | TextNodes | directory | Query engines |
 | **Haystack** | Documents | directory | Enterprise RAG |
@@ -38,6 +46,12 @@ output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format
 | **Cursor** | .cursorrules | file | IDE AI context |
 | **Windsurf** | .windsurfrules | file | IDE AI context |
 | **Cline** | .clinerules | file | VS Code AI |
+| **Roo** | .roorules | file | VS Code AI |
+| **Aider** | .aider | file | Terminal AI coding |
+| **Bolt** | bolt context | file | Web IDE AI |
+| **Kilo** | kilo context | file | IDE AI context |
+| **Continue** | .continue | file | IDE AI context |
+| **Kimi Code** | kimi context | file | IDE AI context |
 
 ---
 

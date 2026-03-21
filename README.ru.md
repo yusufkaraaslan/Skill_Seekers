@@ -192,7 +192,7 @@ Skill Seekers заменяет дни ручной предобработки с
 - ✅ **Обратная совместимость** — устаревшие одноисточниковые конфигурации продолжают работать
 
 ### 🤖 Поддержка нескольких LLM-платформ
-- ✅ **4 LLM-платформы** — Claude AI, Google Gemini, OpenAI ChatGPT, универсальный Markdown
+- ✅ **12 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Универсальное сканирование** — одна и та же документация для всех платформ
 - ✅ **Платформоспецифичная упаковка** — оптимизированные форматы для каждой LLM
 - ✅ **Экспорт одной командой** — флаг `--target` для выбора платформы
@@ -579,9 +579,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Матрица функций
 
-Skill Seekers поддерживает **4 LLM-платформы**, **17 типов источников** и полный паритет функций по всем целевым платформам.
+Skill Seekers поддерживает **12 LLM-платформ**, **17 типов источников** и полный паритет функций по всем целевым платформам.
 
-**Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, универсальный Markdown
+**Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Типы источников:** Документация сайтов, репозитории GitHub, PDF, Word (.docx), EPUB, видео, локальные кодовые базы, Jupyter-ноутбуки, локальный HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты чатов Slack/Discord
 
 Подробности см. в [Полной матрице функций](docs/FEATURE_MATRIX.md).
@@ -817,7 +817,7 @@ skill-seekers package output/react/
 
 ## 🤖 Установка в ИИ-агенты
 
-Skill Seekers может автоматически устанавливать навыки в 10+ ИИ-агентов для программирования.
+Skill Seekers может автоматически устанавливать навыки в 18 ИИ-агентов для программирования.
 
 ```bash
 # Установка в конкретный агент
@@ -841,6 +841,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Глобальный |
 | **OpenCode** | `~/.opencode/skills/` | Глобальный |
 | **Windsurf** | `~/.windsurf/skills/` | Глобальный |
+| **Roo Code** | `.roo/skills/` | Проектный |
+| **Cline** | `.cline/skills/` | Проектный |
+| **Aider** | `~/.aider/skills/` | Глобальный |
+| **Bolt** | `.bolt/skills/` | Проектный |
+| **Kilo Code** | `.kilo/skills/` | Проектный |
+| **Continue** | `~/.continue/skills/` | Глобальный |
+| **Kimi Code** | `~/.kimi/skills/` | Глобальный |
 
 ---
 

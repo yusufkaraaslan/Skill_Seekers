@@ -192,7 +192,7 @@ skill-seekers package output/my-skill/ --target langchain
 
 ### For AI Coding Assistant Users
 
-Using Cursor, Windsurf, or Cline?
+Using Cursor, Windsurf, Cline, Roo, Aider, Bolt, Kilo, Continue, or Kimi Code?
 
 **Learn:**
 - Local codebase analysis

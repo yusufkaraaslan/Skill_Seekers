@@ -254,7 +254,7 @@ Au lieu de passer des jours en prétraitement manuel, Skill Seekers :
 - ✅ **Rétrocompatibilité** - Les configurations à source unique héritées fonctionnent toujours
 
 ### 🤖 Support multi-plateformes LLM
-- ✅ **4 plateformes LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, Markdown générique
+- ✅ **12 plateformes LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown générique, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Scraping universel** - La même documentation fonctionne pour toutes les plateformes
 - ✅ **Empaquetage spécifique** - Formats optimisés pour chaque LLM
 - ✅ **Export en une commande** - Le flag `--target` sélectionne la plateforme
@@ -704,9 +704,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Matrice de fonctionnalités
 
-Skill Seekers prend en charge **4 plateformes LLM**, **17 types de sources** et une parité fonctionnelle complète sur toutes les cibles.
+Skill Seekers prend en charge **12 plateformes LLM**, **17 types de sources** et une parité fonctionnelle complète sur toutes les cibles.
 
-**Plateformes :** Claude AI, Google Gemini, OpenAI ChatGPT, Markdown générique
+**Plateformes :** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown générique, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Types de sources :** Sites de documentation, dépôts GitHub, PDF, Word (.docx), EPUB, Vidéo, Bases de code locales, Notebooks Jupyter, HTML local, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), Flux RSS/Atom, Pages de manuel, Wikis Confluence, Pages Notion, Exports chat Slack/Discord
 
 Consultez la [matrice complète des fonctionnalités](docs/FEATURE_MATRIX.md) pour le support détaillé par plateforme et fonctionnalité.
@@ -944,7 +944,7 @@ Dans Claude Code, demandez simplement :
 
 ## 🤖 Installation dans les agents IA
 
-Skill Seekers peut installer automatiquement des compétences dans plus de 10 agents de codage IA.
+Skill Seekers peut installer automatiquement des compétences dans 18 agents de codage IA.
 
 ```bash
 # Installer dans un agent spécifique
@@ -968,6 +968,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Roo Code** | `.roo/skills/` | Projet |
+| **Cline** | `.cline/skills/` | Projet |
+| **Aider** | `~/.aider/skills/` | Global |
+| **Bolt** | `.bolt/skills/` | Projet |
+| **Kilo Code** | `.kilo/skills/` | Projet |
+| **Continue** | `~/.continue/skills/` | Global |
+| **Kimi Code** | `~/.kimi/skills/` | Global |
 
 ---
 

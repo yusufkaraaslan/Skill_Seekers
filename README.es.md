@@ -239,7 +239,7 @@ En lugar de pasar días en preprocesamiento manual, Skill Seekers:
 - ✅ **Compatible con versiones anteriores** - Las configuraciones de fuente única legacy siguen funcionando
 
 ### 🤖 Soporte para múltiples plataformas LLM
-- ✅ **4 plataformas LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, Markdown genérico
+- ✅ **12 plataformas LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown genérico, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Extracción universal** - La misma documentación funciona para todas las plataformas
 - ✅ **Empaquetado específico por plataforma** - Formatos optimizados para cada LLM
 - ✅ **Exportación con un solo comando** - El flag `--target` selecciona la plataforma
@@ -689,9 +689,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Matriz de funcionalidades
 
-Skill Seekers soporta **4 plataformas LLM**, **17 tipos de fuentes** y paridad total de funcionalidades en todos los destinos.
+Skill Seekers soporta **12 plataformas LLM**, **17 tipos de fuentes** y paridad total de funcionalidades en todos los destinos.
 
-**Plataformas:** Claude AI, Google Gemini, OpenAI ChatGPT, Markdown genérico
+**Plataformas:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown genérico, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Tipos de fuentes:** Sitios web de documentación, repos de GitHub, PDFs, Word (.docx), EPUB, Video, Bases de código locales, Jupyter Notebooks, HTML local, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), feeds RSS/Atom, páginas de manual, wikis de Confluence, páginas de Notion, exportaciones de chat de Slack/Discord
 
 Consulta la [Matriz completa de funcionalidades](docs/FEATURE_MATRIX.md) para información detallada de soporte por plataforma y funcionalidad.
@@ -929,7 +929,7 @@ En Claude Code, simplemente pide:
 
 ## 🤖 Instalación en agentes de IA
 
-Skill Seekers puede instalar automáticamente skills en más de 10 agentes de programación con IA.
+Skill Seekers puede instalar automáticamente skills en 18 agentes de programación con IA.
 
 ```bash
 # Instalar en un agente específico
@@ -953,6 +953,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Roo Code** | `.roo/skills/` | Proyecto |
+| **Cline** | `.cline/skills/` | Proyecto |
+| **Aider** | `~/.aider/skills/` | Global |
+| **Bolt** | `.bolt/skills/` | Proyecto |
+| **Kilo Code** | `.kilo/skills/` | Proyecto |
+| **Continue** | `~/.continue/skills/` | Global |
+| **Kimi Code** | `~/.kimi/skills/` | Global |
 
 ---
 

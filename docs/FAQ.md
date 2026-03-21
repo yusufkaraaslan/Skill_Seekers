@@ -9,7 +9,7 @@
 
 ### What is Skill Seekers?
 
-Skill Seekers is a Python tool that converts 17 source types — documentation websites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML files, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and local codebases — into AI-ready formats for 16+ platforms: LLM platforms (Claude, Gemini, OpenAI), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev).
+Skill Seekers is a Python tool that converts 17 source types — documentation websites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML files, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and local codebases — into AI-ready formats for 30+ platforms: LLM platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Markdown), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev, Roo, Aider, Bolt, Kilo, Kimi Code).
 
 **Use Cases:**
 - Create custom documentation skills for your favorite frameworks
@@ -23,31 +23,44 @@ Skill Seekers is a Python tool that converts 17 source types — documentation w
 
 ### Which platforms are supported?
 
-**Supported Platforms (16+):**
+**Supported Platforms (30+):**
 
-*LLM Platforms:*
+*LLM Platforms (12):*
 1. **Claude AI** - ZIP format with YAML frontmatter
 2. **Google Gemini** - tar.gz format for Grounded Generation
 3. **OpenAI ChatGPT** - ZIP format for Vector Stores
-4. **Generic Markdown** - ZIP format with markdown files
+4. **MiniMax** - ZIP format
+5. **OpenCode** - ZIP format
+6. **Kimi** - ZIP format
+7. **DeepSeek** - ZIP format
+8. **Qwen** - ZIP format
+9. **OpenRouter** - ZIP format for multi-model routing
+10. **Together AI** - ZIP format for open-source models
+11. **Fireworks AI** - ZIP format for fast inference
+12. **Generic Markdown** - ZIP format with markdown files
 
 *RAG Frameworks:*
-5. **LangChain** - Document objects for QA chains and agents
-6. **LlamaIndex** - TextNodes for query engines
-7. **Haystack** - Document objects for enterprise RAG
+13. **LangChain** - Document objects for QA chains and agents
+14. **LlamaIndex** - TextNodes for query engines
+15. **Haystack** - Document objects for enterprise RAG
 
 *Vector Databases:*
-8. **ChromaDB** - Direct collection upload
-9. **FAISS** - Index files for local similarity search
-10. **Weaviate** - Vector objects with schema creation
-11. **Qdrant** - Points with payload indexing
-12. **Pinecone** - Ready-to-upsert format
+16. **ChromaDB** - Direct collection upload
+17. **FAISS** - Index files for local similarity search
+18. **Weaviate** - Vector objects with schema creation
+19. **Qdrant** - Points with payload indexing
+20. **Pinecone** - Ready-to-upsert format
 
-*AI Coding Assistants:*
-13. **Cursor** - .cursorrules persistent context
-14. **Windsurf** - .windsurfrules AI coding rules
-15. **Cline** - .clinerules + MCP integration
-16. **Continue.dev** - HTTP context server (all IDEs)
+*AI Coding Assistants (9):*
+21. **Cursor** - .cursorrules persistent context
+22. **Windsurf** - .windsurfrules AI coding rules
+23. **Cline** - .clinerules + MCP integration
+24. **Continue.dev** - HTTP context server (all IDEs)
+25. **Roo** - .roorules AI coding rules
+26. **Aider** - Terminal AI coding assistant
+27. **Bolt** - Web IDE AI context
+28. **Kilo** - IDE AI context
+29. **Kimi Code** - IDE AI context
 
 Each platform has a dedicated adaptor for optimal formatting and upload.
 
@@ -404,6 +417,8 @@ skill-seekers install react --target claude --upload
 - Claude AI: Best for Claude Code integration
 - Google Gemini: Best for Grounded Generation in Gemini
 - OpenAI ChatGPT: Best for ChatGPT Custom GPTs
+- MiniMax/Kimi/DeepSeek/Qwen: Best for Chinese LLM ecosystem
+- OpenRouter/Together/Fireworks: Best for multi-model routing or open-source model access
 - Markdown: Generic export for other tools
 
 ### Can I use multiple platforms at once?
@@ -412,7 +427,7 @@ Yes! Package and upload to all platforms:
 
 ```bash
 # Package for all platforms
-for platform in claude gemini openai markdown; do
+for platform in claude gemini openai minimax kimi deepseek qwen openrouter together fireworks markdown; do
   skill-seekers package output/react/ --target $platform
 done
 

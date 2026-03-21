@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-03-21
+
+### Added
+- **OpenCode adaptor** (`--target opencode`) - Directory-based packaging with dual-format YAML frontmatter
+- **OpenAI-compatible base class** - Shared base for all OpenAI-compatible LLM platforms
+- **6 new LLM platform adaptors**: Kimi (`--target kimi`), DeepSeek (`--target deepseek`), Qwen (`--target qwen`), OpenRouter (`--target openrouter`), Together AI (`--target together`), Fireworks AI (`--target fireworks`)
+- **7 new CLI agent install paths**: roo, cline, aider, bolt, kilo, continue, kimi-code (total: 18 agents)
+- **OpenCode skill splitter** - Auto-split large docs into focused sub-skills with router
+- **Bi-directional skill converter** - Import/export between OpenCode and any platform format
+- **GitHub Actions template** for automated skill updates (`templates/github-actions/update-skills.yml`)
+
+### Changed
+- Refactored MiniMax adaptor to inherit from shared OpenAI-compatible base class
+- Platform count: 5 → 12 LLM targets
+- Agent count: 11 → 18 install paths
+
 ## [3.3.0] - 2026-03-16
 
 **Theme:** 10 new source types (17 total), EPUB unified integration, sync-config command, performance optimizations, 12 README translations, and 19 bug fixes. 117 files changed, +41,588 lines since v3.2.0.

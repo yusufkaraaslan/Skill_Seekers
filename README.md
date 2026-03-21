@@ -248,7 +248,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
 ### 🤖 Multi-LLM Platform Support
-- ✅ **5 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown
+- ✅ **12 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **Universal Scraping** - Same documentation works for all platforms
 - ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
 - ✅ **One-Command Export** - `--target` flag selects platform
@@ -707,9 +707,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **5 LLM platforms**, **17 source types**, and full feature parity across all targets.
+Skill Seekers supports **12 LLM platforms**, **17 source types**, and full feature parity across all targets.
 
-**Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown
+**Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 **Source Types:** Documentation websites, GitHub repos, PDFs, Word (.docx), EPUB, Video, Local codebases, Jupyter Notebooks, Local HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom feeds, Man pages, Confluence wikis, Notion pages, Slack/Discord chat exports
 
 See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
@@ -947,7 +947,7 @@ In Claude Code, just ask:
 
 ## 🤖 Installing to AI Agents
 
-Skill Seekers can automatically install skills to 10+ AI coding agents.
+Skill Seekers can automatically install skills to 18 AI coding agents.
 
 ```bash
 # Install to specific agent
@@ -971,6 +971,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Roo Code** | `.roo/skills/` | Project |
+| **Cline** | `.cline/skills/` | Project |
+| **Aider** | `~/.aider/skills/` | Global |
+| **Bolt** | `.bolt/skills/` | Project |
+| **Kilo Code** | `.kilo/skills/` | Project |
+| **Continue** | `~/.continue/skills/` | Global |
+| **Kimi Code** | `~/.kimi/skills/` | Global |
 
 ---
 

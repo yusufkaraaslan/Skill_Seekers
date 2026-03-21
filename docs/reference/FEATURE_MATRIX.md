@@ -9,30 +9,38 @@ Complete feature support across all platforms and skill modes.
 | **Claude AI** | ZIP | ✅ Anthropic API | ✅ Sonnet 4 | ANTHROPIC_API_KEY |
 | **Google Gemini** | tar.gz | ✅ Files API | ✅ Gemini 2.0 | GOOGLE_API_KEY |
 | **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
+| **MiniMax** | ZIP | ❌ Manual | ❌ None | None |
+| **OpenCode** | ZIP | ❌ Manual | ❌ None | None |
+| **Kimi** | ZIP | ❌ Manual | ❌ None | None |
+| **DeepSeek** | ZIP | ❌ Manual | ❌ None | None |
+| **Qwen** | ZIP | ❌ Manual | ❌ None | None |
+| **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
+| **Together AI** | ZIP | ❌ Manual | ❌ None | None |
+| **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
 
 ## Skill Mode Support
 
 | Mode | Description | Platforms | CLI Command | `create` Detection |
 |------|-------------|-----------|-------------|-------------------|
-| **Documentation** | Scrape HTML docs | All 4 | `scrape` | `https://...` URLs |
-| **GitHub** | Analyze repositories | All 4 | `github` | `owner/repo` or github.com URLs |
-| **PDF** | Extract from PDFs | All 4 | `pdf` | `.pdf` extension |
-| **Word** | Extract from DOCX | All 4 | `word` | `.docx` extension |
-| **EPUB** | Extract from EPUB | All 4 | `epub` | `.epub` extension |
-| **Video** | Video transcription | All 4 | `video` | YouTube/Vimeo URLs, video extensions |
-| **Local Repo** | Local codebase analysis | All 4 | `analyze` | Directory paths |
-| **Jupyter** | Extract from notebooks | All 4 | `jupyter` | `.ipynb` extension |
-| **HTML** | Extract local HTML files | All 4 | `html` | `.html`/`.htm` extension |
-| **OpenAPI** | Extract API specs | All 4 | `openapi` | `.yaml`/`.yml` with OpenAPI content |
-| **AsciiDoc** | Extract AsciiDoc files | All 4 | `asciidoc` | `.adoc`/`.asciidoc` extension |
-| **PowerPoint** | Extract from PPTX | All 4 | `pptx` | `.pptx` extension |
-| **RSS/Atom** | Extract from feeds | All 4 | `rss` | `.rss`/`.atom` extension |
-| **Man Pages** | Extract man pages | All 4 | `manpage` | `.1`-`.8`/`.man` extension |
-| **Confluence** | Extract from Confluence | All 4 | `confluence` | API or export directory |
-| **Notion** | Extract from Notion | All 4 | `notion` | API or export directory |
-| **Chat** | Extract Slack/Discord | All 4 | `chat` | Export directory or API |
-| **Unified** | Multi-source combination | All 4 | `unified` | N/A (config-driven) |
+| **Documentation** | Scrape HTML docs | All 12 | `scrape` | `https://...` URLs |
+| **GitHub** | Analyze repositories | All 12 | `github` | `owner/repo` or github.com URLs |
+| **PDF** | Extract from PDFs | All 12 | `pdf` | `.pdf` extension |
+| **Word** | Extract from DOCX | All 12 | `word` | `.docx` extension |
+| **EPUB** | Extract from EPUB | All 12 | `epub` | `.epub` extension |
+| **Video** | Video transcription | All 12 | `video` | YouTube/Vimeo URLs, video extensions |
+| **Local Repo** | Local codebase analysis | All 12 | `analyze` | Directory paths |
+| **Jupyter** | Extract from notebooks | All 12 | `jupyter` | `.ipynb` extension |
+| **HTML** | Extract local HTML files | All 12 | `html` | `.html`/`.htm` extension |
+| **OpenAPI** | Extract API specs | All 12 | `openapi` | `.yaml`/`.yml` with OpenAPI content |
+| **AsciiDoc** | Extract AsciiDoc files | All 12 | `asciidoc` | `.adoc`/`.asciidoc` extension |
+| **PowerPoint** | Extract from PPTX | All 12 | `pptx` | `.pptx` extension |
+| **RSS/Atom** | Extract from feeds | All 12 | `rss` | `.rss`/`.atom` extension |
+| **Man Pages** | Extract man pages | All 12 | `manpage` | `.1`-`.8`/`.man` extension |
+| **Confluence** | Extract from Confluence | All 12 | `confluence` | API or export directory |
+| **Notion** | Extract from Notion | All 12 | `notion` | API or export directory |
+| **Chat** | Extract Slack/Discord | All 12 | `chat` | Export directory or API |
+| **Unified** | Multi-source combination | All 12 | `unified` | N/A (config-driven) |
 
 ## CLI Command Support
 
@@ -127,21 +135,21 @@ Complete feature support across all platforms and skill modes.
 ```
 Config → Scrape → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**Platforms:** All 4
+**Platforms:** All 12
 **Modes:** Docs, GitHub, PDF
 
 ### Unified Multi-Source Workflow
 ```
 Config → Scrape All → Detect Conflicts → Merge → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**Platforms:** All 4
+**Platforms:** All 12
 **Modes:** Unified only
 
 ### Complete Installation Workflow
 ```
 install --target X → Fetch → Scrape → Enhance → Package → Upload
 ```
-**Platforms:** All 4
+**Platforms:** All 12
 **Modes:** All (via config type detection)
 
 ## API Key Requirements
@@ -342,6 +350,8 @@ A:
 - **Claude:** Best default choice, excellent MCP integration
 - **Gemini:** Choose if you need long context (1M tokens) or grounding
 - **OpenAI:** Choose if you need vector search and semantic retrieval
+- **MiniMax/Kimi/DeepSeek/Qwen:** Choose for Chinese LLM ecosystem compatibility
+- **OpenRouter/Together/Fireworks:** Choose for multi-model routing or open-source model access
 - **Markdown:** Choose for universal compatibility or offline use
 
 **Q: Can I enhance a skill for different platforms?**
@@ -351,7 +361,7 @@ A: Yes! Enhancement adds platform-specific formatting:
 - OpenAI: Plain text assistant instructions
 
 **Q: Do all skill modes work with all platforms?**
-A: Yes! All 17 source types work with all 4 platforms (Claude, Gemini, OpenAI, Markdown).
+A: Yes! All 17 source types work with all 12 LLM platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Markdown).
 
 ## See Also
 

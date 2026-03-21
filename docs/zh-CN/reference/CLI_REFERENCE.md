@@ -1,7 +1,7 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.2.0  
-> **Last Updated:** 2026-03-15  
+> **Version:** 3.4.0
+> **Last Updated:** 2026-03-21
 > **Complete reference for all 30+ CLI commands**
 
 ---
@@ -520,7 +520,7 @@ skill-seekers install --config react --dry-run
 
 ### install-agent
 
-Install skill to AI agent directories (Cursor, Windsurf, Cline).
+Install skill to AI agent directories (Cursor, Windsurf, Cline, Roo, Aider, Bolt, Kilo, Continue, Kimi Code).
 
 **Purpose:** Direct installation to IDE AI assistant context directories.
 
@@ -534,7 +534,7 @@ skill-seekers install-agent SKILL_DIRECTORY --agent AGENT [options]
 | Name | Required | Description |
 |------|----------|-------------|
 | `SKILL_DIRECTORY` | Yes | Path to skill directory |
-| `--agent AGENT` | Yes | Target agent: cursor, windsurf, cline, continue |
+| `--agent AGENT` | Yes | Target agent: cursor, windsurf, cline, continue, roo, aider, bolt, kilo, kimi-code |
 
 **Flags:**
 
@@ -630,6 +630,13 @@ skill-seekers package SKILL_DIRECTORY [options]
 | Claude AI | ZIP + YAML | `--target claude` |
 | Google Gemini | tar.gz | `--target gemini` |
 | OpenAI | ZIP + Vector | `--target openai` |
+| OpenCode | Directory | `--target opencode` |
+| Kimi | ZIP | `--target kimi` |
+| DeepSeek | ZIP | `--target deepseek` |
+| Qwen | ZIP | `--target qwen` |
+| OpenRouter | ZIP | `--target openrouter` |
+| Together AI | ZIP | `--target together` |
+| Fireworks AI | ZIP | `--target fireworks` |
 | LangChain | Documents | `--target langchain` |
 | LlamaIndex | TextNodes | `--target llama-index` |
 | Haystack | Documents | `--target haystack` |

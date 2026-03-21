@@ -192,7 +192,7 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 - ✅ **向后兼容** - 遗留单源配置继续有效
 
 ### 🤖 多 LLM 平台支持
-- ✅ **4 个 LLM 平台** - Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
+- ✅ **12 个 LLM 平台** - Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、通用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 - ✅ **通用抓取** - 相同文档适用于所有平台
 - ✅ **平台专用打包** - 针对每个 LLM 的优化格式
 - ✅ **一键导出** - `--target` 标志选择平台
@@ -576,9 +576,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 功能矩阵
 
-Skill Seekers 支持 **4 个 LLM 平台**、**17 种来源类型**和 **5 种技能模式**，功能完全对等。
+Skill Seekers 支持 **12 个 LLM 平台**、**17 种来源类型**和 **5 种技能模式**，功能完全对等。
 
-**平台：** Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
+**平台：** Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、通用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 **来源类型：** 文档网站、GitHub 仓库、PDF、Word、EPUB、视频、本地代码库、Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录
 **技能模式：** 文档、GitHub、PDF、统一多源、本地仓库
 
@@ -815,7 +815,7 @@ skill-seekers package output/react/
 
 ## 🤖 安装到 AI 代理
 
-Skill Seekers 可自动将技能安装到 10+ 个 AI 编程代理。
+Skill Seekers 可自动将技能安装到 18 个 AI 编程代理。
 
 ```bash
 # 安装到特定代理
@@ -839,6 +839,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | 全局 |
 | **OpenCode** | `~/.opencode/skills/` | 全局 |
 | **Windsurf** | `~/.windsurf/skills/` | 全局 |
+| **Roo Code** | `.roo/skills/` | 项目 |
+| **Cline** | `.cline/skills/` | 项目 |
+| **Aider** | `~/.aider/skills/` | 全局 |
+| **Bolt** | `.bolt/skills/` | 项目 |
+| **Kilo Code** | `.kilo/skills/` | 项目 |
+| **Continue** | `~/.continue/skills/` | 全局 |
+| **Kimi Code** | `~/.kimi/skills/` | 全局 |
 
 ---
 

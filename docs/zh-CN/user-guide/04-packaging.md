@@ -1,6 +1,6 @@
 # Packaging Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.4.0**
 > **Export skills to AI platforms and vector databases**
 
 ---
@@ -26,6 +26,13 @@ output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format
 | **Claude AI** | ZIP + YAML | `.zip` | Claude Code, Claude API |
 | **Google Gemini** | tar.gz | `.tar.gz` | Gemini skills |
 | **OpenAI ChatGPT** | ZIP + Vector | `.zip` | Custom GPTs |
+| **OpenCode** | Directory | directory | OpenCode agent |
+| **Kimi** | ZIP | `.zip` | Kimi platform |
+| **DeepSeek** | ZIP | `.zip` | DeepSeek platform |
+| **Qwen** | ZIP | `.zip` | Qwen platform |
+| **OpenRouter** | ZIP | `.zip` | OpenRouter |
+| **Together AI** | ZIP | `.zip` | Together AI |
+| **Fireworks AI** | ZIP | `.zip` | Fireworks AI |
 | **LangChain** | Documents | directory | RAG pipelines |
 | **LlamaIndex** | TextNodes | directory | Query engines |
 | **Haystack** | Documents | directory | Enterprise RAG |
