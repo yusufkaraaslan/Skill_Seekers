@@ -78,7 +78,7 @@ Step 3: Success
 | Code analysis | ✅ File tree | ✅ AST + Patterns + Examples | 90% |
 | Issues/PRs | ❌ Not using | ✅ Top problems/solutions | 100% |
 | AI enhancement | ❌ Not using | ✅ Dual mode (API/LOCAL) | 100% |
-| Multi-platform | ❌ Claude only | ✅ 4 platforms | 75% |
+| Multi-platform | ❌ Claude only | ✅ 12 platforms | 75% |
 | Router skills | ❌ Not using | ✅ Solves context limits | 100% |
 | Rate limit mgmt | ❌ Not aware | ✅ Multi-token system | 100% |
 
@@ -167,7 +167,7 @@ skill-seekers config --github
 
 **They Only Know:** Claude AI
 
-**We Support:** 4 platforms
+**We Support:** 12 platforms
 - Claude AI (ZIP + YAML)
 - Google Gemini (tar.gz)
 - OpenAI ChatGPT (ZIP + Vector Store)

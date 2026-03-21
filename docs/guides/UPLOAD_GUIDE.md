@@ -1,6 +1,6 @@
 # Multi-Platform Upload Guide
 
-Skill Seekers supports uploading to **4 LLM platforms**: Claude AI, Google Gemini, OpenAI ChatGPT, and Generic Markdown export.
+Skill Seekers supports uploading to **12 LLM platforms**: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown export.
 
 ## Quick Platform Selection
 

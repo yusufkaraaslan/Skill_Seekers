@@ -98,7 +98,7 @@ CodeSee, Sourcery, Stepsize, Swimm - medium priority
 
 ### 1. **New Output Formats** (HIGH PRIORITY)
 
-**Current:** `--target claude|gemini|openai|markdown`
+**Current:** `--target claude|gemini|openai|minimax|opencode|kimi|deepseek|qwen|openrouter|together|fireworks|markdown`
 
 **Add:**
 ```bash
