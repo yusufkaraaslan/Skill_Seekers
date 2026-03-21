@@ -49,9 +49,7 @@ class TestIssue277RealWorld(unittest.TestCase):
             self.assertNotIn("#", url, f"URL should not contain anchor: {url}")
             # No /index.html.md should be appended to non-.md URLs
             if not url.endswith(".md"):
-                self.assertNotIn(
-                    "index.html.md", url, f"Should not append /index.html.md: {url}"
-                )
+                self.assertNotIn("index.html.md", url, f"Should not append /index.html.md: {url}")
 
         # .md URLs preserved, non-.md URLs preserved as-is, anchors deduplicated
         self.assertIn("https://mikro-orm.io/docs/reference.md", result)

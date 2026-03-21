@@ -471,7 +471,11 @@ class DocToSkillConverter:
                     else:
                         continue
                     full_url = full_url.split("#")[0]
-                    if self._has_md_extension(full_url) and self.is_valid_url(full_url) and full_url not in links:
+                    if (
+                        self._has_md_extension(full_url)
+                        and self.is_valid_url(full_url)
+                        and full_url not in links
+                    ):
                         links.append(full_url)
 
                 return {
@@ -560,7 +564,11 @@ class DocToSkillConverter:
             # Strip anchor fragments
             full_url = full_url.split("#")[0]
             # Only include .md URLs to avoid client-side rendered HTML pages
-            if self._has_md_extension(full_url) and self.is_valid_url(full_url) and full_url not in page["links"]:
+            if (
+                self._has_md_extension(full_url)
+                and self.is_valid_url(full_url)
+                and full_url not in page["links"]
+            ):
                 page["links"].append(full_url)
 
         return page

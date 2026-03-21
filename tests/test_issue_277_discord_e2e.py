@@ -88,8 +88,7 @@ class TestIssue277DiscordDocsE2E(unittest.TestCase):
             len(bad_urls),
             0,
             f"Found {len(bad_urls)} URLs with /index.html.md appended "
-            f"(would cause 404s):\n"
-            + "\n".join(bad_urls[:10]),
+            f"(would cause 404s):\n" + "\n".join(bad_urls[:10]),
         )
 
         # Step 6: Verify no anchor fragments leaked through
@@ -97,8 +96,7 @@ class TestIssue277DiscordDocsE2E(unittest.TestCase):
         self.assertEqual(
             len(anchor_urls),
             0,
-            f"Found {len(anchor_urls)} URLs with anchor fragments:\n"
-            + "\n".join(anchor_urls[:10]),
+            f"Found {len(anchor_urls)} URLs with anchor fragments:\n" + "\n".join(anchor_urls[:10]),
         )
 
         # Step 7: Verify we got a reasonable number of URLs

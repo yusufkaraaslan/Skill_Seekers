@@ -280,10 +280,14 @@ class TestHasMdExtension(unittest.TestCase):
 
     def test_md_in_middle_of_path(self):
         """.md in middle of path should not match"""
-        self.assertFalse(DocToSkillConverter._has_md_extension("https://example.com/page.md/subpage"))
+        self.assertFalse(
+            DocToSkillConverter._has_md_extension("https://example.com/page.md/subpage")
+        )
 
     def test_index_html_md(self):
-        self.assertTrue(DocToSkillConverter._has_md_extension("https://example.com/page/index.html.md"))
+        self.assertTrue(
+            DocToSkillConverter._has_md_extension("https://example.com/page/index.html.md")
+        )
 
 
 if __name__ == "__main__":
