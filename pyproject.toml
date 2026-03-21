@@ -94,6 +94,36 @@ minimax = [
     "openai>=1.0.0",
 ]
 
+# Kimi (Moonshot AI) support (uses OpenAI-compatible API)
+kimi = [
+    "openai>=1.0.0",
+]
+
+# DeepSeek AI support (uses OpenAI-compatible API)
+deepseek = [
+    "openai>=1.0.0",
+]
+
+# Qwen (Alibaba) support (uses OpenAI-compatible API)
+qwen = [
+    "openai>=1.0.0",
+]
+
+# OpenRouter support (uses OpenAI-compatible API)
+openrouter = [
+    "openai>=1.0.0",
+]
+
+# Together AI support (uses OpenAI-compatible API)
+together = [
+    "openai>=1.0.0",
+]
+
+# Fireworks AI support (uses OpenAI-compatible API)
+fireworks = [
+    "openai>=1.0.0",
+]
+
 # All LLM platforms combined
 all-llms = [
     "google-generativeai>=0.8.0",
@@ -306,6 +336,7 @@ skill-seekers-manpage = "skill_seekers.cli.man_scraper:main"
 skill-seekers-confluence = "skill_seekers.cli.confluence_scraper:main"
 skill-seekers-notion = "skill_seekers.cli.notion_scraper:main"
 skill-seekers-chat = "skill_seekers.cli.chat_scraper:main"
+skill-seekers-opencode-split = "skill_seekers.cli.opencode_skill_splitter:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

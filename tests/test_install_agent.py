@@ -66,16 +66,37 @@ class TestAgentPathMapping:
             get_agent_path("invalid_agent")
 
     def test_get_available_agents(self):
-        """Test that all 11 agents are listed."""
+        """Test that all 18 agents are listed."""
         agents = get_available_agents()
-        assert len(agents) == 11
+        assert len(agents) == 18
         assert "claude" in agents
         assert "cursor" in agents
         assert "vscode" in agents
         assert "amp" in agents
         assert "goose" in agents
         assert "neovate" in agents
+        assert "roo" in agents
+        assert "cline" in agents
+        assert "aider" in agents
+        assert "bolt" in agents
+        assert "kilo" in agents
+        assert "continue" in agents
+        assert "kimi-code" in agents
         assert sorted(agents) == agents  # Should be sorted
+
+    def test_new_agents_project_relative(self):
+        """Test that project-relative new agents resolve correctly."""
+        for agent in ["roo", "cline", "bolt", "kilo"]:
+            path = get_agent_path(agent)
+            assert path.is_absolute()
+            assert str(Path.cwd()) in str(path)
+
+    def test_new_agents_global(self):
+        """Test that global new agents resolve to home directory."""
+        for agent in ["aider", "continue", "kimi-code"]:
+            path = get_agent_path(agent)
+            assert path.is_absolute()
+            assert str(path).startswith(str(Path.home()))
 
     def test_agent_path_case_insensitive(self):
         """Test that agent names are case-insensitive."""
@@ -340,7 +361,7 @@ class TestInstallToAllAgents:
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_install_to_all_success(self):
-        """Test that install_to_all_agents attempts all 11 agents."""
+        """Test that install_to_all_agents attempts all 18 agents."""
         with tempfile.TemporaryDirectory() as agent_tmpdir:
 
             def mock_get_agent_path(agent_name, _project_root=None):
@@ -352,7 +373,7 @@ class TestInstallToAllAgents:
             ):
                 results = install_to_all_agents(self.skill_dir, force=True)
 
-                assert len(results) == 11
+                assert len(results) == 18
                 assert "claude" in results
                 assert "cursor" in results
 
@@ -362,7 +383,7 @@ class TestInstallToAllAgents:
         results = install_to_all_agents(self.skill_dir, dry_run=True)
 
         # All should succeed in dry-run mode
-        assert len(results) == 11
+        assert len(results) == 18
         for _agent_name, (success, message) in results.items():
             assert success is True
             assert "DRY RUN" in message
@@ -399,7 +420,7 @@ class TestInstallToAllAgents:
         results = install_to_all_agents(self.skill_dir, dry_run=True)
 
         assert isinstance(results, dict)
-        assert len(results) == 11
+        assert len(results) == 18
 
         for agent_name, (success, message) in results.items():
             assert isinstance(success, bool)
