@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>SyncMonitor</title>
+    <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic|Source+Code+Pro:300,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../assets/css/bootstrap.css">
+<link rel="stylesheet" href="../assets/css/jquery.bonsai.css">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/icon-font/icons.css">
+<script type="text/javascript" src="../assets/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="../assets/js/bootstrap.js"></script>
+<script type="text/javascript" src="../assets/js/jquery.bonsai.js"></script>
+<script type="text/javascript" src="../assets/js/imageMapResizer.min.js"></script>
+
+  </head>
+  <body>
+    <div>
+
+      <!-- Name Title -->
+
+      <h1>SyncMonitor</h1>
+
+      <!-- Type and Stereotype -->
+
+      <section style="margin-top: .5em;">
+        <span class="alert alert-info">
+          <span class="node-icon staruml-icon icon-UMLClass"></span>
+          UMLClass
+        </span>
+        
+      </section>
+
+      <!-- Path -->
+
+      <section style="margin-top: 10px">
+        
+        
+        
+          
+          <span class="label label-info"><a href='cf9c8b720f3815adeccaf3ef6e48c6c4.html'><span class='node-icon staruml-icon icon-Project'></span>Skill Seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='6a4361334e8b649314ed681b9e6798c3.html'><span class='node-icon staruml-icon icon-UMLModel'></span>skill_seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='8d93060f6d7a7c6803e67fc2ec0f4522.html'><span class='node-icon staruml-icon icon-UMLPackage'></span>Sync</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='b981ba669c0e879541c2cf16c5fc41b1.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SyncMonitor</a></span>
+        
+      </section>
+
+      <!-- Diagram -->
+
+      
+
+      <!-- Description -->
+
+      
+      <section>
+        <h3>Description</h3>
+        <div>
+          
+            <p>Monitors documentation for changes and triggers updates. Features: continuous monitoring with configurable intervals, state persistence, change detection and diff generation, notification system, auto-update capability. Supports context manager protocol.</p>
+          
+        </div>
+      </section>
+      
+
+      <!-- Specification -->
+
+      
+
+      <!-- Directed Relationship -->
+
+      
+
+      <!-- Undirected Relationship -->
+
+      
+
+      <!-- Classifier -->
+
+      
+        
+        
+
+
+        
+        
+
+
+        
+        
+<section class="element-list">
+    <h3>Interfaces</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='eeeb39aabf2da47a1cd7c73ba927c517.html'><span class='node-icon staruml-icon icon-UMLInterface'></span>ISyncSystem</a></li>
+        
+    </ul>
+</section>
+
+
+
+        
+        
+
+
+        
+        
+
+      
+
+      <!-- Interface -->
+
+      
+
+      <!-- Component -->
+
+      
+
+      <!-- Node -->
+
+      
+
+      <!-- Actor -->
+
+      
+
+      <!-- Use Case -->
+
+      
+
+      <!-- Template Parameters -->
+
+      
+
+      <!-- Literals -->
+
+      
+
+      <!-- Attributes -->
+
+      
+      <section>
+        <h3>Attributes</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="67114b96b7afe323068cffd200af0fe2.html">config_path</a></td>
+            <td>Path </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="01ff8f1b7d9d7beccdfac55ed1d3017d.html">check_interval</a></td>
+            <td>int </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="90445a68b831c415f877667e5a58d2e1.html">auto_update</a></td>
+            <td>bool </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="c53a1f67ea692bc3510a4e3af3f0f6ee.html">on_change</a></td>
+            <td>Callable | None </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="bf38eb5620427358f67b79cc3f33ec9f.html">skill_config</a></td>
+            <td>dict </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="b2743363efd24773abd69b142f634b92.html">skill_name</a></td>
+            <td>str </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="c1fabed9be8de143b687e1fb7586b60a.html">state_file</a></td>
+            <td>Path </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="7cca037d7711696cc49b648ead2b2d8e.html">detector</a></td>
+            <td>ChangeDetector </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="3fa51210e706aa8550e7933bb41f4458.html">notifier</a></td>
+            <td>Notifier </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="684261b1b4af46cae1d36f75b08acb1f.html">state</a></td>
+            <td>SyncState </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="9f01adebba87d03cc42f31a6df26ecc7.html">_running</a></td>
+            <td>bool </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="6f5c72af2909b1945120c2a9f0637b9c.html">_thread</a></td>
+            <td>Thread | None </td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Operations -->
+
+      
+      <section>
+        <h3>Operations</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="084f65230d8e15d82dca008da5251503.html">monitor()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="c37874d72771207e93ed408cd5bea157.html">check()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="a4dfe98bc6fb53bae1d39a500b10ce03.html">check_now(generate_diffs: bool): ChangeReport()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="86aa98de6c4dae155e1942dfab6171c3.html">start()()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="8a9d8d2586fffa53c37435d799b71a85.html">stop()()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="a5cd295af4296fbc376a726a362495bd.html">stats(): dict()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="d3b64a54bb181def446af43cfba80541.html">_load_state(): SyncState()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="1760bffa8edf160a10b394c7ed51500b.html">_save_state()()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="83e6634c08dac5457ef78be84d71fb82.html">_notify(report: ChangeReport)()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="b5bebe48c49c17de6ec6e94a26a12bda.html">_trigger_update(report: ChangeReport)()</a></td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Receptions -->
+
+      
+
+      <!-- Extension Points -->
+
+      
+
+      <!-- Parameters -->
+
+      
+
+      <!-- Diagrams -->
+
+      
+      
+
+      <!-- Behavior -->
+
+      
+
+      <!-- Action -->
+
+      
+
+      <!-- Interaction -->
+
+      
+
+      <!-- CombinedFragment -->
+
+      
+
+      <!-- Activity -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State -->
+
+      
+
+      <!-- Vertex -->
+
+      
+
+      <!-- Transition -->
+
+      
+
+      <!-- Data Model (ERD) -->
+
+      
+
+      <!-- Columns (ERD) -->
+
+      
+
+      <!-- Related Entities (ERD) -->
+
+      
+
+      <!-- Data Flows (DFD) -->
+
+      
+
+      <!-- Flows (Flowchart) -->
+
+      
+
+      <!-- Properties -->
+
+      <section>
+        <h3>Properties</h3>
+        
+        <table class="table table-striped table-bordered">
+    <tr>
+        <th width="50%">Name</th>
+        <th width="50%">Value</th>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>name</td>
+        <td>SyncMonitor</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>stereotype</td>
+        <td><span class='label label-info'>null</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>visibility</td>
+        <td>public</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>isAbstract</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isFinalSpecialization</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isLeaf</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isActive</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+</table>                
+
+      </section>
+
+      <!-- Tags -->
+
+      
+
+      <!-- Constraints, Dependencies, Dependants -->
+
+      
+        
+        
+
+
+        
+        
+<section class="element-list">
+    <h3>Dependencies</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='eeeb39aabf2da47a1cd7c73ba927c517.html'><span class='node-icon staruml-icon icon-UMLInterface'></span>ISyncSystem</a></li>
+        
+        <li><a href='ea087b89af05225e59d0a4f985ac8a71.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ChangeDetector</a></li>
+        
+        <li><a href='3127b5e8b9afcd79148641d02039a191.html'><span class='node-icon staruml-icon icon-UMLClass'></span>Notifier</a></li>
+        
+        <li><a href='e309fa6ae75dde063a181105ccfbb9a4.html'><span class='node-icon staruml-icon icon-UMLDataType'></span>SyncState</a></li>
+        
+        <li><a href='bd9ab2cd7440ceed6d93de7efc261d6c.html'><span class='node-icon staruml-icon icon-UMLDataType'></span>ChangeReport</a></li>
+        
+    </ul>
+</section>
+
+
+
+        
+        
+
+      
+
+      <!-- Relationships -->
+
+      
+      
+<section class="element-list">
+    <h3>Relationships</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='504151fc3993c9111eb7cca1d4bd8186.html'><span class='node-icon staruml-icon icon-UMLInterfaceRealization'></span>(SyncMonitor→ISyncSystem)</a></li>
+        
+        <li><a href='9d83d1b61b8db7d48a9ea552102409af.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→ChangeDetector)</a></li>
+        
+        <li><a href='eb4115159c79a0701a3de3dec0f6e6b1.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→Notifier)</a></li>
+        
+        <li><a href='c8351c3caa2daa09b565eac3d3436c44.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→SyncState)</a></li>
+        
+        <li><a href='c798042ec649752f2829432e3774f1ea.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→ChangeReport)</a></li>
+        
+    </ul>
+</section>
+
+
+
+      <!-- Owned Elements -->
+
+      
+      
+<section class="element-list">
+    <h3>Owned Elements</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='504151fc3993c9111eb7cca1d4bd8186.html'><span class='node-icon staruml-icon icon-UMLInterfaceRealization'></span>(SyncMonitor→ISyncSystem)</a></li>
+        
+        <li><a href='9d83d1b61b8db7d48a9ea552102409af.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→ChangeDetector)</a></li>
+        
+        <li><a href='eb4115159c79a0701a3de3dec0f6e6b1.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→Notifier)</a></li>
+        
+        <li><a href='c8351c3caa2daa09b565eac3d3436c44.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→SyncState)</a></li>
+        
+        <li><a href='c798042ec649752f2829432e3774f1ea.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(SyncMonitor→ChangeReport)</a></li>
+        
+    </ul>
+</section>
+
+
+
+      <!-- Diagrams -->
+      
+      
+      
+<section class="element-list">
+    <h3>Diagrams</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='9c77d89de8418c23e57114f6d0c155a3.html'><span class='node-icon staruml-icon icon-UMLClassDiagram'></span>Sync</a></li>
+        
+    </ul>
+</section>
+
+
+      
+      
+      <!-- Image Map Resizer (https://github.com/davidjbradshaw/image-map-resizer) -->
+      <script>
+      imageMapResize();
+      </script>
+    </div>
+  </body>
+</html>

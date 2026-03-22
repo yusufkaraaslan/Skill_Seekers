@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>SubcommandParser</title>
+    <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic|Source+Code+Pro:300,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../assets/css/bootstrap.css">
+<link rel="stylesheet" href="../assets/css/jquery.bonsai.css">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/icon-font/icons.css">
+<script type="text/javascript" src="../assets/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="../assets/js/bootstrap.js"></script>
+<script type="text/javascript" src="../assets/js/jquery.bonsai.js"></script>
+<script type="text/javascript" src="../assets/js/imageMapResizer.min.js"></script>
+
+  </head>
+  <body>
+    <div>
+
+      <!-- Name Title -->
+
+      <h1>SubcommandParser</h1>
+
+      <!-- Type and Stereotype -->
+
+      <section style="margin-top: .5em;">
+        <span class="alert alert-info">
+          <span class="node-icon staruml-icon icon-UMLClass"></span>
+          UMLClass
+        </span>
+        
+      </section>
+
+      <!-- Path -->
+
+      <section style="margin-top: 10px">
+        
+        
+        
+          
+          <span class="label label-info"><a href='cf9c8b720f3815adeccaf3ef6e48c6c4.html'><span class='node-icon staruml-icon icon-Project'></span>Skill Seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='6a4361334e8b649314ed681b9e6798c3.html'><span class='node-icon staruml-icon icon-UMLModel'></span>skill_seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='08f15a81b2edd5a6cfdd763c99b3e6d9.html'><span class='node-icon staruml-icon icon-UMLPackage'></span>Parsers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='d90e6502c6a3eb4ae2e5beeeb7dc3ad5.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SubcommandParser</a></span>
+        
+      </section>
+
+      <!-- Diagram -->
+
+      
+
+      <!-- Description -->
+
+      
+      <section>
+        <h3>Description</h3>
+        <div>
+          
+            <p>Abstract base for CLI subcommand argument parsers. Defines register(subparsers) to add a subcommand with its arguments. 30+ implementations, one per CLI subcommand.</p>
+          
+        </div>
+      </section>
+      
+
+      <!-- Specification -->
+
+      
+
+      <!-- Directed Relationship -->
+
+      
+
+      <!-- Undirected Relationship -->
+
+      
+
+      <!-- Classifier -->
+
+      
+        
+        
+
+
+        
+        
+<section class="element-list">
+    <h3>Specialized Elements</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='cacc297a98a7bfd5ed1cb6dde60da532.html'><span class='node-icon staruml-icon icon-UMLClass'></span>CreateParser</a></li>
+        
+        <li><a href='b0cc9f6f4d4df675f041ce7b94d18fd1.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ScrapeParser</a></li>
+        
+        <li><a href='f3071eeae819574a3d8eaa32155c2f2b.html'><span class='node-icon staruml-icon icon-UMLClass'></span>GitHubParser</a></li>
+        
+        <li><a href='d8f1180da07f726fbeb713b67ef9a71f.html'><span class='node-icon staruml-icon icon-UMLClass'></span>PDFParser</a></li>
+        
+        <li><a href='e70be99c4e1669d4e7bed6e61594c2fb.html'><span class='node-icon staruml-icon icon-UMLClass'></span>WordParser</a></li>
+        
+        <li><a href='fd07c0cf771c975ca25a3537e94e5746.html'><span class='node-icon staruml-icon icon-UMLClass'></span>EpubParser</a></li>
+        
+        <li><a href='b4dd456a3b6e5551e4855297a9be77c2.html'><span class='node-icon staruml-icon icon-UMLClass'></span>VideoParser</a></li>
+        
+        <li><a href='ae3b575430c8572f482e5a64e010a788.html'><span class='node-icon staruml-icon icon-UMLClass'></span>UnifiedParser</a></li>
+        
+        <li><a href='b93a4aa5ecca2453c53310562bc9c7fd.html'><span class='node-icon staruml-icon icon-UMLClass'></span>AnalyzeParser</a></li>
+        
+        <li><a href='b869be6fe71475d3fe13c51f0024f1bf.html'><span class='node-icon staruml-icon icon-UMLClass'></span>EnhanceParser</a></li>
+        
+        <li><a href='2b862739db03447a0e02cff6dc5622df.html'><span class='node-icon staruml-icon icon-UMLClass'></span>PackageParser</a></li>
+        
+        <li><a href='592f2e8f58d54aeb490f6265b5db6c8d.html'><span class='node-icon staruml-icon icon-UMLClass'></span>UploadParser</a></li>
+        
+        <li><a href='c1493c9aa8bbf49c6165094020249475.html'><span class='node-icon staruml-icon icon-UMLClass'></span>JupyterParser</a></li>
+        
+        <li><a href='04d495ef445aec5ab8fada58f2ad2025.html'><span class='node-icon staruml-icon icon-UMLClass'></span>HtmlParser</a></li>
+        
+        <li><a href='45798c81b263501c40acf160ece59cc2.html'><span class='node-icon staruml-icon icon-UMLClass'></span>OpenAPIParser</a></li>
+        
+        <li><a href='8e005f760cd30d5339a4ada643d9b466.html'><span class='node-icon staruml-icon icon-UMLClass'></span>AsciiDocParser</a></li>
+        
+        <li><a href='05d2236199bcdc97250863d4d250f673.html'><span class='node-icon staruml-icon icon-UMLClass'></span>PptxParser</a></li>
+        
+        <li><a href='6a31af6a1f5ee1002a45b6d4156bf14b.html'><span class='node-icon staruml-icon icon-UMLClass'></span>RssParser</a></li>
+        
+        <li><a href='83924484d40c0080ed868476fd5b85c8.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ManPageParser</a></li>
+        
+        <li><a href='5adcd2d86e95f28f331218acfbcb69a2.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ConfluenceParser</a></li>
+        
+        <li><a href='ca6e7604410ba4ab798da407a4692470.html'><span class='node-icon staruml-icon icon-UMLClass'></span>NotionParser</a></li>
+        
+        <li><a href='db5d895c72d5b2b8b3f04bab33f4eb3b.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ChatParser</a></li>
+        
+        <li><a href='133d163d58905e9388b375e4e8a2a931.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ConfigParser</a></li>
+        
+        <li><a href='afe66c8ced927b3c041f1814baa2fb97.html'><span class='node-icon staruml-icon icon-UMLClass'></span>EstimateParser</a></li>
+        
+        <li><a href='10ae7246a744d30d9e4442c50682919f.html'><span class='node-icon staruml-icon icon-UMLClass'></span>InstallParser</a></li>
+        
+        <li><a href='e4e295495f21f867b802143cba096780.html'><span class='node-icon staruml-icon icon-UMLClass'></span>StreamParser</a></li>
+        
+        <li><a href='d35cee11c86aaa14e57a2b7faade25d3.html'><span class='node-icon staruml-icon icon-UMLClass'></span>QualityParser</a></li>
+        
+        <li><a href='7bde81fd965524c964a92ccbff4770c9.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SyncConfigParser</a></li>
+        
+    </ul>
+</section>
+
+
+
+        
+        
+
+
+        
+        
+
+
+        
+        
+
+      
+
+      <!-- Interface -->
+
+      
+
+      <!-- Component -->
+
+      
+
+      <!-- Node -->
+
+      
+
+      <!-- Actor -->
+
+      
+
+      <!-- Use Case -->
+
+      
+
+      <!-- Template Parameters -->
+
+      
+
+      <!-- Literals -->
+
+      
+
+      <!-- Attributes -->
+
+      
+
+      <!-- Operations -->
+
+      
+      <section>
+        <h3>Operations</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="743580d6b145ea4e45595f96b7d91458.html">register()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="379a4f9f5a91c19f5813e84fb92e6558.html">name()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="cf5edefcb7cf4c2e88c37c0a4ae93608.html">help()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="a3ee12e3b29e487b9e5bec995e46202a.html">description()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="7876aaf9a4c41c1f005ccc80ef1a4d9d.html">add_arguments()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="ff9978e485f7454d227539d1cbd76c79.html">create_parser()</a></td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Receptions -->
+
+      
+
+      <!-- Extension Points -->
+
+      
+
+      <!-- Parameters -->
+
+      
+
+      <!-- Diagrams -->
+
+      
+      
+
+      <!-- Behavior -->
+
+      
+
+      <!-- Action -->
+
+      
+
+      <!-- Interaction -->
+
+      
+
+      <!-- CombinedFragment -->
+
+      
+
+      <!-- Activity -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State -->
+
+      
+
+      <!-- Vertex -->
+
+      
+
+      <!-- Transition -->
+
+      
+
+      <!-- Data Model (ERD) -->
+
+      
+
+      <!-- Columns (ERD) -->
+
+      
+
+      <!-- Related Entities (ERD) -->
+
+      
+
+      <!-- Data Flows (DFD) -->
+
+      
+
+      <!-- Flows (Flowchart) -->
+
+      
+
+      <!-- Properties -->
+
+      <section>
+        <h3>Properties</h3>
+        
+        <table class="table table-striped table-bordered">
+    <tr>
+        <th width="50%">Name</th>
+        <th width="50%">Value</th>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>name</td>
+        <td>SubcommandParser</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>stereotype</td>
+        <td><span class='label label-info'>null</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>visibility</td>
+        <td>public</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>isAbstract</td>
+        <td><span class='label label-info'>true</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isFinalSpecialization</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isLeaf</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isActive</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+</table>                
+
+      </section>
+
+      <!-- Tags -->
+
+      
+
+      <!-- Constraints, Dependencies, Dependants -->
+
+      
+        
+        
+
+
+        
+        
+
+
+        
+        
+
+      
+
+      <!-- Relationships -->
+
+      
+      
+<section class="element-list">
+    <h3>Relationships</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='e28eba589245cf719a1770a080716952.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(CreateParser→SubcommandParser)</a></li>
+        
+        <li><a href='780aab2063811a1f5f1a2d1fa1c9fce6.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(ScrapeParser→SubcommandParser)</a></li>
+        
+        <li><a href='54e2bce410774a7534ef5114723e9c29.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(GitHubParser→SubcommandParser)</a></li>
+        
+        <li><a href='245f11fc3d0d9a835a368c096c0a02b4.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(PDFParser→SubcommandParser)</a></li>
+        
+        <li><a href='743989ddc8ea56152bbfd970188f3359.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(WordParser→SubcommandParser)</a></li>
+        
+        <li><a href='99e18d3f187d2f4eca697caa97e2d21a.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(EpubParser→SubcommandParser)</a></li>
+        
+        <li><a href='961e158b052789fd8741634382512dc9.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(VideoParser→SubcommandParser)</a></li>
+        
+        <li><a href='5f42db891c7cab53e77218be0d6a066d.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(UnifiedParser→SubcommandParser)</a></li>
+        
+        <li><a href='d1d7434ba26052cdfe8d603b718f8118.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(AnalyzeParser→SubcommandParser)</a></li>
+        
+        <li><a href='42fd6ab13d5f054dbb78375c00bdd07f.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(EnhanceParser→SubcommandParser)</a></li>
+        
+        <li><a href='8ee0b0f380ceb24ff519db9affdc6224.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(PackageParser→SubcommandParser)</a></li>
+        
+        <li><a href='325e44da078321794cbce9b63df04874.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(UploadParser→SubcommandParser)</a></li>
+        
+        <li><a href='46cd7ee72c22209eadbfe5e231840294.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(JupyterParser→SubcommandParser)</a></li>
+        
+        <li><a href='9f1aab4bde6c272591f1751dd50358e4.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(HtmlParser→SubcommandParser)</a></li>
+        
+        <li><a href='39081c09b2170695a9c61a48962ec0c5.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(OpenAPIParser→SubcommandParser)</a></li>
+        
+        <li><a href='7010d7145e042ab490579b87053213d5.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(AsciiDocParser→SubcommandParser)</a></li>
+        
+        <li><a href='f5ebfb935b1f1325943d24f586e7d8e2.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(PptxParser→SubcommandParser)</a></li>
+        
+        <li><a href='27fa8dbe981edd3a531ad9a64b64031c.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(RssParser→SubcommandParser)</a></li>
+        
+        <li><a href='d5dcdd7e20c8659e9a036965cebba72a.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(ManPageParser→SubcommandParser)</a></li>
+        
+        <li><a href='1b502cde6ab7eb4f4b89b37b16693eb2.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(ConfluenceParser→SubcommandParser)</a></li>
+        
+        <li><a href='46bbbde1d3d18b44c7013f823276b419.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(NotionParser→SubcommandParser)</a></li>
+        
+        <li><a href='60648e818218cd36de72316be0493a7c.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(ChatParser→SubcommandParser)</a></li>
+        
+        <li><a href='e8b8016efc61981fe505662828424655.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(ConfigParser→SubcommandParser)</a></li>
+        
+        <li><a href='5a743b6df1c34dfa55a2901492b39083.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(EstimateParser→SubcommandParser)</a></li>
+        
+        <li><a href='88b4dc2dd2433d4713c5ee879dba3520.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(InstallParser→SubcommandParser)</a></li>
+        
+        <li><a href='fca5566e62f6c7a91f935e357cc6d229.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(StreamParser→SubcommandParser)</a></li>
+        
+        <li><a href='3e2e582bc84aef04c467e4252ff5ad74.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(QualityParser→SubcommandParser)</a></li>
+        
+        <li><a href='bb9e1bebb1411e4cd60b796a92673b44.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(SyncConfigParser→SubcommandParser)</a></li>
+        
+    </ul>
+</section>
+
+
+
+      <!-- Owned Elements -->
+
+      
+      
+
+
+      <!-- Diagrams -->
+      
+      
+      
+<section class="element-list">
+    <h3>Diagrams</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='cb2288495cbd72beb8d6aff88271c27f.html'><span class='node-icon staruml-icon icon-UMLClassDiagram'></span>Parsers</a></li>
+        
+    </ul>
+</section>
+
+
+      
+      
+      <!-- Image Map Resizer (https://github.com/davidjbradshaw/image-map-resizer) -->
+      <script>
+      imageMapResize();
+      </script>
+    </div>
+  </body>
+</html>
