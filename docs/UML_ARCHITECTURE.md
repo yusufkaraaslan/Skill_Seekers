@@ -1,6 +1,6 @@
 # Skill Seekers Architecture
 
-> Generated 2026-03-22 | StarUML project: `Docs/UML/skill_seekers.mdj`
+> Generated 2026-03-22 | StarUML project: `docs/UML/skill_seekers.mdj`
 
 ## Overview
 
@@ -109,6 +109,6 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, Claude API calls) and `Unif
 
 ## File Locations
 
-- **StarUML project**: `Docs/UML/skill_seekers.mdj`
-- **Diagram exports**: `Docs/UML/exports/*.png`
+- **StarUML project**: `docs/UML/skill_seekers.mdj`
+- **Diagram exports**: `docs/UML/exports/*.png`
 - **Source code**: `src/skill_seekers/`

@@ -916,7 +916,7 @@ graph LR
 
 The system is organized into **8 core modules** and **5 utility modules** (~200 classes total):
 
-![Package Overview](Docs/UML/exports/00_package_overview.png)
+![Package Overview](docs/UML/exports/00_package_overview.png)
 
 | Module | Purpose | Key Classes |
 |--------|---------|-------------|
@@ -931,7 +931,7 @@ The system is organized into **8 core modules** and **5 utility modules** (~200 
 
 Utility modules: **Parsers** (28 CLI parsers), **Storage** (S3/GCS/Azure), **Embedding** (multi-provider vectors), **Benchmark** (performance), **Utilities** (16 shared helpers).
 
-Full UML diagrams: **[Docs/Architecture.md](Docs/Architecture.md)** | StarUML project: `Docs/UML/skill_seekers.mdj` | HTML API reference: `Docs/UML/html/`
+Full UML diagrams: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | StarUML project: `docs/UML/skill_seekers.mdj` | HTML API reference: `docs/UML/html/`
 
 ## 📋 Prerequisites
 
@@ -1201,10 +1201,10 @@ skill-seekers config --github
 - **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - One-page cheat sheet
 
 ### Architecture
-- **[Docs/Architecture.md](Docs/Architecture.md)** - UML architecture overview with 14 diagrams
-- **[Docs/UML/exports/](Docs/UML/exports/)** - PNG diagram exports (package overview + 13 class diagrams)
-- **[Docs/UML/html/](Docs/UML/html/index.html/index.html)** - Full HTML API reference (all classes, operations, attributes)
-- **[Docs/UML/skill_seekers.mdj](Docs/UML/skill_seekers.mdj)** - StarUML project file (open with [StarUML](https://staruml.io/))
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - UML architecture overview with 14 diagrams
+- **[docs/UML/exports/](docs/UML/exports/)** - PNG diagram exports (package overview + 13 class diagrams)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - Full HTML API reference (all classes, operations, attributes)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML project file (open with [StarUML](https://staruml.io/))
 
 ### Guides
 - **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs

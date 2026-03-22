@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Version:** 3.3.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
-**Architecture:** See `Docs/Architecture.md` for UML diagrams and module overview. StarUML project at `Docs/UML/skill_seekers.mdj`.
+**Architecture:** See `docs/UML_ARCHITECTURE.md` for UML diagrams and module overview. StarUML project at `docs/UML/skill_seekers.mdj`.
 
 ## Essential Commands
 

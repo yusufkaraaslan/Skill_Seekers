@@ -500,10 +500,10 @@ Skill_Seekers/
 
 Full UML class diagrams are maintained in StarUML and synced from source code:
 
-- **[Docs/Architecture.md](Docs/Architecture.md)** - Overview with embedded PNG diagrams
-- **[Docs/UML/skill_seekers.mdj](Docs/UML/skill_seekers.mdj)** - StarUML project (open with [StarUML](https://staruml.io/))
-- **[Docs/UML/exports/](Docs/UML/exports/)** - 14 PNG exports (package overview + 13 class diagrams)
-- **[Docs/UML/html/](Docs/UML/html/index.html/index.html)** - HTML API reference
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - Overview with embedded PNG diagrams
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML project (open with [StarUML](https://staruml.io/))
+- **[docs/UML/exports/](docs/UML/exports/)** - 14 PNG exports (package overview + 13 class diagrams)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - HTML API reference
 
 **Key design patterns documented in UML:**
 - Strategy + Factory in Adaptors (SkillAdaptor ABC + 20+ implementations)
