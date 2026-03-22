@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Version:** 3.3.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
+**Architecture:** See `Docs/Architecture.md` for UML diagrams and module overview. StarUML project at `Docs/UML/skill_seekers.mdj`.
+
 ## Essential Commands
 
 ```bash
@@ -57,7 +59,8 @@ Entry point `src/skill_seekers/cli/main.py` maps subcommands to modules. The `cr
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
 skill-seekers <type> [options]    # Direct: scrape, github, pdf, word, epub, video, jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat
-skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant)
+skill-seekers analyze <dir>       # Analyze local codebase (C3.x pipeline)
+skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone)
 ```
 
 ### Data Flow (5 phases)
@@ -70,33 +73,37 @@ skill-seekers package <dir>       # Package for platform (--target claude/gemini
 
 ### Platform Adaptor Pattern (Strategy + Factory)
 
+Factory: `get_adaptor(platform, config)` in `adaptors/__init__.py` returns a `SkillAdaptor` instance. Base class `SkillAdaptor` + `SkillMetadata` in `adaptors/base.py`.
+
 ```
 src/skill_seekers/cli/adaptors/
-├── __init__.py          # Factory: get_adaptor(target=..., format=...)
-├── base_adaptor.py      # Abstract base: package(), upload(), enhance(), export()
-├── claude_adaptor.py    # --target claude
-├── gemini_adaptor.py    # --target gemini
-├── openai_adaptor.py    # --target openai
-├── markdown_adaptor.py  # --target markdown
-├── minimax_adaptor.py   # --target minimax
-├── opencode_adaptor.py  # --target opencode
-├── kimi_adaptor.py      # --target kimi
-├── deepseek_adaptor.py  # --target deepseek
-├── qwen_adaptor.py      # --target qwen
-├── openrouter_adaptor.py # --target openrouter
-├── together_adaptor.py  # --target together
-├── fireworks_adaptor.py # --target fireworks
-├── langchain.py         # --format langchain
-├── llama_index.py       # --format llama-index
-├── haystack.py          # --format haystack
-├── chroma.py            # --format chroma
-├── faiss_helpers.py     # --format faiss
-├── qdrant.py            # --format qdrant
-├── weaviate.py          # --format weaviate
-└── streaming_adaptor.py # --format streaming
+├── __init__.py              # Factory: get_adaptor(platform, config), ADAPTORS registry
+├── base.py                  # Abstract base: SkillAdaptor, SkillMetadata
+├── openai_compatible.py     # Shared base for OpenAI-compatible platforms
+├── claude.py                # --target claude
+├── gemini.py                # --target gemini
+├── openai.py                # --target openai
+├── markdown.py              # --target markdown
+├── minimax.py               # --target minimax
+├── opencode.py              # --target opencode
+├── kimi.py                  # --target kimi
+├── deepseek.py              # --target deepseek
+├── qwen.py                  # --target qwen
+├── openrouter.py            # --target openrouter
+├── together.py              # --target together
+├── fireworks.py             # --target fireworks
+├── langchain.py             # --format langchain
+├── llama_index.py           # --format llama-index
+├── haystack.py              # --format haystack
+├── chroma.py                # --format chroma
+├── faiss_helpers.py         # --format faiss
+├── qdrant.py                # --format qdrant
+├── weaviate.py              # --format weaviate
+├── pinecone_adaptor.py      # --format pinecone
+└── streaming_adaptor.py     # --format streaming
 ```
 
-`--target` = LLM platforms, `--format` = RAG/vector DBs.
+`--target` = LLM platforms, `--format` = RAG/vector DBs. All adaptors are imported with `try/except ImportError` so missing optional deps don't break the registry.
 
 ### 17 Source Type Scrapers
 
@@ -208,8 +215,8 @@ GITHUB_TOKEN=ghp_...                  # Higher GitHub rate limits
 ## Adding New Features
 
 ### New platform adaptor
-1. Create `src/skill_seekers/cli/adaptors/{platform}_adaptor.py` inheriting `BaseAdaptor`
-2. Register in `adaptors/__init__.py` factory
+1. Create `src/skill_seekers/cli/adaptors/{platform}.py` inheriting `SkillAdaptor` from `base.py`
+2. Register in `adaptors/__init__.py` (add try/except import + add to `ADAPTORS` dict)
 3. Add optional dep to `pyproject.toml`
 4. Add tests in `tests/`
 
