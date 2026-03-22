@@ -894,6 +894,27 @@ graph LR
 3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples
 4. **Package**: Bundles everything into a Claude-ready `.zip` file
 
+## Architecture
+
+The system is organized into **8 core modules** and **5 utility modules** (~200 classes total):
+
+![Package Overview](Docs/UML/exports/00_package_overview.png)
+
+| Module | Purpose | Key Classes |
+|--------|---------|-------------|
+| **CLICore** | Git-style command dispatcher | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
+| **Scrapers** | 17 source-type extractors | `DocToSkillConverter`, `GitHubScraper`, `UnifiedScraper` |
+| **Adaptors** | 20+ output platform formats | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
+| **Analysis** | C3.x codebase analysis pipeline | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 GoF detectors |
+| **Enhancement** | AI-powered skill improvement | `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Packaging** | Package, upload, install skills | `PackageSkill`, `InstallAgent` |
+| **MCP** | FastMCP server (34 tools) | `SkillSeekerMCPServer`, 8 tool modules |
+| **Sync** | Doc change detection | `ChangeDetector`, `SyncMonitor`, `Notifier` |
+
+Utility modules: **Parsers** (28 CLI parsers), **Storage** (S3/GCS/Azure), **Embedding** (multi-provider vectors), **Benchmark** (performance), **Utilities** (16 shared helpers).
+
+Full UML diagrams: **[Docs/Architecture.md](Docs/Architecture.md)** | StarUML project: `Docs/UML/skill_seekers.mdj` | HTML API reference: `Docs/UML/html/`
+
 ## 📋 Prerequisites
 
 **Before you start, make sure you have:**
@@ -1160,6 +1181,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start for experienced users
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - One-page cheat sheet
+
+### Architecture
+- **[Docs/Architecture.md](Docs/Architecture.md)** - UML architecture overview with 14 diagrams
+- **[Docs/UML/exports/](Docs/UML/exports/)** - PNG diagram exports (package overview + 13 class diagrams)
+- **[Docs/UML/html/](Docs/UML/html/index.html/index.html)** - Full HTML API reference (all classes, operations, attributes)
+- **[Docs/UML/skill_seekers.mdj](Docs/UML/skill_seekers.mdj)** - StarUML project file (open with [StarUML](https://staruml.io/))
 
 ### Guides
 - **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs

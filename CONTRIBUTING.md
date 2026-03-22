@@ -481,6 +481,24 @@ Skill_Seekers/
 
 **Scraper pattern (17 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
 
+### UML Architecture
+
+Full UML class diagrams are maintained in StarUML and synced from source code:
+
+- **[Docs/Architecture.md](Docs/Architecture.md)** - Overview with embedded PNG diagrams
+- **[Docs/UML/skill_seekers.mdj](Docs/UML/skill_seekers.mdj)** - StarUML project (open with [StarUML](https://staruml.io/))
+- **[Docs/UML/exports/](Docs/UML/exports/)** - 14 PNG exports (package overview + 13 class diagrams)
+- **[Docs/UML/html/](Docs/UML/html/index.html/index.html)** - HTML API reference
+
+**Key design patterns documented in UML:**
+- Strategy + Factory in Adaptors (SkillAdaptor ABC + 20+ implementations)
+- Strategy + Factory in Storage (BaseStorageAdaptor + S3/GCS/Azure)
+- Template Method in Parsers (SubcommandParser + 28 subclasses)
+- Template Method in Analysis (BasePatternDetector + 10 GoF detectors)
+- Command pattern in CLI (CLIDispatcher + COMMAND_MODULES lazy dispatch)
+
+When adding new classes or modules, please update the corresponding UML diagram to keep architecture docs in sync.
+
 ---
 
 ## Release Process
