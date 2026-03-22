@@ -29,6 +29,22 @@
 
 > 📋 **[開発ロードマップとタスクを確認](https://github.com/users/yusufkaraaslan/projects/2)** - 10 カテゴリで 134 タスク、好きなものを選んで貢献できます！
 
+## 🌐 エコシステム
+
+Skill Seekers はマルチリポジトリプロジェクトです。各リポジトリの役割：
+
+| リポジトリ | 説明 | リンク |
+|-----------|------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | コア CLI & MCP サーバー（このリポジトリ） | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | ウェブサイト＆ドキュメント | [サイト](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | コミュニティ設定リポジトリ | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code プラグイン | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP サーバー一覧 | |
+
+> **貢献したいですか？** ウェブサイトと設定リポジトリは新しい貢献者に最適です！
+
 ## 🧠 AI システムのデータレイヤー
 
 **Skill Seekers は汎用的な前処理レイヤー**であり、生のドキュメントとそれを利用するすべての AI システムの間に位置します。Claude スキル、LangChain RAG パイプライン、Cursor の `.cursorrules` ファイルのいずれを構築する場合でも、データの準備作業は同じです。一度実行すれば、すべてのターゲットにエクスポートできます。

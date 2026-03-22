@@ -29,6 +29,22 @@
 
 > 📋 **[查看开发路线图和任务](https://github.com/users/yusufkaraaslan/projects/2)** - 10 个类别的 134 个任务，选择任意一个参与贡献！
 
+## 🌐 生态系统
+
+Skill Seekers 是一个多仓库项目。以下是各部分所在位置：
+
+| 仓库 | 描述 | 链接 |
+|------|------|------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | 核心 CLI 和 MCP 服务器（本仓库） | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | 网站和文档 | [在线](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | 社区配置仓库 | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 插件 | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP 服务器精选列表 | |
+
+> **想要贡献？** 网站和配置仓库是新贡献者的最佳起点！
+
 ## 🧠 AI 系统的数据层
 
 **Skill Seekers 是通用预处理层**，位于原始文档和所有使用它的 AI 系统之间。无论您是在构建 Claude 技能、LangChain RAG 流水线，还是 Cursor `.cursorrules` 文件——数据准备工作完全相同。只需执行一次，即可导出到所有目标平台。

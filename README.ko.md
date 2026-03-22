@@ -31,6 +31,22 @@
 
 > 📋 **[개발 로드맵 및 작업 보기](https://github.com/users/yusufkaraaslan/projects/2)** - 10개 카테고리에 걸친 134개 작업, 원하는 것을 선택하여 기여하세요!
 
+## 🌐 에코시스템
+
+Skill Seekers는 다중 저장소 프로젝트입니다. 각 저장소의 역할:
+
+| 저장소 | 설명 | 링크 |
+|--------|------|------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | 핵심 CLI & MCP 서버 (이 저장소) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | 웹사이트 & 문서 | [사이트](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | 커뮤니티 설정 저장소 | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 플러그인 | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP 서버 목록 | |
+
+> **기여하고 싶으신가요?** 웹사이트와 설정 저장소는 새 기여자에게 좋은 시작점입니다!
+
 ## 🧠 AI 시스템을 위한 데이터 레이어
 
 **Skill Seekers는 범용 전처리 레이어**로, 원시 문서와 이를 활용하는 모든 AI 시스템 사이에 위치합니다. Claude 스킬을 구축하든, LangChain RAG 파이프라인을 만들든, Cursor `.cursorrules` 파일을 작성하든 — 데이터 준비 작업은 동일합니다. 한 번만 수행하면 모든 대상 플랫폼으로 내보낼 수 있습니다.

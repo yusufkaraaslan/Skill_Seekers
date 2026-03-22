@@ -31,6 +31,22 @@
 
 > 📋 **[Veja o Roteiro de Desenvolvimento e Tarefas](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tarefas em 10 categorias, escolha qualquer uma para contribuir!
 
+## 🌐 Ecossistema
+
+Skill Seekers é um projeto multi-repositório. Aqui está onde tudo se encontra:
+
+| Repositório | Descrição | Links |
+|------------|-----------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | CLI principal e servidor MCP (este repo) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Website e documentação | [Site](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Repositório de configurações da comunidade | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action para CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Plugin Claude Code | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap para macOS | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Lista curada de servidores MCP | |
+
+> **Quer contribuir?** Os repos do website e configurações são ótimos pontos de partida para novos contribuidores!
+
 ## 🧠 A Camada de Dados para Sistemas de IA
 
 **Skill Seekers é a camada universal de pré-processamento** que fica entre a documentação bruta e todo sistema de IA que a consome. Seja para construir Claude Skills, um pipeline RAG com LangChain ou um arquivo `.cursorrules` para o Cursor — a preparação dos dados é idêntica. Faça uma vez e exporte para todos os destinos.

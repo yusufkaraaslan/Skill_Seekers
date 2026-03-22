@@ -5784,6 +5784,9 @@ chroma = [
 confluence = [
     { name = "atlassian-python-api" },
 ]
+deepseek = [
+    { name = "openai" },
+]
 docx = [
     { name = "mammoth" },
     { name = "python-docx" },
@@ -5799,6 +5802,9 @@ embedding = [
 epub = [
     { name = "ebooklib" },
 ]
+fireworks = [
+    { name = "openai" },
+]
 gcs = [
     { name = "google-cloud-storage" },
 ]
@@ -5807,6 +5813,9 @@ gemini = [
 ]
 jupyter = [
     { name = "nbformat" },
+]
+kimi = [
+    { name = "openai" },
 ]
 mcp = [
     { name = "httpx" },
@@ -5825,11 +5834,17 @@ notion = [
 openai = [
     { name = "openai" },
 ]
+openrouter = [
+    { name = "openai" },
+]
 pinecone = [
     { name = "pinecone" },
 ]
 pptx = [
     { name = "python-pptx" },
+]
+qwen = [
+    { name = "openai" },
 ]
 rag-upload = [
     { name = "chromadb" },
@@ -5845,6 +5860,9 @@ s3 = [
 ]
 sentence-transformers = [
     { name = "sentence-transformers" },
+]
+together = [
+    { name = "openai" },
 ]
 video = [
     { name = "youtube-transcript-api" },
@@ -5933,8 +5951,14 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'embedding'", specifier = ">=1.24.0" },
     { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'all-llms'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'deepseek'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'fireworks'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'kimi'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'minimax'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'openrouter'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'qwen'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'together'", specifier = ">=1.0.0" },
     { name = "opencv-python-headless", marker = "extra == 'video-full'", specifier = ">=4.9.0" },
     { name = "pathspec", specifier = ">=0.12.1" },
     { name = "pillow", specifier = ">=11.0.0" },
@@ -5982,7 +6006,7 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'video'", specifier = ">=2024.12.0" },
     { name = "yt-dlp", marker = "extra == 'video-full'", specifier = ">=2024.12.0" },
 ]
-provides-extras = ["mcp", "gemini", "openai", "minimax", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "embedding", "all"]
+provides-extras = ["mcp", "gemini", "openai", "minimax", "kimi", "deepseek", "qwen", "openrouter", "together", "fireworks", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "embedding", "all"]
 
 [package.metadata.requires-dev]
 dev = [

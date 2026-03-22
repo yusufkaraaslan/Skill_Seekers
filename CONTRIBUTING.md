@@ -76,6 +76,21 @@ git push origin my-feature
 
 ---
 
+## Related Repositories
+
+Skill Seekers spans multiple repositories. Make sure you're contributing to the right one:
+
+| What you want to work on | Repository |
+|--------------------------|-----------|
+| Core CLI, scrapers, MCP tools, adaptors | [Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers) (this repo) |
+| Website, docs, UI/UX | [skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb) |
+| Preset configs, community configs | [skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs) |
+| GitHub Action integration | [skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action) |
+| Claude Code plugin | [skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin) |
+| Homebrew formula | [homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers) |
+
+---
+
 ## Code of Conduct
 
 This project and everyone participating in it is governed by our commitment to fostering an open and welcoming environment. Please be respectful and constructive in all interactions.

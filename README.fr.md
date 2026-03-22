@@ -31,6 +31,22 @@
 
 > 📋 **[Consultez la feuille de route et les tâches](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tâches réparties en 10 catégories, choisissez-en une pour contribuer !
 
+## 🌐 Écosystème
+
+Skill Seekers est un projet multi-dépôts. Voici où se trouve chaque partie :
+
+| Dépôt | Description | Liens |
+|-------|-------------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | CLI principal et serveur MCP (ce dépôt) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Site web et documentation | [Site](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Dépôt de configurations communautaires | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action pour CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Plugin Claude Code | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap pour macOS | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Liste de serveurs MCP | |
+
+> **Vous voulez contribuer ?** Les dépôts du site web et des configurations sont d'excellents points de départ pour les nouveaux contributeurs !
+
 ## 🧠 La couche de données pour les systèmes d'IA
 
 **Skill Seekers est la couche de prétraitement universelle** qui se situe entre la documentation brute et tous les systèmes d'IA qui la consomment. Que vous construisiez des compétences Claude, un pipeline RAG LangChain ou un fichier `.cursorrules` pour Cursor — la préparation des données est identique. Vous le faites une seule fois, et exportez vers toutes les cibles.

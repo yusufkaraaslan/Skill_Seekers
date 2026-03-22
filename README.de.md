@@ -31,6 +31,22 @@
 
 > **[Entwicklungsroadmap und Aufgaben ansehen](https://github.com/users/yusufkaraaslan/projects/2)** - 134 Aufgaben in 10 Kategorien — wählen Sie eine beliebige zum Mitwirken!
 
+## 🌐 Ökosystem
+
+Skill Seekers ist ein Multi-Repository-Projekt. Hier finden Sie alles:
+
+| Repository | Beschreibung | Links |
+|-----------|-------------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | Kern-CLI & MCP-Server (dieses Repo) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Website & Dokumentation | [Web](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Community-Konfigurationsrepository | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action für CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code Plugin | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew Tap für macOS | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Kuratierte MCP-Server-Liste | |
+
+> **Möchten Sie beitragen?** Die Website- und Konfigurations-Repos sind ideale Einstiegspunkte für neue Mitwirkende!
+
 ## Die Datenschicht für KI-Systeme
 
 **Skill Seekers ist die universelle Vorverarbeitungsschicht**, die zwischen Rohdokumentation und jedem KI-System steht, das diese konsumiert. Ob Sie Claude-Skills, eine LangChain-RAG-Pipeline oder eine Cursor-`.cursorrules`-Datei erstellen — die Datenaufbereitung ist identisch. Sie führen sie einmal durch und exportieren für alle Zielplattformen.

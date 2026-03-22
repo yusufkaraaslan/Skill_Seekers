@@ -31,6 +31,22 @@
 
 > 📋 **[Geliştirme Yol Haritası ve Görevleri Görüntüleyin](https://github.com/users/yusufkaraaslan/projects/2)** - 10 kategoride 134 görev, istediğinizi seçip katkıda bulunun!
 
+## 🌐 Ekosistem
+
+Skill Seekers çoklu depo projesidır. Her şeyin bulunduğu yerler:
+
+| Depo | Açıklama | Bağlantılar |
+|------|----------|-------------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | Ana CLI ve MCP sunucusu (bu depo) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Web sitesi ve belgeler | [Site](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Topluluk yapılandırma deposu | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code eklentisi | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS için Homebrew tap | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Seçilmiş MCP sunucu listesi | |
+
+> **Katkıda bulunmak ister misiniz?** Web sitesi ve yapılandırma depoları yeni katkıda bulunanlar için harika başlangıç noktalarıdır!
+
 ## 🧠 Yapay Zeka Sistemleri İçin Veri Katmanı
 
 **Skill Seekers, evrensel bir ön işleme katmanıdır** ve ham dokümantasyon ile onu tüketen tüm yapay zeka sistemleri arasında yer alır. İster Claude yetenekleri, ister LangChain RAG hattı, ister Cursor `.cursorrules` dosyası oluşturuyor olun — veri hazırlık süreci aynıdır. Bir kez yaparsınız, tüm hedef platformlara dışa aktarırsınız.

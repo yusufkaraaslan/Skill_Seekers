@@ -29,6 +29,22 @@
 
 > 📋 **[Смотрите дорожную карту разработки и задачи](https://github.com/users/yusufkaraaslan/projects/2)** — 134 задачи в 10 категориях, выберите любую для участия!
 
+## 🌐 Экосистема
+
+Skill Seekers — это мульти-репозиторный проект. Вот где находится каждая часть:
+
+| Репозиторий | Описание | Ссылки |
+|------------|----------|--------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | Основной CLI и MCP сервер (этот репозиторий) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Веб-сайт и документация | [Сайт](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Репозиторий конфигураций сообщества | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action для CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Плагин Claude Code | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap для macOS | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Каталог MCP серверов | |
+
+> **Хотите внести вклад?** Репозитории сайта и конфигураций — отличная отправная точка для новых участников!
+
 ## 🧠 Слой данных для ИИ-систем
 
 **Skill Seekers — это универсальный слой предобработки**, расположенный между необработанной документацией и всеми ИИ-системами, которые её потребляют. Независимо от того, создаёте ли вы навыки для Claude, RAG-конвейер LangChain или файл `.cursorrules` для Cursor — подготовка данных одинакова. Выполните её один раз и экспортируйте во все целевые платформы.

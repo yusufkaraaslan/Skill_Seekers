@@ -29,6 +29,22 @@
 
 > 📋 **[عرض خارطة الطريق والمهام](https://github.com/users/yusufkaraaslan/projects/2)** - 134 مهمة عبر 10 فئات، اختر أيًا منها للمساهمة!
 
+## 🌐 المنظومة
+
+Skill Seekers هو مشروع متعدد المستودعات. إليك أين يوجد كل شيء:
+
+| المستودع | الوصف | الروابط |
+|----------|-------|---------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | CLI الأساسي وخادم MCP (هذا المستودع) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | الموقع والتوثيق | [الموقع](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | مستودع إعدادات المجتمع | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action لـ CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | إضافة Claude Code | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap لـ macOS | |
+| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | قائمة خوادم MCP المختارة | |
+
+> **تريد المساهمة؟** مستودعات الموقع والإعدادات هي نقاط بداية رائعة للمساهمين الجدد!
+
 ## 🧠 طبقة البيانات لأنظمة الذكاء الاصطناعي
 
 **Skill Seekers هو طبقة المعالجة المسبقة العامة** التي تقع بين التوثيق الخام وجميع أنظمة الذكاء الاصطناعي التي تستهلكه. سواء كنت تبني مهارات Claude أو خط أنابيب RAG باستخدام LangChain أو ملف `.cursorrules` لـ Cursor — فإن تحضير البيانات متطابق. تقوم بذلك مرة واحدة وتصدّر إلى جميع المنصات المستهدفة.

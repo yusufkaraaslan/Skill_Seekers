@@ -287,6 +287,11 @@ Documentation = "https://skillseekersweb.com/"
 "Config Browser" = "https://skillseekersweb.com/"
 "中文文档 (Chinese)" = "https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md"
 "Author" = "https://x.com/_yUSyUS_"
+"Website Repository" = "https://github.com/yusufkaraaslan/skillseekersweb"
+"Community Configs" = "https://github.com/yusufkaraaslan/skill-seekers-configs"
+"GitHub Action" = "https://github.com/yusufkaraaslan/skill-seekers-action"
+"Plugin" = "https://github.com/yusufkaraaslan/skill-seekers-plugin"
+"Homebrew Tap" = "https://github.com/yusufkaraaslan/homebrew-skill-seekers"
 
 [project.scripts]
 # Main unified CLI
