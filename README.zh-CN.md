@@ -41,7 +41,6 @@ Skill Seekers 是一个多仓库项目。以下是各部分所在位置：
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 插件 | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP 服务器精选列表 | |
 
 > **想要贡献？** 网站和配置仓库是新贡献者的最佳起点！
 

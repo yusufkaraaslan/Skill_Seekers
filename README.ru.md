@@ -41,7 +41,6 @@ Skill Seekers — это мульти-репозиторный проект. В�
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action для CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Плагин Claude Code | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap для macOS | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Каталог MCP серверов | |
 
 > **Хотите внести вклад?** Репозитории сайта и конфигураций — отличная отправная точка для новых участников!
 

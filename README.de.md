@@ -43,7 +43,6 @@ Skill Seekers ist ein Multi-Repository-Projekt. Hier finden Sie alles:
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action für CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code Plugin | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew Tap für macOS | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Kuratierte MCP-Server-Liste | |
 
 > **Möchten Sie beitragen?** Die Website- und Konfigurations-Repos sind ideale Einstiegspunkte für neue Mitwirkende!
 

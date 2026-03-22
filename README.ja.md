@@ -41,7 +41,6 @@ Skill Seekers はマルチリポジトリプロジェクトです。各リポジ
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code プラグイン | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP サーバー一覧 | |
 
 > **貢献したいですか？** ウェブサイトと設定リポジトリは新しい貢献者に最適です！
 

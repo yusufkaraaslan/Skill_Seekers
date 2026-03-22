@@ -43,7 +43,6 @@ Skill Seekers çoklu depo projesidır. Her şeyin bulunduğu yerler:
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code eklentisi | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS için Homebrew tap | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | Seçilmiş MCP sunucu listesi | |
 
 > **Katkıda bulunmak ister misiniz?** Web sitesi ve yapılandırma depoları yeni katkıda bulunanlar için harika başlangıç noktalarıdır!
 

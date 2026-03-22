@@ -43,7 +43,6 @@ Skill Seekers एक मल्टी-रिपॉजिटरी प्रोज
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code प्लगइन | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS के लिए Homebrew tap | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | चयनित MCP सर्वर सूची | |
 
 > **योगदान करना चाहते हैं?** वेबसाइट और कॉन्फिग रिपॉजिटरी नए योगदानकर्ताओं के लिए बेहतरीन शुरुआती बिंदु हैं!
 

@@ -43,7 +43,6 @@ Skill Seekers는 다중 저장소 프로젝트입니다. 각 저장소의 역할
 | **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
 | **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 플러그인 | |
 | **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
-| **[awesome-mcp-servers](https://github.com/yusufkaraaslan/awesome-mcp-servers)** | MCP 서버 목록 | |
 
 > **기여하고 싶으신가요?** 웹사이트와 설정 저장소는 새 기여자에게 좋은 시작점입니다!
 
