@@ -198,6 +198,8 @@ class DocToSkillConverter:
         )  # Track all ever-enqueued URLs for O(1) dedup
         self.pages: list[dict[str, Any]] = []
         self.pages_scraped = 0
+        self.pages_saved = 0
+        self.pages_skipped = 0
 
         # Language detection
         self.language_detector = LanguageDetector(min_confidence=0.15)
@@ -694,8 +696,11 @@ class DocToSkillConverter:
         """Save page data (skip pages with empty content)"""
         # Skip pages with empty or very short content
         if not page.get("content") or len(page.get("content", "")) < 50:
+            self.pages_skipped += 1
             logger.debug("Skipping page with empty/short content: %s", page.get("url", "unknown"))
             return
+
+        self.pages_saved += 1
 
         url_hash = hashlib.md5(page["url"].encode()).hexdigest()[:10]
         safe_title = _SAFE_TITLE_RE.sub("", page["title"])[:50]
@@ -1219,7 +1224,7 @@ class DocToSkillConverter:
                 )
             logger.info("\n💡 To actually scrape, run without --dry-run")
         else:
-            logger.info("\n✅ Scraped %d pages", len(self.visited_urls))
+            self._log_scrape_completion()
             self.save_summary()
 
     async def scrape_all_async(self) -> None:
@@ -1362,8 +1367,42 @@ class DocToSkillConverter:
                 )
             logger.info("\n💡 To actually scrape, run without --dry-run")
         else:
-            logger.info("\n✅ Scraped %d pages (async mode)", len(self.visited_urls))
+            self._log_scrape_completion()
             self.save_summary()
+
+    def _log_scrape_completion(self) -> None:
+        """Log scrape completion with accurate saved/skipped counts."""
+        visited = len(self.visited_urls)
+        if self.pages_skipped > 0:
+            logger.info(
+                "\n✅ Scraped %d pages (%d saved, %d skipped - empty content)",
+                visited,
+                self.pages_saved,
+                self.pages_skipped,
+            )
+        else:
+            logger.info(
+                "\n✅ Scraped %d pages (%d saved)",
+                visited,
+                self.pages_saved,
+            )
+
+        # SPA detection: warn when most pages had empty content
+        if visited >= 5 and self.pages_saved == 0:
+            logger.warning(
+                "⚠️  All %d pages had empty content. This site likely requires "
+                "JavaScript rendering (SPA/React/Vue). Scraping cannot extract "
+                "content from JavaScript-rendered pages.",
+                visited,
+            )
+        elif visited >= 10 and self.pages_skipped > 0:
+            skip_ratio = self.pages_skipped / visited
+            if skip_ratio > 0.8:
+                logger.warning(
+                    "⚠️  %d%% of pages had empty content. This site may use "
+                    "JavaScript rendering for some pages.",
+                    int(skip_ratio * 100),
+                )
 
     def save_summary(self) -> None:
         """Save scraping summary"""
@@ -1731,6 +1770,12 @@ To refresh this skill with updated documentation:
 
         if not pages:
             logger.error("✗ No scraped data found!")
+            if self.pages_skipped > 0:
+                logger.error(
+                    "   %d pages were visited but had empty content. "
+                    "The site may require JavaScript rendering (SPA).",
+                    self.pages_skipped,
+                )
             return False
 
         logger.info("  ✓ Loaded %d pages\n", len(pages))
