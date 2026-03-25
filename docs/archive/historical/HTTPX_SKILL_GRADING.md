@@ -809,7 +809,7 @@ platforms:
 
 1. Add `platforms: [claude, gemini, openai, markdown]` to YAML
 2. Add `version: 1.0.0` to YAML
-3. Test skill loading on all 4 platforms
+3. Test skill loading on all 12 platforms
 4. Document any platform-specific quirks
 5. Add `skill.yaml` file (optional, mirrors frontmatter)
 

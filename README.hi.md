@@ -31,6 +31,21 @@
 
 > 📋 **[विकास रोडमैप और कार्य देखें](https://github.com/users/yusufkaraaslan/projects/2)** - 10 श्रेणियों में 134 कार्य, किसी भी में योगदान करें!
 
+## 🌐 इकोसिस्टम
+
+Skill Seekers एक मल्टी-रिपॉजिटरी प्रोजेक्ट है। यहां सब कुछ मौजूद है:
+
+| रिपॉजिटरी | विवरण | लिंक |
+|-----------|--------|------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | कोर CLI और MCP सर्वर (यह रिपो) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | वेबसाइट और डॉक्यूमेंटेशन | [साइट](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | सामुदायिक कॉन्फिग रिपॉजिटरी | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code प्लगइन | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS के लिए Homebrew tap | |
+
+> **योगदान करना चाहते हैं?** वेबसाइट और कॉन्फिग रिपॉजिटरी नए योगदानकर्ताओं के लिए बेहतरीन शुरुआती बिंदु हैं!
+
 ## 🧠 AI सिस्टम के लिए डेटा लेयर
 
 **Skill Seekers एक सार्वभौमिक प्रीप्रोसेसिंग लेयर है** जो कच्चे दस्तावेज़ों और उनका उपयोग करने वाले सभी AI सिस्टम के बीच स्थित है। चाहे आप Claude कौशल, LangChain RAG पाइपलाइन, या Cursor `.cursorrules` फ़ाइल बना रहे हों—डेटा तैयारी पूरी तरह समान है। बस एक बार करें, और सभी लक्ष्यों पर निर्यात करें।
@@ -254,7 +269,7 @@ Skill Seekers **AI सिस्टम के लिए डेटा लेयर
 - ✅ **पश्चगामी संगत** - पुराने एकल-स्रोत कॉन्फ़िग अभी भी काम करते हैं
 
 ### 🤖 बहु-LLM प्लेटफ़ॉर्म समर्थन
-- ✅ **4 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, जेनेरिक Markdown
+- ✅ **12 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **सार्वभौमिक स्क्रैपिंग** - समान दस्तावेज़ सभी प्लेटफ़ॉर्म के लिए काम करते हैं
 - ✅ **प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग** - प्रत्येक LLM के लिए अनुकूलित प्रारूप
 - ✅ **एक-कमांड निर्यात** - `--target` फ़्लैग प्लेटफ़ॉर्म चुनता है
@@ -699,9 +714,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 फ़ीचर मैट्रिक्स
 
-Skill Seekers **4 LLM प्लेटफ़ॉर्म**, **17 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
+Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
 
-**प्लेटफ़ॉर्म:** Claude AI, Google Gemini, OpenAI ChatGPT, जेनेरिक Markdown
+**प्लेटफ़ॉर्म:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **स्रोत प्रकार:** डॉक्यूमेंटेशन वेबसाइट, GitHub रिपो, PDF, Word (.docx), EPUB, वीडियो, स्थानीय कोडबेस, Jupyter Notebook, स्थानीय HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord चैट एक्सपोर्ट
 
 विस्तृत प्लेटफ़ॉर्म और फ़ीचर समर्थन के लिए [पूर्ण फ़ीचर मैट्रिक्स](docs/FEATURE_MATRIX.md) देखें।
@@ -939,7 +954,7 @@ Claude Code में, बस पूछें:
 
 ## 🤖 AI एजेंट में इंस्टॉल करना
 
-Skill Seekers स्वचालित रूप से 10+ AI कोडिंग एजेंट में कौशल इंस्टॉल कर सकता है।
+Skill Seekers स्वचालित रूप से 18 AI कोडिंग एजेंट में कौशल इंस्टॉल कर सकता है।
 
 ```bash
 # विशिष्ट एजेंट में इंस्टॉल करें
@@ -963,6 +978,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | वैश्विक |
 | **OpenCode** | `~/.opencode/skills/` | वैश्विक |
 | **Windsurf** | `~/.windsurf/skills/` | वैश्विक |
+| **Roo Code** | `.roo/skills/` | प्रोजेक्ट |
+| **Cline** | `.cline/skills/` | प्रोजेक्ट |
+| **Aider** | `~/.aider/skills/` | वैश्विक |
+| **Bolt** | `.bolt/skills/` | प्रोजेक्ट |
+| **Kilo Code** | `.kilo/skills/` | प्रोजेक्ट |
+| **Continue** | `~/.continue/skills/` | वैश्विक |
+| **Kimi Code** | `~/.kimi/skills/` | वैश्विक |
 
 ---
 

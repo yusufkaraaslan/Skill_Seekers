@@ -1,6 +1,6 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.2.0**
+> **Complete documentation for Skill Seekers v3.4.0**
 
 ---
 
@@ -38,7 +38,7 @@ Look up specific information:
 
 - [CLI Reference](reference/CLI_REFERENCE.md) - All 30+ commands
 - [MCP Reference](reference/MCP_REFERENCE.md) - 27 MCP tools
-- [Feature Matrix](reference/FEATURE_MATRIX.md) - 17 source types × 4 platforms
+- [Feature Matrix](reference/FEATURE_MATRIX.md) - 17 source types × 12 platforms
 - [Config Format](reference/CONFIG_FORMAT.md) - JSON specification
 - [Environment Variables](reference/ENVIRONMENT_VARIABLES.md) - All env vars
 
@@ -176,8 +176,8 @@ For Cursor, Windsurf, Cline:
 
 ## Version Information
 
-- **Current Version:** 3.2.0
-- **Last Updated:** 2026-03-15
+- **Current Version:** 3.4.0
+- **Last Updated:** 2026-03-21
 - **Python Required:** 3.10+
 
 ---

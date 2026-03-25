@@ -29,6 +29,21 @@
 
 > 📋 **[查看开发路线图和任务](https://github.com/users/yusufkaraaslan/projects/2)** - 10 个类别的 134 个任务，选择任意一个参与贡献！
 
+## 🌐 生态系统
+
+Skill Seekers 是一个多仓库项目。以下是各部分所在位置：
+
+| 仓库 | 描述 | 链接 |
+|------|------|------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | 核心 CLI 和 MCP 服务器（本仓库） | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | 网站和文档 | [在线](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | 社区配置仓库 | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 插件 | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
+
+> **想要贡献？** 网站和配置仓库是新贡献者的最佳起点！
+
 ## 🧠 AI 系统的数据层
 
 **Skill Seekers 是通用预处理层**，位于原始文档和所有使用它的 AI 系统之间。无论您是在构建 Claude 技能、LangChain RAG 流水线，还是 Cursor `.cursorrules` 文件——数据准备工作完全相同。只需执行一次，即可导出到所有目标平台。
@@ -192,7 +207,7 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 - ✅ **向后兼容** - 遗留单源配置继续有效
 
 ### 🤖 多 LLM 平台支持
-- ✅ **4 个 LLM 平台** - Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
+- ✅ **12 个 LLM 平台** - Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、通用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 - ✅ **通用抓取** - 相同文档适用于所有平台
 - ✅ **平台专用打包** - 针对每个 LLM 的优化格式
 - ✅ **一键导出** - `--target` 标志选择平台
@@ -576,9 +591,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 功能矩阵
 
-Skill Seekers 支持 **4 个 LLM 平台**、**17 种来源类型**和 **5 种技能模式**，功能完全对等。
+Skill Seekers 支持 **12 个 LLM 平台**、**17 种来源类型**和 **5 种技能模式**，功能完全对等。
 
-**平台：** Claude AI、Google Gemini、OpenAI ChatGPT、通用 Markdown
+**平台：** Claude AI、Google Gemini、OpenAI ChatGPT、MiniMax AI、通用 Markdown、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI
 **来源类型：** 文档网站、GitHub 仓库、PDF、Word、EPUB、视频、本地代码库、Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录
 **技能模式：** 文档、GitHub、PDF、统一多源、本地仓库
 
@@ -815,7 +830,7 @@ skill-seekers package output/react/
 
 ## 🤖 安装到 AI 代理
 
-Skill Seekers 可自动将技能安装到 10+ 个 AI 编程代理。
+Skill Seekers 可自动将技能安装到 18 个 AI 编程代理。
 
 ```bash
 # 安装到特定代理
@@ -839,6 +854,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | 全局 |
 | **OpenCode** | `~/.opencode/skills/` | 全局 |
 | **Windsurf** | `~/.windsurf/skills/` | 全局 |
+| **Roo Code** | `.roo/skills/` | 项目 |
+| **Cline** | `.cline/skills/` | 项目 |
+| **Aider** | `~/.aider/skills/` | 全局 |
+| **Bolt** | `.bolt/skills/` | 项目 |
+| **Kilo Code** | `.kilo/skills/` | 项目 |
+| **Continue** | `~/.continue/skills/` | 全局 |
+| **Kimi Code** | `~/.kimi/skills/` | 全局 |
 
 ---
 

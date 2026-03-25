@@ -224,7 +224,7 @@ class TestScrapeDocumentation:
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
 
-        assert any("llms_txt_url" in c for c in written_configs)
+        assert any("llms_txt_url" in s for c in written_configs for s in c.get("sources", [c]))
 
     def test_start_urls_forwarded_to_doc_config(self, tmp_path):
         """start_urls from source is forwarded to the temporary doc config."""
@@ -247,7 +247,7 @@ class TestScrapeDocumentation:
             mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
             scraper._scrape_documentation(source)
 
-        assert any("start_urls" in c for c in written_configs)
+        assert any("start_urls" in s for c in written_configs for s in c.get("sources", [c]))
 
 
 # ===========================================================================

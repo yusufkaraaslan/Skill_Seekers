@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-03-21
+
+### Added
+- **OpenCode adaptor** (`--target opencode`) - Directory-based packaging with dual-format YAML frontmatter
+- **OpenAI-compatible base class** - Shared base for all OpenAI-compatible LLM platforms
+- **6 new LLM platform adaptors**: Kimi (`--target kimi`), DeepSeek (`--target deepseek`), Qwen (`--target qwen`), OpenRouter (`--target openrouter`), Together AI (`--target together`), Fireworks AI (`--target fireworks`)
+- **7 new CLI agent install paths**: roo, cline, aider, bolt, kilo, continue, kimi-code (total: 18 agents)
+- **OpenCode skill splitter** - Auto-split large docs into focused sub-skills with router
+- **Bi-directional skill converter** - Import/export between OpenCode and any platform format
+- **Distribution files** for Smithery (`smithery.yaml`), GitHub Actions (`templates/github-actions/update-skills.yml`), and Claude Code Plugin
+- **Full UML architecture documentation** — 14 class diagrams synced from source code via StarUML
+- **StarUML HTML API reference** documentation export
+- **Ecosystem section** in README linking all Skill Seekers repos (PyPI, website, plugin, GitHub Action)
+
+### Fixed
+- **`sanitize_url()` crashes on Python 3.14** due to strict `urlparse` rejecting bracket-containing URLs (#284)
+- **Blindly appending `/index.html.md` to non-.md URLs** — now only appends for URLs that should have it (#277)
+- **Unified scraper temp config** uses unified format for `doc_scraper` instead of raw args (#317)
+- **Unicode arrows in CLI help text** replaced with ASCII for Windows cp1252 compatibility
+- **CLI flags in plugin slash commands** corrected (`create` uses `--preset`, `package` uses `--target`)
+- **MiniMax adaptor** improvements from PR #318 review (#319)
+- **Misleading "Scraped N pages" count** reported visited URLs instead of saved pages — now shows `(N saved, M skipped)` (#320)
+- **"No scraped data found" after successful scrape** on JavaScript SPA sites — now warns that site requires JS rendering (#320, #321)
+
+### Changed
+- Refactored MiniMax adaptor to inherit from shared OpenAI-compatible base class
+- Platform count: 5 → 12 LLM targets
+- Agent count: 11 → 18 install paths
+- Consolidated `Docs/` into `docs/` (single documentation directory)
+- Removed stale root-level test scripts and junk files
+- Removed stale `UNIFIED_PARSERS.md` superseded by UML architecture
+- Added architecture references to README.md and CONTRIBUTING.md
+- Fixed pre-existing ruff format issues in 5 files
+
 ## [3.3.0] - 2026-03-16
 
 **Theme:** 10 new source types (17 total), EPUB unified integration, sync-config command, performance optimizations, 12 README translations, and 19 bug fixes. 117 files changed, +41,588 lines since v3.2.0.

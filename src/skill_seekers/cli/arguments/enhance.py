@@ -26,7 +26,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": (
                 "AI platform for enhancement (uses API mode). "
                 "Auto-detected from env vars if not specified: "
-                "ANTHROPIC_API_KEY→claude, GOOGLE_API_KEY→gemini, OPENAI_API_KEY→openai. "
+                "ANTHROPIC_API_KEY->claude, GOOGLE_API_KEY->gemini, OPENAI_API_KEY->openai. "
                 "Falls back to LOCAL mode (Claude Code CLI) when no API keys are found."
             ),
             "metavar": "PLATFORM",

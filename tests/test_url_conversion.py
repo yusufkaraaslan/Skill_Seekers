@@ -1,6 +1,9 @@
 """
 Tests for URL conversion logic (_convert_to_md_urls).
 Covers bug fix for issue #277: URLs with anchor fragments causing 404 errors.
+
+Updated: _convert_to_md_urls no longer blindly appends /index.html.md to non-.md URLs.
+It now strips anchors, deduplicates, and preserves original URLs as-is.
 """
 
 import unittest
@@ -31,11 +34,11 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         result = self.converter._convert_to_md_urls(urls)
 
-        # All should be converted without anchor fragments
+        # All should have anchors stripped
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], "https://example.com/docs/quick-start/index.html.md")
-        self.assertEqual(result[1], "https://example.com/docs/api/index.html.md")
-        self.assertEqual(result[2], "https://example.com/docs/guide/index.html.md")
+        self.assertEqual(result[0], "https://example.com/docs/quick-start")
+        self.assertEqual(result[1], "https://example.com/docs/api")
+        self.assertEqual(result[2], "https://example.com/docs/guide")
 
     def test_deduplicates_multiple_anchors_same_url(self):
         """Test that multiple anchors on the same URL are deduplicated"""
@@ -50,7 +53,7 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Should only have one entry for the base URL
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], "https://example.com/docs/api/index.html.md")
+        self.assertEqual(result[0], "https://example.com/docs/api")
 
     def test_preserves_md_extension_urls(self):
         """Test that URLs already ending with .md are preserved"""
@@ -83,8 +86,27 @@ class TestConvertToMdUrls(unittest.TestCase):
         self.assertIn("https://example.com/docs/guide.md", result)
         self.assertIn("https://example.com/docs/api.md", result)
 
+    def test_non_md_urls_not_converted(self):
+        """Test that non-.md URLs are NOT converted to /index.html.md (issue #277)"""
+        urls = [
+            "https://example.com/docs/getting-started",
+            "https://example.com/docs/api-reference",
+            "https://example.com/docs/tutorials",
+        ]
+
+        result = self.converter._convert_to_md_urls(urls)
+
+        # Should preserve URLs as-is, NOT append /index.html.md
+        self.assertEqual(len(result), 3)
+        for url in result:
+            self.assertNotIn("index.html.md", url, f"Should not append /index.html.md: {url}")
+
+        self.assertEqual(result[0], "https://example.com/docs/getting-started")
+        self.assertEqual(result[1], "https://example.com/docs/api-reference")
+        self.assertEqual(result[2], "https://example.com/docs/tutorials")
+
     def test_does_not_match_md_in_path(self):
-        """Test that URLs containing 'md' in path (but not ending with .md) are converted"""
+        """Test that URLs containing 'md' in path are preserved as-is"""
         urls = [
             "https://example.com/cmd-line",
             "https://example.com/AMD-processors",
@@ -93,27 +115,23 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         result = self.converter._convert_to_md_urls(urls)
 
-        # All should be converted since they don't END with .md
+        # URLs with 'md' substring (not extension) should be preserved as-is
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], "https://example.com/cmd-line/index.html.md")
-        self.assertEqual(result[1], "https://example.com/AMD-processors/index.html.md")
-        self.assertEqual(result[2], "https://example.com/metadata/index.html.md")
+        self.assertEqual(result[0], "https://example.com/cmd-line")
+        self.assertEqual(result[1], "https://example.com/AMD-processors")
+        self.assertEqual(result[2], "https://example.com/metadata")
 
-    def test_removes_trailing_slashes(self):
-        """Test that trailing slashes are removed before appending /index.html.md"""
+    def test_removes_trailing_slashes_for_dedup(self):
+        """Test that trailing slash variants are deduplicated"""
         urls = [
             "https://example.com/docs/api/",
-            "https://example.com/docs/guide//",
-            "https://example.com/docs/reference",
+            "https://example.com/docs/api",
         ]
 
         result = self.converter._convert_to_md_urls(urls)
 
-        # All should have proper /index.html.md without double slashes
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], "https://example.com/docs/api/index.html.md")
-        self.assertEqual(result[1], "https://example.com/docs/guide/index.html.md")
-        self.assertEqual(result[2], "https://example.com/docs/reference/index.html.md")
+        # Should deduplicate (trailing slash vs no slash)
+        self.assertEqual(len(result), 1)
 
     def test_mixed_urls_with_and_without_anchors(self):
         """Test mixed URLs with various formats"""
@@ -130,9 +148,9 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Should deduplicate to 3 unique base URLs
         self.assertEqual(len(result), 3)
-        self.assertIn("https://example.com/docs/intro/index.html.md", result)
+        self.assertIn("https://example.com/docs/intro", result)
         self.assertIn("https://example.com/docs/api.md", result)
-        self.assertIn("https://example.com/docs/guide/index.html.md", result)
+        self.assertIn("https://example.com/docs/guide", result)
 
     def test_empty_url_list(self):
         """Test that empty URL list returns empty result"""
@@ -155,13 +173,14 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Should deduplicate to 3 unique base URLs
         self.assertEqual(len(result), 3)
-        self.assertIn("https://mikro-orm.io/docs/quick-start/index.html.md", result)
-        self.assertIn("https://mikro-orm.io/docs/propagation/index.html.md", result)
-        self.assertIn("https://mikro-orm.io/docs/defining-entities/index.html.md", result)
 
         # Should NOT contain any URLs with anchor fragments
         for url in result:
             self.assertNotIn("#", url, f"URL should not contain anchor: {url}")
+
+        # Should NOT contain /index.html.md
+        for url in result:
+            self.assertNotIn("index.html.md", url, f"Should not append /index.html.md: {url}")
 
     def test_preserves_query_parameters(self):
         """Test that query parameters are preserved (only anchors stripped)"""
@@ -175,8 +194,6 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Query parameters should be preserved, anchors stripped
         self.assertEqual(len(result), 2)  # search deduplicated
-        # Note: Query parameters might not be ideal for .md conversion,
-        # but they should be preserved if present
         self.assertTrue(
             any("?q=test" in url for url in result),
             "Query parameter should be preserved",
@@ -199,7 +216,7 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # All should deduplicate to single base URL
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], "https://example.com/docs/guide/index.html.md")
+        self.assertEqual(result[0], "https://example.com/docs/guide")
 
     def test_url_order_preservation(self):
         """Test that first occurrence of base URL is preserved"""
@@ -214,9 +231,63 @@ class TestConvertToMdUrls(unittest.TestCase):
 
         # Should have 3 unique URLs, first occurrence preserved
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], "https://example.com/docs/a/index.html.md")
-        self.assertEqual(result[1], "https://example.com/docs/b/index.html.md")
-        self.assertEqual(result[2], "https://example.com/docs/c/index.html.md")
+        self.assertEqual(result[0], "https://example.com/docs/a")
+        self.assertEqual(result[1], "https://example.com/docs/b")
+        self.assertEqual(result[2], "https://example.com/docs/c")
+
+    def test_discord_docs_case(self):
+        """Test the Discord docs case reported by @skeith in issue #277"""
+        urls = [
+            "https://docs.discord.com/developers/activities/building-an-activity",
+            "https://docs.discord.com/developers/activities/design-patterns",
+            "https://docs.discord.com/developers/components/overview",
+            "https://docs.discord.com/developers/bots/getting-started#step-1",
+        ]
+
+        result = self.converter._convert_to_md_urls(urls)
+
+        # No /index.html.md should be appended
+        for url in result:
+            self.assertNotIn("index.html.md", url, f"Should not append /index.html.md: {url}")
+            self.assertNotIn("#", url, f"Should not contain anchor: {url}")
+
+        self.assertEqual(len(result), 4)
+
+
+class TestHasMdExtension(unittest.TestCase):
+    """Test suite for _has_md_extension static method"""
+
+    def test_md_extension(self):
+        self.assertTrue(DocToSkillConverter._has_md_extension("https://example.com/page.md"))
+
+    def test_md_with_query(self):
+        self.assertTrue(DocToSkillConverter._has_md_extension("https://example.com/page.md?v=1"))
+
+    def test_no_md_extension(self):
+        self.assertFalse(DocToSkillConverter._has_md_extension("https://example.com/page"))
+
+    def test_md_in_path_not_extension(self):
+        """'cmd-line' contains 'md' but is not a .md extension"""
+        self.assertFalse(DocToSkillConverter._has_md_extension("https://example.com/cmd-line"))
+
+    def test_md_in_domain(self):
+        """'.md' in domain should not match"""
+        self.assertFalse(DocToSkillConverter._has_md_extension("https://docs.md.example.com/page"))
+
+    def test_mdx_not_md(self):
+        """.mdx is not .md"""
+        self.assertFalse(DocToSkillConverter._has_md_extension("https://example.com/page.mdx"))
+
+    def test_md_in_middle_of_path(self):
+        """.md in middle of path should not match"""
+        self.assertFalse(
+            DocToSkillConverter._has_md_extension("https://example.com/page.md/subpage")
+        )
+
+    def test_index_html_md(self):
+        self.assertTrue(
+            DocToSkillConverter._has_md_extension("https://example.com/page/index.html.md")
+        )
 
 
 if __name__ == "__main__":

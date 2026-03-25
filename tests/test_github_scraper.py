@@ -68,7 +68,12 @@ class TestGitHubScraperInitialization(unittest.TestCase):
             "github_token": "test_token_123",
         }
 
-        with patch("skill_seekers.cli.github_scraper.Github") as mock_github:
+        # Clear GITHUB_TOKEN env var so config token is used (env takes priority)
+        env = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
+        with (
+            patch.dict(os.environ, env, clear=True),
+            patch("skill_seekers.cli.github_scraper.Github") as mock_github,
+        ):
             _scraper = self.GitHubScraper(config)
             mock_github.assert_called_once_with("test_token_123")
 

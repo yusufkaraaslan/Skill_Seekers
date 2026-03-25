@@ -76,6 +76,21 @@ git push origin my-feature
 
 ---
 
+## Related Repositories
+
+Skill Seekers spans multiple repositories. Make sure you're contributing to the right one:
+
+| What you want to work on | Repository |
+|--------------------------|-----------|
+| Core CLI, scrapers, MCP tools, adaptors | [Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers) (this repo) |
+| Website, docs, UI/UX | [skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb) |
+| Preset configs, community configs | [skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs) |
+| GitHub Action integration | [skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action) |
+| Claude Code plugin | [skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin) |
+| Homebrew formula | [homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers) |
+
+---
+
 ## Code of Conduct
 
 This project and everyone participating in it is governed by our commitment to fostering an open and welcoming environment. Please be respectful and constructive in all interactions.
@@ -480,6 +495,24 @@ Skill_Seekers/
 ```
 
 **Scraper pattern (17 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
+
+### UML Architecture
+
+Full UML class diagrams are maintained in StarUML and synced from source code:
+
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - Overview with embedded PNG diagrams
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML project (open with [StarUML](https://staruml.io/))
+- **[docs/UML/exports/](docs/UML/exports/)** - 14 PNG exports (package overview + 13 class diagrams)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - HTML API reference
+
+**Key design patterns documented in UML:**
+- Strategy + Factory in Adaptors (SkillAdaptor ABC + 20+ implementations)
+- Strategy + Factory in Storage (BaseStorageAdaptor + S3/GCS/Azure)
+- Template Method in Parsers (SubcommandParser + 28 subclasses)
+- Template Method in Analysis (BasePatternDetector + 10 GoF detectors)
+- Command pattern in CLI (CLIDispatcher + COMMAND_MODULES lazy dispatch)
+
+When adding new classes or modules, please update the corresponding UML diagram to keep architecture docs in sync.
 
 ---
 

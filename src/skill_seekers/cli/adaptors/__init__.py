@@ -3,7 +3,9 @@
 Multi-LLM Adaptor Registry
 
 Provides factory function to get platform-specific adaptors for skill generation.
-Supports Claude AI, Google Gemini, OpenAI ChatGPT, and generic Markdown export.
+Supports Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode,
+Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI,
+and generic Markdown export.
 """
 
 from .base import SkillAdaptor, SkillMetadata
@@ -69,6 +71,46 @@ try:
 except ImportError:
     PineconeAdaptor = None
 
+try:
+    from .minimax import MiniMaxAdaptor
+except ImportError:
+    MiniMaxAdaptor = None
+
+try:
+    from .opencode import OpenCodeAdaptor
+except ImportError:
+    OpenCodeAdaptor = None
+
+try:
+    from .kimi import KimiAdaptor
+except ImportError:
+    KimiAdaptor = None
+
+try:
+    from .deepseek import DeepSeekAdaptor
+except ImportError:
+    DeepSeekAdaptor = None
+
+try:
+    from .qwen import QwenAdaptor
+except ImportError:
+    QwenAdaptor = None
+
+try:
+    from .openrouter import OpenRouterAdaptor
+except ImportError:
+    OpenRouterAdaptor = None
+
+try:
+    from .together import TogetherAdaptor
+except ImportError:
+    TogetherAdaptor = None
+
+try:
+    from .fireworks import FireworksAdaptor
+except ImportError:
+    FireworksAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -98,6 +140,22 @@ if HaystackAdaptor:
     ADAPTORS["haystack"] = HaystackAdaptor
 if PineconeAdaptor:
     ADAPTORS["pinecone"] = PineconeAdaptor
+if MiniMaxAdaptor:
+    ADAPTORS["minimax"] = MiniMaxAdaptor
+if OpenCodeAdaptor:
+    ADAPTORS["opencode"] = OpenCodeAdaptor
+if KimiAdaptor:
+    ADAPTORS["kimi"] = KimiAdaptor
+if DeepSeekAdaptor:
+    ADAPTORS["deepseek"] = DeepSeekAdaptor
+if QwenAdaptor:
+    ADAPTORS["qwen"] = QwenAdaptor
+if OpenRouterAdaptor:
+    ADAPTORS["openrouter"] = OpenRouterAdaptor
+if TogetherAdaptor:
+    ADAPTORS["together"] = TogetherAdaptor
+if FireworksAdaptor:
+    ADAPTORS["fireworks"] = FireworksAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
@@ -105,7 +163,9 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
     Factory function to get platform-specific adaptor instance.
 
     Args:
-        platform: Platform identifier ('claude', 'gemini', 'openai', 'markdown')
+        platform: Platform identifier (e.g., 'claude', 'gemini', 'openai', 'minimax',
+                  'opencode', 'kimi', 'deepseek', 'qwen', 'openrouter', 'together',
+                  'fireworks', 'markdown')
         config: Optional platform-specific configuration
 
     Returns:
@@ -116,6 +176,7 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
 
     Examples:
         >>> adaptor = get_adaptor('claude')
+        >>> adaptor = get_adaptor('minimax')
         >>> adaptor = get_adaptor('gemini', {'api_version': 'v1beta'})
     """
     if platform not in ADAPTORS:
@@ -141,7 +202,7 @@ def list_platforms() -> list[str]:
 
     Examples:
         >>> list_platforms()
-        ['claude', 'gemini', 'openai', 'markdown']
+        ['claude', 'gemini', 'openai', 'minimax', 'markdown']
     """
     return list(ADAPTORS.keys())
 

@@ -692,7 +692,7 @@ skill-seekers install-agent SKILL_DIRECTORY --agent AGENT [options]
 | Name | Required | Description |
 |------|----------|-------------|
 | `SKILL_DIRECTORY` | Yes | Path to skill directory |
-| `--agent AGENT` | Yes | Target agent: cursor, windsurf, cline, continue |
+| `--agent AGENT` | Yes | Target agent: cursor, windsurf, cline, continue, roo, aider, bolt, kilo, kimi-code |
 
 **Flags:**
 
@@ -923,6 +923,14 @@ skill-seekers package SKILL_DIRECTORY [options]
 | Claude AI | ZIP + YAML | `--target claude` |
 | Google Gemini | tar.gz | `--target gemini` |
 | OpenAI | ZIP + Vector | `--target openai` |
+| MiniMax | ZIP | `--target minimax` |
+| OpenCode | ZIP | `--target opencode` |
+| Kimi | ZIP | `--target kimi` |
+| DeepSeek | ZIP | `--target deepseek` |
+| Qwen | ZIP | `--target qwen` |
+| OpenRouter | ZIP | `--target openrouter` |
+| Together AI | ZIP | `--target together` |
+| Fireworks AI | ZIP | `--target fireworks` |
 | LangChain | Documents | `--target langchain` |
 | LlamaIndex | TextNodes | `--target llama-index` |
 | Haystack | Documents | `--target haystack` |

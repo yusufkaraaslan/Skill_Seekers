@@ -165,10 +165,6 @@ class UnifiedScraper:
         logger.info("PHASE 1: Scraping all sources")
         logger.info("=" * 60)
 
-        if not self.validator.is_unified:
-            logger.warning("Config is not unified format, converting...")
-            self.config = self.validator.convert_legacy_to_unified()
-
         sources = self.config.get("sources", [])
 
         for i, source in enumerate(sources):
@@ -220,9 +216,10 @@ class UnifiedScraper:
 
     def _scrape_documentation(self, source: dict[str, Any]):
         """Scrape documentation website."""
-        # Create temporary config for doc scraper
-        doc_config = {
-            "name": f"{self.name}_docs",
+        # Create temporary config for doc scraper in unified format
+        # (doc_scraper's ConfigValidator requires "sources" key)
+        doc_source = {
+            "type": "documentation",
             "base_url": source["base_url"],
             "selectors": source.get("selectors", {}),
             "url_patterns": source.get("url_patterns", {}),
@@ -233,14 +230,20 @@ class UnifiedScraper:
 
         # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
         if "llms_txt_url" in source:
-            doc_config["llms_txt_url"] = source.get("llms_txt_url")
+            doc_source["llms_txt_url"] = source["llms_txt_url"]
 
         if "skip_llms_txt" in source:
-            doc_config["skip_llms_txt"] = source.get("skip_llms_txt")
+            doc_source["skip_llms_txt"] = source["skip_llms_txt"]
 
         # Optional: support overriding start URLs
         if "start_urls" in source:
-            doc_config["start_urls"] = source.get("start_urls")
+            doc_source["start_urls"] = source["start_urls"]
+
+        doc_config = {
+            "name": f"{self.name}_docs",
+            "description": f"Documentation for {self.name}",
+            "sources": [doc_source],
+        }
 
         # Write temporary config
         temp_config_path = os.path.join(self.data_dir, "temp_docs_config.json")

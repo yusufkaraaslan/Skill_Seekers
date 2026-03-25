@@ -626,17 +626,17 @@ Examples:
   Config:   skill-seekers create configs/react.json
 
 Source Auto-Detection:
-  • URLs/domains → web scraping
-  • owner/repo → GitHub analysis
-  • ./path → local codebase
-  • file.pdf → PDF extraction
-  • file.docx → Word document extraction
-  • file.epub → EPUB extraction
-  • youtube.com/... → Video transcript extraction
-  • file.mp4 → Video file extraction
-  • file.json → multi-source config
+  URLs/domains -> web scraping
+  owner/repo -> GitHub analysis
+  ./path -> local codebase
+  file.pdf -> PDF extraction
+  file.docx -> Word document extraction
+  file.epub -> EPUB extraction
+  youtube.com/... -> Video transcript extraction
+  file.mp4 -> Video file extraction
+  file.json -> multi-source config
 
-Progressive Help (13 → 120+ flags):
+Progressive Help (13 -> 120+ flags):
   --help-web       Web scraping options
   --help-github    GitHub repository options
   --help-local     Local codebase analysis

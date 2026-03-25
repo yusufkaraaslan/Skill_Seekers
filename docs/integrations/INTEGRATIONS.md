@@ -112,6 +112,7 @@ Upload documentation as custom skills to AI chat platforms:
 | **[Claude](CLAUDE.md)** | Anthropic | ZIP + YAML | Claude.ai Projects | [Setup →](CLAUDE.md) |
 | **[Gemini](GEMINI_INTEGRATION.md)** | Google | tar.gz | Gemini AI | [Setup →](GEMINI_INTEGRATION.md) |
 | **[ChatGPT](OPENAI_INTEGRATION.md)** | OpenAI | ZIP + Vector Store | GPT Actions | [Setup →](OPENAI_INTEGRATION.md) |
+| **[MiniMax](MINIMAX_INTEGRATION.md)** | MiniMax | ZIP | MiniMax AI Platform | [Setup →](MINIMAX_INTEGRATION.md) |
 
 **Quick Example:**
 ```bash
@@ -139,7 +140,7 @@ skill-seekers upload output/vue-claude.zip --target claude
 | **AI coding (flow-based)** | Windsurf | Unique flow paradigm, Codeium AI | 5 min |
 | **AI coding (VS Code ext)** | Cline | Claude in VS Code, MCP integration | 10 min |
 | **AI coding (any IDE)** | Continue.dev | Works everywhere, open-source | 5 min |
-| **Chat with documentation** | Claude/Gemini/ChatGPT | Direct upload as custom skill | 3 min |
+| **Chat with documentation** | Claude/Gemini/ChatGPT/MiniMax | Direct upload as custom skill | 3 min |
 
 ### By Technical Requirements
 

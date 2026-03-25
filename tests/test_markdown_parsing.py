@@ -310,6 +310,38 @@ API: https://example.com/api/reference.md
         result = parser._clean_url("https://example.com/api/[v1]/page#section/deep")
         self.assertEqual(result, "https://example.com/api/%5Bv1%5D/page")
 
+    def test_clean_url_malformed_ipv6_no_crash(self):
+        """Test that incomplete IPv6 placeholder URLs don't crash (issue #284).
+
+        Python 3.14 raises ValueError from urlparse() on these URLs.
+        Seen in real-world llms-full.txt from docs.openclaw.ai.
+        """
+        from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+
+        parser = LlmsTxtParser("", base_url="https://example.com")
+
+        # Must not raise ValueError
+        result = parser._clean_url("http://[fdaa:x:x:x:x::x")
+        self.assertIn("%5B", result)
+        self.assertNotIn("[", result)
+
+    def test_extract_urls_with_ipv6_placeholder_no_crash(self):
+        """Test that extract_urls handles content with broken IPv6 URLs (issue #284)."""
+        from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+
+        content = """# Docs
+- [Guide](https://example.com/guide.md)
+- Connect to http://[fdaa:x:x:x:x::x for private networking
+- [API](https://example.com/api.md)
+"""
+        parser = LlmsTxtParser(content, base_url="https://example.com")
+
+        # Must not raise ValueError
+        urls = parser.extract_urls()
+        # Should still extract the valid URLs
+        valid = [u for u in urls if "example.com" in u]
+        self.assertGreaterEqual(len(valid), 2)
+
     def test_deduplicate_urls(self):
         """Test that duplicate URLs are removed."""
         from skill_seekers.cli.llms_txt_parser import LlmsTxtParser

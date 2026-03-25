@@ -33,7 +33,7 @@ We can replicate this positioning with dozens of other tools/platforms to create
 | **MCP integration** | ✅ Aware | ✅ 26 tools available | **Medium** |
 | **Context limits** | ⚠️ Problem | ✅ Router skills solve | **Large** |
 | **AI enhancement** | ❌ Not mentioned | ✅ Dual mode (API/LOCAL) | **Large** |
-| **Multi-platform** | ❌ Claude only | ✅ 4 platforms | **Medium** |
+| **Multi-platform** | ❌ Claude only | ✅ 12 platforms | **Medium** |
 | **Rate limits** | ❌ Not mentioned | ✅ Smart management | **Medium** |
 | **Quality** | Basic | Production-ready | **Large** |
 

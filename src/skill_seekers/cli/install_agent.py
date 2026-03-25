@@ -44,6 +44,13 @@ AGENT_PATHS = {
     "aide": "~/.aide/skills/",  # Global
     "windsurf": "~/.windsurf/skills/",  # Global
     "neovate": "~/.neovate/skills/",  # Global
+    "roo": ".roo/skills/",  # Project-relative (Roo Code, Cline fork)
+    "cline": ".cline/skills/",  # Project-relative (Cline AI)
+    "aider": "~/.aider/skills/",  # Global (terminal AI coding)
+    "bolt": ".bolt/skills/",  # Project-relative (Bolt.new/Bolt.diy)
+    "kilo": ".kilo/skills/",  # Project-relative (Kilo Code, Cline fork)
+    "continue": "~/.continue/skills/",  # Global (Continue.dev)
+    "kimi-code": "~/.kimi/skills/",  # Global (Kimi Code)
 }
 
 
@@ -360,7 +367,8 @@ Examples:
   skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 Supported agents:
-  claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf, neovate, all
+  claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf,
+  neovate, roo, cline, aider, bolt, kilo, continue, kimi-code, all
         """,
     )
 

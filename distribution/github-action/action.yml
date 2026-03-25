@@ -1,0 +1,92 @@
+name: 'Skill Seekers - AI Knowledge Builder'
+description: 'Transform documentation, repos, PDFs, videos, and 13 other source types into AI skills and RAG knowledge'
+author: 'Yusuf Karaaslan'
+
+branding:
+  icon: 'book-open'
+  color: 'blue'
+
+inputs:
+  source:
+    description: 'Source URL, file path, or owner/repo for GitHub repos'
+    required: true
+  command:
+    description: 'Command to run: create (auto-detect), scrape, github, pdf, video, analyze, unified'
+    required: false
+    default: 'create'
+  target:
+    description: 'Output target platform: claude, openai, gemini, langchain, llamaindex, markdown, cursor, windsurf'
+    required: false
+    default: 'claude'
+  config:
+    description: 'Path to JSON config file (for unified/advanced scraping)'
+    required: false
+  output-dir:
+    description: 'Output directory for generated skills'
+    required: false
+    default: 'output'
+  extra-args:
+    description: 'Additional CLI arguments to pass to skill-seekers'
+    required: false
+    default: ''
+
+outputs:
+  skill-dir:
+    description: 'Path to the generated skill directory'
+    value: ${{ steps.run.outputs.skill-dir }}
+  skill-name:
+    description: 'Name of the generated skill'
+    value: ${{ steps.run.outputs.skill-name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Skill Seekers
+      shell: bash
+      run: pip install skill-seekers
+
+    - name: Run Skill Seekers
+      id: run
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
+        OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
+        GOOGLE_API_KEY: ${{ env.GOOGLE_API_KEY }}
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        mkdir -p "$OUTPUT_DIR"
+
+        CMD="${{ inputs.command }}"
+        SOURCE="${{ inputs.source }}"
+        TARGET="${{ inputs.target }}"
+        CONFIG="${{ inputs.config }}"
+        EXTRA="${{ inputs.extra-args }}"
+
+        # Build the command
+        if [ "$CMD" = "create" ]; then
+          skill-seekers create "$SOURCE" --target "$TARGET" --output "$OUTPUT_DIR" $EXTRA
+        elif [ -n "$CONFIG" ]; then
+          skill-seekers "$CMD" --config "$CONFIG" --target "$TARGET" --output "$OUTPUT_DIR" $EXTRA
+        else
+          skill-seekers "$CMD" "$SOURCE" --target "$TARGET" --output "$OUTPUT_DIR" $EXTRA
+        fi
+
+        # Find the generated skill directory
+        SKILL_DIR=$(find "$OUTPUT_DIR" -name "SKILL.md" -exec dirname {} \; | head -1)
+        SKILL_NAME=$(basename "$SKILL_DIR" 2>/dev/null || echo "unknown")
+
+        echo "skill-dir=$SKILL_DIR" >> "$GITHUB_OUTPUT"
+        echo "skill-name=$SKILL_NAME" >> "$GITHUB_OUTPUT"
+
+        echo "### Skill Generated" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Name:** $SKILL_NAME" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Directory:** $SKILL_DIR" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Target:** $TARGET" >> "$GITHUB_STEP_SUMMARY"

@@ -31,6 +31,21 @@
 
 > 📋 **[Veja o Roteiro de Desenvolvimento e Tarefas](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tarefas em 10 categorias, escolha qualquer uma para contribuir!
 
+## 🌐 Ecossistema
+
+Skill Seekers é um projeto multi-repositório. Aqui está onde tudo se encontra:
+
+| Repositório | Descrição | Links |
+|------------|-----------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | CLI principal e servidor MCP (este repo) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Website e documentação | [Site](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Repositório de configurações da comunidade | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action para CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Plugin Claude Code | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap para macOS | |
+
+> **Quer contribuir?** Os repos do website e configurações são ótimos pontos de partida para novos contribuidores!
+
 ## 🧠 A Camada de Dados para Sistemas de IA
 
 **Skill Seekers é a camada universal de pré-processamento** que fica entre a documentação bruta e todo sistema de IA que a consome. Seja para construir Claude Skills, um pipeline RAG com LangChain ou um arquivo `.cursorrules` para o Cursor — a preparação dos dados é idêntica. Faça uma vez e exporte para todos os destinos.
@@ -239,7 +254,7 @@ O Skill Seekers substitui dias de pré-processamento manual com os seguintes pas
 - ✅ **Retrocompatível** - Configurações legadas de fonte única continuam funcionando
 
 ### 🤖 Suporte a Múltiplas Plataformas LLM
-- ✅ **4 Plataformas LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, Markdown Genérico
+- ✅ **12 Plataformas LLM** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown Genérico, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Coleta Universal** - A mesma documentação funciona para todas as plataformas
 - ✅ **Empacotamento Específico por Plataforma** - Formatos otimizados para cada LLM
 - ✅ **Exportação com Um Comando** - Flag `--target` seleciona a plataforma
@@ -689,9 +704,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Matriz de Funcionalidades
 
-O Skill Seekers suporta **4 plataformas LLM**, **17 tipos de fontes** e paridade completa de funcionalidades em todos os destinos.
+O Skill Seekers suporta **12 plataformas LLM**, **17 tipos de fontes** e paridade completa de funcionalidades em todos os destinos.
 
-**Plataformas:** Claude AI, Google Gemini, OpenAI ChatGPT, Markdown Genérico
+**Plataformas:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown Genérico, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Tipos de Fontes:** Sites de documentação, repositórios GitHub, PDFs, Word (.docx), EPUB, Vídeo, Codebases locais, Jupyter Notebooks, HTML local, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), feeds RSS/Atom, Man pages, wikis Confluence, páginas Notion, exportações de chat Slack/Discord
 
 Consulte a [Matriz Completa de Funcionalidades](docs/FEATURE_MATRIX.md) para suporte detalhado por plataforma e funcionalidade.
@@ -929,7 +944,7 @@ No Claude Code, basta pedir:
 
 ## 🤖 Instalando em Agentes de IA
 
-O Skill Seekers pode instalar automaticamente skills em mais de 10 agentes de programação com IA.
+O Skill Seekers pode instalar automaticamente skills em 18 agentes de programação com IA.
 
 ```bash
 # Instalar em agente específico
@@ -953,6 +968,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | Global |
 | **OpenCode** | `~/.opencode/skills/` | Global |
 | **Windsurf** | `~/.windsurf/skills/` | Global |
+| **Roo Code** | `.roo/skills/` | Projeto |
+| **Cline** | `.cline/skills/` | Projeto |
+| **Aider** | `~/.aider/skills/` | Global |
+| **Bolt** | `.bolt/skills/` | Projeto |
+| **Kilo Code** | `.kilo/skills/` | Projeto |
+| **Continue** | `~/.continue/skills/` | Global |
+| **Kimi Code** | `~/.kimi/skills/` | Global |
 
 ---
 

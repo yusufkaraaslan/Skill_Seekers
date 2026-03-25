@@ -1,0 +1,17 @@
+services:
+  # MCP Server Service (HTTP mode)
+  - type: web
+    name: skill-seekers-mcp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.mcp
+    envVars:
+      - key: MCP_PORT
+        value: "8765"
+      - key: PORT
+        fromService:
+          type: web
+          name: skill-seekers-mcp
+          property: port
+    healthCheckPath: /health
+    autoDeploy: true

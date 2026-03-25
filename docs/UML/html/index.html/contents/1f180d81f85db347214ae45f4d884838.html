@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>BaseStorageAdaptor</title>
+    <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic|Source+Code+Pro:300,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../assets/css/bootstrap.css">
+<link rel="stylesheet" href="../assets/css/jquery.bonsai.css">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/icon-font/icons.css">
+<script type="text/javascript" src="../assets/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="../assets/js/bootstrap.js"></script>
+<script type="text/javascript" src="../assets/js/jquery.bonsai.js"></script>
+<script type="text/javascript" src="../assets/js/imageMapResizer.min.js"></script>
+
+  </head>
+  <body>
+    <div>
+
+      <!-- Name Title -->
+
+      <h1>BaseStorageAdaptor</h1>
+
+      <!-- Type and Stereotype -->
+
+      <section style="margin-top: .5em;">
+        <span class="alert alert-info">
+          <span class="node-icon staruml-icon icon-UMLClass"></span>
+          UMLClass
+        </span>
+        
+      </section>
+
+      <!-- Path -->
+
+      <section style="margin-top: 10px">
+        
+        
+        
+          
+          <span class="label label-info"><a href='cf9c8b720f3815adeccaf3ef6e48c6c4.html'><span class='node-icon staruml-icon icon-Project'></span>Skill Seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='6a4361334e8b649314ed681b9e6798c3.html'><span class='node-icon staruml-icon icon-UMLModel'></span>skill_seekers</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='b9f465c166847f04c445425fb5a55d39.html'><span class='node-icon staruml-icon icon-UMLPackage'></span>Storage</a></span>
+        
+          <span>::</span>
+          <span class="label label-info"><a href='1f180d81f85db347214ae45f4d884838.html'><span class='node-icon staruml-icon icon-UMLClass'></span>BaseStorageAdaptor</a></span>
+        
+      </section>
+
+      <!-- Diagram -->
+
+      
+
+      <!-- Description -->
+
+      
+      <section>
+        <h3>Description</h3>
+        <div>
+          
+            <p>Abstract base class for cloud storage adaptors. Provides unified interface for different cloud storage providers. All adaptors must implement the abstract methods.</p>
+          
+        </div>
+      </section>
+      
+
+      <!-- Specification -->
+
+      
+
+      <!-- Directed Relationship -->
+
+      
+
+      <!-- Undirected Relationship -->
+
+      
+
+      <!-- Classifier -->
+
+      
+        
+        
+
+
+        
+        
+<section class="element-list">
+    <h3>Specialized Elements</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='f3eeafc76be1c31a500be61f86e0b3d2.html'><span class='node-icon staruml-icon icon-UMLClass'></span>S3StorageAdaptor</a></li>
+        
+        <li><a href='93becefdd6adf4248b8ba012a9121400.html'><span class='node-icon staruml-icon icon-UMLClass'></span>GCSStorageAdaptor</a></li>
+        
+        <li><a href='9a75470762d321f43986bd5936916083.html'><span class='node-icon staruml-icon icon-UMLClass'></span>AzureStorageAdaptor</a></li>
+        
+    </ul>
+</section>
+
+
+
+        
+        
+
+
+        
+        
+
+
+        
+        
+
+      
+
+      <!-- Interface -->
+
+      
+
+      <!-- Component -->
+
+      
+
+      <!-- Node -->
+
+      
+
+      <!-- Actor -->
+
+      
+
+      <!-- Use Case -->
+
+      
+
+      <!-- Template Parameters -->
+
+      
+
+      <!-- Literals -->
+
+      
+
+      <!-- Attributes -->
+
+      
+      <section>
+        <h3>Attributes</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="4232d7d3b6030a860088d03085de6e7a.html">config</a></td>
+            <td>dict </td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Operations -->
+
+      
+      <section>
+        <h3>Operations</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="b3b36f825f580eddc5003175f70d1013.html">upload_file()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="5ca7bf366f6e96fb4f8a1b673c0c9a99.html">download_file()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="cabb07561850fd4a1aeae8f7c2d23ec9.html">delete_file()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="03f058a533840c37160ba9cbb3005bef.html">list_files()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="3a45afb4aa1f2645e64f04d24e5b77bd.html">file_exists()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="8e74d8eb060422c6a14c291d2a96c11c.html">get_file_url()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="babd427722148f926383f768b7ffe206.html">upload_directory()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="a6b7c15ea29bdb424d6842a9934c9b30.html">__init__(**kwargs)()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="9ca1a7d42c4617860ea6fe4491e4f12e.html">upload_file(local_path: str, remote_path: str, metadata: dict | None) : str()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="e3a9f1ccc48ad66dbc95de140127874d.html">download_file(remote_path: str, local_path: str) : None()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="72973aecdcb744a1c2a7ce3b9831f7ce.html">delete_file(remote_path: str) : None()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="d96ffc6326e55dd11525ed461459db79.html">list_files(prefix: str, max_results: int) : list[StorageObject]()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="6de448df049ad410d7a2e820401e6791.html">file_exists(remote_path: str) : bool()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="7da21169908633b315862c8d64bb4605.html">get_file_url(remote_path: str, expires_in: int) : str()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="f12ac42eebbe93fb75310d4d2778f3cd.html">upload_directory(local_dir: str, remote_prefix: str, exclude_patterns: list | None) : list[str]()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="8d1cc3ac66bbd8aee036082838b7876d.html">download_directory(remote_prefix: str, local_dir: str) : list[str]()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="bd3a346926feadd098fe7bc3e5d9af38.html">get_file_size(remote_path: str) : int()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="90d19b49d40cf0722e8fdebaaa108f96.html">copy_file(source_path: str, dest_path: str) : None()</a></td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Receptions -->
+
+      
+
+      <!-- Extension Points -->
+
+      
+
+      <!-- Parameters -->
+
+      
+
+      <!-- Diagrams -->
+
+      
+      
+
+      <!-- Behavior -->
+
+      
+
+      <!-- Action -->
+
+      
+
+      <!-- Interaction -->
+
+      
+
+      <!-- CombinedFragment -->
+
+      
+
+      <!-- Activity -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State Machine -->
+
+      
+
+      <!-- State -->
+
+      
+
+      <!-- Vertex -->
+
+      
+
+      <!-- Transition -->
+
+      
+
+      <!-- Data Model (ERD) -->
+
+      
+
+      <!-- Columns (ERD) -->
+
+      
+
+      <!-- Related Entities (ERD) -->
+
+      
+
+      <!-- Data Flows (DFD) -->
+
+      
+
+      <!-- Flows (Flowchart) -->
+
+      
+
+      <!-- Properties -->
+
+      <section>
+        <h3>Properties</h3>
+        
+        <table class="table table-striped table-bordered">
+    <tr>
+        <th width="50%">Name</th>
+        <th width="50%">Value</th>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>name</td>
+        <td>BaseStorageAdaptor</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>stereotype</td>
+        <td><span class='label label-info'>null</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>visibility</td>
+        <td>public</td>
+    </tr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <tr>
+        <td>isAbstract</td>
+        <td><span class='label label-info'>true</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isFinalSpecialization</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isLeaf</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+    
+    
+    <tr>
+        <td>isActive</td>
+        <td><span class='label label-info'>false</span></td>
+    </tr>
+    
+    
+    
+</table>                
+
+      </section>
+
+      <!-- Tags -->
+
+      
+
+      <!-- Constraints, Dependencies, Dependants -->
+
+      
+        
+        
+
+
+        
+        
+<section class="element-list">
+    <h3>Dependencies</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='f9cf7eafa8bc6c04ff803a0732f5d690.html'><span class='node-icon staruml-icon icon-UMLDataType'></span>StorageObject</a></li>
+        
+    </ul>
+</section>
+
+
+
+        
+        
+
+      
+
+      <!-- Relationships -->
+
+      
+      
+<section class="element-list">
+    <h3>Relationships</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='0a97292d8e93749d795ceb9d3a7ea43b.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(S3StorageAdaptor→BaseStorageAdaptor)</a></li>
+        
+        <li><a href='e8ade9bed41d4855832a475565f12fc3.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(GCSStorageAdaptor→BaseStorageAdaptor)</a></li>
+        
+        <li><a href='200b04a90076abbec97a2c32cdaf18ca.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(AzureStorageAdaptor→BaseStorageAdaptor)</a></li>
+        
+        <li><a href='bcb7ce47826f2b2842799270e0088aad.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(BaseStorageAdaptor→StorageObject)</a></li>
+        
+    </ul>
+</section>
+
+
+
+      <!-- Owned Elements -->
+
+      
+      
+<section class="element-list">
+    <h3>Owned Elements</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='bcb7ce47826f2b2842799270e0088aad.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(BaseStorageAdaptor→StorageObject)</a></li>
+        
+    </ul>
+</section>
+
+
+
+      <!-- Diagrams -->
+      
+      
+      
+<section class="element-list">
+    <h3>Diagrams</h3>
+    <ul class="nav nav-list">
+        
+        <li><a href='02524d7a310024538b8bf2b5217a0405.html'><span class='node-icon staruml-icon icon-UMLClassDiagram'></span>Storage</a></li>
+        
+    </ul>
+</section>
+
+
+      
+      
+      <!-- Image Map Resizer (https://github.com/davidjbradshaw/image-map-resizer) -->
+      <script>
+      imageMapResize();
+      </script>
+    </div>
+  </body>
+</html>

@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Recent Updates (December 2025):
 
 **🎉 MAJOR RELEASE: Multi-Platform Feature Parity! (v2.5.0)**
-- **🌐 Multi-LLM Support**: Full support for 4 platforms - Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
+- **🌐 Multi-LLM Support**: Full support for 12 platforms - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Generic Markdown
 - **🔄 Complete Feature Parity**: All skill modes work with all platforms
 - **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
 - **✨ 26 MCP Tools**: Enhanced with multi-platform support (package, upload, enhance)

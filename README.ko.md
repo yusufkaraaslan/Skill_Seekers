@@ -31,6 +31,21 @@
 
 > 📋 **[개발 로드맵 및 작업 보기](https://github.com/users/yusufkaraaslan/projects/2)** - 10개 카테고리에 걸친 134개 작업, 원하는 것을 선택하여 기여하세요!
 
+## 🌐 에코시스템
+
+Skill Seekers는 다중 저장소 프로젝트입니다. 각 저장소의 역할:
+
+| 저장소 | 설명 | 링크 |
+|--------|------|------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | 핵심 CLI & MCP 서버 (이 저장소) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | 웹사이트 & 문서 | [사이트](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | 커뮤니티 설정 저장소 | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code 플러그인 | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | macOS Homebrew tap | |
+
+> **기여하고 싶으신가요?** 웹사이트와 설정 저장소는 새 기여자에게 좋은 시작점입니다!
+
 ## 🧠 AI 시스템을 위한 데이터 레이어
 
 **Skill Seekers는 범용 전처리 레이어**로, 원시 문서와 이를 활용하는 모든 AI 시스템 사이에 위치합니다. Claude 스킬을 구축하든, LangChain RAG 파이프라인을 만들든, Cursor `.cursorrules` 파일을 작성하든 — 데이터 준비 작업은 동일합니다. 한 번만 수행하면 모든 대상 플랫폼으로 내보낼 수 있습니다.
@@ -194,7 +209,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 - ✅ **하위 호환** - 레거시 단일 소스 설정 계속 작동
 
 ### 🤖 다중 LLM 플랫폼 지원
-- ✅ **4개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, 범용 Markdown
+- ✅ **12개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **범용 스크래핑** - 동일한 문서가 모든 플랫폼에 적용
 - ✅ **플랫폼별 패키징** - 각 LLM에 최적화된 형식
 - ✅ **원커맨드 내보내기** - `--target` 플래그로 플랫폼 선택
@@ -581,9 +596,9 @@ skill-seekers install --config react --dry-run
 
 ## 📊 기능 매트릭스
 
-Skill Seekers는 **4개 LLM 플랫폼**, **17가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
+Skill Seekers는 **12개 LLM 플랫폼**, **17가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
 
-**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, 범용 Markdown
+**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **소스 유형:** 문서 사이트, GitHub 저장소, PDF, Word (.docx), EPUB, 동영상, 로컬 코드베이스, Jupyter 노트북, 로컬 HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 채팅 내보내기
 
 전체 내용은 [전체 기능 매트릭스](docs/FEATURE_MATRIX.md)를 참조하세요.
@@ -819,7 +834,7 @@ Claude Code에서 직접 요청:
 
 ## 🤖 AI 에이전트에 설치
 
-Skill Seekers는 10개 이상의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
+Skill Seekers는 18개의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
 
 ```bash
 # 특정 에이전트에 설치
@@ -843,6 +858,13 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Goose** | `~/.config/goose/skills/` | 전역 |
 | **OpenCode** | `~/.opencode/skills/` | 전역 |
 | **Windsurf** | `~/.windsurf/skills/` | 전역 |
+| **Roo Code** | `.roo/skills/` | 프로젝트 |
+| **Cline** | `.cline/skills/` | 프로젝트 |
+| **Aider** | `~/.aider/skills/` | 전역 |
+| **Bolt** | `.bolt/skills/` | 프로젝트 |
+| **Kilo Code** | `.kilo/skills/` | 프로젝트 |
+| **Continue** | `~/.continue/skills/` | 전역 |
+| **Kimi Code** | `~/.kimi/skills/` | 전역 |
 
 ---
 

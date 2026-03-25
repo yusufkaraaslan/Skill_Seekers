@@ -9,6 +9,7 @@ Skill Seekers supports multiple LLM platforms through a clean adaptor system. Th
 | **Claude AI** | ✅ Full Support | ZIP + YAML | ✅ Automatic | ✅ Yes | ANTHROPIC_API_KEY |
 | **Google Gemini** | ✅ Full Support | tar.gz | ✅ Automatic | ✅ Yes | GOOGLE_API_KEY |
 | **OpenAI ChatGPT** | ✅ Full Support | ZIP + Vector Store | ✅ Automatic | ✅ Yes | OPENAI_API_KEY |
+| **MiniMax AI** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | MINIMAX_API_KEY |
 | **Generic Markdown** | ✅ Export Only | ZIP | ❌ Manual | ❌ No | None |
 
 ## Quick Start
@@ -108,6 +109,9 @@ pip install skill-seekers[gemini]
 # OpenAI ChatGPT support
 pip install skill-seekers[openai]
 
+# MiniMax AI support
+pip install skill-seekers[minimax]
+
 # All LLM platforms
 pip install skill-seekers[all-llms]
 
@@ -150,6 +154,13 @@ pip install -e .[all-llms]
 - API: Assistants API + Vector Store
 - Enhancement: GPT-4o
 
+**MiniMax AI:**
+- Format: ZIP archive
+- SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
+- Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
+- API: OpenAI-compatible chat completions
+- Enhancement: MiniMax-M2.7
+
 **Generic Markdown:**
 - Format: ZIP archive
 - Structure: `README.md`, `references/`, `DOCUMENTATION.md` (combined)
@@ -172,6 +183,11 @@ export GOOGLE_API_KEY=AIzaSy...
 **OpenAI ChatGPT:**
 ```bash
 export OPENAI_API_KEY=sk-proj-...
+```
+
+**MiniMax AI:**
+```bash
+export MINIMAX_API_KEY=your-key
 ```
 
 ## Complete Workflow Examples
@@ -238,7 +254,29 @@ skill-seekers upload react-openai.zip --target openai
 # Access at: https://platform.openai.com/assistants/
 ```
 
-### Workflow 4: Export to All Platforms
+### Workflow 4: MiniMax AI
+
+```bash
+# Setup (one-time)
+pip install skill-seekers[minimax]
+export MINIMAX_API_KEY=your-key
+
+# 1. Scrape (universal)
+skill-seekers scrape --config configs/react.json
+
+# 2. Enhance with MiniMax-M2.7
+skill-seekers enhance output/react/ --target minimax
+
+# 3. Package for MiniMax
+skill-seekers package output/react/ --target minimax
+
+# 4. Upload to MiniMax (validates with API)
+skill-seekers upload react-minimax.zip --target minimax
+
+# Access at: https://platform.minimaxi.com/
+```
+
+### Workflow 5: Export to All Platforms
 
 ```bash
 # Install all platforms
@@ -251,12 +289,14 @@ skill-seekers scrape --config configs/react.json
 skill-seekers package output/react/ --target claude
 skill-seekers package output/react/ --target gemini
 skill-seekers package output/react/ --target openai
+skill-seekers package output/react/ --target minimax
 skill-seekers package output/react/ --target markdown
 
 # Result:
 # - react.zip (Claude)
 # - react-gemini.tar.gz (Gemini)
 # - react-openai.zip (OpenAI)
+# - react-minimax.zip (MiniMax)
 # - react-markdown.zip (Universal)
 ```
 
@@ -300,7 +340,7 @@ from skill_seekers.cli.adaptors import list_platforms, is_platform_available
 
 # List all registered platforms
 platforms = list_platforms()
-print(platforms)  # ['claude', 'gemini', 'openai', 'markdown']
+print(platforms)  # ['claude', 'gemini', 'minimax', 'openai', 'markdown']
 
 # Check if platform is available
 if is_platform_available('gemini'):
@@ -323,6 +363,7 @@ For detailed platform-specific instructions, see:
 - [Claude AI Integration](CLAUDE_INTEGRATION.md) (default)
 - [Google Gemini Integration](GEMINI_INTEGRATION.md)
 - [OpenAI ChatGPT Integration](OPENAI_INTEGRATION.md)
+- [MiniMax AI Integration](MINIMAX_INTEGRATION.md)
 
 ## Troubleshooting
 
@@ -340,6 +381,8 @@ pip install skill-seekers[gemini]
 **Solution:**
 ```bash
 pip install skill-seekers[openai]
+# or for MiniMax (also uses openai library)
+pip install skill-seekers[minimax]
 ```
 
 ### API Key Issues
@@ -350,6 +393,7 @@ pip install skill-seekers[openai]
 - Claude: `sk-ant-...`
 - Gemini: `AIza...`
 - OpenAI: `sk-proj-...` or `sk-...`
+- MiniMax: Any valid API key string
 
 ### Package Format Errors
 
@@ -380,6 +424,7 @@ A: Yes, each platform uses its own enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
+- MiniMax: MiniMax-M2.7
 
 **Q: What if I don't want to upload automatically?**
 

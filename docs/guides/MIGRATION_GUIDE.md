@@ -190,7 +190,7 @@ python -m skill_seekers.mcp.server
 | Config files | ✅ | ✅ | No |
 | Codebase flags | `--build-*` | `--skip-*` | Yes (but backward compatible) |
 | MCP tools | 9 tools | 18 tools | No (additive) |
-| Platform support | Claude only | 4 platforms | No (opt-in) |
+| Platform support | Claude only | 12 platforms | No (opt-in) |
 
 ---
 
@@ -422,7 +422,7 @@ skill-seekers install react --target claude --upload
 | CLI commands | Separate | Unified | Update scripts |
 | Config format | Basic | Unified | Old still works |
 | MCP server | 9 tools | 18 tools | Update config |
-| Platforms | Claude only | 4 platforms | Opt-in |
+| Platforms | Claude only | 12 platforms | Opt-in |
 
 ---
 
