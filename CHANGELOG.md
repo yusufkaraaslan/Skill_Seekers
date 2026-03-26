@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **GitHub language detection crashes with `TypeError`** when API response contains non-integer metadata keys (e.g., `"url"`) — now filters to integer values only (#322)
+
 ## [3.4.0] - 2026-03-21
 
 ### Added
