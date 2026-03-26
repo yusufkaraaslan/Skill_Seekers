@@ -522,9 +522,7 @@ class GitHubScraper:
             # Filter out non-integer metadata (e.g., "url" key from some API configurations)
             non_lang_keys = {k for k, v in languages.items() if not isinstance(v, int)}
             if non_lang_keys:
-                logger.debug(
-                    f"Filtered non-language keys from API response: {non_lang_keys}"
-                )
+                logger.debug(f"Filtered non-language keys from API response: {non_lang_keys}")
                 languages = {k: v for k, v in languages.items() if isinstance(v, int)}
             total_bytes = sum(languages.values())
 
