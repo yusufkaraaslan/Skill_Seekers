@@ -1539,8 +1539,8 @@ class UnifiedScraper:
                 extract_test_examples=True,  # C3.2: Test examples
                 build_how_to_guides=True,  # C3.3: How-to guides
                 extract_config_patterns=True,  # C3.4: Config patterns
-                enhance_with_ai=source.get("ai_mode", "auto") != "none",
-                ai_mode=source.get("ai_mode", "auto"),
+                extract_docs=True,
+                enhance_level=0 if source.get("ai_mode", "auto") == "none" else 2,
             )
 
             # Load C3.x outputs into memory

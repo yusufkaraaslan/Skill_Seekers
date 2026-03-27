@@ -472,6 +472,31 @@ class TestScrapeLocal:
 
         assert captured_kwargs.get("enhance_level") == 3
 
+    def test_analyze_codebase_not_called_with_old_kwargs(self, tmp_path, monkeypatch):
+        """analyze_codebase() must not receive enhance_with_ai or ai_mode (#323)."""
+        scraper = _make_scraper(tmp_path=tmp_path)
+        source = {"type": "local", "path": str(tmp_path)}
+
+        captured_kwargs = {}
+
+        def fake_analyze(**kwargs):
+            captured_kwargs.update(kwargs)
+
+        monkeypatch.setattr(
+            "skill_seekers.cli.codebase_scraper.analyze_codebase",
+            fake_analyze,
+        )
+
+        scraper._scrape_local(source)
+
+        assert "enhance_with_ai" not in captured_kwargs, (
+            "enhance_with_ai is not a valid analyze_codebase() parameter"
+        )
+        assert "ai_mode" not in captured_kwargs, (
+            "ai_mode is not a valid analyze_codebase() parameter"
+        )
+        assert "enhance_level" in captured_kwargs
+
 
 # ===========================================================================
 # 6. run() orchestration

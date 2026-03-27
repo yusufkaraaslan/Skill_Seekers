@@ -358,5 +358,47 @@ class TestC3Integration:
         assert "references/codebase_analysis/ARCHITECTURE.md" in content
 
 
+class TestC3AnalyzeCodebaseSignature:
+    """Verify _run_c3_analysis passes valid kwargs to analyze_codebase (#323)."""
+
+    @pytest.fixture
+    def temp_dir(self):
+        """Create temporary directory for tests."""
+        temp = tempfile.mkdtemp()
+        yield temp
+        shutil.rmtree(temp, ignore_errors=True)
+
+    def test_run_c3_analysis_uses_enhance_level_not_old_kwargs(self, temp_dir):
+        """_run_c3_analysis must pass enhance_level, not enhance_with_ai/ai_mode."""
+        config_path = os.path.join(temp_dir, "config.json")
+        config = {
+            "name": "test",
+            "description": "Test",
+            "sources": [{"type": "github", "repo": "test/repo", "ai_mode": "none"}],
+        }
+        with open(config_path, "w") as f:
+            json.dump(config, f)
+
+        scraper = UnifiedScraper(config_path)
+
+        captured_kwargs = {}
+
+        def fake_analyze(**kwargs):
+            captured_kwargs.update(kwargs)
+            return {}
+
+        with patch("skill_seekers.cli.codebase_scraper.analyze_codebase", fake_analyze):
+            scraper._run_c3_analysis(str(temp_dir), config["sources"][0])
+
+        assert "enhance_with_ai" not in captured_kwargs, (
+            "enhance_with_ai is not a valid analyze_codebase() parameter"
+        )
+        assert "ai_mode" not in captured_kwargs, (
+            "ai_mode is not a valid analyze_codebase() parameter"
+        )
+        assert "enhance_level" in captured_kwargs
+        assert captured_kwargs["enhance_level"] == 0  # ai_mode "none" → enhance_level 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

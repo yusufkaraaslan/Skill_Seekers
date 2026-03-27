@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **GitHub language detection crashes with `TypeError`** when API response contains non-integer metadata keys (e.g., `"url"`) — now filters to integer values only (#322)
+- **C3.x codebase analysis crashes with `TypeError`** — `_run_c3_analysis()` and `_analyze_c3x()` passed removed `enhance_with_ai`/`ai_mode` kwargs to `analyze_codebase()` instead of `enhance_level` (#323)
 
 ## [3.4.0] - 2026-03-21
 

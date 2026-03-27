@@ -267,8 +267,7 @@ class UnifiedCodebaseAnalyzer:
                 extract_test_examples=True,
                 build_how_to_guides=True,
                 extract_config_patterns=True,
-                enhance_with_ai=False,  # Disable AI for speed
-                ai_mode="none",
+                enhance_level=0,  # Disable AI for speed
             )
 
             # Load C3.x results from output files
