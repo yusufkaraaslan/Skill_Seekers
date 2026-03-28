@@ -135,6 +135,10 @@ def get_workflow_tool(args: dict) -> list:
     name = args.get("name", "").strip()
     if not name:
         return [TextContent(type="text", text="Error: 'name' parameter is required.")]
+    try:
+        _validate_name(name)
+    except ValueError as exc:
+        return [TextContent(type="text", text=f"Error: {exc}")]
 
     text = _read_workflow(name)
     if text is None:
