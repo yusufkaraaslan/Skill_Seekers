@@ -107,6 +107,38 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, Claude API calls) and `Unif
 | Template Method | Pattern Detection | `BasePatternDetector` + 10 GoF detectors |
 | Template Method | Parsers | `SubcommandParser` + 27 subclasses |
 
+## Behavioral Diagrams
+
+### Create Pipeline Sequence
+![Create Pipeline](UML/exports/14_create_pipeline_sequence.png)
+
+`CreateCommand` is a dispatcher, not a pipeline orchestrator. Flow: User → `execute()` → `SourceDetector.detect(source)` → `validate_source()` → `_validate_arguments()` → `_route_to_scraper()` → `scraper.main(argv)`. The 5 phases (scrape, build_skill, enhance, package, upload) all happen *inside* each scraper's `main()` — CreateCommand only sees the exit code.
+
+### GitHub Unified Flow + C3.x
+![GitHub Unified](UML/exports/15_github_unified_sequence.png)
+
+`UnifiedScraper` orchestrates GitHub scraping (3-stream fetch) then delegates to `analyze_codebase(enhance_level)` for C3.x analysis. Shows all 5 C3.x stages: `PatternRecognizer` (C3.1), `TestExampleExtractor` (C3.2), `HowToGuideBuilder` with examples from C3.2 (C3.3), `ConfigExtractor` (C3.4), and `ArchitecturalPatternDetector` (C3.5). Note: `enhance_level` is the sole AI control parameter — `enhance_with_ai`/`ai_mode` are internal to C3.x classes only.
+
+### Source Auto-Detection
+![Source Detection](UML/exports/16_source_detection_activity.png)
+
+Activity diagram showing `source_detector.py` decision tree in correct code order: file extension first (.json config, .pdf/.docx/.epub/.ipynb/.html/.pptx/etc) → video URL → `os.path.isdir()` (Codebase) → GitHub pattern (owner/repo or github.com URL) → http/https URL (Web) → bare domain inference → error.
+
+### MCP Tool Invocation
+![MCP Invocation](UML/exports/17_mcp_invocation_sequence.png)
+
+MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocation paths: **Path A** (scraping tools) uses `subprocess.run(["skill-seekers", ...])`, **Path B** (packaging/config tools) uses direct Python imports (`get_adaptor()`, `sync_config()`). Both return TextContent → JSON-RPC.
+
+### Enhancement Pipeline
+![Enhancement Pipeline](UML/exports/18_enhancement_activity.png)
+
+`--enhance-level` decision flow with precise internal variable mapping: Level 0 sets `ai_mode=none`, skips all AI. Level ≥ 1 selects `ai_mode=api` (if `ANTHROPIC_API_KEY` set) or `ai_mode=local` (Claude Code CLI), then SKILL.md enhancement happens post-build via `enhance_command`. Level ≥ 2 enables `enhance_config=True`, `enhance_architecture=True` inside `analyze_codebase()`. Level 3 adds `enhance_patterns=True`, `enhance_tests=True`.
+
+### Runtime Components
+![Runtime Components](UML/exports/19_runtime_components.png)
+
+Component diagram with corrected runtime dependencies. Key flows: `CLI Core` dispatches to `Scrapers` (via `scraper.main(argv)`) and to `Adaptors` (via package/upload commands). `Scrapers` call `Codebase Analysis` via `analyze_codebase(enhance_level)`. `Codebase Analysis` uses `C3.x Classes` internally and `Enhancement` when level ≥ 2. `MCP Server` reaches `Scrapers` via subprocess and `Adaptors` via direct import.
+
 ## File Locations
 
 - **StarUML project**: `docs/UML/skill_seekers.mdj`

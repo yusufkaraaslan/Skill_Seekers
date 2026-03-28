@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **6 behavioral UML diagrams** — 3 sequence (create pipeline, GitHub+C3.x flow, MCP invocation), 2 activity (source detection, enhancement pipeline), 1 component (runtime dependencies with interface contracts)
+
 ### Fixed
 - **GitHub language detection crashes with `TypeError`** when API response contains non-integer metadata keys (e.g., `"url"`) — now filters to integer values only (#322)
 - **C3.x codebase analysis crashes with `TypeError`** — `_run_c3_analysis()` and `_analyze_c3x()` passed removed `enhance_with_ai`/`ai_mode` kwargs to `analyze_codebase()` instead of `enhance_level` (#323)
