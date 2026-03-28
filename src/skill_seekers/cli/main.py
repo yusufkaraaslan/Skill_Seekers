@@ -56,6 +56,7 @@ from skill_seekers.cli import __version__
 # Command module mapping (command name -> module path)
 COMMAND_MODULES = {
     "create": "skill_seekers.cli.create_command",  # NEW: Unified create command
+    "doctor": "skill_seekers.cli.doctor",
     "config": "skill_seekers.cli.config_command",
     "scrape": "skill_seekers.cli.doc_scraper",
     "github": "skill_seekers.cli.github_scraper",

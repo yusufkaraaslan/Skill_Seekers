@@ -32,6 +32,7 @@ from .multilang_parser import MultilangParser
 from .quality_parser import QualityParser
 from .workflows_parser import WorkflowsParser
 from .sync_config_parser import SyncConfigParser
+from .doctor_parser import DoctorParser
 
 # New source type parsers (v3.2.0+)
 from .jupyter_parser import JupyterParser
@@ -48,6 +49,7 @@ from .chat_parser import ChatParser
 # Registry of all parsers (in order of usage frequency)
 PARSERS = [
     CreateParser(),  # NEW: Unified create command (placed first for prominence)
+    DoctorParser(),
     ConfigParser(),
     ScrapeParser(),
     GitHubParser(),
