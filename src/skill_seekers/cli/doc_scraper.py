@@ -184,6 +184,10 @@ class DocToSkillConverter:
         self.llms_txt_variant = None
         self.llms_txt_variants: list[str] = []  # Track all downloaded variants
 
+        # Browser rendering mode (for JavaScript SPA sites)
+        self.browser_mode = config.get("browser", False)
+        self._browser_renderer = None
+
         # Parallel scraping config
         self.workers = config.get("workers", 1)
         self.async_mode = config.get("async_mode", DEFAULT_ASYNC_MODE)
@@ -712,6 +716,24 @@ class DocToSkillConverter:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(page, f, indent=2, ensure_ascii=False)
 
+    def _render_with_browser(self, url: str) -> str:
+        """Render a page using headless browser (Playwright).
+
+        Lazily initializes the BrowserRenderer on first call.
+
+        Args:
+            url: URL to render
+
+        Returns:
+            Fully-rendered HTML string
+        """
+        if self._browser_renderer is None:
+            from skill_seekers.cli.browser_renderer import BrowserRenderer
+
+            self._browser_renderer = BrowserRenderer()
+            logger.info("Launched headless browser for JavaScript rendering")
+        return self._browser_renderer.render_page(url)
+
     def scrape_page(self, url: str) -> None:
         """Scrape a single page with thread-safe operations.
 
@@ -730,16 +752,22 @@ class DocToSkillConverter:
             url = sanitize_url(url)
 
             # Scraping part (no lock needed - independent)
-            headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
-
-            # Check if this is a Markdown file
-            if self._has_md_extension(url):
-                page = self._extract_markdown_content(response.text, url)
-            else:
-                soup = BeautifulSoup(response.content, "html.parser")
+            if self.browser_mode and not self._has_md_extension(url):
+                # Use Playwright headless browser for JavaScript rendering
+                html = self._render_with_browser(url)
+                soup = BeautifulSoup(html, "html.parser")
                 page = self.extract_content(soup, url)
+            else:
+                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+                response = requests.get(url, headers=headers, timeout=30)
+                response.raise_for_status()
+
+                # Check if this is a Markdown file
+                if self._has_md_extension(url):
+                    page = self._extract_markdown_content(response.text, url)
+                else:
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required for workers > 1)
             if self.workers > 1:
@@ -788,18 +816,27 @@ class DocToSkillConverter:
                 # Sanitise brackets before fetching (safety net; see #284)
                 url = sanitize_url(url)
 
-                # Async HTTP request
-                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                response = await client.get(url, headers=headers, timeout=30.0)
-                response.raise_for_status()
-
-                # Check if this is a Markdown file
-                if self._has_md_extension(url):
-                    page = self._extract_markdown_content(response.text, url)
-                else:
-                    # BeautifulSoup parsing (still synchronous, but fast)
-                    soup = BeautifulSoup(response.content, "html.parser")
+                if self.browser_mode and not self._has_md_extension(url):
+                    # Use Playwright in executor (sync API in async context)
+                    loop = asyncio.get_event_loop()
+                    html = await loop.run_in_executor(
+                        None, self._render_with_browser, url
+                    )
+                    soup = BeautifulSoup(html, "html.parser")
                     page = self.extract_content(soup, url)
+                else:
+                    # Async HTTP request
+                    headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+                    response = await client.get(url, headers=headers, timeout=30.0)
+                    response.raise_for_status()
+
+                    # Check if this is a Markdown file
+                    if self._has_md_extension(url):
+                        page = self._extract_markdown_content(response.text, url)
+                    else:
+                        # BeautifulSoup parsing (still synchronous, but fast)
+                        soup = BeautifulSoup(response.content, "html.parser")
+                        page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
                 logger.info("  %s", url)
@@ -1370,6 +1407,11 @@ class DocToSkillConverter:
             self._log_scrape_completion()
             self.save_summary()
 
+        # Clean up browser renderer if used
+        if self._browser_renderer is not None:
+            self._browser_renderer.close()
+            self._browser_renderer = None
+
     def _log_scrape_completion(self) -> None:
         """Log scrape completion with accurate saved/skipped counts."""
         visited = len(self.visited_urls)
@@ -1391,8 +1433,9 @@ class DocToSkillConverter:
         if visited >= 5 and self.pages_saved == 0:
             logger.warning(
                 "⚠️  All %d pages had empty content. This site likely requires "
-                "JavaScript rendering (SPA/React/Vue). Scraping cannot extract "
-                "content from JavaScript-rendered pages.",
+                "JavaScript rendering (SPA/React/Vue).\n"
+                "   Try: skill-seekers create <url> --browser\n"
+                "   Install: pip install 'skill-seekers[browser]'",
                 visited,
             )
         elif visited >= 10 and self.pages_skipped > 0:
@@ -1400,7 +1443,8 @@ class DocToSkillConverter:
             if skip_ratio > 0.8:
                 logger.warning(
                     "⚠️  %d%% of pages had empty content. This site may use "
-                    "JavaScript rendering for some pages.",
+                    "JavaScript rendering for some pages.\n"
+                    "   Try: skill-seekers create <url> --browser",
                     int(skip_ratio * 100),
                 )
 
@@ -2211,6 +2255,11 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             logger.warning(
                 "⚠️  Async mode enabled but workers=1. Consider using --workers 4 for better performance"
             )
+
+    # Apply CLI override for browser mode
+    if getattr(args, "browser", False):
+        config["browser"] = True
+        logger.info("🌐 Browser mode enabled (Playwright headless Chromium)")
 
     # Apply CLI override for max_pages
     if args.max_pages is not None:

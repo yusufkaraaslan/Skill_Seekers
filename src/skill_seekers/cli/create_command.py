@@ -221,6 +221,8 @@ class CreateCommand:
             argv.append("--async")
         if getattr(self.args, "no_rate_limit", False):
             argv.append("--no-rate-limit")
+        if getattr(self.args, "browser", False):
+            argv.append("--browser")
 
         # Call doc_scraper with modified argv
         logger.debug(f"Calling doc_scraper with argv: {argv}")

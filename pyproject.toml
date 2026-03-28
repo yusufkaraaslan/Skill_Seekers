@@ -232,6 +232,11 @@ chat = [
     "slack-sdk>=3.27.0",
 ]
 
+# Headless browser for JavaScript SPA sites
+browser = [
+    "playwright>=1.40.0",
+]
+
 # Embedding server support
 embedding = [
     "fastapi>=0.109.0",

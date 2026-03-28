@@ -137,7 +137,12 @@ MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocati
 ### Runtime Components
 ![Runtime Components](UML/exports/19_runtime_components.png)
 
-Component diagram with corrected runtime dependencies. Key flows: `CLI Core` dispatches to `Scrapers` (via `scraper.main(argv)`) and to `Adaptors` (via package/upload commands). `Scrapers` call `Codebase Analysis` via `analyze_codebase(enhance_level)`. `Codebase Analysis` uses `C3.x Classes` internally and `Enhancement` when level ≥ 2. `MCP Server` reaches `Scrapers` via subprocess and `Adaptors` via direct import.
+Component diagram with corrected runtime dependencies. Key flows: `CLI Core` dispatches to `Scrapers` (via `scraper.main(argv)`) and to `Adaptors` (via package/upload commands). `Scrapers` call `Codebase Analysis` via `analyze_codebase(enhance_level)`. `Codebase Analysis` uses `C3.x Classes` internally and `Enhancement` when level ≥ 2. `MCP Server` reaches `Scrapers` via subprocess and `Adaptors` via direct import. `Scrapers` optionally use `Browser Renderer (Playwright)` via `render_page()` when `--browser` flag is set for JavaScript SPA sites.
+
+### Browser Rendering Flow
+![Browser Rendering](UML/exports/20_browser_rendering_sequence.png)
+
+When `--browser` flag is set, `DocScraper.scrape_page()` delegates to `BrowserRenderer.render_page(url)` instead of `requests.get()`. The renderer auto-installs Chromium on first use, navigates with `wait_until='networkidle'` to let JavaScript execute, then returns the fully-rendered HTML. The rest of the pipeline (BeautifulSoup → `extract_content()` → `save_page()`) remains unchanged. Optional dependency: `pip install "skill-seekers[browser]"`.
 
 ## File Locations
 

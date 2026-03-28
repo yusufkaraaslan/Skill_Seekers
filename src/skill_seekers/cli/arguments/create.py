@@ -173,6 +173,13 @@ UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
 # Web scraping specific (from scrape.py)
 WEB_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "browser": {
+        "flags": ("--browser",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Use headless browser (Playwright) to render JavaScript SPA sites",
+        },
+    },
     "url": {
         "flags": ("--url",),
         "kwargs": {
