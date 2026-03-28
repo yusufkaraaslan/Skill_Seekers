@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Prompt injection check workflow** — bundled `prompt-injection-check` workflow scans scraped content for injection patterns (role assumption, instruction overrides, delimiter injection, hidden instructions). Added as first stage in `default` and `security-focus` workflows. Flags suspicious content without removing it (#324)
 - **6 behavioral UML diagrams** — 3 sequence (create pipeline, GitHub+C3.x flow, MCP invocation), 2 activity (source detection, enhancement pipeline), 1 component (runtime dependencies with interface contracts)
 
 ### Fixed
