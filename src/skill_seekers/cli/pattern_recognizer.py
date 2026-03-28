@@ -1580,6 +1580,43 @@ class LanguageAdapter:
             elif pattern.pattern_type == "TemplateMethod" and "abstract" in evidence_str:
                 pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
+        # Kotlin adaptations
+        elif language == "Kotlin":
+            # Singleton: object declaration is the idiomatic Kotlin singleton
+            if pattern.pattern_type == "Singleton":
+                if "object" in evidence_str or "companion" in evidence_str:
+                    pattern.confidence = min(pattern.confidence + 0.15, 1.0)
+                    pattern.evidence.append("Kotlin object declaration (singleton)")
+
+            # Factory: companion object with create/of methods
+            elif pattern.pattern_type == "Factory":
+                if "companion" in evidence_str:
+                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+                    pattern.evidence.append("Kotlin companion object factory")
+
+            # Strategy: sealed class/interface with when expression
+            elif pattern.pattern_type == "Strategy":
+                if "sealed" in evidence_str:
+                    pattern.confidence = min(pattern.confidence + 0.15, 1.0)
+                    pattern.evidence.append("Kotlin sealed class/interface strategy")
+
+            # Builder: data class copy() or DSL builder pattern
+            elif pattern.pattern_type == "Builder":
+                if "data" in evidence_str or "apply" in evidence_str:
+                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+                    pattern.evidence.append("Kotlin data class / DSL builder")
+
+            # Observer: Flow/StateFlow is the coroutine-based observer
+            elif pattern.pattern_type == "Observer":
+                if "flow" in evidence_str or "stateflow" in evidence_str:
+                    pattern.confidence = min(pattern.confidence + 0.1, 1.0)
+                    pattern.evidence.append("Kotlin Flow/StateFlow observer")
+
+            # Decorator: extension functions serve as lightweight decorators
+            elif pattern.pattern_type == "Decorator" and "extension" in evidence_str:
+                pattern.confidence = min(pattern.confidence + 0.05, 1.0)
+                pattern.evidence.append("Kotlin extension function decorator")
+
         # Go adaptations
         elif language == "Go":
             # Singleton: sync.Once is idiomatic

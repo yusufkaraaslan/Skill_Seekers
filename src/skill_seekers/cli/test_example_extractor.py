@@ -678,6 +678,18 @@ class GenericTestAnalyzer:
             "assertion": r"assert(?:Equals|True|False|NotNull)\(([^)]+)\)",
             "test_function": r"@Test\s+public\s+void\s+(\w+)\(\)",
         },
+        "kotlin": {
+            # Object instantiation: val x = Foo(args) or val x: Type = Foo(args)
+            "instantiation": r"(?:val|var)\s+(\w+)(?:\s*:\s*[\w<>.,\s?]+)?\s*=\s*(\w+)\(([^)]*)\)",
+            # JUnit assertions + Kotest matchers
+            "assertion": r"(?:assert(?:Equals|True|False|NotNull|That)\(([^)]+)\)|(\w+)\s+should(?:Be|Equal|Match|Have|Contain|Throw)\b)",
+            # JUnit @Test, Kotest test functions, Spek describe/it
+            "test_function": r"(?:@Test\s+fun\s+(\w+)\s*\(|fun\s+[\"']([^\"']+)[\"']\s*\(|(?:test|it|should)\s*\(\s*[\"']([^\"']+)[\"'])",
+            # MockK mocking patterns
+            "mock": r"(?:mockk<([\w<>]+)>\s*\(|every\s*\{\s*(\w+)\.(\w+)|verify\s*\{)",
+            # Coroutine test patterns
+            "coroutine_test": r"(?:runTest\s*\{|runBlocking\s*\{|testCoroutineDispatcher)",
+        },
         "csharp": {
             # Object instantiation patterns (var, explicit type, generic)
             "instantiation": r"(?:var|[\w<>]+)\s+(\w+)\s*=\s*new\s+([\w<>]+)\(([^)]*)\)",
@@ -929,6 +941,9 @@ class TestExampleExtractor:
         "*_test.go",
         "*_test.rs",
         "Test*.java",
+        "*Test.kt",
+        "Test*.kt",
+        "*Spec.kt",  # Kotest/Spek naming convention
         "Test*.cs",
         "*Test.php",
         "*_spec.rb",
@@ -944,6 +959,8 @@ class TestExampleExtractor:
         ".go": "Go",
         ".rs": "Rust",
         ".java": "Java",
+        ".kt": "Kotlin",
+        ".kts": "Kotlin",
         ".cs": "C#",
         ".php": "PHP",
         ".rb": "Ruby",

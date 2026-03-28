@@ -594,8 +594,8 @@ class TestCommandModules:
             assert cmd in names, f"Parser '{cmd}' not registered"
 
     def test_total_parser_count(self):
-        """Test total PARSERS count is 35 (25 original + 10 new)."""
-        assert len(PARSERS) == 35
+        """Test total PARSERS count is 36 (25 original + 10 new + 1 doctor)."""
+        assert len(PARSERS) == 36
 
     def test_no_duplicate_parser_names(self):
         """Test no duplicate parser names exist."""
@@ -604,8 +604,8 @@ class TestCommandModules:
 
     def test_command_module_count(self):
         """Test COMMAND_MODULES has expected number of entries."""
-        # 25 original + 10 new = 35
-        assert len(COMMAND_MODULES) == 35
+        # 25 original + 10 new + 1 doctor = 36
+        assert len(COMMAND_MODULES) == 36
 
 
 # ---------------------------------------------------------------------------

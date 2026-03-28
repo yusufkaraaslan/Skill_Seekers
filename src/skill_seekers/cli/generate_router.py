@@ -249,6 +249,7 @@ class RouterGenerator:
                 "Go": f"Go 1.20+, requires {self.router_name} package",
                 "Rust": f"Rust 1.70+, requires {self.router_name} package",
                 "Java": f"Java 17+, requires {self.router_name} package",
+                "Kotlin": f"Kotlin 1.9+, JDK 17+, requires {self.router_name} package",
             }
             if language in compatibility_map:
                 compatibility = compatibility_map[language]

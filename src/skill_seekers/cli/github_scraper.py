@@ -729,6 +729,8 @@ class GitHubScraper:
             "Python": [".py"],
             "JavaScript": [".js", ".jsx"],
             "TypeScript": [".ts", ".tsx"],
+            "Kotlin": [".kt", ".kts"],
+            "Java": [".java"],
             "C": [".c", ".h"],
             "C++": [".cpp", ".hpp", ".cc", ".hh", ".cxx"],
         }

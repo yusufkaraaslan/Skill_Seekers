@@ -77,6 +77,7 @@ class ConfigFile:
         "ini",
         "python",
         "javascript",
+        "kotlin-gradle",
         "dockerfile",
         "docker-compose",
     ]
@@ -213,6 +214,14 @@ class ConfigFileDetector:
                 "next.config.js",
                 "vue.config.js",
                 "webpack.config.js",
+            ],
+        },
+        "kotlin-gradle": {
+            "patterns": ["*.gradle.kts"],
+            "names": [
+                "build.gradle.kts",
+                "settings.gradle.kts",
+                "gradle.properties",
             ],
         },
         "dockerfile": {
@@ -358,7 +367,13 @@ class ConfigFileDetector:
             return "ci_cd_configuration"
 
         # Package configs
-        if filename in ["package.json", "pyproject.toml", "cargo.toml"]:
+        if filename in [
+            "package.json",
+            "pyproject.toml",
+            "cargo.toml",
+            "build.gradle.kts",
+            "settings.gradle.kts",
+        ]:
             return "package_configuration"
 
         # TypeScript/JavaScript configs

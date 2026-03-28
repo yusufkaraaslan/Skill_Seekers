@@ -73,6 +73,8 @@ LANGUAGE_EXTENSIONS = {
     ".go": "Go",
     ".rs": "Rust",
     ".java": "Java",
+    ".kt": "Kotlin",
+    ".kts": "Kotlin",
     ".rb": "Ruby",
     ".php": "PHP",
 }

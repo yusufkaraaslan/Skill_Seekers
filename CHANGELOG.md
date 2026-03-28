@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Kotlin language support for codebase analysis** — Full C3.x pipeline support: AST parsing (classes, objects, functions, data/sealed classes, extension functions, coroutines), dependency extraction, design pattern recognition (object declaration→Singleton, companion object→Factory, sealed class→Strategy), test example extraction (JUnit, Kotest, MockK, Spek), language detection patterns, config detection (build.gradle.kts), and extension maps across all analyzers (#287)
 - **Headless browser rendering** (`--browser` flag) — uses Playwright to render JavaScript SPA sites (React, Vue, etc.) that return empty HTML shells. Auto-installs Chromium on first use. Optional dep: `pip install "skill-seekers[browser]"` (#321)
 - **`skill-seekers doctor` command** — 8 diagnostic checks (Python version, package install, git, core/optional deps, API keys, MCP server, output dir) with pass/warn/fail status and `--verbose` flag (#316)
 - **Prompt injection check workflow** — bundled `prompt-injection-check` workflow scans scraped content for injection patterns (role assumption, instruction overrides, delimiter injection, hidden instructions). Added as first stage in `default` and `security-focus` workflows. Flags suspicious content without removing it (#324)
