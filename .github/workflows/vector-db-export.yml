@@ -106,16 +106,12 @@ jobs:
           echo "🔹 Exporting to $target..."
 
           # Use adaptor directly via CLI
-          python -c "
-import sys
-from pathlib import Path
-sys.path.insert(0, 'src')
-
-from skill_seekers.cli.adaptors import get_adaptor
-
-adaptor = get_adaptor('$target')
-package_path = adaptor.package(Path('$SKILL_DIR'), Path('output'))
-print(f'✅ Exported to {package_path}')
+          python3 -c "
+          from pathlib import Path
+          from skill_seekers.cli.adaptors import get_adaptor
+          adaptor = get_adaptor('$target')
+          package_path = adaptor.package(Path('$SKILL_DIR'), Path('output'))
+          print(f'Exported to {package_path}')
           "
 
           if [ $? -eq 0 ]; then
@@ -133,21 +129,15 @@ print(f'✅ Exported to {package_path}')
         if [ -d "$SKILL_DIR" ]; then
           echo "📊 Generating quality metrics..."
 
-          python -c "
-import sys
-from pathlib import Path
-sys.path.insert(0, 'src')
-
-from skill_seekers.cli.quality_metrics import QualityAnalyzer
-
-analyzer = QualityAnalyzer(Path('$SKILL_DIR'))
-report = analyzer.generate_report()
-formatted = analyzer.format_report(report)
-print(formatted)
-
-# Save to file
-with open('quality_report_${SKILL_NAME}.txt', 'w') as f:
-    f.write(formatted)
+          python3 -c "
+          from pathlib import Path
+          from skill_seekers.cli.quality_metrics import QualityAnalyzer
+          analyzer = QualityAnalyzer(Path('$SKILL_DIR'))
+          report = analyzer.generate_report()
+          formatted = analyzer.format_report(report)
+          print(formatted)
+          with open('quality_report_${SKILL_NAME}.txt', 'w') as f:
+              f.write(formatted)
           "
         fi
       continue-on-error: true

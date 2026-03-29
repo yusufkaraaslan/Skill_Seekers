@@ -63,23 +63,17 @@ jobs:
         echo "# Reference" > test_skill/references/ref.md
 
         # Test adaptor packaging
-        python3 << 'EOF'
-import sys
-import os
-from pathlib import Path
-sys.path.insert(0, 'src')
-
-from skill_seekers.cli.adaptors import get_adaptor
-
-adaptor_name = os.environ['ADAPTOR_NAME']
-adaptor = get_adaptor(adaptor_name)
-package_path = adaptor.package(Path('test_skill'), Path('.'))
-print(f"✅ Package created: {package_path}")
-
-# Verify package exists
-assert package_path.exists(), "Package file not created"
-print(f"📦 Package size: {package_path.stat().st_size} bytes")
-EOF
+        python3 -c "
+        import os
+        from pathlib import Path
+        from skill_seekers.cli.adaptors import get_adaptor
+        adaptor_name = os.environ['ADAPTOR_NAME']
+        adaptor = get_adaptor(adaptor_name)
+        package_path = adaptor.package(Path('test_skill'), Path('.'))
+        print(f'Package created: {package_path}')
+        assert package_path.exists(), 'Package file not created'
+        print(f'Package size: {package_path.stat().st_size} bytes')
+        "
 
     - name: Upload test package
       uses: actions/upload-artifact@v3

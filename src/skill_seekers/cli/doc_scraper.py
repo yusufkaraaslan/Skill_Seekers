@@ -819,9 +819,7 @@ class DocToSkillConverter:
                 if self.browser_mode and not self._has_md_extension(url):
                     # Use Playwright in executor (sync API in async context)
                     loop = asyncio.get_event_loop()
-                    html = await loop.run_in_executor(
-                        None, self._render_with_browser, url
-                    )
+                    html = await loop.run_in_executor(None, self._render_with_browser, url)
                     soup = BeautifulSoup(html, "html.parser")
                     page = self.extract_content(soup, url)
                 else:

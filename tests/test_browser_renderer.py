@@ -5,13 +5,23 @@ Real end-to-end tests using actual Playwright + Chromium.
 
 from __future__ import annotations
 
+import pytest
+
 from skill_seekers.cli.browser_renderer import (
     BrowserRenderer,
     _auto_install_chromium,
     _check_playwright_available,
 )
 
+# Skip all real browser tests when Playwright is not installed
+_has_playwright = _check_playwright_available()
+requires_playwright = pytest.mark.skipif(
+    not _has_playwright,
+    reason="Playwright not installed (pip install 'skill-seekers[browser]')",
+)
 
+
+@requires_playwright
 class TestPlaywrightAvailability:
     """Test that playwright is properly detected."""
 
@@ -23,6 +33,7 @@ class TestPlaywrightAvailability:
         assert _auto_install_chromium() is True
 
 
+@requires_playwright
 class TestBrowserRendererReal:
     """Real end-to-end tests with actual Chromium."""
 
@@ -113,6 +124,7 @@ class TestDocScraperBrowserIntegration:
         scraper = DocToSkillConverter(config)
         assert scraper.browser_mode is False
 
+    @requires_playwright
     def test_render_with_browser_returns_html(self):
         """Test the _render_with_browser helper directly."""
         from skill_seekers.cli.doc_scraper import DocToSkillConverter
