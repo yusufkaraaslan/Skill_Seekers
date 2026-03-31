@@ -43,6 +43,7 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "claude",
                 "gemini",
                 "openai",
+                "kimi",
                 "markdown",
                 "langchain",
                 "llama-index",

@@ -58,7 +58,7 @@ def add_asciidoc_arguments(parser: argparse.ArgumentParser) -> None:
                 "0=disabled (default for AsciiDoc), 1=SKILL.md only, "
                 "2=+architecture/config, 3=full enhancement. "
                 "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code)"
+                "otherwise LOCAL (Claude Code, Kimi, etc.)"
             )
 
     # AsciiDoc-specific args

@@ -868,6 +868,9 @@ class VideoToSkillConverter:
         reference file to Claude to reconstruct noisy Code Timeline
         sections using transcript context.
         """
+        # Note: Middle-layer AI cleaning currently only supports Claude API
+        # For other agents (kimi, etc.), this step is skipped and enhancement
+        # happens at the SKILL.md level instead of per-reference-file
         has_api_key = bool(
             os.environ.get("ANTHROPIC_API_KEY")
             or os.environ.get("ANTHROPIC_AUTH_TOKEN")
@@ -1203,9 +1206,12 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
         os.environ.get("ANTHROPIC_API_KEY")
         or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         or getattr(args, "api_key", None)
+        or os.environ.get("MOONSHOT_API_KEY")
     )
+    
+    agent = getattr(args, "agent", None)
 
-    if not has_api_key:
+    if not has_api_key and not agent:
         logger.info("\n💡 Enhance your video skill with AI:")
         logger.info(f"  export ANTHROPIC_API_KEY=sk-ant-...")
         logger.info(f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}")
@@ -1219,6 +1225,8 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
         api_key = getattr(args, "api_key", None)
         if api_key:
             enhance_cmd.extend(["--api-key", api_key])
+        if agent:
+            enhance_cmd.extend(["--agent", agent])
 
         logger.info(
             "Starting video skill enhancement (this may take 10+ minutes "

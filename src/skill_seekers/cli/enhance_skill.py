@@ -530,7 +530,7 @@ Examples:
     )
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai"],
+        choices=["claude", "gemini", "openai", "kimi"],
         default="claude",
         help="Target LLM platform (default: claude)",
     )

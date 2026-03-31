@@ -9,6 +9,7 @@ Routes `skill-seekers enhance` to the correct backend:
 
   LOCAL mode — when no API key is found.
               Calls LocalSkillEnhancer from enhance_skill_local.py.
+              Supports: Claude Code, OpenAI Codex, GitHub Copilot, OpenCode, Kimi.
 
 Decision priority:
   1. Explicit --target flag → API mode with that platform.
@@ -43,6 +44,7 @@ def _get_api_keys() -> dict[str, str | None]:
         "claude": (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")),
         "gemini": os.environ.get("GOOGLE_API_KEY"),
         "openai": os.environ.get("OPENAI_API_KEY"),
+        "kimi": os.environ.get("MOONSHOT_API_KEY"),
     }
 
 
@@ -73,7 +75,7 @@ def _pick_mode(args) -> tuple[str, str | None]:
 
     # 2. Config default_agent preference (if a matching key is available).
     config_agent = _get_config_default_agent()
-    if config_agent in ("claude", "gemini", "openai") and api_keys.get(config_agent):
+    if config_agent in ("claude", "gemini", "openai", "kimi") and api_keys.get(config_agent):
         return "api", config_agent
 
     # 3. Auto-detect from environment variables.

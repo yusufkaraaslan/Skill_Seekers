@@ -22,7 +22,7 @@ UPLOAD_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--target",),
         "kwargs": {
             "type": str,
-            "choices": ["claude", "gemini", "openai", "chroma", "weaviate"],
+            "choices": ["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
             "default": "claude",
             "help": "Target platform (default: claude)",
             "metavar": "PLATFORM",

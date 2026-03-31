@@ -162,7 +162,7 @@ Examples:
 
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "chroma", "weaviate"],
+        choices=["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
         default="claude",
         help="Target platform (default: claude)",
     )

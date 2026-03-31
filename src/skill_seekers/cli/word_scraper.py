@@ -1031,14 +1031,18 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    agent = getattr(args, "agent", None) if args else None
+                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                agent = getattr(args, "agent", None) if args else None
+                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")
 

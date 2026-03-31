@@ -92,7 +92,7 @@ def add_chat_arguments(parser: argparse.ArgumentParser) -> None:
                 "0=disabled (default for Chat), 1=SKILL.md only, "
                 "2=+architecture/config, 3=full enhancement. "
                 "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code)"
+                "otherwise LOCAL (Claude Code, Kimi, etc.)"
             )
 
     # Chat-specific args

@@ -47,10 +47,10 @@ class ConfigManager:
             "show_countdown": True,
         },
         "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
-        "api_keys": {"anthropic": None, "google": None, "openai": None},
+        "api_keys": {"anthropic": None, "google": None, "openai": None, "moonshot": None},
         "ai_enhancement": {
             "default_enhance_level": 1,  # Default AI enhancement level (0-3)
-            "default_agent": None,  # "claude", "gemini", "openai", or None (auto-detect)
+            "default_agent": None,  # "claude", "gemini", "openai", "kimi", or None (auto-detect)
             "local_batch_size": 20,  # Patterns per Claude CLI call (default was 5)
             "local_parallel_workers": 3,  # Concurrent Claude CLI calls
         },
