@@ -60,7 +60,7 @@ OPTIONAL_DEPS = {
 }
 
 # ── API keys to check ────────────────────────────────────────────────────────
-API_KEYS = ["ANTHROPIC_API_KEY", "GITHUB_TOKEN", "GOOGLE_API_KEY", "OPENAI_API_KEY"]
+API_KEYS = ["ANTHROPIC_API_KEY", "GITHUB_TOKEN", "GOOGLE_API_KEY", "OPENAI_API_KEY", "MOONSHOT_API_KEY"]
 
 
 def _try_import(module_name: str) -> tuple[bool, str]:

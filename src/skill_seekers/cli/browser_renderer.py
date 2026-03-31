@@ -64,12 +64,14 @@ class BrowserRenderer:
             html = renderer.render_page(url)
     """
 
-    def __init__(self, timeout: int = 30000, wait_until: str = "networkidle"):
+    def __init__(self, timeout: int = 60000, wait_until: str = "domcontentloaded"):
         """Initialize renderer.
 
         Args:
-            timeout: Page load timeout in milliseconds (default: 30s)
+            timeout: Page load timeout in milliseconds (default: 60s)
             wait_until: Playwright wait condition — "networkidle", "load", "domcontentloaded"
+                        Default changed to "domcontentloaded" for better compatibility
+                        with heavy sites (Unity docs, DocFX, etc.) that never reach networkidle.
         """
         if not _check_playwright_available():
             raise ImportError(

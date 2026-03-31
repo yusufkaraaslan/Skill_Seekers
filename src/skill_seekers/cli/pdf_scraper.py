@@ -749,16 +749,22 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    agent = getattr(args, "agent", None) if args else None
+                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
+                    agent_name = agent or "claude"
+                    print(f"✅ Local enhancement complete! (via {agent_name})")
             else:
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                agent = getattr(args, "agent", None) if args else None
+                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
+                agent_name = agent or "claude"
+                print(f"✅ Local enhancement complete! (via {agent_name})")
 
     except RuntimeError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)

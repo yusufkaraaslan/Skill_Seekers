@@ -132,6 +132,11 @@ AGENT_PRESETS = {
         "command": ["opencode"],
         "supports_skip_permissions": False,
     },
+    "kimi": {
+        "display_name": "Kimi Code CLI",
+        "command": ["kimi", "--print", "--input-format", "text", "--work-dir", "{skill_dir}"],
+        "supports_skip_permissions": True,
+    },
 }
 
 
@@ -146,6 +151,7 @@ def _normalize_agent_name(agent_name: str) -> str:
         "copilot-cli": "copilot",
         "open-code": "opencode",
         "open_code": "opencode",
+        "kimi-cli": "kimi",
     }
     return aliases.get(normalized, normalized)
 
@@ -238,6 +244,8 @@ class LocalSkillEnhancer:
             if "{prompt_file}" in arg:
                 cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
                 uses_prompt_file = True
+            if "{skill_dir}" in arg:
+                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir))
 
         return cmd_parts, uses_prompt_file
 

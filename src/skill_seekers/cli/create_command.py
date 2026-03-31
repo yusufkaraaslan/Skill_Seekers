@@ -569,6 +569,12 @@ class CreateCommand:
             argv.extend(["--enhance-level", str(self.args.enhance_level)])
         if self.args.api_key:
             argv.extend(["--api-key", self.args.api_key])
+        
+        # Agent selection for LOCAL mode
+        if getattr(self.args, "agent", None):
+            argv.extend(["--agent", self.args.agent])
+        if getattr(self.args, "agent_cmd", None):
+            argv.extend(["--agent-cmd", self.args.agent_cmd])
 
         # Behavior arguments
         if self.args.dry_run:

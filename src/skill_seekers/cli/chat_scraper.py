@@ -1885,7 +1885,9 @@ Examples:
                         LocalSkillEnhancer,
                     )
 
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    agent = getattr(args, "agent", None) if args else None
+                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
@@ -1893,7 +1895,9 @@ Examples:
                     LocalSkillEnhancer,
                 )
 
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                agent = getattr(args, "agent", None) if args else None
+                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")
 

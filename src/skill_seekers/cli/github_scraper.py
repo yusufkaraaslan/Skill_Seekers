@@ -733,6 +733,13 @@ class GitHubScraper:
             "Java": [".java"],
             "C": [".c", ".h"],
             "C++": [".cpp", ".hpp", ".cc", ".hh", ".cxx"],
+            "C#": [".cs"],
+            "Go": [".go"],
+            "Rust": [".rs"],
+            "Swift": [".swift"],
+            "Ruby": [".rb"],
+            "PHP": [".php"],
+            "GDScript": [".gd"],
         }
 
         extensions = extension_map.get(primary_language, [])
@@ -1518,17 +1525,23 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    agent = getattr(args, "agent", None) if args else None
+                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
-                    logger.info("✅ Local enhancement complete!")
+                    agent_name = agent or "claude"
+                    logger.info(f"✅ Local enhancement complete! (via {agent_name})")
             else:
                 # LOCAL enhancement (no API key)
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                agent = getattr(args, "agent", None) if args else None
+                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
-                logger.info("✅ Local enhancement complete!")
+                agent_name = agent or "claude"
+                logger.info(f"✅ Local enhancement complete! (via {agent_name})")
 
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
 

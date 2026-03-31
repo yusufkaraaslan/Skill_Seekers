@@ -242,6 +242,7 @@ class UnifiedScraper:
         doc_config = {
             "name": f"{self.name}_docs",
             "description": f"Documentation for {self.name}",
+            "base_url": source["base_url"],
             "sources": [doc_source],
         }
 
@@ -256,7 +257,18 @@ class UnifiedScraper:
         doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
         cmd = [sys.executable, str(doc_scraper_path), "--config", temp_config_path, "--fresh"]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+        # Support "browser": true in source config for JavaScript SPA sites
+        if source.get("browser", False):
+            cmd.append("--browser")
+            logger.info("  🌐 Browser mode enabled (JavaScript rendering via Playwright)")
+
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=3600
+            )
+        except subprocess.TimeoutExpired:
+            logger.error("Documentation scraping timed out after 60 minutes")
+            return
 
         if result.returncode != 0:
             logger.error(f"Documentation scraping failed with return code {result.returncode}")
@@ -1607,15 +1619,22 @@ class UnifiedScraper:
 
         if not self.validator.needs_api_merge():
             logger.info("No API merge needed (only one API source)")
+            logger.info("\n" + "=" * 60)
+            logger.info("PHASE 3: Merging sources (skipped - no conflicts detected)")
+            logger.info("=" * 60)
             return []
 
-        # Get documentation and GitHub data
-        docs_data = self.scraped_data.get("documentation", {})
-        github_data = self.scraped_data.get("github", {})
+        # Get documentation and GitHub data (scraped_data stores lists of sources)
+        docs_list = self.scraped_data.get("documentation", [])
+        github_list = self.scraped_data.get("github", [])
 
-        if not docs_data or not github_data:
+        if not docs_list or not github_list:
             logger.warning("Missing documentation or GitHub data for conflict detection")
             return []
+
+        # Use the first source from each list
+        docs_data = docs_list[0]
+        github_data = github_list[0]
 
         # Load data files
         with open(docs_data["data_file"], encoding="utf-8") as f:
@@ -1663,9 +1682,16 @@ class UnifiedScraper:
             logger.info("No conflicts to merge")
             return None
 
-        # Get data files
-        docs_data = self.scraped_data.get("documentation", {})
-        github_data = self.scraped_data.get("github", {})
+        # Get data files (scraped_data stores lists of sources)
+        docs_list = self.scraped_data.get("documentation", [])
+        github_list = self.scraped_data.get("github", [])
+
+        if not docs_list or not github_list:
+            logger.warning("Missing documentation or GitHub data for merging")
+            return None
+
+        docs_data = docs_list[0]
+        github_data = github_list[0]
 
         # Load data
         with open(docs_data["data_file"], encoding="utf-8") as f:
@@ -1796,6 +1822,90 @@ class UnifiedScraper:
                     "description": self.config.get("description", ""),
                 }
                 run_workflows(effective_args, context=unified_context)
+
+            # Phase 6: AI Enhancement of SKILL.md
+            # Triggered by config "enhancement" block or CLI --enhance-level
+            enhancement_config = self.config.get("enhancement", {})
+            enhancement_enabled = enhancement_config.get("enabled", False)
+            enhancement_level = enhancement_config.get("level", 0)
+            enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
+
+            # CLI --enhance-level overrides config
+            cli_enhance_level = getattr(args, "enhance_level", None) if args is not None else None
+            if cli_enhance_level is not None:
+                enhancement_enabled = cli_enhance_level > 0
+                enhancement_level = cli_enhance_level
+
+            if enhancement_enabled and enhancement_level > 0:
+                logger.info("\n" + "=" * 60)
+                logger.info(
+                    f"PHASE 6: Enhancing SKILL.md (level {enhancement_level}, mode {enhancement_mode})"
+                )
+                logger.info("=" * 60)
+
+                skill_md_path = os.path.join(self.output_dir, "SKILL.md")
+                if not os.path.exists(skill_md_path):
+                    logger.warning("⚠️  SKILL.md not found, skipping enhancement")
+                elif enhancement_mode == "LOCAL":
+                    try:
+                        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                        # Get agent from CLI args, config enhancement block, or env var
+                        agent = None
+                        agent_cmd = None
+                        if args is not None:
+                            agent = getattr(args, "agent", None)
+                            agent_cmd = getattr(args, "agent_cmd", None)
+                        if not agent:
+                            agent = enhancement_config.get("agent", None)
+                        if not agent:
+                            agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
+
+                        enhancer = LocalSkillEnhancer(
+                            self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
+                        )
+                        enhancer.run(headless=True, timeout=1000)
+                        agent_name = agent or "claude"
+                        logger.info(f"✅ SKILL.md enhanced (LOCAL mode via {agent_name})")
+                    except Exception as e:
+                        logger.warning(f"⚠️  LOCAL enhancement failed: {e}")
+                        logger.info(
+                            "   Try manually: skill-seekers enhance "
+                            + self.output_dir
+                            + " --agent kimi"
+                        )
+                else:
+                    # API mode
+                    try:
+                        from skill_seekers.cli.enhance_skill import SkillEnhancer
+
+                        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+                        if api_key:
+                            enhancer = SkillEnhancer(self.output_dir, api_key=api_key)
+                            # Read references from output dir
+                            references = ""
+                            refs_dir = Path(self.output_dir) / "references"
+                            if refs_dir.exists():
+                                for md_file in sorted(refs_dir.rglob("*.md")):
+                                    content = md_file.read_text(encoding="utf-8", errors="ignore")
+                                    references += f"\n\n## {md_file.name}\n\n{content}"
+                            current_skill = enhancer.read_current_skill_md()
+                            enhanced = enhancer.enhance_skill_md(references, current_skill)
+                            if enhanced:
+                                shutil.copy2(skill_md_path, skill_md_path + ".backup")
+                                Path(skill_md_path).write_text(enhanced, encoding="utf-8")
+                                logger.info("✅ SKILL.md enhanced (API mode)")
+                            else:
+                                logger.warning("⚠️  API enhancement returned empty result")
+                        else:
+                            logger.warning("⚠️  ANTHROPIC_API_KEY not set, skipping API enhancement")
+                            logger.info('   Set ANTHROPIC_API_KEY or use "mode": "LOCAL" in config')
+                    except Exception as e:
+                        logger.warning(f"⚠️  API enhancement failed: {e}")
+            else:
+                logger.info("\n" + "=" * 60)
+                logger.info("PHASE 6: Enhancement (skipped - not enabled in config)")
+                logger.info("=" * 60)
 
             logger.info("\n" + "✅ " * 20)
             logger.info("Unified scraping complete!")

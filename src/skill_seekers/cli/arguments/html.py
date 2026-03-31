@@ -58,7 +58,7 @@ def add_html_arguments(parser: argparse.ArgumentParser) -> None:
                 "0=disabled (default for HTML), 1=SKILL.md only, "
                 "2=+architecture/config, 3=full enhancement. "
                 "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code)"
+                "otherwise LOCAL (Claude Code, Kimi, etc.)"
             )
 
     # HTML-specific args

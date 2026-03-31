@@ -153,6 +153,7 @@ class AIEnhancer:
                 model="claude-sonnet-4-20250514",
                 max_tokens=max_tokens,
                 messages=[{"role": "user", "content": prompt}],
+                timeout=120,  # 2 minute timeout for API calls
             )
             return response.content[0].text
         except Exception as e:
@@ -161,6 +162,7 @@ class AIEnhancer:
 
     def _call_claude_local(self, prompt: str) -> str | None:
         """Call Claude using LOCAL mode (Claude Code CLI)"""
+        enhance_timeout = int(os.environ.get("SKILL_SEEKER_ENHANCE_TIMEOUT", "300"))
         try:
             # Create a temporary directory for this enhancement
             with tempfile.TemporaryDirectory(prefix="ai_enhance_") as temp_dir:
@@ -196,7 +198,7 @@ DO NOT include any explanation - just write the JSON file.
                     ["claude", "--dangerously-skip-permissions", str(prompt_file)],
                     capture_output=True,
                     text=True,
-                    timeout=120,  # 2 minute timeout per call
+                    timeout=enhance_timeout,
                     cwd=str(temp_path),
                 )
 
@@ -230,7 +232,7 @@ DO NOT include any explanation - just write the JSON file.
                     return None
 
         except subprocess.TimeoutExpired:
-            logger.warning("⚠️  Claude CLI timeout (2 minutes)")
+            logger.warning(f"⚠️  Claude CLI timeout ({enhance_timeout}s)")
             return None
         except Exception as e:
             logger.warning(f"⚠️  LOCAL mode error: {e}")

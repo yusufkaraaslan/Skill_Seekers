@@ -1332,7 +1332,7 @@ def main() -> int:
                 "0=disabled (default for man), 1=SKILL.md only, "
                 "2=+architecture/config, 3=full enhancement. "
                 "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code)"
+                "otherwise LOCAL (Claude Code, Kimi, etc.)"
             )
 
     # Man-specific arguments
@@ -1486,13 +1486,17 @@ def main() -> int:
                     print("❌ API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    agent = getattr(args, "agent", None) if args else None
+                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                agent = getattr(args, "agent", None) if args else None
+                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")
 

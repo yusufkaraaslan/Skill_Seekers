@@ -1831,8 +1831,8 @@ def _get_language_stats(files: list[dict]) -> dict[str, int]:
 
 
 def _format_patterns_section(output_dir: Path) -> str:
-    """Format design patterns section from patterns/detected_patterns.json."""
-    patterns_file = output_dir / "patterns" / "detected_patterns.json"
+    """Format design patterns section from patterns/all_patterns.json."""
+    patterns_file = output_dir / "patterns" / "all_patterns.json"
     if not patterns_file.exists():
         return ""
 

@@ -350,15 +350,23 @@ class WorkflowEngine:
         current = context["current_results"]
 
         # Determine what to enhance based on target
-        if stage.target == "patterns" and "patterns" in current:
-            enhancer = PatternEnhancer()
-            enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
-            return {"patterns": enhanced_patterns}
+        if stage.target == "patterns":
+            if "patterns" in current:
+                enhancer = PatternEnhancer()
+                enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
+                return {"patterns": enhanced_patterns}
+            else:
+                logger.info(f"   ℹ️  No {stage.target} data available, skipping builtin stage")
+                return {}
 
-        elif stage.target == "examples" and "examples" in current:
-            enhancer = TestExampleEnhancer()
-            enhanced_examples = enhancer.enhance_examples(current["examples"])
-            return {"examples": enhanced_examples}
+        elif stage.target == "examples":
+            if "examples" in current:
+                enhancer = TestExampleEnhancer()
+                enhanced_examples = enhancer.enhance_examples(current["examples"])
+                return {"examples": enhanced_examples}
+            else:
+                logger.info(f"   ℹ️  No {stage.target} data available, skipping builtin stage")
+                return {}
 
         else:
             logger.warning(f"Unknown builtin target: {stage.target}")
