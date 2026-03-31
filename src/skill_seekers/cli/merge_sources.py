@@ -440,11 +440,11 @@ class RuleBasedMerger:
         return signature
 
 
-class ClaudeEnhancedMerger:
+class AIEnhancedMerger:
     """
-    Claude-enhanced API merger using local Claude Code with GitHub insights.
+    AI-enhanced API merger using local AI coding agent with GitHub insights.
 
-    Opens Claude Code in a new terminal to intelligently reconcile conflicts.
+    Uses the configured AI agent to intelligently reconcile conflicts.
     Uses the same approach as enhance_skill_local.py.
 
     Multi-layer architecture (Phase 3):
@@ -804,3 +804,7 @@ if __name__ == "__main__":
     print(f"   Code only: {summary.get('code_only', 0)}")
     print(f"   Conflicts: {summary.get('conflict', 0)}")
     print(f"\n📄 Saved to: {args.output}")
+
+
+# Backward compatibility alias
+ClaudeEnhancedMerger = AIEnhancedMerger

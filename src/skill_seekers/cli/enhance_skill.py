@@ -531,14 +531,20 @@ Examples:
     parser.add_argument(
         "--target",
         choices=["claude", "gemini", "openai", "kimi"],
-        default="claude",
-        help="Target LLM platform (default: claude)",
+        default=None,
+        help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without calling API"
     )
 
     args = parser.parse_args()
+
+    # Auto-detect target platform if not specified
+    if args.target is None:
+        from skill_seekers.cli.agent_client import AgentClient
+
+        args.target = AgentClient.detect_default_target()
 
     # Validate skill directory
     skill_dir = Path(args.skill_dir)

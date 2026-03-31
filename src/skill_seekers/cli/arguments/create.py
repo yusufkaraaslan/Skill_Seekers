@@ -57,7 +57,7 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": (
                 "AI enhancement level (auto-detects API vs LOCAL mode): "
                 "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code, Kimi, etc.)"
+                "Mode selection: uses API if API key is set (ANTHROPIC_API_KEY, MOONSHOT_API_KEY, etc.), otherwise LOCAL (AI coding agent)"
             ),
             "metavar": "LEVEL",
         },
@@ -540,8 +540,8 @@ CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--merge-mode",),
         "kwargs": {
             "type": str,
-            "choices": ["rule-based", "claude-enhanced"],
-            "help": "Override merge mode from config (rule-based or claude-enhanced)",
+            "choices": ["rule-based", "ai-enhanced", "claude-enhanced"],
+            "help": "Override merge mode from config (rule-based or ai-enhanced). 'claude-enhanced' accepted as alias.",
             "metavar": "MODE",
         },
     },

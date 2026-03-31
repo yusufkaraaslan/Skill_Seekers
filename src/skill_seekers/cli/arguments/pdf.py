@@ -64,7 +64,7 @@ def add_pdf_arguments(parser: argparse.ArgumentParser) -> None:
             action.help = (
                 "AI enhancement level (auto-detects API vs LOCAL mode): "
                 "0=disabled (default for PDF), 1=SKILL.md only, 2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code, Kimi, etc.)"
+                "Mode selection: uses API if API key is set (ANTHROPIC_API_KEY, MOONSHOT_API_KEY, etc.), otherwise LOCAL (AI coding agent)"
             )
 
     # PDF-specific args

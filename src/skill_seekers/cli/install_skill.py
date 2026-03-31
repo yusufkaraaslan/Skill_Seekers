@@ -120,11 +120,17 @@ Phases:
     parser.add_argument(
         "--target",
         choices=["claude", "gemini", "openai", "kimi", "markdown"],
-        default="claude",
-        help="Target LLM platform (default: claude)",
+        default=None,
+        help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
     )
 
     args = parser.parse_args()
+
+    # Auto-detect target platform if not specified
+    if args.target is None:
+        from skill_seekers.cli.agent_client import AgentClient
+
+        args.target = AgentClient.detect_default_target()
 
     # Determine if config is a name or path
     config_arg = args.config
