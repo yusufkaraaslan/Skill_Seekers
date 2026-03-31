@@ -76,24 +76,40 @@ def open_folder(folder_path: str | Path) -> bool:
 
 def has_api_key() -> bool:
     """
-    Check if ANTHROPIC_API_KEY is set in environment
+    Check if any AI API key is set in environment.
+
+    Checks: ANTHROPIC_API_KEY, MOONSHOT_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY
 
     Returns:
-        bool: True if API key is set, False otherwise
+        bool: True if any API key is set, False otherwise
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    return len(api_key) > 0
+    for env_var in ("ANTHROPIC_API_KEY", "MOONSHOT_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY"):
+        if os.environ.get(env_var, "").strip():
+            return True
+    return False
 
 
 def get_api_key() -> str | None:
     """
-    Get ANTHROPIC_API_KEY from environment
+    Get the first available AI API key from environment.
+
+    Checks: ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, MOONSHOT_API_KEY,
+            GOOGLE_API_KEY, OPENAI_API_KEY
 
     Returns:
         str: API key or None if not set
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    return api_key if api_key else None
+    for env_var in (
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "MOONSHOT_API_KEY",
+        "GOOGLE_API_KEY",
+        "OPENAI_API_KEY",
+    ):
+        key = os.environ.get(env_var, "").strip()
+        if key:
+            return key
+    return None
 
 
 def get_upload_url() -> str:
