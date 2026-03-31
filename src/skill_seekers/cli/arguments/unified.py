@@ -22,7 +22,7 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--merge-mode",),
         "kwargs": {
             "type": str,
-            "help": "Merge mode (rule-based, claude-enhanced)",
+            "help": "Merge mode (rule-based, ai-enhanced). 'claude-enhanced' is accepted as alias.",
             "metavar": "MODE",
         },
     },

@@ -9,7 +9,7 @@ This is the main entry point for unified config workflow.
 
 Usage:
     skill-seekers unified --config configs/godot_unified.json
-    skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
+    skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
 """
 
 import argparse
@@ -26,7 +26,7 @@ from typing import Any
 try:
     from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
-    from skill_seekers.cli.merge_sources import ClaudeEnhancedMerger, RuleBasedMerger
+    from skill_seekers.cli.merge_sources import AIEnhancedMerger, RuleBasedMerger
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
     from skill_seekers.cli.utils import setup_logging
 except ImportError as e:
@@ -64,8 +64,9 @@ class UnifiedScraper:
         self.validator = validate_config(config_path)
         self.config = self.validator.config
 
-        # Determine merge mode
-        self.merge_mode = merge_mode or self.config.get("merge_mode", "rule-based")
+        # Determine merge mode (normalize claude-enhanced → ai-enhanced for backward compat)
+        raw_mode = merge_mode or self.config.get("merge_mode", "rule-based")
+        self.merge_mode = "ai-enhanced" if raw_mode == "claude-enhanced" else raw_mode
         logger.info(f"Merge mode: {self.merge_mode}")
 
         # Storage for scraped data - use lists to support multiple sources of same type
@@ -1701,8 +1702,8 @@ class UnifiedScraper:
             github_json = json.load(f)
 
         # Choose merger
-        if self.merge_mode == "claude-enhanced":
-            merger = ClaudeEnhancedMerger(docs_json, github_json, conflicts)
+        if self.merge_mode in ("ai-enhanced", "claude-enhanced"):
+            merger = AIEnhancedMerger(docs_json, github_json, conflicts)
         else:
             merger = RuleBasedMerger(docs_json, github_json, conflicts)
 
@@ -1936,7 +1937,7 @@ Examples:
   skill-seekers unified --config configs/godot_unified.json
 
   # Override merge mode
-  skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
+  skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
 
   # Backward compatible with legacy configs
   skill-seekers unified --config configs/react.json
@@ -1947,8 +1948,8 @@ Examples:
     parser.add_argument(
         "--merge-mode",
         "-m",
-        choices=["rule-based", "claude-enhanced"],
-        help="Override config merge mode",
+        choices=["rule-based", "ai-enhanced", "claude-enhanced"],
+        help="Override config merge mode (ai-enhanced or rule-based). 'claude-enhanced' accepted as alias.",
     )
     parser.add_argument(
         "--skip-codebase-analysis",

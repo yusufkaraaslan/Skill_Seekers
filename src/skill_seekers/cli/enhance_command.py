@@ -16,8 +16,8 @@ Decision priority:
   2. Config ai_enhancement.default_agent + matching env key → API mode.
   3. Auto-detect from env vars: ANTHROPIC_API_KEY → claude,
      GOOGLE_API_KEY → gemini, OPENAI_API_KEY → openai.
-  4. No API keys → LOCAL mode (Claude Code CLI).
-  5. LOCAL mode + running as root → clear error (Claude Code refuses root).
+  4. No API keys → LOCAL mode (AI coding agent).
+  5. LOCAL mode + running as root → clear error (AI coding agent refuses root).
 """
 
 import os
@@ -179,14 +179,14 @@ def main() -> int:
         description=(
             "Enhance SKILL.md using AI. "
             "Automatically selects API mode (Gemini/OpenAI/Claude API) when an API key "
-            "is available, or falls back to LOCAL mode (Claude Code CLI)."
+            "is available, or falls back to LOCAL mode (AI coding agent)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Mode selection (automatic — no flags required):
   API mode  : Set ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
               Or use --target to force a platform.
-  LOCAL mode: Falls back when no API keys are found. Requires Claude Code CLI.
+  LOCAL mode: Falls back when no API keys are found. Requires AI coding agent.
               Does NOT work as root (Docker/VPS) — use API mode instead.
 
 Examples:
@@ -246,7 +246,7 @@ Examples:
     if _is_root():
         print("❌ Cannot run LOCAL enhancement as root.")
         print()
-        print("   Claude Code CLI refuses to execute as root (Docker/VPS security policy).")
+        print("   AI coding agent refuses to execute as root (Docker/VPS security policy).")
         print("   Use API mode instead by setting one of these environment variables:")
         print()
         print("     export ANTHROPIC_API_KEY=sk-ant-...   # Claude")
@@ -257,7 +257,8 @@ Examples:
         print(f"     skill-seekers enhance {args.skill_directory}")
         return 1
 
-    print("🤖 Enhancement mode: LOCAL (Claude Code CLI)")
+    agent_name = os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
+    print(f"🤖 Enhancement mode: LOCAL ({agent_name})")
     return _run_local_mode(args)
 
 

@@ -3,7 +3,7 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 34 tools for generating Claude AI skills from documentation.
+Provides 34 tools for generating LLM skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
@@ -163,7 +163,7 @@ mcp = None
 if MCP_AVAILABLE and FastMCP is not None:
     mcp = FastMCP(
         name="skill-seeker",
-        instructions="Skill Seeker MCP Server - Generate Claude AI skills from documentation",
+        instructions="Skill Seeker MCP Server - Generate LLM skills from documentation",
     )
 
 
@@ -338,7 +338,7 @@ async def estimate_pages(
 
 
 @safe_tool_decorator(
-    description="Scrape documentation and build Claude skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available."
+    description="Scrape documentation and build LLM skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available."
 )
 async def scrape_docs(
     config_path: str,
@@ -349,12 +349,12 @@ async def scrape_docs(
     merge_mode: str | None = None,
 ) -> str:
     """
-    Scrape documentation and build Claude skill.
+    Scrape documentation and build LLM skill.
 
     Args:
         config_path: Path to config JSON file (e.g., configs/react.json or configs/godot_unified.json)
         unlimited: Remove page limit - scrape all pages (default: false). Overrides max_pages in config.
-        enhance_local: Open terminal for local enhancement with Claude Code (default: false)
+        enhance_local: Open terminal for local enhancement with AI coding agent (default: false)
         skip_scrape: Skip scraping, use cached data (default: false)
         dry_run: Preview what will be scraped without saving (default: false)
         merge_mode: Override merge mode for unified configs: 'rule-based' or 'claude-enhanced' (default: from config)
@@ -879,7 +879,7 @@ async def scrape_generic(
 )
 async def package_skill(
     skill_dir: str,
-    target: str = "claude",
+    target: str = "auto",
     auto_upload: bool = True,
 ) -> str:
     """
@@ -887,12 +887,16 @@ async def package_skill(
 
     Args:
         skill_dir: Path to skill directory to package (e.g., output/react/)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai, markdown
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai, markdown
         auto_upload: Auto-upload after packaging if API key is available (default: true). Requires platform-specific API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
         Packaging results with file path and platform info.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_dir": skill_dir,
         "target": target,
@@ -909,7 +913,7 @@ async def package_skill(
 )
 async def upload_skill(
     skill_zip: str,
-    target: str = "claude",
+    target: str = "auto",
     api_key: str | None = None,
 ) -> str:
     """
@@ -917,12 +921,16 @@ async def upload_skill(
 
     Args:
         skill_zip: Path to skill package (.zip or .tar.gz, e.g., output/react.zip)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai
         api_key: Optional API key (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
     Returns:
         Upload results with skill ID and platform URL.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_zip": skill_zip,
         "target": target,
@@ -937,11 +945,11 @@ async def upload_skill(
 
 
 @safe_tool_decorator(
-    description="Enhance SKILL.md with AI using target platform's model. Local mode uses Claude Code Max (no API key). API mode uses platform API (requires key). Transforms basic templates into comprehensive 500+ line guides with examples."
+    description="Enhance SKILL.md with AI using target platform's model. Local mode uses AI coding agent (no API key). API mode uses platform API (requires key). Transforms basic templates into comprehensive 500+ line guides with examples."
 )
 async def enhance_skill(
     skill_dir: str,
-    target: str = "claude",
+    target: str = "auto",
     mode: str = "local",
     api_key: str | None = None,
 ) -> str:
@@ -950,13 +958,17 @@ async def enhance_skill(
 
     Args:
         skill_dir: Path to skill directory containing SKILL.md (e.g., output/react/)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai
-        mode: Enhancement mode (default: 'local'). Options: local (Claude Code, no API), api (uses platform API)
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai
+        mode: Enhancement mode (default: 'local'). Options: local (AI coding agent, no API), api (uses platform API)
         api_key: Optional API key for 'api' mode (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
     Returns:
         Enhancement results with backup location.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_dir": skill_dir,
         "target": target,
@@ -972,7 +984,7 @@ async def enhance_skill(
 
 
 @safe_tool_decorator(
-    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Supports multiple LLM platforms: claude (default), gemini, openai, markdown. Auto-uploads if platform API key is set."
+    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Supports multiple LLM platforms: auto (detects from environment), claude, gemini, openai, markdown. Auto-uploads if platform API key is set."
 )
 async def install_skill(
     config_name: str | None = None,
@@ -981,7 +993,7 @@ async def install_skill(
     auto_upload: bool = True,
     unlimited: bool = False,
     dry_run: bool = False,
-    target: str = "claude",
+    target: str = "auto",
 ) -> str:
     """
     Complete one-command workflow to install a skill.
@@ -993,11 +1005,15 @@ async def install_skill(
         auto_upload: Auto-upload after packaging (requires platform API key). Default: true. Set to false to skip upload.
         unlimited: Remove page limits during scraping (default: false). WARNING: Can take hours for large sites.
         dry_run: Preview workflow without executing (default: false). Shows all phases that would run.
-        target: Target LLM platform (default: 'claude'). Options: claude, gemini, openai, markdown. Requires corresponding API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
+        target: Target LLM platform (default: 'auto'). Options: auto, claude, gemini, openai, markdown. Requires corresponding API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
         Workflow results with all phase statuses.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "destination": destination,
         "auto_upload": auto_upload,

@@ -163,8 +163,8 @@ Examples:
     parser.add_argument(
         "--target",
         choices=["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
-        default="claude",
-        help="Target platform (default: claude)",
+        default=None,
+        help="Target platform (auto-detected from API keys, or 'claude' if none set)",
     )
 
     parser.add_argument("--api-key", help="Platform API key (or set environment variable)")
@@ -208,6 +208,12 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # Auto-detect target platform if not specified
+    if args.target is None:
+        from skill_seekers.cli.agent_client import AgentClient
+
+        args.target = AgentClient.detect_default_target()
 
     # Build kwargs for vector DB upload
     upload_kwargs = {}

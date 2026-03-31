@@ -47,6 +47,7 @@ Examples:
 
 import argparse
 import importlib
+import os
 import sys
 from pathlib import Path
 
@@ -403,7 +404,8 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                         print("   Set ANTHROPIC_API_KEY / GOOGLE_API_KEY to enable API mode")
                         success = False
                     else:
-                        print("\n🤖 Enhancement mode: LOCAL (Claude Code CLI)")
+                        agent_name = os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
+                        print(f"\n🤖 Enhancement mode: LOCAL ({agent_name})")
                         success = _run_local_mode(_fake_args) == 0
 
                     if success:
