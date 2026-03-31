@@ -14,25 +14,15 @@ Similar to GuideEnhancer (C3.3) but for configuration files.
 
 import json
 import logging
-import os
-import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from skill_seekers.cli.agent_client import AgentClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
-
-# Optional anthropic import
-ANTHROPIC_AVAILABLE = False
-try:
-    import anthropic
-
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    pass
 
 
 @dataclass
@@ -74,39 +64,9 @@ class ConfigEnhancer:
         Args:
             mode: Enhancement mode - "api", "local", or "auto" (default)
         """
-        self.mode = self._detect_mode(mode)
-        self.api_key = os.environ.get("ANTHROPIC_API_KEY")
-        self.client = None
-
-        if self.mode == "api" and ANTHROPIC_AVAILABLE and self.api_key:
-            # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
-            client_kwargs = {"api_key": self.api_key}
-            base_url = os.environ.get("ANTHROPIC_BASE_URL")
-            if base_url:
-                client_kwargs["base_url"] = base_url
-                logger.info(f"✅ Using custom API base URL: {base_url}")
-            self.client = anthropic.Anthropic(**client_kwargs)
-
-    def _detect_mode(self, requested_mode: str) -> str:
-        """
-        Detect best enhancement mode.
-
-        Args:
-            requested_mode: User-requested mode
-
-        Returns:
-            Actual mode to use
-        """
-        if requested_mode in ["api", "local"]:
-            return requested_mode
-
-        # Auto-detect
-        if os.environ.get("ANTHROPIC_API_KEY") and ANTHROPIC_AVAILABLE:
-            logger.info("🤖 AI enhancement: API mode (Claude API detected)")
-            return "api"
-        else:
-            logger.info("🤖 AI enhancement: LOCAL mode (using Claude Code CLI)")
-            return "local"
+        self._agent = AgentClient(mode=mode)
+        self.mode = self._agent.mode
+        self._agent.log_mode()
 
     def enhance_config_result(self, result: dict) -> dict:
         """
@@ -131,24 +91,24 @@ class ConfigEnhancer:
 
     def _enhance_via_api(self, result: dict) -> dict:
         """Enhance configs using Claude API"""
-        if not self.client:
-            logger.error("❌ API mode requested but no API key available")
+        if not self._agent.is_available():
+            logger.error("❌ API mode requested but no API client available")
             return result
 
         try:
             # Create enhancement prompt
             prompt = self._create_enhancement_prompt(result)
 
-            # Call Claude API
-            logger.info("📡 Calling Claude API for config analysis...")
-            response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=8000,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            # Call AI agent for config analysis
+            logger.info("📡 Calling AI agent for config analysis...")
+            response_text = self._agent.call(prompt, max_tokens=8000)
+
+            if not response_text:
+                logger.error("❌ AI agent returned no response")
+                return result
 
             # Parse response
-            enhanced_result = self._parse_api_response(response.content[0].text, result)
+            enhanced_result = self._parse_api_response(response_text, result)
             logger.info("✅ API enhancement complete")
             return enhanced_result
 
@@ -252,34 +212,33 @@ Focus on actionable insights that help developers understand and improve their c
     # =========================================================================
 
     def _enhance_via_local(self, result: dict) -> dict:
-        """Enhance configs using Claude Code CLI"""
+        """Enhance configs using LOCAL CLI agent"""
         try:
-            # Create a temporary directory for this enhancement session
-            with tempfile.TemporaryDirectory(prefix="config_enhance_") as temp_dir:
-                temp_path = Path(temp_dir)
+            logger.info("🖥️  Launching LOCAL agent for config analysis...")
+            logger.info("⏱️  This will take 30-60 seconds...")
 
-                # Define output file path (absolute path that Claude will write to)
-                output_file = temp_path / "config_enhancement.json"
+            # Build the prompt (without output_file since AgentClient handles that)
+            prompt_content = self._create_local_prompt(result, Path("config_enhancement.json"))
 
-                # Create prompt file with the output path embedded
-                prompt_file = temp_path / "enhance_prompt.md"
-                prompt_content = self._create_local_prompt(result, output_file)
-                prompt_file.write_text(prompt_content)
+            # Call via AgentClient which handles temp dirs, file polling, etc.
+            response_text = self._agent.call(prompt_content, timeout=300)
 
-                logger.info("🖥️  Launching Claude Code CLI for config analysis...")
-                logger.info("⏱️  This will take 30-60 seconds...")
+            if response_text:
+                try:
+                    import re
 
-                # Run Claude Code CLI
-                result_data = self._run_claude_cli(prompt_file, output_file, temp_path)
+                    json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+                    if json_match:
+                        data = json.loads(json_match.group())
+                        if "file_enhancements" in data or "overall_insights" in data:
+                            result["ai_enhancements"] = data
+                            logger.info("✅ LOCAL enhancement complete")
+                            return result
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ Failed to parse LOCAL response as JSON: {e}")
 
-                if result_data:
-                    # Merge LOCAL enhancements
-                    result["ai_enhancements"] = result_data
-                    logger.info("✅ LOCAL enhancement complete")
-                    return result
-                else:
-                    logger.warning("⚠️  LOCAL enhancement produced no results")
-                    return result
+            logger.warning("⚠️  LOCAL enhancement produced no results")
+            return result
 
         except Exception as e:
             logger.error(f"❌ LOCAL enhancement failed: {e}")
@@ -365,97 +324,6 @@ The JSON must have this EXACT structure:
 DO NOT explain your work - just write the JSON file directly.
 """
         return prompt
-
-    def _run_claude_cli(
-        self, prompt_file: Path, output_file: Path, working_dir: Path
-    ) -> dict | None:
-        """Run Claude Code CLI and wait for completion
-
-        Args:
-            prompt_file: Path to the prompt markdown file
-            output_file: Expected path where Claude will write the JSON output
-            working_dir: Working directory to run Claude from
-
-        Returns:
-            Parsed JSON dict if successful, None otherwise
-        """
-        import time
-
-        try:
-            start_time = time.time()
-
-            # Run claude command with --dangerously-skip-permissions to bypass all prompts
-            # This allows Claude to write files without asking for confirmation
-            logger.info(f"   Running: claude --dangerously-skip-permissions {prompt_file.name}")
-            logger.info(f"   Output expected at: {output_file}")
-
-            result = subprocess.run(
-                ["claude", "--dangerously-skip-permissions", str(prompt_file)],
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minute timeout
-                cwd=str(working_dir),
-            )
-
-            elapsed = time.time() - start_time
-            logger.info(f"   Claude finished in {elapsed:.1f} seconds")
-
-            if result.returncode != 0:
-                logger.error(f"❌ Claude CLI failed (exit code {result.returncode})")
-                if result.stderr:
-                    logger.error(f"   Error: {result.stderr[:200]}")
-                return None
-
-            # Check if the expected output file was created
-            if output_file.exists():
-                try:
-                    with open(output_file) as f:
-                        data = json.load(f)
-                        if "file_enhancements" in data or "overall_insights" in data:
-                            logger.info(f"✅ Found enhancement data in {output_file.name}")
-                            return data
-                        else:
-                            logger.warning("⚠️  Output file exists but missing expected keys")
-                except json.JSONDecodeError as e:
-                    logger.error(f"❌ Failed to parse output JSON: {e}")
-                    return None
-
-            # Fallback: Look for any JSON files created in the working directory
-            logger.info("   Looking for JSON files in working directory...")
-            current_time = time.time()
-            potential_files = []
-
-            for json_file in working_dir.glob("*.json"):
-                # Check if created recently (within last 2 minutes)
-                if current_time - json_file.stat().st_mtime < 120:
-                    potential_files.append(json_file)
-
-            # Try to load the most recent JSON file with expected structure
-            for json_file in sorted(potential_files, key=lambda f: f.stat().st_mtime, reverse=True):
-                try:
-                    with open(json_file) as f:
-                        data = json.load(f)
-                        if "file_enhancements" in data or "overall_insights" in data:
-                            logger.info(f"✅ Found enhancement data in {json_file.name}")
-                            return data
-                except Exception:
-                    continue
-
-            logger.warning("⚠️  Could not find enhancement output file")
-            logger.info(f"   Expected file: {output_file}")
-            logger.info(f"   Files in dir: {list(working_dir.glob('*'))}")
-            return None
-
-        except subprocess.TimeoutExpired:
-            logger.error("❌ Claude CLI timeout (5 minutes)")
-            return None
-        except FileNotFoundError:
-            logger.error("❌ 'claude' command not found. Is Claude Code CLI installed?")
-            logger.error("   Install with: npm install -g @anthropic-ai/claude-code")
-            return None
-        except Exception as e:
-            logger.error(f"❌ Error running Claude CLI: {e}")
-            return None
 
 
 def main():

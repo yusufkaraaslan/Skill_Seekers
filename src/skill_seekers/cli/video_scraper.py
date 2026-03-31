@@ -300,7 +300,7 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
     try:
         client = anthropic.Anthropic(**client_kwargs)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
             max_tokens=8000,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -1208,7 +1208,7 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
         or getattr(args, "api_key", None)
         or os.environ.get("MOONSHOT_API_KEY")
     )
-    
+
     agent = getattr(args, "agent", None)
 
     if not has_api_key and not agent:

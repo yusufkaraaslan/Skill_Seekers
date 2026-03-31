@@ -393,7 +393,11 @@ class WorkflowEngine:
 
         # Call AI with custom prompt
         logger.info(f"   🤖 Running custom AI prompt...")
-        response = self.enhancer._call_claude(formatted_prompt, max_tokens=3000)
+        # Use call() (agent-agnostic) with _call_claude() as fallback for older enhancers
+        if hasattr(self.enhancer, "call"):
+            response = self.enhancer.call(formatted_prompt, max_tokens=3000)
+        else:
+            response = self.enhancer._call_claude(formatted_prompt, max_tokens=3000)
 
         if not response:
             logger.warning(f"   ⚠️  No response from AI")

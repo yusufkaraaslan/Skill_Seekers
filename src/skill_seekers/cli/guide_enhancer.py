@@ -15,11 +15,7 @@ Provides 5 automatic enhancements:
 
 import json
 import logging
-import os
-import subprocess
-import tempfile
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 # Avoid circular imports by using TYPE_CHECKING
@@ -47,14 +43,8 @@ else:
 
 logger = logging.getLogger(__name__)
 
-# Conditional import for Anthropic API
-try:
-    import anthropic
-
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
-    logger.debug("Anthropic library not available - API mode will be unavailable")
+# ANTHROPIC_AVAILABLE kept for backward compatibility — AgentClient handles detection
+ANTHROPIC_AVAILABLE = True  # Detection delegated to AgentClient
 
 
 @dataclass
@@ -83,76 +73,16 @@ class GuideEnhancer:
         Args:
             mode: Enhancement mode - "api", "local", or "auto"
         """
-        self.mode = self._detect_mode(mode)
-        self.api_key = os.environ.get("ANTHROPIC_API_KEY")
-        self.client = None
+        from skill_seekers.cli.agent_client import AgentClient
 
-        if self.mode == "api":
-            if ANTHROPIC_AVAILABLE and self.api_key:
-                # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
-                client_kwargs = {"api_key": self.api_key}
-                base_url = os.environ.get("ANTHROPIC_BASE_URL")
-                if base_url:
-                    client_kwargs["base_url"] = base_url
-                    logger.info(f"✅ Using custom API base URL: {base_url}")
-                self.client = anthropic.Anthropic(**client_kwargs)
-                logger.info("✨ GuideEnhancer initialized in API mode")
-            else:
-                logger.warning(
-                    "⚠️  API mode requested but anthropic library not available or no API key"
-                )
-                self.mode = "none"
-        elif self.mode == "local":
-            # Check if claude CLI is available
-            if not self._check_claude_cli():
-                logger.warning("⚠️  Claude CLI not found - falling back to API mode")
-                self.mode = "api"
-                if ANTHROPIC_AVAILABLE and self.api_key:
-                    # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
-                    client_kwargs = {"api_key": self.api_key}
-                    base_url = os.environ.get("ANTHROPIC_BASE_URL")
-                    if base_url:
-                        client_kwargs["base_url"] = base_url
-                        logger.info(f"✅ Using custom API base URL: {base_url}")
-                    self.client = anthropic.Anthropic(**client_kwargs)
-                else:
-                    logger.warning("⚠️  API fallback also unavailable")
-                    self.mode = "none"
-            else:
-                logger.info("✨ GuideEnhancer initialized in LOCAL mode")
+        self._agent = AgentClient(mode=mode)
+        self.mode = self._agent.mode
+
+        if self._agent.is_available():
+            self._agent.log_mode()
         else:
-            logger.warning("⚠️  No AI enhancement available (no API key or Claude CLI)")
+            logger.warning("⚠️  No AI enhancement available")
             self.mode = "none"
-
-    def _detect_mode(self, requested_mode: str) -> str:
-        """
-        Detect the best enhancement mode.
-
-        Args:
-            requested_mode: User-requested mode
-
-        Returns:
-            Detected mode: "api", "local", or "none"
-        """
-        if requested_mode == "auto":
-            # Prefer API if key available, else LOCAL
-            if os.environ.get("ANTHROPIC_API_KEY") and ANTHROPIC_AVAILABLE:
-                return "api"
-            elif self._check_claude_cli():
-                return "local"
-            else:
-                return "none"
-        return requested_mode
-
-    def _check_claude_cli(self) -> bool:
-        """Check if Claude Code CLI is available."""
-        try:
-            result = subprocess.run(
-                ["claude", "--version"], capture_output=True, text=True, timeout=5
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
 
     def enhance_guide(self, guide_data: dict) -> dict:
         """
@@ -332,7 +262,7 @@ class GuideEnhancer:
 
     def _call_ai(self, prompt: str, max_tokens: int = 4000) -> str | None:
         """
-        Call AI with the given prompt.
+        Call AI with the given prompt via AgentClient.
 
         Args:
             prompt: Prompt text
@@ -341,73 +271,7 @@ class GuideEnhancer:
         Returns:
             AI response text or None if failed
         """
-        if self.mode == "api":
-            return self._call_claude_api(prompt, max_tokens)
-        elif self.mode == "local":
-            return self._call_claude_local(prompt)
-        return None
-
-    def _call_claude_api(self, prompt: str, max_tokens: int = 4000) -> str | None:
-        """
-        Call Claude API.
-
-        Args:
-            prompt: Prompt text
-            max_tokens: Maximum tokens in response
-
-        Returns:
-            API response text or None if failed
-        """
-        if not self.client:
-            return None
-
-        try:
-            response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return response.content[0].text
-        except Exception as e:
-            logger.warning(f"⚠️  Claude API call failed: {e}")
-            return None
-
-    def _call_claude_local(self, prompt: str) -> str | None:
-        """
-        Call Claude Code CLI.
-
-        Args:
-            prompt: Prompt text
-
-        Returns:
-            CLI response text or None if failed
-        """
-        try:
-            # Create temporary prompt file
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-                f.write(prompt)
-                prompt_file = f.name
-
-            # Run claude CLI
-            result = subprocess.run(
-                ["claude", prompt_file],
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 min timeout
-            )
-
-            # Clean up prompt file
-            Path(prompt_file).unlink(missing_ok=True)
-
-            if result.returncode == 0:
-                return result.stdout
-            else:
-                logger.warning(f"⚠️  Claude CLI failed: {result.stderr}")
-                return None
-
-        except (subprocess.TimeoutExpired, Exception) as e:
-            logger.warning(f"⚠️  Claude CLI execution failed: {e}")
-            return None
+        return self._agent.call(prompt, max_tokens=max_tokens)
 
     # === Prompt Creation Methods ===
 
