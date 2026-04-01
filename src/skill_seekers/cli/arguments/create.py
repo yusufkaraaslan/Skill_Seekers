@@ -185,15 +185,6 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
 # Merge RAG arguments from common.py into universal arguments
 UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
-# Cross-cutting arguments shared by many source types
-UNIVERSAL_ARGUMENTS["from_json"] = {
-    "flags": ("--from-json",),
-    "kwargs": {
-        "type": str,
-        "help": "Build skill from pre-extracted JSON data (skip scraping)",
-        "metavar": "PATH",
-    },
-}
 
 # =============================================================================
 # TIER 2: SOURCE-SPECIFIC ARGUMENTS
@@ -750,6 +741,14 @@ CHAT_ARGUMENTS: dict[str, dict[str, Any]] = {
 # Hidden from default help, shown only with --help-advanced
 
 ADVANCED_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "from_json": {
+        "flags": ("--from-json",),
+        "kwargs": {
+            "type": str,
+            "help": "Build skill from pre-extracted JSON data (skip scraping). Supported by: PDF, Video, Jupyter, HTML, OpenAPI, AsciiDoc, PPTX, RSS, Manpage, Confluence, Notion, Chat.",
+            "metavar": "PATH",
+        },
+    },
     "no_rate_limit": {
         "flags": ("--no-rate-limit",),
         "kwargs": {
