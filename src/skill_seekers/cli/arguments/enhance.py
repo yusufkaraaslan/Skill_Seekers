@@ -22,11 +22,11 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--target",),
         "kwargs": {
             "type": str,
-            "choices": ["claude", "gemini", "openai"],
+            "choices": ["claude", "gemini", "openai", "kimi"],
             "help": (
                 "AI platform for enhancement (uses API mode). "
                 "Auto-detected from env vars if not specified: "
-                "ANTHROPIC_API_KEY->claude, GOOGLE_API_KEY->gemini, OPENAI_API_KEY->openai. "
+                "ANTHROPIC_API_KEY->claude, GOOGLE_API_KEY->gemini, OPENAI_API_KEY->openai, MOONSHOT_API_KEY->kimi. "
                 "Falls back to LOCAL mode (AI coding agent) when no API keys are found."
             ),
             "metavar": "PLATFORM",
@@ -38,7 +38,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "help": (
                 "API key for the target platform "
-                "(or set ANTHROPIC_API_KEY / GOOGLE_API_KEY / OPENAI_API_KEY)"
+                "(or set ANTHROPIC_API_KEY / GOOGLE_API_KEY / OPENAI_API_KEY / MOONSHOT_API_KEY)"
             ),
             "metavar": "KEY",
         },
@@ -56,7 +56,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "type": str,
             "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-            "help": "Local coding agent to use (default: claude or SKILL_SEEKER_AGENT)",
+            "help": "Local coding agent to use (default: AI agent from SKILL_SEEKER_AGENT env var)",
             "metavar": "AGENT",
         },
     },
