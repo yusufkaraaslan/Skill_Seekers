@@ -135,7 +135,8 @@ AGENT_PRESETS = {
     "kimi": {
         "display_name": "Kimi Code CLI",
         "command": ["kimi", "--print", "--input-format", "text", "--work-dir", "{skill_dir}"],
-        "supports_skip_permissions": True,
+        "supports_skip_permissions": False,
+        "uses_stdin": True,
     },
 }
 
@@ -245,7 +246,7 @@ class LocalSkillEnhancer:
                 cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
                 uses_prompt_file = True
             if "{skill_dir}" in arg:
-                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir))
+                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir.resolve()))
 
         return cmd_parts, uses_prompt_file
 
