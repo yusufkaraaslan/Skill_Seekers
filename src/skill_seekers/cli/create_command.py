@@ -485,6 +485,12 @@ class CreateCommand:
         if getattr(self.args, "skip_codebase_analysis", False):
             argv.append("--skip-codebase-analysis")
 
+        # Agent selection for LOCAL mode
+        if getattr(self.args, "agent", None):
+            argv.extend(["--agent", self.args.agent])
+        if getattr(self.args, "agent_cmd", None):
+            argv.extend(["--agent-cmd", self.args.agent_cmd])
+
         # Enhancement workflow flags (unified_scraper now supports these)
         if getattr(self.args, "enhance_workflow", None):
             for wf in self.args.enhance_workflow:

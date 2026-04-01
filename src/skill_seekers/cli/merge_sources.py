@@ -674,7 +674,7 @@ Return ONLY the JSON, no explanation."""
         client = AgentClient(mode="auto")
         logger.info(f"Running AI merge via {client.agent_display}...")
 
-        response = client.call(prompt, max_tokens=8192, timeout=600)
+        response = client.call(prompt, max_tokens=8192)
 
         if response:
             # Try to extract JSON from response

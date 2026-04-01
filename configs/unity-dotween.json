@@ -85,11 +85,7 @@
       "fetch_issues": true,
       "max_issues": 50,
       "fetch_changelog": false,
-      "fetch_releases": true,
-      "file_patterns": [
-        "_DOTween Assembly/DOTween/**/*.cs",
-        "_DOTween Assembly/DOTween/Plugins/**/*.cs"
-      ]
+      "fetch_releases": true
     }
   ],
   "analysis_features": {
@@ -105,7 +101,9 @@
   "enhancement": {
     "enabled": true,
     "level": 3,
-    "mode": "LOCAL"
+    "mode": "LOCAL",
+    "agent": "kimi",
+    "timeout": "unlimited"
   },
 
   "chunking": {

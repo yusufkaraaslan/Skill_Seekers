@@ -661,7 +661,7 @@ After writing, the file SKILL.md should:
         except Exception:
             return None
 
-    def run(self, headless=True, timeout=600, background=False, daemon=False):
+    def run(self, headless=True, timeout=2700, background=False, daemon=False):
         """Main enhancement workflow with automatic smart summarization for large skills.
 
         Automatically detects large skills (>30K chars) and applies smart summarization
@@ -675,7 +675,7 @@ After writing, the file SKILL.md should:
 
         Args:
             headless: If True, run local agent directly without opening terminal (default: True)
-            timeout: Maximum time to wait for enhancement in seconds (default: 600 = 10 minutes)
+            timeout: Maximum time to wait for enhancement in seconds (default: 2700 = 45 minutes)
             background: If True, run in background and return immediately (default: False)
             daemon: If True, run as persistent daemon with monitoring (default: False)
 

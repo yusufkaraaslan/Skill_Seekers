@@ -84,12 +84,13 @@ class WorkflowEngine:
     - Target specific parts of the analysis
     """
 
-    def __init__(self, workflow: EnhancementWorkflow | str | Path):
+    def __init__(self, workflow: EnhancementWorkflow | str | Path, agent: str | None = None):
         """
         Initialize workflow engine.
 
         Args:
             workflow: EnhancementWorkflow object or path to YAML file
+            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
         if isinstance(workflow, (str, Path)):
             self.workflow = self._load_workflow(workflow)
@@ -98,6 +99,7 @@ class WorkflowEngine:
 
         self.history: list[dict[str, Any]] = []
         self.enhancer = None  # Lazy load UnifiedEnhancer
+        self.agent = agent
 
     def _load_workflow(self, workflow_ref: str | Path) -> EnhancementWorkflow:
         """Load workflow from YAML file using 3-level search order.
@@ -352,7 +354,7 @@ class WorkflowEngine:
         # Determine what to enhance based on target
         if stage.target == "patterns":
             if "patterns" in current:
-                enhancer = PatternEnhancer()
+                enhancer = PatternEnhancer(agent=self.agent)
                 enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
                 return {"patterns": enhanced_patterns}
             else:
@@ -361,7 +363,7 @@ class WorkflowEngine:
 
         elif stage.target == "examples":
             if "examples" in current:
-                enhancer = TestExampleEnhancer()
+                enhancer = TestExampleEnhancer(agent=self.agent)
                 enhanced_examples = enhancer.enhance_examples(current["examples"])
                 return {"examples": enhanced_examples}
             else:
@@ -382,7 +384,7 @@ class WorkflowEngine:
         if not self.enhancer:
             from skill_seekers.cli.ai_enhancer import AIEnhancer
 
-            self.enhancer = AIEnhancer()
+            self.enhancer = AIEnhancer(agent=self.agent)
 
         # Format prompt with context
         try:

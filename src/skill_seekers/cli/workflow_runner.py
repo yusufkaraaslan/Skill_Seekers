@@ -43,6 +43,7 @@ def _build_inline_engine(args: argparse.Namespace):
     """Build a WorkflowEngine from --enhance-stage flags."""
     from skill_seekers.cli.enhancement_workflow import WorkflowEngine
 
+    agent = getattr(args, "agent", None)
     stages = []
     for i, spec in enumerate(args.enhance_stage, 1):
         if ":" in spec:
@@ -63,7 +64,7 @@ def _build_inline_engine(args: argparse.Namespace):
         "description": "Custom inline workflow from --enhance-stage arguments",
         "stages": stages,
     }
-    return WorkflowEngine(workflow_data=inline_def)
+    return WorkflowEngine(workflow_data=inline_def, agent=agent)
 
 
 def run_workflows(
@@ -107,6 +108,7 @@ def run_workflows(
             logger.info(f"     {k} = {v}")
 
     executed: list[str] = []
+    agent = getattr(args, "agent", None)
 
     # ── Named workflows ────────────────────────────────────────────────────
     total = len(named_workflows) + (1 if inline_stages else 0)
@@ -118,7 +120,7 @@ def run_workflows(
         logger.info(header)
 
         try:
-            engine = WorkflowEngine(workflow_name)
+            engine = WorkflowEngine(workflow_name, agent=agent)
         except Exception as exc:
             logger.error(f"❌ Failed to load workflow '{workflow_name}': {exc}")
             logger.info("   Skipping this workflow and continuing...")
