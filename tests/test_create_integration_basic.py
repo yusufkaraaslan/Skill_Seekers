@@ -131,17 +131,18 @@ class TestCreateCommandBasic:
 
 
 class TestCreateCommandArgvForwarding:
-    """Unit tests for _add_common_args argv forwarding."""
+    """Unit tests for _build_argv argument forwarding."""
 
     def _make_args(self, **kwargs):
         import argparse
 
         defaults = {
+            "source": "https://example.com",
             "enhance_workflow": None,
             "enhance_stage": None,
             "var": None,
             "workflow_dry_run": False,
-            "enhance_level": 0,
+            "enhance_level": 2,
             "output": None,
             "name": None,
             "description": None,
@@ -157,17 +158,20 @@ class TestCreateCommandArgvForwarding:
             "no_preserve_code_blocks": False,
             "no_preserve_paragraphs": False,
             "interactive_enhancement": False,
+            "agent": None,
+            "agent_cmd": None,
+            "doc_version": "",
         }
         defaults.update(kwargs)
         return argparse.Namespace(**defaults)
 
     def _collect_argv(self, args):
         from skill_seekers.cli.create_command import CreateCommand
+        from skill_seekers.cli.source_detector import SourceDetector
 
         cmd = CreateCommand(args)
-        argv = []
-        cmd._add_common_args(argv)
-        return argv
+        cmd.source_info = SourceDetector.detect(args.source)
+        return cmd._build_argv("test_module", [])
 
     def test_single_enhance_workflow_forwarded(self):
         args = self._make_args(enhance_workflow=["security-focus"])
