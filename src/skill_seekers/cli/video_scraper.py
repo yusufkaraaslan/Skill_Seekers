@@ -1221,7 +1221,6 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
 
     try:
         enhance_cmd = ["skill-seekers-enhance", skill_dir]
-        enhance_cmd.extend(["--enhance-level", str(enhance_level)])
         api_key = getattr(args, "api_key", None)
         if api_key:
             enhance_cmd.extend(["--api-key", api_key])
