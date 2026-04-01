@@ -73,7 +73,7 @@ COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "type": str,
             "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-            "help": "Local coding agent for enhancement (default: claude or SKILL_SEEKER_AGENT env var)",
+            "help": "Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
             "metavar": "AGENT",
         },
     },

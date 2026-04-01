@@ -66,7 +66,7 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--api-key",),
         "kwargs": {
             "type": str,
-            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+            "help": "API key for enhancement (ANTHROPIC_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, MOONSHOT_API_KEY)",
             "metavar": "KEY",
         },
     },

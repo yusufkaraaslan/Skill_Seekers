@@ -47,8 +47,9 @@ AGENT_PRESETS = {
     },
     "copilot": {
         "display_name": "GitHub Copilot CLI",
-        "command": ["gh", "copilot", "chat"],
+        "command": ["gh", "copilot", "chat", "-"],
         "version_check": ["gh", "copilot", "--version"],
+        "uses_stdin": True,
     },
     "opencode": {
         "display_name": "OpenCode CLI",
@@ -108,6 +109,8 @@ def normalize_agent_name(agent_name: str) -> str:
         "open-code": "opencode",
         "open_code": "opencode",
         "kimi-cli": "kimi",
+        "kimi_code": "kimi",
+        "kimi-code": "kimi",
     }
     return aliases.get(normalized, normalized)
 
@@ -286,10 +289,22 @@ class AgentClient:
         cwd: str | Path | None = None,
     ) -> str | None:
         """Call via LOCAL CLI agent using agent presets."""
-        preset = AGENT_PRESETS.get(self.agent)
-        if not preset:
-            logger.warning(f"⚠️  Unknown agent: {self.agent}")
-            return None
+        # Handle custom agent from env var
+        if self.agent == "custom":
+            custom_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
+            if not custom_cmd:
+                logger.warning("⚠️  Custom agent selected but SKILL_SEEKER_AGENT_CMD not set")
+                return None
+            preset = {
+                "display_name": "Custom Agent",
+                "command": custom_cmd.split(),
+                "version_check": custom_cmd.split()[:1] + ["--version"],
+            }
+        else:
+            preset = AGENT_PRESETS.get(self.agent)
+            if not preset:
+                logger.warning(f"⚠️  Unknown agent: {self.agent}")
+                return None
 
         try:
             with tempfile.TemporaryDirectory(prefix="agent_client_") as temp_dir:
