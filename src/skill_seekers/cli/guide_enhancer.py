@@ -2,8 +2,8 @@
 AI Enhancement for How-To Guides (C3.3)
 
 This module provides comprehensive AI enhancement for how-to guides with dual-mode support:
-- API mode: Uses Claude API (requires ANTHROPIC_API_KEY)
-- LOCAL mode: Uses Claude Code CLI (no API key needed)
+- API mode: Uses Anthropic API (requires ANTHROPIC_API_KEY)
+- LOCAL mode: Uses a coding agent CLI (no API key needed)
 
 Provides 5 automatic enhancements:
 1. Step Descriptions - Natural language explanations (not just syntax)
@@ -61,8 +61,8 @@ class GuideEnhancer:
     AI enhancement for how-to guides with dual-mode support.
 
     Modes:
-    - api: Uses Claude API (requires ANTHROPIC_API_KEY)
-    - local: Uses Claude Code CLI (no API key needed)
+    - api: Uses Anthropic API (requires ANTHROPIC_API_KEY)
+    - local: Uses a coding agent CLI (no API key needed)
     - auto: Automatically detect best mode
     """
 

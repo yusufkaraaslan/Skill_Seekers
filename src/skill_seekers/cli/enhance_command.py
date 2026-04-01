@@ -4,12 +4,12 @@ Smart Enhancement Dispatcher
 
 Routes `skill-seekers enhance` to the correct backend:
 
-  API mode  — when an API key is available (Claude/Gemini/OpenAI).
+  API mode  — when an API key is available (Anthropic/Gemini/OpenAI).
               Calls enhance_skill.py which uses platform adaptors.
 
   LOCAL mode — when no API key is found.
               Calls LocalSkillEnhancer from enhance_skill_local.py.
-              Supports: Claude Code, OpenAI Codex, GitHub Copilot, OpenCode, Kimi.
+              Supports: Claude Code, OpenAI Codex, GitHub Copilot, OpenCode, Kimi, and other agents.
 
 Decision priority:
   1. Explicit --target flag → API mode with that platform.
@@ -79,7 +79,7 @@ def _pick_mode(args) -> tuple[str, str | None]:
         return "api", config_agent
 
     # 3. Auto-detect from environment variables.
-    #    Priority: Claude > Gemini > OpenAI (Claude is Anthropic's native platform).
+    #    Priority: Anthropic > Gemini > OpenAI.
     if api_keys["claude"]:
         return "api", "claude"
     if api_keys["gemini"]:
@@ -178,7 +178,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Enhance SKILL.md using AI. "
-            "Automatically selects API mode (Gemini/OpenAI/Claude API) when an API key "
+            "Automatically selects API mode (Anthropic/Gemini/OpenAI API) when an API key "
             "is available, or falls back to LOCAL mode (AI coding agent)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -196,7 +196,7 @@ Examples:
   # Force Gemini API
   skill-seekers enhance output/react/ --target gemini
 
-  # Force Claude API with explicit key
+  # Force Anthropic API with explicit key
   skill-seekers enhance output/react/ --target claude --api-key sk-ant-...
 
   # LOCAL mode options
@@ -249,7 +249,7 @@ Examples:
         print("   AI coding agent refuses to execute as root (Docker/VPS security policy).")
         print("   Use API mode instead by setting one of these environment variables:")
         print()
-        print("     export ANTHROPIC_API_KEY=sk-ant-...   # Claude")
+        print("     export ANTHROPIC_API_KEY=sk-ant-...   # Anthropic")
         print("     export GOOGLE_API_KEY=AIza...          # Gemini")
         print("     export OPENAI_API_KEY=sk-proj-...      # OpenAI")
         print()

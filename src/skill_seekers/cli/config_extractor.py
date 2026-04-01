@@ -867,13 +867,13 @@ def main():
     parser.add_argument(
         "--enhance-local",
         action="store_true",
-        help="Enhance with AI analysis (LOCAL mode, uses Claude Code CLI)",
+        help="Enhance with AI analysis (LOCAL mode, uses coding agent CLI)",
     )
     parser.add_argument(
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
         default="none",
-        help="AI enhancement mode: auto (detect), api (Claude API), local (Claude Code CLI), none (disable)",
+        help="AI enhancement mode: auto (detect), api (Anthropic API), local (coding agent CLI), none (disable)",
     )
 
     args = parser.parse_args()
