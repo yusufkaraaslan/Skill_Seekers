@@ -761,14 +761,14 @@ class ConfigExtractor:
         self.pattern_detector = ConfigPatternDetector()
 
     def extract_from_directory(
-        self, directory: Path, max_files: int = 100
+        self, directory: Path, max_files: int = 0
     ) -> ConfigExtractionResult:
         """
         Extract configuration patterns from directory.
 
         Args:
             directory: Root directory to analyze
-            max_files: Maximum config files to process
+            max_files: Maximum config files to process (0 = unlimited)
 
         Returns:
             ConfigExtractionResult with all findings
@@ -857,7 +857,7 @@ def main():
     parser.add_argument("directory", type=Path, help="Directory to analyze")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
     parser.add_argument(
-        "--max-files", type=int, default=100, help="Maximum config files to process"
+        "--max-files", type=int, default=0, help="Maximum config files to process (0 = unlimited)"
     )
     parser.add_argument(
         "--enhance",
