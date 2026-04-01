@@ -720,11 +720,8 @@ class GitHubScraper:
             logger.warning("No languages detected - skipping code analysis")
             return
 
-        # Determine primary language
-        primary_language = max(languages.items(), key=lambda x: x[1]["bytes"])[0]
-        logger.info(f"Primary language: {primary_language}")
-
-        # Determine file extensions to analyze
+        # Determine languages to analyze
+        # Use config "language" field if set, otherwise analyze top languages by bytes
         extension_map = {
             "Python": [".py"],
             "JavaScript": [".js", ".jsx"],
@@ -742,9 +739,30 @@ class GitHubScraper:
             "GDScript": [".gd"],
         }
 
-        extensions = extension_map.get(primary_language, [])
+        # Check if config specifies target language(s)
+        config_language = self.config.get("language", "")
+        if config_language:
+            # Config can specify comma-separated languages: "C#,C++"
+            target_languages = [lang.strip() for lang in config_language.split(",")]
+            logger.info(f"Target language(s) from config: {', '.join(target_languages)}")
+        else:
+            # Analyze top 3 languages that have extension mappings
+            sorted_langs = sorted(languages.items(), key=lambda x: x[1]["bytes"], reverse=True)
+            target_languages = [
+                lang for lang, _ in sorted_langs if lang in extension_map
+            ][:3]
+            if not target_languages:
+                primary_language = max(languages.items(), key=lambda x: x[1]["bytes"])[0]
+                target_languages = [primary_language]
+            logger.info(f"Primary language(s): {', '.join(target_languages)}")
+
+        # Collect all extensions for target languages
+        extensions = []
+        for lang in target_languages:
+            extensions.extend(extension_map.get(lang, []))
+
         if not extensions:
-            logger.warning(f"No file extensions mapped for {primary_language}")
+            logger.warning(f"No file extensions mapped for {target_languages}")
             return
 
         # Analyze files matching patterns and extensions
