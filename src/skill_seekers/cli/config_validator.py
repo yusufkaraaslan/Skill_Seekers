@@ -178,9 +178,7 @@ class ConfigValidator:
                         f"marketplace_targets[{i}]: missing required field 'marketplace'"
                     )
                 if not isinstance(mt["marketplace"], str):
-                    raise ValueError(
-                        f"marketplace_targets[{i}]: 'marketplace' must be a string"
-                    )
+                    raise ValueError(f"marketplace_targets[{i}]: 'marketplace' must be a string")
 
         # Validate each source
         for i, source in enumerate(sources):

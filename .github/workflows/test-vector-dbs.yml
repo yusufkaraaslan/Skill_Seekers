@@ -51,7 +51,7 @@ jobs:
     - name: Run adaptor tests
       run: |
         echo "🧪 Testing $ADAPTOR_NAME adaptor..."
-        python -m pytest "tests/test_${ADAPTOR_NAME}_adaptor.py" -v --tb=short
+        python -m pytest "tests/test_adaptors/test_${ADAPTOR_NAME}_adaptor.py" -v --tb=short
 
     - name: Test adaptor integration
       run: |

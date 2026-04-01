@@ -871,16 +871,16 @@ async def push_config_tool(args: dict) -> list[TextContent]:
 
         output = f"""✅ Config pushed successfully!
 
-📄 Config: {result['config_name']}
-📂 Path: {result['config_path']}
-🏷️  Category: {result['category']}
-📦 Source: {result['source']}
-🔀 Branch: {result['branch']}
-📝 Commit: {result['commit_sha']}
-💬 Message: {result['message']}
+📄 Config: {result["config_name"]}
+📂 Path: {result["config_path"]}
+🏷️  Category: {result["category"]}
+📦 Source: {result["source"]}
+🔀 Branch: {result["branch"]}
+📝 Commit: {result["commit_sha"]}
+💬 Message: {result["message"]}
 
 To fetch this config:
-  fetch_config(source="{result['source']}", config_name="{result['config_name']}")
+  fetch_config(source="{result["source"]}", config_name="{result["config_name"]}")
 """
         return [TextContent(type="text", text=output)]
 

@@ -1131,7 +1131,9 @@ class DocToSkillConverter:
 
         for sitemap_url in sitemap_urls_to_try:
             try:
-                response = requests.get(sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"})
+                response = requests.get(
+                    sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"}
+                )
                 if response.status_code != 200:
                     continue
 
@@ -1144,7 +1146,11 @@ class DocToSkillConverter:
                 # Handle sitemap index (nested sitemaps)
                 for sitemap in root.findall(".//sm:sitemap/sm:loc", ns):
                     try:
-                        sub_resp = requests.get(sitemap.text.strip(), timeout=10, headers={"User-Agent": "SkillSeekers/3.4"})
+                        sub_resp = requests.get(
+                            sitemap.text.strip(),
+                            timeout=10,
+                            headers={"User-Agent": "SkillSeekers/3.4"},
+                        )
                         if sub_resp.status_code == 200:
                             sub_root = ET.fromstring(sub_resp.text)
                             for loc in sub_root.findall(".//sm:url/sm:loc", ns):

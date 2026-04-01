@@ -1314,13 +1314,15 @@ async def push_config(
     """
     from skill_seekers.mcp.tools.source_tools import push_config_tool
 
-    result = await push_config_tool({
-        "config_path": config_path,
-        "source_name": source_name,
-        "category": category,
-        "create_branch": create_branch,
-        "force": force,
-    })
+    result = await push_config_tool(
+        {
+            "config_path": config_path,
+            "source_name": source_name,
+            "category": category,
+            "create_branch": create_branch,
+            "force": force,
+        }
+    )
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
@@ -1371,9 +1373,7 @@ async def add_marketplace(
     return str(result)
 
 
-@safe_tool_decorator(
-    description="List all registered plugin marketplace repositories."
-)
+@safe_tool_decorator(description="List all registered plugin marketplace repositories.")
 async def list_marketplaces(enabled_only: bool = False) -> str:
     """List all registered plugin marketplace repositories."""
     result = await list_marketplaces_impl({"enabled_only": enabled_only})

@@ -899,9 +899,7 @@ def process_markdown_docs(
     return index_data
 
 
-def _enhance_docs_with_ai(
-    docs: list[dict], ai_mode: str, agent: str | None = None
-) -> list[dict]:
+def _enhance_docs_with_ai(docs: list[dict], ai_mode: str, agent: str | None = None) -> list[dict]:
     """
     Enhance documentation analysis with AI via AgentClient.
 
@@ -1441,9 +1439,7 @@ def analyze_codebase(
     logger.info("Analyzing architectural patterns...")
     from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
 
-    arch_detector = ArchitecturalPatternDetector(
-        enhance_with_ai=enhance_architecture, agent=agent
-    )
+    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture, agent=agent)
     arch_report = arch_detector.analyze(directory, results["files"])
 
     # Save architecture analysis if we have patterns OR frameworks (fixes #239)

@@ -760,9 +760,7 @@ class ConfigExtractor:
         self.parser = ConfigParser()
         self.pattern_detector = ConfigPatternDetector()
 
-    def extract_from_directory(
-        self, directory: Path, max_files: int = 0
-    ) -> ConfigExtractionResult:
+    def extract_from_directory(self, directory: Path, max_files: int = 0) -> ConfigExtractionResult:
         """
         Extract configuration patterns from directory.
 

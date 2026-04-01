@@ -835,9 +835,8 @@ class UnifiedScraper:
                     refs / "test_examples" / "test_examples.json",
                     temp_output / "test_examples" / "test_examples.json",
                 ),
-                "how_to_guides": self._load_guide_collection(
-                    refs / "tutorials"
-                ) or self._load_guide_collection(temp_output / "tutorials"),
+                "how_to_guides": self._load_guide_collection(refs / "tutorials")
+                or self._load_guide_collection(temp_output / "tutorials"),
                 "config_patterns": self._load_json_fallback(
                     refs / "config_patterns" / "config_patterns.json",
                     temp_output / "config_patterns" / "config_patterns.json",
@@ -846,9 +845,8 @@ class UnifiedScraper:
                     refs / "architecture" / "architectural_patterns.json",
                     temp_output / "architecture" / "architectural_patterns.json",
                 ),
-                "api_reference": self._load_api_reference(
-                    refs / "api_reference"
-                ) or self._load_api_reference(temp_output / "api_reference"),
+                "api_reference": self._load_api_reference(refs / "api_reference")
+                or self._load_api_reference(temp_output / "api_reference"),
                 "dependency_graph": self._load_json_fallback(
                     refs / "dependencies" / "dependency_graph.json",
                     temp_output / "dependencies" / "dependency_graph.json",
@@ -1626,9 +1624,8 @@ class UnifiedScraper:
                     refs / "test_examples" / "test_examples.json",
                     temp_output / "test_examples" / "test_examples.json",
                 ),
-                "how_to_guides": self._load_guide_collection(
-                    refs / "tutorials"
-                ) or self._load_guide_collection(temp_output / "tutorials"),
+                "how_to_guides": self._load_guide_collection(refs / "tutorials")
+                or self._load_guide_collection(temp_output / "tutorials"),
                 "config_patterns": self._load_json_fallback(
                     refs / "config_patterns" / "config_patterns.json",
                     temp_output / "config_patterns" / "config_patterns.json",
@@ -1637,9 +1634,8 @@ class UnifiedScraper:
                     refs / "architecture" / "architectural_patterns.json",
                     temp_output / "architecture" / "architectural_patterns.json",
                 ),
-                "api_reference": self._load_api_reference(
-                    refs / "api_reference"
-                ) or self._load_api_reference(temp_output / "api_reference"),
+                "api_reference": self._load_api_reference(refs / "api_reference")
+                or self._load_api_reference(temp_output / "api_reference"),
                 "dependency_graph": self._load_json_fallback(
                     refs / "dependencies" / "dependency_graph.json",
                     temp_output / "dependencies" / "dependency_graph.json",
