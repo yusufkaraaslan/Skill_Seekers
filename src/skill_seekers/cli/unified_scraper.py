@@ -451,6 +451,7 @@ class UnifiedScraper:
             "include_code": source.get("include_code", True),
             "code_analysis_depth": source.get("code_analysis_depth", "surface"),
             "file_patterns": source.get("file_patterns", []),
+            "language": source.get("language", ""),
             "local_repo_path": local_repo_path,  # Use cloned path if available
         }
 
