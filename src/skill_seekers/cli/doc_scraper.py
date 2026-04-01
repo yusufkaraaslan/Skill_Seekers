@@ -2490,10 +2490,11 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
 
         try:
             enhance_cmd = ["skill-seekers-enhance", f"output/{config['name']}/"]
-            enhance_cmd.extend(["--enhance-level", str(args.enhance_level)])
 
             if args.api_key:
                 enhance_cmd.extend(["--api-key", args.api_key])
+            if getattr(args, "agent", None):
+                enhance_cmd.extend(["--agent", args.agent])
             if getattr(args, "interactive_enhancement", False):
                 enhance_cmd.append("--interactive-enhancement")
 
@@ -2505,9 +2506,8 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
         except FileNotFoundError:
             logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
             logger.info(
-                "  skill-seekers-enhance output/%s/ --enhance-level %d",
+                "  skill-seekers enhance output/%s/",
                 config["name"],
-                args.enhance_level,
             )
 
     # Print packaging instructions
@@ -2517,7 +2517,7 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
     # Suggest enhancement if not done
     if getattr(args, "enhance_level", 0) == 0:
         logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
-        logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
+        logger.info("  skill-seekers enhance output/%s/", config["name"])
         logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")
         logger.info(
             "  API-based:            skill-seekers-enhance-api output/%s/",
