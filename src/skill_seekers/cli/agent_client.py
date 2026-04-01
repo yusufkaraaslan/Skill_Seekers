@@ -113,6 +113,7 @@ def get_default_timeout() -> int:
     except ValueError:
         return DEFAULT_ENHANCE_TIMEOUT
 
+
 # Provider → target platform mapping (for --target defaults)
 PROVIDER_TARGET_MAP = {
     "anthropic": "claude",
@@ -310,11 +311,13 @@ class AgentClient:
     def _call_local(
         self,
         prompt: str,
-        timeout: int = 300,
+        timeout: int | None = None,
         output_file: str | Path | None = None,
         cwd: str | Path | None = None,
     ) -> str | None:
         """Call via LOCAL CLI agent using agent presets."""
+        if timeout is None:
+            timeout = get_default_timeout()
         # Handle custom agent from env var
         if self.agent == "custom":
             custom_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()

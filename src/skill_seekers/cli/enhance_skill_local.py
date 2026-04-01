@@ -914,6 +914,45 @@ rm {prompt_file}
                     print("❌ SKILL.md not found after enhancement")
                     return False
             else:
+                # Exit code 75 = EX_TEMPFAIL (retryable temporary failure from Kimi CLI)
+                if result.returncode == 75:
+                    print(f"⚠️  {self.agent_display} returned temporary failure (exit code: 75)")
+                    print(
+                        "   This usually means a transient API issue (timeout, rate limit, or empty response)."
+                    )
+                    print("   Retrying once in 5 seconds...")
+                    print()
+                    time.sleep(5)
+                    result_retry, error = self._run_agent_command(
+                        prompt_file, timeout, include_permissions_flag=True
+                    )
+                    if error:
+                        print(f"❌ {error}")
+                        with contextlib.suppress(Exception):
+                            os.unlink(prompt_file)
+                        return False
+                    if result_retry.returncode == 0:
+                        elapsed = time.time() - start_time
+                        if self.skill_md_path.exists():
+                            new_mtime = self.skill_md_path.stat().st_mtime
+                            new_size = self.skill_md_path.stat().st_size
+                            if new_mtime > initial_mtime and new_size > initial_size:
+                                print(f"✅ Enhancement complete on retry! ({elapsed:.1f} seconds)")
+                                print(f"   SKILL.md updated: {new_size:,} bytes")
+                                print()
+                                with contextlib.suppress(Exception):
+                                    os.unlink(prompt_file)
+                                return True
+                    print(f"❌ Retry also failed (exit code: {result_retry.returncode})")
+                    if result_retry.stderr:
+                        stderr_lines = result_retry.stderr.strip().split("\n")
+                        for line in stderr_lines[:10]:
+                            print(f"   | {line}")
+                    print("   Try again later or use API mode:")
+                    print("     export ANTHROPIC_API_KEY=sk-ant-...")
+                    print(f"     skill-seekers enhance {self.skill_dir} --target claude")
+                    return False
+
                 print(f"❌ {self.agent_display} returned error (exit code: {result.returncode})")
                 if result.stderr:
                     stderr_lines = result.stderr.strip().split("\n")
@@ -1382,11 +1421,16 @@ Force Mode (LOCAL only, Default ON):
         help="Disable force mode: enable confirmation prompts (default: force mode ON)",
     )
 
+    from skill_seekers.cli.agent_client import get_default_timeout
+
     parser.add_argument(
         "--timeout",
         type=int,
-        default=600,
-        help="Timeout in seconds for headless mode (default: 600 = 10 minutes)",
+        default=get_default_timeout(),
+        help=(
+            "Timeout in seconds for headless mode "
+            "(default: 45 minutes, set SKILL_SEEKER_ENHANCE_TIMEOUT to override)"
+        ),
     )
 
     args = parser.parse_args()

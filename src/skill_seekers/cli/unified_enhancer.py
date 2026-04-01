@@ -228,7 +228,9 @@ class UnifiedEnhancer:
 
     def _call_claude(self, prompt: str, max_tokens: int = 1000) -> str | None:
         """Call AI agent (API or LOCAL mode) via AgentClient."""
-        timeout = 120 if self._agent.mode == "local" else None
+        from skill_seekers.cli.agent_client import get_default_timeout
+
+        timeout = get_default_timeout() if self._agent.mode == "local" else None
         return self._agent.call(prompt, max_tokens=max_tokens, timeout=timeout)
 
     def _get_default_prompt(self, enhancement_type: str) -> str:
