@@ -15,7 +15,7 @@ All tool implementations are delegated to modular tool files in tools/ directory
   * Scraping tools (11): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_video, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns, scrape_generic
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
-  * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Source tools (6): fetch_config, submit_config, push_config, add_config_source, list_config_sources, remove_config_source
   * Marketplace tools (4): add_marketplace, list_marketplaces, remove_marketplace, publish_to_marketplace
   * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
   * Workflow tools (5): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
@@ -1284,6 +1284,43 @@ async def remove_config_source(name: str) -> str:
         Removal results with success/error message.
     """
     result = await remove_config_source_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Push a config to a registered config source repository. Validates, places in category directory, commits, and pushes."
+)
+async def push_config(
+    config_path: str,
+    source_name: str,
+    category: str = "auto",
+    create_branch: bool = False,
+    force: bool = False,
+) -> str:
+    """
+    Push a config to a registered config source repository.
+
+    Args:
+        config_path: Path to config JSON file. Example: 'configs/unity-spine.json'
+        source_name: Registered source name. Example: 'spyke'
+        category: Category directory (e.g., 'game-engines'). Auto-detected if 'auto'.
+        create_branch: Create feature branch instead of pushing to main. Default: false
+        force: Overwrite existing config if it exists. Default: false
+
+    Returns:
+        Push results with commit SHA and config location.
+    """
+    from skill_seekers.mcp.tools.source_tools import push_config_tool
+
+    result = await push_config_tool({
+        "config_path": config_path,
+        "source_name": source_name,
+        "category": category,
+        "create_branch": create_branch,
+        "force": force,
+    })
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
