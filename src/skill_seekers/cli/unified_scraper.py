@@ -331,6 +331,11 @@ class UnifiedScraper:
             shutil.move(docs_data_dir, cache_data_dir)
             logger.info(f"📦 Moved docs data to cache: {cache_data_dir}")
 
+            # Update data_file path to point to cache location
+            if self.scraped_data["documentation"]:
+                cached_data_file = os.path.join(cache_data_dir, "summary.json")
+                self.scraped_data["documentation"][-1]["data_file"] = cached_data_file
+
     def _clone_github_repo(self, repo_name: str, idx: int = 0) -> str | None:
         """
         Clone GitHub repository to cache directory for C3.x analysis.
