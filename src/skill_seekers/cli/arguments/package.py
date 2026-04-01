@@ -55,7 +55,7 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "pinecone",
             ],
             "default": None,
-            "help": "Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
+            "help": "Target LLM platform (auto-detected from API keys, or 'markdown' if none set)",
             "metavar": "PLATFORM",
         },
     },
