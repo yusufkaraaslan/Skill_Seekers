@@ -67,6 +67,8 @@ AGENT_PRESETS = {
             "{cwd}",
         ],
         "version_check": ["kimi", "--version"],
+        "uses_stdin": True,
+        "parse_output": "kimi",  # Needs special output parsing
     },
 }
 
@@ -351,9 +353,13 @@ class AgentClient:
                     if json_file.name != "prompt.json":
                         return json_file.read_text(encoding="utf-8")
 
-                # Fall back to stdout
+                # Fall back to stdout (with agent-specific parsing)
                 if result.stdout and result.stdout.strip():
-                    return result.stdout.strip()
+                    stdout = result.stdout.strip()
+                    parser = preset.get("parse_output")
+                    if parser == "kimi":
+                        stdout = self._parse_kimi_output(stdout)
+                    return stdout
 
                 logger.warning(f"⚠️  No output from {self.agent_display}")
                 return None
@@ -370,6 +376,26 @@ class AgentClient:
         except Exception as e:
             logger.warning(f"⚠️  {self.agent_display} error: {e}")
             return None
+
+    @staticmethod
+    def _parse_kimi_output(raw_output: str) -> str:
+        """Parse Kimi CLI --print mode output to extract text content.
+
+        Kimi's --print mode outputs structured lines like:
+            TurnBegin(...)
+            StepBegin(...)
+            TextPart(type='text', text='actual content')
+            ThinkPart(type='think', think='...')
+
+        This extracts the text= values from TextPart lines.
+        """
+        import re
+
+        text_parts = re.findall(r"TextPart\(type='text', text='(.+?)'\)", raw_output)
+        if text_parts:
+            return "\n".join(text_parts)
+        # Fallback: return raw if no TextPart found
+        return raw_output
 
     def is_available(self) -> bool:
         """Check if the configured agent/API is available."""
