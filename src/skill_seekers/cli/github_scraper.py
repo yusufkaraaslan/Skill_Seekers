@@ -714,14 +714,7 @@ class GitHubScraper:
 
         logger.info(f"Extracting code signatures ({self.code_analysis_depth} analysis)...")
 
-        # Get primary language for the repository
-        languages = self.extracted_data.get("languages", {})
-        if not languages:
-            logger.warning("No languages detected - skipping code analysis")
-            return
-
-        # Determine languages to analyze
-        # Use config "language" field if set, otherwise analyze top languages by bytes
+        # Build reverse extension → language map for per-file detection
         extension_map = {
             "Python": [".py"],
             "JavaScript": [".js", ".jsx"],
@@ -738,92 +731,78 @@ class GitHubScraper:
             "PHP": [".php"],
             "GDScript": [".gd"],
         }
+        ext_to_lang = {}
+        for lang, exts in extension_map.items():
+            for ext in exts:
+                ext_to_lang[ext] = lang
 
-        # Check if config specifies target language(s)
+        # Optional: filter to specific languages from config
+        target_languages = None
         config_language = self.config.get("language", "")
         if config_language:
-            # Config can specify comma-separated languages: "C#,C++"
-            target_languages = [lang.strip() for lang in config_language.split(",")]
-            logger.info(f"Target language(s) from config: {', '.join(target_languages)}")
-        else:
-            # Analyze top 3 languages that have extension mappings
-            sorted_langs = sorted(languages.items(), key=lambda x: x[1]["bytes"], reverse=True)
-            target_languages = [
-                lang for lang, _ in sorted_langs if lang in extension_map
-            ][:3]
-            if not target_languages:
-                primary_language = max(languages.items(), key=lambda x: x[1]["bytes"])[0]
-                target_languages = [primary_language]
-            logger.info(f"Primary language(s): {', '.join(target_languages)}")
+            target_languages = {lang.strip() for lang in config_language.split(",")}
+            logger.info(f"Language filter from config: {', '.join(sorted(target_languages))}")
 
-        # Collect all extensions for target languages
-        extensions = []
-        for lang in target_languages:
-            extensions.extend(extension_map.get(lang, []))
-
-        if not extensions:
-            logger.warning(f"No file extensions mapped for {target_languages}")
-            return
-
-        # Analyze files matching patterns and extensions
+        # Analyze ALL files, detecting language per-file from extension
         analyzed_files = []
         file_tree = self.extracted_data.get("file_tree", [])
+        languages_found = set()
 
         for file_info in file_tree:
             file_path = file_info["path"]
 
-            # Check if file matches extension
-            if not any(file_path.endswith(ext) for ext in extensions):
+            # Detect language from file extension
+            ext = os.path.splitext(file_path)[1].lower()
+            language = ext_to_lang.get(ext)
+            if not language:
                 continue
 
-            # Check if file matches patterns (if specified)
+            # Apply language filter if config specifies target languages
+            if target_languages and language not in target_languages:
+                continue
+
+            # Check if file matches patterns (if specified in config)
             if self.file_patterns and not any(
                 fnmatch.fnmatch(file_path, pattern) for pattern in self.file_patterns
             ):
                 continue
 
-            # Analyze this file
+            # Analyze this file with the correct language
             try:
-                # Read file content based on mode
                 if self.local_repo_path:
-                    # Local mode - read from filesystem
                     full_path = os.path.join(self.local_repo_path, file_path)
                     with open(full_path, encoding="utf-8") as f:
                         content = f.read()
                 else:
-                    # GitHub API mode - fetch from API
                     file_content = self.repo.get_contents(file_path)
                     content = file_content.decoded_content.decode("utf-8")
 
-                analysis_result = self.code_analyzer.analyze_file(
-                    file_path, content, primary_language
-                )
+                analysis_result = self.code_analyzer.analyze_file(file_path, content, language)
 
                 if analysis_result and (
                     analysis_result.get("classes") or analysis_result.get("functions")
                 ):
                     analyzed_files.append(
-                        {"file": file_path, "language": primary_language, **analysis_result}
+                        {"file": file_path, "language": language, **analysis_result}
                     )
-
-                    logger.debug(
-                        f"Analyzed {file_path}: "
-                        f"{len(analysis_result.get('classes', []))} classes, "
-                        f"{len(analysis_result.get('functions', []))} functions"
-                    )
+                    languages_found.add(language)
 
             except Exception as e:
                 logger.debug(f"Could not analyze {file_path}: {e}")
                 continue
 
-            # Limit number of files analyzed to avoid rate limits (GitHub API mode only)
-            if not self.local_repo_path and len(analyzed_files) >= 50:
-                logger.info("Reached analysis limit (50 files, GitHub API mode)")
-                break
+        # Determine primary language for backward compat in output
+        repo_languages = self.extracted_data.get("languages", {})
+        primary_language = (
+            max(repo_languages.items(), key=lambda x: x[1]["bytes"])[0]
+            if repo_languages
+            else "Unknown"
+        )
 
         self.extracted_data["code_analysis"] = {
             "depth": self.code_analysis_depth,
             "language": primary_language,
+            "languages_analyzed": sorted(languages_found),
             "files_analyzed": len(analyzed_files),
             "files": analyzed_files,
         }
@@ -832,8 +811,9 @@ class GitHubScraper:
         total_classes = sum(len(f.get("classes", [])) for f in analyzed_files)
         total_functions = sum(len(f.get("functions", [])) for f in analyzed_files)
 
+        lang_summary = ", ".join(sorted(languages_found)) if languages_found else "none"
         logger.info(
-            f"Code analysis complete: {len(analyzed_files)} files, {total_classes} classes, {total_functions} functions"
+            f"Code analysis complete: {len(analyzed_files)} files, {total_classes} classes, {total_functions} functions ({lang_summary})"
         )
 
     def _extract_issues(self):

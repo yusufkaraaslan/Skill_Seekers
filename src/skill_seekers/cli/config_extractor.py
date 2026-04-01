@@ -271,13 +271,13 @@ class ConfigFileDetector:
         ".tmp",
     }
 
-    def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
+    def find_config_files(self, directory: Path, max_files: int = 0) -> list[ConfigFile]:
         """
         Find all configuration files in directory.
 
         Args:
             directory: Root directory to search
-            max_files: Maximum number of config files to find
+            max_files: Maximum number of config files to find (0 = unlimited)
 
         Returns:
             List of ConfigFile objects
@@ -286,7 +286,7 @@ class ConfigFileDetector:
         found_count = 0
 
         for file_path in self._walk_directory(directory):
-            if found_count >= max_files:
+            if max_files > 0 and found_count >= max_files:
                 logger.info(f"Reached max_files limit ({max_files})")
                 break
 

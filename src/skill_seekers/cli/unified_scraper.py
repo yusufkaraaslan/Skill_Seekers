@@ -226,7 +226,7 @@ class UnifiedScraper:
             "url_patterns": source.get("url_patterns", {}),
             "categories": source.get("categories", {}),
             "rate_limit": source.get("rate_limit", 0.5),
-            "max_pages": source.get("max_pages", 100),
+            "max_pages": source.get("max_pages", 500),
         }
 
         # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
