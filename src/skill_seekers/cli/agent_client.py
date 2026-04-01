@@ -43,6 +43,7 @@ AGENT_PRESETS = {
         "display_name": "OpenAI Codex CLI",
         "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
         "version_check": ["codex", "--version"],
+        "uses_stdin": True,
     },
     "copilot": {
         "display_name": "GitHub Copilot CLI",
@@ -141,7 +142,8 @@ class AgentClient:
         # Detect API key and provider
         if api_key:
             self.api_key = api_key
-            self.provider = "anthropic"  # Assume anthropic if key provided directly
+            # Detect provider from key prefix or env vars
+            self.provider = self._detect_provider_from_key(api_key)
         else:
             self.api_key, self.provider = self.detect_api_key()
 
@@ -157,6 +159,24 @@ class AgentClient:
         self.client = None
         if self.mode == "api" and self.api_key:
             self.client = self._init_api_client()
+
+    @staticmethod
+    def _detect_provider_from_key(api_key: str) -> str:
+        """Detect provider from API key prefix or fall back to env var check."""
+        if api_key.startswith("sk-ant-"):
+            return "anthropic"
+        if api_key.startswith("sk-"):
+            # Could be OpenAI or Moonshot — check env vars
+            if os.environ.get("MOONSHOT_API_KEY", "").strip() == api_key:
+                return "moonshot"
+            return "openai"
+        if api_key.startswith("AIza"):
+            return "google"
+        # Default: check which env var matches
+        for env_var, provider in API_KEY_MAP.items():
+            if os.environ.get(env_var, "").strip() == api_key:
+                return provider
+        return "anthropic"  # Safe fallback
 
     def _init_api_client(self):
         """Initialize the API client based on detected provider."""
@@ -275,11 +295,11 @@ class AgentClient:
             with tempfile.TemporaryDirectory(prefix="agent_client_") as temp_dir:
                 temp_path = Path(temp_dir)
                 prompt_file = temp_path / "prompt.md"
-                resp_file = output_file or (temp_path / "response.json")
+                resp_file = Path(output_file) if output_file else (temp_path / "response.json")
 
-                # Write prompt with output instructions
+                # Only append output file instruction when caller explicitly requests it
                 full_prompt = prompt
-                if output_file or resp_file:
+                if output_file:
                     full_prompt += f"\n\nWrite your response to: {resp_file}\n"
 
                 prompt_file.write_text(full_prompt)
@@ -292,14 +312,15 @@ class AgentClient:
                     part = part.replace("{skill_dir}", str(cwd or temp_path))
                     cmd.append(part)
 
-                # Execute
+                # Execute — pipe stdin for agents that read from it (e.g., codex)
+                stdin_input = full_prompt if preset.get("uses_stdin") else None
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     text=True,
                     timeout=timeout,
                     cwd=str(cwd or temp_path),
-                    stdin=subprocess.DEVNULL,
+                    input=stdin_input,
                 )
 
                 if result.returncode != 0:

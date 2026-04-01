@@ -16,7 +16,6 @@ import json
 import logging
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from skill_seekers.cli.agent_client import AgentClient
 
@@ -217,8 +216,8 @@ Focus on actionable insights that help developers understand and improve their c
             logger.info("🖥️  Launching LOCAL agent for config analysis...")
             logger.info("⏱️  This will take 30-60 seconds...")
 
-            # Build the prompt (without output_file since AgentClient handles that)
-            prompt_content = self._create_local_prompt(result, Path("config_enhancement.json"))
+            # Build the prompt — AgentClient handles output file management
+            prompt_content = self._create_local_prompt(result)
 
             # Call via AgentClient which handles temp dirs, file polling, etc.
             response_text = self._agent.call(prompt_content, timeout=300)
@@ -244,12 +243,11 @@ Focus on actionable insights that help developers understand and improve their c
             logger.error(f"❌ LOCAL enhancement failed: {e}")
             return result
 
-    def _create_local_prompt(self, result: dict, output_file: Path) -> str:
-        """Create prompt file for coding agent CLI
+    def _create_local_prompt(self, result: dict) -> str:
+        """Create prompt for AI agent.
 
         Args:
             result: Config extraction result dict
-            output_file: Absolute path where the agent should write the JSON output
 
         Returns:
             Prompt content string
@@ -276,9 +274,6 @@ Focus on actionable insights that help developers understand and improve their c
 """)
 
         prompt = f"""# Configuration Analysis Task
-
-IMPORTANT: You MUST write the output to this EXACT file path:
-{output_file}
 
 ## Configuration Files ({len(config_files)} total, showing first 15)
 
@@ -313,7 +308,7 @@ The JSON must have this EXACT structure:
 
 ## Instructions
 
-1. Use the Write tool to create the JSON file at: {output_file}
+1. Return the JSON response directly
 2. Include an enhancement entry for each config file shown above
 3. Focus on actionable insights:
    - Explain what each config does in 1-2 sentences
