@@ -258,6 +258,17 @@ class UnifiedScraper:
         doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
         cmd = [sys.executable, str(doc_scraper_path), "--config", temp_config_path, "--fresh"]
 
+        # Forward agent-related CLI args so doc scraper enhancement respects
+        # the user's chosen agent instead of defaulting to claude.
+        cli_args = getattr(self, "_cli_args", None)
+        if cli_args is not None:
+            if getattr(cli_args, "agent", None):
+                cmd.extend(["--agent", cli_args.agent])
+            if getattr(cli_args, "agent_cmd", None):
+                cmd.extend(["--agent-cmd", cli_args.agent_cmd])
+            if getattr(cli_args, "api_key", None):
+                cmd.extend(["--api-key", cli_args.api_key])
+
         # Support "browser": true in source config for JavaScript SPA sites
         if source.get("browser", False):
             cmd.append("--browser")
@@ -1543,6 +1554,11 @@ class UnifiedScraper:
         logger.info(f"   Analyzing codebase: {local_repo_path}")
 
         try:
+            # Resolve agent from CLI args for C3.x analysis
+            cli_args = getattr(self, "_cli_args", None)
+            agent = getattr(cli_args, "agent", None) if cli_args else None
+            agent_cmd = getattr(cli_args, "agent_cmd", None) if cli_args else None
+
             # Run full C3.x analysis
             _results = analyze_codebase(
                 directory=Path(local_repo_path),
@@ -1559,6 +1575,8 @@ class UnifiedScraper:
                 extract_config_patterns=True,  # C3.4: Config patterns
                 extract_docs=True,
                 enhance_level=0 if source.get("ai_mode", "auto") == "none" else 2,
+                agent=agent,
+                agent_cmd=agent_cmd,
             )
 
             # Load C3.x outputs into memory
@@ -1867,10 +1885,28 @@ class UnifiedScraper:
                         if not agent:
                             agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
 
+                        # Read timeout from config enhancement block
+                        timeout_val = enhancement_config.get("timeout")
+                        if timeout_val is not None:
+                            if isinstance(timeout_val, str) and timeout_val.lower() in (
+                                "unlimited",
+                                "none",
+                            ):
+                                timeout_val = 86400  # 24 hours
+                            else:
+                                try:
+                                    timeout_val = int(timeout_val)
+                                    if timeout_val <= 0:
+                                        timeout_val = 86400
+                                except (ValueError, TypeError):
+                                    timeout_val = 2700
+                        else:
+                            timeout_val = 2700
+
                         enhancer = LocalSkillEnhancer(
                             self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
                         )
-                        enhancer.run(headless=True, timeout=1000)
+                        enhancer.run(headless=True, timeout=timeout_val)
                         agent_name = agent or "claude"
                         logger.info(f"✅ SKILL.md enhanced (LOCAL mode via {agent_name})")
                     except Exception as e:
@@ -2026,6 +2062,19 @@ Examples:
             "(0=off, 1=SKILL.md, 2=+arch/config, 3=full). "
             "Overrides per-source enhance_level in config."
         ),
+    )
+    parser.add_argument(
+        "--agent",
+        type=str,
+        choices=["claude", "codex", "copilot", "opencode", "kimi", "custom"],
+        metavar="AGENT",
+        help="Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
+    )
+    parser.add_argument(
+        "--agent-cmd",
+        type=str,
+        metavar="CMD",
+        help="Override agent command template (advanced)",
     )
 
     args = parser.parse_args()

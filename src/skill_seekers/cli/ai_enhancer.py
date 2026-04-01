@@ -51,7 +51,13 @@ class AIAnalysis:
 class AIEnhancer:
     """Base class for AI enhancement — delegates to AgentClient for all AI calls."""
 
-    def __init__(self, api_key: str | None = None, enabled: bool = True, mode: str = "auto"):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        enabled: bool = True,
+        mode: str = "auto",
+        agent: str | None = None,
+    ):
         """
         Initialize AI enhancer.
 
@@ -59,6 +65,7 @@ class AIEnhancer:
             api_key: API key (auto-detected from env if None)
             enabled: Enable AI enhancement (default: True)
             mode: Enhancement mode - "auto" (default), "api", or "local"
+            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
         self.enabled = enabled
 
@@ -74,7 +81,7 @@ class AIEnhancer:
         # Initialize AgentClient
         from skill_seekers.cli.agent_client import AgentClient
 
-        self._agent = AgentClient(mode=mode, api_key=api_key)
+        self._agent = AgentClient(mode=mode, api_key=api_key, agent=agent)
         self.mode = self._agent.mode
         self.client = self._agent.client  # For backward compatibility
 

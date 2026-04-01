@@ -89,6 +89,30 @@ API_KEY_MAP = {
     "OPENAI_API_KEY": "openai",
 }
 
+DEFAULT_ENHANCE_TIMEOUT = 2700  # 45 minutes
+UNLIMITED_TIMEOUT = 86400  # 24 hours (subprocess requires a finite number)
+
+
+def get_default_timeout() -> int:
+    """Return default enhancement timeout in seconds.
+
+    Priority:
+    1. SKILL_SEEKER_ENHANCE_TIMEOUT environment variable
+    2. DEFAULT_ENHANCE_TIMEOUT (45 minutes)
+
+    Supports 'unlimited' or 0/negative values which map to UNLIMITED_TIMEOUT (24h).
+    """
+    env_val = os.environ.get("SKILL_SEEKER_ENHANCE_TIMEOUT", "").strip().lower()
+    if env_val in ("unlimited", "none", "0"):
+        return UNLIMITED_TIMEOUT
+    try:
+        timeout = int(env_val)
+        if timeout <= 0:
+            return UNLIMITED_TIMEOUT
+        return timeout
+    except ValueError:
+        return DEFAULT_ENHANCE_TIMEOUT
+
 # Provider → target platform mapping (for --target defaults)
 PROVIDER_TARGET_MAP = {
     "anthropic": "claude",
@@ -232,7 +256,7 @@ class AgentClient:
         Args:
             prompt: The prompt to send
             max_tokens: Max response tokens (API mode only)
-            timeout: Timeout in seconds (default from SKILL_SEEKER_ENHANCE_TIMEOUT or 300)
+            timeout: Timeout in seconds (default from SKILL_SEEKER_ENHANCE_TIMEOUT or 2700 = 45m)
             output_file: Path for agent to write output (LOCAL mode, some agents)
             cwd: Working directory for LOCAL mode subprocess
 
@@ -240,7 +264,7 @@ class AgentClient:
             Response text, or None on failure
         """
         if timeout is None:
-            timeout = int(os.environ.get("SKILL_SEEKER_ENHANCE_TIMEOUT", "300"))
+            timeout = get_default_timeout()
 
         if self.mode == "api":
             return self._call_api(prompt, max_tokens)

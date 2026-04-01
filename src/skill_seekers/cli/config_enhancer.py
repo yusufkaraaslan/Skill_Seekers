@@ -56,14 +56,15 @@ class ConfigEnhancer:
     - AUTO mode: Automatically detects best available mode
     """
 
-    def __init__(self, mode: str = "auto"):
+    def __init__(self, mode: str = "auto", agent: str | None = None):
         """
         Initialize ConfigEnhancer.
 
         Args:
             mode: Enhancement mode - "api", "local", or "auto" (default)
+            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
-        self._agent = AgentClient(mode=mode)
+        self._agent = AgentClient(mode=mode, agent=agent)
         self.mode = self._agent.mode
         self._agent.log_mode()
 
@@ -220,7 +221,7 @@ Focus on actionable insights that help developers understand and improve their c
             prompt_content = self._create_local_prompt(result)
 
             # Call via AgentClient which handles temp dirs, file polling, etc.
-            response_text = self._agent.call(prompt_content, timeout=300)
+            response_text = self._agent.call(prompt_content)
 
             if response_text:
                 try:

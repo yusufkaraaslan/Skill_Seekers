@@ -392,7 +392,7 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                         background=False,
                         daemon=False,
                         no_force=False,
-                        timeout=600,
+                        timeout=2700,
                     )
                     _mode, _target = _pick_mode(_fake_args)
 
