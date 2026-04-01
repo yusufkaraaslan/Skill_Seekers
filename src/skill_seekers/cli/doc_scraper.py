@@ -250,7 +250,12 @@ class DocToSkillConverter:
         Returns:
             bool: True if URL matches include patterns and doesn't match exclude patterns
         """
-        if not url.startswith(self.base_url):
+        # Use directory part of base_url for prefix check so sibling pages match.
+        # e.g., base_url "https://example.com/docs/index.html" → prefix "https://example.com/docs/"
+        base_dir = self.base_url
+        if not base_dir.endswith("/"):
+            base_dir = base_dir.rsplit("/", 1)[0] + "/"
+        if not url.startswith(base_dir):
             return False
 
         if self._include_patterns and not any(pattern in url for pattern in self._include_patterns):
