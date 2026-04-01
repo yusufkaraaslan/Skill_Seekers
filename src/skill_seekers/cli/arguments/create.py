@@ -162,6 +162,24 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "VERSION",
         },
     },
+    # Agent selection for enhancement (added in v3.4.0 - multi-agent support)
+    "agent": {
+        "flags": ("--agent",),
+        "kwargs": {
+            "type": str,
+            "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
+            "help": "Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
+            "metavar": "AGENT",
+        },
+    },
+    "agent_cmd": {
+        "flags": ("--agent-cmd",),
+        "kwargs": {
+            "type": str,
+            "help": "Override agent command template (advanced)",
+            "metavar": "CMD",
+        },
+    },
 }
 
 # Merge RAG arguments from common.py into universal arguments
