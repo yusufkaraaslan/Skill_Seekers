@@ -51,8 +51,8 @@ class ConfigManager:
         "ai_enhancement": {
             "default_enhance_level": 1,  # Default AI enhancement level (0-3)
             "default_agent": None,  # "claude", "gemini", "openai", "kimi", or None (auto-detect)
-            "local_batch_size": 20,  # Patterns per Claude CLI call (default was 5)
-            "local_parallel_workers": 3,  # Concurrent Claude CLI calls
+            "local_batch_size": 20,  # Patterns per CLI agent call (default was 5)
+            "local_parallel_workers": 3,  # Concurrent CLI agent calls
         },
         "first_run": {"completed": False, "version": "2.7.0"},
     }

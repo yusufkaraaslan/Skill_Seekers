@@ -28,7 +28,7 @@ CONTENT_MATCH_POINTS = 1  # points for content keyword match
 API_CONTENT_LIMIT = 100000  # max characters for API enhancement
 API_PREVIEW_LIMIT = 40000  # max characters for preview
 
-# Local enhancement limits (uses Claude Code Max)
+# Local enhancement limits (uses coding agent CLI)
 LOCAL_CONTENT_LIMIT = 50000  # max characters for local enhancement
 LOCAL_PREVIEW_LIMIT = 20000  # max characters for preview
 
