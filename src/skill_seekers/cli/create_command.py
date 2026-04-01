@@ -205,7 +205,12 @@ class CreateCommand:
         }
     )
 
-    def _build_argv(self, module_name: str, positional_args: list[str]) -> list[str]:
+    def _build_argv(
+        self,
+        module_name: str,
+        positional_args: list[str],
+        allowlist: frozenset[str] | None = None,
+    ) -> list[str]:
         """Build argv dynamically by forwarding all explicitly-set arguments.
 
         Uses the same pattern as main.py::_reconstruct_argv().
@@ -214,18 +219,24 @@ class CreateCommand:
         Args:
             module_name: Scraper module name (e.g., "doc_scraper")
             positional_args: Positional arguments to prepend (e.g., [url] or ["--repo", repo])
+            allowlist: If provided, ONLY forward args in this set (overrides _SKIP_ARGS).
+                       Used for targets with strict arg sets like unified_scraper.
 
         Returns:
             Complete argv list for the scraper
         """
         argv = [module_name] + positional_args
 
-        # Auto-add suggested name if user didn't provide one
-        if not self.args.name and self.source_info:
+        # Auto-add suggested name if user didn't provide one (skip for allowlisted targets)
+        if not allowlist and not self.args.name and self.source_info:
             argv.extend(["--name", self.source_info.suggested_name])
 
         for key, value in vars(self.args).items():
-            if key in self._SKIP_ARGS or key.startswith("_help_"):
+            # If allowlist provided, only forward args in the allowlist
+            if allowlist is not None:
+                if key not in allowlist:
+                    continue
+            elif key in self._SKIP_ARGS or key.startswith("_help_"):
                 continue
             if not self._is_explicitly_set(key, value):
                 continue
@@ -336,12 +347,34 @@ class CreateCommand:
         argv = self._build_argv("video_scraper", positional)
         return self._call_module(video_scraper, argv)
 
+    # Args accepted by unified_scraper (allowlist for config route)
+    _UNIFIED_SCRAPER_ARGS = frozenset(
+        {
+            "merge_mode",
+            "skip_codebase_analysis",
+            "fresh",
+            "dry_run",
+            "enhance_workflow",
+            "enhance_stage",
+            "var",
+            "workflow_dry_run",
+            "api_key",
+            "enhance_level",
+            "agent",
+            "agent_cmd",
+        }
+    )
+
     def _route_config(self) -> int:
         """Route to unified scraper for config files (unified_scraper.py)."""
         from skill_seekers.cli import unified_scraper
 
         config_path = self.source_info.parsed["config_path"]
-        argv = self._build_argv("unified_scraper", ["--config", config_path])
+        argv = self._build_argv(
+            "unified_scraper",
+            ["--config", config_path],
+            allowlist=self._UNIFIED_SCRAPER_ARGS,
+        )
         return self._call_module(unified_scraper, argv)
 
     def _route_generic(self, module_name: str, file_flag: str) -> int:
