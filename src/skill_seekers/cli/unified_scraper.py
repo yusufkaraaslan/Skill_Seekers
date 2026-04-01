@@ -241,10 +241,21 @@ class UnifiedScraper:
         if "start_urls" in source:
             doc_source["start_urls"] = source["start_urls"]
 
+        # Pass through browser rendering settings
+        if source.get("browser"):
+            doc_source["browser"] = True
+        if "browser_wait_until" in source:
+            doc_source["browser_wait_until"] = source["browser_wait_until"]
+        if "browser_extra_wait" in source:
+            doc_source["browser_extra_wait"] = source["browser_extra_wait"]
+
         doc_config = {
             "name": f"{self.name}_docs",
             "description": f"Documentation for {self.name}",
             "base_url": source["base_url"],
+            "browser": source.get("browser", False),
+            "browser_wait_until": source.get("browser_wait_until", "domcontentloaded"),
+            "browser_extra_wait": source.get("browser_extra_wait", 0),
             "sources": [doc_source],
         }
 

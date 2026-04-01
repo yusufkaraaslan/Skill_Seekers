@@ -9,6 +9,8 @@
       "type": "documentation",
       "base_url": "https://docs.unity3d.com/Packages/com.unity.addressables@2.3/manual/index.html",
       "browser": true,
+      "browser_wait_until": "networkidle",
+      "browser_extra_wait": 5000,
       "extract_api": true,
       "selectors": {
         "main_content": ".content-wrap, .section, article, main",
