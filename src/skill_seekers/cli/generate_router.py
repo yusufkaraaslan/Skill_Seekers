@@ -1202,7 +1202,7 @@ Examples:
     print(f"     skill-seekers scrape --config {config_path}")
     print("3. Package router skill:")
     print(f"     skill-seekers package output/{generator.router_name}/")
-    print("4. Upload router + all sub-skills to Claude")
+    print("4. Upload router + all sub-skills to target platform")
     print("")
 
 

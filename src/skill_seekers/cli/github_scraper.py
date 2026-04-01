@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-GitHub Repository to Claude Skill Converter (Tasks C1.1-C1.12)
+GitHub Repository to AI Skill Converter (Tasks C1.1-C1.12)
 
-Converts GitHub repositories into Claude AI skills by extracting:
+Converts GitHub repositories into AI skills by extracting:
 - README and documentation
 - Code structure and signatures
 - GitHub Issues, Changelog, and Releases
@@ -920,7 +920,7 @@ class GitHubScraper:
 
 class GitHubToSkillConverter:
     """
-    Convert extracted GitHub data to Claude skill format (C1.10).
+    Convert extracted GitHub data to AI skill format (C1.10).
     """
 
     def __init__(self, config: dict[str, Any]):
@@ -1394,7 +1394,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         argparse.ArgumentParser: Configured argument parser
     """
     parser = argparse.ArgumentParser(
-        description="GitHub Repository to Claude Skill Converter",
+        description="GitHub Repository to AI Skill Converter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1547,7 +1547,7 @@ def main():
 
         # Only suggest enhancement if neither workflow nor traditional enhancement was done
         if not workflow_executed and getattr(args, "enhance_level", 0) == 0:
-            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+            logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
             logger.info("\n💡 Or use a workflow:")

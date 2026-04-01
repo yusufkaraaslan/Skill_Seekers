@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple Skill Packager
-Packages a skill directory into a .zip file for Claude.
+Packages a skill directory into a .zip file for LLM platforms.
 
 Usage:
     skill-seekers package output/steam-inventory/
@@ -197,7 +197,7 @@ def main():
     from skill_seekers.cli.arguments.package import add_package_arguments
 
     parser = argparse.ArgumentParser(
-        description="Package a skill directory into a .zip file for Claude",
+        description="Package a skill directory into a .zip file for LLM platforms",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -210,7 +210,7 @@ Examples:
   # Skip quality checks (faster, but not recommended)
   skill-seekers package output/react/ --skip-quality-check
 
-  # Package and auto-upload to Claude
+  # Package and auto-upload to target platform
   skill-seekers package output/react/ --upload
 
   # Get help

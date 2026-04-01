@@ -719,7 +719,7 @@ After writing, the file SKILL.md should:
             print("⚠️  LARGE SKILL DETECTED")
             print(f"  📊 Reference content: {total_size:,} characters")
             if self.agent == "claude":
-                print("  💡 Claude CLI limit: ~30,000-40,000 characters")
+                print("  💡 CLI agent limit: ~30,000-40,000 characters")
             else:
                 print("  💡 Local CLI agents often have input limits; summarizing to be safe")
             print()
@@ -747,7 +747,7 @@ After writing, the file SKILL.md should:
         if use_summarization:
             print(f"  ✓ Prompt created and optimized ({len(prompt):,} characters)")
             if self.agent == "claude":
-                print("  ✓ Ready for Claude CLI (within safe limits)")
+                print("  ✓ Ready for CLI agent (within safe limits)")
             else:
                 print("  ✓ Ready for local CLI (within safe limits)")
             print()
@@ -927,7 +927,7 @@ rm {prompt_file}
                     ):
                         print()
                         print("   ⚠️  This looks like a root/permission error.")
-                        print("   Claude Code CLI refuses to run as root (security policy).")
+                        print("   The CLI agent refuses to run as root (security policy).")
                         print("   Use API mode instead:")
                         print("     export ANTHROPIC_API_KEY=sk-ant-...")
                         print(f"     skill-seekers enhance {self.skill_dir} --target claude")
@@ -1297,10 +1297,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Auto-detection (no flags needed):
-  If ANTHROPIC_API_KEY is set  → Claude API mode
+  If ANTHROPIC_API_KEY is set  → Anthropic API mode
   If GOOGLE_API_KEY is set     → Gemini API mode
   If OPENAI_API_KEY is set     → OpenAI API mode
-  Otherwise                    → LOCAL mode (Claude Code Max, free)
+  Otherwise                    → LOCAL mode (coding agent CLI, free)
 
 Examples:
   # Auto-detect mode based on env vars (recommended)

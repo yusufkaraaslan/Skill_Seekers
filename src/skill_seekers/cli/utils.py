@@ -114,10 +114,10 @@ def get_api_key() -> str | None:
 
 def get_upload_url() -> str:
     """
-    Get the Claude skills upload URL
+    Get the skills upload URL
 
     Returns:
-        str: Claude skills upload URL
+        str: Skills upload URL
     """
     return "https://claude.ai/skills"
 
@@ -136,7 +136,7 @@ def print_upload_instructions(zip_path: str | Path) -> None:
     print("║                     NEXT STEP                            ║")
     print("╚══════════════════════════════════════════════════════════╝")
     print()
-    print(f"📤 Upload to Claude: {get_upload_url()}")
+    print(f"📤 Upload to platform: {get_upload_url()}")
     print()
     print(f"1. Go to {get_upload_url()}")
     print('2. Click "Upload Skill"')

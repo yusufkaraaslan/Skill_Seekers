@@ -4,7 +4,7 @@ Automatic Skill Uploader
 Uploads a skill package to LLM platforms (Claude, Gemini, OpenAI, etc.)
 
 Usage:
-    # Claude (default)
+    # Anthropic (default)
     export ANTHROPIC_API_KEY=sk-ant-...
     skill-seekers upload output/react.zip
 
@@ -117,7 +117,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Setup:
-  Claude:
+  Anthropic (Claude):
     export ANTHROPIC_API_KEY=sk-ant-...
 
   Gemini:
@@ -135,7 +135,7 @@ Setup:
     docker run -p 8080:8080 semitechnologies/weaviate:latest
 
 Examples:
-  # Upload to Claude (default)
+  # Upload to default platform
   skill-seekers upload output/react.zip
 
   # Upload to Gemini

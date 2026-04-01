@@ -61,7 +61,11 @@ class ConfigValidator:
     }
 
     # Valid merge modes
-    VALID_MERGE_MODES = {"rule-based", "ai-enhanced", "claude-enhanced"}  # claude-enhanced kept as alias
+    VALID_MERGE_MODES = {
+        "rule-based",
+        "ai-enhanced",
+        "claude-enhanced",
+    }  # claude-enhanced kept as alias
 
     # Valid code analysis depth levels
     VALID_DEPTH_LEVELS = {"surface", "deep", "full"}

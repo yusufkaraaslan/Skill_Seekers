@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Skill Seeker MCP Server
-Model Context Protocol server for generating Claude AI skills from documentation
+Model Context Protocol server for generating LLM skills from documentation
 """
 
 import asyncio
@@ -200,7 +200,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="scrape_docs",
-            description="Scrape documentation and build Claude skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available.",
+            description="Scrape documentation and build LLM skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -215,7 +215,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "enhance_local": {
                         "type": "boolean",
-                        "description": "Open terminal for local enhancement with Claude Code (default: false)",
+                        "description": "Open terminal for local enhancement with AI coding agent (default: false)",
                         "default": False,
                     },
                     "skip_scrape": {
@@ -230,7 +230,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "merge_mode": {
                         "type": "string",
-                        "description": "Override merge mode for unified configs: 'rule-based' or 'claude-enhanced' (default: from config)",
+                        "description": "Override merge mode for unified configs: 'rule-based' or 'ai-enhanced' (default: from config)",
                     },
                 },
                 "required": ["config_path"],
@@ -238,7 +238,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="package_skill",
-            description="Package a skill directory into a .zip file ready for Claude upload. Automatically uploads if ANTHROPIC_API_KEY is set.",
+            description="Package a skill directory into a .zip file ready for upload. Automatically uploads if ANTHROPIC_API_KEY is set.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -257,7 +257,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="upload_skill",
-            description="Upload a skill .zip file to Claude automatically (requires ANTHROPIC_API_KEY)",
+            description="Upload a skill .zip file automatically (requires ANTHROPIC_API_KEY)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -340,7 +340,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="scrape_pdf",
-            description="Scrape PDF documentation and build Claude skill. Extracts text, code, and images from PDF files.",
+            description="Scrape PDF documentation and build LLM skill. Extracts text, code, and images from PDF files.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -370,7 +370,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="scrape_github",
-            description="Scrape GitHub repository and build Claude skill. Extracts README, Issues, Changelog, Releases, and code structure.",
+            description="Scrape GitHub repository and build LLM skill. Extracts README, Issues, Changelog, Releases, and code structure.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -425,7 +425,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="install_skill",
-            description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Automatically uploads to Claude if ANTHROPIC_API_KEY is set.",
+            description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Automatically uploads if ANTHROPIC_API_KEY is set.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -444,7 +444,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "auto_upload": {
                         "type": "boolean",
-                        "description": "Auto-upload to Claude after packaging (requires ANTHROPIC_API_KEY). Default: true. Set to false to skip upload.",
+                        "description": "Auto-upload after packaging (requires ANTHROPIC_API_KEY). Default: true. Set to false to skip upload.",
                         "default": True,
                     },
                     "unlimited": {
@@ -898,7 +898,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
         if should_upload:
             # Upload succeeded
             output += "\n\n✅ Skill packaged and uploaded automatically!"
-            output += "\n   Your skill is now available in Claude!"
+            output += "\n   Your skill has been uploaded successfully!"
         elif auto_upload and not has_api_key:
             # User wanted upload but no API key
             output += "\n\n📝 Skill packaged successfully!"
@@ -922,7 +922,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
 
 
 async def upload_skill_tool(args: dict) -> list[TextContent]:
-    """Upload skill .zip to Claude"""
+    """Upload skill .zip file"""
     skill_zip = args["skill_zip"]
 
     # Run upload_skill.py
@@ -931,7 +931,7 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
     # Timeout: 5 minutes for upload
     timeout = 300
 
-    progress_msg = "📤 Uploading skill to Claude...\n"
+    progress_msg = "📤 Uploading skill...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
     stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
@@ -1194,7 +1194,7 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
 
 
 async def scrape_github_tool(args: dict) -> list[TextContent]:
-    """Scrape GitHub repository to Claude skill (C1.11)"""
+    """Scrape GitHub repository to LLM skill (C1.11)"""
     repo = args.get("repo")
     config_path = args.get("config_path")
     name = args.get("name")
@@ -1550,7 +1550,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
         2. Scrape documentation
         3. AI Enhancement (MANDATORY - no skip option)
         4. Package to .zip
-        5. Upload to Claude (optional)
+        5. Upload (optional)
 
     Args:
         config_name: Config to fetch from API (mutually exclusive with config_path)
@@ -1743,7 +1743,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append(stdout)
             workflow_state["phases_completed"].append("enhance_skill")
         else:
-            output_lines.append("  [DRY RUN] Would enhance SKILL.md with Claude Code")
+            output_lines.append("  [DRY RUN] Would enhance SKILL.md with AI agent")
 
         output_lines.append("")
 
@@ -1786,7 +1786,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
         # ===== PHASE 5: Upload (Optional) =====
         if auto_upload:
             phase_num = "5/5" if config_name else "4/4"
-            output_lines.append(f"📤 PHASE {phase_num}: Upload to Claude")
+            output_lines.append(f"📤 PHASE {phase_num}: Upload Skill")
             output_lines.append("-" * 70)
             output_lines.append(f"Zip file: {workflow_state['zip_path']}")
             output_lines.append("")
@@ -1817,7 +1817,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     output_lines.append("  2. Click 'Upload Skill'")
                     output_lines.append(f"  3. Select: {workflow_state['zip_path']}")
             else:
-                output_lines.append("  [DRY RUN] Would upload to Claude (if API key set)")
+                output_lines.append("  [DRY RUN] Would upload skill (if API key set)")
 
             output_lines.append("")
 
@@ -1840,7 +1840,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append("")
 
             if auto_upload and has_api_key:
-                output_lines.append("🎉 Your skill is now available in Claude!")
+                output_lines.append("🎉 Your skill has been uploaded successfully!")
                 output_lines.append("   Go to https://claude.ai/skills to use it")
             elif auto_upload:
                 output_lines.append("📝 Manual upload required (see instructions above)")

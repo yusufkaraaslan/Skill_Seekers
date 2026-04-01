@@ -74,7 +74,7 @@ Examples:
   # Preview workflow (dry run)
   skill-seekers install --config react --dry-run
 
-  # Install for Gemini instead of Claude
+  # Install for Gemini instead of default platform
   skill-seekers install --config react --target gemini
 
   # Install for OpenAI ChatGPT
@@ -107,7 +107,9 @@ Phases:
         help="Output directory for skill files (default: output/)",
     )
 
-    parser.add_argument("--no-upload", action="store_true", help="Skip automatic upload to Claude")
+    parser.add_argument(
+        "--no-upload", action="store_true", help="Skip automatic upload to target platform"
+    )
 
     parser.add_argument(
         "--unlimited",

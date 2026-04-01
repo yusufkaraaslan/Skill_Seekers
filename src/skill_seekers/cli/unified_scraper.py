@@ -45,7 +45,7 @@ class UnifiedScraper:
     1. Load and validate unified config
     2. Scrape all sources (docs, GitHub, PDF)
     3. Detect conflicts between sources
-    4. Merge intelligently (rule-based or Claude-enhanced)
+    4. Merge intelligently (rule-based or AI-enhanced)
     5. Build unified skill
     """
 

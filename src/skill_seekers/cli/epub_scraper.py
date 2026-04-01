@@ -69,7 +69,7 @@ def infer_description_from_epub(metadata: dict | None = None, name: str = "") ->
 
 
 class EpubToSkillConverter:
-    """Convert EPUB e-book to Claude skill."""
+    """Convert EPUB e-book to AI skill."""
 
     def __init__(self, config):
         self.config = config

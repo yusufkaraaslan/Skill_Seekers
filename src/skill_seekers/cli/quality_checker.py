@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quality Checker for Claude Skills
+Quality Checker for AI Skills
 Validates skill quality, checks links, and generates quality reports.
 
 Usage:
@@ -350,7 +350,7 @@ class SkillQualityChecker:
         else:
             self.report.add_info(
                 "completeness",
-                "Consider adding prerequisites section - helps Claude verify conditions first",
+                "Consider adding prerequisites section - helps the LLM verify conditions first",
                 "SKILL.md",
             )
 
