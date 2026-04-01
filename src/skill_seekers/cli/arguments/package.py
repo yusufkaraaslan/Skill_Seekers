@@ -134,6 +134,32 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Allow code block splitting (default: code blocks preserved)",
         },
     },
+    # Marketplace options
+    "marketplace": {
+        "flags": ("--marketplace",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Publish to registered marketplace after packaging (use add_marketplace to register)",
+            "metavar": "NAME",
+        },
+    },
+    "marketplace_category": {
+        "flags": ("--marketplace-category",),
+        "kwargs": {
+            "type": str,
+            "default": "development",
+            "help": "Plugin category in marketplace (default: development)",
+            "metavar": "CAT",
+        },
+    },
+    "create_branch": {
+        "flags": ("--create-branch",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Create a feature branch in marketplace repo instead of committing to main",
+        },
+    },
 }
 
 
