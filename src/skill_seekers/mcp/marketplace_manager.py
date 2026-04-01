@@ -68,6 +68,7 @@ class MarketplaceManager:
         if token_env is None:
             token_env = self._default_token_env(git_url)
 
+        now = datetime.now(timezone.utc).isoformat()
         marketplace = {
             "name": name.lower(),
             "git_url": git_url.strip(),
@@ -75,8 +76,8 @@ class MarketplaceManager:
             "branch": branch,
             "author": author or {"name": "", "email": ""},
             "enabled": enabled,
-            "added_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "added_at": now,
+            "updated_at": now,
         }
 
         registry = self._read_registry()

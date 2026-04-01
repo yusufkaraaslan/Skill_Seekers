@@ -92,16 +92,17 @@ class MarketplacePublisher:
                 f"for marketplace '{marketplace_name}'"
             )
 
-        # 5. Clone/pull marketplace repo
+        # 5. Clone/pull marketplace repo (full clone, not shallow — needed for push)
         cache_name = f"marketplace_{marketplace_name}"
+        repo_path = self.git_repo.cache_dir / cache_name
+        clone_url = self.git_repo.inject_token(git_url, token) if token else git_url
         try:
-            repo_path = self.git_repo.clone_or_pull(
-                source_name=cache_name,
-                git_url=git_url,
-                branch=branch,
-                token=token,
-            )
-        except Exception as e:
+            if repo_path.exists() and (repo_path / ".git").exists():
+                repo_obj = git.Repo(repo_path)
+                repo_obj.remotes.origin.pull(branch)
+            else:
+                git.Repo.clone_from(clone_url, repo_path, branch=branch)
+        except git.GitCommandError as e:
             raise RuntimeError(f"Failed to clone/pull marketplace repo: {e}") from e
 
         # 6. Check for existing plugin
@@ -166,7 +167,7 @@ class MarketplacePublisher:
             raise RuntimeError(f"Git operation failed: {e}") from e
         except Exception:
             # Clean up partial plugin directory on non-git failure
-            if plugin_created and plugin_dir.exists() and not force:
+            if plugin_created and plugin_dir.exists():
                 shutil.rmtree(plugin_dir, ignore_errors=True)
             raise
 
