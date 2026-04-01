@@ -840,8 +840,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     mp_name = mp_target.get("marketplace", "")
                     mp_cat = mp_target.get("category", "development")
                     output_lines.append(
-                        f"  [DRY RUN] Would publish to marketplace '{mp_name}' "
-                        f"(category: {mp_cat})"
+                        f"  [DRY RUN] Would publish to marketplace '{mp_name}' (category: {mp_cat})"
                     )
                 output_lines.append("")
 
