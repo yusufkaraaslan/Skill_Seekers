@@ -202,22 +202,38 @@ class TestPublishErrors:
             publisher.publish(skill_dir=skill_dir, marketplace_name="test")
 
     def test_publish_plugin_already_exists(self, skill_dir, tmp_path, temp_config_dir):
+        import git as gitmodule
         from skill_seekers.mcp.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(temp_config_dir))
         manager.add_marketplace(
             name="test", git_url="https://github.com/test/repo.git", token_env="TEST_TOKEN"
         )
-        cache_path = tmp_path / "cache"
-        (cache_path / "plugins" / "test-skill").mkdir(parents=True)
+        # Create a cached repo without .git so publish() takes the clone path
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+
         publisher = MarketplacePublisher.__new__(MarketplacePublisher)
         publisher.git_repo = MagicMock()
-        publisher.git_repo.clone_or_pull.return_value = cache_path
+        publisher.git_repo.cache_dir = cache_dir
+        publisher.git_repo.inject_token.return_value = "https://fake@github.com/test/repo.git"
+
+        # Mock clone_from to create the dir with existing plugin
+        def fake_clone(_url, path, **_kwargs):
+            from pathlib import Path
+
+            p = Path(path)
+            p.mkdir(parents=True, exist_ok=True)
+            (p / "plugins" / "test-skill").mkdir(parents=True)
+            return gitmodule.Repo.init(p)
+
         with (
             patch.dict(os.environ, {"TEST_TOKEN": "fake-token"}),
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager", return_value=manager
+                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager",
+                return_value=manager,
             ),
+            patch.object(gitmodule.Repo, "clone_from", side_effect=fake_clone),
             pytest.raises(ValueError, match="already exists"),
         ):
             publisher.publish(skill_dir=skill_dir, marketplace_name="test")

@@ -295,6 +295,30 @@ Examples:
             print(f"\n❌ Upload error: {e}")
             sys.exit(1)
 
+    # Publish to marketplace if requested
+    marketplace_name = getattr(args, "marketplace", None)
+    if marketplace_name:
+        try:
+            from skill_seekers.mcp.marketplace_publisher import MarketplacePublisher
+
+            publisher = MarketplacePublisher()
+            pub_result = publisher.publish(
+                skill_dir=args.skill_directory,
+                marketplace_name=marketplace_name,
+                category=getattr(args, "marketplace_category", "development"),
+                create_branch=getattr(args, "create_branch", False),
+            )
+            if pub_result["success"]:
+                print(f"\n✅ {pub_result['message']}")
+                print(f"   Plugin: {pub_result['plugin_path']}")
+                print(f"   Branch: {pub_result['branch']}")
+                print(f"   Commit: {pub_result['commit_sha']}")
+            else:
+                print(f"\n⚠️  Marketplace publish failed: {pub_result['message']}")
+        except Exception as e:
+            print(f"\n⚠️  Marketplace publish failed: {e}")
+            print("   Packaging was successful — publish manually later.")
+
     sys.exit(0)
 
 
