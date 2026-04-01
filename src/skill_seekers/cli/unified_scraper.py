@@ -24,6 +24,7 @@ from typing import Any
 
 # Import validators and scrapers
 try:
+    from skill_seekers.cli.agent_client import get_default_timeout
     from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
     from skill_seekers.cli.merge_sources import AIEnhancedMerger, RuleBasedMerger
@@ -382,7 +383,7 @@ class UnifiedScraper:
                 ["git", "clone", repo_url, clone_path],
                 capture_output=True,
                 text=True,
-                timeout=600,  # 10 minute timeout for full clone
+                timeout=get_default_timeout(),  # default 45 min, configurable via SKILL_SEEKER_ENHANCE_TIMEOUT
             )
 
             if result.returncode == 0:
@@ -1907,9 +1908,15 @@ class UnifiedScraper:
                         enhancer = LocalSkillEnhancer(
                             self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
                         )
-                        enhancer.run(headless=True, timeout=timeout_val)
+                        success = enhancer.run(headless=True, timeout=timeout_val)
                         agent_name = agent or "claude"
-                        logger.info(f"✅ SKILL.md enhanced (LOCAL mode via {agent_name})")
+                        if success:
+                            logger.info(f"✅ SKILL.md enhanced (LOCAL mode via {agent_name})")
+                        else:
+                            logger.warning(
+                                f"⚠️  SKILL.md enhancement returned false (LOCAL mode via {agent_name}). "
+                                "Check logs above for the exact error."
+                            )
                     except Exception as e:
                         logger.warning(f"⚠️  LOCAL enhancement failed: {e}")
                         logger.info(

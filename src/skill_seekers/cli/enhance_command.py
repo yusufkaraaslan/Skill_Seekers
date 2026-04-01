@@ -24,6 +24,8 @@ import os
 import sys
 from pathlib import Path
 
+from skill_seekers.cli.agent_client import get_default_timeout
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -158,7 +160,7 @@ def _run_local_mode(args) -> int:
     headless = not interactive
     success = enhancer.run(
         headless=headless,
-        timeout=getattr(args, "timeout", 600),
+        timeout=getattr(args, "timeout", None) or get_default_timeout(),
         background=getattr(args, "background", False),
         daemon=getattr(args, "daemon", False),
     )

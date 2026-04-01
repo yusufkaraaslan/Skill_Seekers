@@ -101,8 +101,11 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--timeout",),
         "kwargs": {
             "type": int,
-            "default": 600,
-            "help": "Timeout in seconds (default: 600)",
+            "default": None,  # Resolved at runtime via get_default_timeout()
+            "help": (
+                "Timeout in seconds "
+                "(default: 45 minutes, set SKILL_SEEKER_ENHANCE_TIMEOUT to override)"
+            ),
             "metavar": "SECONDS",
         },
     },
