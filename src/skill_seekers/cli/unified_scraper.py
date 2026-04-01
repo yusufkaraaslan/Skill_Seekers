@@ -825,7 +825,7 @@ class UnifiedScraper:
                 "name": source_name,
                 "description": source.get("description", f"Local analysis of {path_id}"),
                 "weight": source.get("weight", 1.0),
-                "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
+                "patterns": self._load_json(temp_output / "patterns" / "all_patterns.json"),
                 "test_examples": self._load_json(
                     temp_output / "test_examples" / "test_examples.json"
                 ),
@@ -833,7 +833,9 @@ class UnifiedScraper:
                 "config_patterns": self._load_json(
                     temp_output / "config_patterns" / "config_patterns.json"
                 ),
-                "architecture": self._load_json(temp_output / "ARCHITECTURE.json"),
+                "architecture": self._load_json(
+                    temp_output / "architecture" / "architectural_patterns.json"
+                ),
                 "api_reference": self._load_api_reference(temp_output / "api_reference"),
                 "dependency_graph": self._load_json(
                     temp_output / "dependencies" / "dependency_graph.json"
@@ -1594,7 +1596,7 @@ class UnifiedScraper:
 
             # Load C3.x outputs into memory
             c3_data = {
-                "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
+                "patterns": self._load_json(temp_output / "patterns" / "all_patterns.json"),
                 "test_examples": self._load_json(
                     temp_output / "test_examples" / "test_examples.json"
                 ),
