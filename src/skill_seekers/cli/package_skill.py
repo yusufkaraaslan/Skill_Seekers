@@ -307,6 +307,7 @@ Examples:
                 marketplace_name=marketplace_name,
                 category=getattr(args, "marketplace_category", "development"),
                 create_branch=getattr(args, "create_branch", False),
+                force=True,
             )
             if pub_result["success"]:
                 print(f"\n✅ {pub_result['message']}")
