@@ -185,6 +185,16 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
 # Merge RAG arguments from common.py into universal arguments
 UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
+# Cross-cutting arguments shared by many source types
+UNIVERSAL_ARGUMENTS["from_json"] = {
+    "flags": ("--from-json",),
+    "kwargs": {
+        "type": str,
+        "help": "Build skill from pre-extracted JSON data (skip scraping)",
+        "metavar": "PATH",
+    },
+}
+
 # =============================================================================
 # TIER 2: SOURCE-SPECIFIC ARGUMENTS
 # =============================================================================
@@ -394,6 +404,43 @@ LOCAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Skip documentation extraction",
         },
     },
+    "skip_api_reference": {
+        "flags": ("--skip-api-reference",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Skip API reference generation",
+        },
+    },
+    "skip_dependency_graph": {
+        "flags": ("--skip-dependency-graph",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Skip dependency graph analysis",
+        },
+    },
+    "skip_config_patterns": {
+        "flags": ("--skip-config-patterns",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Skip configuration pattern extraction",
+        },
+    },
+    "no_comments": {
+        "flags": ("--no-comments",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Skip comment extraction from source code",
+        },
+    },
+    "depth": {
+        "flags": ("--depth",),
+        "kwargs": {
+            "type": str,
+            "choices": ["surface", "deep", "full"],
+            "help": "Analysis depth (deprecated, use --preset instead)",
+            "metavar": "LEVEL",
+        },
+    },
 }
 
 # PDF specific (from pdf.py)
@@ -449,6 +496,13 @@ EPUB_ARGUMENTS: dict[str, dict[str, Any]] = {
 
 # Video specific (from video.py)
 VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "setup": {
+        "flags": ("--setup",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Auto-detect GPU and install video dependencies",
+        },
+    },
     "video_url": {
         "flags": ("--video-url",),
         "kwargs": {
@@ -553,6 +607,7 @@ VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
 }
 
 # Multi-source config specific (from unified_scraper.py)
+# Note: --fresh is in WEB_ARGUMENTS, shared with config sources via dynamic forwarding
 CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
     "merge_mode": {
         "flags": ("--merge-mode",),
