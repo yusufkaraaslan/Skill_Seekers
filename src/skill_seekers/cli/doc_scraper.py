@@ -254,9 +254,7 @@ class DocToSkillConverter:
         """
         # Use directory part of base_url for prefix check so sibling pages match.
         # e.g., base_url "https://example.com/docs/index.html" → prefix "https://example.com/docs/"
-        base_dir = self.base_url
-        if not base_dir.endswith("/"):
-            base_dir = base_dir.rsplit("/", 1)[0] + "/"
+        base_dir = self.base_url if self.base_url.endswith("/") else self.base_url + "/"
         if not url.startswith(base_dir):
             return False
 
@@ -1114,7 +1112,10 @@ class DocToSkillConverter:
         Returns:
             List of discovered valid URLs (empty if no sitemap found).
         """
-        import xml.etree.ElementTree as ET
+        try:
+            import defusedxml.ElementTree as ET
+        except ImportError:
+            import xml.etree.ElementTree as ET
 
         from urllib.parse import urlparse
 

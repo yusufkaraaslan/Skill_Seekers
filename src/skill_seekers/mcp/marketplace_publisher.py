@@ -101,7 +101,9 @@ class MarketplacePublisher:
                 repo_obj = git.Repo(repo_path)
                 repo_obj.remotes.origin.pull(branch)
             else:
-                git.Repo.clone_from(clone_url, repo_path, branch=branch)
+                repo_obj = git.Repo.clone_from(clone_url, repo_path, branch=branch)
+            # Clear token from cached .git/config by resetting to non-token URL
+            repo_obj.remotes.origin.set_url(git_url)
         except git.GitCommandError as e:
             raise RuntimeError(f"Failed to clone/pull marketplace repo: {e}") from e
 
@@ -138,7 +140,17 @@ class MarketplacePublisher:
                 target_branch = f"skill/{skill_name}"
                 repo.git.checkout("-b", target_branch)
 
-            repo.git.add("-A")
+            # Only stage the specific files we wrote (not the entire repo)
+            files_to_stage = []
+            # Stage the plugin directory (skill files + plugin.json)
+            plugin_rel = str(plugin_dir.relative_to(repo_path))
+            files_to_stage.append(plugin_rel)
+            # Stage marketplace.json
+            marketplace_json_rel = str(
+                (repo_path / ".claude-plugin" / "marketplace.json").relative_to(repo_path)
+            )
+            files_to_stage.append(marketplace_json_rel)
+            repo.index.add(files_to_stage)
 
             action = "update" if force else "add"
             commit_msg = f"feat: {action} {skill_name} skill plugin"

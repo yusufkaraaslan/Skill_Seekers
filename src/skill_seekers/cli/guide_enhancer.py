@@ -286,7 +286,7 @@ class GuideEnhancer:
             Enhanced guide data
         """
         prompt = self._create_enhancement_prompt(guide_data)
-        response = self._call_claude_api(prompt)
+        response = self._call_ai(prompt)
 
         if not response:
             return guide_data

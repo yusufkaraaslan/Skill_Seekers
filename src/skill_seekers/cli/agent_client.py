@@ -177,7 +177,8 @@ class AgentClient:
         else:
             self.api_key, self.provider = self.detect_api_key()
 
-        # Determine mode
+        # Determine mode (keep original for error handling decisions)
+        self._requested_mode = mode
         self.mode = mode
         if mode == "auto":
             if self.api_key:
@@ -236,10 +237,12 @@ class AgentClient:
                 genai.configure(api_key=self.api_key)
                 return genai
         except ImportError as e:
-            logger.warning(f"⚠️  {self.provider} SDK not installed: {e}")
+            logger.info(f"{self.provider} SDK not installed, falling back to LOCAL mode: {e}")
             self.mode = "local"
         except Exception as e:
-            logger.warning(f"⚠️  Failed to initialize {self.provider} API client: {e}")
+            if self._requested_mode == "api":
+                raise RuntimeError(f"Failed to initialize {self.provider} API client: {e}") from e
+            logger.error(f"Failed to initialize {self.provider} API client: {e}")
             self.mode = "local"
         return None
 
@@ -305,7 +308,41 @@ class AgentClient:
                 return response.text
 
         except Exception as e:
-            logger.warning(f"⚠️  {self.provider} API call failed: {e}")
+            error_type = type(e).__name__
+            error_module = type(e).__module__ or ""
+
+            # Rate limit errors
+            if "rate" in error_type.lower() or "ratelimit" in error_type.lower():
+                logger.error(
+                    f"{self.provider} API rate limited: {e}. "
+                    "Retry after waiting or reduce request frequency."
+                )
+                return None
+
+            # Auth / permission errors
+            if "auth" in error_type.lower() or "permission" in error_type.lower():
+                logger.error(
+                    f"{self.provider} API authentication failed: {e}. "
+                    "Check your API key is valid and has sufficient permissions."
+                )
+                return None
+
+            # Timeout / connection errors
+            if (
+                any(
+                    kw in error_type.lower()
+                    for kw in ("timeout", "connect", "connection", "network")
+                )
+                or "httpx" in error_module.lower()
+            ):
+                logger.error(
+                    f"{self.provider} API connection error: {e}. "
+                    "Check your network connectivity and try again."
+                )
+                return None
+
+            # All other errors
+            logger.error(f"{self.provider} API call failed: {e}")
             return None
 
     def _call_local(
@@ -368,7 +405,9 @@ class AgentClient:
                 )
 
                 if result.returncode != 0:
-                    logger.warning(f"⚠️  {self.agent_display} returned error: {result.returncode}")
+                    logger.error(f"{self.agent_display} returned error code {result.returncode}")
+                    if result.stderr and result.stderr.strip():
+                        logger.error(f"{self.agent_display} stderr: {result.stderr.strip()}")
 
                 # Try to read output file first
                 resp_path = Path(resp_file)
@@ -401,7 +440,7 @@ class AgentClient:
             )
             return None
         except Exception as e:
-            logger.warning(f"⚠️  {self.agent_display} error: {e}")
+            logger.error(f"{self.agent_display} error: {e}")
             return None
 
     @staticmethod

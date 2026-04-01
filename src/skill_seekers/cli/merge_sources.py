@@ -494,7 +494,7 @@ class AIEnhancedMerger:
         logger.info("AI will analyze conflicts and create reconciled API reference")
 
         try:
-            self._launch_claude_merge(workspace_dir)
+            self._launch_ai_merge(workspace_dir)
 
             # Read enhanced results
             merged_data = self._read_merged_results(workspace_dir)
@@ -624,7 +624,7 @@ Take your time to analyze each conflict carefully. The goal is to create the mos
             counts[value] = counts.get(value, 0) + 1
         return counts
 
-    def _launch_claude_merge(self, workspace: str):
+    def _launch_ai_merge(self, workspace: str):
         """
         Run AI-enhanced merge via AgentClient (automated, no terminal).
         """

@@ -111,7 +111,6 @@ class CreateCommand:
             "chunk_tokens": DEFAULT_CHUNK_TOKENS,
             "chunk_overlap_tokens": DEFAULT_CHUNK_OVERLAP_TOKENS,
             "output": None,
-            "enhance_level": 2,
             "doc_version": "",
             "video_languages": "en",
             "whisper_model": "base",
@@ -268,7 +267,10 @@ class CreateCommand:
         try:
             sys.argv = argv
             result = module.main()
-            return result if result is not None else 0
+            if result is None:
+                logger.warning(f"Module returned None exit code, treating as success")
+                return 0
+            return result
         finally:
             sys.argv = original_argv
 

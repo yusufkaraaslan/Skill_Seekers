@@ -117,12 +117,19 @@ class ConfigPublisher:
         if not config_name:
             raise ValueError("Config JSON must have a 'name' field")
 
+        # Validate config_name to prevent path traversal
+        if "/" in config_name or "\\" in config_name or ".." in config_name:
+            raise ValueError(
+                f"Invalid config name '{config_name}'. "
+                "Path separators (/, \\) and traversal sequences (..) are not allowed."
+            )
+
         try:
             from skill_seekers.cli.config_validator import validate_config
 
             validate_config(str(config_path))
             logger.info(f"✅ Config validated: {config_name}")
-        except Exception as e:
+        except ValueError as e:
             logger.warning(f"⚠️  Config validation warning: {e}")
             # Continue — validation warnings shouldn't block push
 
@@ -157,8 +164,10 @@ class ConfigPublisher:
                 repo_obj.remotes.origin.pull(branch)
                 logger.info(f"📥 Pulled latest from {source_name}/{branch}")
             else:
-                git.Repo.clone_from(clone_url, repo_path, branch=branch)
+                repo_obj = git.Repo.clone_from(clone_url, repo_path, branch=branch)
                 logger.info(f"📥 Cloned {source_name} repo")
+            # Clear token from cached .git/config by resetting to non-token URL
+            repo_obj.remotes.origin.set_url(git_url)
         except git.GitCommandError as e:
             raise RuntimeError(f"Failed to clone/pull source repo: {e}") from e
 
@@ -182,21 +191,7 @@ class ConfigPublisher:
         shutil.copy2(config_path, target_file)
         logger.info(f"📄 Placed config at configs/{category}/{config_name}.json")
 
-        # 9. Run repo's validate-config.py if it exists
-        validate_script = repo_path / "scripts" / "validate-config.py"
-        if validate_script.exists():
-            import subprocess
-
-            result = subprocess.run(
-                ["python3", str(validate_script), str(target_file)],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            if result.returncode != 0:
-                logger.warning(f"⚠️  Repo validation warning: {result.stderr}")
-
-        # 10. Git commit and push
+        # 9. Git commit and push
         repo = git.Repo(repo_path)
 
         target_branch = branch

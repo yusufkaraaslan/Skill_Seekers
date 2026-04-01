@@ -225,7 +225,9 @@ class TestPublishErrors:
             p = Path(path)
             p.mkdir(parents=True, exist_ok=True)
             (p / "plugins" / "test-skill").mkdir(parents=True)
-            return gitmodule.Repo.init(p)
+            r = gitmodule.Repo.init(p, initial_branch="main")
+            r.create_remote("origin", _url)
+            return r
 
         with (
             patch.dict(os.environ, {"TEST_TOKEN": "fake-token"}),
@@ -296,7 +298,7 @@ class TestPublishSuccess:
         # Create a working repo with initial marketplace structure, then bare-clone it
         working_path = tmp_path / "working"
         working_path.mkdir()
-        repo = gitmodule.Repo.init(working_path)
+        repo = gitmodule.Repo.init(working_path, initial_branch="main")
         repo.config_writer().set_value("user", "name", "Test").release()
         repo.config_writer().set_value("user", "email", "test@test.com").release()
 
@@ -381,7 +383,7 @@ class TestPublishSuccess:
 
         working_path = tmp_path / "working"
         working_path.mkdir()
-        repo = gitmodule.Repo.init(working_path)
+        repo = gitmodule.Repo.init(working_path, initial_branch="main")
         repo.config_writer().set_value("user", "name", "Test").release()
         repo.config_writer().set_value("user", "email", "t@t.com").release()
 
