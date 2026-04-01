@@ -187,6 +187,8 @@ class DocToSkillConverter:
         # Browser rendering mode (for JavaScript SPA sites)
         self.browser_mode = config.get("browser", False)
         self._browser_renderer = None
+        self._browser_wait_until = config.get("browser_wait_until", "domcontentloaded")
+        self._browser_extra_wait = config.get("browser_extra_wait", 0)  # ms
 
         # Parallel scraping config
         self.workers = config.get("workers", 1)
@@ -735,8 +737,14 @@ class DocToSkillConverter:
         if self._browser_renderer is None:
             from skill_seekers.cli.browser_renderer import BrowserRenderer
 
-            self._browser_renderer = BrowserRenderer()
-            logger.info("Launched headless browser for JavaScript rendering")
+            self._browser_renderer = BrowserRenderer(
+                wait_until=self._browser_wait_until,
+                extra_wait=self._browser_extra_wait,
+            )
+            logger.info(
+                f"Launched headless browser for JavaScript rendering "
+                f"(wait_until={self._browser_wait_until})"
+            )
         return self._browser_renderer.render_page(url)
 
     def scrape_page(self, url: str) -> None:
