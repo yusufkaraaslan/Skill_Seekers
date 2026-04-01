@@ -52,8 +52,8 @@ class ConfigEnhancer:
     AI enhancement for configuration extraction results.
 
     Supports dual-mode operation:
-    - API mode: Uses Claude API (requires ANTHROPIC_API_KEY)
-    - LOCAL mode: Uses Claude Code CLI (no API key needed)
+    - API mode: Uses Anthropic API (requires ANTHROPIC_API_KEY)
+    - LOCAL mode: Uses a coding agent CLI (no API key needed)
     - AUTO mode: Automatically detects best available mode
     """
 
@@ -86,11 +86,11 @@ class ConfigEnhancer:
             return self._enhance_via_local(result)
 
     # =========================================================================
-    # API MODE - Direct Claude API calls
+    # API MODE - Direct AI API calls
     # =========================================================================
 
     def _enhance_via_api(self, result: dict) -> dict:
-        """Enhance configs using Claude API"""
+        """Enhance configs using AI API"""
         if not self._agent.is_available():
             logger.error("❌ API mode requested but no API client available")
             return result
@@ -117,7 +117,7 @@ class ConfigEnhancer:
             return result
 
     def _create_enhancement_prompt(self, result: dict) -> str:
-        """Create prompt for Claude API"""
+        """Create prompt for AI API"""
         config_files = result.get("config_files", [])
 
         # Summarize configs for prompt
@@ -177,7 +177,7 @@ Focus on actionable insights that help developers understand and improve their c
         return prompt
 
     def _parse_api_response(self, response_text: str, original_result: dict) -> dict:
-        """Parse Claude API response and merge with original result"""
+        """Parse AI API response and merge with original result"""
         try:
             # Extract JSON from response
             import re
@@ -208,7 +208,7 @@ Focus on actionable insights that help developers understand and improve their c
             return original_result
 
     # =========================================================================
-    # LOCAL MODE - Claude Code CLI
+    # LOCAL MODE - Coding Agent CLI
     # =========================================================================
 
     def _enhance_via_local(self, result: dict) -> dict:
@@ -245,18 +245,18 @@ Focus on actionable insights that help developers understand and improve their c
             return result
 
     def _create_local_prompt(self, result: dict, output_file: Path) -> str:
-        """Create prompt file for Claude Code CLI
+        """Create prompt file for coding agent CLI
 
         Args:
             result: Config extraction result dict
-            output_file: Absolute path where Claude should write the JSON output
+            output_file: Absolute path where the agent should write the JSON output
 
         Returns:
             Prompt content string
         """
         config_files = result.get("config_files", [])
 
-        # Format config data for Claude (limit to 15 files for reasonable prompt size)
+        # Format config data for AI agent (limit to 15 files for reasonable prompt size)
         config_data = []
         for cf in config_files[:15]:
             # Support both "type" (from config_extractor) and "config_type" (legacy)

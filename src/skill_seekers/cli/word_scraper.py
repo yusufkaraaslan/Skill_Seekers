@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Word Document (.docx) to Claude Skill Converter (Task B2)
+Word Document (.docx) to AI Skill Converter (Task B2)
 
-Converts Word documents into Claude AI skills.
+Converts Word documents into AI skills.
 Uses mammoth for HTML conversion and python-docx for metadata/tables.
 
 Usage:
@@ -73,7 +73,7 @@ def infer_description_from_word(metadata: dict = None, name: str = "") -> str:
 
 
 class WordToSkillConverter:
-    """Convert Word document (.docx) to Claude skill."""
+    """Convert Word document (.docx) to AI skill."""
 
     def __init__(self, config):
         self.config = config
@@ -924,7 +924,7 @@ def main():
     from .arguments.word import add_word_arguments
 
     parser = argparse.ArgumentParser(
-        description="Convert Word document (.docx) to Claude skill",
+        description="Convert Word document (.docx) to AI skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 

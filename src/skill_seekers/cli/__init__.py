@@ -1,7 +1,7 @@
 """Skill Seekers CLI tools package.
 
 This package provides command-line tools for converting documentation
-websites into Claude AI skills.
+websites into AI skills.
 
 Main modules:
     - doc_scraper: Main documentation scraping and skill building tool
@@ -13,7 +13,7 @@ Main modules:
     - enhance_skill_local: AI-powered skill enhancement (local)
     - estimate_pages: Estimate page count before scraping
     - package_skill: Package skills into .zip files
-    - upload_skill: Upload skills to Claude
+    - upload_skill: Upload skills to target platform
     - utils: Shared utility functions
 """
 

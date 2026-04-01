@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Video to Claude Skill Converter
+Video to AI Skill Converter
 
 Extracts transcripts, metadata, and visual content from videos
-and converts them into Claude AI skills.
+and converts them into AI skills.
 
 Supports YouTube videos/playlists, Vimeo, and local video files.
 
@@ -264,7 +264,7 @@ def _is_likely_code(text: str) -> bool:
 def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None) -> None:
     """Use AI to clean Code Timeline section in a reference file.
 
-    Sends the reference file content to Claude with a focused prompt
+    Sends the reference file content to the AI with a focused prompt
     to reconstruct the Code Timeline from noisy OCR + transcript context.
     """
     try:
@@ -319,7 +319,7 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
 
 
 class VideoToSkillConverter:
-    """Convert video content to Claude skill."""
+    """Convert video content to AI skill."""
 
     def __init__(self, config: dict):
         """Initialize converter.
@@ -865,10 +865,10 @@ class VideoToSkillConverter:
         """First-pass: AI-clean reference files before SKILL.md enhancement.
 
         When enhance_level >= 2 and an API key is available, sends each
-        reference file to Claude to reconstruct noisy Code Timeline
+        reference file to the AI to reconstruct noisy Code Timeline
         sections using transcript context.
         """
-        # Note: Middle-layer AI cleaning currently only supports Claude API
+        # Note: Middle-layer AI cleaning currently only supports Anthropic API
         # For other agents (kimi, etc.), this step is skipped and enhancement
         # happens at the SKILL.md level instead of per-reference-file
         has_api_key = bool(

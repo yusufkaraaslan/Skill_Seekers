@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Documentation to Claude Skill Converter
-Single tool to scrape any documentation and create high-quality Claude skills.
+Documentation to AI Skill Converter
+Single tool to scrape any documentation and create high-quality AI skills.
 
 Usage:
     skill-seekers scrape --interactive
@@ -2158,7 +2158,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         configs/react.json
     """
     parser = argparse.ArgumentParser(
-        description="Convert documentation websites to Claude skills",
+        description="Convert documentation websites to AI skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -2444,11 +2444,11 @@ def execute_scraping_and_building(
 
 
 def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, converter=None) -> None:
-    """Execute optional SKILL.md enhancement with Claude.
+    """Execute optional SKILL.md enhancement with AI.
 
     Supports two enhancement modes:
     1. API-based enhancement (requires ANTHROPIC_API_KEY)
-    2. Local enhancement using Claude Code (no API key needed)
+    2. Local enhancement using a coding agent CLI (no API key needed)
 
     Prints appropriate messages and suggestions based on whether
     enhancement was requested and whether it succeeded.
@@ -2516,7 +2516,7 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
 
     # Suggest enhancement if not done
     if getattr(args, "enhance_level", 0) == 0:
-        logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+        logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
         logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
         logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")
         logger.info(

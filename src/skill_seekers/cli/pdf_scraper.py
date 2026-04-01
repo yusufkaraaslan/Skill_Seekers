@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-PDF Documentation to Claude Skill Converter (Task B1.6)
+PDF Documentation to AI Skill Converter (Task B1.6)
 
-Converts PDF documentation into Claude AI skills.
+Converts PDF documentation into AI skills.
 Uses pdf_extractor_poc.py for extraction, builds skill structure.
 
 Usage:
@@ -63,7 +63,7 @@ def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str
 
 
 class PDFToSkillConverter:
-    """Convert PDF documentation to Claude skill"""
+    """Convert PDF documentation to AI skill"""
 
     def __init__(self, config):
         self.config = config
@@ -637,7 +637,7 @@ def main():
     from .arguments.pdf import add_pdf_arguments
 
     parser = argparse.ArgumentParser(
-        description="Convert PDF documentation to Claude skill",
+        description="Convert PDF documentation to AI skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 

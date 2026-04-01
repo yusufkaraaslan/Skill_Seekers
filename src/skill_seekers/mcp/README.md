@@ -1,10 +1,13 @@
 # Skill Seeker MCP Server
 
-Model Context Protocol (MCP) server for Skill Seeker - enables Claude Code to generate documentation skills directly.
+> Works with **Claude Code**, **Cursor**, **Windsurf**, **VS Code + Cline**, and **IntelliJ IDEA**.
+> Supports API mode (Anthropic, Moonshot/Kimi, Google Gemini, OpenAI) and LOCAL mode (any AI coding agent).
+
+Model Context Protocol (MCP) server for Skill Seeker - enables AI coding agents to generate documentation skills directly.
 
 ## What is This?
 
-This MCP server allows Claude Code to use Skill Seeker's tools directly through natural language commands. Instead of running CLI commands manually, you can ask Claude Code to:
+This MCP server allows your AI coding agent to use Skill Seeker's tools directly through natural language commands. Instead of running CLI commands manually, you can ask your agent to:
 
 - Generate config files for any documentation site
 - Estimate page counts before scraping
@@ -36,12 +39,12 @@ pip3 install -e ".[mcp]"
 # - Install dependencies
 # - Test the server
 # - Generate configuration
-# - Guide you through Claude Code setup
+# - Guide you through agent setup
 ```
 
 ### 3. Manual Setup
 
-Add to `~/.claude.json`:
+**For Claude Code** - add to `~/.claude.json`:
 
 ```json
 {
@@ -62,13 +65,15 @@ Add to `~/.claude.json`:
 
 **Replace `/path/to/Skill_Seekers`** with your actual repository path!
 
-### 4. Restart Claude Code
+**For Cursor/Windsurf** - use HTTP transport mode. See your editor's MCP documentation for configuration details.
 
-Quit and reopen Claude Code (don't just close the window).
+### 4. Restart Your Agent
+
+Quit and reopen your AI coding agent (don't just close the window).
 
 ### 5. Test
 
-In Claude Code, type:
+In your AI coding agent, type:
 ```
 List all available configs
 ```
@@ -107,7 +112,7 @@ Estimate pages for configs/react.json
 ```
 
 ### 3. `scrape_docs`
-Scrape documentation and build Claude skill.
+Scrape documentation and build LLM skill.
 
 **Parameters:**
 - `config_path` (required): Path to config file
@@ -125,16 +130,17 @@ Package skill directory into platform-specific format. Automatically uploads if 
 
 **Parameters:**
 - `skill_dir` (required): Path to skill directory (e.g., "output/react/")
-- `target` (optional): Target platform - "claude", "gemini", "openai", "markdown" (default: "claude")
+- `target` (optional): Target platform - "claude", "gemini", "openai", "markdown", and more (default: auto-detected from environment)
 - `auto_upload` (optional): Try to upload automatically if API key is available (default: true)
 
 **Platform-specific outputs:**
-- Claude/OpenAI/Markdown: `.zip` file
+- Claude/OpenAI/Markdown/Kimi/DeepSeek/Qwen: `.zip` file
 - Gemini: `.tar.gz` file
 
 **Examples:**
 ```
-Package skill for Claude (default): output/react/
+Package skill (auto-detected platform): output/react/
+Package skill for Claude: output/react/ with target claude
 Package skill for Gemini: output/react/ with target gemini
 Package skill for OpenAI: output/react/ with target openai
 Package skill for Markdown: output/react/ with target markdown
@@ -145,7 +151,7 @@ Upload skill package to target LLM platform (requires platform-specific API key)
 
 **Parameters:**
 - `skill_zip` (required): Path to skill package (`.zip` or `.tar.gz`)
-- `target` (optional): Target platform - "claude", "gemini", "openai" (default: "claude")
+- `target` (optional): Target platform - "claude", "gemini", "openai" (default: auto-detected from environment)
 
 **Examples:**
 ```
@@ -161,8 +167,8 @@ Enhance SKILL.md with AI using target platform's model. Transforms basic templat
 
 **Parameters:**
 - `skill_dir` (required): Path to skill directory (e.g., "output/react/")
-- `target` (optional): Target platform - "claude", "gemini", "openai" (default: "claude")
-- `mode` (optional): "local" (Claude Code Max, no API key) or "api" (requires API key) (default: "local")
+- `target` (optional): Target platform - "claude", "gemini", "openai" (default: auto-detected from environment)
+- `mode` (optional): "local" (AI coding agent, no API key) or "api" (requires API key) (default: "local")
 - `api_key` (optional): Platform API key (uses env var if not provided)
 
 **What it does:**
@@ -173,12 +179,12 @@ Enhance SKILL.md with AI using target platform's model. Transforms basic templat
 
 **Examples:**
 ```
-Enhance with Claude locally (no API key): output/react/
+Enhance locally (no API key): output/react/
 Enhance with Gemini API: output/react/ with target gemini and mode api
 Enhance with OpenAI API: output/react/ with target openai and mode api
 ```
 
-**Note:** Local mode uses Claude Code Max (requires Claude Code but no API key). API mode requires platform-specific API key.
+**Note:** Local mode uses your AI coding agent (no API key needed). API mode requires a platform-specific API key.
 
 ### 7. `list_configs`
 List all available preset configurations.
@@ -240,7 +246,7 @@ Generate router for configs/godot-*.json
 - Users can ask questions naturally, router directs to appropriate sub-skill
 
 ### 11. `scrape_pdf`
-Scrape PDF documentation and build Claude skill. Extracts text, code blocks, images, and tables from PDF files with advanced features.
+Scrape PDF documentation and build LLM skill. Extracts text, code blocks, images, and tables from PDF files with advanced features.
 
 **Parameters:**
 - `config_path` (optional): Path to PDF config JSON file (e.g., "configs/manual_pdf.json")
@@ -293,20 +299,20 @@ Fast parallel processing: --pdf docs/large.pdf --parallel --workers 8
 ```
 User: Generate config for Svelte at https://svelte.dev/docs
 
-Claude: ✅ Config created: configs/svelte.json
+Agent: ✅ Config created: configs/svelte.json
 
 User: Estimate pages for configs/svelte.json
 
-Claude: 📊 Estimated pages: 150
+Agent: 📊 Estimated pages: 150
 
 User: Scrape docs using configs/svelte.json
 
-Claude: ✅ Skill created at output/svelte/
+Agent: ✅ Skill created at output/svelte/
 
 User: Package skill at output/svelte/
 
-Claude: ✅ Created: output/svelte.zip
-      Ready to upload to Claude!
+Agent: ✅ Created: output/svelte.zip
+       Ready to upload!
 ```
 
 ### Use Existing Preset
@@ -314,15 +320,15 @@ Claude: ✅ Created: output/svelte.zip
 ```
 User: List all available configs
 
-Claude: [Shows all configs: godot, react, vue, django, fastapi, etc.]
+Agent: [Shows all configs: godot, react, vue, django, fastapi, etc.]
 
 User: Scrape docs using configs/react.json
 
-Claude: ✅ Skill created at output/react/
+Agent: ✅ Skill created at output/react/
 
 User: Package skill at output/react/
 
-Claude: ✅ Created: output/react.zip
+Agent: ✅ Created: output/react.zip
 ```
 
 ### Validate Before Scraping
@@ -330,7 +336,7 @@ Claude: ✅ Created: output/react.zip
 ```
 User: Validate configs/godot.json
 
-Claude: ✅ Config is valid!
+Agent: ✅ Config is valid!
         Name: godot
         Base URL: https://docs.godotengine.org/en/stable/
         Max pages: 500
@@ -338,7 +344,7 @@ Claude: ✅ Config is valid!
 
 User: Scrape docs using configs/godot.json
 
-Claude: [Starts scraping...]
+Agent: [Starts scraping...]
 ```
 
 ### PDF Documentation - NEW
@@ -346,17 +352,17 @@ Claude: [Starts scraping...]
 ```
 User: Scrape PDF at docs/api-manual.pdf and create skill named api-docs
 
-Claude: 📄 Scraping PDF documentation...
-        ✅ Extracted 120 pages
-        ✅ Found 45 code blocks (Python, JavaScript, C++)
-        ✅ Extracted 12 images
-        ✅ Created skill at output/api-docs/
-        📦 Package with: python3 cli/package_skill.py output/api-docs/
+Agent: 📄 Scraping PDF documentation...
+       ✅ Extracted 120 pages
+       ✅ Found 45 code blocks (Python, JavaScript, C++)
+       ✅ Extracted 12 images
+       ✅ Created skill at output/api-docs/
+       📦 Package with: python3 cli/package_skill.py output/api-docs/
 
 User: Package skill at output/api-docs/
 
-Claude: ✅ Created: output/api-docs.zip
-        Ready to upload to Claude!
+Agent: ✅ Created: output/api-docs.zip
+       Ready to upload!
 ```
 
 ### Large Documentation (40K Pages)
@@ -364,13 +370,13 @@ Claude: ✅ Created: output/api-docs.zip
 ```
 User: Estimate pages for configs/godot.json
 
-Claude: 📊 Estimated pages: 40,000
-        ⚠️  Large documentation detected!
-        💡 Recommend splitting into multiple skills
+Agent: 📊 Estimated pages: 40,000
+       ⚠️  Large documentation detected!
+       💡 Recommend splitting into multiple skills
 
 User: Split configs/godot.json using router strategy
 
-Claude: ✅ Split complete!
+Agent: ✅ Split complete!
         Created 5 sub-skills:
         - godot-scripting.json (5,000 pages)
         - godot-2d.json (8,000 pages)
@@ -380,12 +386,12 @@ Claude: ✅ Split complete!
 
 User: Scrape all godot sub-skills in parallel
 
-Claude: [Starts scraping all 5 configs in parallel...]
-        ✅ All skills created in 4-8 hours instead of 20-40!
+Agent: [Starts scraping all 5 configs in parallel...]
+       ✅ All skills created in 4-8 hours instead of 20-40!
 
 User: Generate router for configs/godot-*.json
 
-Claude: ✅ Router skill created at output/godot/
+Agent: ✅ Router skill created at output/godot/
         Routing logic:
         - "scripting", "gdscript" → godot-scripting
         - "2d", "sprites", "tilemap" → godot-2d
@@ -395,16 +401,16 @@ Claude: ✅ Router skill created at output/godot/
 
 User: Package all godot skills
 
-Claude: ✅ 6 skills packaged:
-        - godot.zip (router)
-        - godot-scripting.zip
-        - godot-2d.zip
-        - godot-3d.zip
-        - godot-physics.zip
-        - godot-shaders.zip
+Agent: ✅ 6 skills packaged:
+       - godot.zip (router)
+       - godot-scripting.zip
+       - godot-2d.zip
+       - godot-3d.zip
+       - godot-physics.zip
+       - godot-shaders.zip
 
-        Upload all to Claude!
-        Users just ask questions naturally - router handles routing!
+       Upload all to your LLM platform!
+       Users just ask questions naturally - router handles routing!
 ```
 
 ## Architecture
@@ -420,11 +426,11 @@ mcp/
 
 ### How It Works
 
-1. **Claude Code** sends MCP requests to the server
+1. **AI coding agent** (Claude Code, Cursor, Windsurf, etc.) sends MCP requests to the server
 2. **Server** routes requests to appropriate tool functions
 3. **Tools** call CLI scripts (`doc_scraper.py`, `estimate_pages.py`, etc.)
 4. **CLI scripts** perform actual work (scraping, packaging, etc.)
-5. **Results** returned to Claude Code via MCP protocol
+5. **Results** returned to the agent via MCP protocol
 
 ### Tool Implementation
 
@@ -482,12 +488,12 @@ python3 -m pytest tests/test_mcp_server.py -v
 ### MCP Server Not Loading
 
 **Symptoms:**
-- Tools don't appear in Claude Code
+- Tools don't appear in your AI coding agent
 - No response to skill-seeker commands
 
 **Solutions:**
 
-1. Check configuration:
+1. Check configuration (for Claude Code):
    ```bash
    cat ~/.config/claude-code/mcp.json
    ```
@@ -503,11 +509,12 @@ python3 -m pytest tests/test_mcp_server.py -v
    pip3 install -r mcp/requirements.txt
    ```
 
-4. Completely restart Claude Code (quit and reopen)
+4. Completely restart your AI coding agent (quit and reopen)
 
-5. Check Claude Code logs:
-   - macOS: `~/Library/Logs/Claude Code/`
-   - Linux: `~/.config/claude-code/logs/`
+5. Check agent logs:
+   - Claude Code (macOS): `~/Library/Logs/Claude Code/`
+   - Claude Code (Linux): `~/.config/claude-code/logs/`
+   - Cursor/Windsurf: Check your editor's output panel for MCP errors
 
 ### "ModuleNotFoundError: No module named 'mcp'"
 
@@ -551,7 +558,7 @@ pip install requests beautifulsoup4
 which python3  # Copy this path
 ```
 
-Configure Claude Code to use venv Python:
+Configure your AI coding agent to use venv Python (example for Claude Code):
 
 ```json
 {

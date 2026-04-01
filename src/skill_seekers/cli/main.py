@@ -30,7 +30,7 @@ Commands:
     enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
-    upload               Upload skill to Claude
+    upload               Upload skill to target platform
     estimate             Estimate page count before scraping
     extract-test-examples Extract usage examples from test files
     install-agent        Install skill to AI agent directories
@@ -102,7 +102,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="skill-seekers",
-        description="Convert documentation, GitHub repos, and PDFs into Claude AI skills",
+        description="Convert documentation, GitHub repos, and PDFs into AI skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -404,7 +404,9 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                         print("   Set ANTHROPIC_API_KEY / GOOGLE_API_KEY to enable API mode")
                         success = False
                     else:
-                        agent_name = os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
+                        agent_name = (
+                            os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
+                        )
                         print(f"\n🤖 Enhancement mode: LOCAL ({agent_name})")
                         success = _run_local_mode(_fake_args) == 0
 

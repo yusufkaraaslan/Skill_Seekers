@@ -2236,8 +2236,8 @@ Examples:
         help=(
             "AI enhancement mode for how-to guides: "
             "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
-            "api (Claude API, requires ANTHROPIC_API_KEY), "
-            "local (Claude Code Max, FREE, no API key), "
+            "api (Anthropic API, requires ANTHROPIC_API_KEY), "
+            "local (coding agent CLI, FREE, no API key), "
             "none (disable AI enhancement). "
             "💡 TIP: Use --enhance flag instead for simpler UX!"
         ),

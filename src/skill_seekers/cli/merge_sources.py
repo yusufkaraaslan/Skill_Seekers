@@ -4,7 +4,7 @@ Source Merger for Multi-Source Skills
 
 Merges documentation and code data intelligently with GitHub insights:
 - Rule-based merge: Fast, deterministic rules
-- Claude-enhanced merge: AI-powered reconciliation
+- AI-enhanced merge: AI-powered reconciliation
 
 Handles conflicts and creates unified API reference with GitHub metadata.
 
@@ -462,7 +462,7 @@ class AIEnhancedMerger:
         github_streams: Optional["ThreeStreamData"] = None,
     ):
         """
-        Initialize Claude-enhanced merger with GitHub streams support.
+        Initialize AI-enhanced merger with GitHub streams support.
 
         Args:
             docs_data: Documentation scraper data (Layer 2: HTML docs)
@@ -480,19 +480,19 @@ class AIEnhancedMerger:
 
     def merge_all(self) -> dict[str, Any]:
         """
-        Merge all APIs using Claude enhancement.
+        Merge all APIs using AI enhancement.
 
         Returns:
             Dict containing merged API data
         """
-        logger.info("Starting Claude-enhanced merge...")
+        logger.info("Starting AI-enhanced merge...")
 
         # Create temporary workspace
         workspace_dir = self._create_workspace()
 
-        # Launch Claude Code for enhancement
-        logger.info("Launching Claude Code for intelligent merging...")
-        logger.info("Claude will analyze conflicts and create reconciled API reference")
+        # Launch AI agent for enhancement
+        logger.info("Launching AI agent for intelligent merging...")
+        logger.info("AI will analyze conflicts and create reconciled API reference")
 
         try:
             self._launch_claude_merge(workspace_dir)
@@ -500,11 +500,11 @@ class AIEnhancedMerger:
             # Read enhanced results
             merged_data = self._read_merged_results(workspace_dir)
 
-            logger.info("Claude-enhanced merge complete")
+            logger.info("AI-enhanced merge complete")
             return merged_data
 
         except Exception as e:
-            logger.error(f"Claude enhancement failed: {e}")
+            logger.error(f"AI enhancement failed: {e}")
             logger.info("Falling back to rule-based merge")
             return self.rule_merger.merge_all()
 
@@ -518,13 +518,13 @@ class AIEnhancedMerger:
         workspace = tempfile.mkdtemp(prefix="skill_merge_")
         logger.info(f"Created merge workspace: {workspace}")
 
-        # Write context files for Claude
+        # Write context files for AI agent
         self._write_context_files(workspace)
 
         return workspace
 
     def _write_context_files(self, workspace: str):
-        """Write context files for Claude to analyze."""
+        """Write context files for AI agent to analyze."""
 
         # 1. Write conflicts summary
         conflicts_file = os.path.join(workspace, "conflicts.json")
@@ -553,7 +553,7 @@ class AIEnhancedMerger:
         with open(code_apis_file, "w") as f:
             json.dump(detector.code_apis, f, indent=2)
 
-        # 4. Write merge instructions for Claude
+        # 4. Write merge instructions for AI agent
         instructions = """# API Merge Task
 
 You are merging API documentation from two sources:
@@ -627,15 +627,15 @@ Take your time to analyze each conflict carefully. The goal is to create the mos
 
     def _launch_claude_merge(self, workspace: str):
         """
-        Launch Claude Code to perform merge.
+        Launch AI agent to perform merge.
 
         Similar to enhance_skill_local.py approach.
         """
-        # Create a script that Claude will execute
+        # Create a script that the AI agent will execute
         script_path = os.path.join(workspace, "merge_script.sh")
 
         script_content = f"""#!/bin/bash
-# Automatic merge script for Claude Code
+# Automatic merge script for AI agent
 
 cd "{workspace}"
 
@@ -660,7 +660,7 @@ read -p "Press Enter when merge is complete..."
 
         os.chmod(script_path, 0o755)
 
-        # Open new terminal with Claude Code
+        # Open new terminal with AI agent
         # Try different terminal emulators
         terminals = [
             ["x-terminal-emulator", "-e"],
@@ -693,7 +693,7 @@ read -p "Press Enter when merge is complete..."
             elapsed += 5
 
         if not os.path.exists(merged_file):
-            raise TimeoutError("Claude merge timed out after 1 hour")
+            raise TimeoutError("AI merge timed out after 1 hour")
 
     def _read_merged_results(self, workspace: str) -> dict[str, Any]:
         """Read merged results from workspace."""
