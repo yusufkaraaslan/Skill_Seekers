@@ -818,27 +818,40 @@ class UnifiedScraper:
                 enhance_level=enhance_level,
             )
 
-            # Load analysis outputs into memory
+            # Load analysis outputs into memory.
+            # _generate_references() moves dirs into references/ and deletes originals.
+            refs = temp_output / "references"
             local_data = {
                 "source_id": f"{self.name}_local_{idx}_{path_id}",
                 "path": local_path,
                 "name": source_name,
                 "description": source.get("description", f"Local analysis of {path_id}"),
                 "weight": source.get("weight", 1.0),
-                "patterns": self._load_json(temp_output / "patterns" / "all_patterns.json"),
-                "test_examples": self._load_json(
-                    temp_output / "test_examples" / "test_examples.json"
+                "patterns": self._load_json_fallback(
+                    refs / "patterns" / "all_patterns.json",
+                    temp_output / "patterns" / "all_patterns.json",
                 ),
-                "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
-                "config_patterns": self._load_json(
-                    temp_output / "config_patterns" / "config_patterns.json"
+                "test_examples": self._load_json_fallback(
+                    refs / "test_examples" / "test_examples.json",
+                    temp_output / "test_examples" / "test_examples.json",
                 ),
-                "architecture": self._load_json(
-                    temp_output / "architecture" / "architectural_patterns.json"
+                "how_to_guides": self._load_guide_collection(
+                    refs / "tutorials"
+                ) or self._load_guide_collection(temp_output / "tutorials"),
+                "config_patterns": self._load_json_fallback(
+                    refs / "config_patterns" / "config_patterns.json",
+                    temp_output / "config_patterns" / "config_patterns.json",
                 ),
-                "api_reference": self._load_api_reference(temp_output / "api_reference"),
-                "dependency_graph": self._load_json(
-                    temp_output / "dependencies" / "dependency_graph.json"
+                "architecture": self._load_json_fallback(
+                    refs / "architecture" / "architectural_patterns.json",
+                    temp_output / "architecture" / "architectural_patterns.json",
+                ),
+                "api_reference": self._load_api_reference(
+                    refs / "api_reference"
+                ) or self._load_api_reference(temp_output / "api_reference"),
+                "dependency_graph": self._load_json_fallback(
+                    refs / "dependencies" / "dependency_graph.json",
+                    temp_output / "dependencies" / "dependency_graph.json",
                 ),
             }
 
@@ -1469,6 +1482,12 @@ class UnifiedScraper:
 
         logger.info(f"✅ Chat: {len(chat_data.get('messages', []))} messages extracted")
 
+    def _load_json_fallback(self, primary: Path, fallback: Path) -> dict:
+        """Load JSON from primary path, falling back to secondary if not found."""
+        if primary.exists():
+            return self._load_json(primary)
+        return self._load_json(fallback)
+
     def _load_json(self, file_path: Path) -> dict:
         """
         Load JSON file safely.
@@ -1594,23 +1613,37 @@ class UnifiedScraper:
                 agent_cmd=agent_cmd,
             )
 
-            # Load C3.x outputs into memory
+            # Load C3.x outputs into memory.
+            # _generate_references() inside analyze_codebase() moves analysis dirs
+            # into references/ and deletes the originals, so we check both locations.
+            refs = temp_output / "references"
             c3_data = {
-                "patterns": self._load_json(temp_output / "patterns" / "all_patterns.json"),
-                "test_examples": self._load_json(
-                    temp_output / "test_examples" / "test_examples.json"
+                "patterns": self._load_json_fallback(
+                    refs / "patterns" / "all_patterns.json",
+                    temp_output / "patterns" / "all_patterns.json",
                 ),
-                "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
-                "config_patterns": self._load_json(
-                    temp_output / "config_patterns" / "config_patterns.json"
+                "test_examples": self._load_json_fallback(
+                    refs / "test_examples" / "test_examples.json",
+                    temp_output / "test_examples" / "test_examples.json",
                 ),
-                "architecture": self._load_json(
-                    temp_output / "architecture" / "architectural_patterns.json"
+                "how_to_guides": self._load_guide_collection(
+                    refs / "tutorials"
+                ) or self._load_guide_collection(temp_output / "tutorials"),
+                "config_patterns": self._load_json_fallback(
+                    refs / "config_patterns" / "config_patterns.json",
+                    temp_output / "config_patterns" / "config_patterns.json",
                 ),
-                "api_reference": self._load_api_reference(temp_output / "api_reference"),  # C2.5
-                "dependency_graph": self._load_json(
-                    temp_output / "dependencies" / "dependency_graph.json"
-                ),  # C2.6
+                "architecture": self._load_json_fallback(
+                    refs / "architecture" / "architectural_patterns.json",
+                    temp_output / "architecture" / "architectural_patterns.json",
+                ),
+                "api_reference": self._load_api_reference(
+                    refs / "api_reference"
+                ) or self._load_api_reference(temp_output / "api_reference"),
+                "dependency_graph": self._load_json_fallback(
+                    refs / "dependencies" / "dependency_graph.json",
+                    temp_output / "dependencies" / "dependency_graph.json",
+                ),
             }
 
             # Log summary
