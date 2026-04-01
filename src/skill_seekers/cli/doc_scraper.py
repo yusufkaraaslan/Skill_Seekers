@@ -1105,6 +1105,117 @@ class DocToSkillConverter:
 
         return True
 
+    def _try_sitemap(self) -> list[str]:
+        """Layer 1: Try to discover pages via sitemap.xml.
+
+        Checks common sitemap locations at the domain root.
+        Parses XML for <loc> tags, filters by is_valid_url().
+
+        Returns:
+            List of discovered valid URLs (empty if no sitemap found).
+        """
+        import xml.etree.ElementTree as ET
+
+        from urllib.parse import urlparse
+
+        parsed = urlparse(self.base_url)
+        domain = f"{parsed.scheme}://{parsed.netloc}"
+
+        sitemap_urls_to_try = [
+            f"{domain}/sitemap.xml",
+            f"{domain}/sitemap_index.xml",
+        ]
+
+        discovered = []
+
+        for sitemap_url in sitemap_urls_to_try:
+            try:
+                response = requests.get(sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"})
+                if response.status_code != 200:
+                    continue
+
+                if "xml" not in response.headers.get("content-type", ""):
+                    continue
+
+                root = ET.fromstring(response.text)
+                ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+
+                # Handle sitemap index (nested sitemaps)
+                for sitemap in root.findall(".//sm:sitemap/sm:loc", ns):
+                    try:
+                        sub_resp = requests.get(sitemap.text.strip(), timeout=10, headers={"User-Agent": "SkillSeekers/3.4"})
+                        if sub_resp.status_code == 200:
+                            sub_root = ET.fromstring(sub_resp.text)
+                            for loc in sub_root.findall(".//sm:url/sm:loc", ns):
+                                url = loc.text.strip().split("#")[0]
+                                if self.is_valid_url(url):
+                                    discovered.append(url)
+                    except Exception:
+                        continue
+
+                # Handle direct sitemap
+                for loc in root.findall(".//sm:url/sm:loc", ns):
+                    url = loc.text.strip().split("#")[0]
+                    if self.is_valid_url(url):
+                        discovered.append(url)
+
+                if discovered:
+                    logger.info(f"📋 Found sitemap at {sitemap_url} ({len(discovered)} valid URLs)")
+                    return list(set(discovered))
+
+            except Exception as e:
+                logger.debug(f"Sitemap check failed for {sitemap_url}: {e}")
+                continue
+
+        return []
+
+    def _discover_spa_nav(self) -> list[str]:
+        """Layer 3: Render index page with networkidle to discover SPA navigation.
+
+        Used when browser mode is on and sitemap/llms.txt didn't find pages.
+        Renders the first page with networkidle (slower but discovers full nav),
+        then normal crawl uses domcontentloaded (fast).
+
+        Returns:
+            List of discovered valid URLs from the rendered navigation.
+        """
+        if not self.browser_mode:
+            return []
+
+        logger.info("🌐 Rendering index page with networkidle to discover SPA navigation...")
+
+        try:
+            from skill_seekers.cli.browser_renderer import BrowserRenderer
+
+            # Use a separate renderer with networkidle for discovery only
+            discovery_renderer = BrowserRenderer(
+                timeout=60000,
+                wait_until="networkidle",
+                extra_wait=3000,  # 3s extra for lazy-loaded nav
+            )
+            html = discovery_renderer.render_page(self.base_url)
+            discovery_renderer.close()
+
+            # Parse rendered DOM for all links
+            soup = BeautifulSoup(html, "html.parser")
+            discovered = []
+            seen = set()
+
+            for link in soup.find_all("a", href=True):
+                href = urljoin(self.base_url, link["href"]).split("#")[0]
+                if href not in seen and self.is_valid_url(href):
+                    seen.add(href)
+                    discovered.append(href)
+
+            if discovered:
+                logger.info(f"🌐 Discovered {len(discovered)} pages from rendered SPA navigation")
+
+            return discovered
+
+        except Exception as e:
+            logger.warning(f"⚠️  SPA navigation discovery failed: {e}")
+            return []
+
     def scrape_all(self) -> None:
         """Scrape all pages (supports llms.txt and HTML scraping)
 
@@ -1115,16 +1226,35 @@ class DocToSkillConverter:
             asyncio.run(self.scrape_all_async())
             return
 
-        # Try llms.txt first (unless dry-run or explicitly disabled)
-        if not self.dry_run and not self.skip_llms_txt:
-            llms_result = self._try_llms_txt()
-            if llms_result:
-                logger.info(
-                    "\n✅ Used llms.txt (%s) - skipping HTML scraping",
-                    self.llms_txt_variant,
-                )
-                self.save_summary()
-                return
+        # === Three-Layer Discovery Engine ===
+        # Discovers pages before the BFS crawl loop starts.
+        # Layer 1: sitemap.xml — instant, no rendering needed
+        # Layer 2: llms.txt — existing mechanism
+        # Layer 3: SPA nav — renders index with networkidle to find JS-rendered links
+
+        if not self.dry_run:
+            # Layer 1: Try sitemap.xml
+            sitemap_urls = self._try_sitemap()
+            if sitemap_urls:
+                for url in sitemap_urls:
+                    self._enqueue_url(url)
+
+            # Layer 2: Try llms.txt (unless explicitly disabled)
+            if not sitemap_urls and not self.skip_llms_txt:
+                llms_result = self._try_llms_txt()
+                if llms_result:
+                    logger.info(
+                        "\n✅ Used llms.txt (%s) - skipping HTML scraping",
+                        self.llms_txt_variant,
+                    )
+                    self.save_summary()
+                    return
+
+            # Layer 3: SPA nav discovery (browser mode only, when other layers found few pages)
+            if self.browser_mode and len(self.pending_urls) <= 1:
+                spa_urls = self._discover_spa_nav()
+                for url in spa_urls:
+                    self._enqueue_url(url)
 
         # HTML scraping (sync/thread-based logic)
         logger.info("\n" + "=" * 60)
