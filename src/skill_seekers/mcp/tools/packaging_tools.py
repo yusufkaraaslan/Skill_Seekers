@@ -468,6 +468,9 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
     unlimited = args.get("unlimited", False)
     dry_run = args.get("dry_run", False)
     target = args.get("target", "auto")
+    marketplace_arg = args.get("marketplace")
+    marketplace_category = args.get("marketplace_category", "development")
+    create_branch = args.get("create_branch", False)
     if target == "auto":
         from skill_seekers.cli.agent_client import AgentClient
 
@@ -575,6 +578,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 with open(workflow_state["config_path"]) as f:
                     config = json.load(f)
                     workflow_state["skill_name"] = config.get("name", "unknown")
+                    workflow_state["config_data"] = config
             except Exception as e:
                 return [
                     TextContent(
@@ -718,6 +722,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
         output_lines.append("")
 
         # ===== PHASE 5: Upload (Optional) =====
+        has_api_key = False  # Initialize before conditional block
         if auto_upload:
             phase_num = "5/5" if config_name else "4/4"
             output_lines.append(f"📤 PHASE {phase_num}: Upload to {adaptor.PLATFORM_NAME}")
@@ -782,6 +787,63 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 )
 
             output_lines.append("")
+
+        # ===== PHASE 6: Publish to Marketplace (Optional) =====
+        marketplace_targets = []
+        if marketplace_arg:
+            marketplace_targets.append(
+                {"marketplace": marketplace_arg, "category": marketplace_category}
+            )
+        else:
+            cd = workflow_state.get("config_data", {})
+            if isinstance(cd, dict):
+                marketplace_targets = cd.get("marketplace_targets", [])
+
+        if marketplace_targets:
+            phase_num = len(workflow_state["phases_completed"]) + 1
+            output_lines.append(f"{'=' * 70}")
+            output_lines.append(
+                f"PHASE {phase_num}: Publish to Marketplace"
+                f" ({len(marketplace_targets)} target{'s' if len(marketplace_targets) > 1 else ''})"
+            )
+            output_lines.append(f"{'=' * 70}")
+            output_lines.append("")
+
+            if not dry_run:
+                from .marketplace_tools import publish_to_marketplace_tool
+
+                for mp_target in marketplace_targets:
+                    mp_name = mp_target.get("marketplace", "")
+                    mp_cat = mp_target.get("category", "development")
+                    output_lines.append(f"Publishing to marketplace '{mp_name}'...")
+
+                    try:
+                        pub_result = await publish_to_marketplace_tool(
+                            {
+                                "skill_dir": workflow_state["skill_dir"],
+                                "marketplace": mp_name,
+                                "category": mp_cat,
+                                "create_branch": create_branch,
+                                "force": True,
+                            }
+                        )
+                        pub_output = pub_result[0].text if pub_result else "No output"
+                        output_lines.append(pub_output)
+                        workflow_state["phases_completed"].append(
+                            f"publish_to_marketplace({mp_name})"
+                        )
+                    except Exception as e:
+                        output_lines.append(f"Failed to publish to '{mp_name}': {str(e)}")
+                    output_lines.append("")
+            else:
+                for mp_target in marketplace_targets:
+                    mp_name = mp_target.get("marketplace", "")
+                    mp_cat = mp_target.get("category", "development")
+                    output_lines.append(
+                        f"  [DRY RUN] Would publish to marketplace '{mp_name}' "
+                        f"(category: {mp_cat})"
+                    )
+                output_lines.append("")
 
         # ===== WORKFLOW SUMMARY =====
         output_lines.append("=" * 70)

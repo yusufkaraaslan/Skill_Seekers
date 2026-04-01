@@ -16,6 +16,7 @@ All tool implementations are delegated to modular tool files in tools/ directory
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
   * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Marketplace tools (4): add_marketplace, list_marketplaces, remove_marketplace, publish_to_marketplace
   * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
   * Workflow tools (5): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
 
@@ -86,6 +87,11 @@ try:
         extract_test_examples_impl,
         # Source tools
         fetch_config_impl,
+        # Marketplace tools
+        add_marketplace_impl,
+        list_marketplaces_impl,
+        remove_marketplace_impl,
+        publish_to_marketplace_impl,
         # Config tools
         generate_config_impl,
         generate_router_impl,
@@ -133,6 +139,10 @@ except ImportError:
         extract_config_patterns_impl,
         extract_test_examples_impl,
         fetch_config_impl,
+        add_marketplace_impl,
+        list_marketplaces_impl,
+        remove_marketplace_impl,
+        publish_to_marketplace_impl,
         generate_config_impl,
         generate_router_impl,
         install_skill_impl,
@@ -1274,6 +1284,113 @@ async def remove_config_source(name: str) -> str:
         Removal results with success/error message.
     """
     result = await remove_config_source_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+# ============================================================================
+# MARKETPLACE TOOLS (4 tools)
+# ============================================================================
+
+
+@safe_tool_decorator(
+    description="Register a plugin marketplace repository. Allows publishing skills to private/team plugin repos. Supports GitHub, GitLab, Bitbucket with per-repo authentication."
+)
+async def add_marketplace(
+    name: str,
+    git_url: str,
+    token_env: str = None,
+    branch: str = "main",
+    author_name: str = "",
+    author_email: str = "",
+    enabled: bool = True,
+) -> str:
+    """
+    Register a plugin marketplace repository.
+
+    Args:
+        name: Marketplace identifier (lowercase, alphanumeric + hyphens/underscores). Example: 'spyke'
+        git_url: Git repository URL. Example: 'https://github.com/myorg/plugins.git'
+        token_env: Environment variable name for auth token (auto-detected from URL). Example: 'GITHUB_TOKEN'
+        branch: Git branch to use (default: "main")
+        author_name: Default author name for generated plugin.json files
+        author_email: Default author email for generated plugin.json files
+        enabled: Whether marketplace is enabled (default: true)
+    """
+    result = await add_marketplace_impl(
+        {
+            "name": name,
+            "git_url": git_url,
+            "token_env": token_env,
+            "branch": branch,
+            "author_name": author_name,
+            "author_email": author_email,
+            "enabled": enabled,
+        }
+    )
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="List all registered plugin marketplace repositories."
+)
+async def list_marketplaces(enabled_only: bool = False) -> str:
+    """List all registered plugin marketplace repositories."""
+    result = await list_marketplaces_impl({"enabled_only": enabled_only})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Remove a registered plugin marketplace. Deletes from registry but not cached data."
+)
+async def remove_marketplace(name: str) -> str:
+    """Remove a registered plugin marketplace."""
+    result = await remove_marketplace_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Publish a packaged skill to a plugin marketplace repository. Creates a Claude Code plugin in the target marketplace repo."
+)
+async def publish_to_marketplace(
+    skill_dir: str,
+    marketplace: str,
+    category: str = "development",
+    skill_name: str = None,
+    description: str = None,
+    create_branch: bool = False,
+    force: bool = False,
+) -> str:
+    """
+    Publish a skill to a plugin marketplace repository.
+
+    Args:
+        skill_dir: Path to skill directory containing SKILL.md. Example: 'output/react/'
+        marketplace: Registered marketplace name. Example: 'spyke'
+        category: Plugin category (default: "development")
+        skill_name: Override skill name (optional)
+        description: Override description (optional)
+        create_branch: Create feature branch instead of committing to main (default: false)
+        force: Overwrite existing plugin (default: false)
+    """
+    result = await publish_to_marketplace_impl(
+        {
+            "skill_dir": skill_dir,
+            "marketplace": marketplace,
+            "category": category,
+            "skill_name": skill_name,
+            "description": description,
+            "create_branch": create_branch,
+            "force": force,
+        }
+    )
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
