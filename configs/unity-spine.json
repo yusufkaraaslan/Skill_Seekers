@@ -84,6 +84,7 @@
       "type": "github",
       "repo": "EsotericSoftware/spine-runtimes",
       "include_code": true,
+      "language": "C#",
       "enable_codebase_analysis": true,
       "code_analysis_depth": "deep",
       "fetch_issues": true,
