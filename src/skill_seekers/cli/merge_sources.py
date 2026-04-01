@@ -18,7 +18,6 @@ Multi-layer architecture (Phase 3):
 import json
 import logging
 import os
-import subprocess
 import tempfile
 from typing import Any, Optional
 
@@ -627,73 +626,77 @@ Take your time to analyze each conflict carefully. The goal is to create the mos
 
     def _launch_claude_merge(self, workspace: str):
         """
-        Launch AI agent to perform merge.
-
-        Similar to enhance_skill_local.py approach.
+        Run AI-enhanced merge via AgentClient (automated, no terminal).
         """
-        # Create a script that the AI agent will execute
-        script_path = os.path.join(workspace, "merge_script.sh")
+        from skill_seekers.cli.agent_client import AgentClient
 
-        script_content = f"""#!/bin/bash
-# Automatic merge script for AI agent
-
-cd "{workspace}"
-
-echo "📊 Analyzing conflicts..."
-cat conflicts.json | head -20
-
-echo ""
-echo "📖 Documentation APIs: $(cat docs_apis.json | grep -c '\"name\"')"
-echo "💻 Code APIs: $(cat code_apis.json | grep -c '\"name\"')"
-echo ""
-echo "Please review the conflicts and create merged_apis.json"
-echo "Follow the instructions in MERGE_INSTRUCTIONS.md"
-echo ""
-echo "When done, save merged_apis.json and close this terminal."
-
-# Wait for user to complete merge
-read -p "Press Enter when merge is complete..."
-"""
-
-        with open(script_path, "w") as f:
-            f.write(script_content)
-
-        os.chmod(script_path, 0o755)
-
-        # Open new terminal with AI agent
-        # Try different terminal emulators
-        terminals = [
-            ["x-terminal-emulator", "-e"],
-            ["gnome-terminal", "--"],
-            ["xterm", "-e"],
-            ["konsole", "-e"],
-        ]
-
-        for terminal_cmd in terminals:
-            try:
-                cmd = terminal_cmd + ["bash", script_path]
-                subprocess.Popen(cmd)
-                logger.info(f"Opened terminal with {terminal_cmd[0]}")
-                break
-            except FileNotFoundError:
-                continue
-
-        # Wait for merge to complete
+        # Read context files to build prompt
+        conflicts_file = os.path.join(workspace, "conflicts.json")
+        docs_apis_file = os.path.join(workspace, "docs_apis.json")
+        code_apis_file = os.path.join(workspace, "code_apis.json")
+        instructions_file = os.path.join(workspace, "MERGE_INSTRUCTIONS.md")
         merged_file = os.path.join(workspace, "merged_apis.json")
-        logger.info(f"Waiting for merged results at: {merged_file}")
-        logger.info("Close the terminal when done to continue...")
 
-        # Poll for file existence
-        import time
+        with open(instructions_file) as f:
+            instructions = f.read()
 
-        timeout = 3600  # 1 hour max
-        elapsed = 0
-        while not os.path.exists(merged_file) and elapsed < timeout:
-            time.sleep(5)
-            elapsed += 5
+        with open(conflicts_file) as f:
+            conflicts_data = f.read()
 
-        if not os.path.exists(merged_file):
-            raise TimeoutError("AI merge timed out after 1 hour")
+        # Limit conflict data to avoid token overflow
+        if len(conflicts_data) > 30000:
+            conflicts_data = conflicts_data[:30000] + "\n... (truncated)"
+
+        with open(docs_apis_file) as f:
+            docs_apis = f.read()
+        if len(docs_apis) > 15000:
+            docs_apis = docs_apis[:15000] + "\n... (truncated)"
+
+        with open(code_apis_file) as f:
+            code_apis = f.read()
+        if len(code_apis) > 15000:
+            code_apis = code_apis[:15000] + "\n... (truncated)"
+
+        prompt = f"""{instructions}
+
+## Conflicts Data:
+{conflicts_data}
+
+## Documentation APIs:
+{docs_apis}
+
+## Code APIs:
+{code_apis}
+
+Write the merged_apis.json output as valid JSON following the format in the instructions above.
+Return ONLY the JSON, no explanation."""
+
+        client = AgentClient(mode="auto")
+        logger.info(f"Running AI merge via {client.agent_display}...")
+
+        response = client.call(prompt, max_tokens=8192, timeout=600)
+
+        if response:
+            # Try to extract JSON from response
+            import re
+
+            json_match = re.search(r"\{[\s\S]*\}", response)
+            if json_match:
+                try:
+                    merged = json.loads(json_match.group())
+                    with open(merged_file, "w") as f:
+                        json.dump(merged, f, indent=2)
+                    logger.info("✅ AI merge complete — merged_apis.json written")
+                    return
+                except json.JSONDecodeError:
+                    logger.warning("⚠️  Could not parse JSON from AI response")
+
+            # Fallback: write raw response
+            with open(merged_file, "w") as f:
+                f.write(response)
+            logger.info("✅ AI merge complete (raw response saved)")
+        else:
+            raise RuntimeError("AI agent returned no response for merge")
 
     def _read_merged_results(self, workspace: str) -> dict[str, Any]:
         """Read merged results from workspace."""
