@@ -104,12 +104,21 @@ class CreateCommand:
         if arg_value is None:
             return False
 
-        # Check against common defaults
+        # Check against common defaults — args with these values were NOT
+        # explicitly set by the user and should not be forwarded.
         defaults = {
             "max_issues": 100,
             "chunk_tokens": DEFAULT_CHUNK_TOKENS,
             "chunk_overlap_tokens": DEFAULT_CHUNK_OVERLAP_TOKENS,
             "output": None,
+            "enhance_level": 2,
+            "doc_version": "",
+            "video_languages": "en",
+            "whisper_model": "base",
+            "platform": "slack",
+            "visual_interval": 0.7,
+            "visual_min_gap": 0.5,
+            "visual_similarity": 3.0,
         }
 
         if arg_name in defaults:
@@ -174,13 +183,15 @@ class CreateCommand:
     # Dest names that differ from their CLI flag (dest → flag)
     _DEST_TO_FLAG = {
         "async_mode": "--async",
+        "video_url": "--url",
         "video_playlist": "--playlist",
         "video_languages": "--languages",
         "skip_config": "--skip-config-patterns",
-        "workflow_var": "--var",
     }
 
-    # Internal args that should never be forwarded to sub-scrapers
+    # Internal args that should never be forwarded to sub-scrapers.
+    # video_url/video_playlist/video_file are handled as positionals by _route_video().
+    # config is forwarded manually only by routes that need it (web, github).
     _SKIP_ARGS = frozenset(
         {
             "source",
@@ -188,6 +199,9 @@ class CreateCommand:
             "subcommand",
             "command",
             "config",
+            "video_url",
+            "video_playlist",
+            "video_file",
         }
     )
 
