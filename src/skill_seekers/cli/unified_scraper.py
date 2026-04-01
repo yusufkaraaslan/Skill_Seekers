@@ -1876,31 +1876,41 @@ class UnifiedScraper:
                             + " --agent kimi"
                         )
                 else:
-                    # API mode
+                    # API mode — use AgentClient for multi-provider support
                     try:
-                        from skill_seekers.cli.enhance_skill import SkillEnhancer
+                        from skill_seekers.cli.agent_client import AgentClient
 
-                        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-                        if api_key:
-                            enhancer = SkillEnhancer(self.output_dir, api_key=api_key)
-                            # Read references from output dir
+                        client = AgentClient(mode="api")
+                        if client.client:
+                            # Read references and current SKILL.md
                             references = ""
                             refs_dir = Path(self.output_dir) / "references"
                             if refs_dir.exists():
                                 for md_file in sorted(refs_dir.rglob("*.md")):
                                     content = md_file.read_text(encoding="utf-8", errors="ignore")
                                     references += f"\n\n## {md_file.name}\n\n{content}"
-                            current_skill = enhancer.read_current_skill_md()
-                            enhanced = enhancer.enhance_skill_md(references, current_skill)
+                            current_skill = Path(skill_md_path).read_text(encoding="utf-8")
+
+                            # Build enhancement prompt
+                            prompt = (
+                                f"Enhance this SKILL.md using the reference documentation.\n\n"
+                                f"CURRENT SKILL.MD:\n{current_skill}\n\n"
+                                f"REFERENCES:\n{references}\n\n"
+                                f"Return ONLY the complete enhanced SKILL.md content, "
+                                f"starting with the frontmatter (---)."
+                            )
+                            enhanced = client.call(prompt, max_tokens=8192)
                             if enhanced:
                                 shutil.copy2(skill_md_path, skill_md_path + ".backup")
                                 Path(skill_md_path).write_text(enhanced, encoding="utf-8")
-                                logger.info("✅ SKILL.md enhanced (API mode)")
+                                logger.info(
+                                    f"✅ SKILL.md enhanced (API mode via {client.provider})"
+                                )
                             else:
                                 logger.warning("⚠️  API enhancement returned empty result")
                         else:
-                            logger.warning("⚠️  ANTHROPIC_API_KEY not set, skipping API enhancement")
-                            logger.info('   Set ANTHROPIC_API_KEY or use "mode": "LOCAL" in config')
+                            logger.warning("⚠️  No API key found, skipping API enhancement")
+                            logger.info('   Set an API key or use "mode": "LOCAL" in config')
                     except Exception as e:
                         logger.warning(f"⚠️  API enhancement failed: {e}")
             else:
