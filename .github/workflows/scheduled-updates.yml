@@ -37,12 +37,12 @@ jobs:
       FRAMEWORKS_INPUT: ${{ github.event.inputs.frameworks }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
@@ -167,7 +167,7 @@ jobs:
 
     - name: Upload updated skill
       if: steps.should_update.outputs.update == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.FRAMEWORK }}-skill-updated
         path: output/${{ env.FRAMEWORK }}.zip
