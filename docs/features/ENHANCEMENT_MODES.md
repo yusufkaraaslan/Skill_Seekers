@@ -20,6 +20,7 @@ All enhancement modes now support **multiple local coding agents**:
 | Agent | Display Name | Default | Notes |
 |-------|--------------|---------|-------|
 | **claude** | Claude Code | ✅ Yes | Your Claude Code Max plan (no API costs) |
+| **kimi** | Kimi Code CLI | No | Uses `kimi --print` with stdin |
 | **codex** | OpenAI Codex CLI | No | Uses `codex exec --full-auto` |
 | **copilot** | GitHub Copilot CLI | No | Uses `gh copilot chat` |
 | **opencode** | OpenCode CLI | No | Uses `opencode` command |
@@ -101,6 +102,10 @@ Agent names are normalized with smart alias support:
 # All resolve to "copilot"
 --agent copilot
 --agent copilot-cli
+
+# All resolve to "kimi"
+--agent kimi
+--agent kimi-code
 ```
 
 ## Mode Comparison

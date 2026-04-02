@@ -15,9 +15,9 @@ Skill Seekers converts documentation from 17 source types into production-ready 
 - **Scrapers** -- 17 source-type extractors (web, GitHub, PDF, Word, EPUB, video, etc.)
 - **Adaptors** -- Strategy+Factory pattern for 20+ output platforms (Claude, Gemini, OpenAI, RAG frameworks)
 - **Analysis** -- C3.x codebase analysis pipeline (AST parsing, 10 GoF pattern detectors, guide builders)
-- **Enhancement** -- AI-powered skill improvement (API mode + LOCAL mode, --enhance-level 0-3)
+- **Enhancement** -- AI-powered skill improvement via `AgentClient` (API mode: Anthropic/Kimi/Gemini/OpenAI + LOCAL mode: Claude Code/Kimi/Codex/Copilot/OpenCode/custom, --enhance-level 0-3)
 - **Packaging** -- Package, upload, and install skills to AI agent directories
-- **MCP** -- FastMCP server exposing 34 tools via stdio/HTTP transport
+- **MCP** -- FastMCP server exposing 40 tools via stdio/HTTP transport (includes marketplace and config publishing)
 - **Sync** -- Documentation change detection and re-scraping triggers
 
 **Utility Modules** (lower area):
@@ -52,7 +52,7 @@ Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules vi
 ### Enhancement
 ![Enhancement](UML/exports/05_enhancement.png)
 
-Two enhancement hierarchies: `AIEnhancer` (API mode, Claude API calls) and `UnifiedEnhancer` (C3.x pipeline enhancers). Each has specialized subclasses for patterns, test examples, guides, and configs. `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`.
+Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentClient`) and `UnifiedEnhancer` (C3.x pipeline enhancers). Each has specialized subclasses for patterns, test examples, guides, and configs. `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`. The `AgentClient` (`cli/agent_client.py`) centralizes all AI invocations, supporting API mode (Anthropic, Moonshot/Kimi, Gemini, OpenAI) and LOCAL mode (Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents).
 
 ### Packaging
 ![Packaging](UML/exports/06_packaging.png)
@@ -62,7 +62,7 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, Claude API calls) and `Unif
 ### MCP Server
 ![MCP Server](UML/exports/07_mcp_server.png)
 
-`SkillSeekerMCPServer` (FastMCP) with 34 tools in 8 categories. Supporting classes: `SourceManager` (config CRUD), `AgentDetector` (environment detection), `GitConfigRepo` (community configs).
+`SkillSeekerMCPServer` (FastMCP) with 40 tools in 10 categories. Supporting classes: `SourceManager` (config CRUD), `AgentDetector` (environment detection), `GitConfigRepo` (community configs), `MarketplacePublisher` (publish skills to marketplace repos), `MarketplaceManager` (marketplace registry CRUD), `ConfigPublisher` (push configs to registered source repos).
 
 ### Sync
 ![Sync](UML/exports/08_sync.png)
@@ -132,7 +132,7 @@ MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocati
 ### Enhancement Pipeline
 ![Enhancement Pipeline](UML/exports/18_enhancement_activity.png)
 
-`--enhance-level` decision flow with precise internal variable mapping: Level 0 sets `ai_mode=none`, skips all AI. Level ≥ 1 selects `ai_mode=api` (if `ANTHROPIC_API_KEY` set) or `ai_mode=local` (Claude Code CLI), then SKILL.md enhancement happens post-build via `enhance_command`. Level ≥ 2 enables `enhance_config=True`, `enhance_architecture=True` inside `analyze_codebase()`. Level 3 adds `enhance_patterns=True`, `enhance_tests=True`.
+`--enhance-level` decision flow with precise internal variable mapping: Level 0 sets `ai_mode=none`, skips all AI. Level >= 1 selects `ai_mode=api` (if any supported API key set: Anthropic, Moonshot/Kimi, Gemini, OpenAI) or `ai_mode=local` (via `AgentClient` with configurable agent: Claude Code, Kimi, Codex, Copilot, OpenCode, or custom), then SKILL.md enhancement happens post-build via `enhance_command`. Level >= 2 enables `enhance_config=True`, `enhance_architecture=True` inside `analyze_codebase()`. Level 3 adds `enhance_patterns=True`, `enhance_tests=True`.
 
 ### Runtime Components
 ![Runtime Components](UML/exports/19_runtime_components.png)

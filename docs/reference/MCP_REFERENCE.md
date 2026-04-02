@@ -1,8 +1,8 @@
 # MCP Reference - Skill Seekers
 
-> **Version:** 3.2.0  
-> **Last Updated:** 2026-03-15  
-> **Complete reference for 27 MCP tools**
+> **Version:** 3.4.0  
+> **Last Updated:** 2026-04-01  
+> **Complete reference for 40 MCP tools**
 
 ---
 
@@ -14,9 +14,11 @@
   - [Starting the Server](#starting-the-server)
 - [Tool Categories](#tool-categories)
   - [Core Tools (9)](#core-tools)
-  - [Extended Tools (9)](#extended-tools)
+  - [Extended Tools (10)](#extended-tools)
   - [Config Source Tools (5)](#config-source-tools)
   - [Config Splitting Tools (2)](#config-splitting-tools)
+  - [Config Publishing Tools (1)](#config-publishing-tools)
+  - [Marketplace Tools (4)](#marketplace-tools)
   - [Vector Database Tools (4)](#vector-database-tools)
   - [Workflow Tools (5)](#workflow-tools)
 - [Tool Reference](#tool-reference)
@@ -87,14 +89,14 @@ Advanced scraping and analysis tools:
 |------|---------|
 | `scrape_github` | GitHub repository analysis |
 | `scrape_pdf` | PDF extraction |
+| `scrape_video` | Video transcript extraction |
 | `scrape_codebase` | Local codebase analysis |
 | `scrape_generic` | Generic scraper for 10 new source types |
-| `unified_scrape` | Multi-source scraping |
+| `sync_config` | Sync config from remote source |
 | `detect_patterns` | Pattern detection |
 | `extract_test_examples` | Extract usage examples from tests |
 | `build_how_to_guides` | Generate how-to guides |
 | `extract_config_patterns` | Extract configuration patterns |
-| `detect_conflicts` | Find doc/code discrepancies |
 
 ### Config Source Tools (5)
 
@@ -116,6 +118,25 @@ Handle large documentation:
 |------|---------|
 | `split_config` | Split large config |
 | `generate_router` | Generate router skill |
+
+### Config Publishing Tools (1)
+
+Push configs to registered source repositories:
+
+| Tool | Purpose |
+|------|---------|
+| `push_config` | Push validated config to a registered config source repo |
+
+### Marketplace Tools (4)
+
+Manage plugin marketplace repositories:
+
+| Tool | Purpose |
+|------|---------|
+| `add_marketplace` | Register a marketplace repository |
+| `list_marketplaces` | List registered marketplaces |
+| `remove_marketplace` | Remove a marketplace |
+| `publish_to_marketplace` | Publish skill to a marketplace repo |
 
 ### Vector Database Tools (4)
 

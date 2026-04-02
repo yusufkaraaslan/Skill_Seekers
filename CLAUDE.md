@@ -133,13 +133,21 @@ Local codebase analysis features, all opt-out (`--skip-*` flags):
 
 ### MCP Server
 
-`src/skill_seekers/mcp/server_fastmcp.py` - 26+ tools via FastMCP. Transport: stdio (Claude Code) or HTTP (Cursor/Windsurf). Optional dependency: `pip install -e ".[mcp]"`
+`src/skill_seekers/mcp/server_fastmcp.py` - 40 tools via FastMCP. Transport: stdio (Claude Code) or HTTP (Cursor/Windsurf). Optional dependency: `pip install -e ".[mcp]"`
 
-### Enhancement Modes
+Supporting modules:
+- `marketplace_publisher.py` - Publish skills to plugin marketplace repositories
+- `marketplace_manager.py` - Manage marketplace registry
+- `config_publisher.py` - Push configs to registered config source repositories
 
-- **API mode** (if `ANTHROPIC_API_KEY` set): Direct Claude API calls
-- **LOCAL mode** (fallback): Uses Claude Code CLI (free with Max plan)
+### Enhancement Modes (via AgentClient)
+
+Enhancement now uses the `AgentClient` abstraction (`src/skill_seekers/cli/agent_client.py`) instead of direct Claude API calls:
+
+- **API mode** (if API key set): Supports Anthropic, Moonshot/Kimi, Google Gemini, OpenAI
+- **LOCAL mode** (fallback): Supports Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents
 - Control: `--enhance-level 0` (off) / `1` (SKILL.md only) / `2` (default, balanced) / `3` (full)
+- Agent selection: `--agent claude|codex|copilot|opencode|kimi|custom`
 
 ## Key Implementation Details
 

@@ -82,7 +82,7 @@ You should see a list of preset configurations (Godot, React, Vue, etc.).
 
 ## Available Tools
 
-The MCP server exposes 18 tools:
+The MCP server exposes 40 tools (see `docs/reference/MCP_REFERENCE.md` for the full list). Key tools include:
 
 ### 1. `generate_config`
 Create a new configuration file for any documentation website.
@@ -419,9 +419,27 @@ Agent: ✅ 6 skills packaged:
 
 ```
 mcp/
-├── server.py           # Main MCP server
-├── requirements.txt    # MCP dependencies
-└── README.md          # This file
+├── server_fastmcp.py       # Main MCP server (FastMCP, 40 tools)
+├── server.py               # Server entry point
+├── server_legacy.py        # Legacy server
+├── source_manager.py       # Config source CRUD
+├── agent_detector.py       # Environment/agent detection
+├── git_repo.py             # Community config git repos
+├── marketplace_publisher.py # Publish skills to marketplace repos
+├── marketplace_manager.py  # Marketplace registry management
+├── config_publisher.py     # Push configs to source repos
+├── tools/                  # Tool implementations by category
+│   ├── config_tools.py
+│   ├── marketplace_tools.py
+│   ├── packaging_tools.py
+│   ├── scraping_tools.py
+│   ├── source_tools.py
+│   ├── splitting_tools.py
+│   ├── sync_config_tools.py
+│   ├── vector_db_tools.py
+│   └── workflow_tools.py
+├── requirements.txt        # MCP dependencies
+└── README.md               # This file
 ```
 
 ### How It Works
@@ -500,13 +518,13 @@ python3 -m pytest tests/test_mcp_server.py -v
 
 2. Verify server can start:
    ```bash
-   python3 mcp/server.py
+   python3 -m skill_seekers.mcp.server_fastmcp
    # Should start without errors (Ctrl+C to exit)
    ```
 
 3. Check dependencies:
    ```bash
-   pip3 install -r mcp/requirements.txt
+   pip3 install -e ".[mcp]"
    ```
 
 4. Completely restart your AI coding agent (quit and reopen)

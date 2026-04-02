@@ -6,7 +6,7 @@
 
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
-[![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
@@ -99,6 +99,13 @@ skill-seekers package output/django --target claude
 ```
 
 **That's it!** You now have `output/django-claude.zip` ready to use.
+
+```bash
+# Use a different AI agent for enhancement (default: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
 
 ### Other Sources (17 Supported)
 
@@ -224,6 +231,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 ## Key Features
 
 ### 🌐 Documentation Scraping
+- ✅ **Smart SPA Discovery** - Three-layer discovery for JavaScript SPA sites (sitemap.xml → llms.txt → headless browser rendering)
 - ✅ **llms.txt Support** - Automatically detects and uses LLM-ready documentation files (10x faster)
 - ✅ **Universal Scraper** - Works with ANY documentation website
 - ✅ **Smart Categorization** - Automatically organizes content by topic
@@ -519,7 +527,7 @@ skill-seekers resume github_react_20260117_143022
 
 ### 🎯 Bootstrap Skill - Self-Hosting
 
-Generate skill-seekers as a Claude Code skill to use within Claude:
+Generate skill-seekers as a skill to use within your AI agent (Claude Code, Kimi, Codex, etc.):
 
 ```bash
 # Generate the skill
@@ -636,6 +644,15 @@ stages:
 - ✅ **Checkpoint/Resume** - Never lose progress on long scrapes
 - ✅ **Caching System** - Scrape once, rebuild instantly
 
+### 🤖 Agent-Agnostic Skill Generation
+- ✅ **Multi-Agent Support** - Generate skills for Claude, Kimi, Codex, Copilot, OpenCode, or any custom agent via `--agent` flag
+- ✅ **Custom Agent Commands** - Use `--agent-cmd` to specify a custom agent CLI command for enhancement
+- ✅ **Universal Flags** - `--agent` and `--agent-cmd` available on all commands (create, scrape, github, pdf, etc.)
+
+### 📦 Marketplace Pipeline
+- ✅ **Publish to Marketplace** - Publish skills to Claude Code plugin marketplace repos
+- ✅ **End-to-End Pipeline** - From documentation source to published marketplace entry
+
 ### ✅ Quality Assurance
 - ✅ **Fully Tested** - 2,540+ tests with comprehensive coverage
 
@@ -719,7 +736,7 @@ skill-seekers install --config react --dry-run
 
 **Requirements:**
 - ANTHROPIC_API_KEY environment variable (for auto-upload)
-- Claude Code Max plan (for local AI enhancement)
+- Claude Code Max plan (for local AI enhancement), or use `--agent` to select a different AI agent
 
 ---
 
@@ -756,6 +773,9 @@ skill-seekers scrape --url https://react.dev --name react
 
 # With async mode (3x faster)
 skill-seekers scrape --config configs/godot.json --async --workers 8
+
+# Use a specific AI agent for enhancement
+skill-seekers scrape --config configs/react.json --agent kimi
 ```
 
 ### PDF Extraction
@@ -902,15 +922,15 @@ graph LR
     C --> F[Organized References]
     D --> F
     F --> E
-    E --> G[Claude Skill .zip]
-    G --> H[Upload to Claude AI]
+    E --> G[AI Skill .zip]
+    G --> H[Upload to AI Platform]
 ```
 
-0. **Detect llms.txt** - Checks for llms-full.txt, llms.txt, llms-small.txt first
+0. **Detect llms.txt** - Checks for llms-full.txt, llms.txt, llms-small.txt first (part of Smart SPA Discovery)
 1. **Scrape**: Extracts all pages from documentation
 2. **Categorize**: Organizes content into topics (API, guides, tutorials, etc.)
-3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples
-4. **Package**: Bundles everything into a Claude-ready `.zip` file
+3. **Enhance**: AI analyzes docs and creates comprehensive SKILL.md with examples (supports multiple agents via `--agent`)
+4. **Package**: Bundles everything into a platform-ready `.zip` file
 
 ## Architecture
 
@@ -924,9 +944,9 @@ The system is organized into **8 core modules** and **5 utility modules** (~200 
 | **Scrapers** | 17 source-type extractors | `DocToSkillConverter`, `GitHubScraper`, `UnifiedScraper` |
 | **Adaptors** | 20+ output platform formats | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
 | **Analysis** | C3.x codebase analysis pipeline | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 GoF detectors |
-| **Enhancement** | AI-powered skill improvement | `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Enhancement** | AI-powered skill improvement via `AgentClient` | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
 | **Packaging** | Package, upload, install skills | `PackageSkill`, `InstallAgent` |
-| **MCP** | FastMCP server (34 tools) | `SkillSeekerMCPServer`, 8 tool modules |
+| **MCP** | FastMCP server (40 tools) | `SkillSeekerMCPServer`, 10 tool modules |
 | **Sync** | Doc change detection | `ChangeDetector`, `SyncMonitor`, `Notifier` |
 
 Utility modules: **Parsers** (28 CLI parsers), **Storage** (S3/GCS/Azure), **Embedding** (multi-provider vectors), **Benchmark** (performance), **Utilities** (16 shared helpers).

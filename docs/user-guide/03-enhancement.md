@@ -39,11 +39,15 @@ Choose how much enhancement to apply:
 
 ### API Mode (Default if key available)
 
-Uses Claude API for fast enhancement.
+Uses any supported AI provider API via `AgentClient`. Providers: Anthropic (Claude), Moonshot/Kimi, Google Gemini, OpenAI.
 
 **Requirements:**
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+# Any one of these activates API mode:
+export ANTHROPIC_API_KEY=sk-ant-...   # Claude
+export MOONSHOT_API_KEY=...           # Kimi
+export GOOGLE_API_KEY=...             # Gemini
+export OPENAI_API_KEY=...             # OpenAI
 ```
 
 **Usage:**
@@ -67,27 +71,33 @@ skill-seekers enhance output/my-skill/ --agent api
 
 ### LOCAL Mode (Default if no key)
 
-Uses Claude Code (free with Max plan).
+Uses a local AI coding agent via `AgentClient`. Supports Claude Code, Kimi Code, Codex, Copilot, OpenCode, or custom agents.
 
 **Requirements:**
-- Claude Code installed
-- Claude Code Max subscription
+- One of the supported agents installed (Claude Code, Codex, Copilot, OpenCode, Kimi)
 
 **Usage:**
 ```bash
-# Auto-detects LOCAL mode (no API key)
+# Auto-detects LOCAL mode (no API key), defaults to Claude Code
 skill-seekers create <source>
 
-# Explicit
-skill-seekers enhance output/my-skill/ --agent local
+# Use a different local agent
+skill-seekers enhance output/my-skill/ --agent codex
+skill-seekers enhance output/my-skill/ --agent copilot
+skill-seekers enhance output/my-skill/ --agent kimi
+skill-seekers enhance output/my-skill/ --agent opencode
+
+# Custom agent
+skill-seekers enhance output/my-skill/ --agent custom --agent-cmd "my-agent {prompt_file}"
 ```
 
 **Pros:**
-- Free (with Claude Code Max)
+- Free (with agent subscription)
 - Better quality (full context)
+- Agent-agnostic -- works with any supported coding agent
 
 **Cons:**
-- Requires Claude Code
+- Requires a local coding agent
 - Slightly slower (~60-120 sec)
 
 ---
