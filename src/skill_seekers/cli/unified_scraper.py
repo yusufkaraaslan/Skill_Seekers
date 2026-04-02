@@ -157,6 +157,40 @@ class UnifiedScraper:
         logger.info(f"📝 Logging to: {log_file}")
         logger.info(f"🗂️  Cache directory: {self.cache_dir}")
 
+    @staticmethod
+    def _enrich_docs_json(docs_json: dict, data_file_path: str) -> dict:
+        """Enrich docs summary with page content from individual page files.
+
+        summary.json only has {title, url} per page; full content lives in pages/*.json.
+        ConflictDetector needs content to extract APIs, so we load page files and convert
+        to the dict format {url: page_data} that the detector's dict branch understands.
+        """
+        pages = docs_json.get("pages", [])
+        if not isinstance(pages, list) or not pages or "content" in pages[0]:
+            return docs_json
+
+        pages_dir = os.path.join(os.path.dirname(data_file_path), "pages")
+        if not os.path.isdir(pages_dir):
+            return docs_json
+
+        enriched_pages = {}
+        for page_file in os.listdir(pages_dir):
+            if page_file.endswith(".json"):
+                try:
+                    with open(os.path.join(pages_dir, page_file), encoding="utf-8") as pf:
+                        page_data = json.load(pf)
+                    url = page_data.get("url", "")
+                    if url:
+                        enriched_pages[url] = page_data
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+        if enriched_pages:
+            docs_json = {**docs_json, "pages": enriched_pages}
+            logger.info(f"Enriched docs data with {len(enriched_pages)} page files for API extraction")
+
+        return docs_json
+
     def scrape_all_sources(self):
         """
         Scrape all configured sources.
@@ -1704,12 +1738,16 @@ class UnifiedScraper:
         docs_data = docs_list[0]
         github_data = github_list[0]
 
-        # Load data files
+        # Load data files (cached for reuse in merge_sources)
         with open(docs_data["data_file"], encoding="utf-8") as f:
             docs_json = json.load(f)
+        docs_json = self._enrich_docs_json(docs_json, docs_data["data_file"])
 
         with open(github_data["data_file"], encoding="utf-8") as f:
             github_json = json.load(f)
+
+        self._cached_docs_json = docs_json
+        self._cached_github_json = github_json
 
         # Detect conflicts
         detector = ConflictDetector(docs_json, github_json)
@@ -1758,15 +1796,18 @@ class UnifiedScraper:
             logger.warning("Missing documentation or GitHub data for merging")
             return None
 
-        docs_data = docs_list[0]
-        github_data = github_list[0]
+        # Reuse cached data from detect_conflicts() to avoid redundant disk I/O
+        docs_json = getattr(self, "_cached_docs_json", None)
+        github_json = getattr(self, "_cached_github_json", None)
 
-        # Load data
-        with open(docs_data["data_file"], encoding="utf-8") as f:
-            docs_json = json.load(f)
-
-        with open(github_data["data_file"], encoding="utf-8") as f:
-            github_json = json.load(f)
+        if docs_json is None or github_json is None:
+            docs_data = docs_list[0]
+            github_data = github_list[0]
+            with open(docs_data["data_file"], encoding="utf-8") as f:
+                docs_json = json.load(f)
+            docs_json = self._enrich_docs_json(docs_json, docs_data["data_file"])
+            with open(github_data["data_file"], encoding="utf-8") as f:
+                github_json = json.load(f)
 
         # Choose merger
         if self.merge_mode in ("ai-enhanced", "claude-enhanced"):

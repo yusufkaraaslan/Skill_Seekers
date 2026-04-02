@@ -908,8 +908,29 @@ class HowToGuideBuilder:
         return collection
 
     def _extract_workflow_examples(self, examples: list[dict]) -> list[dict]:
-        """Filter to workflow category only"""
-        return [ex for ex in examples if isinstance(ex, dict) and ex.get("category") == "workflow"]
+        """Filter to examples suitable for guide generation.
+
+        Includes:
+        - All workflow-category examples
+        - Setup/config examples with sufficient complexity (4+ steps or high confidence)
+        - Instantiation examples with high confidence and multiple dependencies
+        """
+        guide_worthy = []
+        for ex in examples:
+            if not isinstance(ex, dict):
+                continue
+            category = ex.get("category", "")
+            complexity = ex.get("complexity_score", 0)
+            confidence = ex.get("confidence", 0)
+
+            if category == "workflow":
+                guide_worthy.append(ex)
+            elif category in ("setup", "config") and (complexity >= 0.4 or confidence >= 0.7):
+                guide_worthy.append(ex)
+            elif category == "instantiation" and complexity >= 0.6 and confidence >= 0.7:
+                guide_worthy.append(ex)
+
+        return guide_worthy
 
     def _create_guide(self, title: str, workflows: list[dict], enhancer=None) -> HowToGuide:
         """

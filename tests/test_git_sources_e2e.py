@@ -52,8 +52,8 @@ class TestGitSourcesE2E:
         """Create a temporary git repository with sample configs."""
         repo_dir = tempfile.mkdtemp(prefix="ss_repo_")
 
-        # Initialize git repository
-        repo = git.Repo.init(repo_dir)
+        # Initialize git repository with 'master' branch for test consistency
+        repo = git.Repo.init(repo_dir, initial_branch="master")
 
         # Create sample config files
         configs = {
@@ -685,8 +685,8 @@ class TestMCPToolsE2E:
         """Create a temporary git repository with sample configs."""
         repo_dir = tempfile.mkdtemp(prefix="ss_mcp_repo_")
 
-        # Initialize git repository
-        repo = git.Repo.init(repo_dir)
+        # Initialize git repository with 'master' branch for test consistency
+        repo = git.Repo.init(repo_dir, initial_branch="master")
 
         # Create sample config
         config = {

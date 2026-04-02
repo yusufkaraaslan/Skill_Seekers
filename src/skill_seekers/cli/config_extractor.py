@@ -627,15 +627,17 @@ class ConfigParser:
             parent_path = []
 
         for key, value in data.items():
+            # YAML parses 'on:' as boolean True; convert non-string keys
+            str_key = str(key) if not isinstance(key, str) else key
             if isinstance(value, dict):
                 # Recurse into nested dicts
-                self._extract_settings_from_dict(value, config_file, parent_path + [key])
+                self._extract_settings_from_dict(value, config_file, parent_path + [str_key])
             else:
                 setting = ConfigSetting(
-                    key=".".join(parent_path + [key]) if parent_path else key,
+                    key=".".join(parent_path + [str_key]) if parent_path else str_key,
                     value=value,
                     value_type=self._infer_type(value),
-                    nested_path=parent_path + [key],
+                    nested_path=parent_path + [str_key],
                 )
                 config_file.settings.append(setting)
 
