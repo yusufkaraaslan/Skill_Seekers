@@ -271,13 +271,13 @@ class ConfigFileDetector:
         ".tmp",
     }
 
-    def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
+    def find_config_files(self, directory: Path, max_files: int = 0) -> list[ConfigFile]:
         """
         Find all configuration files in directory.
 
         Args:
             directory: Root directory to search
-            max_files: Maximum number of config files to find
+            max_files: Maximum number of config files to find (0 = unlimited)
 
         Returns:
             List of ConfigFile objects
@@ -286,7 +286,7 @@ class ConfigFileDetector:
         found_count = 0
 
         for file_path in self._walk_directory(directory):
-            if found_count >= max_files:
+            if max_files > 0 and found_count >= max_files:
                 logger.info(f"Reached max_files limit ({max_files})")
                 break
 
@@ -760,15 +760,13 @@ class ConfigExtractor:
         self.parser = ConfigParser()
         self.pattern_detector = ConfigPatternDetector()
 
-    def extract_from_directory(
-        self, directory: Path, max_files: int = 100
-    ) -> ConfigExtractionResult:
+    def extract_from_directory(self, directory: Path, max_files: int = 0) -> ConfigExtractionResult:
         """
         Extract configuration patterns from directory.
 
         Args:
             directory: Root directory to analyze
-            max_files: Maximum config files to process
+            max_files: Maximum config files to process (0 = unlimited)
 
         Returns:
             ConfigExtractionResult with all findings
@@ -857,7 +855,7 @@ def main():
     parser.add_argument("directory", type=Path, help="Directory to analyze")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
     parser.add_argument(
-        "--max-files", type=int, default=100, help="Maximum config files to process"
+        "--max-files", type=int, default=0, help="Maximum config files to process (0 = unlimited)"
     )
     parser.add_argument(
         "--enhance",
@@ -867,13 +865,13 @@ def main():
     parser.add_argument(
         "--enhance-local",
         action="store_true",
-        help="Enhance with AI analysis (LOCAL mode, uses Claude Code CLI)",
+        help="Enhance with AI analysis (LOCAL mode, uses coding agent CLI)",
     )
     parser.add_argument(
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
         default="none",
-        help="AI enhancement mode: auto (detect), api (Claude API), local (Claude Code CLI), none (disable)",
+        help="AI enhancement mode: auto (detect), api (Anthropic API), local (coding agent CLI), none (disable)",
     )
 
     args = parser.parse_args()

@@ -4,7 +4,7 @@ SKILL.md Enhancement Script
 Uses platform AI APIs to improve SKILL.md by analyzing reference documentation.
 
 Usage:
-    # Claude (default)
+    # Anthropic (default)
     skill-seekers enhance output/react/
     skill-seekers enhance output/react/ --api-key sk-ant-...
 
@@ -63,17 +63,17 @@ class SkillEnhancer:
         return self.skill_md_path.read_text(encoding="utf-8")
 
     def enhance_skill_md(self, references, current_skill_md):
-        """Use Claude to enhance SKILL.md"""
+        """Use AI to enhance SKILL.md"""
 
         # Build prompt
         prompt = self._build_enhancement_prompt(references, current_skill_md)
 
-        print("\n🤖 Asking Claude to enhance SKILL.md...")
+        print("\n🤖 Asking AI to enhance SKILL.md...")
         print(f"   Input: {len(prompt):,} characters")
 
         try:
             message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
                 max_tokens=4096,
                 temperature=0.3,
                 messages=[{"role": "user", "content": prompt}],
@@ -94,7 +94,7 @@ class SkillEnhancer:
             return enhanced_content
 
         except Exception as e:
-            print(f"❌ Error calling Claude API: {e}")
+            print(f"❌ Error calling AI API: {e}")
             return None
 
     def _is_video_source(self, references):
@@ -102,7 +102,7 @@ class SkillEnhancer:
         return any(meta["source"] == "video_tutorial" for meta in references.values())
 
     def _build_enhancement_prompt(self, references, current_skill_md):
-        """Build the prompt for Claude with multi-source awareness"""
+        """Build the prompt for AI with multi-source awareness"""
 
         # Dispatch to video-specific prompt if video source detected
         if self._is_video_source(references):
@@ -119,7 +119,7 @@ class SkillEnhancer:
         # Analyze conflicts if present
         has_conflicts = any("conflicts" in meta["path"] for meta in references.values())
 
-        prompt = f"""You are enhancing a Claude skill's SKILL.md file. This skill is about: {skill_name}
+        prompt = f"""You are enhancing an LLM skill's SKILL.md file. This skill is about: {skill_name}
 
 I've scraped documentation from multiple sources and organized it into reference files. Your job is to create an EXCELLENT SKILL.md that synthesizes knowledge from these sources.
 
@@ -275,7 +275,7 @@ IMPORTANT:
 - Prioritize SHORT, clear examples (5-20 lines max)
 - Make it actionable and practical
 - Don't be too verbose - be concise but useful
-- Maintain the markdown structure for Claude skills
+- Maintain the markdown structure for LLM skills
 - Keep code examples properly formatted with language tags
 
 OUTPUT:
@@ -294,7 +294,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         """
         skill_name = self.skill_dir.name
 
-        prompt = f"""You are enhancing a Claude skill built from VIDEO TUTORIAL extraction. This skill is about: {skill_name}
+        prompt = f"""You are enhancing an LLM skill built from VIDEO TUTORIAL extraction. This skill is about: {skill_name}
 
 The raw data was extracted from video tutorials using:
 1. **Transcript** (speech-to-text) — HIGH quality, this is the primary signal
@@ -471,7 +471,7 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         else:
             print("  ℹ No existing SKILL.md, will create new one")
 
-        # Enhance with Claude
+        # Enhance with AI
         enhanced = self.enhance_skill_md(references, current_skill_md)
 
         if not enhanced:
@@ -502,7 +502,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Claude (default)
+  # Anthropic (default)
   export ANTHROPIC_API_KEY=sk-ant-...
   skill-seekers enhance output/react/
 
@@ -530,15 +530,21 @@ Examples:
     )
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai"],
-        default="claude",
-        help="Target LLM platform (default: claude)",
+        choices=["claude", "gemini", "openai", "kimi"],
+        default=None,
+        help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without calling API"
     )
 
     args = parser.parse_args()
+
+    # Auto-detect target platform if not specified
+    if args.target is None:
+        from skill_seekers.cli.agent_client import AgentClient
+
+        args.target = AgentClient.detect_default_target()
 
     # Validate skill directory
     skill_dir = Path(args.skill_dir)
@@ -578,7 +584,7 @@ Examples:
         if not adaptor.supports_enhancement():
             print(f"❌ Error: {adaptor.PLATFORM_NAME} does not support AI enhancement")
             print("\nSupported platforms for enhancement:")
-            print("  - Claude AI (Anthropic)")
+            print("  - Anthropic (Claude AI)")
             print("  - Google Gemini")
             print("  - OpenAI ChatGPT")
             sys.exit(1)

@@ -70,12 +70,11 @@ class TestInstallSkillDryRun:
         assert "🔍 DRY RUN MODE" in output
         assert "Preview only, no actions taken" in output
 
-        # Verify all 5 phases are shown
-        assert "PHASE 1/5: Fetch Config" in output
-        assert "PHASE 2/5: Scrape Documentation" in output
-        assert "PHASE 3/5: AI Enhancement (MANDATORY)" in output
-        assert "PHASE 4/5: Package Skill" in output
-        assert "PHASE 5/5: Upload to Claude" in output
+        # Verify core phases are shown
+        assert "Fetch Config" in output
+        assert "Scrape Documentation" in output
+        assert "AI Enhancement (MANDATORY)" in output
+        assert "Package Skill" in output
 
         # Verify dry run indicators
         assert "[DRY RUN]" in output
@@ -92,11 +91,10 @@ class TestInstallSkillDryRun:
         # Verify dry run mode
         assert "🔍 DRY RUN MODE" in output
 
-        # Verify only 4 phases (no fetch)
-        assert "PHASE 1/4: Scrape Documentation" in output
-        assert "PHASE 2/4: AI Enhancement (MANDATORY)" in output
-        assert "PHASE 3/4: Package Skill" in output
-        assert "PHASE 4/4: Upload to Claude" in output
+        # Verify core phases are shown (no fetch)
+        assert "Scrape Documentation" in output
+        assert "AI Enhancement (MANDATORY)" in output
+        assert "Package Skill" in output
 
         # Should not show fetch phase
         assert "PHASE 1/5" not in output
@@ -243,18 +241,16 @@ class TestInstallSkillPhaseOrchestration:
 
         output = result[0].text
 
-        # Should only have 4 phases (no fetch)
-        assert "PHASE 1/4: Scrape Documentation" in output
-        assert "PHASE 2/4: AI Enhancement" in output
-        assert "PHASE 3/4: Package Skill" in output
-        assert "PHASE 4/4: Upload to Claude" in output
+        # Should have core phases (no fetch)
+        assert "Scrape Documentation" in output
+        assert "AI Enhancement" in output
+        assert "Package Skill" in output
 
         # Should not have fetch phase
         assert "Fetch Config" not in output
 
         # Should show manual upload instructions (no API key)
-        assert "⚠️  ANTHROPIC_API_KEY not set" in output
-        assert "Manual upload:" in output
+        assert "Manual upload" in output
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")

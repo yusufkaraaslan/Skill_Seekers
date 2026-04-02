@@ -1,0 +1,128 @@
+{
+  "name": "dotween",
+  "description": "DOTween (HOTween v2) animation engine for Unity - Use when implementing tweening animations, sequences, easing, UI animations, or any programmatic animation in Unity C# projects.",
+  "version": "1.0.0",
+  "merge_mode": "claude-enhanced",
+  "base_url": "https://dotween.demigiant.com/documentation.php",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://dotween.demigiant.com/documentation.php",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "#content, .documentation, article, main",
+        "title": "h1, h2",
+        "code_blocks": "pre code, .code"
+      },
+      "url_patterns": {
+        "include": [
+          "/documentation",
+          "/getstarted",
+          "/pro",
+          "/support"
+        ],
+        "exclude": [
+          "/download",
+          "/credits"
+        ]
+      },
+      "categories": {
+        "getting_started": [
+          "getstarted",
+          "setup",
+          "installation",
+          "initialization"
+        ],
+        "core_api": [
+          "DOTween",
+          "Tweener",
+          "Sequence",
+          "Tween",
+          "TweenParams",
+          "DOVirtual"
+        ],
+        "shortcuts": [
+          "shortcuts",
+          "transform",
+          "material",
+          "rigidbody",
+          "camera",
+          "audio",
+          "light",
+          "spriterenderer"
+        ],
+        "easing": [
+          "ease",
+          "easing",
+          "animationcurve",
+          "custom-ease"
+        ],
+        "sequences": [
+          "sequence",
+          "append",
+          "insert",
+          "join",
+          "prepend",
+          "callbacks"
+        ],
+        "advanced": [
+          "paths",
+          "blendable",
+          "DOTweenAnimation",
+          "DOTweenVisualManager",
+          "pro"
+        ]
+      },
+      "rate_limit": 1.0
+    },
+    {
+      "type": "github",
+      "repo": "Demigiant/dotween",
+      "include_code": true,
+      "language": "C#",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+      "fetch_issues": true,
+      "max_issues": 50,
+      "fetch_changelog": false,
+      "fetch_releases": true
+    }
+  ],
+  "analysis_features": {
+    "pattern_detection": true,
+    "test_extraction": true,
+    "how_to_guides": true,
+    "config_extraction": true,
+    "architecture_overview": true,
+    "api_reference": true,
+    "dependency_graph": true
+  },
+
+  "enhancement": {
+    "enabled": true,
+    "level": 3,
+    "mode": "LOCAL",
+    "agent": "kimi",
+    "timeout": "unlimited"
+  },
+
+  "chunking": {
+    "enabled": true,
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+
+  "output_formats": [
+    "claude",
+    "markdown"
+  ],
+
+  "metadata": {
+    "version": "1.2",
+    "framework": "unity",
+    "language": "csharp",
+    "tags": ["unity", "dotween", "tweening", "animation", "easing", "csharp"],
+    "documentation_url": "https://dotween.demigiant.com/documentation.php",
+    "repository_url": "https://github.com/Demigiant/dotween"
+  }
+}

@@ -88,6 +88,7 @@ class TestCheckApiKeys:
             "GITHUB_TOKEN": "ghp_test123456789",
             "GOOGLE_API_KEY": "AIza_test123456789",
             "OPENAI_API_KEY": "sk-test123456789",
+            "MOONSHOT_API_KEY": "sk-moon-test123456789",
         }
         with patch.dict(os.environ, env, clear=True):
             result = check_api_keys()

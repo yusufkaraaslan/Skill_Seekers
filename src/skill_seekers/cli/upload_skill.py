@@ -4,7 +4,7 @@ Automatic Skill Uploader
 Uploads a skill package to LLM platforms (Claude, Gemini, OpenAI, etc.)
 
 Usage:
-    # Claude (default)
+    # Anthropic (default)
     export ANTHROPIC_API_KEY=sk-ant-...
     skill-seekers upload output/react.zip
 
@@ -117,7 +117,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Setup:
-  Claude:
+  Anthropic (Claude):
     export ANTHROPIC_API_KEY=sk-ant-...
 
   Gemini:
@@ -135,7 +135,7 @@ Setup:
     docker run -p 8080:8080 semitechnologies/weaviate:latest
 
 Examples:
-  # Upload to Claude (default)
+  # Upload to default platform
   skill-seekers upload output/react.zip
 
   # Upload to Gemini
@@ -162,9 +162,9 @@ Examples:
 
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "chroma", "weaviate"],
-        default="claude",
-        help="Target platform (default: claude)",
+        choices=["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
+        default=None,
+        help="Target platform (auto-detected from API keys, or 'claude' if none set)",
     )
 
     parser.add_argument("--api-key", help="Platform API key (or set environment variable)")
@@ -208,6 +208,12 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # Auto-detect target platform if not specified
+    if args.target is None:
+        from skill_seekers.cli.agent_client import AgentClient
+
+        args.target = AgentClient.detect_default_target()
 
     # Build kwargs for vector DB upload
     upload_kwargs = {}

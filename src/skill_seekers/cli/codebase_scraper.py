@@ -650,6 +650,7 @@ def process_markdown_docs(
     gitignore_spec: pathspec.PathSpec | None = None,
     enhance_with_ai: bool = False,
     ai_mode: str = "none",
+    agent: str | None = None,
 ) -> dict[str, Any]:
     """
     Process all markdown documentation files in a directory.
@@ -822,7 +823,7 @@ def process_markdown_docs(
     if enhance_with_ai and ai_mode != "none" and processed_docs:
         logger.info("🤖 Enhancing documentation analysis with AI...")
         try:
-            processed_docs = _enhance_docs_with_ai(processed_docs, ai_mode)
+            processed_docs = _enhance_docs_with_ai(processed_docs, ai_mode, agent=agent)
             logger.info("✅ AI documentation enhancement complete")
         except Exception as e:
             logger.warning(f"⚠️  AI enhancement failed: {e}")
@@ -898,55 +899,46 @@ def process_markdown_docs(
     return index_data
 
 
-def _enhance_docs_with_ai(docs: list[dict], ai_mode: str) -> list[dict]:
+def _enhance_docs_with_ai(docs: list[dict], ai_mode: str, agent: str | None = None) -> list[dict]:
     """
-    Enhance documentation analysis with AI.
+    Enhance documentation analysis with AI via AgentClient.
 
     Args:
         docs: List of processed document dictionaries
-        ai_mode: AI mode ('api' or 'local')
+        ai_mode: AI mode ('api', 'local', or 'auto')
+        agent: Local CLI agent name (e.g., "kimi", "claude")
 
     Returns:
         Enhanced document list
     """
-    # Try API mode first
-    if ai_mode in ("api", "auto"):
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if api_key:
-            return _enhance_docs_api(docs, api_key)
+    from skill_seekers.cli.agent_client import AgentClient
 
-    # Fall back to LOCAL mode
-    if ai_mode in ("local", "auto"):
-        return _enhance_docs_local(docs)
+    client = AgentClient(mode=ai_mode, agent=agent)
 
-    return docs
+    if not client.is_available():
+        logger.warning("⚠️  No AI agent available for documentation enhancement")
+        return docs
 
+    # Batch documents for efficiency
+    batch_size = 10
+    docs_with_summary = [d for d in docs if d.get("summary")]
+    if not docs_with_summary:
+        return docs
 
-def _enhance_docs_api(docs: list[dict], api_key: str) -> list[dict]:
-    """Enhance docs using Claude API."""
-    try:
-        import anthropic
+    for i in range(0, len(docs_with_summary), batch_size):
+        batch = docs_with_summary[i : i + batch_size]
 
-        client = anthropic.Anthropic(api_key=api_key)
+        docs_text = "\n\n".join(
+            [
+                f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
+                for d in batch
+            ]
+        )
 
-        # Batch documents for efficiency
-        batch_size = 10
-        for i in range(0, len(docs), batch_size):
-            batch = docs[i : i + batch_size]
+        if not docs_text:
+            continue
 
-            # Create prompt for batch
-            docs_text = "\n\n".join(
-                [
-                    f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nSummary: {d.get('summary', 'N/A')}"
-                    for d in batch
-                    if d.get("summary")
-                ]
-            )
-
-            if not docs_text:
-                continue
-
-            prompt = f"""Analyze these documentation files and provide:
+        prompt = f"""Analyze these documentation files and provide:
 1. A brief description of what each document covers
 2. Key topics/concepts mentioned
 3. How they relate to each other
@@ -957,15 +949,10 @@ Documents:
 Return JSON with format:
 {{"enhancements": [{{"filename": "...", "description": "...", "key_topics": [...], "related_to": [...]}}]}}"""
 
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}],
-            )
-
-            # Parse response and merge enhancements
-            try:
-                json_match = re.search(r"\{.*\}", response.content[0].text, re.DOTALL)
+        try:
+            response = client.call(prompt, max_tokens=2000)
+            if response:
+                json_match = re.search(r"\{.*\}", response, re.DOTALL)
                 if json_match:
                     enhancements = json.loads(json_match.group())
                     for enh in enhancements.get("enhancements", []):
@@ -974,72 +961,8 @@ Return JSON with format:
                                 doc["ai_description"] = enh.get("description")
                                 doc["ai_topics"] = enh.get("key_topics", [])
                                 doc["ai_related"] = enh.get("related_to", [])
-            except Exception:
-                pass
-
-    except Exception as e:
-        logger.warning(f"API enhancement failed: {e}")
-
-    return docs
-
-
-def _enhance_docs_local(docs: list[dict]) -> list[dict]:
-    """Enhance docs using Claude Code CLI (LOCAL mode)."""
-    import subprocess
-    import tempfile
-
-    # Prepare batch of docs for enhancement
-    docs_with_summary = [d for d in docs if d.get("summary")]
-    if not docs_with_summary:
-        return docs
-
-    docs_text = "\n\n".join(
-        [
-            f"## {d.get('title', d['filename'])}\nCategory: {d['category']}\nPath: {d['path']}\nSummary: {d.get('summary', 'N/A')}"
-            for d in docs_with_summary[:20]  # Limit to 20 docs
-        ]
-    )
-
-    prompt = f"""Analyze these documentation files from a codebase and provide insights.
-
-For each document, provide:
-1. A brief description of what it covers
-2. Key topics/concepts
-3. Related documents
-
-Documents:
-{docs_text}
-
-Output JSON only:
-{{"enhancements": [{{"filename": "...", "description": "...", "key_topics": ["..."], "related_to": ["..."]}}]}}"""
-
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write(prompt)
-            prompt_file = f.name
-
-        result = subprocess.run(
-            ["claude", "--dangerously-skip-permissions", "-p", prompt],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-
-        os.unlink(prompt_file)
-
-        if result.returncode == 0 and result.stdout:
-            json_match = re.search(r"\{.*\}", result.stdout, re.DOTALL)
-            if json_match:
-                enhancements = json.loads(json_match.group())
-                for enh in enhancements.get("enhancements", []):
-                    for doc in docs:
-                        if doc["filename"] == enh.get("filename"):
-                            doc["ai_description"] = enh.get("description")
-                            doc["ai_topics"] = enh.get("key_topics", [])
-                            doc["ai_related"] = enh.get("related_to", [])
-
-    except Exception as e:
-        logger.warning(f"LOCAL enhancement failed: {e}")
+        except Exception as e:
+            logger.warning(f"AI enhancement batch failed: {e}")
 
     return docs
 
@@ -1062,6 +985,8 @@ def analyze_codebase(
     skill_name: str | None = None,
     skill_description: str | None = None,
     doc_version: str = "",
+    agent: str | None = None,
+    agent_cmd: str | None = None,
 ) -> dict[str, Any]:
     """
     Analyze local codebase and extract code knowledge.
@@ -1467,7 +1392,7 @@ def analyze_codebase(
                         from skill_seekers.cli.config_enhancer import ConfigEnhancer
 
                         logger.info(f"🤖 Enhancing config analysis with AI (mode: {ai_mode})...")
-                        enhancer = ConfigEnhancer(mode=ai_mode)
+                        enhancer = ConfigEnhancer(mode=ai_mode, agent=agent)
                         result_dict = enhancer.enhance_config_result(result_dict)
                         logger.info("✅ AI enhancement complete")
                     except Exception as e:
@@ -1514,7 +1439,7 @@ def analyze_codebase(
     logger.info("Analyzing architectural patterns...")
     from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
 
-    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture)
+    arch_detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_architecture, agent=agent)
     arch_report = arch_detector.analyze(directory, results["files"])
 
     # Save architecture analysis if we have patterns OR frameworks (fixes #239)
@@ -1579,6 +1504,7 @@ def analyze_codebase(
                 gitignore_spec=gitignore_spec,
                 enhance_with_ai=enhance_docs_ai,
                 ai_mode=ai_mode,
+                agent=agent,
             )
 
             if docs_data and docs_data.get("total_files", 0) > 0:
@@ -1831,8 +1757,8 @@ def _get_language_stats(files: list[dict]) -> dict[str, int]:
 
 
 def _format_patterns_section(output_dir: Path) -> str:
-    """Format design patterns section from patterns/detected_patterns.json."""
-    patterns_file = output_dir / "patterns" / "detected_patterns.json"
+    """Format design patterns section from patterns/all_patterns.json."""
+    patterns_file = output_dir / "patterns" / "all_patterns.json"
     if not patterns_file.exists():
         return ""
 
@@ -2315,8 +2241,8 @@ Examples:
         help=(
             "AI enhancement mode for how-to guides: "
             "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
-            "api (Claude API, requires ANTHROPIC_API_KEY), "
-            "local (Claude Code Max, FREE, no API key), "
+            "api (Anthropic API, requires ANTHROPIC_API_KEY), "
+            "local (coding agent CLI, FREE, no API key), "
             "none (disable AI enhancement). "
             "💡 TIP: Use --enhance flag instead for simpler UX!"
         ),

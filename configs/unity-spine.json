@@ -1,0 +1,136 @@
+{
+  "name": "spine-unity",
+  "description": "Spine 2D skeletal animation runtime for Unity - Use when implementing Spine animations, SkeletonAnimation components, skin management, or spine-unity integration in Unity projects.",
+  "version": "1.0.0",
+  "merge_mode": "claude-enhanced",
+  "base_url": "http://en.esotericsoftware.com/spine-unity",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "http://en.esotericsoftware.com/spine-unity",
+      "extract_api": true,
+      "selectors": {
+        "main_content": "#wiki_page_content, .wiki-content, article, main",
+        "title": "h1",
+        "code_blocks": "pre code"
+      },
+      "url_patterns": {
+        "include": [
+          "/spine-unity",
+          "/spine-runtime",
+          "/spine-api",
+          "/spine-applying-animations",
+          "/spine-attachments",
+          "/spine-events",
+          "/spine-skeleton",
+          "/spine-skins",
+          "/spine-slots"
+        ],
+        "exclude": [
+          "/spine-corona",
+          "/spine-cocos2d",
+          "/spine-godot",
+          "/spine-unreal",
+          "/spine-flutter",
+          "/spine-sfml",
+          "/spine-monogame",
+          "/spine-love",
+          "/spine-haxe",
+          "/spine-ts",
+          "/spine-phaser",
+          "/spine-pixi",
+          "/spine-lwjgl",
+          "/spine-libgdx",
+          "/spine-changelog"
+        ]
+      },
+      "categories": {
+        "getting_started": [
+          "Installation",
+          "Download",
+          "Assets",
+          "Runtime Documentation",
+          "FAQ"
+        ],
+        "components": [
+          "Main Components",
+          "Utility Components",
+          "SkeletonAnimation",
+          "SkeletonGraphic",
+          "SkeletonMecanim",
+          "BoneFollower"
+        ],
+        "animation": [
+          "Events",
+          "AnimationState",
+          "callback",
+          "Timeline",
+          "Examples"
+        ],
+        "rendering": [
+          "Rendering",
+          "shader",
+          "material"
+        ],
+        "advanced": [
+          "On-Demand Loading",
+          "UPM",
+          "Packages"
+        ]
+      },
+      "rate_limit": 1.0
+    },
+    {
+      "type": "github",
+      "repo": "EsotericSoftware/spine-runtimes",
+      "include_code": true,
+      "language": "C#",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+      "fetch_issues": true,
+      "max_issues": 50,
+      "fetch_changelog": true,
+      "fetch_releases": true,
+      "file_patterns": [
+        "spine-unity/Assets/Spine/**/*.cs",
+        "spine-unity/Assets/Spine Examples/**/*.cs",
+        "spine-csharp/src/**/*.cs"
+      ]
+    }
+  ],
+  "analysis_features": {
+    "pattern_detection": true,
+    "test_extraction": true,
+    "how_to_guides": true,
+    "config_extraction": true,
+    "architecture_overview": true,
+    "api_reference": true,
+    "dependency_graph": true
+  },
+
+  "enhancement": {
+    "enabled": true,
+    "level": 3,
+    "mode": "LOCAL"
+  },
+
+  "chunking": {
+    "enabled": true,
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+
+  "output_formats": [
+    "claude",
+    "markdown"
+  ],
+
+  "metadata": {
+    "version": "4.2",
+    "framework": "unity",
+    "language": "csharp",
+    "tags": ["unity", "spine", "2d-animation", "skeletal-animation", "csharp"],
+    "documentation_url": "http://en.esotericsoftware.com/spine-unity",
+    "repository_url": "https://github.com/EsotericSoftware/spine-runtimes"
+  }
+}

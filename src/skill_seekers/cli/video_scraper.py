@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Video to Claude Skill Converter
+Video to AI Skill Converter
 
 Extracts transcripts, metadata, and visual content from videos
-and converts them into Claude AI skills.
+and converts them into AI skills.
 
 Supports YouTube videos/playlists, Vimeo, and local video files.
 
@@ -264,7 +264,7 @@ def _is_likely_code(text: str) -> bool:
 def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None) -> None:
     """Use AI to clean Code Timeline section in a reference file.
 
-    Sends the reference file content to Claude with a focused prompt
+    Sends the reference file content to the AI with a focused prompt
     to reconstruct the Code Timeline from noisy OCR + transcript context.
     """
     try:
@@ -300,7 +300,7 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
     try:
         client = anthropic.Anthropic(**client_kwargs)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
             max_tokens=8000,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -319,7 +319,7 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
 
 
 class VideoToSkillConverter:
-    """Convert video content to Claude skill."""
+    """Convert video content to AI skill."""
 
     def __init__(self, config: dict):
         """Initialize converter.
@@ -865,9 +865,12 @@ class VideoToSkillConverter:
         """First-pass: AI-clean reference files before SKILL.md enhancement.
 
         When enhance_level >= 2 and an API key is available, sends each
-        reference file to Claude to reconstruct noisy Code Timeline
+        reference file to the AI to reconstruct noisy Code Timeline
         sections using transcript context.
         """
+        # Note: Middle-layer AI cleaning currently only supports Anthropic API
+        # For other agents (kimi, etc.), this step is skipped and enhancement
+        # happens at the SKILL.md level instead of per-reference-file
         has_api_key = bool(
             os.environ.get("ANTHROPIC_API_KEY")
             or os.environ.get("ANTHROPIC_AUTH_TOKEN")
@@ -1203,9 +1206,12 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
         os.environ.get("ANTHROPIC_API_KEY")
         or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         or getattr(args, "api_key", None)
+        or os.environ.get("MOONSHOT_API_KEY")
     )
 
-    if not has_api_key:
+    agent = getattr(args, "agent", None)
+
+    if not has_api_key and not agent:
         logger.info("\n💡 Enhance your video skill with AI:")
         logger.info(f"  export ANTHROPIC_API_KEY=sk-ant-...")
         logger.info(f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}")
@@ -1215,10 +1221,11 @@ def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
 
     try:
         enhance_cmd = ["skill-seekers-enhance", skill_dir]
-        enhance_cmd.extend(["--enhance-level", str(enhance_level)])
         api_key = getattr(args, "api_key", None)
         if api_key:
             enhance_cmd.extend(["--api-key", api_key])
+        if agent:
+            enhance_cmd.extend(["--agent", agent])
 
         logger.info(
             "Starting video skill enhancement (this may take 10+ minutes "

@@ -43,6 +43,14 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "claude",
                 "gemini",
                 "openai",
+                "kimi",
+                "minimax",
+                "opencode",
+                "deepseek",
+                "qwen",
+                "openrouter",
+                "together",
+                "fireworks",
                 "markdown",
                 "langchain",
                 "llama-index",
@@ -53,8 +61,8 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "qdrant",
                 "pinecone",
             ],
-            "default": "claude",
-            "help": "Target LLM platform (default: claude)",
+            "default": None,
+            "help": "Target LLM platform (auto-detected from API keys, or 'markdown' if none set)",
             "metavar": "PLATFORM",
         },
     },
@@ -131,6 +139,32 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "action": "store_true",
             "help": "Allow code block splitting (default: code blocks preserved)",
+        },
+    },
+    # Marketplace options
+    "marketplace": {
+        "flags": ("--marketplace",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Publish to registered marketplace after packaging (use add_marketplace to register)",
+            "metavar": "NAME",
+        },
+    },
+    "marketplace_category": {
+        "flags": ("--marketplace-category",),
+        "kwargs": {
+            "type": str,
+            "default": "development",
+            "help": "Plugin category in marketplace (default: development)",
+            "metavar": "CAT",
+        },
+    },
+    "create_branch": {
+        "flags": ("--create-branch",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Create a feature branch in marketplace repo instead of committing to main",
         },
     },
 }

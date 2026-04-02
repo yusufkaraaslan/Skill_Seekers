@@ -319,7 +319,7 @@ class UnifiedCodebaseAnalyzer:
         c3x_data = {}
 
         # C3.1: Design Patterns
-        patterns_file = output_dir / "patterns" / "design_patterns.json"
+        patterns_file = output_dir / "patterns" / "all_patterns.json"
         if patterns_file.exists():
             with open(patterns_file) as f:
                 patterns_data = json.load(f)

@@ -64,12 +64,21 @@ class BrowserRenderer:
             html = renderer.render_page(url)
     """
 
-    def __init__(self, timeout: int = 30000, wait_until: str = "networkidle"):
+    def __init__(
+        self,
+        timeout: int = 60000,
+        wait_until: str = "domcontentloaded",
+        extra_wait: int = 0,
+    ):
         """Initialize renderer.
 
         Args:
-            timeout: Page load timeout in milliseconds (default: 30s)
+            timeout: Page load timeout in milliseconds (default: 60s)
             wait_until: Playwright wait condition — "networkidle", "load", "domcontentloaded"
+                        Default changed to "domcontentloaded" for better compatibility
+                        with heavy sites (Unity docs, DocFX, etc.) that never reach networkidle.
+            extra_wait: Additional milliseconds to wait after page load for lazy-loaded
+                        navigation/content (e.g., 5000 for DocFX sidebar). Default: 0.
         """
         if not _check_playwright_available():
             raise ImportError(
@@ -80,6 +89,7 @@ class BrowserRenderer:
 
         self._timeout = timeout
         self._wait_until = wait_until
+        self._extra_wait = extra_wait
         self._playwright = None
         self._browser = None
         self._context = None
@@ -127,6 +137,8 @@ class BrowserRenderer:
         page = self._context.new_page()
         try:
             page.goto(url, wait_until=self._wait_until, timeout=self._timeout)
+            if self._extra_wait > 0:
+                page.wait_for_timeout(self._extra_wait)
             html = page.content()
             return html
         finally:
