@@ -252,7 +252,7 @@ class ExecutionContext(BaseModel):
         if source_info:
             data["source"] = {
                 "type": source_info.type,
-                "raw_source": source_info.raw_source,
+                "raw_source": getattr(source_info, "raw_source", None) or getattr(source_info, "raw_input", ""),
                 "parsed": source_info.parsed,
                 "suggested_name": source_info.suggested_name,
             }

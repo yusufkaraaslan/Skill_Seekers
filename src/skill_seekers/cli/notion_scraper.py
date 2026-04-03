@@ -866,133 +866,150 @@ class NotionToSkillConverter:
 
 def main() -> int:
     """CLI entry point for the Notion scraper."""
-    from .arguments.common import add_all_standard_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert Notion workspace content to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  skill-seekers notion --database-id ID --token $NOTION_TOKEN --name myskill\n"
-            "  skill-seekers notion --page-id ID --token $NOTION_TOKEN --name myskill\n"
-            "  skill-seekers notion --export-path ./export/ --name myskill\n"
-            "  skill-seekers notion --from-json output/myskill_notion_data.json --name myskill"
-        ),
-    )
-    add_all_standard_arguments(parser)
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert Notion workspace content to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    # Override enhance-level default to 0 for Notion
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
+        # Import and add arguments based on scraper type
+        from .arguments.common import add_all_standard_arguments
+        add_all_standard_arguments(parser)
+        # Notion-specific args
+        parser.add_argument("--database-id", type=str, help="Notion database ID")
+        parser.add_argument("--page-id", type=str, help="Notion page ID")
+        parser.add_argument("--export-path", type=str, help="Path to export directory")
+        parser.add_argument("--token", type=str, help="Notion integration token")
+        parser.add_argument("--max-pages", type=int, default=100, help="Max pages to fetch")
+        parser.add_argument("--from-json", type=str, help="Build from previously extracted JSON")
+        # Override enhance-level default
+        for action in parser._actions:
+            if hasattr(action, "dest") and action.dest == "enhance_level":
+                action.default = 0
 
-    # Notion-specific arguments
-    parser.add_argument(
-        "--database-id", type=str, help="Notion database ID (API mode)", metavar="ID"
-    )
-    parser.add_argument(
-        "--page-id", type=str, help="Notion page ID (API mode, recursive)", metavar="ID"
-    )
-    parser.add_argument(
-        "--export-path", type=str, help="Notion export directory (export mode)", metavar="PATH"
-    )
-    parser.add_argument(
-        "--token", type=str, help="Notion integration token (or NOTION_TOKEN env)", metavar="TOKEN"
-    )
-    parser.add_argument(
-        "--max-pages",
-        type=int,
-        default=DEFAULT_MAX_PAGES,
-        help=f"Maximum pages to extract (default: {DEFAULT_MAX_PAGES})",
-        metavar="N",
-    )
-    parser.add_argument(
-        "--from-json", type=str, help="Build from previously extracted JSON", metavar="FILE"
-    )
+        args = parser.parse_args()
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
-    args = parser.parse_args()
+    # Set logging level
+    if getattr(args, "quiet", False) if args else ctx.output.quiet:
+        logging.getLogger().setLevel(logging.WARNING)
+    elif getattr(args, "verbose", False) if args else ctx.output.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
-    # Logging
-    level = (
-        logging.WARNING
-        if getattr(args, "quiet", False)
-        else (logging.DEBUG if getattr(args, "verbose", False) else logging.INFO)
-    )
-    logging.basicConfig(level=level, format="%(message)s", force=True)
-
-    # Dry run
-    if getattr(args, "dry_run", False):
+    # Handle --dry-run
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
         source = (
-            getattr(args, "database_id", None)
-            or getattr(args, "page_id", None)
-            or getattr(args, "export_path", None)
-            or getattr(args, "from_json", None)
+            (args and (getattr(args, "export_path", None) or getattr(args, "from_json", None) or getattr(args, "database_id", None) or getattr(args, "page_id", None)))
+            or ctx.output.name
             or "(none)"
         )
-        print(f"\n{'=' * 60}\nDRY RUN: Notion Extraction\n{'=' * 60}")
-        print(
-            f"Source: {source}\nName: {getattr(args, 'name', None) or '(auto)'}\nMax pages: {args.max_pages}"
-        )
+        print(f"\n{'=' * 60}")
+        print("DRY RUN: Notion Extraction")
+        print(f"{'=' * 60}")
+        print(f"Source:         {source}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
+        print(f"\n✅ Dry run complete")
         return 0
 
+    # Resolve source-specific args from ctx or args
+    database_id = ctx.get_raw("database_id") if ctx else None
+    page_id = ctx.get_raw("page_id") if ctx else None
+    export_path = ctx.get_raw("export_path") if ctx else None
+    from_json = ctx.get_raw("from_json") if ctx else None
+    token = ctx.get_raw("token") if ctx else None
+    max_pages = ctx.get_raw("max_pages") or DEFAULT_MAX_PAGES
+    description = ctx.get_raw("description") if ctx else None
+    if args:
+        database_id = getattr(args, "database_id", None) or database_id
+        page_id = getattr(args, "page_id", None) or page_id
+        export_path = getattr(args, "export_path", None) or export_path
+        from_json = getattr(args, "from_json", None) or from_json
+        token = getattr(args, "token", None) or token
+        max_pages = getattr(args, "max_pages", DEFAULT_MAX_PAGES) or max_pages
+        description = getattr(args, "description", None) or description
+
     # Validate
-    has_source = any(
-        getattr(args, a, None) for a in ("database_id", "page_id", "export_path", "from_json")
-    )
+    has_source = any([database_id, page_id, export_path, from_json])
     if not has_source:
-        parser.error("Must specify --database-id, --page-id, --export-path, or --from-json")
-    if not getattr(args, "name", None):
-        if getattr(args, "from_json", None):
-            args.name = Path(args.from_json).stem.replace("_notion_data", "")
-        elif getattr(args, "export_path", None):
-            args.name = Path(args.export_path).stem
+        if args:
+            parser.error("Must specify --database-id, --page-id, --export-path, or --from-json")
         else:
-            parser.error("--name is required when using --database-id or --page-id")
+            print(
+                "Error: Must specify database-id, page-id, export-path, or from-json",
+                file=sys.stderr,
+            )
+            return 1
+
+    # Determine name
+    skill_name = ctx.output.name
+    if not skill_name:
+        if args and getattr(args, "name", None):
+            skill_name = args.name
+        elif from_json:
+            skill_name = Path(from_json).stem.replace("_notion_data", "")
+        elif export_path:
+            skill_name = Path(export_path).stem
+        else:
+            if args:
+                parser.error("--name is required when using --database-id or --page-id")
+            else:
+                print("Error: --name is required for API mode", file=sys.stderr)
+                return 1
 
     # --from-json: build only
-    if getattr(args, "from_json", None):
+    if from_json:
         config = {
-            "name": args.name,
-            "description": getattr(args, "description", None),
-            "max_pages": args.max_pages,
+            "name": skill_name,
+            "description": description,
+            "max_pages": max_pages,
         }
         try:
             conv = NotionToSkillConverter(config)
-            conv.load_extracted_data(args.from_json)
+            conv.load_extracted_data(from_json)
             conv.build_skill()
         except Exception as e:
             print(f"\n   Error: {e}", file=sys.stderr)
-            sys.exit(1)  # noqa: E702
+            sys.exit(1)
         return 0
 
     # Full extract + build
     config: dict[str, Any] = {
-        "name": args.name,
-        "database_id": getattr(args, "database_id", None),
-        "page_id": getattr(args, "page_id", None),
-        "export_path": getattr(args, "export_path", None),
-        "token": getattr(args, "token", None),
-        "description": getattr(args, "description", None),
-        "max_pages": args.max_pages,
+        "name": skill_name,
+        "database_id": database_id,
+        "page_id": page_id,
+        "export_path": export_path,
+        "token": token,
+        "description": description,
+        "max_pages": max_pages,
     }
     try:
         conv = NotionToSkillConverter(config)
         if not conv.extract_notion():
             print("\n   Notion extraction failed", file=sys.stderr)
-            sys.exit(1)  # noqa: E702
+            sys.exit(1)
         conv.build_skill()
 
         # Run enhancement workflows if specified
         try:
             from skill_seekers.cli.workflow_runner import run_workflows
 
-            run_workflows(args)
+            run_workflows(args if args else ctx)
         except (ImportError, AttributeError):
             pass
 
         # Traditional AI enhancement
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             skill_dir = conv.skill_dir
             if api_key:
                 try:
@@ -1002,26 +1019,30 @@ def main() -> int:
                 except ImportError:
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.get_raw("agent_cmd")
+                    enhancer = LocalSkillEnhancer(
+                        Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                    )
                     enhancer.run(headless=True)
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.get_raw("agent_cmd")
+                enhancer = LocalSkillEnhancer(
+                    Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                )
                 enhancer.run(headless=True)
     except RuntimeError as e:
         print(f"\n   Error: {e}", file=sys.stderr)
-        sys.exit(1)  # noqa: E702
+        sys.exit(1)
     except Exception as e:
         print(f"\n   Unexpected error: {e}", file=sys.stderr)
         import traceback
 
         traceback.print_exc()
-        sys.exit(1)  # noqa: E702
+        sys.exit(1)
     return 0
 
 

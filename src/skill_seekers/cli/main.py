@@ -145,6 +145,9 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
 def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
     """Reconstruct sys.argv from args namespace for command module.
 
+    DEPRECATED: Use ExecutionContext instead. This function is kept for
+    backward compatibility and will be removed in a future version.
+
     Args:
         command: Command name
         args: Parsed arguments namespace
@@ -152,6 +155,13 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
     Returns:
         List of command-line arguments for the command module
     """
+    import warnings
+
+    warnings.warn(
+        "_reconstruct_argv is deprecated. Use ExecutionContext instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     argv = [f"{command}_command.py"]
 
     # Convert args to sys.argv format
@@ -225,6 +235,10 @@ def main(argv: list[str] | None = None) -> int:
     if not args.command:
         parser.print_help()
         return 1
+
+    # Note: ExecutionContext is initialized by individual commands (e.g., create_command,
+    # enhance_command) with the correct config_path and source_info. Do NOT initialize
+    # it here — commands need to set config_path which requires source detection first.
 
     # Get command module
     module_name = COMMAND_MODULES.get(args.command)

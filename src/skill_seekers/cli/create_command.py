@@ -9,6 +9,7 @@ import logging
 import argparse
 
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
+from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.arguments.create import (
     get_compatible_arguments,
     get_universal_argument_names,
@@ -52,10 +53,23 @@ class CreateCommand:
             logger.error(f"Source validation failed: {e}")
             return 1
 
-        # 3. Validate and warn about incompatible arguments
+        # 3. Initialize ExecutionContext with source info
+        # This provides a single source of truth for all configuration
+        # Resolve config path from args or source detection
+        config_path = (
+            getattr(self.args, "config", None)
+            or (self.source_info.parsed.get("config_path") if self.source_info else None)
+        )
+        ExecutionContext.initialize(
+            args=self.args,
+            config_path=config_path,
+            source_info=self.source_info,
+        )
+
+        # 4. Validate and warn about incompatible arguments
         self._validate_arguments()
 
-        # 4. Route to appropriate scraper
+        # 5. Route to appropriate scraper
         logger.info(f"Routing to {self.source_info.type} scraper...")
         return self._route_to_scraper()
 
@@ -212,8 +226,8 @@ class CreateCommand:
     ) -> list[str]:
         """Build argv dynamically by forwarding all explicitly-set arguments.
 
-        Uses the same pattern as main.py::_reconstruct_argv().
-        Replaces manual per-flag checking in _route_*() and _add_common_args().
+        DEPRECATED: Use ExecutionContext instead. This method is kept for
+        backward compatibility and will be removed in a future version.
 
         Args:
             module_name: Scraper module name (e.g., "doc_scraper")
@@ -224,6 +238,13 @@ class CreateCommand:
         Returns:
             Complete argv list for the scraper
         """
+        import warnings
+
+        warnings.warn(
+            "_build_argv is deprecated. Use ExecutionContext instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         argv = [module_name] + positional_args
 
         # Auto-add suggested name if user didn't provide one (skip for allowlisted targets)

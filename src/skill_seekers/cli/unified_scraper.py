@@ -293,50 +293,41 @@ class UnifiedScraper:
             "sources": [doc_source],
         }
 
-        # Write temporary config
-        temp_config_path = os.path.join(self.data_dir, "temp_docs_config.json")
-        with open(temp_config_path, "w", encoding="utf-8") as f:
-            json.dump(doc_config, f, indent=2)
-
-        # Run doc_scraper as subprocess
+        # Run doc_scraper directly (no subprocess needed with ExecutionContext)
         logger.info(f"Scraping documentation from {source['base_url']}")
-
-        doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
-        cmd = [sys.executable, str(doc_scraper_path), "--config", temp_config_path, "--fresh"]
-
-        # Forward agent-related CLI args so doc scraper enhancement respects
-        # the user's chosen agent instead of defaulting to claude.
-        cli_args = getattr(self, "_cli_args", None)
-        if cli_args is not None:
-            if getattr(cli_args, "agent", None):
-                cmd.extend(["--agent", cli_args.agent])
-            if getattr(cli_args, "agent_cmd", None):
-                cmd.extend(["--agent-cmd", cli_args.agent_cmd])
-            if getattr(cli_args, "api_key", None):
-                cmd.extend(["--api-key", cli_args.api_key])
 
         # Support "browser": true in source config for JavaScript SPA sites
         if source.get("browser", False):
-            cmd.append("--browser")
+            doc_config["browser"] = True
             logger.info("  🌐 Browser mode enabled (JavaScript rendering via Playwright)")
 
+        # Import and call directly
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=3600
+            from skill_seekers.cli.doc_scraper import scrape_documentation
+            from skill_seekers.cli.execution_context import ExecutionContext
+
+            # Create child context with doc-specific overrides
+            doc_ctx = ExecutionContext.get().override(
+                output__name=f"{self.name}_docs",
+                scraping__max_pages=source.get("max_pages", 500),
             )
-        except subprocess.TimeoutExpired:
-            logger.error("Documentation scraping timed out after 60 minutes")
-            return
 
-        if result.returncode != 0:
-            logger.error(f"Documentation scraping failed with return code {result.returncode}")
-            logger.error(f"STDERR: {result.stderr}")
-            logger.error(f"STDOUT: {result.stdout}")
-            return
+            with doc_ctx:
+                result = scrape_documentation(
+                    config=doc_config,
+                    ctx=ExecutionContext.get(),
+                )
 
-        # Log subprocess output for debugging
-        if result.stdout:
-            logger.info(f"Doc scraper output: {result.stdout[-500:]}")  # Last 500 chars
+            if result != 0:
+                logger.error(f"Documentation scraping failed with return code {result}")
+                return
+
+        except Exception as e:
+            logger.error(f"Documentation scraping failed: {e}")
+            import traceback
+
+            logger.debug(f"Traceback: {traceback.format_exc()}")
+            return
 
         # Load scraped data
         docs_data_file = f"output/{doc_config['name']}_data/summary.json"
@@ -360,10 +351,6 @@ class UnifiedScraper:
             logger.info(f"✅ Documentation: {summary.get('total_pages', 0)} pages scraped")
         else:
             logger.warning("Documentation data file not found")
-
-        # Clean up temp config
-        if os.path.exists(temp_config_path):
-            os.remove(temp_config_path)
 
         # Move intermediate files to cache to keep output/ clean
         docs_output_dir = f"output/{doc_config['name']}"
@@ -2168,14 +2155,34 @@ Examples:
         help="Override agent command template (advanced)",
     )
 
-    args = parser.parse_args()
+    # Context-first pattern: try ExecutionContext, fallback to argv
+    from skill_seekers.cli.execution_context import ExecutionContext
+
+    try:
+        ctx = ExecutionContext.get()
+        args = None
+        # Resolve config from context or source info
+        config_path = (
+            ctx.config_path
+            or ctx.get_raw("config")
+            or (ctx.source.parsed.get("config_path") if ctx.source and ctx.source.parsed else None)
+        )
+        merge_mode = ctx.get_raw("merge_mode")
+    except RuntimeError:
+        args = parser.parse_args()
+        ExecutionContext.initialize(args=args, config_path=getattr(args, "config", None))
+        ctx = ExecutionContext.get()
+        config_path = args.config
+        merge_mode = args.merge_mode
+
     setup_logging()
 
     # Create scraper
-    scraper = UnifiedScraper(args.config, args.merge_mode)
+    scraper = UnifiedScraper(config_path, merge_mode)
 
     # Disable codebase analysis if requested
-    if args.skip_codebase_analysis:
+    skip_analysis = (args.skip_codebase_analysis if args else False) or ctx.get_raw("skip_codebase_analysis", False)
+    if skip_analysis:
         for source in scraper.config.get("sources", []):
             if source["type"] == "github":
                 source["enable_codebase_analysis"] = False
@@ -2184,7 +2191,8 @@ Examples:
                 )
 
     # Handle --fresh flag (clear cache)
-    if args.fresh:
+    is_fresh = (args.fresh if args else False) or ctx.scraping.fresh
+    if is_fresh:
         import shutil
 
         if os.path.exists(scraper.cache_dir):
@@ -2197,7 +2205,8 @@ Examples:
             os.makedirs(scraper.logs_dir, exist_ok=True)
 
     # Handle --dry-run flag
-    if args.dry_run:
+    is_dry_run = (args.dry_run if args else False) or ctx.output.dry_run
+    if is_dry_run:
         logger.info("🔍 DRY RUN MODE - Preview only, no scraping will occur")
         logger.info(f"\nWould scrape {len(scraper.config.get('sources', []))} sources:")
         # Source type display config: type -> (label, key for detail)

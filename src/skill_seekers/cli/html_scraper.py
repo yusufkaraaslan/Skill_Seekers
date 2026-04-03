@@ -1750,93 +1750,87 @@ def _score_code_quality(code: str) -> float:
 
 
 def main() -> int:
-    """CLI entry point for the HTML scraper.
+    """CLI entry point for the HTML scraper."""
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    Parses command-line arguments and runs the extraction/build pipeline.
-    Supports two workflows:
-    1. Direct HTML extraction: ``--html-path page.html --name myskill``
-    2. Build from JSON: ``--from-json page_extracted.json``
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert local HTML files to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    Returns:
-        Exit code (0 for success, non-zero for failure).
-    """
-    parser = argparse.ArgumentParser(
-        description="Convert local HTML files to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s --html-path page.html --name myskill\n"
-            "  %(prog)s --html-path ./docs/ --name myskill\n"
-            "  %(prog)s --from-json page_extracted.json\n"
-        ),
-    )
+        # Import and add arguments based on scraper type
+        from .arguments.common import add_all_standard_arguments
+        add_all_standard_arguments(parser)
+        # HTML-specific args
+        parser.add_argument("--html-path", type=str, help="Path to HTML file or directory")
+        parser.add_argument("--from-json", type=str, help="Build from previously extracted JSON")
+        # Override enhance-level default
+        for action in parser._actions:
+            if hasattr(action, "dest") and action.dest == "enhance_level":
+                action.default = 0
 
-    # Shared universal args
-    from .arguments.common import add_all_standard_arguments
-
-    add_all_standard_arguments(parser)
-
-    # Override enhance-level default to 0 for HTML
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for HTML), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
-
-    # HTML-specific args
-    parser.add_argument(
-        "--html-path",
-        type=str,
-        help="Path to HTML file or directory of HTML files",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON",
-        metavar="FILE",
-    )
-
-    args = parser.parse_args()
+        args = parser.parse_args()
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level
-    if getattr(args, "quiet", False):
+    if getattr(args, "quiet", False) if args else ctx.output.quiet:
         logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
+    elif getattr(args, "verbose", False) if args else ctx.output.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "html_path", None) or getattr(args, "from_json", None) or "(none)"
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "html_path", None) or getattr(args, "from_json", None)))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: HTML Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Validate inputs
-    if not (getattr(args, "html_path", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --html-path or --from-json")
+    html_path = ctx.get_raw("html_path") if ctx else None
+    from_json = ctx.get_raw("from_json") if ctx else None
+    if args:
+        html_path = getattr(args, "html_path", None) or html_path
+        from_json = getattr(args, "from_json", None) or from_json
+
+    if not (html_path or from_json):
+        if args:
+            parser.error("Must specify --html-path or --from-json")
+        else:
+            print("Error: Must specify --html-path or --from-json", file=sys.stderr)
+            return 1
 
     # Build from JSON workflow
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
+    if from_json:
+        name = Path(from_json).stem.replace("_extracted", "")
+        skill_name = ctx.output.name or name
+        skill_desc = (
+            ctx.get_raw("description")
+            or (getattr(args, "description", None) if args else None)
+            or f"Use when referencing {name} documentation"
+        )
         config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
+            "name": skill_name,
+            "description": skill_desc,
         }
         try:
             converter = HtmlToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
+            converter.load_extracted_data(from_json)
             converter.build_skill()
         except Exception as e:
             print(f"\n❌ Error: {e}", file=sys.stderr)
@@ -1844,16 +1838,23 @@ def main() -> int:
         return 0
 
     # Direct HTML mode
-    if not getattr(args, "name", None):
-        # Auto-detect name from path
-        path = Path(args.html_path)
-        args.name = path.stem if path.is_file() else path.name
+    skill_name = ctx.output.name
+    if not skill_name:
+        if args and getattr(args, "name", None):
+            skill_name = args.name
+        else:
+            # Auto-detect name from path
+            path = Path(html_path)
+            skill_name = path.stem if path.is_file() else path.name
 
     config = {
-        "name": args.name,
-        "html_path": args.html_path,
+        "name": skill_name,
+        "html_path": html_path,
         # Pass None so extract_html() can infer from HTML metadata
-        "description": getattr(args, "description", None),
+        "description": (
+            ctx.get_raw("description")
+            or (getattr(args, "description", None) if args else None)
+        ),
     }
 
     try:
@@ -1873,16 +1874,17 @@ def main() -> int:
         # Enhancement Workflow Integration
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else ctx)
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1907,9 +1909,11 @@ def main() -> int:
                         LocalSkillEnhancer,
                     )
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.get_raw("agent_cmd")
+                    enhancer = LocalSkillEnhancer(
+                        Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                    )
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
@@ -1917,9 +1921,11 @@ def main() -> int:
                     LocalSkillEnhancer,
                 )
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.get_raw("agent_cmd")
+                enhancer = LocalSkillEnhancer(
+                    Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                )
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")
 

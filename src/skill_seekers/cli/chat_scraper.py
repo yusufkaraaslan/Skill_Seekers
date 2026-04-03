@@ -1738,75 +1738,83 @@ class ChatToSkillConverter:
 
 
 def main() -> int:
-    """CLI entry point for the Slack/Discord chat scraper.
+    """CLI entry point for the Chat scraper."""
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    Parses command-line arguments and runs the extraction and
-    skill-building pipeline. Supports export import, API fetch,
-    and loading from previously extracted JSON.
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert Slack/Discord chat history to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    Returns:
-        Exit code (0 for success, non-zero for errors).
-    """
-    from .arguments.chat import add_chat_arguments
+        # Import and add arguments based on scraper type
+        from .arguments.chat import add_chat_arguments
+        add_chat_arguments(parser)
 
-    parser = argparse.ArgumentParser(
-        description="Convert Slack/Discord chat history to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    # Slack workspace export
-    %(prog)s --export-path ./slack-export/ --platform slack --name myteam
-
-    # Slack API
-    %(prog)s --platform slack --token xoxb-... --channel C01234 --name myteam
-
-    # Discord export (DiscordChatExporter)
-    %(prog)s --export-path ./discord-export.json --platform discord --name myserver
-
-    # Discord API
-    %(prog)s --platform discord --token Bot-token --channel 12345 --name myserver
-
-    # From previously extracted JSON
-    %(prog)s --from-json myteam_extracted.json --name myteam
-        """,
-    )
-
-    add_chat_arguments(parser)
-
-    args = parser.parse_args()
+        args = parser.parse_args()
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level
-    if getattr(args, "quiet", False):
+    if getattr(args, "quiet", False) if args else ctx.output.quiet:
         logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
+    elif getattr(args, "verbose", False) if args else ctx.output.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Handle --dry-run
-    if args.dry_run:
-        source = args.export_path or args.from_json or f"{args.platform}-api"
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "export_path", None) or getattr(args, "from_json", None) or getattr(args, "database_id", None) or getattr(args, "page_id", None)))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: Chat Extraction")
         print(f"{'=' * 60}")
-        print(f"Platform:       {args.platform}")
         print(f"Source:         {source}")
-        print(f"Name:           {args.name or '(auto-detect)'}")
-        print(f"Channel:        {args.channel or '(all)'}")
-        print(f"Max messages:   {args.max_messages}")
-        print(f"Enhance level:  {args.enhance_level}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
+    # Resolve source-specific args from ctx or args
+    export_path = ctx.get_raw("export_path") if ctx else None
+    from_json = ctx.get_raw("from_json") if ctx else None
+    platform = ctx.get_raw("platform") if ctx else "slack"
+    token = ctx.get_raw("token") if ctx else None
+    channel = ctx.get_raw("channel") if ctx else None
+    max_messages = ctx.get_raw("max_messages") if ctx else 10000
+    description = ctx.get_raw("description") if ctx else None
+    if args:
+        export_path = getattr(args, "export_path", None) or export_path
+        from_json = getattr(args, "from_json", None) or from_json
+        platform = getattr(args, "platform", "slack") or platform
+        token = getattr(args, "token", None) or token
+        channel = getattr(args, "channel", None) or channel
+        max_messages = getattr(args, "max_messages", 10000) or max_messages
+        description = getattr(args, "description", None) or description
+
     # Validate inputs
-    if args.from_json:
+    if from_json:
         # Build from previously extracted JSON
-        name = args.name or Path(args.from_json).stem.replace("_extracted", "")
+        skill_name = ctx.output.name
+        if not skill_name:
+            skill_name = (
+                (getattr(args, "name", None) if args else None)
+                or Path(from_json).stem.replace("_extracted", "")
+            )
         config = {
-            "name": name,
-            "description": (args.description or f"Use when referencing {name} chat knowledge base"),
+            "name": skill_name,
+            "description": description or f"Use when referencing {skill_name} chat knowledge base",
         }
         try:
             converter = ChatToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
+            converter.load_extracted_data(from_json)
             converter.build_skill()
         except Exception as e:
             print(f"\n❌ Error: {e}", file=sys.stderr)
@@ -1814,26 +1822,36 @@ Examples:
         return 0
 
     # Require either --export-path or --token for extraction
-    if not args.export_path and not args.token:
-        parser.error(
-            "Must specify --export-path (export mode), --token (API mode), "
-            "or --from-json (build from extracted data)"
-        )
-
-    if not args.name:
-        if args.export_path:
-            args.name = Path(args.export_path).stem
+    if not export_path and not token:
+        if args:
+            parser.error(
+                "Must specify --export-path (export mode), --token (API mode), "
+                "or --from-json (build from extracted data)"
+            )
         else:
-            args.name = f"{args.platform}_chat"
+            print(
+                "Error: Must specify export-path, token, or from-json",
+                file=sys.stderr,
+            )
+            return 1
+
+    skill_name = ctx.output.name
+    if not skill_name:
+        if args and getattr(args, "name", None):
+            skill_name = args.name
+        elif export_path:
+            skill_name = Path(export_path).stem
+        else:
+            skill_name = f"{platform}_chat"
 
     config = {
-        "name": args.name,
-        "export_path": args.export_path or "",
-        "platform": args.platform,
-        "token": args.token or "",
-        "channel": args.channel or "",
-        "max_messages": args.max_messages,
-        "description": args.description,
+        "name": skill_name,
+        "export_path": export_path or "",
+        "platform": platform,
+        "token": token or "",
+        "channel": channel or "",
+        "max_messages": max_messages,
+        "description": description,
     }
 
     try:
@@ -1853,16 +1871,17 @@ Examples:
         # Enhancement Workflow Integration
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else ctx)
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1885,9 +1904,11 @@ Examples:
                         LocalSkillEnhancer,
                     )
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.get_raw("agent_cmd")
+                    enhancer = LocalSkillEnhancer(
+                        Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                    )
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
@@ -1895,9 +1916,11 @@ Examples:
                     LocalSkillEnhancer,
                 )
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.get_raw("agent_cmd")
+                enhancer = LocalSkillEnhancer(
+                    Path(skill_dir), agent=agent, agent_cmd=agent_cmd
+                )
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")
 
