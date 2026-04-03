@@ -8,16 +8,12 @@ import argparse
 import json
 import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
 from skill_seekers.cli.execution_context import (
     ExecutionContext,
     get_context,
-    EnhancementSettings,
-    OutputSettings,
-    ScrapingSettings,
 )
 
 
@@ -36,14 +32,14 @@ class TestExecutionContextBasics:
         """Should raise RuntimeError when getting uninitialized context."""
         with pytest.raises(RuntimeError) as exc_info:
             ExecutionContext.get()
-        
+
         assert "not initialized" in str(exc_info.value)
 
     def test_get_context_shortcut(self):
         """get_context() should be equivalent to ExecutionContext.get()."""
         args = argparse.Namespace(name="test-skill")
         ExecutionContext.initialize(args=args)
-        
+
         ctx = get_context()
         assert ctx.output.name == "test-skill"
 
@@ -51,7 +47,7 @@ class TestExecutionContextBasics:
         """initialize() should return the context instance."""
         args = argparse.Namespace(name="test")
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert isinstance(ctx, ExecutionContext)
         assert ctx.output.name == "test"
 
@@ -60,16 +56,16 @@ class TestExecutionContextBasics:
         args = argparse.Namespace(name="first")
         ctx1 = ExecutionContext.initialize(args=args)
         ctx2 = ExecutionContext.get()
-        
+
         assert ctx1 is ctx2
 
     def test_reset_clears_instance(self):
         """reset() should clear the singleton."""
         args = argparse.Namespace(name="test")
         ExecutionContext.initialize(args=args)
-        
+
         ExecutionContext.reset()
-        
+
         with pytest.raises(RuntimeError):
             ExecutionContext.get()
 
@@ -93,9 +89,9 @@ class TestExecutionContextFromArgs:
             enhance_level=3,
             agent="kimi",
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.output.name == "react-docs"
         assert ctx.output.output_dir == "custom/output"
         assert ctx.output.doc_version == "18.2"
@@ -116,9 +112,9 @@ class TestExecutionContextFromArgs:
             fresh=False,
             skip_scrape=True,
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.scraping.max_pages == 100
         assert ctx.scraping.rate_limit == 1.5
         assert ctx.scraping.browser is True
@@ -137,9 +133,9 @@ class TestExecutionContextFromArgs:
             skip_how_to_guides=True,
             file_patterns="*.py,*.js",
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.analysis.depth == "full"
         assert ctx.analysis.skip_patterns is True
         assert ctx.analysis.skip_test_examples is True
@@ -154,9 +150,9 @@ class TestExecutionContextFromArgs:
             enhance_stage=["stage1:prompt1"],
             var=["key1=value1", "key2=value2"],
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.enhancement.workflows == ["security-focus", "api-docs"]
         assert ctx.enhancement.stages == ["stage1:prompt1"]
         assert ctx.enhancement.workflow_vars == {"key1": "value1", "key2": "value2"}
@@ -168,9 +164,9 @@ class TestExecutionContextFromArgs:
             chunk_for_rag=True,
             chunk_tokens=1024,
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.rag.chunk_for_rag is True
         assert ctx.rag.chunk_tokens == 1024
 
@@ -180,9 +176,9 @@ class TestExecutionContextFromArgs:
             name="test",
             api_key="test-key",
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.enhancement.mode == "api"
 
     def test_local_mode_detection(self):
@@ -205,9 +201,9 @@ class TestExecutionContextFromArgs:
             name="test",
             custom_field="custom_value",
         )
-        
+
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.get_raw("name") == "test"
         assert ctx.get_raw("custom_field") == "custom_value"
         assert ctx.get_raw("nonexistent", "default") == "default"
@@ -239,14 +235,14 @@ class TestExecutionContextFromConfigFile:
             "workflow_vars": {"var1": "value1"},
             "sources": [{"type": "documentation", "base_url": "https://docs.unity3d.com/"}],
         }
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
-        
+
         try:
             ctx = ExecutionContext.initialize(config_path=config_path)
-            
+
             assert ctx.output.name == "unity-docs"
             assert ctx.output.doc_version == "2022.3"
             assert ctx.enhancement.enabled is True
@@ -269,14 +265,14 @@ class TestExecutionContextFromConfigFile:
             "rate_limit": 0.5,
             "browser": True,
         }
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
-        
+
         try:
             ctx = ExecutionContext.initialize(config_path=config_path)
-            
+
             assert ctx.output.name == "react-docs"
             assert ctx.output.doc_version == "18.2"
             assert ctx.scraping.max_pages == 500
@@ -292,11 +288,11 @@ class TestExecutionContextFromConfigFile:
             "enhancement": {"timeout": 3600},
             "sources": [],
         }
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
-        
+
         try:
             ctx = ExecutionContext.initialize(config_path=config_path)
             assert ctx.enhancement.timeout == 3600
@@ -323,15 +319,15 @@ class TestExecutionContextPriority:
     def test_cli_overrides_config(self):
         """CLI args should override config file values."""
         config = {"name": "config-name", "sources": []}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
-        
+
         try:
             args = argparse.Namespace(name="cli-name")
             ctx = ExecutionContext.initialize(args=args, config_path=config_path)
-            
+
             # CLI should win
             assert ctx.output.name == "cli-name"
         finally:
@@ -344,14 +340,14 @@ class TestExecutionContextPriority:
             "enhancement": {"level": 3},
             "sources": [],
         }
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_path = f.name
-        
+
         try:
             ctx = ExecutionContext.initialize(config_path=config_path)
-            
+
             # Config should override default (level=2)
             assert ctx.enhancement.level == 3
         finally:
@@ -361,9 +357,9 @@ class TestExecutionContextPriority:
         """Environment variables should override defaults."""
         self._original_env["SKILL_SEEKER_AGENT"] = os.environ.get("SKILL_SEEKER_AGENT")
         os.environ["SKILL_SEEKER_AGENT"] = "claude"
-        
+
         ctx = ExecutionContext.initialize()
-        
+
         # Env var should override default (None)
         assert ctx.enhancement.agent == "claude"
 
@@ -379,14 +375,15 @@ class TestExecutionContextSourceInfo:
 
     def test_source_info_integration(self):
         """Should integrate source info from source_detector."""
+
         class MockSourceInfo:
             type = "web"
             raw_source = "https://react.dev/"
             parsed = {"url": "https://react.dev/"}
             suggested_name = "react"
-        
+
         ctx = ExecutionContext.initialize(source_info=MockSourceInfo())
-        
+
         assert ctx.source is not None
         assert ctx.source.type == "web"
         assert ctx.source.raw_source == "https://react.dev/"
@@ -406,13 +403,13 @@ class TestExecutionContextOverride:
         """override() should temporarily change values."""
         args = argparse.Namespace(name="original", enhance_level=2)
         ctx = ExecutionContext.initialize(args=args)
-        
+
         assert ctx.enhancement.level == 2
-        
+
         with ctx.override(enhancement__level=3):
             ctx_from_get = ExecutionContext.get()
             assert ctx_from_get.enhancement.level == 3
-        
+
         # After exit, original value restored
         assert ExecutionContext.get().enhancement.level == 2
 
@@ -420,14 +417,14 @@ class TestExecutionContextOverride:
         """override() should restore values even on exception."""
         args = argparse.Namespace(name="original", enhance_level=2)
         ctx = ExecutionContext.initialize(args=args)
-        
+
         try:
             with ctx.override(enhancement__level=3):
                 assert ExecutionContext.get().enhancement.level == 3
                 raise ValueError("Test error")
         except ValueError:
             pass
-        
+
         # Should still be restored
         assert ExecutionContext.get().enhancement.level == 2
 
@@ -444,21 +441,27 @@ class TestExecutionContextValidation:
     def test_enhancement_level_bounds(self):
         """Enhancement level should be 0-3."""
         args = argparse.Namespace(name="test", enhance_level=5)
-        
+
         with pytest.raises(ValueError) as exc_info:
             ExecutionContext.initialize(args=args)
-        
+
         assert "level" in str(exc_info.value)
 
     def test_analysis_depth_choices(self):
-        """Analysis depth should be valid choice."""
-        # Note: Pydantic v1 doesn't validate string choices by default
-        # This test documents expected behavior
+        """Analysis depth should reject invalid values."""
+        import pydantic
+
         args = argparse.Namespace(name="test", depth="invalid")
-        ctx = ExecutionContext.initialize(args=args)
-        
-        # Currently allows any string (no strict validation)
-        assert ctx.analysis.depth == "invalid"
+        with pytest.raises(pydantic.ValidationError):
+            ExecutionContext.initialize(args=args)
+
+    def test_analysis_depth_valid_choices(self):
+        """Analysis depth should accept surface, deep, full."""
+        for depth in ("surface", "deep", "full"):
+            ExecutionContext.reset()
+            args = argparse.Namespace(name="test", depth=depth)
+            ctx = ExecutionContext.initialize(args=args)
+            assert ctx.analysis.depth == depth
 
 
 class TestExecutionContextDefaults:
@@ -473,26 +476,26 @@ class TestExecutionContextDefaults:
     def test_default_values(self):
         """Should have sensible defaults."""
         ctx = ExecutionContext.initialize()
-        
+
         # Enhancement defaults
         assert ctx.enhancement.enabled is True
         assert ctx.enhancement.level == 2
         assert ctx.enhancement.mode == "auto"  # Default is auto, resolved at runtime
         assert ctx.enhancement.timeout == 2700  # 45 minutes
-        
+
         # Output defaults
         assert ctx.output.name is None
         assert ctx.output.dry_run is False
-        
+
         # Scraping defaults
         assert ctx.scraping.browser is False
         assert ctx.scraping.workers == 1
         assert ctx.scraping.languages == ["en"]
-        
+
         # Analysis defaults
         assert ctx.analysis.depth == "surface"
         assert ctx.analysis.skip_patterns is False
-        
+
         # RAG defaults
         assert ctx.rag.chunk_for_rag is False
         assert ctx.rag.chunk_tokens == 512

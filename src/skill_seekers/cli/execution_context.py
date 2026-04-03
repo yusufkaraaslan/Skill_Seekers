@@ -20,7 +20,7 @@ import logging
 import os
 import threading
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 from collections.abc import Generator
 
 from pydantic import BaseModel, Field, PrivateAttr
@@ -104,7 +104,9 @@ class ScrapingSettings(BaseModel):
 class AnalysisSettings(BaseModel):
     """Code analysis configuration."""
 
-    depth: str = Field(default="surface", description="Analysis depth: surface, deep, full")
+    depth: Literal["surface", "deep", "full"] = Field(
+        default="surface", description="Analysis depth: surface, deep, full"
+    )
     skip_patterns: bool = Field(default=False, description="Skip design pattern detection")
     skip_test_examples: bool = Field(default=False, description="Skip test example extraction")
     skip_how_to_guides: bool = Field(default=False, description="Skip how-to guide generation")
@@ -158,6 +160,7 @@ class ExecutionContext(BaseModel):
 
     # Private attributes
     _raw_args: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _config_path: str | None = PrivateAttr(default=None)
 
     # Singleton storage (class-level)
     _instance: ClassVar[ExecutionContext | None] = None
@@ -166,16 +169,17 @@ class ExecutionContext(BaseModel):
 
     @classmethod
     def get(cls) -> ExecutionContext:
-        """Get the singleton instance.
+        """Get the singleton instance (thread-safe).
 
         Raises:
             RuntimeError: If context hasn't been initialized
         """
-        if cls._instance is None:
-            raise RuntimeError(
-                "ExecutionContext not initialized. Call ExecutionContext.initialize() first."
-            )
-        return cls._instance
+        with cls._lock:
+            if cls._instance is None:
+                raise RuntimeError(
+                    "ExecutionContext not initialized. Call ExecutionContext.initialize() first."
+                )
+            return cls._instance
 
     @classmethod
     def initialize(
@@ -212,6 +216,7 @@ class ExecutionContext(BaseModel):
             cls._instance = cls.model_validate(context_data)
             if args:
                 cls._instance._raw_args = vars(args)
+            cls._instance._config_path = config_path
             cls._initialized = True
             return cls._instance
 
@@ -477,6 +482,11 @@ class ExecutionContext(BaseModel):
                 result[key] = value
         return result
 
+    @property
+    def config_path(self) -> str | None:
+        """Path to the config file used for initialization, if any."""
+        return self._config_path
+
     def get_raw(self, name: str, default: Any = None) -> Any:
         """Get raw argument value (backward compatibility)."""
         return self._raw_args.get(name, default)
@@ -513,15 +523,19 @@ class ExecutionContext(BaseModel):
         temp_ctx = self.__class__.model_validate(current_data)
         temp_ctx._raw_args = dict(self._raw_args)  # Copy raw args to temp context
 
-        with self._lock:
-            previous = self._instance
+        # Swap singleton atomically — hold lock only for the swap operations,
+        # save/restore _initialized to prevent re-init during override (#10).
+        with self.__class__._lock:
+            previous = self.__class__._instance
+            prev_initialized = self.__class__._initialized
             self.__class__._instance = temp_ctx
-
+            self.__class__._initialized = True
         try:
             yield temp_ctx
         finally:
-            with self._lock:
+            with self.__class__._lock:
                 self.__class__._instance = previous
+                self.__class__._initialized = prev_initialized
 
 
 def get_context() -> ExecutionContext:
