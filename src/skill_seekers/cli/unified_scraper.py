@@ -1920,17 +1920,28 @@ class UnifiedScraper:
                 run_workflows(effective_args, context=unified_context)
 
             # Phase 6: AI Enhancement of SKILL.md
-            # Triggered by config "enhancement" block or CLI --enhance-level
-            enhancement_config = self.config.get("enhancement", {})
-            enhancement_enabled = enhancement_config.get("enabled", False)
-            enhancement_level = enhancement_config.get("level", 0)
-            enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
+            # Read from ExecutionContext first (has correct priority resolution),
+            # fall back to raw config dict for backward compatibility.
+            try:
+                from skill_seekers.cli.execution_context import ExecutionContext
 
-            # CLI --enhance-level overrides config
-            cli_enhance_level = getattr(args, "enhance_level", None) if args is not None else None
-            if cli_enhance_level is not None:
-                enhancement_enabled = cli_enhance_level > 0
-                enhancement_level = cli_enhance_level
+                ctx = ExecutionContext.get()
+                enhancement_enabled = ctx.enhancement.enabled
+                enhancement_level = ctx.enhancement.level
+                enhancement_mode = ctx.enhancement.mode.upper()
+            except (RuntimeError, Exception):
+                # Fallback to raw config + args
+                enhancement_config = self.config.get("enhancement", {})
+                enhancement_enabled = enhancement_config.get("enabled", False)
+                enhancement_level = enhancement_config.get("level", 0)
+                enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
+
+                cli_enhance_level = (
+                    getattr(args, "enhance_level", None) if args is not None else None
+                )
+                if cli_enhance_level is not None:
+                    enhancement_enabled = cli_enhance_level > 0
+                    enhancement_level = cli_enhance_level
 
             if enhancement_enabled and enhancement_level > 0:
                 logger.info("\n" + "=" * 60)
@@ -1946,16 +1957,19 @@ class UnifiedScraper:
                     try:
                         from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                        # Get agent from CLI args, config enhancement block, or env var
-                        agent = None
-                        agent_cmd = None
-                        if args is not None:
-                            agent = getattr(args, "agent", None)
-                            agent_cmd = getattr(args, "agent_cmd", None)
-                        if not agent:
-                            agent = enhancement_config.get("agent", None)
-                        if not agent:
-                            agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
+                        # Get agent from ExecutionContext (already resolved with correct priority)
+                        try:
+                            ctx = ExecutionContext.get()
+                            agent = ctx.enhancement.agent
+                            agent_cmd = ctx.enhancement.agent_cmd
+                        except (RuntimeError, Exception):
+                            agent = None
+                            agent_cmd = None
+                            if args is not None:
+                                agent = getattr(args, "agent", None)
+                                agent_cmd = getattr(args, "agent_cmd", None)
+                            if not agent:
+                                agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
 
                         # Read timeout from config enhancement block
                         timeout_val = enhancement_config.get("timeout")

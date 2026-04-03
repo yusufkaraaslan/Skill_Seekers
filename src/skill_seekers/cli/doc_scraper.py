@@ -2679,14 +2679,206 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
         )
 
 
+def scrape_documentation(
+    config: dict[str, Any],
+    ctx: Any | None = None,
+    verbose: bool = False,
+    quiet: bool = False,
+) -> int:
+    """Scrape documentation using config and optional context.
+
+    This is the main entry point for programmatic use. CLI main() is a thin
+    wrapper around this function.
+
+    Args:
+        config: Configuration dictionary with required fields (name, base_url, etc.)
+        ctx: Optional ExecutionContext for shared configuration
+        verbose: Enable verbose logging
+        quiet: Minimize logging output
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    from skill_seekers.cli.execution_context import ExecutionContext
+
+    # Setup logging
+    setup_logging(verbose=verbose, quiet=quiet)
+
+    # Initialize context if not provided
+    if ctx is None:
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(**config))
+
+    # Build converter and execute
+    try:
+        converter = _run_scraping(config)
+        if converter is None:
+            return 1
+
+        # Handle enhancement if enabled
+        if ctx.enhancement.enabled and ctx.enhancement.level > 0:
+            _run_enhancement(config, ctx, converter)
+
+        return 0
+    except Exception as e:
+        logger.error(f"Scraping failed: {e}")
+        return 1
+
+
+def _run_scraping(config: dict[str, Any]) -> Optional["DocToSkillConverter"]:
+    """Run the scraping process."""
+    # Create converter
+    converter = DocToSkillConverter(config)
+
+    # Check for resume
+    if config.get("resume") and converter.checkpoint_exists():
+        logger.info("📂 Resuming from checkpoint...")
+        converter.load_checkpoint()
+    else:
+        # Clear checkpoint if fresh start
+        if config.get("fresh"):
+            converter.clear_checkpoint()
+
+    # Scrape
+    if not config.get("skip_scrape"):
+        logger.info("\n🔍 Starting scrape...")
+        try:
+            asyncio.run(converter.scrape())
+        except KeyboardInterrupt:
+            logger.info("\n\n⚠️  Interrupted by user")
+            converter.save_checkpoint()
+            logger.info("💾 Checkpoint saved. Resume with --resume")
+            return None
+
+    # Build skill
+    logger.info("\n📦 Building skill...")
+    converter.build_skill()
+
+    return converter
+
+
+def _run_enhancement(
+    config: dict[str, Any],
+    ctx: Any,
+    _converter: Any,
+) -> None:
+    """Run enhancement using context settings."""
+    from pathlib import Path
+
+    skill_dir = f"output/{config['name']}"
+
+    logger.info("\n" + "=" * 60)
+    logger.info(f"🤖 Enhancing SKILL.md (level {ctx.enhancement.level})")
+    logger.info("=" * 60)
+
+    # Use AgentClient from context
+    try:
+        agent_client = ctx.get_agent_client()
+
+        # Run enhancement based on mode
+        if agent_client.mode == "api" and agent_client.client:
+            # API mode enhancement
+            from skill_seekers.cli.enhance_skill import enhance_skill_md
+
+            # Use AgentClient's API key detection (respects priority: CLI > config > env)
+            api_key = ctx.enhancement.api_key or agent_client.api_key
+            if api_key:
+                enhance_skill_md(skill_dir, api_key)
+                logger.info("✅ API enhancement complete!")
+            else:
+                logger.warning("⚠️  No API key available for enhancement")
+        else:
+            # Local mode enhancement
+            from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+            enhancer = LocalSkillEnhancer(
+                Path(skill_dir),
+                agent=ctx.enhancement.agent,
+                agent_cmd=ctx.enhancement.agent_cmd,
+            )
+            success = enhancer.run(headless=True, timeout=ctx.enhancement.timeout)
+            if success:
+                agent_name = ctx.enhancement.agent or "claude"
+                logger.info(f"✅ Local enhancement complete! (via {agent_name})")
+            else:
+                logger.warning("⚠️  Local enhancement did not complete")
+    except Exception as e:
+        logger.warning(f"⚠️  Enhancement failed: {e}")
+
+
 def main() -> None:
-    parser = setup_argument_parser()
-    args = parser.parse_args()
+    from skill_seekers.cli.execution_context import ExecutionContext
+
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = setup_argument_parser()
+        args = parser.parse_args()
+
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Setup logging based on verbosity flags
-    setup_logging(verbose=args.verbose, quiet=args.quiet)
+    if args:
+        setup_logging(verbose=args.verbose, quiet=args.quiet)
+    else:
+        setup_logging(verbose=ctx.get_raw("verbose", False), quiet=ctx.get_raw("quiet", False))
 
-    config = get_configuration(args)
+    # Build config from context when args is None
+    if args is None:
+        # Build config from ctx
+        config = {
+            "name": ctx.output.name or "",
+            "description": f"Use when working with {ctx.output.name}",
+            "base_url": ctx.source.parsed.get("base_url", "") if ctx.source else "",
+            "doc_version": ctx.output.doc_version,
+            "max_pages": ctx.scraping.max_pages,
+            "rate_limit": ctx.scraping.rate_limit,
+            "browser": ctx.scraping.browser,
+            "workers": ctx.scraping.workers,
+            "async_mode": ctx.scraping.async_mode,
+            "resume": ctx.scraping.resume,
+            "fresh": ctx.scraping.fresh,
+            "skip_scrape": ctx.scraping.skip_scrape,
+            "selectors": {"title": "title", "code_blocks": "pre code"},
+            "url_patterns": {"include": [], "exclude": []},
+        }
+        # Create a namespace-like object for args-dependent code
+        args_namespace = argparse.Namespace(
+            dry_run=ctx.output.dry_run,
+            skip_scrape=ctx.scraping.skip_scrape,
+            resume=ctx.scraping.resume,
+            fresh=ctx.scraping.fresh,
+            config=None,
+            url=ctx.source.parsed.get("base_url", "") if ctx.source else "",
+            name=ctx.output.name or "",
+            description=f"Use when working with {ctx.output.name}",
+            interactive=False,
+            no_rate_limit=ctx.scraping.rate_limit == 0,
+            rate_limit=ctx.scraping.rate_limit,
+            workers=ctx.scraping.workers,
+            async_mode=ctx.scraping.async_mode,
+            browser=ctx.scraping.browser,
+            max_pages=ctx.scraping.max_pages,
+            chunk_for_rag=ctx.rag.chunk_for_rag,
+            chunk_tokens=ctx.rag.chunk_tokens,
+            chunk_overlap_tokens=ctx.rag.chunk_overlap_tokens,
+            no_preserve_code_blocks=not ctx.rag.preserve_code_blocks,
+            no_preserve_paragraphs=not ctx.rag.preserve_paragraphs,
+            api_key=ctx.enhancement.api_key,
+            agent=ctx.enhancement.agent,
+            agent_cmd=ctx.enhancement.agent_cmd,
+            enhance_level=ctx.enhancement.level,
+            verbose=ctx.get_raw("verbose", False),
+            quiet=ctx.get_raw("quiet", False),
+            doc_version=ctx.output.doc_version,
+        )
+        args = args_namespace
+    else:
+        config = get_configuration(args)
 
     # Execute scraping and building
     converter = execute_scraping_and_building(config, args)

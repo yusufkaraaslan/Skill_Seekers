@@ -395,18 +395,33 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                     )
                     import argparse as _ap
 
+                    # Populate from ExecutionContext if available
+                    try:
+                        from skill_seekers.cli.execution_context import ExecutionContext as _EC
+
+                        _ctx = _EC.get()
+                        _agent = _ctx.enhancement.agent
+                        _agent_cmd = _ctx.enhancement.agent_cmd
+                        _api_key = _ctx.enhancement.api_key
+                        _timeout = _ctx.enhancement.timeout
+                    except (RuntimeError, Exception):
+                        _agent = None
+                        _agent_cmd = None
+                        _api_key = None
+                        _timeout = 2700
+
                     _fake_args = _ap.Namespace(
                         skill_directory=str(skill_dir),
                         target=None,
-                        api_key=None,
+                        api_key=_api_key,
                         dry_run=False,
-                        agent=None,
-                        agent_cmd=None,
+                        agent=_agent,
+                        agent_cmd=_agent_cmd,
                         interactive_enhancement=False,
                         background=False,
                         daemon=False,
                         no_force=False,
-                        timeout=2700,
+                        timeout=_timeout,
                     )
                     _mode, _target = _pick_mode(_fake_args)
 
