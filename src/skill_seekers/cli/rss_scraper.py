@@ -875,112 +875,128 @@ class RssToSkillConverter:
 def main() -> int:
     """CLI entry point for the RSS/Atom feed scraper."""
     from .arguments.common import add_all_standard_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert RSS/Atom feed to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s --feed-url https://example.com/feed.xml --name myblog\n"
-            "  %(prog)s --feed-path ./feed.xml --name myblog\n"
-            "  %(prog)s --feed-url https://example.com/rss --no-follow-links --name myblog\n"
-            "  %(prog)s --from-json myblog_extracted.json\n"
-        ),
-    )
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert RSS/Atom feed to AI-ready skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=(
+                "Examples:\n"
+                "  %(prog)s --feed-url https://example.com/feed.xml --name myblog\n"
+                "  %(prog)s --feed-path ./feed.xml --name myblog\n"
+                "  %(prog)s --feed-url https://example.com/rss --no-follow-links --name myblog\n"
+                "  %(prog)s --from-json myblog_extracted.json\n"
+            ),
+        )
 
-    # Standard arguments (name, description, output, enhance-level, etc.)
-    add_all_standard_arguments(parser)
+        # Standard arguments (name, description, output, enhance-level, etc.)
+        add_all_standard_arguments(parser)
 
-    # Override enhance-level default to 0 for RSS
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for RSS), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
+        # Override enhance-level default to 0 for RSS
+        for action in parser._actions:
+            if hasattr(action, "dest") and action.dest == "enhance_level":
+                action.default = 0
+                action.help = (
+                    "AI enhancement level (auto-detects API vs LOCAL mode): "
+                    "0=disabled (default for RSS), 1=SKILL.md only, "
+                    "2=+architecture/config, 3=full enhancement. "
+                    "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
+                    "otherwise LOCAL (Claude Code, Kimi, etc.)"
+                )
 
-    # RSS-specific arguments
-    parser.add_argument(
-        "--feed-url",
-        type=str,
-        help="URL of the RSS/Atom feed to scrape",
-        metavar="URL",
-    )
-    parser.add_argument(
-        "--feed-path",
-        type=str,
-        help="Local file path to an RSS/Atom XML file",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--follow-links",
-        action="store_true",
-        default=True,
-        dest="follow_links",
-        help="Follow article links to scrape full content (default: enabled)",
-    )
-    parser.add_argument(
-        "--no-follow-links",
-        action="store_false",
-        dest="follow_links",
-        help="Do not follow article links — use feed content only",
-    )
-    parser.add_argument(
-        "--max-articles",
-        type=int,
-        default=50,
-        metavar="N",
-        help="Maximum number of articles to process (default: 50)",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON file",
-        metavar="FILE",
-    )
+        # RSS-specific arguments
+        parser.add_argument(
+            "--feed-url",
+            type=str,
+            help="URL of the RSS/Atom feed to scrape",
+            metavar="URL",
+        )
+        parser.add_argument(
+            "--feed-path",
+            type=str,
+            help="Local file path to an RSS/Atom XML file",
+            metavar="PATH",
+        )
+        parser.add_argument(
+            "--follow-links",
+            action="store_true",
+            default=True,
+            dest="follow_links",
+            help="Follow article links to scrape full content (default: enabled)",
+        )
+        parser.add_argument(
+            "--no-follow-links",
+            action="store_false",
+            dest="follow_links",
+            help="Do not follow article links — use feed content only",
+        )
+        parser.add_argument(
+            "--max-articles",
+            type=int,
+            default=50,
+            metavar="N",
+            help="Maximum number of articles to process (default: 50)",
+        )
+        parser.add_argument(
+            "--from-json",
+            type=str,
+            help="Build skill from previously extracted JSON file",
+            metavar="FILE",
+        )
 
-    args = parser.parse_args()
+        args = parser.parse_args()
+
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
+    if args:
+        if getattr(args, "quiet", False):
+            logging.getLogger().setLevel(logging.WARNING)
+        elif getattr(args, "verbose", False):
+            logging.getLogger().setLevel(logging.DEBUG)
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
+    if ctx.output.dry_run:
         source = (
-            getattr(args, "feed_url", None)
-            or getattr(args, "feed_path", None)
-            or getattr(args, "from_json", None)
+            (args and (getattr(args, "feed_url", None) or getattr(args, "feed_path", None)
+                      or getattr(args, "from_json", None)))
+            or ctx.output.name
             or "(none)"
         )
         print(f"\n{'=' * 60}")
         print("DRY RUN: RSS/Atom Feed Extraction")
         print(f"{'=' * 60}")
         print(f"Source:          {source}")
-        print(f"Name:            {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Follow links:    {getattr(args, 'follow_links', True)}")
-        print(f"Max articles:    {getattr(args, 'max_articles', 50)}")
-        print(f"Enhance level:   {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:            {ctx.output.name or '(auto-detect)'}")
+        print(f"Follow links:    {getattr(args, 'follow_links', True) if args else True}")
+        print(f"Max articles:    {getattr(args, 'max_articles', 50) if args else 50}")
+        print(f"Enhance level:   {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Validate inputs
     has_source = (
-        getattr(args, "feed_url", None)
-        or getattr(args, "feed_path", None)
-        or getattr(args, "from_json", None)
+        (args and (getattr(args, "feed_url", None) or getattr(args, "feed_path", None)
+                   or getattr(args, "from_json", None)))
+        or ctx.output.name
     )
     if not has_source:
-        parser.error("Must specify --feed-url, --feed-path, or --from-json")
+        if args:
+            parser.error("Must specify --feed-url, --feed-path, or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Build from JSON workflow
-    if getattr(args, "from_json", None):
+    if args and getattr(args, "from_json", None):
         name = Path(args.from_json).stem.replace("_extracted", "")
         config: dict[str, Any] = {
             "name": getattr(args, "name", None) or name,
@@ -996,25 +1012,38 @@ def main() -> int:
             sys.exit(1)
         return 0
 
-    # Feed extraction workflow
-    if not getattr(args, "name", None):
-        # Auto-detect name from URL or file path
-        if getattr(args, "feed_url", None):
-            from urllib.parse import urlparse
-
-            parsed_url = urlparse(args.feed_url)
-            args.name = parsed_url.hostname.replace(".", "-") if parsed_url.hostname else "feed"
-        elif getattr(args, "feed_path", None):
-            args.name = Path(args.feed_path).stem
-
-    config = {
-        "name": args.name,
-        "feed_url": getattr(args, "feed_url", "") or "",
-        "feed_path": getattr(args, "feed_path", "") or "",
-        "follow_links": getattr(args, "follow_links", True),
-        "max_articles": getattr(args, "max_articles", 50),
-        "description": getattr(args, "description", None),
-    }
+    # Determine name and build config
+    if args:
+        # CLI mode
+        if not getattr(args, "name", None):
+            # Auto-detect name from URL or file path
+            if getattr(args, "feed_url", None):
+                from urllib.parse import urlparse
+                parsed_url = urlparse(args.feed_url)
+                args.name = parsed_url.hostname.replace(".", "-") if parsed_url.hostname else "feed"
+            elif getattr(args, "feed_path", None):
+                args.name = Path(args.feed_path).stem
+        config = {
+            "name": args.name,
+            "feed_url": getattr(args, "feed_url", "") or "",
+            "feed_path": getattr(args, "feed_path", "") or "",
+            "follow_links": getattr(args, "follow_links", True),
+            "max_articles": getattr(args, "max_articles", 50),
+            "description": getattr(args, "description", None),
+        }
+    else:
+        # ExecutionContext mode
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        config = {
+            "name": ctx.output.name,
+            "feed_url": "",
+            "feed_path": "",
+            "follow_links": True,
+            "max_articles": 50,
+            "description": f"Use when referencing {ctx.output.name} feed content",
+        }
 
     try:
         converter = RssToSkillConverter(config)
@@ -1030,16 +1059,17 @@ def main() -> int:
         # Enhancement Workflow Integration
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1060,16 +1090,16 @@ def main() -> int:
                     print("❌ API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")

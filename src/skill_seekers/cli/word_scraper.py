@@ -922,40 +922,56 @@ def _score_code_quality(code: str) -> float:
 
 def main():
     from .arguments.word import add_word_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert Word document (.docx) to AI skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert Word document (.docx) to AI skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    add_word_arguments(parser)
+        add_word_arguments(parser)
+        args = parser.parse_args()
 
-    args = parser.parse_args()
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "docx", None) or getattr(args, "from_json", None) or "(none)"
+    # Set logging level from behavior args
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "docx", None) or getattr(args, "from_json", None)))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: Word Document Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Validate inputs
-    if not (getattr(args, "docx", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --docx or --from-json")
+    has_input = (
+        (args and (getattr(args, "docx", None) or getattr(args, "from_json", None)))
+        or (ctx.output.name)  # Context provides name for output
+    )
+    if not has_input:
+        if args:
+            parser.error("Must specify --docx or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Build from JSON workflow
-    if getattr(args, "from_json", None):
+    if args and getattr(args, "from_json", None):
         name = Path(args.from_json).stem.replace("_extracted", "")
         config = {
             "name": getattr(args, "name", None) or name,
@@ -972,24 +988,33 @@ def main():
         return 0
 
     # Direct DOCX mode
-    if not getattr(args, "name", None):
-        # Auto-detect name from filename
-        args.name = Path(args.docx).stem
-
-    config = {
-        "name": args.name,
-        "docx_path": args.docx,
-        # Pass None so extract_docx() can infer from document metadata (subject/title)
-        "description": getattr(args, "description", None),
-    }
-    if getattr(args, "categories", None):
-        config["categories"] = args.categories
+    if args:
+        if not getattr(args, "name", None):
+            # Auto-detect name from filename
+            args.name = Path(args.docx).stem
+        config = {
+            "name": args.name,
+            "docx_path": args.docx,
+            # Pass None so extract_docx() can infer from document metadata (subject/title)
+            "description": getattr(args, "description", None),
+        }
+        if getattr(args, "categories", None):
+            config["categories"] = args.categories
+    else:
+        # Using ExecutionContext - build config from context
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        config = {
+            "name": ctx.output.name,
+            "description": f"Use when referencing {ctx.output.name} documentation",
+        }
 
     try:
         converter = WordToSkillConverter(config)
 
         # Extract
-        if not converter.extract_docx():
+        if config.get("docx_path") and not converter.extract_docx():
             print("\n❌ Word extraction failed - see error above", file=sys.stderr)
             sys.exit(1)
 
@@ -999,18 +1024,19 @@ def main():
         # Enhancement Workflow Integration
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if enhance_level > 0:
             import os
 
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1031,20 +1057,22 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
+                    agent_name = agent or "claude"
+                    print(f"✅ Local enhancement complete! (via {agent_name})")
             else:
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
+                agent_name = agent or "claude"
+                print(f"✅ Local enhancement complete! (via {agent_name})")
 
     except RuntimeError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)

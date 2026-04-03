@@ -21,6 +21,9 @@ from .llms_txt_detector import LlmsTxtDetector
 from .llms_txt_downloader import LlmsTxtDownloader
 from .llms_txt_parser import LlmsTxtParser
 
+# ExecutionContext - single source of truth for all configuration
+from .execution_context import ExecutionContext, get_context
+
 try:
     from .utils import open_folder, read_reference_files
 except ImportError:
@@ -35,6 +38,8 @@ __all__ = [
     "LlmsTxtDetector",
     "LlmsTxtDownloader",
     "LlmsTxtParser",
+    "ExecutionContext",
+    "get_context",
     "open_folder",
     "read_reference_files",
     "__version__",

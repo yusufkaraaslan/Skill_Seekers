@@ -1092,34 +1092,62 @@ def _score_code_quality(code: str) -> float:
 def main() -> int:
     """Standalone CLI entry point for the Jupyter Notebook scraper."""
     from .arguments.jupyter import add_jupyter_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert Jupyter Notebook (.ipynb) to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    add_jupyter_arguments(parser)
-    args = parser.parse_args()
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert Jupyter Notebook (.ipynb) to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_jupyter_arguments(parser)
+        args = parser.parse_args()
 
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "notebook", None) or getattr(args, "from_json", None) or "(none)"
+    # Set logging level from behavior args
+    if args:
+        if getattr(args, "quiet", False):
+            logging.getLogger().setLevel(logging.WARNING)
+        elif getattr(args, "verbose", False):
+            logging.getLogger().setLevel(logging.DEBUG)
+
+    # Dry run check
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "notebook", None) or getattr(args, "from_json", None)))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: Jupyter Notebook Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
-    if not (getattr(args, "notebook", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --notebook or --from-json")
+    # Validate inputs
+    has_input = (
+        (args and (getattr(args, "notebook", None) or getattr(args, "from_json", None)))
+        or (ctx.output.name)  # Context provides name for output
+    )
+    if not has_input:
+        if args:
+            parser.error("Must specify --notebook or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
-    if getattr(args, "from_json", None):
+    # Build from JSON workflow
+    if args and getattr(args, "from_json", None):
         name = Path(args.from_json).stem.replace("_extracted", "")
         config = {
             "name": getattr(args, "name", None) or name,
@@ -1135,16 +1163,28 @@ def main() -> int:
             sys.exit(1)
         return 0
 
-    # Direct notebook mode
-    if not getattr(args, "name", None):
-        nb_path = Path(args.notebook)
-        args.name = nb_path.stem if nb_path.is_file() else (nb_path.name or "notebooks")
+    # Direct notebook mode - build config from ctx or args
+    if args is None:
+        # Using ExecutionContext
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        config = {
+            "name": ctx.output.name,
+            "notebook_path": "",  # Must be provided via other means when using context
+            "description": f"Use when referencing {ctx.output.name} notebook documentation",
+        }
+    else:
+        # Using args
+        if not getattr(args, "name", None):
+            nb_path = Path(args.notebook)
+            args.name = nb_path.stem if nb_path.is_file() else (nb_path.name or "notebooks")
 
-    config = {
-        "name": args.name,
-        "notebook_path": args.notebook,
-        "description": getattr(args, "description", None),
-    }
+        config = {
+            "name": args.name,
+            "notebook_path": args.notebook,
+            "description": getattr(args, "description", None),
+        }
 
     try:
         converter = JupyterToSkillConverter(config)
@@ -1155,14 +1195,18 @@ def main() -> int:
 
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if args and getattr(args, "enhance_level", 0) > 0 and not ctx.enhancement.enabled:
+            enhance_level = args.enhance_level
+
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1182,16 +1226,16 @@ def main() -> int:
                     print("❌ API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")

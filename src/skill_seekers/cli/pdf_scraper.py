@@ -635,43 +635,59 @@ class PDFToSkillConverter:
 
 def main():
     from .arguments.pdf import add_pdf_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert PDF documentation to AI skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert PDF documentation to AI skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    add_pdf_arguments(parser)
+        add_pdf_arguments(parser)
+        args = parser.parse_args()
 
-    args = parser.parse_args()
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level from behavior args
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = args.pdf or args.config or args.from_json or "(none)"
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (args.pdf or args.config or args.from_json))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print(f"DRY RUN: PDF Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return
 
     # Validate inputs
-    if not (args.config or args.pdf or args.from_json):
-        parser.error("Must specify --config, --pdf, or --from-json")
+    has_input = (
+        (args and (args.config or args.pdf or args.from_json))
+        or (ctx.output.name)  # Context provides name for output
+    )
+    if not has_input:
+        if args:
+            parser.error("Must specify --config, --pdf, or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Load or create config
-    if args.config:
+    if args and args.config:
         with open(args.config) as f:
             config = json.load(f)
-    elif args.from_json:
+    elif args and args.from_json:
         # Build from extracted JSON
         name = Path(args.from_json).stem.replace("_extracted", "")
         config = {
@@ -682,7 +698,7 @@ def main():
         converter.load_extracted_data(args.from_json)
         converter.build_skill()
         return
-    else:
+    elif args and args.pdf:
         # Direct PDF mode
         if not args.name:
             parser.error("Must specify --name with --pdf")
@@ -690,6 +706,21 @@ def main():
             "name": args.name,
             "pdf_path": args.pdf,
             "description": args.description or f"Use when referencing {args.name} documentation",
+            "extract_options": {
+                "chunk_size": 10,
+                "min_quality": 5.0,
+                "extract_images": True,
+                "min_image_size": 100,
+            },
+        }
+    else:
+        # Using ExecutionContext - build config from context
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        config = {
+            "name": ctx.output.name,
+            "description": f"Use when referencing {ctx.output.name} documentation",
             "extract_options": {
                 "chunk_size": 10,
                 "min_quality": 5.0,
@@ -715,20 +746,21 @@ def main():
         # ═══════════════════════════════════════════════════════════════════════════
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # ═══════════════════════════════════════════════════════════════════════════
         # Traditional Enhancement (complements workflow system)
         # ═══════════════════════════════════════════════════════════════════════════
-        if getattr(args, "enhance_level", 0) > 0:
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if enhance_level > 0:
             import os
 
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -749,8 +781,8 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     agent_name = agent or "claude"
@@ -759,8 +791,8 @@ def main():
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 agent_name = agent or "claude"

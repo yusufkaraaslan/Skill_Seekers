@@ -1790,84 +1790,109 @@ def main() -> int:
     Standard arguments (--name, --description, --verbose, --quiet, --dry-run)
     are provided by the shared argument system.
     """
+    from skill_seekers.cli.execution_context import ExecutionContext
+
     _check_yaml_deps()
 
-    parser = argparse.ArgumentParser(
-        description="Convert OpenAPI/Swagger specifications to AI-ready skills",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert OpenAPI/Swagger specifications to AI-ready skills",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
 Examples:
   %(prog)s --spec petstore.yaml --name petstore-api
   %(prog)s --spec-url https://petstore3.swagger.io/api/v3/openapi.json --name petstore
   %(prog)s --from-json petstore_extracted.json
         """,
-    )
+        )
 
-    # Standard shared arguments
-    from .arguments.common import add_all_standard_arguments
+        # Standard shared arguments
+        from .arguments.common import add_all_standard_arguments
 
-    add_all_standard_arguments(parser)
+        add_all_standard_arguments(parser)
 
-    # Override enhance-level default to 0 for OpenAPI
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for OpenAPI), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
+        # Override enhance-level default to 0 for OpenAPI
+        for action in parser._actions:
+            if hasattr(action, "dest") and action.dest == "enhance_level":
+                action.default = 0
+                action.help = (
+                    "AI enhancement level (auto-detects API vs LOCAL mode): "
+                    "0=disabled (default for OpenAPI), 1=SKILL.md only, "
+                    "2=+architecture/config, 3=full enhancement. "
+                    "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
+                    "otherwise LOCAL (Claude Code, Kimi, etc.)"
+                )
 
-    # OpenAPI-specific arguments
-    parser.add_argument(
-        "--spec",
-        type=str,
-        help="Local path to OpenAPI/Swagger spec file (YAML or JSON)",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--spec-url",
-        type=str,
-        help="Remote URL to fetch OpenAPI/Swagger spec from",
-        metavar="URL",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON data",
-        metavar="FILE",
-    )
+        # OpenAPI-specific arguments
+        parser.add_argument(
+            "--spec",
+            type=str,
+            help="Local path to OpenAPI/Swagger spec file (YAML or JSON)",
+            metavar="PATH",
+        )
+        parser.add_argument(
+            "--spec-url",
+            type=str,
+            help="Remote URL to fetch OpenAPI/Swagger spec from",
+            metavar="URL",
+        )
+        parser.add_argument(
+            "--from-json",
+            type=str,
+            help="Build skill from previously extracted JSON data",
+            metavar="FILE",
+        )
 
-    args = parser.parse_args()
+        args = parser.parse_args()
+
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Setup logging
-    if getattr(args, "quiet", False):
-        logging.basicConfig(level=logging.WARNING, format="%(message)s")
-    elif getattr(args, "verbose", False):
-        logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
-    else:
-        logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if args:
+        if getattr(args, "quiet", False):
+            logging.basicConfig(level=logging.WARNING, format="%(message)s")
+        elif getattr(args, "verbose", False):
+            logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+        else:
+            logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = args.spec or args.spec_url or args.from_json or "(none)"
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (args.spec or args.spec_url or args.from_json))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: OpenAPI Specification Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n  Dry run complete")
         return 0
 
     # Validate inputs
-    if not (args.spec or args.spec_url or args.from_json):
-        parser.error("Must specify --spec (file path), --spec-url (URL), or --from-json")
+    has_source = (
+        (args and (args.spec or args.spec_url or args.from_json))
+        or ctx.output.name
+    )
+    if not has_source:
+        if args:
+            parser.error("Must specify --spec (file path), --spec-url (URL), or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Build from pre-extracted JSON
-    if args.from_json:
+    if args and args.from_json:
         name = args.name or Path(args.from_json).stem.replace("_extracted", "")
         config: dict[str, Any] = {
             "name": name,
@@ -1878,29 +1903,42 @@ Examples:
         converter.build_skill()
         return 0
 
-    # Determine name
-    if not args.name:
-        if args.spec:
-            name = Path(args.spec).stem
-        elif args.spec_url:
-            # Derive name from URL
-            from urllib.parse import urlparse
+    # Determine name and build config
+    if args:
+        # CLI mode
+        if not args.name:
+            if args.spec:
+                name = Path(args.spec).stem
+            elif args.spec_url:
+                # Derive name from URL
+                from urllib.parse import urlparse
 
-            url_path = urlparse(args.spec_url).path
-            name = Path(url_path).stem if url_path else "api"
+                url_path = urlparse(args.spec_url).path
+                name = Path(url_path).stem if url_path else "api"
+            else:
+                name = "api"
         else:
-            name = "api"
-    else:
-        name = args.name
+            name = args.name
 
-    # Build config
-    config = {
-        "name": name,
-        "spec_path": args.spec or "",
-        "spec_url": args.spec_url or "",
-    }
-    if args.description:
-        config["description"] = args.description
+        config = {
+            "name": name,
+            "spec_path": args.spec or "",
+            "spec_url": args.spec_url or "",
+        }
+        if args.description:
+            config["description"] = args.description
+    else:
+        # ExecutionContext mode
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        name = ctx.output.name
+        config = {
+            "name": name,
+            "spec_path": "",
+            "spec_url": "",
+            "description": f"Use when working with the {name} API",
+        }
 
     # Create converter and run
     try:
@@ -1913,12 +1951,13 @@ Examples:
         converter.build_skill()
 
         # Enhancement workflow integration
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print(f"\n{'=' * 80}")
-            print(f"  AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"  AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
 
             skill_dir = converter.skill_dir
@@ -1932,16 +1971,16 @@ Examples:
                     print("  API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("  Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("  Local enhancement complete!")

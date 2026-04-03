@@ -953,42 +953,63 @@ class AsciiDocToSkillConverter:
 def main() -> int:
     """CLI entry point for AsciiDoc scraper."""
     from skill_seekers.cli.arguments.asciidoc import add_asciidoc_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert AsciiDoc documentation to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert AsciiDoc documentation to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
-    add_asciidoc_arguments(parser)
+        add_asciidoc_arguments(parser)
+        args = parser.parse_args()
 
-    args = parser.parse_args()
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
+    if args:
+        if getattr(args, "quiet", False):
+            logging.getLogger().setLevel(logging.WARNING)
+        elif getattr(args, "verbose", False):
+            logging.getLogger().setLevel(logging.DEBUG)
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
         source = (
-            getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None) or "(none)"
+            (args and (getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None)))
+            or ctx.output.name
+            or "(none)"
         )
         print(f"\n{'=' * 60}")
         print("DRY RUN: AsciiDoc Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Validate inputs
-    if not (getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --asciidoc-path or --from-json")
+    has_source = (
+        (args and (getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None)))
+        or ctx.output.name
+    )
+    if not has_source:
+        if args:
+            parser.error("Must specify --asciidoc-path or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Build from JSON workflow
-    if getattr(args, "from_json", None):
+    if args and getattr(args, "from_json", None):
         name = Path(args.from_json).stem.replace("_extracted", "")
         config = {
             "name": getattr(args, "name", None) or name,
@@ -1004,16 +1025,29 @@ def main() -> int:
             sys.exit(1)
         return 0
 
-    # Direct AsciiDoc mode
-    if not getattr(args, "name", None):
-        p = Path(args.asciidoc_path)
-        args.name = p.stem if p.is_file() else p.name
+    # Determine name and build config
+    if args:
+        # CLI mode
+        if not getattr(args, "name", None):
+            p = Path(args.asciidoc_path)
+            args.name = p.stem if p.is_file() else p.name
 
-    config = {
-        "name": args.name,
-        "asciidoc_path": args.asciidoc_path,
-        "description": getattr(args, "description", None),
-    }
+        config = {
+            "name": args.name,
+            "asciidoc_path": args.asciidoc_path,
+            "description": getattr(args, "description", None),
+        }
+    else:
+        # ExecutionContext mode
+        if not ctx.output.name:
+            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
+            sys.exit(1)
+        name = ctx.output.name
+        config = {
+            "name": name,
+            "asciidoc_path": "",
+            "description": f"Use when referencing {name} documentation",
+        }
 
     try:
         converter = AsciiDocToSkillConverter(config)
@@ -1029,16 +1063,17 @@ def main() -> int:
         # Enhancement Workflow Integration
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             print("=" * 80)
             if workflow_executed:
                 print(f"   Running after workflow: {workflow_name}")
@@ -1059,16 +1094,16 @@ def main() -> int:
                     print("❌ API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     print("✅ Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                agent = ctx.enhancement.agent
+                agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 print("✅ Local enhancement complete!")

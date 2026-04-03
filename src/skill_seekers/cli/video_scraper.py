@@ -1029,12 +1029,19 @@ def main() -> int:
         Exit code (0 for success, non-zero for error).
     """
     from skill_seekers.cli.arguments.video import add_video_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers-video",
-        description="Extract transcripts and metadata from videos and generate skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""\
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            prog="skill-seekers-video",
+            description="Extract transcripts and metadata from videos and generate skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""\
 Examples:
   skill-seekers video --url https://www.youtube.com/watch?v=...
   skill-seekers video --video-file recording.mp4
@@ -1042,37 +1049,52 @@ Examples:
   skill-seekers video --from-json video_extracted.json
   skill-seekers video --url https://youtu.be/... --languages en,es
 """,
-    )
+        )
 
-    add_video_arguments(parser)
-    args = parser.parse_args()
+        add_video_arguments(parser)
+        args = parser.parse_args()
+
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # --setup: run GPU detection + dependency installation, then exit
-    if getattr(args, "setup", False):
+    if args and getattr(args, "setup", False):
         from skill_seekers.cli.video_setup import run_setup
 
         return run_setup(interactive=True)
 
-    # Setup logging
-    log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
+    # Setup logging from behavior args
+    if args:
+        log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
+        logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
     # Validate inputs
-    has_source = any(
-        [
-            getattr(args, "url", None),
-            getattr(args, "video_file", None),
-            getattr(args, "playlist", None),
-        ]
+    has_source = (
+        (args and any(
+            [
+                getattr(args, "url", None),
+                getattr(args, "video_file", None),
+                getattr(args, "playlist", None),
+            ]
+        ))
+        or (ctx.output.name)  # Context provides name for output
     )
-    has_json = getattr(args, "from_json", None)
+    has_json = args and getattr(args, "from_json", None)
 
     if not has_source and not has_json:
-        parser.error("Must specify --url, --video-file, --playlist, or --from-json")
+        if args:
+            parser.error("Must specify --url, --video-file, --playlist, or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            sys.exit(1)
 
     # Parse and validate time clipping
-    raw_start = getattr(args, "start_time", None)
-    raw_end = getattr(args, "end_time", None)
+    if args:
+        raw_start = getattr(args, "start_time", None)
+        raw_end = getattr(args, "end_time", None)
+    else:
+        raw_start = raw_end = None
     clip_start: float | None = None
     clip_end: float | None = None
 
@@ -1080,53 +1102,90 @@ Examples:
         try:
             clip_start = parse_time_to_seconds(raw_start)
         except ValueError as exc:
-            parser.error(f"--start-time: {exc}")
+            if args:
+                parser.error(f"--start-time: {exc}")
+            else:
+                print(f"Error: Invalid start time: {exc}", file=sys.stderr)
+                sys.exit(1)
     if raw_end is not None:
         try:
             clip_end = parse_time_to_seconds(raw_end)
         except ValueError as exc:
-            parser.error(f"--end-time: {exc}")
+            if args:
+                parser.error(f"--end-time: {exc}")
+            else:
+                print(f"Error: Invalid end time: {exc}", file=sys.stderr)
+                sys.exit(1)
 
     if clip_start is not None or clip_end is not None:
-        if getattr(args, "playlist", None):
+        if args and getattr(args, "playlist", None):
             parser.error("--start-time/--end-time cannot be used with --playlist")
         if clip_start is not None and clip_end is not None and clip_start >= clip_end:
-            parser.error(f"--start-time ({clip_start}s) must be before --end-time ({clip_end}s)")
+            if args:
+                parser.error(f"--start-time ({clip_start}s) must be before --end-time ({clip_end}s)")
+            else:
+                print(f"Error: start_time must be before end_time", file=sys.stderr)
+                sys.exit(1)
 
-    # Build config
-    config = {
-        "name": args.name or "video_skill",
-        "description": getattr(args, "description", None) or "",
-        "output": getattr(args, "output", None),
-        "url": getattr(args, "url", None),
-        "video_file": getattr(args, "video_file", None),
-        "playlist": getattr(args, "playlist", None),
-        "languages": getattr(args, "languages", "en"),
-        "visual": getattr(args, "visual", False),
-        "whisper_model": getattr(args, "whisper_model", "base"),
-        "visual_interval": getattr(args, "visual_interval", 0.7),
-        "visual_min_gap": getattr(args, "visual_min_gap", 0.5),
-        "visual_similarity": getattr(args, "visual_similarity", 3.0),
-        "vision_ocr": getattr(args, "vision_ocr", False),
-        "start_time": clip_start,
-        "end_time": clip_end,
-    }
+    # Build config from ctx or args
+    if args is None:
+        config = {
+            "name": ctx.output.name or "video_skill",
+            "description": "",
+            "output": ctx.output.output_dir,
+            "url": None,
+            "video_file": None,
+            "playlist": None,
+            "languages": "en",
+            "visual": False,
+            "whisper_model": "base",
+            "visual_interval": 0.7,
+            "visual_min_gap": 0.5,
+            "visual_similarity": 3.0,
+            "vision_ocr": False,
+            "start_time": clip_start,
+            "end_time": clip_end,
+        }
+    else:
+        config = {
+            "name": args.name or "video_skill",
+            "description": getattr(args, "description", None) or "",
+            "output": getattr(args, "output", None),
+            "url": getattr(args, "url", None),
+            "video_file": getattr(args, "video_file", None),
+            "playlist": getattr(args, "playlist", None),
+            "languages": getattr(args, "languages", "en"),
+            "visual": getattr(args, "visual", False),
+            "whisper_model": getattr(args, "whisper_model", "base"),
+            "visual_interval": getattr(args, "visual_interval", 0.7),
+            "visual_min_gap": getattr(args, "visual_min_gap", 0.5),
+            "visual_similarity": getattr(args, "visual_similarity", 3.0),
+            "vision_ocr": getattr(args, "vision_ocr", False),
+            "start_time": clip_start,
+            "end_time": clip_end,
+        }
 
     converter = VideoToSkillConverter(config)
 
     # Dry run
-    if args.dry_run:
-        logger.info("DRY RUN — would process:")
-        for key in ["url", "video_file", "playlist"]:
-            if config.get(key):
-                logger.info(f"  {key}: {config[key]}")
-        logger.info(f"  name: {config['name']}")
-        logger.info(f"  languages: {config['languages']}")
-        logger.info(f"  visual: {config['visual']}")
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "url", None) or getattr(args, "video_file", None) or getattr(args, "playlist", None)))
+            or ctx.output.name
+            or "(none)"
+        )
+        print(f"\n{'=' * 60}")
+        print("DRY RUN: Video Extraction")
+        print(f"{'=' * 60}")
+        print(f"Source:         {source}")
+        print(f"Name:           {config['name']}")
+        print(f"Languages:      {config['languages']}")
+        print(f"Visual:         {config['visual']}")
         if clip_start is not None or clip_end is not None:
             start_str = _format_duration(clip_start) if clip_start is not None else "start"
             end_str = _format_duration(clip_end) if clip_end is not None else "end"
-            logger.info(f"  clip range: {start_str} - {end_str}")
+            print(f"Clip range:     {start_str} - {end_str}")
+        print(f"\n✅ Dry run complete")
         return 0
 
     # Workflow 1: Build from JSON
@@ -1165,14 +1224,18 @@ Examples:
         return 1
 
     # Enhancement
-    enhance_level = getattr(args, "enhance_level", 0)
+    enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
+    if args and getattr(args, "enhance_level", 0) > 0 and not ctx.enhancement.enabled:
+        enhance_level = args.enhance_level
+
     if enhance_level > 0:
         # Pass 1: Clean reference files (Code Timeline reconstruction)
-        converter._enhance_reference_files(enhance_level, args)
+        converter._enhance_reference_files(enhance_level, args if args else argparse.Namespace())
 
         # Auto-inject video-tutorial workflow if no workflow specified
-        if not getattr(args, "enhance_workflow", None):
-            args.enhance_workflow = ["video-tutorial"]
+        workflow_args = args if args else argparse.Namespace()
+        if not getattr(workflow_args, "enhance_workflow", None):
+            workflow_args.enhance_workflow = ["video-tutorial"]
 
         # Pass 2: Run workflow stages (specialized video analysis)
         try:
@@ -1183,12 +1246,12 @@ Examples:
                 "skill_dir": converter.skill_dir,
                 "source_type": "video_tutorial",
             }
-            run_workflows(args, context=video_context)
+            run_workflows(workflow_args, context=video_context)
         except ImportError:
             logger.debug("Workflow runner not available, skipping workflow stages")
 
         # Run traditional SKILL.md enhancement (reads references + rewrites)
-        _run_video_enhancement(converter.skill_dir, enhance_level, args)
+        _run_video_enhancement(converter.skill_dir, enhance_level, workflow_args)
 
     return 0
 
