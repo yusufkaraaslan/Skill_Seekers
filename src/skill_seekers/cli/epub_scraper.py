@@ -1072,101 +1072,83 @@ def _score_code_quality(code: str) -> float:
 
 def main():
     from .arguments.epub import add_epub_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Convert EPUB e-book to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Convert EPUB e-book to skill",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        add_epub_arguments(parser)
+        args = parser.parse_args()
 
-    add_epub_arguments(parser)
-
-    args = parser.parse_args()
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
 
     # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "epub", None) or getattr(args, "from_json", None) or "(none)"
+    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
+        source = (
+            (args and (getattr(args, "epub", None) or getattr(args, "from_json", None)))
+            or ctx.output.name
+            or "(none)"
+        )
         print(f"\n{'=' * 60}")
         print("DRY RUN: EPUB Extraction")
         print(f"{'=' * 60}")
         print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Validate inputs
-    if not (getattr(args, "epub", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --epub or --from-json")
+    has_input = (
+        (args and (getattr(args, "epub", None) or getattr(args, "from_json", None)))
+        or ctx.output.name
+    )
+    if not has_input:
+        if args:
+            parser.error("Must specify --epub or --from-json")
+        else:
+            print("Error: No input source provided", file=sys.stderr)
+            return 1
 
-    # Build from JSON workflow
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
-        }
-        try:
-            converter = EpubToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Direct EPUB mode
-    if not getattr(args, "name", None):
-        # Auto-detect name from filename
-        args.name = Path(args.epub).stem
+    # Direct EPUB extraction mode
+    epub_path = ctx.get_raw("epub") or (getattr(args, "epub", None) if args else None)
+    name = ctx.output.name
+    if not name:
+        name = Path(epub_path).stem if epub_path else "unnamed"
 
     config = {
-        "name": args.name,
-        "epub_path": args.epub,
-        # Pass None so extract_epub() can infer from EPUB metadata
-        "description": getattr(args, "description", None),
+        "name": name,
+        "epub_path": epub_path,
+        "description": ctx.get_raw("description"),
     }
 
     try:
         converter = EpubToSkillConverter(config)
 
-        # Extract
         if not converter.extract_epub():
-            print("\n❌ EPUB extraction failed - see error above", file=sys.stderr)
+            print("\n❌ EPUB extraction failed", file=sys.stderr)
             sys.exit(1)
 
-        # Build skill
         converter.build_skill()
 
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            import os
-
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
+        # Enhancement
+        enhance_level = ctx.enhancement.level
+        if enhance_level > 0:
+            api_key = ctx.enhancement.api_key
+            agent = ctx.enhancement.agent
+            agent_cmd = ctx.enhancement.agent_cmd
             mode = "API" if api_key else "LOCAL"
 
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis,"
-                    " enhancement provides general improvements)"
-                )
-            print("")
+            print(f"\n🤖 AI Enhancement ({mode} mode, level {enhance_level})")
 
             skill_dir = converter.skill_dir
             if api_key:
@@ -1174,33 +1156,19 @@ def main():
                     from skill_seekers.cli.enhance_skill import enhance_skill_md
 
                     enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
                 except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
 
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Unexpected error during EPUB processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
+        print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
 
     return 0

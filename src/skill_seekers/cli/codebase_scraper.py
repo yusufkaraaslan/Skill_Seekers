@@ -2201,11 +2201,18 @@ def _check_deprecated_flags(args):
 def main():
     """Command-line interface for codebase analysis."""
     from skill_seekers.cli.arguments.analyze import add_analyze_arguments
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    parser = argparse.ArgumentParser(
-        description="Analyze local codebases and extract code knowledge",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = argparse.ArgumentParser(
+            description="Analyze local codebases and extract code knowledge",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
 Examples:
   # Analyze current directory
   codebase-scraper --directory . --output output/codebase/
@@ -2228,162 +2235,229 @@ Examples:
   # Skip specific features
   codebase-scraper --directory . --skip-patterns --skip-test-examples
 """,
-    )
+        )
 
-    # Register all args from the shared definitions module
-    add_analyze_arguments(parser)
+        # Register all args from the shared definitions module
+        add_analyze_arguments(parser)
 
-    # Extra legacy arg only used by standalone CLI (not in arguments/analyze.py)
-    parser.add_argument(
-        "--ai-mode",
-        choices=["auto", "api", "local", "none"],
-        default="auto",
-        help=(
-            "AI enhancement mode for how-to guides: "
-            "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
-            "api (Anthropic API, requires ANTHROPIC_API_KEY), "
-            "local (coding agent CLI, FREE, no API key), "
-            "none (disable AI enhancement). "
-            "💡 TIP: Use --enhance flag instead for simpler UX!"
-        ),
-    )
+        # Extra legacy arg only used by standalone CLI (not in arguments/analyze.py)
+        parser.add_argument(
+            "--ai-mode",
+            choices=["auto", "api", "local", "none"],
+            default="auto",
+            help=(
+                "AI enhancement mode for how-to guides: "
+                "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
+                "api (Anthropic API, requires ANTHROPIC_API_KEY), "
+                "local (coding agent CLI, FREE, no API key), "
+                "none (disable AI enhancement). "
+                "💡 TIP: Use --enhance flag instead for simpler UX!"
+            ),
+        )
 
-    # Check for deprecated flags
-    deprecated_flags = {
-        "--build-api-reference": "--skip-api-reference",
-        "--build-dependency-graph": "--skip-dependency-graph",
-        "--detect-patterns": "--skip-patterns",
-        "--extract-test-examples": "--skip-test-examples",
-        "--build-how-to-guides": "--skip-how-to-guides",
-        "--extract-config-patterns": "--skip-config-patterns",
-    }
+        # Check for deprecated flags
+        deprecated_flags = {
+            "--build-api-reference": "--skip-api-reference",
+            "--build-dependency-graph": "--skip-dependency-graph",
+            "--detect-patterns": "--skip-patterns",
+            "--extract-test-examples": "--skip-test-examples",
+            "--build-how-to-guides": "--skip-how-to-guides",
+            "--extract-config-patterns": "--skip-config-patterns",
+        }
 
-    for old_flag, new_flag in deprecated_flags.items():
-        if old_flag in sys.argv:
-            logger.warning(
-                f"⚠️  DEPRECATED: {old_flag} is deprecated. "
-                f"All features are now enabled by default. "
-                f"Use {new_flag} to disable this feature."
-            )
+        for old_flag, new_flag in deprecated_flags.items():
+            if old_flag in sys.argv:
+                logger.warning(
+                    f"⚠️  DEPRECATED: {old_flag} is deprecated. "
+                    f"All features are now enabled by default. "
+                    f"Use {new_flag} to disable this feature."
+                )
 
-    # Handle --preset-list flag BEFORE parse_args() to avoid required --directory validation
-    if "--preset-list" in sys.argv:
-        from skill_seekers.cli.presets import PresetManager
+        # Handle --preset-list flag BEFORE parse_args() to avoid required --directory validation
+        if "--preset-list" in sys.argv:
+            from skill_seekers.cli.presets import PresetManager
 
-        print(PresetManager.format_preset_help())
-        return 0
+            print(PresetManager.format_preset_help())
+            return 0
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    # Check for deprecated flags and show warnings
-    _check_deprecated_flags(args)
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
+
+    # Check for deprecated flags and show warnings (only when using args)
+    if args:
+        _check_deprecated_flags(args)
 
     # Handle presets using formal preset system
     preset_name = None
-    if hasattr(args, "preset") and args.preset:
-        # New --preset flag (recommended)
-        preset_name = args.preset
-    elif hasattr(args, "quick") and args.quick:
-        # Legacy --quick flag (backward compatibility)
-        preset_name = "quick"
-    elif hasattr(args, "comprehensive") and args.comprehensive:
-        # Legacy --comprehensive flag (backward compatibility)
-        preset_name = "comprehensive"
+    if args:
+        if hasattr(args, "preset") and args.preset:
+            # New --preset flag (recommended)
+            preset_name = args.preset
+        elif hasattr(args, "quick") and args.quick:
+            # Legacy --quick flag (backward compatibility)
+            preset_name = "quick"
+        elif hasattr(args, "comprehensive") and args.comprehensive:
+            # Legacy --comprehensive flag (backward compatibility)
+            preset_name = "comprehensive"
+        else:
+            # Default preset if none specified
+            preset_name = "standard"
+
+        # Apply preset using PresetManager
+        if preset_name:
+            from skill_seekers.cli.presets import PresetManager
+
+            try:
+                preset_args = PresetManager.apply_preset(preset_name, vars(args))
+                # Update args with preset values
+                for key, value in preset_args.items():
+                    setattr(args, key, value)
+
+                preset = PresetManager.get_preset(preset_name)
+                logger.info(f"{preset.icon} {preset.name} analysis mode: {preset.description}")
+            except ValueError as e:
+                logger.error(f"❌ {e}")
+                return 1
+
+        # Apply default depth if not set by preset or CLI
+        if args.depth is None:
+            args.depth = "deep"  # Default depth
+
+        setup_logging(verbose=args.verbose, quiet=getattr(args, "quiet", False))
     else:
-        # Default preset if none specified
-        preset_name = "standard"
-
-    # Apply preset using PresetManager
-    if preset_name:
-        from skill_seekers.cli.presets import PresetManager
-
-        try:
-            preset_args = PresetManager.apply_preset(preset_name, vars(args))
-            # Update args with preset values
-            for key, value in preset_args.items():
-                setattr(args, key, value)
-
-            preset = PresetManager.get_preset(preset_name)
-            logger.info(f"{preset.icon} {preset.name} analysis mode: {preset.description}")
-        except ValueError as e:
-            logger.error(f"❌ {e}")
-            return 1
-
-    # Apply default depth if not set by preset or CLI
-    if args.depth is None:
-        args.depth = "deep"  # Default depth
-
-    setup_logging(verbose=args.verbose, quiet=getattr(args, "quiet", False))
+        # Using ExecutionContext
+        preset_name = "standard"  # Default for context mode
+        setup_logging(
+            verbose=ctx.get_raw("verbose", False), quiet=ctx.get_raw("quiet", False)
+        )
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        directory = Path(args.directory)
+    dry_run = ctx.output.dry_run if (args is None) else getattr(args, "dry_run", False)
+    if dry_run:
+        if args:
+            directory = Path(args.directory)
+            depth = args.depth or "deep (default)"
+            name = getattr(args, "name", None) or directory.name
+            enhance_level = args.enhance_level
+            skip_flags = [
+                "skip_api_reference",
+                "skip_dependency_graph",
+                "skip_patterns",
+                "skip_test_examples",
+                "skip_how_to_guides",
+                "skip_config_patterns",
+                "skip_docs",
+            ]
+            skips = [f"--{flag.replace('_', '-')}" for flag in skip_flags if getattr(args, flag, False)]
+            output = args.output
+        else:
+            # Get directory from source or default
+            directory = Path(ctx.source.parsed.get("directory", ".")) if ctx.source else Path(".")
+            depth = ctx.analysis.depth or "deep (default)"
+            name = ctx.output.name or directory.name
+            enhance_level = ctx.enhancement.level
+            skips = []
+            output = ctx.output.output_dir or "output/codebase/"
         print(f"\n{'=' * 60}")
         print(f"DRY RUN: Codebase Analysis")
         print(f"{'=' * 60}")
         print(f"Directory:    {directory.resolve()}")
-        print(f"Output:       {args.output}")
+        print(f"Output:       {output}")
         print(f"Preset:       {preset_name}")
-        print(f"Depth:        {args.depth or 'deep (default)'}")
-        print(f"Name:         {getattr(args, 'name', None) or directory.name}")
-        print(f"Enhance:      level {args.enhance_level}")
+        print(f"Depth:        {depth}")
+        print(f"Name:         {name}")
+        print(f"Enhance:      level {enhance_level}")
         print(f"Skip flags:   ", end="")
-        skips = []
-        for flag in [
-            "skip_api_reference",
-            "skip_dependency_graph",
-            "skip_patterns",
-            "skip_test_examples",
-            "skip_how_to_guides",
-            "skip_config_patterns",
-            "skip_docs",
-        ]:
-            if getattr(args, flag, False):
-                skips.append(f"--{flag.replace('_', '-')}")
         print(", ".join(skips) if skips else "(none)")
         print(f"\n✅ Dry run complete")
         return 0
 
-    # Validate directory
-    directory = Path(args.directory)
-    if not directory.exists():
-        logger.error(f"Directory not found: {directory}")
-        return 1
+    # Validate directory and get parameters
+    if args:
+        directory = Path(args.directory)
+        if not directory.exists():
+            logger.error(f"Directory not found: {directory}")
+            return 1
+        if not directory.is_dir():
+            logger.error(f"Not a directory: {directory}")
+            return 1
 
-    if not directory.is_dir():
-        logger.error(f"Not a directory: {directory}")
-        return 1
+        # Parse languages
+        languages = None
+        if args.languages:
+            languages = [lang.strip() for lang in args.languages.split(",")]
 
-    # Parse languages
-    languages = None
-    if args.languages:
-        languages = [lang.strip() for lang in args.languages.split(",")]
+        # Parse file patterns
+        file_patterns = None
+        if args.file_patterns:
+            file_patterns = [p.strip() for p in args.file_patterns.split(",")]
 
-    # Parse file patterns
-    file_patterns = None
-    if args.file_patterns:
-        file_patterns = [p.strip() for p in args.file_patterns.split(",")]
+        # Get settings from args
+        depth = args.depth
+        build_api_reference = not args.skip_api_reference
+        extract_comments = not args.no_comments
+        build_dependency_graph = not args.skip_dependency_graph
+        detect_patterns = not args.skip_patterns
+        extract_test_examples = not args.skip_test_examples
+        build_how_to_guides = not args.skip_how_to_guides
+        extract_config_patterns = not args.skip_config_patterns
+        extract_docs = not args.skip_docs
+        enhance_level = args.enhance_level
+        skill_name = getattr(args, "name", None)
+        skill_description = getattr(args, "description", None)
+        doc_version = getattr(args, "doc_version", "")
+        output_dir = Path(args.output)
+    else:
+        # Using ExecutionContext
+        directory = Path(ctx.source.parsed.get("directory", ".")) if ctx.source else Path(".")
+        if not directory.exists():
+            logger.error(f"Directory not found: {directory}")
+            return 1
+        if not directory.is_dir():
+            logger.error(f"Not a directory: {directory}")
+            return 1
+
+        # Get settings from context
+        languages = ctx.scraping.languages if ctx.scraping.languages != ["en"] else None
+        file_patterns = ctx.analysis.file_patterns
+        depth = ctx.analysis.depth
+        build_api_reference = not ctx.analysis.skip_api_reference
+        extract_comments = not ctx.analysis.no_comments
+        build_dependency_graph = not ctx.analysis.skip_dependency_graph
+        detect_patterns = not ctx.analysis.skip_patterns
+        extract_test_examples = not ctx.analysis.skip_test_examples
+        build_how_to_guides = not ctx.analysis.skip_how_to_guides
+        extract_config_patterns = not ctx.analysis.skip_config_patterns
+        extract_docs = not ctx.analysis.skip_docs
+        enhance_level = ctx.enhancement.level
+        skill_name = ctx.output.name
+        skill_description = None
+        doc_version = ctx.output.doc_version
+        output_dir = Path(ctx.output.output_dir or "output/codebase/")
 
     # Analyze codebase
     try:
         results = analyze_codebase(
             directory=directory,
-            output_dir=Path(args.output),
-            depth=args.depth,
+            output_dir=output_dir,
+            depth=depth,
             languages=languages,
             file_patterns=file_patterns,
-            build_api_reference=not args.skip_api_reference,
-            extract_comments=not args.no_comments,
-            build_dependency_graph=not args.skip_dependency_graph,
-            detect_patterns=not args.skip_patterns,
-            extract_test_examples=not args.skip_test_examples,
-            build_how_to_guides=not args.skip_how_to_guides,
-            extract_config_patterns=not args.skip_config_patterns,
-            extract_docs=not args.skip_docs,
-            enhance_level=args.enhance_level,  # AI enhancement level (0-3)
-            skill_name=getattr(args, "name", None),
-            skill_description=getattr(args, "description", None),
-            doc_version=getattr(args, "doc_version", ""),
+            build_api_reference=build_api_reference,
+            extract_comments=extract_comments,
+            build_dependency_graph=build_dependency_graph,
+            detect_patterns=detect_patterns,
+            extract_test_examples=extract_test_examples,
+            build_how_to_guides=build_how_to_guides,
+            extract_config_patterns=extract_config_patterns,
+            extract_docs=extract_docs,
+            enhance_level=enhance_level,  # AI enhancement level (0-3)
+            skill_name=skill_name,
+            skill_description=skill_description,
+            doc_version=doc_version,
         )
 
         # ============================================================
@@ -2391,7 +2465,9 @@ Examples:
         # ============================================================
         from skill_seekers.cli.workflow_runner import run_workflows
 
-        workflow_executed, workflow_names = run_workflows(args)
+        workflow_executed, workflow_names = run_workflows(
+            args if args else argparse.Namespace()
+        )
 
         # Print summary
         print(f"\n{'=' * 60}")
@@ -2400,9 +2476,10 @@ Examples:
             print(f" + {len(workflow_names)} ENHANCEMENT WORKFLOW(S) EXECUTED")
         print(f"{'=' * 60}")
         print(f"Files analyzed: {len(results['files'])}")
-        print(f"Output directory: {args.output}")
-        if not args.skip_api_reference:
-            print(f"API reference: {Path(args.output) / 'api_reference'}")
+        _output_dir = (args.output if args else None) or ctx.output.output_dir or output_dir
+        print(f"Output directory: {_output_dir}")
+        if not (getattr(args, "skip_api_reference", False) if args else ctx.analysis.skip_api_reference):
+            print(f"API reference: {Path(str(_output_dir)) / 'api_reference'}")
         if workflow_executed:
             print(f"Workflows applied: {', '.join(workflow_names)}")
         print(f"{'=' * 60}\n")

@@ -1411,30 +1411,64 @@ Examples:
 
 def main():
     """C1.10: CLI tool entry point."""
-    parser = setup_argument_parser()
-    args = parser.parse_args()
+    from skill_seekers.cli.execution_context import ExecutionContext
 
-    setup_logging(verbose=getattr(args, "verbose", False), quiet=getattr(args, "quiet", False))
+    # Try to get context first (new path)
+    try:
+        ctx = ExecutionContext.get()
+        args = None  # Signal to use context
+    except RuntimeError:
+        # Fallback: parse argv (backward compatibility)
+        parser = setup_argument_parser()
+        args = parser.parse_args()
+
+        # Initialize context for downstream
+        ExecutionContext.initialize(args=args)
+        ctx = ExecutionContext.get()
+
+    # Setup logging
+    if args:
+        setup_logging(verbose=getattr(args, "verbose", False), quiet=getattr(args, "quiet", False))
+    else:
+        setup_logging(
+            verbose=ctx.get_raw("verbose", False), quiet=ctx.get_raw("quiet", False)
+        )
 
     # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        repo = args.repo or (args.config and "(from config)")
+    dry_run = ctx.output.dry_run if args is None else getattr(args, "dry_run", False)
+    if dry_run:
+        if args:
+            repo = args.repo or (args.config and "(from config)")
+            name = getattr(args, "name", None) or "(auto-detect)"
+            include_issues = not getattr(args, "no_issues", False)
+            include_releases = not getattr(args, "no_releases", False)
+            include_changelog = not getattr(args, "no_changelog", False)
+            max_issues = getattr(args, "max_issues", 100)
+            profile = getattr(args, "profile", None) or "(default)"
+        else:
+            repo = ctx.source.parsed.get("repo", "") if ctx.source else "(from config)"
+            name = ctx.output.name or "(auto-detect)"
+            include_issues = True
+            include_releases = True
+            include_changelog = True
+            max_issues = 100
+            profile = "(default)"
         print(f"\n{'=' * 60}")
         print(f"DRY RUN: GitHub Repository Analysis")
         print(f"{'=' * 60}")
         print(f"Repository:     {repo}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Include issues: {not getattr(args, 'no_issues', False)}")
-        print(f"Include releases: {not getattr(args, 'no_releases', False)}")
-        print(f"Include changelog: {not getattr(args, 'no_changelog', False)}")
-        print(f"Max issues:     {getattr(args, 'max_issues', 100)}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"Profile:        {getattr(args, 'profile', None) or '(default)'}")
+        print(f"Name:           {name}")
+        print(f"Include issues: {include_issues}")
+        print(f"Include releases: {include_releases}")
+        print(f"Include changelog: {include_changelog}")
+        print(f"Max issues:     {max_issues}")
+        print(f"Enhance level:  {ctx.enhancement.level}")
+        print(f"Profile:        {profile}")
         print(f"\n✅ Dry run complete")
         return 0
 
     # Build config from args or file
-    if args.config:
+    if args and args.config:
         with open(args.config, encoding="utf-8") as f:
             config = json.load(f)
         # Override with CLI args if provided
@@ -1442,7 +1476,7 @@ def main():
             config["interactive"] = False
         if args.profile:
             config["github_profile"] = args.profile
-    elif args.repo:
+    elif args and args.repo:
         config = {
             "repo": args.repo,
             "name": args.name or args.repo.split("/")[-1],
@@ -1456,15 +1490,34 @@ def main():
             "github_profile": args.profile,
             "local_repo_path": getattr(args, "local_repo_path", None),
         }
-    else:
+    elif args:
         parser.error("Either --repo or --config is required")
+    else:
+        # Using ExecutionContext - build config from context
+        repo = ctx.source.parsed.get("repo", "") if ctx.source else ""
+        if not repo:
+            print("Error: No repository specified in context", file=sys.stderr)
+            sys.exit(1)
+        config = {
+            "repo": repo,
+            "name": ctx.output.name or repo.split("/")[-1],
+            "description": f"Use when working with {repo.split('/')[-1]}",
+            "github_token": None,
+            "include_issues": True,
+            "include_changelog": True,
+            "include_releases": True,
+            "max_issues": 100,
+            "interactive": False,
+            "github_profile": None,
+            "local_repo_path": None,
+        }
 
     try:
         # Phase 1: Scrape GitHub repository
         scraper = GitHubScraper(config)
         scraper.scrape()
 
-        if args.scrape_only:
+        if args and getattr(args, "scrape_only", False):
             logger.info("Scrape complete (--scrape-only mode)")
             return
 
@@ -1487,20 +1540,26 @@ def main():
             "description": config.get("description", ""),
         }
 
-        workflow_executed, workflow_names = run_workflows(args, context=github_context)
+        workflow_executed, workflow_names = run_workflows(
+            args if args else argparse.Namespace(), context=github_context
+        )
         workflow_name = ", ".join(workflow_names) if workflow_names else None
 
         # Phase 3: Optional enhancement with auto-detected mode
         # Note: Runs independently of workflow system (they complement each other)
-        if getattr(args, "enhance_level", 0) > 0:
+        enhance_level = ctx.enhancement.level if (args is None) else getattr(args, "enhance_level", 0)
+        if enhance_level > 0:
             import os
 
             # Auto-detect mode based on API key availability
-            api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+            if args:
+                api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+            else:
+                api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
             mode = "API" if api_key else "LOCAL"
 
             logger.info("\n" + "=" * 80)
-            logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
             logger.info("=" * 80)
             if workflow_executed:
                 logger.info(f"   Running after workflow: {workflow_name}")
@@ -1523,8 +1582,8 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                    agent = (getattr(args, "agent", None) if args else None) or ctx.enhancement.agent
+                    agent_cmd = (getattr(args, "agent_cmd", None) if args else None) or ctx.enhancement.agent_cmd
                     enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                     enhancer.run(headless=True)
                     agent_name = agent or "claude"
@@ -1534,8 +1593,12 @@ def main():
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
+                if args:
+                    agent = getattr(args, "agent", None)
+                    agent_cmd = getattr(args, "agent_cmd", None)
+                else:
+                    agent = ctx.enhancement.agent
+                    agent_cmd = ctx.enhancement.agent_cmd
                 enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
                 enhancer.run(headless=True)
                 agent_name = agent or "claude"
@@ -1544,7 +1607,8 @@ def main():
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
 
         # Only suggest enhancement if neither workflow nor traditional enhancement was done
-        if not workflow_executed and getattr(args, "enhance_level", 0) == 0:
+        check_level = ctx.enhancement.level if (args is None) else getattr(args, "enhance_level", 0)
+        if not workflow_executed and check_level == 0:
             logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
