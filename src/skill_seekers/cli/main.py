@@ -2,47 +2,35 @@
 """
 Skill Seekers - Unified CLI Entry Point
 
-Provides a git-style unified command-line interface for all Skill Seekers tools.
+Convert documentation, codebases, and repositories into AI skills.
 
 Usage:
     skill-seekers <command> [options]
 
 Commands:
-    config               Configure GitHub tokens, API keys, and settings
-    scrape               Scrape documentation website
-    github               Scrape GitHub repository
-    pdf                  Extract from PDF file
-    word                 Extract from Word (.docx) file
-    epub                 Extract from EPUB e-book (.epub)
-    video                Extract from video (YouTube or local)
-    jupyter              Extract from Jupyter Notebook (.ipynb)
-    html                 Extract from local HTML files
-    openapi              Extract from OpenAPI/Swagger spec
-    asciidoc             Extract from AsciiDoc documents (.adoc)
-    pptx                 Extract from PowerPoint (.pptx)
-    rss                  Extract from RSS/Atom feeds
-    manpage              Extract from man pages
-    confluence           Extract from Confluence wiki
-    notion               Extract from Notion pages
-    chat                 Extract from Slack/Discord chat exports
-    unified              Multi-source scraping (docs + GitHub + PDF + more)
+    create               Create skill from any source (auto-detects type)
+    unified              Multi-source scraping from uni_skill_config
     analyze              Analyze local codebase and extract code knowledge
     enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
     upload               Upload skill to target platform
+    install              One-command workflow (scrape + enhance + package + upload)
+    install-agent        Install skill to AI agent directories
     estimate             Estimate page count before scraping
     extract-test-examples Extract usage examples from test files
-    install-agent        Install skill to AI agent directories
     resume               Resume interrupted scraping job
+    config               Configure GitHub tokens, API keys, and settings
+    doctor               Health check for dependencies and configuration
 
 Examples:
-    skill-seekers scrape --config configs/react.json
-    skill-seekers github --repo microsoft/TypeScript
-    skill-seekers unified --config configs/react_unified.json
-    skill-seekers extract-test-examples tests/ --language python
+    skill-seekers create https://react.dev
+    skill-seekers create owner/repo
+    skill-seekers create ./document.pdf
+    skill-seekers create configs/unity-spine.json
+    skill-seekers create configs/unity-spine.json --enhance-workflow unity-game-dev
+    skill-seekers enhance output/react/
     skill-seekers package output/react/
-    skill-seekers install-agent output/react/ --agent cursor
 """
 
 import argparse
@@ -56,43 +44,32 @@ from skill_seekers.cli import __version__
 
 # Command module mapping (command name -> module path)
 COMMAND_MODULES = {
-    "create": "skill_seekers.cli.create_command",  # NEW: Unified create command
-    "doctor": "skill_seekers.cli.doctor",
-    "config": "skill_seekers.cli.config_command",
-    "scrape": "skill_seekers.cli.doc_scraper",
-    "github": "skill_seekers.cli.github_scraper",
-    "pdf": "skill_seekers.cli.pdf_scraper",
-    "word": "skill_seekers.cli.word_scraper",
-    "epub": "skill_seekers.cli.epub_scraper",
-    "video": "skill_seekers.cli.video_scraper",
+    # Skill creation — unified entry point for all 17 source types
+    "create": "skill_seekers.cli.create_command",
+    # Multi-source config orchestrator
     "unified": "skill_seekers.cli.unified_scraper",
+    # Enhancement & packaging
     "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",
     "package": "skill_seekers.cli.package_skill",
     "upload": "skill_seekers.cli.upload_skill",
+    "install": "skill_seekers.cli.install_skill",
+    "install-agent": "skill_seekers.cli.install_agent",
+    # Analysis & utilities
+    "analyze": "skill_seekers.cli.codebase_scraper",
     "estimate": "skill_seekers.cli.estimate_pages",
     "extract-test-examples": "skill_seekers.cli.test_example_extractor",
-    "install-agent": "skill_seekers.cli.install_agent",
-    "analyze": "skill_seekers.cli.codebase_scraper",
-    "install": "skill_seekers.cli.install_skill",
     "resume": "skill_seekers.cli.resume_command",
+    "quality": "skill_seekers.cli.quality_metrics",
+    # Configuration & workflows
+    "config": "skill_seekers.cli.config_command",
+    "doctor": "skill_seekers.cli.doctor",
+    "workflows": "skill_seekers.cli.workflows_command",
+    "sync-config": "skill_seekers.cli.sync_config",
+    # Advanced (less common)
     "stream": "skill_seekers.cli.streaming_ingest",
     "update": "skill_seekers.cli.incremental_updater",
     "multilang": "skill_seekers.cli.multilang_support",
-    "quality": "skill_seekers.cli.quality_metrics",
-    "workflows": "skill_seekers.cli.workflows_command",
-    "sync-config": "skill_seekers.cli.sync_config",
-    # New source types (v3.2.0+)
-    "jupyter": "skill_seekers.cli.jupyter_scraper",
-    "html": "skill_seekers.cli.html_scraper",
-    "openapi": "skill_seekers.cli.openapi_scraper",
-    "asciidoc": "skill_seekers.cli.asciidoc_scraper",
-    "pptx": "skill_seekers.cli.pptx_scraper",
-    "rss": "skill_seekers.cli.rss_scraper",
-    "manpage": "skill_seekers.cli.man_scraper",
-    "confluence": "skill_seekers.cli.confluence_scraper",
-    "notion": "skill_seekers.cli.notion_scraper",
-    "chat": "skill_seekers.cli.chat_scraper",
 }
 
 

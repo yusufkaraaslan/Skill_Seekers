@@ -1,20 +1,15 @@
 """Parser registry and factory.
 
 This module registers all subcommand parsers and provides a factory
-function to create them.
+function to create them. Individual scraper commands have been removed —
+use `skill-seekers create <source>` for all source types.
 """
 
 from .base import SubcommandParser
 
-# Import all parser classes
-from .create_parser import CreateParser  # NEW: Unified create command
+# Import parser classes (scrapers removed — use create command)
+from .create_parser import CreateParser
 from .config_parser import ConfigParser
-from .scrape_parser import ScrapeParser
-from .github_parser import GitHubParser
-from .pdf_parser import PDFParser
-from .word_parser import WordParser
-from .epub_parser import EpubParser
-from .video_parser import VideoParser
 from .unified_parser import UnifiedParser
 from .enhance_parser import EnhanceParser
 from .enhance_status_parser import EnhanceStatusParser
@@ -34,57 +29,28 @@ from .workflows_parser import WorkflowsParser
 from .sync_config_parser import SyncConfigParser
 from .doctor_parser import DoctorParser
 
-# New source type parsers (v3.2.0+)
-from .jupyter_parser import JupyterParser
-from .html_parser import HtmlParser
-from .openapi_parser import OpenAPIParser
-from .asciidoc_parser import AsciiDocParser
-from .pptx_parser import PptxParser
-from .rss_parser import RssParser
-from .manpage_parser import ManPageParser
-from .confluence_parser import ConfluenceParser
-from .notion_parser import NotionParser
-from .chat_parser import ChatParser
-
-# Registry of all parsers (in order of usage frequency)
+# Registry of all parsers
 PARSERS = [
-    CreateParser(),  # NEW: Unified create command (placed first for prominence)
+    CreateParser(),
     DoctorParser(),
     ConfigParser(),
-    ScrapeParser(),
-    GitHubParser(),
-    PackageParser(),
-    UploadParser(),
+    UnifiedParser(),
     AnalyzeParser(),
     EnhanceParser(),
     EnhanceStatusParser(),
-    PDFParser(),
-    WordParser(),
-    EpubParser(),
-    VideoParser(),
-    UnifiedParser(),
+    PackageParser(),
+    UploadParser(),
     EstimateParser(),
     InstallParser(),
     InstallAgentParser(),
     TestExamplesParser(),
     ResumeParser(),
-    StreamParser(),
-    UpdateParser(),
-    MultilangParser(),
     QualityParser(),
     WorkflowsParser(),
     SyncConfigParser(),
-    # New source types (v3.2.0+)
-    JupyterParser(),
-    HtmlParser(),
-    OpenAPIParser(),
-    AsciiDocParser(),
-    PptxParser(),
-    RssParser(),
-    ManPageParser(),
-    ConfluenceParser(),
-    NotionParser(),
-    ChatParser(),
+    StreamParser(),
+    UpdateParser(),
+    MultilangParser(),
 ]
 
 
