@@ -171,14 +171,14 @@ class ExecutionContext(BaseModel):
     def get(cls) -> ExecutionContext:
         """Get the singleton instance (thread-safe).
 
-        Raises:
-            RuntimeError: If context hasn't been initialized
+        Returns a default context if not explicitly initialized.
+        This ensures components can always read from the context
+        without try/except blocks.
         """
         with cls._lock:
             if cls._instance is None:
-                raise RuntimeError(
-                    "ExecutionContext not initialized. Call ExecutionContext.initialize() first."
-                )
+                cls._instance = cls()
+                logger.debug("ExecutionContext auto-initialized with defaults")
             return cls._instance
 
     @classmethod

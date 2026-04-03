@@ -28,12 +28,12 @@ class TestExecutionContextBasics:
         """Clean up after each test."""
         ExecutionContext.reset()
 
-    def test_get_raises_when_not_initialized(self):
-        """Should raise RuntimeError when getting uninitialized context."""
-        with pytest.raises(RuntimeError) as exc_info:
-            ExecutionContext.get()
-
-        assert "not initialized" in str(exc_info.value)
+    def test_get_returns_defaults_when_not_initialized(self):
+        """Should return default context when not explicitly initialized."""
+        ctx = ExecutionContext.get()
+        assert ctx is not None
+        assert ctx.enhancement.level == 2  # default
+        assert ctx.output.name is None  # default
 
     def test_get_context_shortcut(self):
         """get_context() should be equivalent to ExecutionContext.get()."""
@@ -60,14 +60,16 @@ class TestExecutionContextBasics:
         assert ctx1 is ctx2
 
     def test_reset_clears_instance(self):
-        """reset() should clear the singleton."""
-        args = argparse.Namespace(name="test")
+        """reset() should clear the initialized instance, get() returns fresh defaults."""
+        args = argparse.Namespace(name="test-skill")
         ExecutionContext.initialize(args=args)
+        assert ExecutionContext.get().output.name == "test-skill"
 
         ExecutionContext.reset()
 
-        with pytest.raises(RuntimeError):
-            ExecutionContext.get()
+        # After reset, get() returns default context (not the old one)
+        ctx = ExecutionContext.get()
+        assert ctx.output.name is None  # default, not "test-skill"
 
 
 class TestExecutionContextFromArgs:
