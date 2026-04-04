@@ -53,9 +53,9 @@ Presets: -p quick (1-2min) | -p standard (5-10min) | -p comprehensive (20-60min)
 
         Multi-mode help handled via custom flags detected in argument parsing.
         """
-        # Add all arguments in 'default' mode (universal only)
-        # This keeps help text clean and focused
-        add_create_arguments(parser, mode="default")
+        # Add all arguments in 'all' mode to support all source types
+        # Progressive help still works via --help-web, --help-github, etc.
+        add_create_arguments(parser, mode="all")
 
         # Add hidden help mode flags
         # These won't show in default help but can be used to get source-specific help
