@@ -2,7 +2,7 @@
 SkillConverter — Base interface for all source type converters.
 
 Every scraper/converter inherits this and implements extract().
-The create command calls converter.run() — same interface for all 17 types.
+The create command calls converter.run() — same interface for all 18 types.
 
 Usage:
     converter = get_converter("web", config)
@@ -43,7 +43,7 @@ class SkillConverter:
             logger.info(f"✅ Skill built: {self.skill_dir}/")
             return 0
         except Exception as e:
-            logger.error(f"❌ {self.SOURCE_TYPE} extraction failed: {e}")
+            logger.exception(f"❌ {self.SOURCE_TYPE} extraction failed: {e}")
             return 1
 
     def extract(self):

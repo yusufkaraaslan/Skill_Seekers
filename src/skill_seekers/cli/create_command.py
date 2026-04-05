@@ -14,9 +14,9 @@ from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
 from skill_seekers.cli.arguments.create import (
     get_compatible_arguments,
+    get_create_defaults,
     get_universal_argument_names,
 )
-from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +24,20 @@ logger = logging.getLogger(__name__)
 class CreateCommand:
     """Unified create command implementation."""
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace, parser_defaults: dict[str, Any] | None = None):
         """Initialize create command.
 
         Args:
             args: Parsed command-line arguments
+            parser_defaults: Default values from the argument parser. Used by
+                _is_explicitly_set() to detect which args the user actually
+                provided on the command line vs. which are just defaults.
         """
         self.args = args
         self.source_info: SourceInfo | None = None
+        self._parser_defaults = (
+            parser_defaults if parser_defaults is not None else get_create_defaults()
+        )
 
     def execute(self) -> int:
         """Execute the create command.
@@ -113,44 +119,31 @@ class CreateCommand:
                     f"{self.source_info.type} sources and will be ignored"
                 )
 
-    def _is_explicitly_set(self, arg_name: str, arg_value: any) -> bool:
+    def _is_explicitly_set(self, arg_name: str, arg_value: Any) -> bool:
         """Check if an argument was explicitly set by the user.
 
+        Compares the current value against the parser's registered default.
+        This avoids hardcoding default values that can drift out of sync.
+
         Args:
-            arg_name: Argument name
-            arg_value: Argument value
+            arg_name: Argument destination name
+            arg_value: Current argument value
 
         Returns:
             True if user explicitly set this argument
         """
-        # Boolean flags - True means it was set
-        if isinstance(arg_value, bool):
-            return arg_value
-
-        # None means not set
         if arg_value is None:
             return False
 
-        # Check against common defaults — args with these values were NOT
-        # explicitly set by the user and should not be forwarded.
-        defaults = {
-            "max_issues": 100,
-            "chunk_tokens": DEFAULT_CHUNK_TOKENS,
-            "chunk_overlap_tokens": DEFAULT_CHUNK_OVERLAP_TOKENS,
-            "output": None,
-            "doc_version": "",
-            "video_languages": "en",
-            "whisper_model": "base",
-            "platform": "slack",
-            "visual_interval": 0.7,
-            "visual_min_gap": 0.5,
-            "visual_similarity": 3.0,
-        }
+        # Boolean flags: True means explicitly set (store_true defaults to False)
+        if isinstance(arg_value, bool):
+            return arg_value
 
-        if arg_name in defaults:
-            return arg_value != defaults[arg_name]
+        # Compare against parser default if available
+        if arg_name in self._parser_defaults:
+            return arg_value != self._parser_defaults[arg_name]
 
-        # Any other non-None value means it was set
+        # No registered default and non-None → user must have set it
         return True
 
     def _route_to_scraper(self) -> int:
@@ -557,97 +550,28 @@ Common Workflows:
     args = parser.parse_args()
 
     # Handle source-specific help modes
-    if args._help_web:
-        # Recreate parser with web-specific arguments
-        parser_web = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from web documentation",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_web, mode="web")
-        parser_web.print_help()
-        return 0
-    elif args._help_github:
-        parser_github = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from GitHub repository",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_github, mode="github")
-        parser_github.print_help()
-        return 0
-    elif args._help_local:
-        parser_local = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from local codebase",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_local, mode="local")
-        parser_local.print_help()
-        return 0
-    elif args._help_pdf:
-        parser_pdf = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from PDF file",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_pdf, mode="pdf")
-        parser_pdf.print_help()
-        return 0
-    elif args._help_word:
-        parser_word = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from Word document (.docx)",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_word, mode="word")
-        parser_word.print_help()
-        return 0
-    elif args._help_epub:
-        parser_epub = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from EPUB e-book (.epub)",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_epub, mode="epub")
-        parser_epub.print_help()
-        return 0
-    elif args._help_video:
-        parser_video = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from video (YouTube, Vimeo, local files)",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_video, mode="video")
-        parser_video.print_help()
-        return 0
-    elif args._help_config:
-        parser_config = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill from multi-source config file (unified scraper)",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_config, mode="config")
-        parser_config.print_help()
-        return 0
-    elif args._help_advanced:
-        parser_advanced = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill - advanced options",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_advanced, mode="advanced")
-        parser_advanced.print_help()
-        return 0
-    elif args._help_all:
-        parser_all = argparse.ArgumentParser(
-            prog="skill-seekers create",
-            description="Create skill - all options",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        add_create_arguments(parser_all, mode="all")
-        parser_all.print_help()
-        return 0
+    _HELP_MODES = {
+        "_help_web": ("web", "Create skill from web documentation"),
+        "_help_github": ("github", "Create skill from GitHub repository"),
+        "_help_local": ("local", "Create skill from local codebase"),
+        "_help_pdf": ("pdf", "Create skill from PDF file"),
+        "_help_word": ("word", "Create skill from Word document (.docx)"),
+        "_help_epub": ("epub", "Create skill from EPUB e-book (.epub)"),
+        "_help_video": ("video", "Create skill from video (YouTube, Vimeo, local files)"),
+        "_help_config": ("config", "Create skill from multi-source config file (unified scraper)"),
+        "_help_advanced": ("advanced", "Create skill - advanced options"),
+        "_help_all": ("all", "Create skill - all options"),
+    }
+    for attr, (mode, description) in _HELP_MODES.items():
+        if getattr(args, attr, False):
+            help_parser = argparse.ArgumentParser(
+                prog="skill-seekers create",
+                description=description,
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+            )
+            add_create_arguments(help_parser, mode=mode)
+            help_parser.print_help()
+            return 0
 
     # Setup logging
     log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)

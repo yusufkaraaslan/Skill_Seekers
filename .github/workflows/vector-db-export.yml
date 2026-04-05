@@ -74,7 +74,7 @@ jobs:
       if: steps.check_config.outputs.exists == 'true'
       run: |
         echo "📥 Scraping documentation for $SKILL_NAME..."
-        skill-seekers scrape --config "${{ steps.config.outputs.path }}" --max-pages 100
+        skill-seekers create "${{ steps.config.outputs.path }}" --max-pages 100
       continue-on-error: true
 
     - name: Determine export targets

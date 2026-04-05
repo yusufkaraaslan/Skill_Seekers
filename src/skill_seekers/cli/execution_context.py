@@ -206,7 +206,7 @@ class ExecutionContext(BaseModel):
         """
         with cls._lock:
             if cls._initialized:
-                logger.debug(
+                logger.info(
                     "ExecutionContext.initialize() called again — returning existing instance. "
                     "Use ExecutionContext.reset() first if re-initialization is intended."
                 )
