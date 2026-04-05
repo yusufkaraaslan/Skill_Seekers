@@ -10,7 +10,6 @@ from .base import SubcommandParser
 # Import parser classes (scrapers removed — use create command)
 from .create_parser import CreateParser
 from .config_parser import ConfigParser
-from .unified_parser import UnifiedParser
 from .enhance_parser import EnhanceParser
 from .enhance_status_parser import EnhanceStatusParser
 from .package_parser import PackageParser
@@ -18,7 +17,6 @@ from .upload_parser import UploadParser
 from .estimate_parser import EstimateParser
 from .test_examples_parser import TestExamplesParser
 from .install_agent_parser import InstallAgentParser
-from .analyze_parser import AnalyzeParser
 from .install_parser import InstallParser
 from .resume_parser import ResumeParser
 from .stream_parser import StreamParser
@@ -34,8 +32,6 @@ PARSERS = [
     CreateParser(),
     DoctorParser(),
     ConfigParser(),
-    UnifiedParser(),
-    AnalyzeParser(),
     EnhanceParser(),
     EnhanceStatusParser(),
     PackageParser(),

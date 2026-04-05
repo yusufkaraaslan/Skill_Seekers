@@ -1,15 +1,17 @@
 """Unified create command - single entry point for skill creation.
 
 Auto-detects source type (web, GitHub, local, PDF, config) and routes
-to appropriate scraper while maintaining full backward compatibility.
+to appropriate converter via get_converter().
 """
 
 import sys
 import logging
 import argparse
+from typing import Any
 
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.execution_context import ExecutionContext
+from skill_seekers.cli.skill_converter import get_converter
 from skill_seekers.cli.arguments.create import (
     get_compatible_arguments,
     get_universal_argument_names,
@@ -56,9 +58,8 @@ class CreateCommand:
         # 3. Initialize ExecutionContext with source info
         # This provides a single source of truth for all configuration
         # Resolve config path from args or source detection
-        config_path = (
-            getattr(self.args, "config", None)
-            or (self.source_info.parsed.get("config_path") if self.source_info else None)
+        config_path = getattr(self.args, "config", None) or (
+            self.source_info.parsed.get("config_path") if self.source_info else None
         )
         ExecutionContext.initialize(
             args=self.args,
@@ -69,9 +70,21 @@ class CreateCommand:
         # 4. Validate and warn about incompatible arguments
         self._validate_arguments()
 
-        # 5. Route to appropriate scraper
-        logger.info(f"Routing to {self.source_info.type} scraper...")
-        return self._route_to_scraper()
+        # 5. Route to appropriate converter
+        logger.info(f"Routing to {self.source_info.type} converter...")
+        result = self._route_to_scraper()
+        if result != 0:
+            return result
+
+        # 6. Centralized enhancement (runs after converter, not inside each scraper)
+        ctx = ExecutionContext.get()
+        if ctx.enhancement.enabled and ctx.enhancement.level > 0:
+            self._run_enhancement(ctx)
+
+        # 7. Centralized workflows
+        self._run_workflows()
+
+        return 0
 
     def _validate_arguments(self) -> None:
         """Validate arguments and warn about incompatible ones."""
@@ -141,279 +154,310 @@ class CreateCommand:
         return True
 
     def _route_to_scraper(self) -> int:
-        """Route to appropriate scraper based on source type.
+        """Route to appropriate converter based on source type.
+
+        Builds a config dict from ExecutionContext + source_info, then
+        calls converter.run() directly — no sys.argv swap needed.
 
         Returns:
-            Exit code from scraper
+            Exit code from converter
         """
-        if self.source_info.type == "web":
-            return self._route_web()
-        elif self.source_info.type == "github":
-            return self._route_github()
-        elif self.source_info.type == "local":
-            return self._route_local()
-        elif self.source_info.type == "pdf":
-            return self._route_pdf()
-        elif self.source_info.type == "word":
-            return self._route_word()
-        elif self.source_info.type == "epub":
-            return self._route_epub()
-        elif self.source_info.type == "video":
-            return self._route_video()
-        elif self.source_info.type == "config":
-            return self._route_config()
-        elif self.source_info.type == "jupyter":
-            return self._route_generic("jupyter_scraper", "--notebook")
-        elif self.source_info.type == "html":
-            return self._route_generic("html_scraper", "--html-path")
-        elif self.source_info.type == "openapi":
-            return self._route_generic("openapi_scraper", "--spec")
-        elif self.source_info.type == "asciidoc":
-            return self._route_generic("asciidoc_scraper", "--asciidoc-path")
-        elif self.source_info.type == "pptx":
-            return self._route_generic("pptx_scraper", "--pptx")
-        elif self.source_info.type == "rss":
-            return self._route_generic("rss_scraper", "--feed-path")
-        elif self.source_info.type == "manpage":
-            return self._route_generic("man_scraper", "--man-path")
-        elif self.source_info.type == "confluence":
-            return self._route_generic("confluence_scraper", "--export-path")
-        elif self.source_info.type == "notion":
-            return self._route_generic("notion_scraper", "--export-path")
-        elif self.source_info.type == "chat":
-            return self._route_generic("chat_scraper", "--export-path")
-        else:
-            logger.error(f"Unknown source type: {self.source_info.type}")
-            return 1
+        source_type = self.source_info.type
+        ctx = ExecutionContext.get()
 
-    # ── Dynamic argument forwarding ──────────────────────────────────────
-    #
-    # Instead of manually checking each flag in every _route_*() method,
-    # _build_argv() dynamically iterates vars(self.args) and forwards all
-    # explicitly-set arguments.  This is the same pattern used by
-    # main.py::_reconstruct_argv() and eliminates ~40 missing-flag gaps.
+        # UnifiedScraper is special — it takes config_path, not a config dict
+        if source_type == "config":
+            from skill_seekers.cli.unified_scraper import UnifiedScraper
 
-    # Dest names that differ from their CLI flag (dest → flag)
-    _DEST_TO_FLAG = {
-        "async_mode": "--async",
-        "video_url": "--url",
-        "video_playlist": "--playlist",
-        "video_languages": "--languages",
-        "skip_config": "--skip-config-patterns",
-    }
+            config_path = self.source_info.parsed["config_path"]
+            merge_mode = getattr(self.args, "merge_mode", None)
+            converter = UnifiedScraper(config_path, merge_mode=merge_mode)
+            return converter.run()
 
-    # Internal args that should never be forwarded to sub-scrapers.
-    # video_url/video_playlist/video_file are handled as positionals by _route_video().
-    # config is forwarded manually only by routes that need it (web, github).
-    _SKIP_ARGS = frozenset(
-        {
-            "source",
-            "func",
-            "subcommand",
-            "command",
-            "config",
-            "video_url",
-            "video_playlist",
-            "video_file",
-        }
-    )
+        config = self._build_config(source_type, ctx)
+        converter = get_converter(source_type, config)
+        return converter.run()
 
-    def _build_argv(
-        self,
-        module_name: str,
-        positional_args: list[str],
-        allowlist: frozenset[str] | None = None,
-    ) -> list[str]:
-        """Build argv dynamically by forwarding all explicitly-set arguments.
+    def _build_config(self, source_type: str, ctx: ExecutionContext) -> dict[str, Any]:
+        """Build a config dict for the converter from ExecutionContext.
 
-        DEPRECATED: Use ExecutionContext instead. This method is kept for
-        backward compatibility and will be removed in a future version.
+        Each converter reads specific keys from the config dict passed to
+        its __init__. This method constructs that dict from the centralized
+        ExecutionContext, which already holds all CLI args + config file values.
 
         Args:
-            module_name: Scraper module name (e.g., "doc_scraper")
-            positional_args: Positional arguments to prepend (e.g., [url] or ["--repo", repo])
-            allowlist: If provided, ONLY forward args in this set (overrides _SKIP_ARGS).
-                       Used for targets with strict arg sets like unified_scraper.
+            source_type: Detected source type (web, github, pdf, etc.)
+            ctx: Initialized ExecutionContext
 
         Returns:
-            Complete argv list for the scraper
+            Config dict suitable for the converter's __init__.
         """
-        import warnings
-
-        warnings.warn(
-            "_build_argv is deprecated. Use ExecutionContext instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        argv = [module_name] + positional_args
-
-        # Auto-add suggested name if user didn't provide one (skip for allowlisted targets)
-        if not allowlist and not self.args.name and self.source_info:
-            argv.extend(["--name", self.source_info.suggested_name])
-
-        for key, value in vars(self.args).items():
-            # If allowlist provided, only forward args in the allowlist
-            if allowlist is not None:
-                if key not in allowlist:
-                    continue
-            elif key in self._SKIP_ARGS or key.startswith("_help_"):
-                continue
-            if not self._is_explicitly_set(key, value):
-                continue
-
-            # Use translation map for mismatched dest→flag names, else derive from key
-            if key in self._DEST_TO_FLAG:
-                arg_flag = self._DEST_TO_FLAG[key]
-            else:
-                arg_flag = f"--{key.replace('_', '-')}"
-
-            if isinstance(value, bool):
-                if value:
-                    argv.append(arg_flag)
-            elif isinstance(value, list):
-                for item in value:
-                    argv.extend([arg_flag, str(item)])
-            elif value is not None:
-                argv.extend([arg_flag, str(value)])
-
-        return argv
-
-    def _call_module(self, module, argv: list[str]) -> int:
-        """Call a scraper module with the given argv.
-
-        Swaps sys.argv, calls module.main(), restores sys.argv.
-        """
-        logger.debug(f"Calling {argv[0]} with argv: {argv}")
-        original_argv = sys.argv
-        try:
-            sys.argv = argv
-            result = module.main()
-            if result is None:
-                logger.warning(f"Module returned None exit code, treating as success")
-                return 0
-            return result
-        finally:
-            sys.argv = original_argv
-
-    def _route_web(self) -> int:
-        """Route to web documentation scraper (doc_scraper.py)."""
-        from skill_seekers.cli import doc_scraper
-
-        url = self.source_info.parsed.get("url", self.source_info.raw_source)
-        argv = self._build_argv("doc_scraper", [url])
-
-        # Forward config if set (not in _build_argv since it's in SKIP_ARGS
-        # to avoid double-forwarding for config-type sources)
-        if self.args.config:
-            argv.extend(["--config", self.args.config])
-
-        return self._call_module(doc_scraper, argv)
-
-    def _route_github(self) -> int:
-        """Route to GitHub repository scraper (github_scraper.py)."""
-        from skill_seekers.cli import github_scraper
-
-        repo = self.source_info.parsed.get("repo", self.source_info.raw_source)
-        argv = self._build_argv("github_scraper", ["--repo", repo])
-
-        if self.args.config:
-            argv.extend(["--config", self.args.config])
-
-        return self._call_module(github_scraper, argv)
-
-    def _route_local(self) -> int:
-        """Route to local codebase analyzer (codebase_scraper.py)."""
-        from skill_seekers.cli import codebase_scraper
-
-        directory = self.source_info.parsed.get("directory", self.source_info.raw_source)
-        argv = self._build_argv("codebase_scraper", ["--directory", directory])
-        return self._call_module(codebase_scraper, argv)
-
-    def _route_pdf(self) -> int:
-        """Route to PDF scraper (pdf_scraper.py)."""
-        from skill_seekers.cli import pdf_scraper
-
-        file_path = self.source_info.parsed.get("file_path", self.source_info.raw_source)
-        argv = self._build_argv("pdf_scraper", ["--pdf", file_path])
-        return self._call_module(pdf_scraper, argv)
-
-    def _route_word(self) -> int:
-        """Route to Word document scraper (word_scraper.py)."""
-        from skill_seekers.cli import word_scraper
-
-        file_path = self.source_info.parsed.get("file_path", self.source_info.raw_source)
-        argv = self._build_argv("word_scraper", ["--docx", file_path])
-        return self._call_module(word_scraper, argv)
-
-    def _route_epub(self) -> int:
-        """Route to EPUB scraper (epub_scraper.py)."""
-        from skill_seekers.cli import epub_scraper
-
-        file_path = self.source_info.parsed.get("file_path", self.source_info.raw_source)
-        argv = self._build_argv("epub_scraper", ["--epub", file_path])
-        return self._call_module(epub_scraper, argv)
-
-    def _route_video(self) -> int:
-        """Route to video scraper (video_scraper.py)."""
-        from skill_seekers.cli import video_scraper
-
         parsed = self.source_info.parsed
-        if parsed.get("source_kind") == "file":
-            positional = ["--video-file", parsed["file_path"]]
-        elif parsed.get("url"):
-            url = parsed["url"]
-            flag = "--playlist" if "playlist" in url.lower() else "--url"
-            positional = [flag, url]
-        else:
-            positional = []
+        name = ctx.output.name or self.source_info.suggested_name
 
-        argv = self._build_argv("video_scraper", positional)
-        return self._call_module(video_scraper, argv)
-
-    # Args accepted by unified_scraper (allowlist for config route)
-    _UNIFIED_SCRAPER_ARGS = frozenset(
-        {
-            "merge_mode",
-            "skip_codebase_analysis",
-            "fresh",
-            "dry_run",
-            "enhance_workflow",
-            "enhance_stage",
-            "var",
-            "workflow_dry_run",
-            "api_key",
-            "enhance_level",
-            "agent",
-            "agent_cmd",
+        # Common keys shared by all converters
+        config: dict[str, Any] = {
+            "name": name,
+            "description": getattr(self.args, "description", None)
+            or f"Use when working with {name}",
         }
-    )
 
-    def _route_config(self) -> int:
-        """Route to unified scraper for config files (unified_scraper.py)."""
-        from skill_seekers.cli import unified_scraper
+        if source_type == "web":
+            url = parsed.get("url", parsed.get("base_url", self.source_info.raw_input))
+            config.update(
+                {
+                    "base_url": url,
+                    "doc_version": ctx.output.doc_version,
+                    "max_pages": ctx.scraping.max_pages,
+                    "rate_limit": ctx.scraping.rate_limit,
+                    "browser": ctx.scraping.browser,
+                    "browser_wait_until": ctx.scraping.browser_wait_until,
+                    "browser_extra_wait": ctx.scraping.browser_extra_wait,
+                    "workers": ctx.scraping.workers,
+                    "async_mode": ctx.scraping.async_mode,
+                    "resume": ctx.scraping.resume,
+                    "fresh": ctx.scraping.fresh,
+                    "skip_scrape": ctx.scraping.skip_scrape,
+                    "selectors": {"title": "title", "code_blocks": "pre code"},
+                    "url_patterns": {"include": [], "exclude": []},
+                }
+            )
+            # Load from config file if provided
+            config_path = getattr(self.args, "config", None)
+            if config_path:
+                self._merge_json_config(config, config_path)
 
-        config_path = self.source_info.parsed["config_path"]
-        argv = self._build_argv(
-            "unified_scraper",
-            ["--config", config_path],
-            allowlist=self._UNIFIED_SCRAPER_ARGS,
-        )
-        return self._call_module(unified_scraper, argv)
+        elif source_type == "github":
+            repo = parsed.get("repo", self.source_info.raw_input)
+            config.update(
+                {
+                    "repo": repo,
+                    "local_repo_path": getattr(self.args, "local_repo_path", None),
+                    "include_issues": getattr(self.args, "include_issues", True),
+                    "max_issues": getattr(self.args, "max_issues", 100),
+                    "include_changelog": getattr(self.args, "include_changelog", True),
+                    "include_releases": getattr(self.args, "include_releases", True),
+                    "include_code": getattr(self.args, "include_code", False),
+                }
+            )
+            config_path = getattr(self.args, "config", None)
+            if config_path:
+                self._merge_json_config(config, config_path)
 
-    def _route_generic(self, module_name: str, file_flag: str) -> int:
-        """Generic routing for new source types.
+        elif source_type == "local":
+            directory = parsed.get("directory", self.source_info.raw_input)
+            config.update(
+                {
+                    "directory": directory,
+                    "depth": ctx.analysis.depth,
+                    "output_dir": ctx.output.output_dir or f"output/{name}",
+                    "languages": getattr(self.args, "languages", None),
+                    "file_patterns": ctx.analysis.file_patterns,
+                    "detect_patterns": not ctx.analysis.skip_patterns,
+                    "extract_test_examples": not ctx.analysis.skip_test_examples,
+                    "build_how_to_guides": not ctx.analysis.skip_how_to_guides,
+                    "extract_config_patterns": not ctx.analysis.skip_config_patterns,
+                    "build_api_reference": not ctx.analysis.skip_api_reference,
+                    "build_dependency_graph": not ctx.analysis.skip_dependency_graph,
+                    "extract_docs": not ctx.analysis.skip_docs,
+                    "extract_comments": not ctx.analysis.no_comments,
+                    "enhance_level": ctx.enhancement.level if ctx.enhancement.enabled else 0,
+                    "skill_name": name,
+                    "doc_version": ctx.output.doc_version,
+                }
+            )
 
-        All new source types (jupyter, html, openapi, asciidoc, pptx, rss,
-        manpage, confluence, notion, chat) use dynamic argument forwarding.
+        elif source_type == "pdf":
+            config.update(
+                {
+                    "pdf_path": parsed.get("file_path", self.source_info.raw_input),
+                    "extract_options": {
+                        "chunk_size": 10,
+                        "min_quality": 5.0,
+                        "extract_images": True,
+                        "min_image_size": 100,
+                    },
+                }
+            )
+
+        elif source_type == "word":
+            config["docx_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "epub":
+            config["epub_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "video":
+            config.update(
+                {
+                    "languages": getattr(self.args, "video_languages", "en"),
+                    "visual": getattr(self.args, "visual", False),
+                    "whisper_model": getattr(self.args, "whisper_model", "base"),
+                    "visual_interval": getattr(self.args, "visual_interval", 0.7),
+                    "visual_min_gap": getattr(self.args, "visual_min_gap", 0.5),
+                    "visual_similarity": getattr(self.args, "visual_similarity", 3.0),
+                }
+            )
+            # Video source can be URL, playlist, or file
+            if parsed.get("source_kind") == "file":
+                config["video_file"] = parsed["file_path"]
+            elif parsed.get("url"):
+                url = parsed["url"]
+                if "playlist" in url.lower():
+                    config["playlist"] = url
+                else:
+                    config["url"] = url
+            else:
+                # Fallback: treat raw input as URL
+                config["url"] = self.source_info.raw_input
+
+        elif source_type == "jupyter":
+            config["notebook_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "html":
+            config["html_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "openapi":
+            file_path = parsed.get("file_path", self.source_info.raw_input)
+            if file_path.startswith(("http://", "https://")):
+                config["spec_url"] = file_path
+            else:
+                config["spec_path"] = file_path
+
+        elif source_type == "asciidoc":
+            config["asciidoc_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "pptx":
+            config["pptx_path"] = parsed.get("file_path", self.source_info.raw_input)
+
+        elif source_type == "rss":
+            file_path = parsed.get("file_path", self.source_info.raw_input)
+            if file_path.startswith(("http://", "https://")):
+                config["feed_url"] = file_path
+            else:
+                config["feed_path"] = file_path
+            config["follow_links"] = getattr(self.args, "follow_links", True)
+            config["max_articles"] = getattr(self.args, "max_articles", 50)
+
+        elif source_type == "manpage":
+            file_path = parsed.get("file_path", "")
+            if file_path:
+                config["man_path"] = file_path
+            man_names = parsed.get("man_names", [])
+            if man_names:
+                config["man_names"] = man_names
+
+        elif source_type == "confluence":
+            config.update(
+                {
+                    "export_path": parsed.get("file_path", ""),
+                    "base_url": getattr(self.args, "confluence_url", ""),
+                    "space_key": getattr(self.args, "space_key", ""),
+                    "username": getattr(self.args, "username", ""),
+                    "token": getattr(self.args, "token", ""),
+                    "max_pages": getattr(self.args, "max_pages", 500),
+                }
+            )
+
+        elif source_type == "notion":
+            config.update(
+                {
+                    "export_path": parsed.get("file_path"),
+                    "database_id": getattr(self.args, "database_id", None),
+                    "page_id": getattr(self.args, "page_id", None),
+                    "token": getattr(self.args, "notion_token", None),
+                    "max_pages": getattr(self.args, "max_pages", 100),
+                }
+            )
+
+        elif source_type == "chat":
+            config.update(
+                {
+                    "export_path": parsed.get("file_path", ""),
+                    "platform": getattr(self.args, "platform", "slack"),
+                    "token": getattr(self.args, "token", ""),
+                    "channel": getattr(self.args, "channel", ""),
+                    "max_messages": getattr(self.args, "max_messages", 1000),
+                }
+            )
+
+        return config
+
+    @staticmethod
+    def _merge_json_config(config: dict[str, Any], config_path: str) -> None:
+        """Merge a JSON config file into the config dict.
+
+        Config file values are used as defaults — CLI args (already in config) take precedence.
         """
-        import importlib
+        import json
 
-        module = importlib.import_module(f"skill_seekers.cli.{module_name}")
+        try:
+            with open(config_path, encoding="utf-8") as f:
+                file_config = json.load(f)
+            # Only set keys that aren't already in config
+            for key, value in file_config.items():
+                if key not in config:
+                    config[key] = value
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.warning(f"Could not load config file {config_path}: {e}")
 
-        file_path = self.source_info.parsed.get("file_path", "")
-        positional = [file_flag, file_path] if file_path else []
-        argv = self._build_argv(module_name, positional)
-        return self._call_module(module, argv)
+    def _run_enhancement(self, ctx: ExecutionContext) -> None:
+        """Run centralized AI enhancement after converter completes."""
+        from pathlib import Path
+
+        name = ctx.output.name or (
+            self.source_info.suggested_name if self.source_info else "unnamed"
+        )
+        skill_dir = ctx.output.output_dir or f"output/{name}"
+
+        logger.info("\n" + "=" * 60)
+        logger.info(f"Enhancing SKILL.md (level {ctx.enhancement.level})")
+        logger.info("=" * 60)
+
+        try:
+            from skill_seekers.cli.agent_client import AgentClient
+
+            client = AgentClient(
+                mode=ctx.enhancement.mode,
+                agent=ctx.enhancement.agent,
+                api_key=ctx.enhancement.api_key,
+            )
+
+            if client.mode == "api" and client.client:
+                from skill_seekers.cli.enhance_skill import enhance_skill_md
+
+                api_key = ctx.enhancement.api_key or client.api_key
+                if api_key:
+                    enhance_skill_md(skill_dir, api_key)
+                    logger.info("API enhancement complete!")
+                else:
+                    logger.warning("No API key available for enhancement")
+            else:
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                enhancer = LocalSkillEnhancer(
+                    Path(skill_dir),
+                    agent=ctx.enhancement.agent,
+                    agent_cmd=ctx.enhancement.agent_cmd,
+                )
+                success = enhancer.run(headless=True, timeout=ctx.enhancement.timeout)
+                if success:
+                    agent_name = ctx.enhancement.agent or "claude"
+                    logger.info(f"Local enhancement complete! (via {agent_name})")
+                else:
+                    logger.warning("Local enhancement did not complete")
+        except Exception as e:
+            logger.warning(f"Enhancement failed: {e}")
+
+    def _run_workflows(self) -> None:
+        """Run enhancement workflows if configured."""
+        try:
+            from skill_seekers.cli.workflow_runner import run_workflows
+
+            run_workflows(self.args)
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.warning(f"Workflow execution failed: {e}")
 
 
 def main() -> int:

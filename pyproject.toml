@@ -304,7 +304,6 @@ skill-seekers = "skill_seekers.cli.main:main"
 
 # Core commands
 skill-seekers-create = "skill_seekers.cli.create_command:main"
-skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
 skill-seekers-enhance = "skill_seekers.cli.enhance_command:main"
 skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"
 skill-seekers-package = "skill_seekers.cli.package_skill:main"

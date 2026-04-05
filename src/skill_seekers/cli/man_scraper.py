@@ -20,14 +20,14 @@ Usage:
     skill-seekers man --from-json unix-tools_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
 import subprocess
-import sys
 from pathlib import Path
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ def infer_description_from_manpages(
     )
 
 
-class ManPageToSkillConverter:
+class ManPageToSkillConverter(SkillConverter):
     """Convert Unix man pages into a skill directory structure.
 
     Supports extraction via the ``man`` command or by reading raw man-page
@@ -124,6 +124,8 @@ class ManPageToSkillConverter:
     file so that the (potentially slow) extraction step can be decoupled
     from skill generation.
     """
+
+    SOURCE_TYPE = "manpage"
 
     def __init__(self, config: dict) -> None:
         """Initialise the converter from a configuration dictionary.
@@ -137,6 +139,7 @@ class ManPageToSkillConverter:
                 - ``description``-- explicit description (optional)
                 - ``categories`` -- keyword-based categorisation map (optional)
         """
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.man_names: list[str] = config.get("man_names", [])
@@ -155,6 +158,10 @@ class ManPageToSkillConverter:
 
         # Extracted data placeholder
         self.extracted_data: dict | None = None
+
+    def extract(self):
+        """Extract content from man pages (SkillConverter interface)."""
+        self.extract_manpages()
 
     # ------------------------------------------------------------------
     # Extraction
@@ -1285,262 +1292,3 @@ class ManPageToSkillConverter:
         safe = re.sub(r"[^\w\s-]", "", name.lower())
         safe = re.sub(r"[-\s]+", "_", safe)
         return safe
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> int:
-    """CLI entry point for the man page scraper.
-
-    Supports three workflows:
-
-    1. ``--man-names git,curl`` -- extract named man pages via the ``man``
-       command.
-    2. ``--man-path /usr/share/man/man1`` -- read man page files from a
-       directory.
-    3. ``--from-json data.json`` -- reload previously extracted data and
-       rebuild the skill.
-
-    Returns:
-        Exit code (0 on success, non-zero on error).
-    """
-    from .arguments.common import add_all_standard_arguments
-    from skill_seekers.cli.execution_context import ExecutionContext
-
-    # Try to get context first (new path)
-    try:
-        ctx = ExecutionContext.get()
-        args = None  # Signal to use context
-    except RuntimeError:
-        # Fallback: parse argv (backward compatibility)
-        parser = argparse.ArgumentParser(
-            description="Convert Unix man pages to a skill",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            epilog=(
-                "Examples:\n"
-                "  %(prog)s --man-names git,curl --name unix-tools\n"
-                "  %(prog)s --man-path /usr/share/man/man1 --name coreutils\n"
-                "  %(prog)s --from-json unix-tools_extracted.json\n"
-            ),
-        )
-
-        add_all_standard_arguments(parser)
-
-        # Override enhance-level default to 0 for man pages
-        for action in parser._actions:
-            if hasattr(action, "dest") and action.dest == "enhance_level":
-                action.default = 0
-                action.help = (
-                    "AI enhancement level (auto-detects API vs LOCAL mode): "
-                    "0=disabled (default for man), 1=SKILL.md only, "
-                    "2=+architecture/config, 3=full enhancement. "
-                    "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                    "otherwise LOCAL (Claude Code, Kimi, etc.)"
-                )
-
-        # Man-specific arguments
-        parser.add_argument(
-            "--man-names",
-            type=str,
-            help="Comma-separated list of man page names (e.g. git,curl,grep)",
-            metavar="NAMES",
-        )
-        parser.add_argument(
-            "--man-path",
-            type=str,
-            help="Directory containing man page files (.1-.8, .man, .gz)",
-            metavar="DIR",
-        )
-        parser.add_argument(
-            "--sections",
-            type=str,
-            help="Comma-separated list of man section numbers to extract (e.g. 1,3,8)",
-            metavar="NUMS",
-        )
-        parser.add_argument(
-            "--from-json",
-            type=str,
-            help="Build skill from previously extracted JSON",
-            metavar="FILE",
-        )
-
-        args = parser.parse_args()
-
-        # Initialize context for downstream
-        ExecutionContext.initialize(args=args)
-        ctx = ExecutionContext.get()
-
-    # Logging level
-    if args:
-        if getattr(args, "quiet", False):
-            logging.getLogger().setLevel(logging.WARNING)
-        elif getattr(args, "verbose", False):
-            logging.getLogger().setLevel(logging.DEBUG)
-
-    # Dry run
-    if ctx.output.dry_run:
-        source = (
-            (args and (getattr(args, "man_names", None) or getattr(args, "man_path", None)
-                       or getattr(args, "from_json", None)))
-            or ctx.output.name
-            or "(none)"
-        )
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: Man Page Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
-        print(f"Sections:       {getattr(args, 'sections', None) or 'all' if args else 'all'}")
-        print(f"Enhance level:  {ctx.enhancement.level}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate: must have at least one source
-    has_source = (
-        (args and (getattr(args, "man_names", None) or getattr(args, "man_path", None)
-                   or getattr(args, "from_json", None)))
-        or ctx.output.name
-    )
-    if not has_source:
-        if args:
-            parser.error("Must specify --man-names, --man-path, or --from-json")
-        else:
-            print("Error: No input source provided", file=sys.stderr)
-            sys.exit(1)
-
-    # Parse section numbers and man names
-    section_list: list[int] = []
-    man_name_list: list[str] = []
-    if args:
-        if getattr(args, "sections", None):
-            try:
-                section_list = [int(s.strip()) for s in args.sections.split(",") if s.strip()]
-            except ValueError:
-                parser.error("--sections must be comma-separated integers (e.g. 1,3,8)")
-        if getattr(args, "man_names", None):
-            man_name_list = [n.strip() for n in args.man_names.split(",") if n.strip()]
-
-    # Build from JSON workflow
-    if args and getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
-        }
-        try:
-            converter = ManPageToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Determine name and build config
-    if args:
-        # CLI mode
-        if not getattr(args, "name", None):
-            if man_name_list:
-                args.name = man_name_list[0] if len(man_name_list) == 1 else "man-pages"
-            elif getattr(args, "man_path", None):
-                args.name = Path(args.man_path).name
-            else:
-                args.name = "man-pages"
-        config = {
-            "name": args.name,
-            "man_names": man_name_list,
-            "man_path": getattr(args, "man_path", ""),
-            "sections": section_list,
-            "description": getattr(args, "description", None),
-        }
-    else:
-        # ExecutionContext mode
-        if not ctx.output.name:
-            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
-            sys.exit(1)
-        config = {
-            "name": ctx.output.name,
-            "man_names": [],
-            "man_path": "",
-            "sections": [],
-            "description": f"Use when referencing {ctx.output.name} documentation",
-        }
-
-    try:
-        converter = ManPageToSkillConverter(config)
-
-        # Extract
-        if not converter.extract_manpages():
-            print("\n❌ Man page extraction failed -- see error above", file=sys.stderr)
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
-        if enhance_level > 0:
-            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis,"
-                    " enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = ctx.enhancement.agent
-                    agent_cmd = ctx.enhancement.agent_cmd
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = ctx.enhancement.agent
-                agent_cmd = ctx.enhancement.agent_cmd
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during man page processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -200,11 +200,22 @@ class LocalSkillEnhancer:
                 raise ValueError(f"Executable '{executable}' not found in PATH")
 
     def _resolve_agent(self, agent, agent_cmd):
+        # Priority: explicit param > ExecutionContext > env var > default
+        try:
+            from skill_seekers.cli.execution_context import ExecutionContext
+
+            ctx = ExecutionContext.get()
+            ctx_agent = ctx.enhancement.agent or ""
+            ctx_cmd = ctx.enhancement.agent_cmd or ""
+        except Exception:
+            ctx_agent = ""
+            ctx_cmd = ""
+
         env_agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip()
         env_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
 
-        agent_name = _normalize_agent_name(agent or env_agent or "claude")
-        cmd_override = agent_cmd or env_cmd or None
+        agent_name = _normalize_agent_name(agent or ctx_agent or env_agent or "claude")
+        cmd_override = agent_cmd or ctx_cmd or env_cmd or None
 
         if agent_name == "custom":
             if not cmd_override:

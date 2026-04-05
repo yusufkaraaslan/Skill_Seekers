@@ -557,7 +557,7 @@ This skill synthesizes knowledge from multiple sources:
             return content
 
         frontmatter = content[3:end]
-        body = content[end + 3:]
+        body = content[end + 3 :]
 
         canonical_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
         frontmatter = re.sub(
@@ -1449,9 +1449,7 @@ This skill combines knowledge from multiple sources:
 
             if languages:
                 f.write("**Languages Detected**:\n")
-                for lang, count in sorted(
-                    languages.items(), key=lambda x: x[1], reverse=True
-                )[:5]:
+                for lang, count in sorted(languages.items(), key=lambda x: x[1], reverse=True)[:5]:
                     if isinstance(count, int) and count > 0:
                         f.write(f"- {lang}: {count} files\n")
                     else:
@@ -1603,7 +1601,7 @@ This skill combines knowledge from multiple sources:
                 remainder = parts[1]
                 slash_idx = remainder.find("/")
                 if slash_idx != -1:
-                    return remainder[slash_idx + 1:]
+                    return remainder[slash_idx + 1 :]
         # Generic: if it looks absolute, try to make it relative
         if os.path.isabs(file_path):
             return os.path.basename(file_path)

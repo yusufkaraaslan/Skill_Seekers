@@ -12,7 +12,6 @@ Usage:
     skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
 """
 
-import argparse
 import json
 import logging
 import os
@@ -28,8 +27,8 @@ try:
     from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
     from skill_seekers.cli.merge_sources import AIEnhancedMerger, RuleBasedMerger
+    from skill_seekers.cli.skill_converter import SkillConverter
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
-    from skill_seekers.cli.utils import setup_logging
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running from the project root directory")
@@ -38,7 +37,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 
-class UnifiedScraper:
+class UnifiedScraper(SkillConverter):
     """
     Orchestrates multi-source scraping and merging.
 
@@ -50,6 +49,8 @@ class UnifiedScraper:
     5. Build unified skill
     """
 
+    SOURCE_TYPE = "config"
+
     def __init__(self, config_path: str, merge_mode: str | None = None):
         """
         Initialize unified scraper.
@@ -58,6 +59,7 @@ class UnifiedScraper:
             config_path: Path to unified config JSON
             merge_mode: Override config merge_mode ('rule-based' or 'claude-enhanced')
         """
+        super().__init__({"name": "unified", "config_path": config_path})
         self.config_path = config_path
 
         # Validate and load config
@@ -187,7 +189,9 @@ class UnifiedScraper:
 
         if enriched_pages:
             docs_json = {**docs_json, "pages": enriched_pages}
-            logger.info(f"Enriched docs data with {len(enriched_pages)} page files for API extraction")
+            logger.info(
+                f"Enriched docs data with {len(enriched_pages)} page files for API extraction"
+            )
 
         return docs_json
 
@@ -1814,6 +1818,10 @@ class UnifiedScraper:
 
         return merged_data
 
+    def extract(self):
+        """SkillConverter interface — delegates to scrape_all_sources()."""
+        self.scrape_all_sources()
+
     def build_skill(self, merged_data: dict | None = None):
         """
         Build final unified skill.
@@ -2067,196 +2075,3 @@ class UnifiedScraper:
 
             traceback.print_exc()
             sys.exit(1)
-
-
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Unified multi-source scraper",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Basic usage with unified config
-  skill-seekers unified --config configs/godot_unified.json
-
-  # Override merge mode
-  skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
-
-  # Backward compatible with legacy configs
-  skill-seekers unified --config configs/react.json
-        """,
-    )
-
-    parser.add_argument("--config", "-c", required=True, help="Path to unified config JSON file")
-    parser.add_argument(
-        "--merge-mode",
-        "-m",
-        choices=["rule-based", "ai-enhanced", "claude-enhanced"],
-        help="Override config merge mode (ai-enhanced or rule-based). 'claude-enhanced' accepted as alias.",
-    )
-    parser.add_argument(
-        "--skip-codebase-analysis",
-        action="store_true",
-        help="Skip C3.x codebase analysis for GitHub sources (default: enabled)",
-    )
-    parser.add_argument(
-        "--fresh",
-        action="store_true",
-        help="Clear any existing data and start fresh (ignore checkpoints)",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview what will be scraped without actually scraping",
-    )
-    # Enhancement Workflow arguments (mirrors scrape/github/pdf/codebase scrapers)
-    parser.add_argument(
-        "--enhance-workflow",
-        action="append",
-        dest="enhance_workflow",
-        help="Apply enhancement workflow (file path or preset). Can use multiple times to chain workflows.",
-        metavar="WORKFLOW",
-    )
-    parser.add_argument(
-        "--enhance-stage",
-        action="append",
-        dest="enhance_stage",
-        help="Add inline enhancement stage (format: 'name:prompt'). Can be used multiple times.",
-        metavar="STAGE",
-    )
-    parser.add_argument(
-        "--var",
-        action="append",
-        dest="var",
-        help="Override workflow variable (format: 'key=value'). Can be used multiple times.",
-        metavar="VAR",
-    )
-    parser.add_argument(
-        "--workflow-dry-run",
-        action="store_true",
-        dest="workflow_dry_run",
-        help="Preview workflow stages without executing (requires --enhance-workflow)",
-    )
-    parser.add_argument(
-        "--api-key",
-        type=str,
-        metavar="KEY",
-        help="Anthropic API key (or set ANTHROPIC_API_KEY env var)",
-    )
-    parser.add_argument(
-        "--enhance-level",
-        type=int,
-        choices=[0, 1, 2, 3],
-        default=None,
-        metavar="LEVEL",
-        help=(
-            "Global AI enhancement level override for all sources "
-            "(0=off, 1=SKILL.md, 2=+arch/config, 3=full). "
-            "Overrides per-source enhance_level in config."
-        ),
-    )
-    parser.add_argument(
-        "--agent",
-        type=str,
-        choices=["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-        metavar="AGENT",
-        help="Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
-    )
-    parser.add_argument(
-        "--agent-cmd",
-        type=str,
-        metavar="CMD",
-        help="Override agent command template (advanced)",
-    )
-
-    # Context-first pattern: try ExecutionContext, fallback to argv
-    from skill_seekers.cli.execution_context import ExecutionContext
-
-    try:
-        ctx = ExecutionContext.get()
-        args = None
-        # Resolve config from context or source info
-        config_path = (
-            ctx.config_path
-            or ctx.get_raw("config")
-            or (ctx.source.parsed.get("config_path") if ctx.source and ctx.source.parsed else None)
-        )
-        merge_mode = ctx.get_raw("merge_mode")
-    except RuntimeError:
-        args = parser.parse_args()
-        ExecutionContext.initialize(args=args, config_path=getattr(args, "config", None))
-        ctx = ExecutionContext.get()
-        config_path = args.config
-        merge_mode = args.merge_mode
-
-    setup_logging()
-
-    # Create scraper
-    scraper = UnifiedScraper(config_path, merge_mode)
-
-    # Disable codebase analysis if requested
-    skip_analysis = (args.skip_codebase_analysis if args else False) or ctx.get_raw("skip_codebase_analysis", False)
-    if skip_analysis:
-        for source in scraper.config.get("sources", []):
-            if source["type"] == "github":
-                source["enable_codebase_analysis"] = False
-                logger.info(
-                    f"⏭️  Skipping codebase analysis for GitHub source: {source.get('repo', 'unknown')}"
-                )
-
-    # Handle --fresh flag (clear cache)
-    is_fresh = (args.fresh if args else False) or ctx.scraping.fresh
-    if is_fresh:
-        import shutil
-
-        if os.path.exists(scraper.cache_dir):
-            logger.info(f"🧹 Clearing cache: {scraper.cache_dir}")
-            shutil.rmtree(scraper.cache_dir)
-            # Recreate directories
-            os.makedirs(scraper.sources_dir, exist_ok=True)
-            os.makedirs(scraper.data_dir, exist_ok=True)
-            os.makedirs(scraper.repos_dir, exist_ok=True)
-            os.makedirs(scraper.logs_dir, exist_ok=True)
-
-    # Handle --dry-run flag
-    is_dry_run = (args.dry_run if args else False) or ctx.output.dry_run
-    if is_dry_run:
-        logger.info("🔍 DRY RUN MODE - Preview only, no scraping will occur")
-        logger.info(f"\nWould scrape {len(scraper.config.get('sources', []))} sources:")
-        # Source type display config: type -> (label, key for detail)
-        _SOURCE_DISPLAY = {
-            "documentation": ("Documentation", "base_url"),
-            "github": ("GitHub", "repo"),
-            "pdf": ("PDF", "path"),
-            "word": ("Word", "path"),
-            "epub": ("EPUB", "path"),
-            "video": ("Video", "url"),
-            "local": ("Local Codebase", "path"),
-            "jupyter": ("Jupyter Notebook", "path"),
-            "html": ("HTML", "path"),
-            "openapi": ("OpenAPI Spec", "path"),
-            "asciidoc": ("AsciiDoc", "path"),
-            "pptx": ("PowerPoint", "path"),
-            "confluence": ("Confluence", "base_url"),
-            "notion": ("Notion", "page_id"),
-            "rss": ("RSS/Atom Feed", "url"),
-            "manpage": ("Man Page", "names"),
-            "chat": ("Chat Export", "path"),
-        }
-        for idx, source in enumerate(scraper.config.get("sources", []), 1):
-            source_type = source.get("type", "unknown")
-            label, key = _SOURCE_DISPLAY.get(source_type, (source_type.title(), "path"))
-            detail = source.get(key, "N/A")
-            if isinstance(detail, list):
-                detail = ", ".join(str(d) for d in detail)
-            logger.info(f"  {idx}. {label}: {detail}")
-        logger.info(f"\nOutput directory: {scraper.output_dir}")
-        logger.info(f"Merge mode: {scraper.merge_mode}")
-        return
-
-    # Run scraper (pass args for workflow integration)
-    scraper.run(args=args)
-
-
-if __name__ == "__main__":
-    main()

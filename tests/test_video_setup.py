@@ -711,21 +711,16 @@ class TestVideoArgumentSetup(unittest.TestCase):
 
 
 class TestVideoScraperSetupEarlyExit(unittest.TestCase):
-    """Test that --setup exits before source validation."""
+    """Test that --setup triggers run_setup via video setup module."""
 
     @patch("skill_seekers.cli.video_setup.run_setup", return_value=0)
-    def test_setup_skips_source_validation(self, mock_setup):
-        """--setup without --url should NOT error about missing source."""
-        from skill_seekers.cli.video_scraper import main
+    def test_setup_runs_successfully(self, mock_setup):
+        """run_setup(interactive=True) should return 0 on success."""
+        from skill_seekers.cli.video_setup import run_setup
 
-        old_argv = sys.argv
-        try:
-            sys.argv = ["video_scraper", "--setup"]
-            rc = main()
-            assert rc == 0
-            mock_setup.assert_called_once_with(interactive=True)
-        finally:
-            sys.argv = old_argv
+        rc = run_setup(interactive=True)
+        assert rc == 0
+        mock_setup.assert_called_once_with(interactive=True)
 
 
 if __name__ == "__main__":

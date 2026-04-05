@@ -13,8 +13,6 @@ import textwrap
 import pytest
 
 from skill_seekers.cli.config_validator import ConfigValidator
-from skill_seekers.cli.main import COMMAND_MODULES
-from skill_seekers.cli.parsers import PARSERS, get_parser_names
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
 
@@ -554,58 +552,11 @@ class TestUnifiedSkillBuilderGenericMerge:
 
 
 # ---------------------------------------------------------------------------
-# 4. COMMAND_MODULES and parser wiring
+# 4. New source types accessible via 'create' command
 # ---------------------------------------------------------------------------
-
-
-class TestCommandModules:
-    """Test that all 10 new source types are wired into CLI."""
-
-    NEW_COMMAND_NAMES = [
-        "jupyter",
-        "html",
-        "openapi",
-        "asciidoc",
-        "pptx",
-        "rss",
-        "manpage",
-        "confluence",
-        "notion",
-        "chat",
-    ]
-
-    def test_new_types_in_command_modules(self):
-        """Test all 10 new source types are in COMMAND_MODULES."""
-        for cmd in self.NEW_COMMAND_NAMES:
-            assert cmd in COMMAND_MODULES, f"'{cmd}' not in COMMAND_MODULES"
-
-    def test_command_modules_values_are_module_paths(self):
-        """Test COMMAND_MODULES values look like importable module paths."""
-        for cmd in self.NEW_COMMAND_NAMES:
-            module_path = COMMAND_MODULES[cmd]
-            assert module_path.startswith("skill_seekers.cli."), (
-                f"Module path for '{cmd}' doesn't start with 'skill_seekers.cli.'"
-            )
-
-    def test_new_parser_names_include_all_10(self):
-        """Test that get_parser_names() includes all 10 new source types."""
-        names = get_parser_names()
-        for cmd in self.NEW_COMMAND_NAMES:
-            assert cmd in names, f"Parser '{cmd}' not registered"
-
-    def test_total_parser_count(self):
-        """Test total PARSERS count is 36 (25 original + 10 new + 1 doctor)."""
-        assert len(PARSERS) == 36
-
-    def test_no_duplicate_parser_names(self):
-        """Test no duplicate parser names exist."""
-        names = get_parser_names()
-        assert len(names) == len(set(names)), "Duplicate parser names found!"
-
-    def test_command_module_count(self):
-        """Test COMMAND_MODULES has expected number of entries."""
-        # 25 original + 10 new + 1 doctor = 36
-        assert len(COMMAND_MODULES) == 36
+# Individual scraper CLI commands (jupyter, html, etc.) were removed in the
+# Grand Unification refactor.  All 17 source types are now accessed via
+# `skill-seekers create`.  The routing is tested in TestCreateCommandRouting.
 
 
 # ---------------------------------------------------------------------------
@@ -769,29 +720,37 @@ class TestSourceDetectorValidation:
 
 
 class TestCreateCommandRouting:
-    """Test that CreateCommand._route_to_scraper maps new types to _route_generic."""
+    """Test that CreateCommand uses get_converter for all source types."""
 
-    # We can't easily call _route_to_scraper (it imports real scrapers),
-    # but we verify the routing table is correct by checking the method source.
+    NEW_SOURCE_TYPES = [
+        "jupyter",
+        "html",
+        "openapi",
+        "asciidoc",
+        "pptx",
+        "rss",
+        "manpage",
+        "confluence",
+        "notion",
+        "chat",
+    ]
 
-    GENERIC_ROUTES = {
-        "jupyter": ("jupyter_scraper", "--notebook"),
-        "html": ("html_scraper", "--html-path"),
-        "openapi": ("openapi_scraper", "--spec"),
-        "asciidoc": ("asciidoc_scraper", "--asciidoc-path"),
-        "pptx": ("pptx_scraper", "--pptx"),
-        "rss": ("rss_scraper", "--feed-path"),
-        "manpage": ("man_scraper", "--man-path"),
-        "confluence": ("confluence_scraper", "--export-path"),
-        "notion": ("notion_scraper", "--export-path"),
-        "chat": ("chat_scraper", "--export-path"),
-    }
+    def test_get_converter_handles_all_new_types(self):
+        """Test get_converter returns a converter for each new source type."""
+        from skill_seekers.cli.skill_converter import get_converter
 
-    def test_route_to_scraper_source_coverage(self):
-        """Test _route_to_scraper method handles all 10 new types.
+        for source_type in self.NEW_SOURCE_TYPES:
+            # get_converter should not raise for known types
+            # (it may raise ImportError for missing optional deps, which is OK)
+            try:
+                converter_cls = get_converter(source_type, {"name": "test"})
+                assert converter_cls is not None, f"get_converter returned None for '{source_type}'"
+            except ImportError:
+                # Optional dependency not installed - that's fine
+                pass
 
-        We inspect the method source to verify each type has a branch.
-        """
+    def test_route_to_scraper_uses_get_converter(self):
+        """Test _route_to_scraper delegates to get_converter (not per-type branches)."""
         import inspect
 
         source = inspect.getsource(
@@ -800,24 +759,9 @@ class TestCreateCommandRouting:
                 fromlist=["CreateCommand"],
             ).CreateCommand._route_to_scraper
         )
-        for source_type in self.GENERIC_ROUTES:
-            assert f'"{source_type}"' in source, (
-                f"_route_to_scraper missing branch for '{source_type}'"
-            )
-
-    def test_generic_route_module_names(self):
-        """Test _route_generic is called with correct module names."""
-        import inspect
-
-        source = inspect.getsource(
-            __import__(
-                "skill_seekers.cli.create_command",
-                fromlist=["CreateCommand"],
-            ).CreateCommand._route_to_scraper
+        assert "get_converter" in source, (
+            "_route_to_scraper should use get_converter for unified routing"
         )
-        for source_type, (module, flag) in self.GENERIC_ROUTES.items():
-            assert f'"{module}"' in source, f"Module name '{module}' not found for '{source_type}'"
-            assert f'"{flag}"' in source, f"Flag '{flag}' not found for '{source_type}'"
 
 
 if __name__ == "__main__":

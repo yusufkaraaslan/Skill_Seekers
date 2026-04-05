@@ -70,10 +70,12 @@ CONVERTER_REGISTRY: dict[str, tuple[str, str]] = {
     "asciidoc": ("skill_seekers.cli.asciidoc_scraper", "AsciiDocToSkillConverter"),
     "pptx": ("skill_seekers.cli.pptx_scraper", "PptxToSkillConverter"),
     "rss": ("skill_seekers.cli.rss_scraper", "RssToSkillConverter"),
-    "manpage": ("skill_seekers.cli.man_scraper", "ManToSkillConverter"),
+    "manpage": ("skill_seekers.cli.man_scraper", "ManPageToSkillConverter"),
     "confluence": ("skill_seekers.cli.confluence_scraper", "ConfluenceToSkillConverter"),
     "notion": ("skill_seekers.cli.notion_scraper", "NotionToSkillConverter"),
     "chat": ("skill_seekers.cli.chat_scraper", "ChatToSkillConverter"),
+    # NOTE: UnifiedScraper takes (config_path: str), not (config: dict).
+    # Callers must construct it directly, not via get_converter().
     "config": ("skill_seekers.cli.unified_scraper", "UnifiedScraper"),
 }
 

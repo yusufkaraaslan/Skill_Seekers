@@ -168,35 +168,32 @@ class TestScrapeAllSourcesRouting:
 
 
 class TestScrapeDocumentation:
-    """_scrape_documentation() writes a temp config and runs doc_scraper as subprocess."""
+    """_scrape_documentation() calls scrape_documentation() directly."""
 
-    def test_subprocess_called_with_config_and_fresh_flag(self, tmp_path):
-        """subprocess.run is called with --config and --fresh for the doc scraper."""
+    def test_scrape_documentation_called_directly(self, tmp_path):
+        """scrape_documentation is called directly (not via subprocess)."""
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {"base_url": "https://docs.example.com/", "type": "documentation"}
 
-        with patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="error")
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation") as mock_scrape:
+            mock_scrape.return_value = 1  # simulate failure
             scraper._scrape_documentation(source)
 
-        assert mock_run.called
-        cmd_args = mock_run.call_args[0][0]
-        assert "--fresh" in cmd_args
-        assert "--config" in cmd_args
+        assert mock_scrape.called
 
-    def test_nothing_appended_on_subprocess_failure(self, tmp_path):
-        """If subprocess returns non-zero, scraped_data["documentation"] stays empty."""
+    def test_nothing_appended_on_scrape_failure(self, tmp_path):
+        """If scrape_documentation returns non-zero, scraped_data["documentation"] stays empty."""
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {"base_url": "https://docs.example.com/", "type": "documentation"}
 
-        with patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="err")
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation") as mock_scrape:
+            mock_scrape.return_value = 1
             scraper._scrape_documentation(source)
 
         assert scraper.scraped_data["documentation"] == []
 
     def test_llms_txt_url_forwarded_to_doc_config(self, tmp_path):
-        """llms_txt_url from source is forwarded to the temporary doc config."""
+        """llms_txt_url from source is forwarded to the doc config."""
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {
             "base_url": "https://docs.example.com/",
@@ -204,30 +201,21 @@ class TestScrapeDocumentation:
             "llms_txt_url": "https://docs.example.com/llms.txt",
         }
 
-        written_configs = []
+        captured_config = {}
 
-        original_json_dump = json.dumps
+        def fake_scrape(config, ctx=None):  # noqa: ARG001
+            captured_config.update(config)
+            return 1  # fail so we don't need to set up output files
 
-        def capture_dump(obj, f, **kwargs):
-            if isinstance(f, str):
-                return original_json_dump(obj, f, **kwargs)
-            written_configs.append(obj)
-            return original_json_dump(obj)
-
-        with (
-            patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch(
-                "skill_seekers.cli.unified_scraper.json.dump",
-                side_effect=lambda obj, _f, **_kw: written_configs.append(obj),
-            ),
-        ):
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation", side_effect=fake_scrape):
             scraper._scrape_documentation(source)
 
-        assert any("llms_txt_url" in s for c in written_configs for s in c.get("sources", [c]))
+        # The llms_txt_url should be in the sources list of the doc config
+        sources = captured_config.get("sources", [])
+        assert any("llms_txt_url" in s for s in sources)
 
     def test_start_urls_forwarded_to_doc_config(self, tmp_path):
-        """start_urls from source is forwarded to the temporary doc config."""
+        """start_urls from source is forwarded to the doc config."""
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {
             "base_url": "https://docs.example.com/",
@@ -235,19 +223,17 @@ class TestScrapeDocumentation:
             "start_urls": ["https://docs.example.com/intro"],
         }
 
-        written_configs = []
+        captured_config = {}
 
-        with (
-            patch("skill_seekers.cli.unified_scraper.subprocess.run") as mock_run,
-            patch(
-                "skill_seekers.cli.unified_scraper.json.dump",
-                side_effect=lambda obj, _f, **_kw: written_configs.append(obj),
-            ),
-        ):
-            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="")
+        def fake_scrape(config, ctx=None):  # noqa: ARG001
+            captured_config.update(config)
+            return 1
+
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation", side_effect=fake_scrape):
             scraper._scrape_documentation(source)
 
-        assert any("start_urls" in s for c in written_configs for s in c.get("sources", [c]))
+        sources = captured_config.get("sources", [])
+        assert any("start_urls" in s for s in sources)
 
 
 # ===========================================================================

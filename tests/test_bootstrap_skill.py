@@ -37,9 +37,7 @@ class TestBootstrapSkillScript:
 
         # Must have commands table
         assert "## Commands" in content, "Header must have Commands section"
-        assert "skill-seekers analyze" in content, "Header must mention analyze command"
-        assert "skill-seekers scrape" in content, "Header must mention scrape command"
-        assert "skill-seekers github" in content, "Header must mention github command"
+        assert "skill-seekers create" in content, "Header must mention create command"
 
     def test_header_has_yaml_frontmatter(self, project_root):
         """Test that header has valid YAML frontmatter."""

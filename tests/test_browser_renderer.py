@@ -147,18 +147,31 @@ class TestDocScraperBrowserIntegration:
 
 
 class TestBrowserArgument:
-    """Test --browser argument is registered in CLI."""
+    """Test --browser argument is accepted by DocToSkillConverter config."""
 
-    def test_scrape_parser_accepts_browser_flag(self):
-        from skill_seekers.cli.doc_scraper import setup_argument_parser
+    def test_browser_config_true(self):
+        """Test that DocToSkillConverter accepts browser=True in config."""
+        from skill_seekers.cli.doc_scraper import DocToSkillConverter
 
-        parser = setup_argument_parser()
-        args = parser.parse_args(["--name", "test", "--url", "https://example.com", "--browser"])
-        assert args.browser is True
+        config = {
+            "name": "test",
+            "base_url": "https://example.com",
+            "browser": True,
+            "selectors": {},
+            "url_patterns": {"include": [], "exclude": []},
+        }
+        scraper = DocToSkillConverter(config)
+        assert scraper.browser_mode is True
 
-    def test_scrape_parser_browser_default_false(self):
-        from skill_seekers.cli.doc_scraper import setup_argument_parser
+    def test_browser_config_default_false(self):
+        """Test that DocToSkillConverter defaults browser to False."""
+        from skill_seekers.cli.doc_scraper import DocToSkillConverter
 
-        parser = setup_argument_parser()
-        args = parser.parse_args(["--name", "test", "--url", "https://example.com"])
-        assert args.browser is False
+        config = {
+            "name": "test",
+            "base_url": "https://example.com",
+            "selectors": {},
+            "url_patterns": {"include": [], "exclude": []},
+        }
+        scraper = DocToSkillConverter(config)
+        assert scraper.browser_mode is False

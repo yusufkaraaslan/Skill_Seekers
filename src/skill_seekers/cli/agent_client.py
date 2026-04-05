@@ -164,9 +164,16 @@ class AgentClient:
                    Resolved from: arg → env SKILL_SEEKER_AGENT → "claude"
             api_key: API key override. If None, auto-detected from env vars.
         """
-        # Resolve agent name
+        # Resolve agent name: param > ExecutionContext > env var > default
+        try:
+            from skill_seekers.cli.execution_context import ExecutionContext
+
+            ctx = ExecutionContext.get()
+            ctx_agent = ctx.enhancement.agent or ""
+        except Exception:
+            ctx_agent = ""
         env_agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip()
-        self.agent = normalize_agent_name(agent or env_agent or "claude")
+        self.agent = normalize_agent_name(agent or ctx_agent or env_agent or "claude")
         self.agent_display = AGENT_PRESETS.get(self.agent, {}).get("display_name", self.agent)
 
         # Detect API key and provider

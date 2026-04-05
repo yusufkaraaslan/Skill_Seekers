@@ -10,12 +10,10 @@ Usage:
     python3 word_scraper.py --from-json document_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 
 # Optional dependency guard
@@ -26,6 +24,8 @@ try:
     WORD_AVAILABLE = True
 except ImportError:
     WORD_AVAILABLE = False
+
+from .skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +72,13 @@ def infer_description_from_word(metadata: dict = None, name: str = "") -> str:
     )
 
 
-class WordToSkillConverter:
+class WordToSkillConverter(SkillConverter):
     """Convert Word document (.docx) to AI skill."""
 
+    SOURCE_TYPE = "word"
+
     def __init__(self, config):
+        super().__init__(config)
         self.config = config
         self.name = config["name"]
         self.docx_path = config.get("docx_path", "")
@@ -92,6 +95,10 @@ class WordToSkillConverter:
 
         # Extracted data
         self.extracted_data = None
+
+    def extract(self):
+        """SkillConverter interface — delegates to extract_docx()."""
+        return self.extract_docx()
 
     def extract_docx(self):
         """Extract content from Word document using mammoth + python-docx.
@@ -918,174 +925,3 @@ def _score_code_quality(code: str) -> float:
         score -= 2.0
 
     return min(10.0, max(0.0, score))
-
-
-def main():
-    from .arguments.word import add_word_arguments
-    from skill_seekers.cli.execution_context import ExecutionContext
-
-    # Try to get context first (new path)
-    try:
-        ctx = ExecutionContext.get()
-        args = None  # Signal to use context
-    except RuntimeError:
-        # Fallback: parse argv (backward compatibility)
-        parser = argparse.ArgumentParser(
-            description="Convert Word document (.docx) to AI skill",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-
-        add_word_arguments(parser)
-        args = parser.parse_args()
-
-        # Initialize context for downstream
-        ExecutionContext.initialize(args=args)
-        ctx = ExecutionContext.get()
-
-    # Set logging level from behavior args
-    if ctx.output.dry_run or (args and getattr(args, "dry_run", False)):
-        source = (
-            (args and (getattr(args, "docx", None) or getattr(args, "from_json", None)))
-            or ctx.output.name
-            or "(none)"
-        )
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: Word Document Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {ctx.output.name or '(auto-detect)'}")
-        print(f"Enhance level:  {ctx.enhancement.level}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate inputs
-    has_input = (
-        (args and (getattr(args, "docx", None) or getattr(args, "from_json", None)))
-        or (ctx.output.name)  # Context provides name for output
-    )
-    if not has_input:
-        if args:
-            parser.error("Must specify --docx or --from-json")
-        else:
-            print("Error: No input source provided", file=sys.stderr)
-            sys.exit(1)
-
-    # Build from JSON workflow
-    if args and getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
-        }
-        try:
-            converter = WordToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Direct DOCX mode
-    if args:
-        if not getattr(args, "name", None):
-            # Auto-detect name from filename
-            args.name = Path(args.docx).stem
-        config = {
-            "name": args.name,
-            "docx_path": args.docx,
-            # Pass None so extract_docx() can infer from document metadata (subject/title)
-            "description": getattr(args, "description", None),
-        }
-        if getattr(args, "categories", None):
-            config["categories"] = args.categories
-    else:
-        # Using ExecutionContext - build config from context
-        if not ctx.output.name:
-            print("Error: Must specify --name when using ExecutionContext", file=sys.stderr)
-            sys.exit(1)
-        config = {
-            "name": ctx.output.name,
-            "description": f"Use when referencing {ctx.output.name} documentation",
-        }
-
-    try:
-        converter = WordToSkillConverter(config)
-
-        # Extract
-        if config.get("docx_path") and not converter.extract_docx():
-            print("\n❌ Word extraction failed - see error above", file=sys.stderr)
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args if args else argparse.Namespace())
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        enhance_level = ctx.enhancement.level if ctx.enhancement.enabled else 0
-        if enhance_level > 0:
-            import os
-
-            api_key = ctx.enhancement.api_key or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis, enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from pathlib import Path
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = ctx.enhancement.agent
-                    agent_cmd = ctx.enhancement.agent_cmd
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    agent_name = agent or "claude"
-                    print(f"✅ Local enhancement complete! (via {agent_name})")
-            else:
-                from pathlib import Path
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = ctx.enhancement.agent
-                agent_cmd = ctx.enhancement.agent_cmd
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                agent_name = agent or "claude"
-                print(f"✅ Local enhancement complete! (via {agent_name})")
-
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during Word processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
