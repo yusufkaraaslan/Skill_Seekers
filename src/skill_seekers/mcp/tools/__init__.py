@@ -9,7 +9,6 @@ Tools are organized by functionality:
 - packaging_tools: Skill packaging and upload
 - splitting_tools: Config splitting and router generation
 - source_tools: Config source management (fetch, submit, add/remove sources)
-- marketplace_tools: Marketplace management (add, list, remove, publish)
 - vector_db_tools: Vector database export (Weaviate, Chroma, FAISS, Qdrant)
 """
 
@@ -85,18 +84,6 @@ from .source_tools import (
 from .source_tools import (
     submit_config_tool as submit_config_impl,
 )
-from .marketplace_tools import (
-    add_marketplace_tool as add_marketplace_impl,
-)
-from .marketplace_tools import (
-    list_marketplaces_tool as list_marketplaces_impl,
-)
-from .marketplace_tools import (
-    publish_to_marketplace_tool as publish_to_marketplace_impl,
-)
-from .marketplace_tools import (
-    remove_marketplace_tool as remove_marketplace_impl,
-)
 from .splitting_tools import (
     generate_router as generate_router_impl,
 )
@@ -160,11 +147,6 @@ __all__ = [
     # Splitting tools
     "split_config_impl",
     "generate_router_impl",
-    # Marketplace tools
-    "add_marketplace_impl",
-    "list_marketplaces_impl",
-    "remove_marketplace_impl",
-    "publish_to_marketplace_impl",
     # Source tools
     "fetch_config_impl",
     "submit_config_impl",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Documentation to AI Skill Converter
-Single tool to scrape any documentation and create high-quality AI skills.
+Documentation to Claude Skill Converter
+Single tool to scrape any documentation and create high-quality Claude skills.
 
 Usage:
     skill-seekers scrape --interactive
@@ -184,12 +184,6 @@ class DocToSkillConverter:
         self.llms_txt_variant = None
         self.llms_txt_variants: list[str] = []  # Track all downloaded variants
 
-        # Browser rendering mode (for JavaScript SPA sites)
-        self.browser_mode = config.get("browser", False)
-        self._browser_renderer = None
-        self._browser_wait_until = config.get("browser_wait_until", "domcontentloaded")
-        self._browser_extra_wait = config.get("browser_extra_wait", 0)  # ms
-
         # Parallel scraping config
         self.workers = config.get("workers", 1)
         self.async_mode = config.get("async_mode", DEFAULT_ASYNC_MODE)
@@ -252,10 +246,7 @@ class DocToSkillConverter:
         Returns:
             bool: True if URL matches include patterns and doesn't match exclude patterns
         """
-        # Use directory part of base_url for prefix check so sibling pages match.
-        # e.g., base_url "https://example.com/docs/index.html" → prefix "https://example.com/docs/"
-        base_dir = self.base_url if self.base_url.endswith("/") else self.base_url + "/"
-        if not url.startswith(base_dir):
+        if not url.startswith(self.base_url):
             return False
 
         if self._include_patterns and not any(pattern in url for pattern in self._include_patterns):
@@ -721,30 +712,6 @@ class DocToSkillConverter:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(page, f, indent=2, ensure_ascii=False)
 
-    def _render_with_browser(self, url: str) -> str:
-        """Render a page using headless browser (Playwright).
-
-        Lazily initializes the BrowserRenderer on first call.
-
-        Args:
-            url: URL to render
-
-        Returns:
-            Fully-rendered HTML string
-        """
-        if self._browser_renderer is None:
-            from skill_seekers.cli.browser_renderer import BrowserRenderer
-
-            self._browser_renderer = BrowserRenderer(
-                wait_until=self._browser_wait_until,
-                extra_wait=self._browser_extra_wait,
-            )
-            logger.info(
-                f"Launched headless browser for JavaScript rendering "
-                f"(wait_until={self._browser_wait_until})"
-            )
-        return self._browser_renderer.render_page(url)
-
     def scrape_page(self, url: str) -> None:
         """Scrape a single page with thread-safe operations.
 
@@ -763,22 +730,16 @@ class DocToSkillConverter:
             url = sanitize_url(url)
 
             # Scraping part (no lock needed - independent)
-            if self.browser_mode and not self._has_md_extension(url):
-                # Use Playwright headless browser for JavaScript rendering
-                html = self._render_with_browser(url)
-                soup = BeautifulSoup(html, "html.parser")
-                page = self.extract_content(soup, url)
-            else:
-                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                response = requests.get(url, headers=headers, timeout=30)
-                response.raise_for_status()
+            headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
 
-                # Check if this is a Markdown file
-                if self._has_md_extension(url):
-                    page = self._extract_markdown_content(response.text, url)
-                else:
-                    soup = BeautifulSoup(response.content, "html.parser")
-                    page = self.extract_content(soup, url)
+            # Check if this is a Markdown file
+            if self._has_md_extension(url):
+                page = self._extract_markdown_content(response.text, url)
+            else:
+                soup = BeautifulSoup(response.content, "html.parser")
+                page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required for workers > 1)
             if self.workers > 1:
@@ -827,25 +788,18 @@ class DocToSkillConverter:
                 # Sanitise brackets before fetching (safety net; see #284)
                 url = sanitize_url(url)
 
-                if self.browser_mode and not self._has_md_extension(url):
-                    # Use Playwright in executor (sync API in async context)
-                    loop = asyncio.get_event_loop()
-                    html = await loop.run_in_executor(None, self._render_with_browser, url)
-                    soup = BeautifulSoup(html, "html.parser")
-                    page = self.extract_content(soup, url)
-                else:
-                    # Async HTTP request
-                    headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                    response = await client.get(url, headers=headers, timeout=30.0)
-                    response.raise_for_status()
+                # Async HTTP request
+                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+                response = await client.get(url, headers=headers, timeout=30.0)
+                response.raise_for_status()
 
-                    # Check if this is a Markdown file
-                    if self._has_md_extension(url):
-                        page = self._extract_markdown_content(response.text, url)
-                    else:
-                        # BeautifulSoup parsing (still synchronous, but fast)
-                        soup = BeautifulSoup(response.content, "html.parser")
-                        page = self.extract_content(soup, url)
+                # Check if this is a Markdown file
+                if self._has_md_extension(url):
+                    page = self._extract_markdown_content(response.text, url)
+                else:
+                    # BeautifulSoup parsing (still synchronous, but fast)
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
                 logger.info("  %s", url)
@@ -1103,126 +1057,6 @@ class DocToSkillConverter:
 
         return True
 
-    def _try_sitemap(self) -> list[str]:
-        """Layer 1: Try to discover pages via sitemap.xml.
-
-        Checks common sitemap locations at the domain root.
-        Parses XML for <loc> tags, filters by is_valid_url().
-
-        Returns:
-            List of discovered valid URLs (empty if no sitemap found).
-        """
-        try:
-            import defusedxml.ElementTree as ET
-        except ImportError:
-            import xml.etree.ElementTree as ET
-
-        from urllib.parse import urlparse
-
-        parsed = urlparse(self.base_url)
-        domain = f"{parsed.scheme}://{parsed.netloc}"
-
-        sitemap_urls_to_try = [
-            f"{domain}/sitemap.xml",
-            f"{domain}/sitemap_index.xml",
-        ]
-
-        discovered = []
-
-        for sitemap_url in sitemap_urls_to_try:
-            try:
-                response = requests.get(
-                    sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"}
-                )
-                if response.status_code != 200:
-                    continue
-
-                if "xml" not in response.headers.get("content-type", ""):
-                    continue
-
-                root = ET.fromstring(response.text)
-                ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-
-                # Handle sitemap index (nested sitemaps)
-                for sitemap in root.findall(".//sm:sitemap/sm:loc", ns):
-                    try:
-                        sub_resp = requests.get(
-                            sitemap.text.strip(),
-                            timeout=10,
-                            headers={"User-Agent": "SkillSeekers/3.4"},
-                        )
-                        if sub_resp.status_code == 200:
-                            sub_root = ET.fromstring(sub_resp.text)
-                            for loc in sub_root.findall(".//sm:url/sm:loc", ns):
-                                url = loc.text.strip().split("#")[0]
-                                if self.is_valid_url(url):
-                                    discovered.append(url)
-                    except Exception:
-                        continue
-
-                # Handle direct sitemap
-                for loc in root.findall(".//sm:url/sm:loc", ns):
-                    url = loc.text.strip().split("#")[0]
-                    if self.is_valid_url(url):
-                        discovered.append(url)
-
-                if discovered:
-                    logger.info(f"📋 Found sitemap at {sitemap_url} ({len(discovered)} valid URLs)")
-                    return list(set(discovered))
-
-            except Exception as e:
-                logger.debug(f"Sitemap check failed for {sitemap_url}: {e}")
-                continue
-
-        return []
-
-    def _discover_spa_nav(self) -> list[str]:
-        """Layer 3: Render index page with networkidle to discover SPA navigation.
-
-        Used when browser mode is on and sitemap/llms.txt didn't find pages.
-        Renders the first page with networkidle (slower but discovers full nav),
-        then normal crawl uses domcontentloaded (fast).
-
-        Returns:
-            List of discovered valid URLs from the rendered navigation.
-        """
-        if not self.browser_mode:
-            return []
-
-        logger.info("🌐 Rendering index page with networkidle to discover SPA navigation...")
-
-        try:
-            from skill_seekers.cli.browser_renderer import BrowserRenderer
-
-            # Use a separate renderer with networkidle for discovery only
-            discovery_renderer = BrowserRenderer(
-                timeout=60000,
-                wait_until="networkidle",
-                extra_wait=3000,  # 3s extra for lazy-loaded nav
-            )
-            html = discovery_renderer.render_page(self.base_url)
-            discovery_renderer.close()
-
-            # Parse rendered DOM for all links
-            soup = BeautifulSoup(html, "html.parser")
-            discovered = []
-            seen = set()
-
-            for link in soup.find_all("a", href=True):
-                href = urljoin(self.base_url, link["href"]).split("#")[0]
-                if href not in seen and self.is_valid_url(href):
-                    seen.add(href)
-                    discovered.append(href)
-
-            if discovered:
-                logger.info(f"🌐 Discovered {len(discovered)} pages from rendered SPA navigation")
-
-            return discovered
-
-        except Exception as e:
-            logger.warning(f"⚠️  SPA navigation discovery failed: {e}")
-            return []
-
     def scrape_all(self) -> None:
         """Scrape all pages (supports llms.txt and HTML scraping)
 
@@ -1233,35 +1067,16 @@ class DocToSkillConverter:
             asyncio.run(self.scrape_all_async())
             return
 
-        # === Three-Layer Discovery Engine ===
-        # Discovers pages before the BFS crawl loop starts.
-        # Layer 1: sitemap.xml — instant, no rendering needed
-        # Layer 2: llms.txt — existing mechanism
-        # Layer 3: SPA nav — renders index with networkidle to find JS-rendered links
-
-        if not self.dry_run:
-            # Layer 1: Try sitemap.xml
-            sitemap_urls = self._try_sitemap()
-            if sitemap_urls:
-                for url in sitemap_urls:
-                    self._enqueue_url(url)
-
-            # Layer 2: Try llms.txt (unless explicitly disabled)
-            if not sitemap_urls and not self.skip_llms_txt:
-                llms_result = self._try_llms_txt()
-                if llms_result:
-                    logger.info(
-                        "\n✅ Used llms.txt (%s) - skipping HTML scraping",
-                        self.llms_txt_variant,
-                    )
-                    self.save_summary()
-                    return
-
-            # Layer 3: SPA nav discovery (browser mode only, when other layers found few pages)
-            if self.browser_mode and len(self.pending_urls) <= 1:
-                spa_urls = self._discover_spa_nav()
-                for url in spa_urls:
-                    self._enqueue_url(url)
+        # Try llms.txt first (unless dry-run or explicitly disabled)
+        if not self.dry_run and not self.skip_llms_txt:
+            llms_result = self._try_llms_txt()
+            if llms_result:
+                logger.info(
+                    "\n✅ Used llms.txt (%s) - skipping HTML scraping",
+                    self.llms_txt_variant,
+                )
+                self.save_summary()
+                return
 
         # HTML scraping (sync/thread-based logic)
         logger.info("\n" + "=" * 60)
@@ -1555,11 +1370,6 @@ class DocToSkillConverter:
             self._log_scrape_completion()
             self.save_summary()
 
-        # Clean up browser renderer if used
-        if self._browser_renderer is not None:
-            self._browser_renderer.close()
-            self._browser_renderer = None
-
     def _log_scrape_completion(self) -> None:
         """Log scrape completion with accurate saved/skipped counts."""
         visited = len(self.visited_urls)
@@ -1581,9 +1391,8 @@ class DocToSkillConverter:
         if visited >= 5 and self.pages_saved == 0:
             logger.warning(
                 "⚠️  All %d pages had empty content. This site likely requires "
-                "JavaScript rendering (SPA/React/Vue).\n"
-                "   Try: skill-seekers create <url> --browser\n"
-                "   Install: pip install 'skill-seekers[browser]'",
+                "JavaScript rendering (SPA/React/Vue). Scraping cannot extract "
+                "content from JavaScript-rendered pages.",
                 visited,
             )
         elif visited >= 10 and self.pages_skipped > 0:
@@ -1591,8 +1400,7 @@ class DocToSkillConverter:
             if skip_ratio > 0.8:
                 logger.warning(
                     "⚠️  %d%% of pages had empty content. This site may use "
-                    "JavaScript rendering for some pages.\n"
-                    "   Try: skill-seekers create <url> --browser",
+                    "JavaScript rendering for some pages.",
                     int(skip_ratio * 100),
                 )
 
@@ -2308,7 +2116,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         configs/react.json
     """
     parser = argparse.ArgumentParser(
-        description="Convert documentation websites to AI skills",
+        description="Convert documentation websites to Claude skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -2403,11 +2211,6 @@ def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
             logger.warning(
                 "⚠️  Async mode enabled but workers=1. Consider using --workers 4 for better performance"
             )
-
-    # Apply CLI override for browser mode
-    if getattr(args, "browser", False):
-        config["browser"] = True
-        logger.info("🌐 Browser mode enabled (Playwright headless Chromium)")
 
     # Apply CLI override for max_pages
     if args.max_pages is not None:
@@ -2594,11 +2397,11 @@ def execute_scraping_and_building(
 
 
 def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, converter=None) -> None:
-    """Execute optional SKILL.md enhancement with AI.
+    """Execute optional SKILL.md enhancement with Claude.
 
     Supports two enhancement modes:
     1. API-based enhancement (requires ANTHROPIC_API_KEY)
-    2. Local enhancement using a coding agent CLI (no API key needed)
+    2. Local enhancement using Claude Code (no API key needed)
 
     Prints appropriate messages and suggestions based on whether
     enhancement was requested and whether it succeeded.
@@ -2640,11 +2443,10 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
 
         try:
             enhance_cmd = ["skill-seekers-enhance", f"output/{config['name']}/"]
+            enhance_cmd.extend(["--enhance-level", str(args.enhance_level)])
 
             if args.api_key:
                 enhance_cmd.extend(["--api-key", args.api_key])
-            if getattr(args, "agent", None):
-                enhance_cmd.extend(["--agent", args.agent])
             if getattr(args, "interactive_enhancement", False):
                 enhance_cmd.append("--interactive-enhancement")
 
@@ -2656,8 +2458,9 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
         except FileNotFoundError:
             logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
             logger.info(
-                "  skill-seekers enhance output/%s/",
+                "  skill-seekers-enhance output/%s/ --enhance-level %d",
                 config["name"],
+                args.enhance_level,
             )
 
     # Print packaging instructions
@@ -2666,8 +2469,8 @@ def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, conver
 
     # Suggest enhancement if not done
     if getattr(args, "enhance_level", 0) == 0:
-        logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
-        logger.info("  skill-seekers enhance output/%s/", config["name"])
+        logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+        logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
         logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")
         logger.info(
             "  API-based:            skill-seekers-enhance-api output/%s/",

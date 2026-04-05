@@ -13,17 +13,23 @@ Features:
 - Identifies best practices
 
 Modes:
-- API mode: Uses AI API (Anthropic, Moonshot/Kimi, Google, OpenAI)
-- LOCAL mode: Uses AI coding agent CLI (Claude Code, Kimi, Codex, Copilot, OpenCode)
+- API mode: Uses Claude API (requires ANTHROPIC_API_KEY)
+- LOCAL mode: Uses Claude Code CLI (no API key needed, uses your Claude Max plan)
 - AUTO mode: Tries API first, falls back to LOCAL
 
-Uses AgentClient for all AI invocations — fully agent-agnostic.
+Credits:
+- Uses Claude AI (Anthropic) for analysis
+- Graceful degradation if API unavailable
 """
 
 import json
 import logging
+import os
+import subprocess
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -49,25 +55,24 @@ class AIAnalysis:
 
 
 class AIEnhancer:
-    """Base class for AI enhancement — delegates to AgentClient for all AI calls."""
+    """Base class for AI enhancement"""
 
-    def __init__(
-        self,
-        api_key: str | None = None,
-        enabled: bool = True,
-        mode: str = "auto",
-        agent: str | None = None,
-    ):
+    def __init__(self, api_key: str | None = None, enabled: bool = True, mode: str = "auto"):
         """
         Initialize AI enhancer.
 
         Args:
-            api_key: API key (auto-detected from env if None)
+            api_key: Anthropic API key (uses ANTHROPIC_API_KEY env if None)
             enabled: Enable AI enhancement (default: True)
             mode: Enhancement mode - "auto" (default), "api", or "local"
-            agent: Local CLI agent name (e.g., "kimi", "claude")
+                  - "auto": Use API if key available, otherwise fall back to LOCAL
+                  - "api": Force API mode (fails if no key)
+                  - "local": Use Claude Code CLI (no API key needed)
         """
         self.enabled = enabled
+        self.mode = mode
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self.client = None
 
         # Get settings from config (with defaults)
         if CONFIG_AVAILABLE:
@@ -75,35 +80,161 @@ class AIEnhancer:
             self.local_batch_size = config.get_local_batch_size()
             self.local_parallel_workers = config.get_local_parallel_workers()
         else:
-            self.local_batch_size = 20
-            self.local_parallel_workers = 3
+            self.local_batch_size = 20  # Default
+            self.local_parallel_workers = 3  # Default
 
-        # Initialize AgentClient
-        from skill_seekers.cli.agent_client import AgentClient
-
-        self._agent = AgentClient(mode=mode, api_key=api_key, agent=agent)
-        self.mode = self._agent.mode
-        self.client = self._agent.client  # For backward compatibility
-
-        if self.enabled:
-            if self._agent.is_available():
-                self._agent.log_mode()
+        # Determine actual mode
+        if mode == "auto":
+            if self.api_key:
+                self.mode = "api"
             else:
+                # Fall back to LOCAL mode (Claude Code CLI)
+                self.mode = "local"
+                logger.info("ℹ️  No API key found, using LOCAL mode (Claude Code CLI)")
+
+        if self.mode == "api" and self.enabled:
+            try:
+                import anthropic
+
+                # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
+                client_kwargs = {"api_key": self.api_key}
+                base_url = os.environ.get("ANTHROPIC_BASE_URL")
+                if base_url:
+                    client_kwargs["base_url"] = base_url
+                    logger.info(f"✅ Using custom API base URL: {base_url}")
+                self.client = anthropic.Anthropic(**client_kwargs)
+                logger.info("✅ AI enhancement enabled (using Claude API)")
+            except ImportError:
+                logger.warning("⚠️  anthropic package not installed, falling back to LOCAL mode")
+                self.mode = "local"
+            except Exception as e:
                 logger.warning(
-                    f"⚠️  {self._agent.agent_display} not available. AI enhancement disabled."
+                    f"⚠️  Failed to initialize API client: {e}, falling back to LOCAL mode"
                 )
+                self.mode = "local"
+
+        if self.mode == "local" and self.enabled:
+            # Verify Claude CLI is available
+            if self._check_claude_cli():
+                logger.info("✅ AI enhancement enabled (using LOCAL mode - Claude Code CLI)")
+            else:
+                logger.warning("⚠️  Claude Code CLI not found. AI enhancement disabled.")
+                logger.warning("   Install with: npm install -g @anthropic-ai/claude-code")
                 self.enabled = False
 
+    def _check_claude_cli(self) -> bool:
+        """Check if Claude Code CLI is available"""
+        try:
+            result = subprocess.run(
+                ["claude", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
     def _call_claude(self, prompt: str, max_tokens: int = 1000) -> str | None:
-        """Call AI agent (API or LOCAL mode) with error handling.
+        """Call Claude (API or LOCAL mode) with error handling"""
+        if self.mode == "api":
+            return self._call_claude_api(prompt, max_tokens)
+        elif self.mode == "local":
+            return self._call_claude_local(prompt)
+        return None
 
-        Named _call_claude for backward compatibility — delegates to AgentClient.
-        """
-        return self._agent.call(prompt, max_tokens=max_tokens)
+    def _call_claude_api(self, prompt: str, max_tokens: int = 1000) -> str | None:
+        """Call Claude API"""
+        if not self.client:
+            return None
 
-    def call(self, prompt: str, max_tokens: int = 1000) -> str | None:
-        """Call AI agent — preferred method name over _call_claude."""
-        return self._agent.call(prompt, max_tokens=max_tokens)
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text
+        except Exception as e:
+            logger.warning(f"⚠️  AI API call failed: {e}")
+            return None
+
+    def _call_claude_local(self, prompt: str) -> str | None:
+        """Call Claude using LOCAL mode (Claude Code CLI)"""
+        try:
+            # Create a temporary directory for this enhancement
+            with tempfile.TemporaryDirectory(prefix="ai_enhance_") as temp_dir:
+                temp_path = Path(temp_dir)
+
+                # Create prompt file
+                prompt_file = temp_path / "prompt.md"
+                output_file = temp_path / "response.json"
+
+                # Write prompt with instructions to output JSON
+                full_prompt = f"""# AI Analysis Task
+
+IMPORTANT: You MUST write your response as valid JSON to this file:
+{output_file}
+
+## Task
+
+{prompt}
+
+## Instructions
+
+1. Analyze the input carefully
+2. Generate the JSON response as specified
+3. Use the Write tool to save the JSON to: {output_file}
+4. The JSON must be valid and parseable
+
+DO NOT include any explanation - just write the JSON file.
+"""
+                prompt_file.write_text(full_prompt)
+
+                # Run Claude CLI
+                result = subprocess.run(
+                    ["claude", "--dangerously-skip-permissions", str(prompt_file)],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,  # 2 minute timeout per call
+                    cwd=str(temp_path),
+                )
+
+                if result.returncode != 0:
+                    logger.warning(f"⚠️  Claude CLI returned error: {result.returncode}")
+                    return None
+
+                # Read output file
+                if output_file.exists():
+                    response_text = output_file.read_text()
+                    # Try to extract JSON from response
+                    try:
+                        # Validate it's valid JSON
+                        json.loads(response_text)
+                        return response_text
+                    except json.JSONDecodeError:
+                        # Try to find JSON in the response
+                        import re
+
+                        json_match = re.search(r"\[[\s\S]*\]|\{[\s\S]*\}", response_text)
+                        if json_match:
+                            return json_match.group()
+                        logger.warning("⚠️  Could not parse JSON from LOCAL response")
+                        return None
+                else:
+                    # Look for any JSON file created
+                    for json_file in temp_path.glob("*.json"):
+                        if json_file.name != "prompt.json":
+                            return json_file.read_text()
+                    logger.warning("⚠️  No output file from LOCAL mode")
+                    return None
+
+        except subprocess.TimeoutExpired:
+            logger.warning("⚠️  Claude CLI timeout (2 minutes)")
+            return None
+        except Exception as e:
+            logger.warning(f"⚠️  LOCAL mode error: {e}")
+            return None
 
 
 class PatternEnhancer(AIEnhancer):

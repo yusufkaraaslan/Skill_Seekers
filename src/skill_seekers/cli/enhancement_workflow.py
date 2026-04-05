@@ -84,13 +84,12 @@ class WorkflowEngine:
     - Target specific parts of the analysis
     """
 
-    def __init__(self, workflow: EnhancementWorkflow | str | Path, agent: str | None = None):
+    def __init__(self, workflow: EnhancementWorkflow | str | Path):
         """
         Initialize workflow engine.
 
         Args:
             workflow: EnhancementWorkflow object or path to YAML file
-            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
         if isinstance(workflow, (str, Path)):
             self.workflow = self._load_workflow(workflow)
@@ -99,7 +98,6 @@ class WorkflowEngine:
 
         self.history: list[dict[str, Any]] = []
         self.enhancer = None  # Lazy load UnifiedEnhancer
-        self.agent = agent
 
     def _load_workflow(self, workflow_ref: str | Path) -> EnhancementWorkflow:
         """Load workflow from YAML file using 3-level search order.
@@ -352,23 +350,15 @@ class WorkflowEngine:
         current = context["current_results"]
 
         # Determine what to enhance based on target
-        if stage.target == "patterns":
-            if "patterns" in current:
-                enhancer = PatternEnhancer(agent=self.agent)
-                enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
-                return {"patterns": enhanced_patterns}
-            else:
-                logger.info(f"   ℹ️  No {stage.target} data available, skipping builtin stage")
-                return {}
+        if stage.target == "patterns" and "patterns" in current:
+            enhancer = PatternEnhancer()
+            enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
+            return {"patterns": enhanced_patterns}
 
-        elif stage.target == "examples":
-            if "examples" in current:
-                enhancer = TestExampleEnhancer(agent=self.agent)
-                enhanced_examples = enhancer.enhance_examples(current["examples"])
-                return {"examples": enhanced_examples}
-            else:
-                logger.info(f"   ℹ️  No {stage.target} data available, skipping builtin stage")
-                return {}
+        elif stage.target == "examples" and "examples" in current:
+            enhancer = TestExampleEnhancer()
+            enhanced_examples = enhancer.enhance_examples(current["examples"])
+            return {"examples": enhanced_examples}
 
         else:
             logger.warning(f"Unknown builtin target: {stage.target}")
@@ -384,7 +374,7 @@ class WorkflowEngine:
         if not self.enhancer:
             from skill_seekers.cli.ai_enhancer import AIEnhancer
 
-            self.enhancer = AIEnhancer(agent=self.agent)
+            self.enhancer = AIEnhancer()
 
         # Format prompt with context
         try:
@@ -395,11 +385,7 @@ class WorkflowEngine:
 
         # Call AI with custom prompt
         logger.info(f"   🤖 Running custom AI prompt...")
-        # Use call() (agent-agnostic) with _call_claude() as fallback for older enhancers
-        if hasattr(self.enhancer, "call"):
-            response = self.enhancer.call(formatted_prompt, max_tokens=3000)
-        else:
-            response = self.enhancer._call_claude(formatted_prompt, max_tokens=3000)
+        response = self.enhancer._call_claude(formatted_prompt, max_tokens=3000)
 
         if not response:
             logger.warning(f"   ⚠️  No response from AI")

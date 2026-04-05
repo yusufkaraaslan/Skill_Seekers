@@ -24,7 +24,7 @@ class InstallAgentParser(SubcommandParser):
         parser.add_argument(
             "--agent",
             required=True,
-            help="Agent name (claude, cursor, vscode, amp, goose, opencode, kimi-code, all)",
+            help="Agent name (claude, cursor, vscode, amp, goose, opencode, all)",
         )
         parser.add_argument(
             "--force", action="store_true", help="Overwrite existing installation without asking"

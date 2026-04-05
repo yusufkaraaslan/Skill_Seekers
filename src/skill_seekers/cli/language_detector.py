@@ -202,49 +202,6 @@ LANGUAGE_PATTERNS: dict[str, list[tuple[str, int]]] = {
         (r"\bimport\s+java\.", 2),
         (r"\bextends\s+\w+", 2),
     ],
-    "kotlin": [
-        # Kotlin-unique keywords (weight 5)
-        (r"\bfun\s+\w+\s*\(", 4),  # Kotlin function declaration
-        (r"\bval\s+\w+\s*:", 3),  # Immutable variable with type
-        (r"\bvar\s+\w+\s*:", 3),  # Mutable variable with type
-        (r"\bdata\s+class\s+\w+", 5),  # Data class — Kotlin-unique
-        (r"\bsealed\s+class\s+\w+", 5),  # Sealed class — Kotlin-unique
-        (r"\bsealed\s+interface\s+\w+", 5),  # Sealed interface — Kotlin-unique
-        (r"\bobject\s+\w+\s*:", 5),  # Object declaration — Kotlin singleton
-        (r"\bobject\s+\w+\s*\{", 5),  # Object declaration — Kotlin singleton
-        (r"\bcompanion\s+object\b", 5),  # Companion object — Kotlin-unique
-        (r"\bsuspend\s+fun\b", 5),  # Coroutine suspend function
-        (r"\bwhen\s*\(", 4),  # when expression (like switch but richer)
-        (r"\bwhen\s*\{", 4),  # when without argument
-        (r"\binline\s+fun\b", 5),  # Inline function — Kotlin-specific
-        (r"\breified\b", 5),  # Reified type parameter — Kotlin-unique
-        (r"\binit\s*\{", 4),  # Init block
-        (r"\bimport\s+kotlin\.", 5),  # Kotlin stdlib import
-        (r"\bimport\s+kotlinx?\.", 5),  # Kotlin/KotlinX imports
-        (r"\bimport\s+android\.", 4),  # Android imports (common in Kotlin)
-        (r"\bimport\s+androidx\.", 4),  # AndroidX imports
-        # Kotlin idioms (weight 3-4)
-        (r"\bby\s+lazy\b", 4),  # Lazy delegation — Kotlin idiom
-        (r"\blistOf\s*\(", 3),  # Kotlin stdlib
-        (r"\bmapOf\s*\(", 3),  # Kotlin stdlib
-        (r"\bsetOf\s*\(", 3),  # Kotlin stdlib
-        (r"\blet\s*\{", 3),  # Scope function
-        (r"\bapply\s*\{", 3),  # Scope function
-        (r"\balso\s*\{", 3),  # Scope function
-        (r"\brun\s*\{", 2),  # Scope function (weak — common word)
-        (r"\?\.", 2),  # Safe call operator
-        (r"\?:", 2),  # Elvis operator
-        (r"!!", 2),  # Non-null assertion
-        # Kotlin multiplatform
-        (r"\bexpect\s+(?:fun|class|val|var)\b", 5),  # KMP expect declaration
-        (r"\bactual\s+(?:fun|class|val|var)\b", 5),  # KMP actual declaration
-        # Coroutines
-        (r"\blaunch\s*\{", 4),  # Coroutine launch
-        (r"\basync\s*\{", 3),  # Coroutine async
-        (r"\bwithContext\s*\(", 4),  # Coroutine context switch
-        (r"\bCoroutineScope\b", 4),  # Coroutine scope
-        (r"\bFlow<", 4),  # Kotlin Flow
-    ],
     "go": [
         (r"\bfunc\s+\w+\s*\(", 3),
         (r"\bpackage\s+\w+", 4),

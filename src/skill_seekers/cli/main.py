@@ -30,7 +30,7 @@ Commands:
     enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
-    upload               Upload skill to target platform
+    upload               Upload skill to Claude
     estimate             Estimate page count before scraping
     extract-test-examples Extract usage examples from test files
     install-agent        Install skill to AI agent directories
@@ -47,7 +47,6 @@ Examples:
 
 import argparse
 import importlib
-import os
 import sys
 from pathlib import Path
 
@@ -57,7 +56,6 @@ from skill_seekers.cli import __version__
 # Command module mapping (command name -> module path)
 COMMAND_MODULES = {
     "create": "skill_seekers.cli.create_command",  # NEW: Unified create command
-    "doctor": "skill_seekers.cli.doctor",
     "config": "skill_seekers.cli.config_command",
     "scrape": "skill_seekers.cli.doc_scraper",
     "github": "skill_seekers.cli.github_scraper",
@@ -102,7 +100,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="skill-seekers",
-        description="Convert documentation, GitHub repos, and PDFs into AI skills",
+        description="Convert documentation, GitHub repos, and PDFs into Claude AI skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -392,7 +390,7 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                         background=False,
                         daemon=False,
                         no_force=False,
-                        timeout=2700,
+                        timeout=600,
                     )
                     _mode, _target = _pick_mode(_fake_args)
 
@@ -404,10 +402,7 @@ def _handle_analyze_command(args: argparse.Namespace) -> int:
                         print("   Set ANTHROPIC_API_KEY / GOOGLE_API_KEY to enable API mode")
                         success = False
                     else:
-                        agent_name = (
-                            os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
-                        )
-                        print(f"\n🤖 Enhancement mode: LOCAL ({agent_name})")
+                        print("\n🤖 Enhancement mode: LOCAL (Claude Code CLI)")
                         success = _run_local_mode(_fake_args) == 0
 
                     if success:

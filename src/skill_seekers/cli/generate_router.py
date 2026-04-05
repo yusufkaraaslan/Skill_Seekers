@@ -249,7 +249,6 @@ class RouterGenerator:
                 "Go": f"Go 1.20+, requires {self.router_name} package",
                 "Rust": f"Rust 1.70+, requires {self.router_name} package",
                 "Java": f"Java 17+, requires {self.router_name} package",
-                "Kotlin": f"Kotlin 1.9+, JDK 17+, requires {self.router_name} package",
             }
             if language in compatibility_map:
                 compatibility = compatibility_map[language]
@@ -1202,7 +1201,7 @@ Examples:
     print(f"     skill-seekers scrape --config {config_path}")
     print("3. Package router skill:")
     print(f"     skill-seekers package output/{generator.router_name}/")
-    print("4. Upload router + all sub-skills to target platform")
+    print("4. Upload router + all sub-skills to Claude")
     print("")
 
 

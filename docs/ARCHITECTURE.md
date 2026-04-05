@@ -103,7 +103,7 @@ docs/
 
 **Files:**
 - `CLI_REFERENCE.md` - All CLI commands (including 17 source-type subcommands)
-- `MCP_REFERENCE.md` - 40 MCP tools
+- `MCP_REFERENCE.md` - 26+ MCP tools
 - `CONFIG_FORMAT.md` - JSON schema (covers all 17 source types)
 - `ENVIRONMENT_VARIABLES.md` - All env vars (including Confluence, Notion, Slack tokens)
 

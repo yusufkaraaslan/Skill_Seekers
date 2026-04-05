@@ -1002,17 +1002,11 @@ def main() -> int:
                 except ImportError:
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
+                    LocalSkillEnhancer(Path(skill_dir)).run(headless=True)
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
+                LocalSkillEnhancer(Path(skill_dir)).run(headless=True)
     except RuntimeError as e:
         print(f"\n   Error: {e}", file=sys.stderr)
         sys.exit(1)  # noqa: E702

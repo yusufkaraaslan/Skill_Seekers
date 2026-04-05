@@ -61,11 +61,7 @@ class ConfigValidator:
     }
 
     # Valid merge modes
-    VALID_MERGE_MODES = {
-        "rule-based",
-        "ai-enhanced",
-        "claude-enhanced",
-    }  # claude-enhanced kept as alias
+    VALID_MERGE_MODES = {"rule-based", "claude-enhanced"}
 
     # Valid code analysis depth levels
     VALID_DEPTH_LEVELS = {"surface", "deep", "full"}
@@ -164,21 +160,6 @@ class ConfigValidator:
             raise ValueError(
                 f"Invalid merge_mode: '{merge_mode}'. Must be one of {self.VALID_MERGE_MODES}"
             )
-
-        # Validate marketplace_targets (optional)
-        marketplace_targets = self.config.get("marketplace_targets")
-        if marketplace_targets is not None:
-            if not isinstance(marketplace_targets, list):
-                raise ValueError("'marketplace_targets' must be an array")
-            for i, mt in enumerate(marketplace_targets):
-                if not isinstance(mt, dict):
-                    raise ValueError(f"marketplace_targets[{i}]: must be an object")
-                if "marketplace" not in mt:
-                    raise ValueError(
-                        f"marketplace_targets[{i}]: missing required field 'marketplace'"
-                    )
-                if not isinstance(mt["marketplace"], str):
-                    raise ValueError(f"marketplace_targets[{i}]: 'marketplace' must be a string")
 
         # Validate each source
         for i, source in enumerate(sources):

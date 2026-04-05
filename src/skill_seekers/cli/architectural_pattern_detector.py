@@ -139,13 +139,12 @@ class ArchitecturalPatternDetector:
         "Laravel": ["laravel", "illuminate", "artisan", "app/Http/Controllers", "app/Models"],
     }
 
-    def __init__(self, enhance_with_ai: bool = True, agent: str | None = None):
+    def __init__(self, enhance_with_ai: bool = True):
         """
         Initialize detector.
 
         Args:
             enhance_with_ai: Enable AI enhancement for detected patterns (C3.6)
-            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
         self.enhance_with_ai = enhance_with_ai
         self.ai_enhancer = None
@@ -154,7 +153,7 @@ class ArchitecturalPatternDetector:
             try:
                 from skill_seekers.cli.ai_enhancer import AIEnhancer
 
-                self.ai_enhancer = AIEnhancer(agent=agent)
+                self.ai_enhancer = AIEnhancer()
             except Exception as e:
                 logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
                 self.enhance_with_ai = False

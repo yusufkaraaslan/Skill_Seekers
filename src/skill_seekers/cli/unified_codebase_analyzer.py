@@ -267,7 +267,8 @@ class UnifiedCodebaseAnalyzer:
                 extract_test_examples=True,
                 build_how_to_guides=True,
                 extract_config_patterns=True,
-                enhance_level=0,  # Disable AI for speed
+                enhance_with_ai=False,  # Disable AI for speed
+                ai_mode="none",
             )
 
             # Load C3.x results from output files
@@ -319,7 +320,7 @@ class UnifiedCodebaseAnalyzer:
         c3x_data = {}
 
         # C3.1: Design Patterns
-        patterns_file = output_dir / "patterns" / "all_patterns.json"
+        patterns_file = output_dir / "patterns" / "design_patterns.json"
         if patterns_file.exists():
             with open(patterns_file) as f:
                 patterns_data = json.load(f)
@@ -559,8 +560,6 @@ class UnifiedCodebaseAnalyzer:
                         ".go": "Go",
                         ".rs": "Rust",
                         ".java": "Java",
-                        ".kt": "Kotlin",
-                        ".kts": "Kotlin",
                         ".rb": "Ruby",
                         ".php": "PHP",
                     }

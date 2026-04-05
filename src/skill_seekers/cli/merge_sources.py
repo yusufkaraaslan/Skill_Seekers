@@ -4,7 +4,7 @@ Source Merger for Multi-Source Skills
 
 Merges documentation and code data intelligently with GitHub insights:
 - Rule-based merge: Fast, deterministic rules
-- AI-enhanced merge: AI-powered reconciliation
+- Claude-enhanced merge: AI-powered reconciliation
 
 Handles conflicts and creates unified API reference with GitHub metadata.
 
@@ -18,6 +18,7 @@ Multi-layer architecture (Phase 3):
 import json
 import logging
 import os
+import subprocess
 import tempfile
 from typing import Any, Optional
 
@@ -439,11 +440,11 @@ class RuleBasedMerger:
         return signature
 
 
-class AIEnhancedMerger:
+class ClaudeEnhancedMerger:
     """
-    AI-enhanced API merger using local AI coding agent with GitHub insights.
+    Claude-enhanced API merger using local Claude Code with GitHub insights.
 
-    Uses the configured AI agent to intelligently reconcile conflicts.
+    Opens Claude Code in a new terminal to intelligently reconcile conflicts.
     Uses the same approach as enhance_skill_local.py.
 
     Multi-layer architecture (Phase 3):
@@ -461,7 +462,7 @@ class AIEnhancedMerger:
         github_streams: Optional["ThreeStreamData"] = None,
     ):
         """
-        Initialize AI-enhanced merger with GitHub streams support.
+        Initialize Claude-enhanced merger with GitHub streams support.
 
         Args:
             docs_data: Documentation scraper data (Layer 2: HTML docs)
@@ -479,31 +480,31 @@ class AIEnhancedMerger:
 
     def merge_all(self) -> dict[str, Any]:
         """
-        Merge all APIs using AI enhancement.
+        Merge all APIs using Claude enhancement.
 
         Returns:
             Dict containing merged API data
         """
-        logger.info("Starting AI-enhanced merge...")
+        logger.info("Starting Claude-enhanced merge...")
 
         # Create temporary workspace
         workspace_dir = self._create_workspace()
 
-        # Launch AI agent for enhancement
-        logger.info("Launching AI agent for intelligent merging...")
-        logger.info("AI will analyze conflicts and create reconciled API reference")
+        # Launch Claude Code for enhancement
+        logger.info("Launching Claude Code for intelligent merging...")
+        logger.info("Claude will analyze conflicts and create reconciled API reference")
 
         try:
-            self._launch_ai_merge(workspace_dir)
+            self._launch_claude_merge(workspace_dir)
 
             # Read enhanced results
             merged_data = self._read_merged_results(workspace_dir)
 
-            logger.info("AI-enhanced merge complete")
+            logger.info("Claude-enhanced merge complete")
             return merged_data
 
         except Exception as e:
-            logger.error(f"AI enhancement failed: {e}")
+            logger.error(f"Claude enhancement failed: {e}")
             logger.info("Falling back to rule-based merge")
             return self.rule_merger.merge_all()
 
@@ -517,13 +518,13 @@ class AIEnhancedMerger:
         workspace = tempfile.mkdtemp(prefix="skill_merge_")
         logger.info(f"Created merge workspace: {workspace}")
 
-        # Write context files for AI agent
+        # Write context files for Claude
         self._write_context_files(workspace)
 
         return workspace
 
     def _write_context_files(self, workspace: str):
-        """Write context files for AI agent to analyze."""
+        """Write context files for Claude to analyze."""
 
         # 1. Write conflicts summary
         conflicts_file = os.path.join(workspace, "conflicts.json")
@@ -552,7 +553,7 @@ class AIEnhancedMerger:
         with open(code_apis_file, "w") as f:
             json.dump(detector.code_apis, f, indent=2)
 
-        # 4. Write merge instructions for AI agent
+        # 4. Write merge instructions for Claude
         instructions = """# API Merge Task
 
 You are merging API documentation from two sources:
@@ -624,79 +625,75 @@ Take your time to analyze each conflict carefully. The goal is to create the mos
             counts[value] = counts.get(value, 0) + 1
         return counts
 
-    def _launch_ai_merge(self, workspace: str):
+    def _launch_claude_merge(self, workspace: str):
         """
-        Run AI-enhanced merge via AgentClient (automated, no terminal).
-        """
-        from skill_seekers.cli.agent_client import AgentClient
+        Launch Claude Code to perform merge.
 
-        # Read context files to build prompt
-        conflicts_file = os.path.join(workspace, "conflicts.json")
-        docs_apis_file = os.path.join(workspace, "docs_apis.json")
-        code_apis_file = os.path.join(workspace, "code_apis.json")
-        instructions_file = os.path.join(workspace, "MERGE_INSTRUCTIONS.md")
+        Similar to enhance_skill_local.py approach.
+        """
+        # Create a script that Claude will execute
+        script_path = os.path.join(workspace, "merge_script.sh")
+
+        script_content = f"""#!/bin/bash
+# Automatic merge script for Claude Code
+
+cd "{workspace}"
+
+echo "📊 Analyzing conflicts..."
+cat conflicts.json | head -20
+
+echo ""
+echo "📖 Documentation APIs: $(cat docs_apis.json | grep -c '\"name\"')"
+echo "💻 Code APIs: $(cat code_apis.json | grep -c '\"name\"')"
+echo ""
+echo "Please review the conflicts and create merged_apis.json"
+echo "Follow the instructions in MERGE_INSTRUCTIONS.md"
+echo ""
+echo "When done, save merged_apis.json and close this terminal."
+
+# Wait for user to complete merge
+read -p "Press Enter when merge is complete..."
+"""
+
+        with open(script_path, "w") as f:
+            f.write(script_content)
+
+        os.chmod(script_path, 0o755)
+
+        # Open new terminal with Claude Code
+        # Try different terminal emulators
+        terminals = [
+            ["x-terminal-emulator", "-e"],
+            ["gnome-terminal", "--"],
+            ["xterm", "-e"],
+            ["konsole", "-e"],
+        ]
+
+        for terminal_cmd in terminals:
+            try:
+                cmd = terminal_cmd + ["bash", script_path]
+                subprocess.Popen(cmd)
+                logger.info(f"Opened terminal with {terminal_cmd[0]}")
+                break
+            except FileNotFoundError:
+                continue
+
+        # Wait for merge to complete
         merged_file = os.path.join(workspace, "merged_apis.json")
+        logger.info(f"Waiting for merged results at: {merged_file}")
+        logger.info("Close the terminal when done to continue...")
 
-        with open(instructions_file) as f:
-            instructions = f.read()
+        # Poll for file existence
+        import time
 
-        with open(conflicts_file) as f:
-            conflicts_data = f.read()
+        timeout = 3600  # 1 hour max
+        elapsed = 0
+        while not os.path.exists(merged_file) and elapsed < timeout:
+            time.sleep(5)
+            elapsed += 5
 
-        # Limit conflict data to avoid token overflow
-        if len(conflicts_data) > 30000:
-            conflicts_data = conflicts_data[:30000] + "\n... (truncated)"
-
-        with open(docs_apis_file) as f:
-            docs_apis = f.read()
-        if len(docs_apis) > 15000:
-            docs_apis = docs_apis[:15000] + "\n... (truncated)"
-
-        with open(code_apis_file) as f:
-            code_apis = f.read()
-        if len(code_apis) > 15000:
-            code_apis = code_apis[:15000] + "\n... (truncated)"
-
-        prompt = f"""{instructions}
-
-## Conflicts Data:
-{conflicts_data}
-
-## Documentation APIs:
-{docs_apis}
-
-## Code APIs:
-{code_apis}
-
-Write the merged_apis.json output as valid JSON following the format in the instructions above.
-Return ONLY the JSON, no explanation."""
-
-        client = AgentClient(mode="auto")
-        logger.info(f"Running AI merge via {client.agent_display}...")
-
-        response = client.call(prompt, max_tokens=8192)
-
-        if response:
-            # Try to extract JSON from response
-            import re
-
-            json_match = re.search(r"\{[\s\S]*\}", response)
-            if json_match:
-                try:
-                    merged = json.loads(json_match.group())
-                    with open(merged_file, "w") as f:
-                        json.dump(merged, f, indent=2)
-                    logger.info("✅ AI merge complete — merged_apis.json written")
-                    return
-                except json.JSONDecodeError:
-                    logger.warning("⚠️  Could not parse JSON from AI response")
-
-            # Fallback: write raw response
-            with open(merged_file, "w") as f:
-                f.write(response)
-            logger.info("✅ AI merge complete (raw response saved)")
-        else:
-            raise RuntimeError("AI agent returned no response for merge")
+        if not os.path.exists(merged_file):
+            raise TimeoutError("Claude merge timed out after 1 hour")
 
     def _read_merged_results(self, workspace: str) -> dict[str, Any]:
         """Read merged results from workspace."""
@@ -807,7 +804,3 @@ if __name__ == "__main__":
     print(f"   Code only: {summary.get('code_only', 0)}")
     print(f"   Conflicts: {summary.get('conflict', 0)}")
     print(f"\n📄 Saved to: {args.output}")
-
-
-# Backward compatibility alias
-ClaudeEnhancedMerger = AIEnhancedMerger

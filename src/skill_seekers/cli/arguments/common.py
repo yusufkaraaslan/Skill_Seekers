@@ -55,7 +55,7 @@ COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": (
                 "AI enhancement level (auto-detects API vs LOCAL mode): "
                 "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if API key is set (ANTHROPIC_API_KEY, MOONSHOT_API_KEY, etc.), otherwise LOCAL (AI coding agent)"
+                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code)"
             ),
             "metavar": "LEVEL",
         },
@@ -64,25 +64,8 @@ COMMON_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--api-key",),
         "kwargs": {
             "type": str,
-            "help": "API key for enhancement (ANTHROPIC_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, MOONSHOT_API_KEY)",
+            "help": "Anthropic API key for --enhance (or set ANTHROPIC_API_KEY env var)",
             "metavar": "KEY",
-        },
-    },
-    "agent": {
-        "flags": ("--agent",),
-        "kwargs": {
-            "type": str,
-            "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-            "help": "Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
-            "metavar": "AGENT",
-        },
-    },
-    "agent_cmd": {
-        "flags": ("--agent-cmd",),
-        "kwargs": {
-            "type": str,
-            "help": "Override agent command template (advanced)",
-            "metavar": "CMD",
         },
     },
     "doc_version": {

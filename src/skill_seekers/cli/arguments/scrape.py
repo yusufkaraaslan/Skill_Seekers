@@ -115,13 +115,6 @@ SCRAPE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Disable rate limiting completely (same as --rate-limit 0)",
         },
     },
-    "browser": {
-        "flags": ("--browser",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Use headless browser (Playwright) to render JavaScript SPA sites. Install: pip install 'skill-seekers[browser]'",
-        },
-    },
     "interactive_enhancement": {
         "flags": ("--interactive-enhancement",),
         "kwargs": {

@@ -131,18 +131,17 @@ class TestCreateCommandBasic:
 
 
 class TestCreateCommandArgvForwarding:
-    """Unit tests for _build_argv argument forwarding."""
+    """Unit tests for _add_common_args argv forwarding."""
 
     def _make_args(self, **kwargs):
         import argparse
 
         defaults = {
-            "source": "https://example.com",
             "enhance_workflow": None,
             "enhance_stage": None,
             "var": None,
             "workflow_dry_run": False,
-            "enhance_level": 2,
+            "enhance_level": 0,
             "output": None,
             "name": None,
             "description": None,
@@ -158,20 +157,17 @@ class TestCreateCommandArgvForwarding:
             "no_preserve_code_blocks": False,
             "no_preserve_paragraphs": False,
             "interactive_enhancement": False,
-            "agent": None,
-            "agent_cmd": None,
-            "doc_version": "",
         }
         defaults.update(kwargs)
         return argparse.Namespace(**defaults)
 
     def _collect_argv(self, args):
         from skill_seekers.cli.create_command import CreateCommand
-        from skill_seekers.cli.source_detector import SourceDetector
 
         cmd = CreateCommand(args)
-        cmd.source_info = SourceDetector.detect(args.source)
-        return cmd._build_argv("test_module", [])
+        argv = []
+        cmd._add_common_args(argv)
+        return argv
 
     def test_single_enhance_workflow_forwarded(self):
         args = self._make_args(enhance_workflow=["security-focus"])
@@ -262,197 +258,6 @@ class TestCreateCommandArgvForwarding:
         assert "--enhance-stage" in argv
         assert "--var" in argv
         assert "--workflow-dry-run" in argv
-
-    # ── _SKIP_ARGS exclusion ────────────────────────────────────────────────
-
-    def test_source_never_forwarded(self):
-        """'source' is in _SKIP_ARGS and must never appear in argv."""
-        args = self._make_args(source="https://example.com")
-        argv = self._collect_argv(args)
-        assert "--source" not in argv
-
-    def test_func_never_forwarded(self):
-        """'func' is in _SKIP_ARGS and must never appear in argv."""
-        args = self._make_args(func=lambda: None)
-        argv = self._collect_argv(args)
-        assert "--func" not in argv
-
-    def test_config_never_forwarded_by_build_argv(self):
-        """'config' is in _SKIP_ARGS; forwarded manually by specific routes."""
-        args = self._make_args(config="/path/to/config.json")
-        argv = self._collect_argv(args)
-        assert "--config" not in argv
-
-    def test_subcommand_never_forwarded(self):
-        """'subcommand' is in _SKIP_ARGS."""
-        args = self._make_args(subcommand="create")
-        argv = self._collect_argv(args)
-        assert "--subcommand" not in argv
-
-    def test_command_never_forwarded(self):
-        """'command' is in _SKIP_ARGS."""
-        args = self._make_args(command="create")
-        argv = self._collect_argv(args)
-        assert "--command" not in argv
-
-    # ── _DEST_TO_FLAG mapping ───────────────────────────────────────────────
-
-    def test_async_mode_maps_to_async_flag(self):
-        """async_mode dest should produce --async flag, not --async-mode."""
-        args = self._make_args(async_mode=True)
-        argv = self._collect_argv(args)
-        assert "--async" in argv
-        assert "--async-mode" not in argv
-
-    def test_skip_config_maps_to_skip_config_patterns(self):
-        """skip_config dest should produce --skip-config-patterns flag."""
-        args = self._make_args(skip_config=True)
-        argv = self._collect_argv(args)
-        assert "--skip-config-patterns" in argv
-        assert "--skip-config" not in argv
-
-    # ── Boolean arg forwarding ──────────────────────────────────────────────
-
-    def test_boolean_true_appends_flag(self):
-        args = self._make_args(dry_run=True)
-        argv = self._collect_argv(args)
-        assert "--dry-run" in argv
-
-    def test_boolean_false_does_not_append_flag(self):
-        args = self._make_args(dry_run=False)
-        argv = self._collect_argv(args)
-        assert "--dry-run" not in argv
-
-    def test_verbose_true_forwarded(self):
-        args = self._make_args(verbose=True)
-        argv = self._collect_argv(args)
-        assert "--verbose" in argv
-
-    def test_quiet_true_forwarded(self):
-        args = self._make_args(quiet=True)
-        argv = self._collect_argv(args)
-        assert "--quiet" in argv
-
-    # ── List arg forwarding ─────────────────────────────────────────────────
-
-    def test_list_arg_each_item_gets_separate_flag(self):
-        """Each list item gets its own --flag value pair."""
-        args = self._make_args(enhance_workflow=["a", "b", "c"])
-        argv = self._collect_argv(args)
-        assert argv.count("--enhance-workflow") == 3
-        for item in ["a", "b", "c"]:
-            idx = argv.index(item)
-            assert argv[idx - 1] == "--enhance-workflow"
-
-    # ── _is_explicitly_set ──────────────────────────────────────────────────
-
-    def test_is_explicitly_set_none_is_not_set(self):
-        """None values should NOT be considered explicitly set."""
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        assert cmd._is_explicitly_set("name", None) is False
-
-    def test_is_explicitly_set_bool_true_is_set(self):
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        assert cmd._is_explicitly_set("dry_run", True) is True
-
-    def test_is_explicitly_set_bool_false_is_not_set(self):
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        assert cmd._is_explicitly_set("dry_run", False) is False
-
-    def test_is_explicitly_set_default_doc_version_empty_not_set(self):
-        """doc_version defaults to '' which means not explicitly set."""
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        assert cmd._is_explicitly_set("doc_version", "") is False
-
-    def test_is_explicitly_set_nonempty_string_is_set(self):
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        assert cmd._is_explicitly_set("name", "my-skill") is True
-
-    def test_is_explicitly_set_non_default_value_is_set(self):
-        """A value that differs from the known default IS explicitly set."""
-        from skill_seekers.cli.create_command import CreateCommand
-
-        args = self._make_args()
-        cmd = CreateCommand(args)
-        # max_issues default is 100; setting to 50 means explicitly set
-        assert cmd._is_explicitly_set("max_issues", 50) is True
-        # Setting to default value means NOT explicitly set
-        assert cmd._is_explicitly_set("max_issues", 100) is False
-
-    # ── Allowlist filtering ─────────────────────────────────────────────────
-
-    def test_allowlist_only_forwards_allowed_args(self):
-        """When allowlist is provided, only those args are forwarded."""
-        from skill_seekers.cli.create_command import CreateCommand
-        from skill_seekers.cli.source_detector import SourceDetector
-
-        args = self._make_args(
-            dry_run=True,
-            verbose=True,
-            name="test-skill",
-        )
-        cmd = CreateCommand(args)
-        cmd.source_info = SourceDetector.detect(args.source)
-
-        # Only allow dry_run in the allowlist
-        allowlist = frozenset({"dry_run"})
-        argv = cmd._build_argv("test_module", [], allowlist=allowlist)
-
-        assert "--dry-run" in argv
-        assert "--verbose" not in argv
-        assert "--name" not in argv
-
-    def test_allowlist_skips_non_allowed_even_if_set(self):
-        """Args not in the allowlist are excluded even if explicitly set."""
-        from skill_seekers.cli.create_command import CreateCommand
-        from skill_seekers.cli.source_detector import SourceDetector
-
-        args = self._make_args(
-            enhance_workflow=["security-focus"],
-            quiet=True,
-        )
-        cmd = CreateCommand(args)
-        cmd.source_info = SourceDetector.detect(args.source)
-
-        allowlist = frozenset({"quiet"})
-        argv = cmd._build_argv("test_module", [], allowlist=allowlist)
-
-        assert "--quiet" in argv
-        assert "--enhance-workflow" not in argv
-
-    def test_allowlist_empty_forwards_nothing(self):
-        """Empty allowlist should forward no user args (auto-name may still be added)."""
-        from skill_seekers.cli.create_command import CreateCommand
-        from skill_seekers.cli.source_detector import SourceDetector
-
-        args = self._make_args(dry_run=True, verbose=True)
-        cmd = CreateCommand(args)
-        cmd.source_info = SourceDetector.detect(args.source)
-
-        allowlist = frozenset()
-        argv = cmd._build_argv("test_module", ["pos"], allowlist=allowlist)
-
-        # User-set args (dry_run, verbose) should NOT be forwarded
-        assert "--dry-run" not in argv
-        assert "--verbose" not in argv
-        # Only module name, positional, and possibly auto-added --name
-        assert argv[0] == "test_module"
-        assert "pos" in argv
 
 
 class TestBackwardCompatibility:

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** converts documentation from 17 source types into production-ready formats for 24+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
 
-**Version:** 3.4.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
+**Version:** 3.3.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
 **Architecture:** See `docs/UML_ARCHITECTURE.md` for UML diagrams and module overview. StarUML project at `docs/UML/skill_seekers.mdj`.
 
@@ -133,21 +133,13 @@ Local codebase analysis features, all opt-out (`--skip-*` flags):
 
 ### MCP Server
 
-`src/skill_seekers/mcp/server_fastmcp.py` - 40 tools via FastMCP. Transport: stdio (Claude Code) or HTTP (Cursor/Windsurf). Optional dependency: `pip install -e ".[mcp]"`
+`src/skill_seekers/mcp/server_fastmcp.py` - 26+ tools via FastMCP. Transport: stdio (Claude Code) or HTTP (Cursor/Windsurf). Optional dependency: `pip install -e ".[mcp]"`
 
-Supporting modules:
-- `marketplace_publisher.py` - Publish skills to plugin marketplace repositories
-- `marketplace_manager.py` - Manage marketplace registry
-- `config_publisher.py` - Push configs to registered config source repositories
+### Enhancement Modes
 
-### Enhancement Modes (via AgentClient)
-
-Enhancement now uses the `AgentClient` abstraction (`src/skill_seekers/cli/agent_client.py`) instead of direct Claude API calls:
-
-- **API mode** (if API key set): Supports Anthropic, Moonshot/Kimi, Google Gemini, OpenAI
-- **LOCAL mode** (fallback): Supports Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents
+- **API mode** (if `ANTHROPIC_API_KEY` set): Direct Claude API calls
+- **LOCAL mode** (fallback): Uses Claude Code CLI (free with Max plan)
 - Control: `--enhance-level 0` (off) / `1` (SKILL.md only) / `2` (default, balanced) / `3` (full)
-- Agent selection: `--agent claude|codex|copilot|opencode|kimi|custom`
 
 ## Key Implementation Details
 

@@ -1,0 +1,24 @@
+{
+  "name": "skill-seekers",
+  "version": "0.1.0",
+  "description": "Convert docs and repos into AI skills from Codex via MCP",
+  "author": {
+    "name": "yusufkaraaslan",
+    "url": "https://github.com/yusufkaraaslan/Skill_Seekers"
+  },
+  "homepage": "https://github.com/yusufkaraaslan/Skill_Seekers",
+  "repository": "https://github.com/yusufkaraaslan/Skill_Seekers",
+  "keywords": [
+    "mcp",
+    "codex"
+  ],
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skill Seekers",
+    "shortDescription": "Convert docs and repos into AI skills from Codex via MCP",
+    "longDescription": "Convert documentation websites, GitHub repositories, and PDFs into AI skills with automatic conflict detection.",
+    "category": "Development",
+    "websiteURL": "https://github.com/yusufkaraaslan/Skill_Seekers"
+  }
+}

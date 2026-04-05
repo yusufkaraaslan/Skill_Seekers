@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "skill-seekers": {
+      "command": "pip",
+      "args": [
+        "install",
+        "skill-seekers"
+      ]
+    }
+  }
+}

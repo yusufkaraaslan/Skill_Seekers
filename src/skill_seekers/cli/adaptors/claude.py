@@ -378,7 +378,7 @@ version: {metadata.version}
             client = anthropic.Anthropic(**client_kwargs)
 
             message = client.messages.create(
-                model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+                model="claude-sonnet-4-20250514",
                 max_tokens=4096,
                 temperature=0.3,
                 messages=[{"role": "user", "content": prompt}],

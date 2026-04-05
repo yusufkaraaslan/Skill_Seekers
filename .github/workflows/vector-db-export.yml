@@ -36,12 +36,12 @@ jobs:
       CONFIG_PATH_INPUT: ${{ github.event.inputs.config_path }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.12'
 
@@ -106,12 +106,16 @@ jobs:
           echo "🔹 Exporting to $target..."
 
           # Use adaptor directly via CLI
-          python3 -c "
-          from pathlib import Path
-          from skill_seekers.cli.adaptors import get_adaptor
-          adaptor = get_adaptor('$target')
-          package_path = adaptor.package(Path('$SKILL_DIR'), Path('output'))
-          print(f'Exported to {package_path}')
+          python -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+
+from skill_seekers.cli.adaptors import get_adaptor
+
+adaptor = get_adaptor('$target')
+package_path = adaptor.package(Path('$SKILL_DIR'), Path('output'))
+print(f'✅ Exported to {package_path}')
           "
 
           if [ $? -eq 0 ]; then
@@ -129,22 +133,28 @@ jobs:
         if [ -d "$SKILL_DIR" ]; then
           echo "📊 Generating quality metrics..."
 
-          python3 -c "
-          from pathlib import Path
-          from skill_seekers.cli.quality_metrics import QualityAnalyzer
-          analyzer = QualityAnalyzer(Path('$SKILL_DIR'))
-          report = analyzer.generate_report()
-          formatted = analyzer.format_report(report)
-          print(formatted)
-          with open('quality_report_${SKILL_NAME}.txt', 'w') as f:
-              f.write(formatted)
+          python -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+
+from skill_seekers.cli.quality_metrics import QualityAnalyzer
+
+analyzer = QualityAnalyzer(Path('$SKILL_DIR'))
+report = analyzer.generate_report()
+formatted = analyzer.format_report(report)
+print(formatted)
+
+# Save to file
+with open('quality_report_${SKILL_NAME}.txt', 'w') as f:
+    f.write(formatted)
           "
         fi
       continue-on-error: true
 
     - name: Upload vector database exports
       if: steps.check_config.outputs.exists == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.SKILL_NAME }}-vector-exports
         path: |
@@ -153,7 +163,7 @@ jobs:
 
     - name: Upload quality report
       if: steps.check_config.outputs.exists == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.SKILL_NAME }}-quality-report
         path: quality_report_${{ env.SKILL_NAME }}.txt

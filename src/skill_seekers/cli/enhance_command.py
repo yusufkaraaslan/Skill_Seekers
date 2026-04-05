@@ -4,27 +4,24 @@ Smart Enhancement Dispatcher
 
 Routes `skill-seekers enhance` to the correct backend:
 
-  API mode  — when an API key is available (Anthropic/Gemini/OpenAI).
+  API mode  — when an API key is available (Claude/Gemini/OpenAI).
               Calls enhance_skill.py which uses platform adaptors.
 
   LOCAL mode — when no API key is found.
               Calls LocalSkillEnhancer from enhance_skill_local.py.
-              Supports: Claude Code, OpenAI Codex, GitHub Copilot, OpenCode, Kimi, and other agents.
 
 Decision priority:
   1. Explicit --target flag → API mode with that platform.
   2. Config ai_enhancement.default_agent + matching env key → API mode.
   3. Auto-detect from env vars: ANTHROPIC_API_KEY → claude,
      GOOGLE_API_KEY → gemini, OPENAI_API_KEY → openai.
-  4. No API keys → LOCAL mode (AI coding agent).
-  5. LOCAL mode + running as root → clear error (AI coding agent refuses root).
+  4. No API keys → LOCAL mode (Claude Code CLI).
+  5. LOCAL mode + running as root → clear error (Claude Code refuses root).
 """
 
 import os
 import sys
 from pathlib import Path
-
-from skill_seekers.cli.agent_client import get_default_timeout
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +43,6 @@ def _get_api_keys() -> dict[str, str | None]:
         "claude": (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")),
         "gemini": os.environ.get("GOOGLE_API_KEY"),
         "openai": os.environ.get("OPENAI_API_KEY"),
-        "kimi": os.environ.get("MOONSHOT_API_KEY"),
     }
 
 
@@ -77,11 +73,11 @@ def _pick_mode(args) -> tuple[str, str | None]:
 
     # 2. Config default_agent preference (if a matching key is available).
     config_agent = _get_config_default_agent()
-    if config_agent in ("claude", "gemini", "openai", "kimi") and api_keys.get(config_agent):
+    if config_agent in ("claude", "gemini", "openai") and api_keys.get(config_agent):
         return "api", config_agent
 
     # 3. Auto-detect from environment variables.
-    #    Priority: Anthropic > Gemini > OpenAI.
+    #    Priority: Claude > Gemini > OpenAI (Claude is Anthropic's native platform).
     if api_keys["claude"]:
         return "api", "claude"
     if api_keys["gemini"]:
@@ -160,7 +156,7 @@ def _run_local_mode(args) -> int:
     headless = not interactive
     success = enhancer.run(
         headless=headless,
-        timeout=getattr(args, "timeout", None) or get_default_timeout(),
+        timeout=getattr(args, "timeout", 600),
         background=getattr(args, "background", False),
         daemon=getattr(args, "daemon", False),
     )
@@ -180,15 +176,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Enhance SKILL.md using AI. "
-            "Automatically selects API mode (Anthropic/Gemini/OpenAI API) when an API key "
-            "is available, or falls back to LOCAL mode (AI coding agent)."
+            "Automatically selects API mode (Gemini/OpenAI/Claude API) when an API key "
+            "is available, or falls back to LOCAL mode (Claude Code CLI)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Mode selection (automatic — no flags required):
   API mode  : Set ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
               Or use --target to force a platform.
-  LOCAL mode: Falls back when no API keys are found. Requires AI coding agent.
+  LOCAL mode: Falls back when no API keys are found. Requires Claude Code CLI.
               Does NOT work as root (Docker/VPS) — use API mode instead.
 
 Examples:
@@ -198,7 +194,7 @@ Examples:
   # Force Gemini API
   skill-seekers enhance output/react/ --target gemini
 
-  # Force Anthropic API with explicit key
+  # Force Claude API with explicit key
   skill-seekers enhance output/react/ --target claude --api-key sk-ant-...
 
   # LOCAL mode options
@@ -248,10 +244,10 @@ Examples:
     if _is_root():
         print("❌ Cannot run LOCAL enhancement as root.")
         print()
-        print("   AI coding agent refuses to execute as root (Docker/VPS security policy).")
+        print("   Claude Code CLI refuses to execute as root (Docker/VPS security policy).")
         print("   Use API mode instead by setting one of these environment variables:")
         print()
-        print("     export ANTHROPIC_API_KEY=sk-ant-...   # Anthropic")
+        print("     export ANTHROPIC_API_KEY=sk-ant-...   # Claude")
         print("     export GOOGLE_API_KEY=AIza...          # Gemini")
         print("     export OPENAI_API_KEY=sk-proj-...      # OpenAI")
         print()
@@ -259,8 +255,7 @@ Examples:
         print(f"     skill-seekers enhance {args.skill_directory}")
         return 1
 
-    agent_name = os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
-    print(f"🤖 Enhancement mode: LOCAL ({agent_name})")
+    print("🤖 Enhancement mode: LOCAL (Claude Code CLI)")
     return _run_local_mode(args)
 
 

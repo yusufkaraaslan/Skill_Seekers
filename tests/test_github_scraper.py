@@ -230,31 +230,6 @@ class TestLanguageDetection(unittest.TestCase):
             self.assertIn("languages", scraper.extracted_data)
             self.assertEqual(scraper.extracted_data["languages"], {})
 
-    def test_extract_languages_filters_non_integer_metadata(self):
-        """Test that non-integer metadata keys (e.g., 'url') are filtered out (#322)"""
-        config = {"repo": "xyflow/xyflow", "name": "xyflow", "github_token": None}
-
-        with patch("skill_seekers.cli.github_scraper.Github"):
-            scraper = self.GitHubScraper(config)
-            scraper.repo = Mock()
-            scraper.repo.get_languages.return_value = {
-                "TypeScript": 707330,
-                "Svelte": 95784,
-                "url": "https://api.github.com/repos/xyflow/xyflow/languages",
-            }
-
-            scraper._extract_languages()
-
-            self.assertIn("languages", scraper.extracted_data)
-            self.assertIn("TypeScript", scraper.extracted_data["languages"])
-            self.assertIn("Svelte", scraper.extracted_data["languages"])
-            self.assertNotIn("url", scraper.extracted_data["languages"])
-
-            # Percentages should be calculated only from real languages
-            ts_data = scraper.extracted_data["languages"]["TypeScript"]
-            total = 707330 + 95784
-            self.assertEqual(ts_data["percentage"], round(707330 / total * 100, 2))
-
 
 class TestIssuesExtraction(unittest.TestCase):
     """Test GitHub Issues extraction (C1.7)"""

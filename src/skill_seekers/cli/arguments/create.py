@@ -57,7 +57,7 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": (
                 "AI enhancement level (auto-detects API vs LOCAL mode): "
                 "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
-                "Mode selection: uses API if API key is set (ANTHROPIC_API_KEY, MOONSHOT_API_KEY, etc.), otherwise LOCAL (AI coding agent)"
+                "Mode selection: uses API if ANTHROPIC_API_KEY is set, otherwise LOCAL (Claude Code)"
             ),
             "metavar": "LEVEL",
         },
@@ -66,7 +66,7 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--api-key",),
         "kwargs": {
             "type": str,
-            "help": "API key for enhancement (ANTHROPIC_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, MOONSHOT_API_KEY)",
+            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
             "metavar": "KEY",
         },
     },
@@ -162,29 +162,10 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "VERSION",
         },
     },
-    # Agent selection for enhancement (added in v3.4.0 - multi-agent support)
-    "agent": {
-        "flags": ("--agent",),
-        "kwargs": {
-            "type": str,
-            "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-            "help": "Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
-            "metavar": "AGENT",
-        },
-    },
-    "agent_cmd": {
-        "flags": ("--agent-cmd",),
-        "kwargs": {
-            "type": str,
-            "help": "Override agent command template (advanced)",
-            "metavar": "CMD",
-        },
-    },
 }
 
 # Merge RAG arguments from common.py into universal arguments
 UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
-
 
 # =============================================================================
 # TIER 2: SOURCE-SPECIFIC ARGUMENTS
@@ -192,13 +173,6 @@ UNIVERSAL_ARGUMENTS.update(RAG_ARGUMENTS)
 
 # Web scraping specific (from scrape.py)
 WEB_ARGUMENTS: dict[str, dict[str, Any]] = {
-    "browser": {
-        "flags": ("--browser",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Use headless browser (Playwright) to render JavaScript SPA sites",
-        },
-    },
     "url": {
         "flags": ("--url",),
         "kwargs": {
@@ -395,43 +369,6 @@ LOCAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Skip documentation extraction",
         },
     },
-    "skip_api_reference": {
-        "flags": ("--skip-api-reference",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Skip API reference generation",
-        },
-    },
-    "skip_dependency_graph": {
-        "flags": ("--skip-dependency-graph",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Skip dependency graph analysis",
-        },
-    },
-    "skip_config_patterns": {
-        "flags": ("--skip-config-patterns",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Skip configuration pattern extraction",
-        },
-    },
-    "no_comments": {
-        "flags": ("--no-comments",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Skip comment extraction from source code",
-        },
-    },
-    "depth": {
-        "flags": ("--depth",),
-        "kwargs": {
-            "type": str,
-            "choices": ["surface", "deep", "full"],
-            "help": "Analysis depth (deprecated, use --preset instead)",
-            "metavar": "LEVEL",
-        },
-    },
 }
 
 # PDF specific (from pdf.py)
@@ -487,13 +424,6 @@ EPUB_ARGUMENTS: dict[str, dict[str, Any]] = {
 
 # Video specific (from video.py)
 VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
-    "setup": {
-        "flags": ("--setup",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Auto-detect GPU and install video dependencies",
-        },
-    },
     "video_url": {
         "flags": ("--video-url",),
         "kwargs": {
@@ -598,14 +528,13 @@ VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
 }
 
 # Multi-source config specific (from unified_scraper.py)
-# Note: --fresh is in WEB_ARGUMENTS, shared with config sources via dynamic forwarding
 CONFIG_ARGUMENTS: dict[str, dict[str, Any]] = {
     "merge_mode": {
         "flags": ("--merge-mode",),
         "kwargs": {
             "type": str,
-            "choices": ["rule-based", "ai-enhanced", "claude-enhanced"],
-            "help": "Override merge mode from config (rule-based or ai-enhanced). 'claude-enhanced' accepted as alias.",
+            "choices": ["rule-based", "claude-enhanced"],
+            "help": "Override merge mode from config (rule-based or claude-enhanced)",
             "metavar": "MODE",
         },
     },
@@ -741,14 +670,6 @@ CHAT_ARGUMENTS: dict[str, dict[str, Any]] = {
 # Hidden from default help, shown only with --help-advanced
 
 ADVANCED_ARGUMENTS: dict[str, dict[str, Any]] = {
-    "from_json": {
-        "flags": ("--from-json",),
-        "kwargs": {
-            "type": str,
-            "help": "Build skill from pre-extracted JSON data (skip scraping). Supported by: PDF, Video, Jupyter, HTML, OpenAPI, AsciiDoc, PPTX, RSS, Manpage, Confluence, Notion, Chat.",
-            "metavar": "PATH",
-        },
-    },
     "no_rate_limit": {
         "flags": ("--no-rate-limit",),
         "kwargs": {

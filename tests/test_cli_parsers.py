@@ -24,12 +24,12 @@ class TestParserRegistry:
 
     def test_all_parsers_registered(self):
         """Test that all parsers are registered."""
-        assert len(PARSERS) == 36, f"Expected 36 parsers, got {len(PARSERS)}"
+        assert len(PARSERS) == 35, f"Expected 35 parsers, got {len(PARSERS)}"
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 36
+        assert len(names) == 35
         assert "scrape" in names
         assert "github" in names
         assert "package" in names
@@ -244,8 +244,8 @@ class TestBackwardCompatibility:
 
     def test_command_count_matches(self):
         """Test that we have exactly 35 commands (25 original + 10 new source types)."""
-        assert len(PARSERS) == 36
-        assert len(get_parser_names()) == 36
+        assert len(PARSERS) == 35
+        assert len(get_parser_names()) == 35
 
 
 if __name__ == "__main__":

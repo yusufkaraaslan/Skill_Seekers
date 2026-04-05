@@ -15,9 +15,9 @@ Skill Seekers converts documentation from 17 source types into production-ready 
 - **Scrapers** -- 17 source-type extractors (web, GitHub, PDF, Word, EPUB, video, etc.)
 - **Adaptors** -- Strategy+Factory pattern for 20+ output platforms (Claude, Gemini, OpenAI, RAG frameworks)
 - **Analysis** -- C3.x codebase analysis pipeline (AST parsing, 10 GoF pattern detectors, guide builders)
-- **Enhancement** -- AI-powered skill improvement via `AgentClient` (API mode: Anthropic/Kimi/Gemini/OpenAI + LOCAL mode: Claude Code/Kimi/Codex/Copilot/OpenCode/custom, --enhance-level 0-3)
+- **Enhancement** -- AI-powered skill improvement (API mode + LOCAL mode, --enhance-level 0-3)
 - **Packaging** -- Package, upload, and install skills to AI agent directories
-- **MCP** -- FastMCP server exposing 40 tools via stdio/HTTP transport (includes marketplace and config publishing)
+- **MCP** -- FastMCP server exposing 34 tools via stdio/HTTP transport
 - **Sync** -- Documentation change detection and re-scraping triggers
 
 **Utility Modules** (lower area):
@@ -52,7 +52,7 @@ Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules vi
 ### Enhancement
 ![Enhancement](UML/exports/05_enhancement.png)
 
-Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentClient`) and `UnifiedEnhancer` (C3.x pipeline enhancers). Each has specialized subclasses for patterns, test examples, guides, and configs. `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`. The `AgentClient` (`cli/agent_client.py`) centralizes all AI invocations, supporting API mode (Anthropic, Moonshot/Kimi, Gemini, OpenAI) and LOCAL mode (Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents).
+Two enhancement hierarchies: `AIEnhancer` (API mode, Claude API calls) and `UnifiedEnhancer` (C3.x pipeline enhancers). Each has specialized subclasses for patterns, test examples, guides, and configs. `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`.
 
 ### Packaging
 ![Packaging](UML/exports/06_packaging.png)
@@ -62,7 +62,7 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentCl
 ### MCP Server
 ![MCP Server](UML/exports/07_mcp_server.png)
 
-`SkillSeekerMCPServer` (FastMCP) with 40 tools in 10 categories. Supporting classes: `SourceManager` (config CRUD), `AgentDetector` (environment detection), `GitConfigRepo` (community configs), `MarketplacePublisher` (publish skills to marketplace repos), `MarketplaceManager` (marketplace registry CRUD), `ConfigPublisher` (push configs to registered source repos).
+`SkillSeekerMCPServer` (FastMCP) with 34 tools in 8 categories. Supporting classes: `SourceManager` (config CRUD), `AgentDetector` (environment detection), `GitConfigRepo` (community configs).
 
 ### Sync
 ![Sync](UML/exports/08_sync.png)
@@ -106,43 +106,6 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentCl
 | Command | CLI | `CLIDispatcher` + `COMMAND_MODULES` lazy dispatch |
 | Template Method | Pattern Detection | `BasePatternDetector` + 10 GoF detectors |
 | Template Method | Parsers | `SubcommandParser` + 27 subclasses |
-
-## Behavioral Diagrams
-
-### Create Pipeline Sequence
-![Create Pipeline](UML/exports/14_create_pipeline_sequence.png)
-
-`CreateCommand` is a dispatcher, not a pipeline orchestrator. Flow: User → `execute()` → `SourceDetector.detect(source)` → `validate_source()` → `_validate_arguments()` → `_route_to_scraper()` → `scraper.main(argv)`. The 5 phases (scrape, build_skill, enhance, package, upload) all happen *inside* each scraper's `main()` — CreateCommand only sees the exit code.
-
-### GitHub Unified Flow + C3.x
-![GitHub Unified](UML/exports/15_github_unified_sequence.png)
-
-`UnifiedScraper` orchestrates GitHub scraping (3-stream fetch) then delegates to `analyze_codebase(enhance_level)` for C3.x analysis. Shows all 5 C3.x stages: `PatternRecognizer` (C3.1), `TestExampleExtractor` (C3.2), `HowToGuideBuilder` with examples from C3.2 (C3.3), `ConfigExtractor` (C3.4), and `ArchitecturalPatternDetector` (C3.5). Note: `enhance_level` is the sole AI control parameter — `enhance_with_ai`/`ai_mode` are internal to C3.x classes only.
-
-### Source Auto-Detection
-![Source Detection](UML/exports/16_source_detection_activity.png)
-
-Activity diagram showing `source_detector.py` decision tree in correct code order: file extension first (.json config, .pdf/.docx/.epub/.ipynb/.html/.pptx/etc) → video URL → `os.path.isdir()` (Codebase) → GitHub pattern (owner/repo or github.com URL) → http/https URL (Web) → bare domain inference → error.
-
-### MCP Tool Invocation
-![MCP Invocation](UML/exports/17_mcp_invocation_sequence.png)
-
-MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocation paths: **Path A** (scraping tools) uses `subprocess.run(["skill-seekers", ...])`, **Path B** (packaging/config tools) uses direct Python imports (`get_adaptor()`, `sync_config()`). Both return TextContent → JSON-RPC.
-
-### Enhancement Pipeline
-![Enhancement Pipeline](UML/exports/18_enhancement_activity.png)
-
-`--enhance-level` decision flow with precise internal variable mapping: Level 0 sets `ai_mode=none`, skips all AI. Level >= 1 selects `ai_mode=api` (if any supported API key set: Anthropic, Moonshot/Kimi, Gemini, OpenAI) or `ai_mode=local` (via `AgentClient` with configurable agent: Claude Code, Kimi, Codex, Copilot, OpenCode, or custom), then SKILL.md enhancement happens post-build via `enhance_command`. Level >= 2 enables `enhance_config=True`, `enhance_architecture=True` inside `analyze_codebase()`. Level 3 adds `enhance_patterns=True`, `enhance_tests=True`.
-
-### Runtime Components
-![Runtime Components](UML/exports/19_runtime_components.png)
-
-Component diagram with corrected runtime dependencies. Key flows: `CLI Core` dispatches to `Scrapers` (via `scraper.main(argv)`) and to `Adaptors` (via package/upload commands). `Scrapers` call `Codebase Analysis` via `analyze_codebase(enhance_level)`. `Codebase Analysis` uses `C3.x Classes` internally and `Enhancement` when level ≥ 2. `MCP Server` reaches `Scrapers` via subprocess and `Adaptors` via direct import. `Scrapers` optionally use `Browser Renderer (Playwright)` via `render_page()` when `--browser` flag is set for JavaScript SPA sites.
-
-### Browser Rendering Flow
-![Browser Rendering](UML/exports/20_browser_rendering_sequence.png)
-
-When `--browser` flag is set, `DocScraper.scrape_page()` delegates to `BrowserRenderer.render_page(url)` instead of `requests.get()`. The renderer auto-installs Chromium on first use, navigates with `wait_until='networkidle'` to let JavaScript execute, then returns the fully-rendered HTML. The rest of the pipeline (BeautifulSoup → `extract_content()` → `save_page()`) remains unchanged. Optional dependency: `pip install "skill-seekers[browser]"`.
 
 ## File Locations
 

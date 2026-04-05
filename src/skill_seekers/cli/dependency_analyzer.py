@@ -139,8 +139,6 @@ class DependencyAnalyzer:
             deps = self._extract_rust_imports(content, file_path)
         elif language == "Java":
             deps = self._extract_java_imports(content, file_path)
-        elif language == "Kotlin":
-            deps = self._extract_kotlin_imports(content, file_path)
         elif language == "Ruby":
             deps = self._extract_ruby_imports(content, file_path)
         elif language == "PHP":
@@ -591,38 +589,6 @@ class DependencyAnalyzer:
                     imported_module=import_path,
                     import_type="import",
                     is_relative=False,  # Java uses absolute package names
-                    line_number=line_num,
-                )
-            )
-
-        return deps
-
-    def _extract_kotlin_imports(self, content: str, file_path: str) -> list[DependencyInfo]:
-        """
-        Extract Kotlin import statements.
-
-        Handles:
-        - import kotlin.collections.List
-        - import kotlinx.coroutines.*
-        - import com.example.Foo as Bar (alias imports)
-
-        Regex patterns based on Kotlin language specification:
-        https://kotlinlang.org/spec/packages-and-imports.html
-        """
-        deps = []
-
-        # Match: import package.Class [as Alias]
-        import_pattern = r"import\s+([A-Za-z_][\w.]*(?:\.\*)?)\s*(?:as\s+\w+)?"
-        for match in re.finditer(import_pattern, content):
-            import_path = match.group(1)
-            line_num = self._offset_to_line(match.start())
-
-            deps.append(
-                DependencyInfo(
-                    source_file=file_path,
-                    imported_module=import_path,
-                    import_type="import",
-                    is_relative=False,
                     line_number=line_num,
                 )
             )

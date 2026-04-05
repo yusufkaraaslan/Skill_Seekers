@@ -590,7 +590,7 @@ def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str
 
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
+            model="claude-haiku-4-5-20251001",
             max_tokens=4096,
             messages=[
                 {

@@ -460,9 +460,9 @@ skill-seekers upload output/react-claude.zip --target claude
 
 AI enhancement transforms basic skills (2-3/10 quality) into production-ready skills (8-9/10 quality) using LLMs.
 
-**Two Modes (via AgentClient):**
-1. **API Mode:** Multi-provider AI API calls -- Anthropic, Moonshot/Kimi, Gemini, OpenAI (fast, costs ~$0.15-0.30)
-2. **LOCAL Mode:** Any supported coding agent -- Claude Code, Kimi, Codex, Copilot, OpenCode, or custom (free with agent subscription)
+**Two Modes:**
+1. **API Mode:** Direct Claude API calls (fast, costs ~$0.15-0.30)
+2. **LOCAL Mode:** Uses Claude Code CLI (free with your Max plan)
 
 **What it improves:**
 - Better organization and structure

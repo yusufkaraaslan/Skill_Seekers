@@ -74,7 +74,7 @@ Examples:
   # Preview workflow (dry run)
   skill-seekers install --config react --dry-run
 
-  # Install for Gemini instead of default platform
+  # Install for Gemini instead of Claude
   skill-seekers install --config react --target gemini
 
   # Install for OpenAI ChatGPT
@@ -107,9 +107,7 @@ Phases:
         help="Output directory for skill files (default: output/)",
     )
 
-    parser.add_argument(
-        "--no-upload", action="store_true", help="Skip automatic upload to target platform"
-    )
+    parser.add_argument("--no-upload", action="store_true", help="Skip automatic upload to Claude")
 
     parser.add_argument(
         "--unlimited",
@@ -121,18 +119,12 @@ Phases:
 
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "kimi", "markdown"],
-        default=None,
-        help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
+        choices=["claude", "gemini", "openai", "markdown"],
+        default="claude",
+        help="Target LLM platform (default: claude)",
     )
 
     args = parser.parse_args()
-
-    # Auto-detect target platform if not specified
-    if args.target is None:
-        from skill_seekers.cli.agent_client import AgentClient
-
-        args.target = AgentClient.detect_default_target()
 
     # Determine if config is a name or path
     config_arg = args.config

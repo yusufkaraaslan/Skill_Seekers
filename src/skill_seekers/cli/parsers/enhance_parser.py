@@ -23,8 +23,8 @@ class EnhanceParser(SubcommandParser):
     def description(self) -> str:
         return (
             "Enhance SKILL.md using AI. "
-            "Automatically uses API mode (Anthropic/Gemini/OpenAI) when an API key is "
-            "available, or falls back to LOCAL mode (coding agent CLI)."
+            "Automatically uses API mode (Gemini/OpenAI/Claude) when an API key is "
+            "available, or falls back to LOCAL mode (Claude Code CLI)."
         )
 
     def add_arguments(self, parser):

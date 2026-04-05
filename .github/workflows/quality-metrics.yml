@@ -31,10 +31,10 @@ jobs:
       FAIL_THRESHOLD_INPUT: ${{ github.event.inputs.fail_threshold }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.12'
 
@@ -88,43 +88,48 @@ jobs:
           echo "🔍 Analyzing $SKILL_NAME..."
 
           # Run quality analysis
-          python3 -c "
-          import sys
-          from pathlib import Path
+          python3 << 'EOF' "$skill_dir" "$THRESHOLD" "$SKILL_NAME"
+import sys
+from pathlib import Path
+sys.path.insert(0, 'src')
 
-          from skill_seekers.cli.quality_metrics import QualityAnalyzer
+from skill_seekers.cli.quality_metrics import QualityAnalyzer
 
-          skill_dir = Path('$skill_dir')
-          threshold = float('$THRESHOLD')
-          skill_name = '$SKILL_NAME'
+skill_dir = Path(sys.argv[1])
+threshold = float(sys.argv[2])
+skill_name = sys.argv[3]
 
-          analyzer = QualityAnalyzer(skill_dir)
-          report = analyzer.generate_report()
+analyzer = QualityAnalyzer(skill_dir)
+report = analyzer.generate_report()
 
-          formatted = analyzer.format_report(report)
-          print(formatted)
+# Print formatted report
+formatted = analyzer.format_report(report)
+print(formatted)
 
-          with open(f'quality_{skill_name}.txt', 'w') as f:
-              f.write(formatted)
+# Save individual report
+with open(f'quality_{skill_name}.txt', 'w') as f:
+    f.write(formatted)
 
-          score = report.overall_score.total_score
-          grade = report.overall_score.grade
-          status = 'PASS' if score >= threshold else 'FAIL'
+# Add to summary
+score = report.overall_score.total_score
+grade = report.overall_score.grade
+status = "✅" if score >= threshold else "❌"
 
-          summary_line = f'{status} **{skill_name}**: {grade} ({score:.1f}/100)'
-          print(f'\n{summary_line}')
+summary_line = f"{status} **{skill_name}**: {grade} ({score:.1f}/100)"
+print(f"\n{summary_line}")
 
-          with open('quality_summary.md', 'a') as f:
-              f.write(f'{summary_line}\n')
+with open('quality_summary.md', 'a') as f:
+    f.write(f"{summary_line}\n")
 
-          if score < threshold:
-              print(f'::error file={skill_dir}/SKILL.md::Quality score {score:.1f} is below threshold {threshold}')
-              sys.exit(1)
-          elif score < 80:
-              print(f'::warning file={skill_dir}/SKILL.md::Quality score {score:.1f} could be improved')
-          else:
-              print(f'::notice file={skill_dir}/SKILL.md::Quality score {score:.1f} - Excellent!')
-          "
+# Set metrics as annotations
+if score < threshold:
+    print(f"::error file={skill_dir}/SKILL.md::Quality score {score:.1f} is below threshold {threshold}")
+    sys.exit(1)
+elif score < 80:
+    print(f"::warning file={skill_dir}/SKILL.md::Quality score {score:.1f} could be improved")
+else:
+    print(f"::notice file={skill_dir}/SKILL.md::Quality score {score:.1f} - Excellent!")
+EOF
 
           if [ $? -ne 0 ]; then
             ALL_PASSED=false
@@ -141,7 +146,7 @@ jobs:
         fi
 
     - name: Upload quality reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: quality-metrics-reports
         path: quality_*.txt
@@ -150,7 +155,7 @@ jobs:
 
     - name: Post summary to PR
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v6
       with:
         script: |
           const fs = require('fs');

@@ -9,7 +9,7 @@ This is the main entry point for unified config workflow.
 
 Usage:
     skill-seekers unified --config configs/godot_unified.json
-    skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
+    skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
 """
 
 import argparse
@@ -24,10 +24,9 @@ from typing import Any
 
 # Import validators and scrapers
 try:
-    from skill_seekers.cli.agent_client import get_default_timeout
     from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
-    from skill_seekers.cli.merge_sources import AIEnhancedMerger, RuleBasedMerger
+    from skill_seekers.cli.merge_sources import ClaudeEnhancedMerger, RuleBasedMerger
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
     from skill_seekers.cli.utils import setup_logging
 except ImportError as e:
@@ -46,7 +45,7 @@ class UnifiedScraper:
     1. Load and validate unified config
     2. Scrape all sources (docs, GitHub, PDF)
     3. Detect conflicts between sources
-    4. Merge intelligently (rule-based or AI-enhanced)
+    4. Merge intelligently (rule-based or Claude-enhanced)
     5. Build unified skill
     """
 
@@ -65,9 +64,8 @@ class UnifiedScraper:
         self.validator = validate_config(config_path)
         self.config = self.validator.config
 
-        # Determine merge mode (normalize claude-enhanced → ai-enhanced for backward compat)
-        raw_mode = merge_mode or self.config.get("merge_mode", "rule-based")
-        self.merge_mode = "ai-enhanced" if raw_mode == "claude-enhanced" else raw_mode
+        # Determine merge mode
+        self.merge_mode = merge_mode or self.config.get("merge_mode", "rule-based")
         logger.info(f"Merge mode: {self.merge_mode}")
 
         # Storage for scraped data - use lists to support multiple sources of same type
@@ -227,7 +225,7 @@ class UnifiedScraper:
             "url_patterns": source.get("url_patterns", {}),
             "categories": source.get("categories", {}),
             "rate_limit": source.get("rate_limit", 0.5),
-            "max_pages": source.get("max_pages", 500),
+            "max_pages": source.get("max_pages", 100),
         }
 
         # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
@@ -241,21 +239,9 @@ class UnifiedScraper:
         if "start_urls" in source:
             doc_source["start_urls"] = source["start_urls"]
 
-        # Pass through browser rendering settings
-        if source.get("browser"):
-            doc_source["browser"] = True
-        if "browser_wait_until" in source:
-            doc_source["browser_wait_until"] = source["browser_wait_until"]
-        if "browser_extra_wait" in source:
-            doc_source["browser_extra_wait"] = source["browser_extra_wait"]
-
         doc_config = {
             "name": f"{self.name}_docs",
             "description": f"Documentation for {self.name}",
-            "base_url": source["base_url"],
-            "browser": source.get("browser", False),
-            "browser_wait_until": source.get("browser_wait_until", "domcontentloaded"),
-            "browser_extra_wait": source.get("browser_extra_wait", 0),
             "sources": [doc_source],
         }
 
@@ -270,29 +256,7 @@ class UnifiedScraper:
         doc_scraper_path = Path(__file__).parent / "doc_scraper.py"
         cmd = [sys.executable, str(doc_scraper_path), "--config", temp_config_path, "--fresh"]
 
-        # Forward agent-related CLI args so doc scraper enhancement respects
-        # the user's chosen agent instead of defaulting to claude.
-        cli_args = getattr(self, "_cli_args", None)
-        if cli_args is not None:
-            if getattr(cli_args, "agent", None):
-                cmd.extend(["--agent", cli_args.agent])
-            if getattr(cli_args, "agent_cmd", None):
-                cmd.extend(["--agent-cmd", cli_args.agent_cmd])
-            if getattr(cli_args, "api_key", None):
-                cmd.extend(["--api-key", cli_args.api_key])
-
-        # Support "browser": true in source config for JavaScript SPA sites
-        if source.get("browser", False):
-            cmd.append("--browser")
-            logger.info("  🌐 Browser mode enabled (JavaScript rendering via Playwright)")
-
-        try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=3600
-            )
-        except subprocess.TimeoutExpired:
-            logger.error("Documentation scraping timed out after 60 minutes")
-            return
+        result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
         if result.returncode != 0:
             logger.error(f"Documentation scraping failed with return code {result.returncode}")
@@ -354,11 +318,6 @@ class UnifiedScraper:
             shutil.move(docs_data_dir, cache_data_dir)
             logger.info(f"📦 Moved docs data to cache: {cache_data_dir}")
 
-            # Update data_file path to point to cache location
-            if self.scraped_data["documentation"]:
-                cached_data_file = os.path.join(cache_data_dir, "summary.json")
-                self.scraped_data["documentation"][-1]["data_file"] = cached_data_file
-
     def _clone_github_repo(self, repo_name: str, idx: int = 0) -> str | None:
         """
         Clone GitHub repository to cache directory for C3.x analysis.
@@ -394,7 +353,7 @@ class UnifiedScraper:
                 ["git", "clone", repo_url, clone_path],
                 capture_output=True,
                 text=True,
-                timeout=get_default_timeout(),  # default 45 min, configurable via SKILL_SEEKER_ENHANCE_TIMEOUT
+                timeout=600,  # 10 minute timeout for full clone
             )
 
             if result.returncode == 0:
@@ -463,7 +422,6 @@ class UnifiedScraper:
             "include_code": source.get("include_code", True),
             "code_analysis_depth": source.get("code_analysis_depth", "surface"),
             "file_patterns": source.get("file_patterns", []),
-            "language": source.get("language", ""),
             "local_repo_path": local_repo_path,  # Use cloned path if available
         }
 
@@ -818,38 +776,25 @@ class UnifiedScraper:
                 enhance_level=enhance_level,
             )
 
-            # Load analysis outputs into memory.
-            # _generate_references() moves dirs into references/ and deletes originals.
-            refs = temp_output / "references"
+            # Load analysis outputs into memory
             local_data = {
                 "source_id": f"{self.name}_local_{idx}_{path_id}",
                 "path": local_path,
                 "name": source_name,
                 "description": source.get("description", f"Local analysis of {path_id}"),
                 "weight": source.get("weight", 1.0),
-                "patterns": self._load_json_fallback(
-                    refs / "patterns" / "all_patterns.json",
-                    temp_output / "patterns" / "all_patterns.json",
+                "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
+                "test_examples": self._load_json(
+                    temp_output / "test_examples" / "test_examples.json"
                 ),
-                "test_examples": self._load_json_fallback(
-                    refs / "test_examples" / "test_examples.json",
-                    temp_output / "test_examples" / "test_examples.json",
+                "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
+                "config_patterns": self._load_json(
+                    temp_output / "config_patterns" / "config_patterns.json"
                 ),
-                "how_to_guides": self._load_guide_collection(refs / "tutorials")
-                or self._load_guide_collection(temp_output / "tutorials"),
-                "config_patterns": self._load_json_fallback(
-                    refs / "config_patterns" / "config_patterns.json",
-                    temp_output / "config_patterns" / "config_patterns.json",
-                ),
-                "architecture": self._load_json_fallback(
-                    refs / "architecture" / "architectural_patterns.json",
-                    temp_output / "architecture" / "architectural_patterns.json",
-                ),
-                "api_reference": self._load_api_reference(refs / "api_reference")
-                or self._load_api_reference(temp_output / "api_reference"),
-                "dependency_graph": self._load_json_fallback(
-                    refs / "dependencies" / "dependency_graph.json",
-                    temp_output / "dependencies" / "dependency_graph.json",
+                "architecture": self._load_json(temp_output / "ARCHITECTURE.json"),
+                "api_reference": self._load_api_reference(temp_output / "api_reference"),
+                "dependency_graph": self._load_json(
+                    temp_output / "dependencies" / "dependency_graph.json"
                 ),
             }
 
@@ -1480,12 +1425,6 @@ class UnifiedScraper:
 
         logger.info(f"✅ Chat: {len(chat_data.get('messages', []))} messages extracted")
 
-    def _load_json_fallback(self, primary: Path, fallback: Path) -> dict:
-        """Load JSON from primary path, falling back to secondary if not found."""
-        if primary.exists():
-            return self._load_json(primary)
-        return self._load_json(fallback)
-
     def _load_json(self, file_path: Path) -> dict:
         """
         Load JSON file safely.
@@ -1586,11 +1525,6 @@ class UnifiedScraper:
         logger.info(f"   Analyzing codebase: {local_repo_path}")
 
         try:
-            # Resolve agent from CLI args for C3.x analysis
-            cli_args = getattr(self, "_cli_args", None)
-            agent = getattr(cli_args, "agent", None) if cli_args else None
-            agent_cmd = getattr(cli_args, "agent_cmd", None) if cli_args else None
-
             # Run full C3.x analysis
             _results = analyze_codebase(
                 directory=Path(local_repo_path),
@@ -1605,41 +1539,27 @@ class UnifiedScraper:
                 extract_test_examples=True,  # C3.2: Test examples
                 build_how_to_guides=True,  # C3.3: How-to guides
                 extract_config_patterns=True,  # C3.4: Config patterns
-                extract_docs=True,
-                enhance_level=0 if source.get("ai_mode", "auto") == "none" else 2,
-                agent=agent,
-                agent_cmd=agent_cmd,
+                enhance_with_ai=source.get("ai_mode", "auto") != "none",
+                ai_mode=source.get("ai_mode", "auto"),
             )
 
-            # Load C3.x outputs into memory.
-            # _generate_references() inside analyze_codebase() moves analysis dirs
-            # into references/ and deletes the originals, so we check both locations.
-            refs = temp_output / "references"
+            # Load C3.x outputs into memory
             c3_data = {
-                "patterns": self._load_json_fallback(
-                    refs / "patterns" / "all_patterns.json",
-                    temp_output / "patterns" / "all_patterns.json",
+                "patterns": self._load_json(temp_output / "patterns" / "detected_patterns.json"),
+                "test_examples": self._load_json(
+                    temp_output / "test_examples" / "test_examples.json"
                 ),
-                "test_examples": self._load_json_fallback(
-                    refs / "test_examples" / "test_examples.json",
-                    temp_output / "test_examples" / "test_examples.json",
+                "how_to_guides": self._load_guide_collection(temp_output / "tutorials"),
+                "config_patterns": self._load_json(
+                    temp_output / "config_patterns" / "config_patterns.json"
                 ),
-                "how_to_guides": self._load_guide_collection(refs / "tutorials")
-                or self._load_guide_collection(temp_output / "tutorials"),
-                "config_patterns": self._load_json_fallback(
-                    refs / "config_patterns" / "config_patterns.json",
-                    temp_output / "config_patterns" / "config_patterns.json",
+                "architecture": self._load_json(
+                    temp_output / "architecture" / "architectural_patterns.json"
                 ),
-                "architecture": self._load_json_fallback(
-                    refs / "architecture" / "architectural_patterns.json",
-                    temp_output / "architecture" / "architectural_patterns.json",
-                ),
-                "api_reference": self._load_api_reference(refs / "api_reference")
-                or self._load_api_reference(temp_output / "api_reference"),
-                "dependency_graph": self._load_json_fallback(
-                    refs / "dependencies" / "dependency_graph.json",
-                    temp_output / "dependencies" / "dependency_graph.json",
-                ),
+                "api_reference": self._load_api_reference(temp_output / "api_reference"),  # C2.5
+                "dependency_graph": self._load_json(
+                    temp_output / "dependencies" / "dependency_graph.json"
+                ),  # C2.6
             }
 
             # Log summary
@@ -1687,22 +1607,15 @@ class UnifiedScraper:
 
         if not self.validator.needs_api_merge():
             logger.info("No API merge needed (only one API source)")
-            logger.info("\n" + "=" * 60)
-            logger.info("PHASE 3: Merging sources (skipped - no conflicts detected)")
-            logger.info("=" * 60)
             return []
 
-        # Get documentation and GitHub data (scraped_data stores lists of sources)
-        docs_list = self.scraped_data.get("documentation", [])
-        github_list = self.scraped_data.get("github", [])
+        # Get documentation and GitHub data
+        docs_data = self.scraped_data.get("documentation", {})
+        github_data = self.scraped_data.get("github", {})
 
-        if not docs_list or not github_list:
+        if not docs_data or not github_data:
             logger.warning("Missing documentation or GitHub data for conflict detection")
             return []
-
-        # Use the first source from each list
-        docs_data = docs_list[0]
-        github_data = github_list[0]
 
         # Load data files
         with open(docs_data["data_file"], encoding="utf-8") as f:
@@ -1750,16 +1663,9 @@ class UnifiedScraper:
             logger.info("No conflicts to merge")
             return None
 
-        # Get data files (scraped_data stores lists of sources)
-        docs_list = self.scraped_data.get("documentation", [])
-        github_list = self.scraped_data.get("github", [])
-
-        if not docs_list or not github_list:
-            logger.warning("Missing documentation or GitHub data for merging")
-            return None
-
-        docs_data = docs_list[0]
-        github_data = github_list[0]
+        # Get data files
+        docs_data = self.scraped_data.get("documentation", {})
+        github_data = self.scraped_data.get("github", {})
 
         # Load data
         with open(docs_data["data_file"], encoding="utf-8") as f:
@@ -1769,8 +1675,8 @@ class UnifiedScraper:
             github_json = json.load(f)
 
         # Choose merger
-        if self.merge_mode in ("ai-enhanced", "claude-enhanced"):
-            merger = AIEnhancedMerger(docs_json, github_json, conflicts)
+        if self.merge_mode == "claude-enhanced":
+            merger = ClaudeEnhancedMerger(docs_json, github_json, conflicts)
         else:
             merger = RuleBasedMerger(docs_json, github_json, conflicts)
 
@@ -1891,124 +1797,6 @@ class UnifiedScraper:
                 }
                 run_workflows(effective_args, context=unified_context)
 
-            # Phase 6: AI Enhancement of SKILL.md
-            # Triggered by config "enhancement" block or CLI --enhance-level
-            enhancement_config = self.config.get("enhancement", {})
-            enhancement_enabled = enhancement_config.get("enabled", False)
-            enhancement_level = enhancement_config.get("level", 0)
-            enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
-
-            # CLI --enhance-level overrides config
-            cli_enhance_level = getattr(args, "enhance_level", None) if args is not None else None
-            if cli_enhance_level is not None:
-                enhancement_enabled = cli_enhance_level > 0
-                enhancement_level = cli_enhance_level
-
-            if enhancement_enabled and enhancement_level > 0:
-                logger.info("\n" + "=" * 60)
-                logger.info(
-                    f"PHASE 6: Enhancing SKILL.md (level {enhancement_level}, mode {enhancement_mode})"
-                )
-                logger.info("=" * 60)
-
-                skill_md_path = os.path.join(self.output_dir, "SKILL.md")
-                if not os.path.exists(skill_md_path):
-                    logger.warning("⚠️  SKILL.md not found, skipping enhancement")
-                elif enhancement_mode == "LOCAL":
-                    try:
-                        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                        # Get agent from CLI args, config enhancement block, or env var
-                        agent = None
-                        agent_cmd = None
-                        if args is not None:
-                            agent = getattr(args, "agent", None)
-                            agent_cmd = getattr(args, "agent_cmd", None)
-                        if not agent:
-                            agent = enhancement_config.get("agent", None)
-                        if not agent:
-                            agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
-
-                        # Read timeout from config enhancement block
-                        timeout_val = enhancement_config.get("timeout")
-                        if timeout_val is not None:
-                            if isinstance(timeout_val, str) and timeout_val.lower() in (
-                                "unlimited",
-                                "none",
-                            ):
-                                timeout_val = 86400  # 24 hours
-                            else:
-                                try:
-                                    timeout_val = int(timeout_val)
-                                    if timeout_val <= 0:
-                                        timeout_val = 86400
-                                except (ValueError, TypeError):
-                                    timeout_val = 2700
-                        else:
-                            timeout_val = 2700
-
-                        enhancer = LocalSkillEnhancer(
-                            self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
-                        )
-                        success = enhancer.run(headless=True, timeout=timeout_val)
-                        agent_name = agent or "claude"
-                        if success:
-                            logger.info(f"✅ SKILL.md enhanced (LOCAL mode via {agent_name})")
-                        else:
-                            logger.warning(
-                                f"⚠️  SKILL.md enhancement returned false (LOCAL mode via {agent_name}). "
-                                "Check logs above for the exact error."
-                            )
-                    except Exception as e:
-                        logger.warning(f"⚠️  LOCAL enhancement failed: {e}")
-                        logger.info(
-                            "   Try manually: skill-seekers enhance "
-                            + self.output_dir
-                            + " --agent kimi"
-                        )
-                else:
-                    # API mode — use AgentClient for multi-provider support
-                    try:
-                        from skill_seekers.cli.agent_client import AgentClient
-
-                        client = AgentClient(mode="api")
-                        if client.client:
-                            # Read references and current SKILL.md
-                            references = ""
-                            refs_dir = Path(self.output_dir) / "references"
-                            if refs_dir.exists():
-                                for md_file in sorted(refs_dir.rglob("*.md")):
-                                    content = md_file.read_text(encoding="utf-8", errors="ignore")
-                                    references += f"\n\n## {md_file.name}\n\n{content}"
-                            current_skill = Path(skill_md_path).read_text(encoding="utf-8")
-
-                            # Build enhancement prompt
-                            prompt = (
-                                f"Enhance this SKILL.md using the reference documentation.\n\n"
-                                f"CURRENT SKILL.MD:\n{current_skill}\n\n"
-                                f"REFERENCES:\n{references}\n\n"
-                                f"Return ONLY the complete enhanced SKILL.md content, "
-                                f"starting with the frontmatter (---)."
-                            )
-                            enhanced = client.call(prompt, max_tokens=8192)
-                            if enhanced:
-                                shutil.copy2(skill_md_path, skill_md_path + ".backup")
-                                Path(skill_md_path).write_text(enhanced, encoding="utf-8")
-                                logger.info(
-                                    f"✅ SKILL.md enhanced (API mode via {client.provider})"
-                                )
-                            else:
-                                logger.warning("⚠️  API enhancement returned empty result")
-                        else:
-                            logger.warning("⚠️  No API key found, skipping API enhancement")
-                            logger.info('   Set an API key or use "mode": "LOCAL" in config')
-                    except Exception as e:
-                        logger.warning(f"⚠️  API enhancement failed: {e}")
-            else:
-                logger.info("\n" + "=" * 60)
-                logger.info("PHASE 6: Enhancement (skipped - not enabled in config)")
-                logger.info("=" * 60)
-
             logger.info("\n" + "✅ " * 20)
             logger.info("Unified scraping complete!")
             logger.info("✅ " * 20 + "\n")
@@ -2038,7 +1826,7 @@ Examples:
   skill-seekers unified --config configs/godot_unified.json
 
   # Override merge mode
-  skill-seekers unified --config configs/react_unified.json --merge-mode ai-enhanced
+  skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
 
   # Backward compatible with legacy configs
   skill-seekers unified --config configs/react.json
@@ -2049,8 +1837,8 @@ Examples:
     parser.add_argument(
         "--merge-mode",
         "-m",
-        choices=["rule-based", "ai-enhanced", "claude-enhanced"],
-        help="Override config merge mode (ai-enhanced or rule-based). 'claude-enhanced' accepted as alias.",
+        choices=["rule-based", "claude-enhanced"],
+        help="Override config merge mode",
     )
     parser.add_argument(
         "--skip-codebase-analysis",
@@ -2112,19 +1900,6 @@ Examples:
             "(0=off, 1=SKILL.md, 2=+arch/config, 3=full). "
             "Overrides per-source enhance_level in config."
         ),
-    )
-    parser.add_argument(
-        "--agent",
-        type=str,
-        choices=["claude", "codex", "copilot", "opencode", "kimi", "custom"],
-        metavar="AGENT",
-        help="Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
-    )
-    parser.add_argument(
-        "--agent-cmd",
-        type=str,
-        metavar="CMD",
-        help="Override agent command template (advanced)",
     )
 
     args = parser.parse_args()

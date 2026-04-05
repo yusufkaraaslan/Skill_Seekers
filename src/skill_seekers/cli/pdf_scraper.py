@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-PDF Documentation to AI Skill Converter (Task B1.6)
+PDF Documentation to Claude Skill Converter (Task B1.6)
 
-Converts PDF documentation into AI skills.
+Converts PDF documentation into Claude AI skills.
 Uses pdf_extractor_poc.py for extraction, builds skill structure.
 
 Usage:
@@ -63,7 +63,7 @@ def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str
 
 
 class PDFToSkillConverter:
-    """Convert PDF documentation to AI skill"""
+    """Convert PDF documentation to Claude skill"""
 
     def __init__(self, config):
         self.config = config
@@ -637,7 +637,7 @@ def main():
     from .arguments.pdf import add_pdf_arguments
 
     parser = argparse.ArgumentParser(
-        description="Convert PDF documentation to AI skill",
+        description="Convert PDF documentation to Claude skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -749,22 +749,16 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                    enhancer = LocalSkillEnhancer(Path(skill_dir))
                     enhancer.run(headless=True)
-                    agent_name = agent or "claude"
-                    print(f"✅ Local enhancement complete! (via {agent_name})")
+                    print("✅ Local enhancement complete!")
             else:
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
                 enhancer.run(headless=True)
-                agent_name = agent or "claude"
-                print(f"✅ Local enhancement complete! (via {agent_name})")
+                print("✅ Local enhancement complete!")
 
     except RuntimeError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)

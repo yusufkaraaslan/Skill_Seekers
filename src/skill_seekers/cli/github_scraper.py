@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-GitHub Repository to AI Skill Converter (Tasks C1.1-C1.12)
+GitHub Repository to Claude Skill Converter (Tasks C1.1-C1.12)
 
-Converts GitHub repositories into AI skills by extracting:
+Converts GitHub repositories into Claude AI skills by extracting:
 - README and documentation
 - Code structure and signatures
 - GitHub Issues, Changelog, and Releases
@@ -519,11 +519,6 @@ class GitHubScraper:
 
         try:
             languages = self.repo.get_languages()
-            # Filter out non-integer metadata (e.g., "url" key from some API configurations)
-            non_lang_keys = {k for k, v in languages.items() if not isinstance(v, int)}
-            if non_lang_keys:
-                logger.debug(f"Filtered non-language keys from API response: {non_lang_keys}")
-                languages = {k: v for k, v in languages.items() if isinstance(v, int)}
             total_bytes = sum(languages.values())
 
             self.extracted_data["languages"] = {
@@ -714,95 +709,89 @@ class GitHubScraper:
 
         logger.info(f"Extracting code signatures ({self.code_analysis_depth} analysis)...")
 
-        # Build reverse extension → language map for per-file detection
+        # Get primary language for the repository
+        languages = self.extracted_data.get("languages", {})
+        if not languages:
+            logger.warning("No languages detected - skipping code analysis")
+            return
+
+        # Determine primary language
+        primary_language = max(languages.items(), key=lambda x: x[1]["bytes"])[0]
+        logger.info(f"Primary language: {primary_language}")
+
+        # Determine file extensions to analyze
         extension_map = {
             "Python": [".py"],
             "JavaScript": [".js", ".jsx"],
             "TypeScript": [".ts", ".tsx"],
-            "Kotlin": [".kt", ".kts"],
-            "Java": [".java"],
             "C": [".c", ".h"],
             "C++": [".cpp", ".hpp", ".cc", ".hh", ".cxx"],
-            "C#": [".cs"],
-            "Go": [".go"],
-            "Rust": [".rs"],
-            "Swift": [".swift"],
-            "Ruby": [".rb"],
-            "PHP": [".php"],
-            "GDScript": [".gd"],
         }
-        ext_to_lang = {}
-        for lang, exts in extension_map.items():
-            for ext in exts:
-                ext_to_lang[ext] = lang
 
-        # Optional: filter to specific languages from config
-        target_languages = None
-        config_language = self.config.get("language", "")
-        if config_language:
-            target_languages = {lang.strip() for lang in config_language.split(",")}
-            logger.info(f"Language filter from config: {', '.join(sorted(target_languages))}")
+        extensions = extension_map.get(primary_language, [])
+        if not extensions:
+            logger.warning(f"No file extensions mapped for {primary_language}")
+            return
 
-        # Analyze ALL files, detecting language per-file from extension
+        # Analyze files matching patterns and extensions
         analyzed_files = []
         file_tree = self.extracted_data.get("file_tree", [])
-        languages_found = set()
 
         for file_info in file_tree:
             file_path = file_info["path"]
 
-            # Detect language from file extension
-            ext = os.path.splitext(file_path)[1].lower()
-            language = ext_to_lang.get(ext)
-            if not language:
+            # Check if file matches extension
+            if not any(file_path.endswith(ext) for ext in extensions):
                 continue
 
-            # Apply language filter if config specifies target languages
-            if target_languages and language not in target_languages:
-                continue
-
-            # Check if file matches patterns (if specified in config)
+            # Check if file matches patterns (if specified)
             if self.file_patterns and not any(
                 fnmatch.fnmatch(file_path, pattern) for pattern in self.file_patterns
             ):
                 continue
 
-            # Analyze this file with the correct language
+            # Analyze this file
             try:
+                # Read file content based on mode
                 if self.local_repo_path:
+                    # Local mode - read from filesystem
                     full_path = os.path.join(self.local_repo_path, file_path)
                     with open(full_path, encoding="utf-8") as f:
                         content = f.read()
                 else:
+                    # GitHub API mode - fetch from API
                     file_content = self.repo.get_contents(file_path)
                     content = file_content.decoded_content.decode("utf-8")
 
-                analysis_result = self.code_analyzer.analyze_file(file_path, content, language)
+                analysis_result = self.code_analyzer.analyze_file(
+                    file_path, content, primary_language
+                )
 
                 if analysis_result and (
                     analysis_result.get("classes") or analysis_result.get("functions")
                 ):
                     analyzed_files.append(
-                        {"file": file_path, "language": language, **analysis_result}
+                        {"file": file_path, "language": primary_language, **analysis_result}
                     )
-                    languages_found.add(language)
+
+                    logger.debug(
+                        f"Analyzed {file_path}: "
+                        f"{len(analysis_result.get('classes', []))} classes, "
+                        f"{len(analysis_result.get('functions', []))} functions"
+                    )
 
             except Exception as e:
                 logger.debug(f"Could not analyze {file_path}: {e}")
                 continue
 
-        # Determine primary language for backward compat in output
-        repo_languages = self.extracted_data.get("languages", {})
-        primary_language = (
-            max(repo_languages.items(), key=lambda x: x[1]["bytes"])[0]
-            if repo_languages
-            else "Unknown"
-        )
+            # Limit number of files analyzed to avoid rate limits (GitHub API mode only)
+            if not self.local_repo_path and len(analyzed_files) >= 50:
+                logger.info("Reached analysis limit (50 files, GitHub API mode)")
+                break
 
         self.extracted_data["code_analysis"] = {
             "depth": self.code_analysis_depth,
             "language": primary_language,
-            "languages_analyzed": sorted(languages_found),
             "files_analyzed": len(analyzed_files),
             "files": analyzed_files,
         }
@@ -811,9 +800,8 @@ class GitHubScraper:
         total_classes = sum(len(f.get("classes", [])) for f in analyzed_files)
         total_functions = sum(len(f.get("functions", [])) for f in analyzed_files)
 
-        lang_summary = ", ".join(sorted(languages_found)) if languages_found else "none"
         logger.info(
-            f"Code analysis complete: {len(analyzed_files)} files, {total_classes} classes, {total_functions} functions ({lang_summary})"
+            f"Code analysis complete: {len(analyzed_files)} files, {total_classes} classes, {total_functions} functions"
         )
 
     def _extract_issues(self):
@@ -918,7 +906,7 @@ class GitHubScraper:
 
 class GitHubToSkillConverter:
     """
-    Convert extracted GitHub data to AI skill format (C1.10).
+    Convert extracted GitHub data to Claude skill format (C1.10).
     """
 
     def __init__(self, config: dict[str, Any]):
@@ -1392,7 +1380,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         argparse.ArgumentParser: Configured argument parser
     """
     parser = argparse.ArgumentParser(
-        description="GitHub Repository to AI Skill Converter",
+        description="GitHub Repository to Claude Skill Converter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1523,29 +1511,23 @@ def main():
                     from pathlib import Path
                     from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                    enhancer = LocalSkillEnhancer(Path(skill_dir))
                     enhancer.run(headless=True)
-                    agent_name = agent or "claude"
-                    logger.info(f"✅ Local enhancement complete! (via {agent_name})")
+                    logger.info("✅ Local enhancement complete!")
             else:
                 # LOCAL enhancement (no API key)
                 from pathlib import Path
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
                 enhancer.run(headless=True)
-                agent_name = agent or "claude"
-                logger.info(f"✅ Local enhancement complete! (via {agent_name})")
+                logger.info("✅ Local enhancement complete!")
 
         logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
 
         # Only suggest enhancement if neither workflow nor traditional enhancement was done
         if not workflow_executed and getattr(args, "enhance_level", 0) == 0:
-            logger.info("\n💡 Optional: Enhance SKILL.md with AI:")
+            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
             logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
             logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
             logger.info("\n💡 Or use a workflow:")

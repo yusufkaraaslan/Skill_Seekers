@@ -29,7 +29,7 @@ class InstallParser(SubcommandParser):
             "--destination", default="output", help="Output directory (default: output/)"
         )
         parser.add_argument(
-            "--no-upload", action="store_true", help="Skip automatic upload to target platform"
+            "--no-upload", action="store_true", help="Skip automatic upload to Claude"
         )
         parser.add_argument(
             "--unlimited", action="store_true", help="Remove page limits during scraping"

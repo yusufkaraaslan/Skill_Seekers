@@ -268,7 +268,7 @@ class SignalFlowAnalyzer:
 
         Args:
             output_dir: Directory to save guides
-            ai_mode: "LOCAL" (coding agent CLI) or "API" (Anthropic API)
+            ai_mode: "LOCAL" (Claude Code) or "API" (Anthropic API)
 
         Returns:
             Path to generated guide file

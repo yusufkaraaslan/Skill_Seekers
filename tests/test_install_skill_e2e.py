@@ -228,7 +228,7 @@ class TestInstallSkillE2E:
             assert "PHASE 2/5: Scrape Documentation" in output
             assert "PHASE 3/5: AI Enhancement" in output
             assert "PHASE 4/5: Package Skill" in output
-            assert "PHASE 5/5: Upload to" in output
+            assert "PHASE 5/5: Upload to Claude" in output
 
             # Verify fetch was called
             mock_fetch.assert_called_once()

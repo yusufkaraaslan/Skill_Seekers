@@ -11,7 +11,7 @@ Tests dual-mode AI enhancement for how-to guides:
 
 import json
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -91,7 +91,7 @@ class TestGuideEnhancerStepDescriptions:
         result = enhancer.enhance_step_descriptions(steps)
         assert result == []
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_step_descriptions_api_mode(self, mock_call):
         """Test step descriptions with API mode"""
         mock_call.return_value = json.dumps(
@@ -156,7 +156,7 @@ class TestGuideEnhancerTroubleshooting:
         result = enhancer.enhance_troubleshooting(guide_data)
         assert result == []
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_troubleshooting_api_mode(self, mock_call):
         """Test troubleshooting with API mode"""
         mock_call.return_value = json.dumps(
@@ -215,7 +215,7 @@ class TestGuideEnhancerPrerequisites:
         result = enhancer.enhance_prerequisites(prereqs)
         assert result == []
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_prerequisites_api_mode(self, mock_call):
         """Test prerequisites with API mode"""
         mock_call.return_value = json.dumps(
@@ -267,7 +267,7 @@ class TestGuideEnhancerNextSteps:
         result = enhancer.enhance_next_steps(guide_data)
         assert result == []
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_next_steps_api_mode(self, mock_call):
         """Test next steps with API mode"""
         mock_call.return_value = json.dumps(
@@ -313,7 +313,7 @@ class TestGuideEnhancerUseCases:
         result = enhancer.enhance_use_cases(guide_data)
         assert result == []
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_use_cases_api_mode(self, mock_call):
         """Test use cases with API mode"""
         mock_call.return_value = json.dumps(
@@ -372,7 +372,7 @@ class TestGuideEnhancerFullWorkflow:
         assert result["title"] == guide_data["title"]
         assert len(result["steps"]) == 2
 
-    @patch.object(GuideEnhancer, "_call_ai")
+    @patch.object(GuideEnhancer, "_call_claude_api")
     def test_enhance_guide_api_mode_success(self, mock_call):
         """Test successful full guide enhancement via API"""
         mock_call.return_value = json.dumps(
@@ -467,36 +467,43 @@ class TestGuideEnhancerFullWorkflow:
 class TestGuideEnhancerLocalMode:
     """Test LOCAL mode (Claude Code CLI)"""
 
-    @patch.object(GuideEnhancer, "_call_ai")
-    def test_call_ai_local_success(self, mock_call_ai):
-        """Test successful LOCAL mode call via AgentClient"""
-        mock_call_ai.return_value = json.dumps(
-            {
-                "step_descriptions": [],
-                "troubleshooting": [],
-                "prerequisites_detailed": [],
-                "next_steps": [],
-                "use_cases": [],
-            }
+    @patch("subprocess.run")
+    def test_call_claude_local_success(self, mock_run):
+        """Test successful LOCAL mode call"""
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "step_descriptions": [],
+                    "troubleshooting": [],
+                    "prerequisites_detailed": [],
+                    "next_steps": [],
+                    "use_cases": [],
+                }
+            ),
         )
 
         enhancer = GuideEnhancer(mode="local")
-        prompt = "Test prompt"
-        result = enhancer._call_ai(prompt)
+        if enhancer.mode == "local":
+            prompt = "Test prompt"
+            result = enhancer._call_claude_local(prompt)
 
-        assert result is not None
-        assert mock_call_ai.called
+            assert result is not None
+            assert mock_run.called
 
-    @patch.object(GuideEnhancer, "_call_ai")
-    def test_call_ai_local_timeout(self, mock_call_ai):
-        """Test LOCAL mode timeout handling via AgentClient"""
-        mock_call_ai.return_value = None
+    @patch("subprocess.run")
+    def test_call_claude_local_timeout(self, mock_run):
+        """Test LOCAL mode timeout handling"""
+        from subprocess import TimeoutExpired
+
+        mock_run.side_effect = TimeoutExpired("claude", 300)
 
         enhancer = GuideEnhancer(mode="local")
-        prompt = "Test prompt"
-        result = enhancer._call_ai(prompt)
+        if enhancer.mode == "local":
+            prompt = "Test prompt"
+            result = enhancer._call_claude_local(prompt)
 
-        assert result is None
+            assert result is None
 
 
 class TestGuideEnhancerPromptGeneration:
