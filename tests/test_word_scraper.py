@@ -572,61 +572,6 @@ class TestWordJSONWorkflow(unittest.TestCase):
         self.assertTrue(skill_md.exists())
 
 
-class TestWordCLIArguments(unittest.TestCase):
-    """Test word subcommand CLI argument parsing via the main CLI."""
-
-    def setUp(self):
-        import sys
-        from pathlib import Path as P
-
-        sys.path.insert(0, str(P(__file__).parent.parent / "src"))
-        from skill_seekers.cli.main import create_parser
-
-        self.parser = create_parser()
-
-    def test_docx_argument_accepted(self):
-        """--docx flag is accepted for the word subcommand."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx"])
-        self.assertEqual(args.docx, "test.docx")
-
-    def test_api_key_accepted(self):
-        """--api-key is accepted for word subcommand."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx", "--api-key", "sk-ant-test"])
-        self.assertEqual(args.api_key, "sk-ant-test")
-
-    def test_enhance_level_accepted(self):
-        """--enhance-level is accepted for word subcommand."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx", "--enhance-level", "1"])
-        self.assertEqual(args.enhance_level, 1)
-
-    def test_enhance_workflow_accepted(self):
-        """--enhance-workflow is accepted and stores a list."""
-        args = self.parser.parse_args(
-            ["word", "--docx", "test.docx", "--enhance-workflow", "minimal"]
-        )
-        self.assertEqual(args.enhance_workflow, ["minimal"])
-
-    def test_workflow_dry_run_accepted(self):
-        """--workflow-dry-run is accepted."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx", "--workflow-dry-run"])
-        self.assertTrue(args.workflow_dry_run)
-
-    def test_dry_run_accepted(self):
-        """--dry-run is accepted for word subcommand."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx", "--dry-run"])
-        self.assertTrue(args.dry_run)
-
-    def test_from_json_accepted(self):
-        """--from-json is accepted."""
-        args = self.parser.parse_args(["word", "--from-json", "data.json"])
-        self.assertEqual(args.from_json, "data.json")
-
-    def test_name_accepted(self):
-        """--name is accepted."""
-        args = self.parser.parse_args(["word", "--docx", "test.docx", "--name", "myskill"])
-        self.assertEqual(args.name, "myskill")
-
-
 class TestWordHelperFunctions(unittest.TestCase):
     """Test module-level helper functions."""
 

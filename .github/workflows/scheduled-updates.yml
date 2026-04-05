@@ -122,7 +122,7 @@ jobs:
         fi
 
         # Use streaming ingestion for large docs
-        skill-seekers scrape --config "$CONFIG_FILE" --streaming --max-pages 200
+        skill-seekers create "$CONFIG_FILE" --max-pages 200
 
     - name: Generate quality report
       if: steps.should_update.outputs.update == 'true'

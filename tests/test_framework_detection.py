@@ -46,31 +46,20 @@ class TestFrameworkDetection(unittest.TestCase):
             "    return render_template('index.html')\n"
         )
 
-        # Run codebase analyzer
-        from skill_seekers.cli.codebase_scraper import main as scraper_main
-        import sys
+        # Run codebase analyzer directly
+        from skill_seekers.cli.codebase_scraper import analyze_codebase
 
-        old_argv = sys.argv
-        try:
-            sys.argv = [
-                "skill-seekers-codebase",
-                "--directory",
-                str(self.test_project),
-                "--output",
-                str(self.output_dir),
-                "--depth",
-                "deep",
-                "--ai-mode",
-                "none",
-                "--skip-patterns",
-                "--skip-test-examples",
-                "--skip-how-to-guides",
-                "--skip-config-patterns",
-                "--skip-docs",
-            ]
-            scraper_main()
-        finally:
-            sys.argv = old_argv
+        analyze_codebase(
+            directory=self.test_project,
+            output_dir=self.output_dir,
+            depth="deep",
+            enhance_level=0,
+            detect_patterns=False,
+            extract_test_examples=False,
+            build_how_to_guides=False,
+            extract_config_patterns=False,
+            extract_docs=False,
+        )
 
         # Verify Flask was detected
         arch_file = self.output_dir / "references" / "architecture" / "architectural_patterns.json"
@@ -91,26 +80,15 @@ class TestFrameworkDetection(unittest.TestCase):
             "import django\nfrom flask import Flask\nimport requests"
         )
 
-        # Run codebase analyzer
-        from skill_seekers.cli.codebase_scraper import main as scraper_main
-        import sys
+        # Run codebase analyzer directly
+        from skill_seekers.cli.codebase_scraper import analyze_codebase
 
-        old_argv = sys.argv
-        try:
-            sys.argv = [
-                "skill-seekers-codebase",
-                "--directory",
-                str(self.test_project),
-                "--output",
-                str(self.output_dir),
-                "--depth",
-                "deep",
-                "--ai-mode",
-                "none",
-            ]
-            scraper_main()
-        finally:
-            sys.argv = old_argv
+        analyze_codebase(
+            directory=self.test_project,
+            output_dir=self.output_dir,
+            depth="deep",
+            enhance_level=0,
+        )
 
         # Verify file was analyzed
         code_analysis = self.output_dir / "code_analysis.json"
@@ -143,26 +121,15 @@ class TestFrameworkDetection(unittest.TestCase):
         # File with no framework imports
         (app_dir / "utils.py").write_text("def my_function():\n    return 'hello'\n")
 
-        # Run codebase analyzer
-        from skill_seekers.cli.codebase_scraper import main as scraper_main
-        import sys
+        # Run codebase analyzer directly
+        from skill_seekers.cli.codebase_scraper import analyze_codebase
 
-        old_argv = sys.argv
-        try:
-            sys.argv = [
-                "skill-seekers-codebase",
-                "--directory",
-                str(self.test_project),
-                "--output",
-                str(self.output_dir),
-                "--depth",
-                "deep",
-                "--ai-mode",
-                "none",
-            ]
-            scraper_main()
-        finally:
-            sys.argv = old_argv
+        analyze_codebase(
+            directory=self.test_project,
+            output_dir=self.output_dir,
+            depth="deep",
+            enhance_level=0,
+        )
 
         # Check frameworks detected
         arch_file = self.output_dir / "references" / "architecture" / "architectural_patterns.json"

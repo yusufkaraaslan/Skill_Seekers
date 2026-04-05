@@ -14,12 +14,10 @@ Usage:
     skill-seekers jupyter --from-json notebook_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 
 # Optional dependency guard
@@ -29,6 +27,8 @@ try:
     JUPYTER_AVAILABLE = True
 except ImportError:
     JUPYTER_AVAILABLE = False
+
+from .skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -199,10 +199,13 @@ def infer_description_from_notebook(metadata: dict | None = None, name: str = ""
     )
 
 
-class JupyterToSkillConverter:
+class JupyterToSkillConverter(SkillConverter):
     """Convert Jupyter Notebook (.ipynb) to skill."""
 
+    SOURCE_TYPE = "jupyter"
+
     def __init__(self, config: dict):
+        super().__init__(config)
         self.config = config
         self.name = config["name"]
         self.notebook_path = config.get("notebook_path", "")
@@ -213,6 +216,10 @@ class JupyterToSkillConverter:
         self.data_file = f"output/{self.name}_extracted.json"
         self.categories = config.get("categories", {})
         self.extracted_data: dict | None = None
+
+    def extract(self):
+        """SkillConverter interface — delegates to extract_notebook()."""
+        return self.extract_notebook()
 
     # ------------------------------------------------------------------
     # Extraction
@@ -1082,132 +1089,3 @@ def _score_code_quality(code: str) -> float:
     if line_count > 0 and not non_magic:
         score -= 1.0
     return min(10.0, max(0.0, score))
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> int:
-    """Standalone CLI entry point for the Jupyter Notebook scraper."""
-    from .arguments.jupyter import add_jupyter_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert Jupyter Notebook (.ipynb) to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    add_jupyter_arguments(parser)
-    args = parser.parse_args()
-
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "notebook", None) or getattr(args, "from_json", None) or "(none)"
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: Jupyter Notebook Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    if not (getattr(args, "notebook", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --notebook or --from-json")
-
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} notebook documentation",
-        }
-        try:
-            converter = JupyterToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Direct notebook mode
-    if not getattr(args, "name", None):
-        nb_path = Path(args.notebook)
-        args.name = nb_path.stem if nb_path.is_file() else (nb_path.name or "notebooks")
-
-    config = {
-        "name": args.name,
-        "notebook_path": args.notebook,
-        "description": getattr(args, "description", None),
-    }
-
-    try:
-        converter = JupyterToSkillConverter(config)
-        if not converter.extract_notebook():
-            print("\n❌ Notebook extraction failed - see error above", file=sys.stderr)
-            sys.exit(1)
-        converter.build_skill()
-
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis, "
-                    "enhancement provides general improvements)"
-                )
-            print("")
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during Jupyter processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

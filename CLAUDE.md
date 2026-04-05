@@ -52,16 +52,25 @@ Runs on push/PR to `main` or `development`. Lint job (Python 3.12, Ubuntu) + Tes
 
 ## Architecture
 
-### CLI: Git-style dispatcher
+### CLI: Unified create command
 
-Entry point `src/skill_seekers/cli/main.py` maps subcommands to modules. The `create` command auto-detects source type and is the recommended entry point for users.
+Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **only** entry point for skill creation — it auto-detects source type and routes to the appropriate `SkillConverter`.
 
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
-skill-seekers <type> [options]    # Direct: scrape, github, pdf, word, epub, video, jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat
-skill-seekers analyze <dir>       # Analyze local codebase (C3.x pipeline)
 skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone)
 ```
+
+### SkillConverter Pattern (Template Method + Factory)
+
+All 18 source types implement the `SkillConverter` base class (`skill_converter.py`):
+
+```python
+converter = get_converter("web", config)  # Factory lookup
+converter.run()  # Template: extract() → build_skill()
+```
+
+Registry in `CONVERTER_REGISTRY` maps source type → (module, class). `create_command.py` builds config from `ExecutionContext`, calls `get_converter()`, then runs centralized enhancement.
 
 ### Data Flow (5 phases)
 
@@ -105,9 +114,9 @@ src/skill_seekers/cli/adaptors/
 
 `--target` = LLM platforms, `--format` = RAG/vector DBs. All adaptors are imported with `try/except ImportError` so missing optional deps don't break the registry.
 
-### 17 Source Type Scrapers
+### 18 Source Type Converters
 
-Each in `src/skill_seekers/cli/{type}_scraper.py` with a `main()` entry point. The `create_command.py` uses `source_detector.py` to auto-route. New scrapers added in v3.2.0+: jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat.
+Each in `src/skill_seekers/cli/{type}_scraper.py` as a `SkillConverter` subclass (no `main()`). The `create_command.py` uses `source_detector.py` to auto-detect, then calls `get_converter()`. Converters: web (doc_scraper), github, pdf, word, epub, video, local (codebase_scraper), jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat, config (unified_scraper).
 
 ### CLI Argument System
 
@@ -228,13 +237,14 @@ GITHUB_TOKEN=ghp_...                  # Higher GitHub rate limits
 3. Add optional dep to `pyproject.toml`
 4. Add tests in `tests/`
 
-### New source type scraper
-1. Create `src/skill_seekers/cli/{type}_scraper.py` with `main()`
-2. Add to `COMMAND_MODULES` in `cli/main.py`
-3. Add entry point in `pyproject.toml` `[project.scripts]`
-4. Add auto-detection in `source_detector.py`
-5. Add optional dep if needed
-6. Add tests
+### New source type converter
+1. Create `src/skill_seekers/cli/{type}_scraper.py` with a class inheriting `SkillConverter`
+2. Implement `extract()` and `build_skill()` methods, set `SOURCE_TYPE`
+3. Register in `CONVERTER_REGISTRY` in `skill_converter.py`
+4. Add source type config building in `create_command.py:_build_config()`
+5. Add auto-detection in `source_detector.py`
+6. Add optional dep if needed
+7. Add tests
 
 ### New CLI argument
 - Universal: `UNIVERSAL_ARGUMENTS` in `arguments/create.py`

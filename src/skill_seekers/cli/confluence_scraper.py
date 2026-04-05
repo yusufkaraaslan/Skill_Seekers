@@ -31,14 +31,14 @@ Usage:
         --space-key DEV --name dev-wiki --max-pages 200
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 from typing import Any
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 # Optional dependency guard for atlassian-python-api
 try:
@@ -177,7 +177,7 @@ def infer_description_from_confluence(
     )
 
 
-class ConfluenceToSkillConverter:
+class ConfluenceToSkillConverter(SkillConverter):
     """Convert Confluence space documentation to an AI-ready skill.
 
     Supports two extraction modes:
@@ -209,6 +209,8 @@ class ConfluenceToSkillConverter:
         extracted_data: Structured extraction results dict.
     """
 
+    SOURCE_TYPE = "confluence"
+
     def __init__(self, config: dict) -> None:
         """Initialize the Confluence to skill converter.
 
@@ -223,6 +225,7 @@ class ConfluenceToSkillConverter:
                 - description (str): Skill description (optional).
                 - max_pages (int): Maximum pages to fetch, default 500.
         """
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.base_url: str = config.get("base_url", "")
@@ -241,6 +244,10 @@ class ConfluenceToSkillConverter:
 
         # Extracted data storage
         self.extracted_data: dict[str, Any] | None = None
+
+    def extract(self):
+        """Extract content from Confluence (SkillConverter interface)."""
+        self.extract_confluence()
 
     # ──────────────────────────────────────────────────────────────────────
     # Extraction dispatcher
@@ -1916,255 +1923,3 @@ def _score_code_quality(code: str) -> float:
         score -= 2.0
 
     return min(10.0, max(0.0, score))
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# CLI entry point
-# ──────────────────────────────────────────────────────────────────────────────
-
-
-def main() -> int:
-    """CLI entry point for the Confluence scraper.
-
-    Parses command-line arguments and runs the extraction/build pipeline.
-    Supports three workflows:
-
-    1. **API mode**: ``--base-url URL --space-key KEY --name my-skill``
-    2. **Export mode**: ``--export-path ./export-dir/ --name my-skill``
-    3. **Build from JSON**: ``--from-json my-skill_extracted.json``
-
-    Returns:
-        Exit code (0 for success, non-zero for failure).
-    """
-    parser = argparse.ArgumentParser(
-        description="Convert Confluence documentation to AI-ready skills",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s --base-url https://wiki.example.com "
-            "--space-key PROJ --name my-wiki\n"
-            "  %(prog)s --export-path ./confluence-export/ --name my-wiki\n"
-            "  %(prog)s --from-json my-wiki_extracted.json\n"
-        ),
-    )
-
-    # Standard shared arguments
-    from .arguments.common import add_all_standard_arguments
-
-    add_all_standard_arguments(parser)
-
-    # Override enhance-level default to 0 for Confluence
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for Confluence), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
-
-    # Confluence-specific arguments
-    parser.add_argument(
-        "--base-url",
-        type=str,
-        help="Confluence instance base URL (e.g., https://wiki.example.com)",
-        metavar="URL",
-    )
-    parser.add_argument(
-        "--space-key",
-        type=str,
-        help="Confluence space key to extract (e.g., PROJ, DEV)",
-        metavar="KEY",
-    )
-    parser.add_argument(
-        "--export-path",
-        type=str,
-        help="Path to Confluence HTML/XML export directory",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--username",
-        type=str,
-        help=("Confluence username / email for API auth (or set CONFLUENCE_USERNAME env var)"),
-        metavar="USER",
-    )
-    parser.add_argument(
-        "--token",
-        type=str,
-        help=("Confluence API token for API auth (or set CONFLUENCE_TOKEN env var)"),
-        metavar="TOKEN",
-    )
-    parser.add_argument(
-        "--max-pages",
-        type=int,
-        default=500,
-        help="Maximum number of pages to fetch (default: 500)",
-        metavar="N",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON data",
-        metavar="FILE",
-    )
-
-    args = parser.parse_args()
-
-    # Setup logging
-    if getattr(args, "quiet", False):
-        logging.basicConfig(level=logging.WARNING, format="%(message)s")
-    elif getattr(args, "verbose", False):
-        logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
-    else:
-        logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = (
-            getattr(args, "base_url", None)
-            or getattr(args, "export_path", None)
-            or getattr(args, "from_json", None)
-            or "(none)"
-        )
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: Confluence Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Space key:      {getattr(args, 'space_key', None) or '(N/A)'}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Max pages:      {getattr(args, 'max_pages', 500)}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"\n  Dry run complete")
-        return 0
-
-    # Validate inputs
-    has_api = getattr(args, "base_url", None) and getattr(args, "space_key", None)
-    has_export = getattr(args, "export_path", None)
-    has_json = getattr(args, "from_json", None)
-
-    if not (has_api or has_export or has_json):
-        parser.error(
-            "Must specify one of:\n"
-            "  --base-url URL --space-key KEY (API mode)\n"
-            "  --export-path PATH (export mode)\n"
-            "  --from-json FILE (build from JSON)"
-        )
-
-    # Build from pre-extracted JSON
-    if has_json:
-        name = getattr(args, "name", None) or Path(args.from_json).stem.replace("_extracted", "")
-        config: dict[str, Any] = {
-            "name": name,
-            "description": (
-                getattr(args, "description", None) or f"Use when referencing {name} documentation"
-            ),
-        }
-        try:
-            converter = ConfluenceToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n  Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Determine name
-    if not getattr(args, "name", None):
-        if has_api:
-            args.name = args.space_key.lower()
-        elif has_export:
-            args.name = Path(args.export_path).name
-        else:
-            args.name = "confluence-skill"
-
-    # Build config
-    config = {
-        "name": args.name,
-        "base_url": getattr(args, "base_url", "") or "",
-        "space_key": getattr(args, "space_key", "") or "",
-        "export_path": getattr(args, "export_path", "") or "",
-        "username": getattr(args, "username", "") or "",
-        "token": getattr(args, "token", "") or "",
-        "max_pages": getattr(args, "max_pages", 500),
-    }
-    if getattr(args, "description", None):
-        config["description"] = args.description
-
-    # Create converter and run
-    try:
-        converter = ConfluenceToSkillConverter(config)
-
-        if not converter.extract_confluence():
-            print("\n  Confluence extraction failed", file=sys.stderr)
-            sys.exit(1)
-
-        converter.build_skill()
-
-        # Enhancement workflow integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"  AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"    Running after workflow: {workflow_name}")
-                print(
-                    "    (Workflow provides specialised analysis,"
-                    " enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("  API enhancement complete!")
-                except ImportError:
-                    print("  API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import (
-                        LocalSkillEnhancer,
-                    )
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("  Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import (
-                    LocalSkillEnhancer,
-                )
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("  Local enhancement complete!")
-
-    except (ValueError, RuntimeError, FileNotFoundError) as e:
-        print(f"\n  Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n  Unexpected error during Confluence processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

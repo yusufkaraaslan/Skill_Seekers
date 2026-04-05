@@ -8,7 +8,6 @@ Tests verify complete fixes for:
 3. Custom API endpoint support (ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN)
 """
 
-import contextlib
 import os
 import shutil
 import subprocess
@@ -117,82 +116,48 @@ class TestIssue219Problem1LargeFiles(unittest.TestCase):
 
 
 class TestIssue219Problem2CLIFlags(unittest.TestCase):
-    """E2E Test: Problem #2 - CLI flags working through main.py dispatcher"""
+    """E2E Test: Problem #2 - CLI flags working through create command"""
 
-    def test_github_command_has_enhancement_flags(self):
-        """E2E: Verify --enhance-level flag exists in github command help"""
+    def test_create_command_has_enhancement_flags(self):
+        """E2E: Verify --enhance-level flag exists in create command help"""
         result = subprocess.run(
-            ["skill-seekers", "github", "--help"], capture_output=True, text=True
+            ["skill-seekers", "create", "--help"], capture_output=True, text=True
         )
 
         # VERIFY: Command succeeds
-        self.assertEqual(result.returncode, 0, "github --help should succeed")
+        self.assertEqual(result.returncode, 0, "create --help should succeed")
 
         # VERIFY: Enhancement flags present
         self.assertIn("--enhance-level", result.stdout, "Missing --enhance-level flag")
-        self.assertIn("--api-key", result.stdout, "Missing --api-key flag")
 
-    def test_github_command_accepts_enhance_level_flag(self):
-        """E2E: Verify --enhance-level flag doesn't cause 'unrecognized arguments' error"""
-        # Strategy: Parse arguments directly without executing to avoid network hangs on CI
-        # This tests that the CLI accepts the flag without actually running the command
-        import argparse
+    def test_enhance_level_flag_accepted_by_create(self):
+        """E2E: Verify --enhance-level flag is accepted by create command parser"""
+        from skill_seekers.cli.main import create_parser
 
-        # Get the argument parser from github_scraper
-        parser = argparse.ArgumentParser()
-        # Add the same arguments as github_scraper.main()
-        parser.add_argument("--repo", required=True)
-        parser.add_argument("--enhance-level", type=int, choices=[0, 1, 2, 3], default=2)
-        parser.add_argument("--api-key")
+        parser = create_parser()
 
         # VERIFY: Parsing succeeds without "unrecognized arguments" error
         try:
-            args = parser.parse_args(["--repo", "test/test", "--enhance-level", "2"])
-            # If we get here, argument parsing succeeded
+            args = parser.parse_args(["create", "owner/repo", "--enhance-level", "2"])
             self.assertEqual(args.enhance_level, 2, "Flag should be parsed as 2")
-            self.assertEqual(args.repo, "test/test")
         except SystemExit as e:
-            # Argument parsing failed
             self.fail(f"Argument parsing failed with: {e}")
 
-    def test_cli_dispatcher_forwards_flags_to_github_scraper(self):
-        """E2E: Verify main.py dispatcher forwards flags to github_scraper.py"""
-        from skill_seekers.cli import main
+    def test_github_scraper_class_accepts_enhance_level(self):
+        """E2E: Verify GitHubScraper config accepts enhance_level."""
+        from skill_seekers.cli.github_scraper import GitHubScraper
 
-        # Mock sys.argv to simulate CLI call
-        test_args = [
-            "skill-seekers",
-            "github",
-            "--repo",
-            "test/test",
-            "--name",
-            "test",
-            "--enhance-level",
-            "2",
-        ]
+        config = {
+            "repo": "test/test",
+            "name": "test",
+            "github_token": None,
+            "enhance_level": 2,
+        }
 
-        with (
-            patch("sys.argv", test_args),
-            patch("skill_seekers.cli.github_scraper.main") as mock_github_main,
-        ):
-            mock_github_main.return_value = 0
-
-            # Call main dispatcher
-            with patch("sys.exit"), contextlib.suppress(SystemExit):
-                main.main()
-
-            # VERIFY: github_scraper.main was called
-            mock_github_main.assert_called_once()
-
-            # VERIFY: sys.argv contains --enhance-level flag
-            # (main.py should have added it before calling github_scraper)
-            called_with_enhance = any(
-                "--enhance-level" in str(call) for call in mock_github_main.call_args_list
-            )
-            self.assertTrue(
-                called_with_enhance or "--enhance-level" in sys.argv,
-                "Flag should be forwarded to github_scraper",
-            )
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = GitHubScraper(config)
+            # Just verify it doesn't crash with enhance_level in config
+            self.assertIsNotNone(scraper)
 
 
 @unittest.skipIf(not ANTHROPIC_AVAILABLE, "anthropic package not installed")
@@ -338,17 +303,16 @@ class TestIssue219IntegrationAll(unittest.TestCase):
     def test_all_fixes_work_together(self):
         """E2E: Verify all 3 fixes work in combination"""
         # This test verifies the complete workflow:
-        # 1. CLI accepts --enhance-level
+        # 1. CLI accepts --enhance-level via create command
         # 2. Large files are downloaded
         # 3. Custom API endpoints work
 
         result = subprocess.run(
-            ["skill-seekers", "github", "--help"], capture_output=True, text=True
+            ["skill-seekers", "create", "--help"], capture_output=True, text=True
         )
 
         # Enhancement flags present
         self.assertIn("--enhance-level", result.stdout)
-        self.assertIn("--api-key", result.stdout)
 
         # Verify we can import all fixed modules
         try:

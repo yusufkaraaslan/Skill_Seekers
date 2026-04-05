@@ -34,15 +34,15 @@ Usage:
     skill-seekers chat --from-json myteam_extracted.json --name myteam
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 # Optional dependency guard — Slack SDK
 try:
@@ -243,7 +243,7 @@ def _score_code_quality(code: str) -> float:
 # ---------------------------------------------------------------------------
 
 
-class ChatToSkillConverter:
+class ChatToSkillConverter(SkillConverter):
     """Convert Slack or Discord chat history into an AI-ready skill.
 
     Follows the same pipeline pattern as the EPUB, Jupyter, and PPTX scrapers:
@@ -261,6 +261,8 @@ class ChatToSkillConverter:
     channel, date range, and detected topic.
     """
 
+    SOURCE_TYPE = "chat"
+
     def __init__(self, config: dict) -> None:
         """Initialize the converter with a configuration dictionary.
 
@@ -276,6 +278,7 @@ class ChatToSkillConverter:
                 - description (str): Skill description (optional, inferred
                   if absent).
         """
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.export_path: str = config.get("export_path", "")
@@ -293,6 +296,10 @@ class ChatToSkillConverter:
 
         # Extracted data (populated by extract_chat or load_extracted_data)
         self.extracted_data: dict | None = None
+
+    def extract(self):
+        """Extract content from chat history (SkillConverter interface)."""
+        self.extract_chat()
 
     # ------------------------------------------------------------------
     # Extraction — public entry point
@@ -1730,195 +1737,3 @@ class ChatToSkillConverter:
         """
         safe = re.sub(r"[^\w\s-]", "", name.lower())
         return re.sub(r"[-\s]+", "_", safe)
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> int:
-    """CLI entry point for the Slack/Discord chat scraper.
-
-    Parses command-line arguments and runs the extraction and
-    skill-building pipeline. Supports export import, API fetch,
-    and loading from previously extracted JSON.
-
-    Returns:
-        Exit code (0 for success, non-zero for errors).
-    """
-    from .arguments.chat import add_chat_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert Slack/Discord chat history to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    # Slack workspace export
-    %(prog)s --export-path ./slack-export/ --platform slack --name myteam
-
-    # Slack API
-    %(prog)s --platform slack --token xoxb-... --channel C01234 --name myteam
-
-    # Discord export (DiscordChatExporter)
-    %(prog)s --export-path ./discord-export.json --platform discord --name myserver
-
-    # Discord API
-    %(prog)s --platform discord --token Bot-token --channel 12345 --name myserver
-
-    # From previously extracted JSON
-    %(prog)s --from-json myteam_extracted.json --name myteam
-        """,
-    )
-
-    add_chat_arguments(parser)
-
-    args = parser.parse_args()
-
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if args.dry_run:
-        source = args.export_path or args.from_json or f"{args.platform}-api"
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: Chat Extraction")
-        print(f"{'=' * 60}")
-        print(f"Platform:       {args.platform}")
-        print(f"Source:         {source}")
-        print(f"Name:           {args.name or '(auto-detect)'}")
-        print(f"Channel:        {args.channel or '(all)'}")
-        print(f"Max messages:   {args.max_messages}")
-        print(f"Enhance level:  {args.enhance_level}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate inputs
-    if args.from_json:
-        # Build from previously extracted JSON
-        name = args.name or Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": name,
-            "description": (args.description or f"Use when referencing {name} chat knowledge base"),
-        }
-        try:
-            converter = ChatToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Require either --export-path or --token for extraction
-    if not args.export_path and not args.token:
-        parser.error(
-            "Must specify --export-path (export mode), --token (API mode), "
-            "or --from-json (build from extracted data)"
-        )
-
-    if not args.name:
-        if args.export_path:
-            args.name = Path(args.export_path).stem
-        else:
-            args.name = f"{args.platform}_chat"
-
-    config = {
-        "name": args.name,
-        "export_path": args.export_path or "",
-        "platform": args.platform,
-        "token": args.token or "",
-        "channel": args.channel or "",
-        "max_messages": args.max_messages,
-        "description": args.description,
-    }
-
-    try:
-        converter = ChatToSkillConverter(config)
-
-        # Extract
-        if not converter.extract_chat():
-            print(
-                "\n❌ Chat extraction failed - see error above",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis, "
-                    "enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import (
-                        LocalSkillEnhancer,
-                    )
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import (
-                    LocalSkillEnhancer,
-                )
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except (FileNotFoundError, ValueError) as e:
-        print(f"\n❌ Input error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(
-            f"\n❌ Unexpected error during chat processing: {e}",
-            file=sys.stderr,
-        )
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

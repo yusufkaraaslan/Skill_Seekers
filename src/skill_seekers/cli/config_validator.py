@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unified Config Validator
+UniSkillConfig Validator
 
-Validates unified config format that supports multiple sources:
+Validates uni_skill_config format that supports multiple sources:
 - documentation (website scraping)
 - github (repository scraping)
 - pdf (PDF document scraping)
@@ -34,9 +34,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ConfigValidator:
+class UniSkillConfigValidator:
     """
-    Validates unified config format (legacy support removed in v2.11.0).
+    Validates uni_skill_config format (legacy support removed in v2.11.0).
     """
 
     # Valid source types
@@ -100,7 +100,7 @@ class ConfigValidator:
 
     def validate(self) -> bool:
         """
-        Validate unified config format.
+        Validate uni_skill_config format.
 
         Returns:
             True if valid
@@ -136,8 +136,8 @@ class ConfigValidator:
         return self._validate_unified()
 
     def _validate_unified(self) -> bool:
-        """Validate unified config format."""
-        logger.info("Validating unified config format...")
+        """Validate uni_skill_config format."""
+        logger.info("Validating uni_skill_config format...")
 
         # Required top-level fields
         if "name" not in self.config:
@@ -483,7 +483,11 @@ class ConfigValidator:
         return has_docs_api and has_github_code
 
 
-def validate_config(config_path: str) -> ConfigValidator:
+# Backward-compat alias
+ConfigValidator = UniSkillConfigValidator
+
+
+def validate_config(config_path: str) -> UniSkillConfigValidator:
     """
     Validate config file and return validator instance.
 
@@ -491,12 +495,12 @@ def validate_config(config_path: str) -> ConfigValidator:
         config_path: Path to config JSON file
 
     Returns:
-        ConfigValidator instance
+        UniSkillConfigValidator instance
 
     Raises:
         ValueError if config is invalid
     """
-    validator = ConfigValidator(config_path)
+    validator = UniSkillConfigValidator(config_path)
     validator.validate()
     return validator
 

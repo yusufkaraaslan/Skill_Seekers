@@ -938,3 +938,14 @@ def add_create_arguments(parser: argparse.ArgumentParser, mode: str = "default")
         action="store_true",
         help=argparse.SUPPRESS,
     )
+
+
+def get_create_defaults() -> dict[str, Any]:
+    """Build a defaults dict from a throwaway parser with all create arguments.
+
+    Used by CreateCommand._is_explicitly_set() to compare argument values
+    against their registered defaults instead of hardcoded values.
+    """
+    temp = argparse.ArgumentParser(add_help=False)
+    add_create_arguments(temp, mode="all")
+    return {action.dest: action.default for action in temp._actions if action.dest != "help"}

@@ -19,16 +19,13 @@ Usage:
     python3 -m skill_seekers.cli.rss_scraper --feed-url https://example.com/atom.xml --name myblog
 """
 
-import argparse
 import hashlib
 import json
 import logging
 import os
 import re
-import sys
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 # Optional dependency guard — feedparser is not in core deps
@@ -41,6 +38,8 @@ except ImportError:
 
 # BeautifulSoup is a core dependency (always available)
 from bs4 import BeautifulSoup, Comment, Tag
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -109,13 +108,15 @@ def infer_description_from_feed(
     )
 
 
-class RssToSkillConverter:
+class RssToSkillConverter(SkillConverter):
     """Convert RSS/Atom feeds to AI-ready skills.
 
     Parses RSS 2.0, RSS 1.0 (RDF), and Atom feeds using feedparser.
     Optionally follows article links to scrape full page content via
     requests + BeautifulSoup.
     """
+
+    SOURCE_TYPE = "rss"
 
     def __init__(self, config: dict[str, Any]) -> None:
         """Initialize the converter with configuration.
@@ -125,6 +126,7 @@ class RssToSkillConverter:
                 follow_links (default True), max_articles (default 50),
                 and description (optional).
         """
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.feed_url: str = config.get("feed_url", "")
@@ -141,6 +143,10 @@ class RssToSkillConverter:
 
         # Internal state
         self.extracted_data: dict[str, Any] | None = None
+
+    def extract(self):
+        """Extract content from RSS/Atom feed (SkillConverter interface)."""
+        self.extract_feed()
 
     # ──────────────────────────────────────────────────────────────────────
     # Public API
@@ -865,227 +871,3 @@ class RssToSkillConverter:
         safe = re.sub(r"[^\w\s-]", "", name.lower())
         safe = re.sub(r"[-\s]+", "_", safe)
         return safe or "unnamed"
-
-
-# ──────────────────────────────────────────────────────────────────────────
-# CLI entry point
-# ──────────────────────────────────────────────────────────────────────────
-
-
-def main() -> int:
-    """CLI entry point for the RSS/Atom feed scraper."""
-    from .arguments.common import add_all_standard_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert RSS/Atom feed to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s --feed-url https://example.com/feed.xml --name myblog\n"
-            "  %(prog)s --feed-path ./feed.xml --name myblog\n"
-            "  %(prog)s --feed-url https://example.com/rss --no-follow-links --name myblog\n"
-            "  %(prog)s --from-json myblog_extracted.json\n"
-        ),
-    )
-
-    # Standard arguments (name, description, output, enhance-level, etc.)
-    add_all_standard_arguments(parser)
-
-    # Override enhance-level default to 0 for RSS
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for RSS), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
-
-    # RSS-specific arguments
-    parser.add_argument(
-        "--feed-url",
-        type=str,
-        help="URL of the RSS/Atom feed to scrape",
-        metavar="URL",
-    )
-    parser.add_argument(
-        "--feed-path",
-        type=str,
-        help="Local file path to an RSS/Atom XML file",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--follow-links",
-        action="store_true",
-        default=True,
-        dest="follow_links",
-        help="Follow article links to scrape full content (default: enabled)",
-    )
-    parser.add_argument(
-        "--no-follow-links",
-        action="store_false",
-        dest="follow_links",
-        help="Do not follow article links — use feed content only",
-    )
-    parser.add_argument(
-        "--max-articles",
-        type=int,
-        default=50,
-        metavar="N",
-        help="Maximum number of articles to process (default: 50)",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON file",
-        metavar="FILE",
-    )
-
-    args = parser.parse_args()
-
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = (
-            getattr(args, "feed_url", None)
-            or getattr(args, "feed_path", None)
-            or getattr(args, "from_json", None)
-            or "(none)"
-        )
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: RSS/Atom Feed Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:          {source}")
-        print(f"Name:            {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Follow links:    {getattr(args, 'follow_links', True)}")
-        print(f"Max articles:    {getattr(args, 'max_articles', 50)}")
-        print(f"Enhance level:   {getattr(args, 'enhance_level', 0)}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate inputs
-    has_source = (
-        getattr(args, "feed_url", None)
-        or getattr(args, "feed_path", None)
-        or getattr(args, "from_json", None)
-    )
-    if not has_source:
-        parser.error("Must specify --feed-url, --feed-path, or --from-json")
-
-    # Build from JSON workflow
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config: dict[str, Any] = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} feed content",
-        }
-        try:
-            converter = RssToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Feed extraction workflow
-    if not getattr(args, "name", None):
-        # Auto-detect name from URL or file path
-        if getattr(args, "feed_url", None):
-            from urllib.parse import urlparse
-
-            parsed_url = urlparse(args.feed_url)
-            args.name = parsed_url.hostname.replace(".", "-") if parsed_url.hostname else "feed"
-        elif getattr(args, "feed_path", None):
-            args.name = Path(args.feed_path).stem
-
-    config = {
-        "name": args.name,
-        "feed_url": getattr(args, "feed_url", "") or "",
-        "feed_path": getattr(args, "feed_path", "") or "",
-        "follow_links": getattr(args, "follow_links", True),
-        "max_articles": getattr(args, "max_articles", 50),
-        "description": getattr(args, "description", None),
-    }
-
-    try:
-        converter = RssToSkillConverter(config)
-
-        # Extract feed
-        if not converter.extract_feed():
-            print("\n❌ Feed extraction failed — see error above", file=sys.stderr)
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis, "
-                    "enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during feed processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

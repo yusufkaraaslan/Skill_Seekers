@@ -575,62 +575,6 @@ def test_config_file_validation():
 
 
 # ===========================
-# Unified CLI Argument Tests
-# ===========================
-
-
-class TestUnifiedCLIArguments:
-    """Test that unified subcommand parser exposes the expected CLI flags."""
-
-    @pytest.fixture
-    def parser(self):
-        import sys
-
-        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-        from skill_seekers.cli.main import create_parser
-
-        return create_parser()
-
-    def test_api_key_stored_correctly(self, parser):
-        """Test --api-key KEY is stored in args."""
-        args = parser.parse_args(["unified", "--config", "my.json", "--api-key", "sk-ant-test"])
-        assert args.api_key == "sk-ant-test"
-
-    def test_enhance_level_stored_correctly(self, parser):
-        """Test --enhance-level 2 is stored in args."""
-        args = parser.parse_args(["unified", "--config", "my.json", "--enhance-level", "2"])
-        assert args.enhance_level == 2
-
-    def test_enhance_level_default_is_none(self, parser):
-        """Test --enhance-level defaults to None (per-source values apply)."""
-        args = parser.parse_args(["unified", "--config", "my.json"])
-        assert args.enhance_level is None
-
-    def test_enhance_level_all_choices(self, parser):
-        """Test all valid --enhance-level choices are accepted."""
-        for level in [0, 1, 2, 3]:
-            args = parser.parse_args(
-                ["unified", "--config", "my.json", "--enhance-level", str(level)]
-            )
-            assert args.enhance_level == level
-
-    def test_enhance_workflow_accepted(self, parser):
-        """Test --enhance-workflow is accepted."""
-        args = parser.parse_args(
-            ["unified", "--config", "my.json", "--enhance-workflow", "security-focus"]
-        )
-        assert args.enhance_workflow == ["security-focus"]
-
-    def test_api_key_and_enhance_level_combined(self, parser):
-        """Test --api-key and --enhance-level can be combined."""
-        args = parser.parse_args(
-            ["unified", "--config", "my.json", "--api-key", "sk-ant-test", "--enhance-level", "3"]
-        )
-        assert args.api_key == "sk-ant-test"
-        assert args.enhance_level == 3
-
-
-# ===========================
 # Workflow JSON Config Tests
 # ===========================
 

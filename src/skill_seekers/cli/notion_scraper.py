@@ -16,16 +16,16 @@ Usage:
     skill-seekers notion --from-json output/myskill_notion_data.json --name myskill
 """
 
-import argparse
 import csv
 import json
 import logging
 import os
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Any
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 # Optional dependency guard — notion-client is not a core dependency
 try:
@@ -71,7 +71,7 @@ def infer_description_from_notion(metadata: dict | None = None, name: str = "") 
     )
 
 
-class NotionToSkillConverter:
+class NotionToSkillConverter(SkillConverter):
     """Convert Notion workspace content (database or page tree) to a skill.
 
     Args:
@@ -79,7 +79,10 @@ class NotionToSkillConverter:
                 token, description, max_pages.
     """
 
+    SOURCE_TYPE = "notion"
+
     def __init__(self, config: dict) -> None:
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.database_id: str | None = config.get("database_id")
@@ -108,6 +111,10 @@ class NotionToSkillConverter:
             self._client = NotionClient(auth=self.token)
             logger.info("Notion API client initialised")
         return self._client
+
+    def extract(self):
+        """Extract content from Notion (SkillConverter interface)."""
+        self.extract_notion()
 
     # -- Public extraction -----------------------------------------------
 
@@ -857,173 +864,3 @@ class NotionToSkillConverter:
         """Strip trailing Notion hex IDs from export filenames."""
         cleaned = re.sub(r"\s+[0-9a-f]{16,}$", "", stem)
         return cleaned.strip() or stem
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> int:
-    """CLI entry point for the Notion scraper."""
-    from .arguments.common import add_all_standard_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert Notion workspace content to AI-ready skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  skill-seekers notion --database-id ID --token $NOTION_TOKEN --name myskill\n"
-            "  skill-seekers notion --page-id ID --token $NOTION_TOKEN --name myskill\n"
-            "  skill-seekers notion --export-path ./export/ --name myskill\n"
-            "  skill-seekers notion --from-json output/myskill_notion_data.json --name myskill"
-        ),
-    )
-    add_all_standard_arguments(parser)
-
-    # Override enhance-level default to 0 for Notion
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-
-    # Notion-specific arguments
-    parser.add_argument(
-        "--database-id", type=str, help="Notion database ID (API mode)", metavar="ID"
-    )
-    parser.add_argument(
-        "--page-id", type=str, help="Notion page ID (API mode, recursive)", metavar="ID"
-    )
-    parser.add_argument(
-        "--export-path", type=str, help="Notion export directory (export mode)", metavar="PATH"
-    )
-    parser.add_argument(
-        "--token", type=str, help="Notion integration token (or NOTION_TOKEN env)", metavar="TOKEN"
-    )
-    parser.add_argument(
-        "--max-pages",
-        type=int,
-        default=DEFAULT_MAX_PAGES,
-        help=f"Maximum pages to extract (default: {DEFAULT_MAX_PAGES})",
-        metavar="N",
-    )
-    parser.add_argument(
-        "--from-json", type=str, help="Build from previously extracted JSON", metavar="FILE"
-    )
-
-    args = parser.parse_args()
-
-    # Logging
-    level = (
-        logging.WARNING
-        if getattr(args, "quiet", False)
-        else (logging.DEBUG if getattr(args, "verbose", False) else logging.INFO)
-    )
-    logging.basicConfig(level=level, format="%(message)s", force=True)
-
-    # Dry run
-    if getattr(args, "dry_run", False):
-        source = (
-            getattr(args, "database_id", None)
-            or getattr(args, "page_id", None)
-            or getattr(args, "export_path", None)
-            or getattr(args, "from_json", None)
-            or "(none)"
-        )
-        print(f"\n{'=' * 60}\nDRY RUN: Notion Extraction\n{'=' * 60}")
-        print(
-            f"Source: {source}\nName: {getattr(args, 'name', None) or '(auto)'}\nMax pages: {args.max_pages}"
-        )
-        return 0
-
-    # Validate
-    has_source = any(
-        getattr(args, a, None) for a in ("database_id", "page_id", "export_path", "from_json")
-    )
-    if not has_source:
-        parser.error("Must specify --database-id, --page-id, --export-path, or --from-json")
-    if not getattr(args, "name", None):
-        if getattr(args, "from_json", None):
-            args.name = Path(args.from_json).stem.replace("_notion_data", "")
-        elif getattr(args, "export_path", None):
-            args.name = Path(args.export_path).stem
-        else:
-            parser.error("--name is required when using --database-id or --page-id")
-
-    # --from-json: build only
-    if getattr(args, "from_json", None):
-        config = {
-            "name": args.name,
-            "description": getattr(args, "description", None),
-            "max_pages": args.max_pages,
-        }
-        try:
-            conv = NotionToSkillConverter(config)
-            conv.load_extracted_data(args.from_json)
-            conv.build_skill()
-        except Exception as e:
-            print(f"\n   Error: {e}", file=sys.stderr)
-            sys.exit(1)  # noqa: E702
-        return 0
-
-    # Full extract + build
-    config: dict[str, Any] = {
-        "name": args.name,
-        "database_id": getattr(args, "database_id", None),
-        "page_id": getattr(args, "page_id", None),
-        "export_path": getattr(args, "export_path", None),
-        "token": getattr(args, "token", None),
-        "description": getattr(args, "description", None),
-        "max_pages": args.max_pages,
-    }
-    try:
-        conv = NotionToSkillConverter(config)
-        if not conv.extract_notion():
-            print("\n   Notion extraction failed", file=sys.stderr)
-            sys.exit(1)  # noqa: E702
-        conv.build_skill()
-
-        # Run enhancement workflows if specified
-        try:
-            from skill_seekers.cli.workflow_runner import run_workflows
-
-            run_workflows(args)
-        except (ImportError, AttributeError):
-            pass
-
-        # Traditional AI enhancement
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            skill_dir = conv.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                except ImportError:
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-            else:
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-    except RuntimeError as e:
-        print(f"\n   Error: {e}", file=sys.stderr)
-        sys.exit(1)  # noqa: E702
-    except Exception as e:
-        print(f"\n   Unexpected error: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)  # noqa: E702
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

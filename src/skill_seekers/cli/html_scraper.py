@@ -16,16 +16,16 @@ Usage:
     skill-seekers html --from-json page_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 
 # BeautifulSoup is a core dependency (always available)
 from bs4 import BeautifulSoup, Comment, Tag
+
+from .skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ def _collect_html_files(html_path: str) -> list[Path]:
     raise ValueError(f"Path is neither a file nor a directory: {html_path}")
 
 
-class HtmlToSkillConverter:
+class HtmlToSkillConverter(SkillConverter):
     """Convert local HTML files to a skill.
 
     Supports single HTML files and directories of HTML files. Parses document
@@ -112,6 +112,8 @@ class HtmlToSkillConverter:
         extracted_data: Parsed extraction results dict.
     """
 
+    SOURCE_TYPE = "html"
+
     def __init__(self, config: dict) -> None:
         """Initialize the HTML to skill converter.
 
@@ -122,6 +124,7 @@ class HtmlToSkillConverter:
                 - description (str): Skill description (optional).
                 - categories (dict): Category definitions for content grouping.
         """
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.html_path: str = config.get("html_path", "")
@@ -138,6 +141,10 @@ class HtmlToSkillConverter:
 
         # Extracted data
         self.extracted_data: dict | None = None
+
+    def extract(self):
+        """SkillConverter interface — delegates to extract_html()."""
+        return self.extract_html()
 
     # ------------------------------------------------------------------
     # Extraction
@@ -1742,205 +1749,3 @@ def _score_code_quality(code: str) -> float:
         score -= 2.0
 
     return min(10.0, max(0.0, score))
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> int:
-    """CLI entry point for the HTML scraper.
-
-    Parses command-line arguments and runs the extraction/build pipeline.
-    Supports two workflows:
-    1. Direct HTML extraction: ``--html-path page.html --name myskill``
-    2. Build from JSON: ``--from-json page_extracted.json``
-
-    Returns:
-        Exit code (0 for success, non-zero for failure).
-    """
-    parser = argparse.ArgumentParser(
-        description="Convert local HTML files to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s --html-path page.html --name myskill\n"
-            "  %(prog)s --html-path ./docs/ --name myskill\n"
-            "  %(prog)s --from-json page_extracted.json\n"
-        ),
-    )
-
-    # Shared universal args
-    from .arguments.common import add_all_standard_arguments
-
-    add_all_standard_arguments(parser)
-
-    # Override enhance-level default to 0 for HTML
-    for action in parser._actions:
-        if hasattr(action, "dest") and action.dest == "enhance_level":
-            action.default = 0
-            action.help = (
-                "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled (default for HTML), 1=SKILL.md only, "
-                "2=+architecture/config, 3=full enhancement. "
-                "Mode selection: uses API if ANTHROPIC_API_KEY is set, "
-                "otherwise LOCAL (Claude Code, Kimi, etc.)"
-            )
-
-    # HTML-specific args
-    parser.add_argument(
-        "--html-path",
-        type=str,
-        help="Path to HTML file or directory of HTML files",
-        metavar="PATH",
-    )
-    parser.add_argument(
-        "--from-json",
-        type=str,
-        help="Build skill from previously extracted JSON",
-        metavar="FILE",
-    )
-
-    args = parser.parse_args()
-
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = getattr(args, "html_path", None) or getattr(args, "from_json", None) or "(none)"
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: HTML Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate inputs
-    if not (getattr(args, "html_path", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --html-path or --from-json")
-
-    # Build from JSON workflow
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
-        }
-        try:
-            converter = HtmlToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Direct HTML mode
-    if not getattr(args, "name", None):
-        # Auto-detect name from path
-        path = Path(args.html_path)
-        args.name = path.stem if path.is_file() else path.name
-
-    config = {
-        "name": args.name,
-        "html_path": args.html_path,
-        # Pass None so extract_html() can infer from HTML metadata
-        "description": getattr(args, "description", None),
-    }
-
-    try:
-        converter = HtmlToSkillConverter(config)
-
-        # Extract
-        if not converter.extract_html():
-            print(
-                "\n❌ HTML extraction failed - see error above",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis,"
-                    " enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import (
-                        enhance_skill_md,
-                    )
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import (
-                        LocalSkillEnhancer,
-                    )
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import (
-                    LocalSkillEnhancer,
-                )
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except (FileNotFoundError, ValueError) as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(
-            f"\n❌ Unexpected error during HTML processing: {e}",
-            file=sys.stderr,
-        )
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

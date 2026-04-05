@@ -16,16 +16,16 @@ pip install skill-seekers
 
 | Source | Command |
 |--------|---------|
-| Local code | `skill-seekers analyze --directory ./path` |
-| Docs URL | `skill-seekers scrape --url https://...` |
-| GitHub | `skill-seekers github --repo owner/repo` |
-| PDF | `skill-seekers pdf --file doc.pdf` |
+| Local code | `skill-seekers create ./path` |
+| Docs URL | `skill-seekers create https://docs.example.com` |
+| GitHub | `skill-seekers create owner/repo` |
+| PDF | `skill-seekers create document.pdf` |
 
 ## Quick Start
 
 ```bash
 # Analyze local codebase
-skill-seekers analyze --directory /path/to/project --output output/my-skill/
+skill-seekers create /path/to/project --name my-skill
 
 # Package for Claude
 yes | skill-seekers package output/my-skill/ --no-open

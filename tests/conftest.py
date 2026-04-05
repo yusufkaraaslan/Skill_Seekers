@@ -29,3 +29,17 @@ def pytest_configure(config):  # noqa: ARG001
 def anyio_backend():
     """Override anyio backend to only use asyncio (not trio)."""
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def _reset_execution_context():
+    """Reset the ExecutionContext singleton before and after every test.
+
+    Without this, a test that calls ExecutionContext.initialize() poisons
+    all subsequent tests in the same process.
+    """
+    from skill_seekers.cli.execution_context import ExecutionContext
+
+    ExecutionContext.reset()
+    yield
+    ExecutionContext.reset()

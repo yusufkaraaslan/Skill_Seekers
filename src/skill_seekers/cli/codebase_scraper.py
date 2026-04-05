@@ -24,12 +24,10 @@ Credits:
     - pathspec for .gitignore support: https://pypi.org/project/pathspec/
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +36,7 @@ from skill_seekers.cli.code_analyzer import CodeAnalyzer
 from skill_seekers.cli.config_extractor import ConfigExtractor
 from skill_seekers.cli.dependency_analyzer import DependencyAnalyzer
 from skill_seekers.cli.signal_flow_analyzer import SignalFlowAnalyzer
-from skill_seekers.cli.utils import setup_logging
+from skill_seekers.cli.skill_converter import SkillConverter
 
 # Try to import pathspec for .gitignore support
 try:
@@ -2147,278 +2145,56 @@ def _generate_references(output_dir: Path):
     logger.info(f"✅ Generated references directory: {references_dir}")
 
 
-def _check_deprecated_flags(args):
-    """Check for deprecated flags and show migration warnings."""
-    warnings = []
+class CodebaseAnalyzer(SkillConverter):
+    """SkillConverter wrapper around the analyze_codebase / _generate_skill_md functions."""
 
-    # Deprecated: --depth
-    if hasattr(args, "depth") and args.depth:
-        preset_map = {
-            "surface": "quick",
-            "deep": "standard",
-            "full": "comprehensive",
-        }
-        suggested_preset = preset_map.get(args.depth, "standard")
-        warnings.append(
-            f"⚠️  DEPRECATED: --depth {args.depth} → use --preset {suggested_preset} instead"
+    SOURCE_TYPE = "local"
+
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.directory = Path(config.get("directory", ".")).resolve()
+        self.output_dir = Path(config.get("output_dir", f"output/{self.name}"))
+        self.depth = config.get("depth", "deep")
+        self.languages = config.get("languages")
+        self.file_patterns = config.get("file_patterns")
+        self.build_api_reference = config.get("build_api_reference", True)
+        self.extract_comments = config.get("extract_comments", True)
+        self.build_dependency_graph = config.get("build_dependency_graph", True)
+        self.detect_patterns = config.get("detect_patterns", True)
+        self.extract_test_examples = config.get("extract_test_examples", True)
+        self.build_how_to_guides = config.get("build_how_to_guides", True)
+        self.extract_config_patterns = config.get("extract_config_patterns", True)
+        self.extract_docs = config.get("extract_docs", True)
+        self.enhance_level = config.get("enhance_level", 0)
+        self.skill_name = config.get("skill_name") or self.name
+        self.skill_description = config.get("skill_description")
+        self.doc_version = config.get("doc_version", "")
+        self._results: dict[str, Any] | None = None
+
+    def extract(self):
+        """SkillConverter interface — delegates to analyze_codebase()."""
+        self._results = analyze_codebase(
+            directory=self.directory,
+            output_dir=self.output_dir,
+            depth=self.depth,
+            languages=self.languages,
+            file_patterns=self.file_patterns,
+            build_api_reference=self.build_api_reference,
+            extract_comments=self.extract_comments,
+            build_dependency_graph=self.build_dependency_graph,
+            detect_patterns=self.detect_patterns,
+            extract_test_examples=self.extract_test_examples,
+            build_how_to_guides=self.build_how_to_guides,
+            extract_config_patterns=self.extract_config_patterns,
+            extract_docs=self.extract_docs,
+            enhance_level=self.enhance_level,
+            skill_name=self.skill_name,
+            skill_description=self.skill_description,
+            doc_version=self.doc_version,
         )
 
-    # Deprecated: --ai-mode
-    if hasattr(args, "ai_mode") and args.ai_mode and args.ai_mode != "auto":
-        if args.ai_mode == "api":
-            warnings.append(
-                "⚠️  DEPRECATED: --ai-mode api → use --enhance-level with ANTHROPIC_API_KEY set instead"
-            )
-        elif args.ai_mode == "local":
-            warnings.append(
-                "⚠️  DEPRECATED: --ai-mode local → use --enhance-level without API key instead"
-            )
-        elif args.ai_mode == "none":
-            warnings.append("⚠️  DEPRECATED: --ai-mode none → use --enhance-level 0 instead")
-
-    # Deprecated: --quick flag
-    if hasattr(args, "quick") and args.quick:
-        warnings.append("⚠️  DEPRECATED: --quick → use --preset quick instead")
-
-    # Deprecated: --comprehensive flag
-    if hasattr(args, "comprehensive") and args.comprehensive:
-        warnings.append("⚠️  DEPRECATED: --comprehensive → use --preset comprehensive instead")
-
-    # Show warnings if any found
-    if warnings:
-        print("\n" + "=" * 70)
-        for warning in warnings:
-            print(warning)
-        print("\n💡 MIGRATION TIP:")
-        print("   --preset quick          (1-2 min, basic features)")
-        print("   --preset standard       (5-10 min, core features, DEFAULT)")
-        print("   --preset comprehensive  (20-60 min, all features + AI)")
-        print("   --enhance-level 0-3     (granular AI enhancement control)")
-        print("\n⚠️  Deprecated flags will be removed in v4.0.0")
-        print("=" * 70 + "\n")
-
-
-def main():
-    """Command-line interface for codebase analysis."""
-    from skill_seekers.cli.arguments.analyze import add_analyze_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Analyze local codebases and extract code knowledge",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Analyze current directory
-  codebase-scraper --directory . --output output/codebase/
-
-  # Deep analysis with API reference and dependency graph
-  codebase-scraper --directory /path/to/repo --depth deep --build-api-reference --build-dependency-graph
-
-  # Analyze only Python and JavaScript
-  codebase-scraper --directory . --languages Python,JavaScript
-
-  # Use file patterns
-  codebase-scraper --directory . --file-patterns "*.py,src/**/*.js"
-
-  # Full analysis with all features (default)
-  codebase-scraper --directory . --depth deep
-
-  # Surface analysis (fast, skip all analysis features)
-  codebase-scraper --directory . --depth surface --skip-api-reference --skip-dependency-graph --skip-patterns --skip-test-examples
-
-  # Skip specific features
-  codebase-scraper --directory . --skip-patterns --skip-test-examples
-""",
-    )
-
-    # Register all args from the shared definitions module
-    add_analyze_arguments(parser)
-
-    # Extra legacy arg only used by standalone CLI (not in arguments/analyze.py)
-    parser.add_argument(
-        "--ai-mode",
-        choices=["auto", "api", "local", "none"],
-        default="auto",
-        help=(
-            "AI enhancement mode for how-to guides: "
-            "auto (auto-detect: API if ANTHROPIC_API_KEY set, else LOCAL), "
-            "api (Anthropic API, requires ANTHROPIC_API_KEY), "
-            "local (coding agent CLI, FREE, no API key), "
-            "none (disable AI enhancement). "
-            "💡 TIP: Use --enhance flag instead for simpler UX!"
-        ),
-    )
-
-    # Check for deprecated flags
-    deprecated_flags = {
-        "--build-api-reference": "--skip-api-reference",
-        "--build-dependency-graph": "--skip-dependency-graph",
-        "--detect-patterns": "--skip-patterns",
-        "--extract-test-examples": "--skip-test-examples",
-        "--build-how-to-guides": "--skip-how-to-guides",
-        "--extract-config-patterns": "--skip-config-patterns",
-    }
-
-    for old_flag, new_flag in deprecated_flags.items():
-        if old_flag in sys.argv:
-            logger.warning(
-                f"⚠️  DEPRECATED: {old_flag} is deprecated. "
-                f"All features are now enabled by default. "
-                f"Use {new_flag} to disable this feature."
-            )
-
-    # Handle --preset-list flag BEFORE parse_args() to avoid required --directory validation
-    if "--preset-list" in sys.argv:
-        from skill_seekers.cli.presets import PresetManager
-
-        print(PresetManager.format_preset_help())
-        return 0
-
-    args = parser.parse_args()
-
-    # Check for deprecated flags and show warnings
-    _check_deprecated_flags(args)
-
-    # Handle presets using formal preset system
-    preset_name = None
-    if hasattr(args, "preset") and args.preset:
-        # New --preset flag (recommended)
-        preset_name = args.preset
-    elif hasattr(args, "quick") and args.quick:
-        # Legacy --quick flag (backward compatibility)
-        preset_name = "quick"
-    elif hasattr(args, "comprehensive") and args.comprehensive:
-        # Legacy --comprehensive flag (backward compatibility)
-        preset_name = "comprehensive"
-    else:
-        # Default preset if none specified
-        preset_name = "standard"
-
-    # Apply preset using PresetManager
-    if preset_name:
-        from skill_seekers.cli.presets import PresetManager
-
-        try:
-            preset_args = PresetManager.apply_preset(preset_name, vars(args))
-            # Update args with preset values
-            for key, value in preset_args.items():
-                setattr(args, key, value)
-
-            preset = PresetManager.get_preset(preset_name)
-            logger.info(f"{preset.icon} {preset.name} analysis mode: {preset.description}")
-        except ValueError as e:
-            logger.error(f"❌ {e}")
-            return 1
-
-    # Apply default depth if not set by preset or CLI
-    if args.depth is None:
-        args.depth = "deep"  # Default depth
-
-    setup_logging(verbose=args.verbose, quiet=getattr(args, "quiet", False))
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        directory = Path(args.directory)
-        print(f"\n{'=' * 60}")
-        print(f"DRY RUN: Codebase Analysis")
-        print(f"{'=' * 60}")
-        print(f"Directory:    {directory.resolve()}")
-        print(f"Output:       {args.output}")
-        print(f"Preset:       {preset_name}")
-        print(f"Depth:        {args.depth or 'deep (default)'}")
-        print(f"Name:         {getattr(args, 'name', None) or directory.name}")
-        print(f"Enhance:      level {args.enhance_level}")
-        print(f"Skip flags:   ", end="")
-        skips = []
-        for flag in [
-            "skip_api_reference",
-            "skip_dependency_graph",
-            "skip_patterns",
-            "skip_test_examples",
-            "skip_how_to_guides",
-            "skip_config_patterns",
-            "skip_docs",
-        ]:
-            if getattr(args, flag, False):
-                skips.append(f"--{flag.replace('_', '-')}")
-        print(", ".join(skips) if skips else "(none)")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate directory
-    directory = Path(args.directory)
-    if not directory.exists():
-        logger.error(f"Directory not found: {directory}")
-        return 1
-
-    if not directory.is_dir():
-        logger.error(f"Not a directory: {directory}")
-        return 1
-
-    # Parse languages
-    languages = None
-    if args.languages:
-        languages = [lang.strip() for lang in args.languages.split(",")]
-
-    # Parse file patterns
-    file_patterns = None
-    if args.file_patterns:
-        file_patterns = [p.strip() for p in args.file_patterns.split(",")]
-
-    # Analyze codebase
-    try:
-        results = analyze_codebase(
-            directory=directory,
-            output_dir=Path(args.output),
-            depth=args.depth,
-            languages=languages,
-            file_patterns=file_patterns,
-            build_api_reference=not args.skip_api_reference,
-            extract_comments=not args.no_comments,
-            build_dependency_graph=not args.skip_dependency_graph,
-            detect_patterns=not args.skip_patterns,
-            extract_test_examples=not args.skip_test_examples,
-            build_how_to_guides=not args.skip_how_to_guides,
-            extract_config_patterns=not args.skip_config_patterns,
-            extract_docs=not args.skip_docs,
-            enhance_level=args.enhance_level,  # AI enhancement level (0-3)
-            skill_name=getattr(args, "name", None),
-            skill_description=getattr(args, "description", None),
-            doc_version=getattr(args, "doc_version", ""),
-        )
-
-        # ============================================================
-        # WORKFLOW SYSTEM INTEGRATION (Phase 2)
-        # ============================================================
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-
-        # Print summary
-        print(f"\n{'=' * 60}")
-        print("CODEBASE ANALYSIS COMPLETE")
-        if workflow_executed:
-            print(f" + {len(workflow_names)} ENHANCEMENT WORKFLOW(S) EXECUTED")
-        print(f"{'=' * 60}")
-        print(f"Files analyzed: {len(results['files'])}")
-        print(f"Output directory: {args.output}")
-        if not args.skip_api_reference:
-            print(f"API reference: {Path(args.output) / 'api_reference'}")
-        if workflow_executed:
-            print(f"Workflows applied: {', '.join(workflow_names)}")
-        print(f"{'=' * 60}\n")
-
-        return 0
-
-    except KeyboardInterrupt:
-        logger.error("\nAnalysis interrupted by user")
-        return 130
-    except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    def build_skill(self):
+        """SkillConverter interface — no-op because analyze_codebase() already calls _generate_skill_md()."""
+        # analyze_codebase() generates SKILL.md internally via _generate_skill_md(),
+        # so there is nothing additional to do here.
+        pass

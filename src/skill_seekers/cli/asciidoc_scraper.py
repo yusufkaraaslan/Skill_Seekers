@@ -15,12 +15,10 @@ Usage:
     skill-seekers asciidoc --from-json doc_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 from pathlib import Path
 
 # Optional dependency guard — asciidoc library for HTML conversion
@@ -30,6 +28,8 @@ try:
     ASCIIDOC_AVAILABLE = True
 except ImportError:
     ASCIIDOC_AVAILABLE = False
+
+from skill_seekers.cli.skill_converter import SkillConverter
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,7 @@ def _score_code_quality(code: str) -> float:
     return min(10.0, max(0.0, score))
 
 
-class AsciiDocToSkillConverter:
+class AsciiDocToSkillConverter(SkillConverter):
     """Convert AsciiDoc documentation to an AI-ready skill.
 
     Handles single ``.adoc`` files and directories. Content is parsed into
@@ -120,7 +120,10 @@ class AsciiDocToSkillConverter:
     directory layout (SKILL.md, references/, etc.).
     """
 
+    SOURCE_TYPE = "asciidoc"
+
     def __init__(self, config: dict) -> None:
+        super().__init__(config)
         self.config = config
         self.name: str = config["name"]
         self.asciidoc_path: str = config.get("asciidoc_path", "")
@@ -131,6 +134,10 @@ class AsciiDocToSkillConverter:
         self.data_file: str = f"output/{self.name}_extracted.json"
         self.categories: dict = config.get("categories", {})
         self.extracted_data: dict | None = None
+
+    def extract(self):
+        """Extract content from AsciiDoc files (SkillConverter interface)."""
+        self.extract_asciidoc()
 
     # ------------------------------------------------------------------
     # Extraction
@@ -943,147 +950,3 @@ class AsciiDocToSkillConverter:
     def _in_range(pos: int, ranges: list[tuple[int, int]]) -> bool:
         """Check whether pos falls within any consumed range."""
         return any(s <= pos < e for s, e in ranges)
-
-
-# ============================================================================
-# CLI entry point
-# ============================================================================
-
-
-def main() -> int:
-    """CLI entry point for AsciiDoc scraper."""
-    from skill_seekers.cli.arguments.asciidoc import add_asciidoc_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert AsciiDoc documentation to skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    add_asciidoc_arguments(parser)
-
-    args = parser.parse_args()
-
-    # Set logging level
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = (
-            getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None) or "(none)"
-        )
-        print(f"\n{'=' * 60}")
-        print("DRY RUN: AsciiDoc Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"\n✅ Dry run complete")
-        return 0
-
-    # Validate inputs
-    if not (getattr(args, "asciidoc_path", None) or getattr(args, "from_json", None)):
-        parser.error("Must specify --asciidoc-path or --from-json")
-
-    # Build from JSON workflow
-    if getattr(args, "from_json", None):
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": getattr(args, "name", None) or name,
-            "description": getattr(args, "description", None)
-            or f"Use when referencing {name} documentation",
-        }
-        try:
-            converter = AsciiDocToSkillConverter(config)
-            converter.load_extracted_data(args.from_json)
-            converter.build_skill()
-        except Exception as e:
-            print(f"\n❌ Error: {e}", file=sys.stderr)
-            sys.exit(1)
-        return 0
-
-    # Direct AsciiDoc mode
-    if not getattr(args, "name", None):
-        p = Path(args.asciidoc_path)
-        args.name = p.stem if p.is_file() else p.name
-
-    config = {
-        "name": args.name,
-        "asciidoc_path": args.asciidoc_path,
-        "description": getattr(args, "description", None),
-    }
-
-    try:
-        converter = AsciiDocToSkillConverter(config)
-
-        # Extract
-        if not converter.extract_asciidoc():
-            print("\n❌ AsciiDoc extraction failed - see error above", file=sys.stderr)
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # Enhancement Workflow Integration
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # Traditional enhancement (complements workflow system)
-        if getattr(args, "enhance_level", 0) > 0:
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis,"
-                    " enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    agent = getattr(args, "agent", None) if args else None
-                    agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                    enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                agent = getattr(args, "agent", None) if args else None
-                agent_cmd = getattr(args, "agent_cmd", None) if args else None
-                enhancer = LocalSkillEnhancer(Path(skill_dir), agent=agent, agent_cmd=agent_cmd)
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except (FileNotFoundError, ValueError, RuntimeError) as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during AsciiDoc processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
