@@ -39,7 +39,10 @@ class SkillConverter:
         try:
             logger.info(f"Extracting from {self.SOURCE_TYPE} source: {self.name}")
             self.extract()
-            self.build_skill()
+            result = self.build_skill()
+            if result is False:
+                logger.error(f"❌ {self.SOURCE_TYPE} build_skill() reported failure")
+                return 1
             logger.info(f"✅ Skill built: {self.skill_dir}/")
             return 0
         except Exception as e:
@@ -103,5 +106,10 @@ def get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter:
 
     module_path, class_name = CONVERTER_REGISTRY[source_type]
     module = importlib.import_module(module_path)
-    converter_class = getattr(module, class_name)
+    converter_class = getattr(module, class_name, None)
+    if converter_class is None:
+        raise ValueError(
+            f"Class '{class_name}' not found in module '{module_path}'. "
+            f"Check CONVERTER_REGISTRY entry for '{source_type}'."
+        )
     return converter_class(config)

@@ -477,13 +477,21 @@ class TestExecutionContextDefaults:
 
     def test_default_values(self):
         """Should have sensible defaults."""
-        ctx = ExecutionContext.initialize()
+        # Clear API key env vars so mode defaults to "auto" regardless of environment
+        api_keys = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "MOONSHOT_API_KEY", "GOOGLE_API_KEY")
+        saved = {k: os.environ.pop(k, None) for k in api_keys}
+        try:
+            ctx = ExecutionContext.initialize()
 
-        # Enhancement defaults
-        assert ctx.enhancement.enabled is True
-        assert ctx.enhancement.level == 2
-        assert ctx.enhancement.mode == "auto"  # Default is auto, resolved at runtime
-        assert ctx.enhancement.timeout == 2700  # 45 minutes
+            # Enhancement defaults
+            assert ctx.enhancement.enabled is True
+            assert ctx.enhancement.level == 2
+            assert ctx.enhancement.mode == "auto"  # Default is auto, resolved at runtime
+            assert ctx.enhancement.timeout == 2700  # 45 minutes
+        finally:
+            for k, v in saved.items():
+                if v is not None:
+                    os.environ[k] = v
 
         # Output defaults
         assert ctx.output.name is None

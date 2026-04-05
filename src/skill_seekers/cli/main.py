@@ -125,13 +125,6 @@ def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
     Returns:
         List of command-line arguments for the command module
     """
-    import warnings
-
-    warnings.warn(
-        "_reconstruct_argv is deprecated. Use ExecutionContext instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     argv = [f"{command}_command.py"]
 
     # Convert args to sys.argv format

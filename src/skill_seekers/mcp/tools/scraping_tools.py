@@ -185,10 +185,11 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
         # Estimate: 0.5s per page discovered
         timeout = max(300, max_discovery // 2)  # Minimum 5 minutes
 
-    # Run estimate_pages.py
+    # Run estimate_pages module
     cmd = [
         sys.executable,
-        str(CLI_DIR / "estimate_pages.py"),
+        "-m",
+        "skill_seekers.cli.estimate_pages",
         config_path,
         "--max-discovery",
         str(max_discovery),
@@ -1069,51 +1070,35 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
             )
         ]
 
-    # Build the subprocess command
-    # Map source type to module name (most are <type>_scraper, but some differ)
-    _MODULE_NAMES = {
-        "manpage": "man_scraper",
+    # Build config dict for the converter — map MCP args to the keys
+    # each converter expects in its __init__.
+    _CONFIG_KEY: dict[str, str] = {
+        "jupyter": "notebook_path",
+        "html": "html_path",
+        "openapi": "spec_path",
+        "asciidoc": "asciidoc_path",
+        "pptx": "pptx_path",
+        "manpage": "man_path",
+        "confluence": "export_path",
+        "notion": "export_path",
+        "rss": "feed_path",
+        "chat": "export_path",
     }
-    module_name = _MODULE_NAMES.get(source_type, f"{source_type}_scraper")
-    cmd = [sys.executable, "-m", f"skill_seekers.cli.{module_name}"]
-
-    # Map source type to the correct CLI flag for file/path input and URL input.
-    # Each scraper has its own flag name — using a generic --path or --url would fail.
-    _PATH_FLAGS: dict[str, str] = {
-        "jupyter": "--notebook",
-        "html": "--html-path",
-        "openapi": "--spec",
-        "asciidoc": "--asciidoc-path",
-        "pptx": "--pptx",
-        "manpage": "--man-path",
-        "confluence": "--export-path",
-        "notion": "--export-path",
-        "rss": "--feed-path",
-        "chat": "--export-path",
-    }
-    _URL_FLAGS: dict[str, str] = {
-        "confluence": "--base-url",
-        "notion": "--page-id",
-        "rss": "--feed-url",
-        "openapi": "--spec-url",
+    _URL_CONFIG_KEY: dict[str, str] = {
+        "confluence": "base_url",
+        "notion": "page_id",
+        "rss": "feed_url",
+        "openapi": "spec_url",
     }
 
-    # Determine the input flag based on source type
+    config: dict = {"name": name}
+
     if source_type in _URL_BASED_TYPES and url:
-        url_flag = _URL_FLAGS.get(source_type, "--url")
-        cmd.extend([url_flag, url])
+        config[_URL_CONFIG_KEY.get(source_type, "url")] = url
     elif path:
-        path_flag = _PATH_FLAGS.get(source_type, "--path")
-        cmd.extend([path_flag, path])
+        config[_CONFIG_KEY.get(source_type, "path")] = path
     elif url:
-        # Allow url fallback for file-based types (some may accept URLs too)
-        url_flag = _URL_FLAGS.get(source_type, "--url")
-        cmd.extend([url_flag, url])
-
-    cmd.extend(["--name", name])
-
-    # Set a reasonable timeout
-    timeout = 600  # 10 minutes
+        config[_URL_CONFIG_KEY.get(source_type, "url")] = url
 
     emoji = _SOURCE_EMOJIS.get(source_type, "🔧")
     progress_msg = f"{emoji} Scraping {source_type} source...\n"
@@ -1121,14 +1106,9 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
         progress_msg += f"📁 Path: {path}\n"
     if url:
         progress_msg += f"🔗 URL: {url}\n"
-    progress_msg += f"📛 Name: {name}\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"📛 Name: {name}\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli.skill_converter import get_converter
 
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter(source_type, config)
+    return _run_converter(converter, progress_msg)

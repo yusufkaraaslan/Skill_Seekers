@@ -129,7 +129,7 @@ class TestCreateCommandConverterRouting:
         """Test that get_converter returns PDFToSkillConverter for pdf."""
         from skill_seekers.cli.skill_converter import get_converter
 
-        config = {"name": "test", "path": "/tmp/test.pdf"}
+        config = {"name": "test", "pdf_path": "/tmp/test.pdf"}
         converter = get_converter("pdf", config)
 
         assert converter.SOURCE_TYPE == "pdf"

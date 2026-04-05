@@ -1930,6 +1930,7 @@ class UnifiedScraper(SkillConverter):
             # Phase 6: AI Enhancement of SKILL.md
             # Read from ExecutionContext first (has correct priority resolution),
             # fall back to raw config dict for backward compatibility.
+            enhancement_config = self.config.get("enhancement", {})
             try:
                 from skill_seekers.cli.execution_context import ExecutionContext
 
@@ -1939,7 +1940,6 @@ class UnifiedScraper(SkillConverter):
                 enhancement_mode = ctx.enhancement.mode.upper()
             except (RuntimeError, Exception):
                 # Fallback to raw config + args
-                enhancement_config = self.config.get("enhancement", {})
                 enhancement_enabled = enhancement_config.get("enabled", False)
                 enhancement_level = enhancement_config.get("level", 0)
                 enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
@@ -2066,12 +2066,14 @@ class UnifiedScraper(SkillConverter):
             logger.info(f"📁 Output: {self.output_dir}/")
             logger.info(f"📁 Data: {self.data_dir}/")
 
+            return 0
+
         except KeyboardInterrupt:
             logger.info("\n\n⚠️  Scraping interrupted by user")
-            sys.exit(1)
+            return 130
         except Exception as e:
             logger.error(f"\n\n❌ Error during scraping: {e}")
             import traceback
 
             traceback.print_exc()
-            sys.exit(1)
+            return 1

@@ -408,11 +408,14 @@ class ExecutionContext(BaseModel):
         if getattr(args, "api_key", None):
             config.setdefault("enhancement", {})["api_key"] = args.api_key
 
-        # Only set mode when user explicitly passed --api-key on CLI.
+        # Resolve mode from explicit CLI flags:
+        # --api-key → "api", --agent (without --api-key) → "local".
         # Env-var-based mode detection belongs in _default_data(), not here,
         # to preserve the priority: CLI args > Config file > Env vars > Defaults.
         if getattr(args, "api_key", None):
             config.setdefault("enhancement", {})["mode"] = "api"
+        elif getattr(args, "agent", None):
+            config.setdefault("enhancement", {})["mode"] = "local"
 
         # Workflows
         if getattr(args, "enhance_workflow", None):
@@ -502,6 +505,9 @@ class ExecutionContext(BaseModel):
     def override(self, **kwargs: Any) -> Generator[ExecutionContext, None, None]:
         """Temporarily override context values.
 
+        Thread-safe: uses an override stack so nested/concurrent overrides
+        restore correctly regardless of ordering.
+
         Usage:
             with ctx.override(enhancement__level=3):
                 run_workflow()  # Uses level 3
@@ -524,19 +530,18 @@ class ExecutionContext(BaseModel):
         temp_ctx = self.__class__.model_validate(current_data)
         temp_ctx._raw_args = dict(self._raw_args)  # Copy raw args to temp context
 
-        # Swap singleton atomically — hold lock only for the swap operations,
-        # save/restore _initialized to prevent re-init during override (#10).
+        # Swap singleton atomically and save previous state on a stack
+        # so nested/concurrent overrides restore in the correct order.
         with self.__class__._lock:
-            previous = self.__class__._instance
-            prev_initialized = self.__class__._initialized
+            saved = (self.__class__._instance, self.__class__._initialized)
             self.__class__._instance = temp_ctx
             self.__class__._initialized = True
         try:
             yield temp_ctx
         finally:
             with self.__class__._lock:
-                self.__class__._instance = previous
-                self.__class__._initialized = prev_initialized
+                self.__class__._instance = saved[0]
+                self.__class__._initialized = saved[1]
 
 
 def get_context() -> ExecutionContext:

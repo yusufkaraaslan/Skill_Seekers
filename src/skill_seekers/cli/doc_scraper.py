@@ -2241,9 +2241,12 @@ def scrape_documentation(
     # Setup logging
     setup_logging(verbose=verbose, quiet=quiet)
 
-    # Initialize context if not provided
+    # Use existing context if already initialized, otherwise create one
     if ctx is None:
-        ctx = ExecutionContext.initialize(args=argparse.Namespace(**config))
+        if ExecutionContext._initialized:
+            ctx = ExecutionContext.get()
+        else:
+            ctx = ExecutionContext.initialize(args=argparse.Namespace(**config))
 
     # Build converter and execute
     try:
