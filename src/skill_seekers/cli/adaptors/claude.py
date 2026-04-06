@@ -422,8 +422,8 @@ version: {metadata.version}
         references = {}
         total_chars = 0
 
-        # Read all .md files
-        for ref_file in sorted(references_dir.glob("*.md")):
+        # Read all .md files recursively (including subdirectories)
+        for ref_file in sorted(references_dir.rglob("*.md")):
             if total_chars >= max_chars:
                 break
 

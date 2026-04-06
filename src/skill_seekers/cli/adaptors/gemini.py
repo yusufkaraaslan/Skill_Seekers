@@ -237,7 +237,7 @@ See the references directory for complete documentation with examples and best p
                 refs_dir = temp_path / "references"
                 uploaded_refs = []
                 if refs_dir.exists():
-                    for ref_file in refs_dir.glob("*.md"):
+                    for ref_file in refs_dir.rglob("*.md"):
                         ref_uploaded = genai.upload_file(
                             path=str(ref_file), display_name=f"{package_path.stem}_{ref_file.stem}"
                         )
@@ -382,8 +382,8 @@ See the references directory for complete documentation with examples and best p
         references = {}
         total_chars = 0
 
-        # Read all .md files
-        for ref_file in sorted(references_dir.glob("*.md")):
+        # Read all .md files recursively (including subdirectories)
+        for ref_file in sorted(references_dir.rglob("*.md")):
             if total_chars >= max_chars:
                 break
 
