@@ -218,7 +218,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 knowledge_dir = temp_path / "knowledge_files"
                 knowledge_count = 0
                 if knowledge_dir.exists():
-                    knowledge_count = len(list(knowledge_dir.glob("*.md")))
+                    knowledge_count = len(list(knowledge_dir.rglob("*.md")))
 
                 client = OpenAI(
                     api_key=api_key,
@@ -364,7 +364,7 @@ Always prioritize accuracy by consulting the attached documentation files before
         references = {}
         total_chars = 0
 
-        for ref_file in sorted(references_dir.glob("*.md")):
+        for ref_file in sorted(references_dir.rglob("*.md")):
             if total_chars >= max_chars:
                 break
 
