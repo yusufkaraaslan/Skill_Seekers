@@ -59,7 +59,7 @@
         <h3>Description</h3>
         <div>
           
-            <p>17 source-type scrapers that extract content from documentation websites, GitHub repos, PDFs, Word docs, EPUB, video, Jupyter notebooks, HTML, OpenAPI specs, AsciiDoc, PPTX, RSS, man pages, Confluence, Notion, and chat exports. Each scraper has a main() entry point and a *ToSkillConverter class.</p>
+            <p>18 source-type converters that extract content from documentation websites, GitHub repos, PDFs, Word docs, EPUB, video, Jupyter notebooks, HTML, OpenAPI specs, AsciiDoc, PPTX, RSS, man pages, Confluence, Notion, and chat exports. All converters inherit from SkillConverter and implement extract()/build<em>skill(). The CONVERTER</em>REGISTRY maps source types to converter classes, and get_converter() provides factory access.</p>
           
         </div>
       </section>
@@ -329,13 +329,13 @@
         
         <li><a href='66c5db9de07c76e1b7444f602a1e28f8.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(CLICore→Scrapers)</a></li>
         
-        <li><a href='a7e387e6836008e652c37a915d30c255.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(Enhancement→Scrapers)</a></li>
-        
-        <li><a href='5541c323f937abda33d6dadae4cedc53.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(MCP→Scrapers)</a></li>
-        
         <li><a href='5aed048619037fd409f2563cc9ad7c15.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(Scrapers→Utilities)</a></li>
         
         <li><a href='ba72e8b427ca412c06af06c82d373fb9.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(Scrapers→Analysis)</a></li>
+        
+        <li><a href='a7e387e6836008e652c37a915d30c255.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(Enhancement→Scrapers)</a></li>
+        
+        <li><a href='5541c323f937abda33d6dadae4cedc53.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(MCP→Scrapers)</a></li>
         
     </ul>
 </section>
@@ -351,8 +351,6 @@
     <ul class="nav nav-list">
         
         <li><a href='a47184837219aea9ccabc89e35d90216.html'><span class='node-icon staruml-icon icon-UMLClassDiagram'></span>Scrapers</a></li>
-        
-        <li><a href='bb5a0e821d35146502e601959f106ff6.html'><span class='node-icon staruml-icon icon-UMLInterface'></span>IScraper</a></li>
         
         <li><a href='3af5ea4716a6bdcdb5593eb62d9fe016.html'><span class='node-icon staruml-icon icon-UMLClass'></span>DocToSkillConverter</a></li>
         
@@ -394,6 +392,10 @@
         
         <li><a href='ba72e8b427ca412c06af06c82d373fb9.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(Scrapers→Analysis)</a></li>
         
+        <li><a href='fe9c23285d6d72ca450de451a7961540.html'><span class='node-icon staruml-icon icon-UMLClass'></span>BrowserRenderer</a></li>
+        
+        <li><a href='a41818884a205b0bf873ee45b258004c.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SkillConverter</a></li>
+        
     </ul>
 </section>
 
@@ -403,15 +405,6 @@
       
       
       
-<section class="element-list">
-    <h3>Diagrams</h3>
-    <ul class="nav nav-list">
-        
-        <li><a href='e9f5fca281d9bc03348e2659e50d7169.html'><span class='node-icon staruml-icon icon-UMLPackageDiagram'></span>Skill Seekers Architecture</a></li>
-        
-    </ul>
-</section>
-
 
       
       

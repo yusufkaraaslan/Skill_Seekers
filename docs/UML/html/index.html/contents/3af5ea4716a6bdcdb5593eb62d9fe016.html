@@ -85,23 +85,23 @@
       
         
         
-
-
-        
-        
-
-
-        
-        
 <section class="element-list">
-    <h3>Interfaces</h3>
+    <h3>Generalized Elements</h3>
     <ul class="nav nav-list">
         
-        <li><a href='bb5a0e821d35146502e601959f106ff6.html'><span class='node-icon staruml-icon icon-UMLInterface'></span>IScraper</a></li>
+        <li><a href='a41818884a205b0bf873ee45b258004c.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SkillConverter</a></li>
         
     </ul>
 </section>
 
+
+
+        
+        
+
+
+        
+        
 
 
         
@@ -196,6 +196,20 @@
             <td></td>
           </tr>
           
+          <tr>
+            <td>private</td>
+            <td><a href="8a54769e716adaef85bcf6ff997e231a.html">browser_mode</a></td>
+            <td>bool </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="b1fb3efbe5d2f1f552ee04194a5e707f.html">_browser_renderer</a></td>
+            <td>Optional[BrowserRenderer] </td>
+            <td></td>
+          </tr>
+          
         </table>
       </section>
       
@@ -210,12 +224,6 @@
             <th>Visibility</th>
             <th>Name</th>
             <th>Description</th>
-          </tr>
-          
-          <tr>
-            <td>public</td>
-            <td><a href="a614fb1b281705d3afca465decce6f40.html">main()</a></td>
-            <td></td>
           </tr>
           
           <tr>
@@ -257,6 +265,12 @@
           <tr>
             <td>public</td>
             <td><a href="2467f8029a96cc66874251878ca2a63c.html">load_scraped_data()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="dd5dcf69f476d248d6302ea67638e830.html">_render_with_browser()</a></td>
             <td></td>
           </tr>
           
@@ -456,7 +470,7 @@
     <h3>Dependencies</h3>
     <ul class="nav nav-list">
         
-        <li><a href='bb5a0e821d35146502e601959f106ff6.html'><span class='node-icon staruml-icon icon-UMLInterface'></span>IScraper</a></li>
+        <li><a href='fe9c23285d6d72ca450de451a7961540.html'><span class='node-icon staruml-icon icon-UMLClass'></span>BrowserRenderer</a></li>
         
     </ul>
 </section>
@@ -485,9 +499,11 @@
     <h3>Relationships</h3>
     <ul class="nav nav-list">
         
-        <li><a href='a45b94962edc72551c47f99322a107d8.html'><span class='node-icon staruml-icon icon-UMLInterfaceRealization'></span>(DocToSkillConverter→IScraper)</a></li>
+        <li><a href='2baaf49077df34a613c960881676062d.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>uses [--browser] (DocToSkillConverter→BrowserRenderer)</a></li>
         
         <li><a href='138fdc81880d347a9f7353f299ae298b.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>«subprocess» (UnifiedScraper→DocToSkillConverter)</a></li>
+        
+        <li><a href='655c9b3ad8761e536ab0735f60439e0d.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(DocToSkillConverter→SkillConverter)</a></li>
         
     </ul>
 </section>
@@ -502,7 +518,9 @@
     <h3>Owned Elements</h3>
     <ul class="nav nav-list">
         
-        <li><a href='a45b94962edc72551c47f99322a107d8.html'><span class='node-icon staruml-icon icon-UMLInterfaceRealization'></span>(DocToSkillConverter→IScraper)</a></li>
+        <li><a href='2baaf49077df34a613c960881676062d.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>uses [--browser] (DocToSkillConverter→BrowserRenderer)</a></li>
+        
+        <li><a href='655c9b3ad8761e536ab0735f60439e0d.html'><span class='node-icon staruml-icon icon-UMLGeneralization'></span>(DocToSkillConverter→SkillConverter)</a></li>
         
     </ul>
 </section>
