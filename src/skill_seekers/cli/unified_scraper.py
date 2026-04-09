@@ -600,7 +600,7 @@ class UnifiedScraper(SkillConverter):
             "name": f"{self.name}_pdf_{idx}_{pdf_id}",
             "pdf_path": source["path"],  # Fixed: use pdf_path instead of pdf
             "description": f"{source.get('name', pdf_id)} documentation",
-            "extract_tables": source.get("extract_tables", False),
+            "extract_tables": source.get("extract_tables", True),
             "ocr": source.get("ocr", False),
             "password": source.get("password"),
         }

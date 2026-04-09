@@ -258,9 +258,9 @@ class GitHubScraper(SkillConverter):
         self.max_issues = config.get("max_issues", 100)
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
-        self.include_code = config.get("include_code", False)
+        self.include_code = config.get("include_code", True)
         self.code_analysis_depth = config.get(
-            "code_analysis_depth", "surface"
+            "code_analysis_depth", "deep"
         )  # 'surface', 'deep', 'full'
         self.file_patterns = config.get("file_patterns", [])
 

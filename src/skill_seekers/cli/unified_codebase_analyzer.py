@@ -27,7 +27,7 @@ class AnalysisResult:
     github_docs: dict | None = None
     github_insights: dict | None = None
     source_type: str = "local"  # 'local' or 'github'
-    analysis_depth: str = "basic"  # 'basic' or 'c3x'
+    analysis_depth: str = "c3x"  # 'basic' or 'c3x'
 
 
 class UnifiedCodebaseAnalyzer:

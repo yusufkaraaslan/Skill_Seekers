@@ -57,7 +57,7 @@ class BaseParser(ABC):
                 - encoding: str = 'utf-8'
         """
         self.options = options or {}
-        self._include_comments = self.options.get("include_comments", False)
+        self._include_comments = self.options.get("include_comments", True)
         self._extract_metadata = self.options.get("extract_metadata", True)
         self._quality_scoring = self.options.get("quality_scoring", True)
         self._max_file_size = self.options.get("max_file_size_mb", 50.0) * 1024 * 1024

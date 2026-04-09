@@ -476,7 +476,7 @@ class UniSkillConfigValidator:
         )
 
         has_github_code = any(
-            s.get("type") == "github" and s.get("include_code", False)
+            s.get("type") == "github" and s.get("include_code", True)
             for s in self.config["sources"]
         )
 

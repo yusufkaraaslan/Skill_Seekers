@@ -230,7 +230,7 @@ class CreateCommand:
                     "max_issues": getattr(self.args, "max_issues", 100),
                     "include_changelog": getattr(self.args, "include_changelog", True),
                     "include_releases": getattr(self.args, "include_releases", True),
-                    "include_code": getattr(self.args, "include_code", False),
+                    "include_code": getattr(self.args, "include_code", True),
                 }
             )
             config_path = getattr(self.args, "config", None)

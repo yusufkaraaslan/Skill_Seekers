@@ -21,7 +21,7 @@ class MarkdownFormatter:
 
     def __init__(self, options: dict[str, Any] = None):
         self.options = options or {}
-        self.include_toc = self.options.get("include_toc", False)
+        self.include_toc = self.options.get("include_toc", True)
         self.max_heading_level = self.options.get("max_heading_level", 6)
         self.code_block_style = self.options.get("code_block_style", "fenced")
         self.table_style = self.options.get("table_style", "github")
