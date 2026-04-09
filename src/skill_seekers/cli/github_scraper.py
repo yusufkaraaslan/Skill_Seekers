@@ -518,7 +518,7 @@ class GitHubScraper:
         logger.info("Detecting programming languages...")
 
         try:
-            languages = self.repo.get_languages()
+            languages = {lang: int(b) for lang, b in self.repo.get_languages().items()}
             total_bytes = sum(languages.values())
 
             self.extracted_data["languages"] = {
