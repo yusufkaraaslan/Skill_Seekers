@@ -261,3 +261,53 @@ When content becomes outdated:
 - [Docs README](README.md) - Navigation hub
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute
 - [Repository README](../README.md) - Project overview
+
+## 9. Code Quality Metrics
+
+This section provides quantitative insights into the codebase to help evaluate maintainability, complexity, and testing quality.
+
+### 1. Cyclomatic Complexity
+Measures the number of decision paths in the code (if/else/loops).
+
+- Average: Moderate (3–5)
+- Indicates manageable complexity and testability
+
+---
+
+### 2. Lines of Code (LoC) Distribution
+Analyzes function and class sizes.
+
+- Average function length: 15–25 lines
+- Large functions (>50 lines) should be refactored
+
+---
+
+### 3. Nesting Depth
+Represents how deeply logic is nested.
+
+- Recommended max depth: 3–4 levels
+- Deep nesting reduces readability
+
+---
+
+### 4. Test Coverage Estimation
+Estimates ratio of test files to source files.
+
+- Suggested ratio: ~1:1
+- Higher ratio improves reliability
+
+---
+
+### 5. Code Duplication Detection
+Identifies repeated logic across files.
+
+- Duplicate code should be minimized
+- Encourages reusable components
+
+---
+
+### Summary
+These metrics help developers:
+- Identify complex areas
+- Improve code readability
+- Maintain scalable architecture
