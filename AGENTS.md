@@ -1,6 +1,6 @@
 # AGENTS.md - Skill Seekers
 
-Comprehensive reference for AI coding agents. Skill Seekers is a Python CLI tool (v3.4.0) that converts documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more into AI-ready skills for 21+ LLM platforms and RAG pipelines.
+Comprehensive reference for AI coding agents. Skill Seekers is a Python CLI tool (v3.5.0) that converts documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more into AI-ready skills for 21+ LLM platforms and RAG pipelines.
 
 ## Project Overview
 

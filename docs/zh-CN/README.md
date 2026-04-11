@@ -1,6 +1,6 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.4.0**
+> **Complete documentation for Skill Seekers v3.5.0**
 
 ---
 
@@ -176,7 +176,7 @@ For Cursor, Windsurf, Cline:
 
 ## Version Information
 
-- **Current Version:** 3.4.0
+- **Current Version:** 3.5.0
 - **Last Updated:** 2026-03-21
 - **Python Required:** 3.10+
 

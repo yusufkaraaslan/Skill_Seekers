@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** converts documentation from 17 source types into production-ready formats for 24+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
 
-**Version:** 3.4.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
+**Version:** 3.5.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
 **Architecture:** See `docs/UML_ARCHITECTURE.md` for UML diagrams and module overview. StarUML project at `docs/UML/skill_seekers.mdj`.
 
