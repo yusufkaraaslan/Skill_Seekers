@@ -77,6 +77,7 @@ class ConfigFile:
         "ini",
         "python",
         "javascript",
+        "kotlin-gradle",
         "dockerfile",
         "docker-compose",
     ]
@@ -215,6 +216,14 @@ class ConfigFileDetector:
                 "webpack.config.js",
             ],
         },
+        "kotlin-gradle": {
+            "patterns": ["*.gradle.kts"],
+            "names": [
+                "build.gradle.kts",
+                "settings.gradle.kts",
+                "gradle.properties",
+            ],
+        },
         "dockerfile": {
             "patterns": ["Dockerfile*"],
             "names": ["Dockerfile", "Dockerfile.dev", "Dockerfile.prod"],
@@ -262,13 +271,13 @@ class ConfigFileDetector:
         ".tmp",
     }
 
-    def find_config_files(self, directory: Path, max_files: int = 100) -> list[ConfigFile]:
+    def find_config_files(self, directory: Path, max_files: int = 0) -> list[ConfigFile]:
         """
         Find all configuration files in directory.
 
         Args:
             directory: Root directory to search
-            max_files: Maximum number of config files to find
+            max_files: Maximum number of config files to find (0 = unlimited)
 
         Returns:
             List of ConfigFile objects
@@ -277,7 +286,7 @@ class ConfigFileDetector:
         found_count = 0
 
         for file_path in self._walk_directory(directory):
-            if found_count >= max_files:
+            if max_files > 0 and found_count >= max_files:
                 logger.info(f"Reached max_files limit ({max_files})")
                 break
 
@@ -358,7 +367,13 @@ class ConfigFileDetector:
             return "ci_cd_configuration"
 
         # Package configs
-        if filename in ["package.json", "pyproject.toml", "cargo.toml"]:
+        if filename in [
+            "package.json",
+            "pyproject.toml",
+            "cargo.toml",
+            "build.gradle.kts",
+            "settings.gradle.kts",
+        ]:
             return "package_configuration"
 
         # TypeScript/JavaScript configs
@@ -612,15 +627,17 @@ class ConfigParser:
             parent_path = []
 
         for key, value in data.items():
+            # YAML parses 'on:' as boolean True; convert non-string keys
+            str_key = str(key) if not isinstance(key, str) else key
             if isinstance(value, dict):
                 # Recurse into nested dicts
-                self._extract_settings_from_dict(value, config_file, parent_path + [key])
+                self._extract_settings_from_dict(value, config_file, parent_path + [str_key])
             else:
                 setting = ConfigSetting(
-                    key=".".join(parent_path + [key]) if parent_path else key,
+                    key=".".join(parent_path + [str_key]) if parent_path else str_key,
                     value=value,
                     value_type=self._infer_type(value),
-                    nested_path=parent_path + [key],
+                    nested_path=parent_path + [str_key],
                 )
                 config_file.settings.append(setting)
 
@@ -745,15 +762,13 @@ class ConfigExtractor:
         self.parser = ConfigParser()
         self.pattern_detector = ConfigPatternDetector()
 
-    def extract_from_directory(
-        self, directory: Path, max_files: int = 100
-    ) -> ConfigExtractionResult:
+    def extract_from_directory(self, directory: Path, max_files: int = 0) -> ConfigExtractionResult:
         """
         Extract configuration patterns from directory.
 
         Args:
             directory: Root directory to analyze
-            max_files: Maximum config files to process
+            max_files: Maximum config files to process (0 = unlimited)
 
         Returns:
             ConfigExtractionResult with all findings
@@ -842,7 +857,7 @@ def main():
     parser.add_argument("directory", type=Path, help="Directory to analyze")
     parser.add_argument("--output", "-o", type=Path, help="Output JSON file")
     parser.add_argument(
-        "--max-files", type=int, default=100, help="Maximum config files to process"
+        "--max-files", type=int, default=0, help="Maximum config files to process (0 = unlimited)"
     )
     parser.add_argument(
         "--enhance",
@@ -852,13 +867,13 @@ def main():
     parser.add_argument(
         "--enhance-local",
         action="store_true",
-        help="Enhance with AI analysis (LOCAL mode, uses Claude Code CLI)",
+        help="Enhance with AI analysis (LOCAL mode, uses coding agent CLI)",
     )
     parser.add_argument(
         "--ai-mode",
         choices=["auto", "api", "local", "none"],
         default="none",
-        help="AI enhancement mode: auto (detect), api (Claude API), local (Claude Code CLI), none (disable)",
+        help="AI enhancement mode: auto (detect), api (Anthropic API), local (coding agent CLI), none (disable)",
     )
 
     args = parser.parse_args()

@@ -288,7 +288,7 @@ class SkillAdaptor(ABC):
         if not references_dir.exists():
             return
 
-        for ref_file in sorted(references_dir.glob("*.md")):
+        for ref_file in sorted(references_dir.rglob("*.md")):
             if ref_file.is_file() and not ref_file.name.startswith("."):
                 try:
                     content = ref_file.read_text(encoding="utf-8")
@@ -565,7 +565,7 @@ class SkillAdaptor(ABC):
             return ""
 
         toc_lines = []
-        for ref_file in sorted(refs_dir.glob("*.md")):
+        for ref_file in sorted(refs_dir.rglob("*.md")):
             if ref_file.name == "index.md":
                 continue
             title = ref_file.stem.replace("_", " ").title()

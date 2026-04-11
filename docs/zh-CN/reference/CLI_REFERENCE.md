@@ -1,6 +1,6 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.4.0
+> **Version:** 3.5.0
 > **Last Updated:** 2026-03-21
 > **Complete reference for all 30+ CLI commands**
 

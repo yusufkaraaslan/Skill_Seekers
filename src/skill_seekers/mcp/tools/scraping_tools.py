@@ -13,7 +13,9 @@ This module contains all scraping-related MCP tool implementations:
 Extracted from server.py for better modularity and organization.
 """
 
+import io
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -32,6 +34,48 @@ except ImportError:
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
+
+
+def _run_converter(converter, progress_msg: str) -> list:
+    """Run a converter in-process with log capture.
+
+    Args:
+        converter: An initialized SkillConverter instance.
+        progress_msg: Progress message to prepend to output.
+
+    Returns:
+        List[TextContent] with success/error message.
+    """
+    log_capture = io.StringIO()
+    handler = logging.StreamHandler(log_capture)
+    handler.setLevel(logging.INFO)
+    sk_logger = logging.getLogger("skill_seekers")
+    sk_logger.addHandler(handler)
+    try:
+        result = converter.run()
+    except Exception as exc:
+        captured = log_capture.getvalue()
+        return [
+            TextContent(
+                type="text",
+                text=f"{progress_msg}{captured}\n\n❌ Converter raised an exception:\n{exc}",
+            )
+        ]
+    finally:
+        sk_logger.removeHandler(handler)
+
+    captured = log_capture.getvalue()
+    output = progress_msg + captured
+
+    if result == 0:
+        return [TextContent(type="text", text=output)]
+    else:
+        return [
+            TextContent(
+                type="text",
+                text=f"{output}\n\n❌ Converter returned non-zero exit code ({result})",
+            )
+        ]
 
 
 def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple:
@@ -141,10 +185,11 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
         # Estimate: 0.5s per page discovered
         timeout = max(300, max_discovery // 2)  # Minimum 5 minutes
 
-    # Run estimate_pages.py
+    # Run estimate_pages module
     cmd = [
         sys.executable,
-        str(CLI_DIR / "estimate_pages.py"),
+        "-m",
+        "skill_seekers.cli.estimate_pages",
         config_path,
         "--max-discovery",
         str(max_discovery),
@@ -185,8 +230,6 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     """
     config_path = args["config_path"]
     unlimited = args.get("unlimited", False)
-    enhance_local = args.get("enhance_local", False)
-    skip_scrape = args.get("skip_scrape", False)
     dry_run = args.get("dry_run", False)
     merge_mode = args.get("merge_mode")
 
@@ -218,80 +261,52 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     else:
         config_to_use = config_path
 
-    # Choose scraper based on format
+    # Build progress message
     if is_unified:
-        scraper_script = "unified_scraper.py"
         progress_msg = "🔄 Starting unified multi-source scraping...\n"
         progress_msg += "📦 Config format: Unified (multiple sources)\n"
     else:
-        scraper_script = "doc_scraper.py"
         progress_msg = "🔄 Starting scraping process...\n"
         progress_msg += "📦 Config format: Legacy (single source)\n"
 
-    # Build command
-    cmd = [sys.executable, str(CLI_DIR / scraper_script), "--config", config_to_use]
-
-    # Add merge mode for unified configs
-    if is_unified and merge_mode:
-        cmd.extend(["--merge-mode", merge_mode])
-
-    # Add --fresh to avoid user input prompts when existing data found
-    if not skip_scrape:
-        cmd.append("--fresh")
-
-    if enhance_local:
-        cmd.append("--enhance-local")
-    if skip_scrape:
-        cmd.append("--skip-scrape")
-    if dry_run:
-        cmd.append("--dry-run")
-
-    # Determine timeout based on operation type
-    if dry_run:
-        timeout = 300  # 5 minutes for dry run
-    elif skip_scrape:
-        timeout = 600  # 10 minutes for building from cache
-    elif unlimited:
-        timeout = None  # No timeout for unlimited mode (user explicitly requested)
-    else:
-        # Read config to estimate timeout
-        try:
-            if is_unified:
-                # For unified configs, estimate based on all sources
-                total_pages = 0
-                for source in config.get("sources", []):
-                    if source.get("type") == "documentation":
-                        total_pages += source.get("max_pages", 500)
-                max_pages = total_pages or 500
-            else:
-                max_pages = config.get("max_pages", 500)
-
-            # Estimate: 30s per page + buffer
-            timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
-        except Exception:
-            timeout = 14400  # Default: 4 hours
-
-    # Add progress message
-    if timeout:
-        progress_msg += f"⏱️ Maximum time allowed: {timeout // 60} minutes\n"
-    else:
-        progress_msg += "⏱️ Unlimited mode - no timeout\n"
     progress_msg += "📝 Progress will be shown below:\n\n"
 
-    # Run scraper with streaming
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # Run converter in-process
+    try:
+        if is_unified:
+            from skill_seekers.cli.unified_scraper import UnifiedScraper
 
-    # Clean up temporary config
-    if unlimited and Path(config_to_use).exists():
-        Path(config_to_use).unlink()
+            converter = UnifiedScraper(config_to_use, merge_mode=merge_mode)
+        else:
+            from skill_seekers.cli.skill_converter import get_converter
 
-    output = progress_msg + stdout
+            # For legacy format, detect type from config keys
+            with open(config_to_use) as f:
+                config_to_pass = json.load(f)
 
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        error_output = output + f"\n\n❌ Error:\n{stderr}"
-        return [TextContent(type="text", text=error_output)]
+            # Detect source type from config content
+            if "base_url" in config_to_pass:
+                source_type = "web"
+            elif "repo" in config_to_pass:
+                source_type = "github"
+            elif "pdf_path" in config_to_pass:
+                source_type = "pdf"
+            elif "directory" in config_to_pass:
+                source_type = "local"
+            else:
+                source_type = "web"  # default fallback
+
+            converter = get_converter(source_type, config_to_pass)
+            if dry_run:
+                converter.dry_run = True
+
+        result = _run_converter(converter, progress_msg)
+    finally:
+        # Clean up temporary config
+        if unlimited and Path(config_to_use).exists():
+            Path(config_to_use).unlink()
+
+    return result
 
 
 async def scrape_pdf_tool(args: dict) -> list[TextContent]:
@@ -318,44 +333,48 @@ async def scrape_pdf_tool(args: dict) -> list[TextContent]:
     description = args.get("description")
     from_json = args.get("from_json")
 
-    # Build command
-    cmd = [sys.executable, str(CLI_DIR / "pdf_scraper.py")]
+    progress_msg = "📄 Scraping PDF documentation...\n\n"
 
     # Mode 1: Config file
     if config_path:
-        cmd.extend(["--config", config_path])
+        with open(config_path) as f:
+            pdf_config = json.load(f)
 
     # Mode 2: Direct PDF
     elif pdf_path and name:
-        cmd.extend(["--pdf", pdf_path, "--name", name])
+        pdf_config = {"name": name, "pdf_path": pdf_path}
         if description:
-            cmd.extend(["--description", description])
+            pdf_config["description"] = description
 
-    # Mode 3: From JSON
+    # Mode 3: From JSON — use PDFToSkillConverter.load_extracted_data
     elif from_json:
-        cmd.extend(["--from-json", from_json])
+        from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
+        # Build a minimal config; name is derived from the JSON filename
+        json_name = Path(from_json).stem.replace("_extracted", "")
+        pdf_config = {"name": json_name}
+        converter = PDFToSkillConverter(pdf_config)
+        converter.load_extracted_data(from_json)
+        converter.build_skill()
+        return [
+            TextContent(
+                type="text",
+                text=f"{progress_msg}✅ Skill built from extracted JSON: {from_json}",
+            )
+        ]
 
     else:
         return [
             TextContent(
-                type="text", text="❌ Error: Must specify --config, --pdf + --name, or --from-json"
+                type="text",
+                text="❌ Error: Must specify --config, --pdf + --name, or --from-json",
             )
         ]
 
-    # Run pdf_scraper.py with streaming (can take a while)
-    timeout = 600  # 10 minutes for PDF extraction
+    from skill_seekers.cli.skill_converter import get_converter
 
-    progress_msg = "📄 Scraping PDF documentation...\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
-
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter("pdf", pdf_config)
+    return _run_converter(converter, progress_msg)
 
 
 async def scrape_video_tool(args: dict) -> list[TextContent]:
@@ -411,29 +430,23 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
     start_time = args.get("start_time")
     end_time = args.get("end_time")
 
-    # Build command
-    cmd = [sys.executable, str(CLI_DIR / "video_scraper.py")]
+    # Build config dict for the converter
+    video_config: dict = {}
 
     if from_json:
-        cmd.extend(["--from-json", from_json])
+        video_config["from_json"] = from_json
+        video_config["name"] = name or Path(from_json).stem.replace("_video_extracted", "")
     elif url:
-        cmd.extend(["--url", url])
-        if name:
-            cmd.extend(["--name", name])
-        if description:
-            cmd.extend(["--description", description])
-        if languages:
-            cmd.extend(["--languages", languages])
+        video_config["url"] = url
+        if not name:
+            return [TextContent(type="text", text="❌ Error: --name is required with --url")]
+        video_config["name"] = name
     elif video_file:
-        cmd.extend(["--video-file", video_file])
-        if name:
-            cmd.extend(["--name", name])
-        if description:
-            cmd.extend(["--description", description])
+        video_config["video_file"] = video_file
+        video_config["name"] = name or Path(video_file).stem
     elif playlist:
-        cmd.extend(["--playlist", playlist])
-        if name:
-            cmd.extend(["--name", name])
+        video_config["playlist"] = playlist
+        video_config["name"] = name or "playlist"
     else:
         return [
             TextContent(
@@ -442,38 +455,31 @@ async def scrape_video_tool(args: dict) -> list[TextContent]:
             )
         ]
 
-    # Visual extraction parameters
-    if visual:
-        cmd.append("--visual")
+    if description:
+        video_config["description"] = description
+    if languages:
+        video_config["languages"] = languages
+    video_config["visual"] = visual
     if whisper_model:
-        cmd.extend(["--whisper-model", whisper_model])
+        video_config["whisper_model"] = whisper_model
     if visual_interval is not None:
-        cmd.extend(["--visual-interval", str(visual_interval)])
+        video_config["visual_interval"] = visual_interval
     if visual_min_gap is not None:
-        cmd.extend(["--visual-min-gap", str(visual_min_gap)])
+        video_config["visual_min_gap"] = visual_min_gap
     if visual_similarity is not None:
-        cmd.extend(["--visual-similarity", str(visual_similarity)])
-    if vision_ocr:
-        cmd.append("--vision-ocr")
+        video_config["visual_similarity"] = visual_similarity
+    video_config["vision_ocr"] = vision_ocr
     if start_time:
-        cmd.extend(["--start-time", str(start_time)])
+        video_config["start_time"] = start_time
     if end_time:
-        cmd.extend(["--end-time", str(end_time)])
+        video_config["end_time"] = end_time
 
-    # Run video_scraper.py with streaming
-    timeout = 600  # 10 minutes for video extraction
+    progress_msg = "🎬 Scraping video content...\n\n"
 
-    progress_msg = "🎬 Scraping video content...\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    from skill_seekers.cli.skill_converter import get_converter
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter("video", video_config)
+    return _run_converter(converter, progress_msg)
 
 
 async def scrape_github_tool(args: dict) -> list[TextContent]:
@@ -510,50 +516,37 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
     max_issues = args.get("max_issues", 100)
     scrape_only = args.get("scrape_only", False)
 
-    # Build command
-    cmd = [sys.executable, str(CLI_DIR / "github_scraper.py")]
-
-    # Mode 1: Config file
+    # Build config dict for the converter
     if config_path:
-        cmd.extend(["--config", config_path])
-
-    # Mode 2: Direct repo
+        with open(config_path) as f:
+            github_config = json.load(f)
     elif repo:
-        cmd.extend(["--repo", repo])
+        github_config: dict = {"repo": repo}
         if name:
-            cmd.extend(["--name", name])
+            github_config["name"] = name
         if description:
-            cmd.extend(["--description", description])
+            github_config["description"] = description
         if token:
-            cmd.extend(["--token", token])
+            github_config["token"] = token
         if no_issues:
-            cmd.append("--no-issues")
+            github_config["no_issues"] = True
         if no_changelog:
-            cmd.append("--no-changelog")
+            github_config["no_changelog"] = True
         if no_releases:
-            cmd.append("--no-releases")
+            github_config["no_releases"] = True
         if max_issues != 100:
-            cmd.extend(["--max-issues", str(max_issues)])
+            github_config["max_issues"] = max_issues
         if scrape_only:
-            cmd.append("--scrape-only")
-
+            github_config["scrape_only"] = True
     else:
         return [TextContent(type="text", text="❌ Error: Must specify --repo or --config")]
 
-    # Run github_scraper.py with streaming (can take a while)
-    timeout = 600  # 10 minutes for GitHub scraping
+    progress_msg = "🐙 Scraping GitHub repository...\n\n"
 
-    progress_msg = "🐙 Scraping GitHub repository...\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    from skill_seekers.cli.skill_converter import get_converter
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter("github", github_config)
+    return _run_converter(converter, progress_msg)
 
 
 async def scrape_codebase_tool(args: dict) -> list[TextContent]:
@@ -605,7 +598,7 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     if not directory:
         return [TextContent(type="text", text="❌ Error: directory parameter is required")]
 
-    output = args.get("output", "output/codebase/")
+    output_dir = args.get("output", "output/codebase/")
     depth = args.get("depth", "deep")
     languages = args.get("languages", "")
     file_patterns = args.get("file_patterns", "")
@@ -620,43 +613,28 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     skip_config_patterns = args.get("skip_config_patterns", False)
     skip_docs = args.get("skip_docs", False)
 
-    # Build command
-    cmd = [sys.executable, "-m", "skill_seekers.cli.codebase_scraper"]
-    cmd.extend(["--directory", directory])
+    # Derive a name from the directory for the converter
+    dir_name = Path(directory).resolve().name or "codebase"
 
-    if output:
-        cmd.extend(["--output", output])
-    if depth:
-        cmd.extend(["--depth", depth])
+    # Build config dict for CodebaseAnalyzer
+    codebase_config: dict = {
+        "name": dir_name,
+        "directory": directory,
+        "output_dir": output_dir,
+        "depth": depth,
+        "enhance_level": enhance_level,
+        "build_api_reference": not skip_api_reference,
+        "build_dependency_graph": not skip_dependency_graph,
+        "detect_patterns": not skip_patterns,
+        "extract_test_examples": not skip_test_examples,
+        "build_how_to_guides": not skip_how_to_guides,
+        "extract_config_patterns": not skip_config_patterns,
+        "extract_docs": not skip_docs,
+    }
     if languages:
-        cmd.extend(["--languages", languages])
+        codebase_config["languages"] = languages
     if file_patterns:
-        cmd.extend(["--file-patterns", file_patterns])
-    if enhance_level > 0:
-        cmd.extend(["--enhance-level", str(enhance_level)])
-
-    # Skip flags
-    if skip_api_reference:
-        cmd.append("--skip-api-reference")
-    if skip_dependency_graph:
-        cmd.append("--skip-dependency-graph")
-    if skip_patterns:
-        cmd.append("--skip-patterns")
-    if skip_test_examples:
-        cmd.append("--skip-test-examples")
-    if skip_how_to_guides:
-        cmd.append("--skip-how-to-guides")
-    if skip_config_patterns:
-        cmd.append("--skip-config-patterns")
-    if skip_docs:
-        cmd.append("--skip-docs")
-
-    # Adjust timeout based on enhance_level
-    timeout = 600  # 10 minutes base
-    if enhance_level >= 2:
-        timeout = 1200  # 20 minutes with AI enhancement
-    if enhance_level >= 3:
-        timeout = 3600  # 60 minutes for full enhancement
+        codebase_config["file_patterns"] = file_patterns
 
     level_names = {0: "off", 1: "SKILL.md only", 2: "standard", 3: "full"}
     progress_msg = "🔍 Analyzing local codebase...\n"
@@ -664,16 +642,12 @@ async def scrape_codebase_tool(args: dict) -> list[TextContent]:
     progress_msg += f"📊 Depth: {depth}\n"
     if enhance_level > 0:
         progress_msg += f"🤖 AI Enhancement: Level {enhance_level} ({level_names.get(enhance_level, 'unknown')})\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += "\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli.skill_converter import get_converter
 
-    output_text = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output_text)]
-    else:
-        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter("local", codebase_config)
+    return _run_converter(converter, progress_msg)
 
 
 async def detect_patterns_tool(args: dict) -> list[TextContent]:
@@ -1096,51 +1070,35 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
             )
         ]
 
-    # Build the subprocess command
-    # Map source type to module name (most are <type>_scraper, but some differ)
-    _MODULE_NAMES = {
-        "manpage": "man_scraper",
+    # Build config dict for the converter — map MCP args to the keys
+    # each converter expects in its __init__.
+    _CONFIG_KEY: dict[str, str] = {
+        "jupyter": "notebook_path",
+        "html": "html_path",
+        "openapi": "spec_path",
+        "asciidoc": "asciidoc_path",
+        "pptx": "pptx_path",
+        "manpage": "man_path",
+        "confluence": "export_path",
+        "notion": "export_path",
+        "rss": "feed_path",
+        "chat": "export_path",
     }
-    module_name = _MODULE_NAMES.get(source_type, f"{source_type}_scraper")
-    cmd = [sys.executable, "-m", f"skill_seekers.cli.{module_name}"]
-
-    # Map source type to the correct CLI flag for file/path input and URL input.
-    # Each scraper has its own flag name — using a generic --path or --url would fail.
-    _PATH_FLAGS: dict[str, str] = {
-        "jupyter": "--notebook",
-        "html": "--html-path",
-        "openapi": "--spec",
-        "asciidoc": "--asciidoc-path",
-        "pptx": "--pptx",
-        "manpage": "--man-path",
-        "confluence": "--export-path",
-        "notion": "--export-path",
-        "rss": "--feed-path",
-        "chat": "--export-path",
-    }
-    _URL_FLAGS: dict[str, str] = {
-        "confluence": "--base-url",
-        "notion": "--page-id",
-        "rss": "--feed-url",
-        "openapi": "--spec-url",
+    _URL_CONFIG_KEY: dict[str, str] = {
+        "confluence": "base_url",
+        "notion": "page_id",
+        "rss": "feed_url",
+        "openapi": "spec_url",
     }
 
-    # Determine the input flag based on source type
+    config: dict = {"name": name}
+
     if source_type in _URL_BASED_TYPES and url:
-        url_flag = _URL_FLAGS.get(source_type, "--url")
-        cmd.extend([url_flag, url])
+        config[_URL_CONFIG_KEY.get(source_type, "url")] = url
     elif path:
-        path_flag = _PATH_FLAGS.get(source_type, "--path")
-        cmd.extend([path_flag, path])
+        config[_CONFIG_KEY.get(source_type, "path")] = path
     elif url:
-        # Allow url fallback for file-based types (some may accept URLs too)
-        url_flag = _URL_FLAGS.get(source_type, "--url")
-        cmd.extend([url_flag, url])
-
-    cmd.extend(["--name", name])
-
-    # Set a reasonable timeout
-    timeout = 600  # 10 minutes
+        config[_URL_CONFIG_KEY.get(source_type, "url")] = url
 
     emoji = _SOURCE_EMOJIS.get(source_type, "🔧")
     progress_msg = f"{emoji} Scraping {source_type} source...\n"
@@ -1148,14 +1106,9 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
         progress_msg += f"📁 Path: {path}\n"
     if url:
         progress_msg += f"🔗 URL: {url}\n"
-    progress_msg += f"📛 Name: {name}\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"📛 Name: {name}\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli.skill_converter import get_converter
 
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    converter = get_converter(source_type, config)
+    return _run_converter(converter, progress_msg)

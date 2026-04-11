@@ -48,14 +48,13 @@ Presets: -p quick (1-2min) | -p standard (5-10min) | -p comprehensive (20-60min)
     def add_arguments(self, parser):
         """Add create-specific arguments.
 
-        Uses shared argument definitions with progressive disclosure.
-        Default mode shows only universal arguments (15 flags).
-
-        Multi-mode help handled via custom flags detected in argument parsing.
+        Registers ALL arguments (120+ flags) so the top-level parser
+        accepts source-specific flags like --browser, --max-pages, etc.
+        Default help still shows only universal args; use --help-all for full list.
         """
-        # Add all arguments in 'default' mode (universal only)
-        # This keeps help text clean and focused
-        add_create_arguments(parser, mode="default")
+        # Register all arguments so source-specific flags are accepted
+        # by the top-level parser (create is the only entry point now)
+        add_create_arguments(parser, mode="all")
 
         # Add hidden help mode flags
         # These won't show in default help but can be used to get source-specific help

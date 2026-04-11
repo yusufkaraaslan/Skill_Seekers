@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-04-09
+
+**Theme:** Grand Unification — one command, one interface, direct converters. Agent-agnostic architecture, marketplace pipeline, smart SPA discovery, all content extraction enabled by default. 80+ files changed across the codebase.
+
+### Added
+- **Grand Unification** — unified `create` command as single entry point for all 18 source types with auto-detection, direct converter invocation, and centralized enhancement (#346)
+- **Agent-agnostic `AgentClient` abstraction** — all 5 enhancers now support Claude, Kimi, Codex, Copilot, OpenCode, and custom agents via a unified interface. Auto-detects agent from API keys instead of hardcoding (#336)
+- **Kimi CLI integration** with stdin piping and output parsing (#336)
+- **`MarketplacePublisher`** — publish skills to Claude Code plugin marketplace repos (#336)
+- **`MarketplaceManager`** — register and manage marketplace repositories (#336)
+- **`ConfigPublisher`** — push configs to registered config source repos (#336)
+- **`push_config` MCP tool** for automated config publishing (#336)
+- **Smart SPA discovery engine** — three-layer discovery: sitemap.xml, llms.txt, SPA nav rendering (#336)
+- **`"browser": true` config support** for JavaScript SPA sites with browser renderer timeout defaults (60s, domcontentloaded) (#336)
+- **Dynamic routing via `_build_argv()`** — replaced manual arg forwarding with dynamic forwarder, added 7 missing CLI flags (#336)
+- **Kotlin language support for codebase analysis** — Full C3.x pipeline support: AST parsing (classes, objects, functions, data/sealed classes, extension functions, coroutines), dependency extraction, design pattern recognition (object declaration→Singleton, companion object→Factory, sealed class→Strategy), test example extraction (JUnit, Kotest, MockK, Spek), language detection patterns, config detection (build.gradle.kts), and extension maps across all analyzers (#287)
+- **Headless browser rendering** (`--browser` flag) — uses Playwright to render JavaScript SPA sites (React, Vue, etc.) that return empty HTML shells. Auto-installs Chromium on first use. Optional dep: `pip install "skill-seekers[browser]"` (#321)
+- **`skill-seekers doctor` command** — 8 diagnostic checks (Python version, package install, git, core/optional deps, API keys, MCP server, output dir) with pass/warn/fail status and `--verbose` flag (#316)
+- **Prompt injection check workflow** — bundled `prompt-injection-check` workflow scans scraped content for injection patterns (role assumption, instruction overrides, delimiter injection, hidden instructions). Added as first stage in `default` and `security-focus` workflows. Flags suspicious content without removing it (#324)
+- **Codex CLI plugin manifest** (`.codex-plugin/plugin.json`) for OpenAI Codex integration (#350)
+- **6 behavioral UML diagrams** — 3 sequence (create pipeline, GitHub+C3.x flow, MCP invocation), 2 activity (source detection, enhancement pipeline), 1 component (runtime dependencies with interface contracts)
+- **134 new tests** — `test_agent_client.py`, `test_config_publisher.py`, `_build_argv` tests. Total: 3194 passed, 39 expected skips (#336)
+
+### Changed
+- **All content extraction features enabled by default** — pattern detection, test examples, how-to guides, config extraction, and router generation no longer require explicit opt-in
+- **Renamed `claude-enhanced` merge mode to `ai-enhanced`** — backward compatibility alias kept (#336)
+- **Removed 118+ hardcoded Claude references** across 60+ files (#336)
+- **Refactored 5 enhancers** to use `AgentClient` abstraction (#336)
+- **Removed 50-file GitHub API analysis limit** (#336)
+- **Removed 100-file config extraction limit** (#336)
+- **Fixed unified scraper default `max_pages`** from 100 to 500 (#336)
+- **Centralized enhancement timeouts** to 45min default with unlimited support (#336)
+- **Excluded slow MCP/e2e tests from CI coverage step** to prevent timeout
+
+### Fixed
+- **`glob('*.md')` replaced with `rglob('*.md')`** in all adaptors — fixes packaging when skills are in nested directories (#349)
+- **`scraped_data` list-vs-dict bug** in conflict detection (#336)
+- **`base_url` passthrough** to doc scraper subprocess (#336)
+- **URL filtering** now uses base directory correctly (#336)
+- **C3.x analysis data loss** (#336)
+- **`--enhance-level` flag** not passed correctly (#336)
+- **`guide_enhancer` method rename** — `_call_claude_api` renamed to `_call_ai` (#336)
+- **11 pre-existing test failures** fixed (#336)
+- **Per-file language detection** in GitHub scraper (#336)
+- **GitHub language detection crashes with `TypeError`** when API response contains non-integer metadata keys (e.g., `"url"`) — now filters to integer values only (#322)
+- **C3.x codebase analysis crashes with `TypeError`** — `_run_c3_analysis()` and `_analyze_c3x()` passed removed `enhance_with_ai`/`ai_mode` kwargs to `analyze_codebase()` instead of `enhance_level` (#323)
+
+### Security
+- **Removed command injection** via cloned repo script execution (#336)
+- **Replaced `git add -A`** with targeted staging in marketplace publisher (#336)
+- **Clear auth tokens** from cached `.git/config` after clone (#336)
+- **Use `defusedxml`** for sitemap XML parsing (XXE protection) (#336)
+- **Path traversal validation** for config names (#336)
+
 ## [3.4.0] - 2026-03-21
 
 ### Added

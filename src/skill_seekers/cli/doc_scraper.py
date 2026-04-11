@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Documentation to Claude Skill Converter
-Single tool to scrape any documentation and create high-quality Claude skills.
+Documentation to AI Skill Converter
+Single tool to scrape any documentation and create high-quality AI skills.
 
 Usage:
     skill-seekers scrape --interactive
@@ -46,7 +46,7 @@ from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
-from skill_seekers.cli.arguments.scrape import add_scrape_arguments
+from skill_seekers.cli.skill_converter import SkillConverter
 from skill_seekers.cli.utils import sanitize_url, setup_logging
 
 # Configure logging
@@ -152,8 +152,11 @@ def infer_description_from_docs(
     )
 
 
-class DocToSkillConverter:
+class DocToSkillConverter(SkillConverter):
+    SOURCE_TYPE = "web"
+
     def __init__(self, config: dict[str, Any], dry_run: bool = False, resume: bool = False) -> None:
+        super().__init__(config)
         self.config = config
         self.name = config["name"]
         self.base_url = config["base_url"]
@@ -183,6 +186,12 @@ class DocToSkillConverter:
         self.llms_txt_detected = False
         self.llms_txt_variant = None
         self.llms_txt_variants: list[str] = []  # Track all downloaded variants
+
+        # Browser rendering mode (for JavaScript SPA sites)
+        self.browser_mode = config.get("browser", False)
+        self._browser_renderer = None
+        self._browser_wait_until = config.get("browser_wait_until", "domcontentloaded")
+        self._browser_extra_wait = config.get("browser_extra_wait", 0)  # ms
 
         # Parallel scraping config
         self.workers = config.get("workers", 1)
@@ -246,7 +255,10 @@ class DocToSkillConverter:
         Returns:
             bool: True if URL matches include patterns and doesn't match exclude patterns
         """
-        if not url.startswith(self.base_url):
+        # Use directory part of base_url for prefix check so sibling pages match.
+        # e.g., base_url "https://example.com/docs/index.html" → prefix "https://example.com/docs/"
+        base_dir = self.base_url if self.base_url.endswith("/") else self.base_url + "/"
+        if not url.startswith(base_dir):
             return False
 
         if self._include_patterns and not any(pattern in url for pattern in self._include_patterns):
@@ -712,6 +724,30 @@ class DocToSkillConverter:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(page, f, indent=2, ensure_ascii=False)
 
+    def _render_with_browser(self, url: str) -> str:
+        """Render a page using headless browser (Playwright).
+
+        Lazily initializes the BrowserRenderer on first call.
+
+        Args:
+            url: URL to render
+
+        Returns:
+            Fully-rendered HTML string
+        """
+        if self._browser_renderer is None:
+            from skill_seekers.cli.browser_renderer import BrowserRenderer
+
+            self._browser_renderer = BrowserRenderer(
+                wait_until=self._browser_wait_until,
+                extra_wait=self._browser_extra_wait,
+            )
+            logger.info(
+                f"Launched headless browser for JavaScript rendering "
+                f"(wait_until={self._browser_wait_until})"
+            )
+        return self._browser_renderer.render_page(url)
+
     def scrape_page(self, url: str) -> None:
         """Scrape a single page with thread-safe operations.
 
@@ -730,16 +766,22 @@ class DocToSkillConverter:
             url = sanitize_url(url)
 
             # Scraping part (no lock needed - independent)
-            headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
-
-            # Check if this is a Markdown file
-            if self._has_md_extension(url):
-                page = self._extract_markdown_content(response.text, url)
-            else:
-                soup = BeautifulSoup(response.content, "html.parser")
+            if self.browser_mode and not self._has_md_extension(url):
+                # Use Playwright headless browser for JavaScript rendering
+                html = self._render_with_browser(url)
+                soup = BeautifulSoup(html, "html.parser")
                 page = self.extract_content(soup, url)
+            else:
+                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+                response = requests.get(url, headers=headers, timeout=30)
+                response.raise_for_status()
+
+                # Check if this is a Markdown file
+                if self._has_md_extension(url):
+                    page = self._extract_markdown_content(response.text, url)
+                else:
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required for workers > 1)
             if self.workers > 1:
@@ -788,18 +830,25 @@ class DocToSkillConverter:
                 # Sanitise brackets before fetching (safety net; see #284)
                 url = sanitize_url(url)
 
-                # Async HTTP request
-                headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                response = await client.get(url, headers=headers, timeout=30.0)
-                response.raise_for_status()
-
-                # Check if this is a Markdown file
-                if self._has_md_extension(url):
-                    page = self._extract_markdown_content(response.text, url)
-                else:
-                    # BeautifulSoup parsing (still synchronous, but fast)
-                    soup = BeautifulSoup(response.content, "html.parser")
+                if self.browser_mode and not self._has_md_extension(url):
+                    # Use Playwright in executor (sync API in async context)
+                    loop = asyncio.get_event_loop()
+                    html = await loop.run_in_executor(None, self._render_with_browser, url)
+                    soup = BeautifulSoup(html, "html.parser")
                     page = self.extract_content(soup, url)
+                else:
+                    # Async HTTP request
+                    headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
+                    response = await client.get(url, headers=headers, timeout=30.0)
+                    response.raise_for_status()
+
+                    # Check if this is a Markdown file
+                    if self._has_md_extension(url):
+                        page = self._extract_markdown_content(response.text, url)
+                    else:
+                        # BeautifulSoup parsing (still synchronous, but fast)
+                        soup = BeautifulSoup(response.content, "html.parser")
+                        page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
                 logger.info("  %s", url)
@@ -1057,6 +1106,126 @@ class DocToSkillConverter:
 
         return True
 
+    def _try_sitemap(self) -> list[str]:
+        """Layer 1: Try to discover pages via sitemap.xml.
+
+        Checks common sitemap locations at the domain root.
+        Parses XML for <loc> tags, filters by is_valid_url().
+
+        Returns:
+            List of discovered valid URLs (empty if no sitemap found).
+        """
+        try:
+            import defusedxml.ElementTree as ET
+        except ImportError:
+            import xml.etree.ElementTree as ET
+
+        from urllib.parse import urlparse
+
+        parsed = urlparse(self.base_url)
+        domain = f"{parsed.scheme}://{parsed.netloc}"
+
+        sitemap_urls_to_try = [
+            f"{domain}/sitemap.xml",
+            f"{domain}/sitemap_index.xml",
+        ]
+
+        discovered = []
+
+        for sitemap_url in sitemap_urls_to_try:
+            try:
+                response = requests.get(
+                    sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"}
+                )
+                if response.status_code != 200:
+                    continue
+
+                if "xml" not in response.headers.get("content-type", ""):
+                    continue
+
+                root = ET.fromstring(response.text)
+                ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+
+                # Handle sitemap index (nested sitemaps)
+                for sitemap in root.findall(".//sm:sitemap/sm:loc", ns):
+                    try:
+                        sub_resp = requests.get(
+                            sitemap.text.strip(),
+                            timeout=10,
+                            headers={"User-Agent": "SkillSeekers/3.4"},
+                        )
+                        if sub_resp.status_code == 200:
+                            sub_root = ET.fromstring(sub_resp.text)
+                            for loc in sub_root.findall(".//sm:url/sm:loc", ns):
+                                url = loc.text.strip().split("#")[0]
+                                if self.is_valid_url(url):
+                                    discovered.append(url)
+                    except Exception:
+                        continue
+
+                # Handle direct sitemap
+                for loc in root.findall(".//sm:url/sm:loc", ns):
+                    url = loc.text.strip().split("#")[0]
+                    if self.is_valid_url(url):
+                        discovered.append(url)
+
+                if discovered:
+                    logger.info(f"📋 Found sitemap at {sitemap_url} ({len(discovered)} valid URLs)")
+                    return list(set(discovered))
+
+            except Exception as e:
+                logger.debug(f"Sitemap check failed for {sitemap_url}: {e}")
+                continue
+
+        return []
+
+    def _discover_spa_nav(self) -> list[str]:
+        """Layer 3: Render index page with networkidle to discover SPA navigation.
+
+        Used when browser mode is on and sitemap/llms.txt didn't find pages.
+        Renders the first page with networkidle (slower but discovers full nav),
+        then normal crawl uses domcontentloaded (fast).
+
+        Returns:
+            List of discovered valid URLs from the rendered navigation.
+        """
+        if not self.browser_mode:
+            return []
+
+        logger.info("🌐 Rendering index page with networkidle to discover SPA navigation...")
+
+        try:
+            from skill_seekers.cli.browser_renderer import BrowserRenderer
+
+            # Use a separate renderer with networkidle for discovery only
+            discovery_renderer = BrowserRenderer(
+                timeout=60000,
+                wait_until="networkidle",
+                extra_wait=3000,  # 3s extra for lazy-loaded nav
+            )
+            html = discovery_renderer.render_page(self.base_url)
+            discovery_renderer.close()
+
+            # Parse rendered DOM for all links
+            soup = BeautifulSoup(html, "html.parser")
+            discovered = []
+            seen = set()
+
+            for link in soup.find_all("a", href=True):
+                href = urljoin(self.base_url, link["href"]).split("#")[0]
+                if href not in seen and self.is_valid_url(href):
+                    seen.add(href)
+                    discovered.append(href)
+
+            if discovered:
+                logger.info(f"🌐 Discovered {len(discovered)} pages from rendered SPA navigation")
+
+            return discovered
+
+        except Exception as e:
+            logger.warning(f"⚠️  SPA navigation discovery failed: {e}")
+            return []
+
     def scrape_all(self) -> None:
         """Scrape all pages (supports llms.txt and HTML scraping)
 
@@ -1067,16 +1236,35 @@ class DocToSkillConverter:
             asyncio.run(self.scrape_all_async())
             return
 
-        # Try llms.txt first (unless dry-run or explicitly disabled)
-        if not self.dry_run and not self.skip_llms_txt:
-            llms_result = self._try_llms_txt()
-            if llms_result:
-                logger.info(
-                    "\n✅ Used llms.txt (%s) - skipping HTML scraping",
-                    self.llms_txt_variant,
-                )
-                self.save_summary()
-                return
+        # === Three-Layer Discovery Engine ===
+        # Discovers pages before the BFS crawl loop starts.
+        # Layer 1: sitemap.xml — instant, no rendering needed
+        # Layer 2: llms.txt — existing mechanism
+        # Layer 3: SPA nav — renders index with networkidle to find JS-rendered links
+
+        if not self.dry_run:
+            # Layer 1: Try sitemap.xml
+            sitemap_urls = self._try_sitemap()
+            if sitemap_urls:
+                for url in sitemap_urls:
+                    self._enqueue_url(url)
+
+            # Layer 2: Try llms.txt (unless explicitly disabled)
+            if not sitemap_urls and not self.skip_llms_txt:
+                llms_result = self._try_llms_txt()
+                if llms_result:
+                    logger.info(
+                        "\n✅ Used llms.txt (%s) - skipping HTML scraping",
+                        self.llms_txt_variant,
+                    )
+                    self.save_summary()
+                    return
+
+            # Layer 3: SPA nav discovery (browser mode only, when other layers found few pages)
+            if self.browser_mode and len(self.pending_urls) <= 1:
+                spa_urls = self._discover_spa_nav()
+                for url in spa_urls:
+                    self._enqueue_url(url)
 
         # HTML scraping (sync/thread-based logic)
         logger.info("\n" + "=" * 60)
@@ -1370,6 +1558,11 @@ class DocToSkillConverter:
             self._log_scrape_completion()
             self.save_summary()
 
+        # Clean up browser renderer if used
+        if self._browser_renderer is not None:
+            self._browser_renderer.close()
+            self._browser_renderer = None
+
     def _log_scrape_completion(self) -> None:
         """Log scrape completion with accurate saved/skipped counts."""
         visited = len(self.visited_urls)
@@ -1391,8 +1584,9 @@ class DocToSkillConverter:
         if visited >= 5 and self.pages_saved == 0:
             logger.warning(
                 "⚠️  All %d pages had empty content. This site likely requires "
-                "JavaScript rendering (SPA/React/Vue). Scraping cannot extract "
-                "content from JavaScript-rendered pages.",
+                "JavaScript rendering (SPA/React/Vue).\n"
+                "   Try: skill-seekers create <url> --browser\n"
+                "   Install: pip install 'skill-seekers[browser]'",
                 visited,
             )
         elif visited >= 10 and self.pages_skipped > 0:
@@ -1400,7 +1594,8 @@ class DocToSkillConverter:
             if skip_ratio > 0.8:
                 logger.warning(
                     "⚠️  %d%% of pages had empty content. This site may use "
-                    "JavaScript rendering for some pages.",
+                    "JavaScript rendering for some pages.\n"
+                    "   Try: skill-seekers create <url> --browser",
                     int(skip_ratio * 100),
                 )
 
@@ -1751,6 +1946,10 @@ To refresh this skill with updated documentation:
 
         logger.info("  ✓ index.md")
 
+    def extract(self):
+        """SkillConverter interface — delegates to scrape_all()."""
+        self.scrape_all()
+
     def build_skill(self) -> bool:
         """Build the skill from scraped data.
 
@@ -2017,490 +2216,130 @@ def load_config(config_path: str) -> dict[str, Any]:
     return config
 
 
-def interactive_config() -> dict[str, Any]:
-    """Interactive configuration wizard for creating new configs.
+def scrape_documentation(
+    config: dict[str, Any],
+    ctx: Any | None = None,
+    verbose: bool = False,
+    quiet: bool = False,
+) -> int:
+    """Scrape documentation using config and optional context.
 
-    Prompts user for all required configuration fields step-by-step
-    and returns a complete configuration dictionary.
-
-    Returns:
-        dict: Complete configuration dictionary with user-provided values
-
-    Example:
-        >>> config = interactive_config()
-        # User enters: name=react, url=https://react.dev, etc.
-        >>> config['name']
-        'react'
-    """
-    logger.info("\n" + "=" * 60)
-    logger.info("Documentation to Skill Converter")
-    logger.info("=" * 60 + "\n")
-
-    config: dict[str, Any] = {}
-
-    # Basic info
-    config["name"] = input("Skill name (e.g., 'react', 'godot'): ").strip()
-    config["description"] = input("Skill description: ").strip()
-    config["base_url"] = input("Base URL (e.g., https://docs.example.com/): ").strip()
-
-    if not config["base_url"].endswith("/"):
-        config["base_url"] += "/"
-
-    # Selectors
-    logger.info("\nCSS Selectors (press Enter for defaults):")
-    selectors = {}
-    selectors["main_content"] = (
-        input("  Main content [div[role='main']]: ").strip() or "div[role='main']"
-    )
-    selectors["title"] = input("  Title [title]: ").strip() or "title"
-    selectors["code_blocks"] = input("  Code blocks [pre code]: ").strip() or "pre code"
-    config["selectors"] = selectors
-
-    # URL patterns
-    logger.info("\nURL Patterns (comma-separated, optional):")
-    include = input("  Include: ").strip()
-    exclude = input("  Exclude: ").strip()
-    config["url_patterns"] = {
-        "include": [p.strip() for p in include.split(",") if p.strip()],
-        "exclude": [p.strip() for p in exclude.split(",") if p.strip()],
-    }
-
-    # Settings
-    rate = input(f"\nRate limit (seconds) [{DEFAULT_RATE_LIMIT}]: ").strip()
-    config["rate_limit"] = float(rate) if rate else DEFAULT_RATE_LIMIT
-
-    max_p = input(f"Max pages [{DEFAULT_MAX_PAGES}]: ").strip()
-    config["max_pages"] = int(max_p) if max_p else DEFAULT_MAX_PAGES
-
-    return config
-
-
-def check_existing_data(name: str) -> tuple[bool, int]:
-    """Check if scraped data already exists for a skill.
+    This is the main entry point for programmatic use. CLI main() is a thin
+    wrapper around this function.
 
     Args:
-        name (str): Skill name to check
+        config: Configuration dictionary with required fields (name, base_url, etc.)
+        ctx: Optional ExecutionContext for shared configuration
+        verbose: Enable verbose logging
+        quiet: Minimize logging output
 
     Returns:
-        tuple: (exists, page_count) where exists is bool and page_count is int
-
-    Example:
-        >>> exists, count = check_existing_data('react')
-        >>> if exists:
-        ...     print(f"Found {count} existing pages")
+        Exit code (0 for success, non-zero for error)
     """
-    data_dir = f"output/{name}_data"
-    if os.path.exists(data_dir) and os.path.exists(f"{data_dir}/summary.json"):
-        with open(f"{data_dir}/summary.json", encoding="utf-8") as f:
-            summary = json.load(f)
-        return True, summary.get("total_pages", 0)
-    return False, 0
+    from skill_seekers.cli.execution_context import ExecutionContext
 
+    # Setup logging
+    setup_logging(verbose=verbose, quiet=quiet)
 
-def setup_argument_parser() -> argparse.ArgumentParser:
-    """Setup and configure command-line argument parser.
-
-    Creates an ArgumentParser with all CLI options for the doc scraper tool,
-    including configuration, scraping, enhancement, and performance options.
-
-    All arguments are defined in skill_seekers.cli.arguments.scrape to ensure
-    consistency between the standalone scraper and unified CLI.
-
-    Returns:
-        argparse.ArgumentParser: Configured argument parser
-
-    Example:
-        >>> parser = setup_argument_parser()
-        >>> args = parser.parse_args(['--config', 'configs/react.json'])
-        >>> print(args.config)
-        configs/react.json
-    """
-    parser = argparse.ArgumentParser(
-        description="Convert documentation websites to Claude skills",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    # Add all scrape arguments from shared definitions
-    # This ensures the standalone scraper and unified CLI stay in sync
-    add_scrape_arguments(parser)
-
-    return parser
-
-
-def get_configuration(args: argparse.Namespace) -> dict[str, Any]:
-    """Load or create configuration from command-line arguments.
-
-    Handles three configuration modes:
-    1. Load from JSON file (--config)
-    2. Interactive configuration wizard (--interactive or missing args)
-    3. Quick mode from command-line arguments (--name, --url)
-
-    Also applies CLI overrides for rate limiting and worker count.
-
-    Args:
-        args: Parsed command-line arguments from argparse
-
-    Returns:
-        dict: Configuration dictionary with all required fields
-
-    Example:
-        >>> args = parser.parse_args(['--name', 'react', '--url', 'https://react.dev'])
-        >>> config = get_configuration(args)
-        >>> print(config['name'])
-        react
-    """
-    # Handle URL from either positional argument or --url flag
-    # Positional 'url' takes precedence, then --url flag
-    effective_url = getattr(args, "url", None)
-
-    # Get base configuration
-    if args.config:
-        config = load_config(args.config)
-    elif args.interactive or not (args.name and effective_url):
-        config = interactive_config()
-    else:
-        config = {
-            "name": args.name,
-            "description": args.description or f"Use when working with {args.name}",
-            "base_url": effective_url,
-            "selectors": {
-                "title": "title",
-                "code_blocks": "pre code",
-            },
-            "url_patterns": {"include": [], "exclude": []},
-            "rate_limit": DEFAULT_RATE_LIMIT,
-            "max_pages": DEFAULT_MAX_PAGES,
-        }
-
-    # Apply CLI override for doc_version (works for all config modes)
-    cli_doc_version = getattr(args, "doc_version", "")
-    if cli_doc_version:
-        config["doc_version"] = cli_doc_version
-
-    # Apply CLI overrides for rate limiting
-    if args.no_rate_limit:
-        config["rate_limit"] = 0
-        logger.info("⚡ Rate limiting disabled")
-    elif args.rate_limit is not None:
-        config["rate_limit"] = args.rate_limit
-        if args.rate_limit == 0:
-            logger.info("⚡ Rate limiting disabled")
+    # Use existing context if already initialized, otherwise create one
+    if ctx is None:
+        if ExecutionContext._initialized:
+            ctx = ExecutionContext.get()
         else:
-            logger.info("⚡ Rate limit override: %ss per page", args.rate_limit)
+            ctx = ExecutionContext.initialize(args=argparse.Namespace(**config))
 
-    # Apply CLI overrides for worker count
-    if args.workers:
-        # Validate workers count
-        if args.workers < 1:
-            logger.error("❌ Error: --workers must be at least 1 (got %d)", args.workers)
-            logger.error("   Suggestion: Use --workers 1 (default) or omit the flag")
-            sys.exit(1)
-        if args.workers > 10:
-            logger.warning("⚠️  Warning: --workers capped at 10 (requested %d)", args.workers)
-            args.workers = 10
-        config["workers"] = args.workers
-        if args.workers > 1:
-            logger.info("🚀 Parallel scraping enabled: %d workers", args.workers)
+    # Build converter and execute
+    try:
+        converter = _run_scraping(config)
+        if converter is None:
+            return 1
 
-    # Apply CLI override for async mode
-    if args.async_mode:
-        config["async_mode"] = True
-        if config.get("workers", 1) > 1:
-            logger.info("⚡ Async mode enabled (2-3x faster than threads)")
-        else:
-            logger.warning(
-                "⚠️  Async mode enabled but workers=1. Consider using --workers 4 for better performance"
-            )
+        # Handle enhancement if enabled
+        if ctx.enhancement.enabled and ctx.enhancement.level > 0:
+            _run_enhancement(config, ctx, converter)
 
-    # Apply CLI override for max_pages
-    if args.max_pages is not None:
-        old_max = config.get("max_pages", DEFAULT_MAX_PAGES)
-        config["max_pages"] = args.max_pages
-
-        # Warnings for --max-pages usage
-        if args.max_pages > 1000:
-            logger.warning(
-                "⚠️  --max-pages=%d is very high - scraping may take hours", args.max_pages
-            )
-            logger.warning("   Recommendation: Use configs with reasonable limits for production")
-        elif args.max_pages < 10:
-            logger.warning(
-                "⚠️  --max-pages=%d is very low - may result in incomplete skill", args.max_pages
-            )
-
-        if old_max and old_max != args.max_pages:
-            logger.info(
-                "📊 Max pages override: %d → %d (from --max-pages flag)", old_max, args.max_pages
-            )
-        else:
-            logger.info("📊 Max pages set to: %d (from --max-pages flag)", args.max_pages)
-
-    return config
+        return 0
+    except Exception as e:
+        logger.error(f"Scraping failed: {e}")
+        return 1
 
 
-def execute_scraping_and_building(
-    config: dict[str, Any], args: argparse.Namespace
-) -> Optional["DocToSkillConverter"]:
-    """Execute the scraping and skill building process.
-
-    Handles dry run mode, existing data checks, scraping with checkpoints,
-    keyboard interrupts, and skill building. This is the core workflow
-    orchestration for the scraping phase.
-
-    Args:
-        config (dict): Configuration dictionary with scraping parameters
-        args: Parsed command-line arguments
-
-    Returns:
-        DocToSkillConverter: The converter instance after scraping/building,
-                            or None if process was aborted
-
-    Example:
-        >>> config = {'name': 'react', 'base_url': 'https://react.dev'}
-        >>> converter = execute_scraping_and_building(config, args)
-        >>> if converter:
-        ...     print("Scraping complete!")
-    """
-    # Dry run mode - preview only
-    if args.dry_run:
-        logger.info("\n" + "=" * 60)
-        logger.info("DRY RUN MODE")
-        logger.info("=" * 60)
-        logger.info("This will show what would be scraped without saving anything.\n")
-
-        converter = DocToSkillConverter(config, dry_run=True)
-        converter.scrape_all()
-
-        logger.info("\n📋 Configuration Summary:")
-        logger.info("   Name: %s", config["name"])
-        logger.info("   Base URL: %s", config["base_url"])
-        logger.info("   Max pages: %d", config.get("max_pages", DEFAULT_MAX_PAGES))
-        logger.info("   Rate limit: %ss", config.get("rate_limit", DEFAULT_RATE_LIMIT))
-        logger.info("   Categories: %d", len(config.get("categories", {})))
-        return None
-
-    # Check for existing data
-    exists, page_count = check_existing_data(config["name"])
-
-    if exists and not args.skip_scrape and not args.fresh:
-        # Check force_rescrape flag from config
-        if config.get("force_rescrape", False):
-            # Auto-delete cached data and rescrape
-            logger.info("\n✓ Found existing data: %d pages", page_count)
-            logger.info("  force_rescrape enabled - deleting cached data and rescaping")
-            import shutil
-
-            data_dir = f"output/{config['name']}_data"
-            if os.path.exists(data_dir):
-                shutil.rmtree(data_dir)
-                logger.info(f"  Deleted: {data_dir}")
-        else:
-            # Only prompt if force_rescrape is False
-            logger.info("\n✓ Found existing data: %d pages", page_count)
-            response = input("Use existing data? (y/n): ").strip().lower()
-            if response == "y":
-                args.skip_scrape = True
-    elif exists and args.fresh:
-        logger.info("\n✓ Found existing data: %d pages", page_count)
-        logger.info("  --fresh flag set, will re-scrape from scratch")
-
+def _run_scraping(config: dict[str, Any]) -> Optional["DocToSkillConverter"]:
+    """Run the scraping process."""
     # Create converter
-    converter = DocToSkillConverter(config, resume=args.resume)
+    converter = DocToSkillConverter(config)
 
-    # Initialize workflow tracking (will be updated if workflow runs)
-    converter.workflow_executed = False
-    converter.workflow_name = None
-
-    # Handle fresh start (clear checkpoint)
-    if args.fresh:
-        converter.clear_checkpoint()
-
-    # Scrape or skip
-    if not args.skip_scrape:
-        try:
-            converter.scrape_all()
-            # Save final checkpoint
-            if converter.checkpoint_enabled:
-                converter.save_checkpoint()
-                logger.info("\n💾 Final checkpoint saved")
-                # Clear checkpoint after successful completion
-                converter.clear_checkpoint()
-                logger.info("✅ Scraping complete - checkpoint cleared")
-        except KeyboardInterrupt:
-            logger.warning("\n\nScraping interrupted.")
-            if converter.checkpoint_enabled:
-                converter.save_checkpoint()
-                logger.info("💾 Progress saved to checkpoint")
-                logger.info(
-                    "   Resume with: --config %s --resume",
-                    args.config if args.config else "config.json",
-                )
-            response = input("Continue with skill building? (y/n): ").strip().lower()
-            if response != "y":
-                return None
+    # Check for resume
+    if config.get("resume") and converter.checkpoint_exists():
+        logger.info("📂 Resuming from checkpoint...")
+        converter.load_checkpoint()
     else:
-        logger.info("\n⏭️  Skipping scrape, using existing data")
+        # Clear checkpoint if fresh start
+        if config.get("fresh"):
+            converter.clear_checkpoint()
+
+    # Scrape
+    if not config.get("skip_scrape"):
+        logger.info("\n🔍 Starting scrape...")
+        try:
+            asyncio.run(converter.scrape())
+        except KeyboardInterrupt:
+            logger.info("\n\n⚠️  Interrupted by user")
+            converter.save_checkpoint()
+            logger.info("💾 Checkpoint saved. Resume with --resume")
+            return None
 
     # Build skill
-    success = converter.build_skill()
-
-    if not success:
-        sys.exit(1)
-
-    # RAG chunking (optional - NEW v2.10.0)
-    if args.chunk_for_rag:
-        logger.info("\n" + "=" * 60)
-        logger.info("🔪 Generating RAG chunks...")
-        logger.info("=" * 60)
-
-        from skill_seekers.cli.rag_chunker import RAGChunker
-
-        chunker = RAGChunker(
-            chunk_size=args.chunk_tokens,
-            chunk_overlap=args.chunk_overlap_tokens,
-            preserve_code_blocks=not args.no_preserve_code_blocks,
-            preserve_paragraphs=not args.no_preserve_paragraphs,
-        )
-
-        # Chunk the skill
-        skill_dir = Path(converter.skill_dir)
-        chunks = chunker.chunk_skill(skill_dir)
-
-        # Save chunks
-        chunks_path = skill_dir / "rag_chunks.json"
-        chunker.save_chunks(chunks, chunks_path)
-
-        logger.info(f"✅ Generated {len(chunks)} RAG chunks")
-        logger.info(f"📄 Saved to: {chunks_path}")
-        logger.info(f"💡 Use with LangChain: --target langchain")
-        logger.info(f"💡 Use with LlamaIndex: --target llama-index")
-
-    # ============================================================
-    # WORKFLOW SYSTEM INTEGRATION (Phase 2 - doc_scraper)
-    # ============================================================
-    from skill_seekers.cli.workflow_runner import run_workflows
-
-    # Pass doc-scraper-specific context to workflows
-    doc_context = {
-        "name": config["name"],
-        "base_url": config.get("base_url", ""),
-        "description": config.get("description", ""),
-    }
-
-    workflow_executed, workflow_names = run_workflows(args, context=doc_context)
-
-    # Store workflow execution status on converter for execute_enhancement() to access
-    converter.workflow_executed = workflow_executed
-    converter.workflow_name = ", ".join(workflow_names) if workflow_names else None
+    logger.info("\n📦 Building skill...")
+    converter.build_skill()
 
     return converter
 
 
-def execute_enhancement(config: dict[str, Any], args: argparse.Namespace, converter=None) -> None:
-    """Execute optional SKILL.md enhancement with Claude.
+def _run_enhancement(
+    config: dict[str, Any],
+    ctx: Any,
+    _converter: Any,
+) -> None:
+    """Run enhancement using context settings."""
+    from pathlib import Path
 
-    Supports two enhancement modes:
-    1. API-based enhancement (requires ANTHROPIC_API_KEY)
-    2. Local enhancement using Claude Code (no API key needed)
+    skill_dir = f"output/{config['name']}"
 
-    Prints appropriate messages and suggestions based on whether
-    enhancement was requested and whether it succeeded.
+    logger.info("\n" + "=" * 60)
+    logger.info(f"🤖 Enhancing SKILL.md (level {ctx.enhancement.level})")
+    logger.info("=" * 60)
 
-    Args:
-        config (dict): Configuration dictionary with skill name
-        args: Parsed command-line arguments with enhancement flags
-        converter: Optional DocToSkillConverter instance (to check workflow status)
+    # Use AgentClient from context
+    try:
+        agent_client = ctx.get_agent_client()
 
-    Example:
-        >>> execute_enhancement(config, args)
-        # Runs enhancement if --enhance or --enhance-local flag is set
-    """
-    import subprocess
+        # Run enhancement based on mode
+        if agent_client.mode == "api" and agent_client.client:
+            # API mode enhancement
+            from skill_seekers.cli.enhance_skill import enhance_skill_md
 
-    # Check if workflow was already executed (for logging context)
-    workflow_executed = (
-        converter and hasattr(converter, "workflow_executed") and converter.workflow_executed
-    )
-    workflow_name = converter.workflow_name if workflow_executed else None
+            # Use AgentClient's API key detection (respects priority: CLI > config > env)
+            api_key = ctx.enhancement.api_key or agent_client.api_key
+            if api_key:
+                enhance_skill_md(skill_dir, api_key)
+                logger.info("✅ API enhancement complete!")
+            else:
+                logger.warning("⚠️  No API key available for enhancement")
+        else:
+            # Local mode enhancement
+            from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-    # Optional enhancement with auto-detected mode (API or LOCAL)
-    # Note: Runs independently of workflow system (they complement each other)
-    if getattr(args, "enhance_level", 0) > 0:
-        import os
-
-        has_api_key = bool(os.environ.get("ANTHROPIC_API_KEY") or args.api_key)
-        mode = "API" if has_api_key else "LOCAL"
-
-        logger.info("\n" + "=" * 80)
-        logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-        logger.info("=" * 80)
-        if workflow_executed:
-            logger.info(f"   Running after workflow: {workflow_name}")
-            logger.info(
-                "   (Workflow provides specialized analysis, enhancement provides general improvements)"
+            enhancer = LocalSkillEnhancer(
+                Path(skill_dir),
+                agent=ctx.enhancement.agent,
+                agent_cmd=ctx.enhancement.agent_cmd,
             )
-        logger.info("")
-
-        try:
-            enhance_cmd = ["skill-seekers-enhance", f"output/{config['name']}/"]
-            enhance_cmd.extend(["--enhance-level", str(args.enhance_level)])
-
-            if args.api_key:
-                enhance_cmd.extend(["--api-key", args.api_key])
-            if getattr(args, "interactive_enhancement", False):
-                enhance_cmd.append("--interactive-enhancement")
-
-            result = subprocess.run(enhance_cmd, check=True)
-            if result.returncode == 0:
-                logger.info("\n✅ Enhancement complete!")
-        except subprocess.CalledProcessError:
-            logger.warning("\n⚠ Enhancement failed, but skill was still built")
-        except FileNotFoundError:
-            logger.warning("\n⚠ skill-seekers-enhance command not found. Run manually:")
-            logger.info(
-                "  skill-seekers-enhance output/%s/ --enhance-level %d",
-                config["name"],
-                args.enhance_level,
-            )
-
-    # Print packaging instructions
-    logger.info("\n📦 Package your skill:")
-    logger.info("  skill-seekers-package output/%s/", config["name"])
-
-    # Suggest enhancement if not done
-    if getattr(args, "enhance_level", 0) == 0:
-        logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
-        logger.info("  skill-seekers-enhance output/%s/ --enhance-level 2", config["name"])
-        logger.info("  or re-run with: --enhance-level 2 (auto-detects API vs LOCAL mode)")
-        logger.info(
-            "  API-based:            skill-seekers-enhance-api output/%s/",
-            config["name"],
-        )
-        logger.info("                        or re-run with: --enhance")
-        logger.info(
-            "\n💡 Tip: Use --interactive-enhancement with --enhance-local to open terminal window"
-        )
-
-
-def main() -> None:
-    parser = setup_argument_parser()
-    args = parser.parse_args()
-
-    # Setup logging based on verbosity flags
-    setup_logging(verbose=args.verbose, quiet=args.quiet)
-
-    config = get_configuration(args)
-
-    # Execute scraping and building
-    converter = execute_scraping_and_building(config, args)
-
-    # Exit if dry run or aborted
-    if converter is None:
-        return
-
-    # Execute enhancement and print instructions (pass converter for workflow status check)
-    execute_enhancement(config, args, converter)
-
-
-if __name__ == "__main__":
-    main()
+            success = enhancer.run(headless=True, timeout=ctx.enhancement.timeout)
+            if success:
+                agent_name = ctx.enhancement.agent or "claude"
+                logger.info(f"✅ Local enhancement complete! (via {agent_name})")
+            else:
+                logger.warning("⚠️  Local enhancement did not complete")
+    except Exception as e:
+        logger.warning(f"⚠️  Enhancement failed: {e}")

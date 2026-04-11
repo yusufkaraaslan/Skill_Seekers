@@ -14,8 +14,6 @@ from skill_seekers.cli.parsers import (
     get_parser_names,
     register_parsers,
 )
-from skill_seekers.cli.parsers.scrape_parser import ScrapeParser
-from skill_seekers.cli.parsers.github_parser import GitHubParser
 from skill_seekers.cli.parsers.package_parser import PackageParser
 
 
@@ -24,20 +22,17 @@ class TestParserRegistry:
 
     def test_all_parsers_registered(self):
         """Test that all parsers are registered."""
-        assert len(PARSERS) == 35, f"Expected 35 parsers, got {len(PARSERS)}"
+        assert len(PARSERS) == 18, f"Expected 18 parsers, got {len(PARSERS)}"
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 35
-        assert "scrape" in names
-        assert "github" in names
+        assert len(names) == 18
+        assert "create" in names
         assert "package" in names
         assert "upload" in names
-        assert "analyze" in names
         assert "config" in names
         assert "workflows" in names
-        assert "video" in names
 
     def test_all_parsers_are_subcommand_parsers(self):
         """Test that all parsers inherit from SubcommandParser."""
@@ -71,29 +66,6 @@ class TestParserRegistry:
 class TestParserCreation:
     """Test parser creation functionality."""
 
-    def test_scrape_parser_creates_subparser(self):
-        """Test that ScrapeParser creates valid subparser."""
-        main_parser = argparse.ArgumentParser()
-        subparsers = main_parser.add_subparsers()
-
-        scrape_parser = ScrapeParser()
-        subparser = scrape_parser.create_parser(subparsers)
-
-        assert subparser is not None
-        assert scrape_parser.name == "scrape"
-        assert scrape_parser.help == "Scrape documentation website"
-
-    def test_github_parser_creates_subparser(self):
-        """Test that GitHubParser creates valid subparser."""
-        main_parser = argparse.ArgumentParser()
-        subparsers = main_parser.add_subparsers()
-
-        github_parser = GitHubParser()
-        subparser = github_parser.create_parser(subparsers)
-
-        assert subparser is not None
-        assert github_parser.name == "github"
-
     def test_package_parser_creates_subparser(self):
         """Test that PackageParser creates valid subparser."""
         main_parser = argparse.ArgumentParser()
@@ -106,21 +78,18 @@ class TestParserCreation:
         assert package_parser.name == "package"
 
     def test_register_parsers_creates_all_subcommands(self):
-        """Test that register_parsers creates all 19 subcommands."""
+        """Test that register_parsers creates all subcommands."""
         main_parser = argparse.ArgumentParser()
         subparsers = main_parser.add_subparsers(dest="command")
 
         # Register all parsers
         register_parsers(subparsers)
 
-        # Test that all commands can be parsed
+        # Test that existing commands can be parsed
         test_commands = [
             "config --show",
-            "scrape --config test.json",
-            "github --repo owner/repo",
             "package output/test/",
             "upload test.zip",
-            "analyze --directory .",
             "enhance output/test/",
             "estimate test.json",
         ]
@@ -132,40 +101,6 @@ class TestParserCreation:
 
 class TestSpecificParsers:
     """Test specific parser implementations."""
-
-    def test_scrape_parser_arguments(self):
-        """Test ScrapeParser has correct arguments."""
-        main_parser = argparse.ArgumentParser()
-        subparsers = main_parser.add_subparsers(dest="command")
-
-        scrape_parser = ScrapeParser()
-        scrape_parser.create_parser(subparsers)
-
-        # Test various argument combinations
-        args = main_parser.parse_args(["scrape", "--config", "test.json"])
-        assert args.command == "scrape"
-        assert args.config == "test.json"
-
-        args = main_parser.parse_args(["scrape", "--config", "test.json", "--max-pages", "100"])
-        assert args.max_pages == 100
-
-        args = main_parser.parse_args(["scrape", "--enhance-level", "2"])
-        assert args.enhance_level == 2
-
-    def test_github_parser_arguments(self):
-        """Test GitHubParser has correct arguments."""
-        main_parser = argparse.ArgumentParser()
-        subparsers = main_parser.add_subparsers(dest="command")
-
-        github_parser = GitHubParser()
-        github_parser.create_parser(subparsers)
-
-        args = main_parser.parse_args(["github", "--repo", "owner/repo"])
-        assert args.command == "github"
-        assert args.repo == "owner/repo"
-
-        args = main_parser.parse_args(["github", "--repo", "owner/repo", "--non-interactive"])
-        assert args.non_interactive is True
 
     def test_package_parser_arguments(self):
         """Test PackageParser has correct arguments."""
@@ -185,44 +120,19 @@ class TestSpecificParsers:
         args = main_parser.parse_args(["package", "output/test/", "--no-open"])
         assert args.no_open is True
 
-    def test_analyze_parser_arguments(self):
-        """Test AnalyzeParser has correct arguments."""
-        main_parser = argparse.ArgumentParser()
-        subparsers = main_parser.add_subparsers(dest="command")
 
-        from skill_seekers.cli.parsers.analyze_parser import AnalyzeParser
+class TestCurrentCommands:
+    """Test current CLI commands after Grand Unification."""
 
-        analyze_parser = AnalyzeParser()
-        analyze_parser.create_parser(subparsers)
-
-        args = main_parser.parse_args(["analyze", "--directory", "."])
-        assert args.command == "analyze"
-        assert args.directory == "."
-
-        args = main_parser.parse_args(["analyze", "--directory", ".", "--quick"])
-        assert args.quick is True
-
-        args = main_parser.parse_args(["analyze", "--directory", ".", "--comprehensive"])
-        assert args.comprehensive is True
-
-        args = main_parser.parse_args(["analyze", "--directory", ".", "--skip-patterns"])
-        assert args.skip_patterns is True
-
-
-class TestBackwardCompatibility:
-    """Test backward compatibility with old CLI."""
-
-    def test_all_original_commands_still_work(self):
-        """Test that all original commands are still registered."""
+    def test_all_current_commands_registered(self):
+        """Test that all current commands are registered."""
         names = get_parser_names()
 
-        # Original commands from old main.py
-        original_commands = [
+        # Commands that survived the Grand Unification
+        # (individual scraper commands removed; use 'create' instead)
+        current_commands = [
             "config",
-            "scrape",
-            "github",
-            "pdf",
-            "unified",
+            "create",
             "enhance",
             "enhance-status",
             "package",
@@ -230,22 +140,50 @@ class TestBackwardCompatibility:
             "estimate",
             "extract-test-examples",
             "install-agent",
-            "analyze",
             "install",
             "resume",
             "stream",
             "update",
             "multilang",
             "quality",
+            "doctor",
+            "workflows",
+            "sync-config",
         ]
 
-        for cmd in original_commands:
+        for cmd in current_commands:
             assert cmd in names, f"Command '{cmd}' not found in parser registry!"
 
+    def test_removed_scraper_commands_not_present(self):
+        """Test that individual scraper commands were removed."""
+        names = get_parser_names()
+
+        removed_commands = [
+            "scrape",
+            "github",
+            "pdf",
+            "video",
+            "word",
+            "epub",
+            "jupyter",
+            "html",
+            "openapi",
+            "asciidoc",
+            "pptx",
+            "rss",
+            "manpage",
+            "confluence",
+            "notion",
+            "chat",
+        ]
+
+        for cmd in removed_commands:
+            assert cmd not in names, f"Removed command '{cmd}' still in parser registry!"
+
     def test_command_count_matches(self):
-        """Test that we have exactly 35 commands (25 original + 10 new source types)."""
-        assert len(PARSERS) == 35
-        assert len(get_parser_names()) == 35
+        """Test that we have exactly 18 commands."""
+        assert len(PARSERS) == 18
+        assert len(get_parser_names()) == 18
 
 
 if __name__ == "__main__":

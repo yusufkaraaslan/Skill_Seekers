@@ -728,13 +728,12 @@ class TestVideoArguments(unittest.TestCase):
         args = parser.parse_args([])
         self.assertEqual(args.enhance_level, 0)
 
-    def test_unified_parser_has_video(self):
-        """Test video subcommand is registered in main parser."""
-        from skill_seekers.cli.main import create_parser
+    def test_video_accessible_via_create(self):
+        """Test video source is accessible via 'create' command (not as subcommand)."""
+        from skill_seekers.cli.source_detector import SourceDetector
 
-        parser = create_parser()
-        args = parser.parse_args(["video", "--url", "https://youtube.com/watch?v=test"])
-        self.assertEqual(args.url, "https://youtube.com/watch?v=test")
+        info = SourceDetector.detect("https://youtube.com/watch?v=test")
+        self.assertEqual(info.type, "video")
 
 
 # =============================================================================

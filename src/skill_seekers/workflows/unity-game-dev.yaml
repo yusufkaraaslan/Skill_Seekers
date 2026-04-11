@@ -1,0 +1,214 @@
+name: unity-game-dev
+description: Unity game development patterns, MonoBehaviour lifecycle, component architecture, memory management, and C# best practices for Unity projects
+version: "1.0"
+applies_to:
+  - codebase_analysis
+  - github_analysis
+  - documentation
+variables:
+  depth: comprehensive
+
+stages:
+  - name: monobehaviour_lifecycle
+    type: custom
+    target: lifecycle
+    uses_history: false
+    enabled: true
+    prompt: >
+      Document all MonoBehaviour lifecycle patterns used in this codebase/library.
+
+      Cover:
+      1. Initialization order (Awake vs Start vs OnEnable)
+      2. Update loops (Update vs FixedUpdate vs LateUpdate) and when to use each
+      3. Destruction and cleanup (OnDestroy, OnDisable, OnApplicationQuit)
+      4. Coroutine lifecycle and cancellation patterns
+      5. Script execution order dependencies
+
+      For each pattern found:
+      - When to use it vs alternatives
+      - Common mistakes and gotchas
+      - Code example showing correct usage
+
+      Output JSON with "lifecycle_patterns" array of:
+      {name, phase, use_case, gotchas[], code_example, execution_order}
+
+  - name: component_architecture
+    type: custom
+    target: components
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document the component-based architecture patterns.
+
+      Cover:
+      1. Component composition patterns (prefer composition over inheritance)
+      2. GetComponent usage and caching strategies
+      3. RequireComponent and dependency management
+      4. Prefab architecture and nested prefab patterns
+      5. ScriptableObject as data containers and event channels
+      6. Inspector serialization ([SerializeField], [Header], [Tooltip], custom editors)
+
+      For each pattern:
+      - Setup steps in Unity Editor
+      - C# implementation
+      - When to use vs alternatives
+
+      Output JSON with:
+      - "component_patterns": array of architecture patterns
+      - "scriptable_objects": data-driven design patterns
+      - "serialization": Inspector setup patterns
+
+  - name: dependency_injection
+    type: custom
+    target: di_patterns
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document dependency injection patterns for Unity.
+
+      Cover:
+      1. Zenject/Extenject bindings (BindInterfacesAndSelfTo, FromComponentInHierarchy, AsSingle, AsCached)
+      2. VContainer registration patterns (if used)
+      3. Installer organization (MonoInstaller, ScriptableObjectInstaller, ProjectInstaller)
+      4. Factory patterns with DI (PlaceholderFactory, IFactory)
+      5. Signal/event bus patterns via DI
+      6. Scene-scoped vs project-scoped containers
+
+      For each pattern:
+      - Binding configuration
+      - Injection usage ([Inject], constructor injection)
+      - Lifecycle management
+      - Testing with mock bindings
+
+      Output JSON with:
+      - "di_bindings": binding patterns and when to use each
+      - "installers": installer organization
+      - "factories": factory patterns
+      - "testing": how to mock dependencies
+
+  - name: async_patterns
+    type: custom
+    target: async
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document async/concurrent programming patterns for Unity.
+
+      Cover:
+      1. Coroutines (IEnumerator, yield return, StartCoroutine/StopCoroutine)
+      2. UniTask patterns (async/await, UniTask vs Task, cancellation tokens)
+      3. Async asset loading (Addressables, Resources.LoadAsync)
+      4. Threading considerations (main thread requirement, UnitySynchronizationContext)
+      5. DOTween async integration (AwaitForCompletion, ToUniTask)
+      6. Progress reporting and loading screens
+
+      For each pattern:
+      - When to use it vs alternatives
+      - Cancellation and cleanup
+      - Error handling
+      - Performance implications
+
+      Output JSON with:
+      - "coroutine_patterns": coroutine usage and gotchas
+      - "unitask_patterns": modern async patterns
+      - "loading_patterns": async loading strategies
+      - "thread_safety": main thread considerations
+
+  - name: memory_and_performance
+    type: custom
+    target: unity_performance
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Unity-specific memory management and performance patterns.
+
+      Cover:
+      1. Object pooling (instantiate/destroy avoidance, pool managers)
+      2. GC pressure reduction (avoid allocations in Update, struct vs class, NativeArray)
+      3. Asset memory lifecycle (loading, reference counting, unloading, Resources.UnloadUnusedAssets)
+      4. Texture/mesh memory optimization (atlasing, LOD, compression)
+      5. Draw call batching (static/dynamic batching, SRP Batcher, GPU instancing)
+      6. Profiler-guided optimization (Unity Profiler, Memory Profiler, Frame Debugger)
+
+      For each optimization:
+      - Problem it solves
+      - Implementation approach
+      - Measurable impact
+      - Common mistakes
+
+      Output JSON with:
+      - "pooling": object pool patterns
+      - "gc_optimization": allocation reduction techniques
+      - "asset_memory": asset lifecycle management
+      - "rendering": draw call and GPU optimizations
+      - "profiling": how to measure and verify
+
+  - name: unity_events
+    type: custom
+    target: events
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document event and messaging patterns for Unity.
+
+      Cover:
+      1. C# events and delegates (event Action, EventHandler)
+      2. UnityEvent and Inspector-wired callbacks
+      3. ScriptableObject event channels (SOA event pattern)
+      4. Signal bus patterns (Zenject Signals, custom implementations)
+      5. Observer pattern implementations
+      6. Message broker / pub-sub patterns
+
+      For each pattern:
+      - When to use it (tight coupling vs loose coupling trade-offs)
+      - Memory leak prevention (unsubscribe in OnDestroy/OnDisable)
+      - Thread safety considerations
+      - Code example with subscribe/unsubscribe
+
+      Output JSON with:
+      - "event_patterns": array of event/messaging approaches
+      - "best_practices": subscription lifecycle management
+      - "comparisons": when to use which pattern
+
+  - name: editor_integration
+    type: custom
+    target: editor
+    uses_history: true
+    enabled: true
+    prompt: >
+      Document Unity Editor integration patterns.
+
+      Cover:
+      1. Custom Inspector/Editor scripts ([CustomEditor], EditorGUILayout)
+      2. PropertyDrawer and DecoratorDrawer patterns
+      3. EditorWindow for tool development
+      4. Gizmos and Handles for scene visualization
+      5. Menu items and context menus ([MenuItem], [ContextMenu])
+      6. Build pipeline hooks (IPreprocessBuildWithReport, IPostprocessBuildWithReport)
+
+      For each pattern:
+      - Use case and setup
+      - Code example
+      - Editor vs runtime separation (#if UNITY_EDITOR)
+
+      Output JSON with:
+      - "custom_inspectors": inspector customization patterns
+      - "editor_tools": tool development patterns
+      - "build_pipeline": build automation patterns
+
+post_process:
+  reorder_sections:
+    - monobehaviour_lifecycle
+    - component_architecture
+    - dependency_injection
+    - async_patterns
+    - memory_and_performance
+    - unity_events
+    - editor_integration
+  add_metadata:
+    enhanced: true
+    workflow: unity-game-dev
+    framework: unity
+    has_lifecycle_docs: true
+    has_di_patterns: true
+    has_performance_guide: true

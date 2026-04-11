@@ -11,7 +11,7 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 **What Works:**
 - ✅ **17 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
 - ✅ Unified multi-source scraping with generic merge for any source combination
-- ✅ 26+ MCP tools fully functional
+- ✅ 40 MCP tools fully functional
 - ✅ Multi-platform support (16 platforms: Claude, Gemini, OpenAI, LangChain, LlamaIndex, Haystack, ChromaDB, FAISS, Weaviate, Qdrant, Cursor, Windsurf, Cline, Continue.dev, Pinecone, Markdown)
 - ✅ Auto-upload to all platforms
 - ✅ 24 preset configs (including 7 unified configs)
@@ -364,7 +364,7 @@ Small standalone tools that add value
 - ✅ 17 source types supported
 - ✅ 24 preset configs (14 official + 10 test/examples)
 - ✅ 1,880+ tests (excellent coverage)
-- ✅ 26+ MCP tools
+- ✅ 40 MCP tools
 - ✅ 4 platform adaptors (Claude, Gemini, OpenAI, Markdown)
 - ✅ C3.x codebase analysis suite complete
 - ✅ Multi-source synthesis with generic merge for any combination

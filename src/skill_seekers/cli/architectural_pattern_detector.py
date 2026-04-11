@@ -139,12 +139,17 @@ class ArchitecturalPatternDetector:
         "Laravel": ["laravel", "illuminate", "artisan", "app/Http/Controllers", "app/Models"],
     }
 
-    def __init__(self, enhance_with_ai: bool = True):
+    # Web frameworks should only match for web-language projects
+    _WEB_FRAMEWORKS = {"React", "Vue.js", "Express", "Angular"}
+    _WEB_LANGUAGES = {"JavaScript", "TypeScript", "Python", "PHP", "Ruby"}
+
+    def __init__(self, enhance_with_ai: bool = True, agent: str | None = None):
         """
         Initialize detector.
 
         Args:
             enhance_with_ai: Enable AI enhancement for detected patterns (C3.6)
+            agent: Local CLI agent name (e.g., "kimi", "claude")
         """
         self.enhance_with_ai = enhance_with_ai
         self.ai_enhancer = None
@@ -153,7 +158,7 @@ class ArchitecturalPatternDetector:
             try:
                 from skill_seekers.cli.ai_enhancer import AIEnhancer
 
-                self.ai_enhancer = AIEnhancer()
+                self.ai_enhancer = AIEnhancer(agent=agent)
             except Exception as e:
                 logger.warning(f"⚠️  Failed to initialize AI enhancer: {e}")
                 self.enhance_with_ai = False
@@ -267,10 +272,25 @@ class ArchitecturalPatternDetector:
                     # Return early to prevent web framework false positives
                     return detected
 
+        # Determine primary language to filter out impossible framework matches
+        # e.g., C#/C++ projects should not match React/Vue.js/Express
+        lang_counts: dict[str, int] = {}
+        for file_data in files:
+            lang = file_data.get("language", "")
+            if lang:
+                lang_counts[lang] = lang_counts.get(lang, 0) + 1
+        primary_lang = max(lang_counts, key=lang_counts.get) if lang_counts else ""
+
+        skip_web = primary_lang and primary_lang not in self._WEB_LANGUAGES
+
         # Check other frameworks (including imports - fixes #239)
         for framework, markers in self.FRAMEWORK_MARKERS.items():
             if framework in ["Unity", "Unreal", "Godot"]:
                 continue  # Already checked
+
+            # Skip web frameworks for non-web language projects
+            if skip_web and framework in self._WEB_FRAMEWORKS:
+                continue
 
             # Check in file paths, directory structure, AND imports
             path_matches = sum(1 for marker in markers if marker.lower() in all_content.lower())

@@ -37,12 +37,12 @@ jobs:
       FRAMEWORKS_INPUT: ${{ github.event.inputs.frameworks }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
@@ -86,32 +86,28 @@ jobs:
         SKILL_DIR="output/$FRAMEWORK"
 
         # Detect changes using incremental updater
-        python3 << 'EOF'
-import sys
-from pathlib import Path
-sys.path.insert(0, 'src')
+        python3 -c "
+        import sys, os
+        from pathlib import Path
 
-from skill_seekers.cli.incremental_updater import IncrementalUpdater
-import os
+        from skill_seekers.cli.incremental_updater import IncrementalUpdater
 
-framework = os.environ['FRAMEWORK']
-skill_dir = Path(f'output/{framework}')
+        framework = os.environ['FRAMEWORK']
+        skill_dir = Path(f'output/{framework}')
 
-updater = IncrementalUpdater(skill_dir)
-changes = updater.detect_changes()
+        updater = IncrementalUpdater(skill_dir)
+        changes = updater.detect_changes()
 
-if changes.has_changes:
-    print(f"🔄 Changes detected:")
-    print(f"   Added: {len(changes.added)}")
-    print(f"   Modified: {len(changes.modified)}")
-    print(f"   Deleted: {len(changes.deleted)}")
-
-    # Save current versions for next run
-    updater.current_versions = updater._scan_documents()
-    updater.save_current_versions()
-else:
-    print("✓ No changes detected, skill is up to date")
-EOF
+        if changes.has_changes:
+            print(f'Changes detected:')
+            print(f'   Added: {len(changes.added)}')
+            print(f'   Modified: {len(changes.modified)}')
+            print(f'   Deleted: {len(changes.deleted)}')
+            updater.current_versions = updater._scan_documents()
+            updater.save_current_versions()
+        else:
+            print('No changes detected, skill is up to date')
+        "
 
     - name: Full scrape (if new or manual)
       if: steps.should_update.outputs.update == 'true' && steps.check_existing.outputs.exists == 'false'
@@ -126,7 +122,7 @@ EOF
         fi
 
         # Use streaming ingestion for large docs
-        skill-seekers scrape --config "$CONFIG_FILE" --streaming --max-pages 200
+        skill-seekers create "$CONFIG_FILE" --max-pages 200
 
     - name: Generate quality report
       if: steps.should_update.outputs.update == 'true'
@@ -140,26 +136,24 @@ EOF
 
         echo "📊 Generating quality metrics..."
 
-        python3 << 'EOF'
-import sys
-import os
-from pathlib import Path
-sys.path.insert(0, 'src')
+        python3 -c "
+        import sys, os
+        from pathlib import Path
 
-from skill_seekers.cli.quality_metrics import QualityAnalyzer
+        from skill_seekers.cli.quality_metrics import QualityAnalyzer
 
-framework = os.environ['FRAMEWORK']
-skill_dir = Path(f'output/{framework}')
+        framework = os.environ['FRAMEWORK']
+        skill_dir = Path(f'output/{framework}')
 
-analyzer = QualityAnalyzer(skill_dir)
-report = analyzer.generate_report()
+        analyzer = QualityAnalyzer(skill_dir)
+        report = analyzer.generate_report()
 
-print(f"\n📊 Quality Score: {report.overall_score.grade} ({report.overall_score.total_score:.1f}/100)")
-print(f"   Completeness: {report.overall_score.completeness:.1f}%")
-print(f"   Accuracy: {report.overall_score.accuracy:.1f}%")
-print(f"   Coverage: {report.overall_score.coverage:.1f}%")
-print(f"   Health: {report.overall_score.health:.1f}%")
-EOF
+        print(f'Quality Score: {report.overall_score.grade} ({report.overall_score.total_score:.1f}/100)')
+        print(f'   Completeness: {report.overall_score.completeness:.1f}%')
+        print(f'   Accuracy: {report.overall_score.accuracy:.1f}%')
+        print(f'   Coverage: {report.overall_score.coverage:.1f}%')
+        print(f'   Health: {report.overall_score.health:.1f}%')
+        "
 
     - name: Package for Claude
       if: steps.should_update.outputs.update == 'true'
@@ -173,7 +167,7 @@ EOF
 
     - name: Upload updated skill
       if: steps.should_update.outputs.update == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.FRAMEWORK }}-skill-updated
         path: output/${{ env.FRAMEWORK }}.zip

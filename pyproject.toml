@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "3.4.0"
+version = "3.5.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills. International support with Chinese (简体中文) documentation."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -232,6 +232,11 @@ chat = [
     "slack-sdk>=3.27.0",
 ]
 
+# Headless browser for JavaScript SPA sites
+browser = [
+    "playwright>=1.40.0",
+]
+
 # Embedding server support
 embedding = [
     "fastapi>=0.109.0",
@@ -294,31 +299,33 @@ Documentation = "https://skillseekersweb.com/"
 "Homebrew Tap" = "https://github.com/yusufkaraaslan/homebrew-skill-seekers"
 
 [project.scripts]
-# Main unified CLI
+# Main CLI entry point
 skill-seekers = "skill_seekers.cli.main:main"
 
-# Individual tool entry points
-skill-seekers-create = "skill_seekers.cli.create_command:main"  # NEW: Unified create command
-skill-seekers-config = "skill_seekers.cli.config_command:main"
-skill-seekers-resume = "skill_seekers.cli.resume_command:main"
-skill-seekers-scrape = "skill_seekers.cli.doc_scraper:main"
-skill-seekers-github = "skill_seekers.cli.github_scraper:main"
-skill-seekers-pdf = "skill_seekers.cli.pdf_scraper:main"
-skill-seekers-word = "skill_seekers.cli.word_scraper:main"
-skill-seekers-epub = "skill_seekers.cli.epub_scraper:main"
-skill-seekers-video = "skill_seekers.cli.video_scraper:main"
-skill-seekers-unified = "skill_seekers.cli.unified_scraper:main"
+# Core commands
+skill-seekers-create = "skill_seekers.cli.create_command:main"
 skill-seekers-enhance = "skill_seekers.cli.enhance_command:main"
 skill-seekers-enhance-status = "skill_seekers.cli.enhance_status:main"
 skill-seekers-package = "skill_seekers.cli.package_skill:main"
 skill-seekers-upload = "skill_seekers.cli.upload_skill:main"
-skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-install = "skill_seekers.cli.install_skill:main"
 skill-seekers-install-agent = "skill_seekers.cli.install_agent:main"
-skill-seekers-codebase = "skill_seekers.cli.codebase_scraper:main"
+
+# Analysis & utilities
+skill-seekers-estimate = "skill_seekers.cli.estimate_pages:main"
 skill-seekers-patterns = "skill_seekers.cli.pattern_recognizer:main"
 skill-seekers-how-to-guides = "skill_seekers.cli.how_to_guide_builder:main"
+skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"
+skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"
+
+# Configuration & setup
+skill-seekers-config = "skill_seekers.cli.config_command:main"
+skill-seekers-doctor = "skill_seekers.cli.doctor:main"
 skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"
+skill-seekers-resume = "skill_seekers.cli.resume_command:main"
+skill-seekers-sync-config = "skill_seekers.cli.sync_config:main"
+
+# Advanced
 skill-seekers-cloud = "skill_seekers.cli.cloud_storage_cli:main"
 skill-seekers-embed = "skill_seekers.embedding.server:main"
 skill-seekers-sync = "skill_seekers.cli.sync_cli:main"
@@ -326,22 +333,6 @@ skill-seekers-benchmark = "skill_seekers.cli.benchmark_cli:main"
 skill-seekers-stream = "skill_seekers.cli.streaming_ingest:main"
 skill-seekers-update = "skill_seekers.cli.incremental_updater:main"
 skill-seekers-multilang = "skill_seekers.cli.multilang_support:main"
-skill-seekers-quality = "skill_seekers.cli.quality_metrics:main"
-skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"
-skill-seekers-sync-config = "skill_seekers.cli.sync_config:main"
-
-# New source type entry points (v3.2.0+)
-skill-seekers-jupyter = "skill_seekers.cli.jupyter_scraper:main"
-skill-seekers-html = "skill_seekers.cli.html_scraper:main"
-skill-seekers-openapi = "skill_seekers.cli.openapi_scraper:main"
-skill-seekers-asciidoc = "skill_seekers.cli.asciidoc_scraper:main"
-skill-seekers-pptx = "skill_seekers.cli.pptx_scraper:main"
-skill-seekers-rss = "skill_seekers.cli.rss_scraper:main"
-skill-seekers-manpage = "skill_seekers.cli.man_scraper:main"
-skill-seekers-confluence = "skill_seekers.cli.confluence_scraper:main"
-skill-seekers-notion = "skill_seekers.cli.notion_scraper:main"
-skill-seekers-chat = "skill_seekers.cli.chat_scraper:main"
-skill-seekers-opencode-split = "skill_seekers.cli.opencode_skill_splitter:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

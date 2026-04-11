@@ -301,6 +301,8 @@ def install_to_agent(
             msg += "Restart Cursor to load the new skill."
         elif agent_name.lower() in ["vscode", "copilot"]:
             msg += "Restart VS Code to load the new skill."
+        elif agent_name.lower() == "kimi-code":
+            msg += "Restart Kimi Code to load the new skill."
         else:
             msg += f"Restart {agent_name.capitalize()} to load the new skill."
 

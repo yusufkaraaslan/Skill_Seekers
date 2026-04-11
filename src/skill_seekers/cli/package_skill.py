@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple Skill Packager
-Packages a skill directory into a .zip file for Claude.
+Packages a skill directory into a .zip file for LLM platforms.
 
 Usage:
     skill-seekers package output/steam-inventory/
@@ -197,7 +197,7 @@ def main():
     from skill_seekers.cli.arguments.package import add_package_arguments
 
     parser = argparse.ArgumentParser(
-        description="Package a skill directory into a .zip file for Claude",
+        description="Package a skill directory into a .zip file for LLM platforms",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -210,7 +210,7 @@ Examples:
   # Skip quality checks (faster, but not recommended)
   skill-seekers package output/react/ --skip-quality-check
 
-  # Package and auto-upload to Claude
+  # Package and auto-upload to target platform
   skill-seekers package output/react/ --upload
 
   # Get help
@@ -294,6 +294,31 @@ Examples:
         except Exception as e:
             print(f"\n❌ Upload error: {e}")
             sys.exit(1)
+
+    # Publish to marketplace if requested
+    marketplace_name = getattr(args, "marketplace", None)
+    if marketplace_name:
+        try:
+            from skill_seekers.mcp.marketplace_publisher import MarketplacePublisher
+
+            publisher = MarketplacePublisher()
+            pub_result = publisher.publish(
+                skill_dir=args.skill_directory,
+                marketplace_name=marketplace_name,
+                category=getattr(args, "marketplace_category", "development"),
+                create_branch=getattr(args, "create_branch", False),
+                force=True,
+            )
+            if pub_result["success"]:
+                print(f"\n✅ {pub_result['message']}")
+                print(f"   Plugin: {pub_result['plugin_path']}")
+                print(f"   Branch: {pub_result['branch']}")
+                print(f"   Commit: {pub_result['commit_sha']}")
+            else:
+                print(f"\n⚠️  Marketplace publish failed: {pub_result['message']}")
+        except Exception as e:
+            print(f"\n⚠️  Marketplace publish failed: {e}")
+            print("   Packaging was successful — publish manually later.")
 
     sys.exit(0)
 

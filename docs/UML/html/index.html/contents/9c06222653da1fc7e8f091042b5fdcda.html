@@ -62,7 +62,7 @@
         <h3>Description</h3>
         <div>
           
-            <p>Unified create command that auto-detects source type from user input. Delegates to SourceDetector for type detection, then routes to the appropriate scraper module. Recommended entry point for users.</p>
+            <p>Unified create command implementation. Auto-detects source type from user input via SourceDetector, initializes ExecutionContext as single source of truth, then routes to the appropriate SkillConverter via get<em>converter(). Runs centralized enhancement and workflows after conversion. File: src/skill</em>seekers/cli/create_command.py</p>
           
         </div>
       </section>
@@ -135,6 +135,40 @@
       <!-- Attributes -->
 
       
+      <section>
+        <h3>Attributes</h3>
+        <table class="table table-striped table-bordered">
+          <tr>
+            <th>Visibility</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="7c7f1fb877a4d86009e01f0293d6f93c.html">args</a></td>
+            <td>argparse.Namespace </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>public</td>
+            <td><a href="62ede64afe3a3131ff854bbeac9ca20f.html">source_info</a></td>
+            <td>SourceInfo </td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="9412e590b5262930491197da221fb57c.html">_parser_defaults</a></td>
+            <td>dict[str, Any] </td>
+            <td></td>
+          </tr>
+          
+        </table>
+      </section>
+      
 
       <!-- Operations -->
 
@@ -150,7 +184,43 @@
           
           <tr>
             <td>public</td>
-            <td><a href="9d09629b8740aca2f9c171b068063153.html">execute()</a></td>
+            <td><a href="9d09629b8740aca2f9c171b068063153.html">execute(): int()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="9d6a52bb4bbb781e074da77f7191f579.html">_build_config(source_type, ctx): dict()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="0a98b22d6960a0d5d4b45307cf38a376.html">_route_to_scraper(): int()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="f51d3524b226f479ae309488cb1cac6e.html">_validate_arguments()()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="1f134fe7a8d24985c2bb689805de76e8.html">_run_enhancement(ctx)()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="15e9103b13f3a783fe6db5bf294e12f8.html">_is_explicitly_set(arg_name, arg_value): bool()</a></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>private</td>
+            <td><a href="f4c5bbc2a24ad0ce63343911b68c911a.html">_run_workflows()()</a></td>
             <td></td>
           </tr>
           
@@ -352,6 +422,8 @@
         
         <li><a href='a484177a9a1023d25d34d009f77a1a32.html'><span class='node-icon staruml-icon icon-UMLClass'></span>SourceDetector</a></li>
         
+        <li><a href='4853ebf39b0adf67fd356a85aca7a430.html'><span class='node-icon staruml-icon icon-UMLClass'></span>ExecutionContext</a></li>
+        
     </ul>
 </section>
 
@@ -383,6 +455,8 @@
         
         <li><a href='71fbf9038914b12487e9916aff3c6532.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(CreateCommand→SourceDetector)</a></li>
         
+        <li><a href='070148fb11e435ea8f68b1d19cc19db3.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>uses (CreateCommand→ExecutionContext)</a></li>
+        
     </ul>
 </section>
 
@@ -397,6 +471,8 @@
     <ul class="nav nav-list">
         
         <li><a href='71fbf9038914b12487e9916aff3c6532.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>(CreateCommand→SourceDetector)</a></li>
+        
+        <li><a href='070148fb11e435ea8f68b1d19cc19db3.html'><span class='node-icon staruml-icon icon-UMLDependency'></span>uses (CreateCommand→ExecutionContext)</a></li>
         
     </ul>
 </section>

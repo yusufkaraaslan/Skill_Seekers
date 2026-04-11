@@ -113,8 +113,8 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
         args: Dictionary with:
             - skill_dir (str): Path to skill directory (e.g., output/react/)
             - auto_upload (bool): Try to upload automatically if API key is available (default: True)
-            - target (str): Target platform (default: 'claude')
-                           Options: 'claude', 'gemini', 'openai', 'markdown'
+            - target (str): Target platform (default: 'auto')
+                           Options: 'auto', 'claude', 'gemini', 'openai', 'markdown'
 
     Returns:
         List of TextContent with packaging results
@@ -123,7 +123,11 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
 
     skill_dir = args["skill_dir"]
     auto_upload = args.get("auto_upload", True)
-    target = args.get("target", "claude")
+    target = args.get("target", "auto")
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
 
     # Get platform adaptor
     try:
@@ -232,8 +236,8 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
     Args:
         args: Dictionary with:
             - skill_zip (str): Path to skill package (.zip or .tar.gz)
-            - target (str): Target platform (default: 'claude')
-                           Options: 'claude', 'gemini', 'openai'
+            - target (str): Target platform (default: 'auto')
+                           Options: 'auto', 'claude', 'gemini', 'openai'
                            Note: 'markdown' does not support upload
             - api_key (str, optional): API key (uses env var if not provided)
 
@@ -243,7 +247,11 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
     from skill_seekers.cli.adaptors import get_adaptor
 
     skill_zip = args["skill_zip"]
-    target = args.get("target", "claude")
+    target = args.get("target", "auto")
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     api_key = args.get("api_key")
 
     # Get platform adaptor
@@ -296,11 +304,11 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
     Args:
         args: Dictionary with:
             - skill_dir (str): Path to skill directory
-            - target (str): Target platform (default: 'claude')
-                           Options: 'claude', 'gemini', 'openai'
+            - target (str): Target platform (default: 'auto')
+                           Options: 'auto', 'claude', 'gemini', 'openai'
                            Note: 'markdown' does not support enhancement
             - mode (str): Enhancement mode (default: 'local')
-                         'local': Uses Claude Code Max (no API key)
+                         'local': Uses AI coding agent (no API key)
                          'api': Uses platform API (requires API key)
             - api_key (str, optional): API key for 'api' mode
 
@@ -310,7 +318,11 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
     from skill_seekers.cli.adaptors import get_adaptor
 
     skill_dir = Path(args.get("skill_dir"))
-    target = args.get("target", "claude")
+    target = args.get("target", "auto")
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     mode = args.get("mode", "local")
     api_key = args.get("api_key")
 
@@ -348,8 +360,8 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
     output_lines.append("")
 
     if mode == "local":
-        # Use local enhancement (Claude Code)
-        output_lines.append("Using Claude Code Max (local, no API key required)")
+        # Use local enhancement (AI coding agent)
+        output_lines.append("Using AI coding agent (local, no API key required)")
         output_lines.append("Running enhancement in headless mode...")
         output_lines.append("")
 
@@ -437,7 +449,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             - auto_upload (bool): Upload after packaging (default: True)
             - unlimited (bool): Remove page limits (default: False)
             - dry_run (bool): Preview only (default: False)
-            - target (str): Target LLM platform (default: "claude")
+            - target (str): Target LLM platform (default: "auto")
 
     Returns:
         List of TextContent with workflow progress and results
@@ -455,7 +467,14 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
     auto_upload = args.get("auto_upload", True)
     unlimited = args.get("unlimited", False)
     dry_run = args.get("dry_run", False)
-    target = args.get("target", "claude")
+    target = args.get("target", "auto")
+    marketplace_arg = args.get("marketplace")
+    marketplace_category = args.get("marketplace_category", "development")
+    create_branch = args.get("create_branch", False)
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
 
     # Get platform adaptor
     try:
@@ -559,6 +578,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 with open(workflow_state["config_path"]) as f:
                     config = json.load(f)
                     workflow_state["skill_name"] = config.get("name", "unknown")
+                    workflow_state["config_data"] = config
             except Exception as e:
                 return [
                     TextContent(
@@ -637,7 +657,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append(stdout)
             workflow_state["phases_completed"].append("enhance_skill")
         else:
-            output_lines.append("  [DRY RUN] Would enhance SKILL.md with Claude Code")
+            output_lines.append("  [DRY RUN] Would enhance SKILL.md with AI agent")
 
         output_lines.append("")
 
@@ -702,6 +722,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
         output_lines.append("")
 
         # ===== PHASE 5: Upload (Optional) =====
+        has_api_key = False  # Initialize before conditional block
         if auto_upload:
             phase_num = "5/5" if config_name else "4/4"
             output_lines.append(f"📤 PHASE {phase_num}: Upload to {adaptor.PLATFORM_NAME}")
@@ -766,6 +787,62 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                 )
 
             output_lines.append("")
+
+        # ===== PHASE 6: Publish to Marketplace (Optional) =====
+        marketplace_targets = []
+        if marketplace_arg:
+            marketplace_targets.append(
+                {"marketplace": marketplace_arg, "category": marketplace_category}
+            )
+        else:
+            cd = workflow_state.get("config_data", {})
+            if isinstance(cd, dict):
+                marketplace_targets = cd.get("marketplace_targets", [])
+
+        if marketplace_targets:
+            phase_num = len(workflow_state["phases_completed"]) + 1
+            output_lines.append(f"{'=' * 70}")
+            output_lines.append(
+                f"PHASE {phase_num}: Publish to Marketplace"
+                f" ({len(marketplace_targets)} target{'s' if len(marketplace_targets) > 1 else ''})"
+            )
+            output_lines.append(f"{'=' * 70}")
+            output_lines.append("")
+
+            if not dry_run:
+                from .marketplace_tools import publish_to_marketplace_tool
+
+                for mp_target in marketplace_targets:
+                    mp_name = mp_target.get("marketplace", "")
+                    mp_cat = mp_target.get("category", "development")
+                    output_lines.append(f"Publishing to marketplace '{mp_name}'...")
+
+                    try:
+                        pub_result = await publish_to_marketplace_tool(
+                            {
+                                "skill_dir": workflow_state["skill_dir"],
+                                "marketplace": mp_name,
+                                "category": mp_cat,
+                                "create_branch": create_branch,
+                                "force": True,
+                            }
+                        )
+                        pub_output = pub_result[0].text if pub_result else "No output"
+                        output_lines.append(pub_output)
+                        workflow_state["phases_completed"].append(
+                            f"publish_to_marketplace({mp_name})"
+                        )
+                    except Exception as e:
+                        output_lines.append(f"Failed to publish to '{mp_name}': {str(e)}")
+                    output_lines.append("")
+            else:
+                for mp_target in marketplace_targets:
+                    mp_name = mp_target.get("marketplace", "")
+                    mp_cat = mp_target.get("category", "development")
+                    output_lines.append(
+                        f"  [DRY RUN] Would publish to marketplace '{mp_name}' (category: {mp_cat})"
+                    )
+                output_lines.append("")
 
         # ===== WORKFLOW SUMMARY =====
         output_lines.append("=" * 70)

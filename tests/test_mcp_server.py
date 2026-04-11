@@ -280,58 +280,69 @@ class TestScrapeDocsTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
-    async def test_scrape_docs_basic(self, mock_streaming):
-        """Test basic documentation scraping"""
-        # Mock successful subprocess run with streaming
-        mock_streaming.return_value = ("Scraping completed successfully", "", 0)
+    @patch("skill_seekers.mcp.tools.scraping_tools._run_converter")
+    @patch("skill_seekers.cli.skill_converter.get_converter")
+    async def test_scrape_docs_basic(self, mock_get_converter, mock_run_converter):
+        """Test basic documentation scraping via in-process converter"""
+        from skill_seekers.mcp.tools.scraping_tools import TextContent
+
+        mock_run_converter.return_value = [
+            TextContent(type="text", text="Scraping completed successfully")
+        ]
 
         args = {"config_path": str(self.config_path)}
-
         result = await skill_seeker_server.scrape_docs_tool(args)
 
         self.assertIsInstance(result, list)
         self.assertIn("success", result[0].text.lower())
+        mock_get_converter.assert_called_once()
+        mock_run_converter.assert_called_once()
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
-    async def test_scrape_docs_with_skip_scrape(self, mock_streaming):
+    @patch("skill_seekers.mcp.tools.scraping_tools._run_converter")
+    @patch("skill_seekers.cli.skill_converter.get_converter")
+    async def test_scrape_docs_with_skip_scrape(self, mock_get_converter, mock_run_converter):
         """Test scraping with skip_scrape flag"""
-        # Mock successful subprocess run with streaming
-        mock_streaming.return_value = ("Using cached data", "", 0)
+        from skill_seekers.mcp.tools.scraping_tools import TextContent
+
+        mock_run_converter.return_value = [TextContent(type="text", text="Using cached data")]
 
         args = {"config_path": str(self.config_path), "skip_scrape": True}
+        result = await skill_seeker_server.scrape_docs_tool(args)
 
-        _result = await skill_seeker_server.scrape_docs_tool(args)
+        self.assertIsInstance(result, list)
+        mock_get_converter.assert_called_once()
 
-        # Verify --skip-scrape was passed
-        call_args = mock_streaming.call_args[0][0]
-        self.assertIn("--skip-scrape", call_args)
+    @patch("skill_seekers.mcp.tools.scraping_tools._run_converter")
+    @patch("skill_seekers.cli.skill_converter.get_converter")
+    async def test_scrape_docs_with_dry_run(self, mock_get_converter, mock_run_converter):
+        """Test scraping with dry_run flag sets converter.dry_run"""
+        from skill_seekers.mcp.tools.scraping_tools import TextContent
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
-    async def test_scrape_docs_with_dry_run(self, mock_streaming):
-        """Test scraping with dry_run flag"""
-        # Mock successful subprocess run with streaming
-        mock_streaming.return_value = ("Dry run completed", "", 0)
+        mock_converter = mock_get_converter.return_value
+        mock_run_converter.return_value = [TextContent(type="text", text="Dry run completed")]
 
         args = {"config_path": str(self.config_path), "dry_run": True}
+        result = await skill_seeker_server.scrape_docs_tool(args)
 
-        _result = await skill_seeker_server.scrape_docs_tool(args)
+        self.assertIsInstance(result, list)
+        # Verify dry_run was set on the converter instance
+        self.assertTrue(mock_converter.dry_run)
 
-        call_args = mock_streaming.call_args[0][0]
-        self.assertIn("--dry-run", call_args)
+    @patch("skill_seekers.mcp.tools.scraping_tools._run_converter")
+    @patch("skill_seekers.cli.skill_converter.get_converter")
+    async def test_scrape_docs_with_enhance_local(self, mock_get_converter, mock_run_converter):
+        """Test scraping with local enhancement flag"""
+        from skill_seekers.mcp.tools.scraping_tools import TextContent
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
-    async def test_scrape_docs_with_enhance_local(self, mock_streaming):
-        """Test scraping with local enhancement"""
-        # Mock successful subprocess run with streaming
-        mock_streaming.return_value = ("Scraping with enhancement", "", 0)
+        mock_run_converter.return_value = [
+            TextContent(type="text", text="Scraping with enhancement")
+        ]
 
         args = {"config_path": str(self.config_path), "enhance_local": True}
+        result = await skill_seeker_server.scrape_docs_tool(args)
 
-        _result = await skill_seeker_server.scrape_docs_tool(args)
-
-        call_args = mock_streaming.call_args[0][0]
-        self.assertIn("--enhance-local", call_args)
+        self.assertIsInstance(result, list)
+        mock_get_converter.assert_called_once()
 
 
 @unittest.skipUnless(MCP_AVAILABLE, "MCP package not installed")

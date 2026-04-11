@@ -132,6 +132,12 @@ AGENT_PRESETS = {
         "command": ["opencode"],
         "supports_skip_permissions": False,
     },
+    "kimi": {
+        "display_name": "Kimi Code CLI",
+        "command": ["kimi", "--print", "--input-format", "text", "--work-dir", "{skill_dir}"],
+        "supports_skip_permissions": False,
+        "uses_stdin": True,
+    },
 }
 
 
@@ -146,6 +152,7 @@ def _normalize_agent_name(agent_name: str) -> str:
         "copilot-cli": "copilot",
         "open-code": "opencode",
         "open_code": "opencode",
+        "kimi-cli": "kimi",
     }
     return aliases.get(normalized, normalized)
 
@@ -193,11 +200,22 @@ class LocalSkillEnhancer:
                 raise ValueError(f"Executable '{executable}' not found in PATH")
 
     def _resolve_agent(self, agent, agent_cmd):
+        # Priority: explicit param > ExecutionContext > env var > default
+        try:
+            from skill_seekers.cli.execution_context import ExecutionContext
+
+            ctx = ExecutionContext.get()
+            ctx_agent = ctx.enhancement.agent or ""
+            ctx_cmd = ctx.enhancement.agent_cmd or ""
+        except Exception:
+            ctx_agent = ""
+            ctx_cmd = ""
+
         env_agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip()
         env_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
 
-        agent_name = _normalize_agent_name(agent or env_agent or "claude")
-        cmd_override = agent_cmd or env_cmd or None
+        agent_name = _normalize_agent_name(agent or ctx_agent or env_agent or "claude")
+        cmd_override = agent_cmd or ctx_cmd or env_cmd or None
 
         if agent_name == "custom":
             if not cmd_override:
@@ -238,6 +256,8 @@ class LocalSkillEnhancer:
             if "{prompt_file}" in arg:
                 cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
                 uses_prompt_file = True
+            if "{skill_dir}" in arg:
+                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir.resolve()))
 
         return cmd_parts, uses_prompt_file
 
@@ -652,7 +672,7 @@ After writing, the file SKILL.md should:
         except Exception:
             return None
 
-    def run(self, headless=True, timeout=600, background=False, daemon=False):
+    def run(self, headless=True, timeout=2700, background=False, daemon=False):
         """Main enhancement workflow with automatic smart summarization for large skills.
 
         Automatically detects large skills (>30K chars) and applies smart summarization
@@ -666,7 +686,7 @@ After writing, the file SKILL.md should:
 
         Args:
             headless: If True, run local agent directly without opening terminal (default: True)
-            timeout: Maximum time to wait for enhancement in seconds (default: 600 = 10 minutes)
+            timeout: Maximum time to wait for enhancement in seconds (default: 2700 = 45 minutes)
             background: If True, run in background and return immediately (default: False)
             daemon: If True, run as persistent daemon with monitoring (default: False)
 
@@ -711,7 +731,7 @@ After writing, the file SKILL.md should:
             print("⚠️  LARGE SKILL DETECTED")
             print(f"  📊 Reference content: {total_size:,} characters")
             if self.agent == "claude":
-                print("  💡 Claude CLI limit: ~30,000-40,000 characters")
+                print("  💡 CLI agent limit: ~30,000-40,000 characters")
             else:
                 print("  💡 Local CLI agents often have input limits; summarizing to be safe")
             print()
@@ -739,7 +759,7 @@ After writing, the file SKILL.md should:
         if use_summarization:
             print(f"  ✓ Prompt created and optimized ({len(prompt):,} characters)")
             if self.agent == "claude":
-                print("  ✓ Ready for Claude CLI (within safe limits)")
+                print("  ✓ Ready for CLI agent (within safe limits)")
             else:
                 print("  ✓ Ready for local CLI (within safe limits)")
             print()
@@ -905,6 +925,45 @@ rm {prompt_file}
                     print("❌ SKILL.md not found after enhancement")
                     return False
             else:
+                # Exit code 75 = EX_TEMPFAIL (retryable temporary failure from Kimi CLI)
+                if result.returncode == 75:
+                    print(f"⚠️  {self.agent_display} returned temporary failure (exit code: 75)")
+                    print(
+                        "   This usually means a transient API issue (timeout, rate limit, or empty response)."
+                    )
+                    print("   Retrying once in 5 seconds...")
+                    print()
+                    time.sleep(5)
+                    result_retry, error = self._run_agent_command(
+                        prompt_file, timeout, include_permissions_flag=True
+                    )
+                    if error:
+                        print(f"❌ {error}")
+                        with contextlib.suppress(Exception):
+                            os.unlink(prompt_file)
+                        return False
+                    if result_retry.returncode == 0:
+                        elapsed = time.time() - start_time
+                        if self.skill_md_path.exists():
+                            new_mtime = self.skill_md_path.stat().st_mtime
+                            new_size = self.skill_md_path.stat().st_size
+                            if new_mtime > initial_mtime and new_size > initial_size:
+                                print(f"✅ Enhancement complete on retry! ({elapsed:.1f} seconds)")
+                                print(f"   SKILL.md updated: {new_size:,} bytes")
+                                print()
+                                with contextlib.suppress(Exception):
+                                    os.unlink(prompt_file)
+                                return True
+                    print(f"❌ Retry also failed (exit code: {result_retry.returncode})")
+                    if result_retry.stderr:
+                        stderr_lines = result_retry.stderr.strip().split("\n")
+                        for line in stderr_lines[:10]:
+                            print(f"   | {line}")
+                    print("   Try again later or use API mode:")
+                    print("     export ANTHROPIC_API_KEY=sk-ant-...")
+                    print(f"     skill-seekers enhance {self.skill_dir} --target claude")
+                    return False
+
                 print(f"❌ {self.agent_display} returned error (exit code: {result.returncode})")
                 if result.stderr:
                     stderr_lines = result.stderr.strip().split("\n")
@@ -919,7 +978,7 @@ rm {prompt_file}
                     ):
                         print()
                         print("   ⚠️  This looks like a root/permission error.")
-                        print("   Claude Code CLI refuses to run as root (security policy).")
+                        print("   The CLI agent refuses to run as root (security policy).")
                         print("   Use API mode instead:")
                         print("     export ANTHROPIC_API_KEY=sk-ant-...")
                         print(f"     skill-seekers enhance {self.skill_dir} --target claude")
@@ -1289,10 +1348,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Auto-detection (no flags needed):
-  If ANTHROPIC_API_KEY is set  → Claude API mode
+  If ANTHROPIC_API_KEY is set  → Anthropic API mode
   If GOOGLE_API_KEY is set     → Gemini API mode
   If OPENAI_API_KEY is set     → OpenAI API mode
-  Otherwise                    → LOCAL mode (Claude Code Max, free)
+  Otherwise                    → LOCAL mode (coding agent CLI, free)
 
 Examples:
   # Auto-detect mode based on env vars (recommended)
@@ -1373,11 +1432,16 @@ Force Mode (LOCAL only, Default ON):
         help="Disable force mode: enable confirmation prompts (default: force mode ON)",
     )
 
+    from skill_seekers.cli.agent_client import get_default_timeout
+
     parser.add_argument(
         "--timeout",
         type=int,
-        default=600,
-        help="Timeout in seconds for headless mode (default: 600 = 10 minutes)",
+        default=get_default_timeout(),
+        help=(
+            "Timeout in seconds for headless mode "
+            "(default: 45 minutes, set SKILL_SEEKER_ENHANCE_TIMEOUT to override)"
+        ),
     )
 
     args = parser.parse_args()

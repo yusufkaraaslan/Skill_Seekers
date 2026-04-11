@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Video to Claude Skill Converter
+Video to AI Skill Converter
 
 Extracts transcripts, metadata, and visual content from videos
-and converts them into Claude AI skills.
+and converts them into AI skills.
 
 Supports YouTube videos/playlists, Vimeo, and local video files.
 
@@ -14,14 +14,13 @@ Usage:
     python3 video_scraper.py --from-json video_extracted.json
 """
 
-import argparse
 import json
 import logging
 import os
 import re
-import sys
 import time
 
+from skill_seekers.cli.skill_converter import SkillConverter
 from skill_seekers.cli.video_models import (
     AudioVisualAlignment,
     TextGroupTimeline,
@@ -264,7 +263,7 @@ def _is_likely_code(text: str) -> bool:
 def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None) -> None:
     """Use AI to clean Code Timeline section in a reference file.
 
-    Sends the reference file content to Claude with a focused prompt
+    Sends the reference file content to the AI with a focused prompt
     to reconstruct the Code Timeline from noisy OCR + transcript context.
     """
     try:
@@ -300,7 +299,7 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
     try:
         client = anthropic.Anthropic(**client_kwargs)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
             max_tokens=8000,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -318,8 +317,10 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
 # =============================================================================
 
 
-class VideoToSkillConverter:
-    """Convert video content to Claude skill."""
+class VideoToSkillConverter(SkillConverter):
+    """Convert video content to AI skill."""
+
+    SOURCE_TYPE = "video"
 
     def __init__(self, config: dict):
         """Initialize converter.
@@ -333,6 +334,7 @@ class VideoToSkillConverter:
                 - visual: Whether to enable visual extraction
                 - whisper_model: Whisper model size
         """
+        super().__init__(config)
         self.config = config
         self.name = config["name"]
         self.description = config.get("description", "")
@@ -354,6 +356,10 @@ class VideoToSkillConverter:
 
         # Results
         self.result: VideoScraperResult | None = None
+
+    def extract(self):
+        """Extract content from video source (SkillConverter interface)."""
+        self.process()
 
     def process(self) -> VideoScraperResult:
         """Run the full video processing pipeline.
@@ -865,9 +871,12 @@ class VideoToSkillConverter:
         """First-pass: AI-clean reference files before SKILL.md enhancement.
 
         When enhance_level >= 2 and an API key is available, sends each
-        reference file to Claude to reconstruct noisy Code Timeline
+        reference file to the AI to reconstruct noisy Code Timeline
         sections using transcript context.
         """
+        # Note: Middle-layer AI cleaning currently only supports Anthropic API
+        # For other agents (kimi, etc.), this step is skipped and enhancement
+        # happens at the SKILL.md level instead of per-reference-file
         has_api_key = bool(
             os.environ.get("ANTHROPIC_API_KEY")
             or os.environ.get("ANTHROPIC_AUTH_TOKEN")
@@ -1012,237 +1021,3 @@ class VideoToSkillConverter:
             lines.append(f"- [{video.title}](references/{ref_filename})")
 
         return "\n".join(lines)
-
-
-# =============================================================================
-# CLI Entry Point
-# =============================================================================
-
-
-def main() -> int:
-    """Entry point for video scraper CLI.
-
-    Returns:
-        Exit code (0 for success, non-zero for error).
-    """
-    from skill_seekers.cli.arguments.video import add_video_arguments
-
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers-video",
-        description="Extract transcripts and metadata from videos and generate skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""\
-Examples:
-  skill-seekers video --url https://www.youtube.com/watch?v=...
-  skill-seekers video --video-file recording.mp4
-  skill-seekers video --playlist https://www.youtube.com/playlist?list=...
-  skill-seekers video --from-json video_extracted.json
-  skill-seekers video --url https://youtu.be/... --languages en,es
-""",
-    )
-
-    add_video_arguments(parser)
-    args = parser.parse_args()
-
-    # --setup: run GPU detection + dependency installation, then exit
-    if getattr(args, "setup", False):
-        from skill_seekers.cli.video_setup import run_setup
-
-        return run_setup(interactive=True)
-
-    # Setup logging
-    log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
-
-    # Validate inputs
-    has_source = any(
-        [
-            getattr(args, "url", None),
-            getattr(args, "video_file", None),
-            getattr(args, "playlist", None),
-        ]
-    )
-    has_json = getattr(args, "from_json", None)
-
-    if not has_source and not has_json:
-        parser.error("Must specify --url, --video-file, --playlist, or --from-json")
-
-    # Parse and validate time clipping
-    raw_start = getattr(args, "start_time", None)
-    raw_end = getattr(args, "end_time", None)
-    clip_start: float | None = None
-    clip_end: float | None = None
-
-    if raw_start is not None:
-        try:
-            clip_start = parse_time_to_seconds(raw_start)
-        except ValueError as exc:
-            parser.error(f"--start-time: {exc}")
-    if raw_end is not None:
-        try:
-            clip_end = parse_time_to_seconds(raw_end)
-        except ValueError as exc:
-            parser.error(f"--end-time: {exc}")
-
-    if clip_start is not None or clip_end is not None:
-        if getattr(args, "playlist", None):
-            parser.error("--start-time/--end-time cannot be used with --playlist")
-        if clip_start is not None and clip_end is not None and clip_start >= clip_end:
-            parser.error(f"--start-time ({clip_start}s) must be before --end-time ({clip_end}s)")
-
-    # Build config
-    config = {
-        "name": args.name or "video_skill",
-        "description": getattr(args, "description", None) or "",
-        "output": getattr(args, "output", None),
-        "url": getattr(args, "url", None),
-        "video_file": getattr(args, "video_file", None),
-        "playlist": getattr(args, "playlist", None),
-        "languages": getattr(args, "languages", "en"),
-        "visual": getattr(args, "visual", False),
-        "whisper_model": getattr(args, "whisper_model", "base"),
-        "visual_interval": getattr(args, "visual_interval", 0.7),
-        "visual_min_gap": getattr(args, "visual_min_gap", 0.5),
-        "visual_similarity": getattr(args, "visual_similarity", 3.0),
-        "vision_ocr": getattr(args, "vision_ocr", False),
-        "start_time": clip_start,
-        "end_time": clip_end,
-    }
-
-    converter = VideoToSkillConverter(config)
-
-    # Dry run
-    if args.dry_run:
-        logger.info("DRY RUN — would process:")
-        for key in ["url", "video_file", "playlist"]:
-            if config.get(key):
-                logger.info(f"  {key}: {config[key]}")
-        logger.info(f"  name: {config['name']}")
-        logger.info(f"  languages: {config['languages']}")
-        logger.info(f"  visual: {config['visual']}")
-        if clip_start is not None or clip_end is not None:
-            start_str = _format_duration(clip_start) if clip_start is not None else "start"
-            end_str = _format_duration(clip_end) if clip_end is not None else "end"
-            logger.info(f"  clip range: {start_str} - {end_str}")
-        return 0
-
-    # Workflow 1: Build from JSON
-    if has_json:
-        logger.info(f"Loading extracted data from {args.from_json}")
-        converter.load_extracted_data(args.from_json)
-        converter.build_skill()
-        logger.info(f"Skill built at {converter.skill_dir}")
-        return 0
-
-    # Workflow 2: Full extraction + build
-    try:
-        result = converter.process()
-        if not result.videos:
-            logger.error("No videos were successfully processed")
-            if result.errors:
-                for err in result.errors:
-                    logger.error(f"  {err['source']}: {err['error']}")
-            return 1
-
-        converter.save_extracted_data()
-        converter.build_skill()
-
-        logger.info(f"\nSkill built successfully at {converter.skill_dir}")
-        logger.info(f"  Videos: {len(result.videos)}")
-        logger.info(f"  Segments: {result.total_segments}")
-        logger.info(f"  Duration: {_format_duration(result.total_duration_seconds)}")
-        logger.info(f"  Processing time: {result.processing_time_seconds:.1f}s")
-
-        if result.warnings:
-            for w in result.warnings:
-                logger.warning(f"  {w}")
-
-    except RuntimeError as e:
-        logger.error(str(e))
-        return 1
-
-    # Enhancement
-    enhance_level = getattr(args, "enhance_level", 0)
-    if enhance_level > 0:
-        # Pass 1: Clean reference files (Code Timeline reconstruction)
-        converter._enhance_reference_files(enhance_level, args)
-
-        # Auto-inject video-tutorial workflow if no workflow specified
-        if not getattr(args, "enhance_workflow", None):
-            args.enhance_workflow = ["video-tutorial"]
-
-        # Pass 2: Run workflow stages (specialized video analysis)
-        try:
-            from skill_seekers.cli.workflow_runner import run_workflows
-
-            video_context = {
-                "skill_name": converter.name,
-                "skill_dir": converter.skill_dir,
-                "source_type": "video_tutorial",
-            }
-            run_workflows(args, context=video_context)
-        except ImportError:
-            logger.debug("Workflow runner not available, skipping workflow stages")
-
-        # Run traditional SKILL.md enhancement (reads references + rewrites)
-        _run_video_enhancement(converter.skill_dir, enhance_level, args)
-
-    return 0
-
-
-def _run_video_enhancement(skill_dir: str, enhance_level: int, args) -> None:
-    """Run traditional SKILL.md enhancement with video-aware prompt.
-
-    This calls the same SkillEnhancer used by other scrapers, but the prompt
-    auto-detects video_tutorial source type and uses a video-specific prompt.
-    """
-    import os
-    import subprocess
-
-    has_api_key = bool(
-        os.environ.get("ANTHROPIC_API_KEY")
-        or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-        or getattr(args, "api_key", None)
-    )
-
-    if not has_api_key:
-        logger.info("\n💡 Enhance your video skill with AI:")
-        logger.info(f"  export ANTHROPIC_API_KEY=sk-ant-...")
-        logger.info(f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}")
-        return
-
-    logger.info(f"\n🤖 Running video-aware SKILL.md enhancement (level {enhance_level})...")
-
-    try:
-        enhance_cmd = ["skill-seekers-enhance", skill_dir]
-        enhance_cmd.extend(["--enhance-level", str(enhance_level)])
-        api_key = getattr(args, "api_key", None)
-        if api_key:
-            enhance_cmd.extend(["--api-key", api_key])
-
-        logger.info(
-            "Starting video skill enhancement (this may take 10+ minutes "
-            "for large videos with AI enhancement)..."
-        )
-        subprocess.run(enhance_cmd, check=True, timeout=1800)
-        logger.info("Video skill enhancement complete!")
-    except subprocess.TimeoutExpired:
-        logger.warning(
-            "⚠ Enhancement timed out after 30 minutes. "
-            "The skill was still built without enhancement. "
-            "You can retry manually with:\n"
-            f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}"
-        )
-    except subprocess.CalledProcessError as exc:
-        logger.warning(
-            f"⚠ Enhancement failed (exit code {exc.returncode}), "
-            "but skill was still built. You can retry manually with:\n"
-            f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}"
-        )
-    except FileNotFoundError:
-        logger.warning("⚠ skill-seekers-enhance not found. Run manually:")
-        logger.info(f"  skill-seekers enhance {skill_dir} --enhance-level {enhance_level}")
-
-
-if __name__ == "__main__":
-    sys.exit(main())

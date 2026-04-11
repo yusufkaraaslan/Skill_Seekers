@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-PDF Documentation to Claude Skill Converter (Task B1.6)
+PDF Documentation to AI Skill Converter (Task B1.6)
 
-Converts PDF documentation into Claude AI skills.
+Converts PDF documentation into AI skills.
 Uses pdf_extractor_poc.py for extraction, builds skill structure.
 
 Usage:
@@ -11,16 +11,14 @@ Usage:
     python3 pdf_scraper.py --from-json manual_extracted.json
 """
 
-import argparse
 import json
-import logging
 import os
 import re
-import sys
 from pathlib import Path
 
 # Import the PDF extractor
 from .pdf_extractor_poc import PDFExtractor
+from .skill_converter import SkillConverter
 
 
 def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str:
@@ -62,10 +60,13 @@ def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str
     )
 
 
-class PDFToSkillConverter:
-    """Convert PDF documentation to Claude skill"""
+class PDFToSkillConverter(SkillConverter):
+    """Convert PDF documentation to AI skill"""
+
+    SOURCE_TYPE = "pdf"
 
     def __init__(self, config):
+        super().__init__(config)
         self.config = config
         self.name = config["name"]
         self.pdf_path = config.get("pdf_path", "")
@@ -86,6 +87,10 @@ class PDFToSkillConverter:
 
         # Extracted data
         self.extracted_data = None
+
+    def extract(self):
+        """SkillConverter interface — delegates to extract_pdf()."""
+        return self.extract_pdf()
 
     def extract_pdf(self):
         """Extract content from PDF using pdf_extractor_poc.py"""
@@ -631,145 +636,3 @@ class PDFToSkillConverter:
         safe = re.sub(r"[^\w\s-]", "", name.lower())
         safe = re.sub(r"[-\s]+", "_", safe)
         return safe
-
-
-def main():
-    from .arguments.pdf import add_pdf_arguments
-
-    parser = argparse.ArgumentParser(
-        description="Convert PDF documentation to Claude skill",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    add_pdf_arguments(parser)
-
-    args = parser.parse_args()
-
-    # Set logging level from behavior args
-    if getattr(args, "quiet", False):
-        logging.getLogger().setLevel(logging.WARNING)
-    elif getattr(args, "verbose", False):
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle --dry-run
-    if getattr(args, "dry_run", False):
-        source = args.pdf or args.config or args.from_json or "(none)"
-        print(f"\n{'=' * 60}")
-        print(f"DRY RUN: PDF Extraction")
-        print(f"{'=' * 60}")
-        print(f"Source:         {source}")
-        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
-        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
-        print(f"\n✅ Dry run complete")
-        return
-
-    # Validate inputs
-    if not (args.config or args.pdf or args.from_json):
-        parser.error("Must specify --config, --pdf, or --from-json")
-
-    # Load or create config
-    if args.config:
-        with open(args.config) as f:
-            config = json.load(f)
-    elif args.from_json:
-        # Build from extracted JSON
-        name = Path(args.from_json).stem.replace("_extracted", "")
-        config = {
-            "name": name,
-            "description": args.description or f"Use when referencing {name} documentation",
-        }
-        converter = PDFToSkillConverter(config)
-        converter.load_extracted_data(args.from_json)
-        converter.build_skill()
-        return
-    else:
-        # Direct PDF mode
-        if not args.name:
-            parser.error("Must specify --name with --pdf")
-        config = {
-            "name": args.name,
-            "pdf_path": args.pdf,
-            "description": args.description or f"Use when referencing {args.name} documentation",
-            "extract_options": {
-                "chunk_size": 10,
-                "min_quality": 5.0,
-                "extract_images": True,
-                "min_image_size": 100,
-            },
-        }
-
-    # Create converter
-    try:
-        converter = PDFToSkillConverter(config)
-
-        # Extract if needed
-        if config.get("pdf_path") and not converter.extract_pdf():
-            print("\n❌ PDF extraction failed - see error above", file=sys.stderr)
-            sys.exit(1)
-
-        # Build skill
-        converter.build_skill()
-
-        # ═══════════════════════════════════════════════════════════════════════════
-        # Enhancement Workflow Integration (Phase 2 - PDF Support)
-        # ═══════════════════════════════════════════════════════════════════════════
-        from skill_seekers.cli.workflow_runner import run_workflows
-
-        workflow_executed, workflow_names = run_workflows(args)
-        workflow_name = ", ".join(workflow_names) if workflow_names else None
-
-        # ═══════════════════════════════════════════════════════════════════════════
-        # Traditional Enhancement (complements workflow system)
-        # ═══════════════════════════════════════════════════════════════════════════
-        if getattr(args, "enhance_level", 0) > 0:
-            import os
-
-            api_key = getattr(args, "api_key", None) or os.environ.get("ANTHROPIC_API_KEY")
-            mode = "API" if api_key else "LOCAL"
-
-            print("\n" + "=" * 80)
-            print(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
-            print("=" * 80)
-            if workflow_executed:
-                print(f"   Running after workflow: {workflow_name}")
-                print(
-                    "   (Workflow provides specialized analysis, enhancement provides general improvements)"
-                )
-            print("")
-
-            skill_dir = converter.skill_dir
-            if api_key:
-                try:
-                    from skill_seekers.cli.enhance_skill import enhance_skill_md
-
-                    enhance_skill_md(skill_dir, api_key)
-                    print("✅ API enhancement complete!")
-                except ImportError:
-                    print("❌ API enhancement not available. Falling back to LOCAL mode...")
-                    from pathlib import Path
-                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                    enhancer = LocalSkillEnhancer(Path(skill_dir))
-                    enhancer.run(headless=True)
-                    print("✅ Local enhancement complete!")
-            else:
-                from pathlib import Path
-                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
-
-                enhancer = LocalSkillEnhancer(Path(skill_dir))
-                enhancer.run(headless=True)
-                print("✅ Local enhancement complete!")
-
-    except RuntimeError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Unexpected error during PDF processing: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

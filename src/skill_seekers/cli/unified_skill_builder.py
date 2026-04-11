@@ -15,6 +15,7 @@ discrepancies transparently.
 import json
 import logging
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -532,11 +533,48 @@ This skill synthesizes knowledge from multiple sources:
             logger.warning("No source SKILL.md files found, generating minimal SKILL.md (legacy)")
             content = self._generate_minimal_skill_md()
 
+        # Ensure frontmatter uses config name/description, not auto-generated slugs
+        content = self._normalize_frontmatter(content)
+
         # Write final content
         with open(skill_path, "w", encoding="utf-8") as f:
             f.write(content)
 
         logger.info(f"Created SKILL.md ({len(content)} chars, ~{len(content.split())} words)")
+
+    def _normalize_frontmatter(self, content: str) -> str:
+        """Ensure SKILL.md frontmatter uses the config name and description.
+
+        Standalone source SKILL.md files may have auto-generated slugs
+        (e.g., 'primetween-github-0-kyrylokuzyk-primetween'). This replaces
+        the name and description with the canonical values from the config.
+        """
+        if not content.startswith("---"):
+            return content
+
+        end = content.find("---", 3)
+        if end == -1:
+            return content
+
+        frontmatter = content[3:end]
+        body = content[end + 3 :]
+
+        canonical_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
+        frontmatter = re.sub(
+            r"^name:.*$", f"name: {canonical_name}", frontmatter, count=1, flags=re.MULTILINE
+        )
+
+        # Handle both single-line and multiline YAML description values
+        desc = self.description[:1024] if len(self.description) > 1024 else self.description
+        frontmatter = re.sub(
+            r"^description:.*(?:\n[ \t]+.*)*$",
+            f"description: {desc}",
+            frontmatter,
+            count=1,
+            flags=re.MULTILINE,
+        )
+
+        return f"---{frontmatter}---{body}"
 
     def _synthesize_docs_pdf(self, skill_mds: dict[str, str]) -> str:
         """Synthesize documentation + PDF sources.
@@ -958,8 +996,8 @@ This skill combines knowledge from multiple sources:
     def _format_api_entry(self, api_data: dict, inline_conflict: bool = False) -> str:
         """Format a single API entry."""
         name = api_data.get("name", "Unknown")
-        signature = api_data.get("merged_signature", name)
-        description = api_data.get("merged_description", "")
+        signature = api_data.get("merged_signature", api_data.get("signature", name))
+        description = api_data.get("merged_description", api_data.get("description", ""))
         warning = api_data.get("warning", "")
 
         entry = f"#### `{signature}`\n\n"
@@ -1302,7 +1340,7 @@ This skill combines knowledge from multiple sources:
             apis = self.merged_data.get("apis", {})
 
             for api_name in sorted(apis.keys()):
-                api_data = apis[api_name]
+                api_data = {**apis[api_name], "name": api_name}
                 entry = self._format_api_entry(api_data, inline_conflict=True)
                 f.write(entry)
 
@@ -1386,16 +1424,33 @@ This skill combines knowledge from multiple sources:
             if c3_data.get("architecture"):
                 languages = c3_data["architecture"].get("languages", {})
 
-            # If no languages from C3.7, try to get from GitHub data
-            # github_data already available from method scope
-            if not languages and github_data.get("languages"):
-                # GitHub data has languages as list, convert to dict with count 1
-                languages = dict.fromkeys(github_data["languages"], 1)
+            # If no languages from C3.7, try to get from code_analysis or GitHub data
+            if not languages:
+                code_analysis = github_data.get("code_analysis", {})
+                if code_analysis.get("files_analyzed") and code_analysis.get("languages_analyzed"):
+                    # Use code_analysis file counts per language
+                    files = code_analysis.get("files", [])
+                    lang_counts = {}
+                    for file_info in files:
+                        lang = file_info.get("language", "Unknown")
+                        lang_counts[lang] = lang_counts.get(lang, 0) + 1
+                    if lang_counts:
+                        languages = lang_counts
+                    else:
+                        # Fallback: total count attributed to primary language
+                        for lang in code_analysis["languages_analyzed"]:
+                            languages[lang] = code_analysis["files_analyzed"]
+                elif github_data.get("languages"):
+                    gh_langs = github_data["languages"]
+                    if isinstance(gh_langs, dict):
+                        languages = dict.fromkeys(gh_langs, 0)
+                    elif isinstance(gh_langs, list):
+                        languages = dict.fromkeys(gh_langs, 0)
 
             if languages:
                 f.write("**Languages Detected**:\n")
                 for lang, count in sorted(languages.items(), key=lambda x: x[1], reverse=True)[:5]:
-                    if isinstance(count, int):
+                    if isinstance(count, int) and count > 0:
                         f.write(f"- {lang}: {count} files\n")
                     else:
                         f.write(f"- {lang}\n")
@@ -1534,6 +1589,24 @@ This skill combines knowledge from multiple sources:
 
         logger.info("📐 Created ARCHITECTURE.md")
 
+    @staticmethod
+    def _make_path_relative(file_path: str) -> str:
+        """Strip absolute path prefixes, keeping only the repo-relative path."""
+        # Strip .skillseeker-cache repo clone paths
+        if ".skillseeker-cache" in file_path:
+            # Pattern: ...repos/{idx}_{owner}_{repo}/relative/path
+            parts = file_path.split("/repos/")
+            if len(parts) > 1:
+                # Skip the repo dir name (e.g., '0_Owner_Repo/')
+                remainder = parts[1]
+                slash_idx = remainder.find("/")
+                if slash_idx != -1:
+                    return remainder[slash_idx + 1 :]
+        # Generic: if it looks absolute, try to make it relative
+        if os.path.isabs(file_path):
+            return os.path.basename(file_path)
+        return file_path
+
     def _generate_pattern_references(self, c3_dir: str, patterns_data: dict):
         """Generate design pattern references (C3.1)."""
         if not patterns_data:
@@ -1556,7 +1629,8 @@ This skill combines knowledge from multiple sources:
             for file_data in patterns_data:
                 patterns = file_data.get("patterns", [])
                 if patterns:
-                    f.write(f"## {file_data['file_path']}\n\n")
+                    display_path = self._make_path_relative(file_data["file_path"])
+                    f.write(f"## {display_path}\n\n")
                     for p in patterns:
                         f.write(f"### {p['pattern_type']}\n\n")
                         if p.get("class_name"):

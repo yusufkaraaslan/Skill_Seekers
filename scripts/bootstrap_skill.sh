@@ -37,8 +37,8 @@ echo "✓ Done"
 # Step 2: Run codebase analysis
 echo "Step 2: Analyzing codebase..."
 rm -rf "$OUTPUT_DIR" 2>/dev/null || true
-uv run skill-seekers analyze \
-    --directory "$PROJECT_ROOT" \
+uv run skill-seekers create "$PROJECT_ROOT" \
+    --name "$SKILL_NAME" \
     --output "$OUTPUT_DIR" 2>&1 | grep -E "^(INFO|✅)" || true
 echo "✓ Done"
 

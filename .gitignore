@@ -20,6 +20,11 @@ wheels/
 .installed.cfg
 *.egg
 
+# Environment variables (secrets)
+.env
+.env.local
+.env.*.local
+
 # Virtual Environment
 venv/
 ENV/
@@ -61,6 +66,7 @@ htmlcov/
 skill-seekers-configs/
 .claude/skills
 .mcp.json
+!/.mcp.json
 !distribution/claude-plugin/.mcp.json
 settings.json
 USER_GUIDE.md

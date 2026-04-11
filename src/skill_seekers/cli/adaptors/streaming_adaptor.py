@@ -197,7 +197,7 @@ class StreamingAdaptorMixin:
         # Reference files
         refs_dir = skill_dir / "references"
         if refs_dir.exists():
-            for ref_file in sorted(refs_dir.glob("*.md")):
+            for ref_file in sorted(refs_dir.rglob("*.md")):
                 if ref_file.is_file() and not ref_file.name.startswith("."):
                     content = ref_file.read_text(encoding="utf-8")
                     char_count = len(content)

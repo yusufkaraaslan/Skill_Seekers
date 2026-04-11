@@ -261,7 +261,7 @@ Browse the reference files for detailed information on each topic. All files are
         # Add all reference files
         if refs_dir.exists():
             # Sort for consistent ordering
-            ref_files = sorted(refs_dir.glob("*.md"))
+            ref_files = sorted(refs_dir.rglob("*.md"))
 
             for ref_file in ref_files:
                 if ref_file.name == "index.md":

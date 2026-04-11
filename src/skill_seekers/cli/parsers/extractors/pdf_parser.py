@@ -45,7 +45,7 @@ class PdfParser(BaseParser):
             "verbose": self.options.get("verbose", False),
             "chunk_size": self.options.get("chunk_size", 10),
             "min_quality": self.options.get("min_quality", 0.0),
-            "extract_images": self.options.get("extract_images", False),
+            "extract_images": self.options.get("extract_images", True),
             "image_dir": self.options.get("image_dir"),
             "min_image_size": self.options.get("min_image_size", 100),
             "use_ocr": self.options.get("use_ocr", False),

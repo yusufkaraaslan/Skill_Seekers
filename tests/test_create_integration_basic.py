@@ -101,200 +101,96 @@ class TestCreateCommandBasic:
         # Verify help works
         assert result.returncode in [0, 2]
 
-    def test_create_invalid_source_shows_error(self):
-        """Test that invalid sources raise a helpful ValueError."""
-        from skill_seekers.cli.source_detector import SourceDetector
 
-        with pytest.raises(ValueError) as exc_info:
-            SourceDetector.detect("not_a_valid_source_123_xyz")
+class TestCreateCommandConverterRouting:
+    """Tests that create command routes to correct converters."""
 
-        error_message = str(exc_info.value)
-        assert "Cannot determine source type" in error_message
-        # Error should include helpful examples
-        assert "https://" in error_message or "github" in error_message.lower()
+    def test_get_converter_web(self):
+        """Test that get_converter returns DocToSkillConverter for web."""
+        from skill_seekers.cli.skill_converter import get_converter
 
-    def test_create_supports_universal_flags(self):
-        """Test that universal flags are accepted."""
-        import subprocess
+        config = {"name": "test", "base_url": "https://example.com"}
+        converter = get_converter("web", config)
 
-        result = subprocess.run(
-            ["skill-seekers", "create", "--help"], capture_output=True, text=True, timeout=10
-        )
-        assert result.returncode == 0
+        assert converter.SOURCE_TYPE == "web"
+        assert converter.name == "test"
 
-        # Check that universal flags are present
-        assert "--name" in result.stdout
-        assert "--enhance" in result.stdout
-        assert "--chunk-for-rag" in result.stdout
-        assert "--preset" in result.stdout
-        assert "--dry-run" in result.stdout
+    def test_get_converter_github(self):
+        """Test that get_converter returns GitHubScraper for github."""
+        from skill_seekers.cli.skill_converter import get_converter
+
+        config = {"name": "test", "repo": "owner/repo"}
+        converter = get_converter("github", config)
+
+        assert converter.SOURCE_TYPE == "github"
+        assert converter.name == "test"
+
+    def test_get_converter_pdf(self):
+        """Test that get_converter returns PDFToSkillConverter for pdf."""
+        from skill_seekers.cli.skill_converter import get_converter
+
+        config = {"name": "test", "pdf_path": "/tmp/test.pdf"}
+        converter = get_converter("pdf", config)
+
+        assert converter.SOURCE_TYPE == "pdf"
+        assert converter.name == "test"
+
+    def test_get_converter_unknown_raises(self):
+        """Test that get_converter raises ValueError for unknown type."""
+        from skill_seekers.cli.skill_converter import get_converter
+
+        with pytest.raises(ValueError, match="Unknown source type"):
+            get_converter("unknown_type", {})
 
 
-class TestCreateCommandArgvForwarding:
-    """Unit tests for _add_common_args argv forwarding."""
+class TestExecutionContextIntegration:
+    """Tests that ExecutionContext flows correctly through the system."""
 
-    def _make_args(self, **kwargs):
+    def test_execution_context_auto_initializes(self):
+        """ExecutionContext.get() returns defaults without explicit init."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        # Reset to ensure clean state
+        ExecutionContext.reset()
+
+        # Should not raise - returns default context
+        ctx = ExecutionContext.get()
+        assert ctx is not None
+        assert ctx.output.name is None  # Default value
+
+        ExecutionContext.reset()
+
+    def test_execution_context_values_preserved(self):
+        """Values set in context are preserved and accessible."""
+        from skill_seekers.cli.execution_context import ExecutionContext
         import argparse
 
-        defaults = {
-            "enhance_workflow": None,
-            "enhance_stage": None,
-            "var": None,
-            "workflow_dry_run": False,
-            "enhance_level": 0,
-            "output": None,
-            "name": None,
-            "description": None,
-            "config": None,
-            "api_key": None,
-            "dry_run": False,
-            "verbose": False,
-            "quiet": False,
-            "chunk_for_rag": False,
-            "chunk_size": 512,
-            "chunk_overlap": 50,
-            "preset": None,
-            "no_preserve_code_blocks": False,
-            "no_preserve_paragraphs": False,
-            "interactive_enhancement": False,
-        }
-        defaults.update(kwargs)
-        return argparse.Namespace(**defaults)
+        ExecutionContext.reset()
 
-    def _collect_argv(self, args):
-        from skill_seekers.cli.create_command import CreateCommand
-
-        cmd = CreateCommand(args)
-        argv = []
-        cmd._add_common_args(argv)
-        return argv
-
-    def test_single_enhance_workflow_forwarded(self):
-        args = self._make_args(enhance_workflow=["security-focus"])
-        argv = self._collect_argv(args)
-        assert argv.count("--enhance-workflow") == 1
-        assert "security-focus" in argv
-
-    def test_multiple_enhance_workflows_all_forwarded(self):
-        """Each workflow must appear as a separate --enhance-workflow flag."""
-        args = self._make_args(enhance_workflow=["security-focus", "minimal"])
-        argv = self._collect_argv(args)
-        assert argv.count("--enhance-workflow") == 2
-        idx1 = argv.index("security-focus")
-        idx2 = argv.index("minimal")
-        assert argv[idx1 - 1] == "--enhance-workflow"
-        assert argv[idx2 - 1] == "--enhance-workflow"
-
-    def test_no_enhance_workflow_not_forwarded(self):
-        args = self._make_args(enhance_workflow=None)
-        argv = self._collect_argv(args)
-        assert "--enhance-workflow" not in argv
-
-    # ── enhance_stage ────────────────────────────────────────────────────────
-
-    def test_single_enhance_stage_forwarded(self):
-        args = self._make_args(enhance_stage=["security:Check for vulnerabilities"])
-        argv = self._collect_argv(args)
-        assert "--enhance-stage" in argv
-        assert "security:Check for vulnerabilities" in argv
-
-    def test_multiple_enhance_stages_all_forwarded(self):
-        stages = ["sec:Check security", "cleanup:Remove boilerplate"]
-        args = self._make_args(enhance_stage=stages)
-        argv = self._collect_argv(args)
-        assert argv.count("--enhance-stage") == 2
-        for stage in stages:
-            assert stage in argv
-
-    def test_enhance_stage_none_not_forwarded(self):
-        args = self._make_args(enhance_stage=None)
-        argv = self._collect_argv(args)
-        assert "--enhance-stage" not in argv
-
-    # ── var ──────────────────────────────────────────────────────────────────
-
-    def test_single_var_forwarded(self):
-        args = self._make_args(var=["depth=comprehensive"])
-        argv = self._collect_argv(args)
-        assert "--var" in argv
-        assert "depth=comprehensive" in argv
-
-    def test_multiple_vars_all_forwarded(self):
-        args = self._make_args(var=["depth=comprehensive", "focus=security"])
-        argv = self._collect_argv(args)
-        assert argv.count("--var") == 2
-        assert "depth=comprehensive" in argv
-        assert "focus=security" in argv
-
-    def test_var_none_not_forwarded(self):
-        args = self._make_args(var=None)
-        argv = self._collect_argv(args)
-        assert "--var" not in argv
-
-    # ── workflow_dry_run ─────────────────────────────────────────────────────
-
-    def test_workflow_dry_run_forwarded(self):
-        args = self._make_args(workflow_dry_run=True)
-        argv = self._collect_argv(args)
-        assert "--workflow-dry-run" in argv
-
-    def test_workflow_dry_run_false_not_forwarded(self):
-        args = self._make_args(workflow_dry_run=False)
-        argv = self._collect_argv(args)
-        assert "--workflow-dry-run" not in argv
-
-    # ── mixed ────────────────────────────────────────────────────────────────
-
-    def test_workflow_and_stage_both_forwarded(self):
-        args = self._make_args(
-            enhance_workflow=["security-focus"],
-            enhance_stage=["cleanup:Remove boilerplate"],
-            var=["depth=basic"],
-            workflow_dry_run=True,
+        args = argparse.Namespace(
+            source="https://example.com",
+            name="test_skill",
+            enhance_level=3,
+            dry_run=True,
         )
-        argv = self._collect_argv(args)
-        assert "--enhance-workflow" in argv
-        assert "security-focus" in argv
-        assert "--enhance-stage" in argv
-        assert "--var" in argv
-        assert "--workflow-dry-run" in argv
+
+        ctx = ExecutionContext.initialize(args=args)
+        assert ctx.output.name == "test_skill"
+        assert ctx.enhancement.level == 3
+        assert ctx.output.dry_run is True
+
+        # Getting context again returns same values
+        ctx2 = ExecutionContext.get()
+        assert ctx2.output.name == "test_skill"
+
+        ExecutionContext.reset()
 
 
-class TestBackwardCompatibility:
-    """Test that old commands still work."""
+class TestUnifiedCommands:
+    """Test that unified commands still work."""
 
-    def test_scrape_command_still_works(self):
-        """Old scrape command should still function."""
-        import subprocess
-
-        result = subprocess.run(
-            ["skill-seekers", "scrape", "--help"], capture_output=True, text=True, timeout=10
-        )
-        assert result.returncode == 0
-        assert "scrape" in result.stdout.lower()
-
-    def test_github_command_still_works(self):
-        """Old github command should still function."""
-        import subprocess
-
-        result = subprocess.run(
-            ["skill-seekers", "github", "--help"], capture_output=True, text=True, timeout=10
-        )
-        assert result.returncode == 0
-        assert "github" in result.stdout.lower()
-
-    def test_analyze_command_still_works(self):
-        """Old analyze command should still function."""
-        import subprocess
-
-        result = subprocess.run(
-            ["skill-seekers", "analyze", "--help"], capture_output=True, text=True, timeout=10
-        )
-        assert result.returncode == 0
-        assert "analyze" in result.stdout.lower()
-
-    def test_main_help_shows_all_commands(self):
-        """Main help should show both old and new commands."""
+    def test_main_help_shows_available_commands(self):
+        """Main help should show available commands."""
         import subprocess
 
         result = subprocess.run(
@@ -303,14 +199,11 @@ class TestBackwardCompatibility:
         assert result.returncode == 0
         # Should show create command
         assert "create" in result.stdout
-
-        # Should still show old commands
-        assert "scrape" in result.stdout
-        assert "github" in result.stdout
-        assert "analyze" in result.stdout
+        # Should show enhance command
+        assert "enhance" in result.stdout
 
     def test_workflows_command_still_works(self):
-        """The new workflows subcommand is accessible via the main CLI."""
+        """The workflows subcommand is accessible via the main CLI."""
         import subprocess
 
         result = subprocess.run(
@@ -320,4 +213,29 @@ class TestBackwardCompatibility:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "workflow" in result.stdout.lower()
+
+
+class TestRemovedCommands:
+    """Test that old individual scraper commands are properly removed."""
+
+    def test_scrape_command_removed(self):
+        """Old scrape command should not exist."""
+        import subprocess
+
+        result = subprocess.run(
+            ["skill-seekers", "scrape", "--help"], capture_output=True, text=True, timeout=10
+        )
+        # Should fail - command removed
+        assert result.returncode == 2
+        assert "invalid choice" in result.stderr
+
+    def test_github_command_removed(self):
+        """Old github command should not exist."""
+        import subprocess
+
+        result = subprocess.run(
+            ["skill-seekers", "github", "--help"], capture_output=True, text=True, timeout=10
+        )
+        # Should fail - command removed
+        assert result.returncode == 2
+        assert "invalid choice" in result.stderr

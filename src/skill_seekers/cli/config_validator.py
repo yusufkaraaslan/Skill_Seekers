@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unified Config Validator
+UniSkillConfig Validator
 
-Validates unified config format that supports multiple sources:
+Validates uni_skill_config format that supports multiple sources:
 - documentation (website scraping)
 - github (repository scraping)
 - pdf (PDF document scraping)
@@ -34,9 +34,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ConfigValidator:
+class UniSkillConfigValidator:
     """
-    Validates unified config format (legacy support removed in v2.11.0).
+    Validates uni_skill_config format (legacy support removed in v2.11.0).
     """
 
     # Valid source types
@@ -61,7 +61,11 @@ class ConfigValidator:
     }
 
     # Valid merge modes
-    VALID_MERGE_MODES = {"rule-based", "claude-enhanced"}
+    VALID_MERGE_MODES = {
+        "rule-based",
+        "ai-enhanced",
+        "claude-enhanced",
+    }  # claude-enhanced kept as alias
 
     # Valid code analysis depth levels
     VALID_DEPTH_LEVELS = {"surface", "deep", "full"}
@@ -96,7 +100,7 @@ class ConfigValidator:
 
     def validate(self) -> bool:
         """
-        Validate unified config format.
+        Validate uni_skill_config format.
 
         Returns:
             True if valid
@@ -132,8 +136,8 @@ class ConfigValidator:
         return self._validate_unified()
 
     def _validate_unified(self) -> bool:
-        """Validate unified config format."""
-        logger.info("Validating unified config format...")
+        """Validate uni_skill_config format."""
+        logger.info("Validating uni_skill_config format...")
 
         # Required top-level fields
         if "name" not in self.config:
@@ -160,6 +164,21 @@ class ConfigValidator:
             raise ValueError(
                 f"Invalid merge_mode: '{merge_mode}'. Must be one of {self.VALID_MERGE_MODES}"
             )
+
+        # Validate marketplace_targets (optional)
+        marketplace_targets = self.config.get("marketplace_targets")
+        if marketplace_targets is not None:
+            if not isinstance(marketplace_targets, list):
+                raise ValueError("'marketplace_targets' must be an array")
+            for i, mt in enumerate(marketplace_targets):
+                if not isinstance(mt, dict):
+                    raise ValueError(f"marketplace_targets[{i}]: must be an object")
+                if "marketplace" not in mt:
+                    raise ValueError(
+                        f"marketplace_targets[{i}]: missing required field 'marketplace'"
+                    )
+                if not isinstance(mt["marketplace"], str):
+                    raise ValueError(f"marketplace_targets[{i}]: 'marketplace' must be a string")
 
         # Validate each source
         for i, source in enumerate(sources):
@@ -457,14 +476,18 @@ class ConfigValidator:
         )
 
         has_github_code = any(
-            s.get("type") == "github" and s.get("include_code", False)
+            s.get("type") == "github" and s.get("include_code", True)
             for s in self.config["sources"]
         )
 
         return has_docs_api and has_github_code
 
 
-def validate_config(config_path: str) -> ConfigValidator:
+# Backward-compat alias
+ConfigValidator = UniSkillConfigValidator
+
+
+def validate_config(config_path: str) -> UniSkillConfigValidator:
     """
     Validate config file and return validator instance.
 
@@ -472,12 +495,12 @@ def validate_config(config_path: str) -> ConfigValidator:
         config_path: Path to config JSON file
 
     Returns:
-        ConfigValidator instance
+        UniSkillConfigValidator instance
 
     Raises:
         ValueError if config is invalid
     """
-    validator = ConfigValidator(config_path)
+    validator = UniSkillConfigValidator(config_path)
     validator.validate()
     return validator
 

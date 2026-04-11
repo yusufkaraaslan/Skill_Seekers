@@ -35,22 +35,23 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install pytest
         pip install -e .
 
     - name: Run adaptor tests
       run: |
         echo "🧪 Testing $ADAPTOR_NAME adaptor..."
-        python -m pytest "tests/test_${ADAPTOR_NAME}_adaptor.py" -v --tb=short
+        python -m pytest "tests/test_adaptors/test_${ADAPTOR_NAME}_adaptor.py" -v --tb=short
 
     - name: Test adaptor integration
       run: |
@@ -63,26 +64,20 @@ jobs:
         echo "# Reference" > test_skill/references/ref.md
 
         # Test adaptor packaging
-        python3 << 'EOF'
-import sys
-import os
-from pathlib import Path
-sys.path.insert(0, 'src')
-
-from skill_seekers.cli.adaptors import get_adaptor
-
-adaptor_name = os.environ['ADAPTOR_NAME']
-adaptor = get_adaptor(adaptor_name)
-package_path = adaptor.package(Path('test_skill'), Path('.'))
-print(f"✅ Package created: {package_path}")
-
-# Verify package exists
-assert package_path.exists(), "Package file not created"
-print(f"📦 Package size: {package_path.stat().st_size} bytes")
-EOF
+        python3 -c "
+        import os
+        from pathlib import Path
+        from skill_seekers.cli.adaptors import get_adaptor
+        adaptor_name = os.environ['ADAPTOR_NAME']
+        adaptor = get_adaptor(adaptor_name)
+        package_path = adaptor.package(Path('test_skill'), Path('.'))
+        print(f'Package created: {package_path}')
+        assert package_path.exists(), 'Package file not created'
+        print(f'Package size: {package_path.stat().st_size} bytes')
+        "
 
     - name: Upload test package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-package-${{ env.ADAPTOR_NAME }}-py${{ env.PYTHON_VERSION }}
         path: test_skill-${{ env.ADAPTOR_NAME }}.json
@@ -93,16 +88,17 @@ EOF
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install pytest
         pip install -e .
 
     - name: Run MCP vector DB tests
@@ -110,41 +106,3 @@ EOF
         echo "🧪 Testing MCP vector database tools..."
         python -m pytest tests/test_mcp_vector_dbs.py -v --tb=short
 
-  test-week2-integration:
-    name: Week 2 Features Integration Test
-    runs-on: ubuntu-latest
-    needs: [test-adaptors, test-mcp-tools]
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-
-    - name: Run Week 2 validation script
-      run: |
-        echo "🎯 Running Week 2 feature validation..."
-        python test_week2_features.py
-
-    - name: Create test summary
-      run: |
-        echo "## 🧪 Vector Database Testing Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Adaptor Tests" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Weaviate adaptor - All tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Chroma adaptor - All tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ FAISS adaptor - All tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Qdrant adaptor - All tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### MCP Tools" >> $GITHUB_STEP_SUMMARY
-        echo "✅ 8/8 MCP vector DB tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Week 2 Integration" >> $GITHUB_STEP_SUMMARY
-        echo "✅ 6/6 feature tests passed" >> $GITHUB_STEP_SUMMARY

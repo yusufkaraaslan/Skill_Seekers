@@ -22,7 +22,7 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--merge-mode",),
         "kwargs": {
             "type": str,
-            "help": "Merge mode (rule-based, claude-enhanced)",
+            "help": "Merge mode (rule-based, ai-enhanced). 'claude-enhanced' is accepted as alias.",
             "metavar": "MODE",
         },
     },
@@ -72,12 +72,30 @@ UNIFIED_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Preview workflow stages without executing (requires --enhance-workflow)",
         },
     },
+    # Agent selection for LOCAL mode enhancement
+    "agent": {
+        "flags": ("--agent",),
+        "kwargs": {
+            "type": str,
+            "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
+            "help": "Local coding agent for enhancement (default: AI agent from SKILL_SEEKER_AGENT env var)",
+            "metavar": "AGENT",
+        },
+    },
+    "agent_cmd": {
+        "flags": ("--agent-cmd",),
+        "kwargs": {
+            "type": str,
+            "help": "Override agent command template (use {prompt_file} or stdin)",
+            "metavar": "CMD",
+        },
+    },
     # API key and enhance-level (parity with scrape/github/analyze/pdf)
     "api_key": {
         "flags": ("--api-key",),
         "kwargs": {
             "type": str,
-            "help": "Anthropic API key (or set ANTHROPIC_API_KEY env var)",
+            "help": "API key for enhancement (ANTHROPIC_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, or MOONSHOT_API_KEY)",
             "metavar": "KEY",
         },
     },

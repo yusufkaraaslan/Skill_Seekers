@@ -22,12 +22,12 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--target",),
         "kwargs": {
             "type": str,
-            "choices": ["claude", "gemini", "openai"],
+            "choices": ["claude", "gemini", "openai", "kimi"],
             "help": (
                 "AI platform for enhancement (uses API mode). "
                 "Auto-detected from env vars if not specified: "
-                "ANTHROPIC_API_KEY->claude, GOOGLE_API_KEY->gemini, OPENAI_API_KEY->openai. "
-                "Falls back to LOCAL mode (Claude Code CLI) when no API keys are found."
+                "ANTHROPIC_API_KEY->claude, GOOGLE_API_KEY->gemini, OPENAI_API_KEY->openai, MOONSHOT_API_KEY->kimi. "
+                "Falls back to LOCAL mode (AI coding agent) when no API keys are found."
             ),
             "metavar": "PLATFORM",
         },
@@ -38,7 +38,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "help": (
                 "API key for the target platform "
-                "(or set ANTHROPIC_API_KEY / GOOGLE_API_KEY / OPENAI_API_KEY)"
+                "(or set ANTHROPIC_API_KEY / GOOGLE_API_KEY / OPENAI_API_KEY / MOONSHOT_API_KEY)"
             ),
             "metavar": "KEY",
         },
@@ -55,8 +55,8 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--agent",),
         "kwargs": {
             "type": str,
-            "choices": ["claude", "codex", "copilot", "opencode", "custom"],
-            "help": "Local coding agent to use (default: claude or SKILL_SEEKER_AGENT)",
+            "choices": ["claude", "codex", "copilot", "opencode", "kimi", "custom"],
+            "help": "Local coding agent to use (default: AI agent from SKILL_SEEKER_AGENT env var)",
             "metavar": "AGENT",
         },
     },
@@ -101,8 +101,11 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--timeout",),
         "kwargs": {
             "type": int,
-            "default": 600,
-            "help": "Timeout in seconds (default: 600)",
+            "default": None,  # Resolved at runtime via get_default_timeout()
+            "help": (
+                "Timeout in seconds "
+                "(default: 45 minutes, set SKILL_SEEKER_ENHANCE_TIMEOUT to override)"
+            ),
             "metavar": "SECONDS",
         },
     },

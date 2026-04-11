@@ -1,0 +1,125 @@
+{
+  "name": "unity-addressables",
+  "description": "Unity Addressables asset management system - Use when implementing asset loading, remote content delivery, asset bundles, memory management, or dynamic asset loading in Unity projects.",
+  "version": "1.0.0",
+  "merge_mode": "claude-enhanced",
+  "base_url": "https://docs.unity3d.com/Packages/com.unity.addressables@2.3/manual/index.html",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.unity3d.com/Packages/com.unity.addressables@2.3/manual/index.html",
+      "browser": true,
+      "extract_api": true,
+      "selectors": {
+        "main_content": ".content-wrap, .section, article, main",
+        "title": "h1",
+        "code_blocks": "pre code"
+      },
+      "url_patterns": {
+        "include": [
+          "com.unity.addressables"
+        ],
+        "exclude": [
+          "/changelog/",
+          "/license/"
+        ]
+      },
+      "categories": {
+        "getting_started": [
+          "index",
+          "getting-started",
+          "installation",
+          "quickstart",
+          "AddressableAssetsGettingStarted"
+        ],
+        "concepts": [
+          "AddressableAssetsDevelopmentCycle",
+          "AddressableAssetsOverview",
+          "asset-references",
+          "labels",
+          "groups",
+          "profiles"
+        ],
+        "loading": [
+          "load-assets",
+          "LoadingAddressableAssets",
+          "MemoryManagement",
+          "AsyncOperationHandle",
+          "UnloadingAddressableAssets",
+          "synchronous-addressables"
+        ],
+        "api": [
+          "api",
+          "reference",
+          "Addressables",
+          "AddressablesAPI"
+        ],
+        "building": [
+          "Builds",
+          "BuildLayoutReport",
+          "ContentUpdateWorkflow",
+          "AddressableAssetSettings",
+          "build-scripting"
+        ],
+        "advanced": [
+          "remote-content-distribution",
+          "content-catalogs",
+          "diagnostic-tools",
+          "CustomOperations",
+          "TransformInternalId",
+          "ccd"
+        ]
+      },
+      "rate_limit": 0.5
+    },
+    {
+      "type": "github",
+      "repo": "Unity-Technologies/Addressables-Sample",
+      "include_code": true,
+      "language": "C#",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "deep",
+      "fetch_issues": false,
+      "fetch_changelog": false,
+      "fetch_releases": false,
+      "file_patterns": [
+        "**/*.cs"
+      ]
+    }
+  ],
+  "analysis_features": {
+    "pattern_detection": true,
+    "test_extraction": true,
+    "how_to_guides": true,
+    "config_extraction": true,
+    "architecture_overview": true,
+    "api_reference": true,
+    "dependency_graph": true
+  },
+
+  "enhancement": {
+    "enabled": true,
+    "level": 3,
+    "mode": "LOCAL"
+  },
+
+  "chunking": {
+    "enabled": true,
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+
+  "output_formats": [
+    "claude",
+    "markdown"
+  ],
+
+  "metadata": {
+    "version": "2.3",
+    "framework": "unity",
+    "language": "csharp",
+    "tags": ["unity", "addressables", "asset-management", "asset-bundles", "content-delivery", "csharp"],
+    "documentation_url": "https://docs.unity3d.com/Packages/com.unity.addressables@latest/",
+    "repository_url": "https://github.com/Unity-Technologies/Addressables-Sample"
+  }
+}

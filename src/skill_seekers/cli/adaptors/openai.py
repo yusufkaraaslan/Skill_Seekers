@@ -264,7 +264,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 file_ids = []
 
                 if vector_files_dir.exists():
-                    for ref_file in vector_files_dir.glob("*.md"):
+                    for ref_file in vector_files_dir.rglob("*.md"):
                         # Upload file
                         with open(ref_file, "rb") as f:
                             uploaded_file = client.files.create(file=f, purpose="assistants")
@@ -433,8 +433,8 @@ Always prioritize accuracy by consulting the attached documentation files before
         references = {}
         total_chars = 0
 
-        # Read all .md files
-        for ref_file in sorted(references_dir.glob("*.md")):
+        # Read all .md files recursively (including subdirectories)
+        for ref_file in sorted(references_dir.rglob("*.md")):
             if total_chars >= max_chars:
                 break
 

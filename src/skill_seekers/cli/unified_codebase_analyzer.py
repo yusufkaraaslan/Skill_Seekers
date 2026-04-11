@@ -27,7 +27,7 @@ class AnalysisResult:
     github_docs: dict | None = None
     github_insights: dict | None = None
     source_type: str = "local"  # 'local' or 'github'
-    analysis_depth: str = "basic"  # 'basic' or 'c3x'
+    analysis_depth: str = "c3x"  # 'basic' or 'c3x'
 
 
 class UnifiedCodebaseAnalyzer:
@@ -267,8 +267,7 @@ class UnifiedCodebaseAnalyzer:
                 extract_test_examples=True,
                 build_how_to_guides=True,
                 extract_config_patterns=True,
-                enhance_with_ai=False,  # Disable AI for speed
-                ai_mode="none",
+                enhance_level=0,  # Disable AI for speed
             )
 
             # Load C3.x results from output files
@@ -320,7 +319,7 @@ class UnifiedCodebaseAnalyzer:
         c3x_data = {}
 
         # C3.1: Design Patterns
-        patterns_file = output_dir / "patterns" / "design_patterns.json"
+        patterns_file = output_dir / "patterns" / "all_patterns.json"
         if patterns_file.exists():
             with open(patterns_file) as f:
                 patterns_data = json.load(f)
@@ -560,6 +559,8 @@ class UnifiedCodebaseAnalyzer:
                         ".go": "Go",
                         ".rs": "Rust",
                         ".java": "Java",
+                        ".kt": "Kotlin",
+                        ".kts": "Kotlin",
                         ".rb": "Ruby",
                         ".php": "PHP",
                     }

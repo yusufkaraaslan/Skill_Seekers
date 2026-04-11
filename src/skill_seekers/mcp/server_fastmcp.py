@@ -3,7 +3,7 @@
 Skill Seeker MCP Server (FastMCP Implementation)
 
 Modern, decorator-based MCP server using FastMCP for simplified tool registration.
-Provides 34 tools for generating Claude AI skills from documentation.
+Provides 34 tools for generating LLM skills from documentation.
 
 This is a streamlined alternative to server.py (2200 lines → 708 lines, 68% reduction).
 All tool implementations are delegated to modular tool files in tools/ directory.
@@ -15,7 +15,8 @@ All tool implementations are delegated to modular tool files in tools/ directory
   * Scraping tools (11): estimate_pages, scrape_docs, scrape_github, scrape_pdf, scrape_video, scrape_codebase, detect_patterns, extract_test_examples, build_how_to_guides, extract_config_patterns, scrape_generic
   * Packaging tools (4): package_skill, upload_skill, enhance_skill, install_skill
   * Splitting tools (2): split_config, generate_router
-  * Source tools (5): fetch_config, submit_config, add_config_source, list_config_sources, remove_config_source
+  * Source tools (6): fetch_config, submit_config, push_config, add_config_source, list_config_sources, remove_config_source
+  * Marketplace tools (4): add_marketplace, list_marketplaces, remove_marketplace, publish_to_marketplace
   * Vector Database tools (4): export_to_weaviate, export_to_chroma, export_to_faiss, export_to_qdrant
   * Workflow tools (5): list_workflows, get_workflow, create_workflow, update_workflow, delete_workflow
 
@@ -86,6 +87,11 @@ try:
         extract_test_examples_impl,
         # Source tools
         fetch_config_impl,
+        # Marketplace tools
+        add_marketplace_impl,
+        list_marketplaces_impl,
+        remove_marketplace_impl,
+        publish_to_marketplace_impl,
         # Config tools
         generate_config_impl,
         generate_router_impl,
@@ -133,6 +139,10 @@ except ImportError:
         extract_config_patterns_impl,
         extract_test_examples_impl,
         fetch_config_impl,
+        add_marketplace_impl,
+        list_marketplaces_impl,
+        remove_marketplace_impl,
+        publish_to_marketplace_impl,
         generate_config_impl,
         generate_router_impl,
         install_skill_impl,
@@ -163,7 +173,7 @@ mcp = None
 if MCP_AVAILABLE and FastMCP is not None:
     mcp = FastMCP(
         name="skill-seeker",
-        instructions="Skill Seeker MCP Server - Generate Claude AI skills from documentation",
+        instructions="Skill Seeker MCP Server - Generate LLM skills from documentation",
     )
 
 
@@ -338,7 +348,7 @@ async def estimate_pages(
 
 
 @safe_tool_decorator(
-    description="Scrape documentation and build Claude skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available."
+    description="Scrape documentation and build LLM skill. Supports both single-source (legacy) and unified multi-source configs. Creates SKILL.md and reference files. Automatically detects llms.txt files for 10x faster processing. Falls back to HTML scraping if not available."
 )
 async def scrape_docs(
     config_path: str,
@@ -349,12 +359,12 @@ async def scrape_docs(
     merge_mode: str | None = None,
 ) -> str:
     """
-    Scrape documentation and build Claude skill.
+    Scrape documentation and build LLM skill.
 
     Args:
         config_path: Path to config JSON file (e.g., configs/react.json or configs/godot_unified.json)
         unlimited: Remove page limit - scrape all pages (default: false). Overrides max_pages in config.
-        enhance_local: Open terminal for local enhancement with Claude Code (default: false)
+        enhance_local: Open terminal for local enhancement with AI coding agent (default: false)
         skip_scrape: Skip scraping, use cached data (default: false)
         dry_run: Preview what will be scraped without saving (default: false)
         merge_mode: Override merge mode for unified configs: 'rule-based' or 'claude-enhanced' (default: from config)
@@ -879,7 +889,7 @@ async def scrape_generic(
 )
 async def package_skill(
     skill_dir: str,
-    target: str = "claude",
+    target: str = "auto",
     auto_upload: bool = True,
 ) -> str:
     """
@@ -887,12 +897,16 @@ async def package_skill(
 
     Args:
         skill_dir: Path to skill directory to package (e.g., output/react/)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai, markdown
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai, markdown
         auto_upload: Auto-upload after packaging if API key is available (default: true). Requires platform-specific API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
         Packaging results with file path and platform info.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_dir": skill_dir,
         "target": target,
@@ -909,7 +923,7 @@ async def package_skill(
 )
 async def upload_skill(
     skill_zip: str,
-    target: str = "claude",
+    target: str = "auto",
     api_key: str | None = None,
 ) -> str:
     """
@@ -917,12 +931,16 @@ async def upload_skill(
 
     Args:
         skill_zip: Path to skill package (.zip or .tar.gz, e.g., output/react.zip)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai
         api_key: Optional API key (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
     Returns:
         Upload results with skill ID and platform URL.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_zip": skill_zip,
         "target": target,
@@ -937,11 +955,11 @@ async def upload_skill(
 
 
 @safe_tool_decorator(
-    description="Enhance SKILL.md with AI using target platform's model. Local mode uses Claude Code Max (no API key). API mode uses platform API (requires key). Transforms basic templates into comprehensive 500+ line guides with examples."
+    description="Enhance SKILL.md with AI using target platform's model. Local mode uses AI coding agent (no API key). API mode uses platform API (requires key). Transforms basic templates into comprehensive 500+ line guides with examples."
 )
 async def enhance_skill(
     skill_dir: str,
-    target: str = "claude",
+    target: str = "auto",
     mode: str = "local",
     api_key: str | None = None,
 ) -> str:
@@ -950,13 +968,17 @@ async def enhance_skill(
 
     Args:
         skill_dir: Path to skill directory containing SKILL.md (e.g., output/react/)
-        target: Target platform (default: 'claude'). Options: claude, gemini, openai
-        mode: Enhancement mode (default: 'local'). Options: local (Claude Code, no API), api (uses platform API)
+        target: Target platform (default: 'auto'). Options: auto, claude, gemini, openai
+        mode: Enhancement mode (default: 'local'). Options: local (AI coding agent, no API), api (uses platform API)
         api_key: Optional API key for 'api' mode (uses env var if not provided: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
 
     Returns:
         Enhancement results with backup location.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "skill_dir": skill_dir,
         "target": target,
@@ -972,7 +994,7 @@ async def enhance_skill(
 
 
 @safe_tool_decorator(
-    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Supports multiple LLM platforms: claude (default), gemini, openai, markdown. Auto-uploads if platform API key is set."
+    description="Complete one-command workflow: fetch config → scrape docs → AI enhance (MANDATORY) → package → upload. Enhancement required for quality (3/10→9/10). Takes 20-45 min depending on config size. Supports multiple LLM platforms: auto (detects from environment), claude, gemini, openai, markdown. Auto-uploads if platform API key is set."
 )
 async def install_skill(
     config_name: str | None = None,
@@ -981,7 +1003,7 @@ async def install_skill(
     auto_upload: bool = True,
     unlimited: bool = False,
     dry_run: bool = False,
-    target: str = "claude",
+    target: str = "auto",
 ) -> str:
     """
     Complete one-command workflow to install a skill.
@@ -993,11 +1015,15 @@ async def install_skill(
         auto_upload: Auto-upload after packaging (requires platform API key). Default: true. Set to false to skip upload.
         unlimited: Remove page limits during scraping (default: false). WARNING: Can take hours for large sites.
         dry_run: Preview workflow without executing (default: false). Shows all phases that would run.
-        target: Target LLM platform (default: 'claude'). Options: claude, gemini, openai, markdown. Requires corresponding API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
+        target: Target LLM platform (default: 'auto'). Options: auto, claude, gemini, openai, markdown. Requires corresponding API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
 
     Returns:
         Workflow results with all phase statuses.
     """
+    if target == "auto":
+        from skill_seekers.cli.agent_client import AgentClient
+
+        target = AgentClient.detect_default_target()
     args = {
         "destination": destination,
         "auto_upload": auto_upload,
@@ -1258,6 +1284,150 @@ async def remove_config_source(name: str) -> str:
         Removal results with success/error message.
     """
     result = await remove_config_source_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Push a config to a registered config source repository. Validates, places in category directory, commits, and pushes."
+)
+async def push_config(
+    config_path: str,
+    source_name: str,
+    category: str = "auto",
+    create_branch: bool = False,
+    force: bool = False,
+) -> str:
+    """
+    Push a config to a registered config source repository.
+
+    Args:
+        config_path: Path to config JSON file. Example: 'configs/unity-spine.json'
+        source_name: Registered source name. Example: 'spyke'
+        category: Category directory (e.g., 'game-engines'). Auto-detected if 'auto'.
+        create_branch: Create feature branch instead of pushing to main. Default: false
+        force: Overwrite existing config if it exists. Default: false
+
+    Returns:
+        Push results with commit SHA and config location.
+    """
+    from skill_seekers.mcp.tools.source_tools import push_config_tool
+
+    result = await push_config_tool(
+        {
+            "config_path": config_path,
+            "source_name": source_name,
+            "category": category,
+            "create_branch": create_branch,
+            "force": force,
+        }
+    )
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+# ============================================================================
+# MARKETPLACE TOOLS (4 tools)
+# ============================================================================
+
+
+@safe_tool_decorator(
+    description="Register a plugin marketplace repository. Allows publishing skills to private/team plugin repos. Supports GitHub, GitLab, Bitbucket with per-repo authentication."
+)
+async def add_marketplace(
+    name: str,
+    git_url: str,
+    token_env: str = None,
+    branch: str = "main",
+    author_name: str = "",
+    author_email: str = "",
+    enabled: bool = True,
+) -> str:
+    """
+    Register a plugin marketplace repository.
+
+    Args:
+        name: Marketplace identifier (lowercase, alphanumeric + hyphens/underscores). Example: 'spyke'
+        git_url: Git repository URL. Example: 'https://github.com/myorg/plugins.git'
+        token_env: Environment variable name for auth token (auto-detected from URL). Example: 'GITHUB_TOKEN'
+        branch: Git branch to use (default: "main")
+        author_name: Default author name for generated plugin.json files
+        author_email: Default author email for generated plugin.json files
+        enabled: Whether marketplace is enabled (default: true)
+    """
+    result = await add_marketplace_impl(
+        {
+            "name": name,
+            "git_url": git_url,
+            "token_env": token_env,
+            "branch": branch,
+            "author_name": author_name,
+            "author_email": author_email,
+            "enabled": enabled,
+        }
+    )
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(description="List all registered plugin marketplace repositories.")
+async def list_marketplaces(enabled_only: bool = False) -> str:
+    """List all registered plugin marketplace repositories."""
+    result = await list_marketplaces_impl({"enabled_only": enabled_only})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Remove a registered plugin marketplace. Deletes from registry but not cached data."
+)
+async def remove_marketplace(name: str) -> str:
+    """Remove a registered plugin marketplace."""
+    result = await remove_marketplace_impl({"name": name})
+    if isinstance(result, list) and result:
+        return result[0].text if hasattr(result[0], "text") else str(result[0])
+    return str(result)
+
+
+@safe_tool_decorator(
+    description="Publish a packaged skill to a plugin marketplace repository. Creates a Claude Code plugin in the target marketplace repo."
+)
+async def publish_to_marketplace(
+    skill_dir: str,
+    marketplace: str,
+    category: str = "development",
+    skill_name: str = None,
+    description: str = None,
+    create_branch: bool = False,
+    force: bool = False,
+) -> str:
+    """
+    Publish a skill to a plugin marketplace repository.
+
+    Args:
+        skill_dir: Path to skill directory containing SKILL.md. Example: 'output/react/'
+        marketplace: Registered marketplace name. Example: 'spyke'
+        category: Plugin category (default: "development")
+        skill_name: Override skill name (optional)
+        description: Override description (optional)
+        create_branch: Create feature branch instead of committing to main (default: false)
+        force: Overwrite existing plugin (default: false)
+    """
+    result = await publish_to_marketplace_impl(
+        {
+            "skill_dir": skill_dir,
+            "marketplace": marketplace,
+            "category": category,
+            "skill_name": skill_name,
+            "description": description,
+            "create_branch": create_branch,
+            "force": force,
+        }
+    )
     if isinstance(result, list) and result:
         return result[0].text if hasattr(result[0], "text") else str(result[0])
     return str(result)
