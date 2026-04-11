@@ -37,8 +37,17 @@ jobs:
         pip install -e .
 
     - name: Run tests
+      timeout-minutes: 30
       run: |
-        python -m pytest tests/ -v
+        # Exclude slow MCP/e2e tests that can hang or run 20+ min each.
+        # The tests.yml workflow (matrix CI) runs these in a separate job with
+        # its own timeout; the release workflow only needs fast confidence that
+        # the package is sound before publishing.
+        python -m pytest tests/ -v \
+          --ignore=tests/test_mcp_fastmcp.py \
+          --ignore=tests/test_mcp_server.py \
+          --ignore=tests/test_install_skill_e2e.py \
+          --ignore=tests/test_bootstrap_skill_e2e.py
 
     - name: Extract version from tag
       id: get_version
