@@ -1,0 +1,25 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: false
+    patch:
+      default:
+        # Patch coverage is informational only — doesn't fail CI.
+        # Rationale: version bumps, docs, config, and test-only commits have
+        # naturally low or zero patch coverage and shouldn't block releases.
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+
+# Ignore files that don't need coverage
+ignore:
+  - "tests/**/*"
+  - "docs/**/*"
+  - "**/__init__.py"
+  - "src/skill_seekers/_version.py"
