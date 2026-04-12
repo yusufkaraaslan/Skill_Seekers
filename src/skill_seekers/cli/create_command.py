@@ -9,6 +9,7 @@ import logging
 import argparse
 from typing import Any
 
+from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
@@ -347,7 +348,7 @@ class CreateCommand:
                     "space_key": getattr(self.args, "space_key", ""),
                     "username": getattr(self.args, "username", ""),
                     "token": getattr(self.args, "token", ""),
-                    "max_pages": getattr(self.args, "max_pages", 500),
+                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
                 }
             )
 
@@ -358,7 +359,7 @@ class CreateCommand:
                     "database_id": getattr(self.args, "database_id", None),
                     "page_id": getattr(self.args, "page_id", None),
                     "token": getattr(self.args, "notion_token", None),
-                    "max_pages": getattr(self.args, "max_pages", 100),
+                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
                 }
             )
 

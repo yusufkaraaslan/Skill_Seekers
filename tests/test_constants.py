@@ -47,10 +47,9 @@ class TestConstants(unittest.TestCase):
     def test_scraping_constants_ranges(self):
         """Test that scraping constants have sensible values."""
         self.assertGreater(DEFAULT_RATE_LIMIT, 0)
-        self.assertGreater(DEFAULT_MAX_PAGES, 0)
+        self.assertEqual(DEFAULT_MAX_PAGES, -1)  # -1 = unlimited by default
         self.assertGreater(DEFAULT_CHECKPOINT_INTERVAL, 0)
         self.assertEqual(DEFAULT_RATE_LIMIT, 0.5)
-        self.assertEqual(DEFAULT_MAX_PAGES, 500)
         self.assertEqual(DEFAULT_CHECKPOINT_INTERVAL, 1000)
 
     def test_content_analysis_constants(self):

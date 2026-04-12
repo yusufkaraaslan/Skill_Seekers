@@ -20,6 +20,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
+from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.utils import sanitize_url, setup_logging
 
 logger = logging.getLogger(__name__)
@@ -55,8 +56,8 @@ def discover_urls(
     include_patterns: list[str] | None = None,
     exclude_patterns: list[str] | None = None,
     depth: int = 2,
-    max_pages: int = 500,
-    rate_limit: float = 0.5,
+    max_pages: int = DEFAULTS["scraping"]["max_pages"],
+    rate_limit: float = DEFAULTS["scraping"]["rate_limit"],
 ) -> set[str]:
     """BFS-crawl *seed_urls* and return all discovered internal URLs.
 
@@ -88,7 +89,8 @@ def discover_urls(
 
     discovered: set[str] = set()
 
-    while queue and len(discovered) < max_pages:
+    unlimited = max_pages is None or max_pages < 0
+    while queue and (unlimited or len(discovered) < max_pages):
         url, cur_depth = queue.popleft()
         if url in visited:
             continue
@@ -189,7 +191,7 @@ def sync_config(
     config_path: str,
     apply: bool = False,
     depth: int = 2,
-    max_pages: int = 500,
+    max_pages: int = DEFAULTS["scraping"]["max_pages"],
     rate_limit: float | None = None,
     source_index: int = 0,
 ) -> dict:
@@ -221,7 +223,7 @@ def sync_config(
     url_patterns = source.get("url_patterns", {})
     includes: list[str] = url_patterns.get("include", [])
     excludes: list[str] = url_patterns.get("exclude", [])
-    effective_rate = rate_limit if rate_limit is not None else source.get("rate_limit", 0.5)
+    effective_rate = rate_limit if rate_limit is not None else source.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
 
     logger.info("Syncing config: %s", config_path)
     logger.info("  Base URL:      %s", base_url)

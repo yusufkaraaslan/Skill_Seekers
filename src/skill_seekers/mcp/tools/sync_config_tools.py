@@ -39,13 +39,14 @@ async def sync_config_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text="Error: config_path is required")]
 
     try:
+        from skill_seekers.cli.defaults import DEFAULTS
         from skill_seekers.cli.sync_config import sync_config
 
         result = sync_config(
             config_path=config_path,
             apply=args.get("apply", False),
             depth=args.get("depth", 2),
-            max_pages=args.get("max_pages", 500),
+            max_pages=args.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
             rate_limit=args.get("rate_limit"),
             source_index=args.get("source_index", 0),
         )

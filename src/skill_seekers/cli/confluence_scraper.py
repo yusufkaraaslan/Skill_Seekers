@@ -38,6 +38,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.skill_converter import SkillConverter
 
 # Optional dependency guard for atlassian-python-api
@@ -236,7 +237,7 @@ class ConfluenceToSkillConverter(SkillConverter):
         self.description: str = (
             config.get("description") or f"Use when referencing {self.name} documentation"
         )
-        self.max_pages: int = int(config.get("max_pages", 500))
+        self.max_pages: int = int(config.get("max_pages", DEFAULTS["scraping"]["max_pages"]))
 
         # Output paths
         self.skill_dir = f"output/{self.name}"

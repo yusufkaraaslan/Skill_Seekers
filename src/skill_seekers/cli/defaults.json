@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Single source of truth for all Skill Seekers default configuration values. Every module that needs a default MUST read from this file via defaults.py — never hardcode.",
+
+  "scraping": {
+    "rate_limit": 0.5,
+    "max_pages": -1,
+    "workers": 1,
+    "async_mode": false,
+    "browser": false,
+    "browser_wait_until": "domcontentloaded",
+    "browser_extra_wait": 0,
+    "checkpoint_interval": 1000,
+    "languages": ["en"]
+  },
+
+  "enhancement": {
+    "enabled": true,
+    "level": 2,
+    "mode": "auto",
+    "timeout": 2700
+  },
+
+  "output": {
+    "doc_version": "",
+    "dry_run": false
+  },
+
+  "analysis": {
+    "depth": "surface",
+    "skip_patterns": false,
+    "skip_test_examples": false,
+    "skip_how_to_guides": false,
+    "skip_config_patterns": false,
+    "skip_api_reference": false,
+    "skip_dependency_graph": false,
+    "skip_docs": false,
+    "no_comments": false
+  },
+
+  "rag": {
+    "chunk_for_rag": false,
+    "chunk_tokens": 512,
+    "chunk_overlap_tokens": 50,
+    "preserve_code_blocks": true,
+    "preserve_paragraphs": true
+  },
+
+  "limits": {
+    "content_preview_length": 500,
+    "max_pages_warning_threshold": 10000,
+    "max_reference_files": 100,
+    "max_code_blocks_per_page": 5,
+    "api_content_limit": 100000,
+    "api_preview_limit": 40000,
+    "local_content_limit": 50000,
+    "local_preview_limit": 20000,
+    "default_max_discovery": 1000,
+    "discovery_threshold": 10000
+  },
+
+  "categorization": {
+    "min_score": 2,
+    "url_match_points": 3,
+    "title_match_points": 2,
+    "content_match_points": 1
+  }
+}

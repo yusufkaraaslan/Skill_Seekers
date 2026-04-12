@@ -660,11 +660,13 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 async def generate_config_tool(args: dict) -> list[TextContent]:
     """Generate a config file"""
     name = args["name"]
+    from skill_seekers.cli.defaults import DEFAULTS
+
     url = args["url"]
     description = args["description"]
-    max_pages = args.get("max_pages", 100)
+    max_pages = args.get("max_pages", DEFAULTS["scraping"]["max_pages"])
     unlimited = args.get("unlimited", False)
-    rate_limit = args.get("rate_limit", 0.5)
+    rate_limit = args.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
 
     # Handle unlimited mode
     if unlimited or max_pages == -1:
@@ -827,13 +829,18 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
                 total_pages = 0
                 for source in config.get("sources", []):
                     if source.get("type") == "documentation":
-                        total_pages += source.get("max_pages", 500)
-                max_pages = total_pages or 500
+                        sp = source.get("max_pages", -1)
+                        if sp is not None and sp > 0:
+                            total_pages += sp
+                max_pages = total_pages if total_pages > 0 else -1
             else:
-                max_pages = config.get("max_pages", 500)
+                max_pages = config.get("max_pages", -1)
 
-            # Estimate: 30s per page + buffer
-            timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
+            # Estimate: 30s per page + buffer (unlimited defaults to 4h)
+            if max_pages is None or max_pages < 0:
+                timeout = 14400  # 4 hours for unlimited
+            else:
+                timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
         except Exception:
             timeout = 14400  # Default: 4 hours
 

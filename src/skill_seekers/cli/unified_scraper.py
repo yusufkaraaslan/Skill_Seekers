@@ -26,6 +26,7 @@ try:
     from skill_seekers.cli.agent_client import get_default_timeout
     from skill_seekers.cli.config_validator import validate_config
     from skill_seekers.cli.conflict_detector import ConflictDetector
+    from skill_seekers.cli.defaults import DEFAULTS
     from skill_seekers.cli.merge_sources import AIEnhancedMerger, RuleBasedMerger
     from skill_seekers.cli.skill_converter import SkillConverter
     from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
@@ -264,8 +265,8 @@ class UnifiedScraper(SkillConverter):
             "selectors": source.get("selectors", {}),
             "url_patterns": source.get("url_patterns", {}),
             "categories": source.get("categories", {}),
-            "rate_limit": source.get("rate_limit", 0.5),
-            "max_pages": source.get("max_pages", 500),
+            "rate_limit": source.get("rate_limit", DEFAULTS["scraping"]["rate_limit"]),
+            "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
         }
 
         # Pass through llms.txt settings (so unified configs behave the same as doc_scraper configs)
@@ -313,7 +314,7 @@ class UnifiedScraper(SkillConverter):
             # Create child context with doc-specific overrides
             doc_ctx = ExecutionContext.get().override(
                 output__name=f"{self.name}_docs",
-                scraping__max_pages=source.get("max_pages", 500),
+                scraping__max_pages=source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
             )
 
             with doc_ctx:
@@ -1253,7 +1254,7 @@ class UnifiedScraper(SkillConverter):
             "username": source.get("username"),
             "token": source.get("token"),
             "description": source.get("description", f"{source_id} Confluence content"),
-            "max_pages": source.get("max_pages", 500),
+            "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
         }
 
         logger.info(f"Scraping Confluence: {source_id}")
@@ -1311,7 +1312,7 @@ class UnifiedScraper(SkillConverter):
             "export_path": source.get("path"),
             "token": source.get("token"),
             "description": source.get("description", f"{source_id} Notion content"),
-            "max_pages": source.get("max_pages", 500),
+            "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
         }
 
         logger.info(f"Scraping Notion: {source_id}")

@@ -13,6 +13,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from skill_seekers.cli.defaults import DEFAULTS
+
 
 class ConfigSplitter:
     """Splits large documentation configs into multiple focused configs"""
@@ -70,7 +72,7 @@ class ConfigSplitter:
 
         # Use provided strategy or auto-detect (documentation configs)
         if self.strategy == "auto":
-            max_pages = self.config.get("max_pages", 500)
+            max_pages = self.config.get("max_pages", DEFAULTS["scraping"]["max_pages"])
 
             if max_pages < 5000:
                 print(f"ℹ️  Small documentation ({max_pages} pages) - no splitting needed")
@@ -152,7 +154,10 @@ class ConfigSplitter:
 
     def split_by_size(self) -> list[dict[str, Any]]:
         """Split config by size (page count)"""
-        max_pages = self.config.get("max_pages", 500)
+        max_pages = self.config.get("max_pages", DEFAULTS["scraping"]["max_pages"])
+        if max_pages is None or max_pages < 0:
+            print("ℹ️  Unlimited max_pages — cannot split by size")
+            return [self.config.copy()]
         num_splits = (max_pages + self.target_pages - 1) // self.target_pages
 
         configs = []
@@ -227,8 +232,8 @@ class ConfigSplitter:
             "base_url": self.config["base_url"],
             "selectors": self.config["selectors"],
             "url_patterns": self.config.get("url_patterns", {}),
-            "rate_limit": self.config.get("rate_limit", 0.5),
-            "max_pages": 500,  # Router only needs overview pages
+            "rate_limit": self.config.get("rate_limit", DEFAULTS["scraping"]["rate_limit"]),
+            "max_pages": 500,  # Router only needs overview pages (intentional fixed limit)
             "_router": True,
             "_sub_skills": [cfg["name"] for cfg in sub_configs],
             "_routing_keywords": {

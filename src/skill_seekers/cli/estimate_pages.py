@@ -35,7 +35,9 @@ def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
     base_url = config["base_url"]
     start_urls = config.get("start_urls", [base_url])
     url_patterns = config.get("url_patterns", {"include": [], "exclude": []})
-    rate_limit = config.get("rate_limit", DEFAULT_RATE_LIMIT)
+    rate_limit = config.get("rate_limit")
+    if rate_limit is None:
+        rate_limit = DEFAULT_RATE_LIMIT
 
     visited = set()
     pending = list(start_urls)
@@ -201,7 +203,9 @@ def print_results(results, config):
         print(f"   (Estimated {estimated} + 50 buffer)")
 
     # Estimate time for full scrape
-    rate_limit = config.get("rate_limit", DEFAULT_RATE_LIMIT)
+    rate_limit = config.get("rate_limit")
+    if rate_limit is None:
+        rate_limit = DEFAULT_RATE_LIMIT
     estimated_time = (estimated * rate_limit) / 60  # in minutes
 
     print()

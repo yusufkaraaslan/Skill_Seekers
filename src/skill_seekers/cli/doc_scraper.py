@@ -42,6 +42,7 @@ from skill_seekers.cli.constants import (
     MAX_PAGES_WARNING_THRESHOLD,
     MIN_CATEGORIZATION_SCORE,
 )
+from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
@@ -194,7 +195,7 @@ class DocToSkillConverter(SkillConverter):
         self._browser_extra_wait = config.get("browser_extra_wait", 0)  # ms
 
         # Parallel scraping config
-        self.workers = config.get("workers", 1)
+        self.workers = config.get("workers") or DEFAULTS["scraping"]["workers"]
         self.async_mode = config.get("async_mode", DEFAULT_ASYNC_MODE)
 
         # State
@@ -799,7 +800,9 @@ class DocToSkillConverter(SkillConverter):
                     self._enqueue_url(link)
 
             # Rate limiting
-            rate_limit = self.config.get("rate_limit", DEFAULT_RATE_LIMIT)
+            rate_limit = self.config.get("rate_limit")
+            if rate_limit is None:
+                rate_limit = DEFAULT_RATE_LIMIT
             if rate_limit > 0:
                 time.sleep(rate_limit)
 
@@ -860,7 +863,9 @@ class DocToSkillConverter(SkillConverter):
                     self._enqueue_url(link)
 
                 # Rate limiting
-                rate_limit = self.config.get("rate_limit", DEFAULT_RATE_LIMIT)
+                rate_limit = self.config.get("rate_limit")
+                if rate_limit is None:
+                    rate_limit = DEFAULT_RATE_LIMIT
                 if rate_limit > 0:
                     await asyncio.sleep(rate_limit)
 

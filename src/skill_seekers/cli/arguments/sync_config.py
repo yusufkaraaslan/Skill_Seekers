@@ -6,6 +6,8 @@ Shared between sync_config.py (standalone) and parsers/sync_config_parser.py
 
 import argparse
 
+from skill_seekers.cli.defaults import DEFAULTS
+
 
 def add_sync_config_arguments(parser: argparse.ArgumentParser) -> None:
     """Add all sync-config arguments to *parser*."""
@@ -33,8 +35,8 @@ def add_sync_config_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--max-pages",
         type=int,
-        default=500,
-        help="Maximum pages to discover (default: 500)",
+        default=DEFAULTS["scraping"]["max_pages"],
+        help=f"Maximum pages to discover (default: {DEFAULTS['scraping']['max_pages']}, -1 = unlimited)",
     )
     parser.add_argument(
         "--rate-limit",

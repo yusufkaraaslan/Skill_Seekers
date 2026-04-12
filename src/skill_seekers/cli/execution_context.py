@@ -86,8 +86,8 @@ class OutputSettings(BaseModel):
 class ScrapingSettings(BaseModel):
     """Web scraping configuration."""
 
-    max_pages: int | None = Field(default=None, description="Maximum pages to scrape")
-    rate_limit: float | None = Field(default=None, description="Rate limit in seconds")
+    max_pages: int = Field(default=-1, description="Maximum pages to scrape (-1 = unlimited)")
+    rate_limit: float = Field(default=0.5, description="Rate limit in seconds")
     browser: bool = Field(default=False, description="Use headless browser for JS sites")
     browser_wait_until: str = Field(
         default="domcontentloaded", description="Browser wait condition"
@@ -262,13 +262,24 @@ class ExecutionContext(BaseModel):
 
     @classmethod
     def _default_data(cls) -> dict[str, Any]:
-        """Get default configuration."""
+        """Get default configuration.
+
+        Reads base values from ``defaults.json`` (via :mod:`defaults`) so that
+        every default is defined in exactly one place.
+        """
         from skill_seekers.cli.agent_client import get_default_timeout
+        from skill_seekers.cli.defaults import DEFAULTS
+
+        scraping = DEFAULTS["scraping"]
+        enhancement = DEFAULTS["enhancement"]
+        output = DEFAULTS["output"]
+        analysis = DEFAULTS["analysis"]
+        rag = DEFAULTS["rag"]
 
         return {
             "enhancement": {
-                "enabled": True,
-                "level": 2,
+                "enabled": enhancement["enabled"],
+                "level": enhancement["level"],
                 # Env-var-based mode detection (lowest priority — CLI and config override this)
                 "mode": "api"
                 if any(
@@ -280,7 +291,7 @@ class ExecutionContext(BaseModel):
                         "GOOGLE_API_KEY",
                     )
                 )
-                else "auto",
+                else enhancement["mode"],
                 "agent": os.environ.get("SKILL_SEEKER_AGENT"),
                 "agent_cmd": None,
                 "api_key": None,
@@ -292,40 +303,40 @@ class ExecutionContext(BaseModel):
             "output": {
                 "name": None,
                 "output_dir": None,
-                "doc_version": "",
-                "dry_run": False,
+                "doc_version": output["doc_version"],
+                "dry_run": output["dry_run"],
             },
             "scraping": {
-                "max_pages": None,
-                "rate_limit": None,
-                "browser": False,
-                "browser_wait_until": "domcontentloaded",
-                "browser_extra_wait": 0,
-                "workers": 1,
-                "async_mode": False,
+                "max_pages": scraping["max_pages"],
+                "rate_limit": scraping["rate_limit"],
+                "browser": scraping["browser"],
+                "browser_wait_until": scraping["browser_wait_until"],
+                "browser_extra_wait": scraping["browser_extra_wait"],
+                "workers": scraping["workers"],
+                "async_mode": scraping["async_mode"],
                 "resume": False,
                 "fresh": False,
                 "skip_scrape": False,
-                "languages": ["en"],
+                "languages": list(scraping["languages"]),
             },
             "analysis": {
-                "depth": "surface",
-                "skip_patterns": False,
-                "skip_test_examples": False,
-                "skip_how_to_guides": False,
-                "skip_config_patterns": False,
-                "skip_api_reference": False,
-                "skip_dependency_graph": False,
-                "skip_docs": False,
-                "no_comments": False,
+                "depth": analysis["depth"],
+                "skip_patterns": analysis["skip_patterns"],
+                "skip_test_examples": analysis["skip_test_examples"],
+                "skip_how_to_guides": analysis["skip_how_to_guides"],
+                "skip_config_patterns": analysis["skip_config_patterns"],
+                "skip_api_reference": analysis["skip_api_reference"],
+                "skip_dependency_graph": analysis["skip_dependency_graph"],
+                "skip_docs": analysis["skip_docs"],
+                "no_comments": analysis["no_comments"],
                 "file_patterns": None,
             },
             "rag": {
-                "chunk_for_rag": False,
-                "chunk_tokens": 512,
-                "chunk_overlap_tokens": 50,
-                "preserve_code_blocks": True,
-                "preserve_paragraphs": True,
+                "chunk_for_rag": rag["chunk_for_rag"],
+                "chunk_tokens": rag["chunk_tokens"],
+                "chunk_overlap_tokens": rag["chunk_overlap_tokens"],
+                "preserve_code_blocks": rag["preserve_code_blocks"],
+                "preserve_paragraphs": rag["preserve_paragraphs"],
             },
         }
 
@@ -430,6 +441,8 @@ class ExecutionContext(BaseModel):
             config.setdefault("scraping", {})["max_pages"] = args.max_pages
         if hasattr(args, "rate_limit") and args.rate_limit is not None:
             config.setdefault("scraping", {})["rate_limit"] = args.rate_limit
+        if getattr(args, "no_rate_limit", False):
+            config.setdefault("scraping", {})["rate_limit"] = 0
         if getattr(args, "browser", False):
             config.setdefault("scraping", {})["browser"] = True
         if hasattr(args, "workers") and args.workers:

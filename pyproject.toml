@@ -343,7 +343,7 @@ include = ["skill_seekers*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-skill_seekers = ["py.typed", "workflows/*.yaml"]
+skill_seekers = ["py.typed", "workflows/*.yaml", "cli/defaults.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

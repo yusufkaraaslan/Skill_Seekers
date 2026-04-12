@@ -18,6 +18,8 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
+from skill_seekers.cli.defaults import DEFAULTS
+
 # Import three-stream data classes (Phase 1)
 try:
     from .github_fetcher import DocsStream, InsightsStream, ThreeStreamData
@@ -998,8 +1000,8 @@ GitHub issues related to this topic:
             "base_url": self.base_config["base_url"],
             "selectors": self.base_config.get("selectors", {}),
             "url_patterns": self.base_config.get("url_patterns", {}),
-            "rate_limit": self.base_config.get("rate_limit", 0.5),
-            "max_pages": 500,  # Router only scrapes overview pages
+            "rate_limit": self.base_config.get("rate_limit", DEFAULTS["scraping"]["rate_limit"]),
+            "max_pages": 500,  # Router only scrapes overview pages (intentional fixed limit)
             "_router": True,
             "_sub_skills": [cfg["name"] for cfg in self.configs],
             "_routing_keywords": routing_keywords,

@@ -557,7 +557,7 @@ class TestSyncConfigCLI(unittest.TestCase):
         args = parser.parse_args(["--config", "test.json"])
         self.assertFalse(args.apply)
         self.assertEqual(args.depth, 2)
-        self.assertEqual(args.max_pages, 500)
+        self.assertEqual(args.max_pages, -1)  # unlimited by default
         self.assertIsNone(args.rate_limit)
         self.assertEqual(args.source_index, 0)
 

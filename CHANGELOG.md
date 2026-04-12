@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Centralized `defaults.json` config** — single source of truth for all default values (`rate_limit`, `max_pages`, `workers`, `async_mode`, enhancement, analysis, RAG settings). New `defaults.py` loader module. All 15+ files that previously hardcoded defaults now read from this file (#356)
+
+### Changed
+- **`max_pages` default is now unlimited (`-1`)** — the scraper fetches all pages unless the user explicitly sets `--max-pages`. Previously defaulted to 500 (#356)
+- **`--no-rate-limit` flag now works** — was defined in CLI arguments but never consumed by `ExecutionContext` (#356)
+- **`constants.py` reads from `defaults.json`** — no longer contains hardcoded magic numbers (#356)
+- **`ExecutionContext.ScrapingSettings`** — `rate_limit` and `max_pages` now use real defaults instead of `None`, preventing None-poisoning downstream (#356)
+
+### Fixed
+- **`TypeError: '>' not supported between instances of 'NoneType' and 'int'`** — `rate_limit` defaulted to `None` in `ExecutionContext`, which flowed through `config.get("rate_limit", DEFAULT)` (dict.get returns None when the key exists with value None, ignoring the fallback). Fixed in `doc_scraper.py` (sync + async paths), `estimate_pages.py`, and `sync_config.py` (#356)
+- **`discover_urls()` loop never executed with unlimited `max_pages`** — `len(discovered) < -1` is always False. Added unlimited mode guard (#356)
+
 ## [3.5.0] - 2026-04-09
 
 **Theme:** Grand Unification — one command, one interface, direct converters. Agent-agnostic architecture, marketplace pipeline, smart SPA discovery, all content extraction enabled by default. 80+ files changed across the codebase.

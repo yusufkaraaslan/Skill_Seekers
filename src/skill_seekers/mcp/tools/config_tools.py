@@ -52,11 +52,13 @@ async def generate_config(args: dict) -> list[TextContent]:
         List[TextContent]: Success message with config path and next steps, or error message.
     """
     name = args["name"]
+    from skill_seekers.cli.defaults import DEFAULTS
+
     url = args["url"]
     description = args["description"]
-    max_pages = args.get("max_pages", 100)
+    max_pages = args.get("max_pages", DEFAULTS["scraping"]["max_pages"])
     unlimited = args.get("unlimited", False)
-    rate_limit = args.get("rate_limit", 0.5)
+    rate_limit = args.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
 
     # Handle unlimited mode
     if unlimited or max_pages == -1:

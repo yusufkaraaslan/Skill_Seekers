@@ -106,8 +106,8 @@ class TestUnlimitedMode(unittest.TestCase):
             converter = DocToSkillConverter(config, dry_run=True)
             self.assertEqual(converter.config.get("max_pages"), -1)
 
-    def test_limited_mode_default(self):
-        """Test default max_pages is limited"""
+    def test_no_max_pages_key_uses_system_default(self):
+        """Test that omitting max_pages from config is handled gracefully"""
         config = {
             "name": "test",
             "base_url": "https://example.com/",
@@ -117,9 +117,9 @@ class TestUnlimitedMode(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             converter = DocToSkillConverter(config, dry_run=True)
-            max_pages = converter.config.get("max_pages", 500)
-            self.assertIsNotNone(max_pages)
-            self.assertGreater(max_pages, 0)
+            # max_pages is not in config — consumers should fall back to DEFAULT_MAX_PAGES
+            max_pages = converter.config.get("max_pages")
+            self.assertIsNone(max_pages)
 
 
 class TestRateLimiting(unittest.TestCase):

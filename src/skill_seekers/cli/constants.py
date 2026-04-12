@@ -1,48 +1,52 @@
 """Configuration constants for Skill Seekers CLI.
 
-This module centralizes all magic numbers and configuration values used
-across the CLI tools to improve maintainability and clarity.
+All values are loaded from ``defaults.json`` via :mod:`defaults`.
+This module re-exports them as module-level names so that existing
+``from skill_seekers.cli.constants import DEFAULT_RATE_LIMIT`` imports
+keep working without changes.
 """
+
+from skill_seekers.cli.defaults import DEFAULTS
 
 # ===== SCRAPING CONFIGURATION =====
 
 # Default scraping limits
-DEFAULT_RATE_LIMIT = 0.5  # seconds between requests
-DEFAULT_MAX_PAGES = 500  # maximum pages to scrape
-DEFAULT_CHECKPOINT_INTERVAL = 1000  # pages between checkpoints
-DEFAULT_ASYNC_MODE = False  # use async mode for parallel scraping (opt-in)
+DEFAULT_RATE_LIMIT: float = DEFAULTS["scraping"]["rate_limit"]
+DEFAULT_MAX_PAGES: int = DEFAULTS["scraping"]["max_pages"]
+DEFAULT_CHECKPOINT_INTERVAL: int = DEFAULTS["scraping"]["checkpoint_interval"]
+DEFAULT_ASYNC_MODE: bool = DEFAULTS["scraping"]["async_mode"]
 
 # Content analysis limits
-CONTENT_PREVIEW_LENGTH = 500  # characters to check for categorization
-MAX_PAGES_WARNING_THRESHOLD = 10000  # warn if config exceeds this
+CONTENT_PREVIEW_LENGTH: int = DEFAULTS["limits"]["content_preview_length"]
+MAX_PAGES_WARNING_THRESHOLD: int = DEFAULTS["limits"]["max_pages_warning_threshold"]
 
 # Quality thresholds
-MIN_CATEGORIZATION_SCORE = 2  # minimum score for category assignment
-URL_MATCH_POINTS = 3  # points for URL keyword match
-TITLE_MATCH_POINTS = 2  # points for title keyword match
-CONTENT_MATCH_POINTS = 1  # points for content keyword match
+MIN_CATEGORIZATION_SCORE: int = DEFAULTS["categorization"]["min_score"]
+URL_MATCH_POINTS: int = DEFAULTS["categorization"]["url_match_points"]
+TITLE_MATCH_POINTS: int = DEFAULTS["categorization"]["title_match_points"]
+CONTENT_MATCH_POINTS: int = DEFAULTS["categorization"]["content_match_points"]
 
 # ===== ENHANCEMENT CONFIGURATION =====
 
 # API-based enhancement limits (uses Anthropic API)
-API_CONTENT_LIMIT = 100000  # max characters for API enhancement
-API_PREVIEW_LIMIT = 40000  # max characters for preview
+API_CONTENT_LIMIT: int = DEFAULTS["limits"]["api_content_limit"]
+API_PREVIEW_LIMIT: int = DEFAULTS["limits"]["api_preview_limit"]
 
 # Local enhancement limits (uses coding agent CLI)
-LOCAL_CONTENT_LIMIT = 50000  # max characters for local enhancement
-LOCAL_PREVIEW_LIMIT = 20000  # max characters for preview
+LOCAL_CONTENT_LIMIT: int = DEFAULTS["limits"]["local_content_limit"]
+LOCAL_PREVIEW_LIMIT: int = DEFAULTS["limits"]["local_preview_limit"]
 
 # ===== PAGE ESTIMATION =====
 
 # Estimation and discovery settings
-DEFAULT_MAX_DISCOVERY = 1000  # default max pages to discover
-DISCOVERY_THRESHOLD = 10000  # threshold for warnings
+DEFAULT_MAX_DISCOVERY: int = DEFAULTS["limits"]["default_max_discovery"]
+DISCOVERY_THRESHOLD: int = DEFAULTS["limits"]["discovery_threshold"]
 
 # ===== FILE LIMITS =====
 
 # Output and processing limits
-MAX_REFERENCE_FILES = 100  # maximum reference files per skill
-MAX_CODE_BLOCKS_PER_PAGE = 5  # maximum code blocks to extract per page
+MAX_REFERENCE_FILES: int = DEFAULTS["limits"]["max_reference_files"]
+MAX_CODE_BLOCKS_PER_PAGE: int = DEFAULTS["limits"]["max_code_blocks_per_page"]
 
 # ===== EXPORT CONSTANTS =====
 
