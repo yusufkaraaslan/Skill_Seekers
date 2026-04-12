@@ -6,6 +6,7 @@ Tests URL validation, language detection, pattern extraction, and categorization
 
 import os
 import sys
+import tempfile
 import unittest
 
 from bs4 import BeautifulSoup
@@ -298,6 +299,134 @@ class TestPatternExtraction(unittest.TestCase):
         patterns = self.converter.extract_patterns(main, [])
 
         self.assertLessEqual(len(patterns), 5, "Should limit to 5 patterns max")
+
+    def test_extract_pattern_ignores_inline_code_only(self):
+        """Inline code tokens should not be treated as meaningful patterns."""
+        html = """
+        <article>
+            <p>Example: returns <code>True</code> on success.</p>
+        </article>
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        main = soup.find("article")
+        patterns = self.converter.extract_patterns(main, [])
+
+        self.assertEqual(patterns, [])
+
+
+class TestQuickReferenceQuality(unittest.TestCase):
+    def setUp(self):
+        config = {
+            "name": "test",
+            "base_url": "https://example.com/",
+            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
+            "rate_limit": 0.1,
+            "max_pages": 10,
+        }
+        self.converter = DocToSkillConverter(config, dry_run=True)
+
+    def test_generate_quick_reference_filters_low_signal_patterns(self):
+        pages = [
+            {
+                "patterns": [
+                    {"description": "Example: boolean result", "code": "True"},
+                    {"description": "Usage: options dict", "code": "options"},
+                    {
+                        "description": "Example: run a crawler request",
+                        "code": "result = await crawler.arun(url='https://example.com')",
+                    },
+                ]
+            }
+        ]
+
+        quick_ref = self.converter.generate_quick_reference(pages)
+
+        self.assertEqual(len(quick_ref), 1)
+        self.assertIn("crawler.arun", quick_ref[0]["code"])
+
+    def test_generate_quick_reference_normalizes_low_signal_descriptions(self):
+        pages = [
+            {
+                "patterns": [
+                    {
+                        "description": "1. Example: Use cosine similarity matching for strict extraction.",
+                        "code": "strategy = CosineStrategy(sim_threshold=0.8)",
+                    },
+                    {
+                        "description": "Example:",
+                        "code": "print('ignore generic marker')",
+                    },
+                ]
+            }
+        ]
+
+        quick_ref = self.converter.generate_quick_reference(pages)
+
+        self.assertEqual(len(quick_ref), 1)
+        self.assertIn("cosine similarity", quick_ref[0]["description"].lower())
+        self.assertNotEqual(quick_ref[0]["description"], "1")
+
+    def test_create_enhanced_skill_md_omits_empty_doc_version_and_placeholders(self):
+        categories = {
+            "getting_started": [
+                {
+                    "code_samples": [
+                        {
+                            "code": "result = await crawler.arun(url='https://example.com')",
+                            "language": "python",
+                        }
+                    ]
+                }
+            ]
+        }
+        quick_ref = [
+            {
+                "description": "Example: run a crawler request",
+                "code": "result = await crawler.arun(url='https://example.com')",
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.makedirs(os.path.join(tmpdir, "references"), exist_ok=True)
+            self.converter.skill_dir = tmpdir
+            self.converter.create_enhanced_skill_md(categories, quick_ref)
+
+            with open(os.path.join(tmpdir, "SKILL.md"), encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertNotIn("doc_version:", content)
+        self.assertNotIn("Add helper scripts here for common automation tasks.", content)
+        self.assertNotIn("Add templates, boilerplate, or example projects here.", content)
+        self.assertIn("High-Signal Examples", content)
+
+    def test_create_enhanced_skill_md_prefers_display_name(self):
+        self.converter.config["display_name"] = "crawl4ai"
+        self.converter.config["version"] = "1.0.0"
+
+        categories = {
+            "getting_started": [
+                {
+                    "code_samples": [
+                        {
+                            "code": "result = await crawler.arun(url='https://example.com')",
+                            "language": "python",
+                        }
+                    ]
+                }
+            ]
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.makedirs(os.path.join(tmpdir, "references"), exist_ok=True)
+            self.converter.skill_dir = tmpdir
+            self.converter.create_enhanced_skill_md(categories, [])
+
+            with open(os.path.join(tmpdir, "SKILL.md"), encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertIn("name: crawl4ai", content)
+        self.assertIn("# Crawl4Ai Skill", content)
+        self.assertIn("understand crawl4ai features", content)
 
 
 class TestCategorization(unittest.TestCase):

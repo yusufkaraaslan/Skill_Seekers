@@ -417,12 +417,21 @@ class CreateCommand:
             )
 
             if client.mode == "api" and client.client:
-                from skill_seekers.cli.enhance_skill import enhance_skill_md
+                from skill_seekers.cli.adaptors import get_adaptor
+                from skill_seekers.cli.agent_client import PROVIDER_TARGET_MAP
 
                 api_key = ctx.enhancement.api_key or client.api_key
                 if api_key:
-                    enhance_skill_md(skill_dir, api_key)
-                    logger.info("API enhancement complete!")
+                    target = PROVIDER_TARGET_MAP.get(client.provider or "", "claude")
+                    adaptor = get_adaptor(target)
+                    if adaptor.supports_enhancement():
+                        success = adaptor.enhance(Path(skill_dir), api_key)
+                        if success:
+                            logger.info("API enhancement complete! (%s)", adaptor.PLATFORM_NAME)
+                        else:
+                            logger.warning("API enhancement did not complete")
+                    else:
+                        logger.warning("%s does not support AI enhancement", adaptor.PLATFORM_NAME)
                 else:
                     logger.warning("No API key available for enhancement")
             else:

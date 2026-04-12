@@ -115,6 +115,22 @@ def test_accuracy_with_placeholder():
         assert score < 100  # Deducted for placeholder
 
 
+def test_accuracy_does_not_flag_placeholder_discussion():
+    """Mentioning placeholders in explanatory text should not count as template residue."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_dir = Path(tmpdir) / "placeholder_note_skill"
+        skill_dir.mkdir()
+
+        (skill_dir / "SKILL.md").write_text(
+            "# Skill\n\nQuick reference entries are filtered to avoid low-signal placeholders."
+        )
+
+        analyzer = QualityAnalyzer(skill_dir)
+        score = analyzer.analyze_accuracy()
+
+        assert score == 100
+
+
 def test_coverage_high(complete_skill_dir):
     """Test coverage analysis with good coverage."""
     analyzer = QualityAnalyzer(complete_skill_dir)
@@ -135,6 +151,27 @@ def test_coverage_low():
         score = analyzer.analyze_coverage()
 
         assert score < 50  # Low coverage
+
+
+def test_coverage_counts_nested_reference_files():
+    """Unified skills may store references under nested per-source directories."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_dir = Path(tmpdir) / "nested_refs_skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Skill\n\nContent")
+
+        nested_refs = skill_dir / "references" / "documentation" / "source_a"
+        nested_refs.mkdir(parents=True)
+        (nested_refs / "getting_started.md").write_text("# Getting Started")
+        (nested_refs / "api.md").write_text("# API")
+        (nested_refs / "examples.md").write_text("# Examples")
+
+        analyzer = QualityAnalyzer(skill_dir)
+        score = analyzer.analyze_coverage()
+        stats = analyzer.calculate_statistics()
+
+        assert score >= 60
+        assert stats["reference_files"] == 3
 
 
 def test_health_good():

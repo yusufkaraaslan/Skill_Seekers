@@ -1164,6 +1164,22 @@ This skill combines knowledge from multiple sources:
                     f"- [{source_id}]({source_id}/index.md) - {base_url} ({total_pages} pages)\n"
                 )
 
+        # Compatibility: if this unified skill contains only one documentation source,
+        # also expose the reference files at references/*.md so docs-only SKILL.md files
+        # remain accurate and easy to browse.
+        non_empty_sources = [source_type for source_type, items in self.scraped_data.items() if items]
+        if len(docs_list) == 1 and non_empty_sources == ["documentation"]:
+            source_id = docs_list[0].get("source_id", "source_0")
+            source_dir = os.path.join(docs_dir, source_id)
+            root_refs_dir = os.path.join(self.skill_dir, "references")
+            for entry in sorted(os.listdir(source_dir)):
+                if entry.lower() == "index.md":
+                    continue
+                src_path = os.path.join(source_dir, entry)
+                dst_path = os.path.join(root_refs_dir, entry)
+                if os.path.isfile(src_path):
+                    shutil.copy2(src_path, dst_path)
+
         logger.info(f"Created documentation references ({len(docs_list)} sources)")
 
     def _generate_github_references(self, github_list: list[dict]):

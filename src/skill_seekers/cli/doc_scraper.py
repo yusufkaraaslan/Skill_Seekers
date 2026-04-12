@@ -69,6 +69,7 @@ FALLBACK_MAIN_SELECTORS = [
 _WHITESPACE_RE = re.compile(r"\s+")
 _SAFE_TITLE_RE = re.compile(r"[^\w\s-]")
 _SAFE_TITLE_SEP_RE = re.compile(r"[-\s]+")
+_DISPLAY_NAME_RE = re.compile(r"[^a-zA-Z0-9_-]+")
 
 
 def infer_description_from_docs(
@@ -98,7 +99,7 @@ def infer_description_from_docs(
             # Strategy 1: Try meta description tag
             meta_desc = soup.find("meta", {"name": "description"})
             if meta_desc and meta_desc.get("content"):
-                desc = meta_desc["content"].strip()
+                desc = str(meta_desc.get("content") or "").strip()
                 if len(desc) > 20:  # Meaningful length
                     # Clean and format
                     if len(desc) > 150:
@@ -108,7 +109,7 @@ def infer_description_from_docs(
             # Strategy 2: Try OpenGraph description
             og_desc = soup.find("meta", {"property": "og:description"})
             if og_desc and og_desc.get("content"):
-                desc = og_desc["content"].strip()
+                desc = str(og_desc.get("content") or "").strip()
                 if len(desc) > 20:
                     if len(desc) > 150:
                         desc = desc[:147] + "..."
@@ -157,10 +158,41 @@ class DocToSkillConverter(SkillConverter):
     SOURCE_TYPE = "web"
 
     def __init__(self, config: dict[str, Any], dry_run: bool = False, resume: bool = False) -> None:
-        super().__init__(config)
-        self.config = config
-        self.name = config["name"]
-        self.base_url = config["base_url"]
+        normalized_config = dict(config)
+        primary_source = {}
+        sources = config.get("sources", [])
+        if isinstance(sources, list) and sources and isinstance(sources[0], dict):
+            primary_source = sources[0]
+
+        for field in [
+            "display_name",
+            "description",
+            "base_url",
+            "selectors",
+            "url_patterns",
+            "categories",
+            "rate_limit",
+            "max_pages",
+            "start_urls",
+            "llms_txt_url",
+            "skip_llms_txt",
+            "browser",
+            "browser_wait_until",
+            "browser_extra_wait",
+            "workers",
+            "async_mode",
+            "checkpoint",
+            "doc_version",
+            "version",
+        ]:
+            if field not in normalized_config and field in primary_source:
+                normalized_config[field] = primary_source[field]
+
+        super().__init__(normalized_config)
+        self.config = normalized_config
+        self.name = normalized_config["name"]
+        self.display_name = str(normalized_config.get("display_name", self.name)).strip() or self.name
+        self.base_url = normalized_config["base_url"]
         self.dry_run = dry_run
         self.resume = resume
 
@@ -170,12 +202,12 @@ class DocToSkillConverter(SkillConverter):
         self.checkpoint_file = f"{self.data_dir}/checkpoint.json"
 
         # Checkpoint config
-        checkpoint_config = config.get("checkpoint", {})
+        checkpoint_config = normalized_config.get("checkpoint", {})
         self.checkpoint_enabled = checkpoint_config.get("enabled", False)
         self.checkpoint_interval = checkpoint_config.get("interval", DEFAULT_CHECKPOINT_INTERVAL)
 
         # llms.txt detection state
-        skip_llms_txt_value = config.get("skip_llms_txt", False)
+        skip_llms_txt_value = normalized_config.get("skip_llms_txt", False)
         if not isinstance(skip_llms_txt_value, bool):
             logger.warning(
                 "Invalid value for 'skip_llms_txt': %r (expected bool). Defaulting to False.",
@@ -189,19 +221,19 @@ class DocToSkillConverter(SkillConverter):
         self.llms_txt_variants: list[str] = []  # Track all downloaded variants
 
         # Browser rendering mode (for JavaScript SPA sites)
-        self.browser_mode = config.get("browser", False)
+        self.browser_mode = normalized_config.get("browser", False)
         self._browser_renderer = None
-        self._browser_wait_until = config.get("browser_wait_until", "domcontentloaded")
-        self._browser_extra_wait = config.get("browser_extra_wait", 0)  # ms
+        self._browser_wait_until = normalized_config.get("browser_wait_until", "domcontentloaded")
+        self._browser_extra_wait = normalized_config.get("browser_extra_wait", 0)  # ms
 
         # Parallel scraping config
-        self.workers = config.get("workers") or DEFAULTS["scraping"]["workers"]
-        self.async_mode = config.get("async_mode", DEFAULT_ASYNC_MODE)
+        self.workers = normalized_config.get("workers") or DEFAULTS["scraping"]["workers"]
+        self.async_mode = normalized_config.get("async_mode", DEFAULT_ASYNC_MODE)
 
         # State
         self.visited_urls: set[str] = set()
         # Support multiple starting URLs
-        start_urls = config.get("start_urls", [self.base_url])
+        start_urls = normalized_config.get("start_urls", [self.base_url])
         self.pending_urls = deque(start_urls)
         self._enqueued_urls: set[str] = set(
             start_urls
@@ -215,7 +247,7 @@ class DocToSkillConverter(SkillConverter):
         self.language_detector = LanguageDetector(min_confidence=0.15)
 
         # Pre-cache URL patterns for faster is_valid_url checks
-        url_patterns = config.get("url_patterns", {})
+        url_patterns = normalized_config.get("url_patterns", {})
         self._include_patterns: list[str] = url_patterns.get("include", [])
         self._exclude_patterns: list[str] = url_patterns.get("exclude", [])
 
@@ -333,6 +365,10 @@ class DocToSkillConverter(SkillConverter):
             except Exception as e:
                 logger.warning("⚠️  Failed to clear checkpoint: %s", e)
 
+    def checkpoint_exists(self) -> bool:
+        """Return True when a saved checkpoint file is available."""
+        return os.path.exists(self.checkpoint_file)
+
     def _find_main_content(self, soup: Any) -> tuple[Any, str | None]:
         """Find the main content element using config selector with fallbacks.
 
@@ -385,7 +421,7 @@ class DocToSkillConverter(SkillConverter):
         # This allows discovery of navigation links outside the main content area.
         seen_links: set[str] = set()
         for link in soup.find_all("a", href=True):
-            href = urljoin(url, link["href"])
+            href = urljoin(url, str(link.get("href") or ""))
             # Strip anchor fragments to avoid treating #anchors as separate pages
             href = href.split("#")[0]
             if href not in seen_links and self.is_valid_url(href):
@@ -687,19 +723,127 @@ class DocToSkillConverter(SkillConverter):
 
         # Look for "Example:" or "Pattern:" sections
         for elem in main.find_all(["p", "div"]):
-            text = elem.get_text().lower()
-            if any(word in text for word in ["example:", "pattern:", "usage:", "typical use"]):
-                # Get the code that follows
-                next_code = elem.find_next(["pre", "code"])
-                if next_code:
-                    patterns.append(
-                        {
-                            "description": self.clean_text(elem.get_text()),
-                            "code": next_code.get_text().strip(),
-                        }
-                    )
+            text = self.clean_text(elem.get_text())
+            lowered_text = text.lower()
+            if any(
+                word in lowered_text for word in ["example:", "pattern:", "usage:", "typical use"]
+            ):
+                # Only accept block code examples. Inline <code> tokens create noisy quick
+                # references such as `True`, `options`, or bare parameter names.
+                next_pre = elem.find_next("pre")
+                if next_pre:
+                    next_code = next_pre.find("code") or next_pre
+                    code = next_code.get_text().strip()
+                    if not self._is_low_signal_code_snippet(code):
+                        patterns.append(
+                            {
+                                "description": text,
+                                "code": code,
+                            }
+                        )
 
         return patterns[:5]  # Limit to 5 most relevant patterns
+
+    @staticmethod
+    def _is_low_signal_code_snippet(code: str) -> bool:
+        """Return True when a snippet is too weak to act as a useful quick reference."""
+        normalized = _WHITESPACE_RE.sub(" ", code).strip()
+        if not normalized:
+            return True
+
+        lowered = normalized.lower()
+        if lowered in {
+            "true",
+            "false",
+            "none",
+            "null",
+            "options",
+            "status_code",
+            "success=false",
+            "success=true",
+            "on_page_context_created",
+        }:
+            return True
+
+        if re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", normalized):
+            return True
+
+        if re.fullmatch(
+            r"[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*(true|false|none|null|-?\d+(\.\d+)?|\"[^\"]*\"|'[^']*')",
+            lowered,
+        ):
+            return True
+
+        if (
+            "\n" not in code
+            and len(normalized) < 16
+            and "(" not in normalized
+            and "." not in normalized
+            and "[" not in normalized
+            and "{" not in normalized
+            and ":" not in normalized
+        ):
+            return True
+
+        return False
+
+    @staticmethod
+    def _normalize_pattern_description(description: str) -> str | None:
+        """Normalize extracted pattern descriptions into concise, useful summaries."""
+        text = _WHITESPACE_RE.sub(" ", description).strip()
+        if not text:
+            return None
+
+        text = re.sub(r"^\s*\d+[\).:\-\s]+", "", text)
+        text = re.sub(r"^\s*(example|usage|pattern)\s*:\s*", "", text, flags=re.IGNORECASE)
+        text = text.strip(" -:")
+
+        if not text:
+            return None
+
+        first_sentence = re.split(r"(?<=[.!?])\s+", text, maxsplit=1)[0].strip()
+        if len(first_sentence) >= 8:
+            text = first_sentence
+
+        lowered = text.lower().strip(" .:")
+        if lowered in {"example", "usage", "pattern", "what", "note"}:
+            return None
+
+        if re.fullmatch(r"\d+", lowered):
+            return None
+
+        if len(text) < 8:
+            return None
+
+        if len(text) > 150:
+            text = text[:147].rstrip() + "..."
+
+        return text
+
+    @staticmethod
+    def _example_language_priority(language: str) -> int:
+        """Rank example languages so the most useful snippets appear first."""
+        priorities = {
+            "python": 0,
+            "bash": 1,
+            "shell": 1,
+            "sh": 1,
+            "console": 1,
+            "json": 2,
+            "yaml": 3,
+            "yml": 3,
+            "toml": 4,
+            "javascript": 5,
+            "typescript": 6,
+            "tsx": 7,
+            "jsx": 8,
+            "html": 9,
+            "css": 10,
+            "sql": 11,
+            "markdown": 12,
+            "text": 20,
+        }
+        return priorities.get(language.lower(), 50)
 
     def clean_text(self, text: str) -> str:
         """Clean text content"""
@@ -1154,15 +1298,18 @@ class DocToSkillConverter(SkillConverter):
                 # Handle sitemap index (nested sitemaps)
                 for sitemap in root.findall(".//sm:sitemap/sm:loc", ns):
                     try:
+                        sitemap_text = (sitemap.text or "").strip()
+                        if not sitemap_text:
+                            continue
                         sub_resp = requests.get(
-                            sitemap.text.strip(),
+                            sitemap_text,
                             timeout=10,
                             headers={"User-Agent": "SkillSeekers/3.4"},
                         )
                         if sub_resp.status_code == 200:
                             sub_root = ET.fromstring(sub_resp.text)
                             for loc in sub_root.findall(".//sm:url/sm:loc", ns):
-                                url = loc.text.strip().split("#")[0]
+                                url = (loc.text or "").strip().split("#")[0]
                                 if self.is_valid_url(url):
                                     discovered.append(url)
                     except Exception:
@@ -1170,7 +1317,7 @@ class DocToSkillConverter(SkillConverter):
 
                 # Handle direct sitemap
                 for loc in root.findall(".//sm:url/sm:loc", ns):
-                    url = loc.text.strip().split("#")[0]
+                    url = (loc.text or "").strip().split("#")[0]
                     if self.is_valid_url(url):
                         discovered.append(url)
 
@@ -1217,7 +1364,7 @@ class DocToSkillConverter(SkillConverter):
             seen = set()
 
             for link in soup.find_all("a", href=True):
-                href = urljoin(self.base_url, link["href"]).split("#")[0]
+                href = urljoin(self.base_url, str(link.get("href") or "")).split("#")[0]
                 if href not in seen and self.is_valid_url(href):
                     seen.add(href)
                     discovered.append(href)
@@ -1322,7 +1469,7 @@ class DocToSkillConverter(SkillConverter):
                         # Discover links from full page (not just main content)
                         # to match real scrape path behaviour in extract_content()
                         for link in soup.find_all("a", href=True):
-                            href = urljoin(url, link["href"])
+                            href = urljoin(url, str(link.get("href") or ""))
                             href = href.split("#")[0]
                             if self.is_valid_url(href):
                                 self._enqueue_url(href)
@@ -1507,7 +1654,7 @@ class DocToSkillConverter(SkillConverter):
                                 )
                                 soup = BeautifulSoup(response.content, "html.parser")
                                 for link in soup.find_all("a", href=True):
-                                    href = urljoin(url, link["href"])
+                                    href = urljoin(url, str(link.get("href") or ""))
                                     href = href.split("#")[0]
                                     if self.is_valid_url(href):
                                         self._enqueue_url(href)
@@ -1738,10 +1885,18 @@ class DocToSkillConverter(SkillConverter):
         # Get most common code patterns
         seen_codes = set()
         for pattern in all_patterns:
-            code = pattern["code"]
-            if code not in seen_codes and len(code) < 300:
-                quick_ref.append(pattern)
-                seen_codes.add(code)
+            code = pattern.get("code", "")
+            description = self._normalize_pattern_description(pattern.get("description", ""))
+            normalized_code = _WHITESPACE_RE.sub(" ", code).strip()
+            if (
+                description
+                and normalized_code
+                and normalized_code not in seen_codes
+                and len(code) < 300
+                and not self._is_low_signal_code_snippet(code)
+            ):
+                quick_ref.append({"description": description, "code": code.strip()})
+                seen_codes.add(normalized_code)
                 if len(quick_ref) >= 15:
                     break
 
@@ -1800,6 +1955,11 @@ class DocToSkillConverter(SkillConverter):
         quick_ref: list[dict[str, str]],
     ) -> None:
         """Create SKILL.md with actual examples (IMPROVED)"""
+        display_name = str(self.config.get("display_name", self.display_name)).strip() or self.name
+        self.display_name = display_name
+        display_slug = _DISPLAY_NAME_RE.sub("-", display_name.lower()).strip("-") or self.name
+        display_title = display_name.replace("_", " ").title()
+
         # Try to infer description if not in config
         if "description" not in self.config:
             # Get first page HTML content to infer description
@@ -1808,73 +1968,98 @@ class DocToSkillConverter(SkillConverter):
                 if pages:
                     first_page_html = pages[0].get("raw_html", "")
                     break
-            description = infer_description_from_docs(self.base_url, first_page_html, self.name)
+            description = infer_description_from_docs(self.base_url, first_page_html, display_name)
         else:
             description = self.config["description"]
 
         # Extract actual code examples from docs
-        example_codes = []
+        example_candidates = []
+        seen_example_codes: set[str] = set()
+        sample_index = 0
         for pages in categories.values():
-            for page in pages[:3]:  # First 3 pages per category
-                for sample in page.get("code_samples", [])[:2]:  # First 2 samples per page
+            for page in pages[:5]:
+                for sample in page.get("code_samples", [])[:4]:
                     code = sample.get("code", sample if isinstance(sample, str) else "")
-                    lang = sample.get("language", "unknown")
-                    if len(code) < 200 and lang != "unknown":
-                        example_codes.append((lang, code))
-                    if len(example_codes) >= 10:
+                    lang = sample.get("language", "unknown") if isinstance(sample, dict) else "unknown"
+                    normalized_code = _WHITESPACE_RE.sub(" ", code).strip()
+                    if (
+                        len(code) < 250
+                        and lang != "unknown"
+                        and normalized_code
+                        and normalized_code not in seen_example_codes
+                        and not self._is_low_signal_code_snippet(code)
+                    ):
+                        example_candidates.append(
+                            (
+                                self._example_language_priority(lang),
+                                sample_index,
+                                lang,
+                                code.strip(),
+                            )
+                        )
+                        seen_example_codes.add(normalized_code)
+                        sample_index += 1
+                    if len(example_candidates) >= 60:
                         break
-                if len(example_codes) >= 10:
+                if len(example_candidates) >= 60:
                     break
-            if len(example_codes) >= 10:
+            if len(example_candidates) >= 60:
                 break
 
-        doc_version = self.config.get("doc_version", "")
-        content = f"""---
-name: {self.name}
-description: {description}
-doc_version: {doc_version}
----
+        example_codes = [
+            (lang, code)
+            for _, _, lang, code in sorted(example_candidates, key=lambda item: (item[0], item[1]))[:10]
+        ]
 
-# {self.name.title()} Skill
+        frontmatter = [
+            "---",
+            f"name: {display_slug}",
+            f"description: {description}",
+        ]
 
-{description.capitalize()}, generated from official documentation.
+        version = str(self.config.get("version", "")).strip()
+        if version:
+            frontmatter.append(f"version: {version}")
 
-## When to Use This Skill
+        doc_version = str(self.config.get("doc_version", "")).strip()
+        if doc_version:
+            frontmatter.append(f"doc_version: {doc_version}")
 
-This skill should be triggered when:
-- Working with {self.name}
-- Asking about {self.name} features or APIs
-- Implementing {self.name} solutions
-- Debugging {self.name} code
-- Learning {self.name} best practices
+        frontmatter.append("---")
+
+        content = "\n".join(frontmatter) + "\n\n"
+        content += f"# {display_title} Skill\n\n"
+        content += f"{description}\n\n"
+        content += f"""## When to Use This Skill
+
+Use this skill when you need to:
+- understand {display_name} features, APIs, and workflows
+- find concrete code examples before implementing or debugging
+- navigate the official documentation quickly through categorized references
 
 ## Quick Reference
-
-### Common Patterns
 
 """
 
         # Add actual quick reference patterns
-        if quick_ref:
-            for i, pattern in enumerate(quick_ref[:8], 1):
-                desc = pattern.get("description", "Example pattern")
-                # Format description: extract first sentence, truncate if too long
-                first_sentence = desc.split(".")[0] if "." in desc else desc
-                if len(first_sentence) > 150:
-                    first_sentence = first_sentence[:147] + "..."
-
-                content += f"**Pattern {i}:** {first_sentence}\n\n"
-                content += "```\n"
-                content += pattern.get("code", "")[:300]
-                content += "\n```\n\n"
-        else:
-            content += "*Quick reference patterns will be added as you use the skill.*\n\n"
-
-        # Add example codes from docs
         if example_codes:
-            content += "### Example Code Patterns\n\n"
+            content += "### High-Signal Examples\n\n"
             for i, (lang, code) in enumerate(example_codes[:5], 1):
                 content += f"**Example {i}** ({lang}):\n```{lang}\n{code}\n```\n\n"
+
+        if quick_ref:
+            content += "### Key Usage Notes\n\n"
+            for i, pattern in enumerate(quick_ref[:8], 1):
+                desc = pattern.get("description", "Example pattern")
+                content += f"**Pattern {i}:** {desc}\n\n"
+                content += "```\n"
+                content += pattern.get("code", "")[:300].strip()
+                content += "\n```\n\n"
+        elif not example_codes:
+            content += (
+                "- Start with `references/getting_started.md` or `references/tutorials.md` for core workflows.\n"
+                "- Use `references/api.md` when you need direct API details.\n\n"
+            )
 
         content += """## Reference Files
 
@@ -1890,36 +2075,21 @@ Use `view` to read specific reference files when detailed information is needed.
 
 ## Working with This Skill
 
-### For Beginners
+### Start Here
 Start with the getting_started or tutorials reference files for foundational concepts.
 
 ### For Specific Features
 Use the appropriate category reference file (api, guides, etc.) for detailed information.
 
 ### For Code Examples
-The quick reference section above contains common patterns extracted from the official docs.
-
-## Resources
-
-### references/
-Organized documentation extracted from official sources. These files contain:
-- Detailed explanations
-- Code examples with language annotations
-- Links to original documentation
-- Table of contents for quick navigation
-
-### scripts/
-Add helper scripts here for common automation tasks.
-
-### assets/
-Add templates, boilerplate, or example projects here.
+Use the high-signal examples above first, then open the matching reference file for full context.
 
 ## Notes
 
 - This skill was automatically generated from official documentation
 - Reference files preserve the structure and examples from source docs
 - Code examples include language detection for better syntax highlighting
-- Quick reference patterns are extracted from common usage examples in the docs
+- Quick reference entries are filtered to avoid low-signal placeholders and inline tokens
 
 ## Updating
 
@@ -2287,7 +2457,7 @@ def _run_scraping(config: dict[str, Any]) -> Optional["DocToSkillConverter"]:
     if not config.get("skip_scrape"):
         logger.info("\n🔍 Starting scrape...")
         try:
-            asyncio.run(converter.scrape())
+            converter.scrape_all()
         except KeyboardInterrupt:
             logger.info("\n\n⚠️  Interrupted by user")
             converter.save_checkpoint()
@@ -2321,14 +2491,22 @@ def _run_enhancement(
 
         # Run enhancement based on mode
         if agent_client.mode == "api" and agent_client.client:
-            # API mode enhancement
-            from skill_seekers.cli.enhance_skill import enhance_skill_md
+            from skill_seekers.cli.adaptors import get_adaptor
+            from skill_seekers.cli.agent_client import PROVIDER_TARGET_MAP
 
             # Use AgentClient's API key detection (respects priority: CLI > config > env)
             api_key = ctx.enhancement.api_key or agent_client.api_key
             if api_key:
-                enhance_skill_md(skill_dir, api_key)
-                logger.info("✅ API enhancement complete!")
+                target = PROVIDER_TARGET_MAP.get(agent_client.provider or "", "claude")
+                adaptor = get_adaptor(target)
+                if adaptor.supports_enhancement():
+                    success = adaptor.enhance(Path(skill_dir), api_key)
+                    if success:
+                        logger.info("✅ API enhancement complete! (%s)", adaptor.PLATFORM_NAME)
+                    else:
+                        logger.warning("⚠️  API enhancement did not complete")
+                else:
+                    logger.warning("⚠️  %s does not support AI enhancement", adaptor.PLATFORM_NAME)
             else:
                 logger.warning("⚠️  No API key available for enhancement")
         else:
