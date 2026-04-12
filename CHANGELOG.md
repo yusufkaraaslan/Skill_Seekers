@@ -9,16 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Centralized `defaults.json` config** — single source of truth for all default values (`rate_limit`, `max_pages`, `workers`, `async_mode`, enhancement, analysis, RAG settings). New `defaults.py` loader module. All 15+ files that previously hardcoded defaults now read from this file (#356)
+- **Low-signal code snippet filtering** — `_is_low_signal_code_snippet()` filters junk patterns like bare `True`, `options`, single identifiers from quick references (#360)
+- **Pattern description normalization** — `_normalize_pattern_description()` cleans boilerplate prefixes and truncates to first meaningful sentence (#360)
+- **Example language priority ranking** — `_example_language_priority()` ranks Python > Bash > JSON > etc. for SKILL.md examples (#360)
+- **`checkpoint_exists()` method** on `DocToSkillConverter` — was called but never defined (#360)
+- **Unified config source normalization** — `DocToSkillConverter.__init__` merges fields from `sources[0]` into flat config for compatibility (#360)
+- **`display_name` support** in SKILL.md generation — produces cleaner titles and slugs (#360)
+- **New tests**: `test_doc_scraper_entrypoint.py` (regression for `_run_scraping`), quick-reference quality tests, docs-only compatibility tests, nested reference coverage tests (#360)
 
 ### Changed
 - **`max_pages` default is now unlimited (`-1`)** — the scraper fetches all pages unless the user explicitly sets `--max-pages`. Previously defaulted to 500 (#356)
 - **`--no-rate-limit` flag now works** — was defined in CLI arguments but never consumed by `ExecutionContext` (#356)
 - **`constants.py` reads from `defaults.json`** — no longer contains hardcoded magic numbers (#356)
 - **`ExecutionContext.ScrapingSettings`** — `rate_limit` and `max_pages` now use real defaults instead of `None`, preventing None-poisoning downstream (#356)
+- **SKILL.md frontmatter cleanup** — empty `doc_version:` and `version:` fields are now omitted; placeholder sections removed (#360)
+- **Enhancement routing through platform adaptors** instead of importing nonexistent `enhance_skill_md` helper (#360)
+- **`quality_metrics.py` uses `rglob`** for nested reference directories in unified skills (#360)
 
 ### Fixed
-- **`TypeError: '>' not supported between instances of 'NoneType' and 'int'`** — `rate_limit` defaulted to `None` in `ExecutionContext`, which flowed through `config.get("rate_limit", DEFAULT)` (dict.get returns None when the key exists with value None, ignoring the fallback). Fixed in `doc_scraper.py` (sync + async paths), `estimate_pages.py`, and `sync_config.py` (#356)
+- **`TypeError: '>' not supported between instances of 'NoneType' and 'int'`** — `rate_limit` defaulted to `None` in `ExecutionContext`, which flowed through `config.get("rate_limit", DEFAULT)` (dict.get returns None when the key exists with value None, ignoring the fallback). Fixed in `doc_scraper.py` (sync + async paths), `estimate_pages.py`, and `sync_config.py` (#356, #359)
 - **`discover_urls()` loop never executed with unlimited `max_pages`** — `len(discovered) < -1` is always False. Added unlimited mode guard (#356)
+- **`converter.scrape()` called nonexistent method** in `_run_scraping()` — changed to `converter.scrape_all()` (#360)
+- **None-safety for BeautifulSoup attributes** — `link["href"]`, `sitemap.text`, `meta_desc["content"]` guarded against None XML text nodes (#360)
+- **Python 3.10 compatibility** — backslash in f-string in `quality_metrics.py` not supported before 3.12 (#360)
 
 ## [3.5.0] - 2026-04-09
 

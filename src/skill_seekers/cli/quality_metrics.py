@@ -198,9 +198,8 @@ class QualityAnalyzer:
             for placeholder in placeholders:
                 if re.search(placeholder, content.lower()):
                     score -= 10
-                    issues.append(
-                        f"Found placeholder text: {placeholder.replace('\\b', '')}"
-                    )
+                    clean = placeholder.replace("\\b", "")
+                    issues.append(f"Found placeholder text: {clean}")
                     break
 
         # Check JSON validity

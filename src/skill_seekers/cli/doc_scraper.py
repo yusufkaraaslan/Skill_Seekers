@@ -163,6 +163,12 @@ class DocToSkillConverter(SkillConverter):
         sources = config.get("sources", [])
         if isinstance(sources, list) and sources and isinstance(sources[0], dict):
             primary_source = sources[0]
+            if len(sources) > 1:
+                logger.warning(
+                    "DocToSkillConverter received %d sources but only uses the first. "
+                    "Use UnifiedScraper for multi-source configs.",
+                    len(sources),
+                )
 
         for field in [
             "display_name",
@@ -774,7 +780,7 @@ class DocToSkillConverter(SkillConverter):
         ):
             return True
 
-        if (
+        return (
             "\n" not in code
             and len(normalized) < 16
             and "(" not in normalized
@@ -782,10 +788,7 @@ class DocToSkillConverter(SkillConverter):
             and "[" not in normalized
             and "{" not in normalized
             and ":" not in normalized
-        ):
-            return True
-
-        return False
+        )
 
     @staticmethod
     def _normalize_pattern_description(description: str) -> str | None:
