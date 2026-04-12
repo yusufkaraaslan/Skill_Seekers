@@ -386,11 +386,15 @@ class ExecutionContext(BaseModel):
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
             }
-            config["scraping"] = {
-                "max_pages": file_data.get("max_pages"),
-                "rate_limit": file_data.get("rate_limit"),
-                "browser": file_data.get("browser", False),
-            }
+            scraping: dict[str, Any] = {}
+            if "max_pages" in file_data:
+                scraping["max_pages"] = file_data["max_pages"]
+            if "rate_limit" in file_data:
+                scraping["rate_limit"] = file_data["rate_limit"]
+            if "browser" in file_data:
+                scraping["browser"] = file_data["browser"]
+            if scraping:
+                config["scraping"] = scraping
 
         return config
 
