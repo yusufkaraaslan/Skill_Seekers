@@ -237,7 +237,9 @@ class ConfluenceToSkillConverter(SkillConverter):
         self.description: str = (
             config.get("description") or f"Use when referencing {self.name} documentation"
         )
-        self.max_pages: int = int(config.get("max_pages", DEFAULTS["scraping"]["max_pages"]))
+        _raw_max = config.get("max_pages", DEFAULTS["scraping"]["max_pages"])
+        self._unlimited: bool = _raw_max is None or int(_raw_max) < 0
+        self.max_pages: int = int(_raw_max) if not self._unlimited else float("inf")
 
         # Output paths
         self.skill_dir = f"output/{self.name}"

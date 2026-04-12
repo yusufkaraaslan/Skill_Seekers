@@ -25,6 +25,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.skill_converter import SkillConverter
 
 # Optional dependency guard — notion-client is not a core dependency
@@ -39,8 +40,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Constants
-DEFAULT_MAX_PAGES = 500
-RATE_LIMIT_DELAY = 0.35  # seconds between API requests
+DEFAULT_MAX_PAGES = DEFAULTS["scraping"]["max_pages"]
+RATE_LIMIT_DELAY = 0.35  # seconds between Notion API requests
 MAX_BLOCK_DEPTH = 5
 
 
@@ -92,7 +93,9 @@ class NotionToSkillConverter(SkillConverter):
         self.description: str = (
             config.get("description") or f"Use when referencing {self.name} documentation"
         )
-        self.max_pages: int = config.get("max_pages", DEFAULT_MAX_PAGES)
+        _raw_max = config.get("max_pages", DEFAULT_MAX_PAGES)
+        self._unlimited: bool = _raw_max is None or _raw_max < 0
+        self.max_pages: int = _raw_max if not self._unlimited else float("inf")
         self.skill_dir: str = f"output/{self.name}"
         self.data_file: str = f"output/{self.name}_notion_data.json"
         self._client: Any = None

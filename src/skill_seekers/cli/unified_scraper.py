@@ -307,9 +307,13 @@ class UnifiedScraper(SkillConverter):
                 "description", self.config.get("description", f"Documentation for {self.name}")
             ),
             "base_url": source["base_url"],
-            "browser": source.get("browser", False),
-            "browser_wait_until": source.get("browser_wait_until", "domcontentloaded"),
-            "browser_extra_wait": source.get("browser_extra_wait", 0),
+            "browser": source.get("browser", DEFAULTS["scraping"]["browser"]),
+            "browser_wait_until": source.get(
+                "browser_wait_until", DEFAULTS["scraping"]["browser_wait_until"]
+            ),
+            "browser_extra_wait": source.get(
+                "browser_extra_wait", DEFAULTS["scraping"]["browser_extra_wait"]
+            ),
             "sources": [doc_source],
         }
 
