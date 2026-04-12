@@ -7,6 +7,7 @@ Tracks completeness, accuracy, coverage, and health metrics.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 from dataclasses import dataclass, field, asdict
@@ -87,6 +88,13 @@ class QualityAnalyzer:
         self.metrics: list[QualityMetric] = []
         self.statistics: dict[str, Any] = {}
 
+    def _reference_markdown_files(self) -> list[Path]:
+        """Return all markdown files under references/, including nested layouts."""
+        refs_dir = self.skill_dir / "references"
+        if not refs_dir.exists():
+            return []
+        return sorted(path for path in refs_dir.rglob("*.md") if path.is_file())
+
     def analyze_completeness(self) -> float:
         """
         Analyze skill completeness.
@@ -122,7 +130,7 @@ class QualityAnalyzer:
             score += 10
 
             # Has reference files (10 points)
-            refs = list(refs_dir.glob("*.md"))
+            refs = self._reference_markdown_files()
             if len(refs) > 0:
                 score += 10
 
@@ -186,11 +194,13 @@ class QualityAnalyzer:
                 issues.append(f"Found {todo_count} TODO markers")
 
             # Check for placeholder text (deduct 10)
-            placeholders = ["lorem ipsum", "placeholder", "coming soon"]
+            placeholders = [r"\blorem ipsum\b", r"\bplaceholder\b", r"\bcoming soon\b"]
             for placeholder in placeholders:
-                if placeholder in content.lower():
+                if re.search(placeholder, content.lower()):
                     score -= 10
-                    issues.append(f"Found placeholder text: {placeholder}")
+                    issues.append(
+                        f"Found placeholder text: {placeholder.replace('\\b', '')}"
+                    )
                     break
 
         # Check JSON validity
@@ -238,7 +248,7 @@ class QualityAnalyzer:
 
         refs_dir = self.skill_dir / "references"
         if refs_dir.exists():
-            ref_files = list(refs_dir.glob("*.md"))
+            ref_files = self._reference_markdown_files()
 
             # Has multiple references (30 points)
             if len(ref_files) >= 3:
@@ -364,9 +374,7 @@ class QualityAnalyzer:
                 pass
 
         # Count references
-        refs_dir = self.skill_dir / "references"
-        if refs_dir.exists():
-            stats["reference_files"] = len(list(refs_dir.glob("*.md")))
+        stats["reference_files"] = len(self._reference_markdown_files())
 
         self.statistics = stats
         return stats

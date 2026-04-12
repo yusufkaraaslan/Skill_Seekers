@@ -250,6 +250,39 @@ class TestUnifiedSkillBuilderDocsReferences(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(source_dir, "api.md")))
         self.assertTrue(os.path.exists(os.path.join(source_dir, "guide.md")))
 
+    def test_single_docs_source_creates_top_level_compatibility_references(self):
+        """Docs-only unified skills should expose flat references for easier browsing and scoring."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        refs_dir = os.path.join(self.temp_dir, "refs")
+        os.makedirs(refs_dir)
+
+        with open(os.path.join(refs_dir, "api.md"), "w") as f:
+            f.write("# API Reference")
+        with open(os.path.join(refs_dir, "getting_started.md"), "w") as f:
+            f.write("# Getting Started")
+
+        config = {"name": "docs_only_skill", "description": "Test", "sources": []}
+        scraped_data = {
+            "documentation": [
+                {
+                    "source_id": "docs_source",
+                    "base_url": "https://docs.example.com",
+                    "total_pages": 2,
+                    "refs_dir": refs_dir,
+                }
+            ],
+            "github": [],
+            "pdf": [],
+        }
+
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder._generate_docs_references(scraped_data["documentation"])
+
+        top_level_refs = os.path.join(builder.skill_dir, "references")
+        self.assertTrue(os.path.exists(os.path.join(top_level_refs, "api.md")))
+        self.assertTrue(os.path.exists(os.path.join(top_level_refs, "getting_started.md")))
+
 
 class TestUnifiedSkillBuilderGitHubReferences(unittest.TestCase):
     """Test GitHub reference generation for multiple repositories."""
