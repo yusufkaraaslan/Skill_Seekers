@@ -1167,7 +1167,9 @@ This skill combines knowledge from multiple sources:
         # Compatibility: if this unified skill contains only one documentation source,
         # also expose the reference files at references/*.md so docs-only SKILL.md files
         # remain accurate and easy to browse.
-        non_empty_sources = [source_type for source_type, items in self.scraped_data.items() if items]
+        non_empty_sources = [
+            source_type for source_type, items in self.scraped_data.items() if items
+        ]
         if len(docs_list) == 1 and non_empty_sources == ["documentation"]:
             source_id = docs_list[0].get("source_id", "source_0")
             source_dir = os.path.join(docs_dir, source_id)

@@ -263,7 +263,9 @@ class UnifiedScraper(SkillConverter):
             "type": "documentation",
             "base_url": source["base_url"],
             "display_name": self.name,
-            "description": source.get("description", self.config.get("description", f"Documentation for {self.name}")),
+            "description": source.get(
+                "description", self.config.get("description", f"Documentation for {self.name}")
+            ),
             "selectors": source.get("selectors", {}),
             "url_patterns": source.get("url_patterns", {}),
             "categories": source.get("categories", {}),

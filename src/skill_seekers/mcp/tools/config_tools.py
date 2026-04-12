@@ -51,12 +51,14 @@ async def generate_config(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Success message with config path and next steps, or error message.
     """
-    name = args["name"]
     from skill_seekers.cli.defaults import DEFAULTS
 
+    name = args["name"]
     url = args["url"]
     description = args["description"]
-    max_pages = args.get("max_pages", DEFAULTS["scraping"]["max_pages"])
+    # MCP config generation uses conservative defaults (100 pages) for safety;
+    # the scraping runtime default (-1 = unlimited) is separate.
+    max_pages = args.get("max_pages", 100)
     unlimited = args.get("unlimited", False)
     rate_limit = args.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
 

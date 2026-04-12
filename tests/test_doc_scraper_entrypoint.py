@@ -34,7 +34,7 @@ def test_run_scraping_uses_scrape_all():
     """Regression test for CLI entrypoint calling a nonexistent scrape() method."""
     converter = DummyConverter()
 
-    with patch("skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda config: converter):
+    with patch("skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda *_a, **_kw: converter):
         result = _run_scraping({"name": "demo", "base_url": "https://example.com"})
 
     assert result is converter
@@ -51,7 +51,7 @@ def test_run_scraping_saves_checkpoint_on_keyboard_interrupt():
 
     converter.scrape_all = raise_interrupt
 
-    with patch("skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda config: converter):
+    with patch("skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda *_a, **_kw: converter):
         result = _run_scraping({"name": "demo", "base_url": "https://example.com"})
 
     assert result is None

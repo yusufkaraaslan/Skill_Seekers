@@ -223,7 +223,11 @@ def sync_config(
     url_patterns = source.get("url_patterns", {})
     includes: list[str] = url_patterns.get("include", [])
     excludes: list[str] = url_patterns.get("exclude", [])
-    effective_rate = rate_limit if rate_limit is not None else source.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
+    effective_rate = (
+        rate_limit
+        if rate_limit is not None
+        else source.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
+    )
 
     logger.info("Syncing config: %s", config_path)
     logger.info("  Base URL:      %s", base_url)

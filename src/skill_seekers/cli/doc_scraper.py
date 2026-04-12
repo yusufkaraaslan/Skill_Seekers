@@ -197,7 +197,9 @@ class DocToSkillConverter(SkillConverter):
         super().__init__(normalized_config)
         self.config = normalized_config
         self.name = normalized_config["name"]
-        self.display_name = str(normalized_config.get("display_name", self.name)).strip() or self.name
+        self.display_name = (
+            str(normalized_config.get("display_name", self.name)).strip() or self.name
+        )
         self.base_url = normalized_config["base_url"]
         self.dry_run = dry_run
         self.resume = resume
@@ -1983,7 +1985,9 @@ class DocToSkillConverter(SkillConverter):
             for page in pages[:5]:
                 for sample in page.get("code_samples", [])[:4]:
                     code = sample.get("code", sample if isinstance(sample, str) else "")
-                    lang = sample.get("language", "unknown") if isinstance(sample, dict) else "unknown"
+                    lang = (
+                        sample.get("language", "unknown") if isinstance(sample, dict) else "unknown"
+                    )
                     normalized_code = _WHITESPACE_RE.sub(" ", code).strip()
                     if (
                         len(code) < 250
@@ -2011,7 +2015,9 @@ class DocToSkillConverter(SkillConverter):
 
         example_codes = [
             (lang, code)
-            for _, _, lang, code in sorted(example_candidates, key=lambda item: (item[0], item[1]))[:10]
+            for _, _, lang, code in sorted(example_candidates, key=lambda item: (item[0], item[1]))[
+                :10
+            ]
         ]
 
         frontmatter = [

@@ -664,7 +664,9 @@ async def generate_config_tool(args: dict) -> list[TextContent]:
 
     url = args["url"]
     description = args["description"]
-    max_pages = args.get("max_pages", DEFAULTS["scraping"]["max_pages"])
+    # MCP config generation uses conservative defaults (100 pages) for safety;
+    # the scraping runtime default (-1 = unlimited) is separate.
+    max_pages = args.get("max_pages", 100)
     unlimited = args.get("unlimited", False)
     rate_limit = args.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
 
@@ -837,10 +839,7 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
                 max_pages = config.get("max_pages", -1)
 
             # Estimate: 30s per page + buffer (unlimited defaults to 4h)
-            if max_pages is None or max_pages < 0:
-                timeout = 14400  # 4 hours for unlimited
-            else:
-                timeout = max(3600, max_pages * 35)  # Minimum 1 hour, or 35s per page
+            timeout = 14400 if max_pages is None or max_pages < 0 else max(3600, max_pages * 35)
         except Exception:
             timeout = 14400  # Default: 4 hours
 
