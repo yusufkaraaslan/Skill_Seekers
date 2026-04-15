@@ -154,6 +154,25 @@ class TestPackageSkill(unittest.TestCase):
             self.assertTrue(success)
             self.assertEqual(zip_path.name, "my-awesome-skill.zip")
 
+    def test_package_ibm_bob_creates_bob_directory(self):
+        """Test IBM Bob packaging creates a Bob-ready directory layout."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = self.create_test_skill_directory(tmpdir)
+
+            success, package_path = package_skill(
+                skill_dir,
+                open_folder_after=False,
+                skip_quality_check=True,
+                target="ibm-bob",
+            )
+
+            self.assertTrue(success)
+            self.assertIsNotNone(package_path)
+            self.assertTrue(package_path.is_dir())
+            self.assertTrue(
+                (package_path / ".bob" / "skills" / "test-skill" / "SKILL.md").exists()
+            )
+
 
 class TestPackageSkillCLI(unittest.TestCase):
     """Test package_skill.py command-line interface"""

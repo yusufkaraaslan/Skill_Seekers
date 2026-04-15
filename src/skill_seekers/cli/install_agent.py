@@ -51,6 +51,7 @@ AGENT_PATHS = {
     "kilo": ".kilo/skills/",  # Project-relative (Kilo Code, Cline fork)
     "continue": "~/.continue/skills/",  # Global (Continue.dev)
     "kimi-code": "~/.kimi/skills/",  # Global (Kimi Code)
+    "bob": ".bob/skills/",  # Project-relative (IBM Bob)
 }
 
 
@@ -370,7 +371,7 @@ Examples:
 
 Supported agents:
   claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf,
-  neovate, roo, cline, aider, bolt, kilo, continue, kimi-code, all
+  neovate, roo, cline, aider, bolt, kilo, continue, kimi-code, bob, all
         """,
     )
 

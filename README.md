@@ -57,7 +57,7 @@ skill-seekers create https://docs.react.dev/
 skill-seekers package output/react --target claude      # → Claude AI Skill (ZIP)
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
-skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → IBM Bob skill directory
 ```
 
 ### What gets built
@@ -72,6 +72,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **Haystack Documents** | `--target haystack` | Enterprise RAG pipelines |
 | **Pinecone-ready** (Markdown) | `--target markdown` | Vector upsert |
 | **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | Local vector DBs |
+| **IBM Bob Skill** (directory) | `--target ibm-bob` | IBM Bob project/global skills |
 | **Cursor** `.cursorrules` | `--target claude` → copy | Cursor IDE AI context |
 | **Windsurf / Cline / Continue** | `--target claude` → copy | VS Code, IntelliJ, Vim |
 
@@ -1006,11 +1007,14 @@ In Claude Code, just ask:
 
 ## 🤖 Installing to AI Agents
 
-Skill Seekers can automatically install skills to 18 AI coding agents.
+Skill Seekers can automatically install skills to 19 AI coding agents.
 
 ```bash
 # Install to specific agent
 skill-seekers install-agent output/react/ --agent cursor
+
+# Install to IBM Bob (project-local .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # Install to all agents at once
 skill-seekers install-agent output/react/ --agent all
@@ -1037,6 +1041,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | Project |
 | **Continue** | `~/.continue/skills/` | Global |
 | **Kimi Code** | `~/.kimi/skills/` | Global |
+| **IBM Bob** | `.bob/skills/` | Project |
 
 ---
 
