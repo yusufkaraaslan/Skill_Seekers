@@ -57,6 +57,7 @@ skill-seekers create https://docs.react.dev/
 skill-seekers package output/react --target claude      # → Claude AI Skill (ZIP)
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
+skill-seekers package output/react --target cursor      # → .cursorrules
 skill-seekers package output/react --target ibm-bob     # → IBM Bob skill directory
 ```
 
