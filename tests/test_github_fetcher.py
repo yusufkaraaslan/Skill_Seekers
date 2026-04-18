@@ -438,3 +438,136 @@ class TestIntegration:
         # Verify insights stream
         assert three_streams.insights_stream.metadata["stars"] == 1234
         assert len(three_streams.insights_stream.common_problems) > 0
+
+
+class TestIssueFiltering:
+    """Test issue filtering parameters (since, labels, state)."""
+
+    @patch("requests.get")
+    def test_fetch_issues_page_sends_since_param(self, mock_get):
+        """Test that _fetch_issues_page sends 'since' when set."""
+        mock_response = Mock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher(
+            "https://github.com/test/repo", issue_since="2026-01-01T00:00:00"
+        )
+        fetcher._fetch_issues_page(state="open", max_count=50)
+
+        call_kwargs = mock_get.call_args
+        params = (
+            call_kwargs[1]["params"] if "params" in call_kwargs[1] else call_kwargs.kwargs["params"]
+        )
+        assert params["since"] == "2026-01-01T00:00:00"
+
+    @patch("requests.get")
+    def test_fetch_issues_page_sends_labels_param(self, mock_get):
+        """Test that _fetch_issues_page sends 'labels' when set."""
+        mock_response = Mock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher(
+            "https://github.com/test/repo", issue_labels=["bug", "enhancement"]
+        )
+        fetcher._fetch_issues_page(state="open", max_count=50)
+
+        call_kwargs = mock_get.call_args
+        params = (
+            call_kwargs[1]["params"] if "params" in call_kwargs[1] else call_kwargs.kwargs["params"]
+        )
+        assert params["labels"] == "bug,enhancement"
+
+    @patch("requests.get")
+    def test_fetch_issues_page_no_extra_params_by_default(self, mock_get):
+        """Test that since/labels are NOT sent when not set."""
+        mock_response = Mock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        fetcher._fetch_issues_page(state="open", max_count=50)
+
+        call_kwargs = mock_get.call_args
+        params = (
+            call_kwargs[1]["params"] if "params" in call_kwargs[1] else call_kwargs.kwargs["params"]
+        )
+        assert "since" not in params
+        assert "labels" not in params
+
+    @patch("requests.get")
+    def test_fetch_issues_single_state_open(self, mock_get):
+        """Test fetch_issues with issue_state='open' makes one call."""
+        mock_response = Mock()
+        mock_response.json.return_value = [
+            {"title": "Bug", "number": 1, "state": "open", "comments": 5, "labels": []}
+        ]
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo", issue_state="open")
+        fetcher.fetch_issues(max_issues=100)
+
+        # Should only call once (not 50/50 split)
+        assert mock_get.call_count == 1
+        # Verify it requested "open" state
+        call_kwargs = mock_get.call_args
+        params = (
+            call_kwargs[1]["params"] if "params" in call_kwargs[1] else call_kwargs.kwargs["params"]
+        )
+        assert params["state"] == "open"
+        assert params["per_page"] == 100
+
+    @patch("requests.get")
+    def test_fetch_issues_single_state_closed(self, mock_get):
+        """Test fetch_issues with issue_state='closed' makes one call."""
+        mock_response = Mock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo", issue_state="closed")
+        fetcher.fetch_issues(max_issues=100)
+
+        assert mock_get.call_count == 1
+        call_kwargs = mock_get.call_args
+        params = (
+            call_kwargs[1]["params"] if "params" in call_kwargs[1] else call_kwargs.kwargs["params"]
+        )
+        assert params["state"] == "closed"
+
+    @patch("requests.get")
+    def test_fetch_issues_all_state_makes_two_calls(self, mock_get):
+        """Test fetch_issues with issue_state='all' makes two calls (50/50 split)."""
+        mock_response = Mock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo", issue_state="all")
+        fetcher.fetch_issues(max_issues=100)
+
+        assert mock_get.call_count == 2
+
+    def test_init_stores_issue_filters(self):
+        """Test that __init__ stores issue filter parameters."""
+        fetcher = GitHubThreeStreamFetcher(
+            "https://github.com/test/repo",
+            issue_since="2026-01-01",
+            issue_labels=["bug"],
+            issue_state="open",
+        )
+        assert fetcher.issue_since == "2026-01-01"
+        assert fetcher.issue_labels == ["bug"]
+        assert fetcher.issue_state == "open"
+
+    def test_init_defaults_for_issue_filters(self):
+        """Test default values for issue filter parameters."""
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        assert fetcher.issue_since is None
+        assert fetcher.issue_labels == []
+        assert fetcher.issue_state == "all"

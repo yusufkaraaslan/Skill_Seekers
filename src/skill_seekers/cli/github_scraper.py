@@ -14,6 +14,7 @@ Usage:
     skill-seekers github --repo owner/repo --token $GITHUB_TOKEN
 """
 
+import argparse
 import fnmatch
 import itertools
 import json
@@ -31,7 +32,9 @@ except ImportError:
     print("Error: PyGithub not installed. Run: pip install PyGithub")
     sys.exit(1)
 
+from skill_seekers.cli.arguments.github import add_github_arguments
 from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.utils import setup_logging
 
 # Try to import pathspec for .gitignore support
 try:
@@ -256,6 +259,10 @@ class GitHubScraper(SkillConverter):
         # Options
         self.include_issues = config.get("include_issues", True)
         self.max_issues = config.get("max_issues", 100)
+        self.max_comments = config.get("max_comments", 50)
+        self.issue_since = config.get("issue_since")
+        self.issue_labels = config.get("issue_labels", [])
+        self.issue_state = config.get("issue_state", "all")
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
         self.include_code = config.get("include_code", True)
@@ -831,14 +838,43 @@ class GitHubScraper(SkillConverter):
         logger.info(f"Extracting GitHub Issues (max {self.max_issues})...")
 
         try:
-            # Fetch recent issues (open + closed)
-            issues = self.repo.get_issues(state="all", sort="updated", direction="desc")
+            # Build kwargs for get_issues
+            kwargs: dict[str, Any] = {
+                "state": self.issue_state or "all",
+                "sort": "updated",
+                "direction": "desc",
+            }
+            if self.issue_labels:
+                kwargs["labels"] = [self.repo.get_label(name) for name in self.issue_labels]
+            if self.issue_since:
+                from datetime import datetime
+
+                kwargs["since"] = datetime.fromisoformat(self.issue_since)
+
+            # Fetch issues with filters
+            issues = self.repo.get_issues(**kwargs)
 
             issue_list = []
             for issue in itertools.islice(issues, self.max_issues):
                 # Skip pull requests (they appear in issues)
                 if issue.pull_request:
                     continue
+
+                # Fetch comments for this issue
+                comments_list = []
+                try:
+                    for comment in issue.get_comments()[: self.max_comments]:
+                        comments_list.append(
+                            {
+                                "author": comment.user.login if comment.user else "unknown",
+                                "created_at": (
+                                    comment.created_at.isoformat() if comment.created_at else None
+                                ),
+                                "body": comment.body,
+                            }
+                        )
+                except Exception as e:
+                    logger.debug(f"Could not fetch comments for issue #{issue.number}: {e}")
 
                 issue_data = {
                     "number": issue.number,
@@ -850,7 +886,8 @@ class GitHubScraper(SkillConverter):
                     "updated_at": issue.updated_at.isoformat() if issue.updated_at else None,
                     "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
                     "url": issue.html_url,
-                    "body": issue.body[:500] if issue.body else None,  # First 500 chars
+                    "body": issue.body or None,
+                    "comments": comments_list,
                 }
                 issue_list.append(issue_data)
 
@@ -935,6 +972,7 @@ class GitHubToSkillConverter:
         """Initialize converter with configuration."""
         self.config = config
         self.name = config.get("name", config["repo"].split("/")[-1])
+        self.repo_short_name = config["repo"].split("/")[-1]
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -1315,9 +1353,10 @@ Use this skill when you need to:
             self._generate_file_structure_reference()
 
     def _generate_issues_reference(self):
-        """Generate issues.md reference file."""
+        """Generate issues.md summary and per-issue reference files."""
         issues = self.data["issues"]
 
+        # --- Summary file (issues.md) ---
         content = f"# GitHub Issues\n\nRecent issues from the repository ({len(issues)} total).\n\n"
 
         # Group by state
@@ -1344,6 +1383,65 @@ Use this skill when you need to:
         with open(issues_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Generated: {issues_path}")
+
+        # --- Per-issue files ---
+        for issue in issues:
+            self._write_per_issue_file(issue)
+
+    def _write_per_issue_file(self, issue: dict):
+        """Write a single per-issue markdown file with YAML frontmatter.
+
+        Args:
+            issue: Issue data dict with number, title, body, comments, etc.
+        """
+        number = issue["number"]
+        title = issue["title"]
+        state = issue["state"]
+        labels = issue.get("labels", [])
+        created_at = issue.get("created_at") or "N/A"
+        updated_at = issue.get("updated_at") or "N/A"
+        url = issue.get("url", "")
+        body = issue.get("body") or ""
+        comments = issue.get("comments", [])
+
+        # Escape title for YAML (wrap in quotes)
+        yaml_title = title.replace('"', '\\"')
+        labels_yaml = json.dumps(labels)
+
+        file_content = f"""---
+type: github_issue
+issue_number: {number}
+title: "{yaml_title}"
+state: {state}
+labels: {labels_yaml}
+created_at: "{created_at}"
+updated_at: "{updated_at}"
+url: "{url}"
+---
+
+# Issue #{number}: {title}
+
+**State:** {state} | **Labels:** {", ".join(labels) if labels else "None"} | **Created:** {created_at[:10]}
+**URL:** {url}
+
+## Description
+
+{body}
+"""
+
+        if comments:
+            file_content += f"\n## Comments ({len(comments)})\n"
+            for comment in comments:
+                author = comment.get("author", "unknown")
+                comment_date = comment.get("created_at", "N/A")
+                comment_body = comment.get("body", "")
+                file_content += f"\n### {author} — {comment_date}\n{comment_body}\n\n---\n"
+
+        filename = f"{self.repo_short_name}_{number}.md"
+        filepath = f"{self.skill_dir}/references/{filename}"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(file_content)
+        logger.debug(f"Generated per-issue file: {filepath}")
 
     def _generate_releases_reference(self):
         """Generate releases.md reference file."""
@@ -1389,3 +1487,198 @@ Use this skill when you need to:
         with open(structure_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Generated: {structure_path}")
+
+
+def setup_argument_parser() -> argparse.ArgumentParser:
+    """Setup and configure command-line argument parser.
+
+    Creates an ArgumentParser with all CLI options for the github scraper.
+    All arguments are defined in skill_seekers.cli.arguments.github to ensure
+    consistency between the standalone scraper and unified CLI.
+
+    Returns:
+        argparse.ArgumentParser: Configured argument parser
+    """
+    parser = argparse.ArgumentParser(
+        description="GitHub Repository to Claude Skill Converter",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  skill-seekers github --repo facebook/react
+  skill-seekers github --config configs/react_github.json
+  skill-seekers github --repo owner/repo --token $GITHUB_TOKEN
+        """,
+    )
+
+    # Add all github arguments from shared definitions
+    # This ensures the standalone scraper and unified CLI stay in sync
+    add_github_arguments(parser)
+
+    return parser
+
+
+def main():
+    """C1.10: CLI tool entry point."""
+    parser = setup_argument_parser()
+    args = parser.parse_args()
+
+    setup_logging(verbose=getattr(args, "verbose", False), quiet=getattr(args, "quiet", False))
+
+    # Handle --dry-run
+    if getattr(args, "dry_run", False):
+        repo = args.repo or (args.config and "(from config)")
+        print(f"\n{'=' * 60}")
+        print(f"DRY RUN: GitHub Repository Analysis")
+        print(f"{'=' * 60}")
+        print(f"Repository:     {repo}")
+        print(f"Name:           {getattr(args, 'name', None) or '(auto-detect)'}")
+        print(f"Include issues: {not getattr(args, 'no_issues', False)}")
+        print(f"Include releases: {not getattr(args, 'no_releases', False)}")
+        print(f"Include changelog: {not getattr(args, 'no_changelog', False)}")
+        print(f"Max issues:     {getattr(args, 'max_issues', 100)}")
+        print(f"Max comments:   {getattr(args, 'max_comments', 50)}")
+        since = getattr(args, "since", None)
+        issue_labels = getattr(args, "issue_labels", None)
+        issue_state = getattr(args, "issue_state", None)
+        if since:
+            print(f"Since:          {since}")
+        if issue_labels:
+            print(f"Issue labels:   {issue_labels}")
+        if issue_state:
+            print(f"Issue state:    {issue_state}")
+        print(f"Enhance level:  {getattr(args, 'enhance_level', 0)}")
+        print(f"Profile:        {getattr(args, 'profile', None) or '(default)'}")
+        print(f"\n✅ Dry run complete")
+        return 0
+
+    # Build config from args or file
+    if args.config:
+        with open(args.config, encoding="utf-8") as f:
+            config = json.load(f)
+        # Override with CLI args if provided
+        if args.non_interactive:
+            config["interactive"] = False
+        if args.profile:
+            config["github_profile"] = args.profile
+    elif args.repo:
+        config = {
+            "repo": args.repo,
+            "name": args.name or args.repo.split("/")[-1],
+            "description": args.description or f"Use when working with {args.repo.split('/')[-1]}",
+            "github_token": args.token,
+            "include_issues": not args.no_issues,
+            "include_changelog": not args.no_changelog,
+            "include_releases": not args.no_releases,
+            "max_issues": args.max_issues,
+            "max_comments": getattr(args, "max_comments", 50),
+            "issue_since": getattr(args, "since", None),
+            "issue_labels": (
+                [lab.strip() for lab in args.issue_labels.split(",") if lab.strip()]
+                if getattr(args, "issue_labels", None)
+                else []
+            ),
+            "issue_state": getattr(args, "issue_state", None) or "all",
+            "interactive": not args.non_interactive,
+            "github_profile": args.profile,
+            "local_repo_path": getattr(args, "local_repo_path", None),
+        }
+    else:
+        parser.error("Either --repo or --config is required")
+
+    try:
+        # Phase 1: Scrape GitHub repository
+        scraper = GitHubScraper(config)
+        scraper.scrape()
+
+        if args.scrape_only:
+            logger.info("Scrape complete (--scrape-only mode)")
+            return
+
+        # Phase 2: Build skill
+        converter = GitHubToSkillConverter(config)
+        converter.build_skill()
+
+        skill_name = config.get("name", config["repo"].split("/")[-1])
+        skill_dir = f"output/{skill_name}"
+
+        # ============================================================
+        # WORKFLOW SYSTEM INTEGRATION (Phase 2 - github_scraper)
+        # ============================================================
+        from skill_seekers.cli.workflow_runner import run_workflows
+
+        # Pass GitHub-specific context to workflows
+        github_context = {
+            "repo": config.get("repo", ""),
+            "name": skill_name,
+            "description": config.get("description", ""),
+        }
+
+        workflow_executed, workflow_names = run_workflows(args, context=github_context)
+        workflow_name = ", ".join(workflow_names) if workflow_names else None
+
+        # Phase 3: Optional enhancement with auto-detected mode
+        # Note: Runs independently of workflow system (they complement each other)
+        if getattr(args, "enhance_level", 0) > 0:
+            import os
+
+            # Auto-detect mode based on API key availability
+            api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+            mode = "API" if api_key else "LOCAL"
+
+            logger.info("\n" + "=" * 80)
+            logger.info(f"🤖 Traditional AI Enhancement ({mode} mode, level {args.enhance_level})")
+            logger.info("=" * 80)
+            if workflow_executed:
+                logger.info(f"   Running after workflow: {workflow_name}")
+                logger.info(
+                    "   (Workflow provides specialized analysis, enhancement provides general improvements)"
+                )
+            logger.info("")
+
+            if api_key:
+                # API-based enhancement
+                try:
+                    from skill_seekers.cli.enhance_skill import enhance_skill_md
+
+                    enhance_skill_md(skill_dir, api_key)
+                    logger.info("✅ API enhancement complete!")
+                except ImportError:
+                    logger.error("❌ API enhancement not available. Install: pip install anthropic")
+                    logger.info("💡 Falling back to LOCAL mode...")
+                    # Fall back to LOCAL mode
+                    from pathlib import Path
+                    from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                    enhancer = LocalSkillEnhancer(Path(skill_dir))
+                    enhancer.run(headless=True)
+                    logger.info("✅ Local enhancement complete!")
+            else:
+                # LOCAL enhancement (no API key)
+                from pathlib import Path
+                from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+                enhancer = LocalSkillEnhancer(Path(skill_dir))
+                enhancer.run(headless=True)
+                logger.info("✅ Local enhancement complete!")
+
+        logger.info(f"\n✅ Success! Skill created at: {skill_dir}/")
+
+        # Only suggest enhancement if neither workflow nor traditional enhancement was done
+        if not workflow_executed and getattr(args, "enhance_level", 0) == 0:
+            logger.info("\n💡 Optional: Enhance SKILL.md with Claude:")
+            logger.info(f"  skill-seekers enhance {skill_dir}/ --enhance-level 2")
+            logger.info("  (auto-detects API vs LOCAL mode based on ANTHROPIC_API_KEY)")
+            logger.info("\n💡 Or use a workflow:")
+            logger.info(
+                f"  skill-seekers github --repo {config['repo']} --enhance-workflow architecture-comprehensive"
+            )
+
+        logger.info(f"\nNext step: skill-seekers package {skill_dir}/")
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

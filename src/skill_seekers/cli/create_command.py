@@ -229,6 +229,14 @@ class CreateCommand:
                     "local_repo_path": getattr(self.args, "local_repo_path", None),
                     "include_issues": getattr(self.args, "include_issues", True),
                     "max_issues": getattr(self.args, "max_issues", 100),
+                    "max_comments": getattr(self.args, "max_comments", 50),
+                    "issue_labels": (
+                        [lab.strip() for lab in self.args.issue_labels.split(",") if lab.strip()]
+                        if getattr(self.args, "issue_labels", None)
+                        else []
+                    ),
+                    "issue_state": getattr(self.args, "issue_state", None) or "all",
+                    "issue_since": getattr(self.args, "since", None),
                     "include_changelog": getattr(self.args, "include_changelog", True),
                     "include_releases": getattr(self.args, "include_releases", True),
                     "include_code": getattr(self.args, "include_code", True),

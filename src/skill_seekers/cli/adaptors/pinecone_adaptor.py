@@ -38,6 +38,34 @@ class PineconeAdaptor(SkillAdaptor):
         """Generate deterministic ID from content and metadata."""
         return self._generate_deterministic_id(content, metadata, format="hex")
 
+    @staticmethod
+    def _parse_ref_frontmatter(content: str) -> tuple[dict[str, Any], str]:
+        """Parse YAML frontmatter from reference file content.
+
+        Args:
+            content: File content potentially starting with ``---`` frontmatter
+
+        Returns:
+            Tuple of (frontmatter dict, content with frontmatter stripped).
+            If no frontmatter, returns ({}, original content).
+        """
+        if not content.startswith("---"):
+            return {}, content
+
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return {}, content
+
+        try:
+            import yaml
+
+            fm = yaml.safe_load(parts[1])
+            if not isinstance(fm, dict):
+                return {}, content
+            return fm, parts[2].lstrip("\n")
+        except Exception:
+            return {}, content
+
     def _truncate_text_for_metadata(
         self, text: str, max_bytes: int = PINECONE_METADATA_BYTES_LIMIT
     ) -> str:
@@ -143,6 +171,9 @@ class PineconeAdaptor(SkillAdaptor):
             if ref_content.strip():
                 category = ref_file.stem.replace("_", " ").lower()
 
+                # Parse YAML frontmatter from per-issue files
+                frontmatter_fields, stripped_content = self._parse_ref_frontmatter(ref_content)
+
                 doc_metadata = {
                     "source": metadata.name,
                     "category": category,
@@ -151,6 +182,23 @@ class PineconeAdaptor(SkillAdaptor):
                     "version": metadata.version,
                     "doc_version": metadata.doc_version,
                 }
+
+                # Merge frontmatter fields into metadata for issue files
+                if frontmatter_fields.get("type") == "github_issue":
+                    doc_metadata["type"] = "github_issue"
+                    doc_metadata["category"] = f"{ref_file.stem}"
+                    for key in (
+                        "issue_number",
+                        "title",
+                        "state",
+                        "labels",
+                        "created_at",
+                        "updated_at",
+                        "url",
+                    ):
+                        if key in frontmatter_fields:
+                            doc_metadata[key] = frontmatter_fields[key]
+                    ref_content = stripped_content
 
                 chunks = self._maybe_chunk_content(
                     ref_content,

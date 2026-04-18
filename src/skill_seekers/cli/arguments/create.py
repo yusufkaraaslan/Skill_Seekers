@@ -325,6 +325,42 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Max issues to fetch (default: 100)",
         },
     },
+    "since": {
+        "flags": ("--since",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Only fetch issues updated after this date (ISO8601 or YYYY-MM-DD)",
+            "metavar": "DATE",
+        },
+    },
+    "issue_labels": {
+        "flags": ("--issue-labels",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Filter issues by labels (comma-separated)",
+            "metavar": "LABELS",
+        },
+    },
+    "issue_state": {
+        "flags": ("--issue-state",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "choices": ["open", "closed", "all"],
+            "help": "Filter issues by state (default: all)",
+        },
+    },
+    "max_comments": {
+        "flags": ("--max-comments",),
+        "kwargs": {
+            "type": int,
+            "default": 50,
+            "help": "Max comments to fetch per issue (default: 50)",
+            "metavar": "N",
+        },
+    },
     "scrape_only": {
         "flags": ("--scrape-only",),
         "kwargs": {
