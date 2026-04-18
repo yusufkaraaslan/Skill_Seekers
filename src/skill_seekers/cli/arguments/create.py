@@ -356,9 +356,16 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--max-comments",),
         "kwargs": {
             "type": int,
-            "default": 50,
-            "help": "Max comments to fetch per issue (default: 50)",
+            "default": 0,
+            "help": "Fetch up to N comments per issue (default: 0, disabled)",
             "metavar": "N",
+        },
+    },
+    "per_issue_files": {
+        "flags": ("--per-issue-files",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Write individual markdown files per issue (with YAML frontmatter)",
         },
     },
     "scrape_only": {

@@ -259,10 +259,11 @@ class GitHubScraper(SkillConverter):
         # Options
         self.include_issues = config.get("include_issues", True)
         self.max_issues = config.get("max_issues", 100)
-        self.max_comments = config.get("max_comments", 50)
+        self.max_comments = config.get("max_comments", 0)
         self.issue_since = config.get("issue_since")
         self.issue_labels = config.get("issue_labels", [])
         self.issue_state = config.get("issue_state", "all")
+        self.per_issue_files = config.get("per_issue_files", False)
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
         self.include_code = config.get("include_code", True)
@@ -860,21 +861,24 @@ class GitHubScraper(SkillConverter):
                 if issue.pull_request:
                     continue
 
-                # Fetch comments for this issue
+                # Fetch comments only when explicitly requested
                 comments_list = []
-                try:
-                    for comment in issue.get_comments()[: self.max_comments]:
-                        comments_list.append(
-                            {
-                                "author": comment.user.login if comment.user else "unknown",
-                                "created_at": (
-                                    comment.created_at.isoformat() if comment.created_at else None
-                                ),
-                                "body": comment.body,
-                            }
-                        )
-                except Exception as e:
-                    logger.debug(f"Could not fetch comments for issue #{issue.number}: {e}")
+                if self.max_comments > 0:
+                    try:
+                        for comment in issue.get_comments()[: self.max_comments]:
+                            comments_list.append(
+                                {
+                                    "author": comment.user.login if comment.user else "unknown",
+                                    "created_at": (
+                                        comment.created_at.isoformat()
+                                        if comment.created_at
+                                        else None
+                                    ),
+                                    "body": comment.body,
+                                }
+                            )
+                    except Exception as e:
+                        logger.debug(f"Could not fetch comments for issue #{issue.number}: {e}")
 
                 issue_data = {
                     "number": issue.number,
@@ -886,7 +890,11 @@ class GitHubScraper(SkillConverter):
                     "updated_at": issue.updated_at.isoformat() if issue.updated_at else None,
                     "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
                     "url": issue.html_url,
-                    "body": issue.body or None,
+                    "body": (
+                        issue.body or None
+                        if self.per_issue_files
+                        else (issue.body[:500] if issue.body else None)
+                    ),  # Full body for per-issue files, truncated otherwise
                     "comments": comments_list,
                 }
                 issue_list.append(issue_data)
@@ -973,6 +981,7 @@ class GitHubToSkillConverter:
         self.config = config
         self.name = config.get("name", config["repo"].split("/")[-1])
         self.repo_short_name = config["repo"].split("/")[-1]
+        self.per_issue_files = config.get("per_issue_files", False)
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -1384,9 +1393,11 @@ Use this skill when you need to:
             f.write(content)
         logger.info(f"Generated: {issues_path}")
 
-        # --- Per-issue files ---
-        for issue in issues:
-            self._write_per_issue_file(issue)
+        # --- Per-issue files (opt-in) ---
+        if self.per_issue_files:
+            for issue in issues:
+                self._write_per_issue_file(issue)
+            logger.info(f"Generated {len(issues)} per-issue files")
 
     def _write_per_issue_file(self, issue: dict):
         """Write a single per-issue markdown file with YAML frontmatter.
@@ -1536,7 +1547,8 @@ def main():
         print(f"Include releases: {not getattr(args, 'no_releases', False)}")
         print(f"Include changelog: {not getattr(args, 'no_changelog', False)}")
         print(f"Max issues:     {getattr(args, 'max_issues', 100)}")
-        print(f"Max comments:   {getattr(args, 'max_comments', 50)}")
+        print(f"Max comments:   {getattr(args, 'max_comments', 0)}")
+        print(f"Per-issue files: {getattr(args, 'per_issue_files', False)}")
         since = getattr(args, "since", None)
         issue_labels = getattr(args, "issue_labels", None)
         issue_state = getattr(args, "issue_state", None)
@@ -1570,7 +1582,8 @@ def main():
             "include_changelog": not args.no_changelog,
             "include_releases": not args.no_releases,
             "max_issues": args.max_issues,
-            "max_comments": getattr(args, "max_comments", 50),
+            "max_comments": getattr(args, "max_comments", 0),
+            "per_issue_files": getattr(args, "per_issue_files", False),
             "issue_since": getattr(args, "since", None),
             "issue_labels": (
                 [lab.strip() for lab in args.issue_labels.split(",") if lab.strip()]

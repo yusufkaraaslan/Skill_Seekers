@@ -229,7 +229,8 @@ class CreateCommand:
                     "local_repo_path": getattr(self.args, "local_repo_path", None),
                     "include_issues": getattr(self.args, "include_issues", True),
                     "max_issues": getattr(self.args, "max_issues", 100),
-                    "max_comments": getattr(self.args, "max_comments", 50),
+                    "max_comments": getattr(self.args, "max_comments", 0),
+                    "per_issue_files": getattr(self.args, "per_issue_files", False),
                     "issue_labels": (
                         [lab.strip() for lab in self.args.issue_labels.split(",") if lab.strip()]
                         if getattr(self.args, "issue_labels", None)

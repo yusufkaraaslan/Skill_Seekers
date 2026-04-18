@@ -1191,9 +1191,9 @@ class TestExtractIssuesFullBodyAndComments(unittest.TestCase):
         comment.body = body
         return comment
 
-    def test_full_body_not_truncated(self):
-        """Issue body is stored in full without truncation."""
-        long_body = "x" * 2000  # Well over the old 500-char limit
+    def test_body_truncated_by_default(self):
+        """Issue body is truncated to 500 chars by default."""
+        long_body = "x" * 2000
         mock_issue = self._make_mock_issue(body=long_body)
 
         config = {"repo": "test/repo", "name": "repo", "github_token": None, "max_issues": 10}
@@ -1205,15 +1205,59 @@ class TestExtractIssuesFullBodyAndComments(unittest.TestCase):
             scraper._extract_issues()
 
             issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["body"]), 500)
+
+    def test_full_body_with_per_issue_files(self):
+        """Issue body is stored in full when per_issue_files is enabled."""
+        long_body = "x" * 2000
+        mock_issue = self._make_mock_issue(body=long_body)
+
+        config = {
+            "repo": "test/repo",
+            "name": "repo",
+            "github_token": None,
+            "max_issues": 10,
+            "per_issue_files": True,
+        }
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
             self.assertEqual(len(issues[0]["body"]), 2000)
 
+    def test_comments_not_fetched_by_default(self):
+        """Comments are NOT fetched when max_comments is 0 (default)."""
+        comment1 = self._make_mock_comment(author="alice", body="First comment")
+        mock_issue = self._make_mock_issue(comments=[comment1])
+
+        config = {"repo": "test/repo", "name": "repo", "github_token": None, "max_issues": 10}
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["comments"]), 0)
+
     def test_comments_fetched(self):
-        """Comments are fetched via issue.get_comments()."""
+        """Comments are fetched when max_comments > 0."""
         comment1 = self._make_mock_comment(author="alice", body="First comment")
         comment2 = self._make_mock_comment(author="bob", body="Second comment")
         mock_issue = self._make_mock_issue(comments=[comment1, comment2])
 
-        config = {"repo": "test/repo", "name": "repo", "github_token": None, "max_issues": 10}
+        config = {
+            "repo": "test/repo",
+            "name": "repo",
+            "github_token": None,
+            "max_issues": 10,
+            "max_comments": 50,
+        }
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = Mock()
@@ -1250,11 +1294,11 @@ class TestExtractIssuesFullBodyAndComments(unittest.TestCase):
             self.assertEqual(len(issues[0]["comments"]), 3)
 
     def test_max_comments_config_default(self):
-        """max_comments defaults to 50 in config."""
+        """max_comments defaults to 0 (disabled) in config."""
         config = {"repo": "test/repo", "name": "repo", "github_token": None}
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
-            self.assertEqual(scraper.max_comments, 50)
+            self.assertEqual(scraper.max_comments, 0)
 
 
 class TestPerIssueFileGeneration(unittest.TestCase):
@@ -1289,7 +1333,7 @@ class TestPerIssueFileGeneration(unittest.TestCase):
         with open(data_file, "w") as f:
             json.dump(data, f)
 
-        config = {"repo": "test/test-repo", "name": name}
+        config = {"repo": "test/test-repo", "name": name, "per_issue_files": True}
 
         # Patch the data file path
         with patch.object(
