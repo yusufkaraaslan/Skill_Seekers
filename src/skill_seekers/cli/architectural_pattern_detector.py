@@ -95,6 +95,8 @@ class ArchitecturalPatternDetector:
             "ProjectSettings/ProjectVersion.txt",
             ".unity",
             "Library/",
+            "UnityEngine",  # Import: using UnityEngine; in C# scripts
+            "Packages/manifest.json",  # Unity Package Manager manifest
         ],
         "Unreal": ["Source/", ".uproject", "Config/DefaultEngine.ini", "Binaries/", "Content/"],
         "Godot": ["project.godot", ".godot", ".tscn", ".tres", ".gd"],
@@ -261,14 +263,21 @@ class ArchitecturalPatternDetector:
         for framework in ["Unity", "Unreal", "Godot"]:
             if framework in self.FRAMEWORK_MARKERS:
                 markers = self.FRAMEWORK_MARKERS[framework]
-                # Check both analyzed files AND directory structure
+                # Check analyzed file paths, directory structure, AND imports
                 file_matches = sum(1 for marker in markers if marker.lower() in all_content.lower())
                 dir_matches = sum(1 for marker in markers if marker.lower() in dir_content.lower())
-                total_matches = file_matches + dir_matches
+                import_matches = sum(
+                    1 for marker in markers if marker.lower() in import_content.lower()
+                )
 
-                if total_matches >= 2:
+                # Import-based detection is high confidence (single match sufficient)
+                # Path/directory-based detection requires 2+ matches to avoid false positives
+                if import_matches >= 1 or (file_matches + dir_matches) >= 2:
                     detected.append(framework)
-                    logger.info(f"  📦 Detected framework: {framework}")
+                    logger.info(
+                        f"  📦 Detected framework: {framework} "
+                        f"(imports:{import_matches} path:{file_matches} dir:{dir_matches})"
+                    )
                     # Return early to prevent web framework false positives
                     return detected
 
