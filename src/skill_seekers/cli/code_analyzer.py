@@ -139,6 +139,8 @@ class CodeAnalyzer:
                 return self._analyze_ruby(content, file_path)
             elif language == "PHP":
                 return self._analyze_php(content, file_path)
+            elif language == "R":
+                return self._analyze_r(content, file_path)
             else:
                 logger.debug(f"No analyzer for language: {language}")
                 return {}
@@ -2147,6 +2149,14 @@ class CodeAnalyzer:
             result["test_functions"] = test_functions
 
         return result
+
+    # ------------------------------------------------------------------
+    # R language support (tree-sitter-language-pack)
+    # ------------------------------------------------------------------
+
+    def _analyze_r(self, content: str, file_path: str) -> dict[str, Any]:
+        """Analyze R file using tree-sitter (full implementation in task 5)."""
+        return {"classes": [], "functions": [], "comments": [], "imports": []}
 
 
 if __name__ == "__main__":
