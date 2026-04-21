@@ -75,6 +75,10 @@ LANGUAGE_EXTENSIONS = {
     ".kts": "Kotlin",
     ".rb": "Ruby",
     ".php": "PHP",
+    ".R": "R",
+    ".r": "R",
+    ".Rmd": "R",   # R Markdown
+    ".qmd": "R",   # Quarto (R-focused computational documents)
 }
 
 # Documentation file extensions

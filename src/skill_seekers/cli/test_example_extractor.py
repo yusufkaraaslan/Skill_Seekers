@@ -965,6 +965,9 @@ class TestExampleExtractor:
         ".php": "PHP",
         ".rb": "Ruby",
         ".gd": "GDScript",
+        ".R": "R",
+        ".r": "R",
+        ".Rmd": "R",
     }
 
     def __init__(
