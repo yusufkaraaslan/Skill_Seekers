@@ -2155,8 +2155,86 @@ class CodeAnalyzer:
     # ------------------------------------------------------------------
 
     def _analyze_r(self, content: str, file_path: str) -> dict[str, Any]:
-        """Analyze R file using tree-sitter (full implementation in task 5)."""
-        return {"classes": [], "functions": [], "comments": [], "imports": []}
+        """Analyze R file using tree-sitter-language-pack (full AST, no R runtime required).
+
+        Extracts named functions (f <- function(...) {}), R6/setRefClass classes,
+        library()/require() imports, and # / #' (roxygen2) comments.
+
+        Falls back to empty dict if tree-sitter-language-pack is not installed
+        rather than crashing — install with:
+            uv add --optional r tree-sitter tree-sitter-language-pack
+        (run from ~/PyCharmProjects/Skill_Seekers)
+        """
+        try:
+            from tree_sitter_language_pack import get_parser as _get_ts_parser
+        except ImportError:
+            logger.warning(
+                "tree-sitter-language-pack not installed; R file %s will not be analyzed. "
+                "Install with: uv add --optional r tree-sitter tree-sitter-language-pack",
+                file_path,
+            )
+            return {}
+
+        parser = _get_ts_parser("r")
+        tree = parser.parse(bytes(content, "utf8"))
+        root = tree.root_node
+        lines = content.splitlines()
+
+        functions: list[dict] = []
+        classes: list[dict] = []
+        imports: list[str] = []
+        comments: list[dict] = []
+
+        ASSIGN_OPS = {"<-", "=", "->", "<<-"}
+
+        for node in root.children:
+            node_type = node.type
+
+            # Named function or R6Class assignments (binary_operator with assignment op)
+            if node_type == "binary_operator":
+                operator = node.child_by_field_name("operator")
+                if operator is None or operator.text.decode() not in ASSIGN_OPS:
+                    continue
+                lhs_name, rhs = self._r_assignment_parts(node)
+                if rhs is None:
+                    continue
+                if rhs.type == "function_definition":
+                    docstring = self._r_collect_roxygen(node, lines)
+                    func = self._r_extract_function(lhs_name, rhs, docstring)
+                    if func:
+                        functions.append(func)
+                elif rhs.type == "call":
+                    callee = rhs.child_by_field_name("function")
+                    if callee and callee.text.decode() in ("R6Class", "setRefClass"):
+                        cls = self._r_extract_r6class(lhs_name, rhs)
+                        if cls:
+                            classes.append(cls)
+
+            # Top-level library()/require() calls
+            elif node_type == "call":
+                callee = node.child_by_field_name("function")
+                if callee and callee.text.decode() in ("library", "require"):
+                    pkg = self._r_extract_import(node)
+                    if pkg:
+                        imports.append(pkg)
+
+            # Comments: # inline, #' roxygen doc
+            elif node_type == "comment":
+                raw = node.text.decode()
+                is_roxygen = raw.startswith("#'")
+                text = raw[2:].strip() if is_roxygen else raw[1:].strip()
+                comments.append({
+                    "line": node.start_point[0] + 1,
+                    "text": text,
+                    "type": "doc" if is_roxygen else "inline",
+                })
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(dict.fromkeys(imports)),  # deduplicate, preserve insertion order
+        }
 
     def _r_assignment_parts(self, node) -> tuple:
         """Return (lhs_name: str | None, rhs_node | None) from an R assignment node.
