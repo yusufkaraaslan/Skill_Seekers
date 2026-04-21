@@ -65,9 +65,16 @@ dependencies = [
     "PyYAML>=6.0", # Required for workflow preset management
     "langchain>=1.2.10",
     "llama-index>=0.14.15",
+    "nbformat>=5.10.4",
 ]
 
 [project.optional-dependencies]
+# R language AST analysis via tree-sitter (no R runtime required)
+r = [
+    "tree-sitter>=0.23",
+    "tree-sitter-language-pack>=0.13.0",
+]
+
 # MCP server dependencies (NOW TRULY OPTIONAL)
 mcp = [
     "mcp>=1.25,<2",
