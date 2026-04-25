@@ -1649,7 +1649,7 @@ class UnifiedScraper(SkillConverter):
                 directory=Path(local_repo_path),
                 output_dir=temp_output,
                 depth="deep",
-                languages=None,  # Analyze all languages
+                languages=source.get("languages"),  # Respect language filter from source config
                 file_patterns=source.get("file_patterns"),
                 build_api_reference=True,  # C2.5: API Reference
                 extract_comments=False,  # Not needed
