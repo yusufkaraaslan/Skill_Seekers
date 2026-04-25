@@ -428,8 +428,52 @@ class TestImageHandling(unittest.TestCase):
         self.assertIn("![", content)  # Markdown image syntax
         self.assertIn("../assets/", content)  # Relative path to assets
 
+    def test_extracted_images_references_in_markdown(self):
+        """Test that extracted_images (pdf_extractor_poc format) are referenced in markdown"""
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
+        converter = self.PDFToSkillConverter(config)
 
-class TestErrorHandling(unittest.TestCase):
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
+        # Pre-create the images directory with a dummy image file
+        images_dir = Path(self.temp_dir) / "test_skill" / "assets" / "images"
+        images_dir.mkdir(parents=True, exist_ok=True)
+        dummy_image = images_dir / "test_page18_img1.png"
+        dummy_image.write_bytes(b"PNG")
+
+        converter.extracted_data = {
+            "pages": [
+                {
+                    "page_number": 18,
+                    "text": "Architecture diagram",
+                    "code_blocks": [],
+                    "extracted_images": [
+                        {
+                            "filename": "test_page18_img1.png",
+                            "path": str(dummy_image),
+                            "page_number": 18,
+                            "width": 200,
+                            "height": 150,
+                            "format": "png",
+                            "size_bytes": 3,
+                        }
+                    ],
+                }
+            ],
+            "total_pages": 1,
+        }
+
+        converter.build_skill()
+
+        # Check reference file has image markdown reference
+        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
+        content = ref_file.read_text()
+
+        self.assertIn("![test_page18_img1.png]", content)
+        self.assertIn("../assets/images/test_page18_img1.png", content)
+
+
+
     """Test error handling for invalid inputs"""
 
     def setUp(self):
