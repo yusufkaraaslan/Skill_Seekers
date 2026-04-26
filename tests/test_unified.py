@@ -527,6 +527,191 @@ def test_skill_builder_merged_apis():
 
 
 # ===========================
+# Issue #363: Local C3.x output
+# ===========================
+
+
+def _make_local_source(
+    *,
+    name: str = "my-codebase",
+    path: str = "/tmp/my-codebase",
+    test_examples: dict | None = None,
+    patterns: list | None = None,
+    how_to_guides: dict | None = None,
+    config_patterns: dict | None = None,
+    architecture: dict | None = None,
+) -> dict:
+    """Build a local-source dict shaped like UnifiedScraper._run_local_codebase_analysis output."""
+    return {
+        "source_id": f"unified_local_0_{name}",
+        "path": path,
+        "name": name,
+        "description": f"Local analysis of {name}",
+        "weight": 1.0,
+        "patterns": patterns,
+        "test_examples": test_examples,
+        "how_to_guides": how_to_guides,
+        "config_patterns": config_patterns,
+        "architecture": architecture,
+        "api_reference": None,
+        "dependency_graph": None,
+    }
+
+
+def test_local_source_test_examples_become_references_363():
+    """Issue #363: test_examples from local sources should land in references/."""
+    config = {
+        "name": "skill_363",
+        "description": "Local C3.x output should not be dropped",
+        "sources": [{"type": "local", "path": "/tmp/my-codebase"}],
+    }
+
+    test_examples = {
+        "total_examples": 292,
+        "high_value_count": 47,
+        "examples_by_category": {"DI": 100, "Setup": 80, "Mocks": 112},
+        "examples": [],
+    }
+    local_source = _make_local_source(test_examples=test_examples)
+
+    scraped_data = {"local": [local_source]}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = tmpdir
+        os.makedirs(os.path.join(tmpdir, "references"), exist_ok=True)
+
+        builder._generate_local_codebase_analysis_references()
+
+        analysis_root = Path(tmpdir) / "references" / "codebase_analysis"
+        # Source-id is sanitized; should produce a single subdir
+        subdirs = [p for p in analysis_root.iterdir() if p.is_dir()]
+        assert len(subdirs) == 1, f"expected 1 source dir, got {subdirs}"
+        source_dir = subdirs[0]
+
+        examples_json = source_dir / "examples" / "test_examples.json"
+        assert examples_json.exists(), "test_examples.json not generated"
+
+        data = json.loads(examples_json.read_text())
+        assert data["total_examples"] == 292
+        assert data["high_value_count"] == 47
+
+        # ARCHITECTURE.md should also be created with the test-examples summary
+        arch_md = source_dir / "ARCHITECTURE.md"
+        assert arch_md.exists()
+        arch_content = arch_md.read_text()
+        assert "292 usage example" in arch_content
+
+
+def test_local_source_skill_md_includes_summary_363():
+    """SKILL.md should reflect counts from local-source C3.x output (#363)."""
+    config = {
+        "name": "skill_363",
+        "description": "Test",
+        "sources": [{"type": "local", "path": "/tmp/my-codebase"}],
+    }
+
+    local_source = _make_local_source(
+        test_examples={"total_examples": 50, "high_value_count": 12},
+        how_to_guides={"guides": [{"title": "A"}, {"title": "B"}]},
+    )
+    scraped_data = {"local": [local_source]}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = tmpdir
+
+        builder._generate_skill_md()
+
+        skill_md = Path(tmpdir) / "SKILL.md"
+        content = skill_md.read_text()
+
+        assert "Architecture & Code Analysis" in content
+        assert "50 extracted from tests" in content
+        assert "12 high-value" in content
+        assert "2 workflow tutorials" in content
+
+
+def test_format_c3_summary_aggregates_across_sources_363():
+    """_format_c3_summary_section should sum counts across multiple payloads."""
+    config = {"name": "agg", "description": "Test", "sources": []}
+    builder = UnifiedSkillBuilder(config, {})
+
+    payloads = [
+        {"test_examples": {"total_examples": 100, "high_value_count": 20}},
+        {"test_examples": {"total_examples": 50, "high_value_count": 5}},
+    ]
+
+    out = builder._format_c3_summary_section(payloads)
+    assert "150 extracted from tests" in out
+    assert "25 high-value" in out
+
+
+def test_format_c3_summary_backward_compat_dict_arg_363():
+    """Single-dict arg (legacy) must still produce the summary."""
+    config = {"name": "compat", "description": "Test", "sources": []}
+    builder = UnifiedSkillBuilder(config, {})
+
+    payload = {"test_examples": {"total_examples": 7, "high_value_count": 3}}
+    out = builder._format_c3_summary_section(payload)
+    assert "7 extracted from tests" in out
+
+
+def test_collect_c3_payloads_combines_github_and_local_363():
+    """_collect_c3_payloads should pull from both github and local sources."""
+    config = {"name": "combo", "description": "Test", "sources": []}
+
+    github_c3 = {"test_examples": {"total_examples": 10, "high_value_count": 2}}
+    local_source = _make_local_source(test_examples={"total_examples": 5, "high_value_count": 1})
+    scraped_data = {
+        "github": [{"repo_id": "owner_repo", "data": {"c3_analysis": github_c3}}],
+        "local": [local_source],
+    }
+    builder = UnifiedSkillBuilder(config, scraped_data)
+
+    payloads = builder._collect_c3_payloads()
+    assert len(payloads) == 2
+
+    # Aggregated summary should reflect both
+    out = builder._format_c3_summary_section(payloads)
+    assert "15 extracted from tests" in out
+    assert "3 high-value" in out
+
+
+def test_local_source_without_c3_data_skipped_363():
+    """Local sources with no C3 fields should not create empty reference dirs."""
+    config = {
+        "name": "empty_local",
+        "description": "Test",
+        "sources": [{"type": "local", "path": "/tmp/my-codebase"}],
+    }
+    # All C3 fields None / empty
+    local_source = _make_local_source()
+    scraped_data = {"local": [local_source]}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = tmpdir
+        os.makedirs(os.path.join(tmpdir, "references"), exist_ok=True)
+
+        builder._generate_local_codebase_analysis_references()
+
+        analysis_root = Path(tmpdir) / "references" / "codebase_analysis"
+        assert not analysis_root.exists() or not any(analysis_root.iterdir())
+
+
+def test_sanitize_source_id_363():
+    """Source IDs must be filesystem-safe."""
+    sanitize = UnifiedSkillBuilder._sanitize_source_id
+    assert sanitize("my-skill_local_0_repo") == "my-skill_local_0_repo"
+    assert sanitize("path/with/slashes") == "path_with_slashes"
+    assert sanitize("name with spaces") == "name_with_spaces"
+    assert sanitize("!!!") == "local"
+    assert sanitize("") == "local"
+    assert sanitize(None) == "local"
+
+
+# ===========================
 # Integration Tests
 # ===========================
 
