@@ -67,7 +67,9 @@ class TestIBMBobAdaptor(unittest.TestCase):
     def test_format_with_existing_content(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             skill_dir = Path(temp_dir)
-            existing = "---\nname: test\ndescription: desc\n---\n\n# Existing Content\n\n" + "x" * 200
+            existing = (
+                "---\nname: test\ndescription: desc\n---\n\n# Existing Content\n\n" + "x" * 200
+            )
             (skill_dir / "SKILL.md").write_text(existing)
 
             metadata = SkillMetadata(name="test", description="Test")

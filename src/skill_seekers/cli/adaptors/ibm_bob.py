@@ -12,10 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
-from skill_seekers.cli.arguments.common import (
-    DEFAULT_CHUNK_OVERLAP_TOKENS,
-    DEFAULT_CHUNK_TOKENS,
-)
+from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_OVERLAP_TOKENS, DEFAULT_CHUNK_TOKENS
 
 
 class IBMBobAdaptor(SkillAdaptor):
@@ -61,9 +58,7 @@ class IBMBobAdaptor(SkillAdaptor):
 
         tags = metadata.tags or [self._to_skill_dir_name(metadata.name)]
         tag_lines = "\n".join(f"  - {tag}" for tag in tags)
-        author_line = (
-            f"\nauthor: {self._quote_yaml(metadata.author)}" if metadata.author else ""
-        )
+        author_line = f"\nauthor: {self._quote_yaml(metadata.author)}" if metadata.author else ""
 
         frontmatter = (
             f"---\n"

@@ -169,9 +169,7 @@ class TestPackageSkill(unittest.TestCase):
             self.assertTrue(success)
             self.assertIsNotNone(package_path)
             self.assertTrue(package_path.is_dir())
-            self.assertTrue(
-                (package_path / ".bob" / "skills" / "test-skill" / "SKILL.md").exists()
-            )
+            self.assertTrue((package_path / ".bob" / "skills" / "test-skill" / "SKILL.md").exists())
 
 
 class TestPackageSkillCLI(unittest.TestCase):
