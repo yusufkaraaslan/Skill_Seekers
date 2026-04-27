@@ -284,8 +284,9 @@ class UniSkillConfigValidator:
                 )
             from datetime import datetime
 
+            since_str = issue_since[:-1] + "+00:00" if issue_since.endswith("Z") else issue_since
             try:
-                datetime.fromisoformat(issue_since)
+                datetime.fromisoformat(since_str)
             except ValueError as err:
                 raise ValueError(
                     f"Source {index} (github): 'issue_since' is not a valid ISO8601 date: '{issue_since}'"

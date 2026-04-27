@@ -1065,7 +1065,7 @@ class TestErrorHandling(unittest.TestCase):
             self.assertEqual(call_kwargs["state"], "open")
 
     def test_extract_issues_passes_labels_filter(self):
-        """Test that _extract_issues passes issue_labels to get_issues."""
+        """Test that _extract_issues passes issue_labels as plain strings to get_issues."""
         config = {
             "repo": "facebook/react",
             "name": "react",
@@ -1074,26 +1074,45 @@ class TestErrorHandling(unittest.TestCase):
             "issue_labels": ["bug", "enhancement"],
         }
 
-        mock_label_bug = Mock()
-        mock_label_bug.name = "bug"
-        mock_label_enh = Mock()
-        mock_label_enh.name = "enhancement"
-
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
             scraper.repo = Mock()
-            scraper.repo.get_label.side_effect = [mock_label_bug, mock_label_enh]
             scraper.repo.get_issues.return_value = []
 
             scraper._extract_issues()
 
-            # Verify get_label was called for each label
-            self.assertEqual(scraper.repo.get_label.call_count, 2)
-            scraper.repo.get_label.assert_any_call("bug")
-            scraper.repo.get_label.assert_any_call("enhancement")
-            # Verify labels were passed to get_issues
+            # PyGithub's get_issues(labels=...) accepts plain strings; we should
+            # NEVER call get_label (which costs an extra API call per label and
+            # 404s if the label doesn't exist).
+            scraper.repo.get_label.assert_not_called()
             call_kwargs = scraper.repo.get_issues.call_args[1]
-            self.assertIn("labels", call_kwargs)
+            self.assertEqual(call_kwargs["labels"], ["bug", "enhancement"])
+
+    def test_extract_issues_since_z_suffix(self):
+        """Test that _extract_issues accepts ISO8601 'Z' (UTC) suffix on Python 3.10."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+            "issue_since": "2024-01-01T00:00:00Z",
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            # Must not raise — Python 3.10's fromisoformat rejects raw 'Z'.
+            scraper._extract_issues()
+
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertIn("since", call_kwargs)
+            since = call_kwargs["since"]
+            self.assertEqual(since.year, 2024)
+            self.assertEqual(since.month, 1)
+            self.assertEqual(since.day, 1)
+            self.assertIsNotNone(since.tzinfo)
 
     def test_extract_issues_passes_since_filter(self):
         """Test that _extract_issues passes issue_since to get_issues."""
@@ -1349,7 +1368,7 @@ class TestPerIssueFileGeneration(unittest.TestCase):
         return converter
 
     def test_per_issue_files_created(self):
-        """Per-issue files are created with correct naming."""
+        """Per-issue files live in references/issues/ with {owner}-{repo}-{n}.md naming."""
         issues = [
             {
                 "number": 42,
@@ -1367,8 +1386,56 @@ class TestPerIssueFileGeneration(unittest.TestCase):
         converter = self._setup_converter(issues)
         converter._generate_issues_reference()
 
-        expected_file = os.path.join(converter.skill_dir, "references", "test-repo_42.md")
+        expected_file = os.path.join(
+            converter.skill_dir, "references", "issues", "test-test-repo-42.md"
+        )
         self.assertTrue(os.path.exists(expected_file))
+
+        # Old flat path must NOT exist (regression guard for the rename).
+        old_file = os.path.join(converter.skill_dir, "references", "test-repo_42.md")
+        self.assertFalse(os.path.exists(old_file))
+
+    def test_per_issue_files_no_collision_across_repos(self):
+        """Two repos sharing a skill_dir + issue number write distinct files."""
+        issues = [
+            {
+                "number": 1,
+                "title": "Same number",
+                "state": "open",
+                "labels": [],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/alpha/proj/issues/1",
+                "body": "Issue from alpha/proj",
+                "comments": [],
+            },
+        ]
+
+        # First repo: alpha/proj
+        skill_dir = os.path.join(self.temp_dir, "shared-skill")
+        os.makedirs(os.path.join(skill_dir, "references"), exist_ok=True)
+
+        config_a = {"repo": "alpha/proj", "name": "shared-skill", "per_issue_files": True}
+        with patch.object(self.GitHubToSkillConverter, "_load_data", return_value={}):
+            converter_a = self.GitHubToSkillConverter(config_a)
+        converter_a.data = {"issues": issues}
+        converter_a.skill_dir = skill_dir
+        converter_a._generate_issues_reference()
+
+        # Second repo: beta/proj — same issue number, same skill_dir.
+        issues_b = [{**issues[0], "url": "https://github.com/beta/proj/issues/1"}]
+        config_b = {"repo": "beta/proj", "name": "shared-skill", "per_issue_files": True}
+        with patch.object(self.GitHubToSkillConverter, "_load_data", return_value={}):
+            converter_b = self.GitHubToSkillConverter(config_b)
+        converter_b.data = {"issues": issues_b}
+        converter_b.skill_dir = skill_dir
+        converter_b._generate_issues_reference()
+
+        alpha_file = os.path.join(skill_dir, "references", "issues", "alpha-proj-1.md")
+        beta_file = os.path.join(skill_dir, "references", "issues", "beta-proj-1.md")
+        self.assertTrue(os.path.exists(alpha_file))
+        self.assertTrue(os.path.exists(beta_file))
 
     def test_per_issue_file_content(self):
         """Per-issue file contains full body and YAML frontmatter."""
@@ -1389,7 +1456,7 @@ class TestPerIssueFileGeneration(unittest.TestCase):
         converter = self._setup_converter(issues)
         converter._generate_issues_reference()
 
-        filepath = os.path.join(converter.skill_dir, "references", "test-repo_99.md")
+        filepath = os.path.join(converter.skill_dir, "references", "issues", "test-test-repo-99.md")
         content = Path(filepath).read_text()
 
         # Check YAML frontmatter
@@ -1431,7 +1498,7 @@ class TestPerIssueFileGeneration(unittest.TestCase):
         converter = self._setup_converter(issues)
         converter._generate_issues_reference()
 
-        filepath = os.path.join(converter.skill_dir, "references", "test-repo_7.md")
+        filepath = os.path.join(converter.skill_dir, "references", "issues", "test-test-repo-7.md")
         content = Path(filepath).read_text()
 
         self.assertIn("## Comments (2)", content)

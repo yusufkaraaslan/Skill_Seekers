@@ -330,7 +330,7 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "type": str,
             "default": None,
-            "help": "Only fetch issues updated after this date (ISO8601 or YYYY-MM-DD)",
+            "help": "Only fetch issues updated after this date (ISO8601, UTC 'Z' suffix accepted, or YYYY-MM-DD)",
             "metavar": "DATE",
         },
     },
@@ -357,7 +357,7 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
         "kwargs": {
             "type": int,
             "default": 0,
-            "help": "Fetch up to N comments per issue (default: 0, disabled)",
+            "help": "Fetch up to N comments per issue (default: 0, disabled; costs 1+ extra API call per issue, paginated)",
             "metavar": "N",
         },
     },

@@ -554,6 +554,57 @@ class TestPineconeAdaptor:
 
 
 # ---------------------------------------------------------------------------
+# _parse_ref_frontmatter — malformed YAML resilience
+# ---------------------------------------------------------------------------
+
+
+class TestParseRefFrontmatter:
+    """_parse_ref_frontmatter must never raise on malformed YAML."""
+
+    def test_parse_valid_frontmatter(self):
+        """Valid YAML frontmatter parses to dict + content."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "---\nfoo: bar\nnum: 42\n---\nbody text\n"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {"foo": "bar", "num": 42}
+        assert body == "body text\n"
+
+    def test_parse_no_frontmatter(self):
+        """Content without leading --- returns empty dict + original content."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "no frontmatter here"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {}
+        assert body == content
+
+    def test_parse_malformed_yaml_does_not_raise(self):
+        """Malformed YAML returns ({}, original content) instead of raising."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        # Two flavors of broken YAML — both must fall through to the except.
+        broken_colons = "---\n: : :\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(broken_colons)
+        assert fm == {}
+        assert body == broken_colons
+
+        unbalanced = "---\n[unbalanced\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(unbalanced)
+        assert fm == {}
+        assert body == unbalanced
+
+    def test_parse_non_dict_yaml_returns_empty(self):
+        """Frontmatter that parses to a non-dict (e.g. a list) returns empty dict."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "---\n- just\n- a list\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {}
+        assert body == content
+
+
+# ---------------------------------------------------------------------------
 # doc_version Metadata Tests (cross-adaptor)
 # ---------------------------------------------------------------------------
 
