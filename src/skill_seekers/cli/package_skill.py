@@ -187,8 +187,13 @@ def package_skill(
         print(f"\n📂 Opening folder: {package_path.parent}")
         open_folder(package_path.parent)
 
-    # Print upload instructions
-    print_upload_instructions(package_path)
+    # Print next-step instructions
+    if adaptor.DEFAULT_API_ENDPOINT:
+        print_upload_instructions(package_path)
+    else:
+        print()
+        print("ℹ️  Local target packaged successfully.")
+        print(f"   Install or copy from: {package_path}")
 
     return True, package_path
 

@@ -51,6 +51,7 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "openrouter",
                 "together",
                 "fireworks",
+                "ibm-bob",
                 "markdown",
                 "langchain",
                 "llama-index",

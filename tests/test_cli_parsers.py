@@ -117,6 +117,9 @@ class TestSpecificParsers:
         args = main_parser.parse_args(["package", "output/test/", "--target", "gemini"])
         assert args.target == "gemini"
 
+        args = main_parser.parse_args(["package", "output/test/", "--target", "ibm-bob"])
+        assert args.target == "ibm-bob"
+
         args = main_parser.parse_args(["package", "output/test/", "--no-open"])
         assert args.no_open is True
 
