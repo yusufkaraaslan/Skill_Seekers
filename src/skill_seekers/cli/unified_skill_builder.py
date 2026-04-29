@@ -882,18 +882,9 @@ This skill combines knowledge from multiple sources:
                 content += f"  - {extra_label}: {source.get(extra_key, extra_default)}\n"
 
         # C3.x Architecture & Code Analysis section (if available)
-        github_data = self.scraped_data.get("github", {})
-        # Handle both dict and list cases
-        if isinstance(github_data, dict):
-            github_data = github_data.get("data", {})
-        elif isinstance(github_data, list) and len(github_data) > 0:
-            first_item = github_data[0]
-            github_data = first_item.get("data", {}) if isinstance(first_item, dict) else {}
-        else:
-            github_data = {}
-
-        if github_data.get("c3_analysis"):
-            content += self._format_c3_summary_section(github_data["c3_analysis"])
+        c3_payloads = self._collect_c3_payloads()
+        if c3_payloads:
+            content += self._format_c3_summary_section(c3_payloads)
 
         # Data quality section
         if self.conflicts:
@@ -1099,6 +1090,9 @@ This skill combines knowledge from multiple sources:
             if github_data.get("c3_analysis"):
                 repo_id = github_source.get("repo_id", "unknown")
                 self._generate_c3_analysis_references(repo_id=repo_id)
+
+        # Local sources also carry C3.x output — fixes #363
+        self._generate_local_codebase_analysis_references()
 
     def _generate_docs_references(self, docs_list: list[dict]):
         """Generate references from multiple documentation sources."""
@@ -1388,14 +1382,59 @@ This skill combines knowledge from multiple sources:
         if not c3_data:
             return
 
-        # Create unique directory per repo for multi-source support
-        c3_dir = os.path.join(self.skill_dir, "references", "codebase_analysis", repo_id)
+        self._write_codebase_analysis_references(
+            c3_data=c3_data, source_id=repo_id, github_data=github_data
+        )
+
+    def _generate_local_codebase_analysis_references(self):
+        """Generate codebase analysis references for each local source (#363).
+
+        Local sources store C3.x output (patterns, test_examples, how_to_guides,
+        config_patterns, architecture, ...) directly on the source dict. They were
+        previously dropped by the builder, which only consumed GitHub sources.
+        """
+        local_list = self.scraped_data.get("local", [])
+        if not local_list:
+            return
+
+        c3_keys = (
+            "patterns",
+            "test_examples",
+            "how_to_guides",
+            "config_patterns",
+            "architecture",
+        )
+        for local_source in local_list:
+            if not any(local_source.get(k) for k in c3_keys):
+                continue
+
+            source_id = self._sanitize_source_id(
+                local_source.get("source_id") or local_source.get("name") or "local"
+            )
+            self._write_codebase_analysis_references(
+                c3_data=local_source, source_id=source_id, github_data=None
+            )
+
+    @staticmethod
+    def _sanitize_source_id(raw: str) -> str:
+        """Normalize a source identifier to a filesystem-safe directory name."""
+        cleaned = re.sub(r"[^\w\-]", "_", raw or "").strip("_")
+        return cleaned or "local"
+
+    def _write_codebase_analysis_references(
+        self,
+        c3_data: dict,
+        source_id: str,
+        github_data: dict | None = None,
+    ):
+        """Shared C3.x reference writer used by both GitHub and local sources."""
+        c3_dir = os.path.join(self.skill_dir, "references", "codebase_analysis", source_id)
         os.makedirs(c3_dir, exist_ok=True)
 
-        logger.info("Generating C3.x codebase analysis references...")
+        logger.info(f"Generating C3.x codebase analysis references for '{source_id}'...")
 
         # Generate ARCHITECTURE.md (main deliverable)
-        self._generate_architecture_overview(c3_dir, c3_data, github_data)
+        self._generate_architecture_overview(c3_dir, c3_data, github_data or {})
 
         # Generate subdirectories for each C3.x component
         self._generate_pattern_references(c3_dir, c3_data.get("patterns"))
@@ -1854,69 +1893,131 @@ This skill combines knowledge from multiple sources:
 
         logger.info(f"   ✓ Architectural details: {len(patterns)} patterns")
 
-    def _format_c3_summary_section(self, c3_data: dict) -> str:
-        """Format C3.x analysis summary for SKILL.md."""
+    def _collect_c3_payloads(self) -> list[dict]:
+        """Gather C3.x analysis payloads across GitHub and local sources (#363).
+
+        Returns:
+            List of c3_data dicts, one per source that produced analysis.
+        """
+        payloads: list[dict] = []
+
+        github_data = self.scraped_data.get("github", {})
+        # Handle both dict and list cases
+        if isinstance(github_data, list):
+            for item in github_data:
+                if not isinstance(item, dict):
+                    continue
+                inner = item.get("data", {})
+                if isinstance(inner, dict) and inner.get("c3_analysis"):
+                    payloads.append(inner["c3_analysis"])
+        elif isinstance(github_data, dict):
+            inner = github_data.get("data", {})
+            if isinstance(inner, dict) and inner.get("c3_analysis"):
+                payloads.append(inner["c3_analysis"])
+
+        for local_source in self.scraped_data.get("local", []) or []:
+            if not isinstance(local_source, dict):
+                continue
+            if any(
+                local_source.get(k)
+                for k in (
+                    "patterns",
+                    "test_examples",
+                    "how_to_guides",
+                    "config_patterns",
+                    "architecture",
+                )
+            ):
+                payloads.append(local_source)
+
+        return payloads
+
+    def _format_c3_summary_section(self, c3_payloads) -> str:
+        """Format C3.x analysis summary for SKILL.md.
+
+        Accepts either a single c3_data dict (legacy) or a list of payloads
+        (post #363, when GitHub + local sources both contribute).
+        """
+        # Backward-compatible: allow callers passing a single dict
+        payloads = [c3_payloads] if isinstance(c3_payloads, dict) else list(c3_payloads or [])
+
+        if not payloads:
+            return ""
+
         content = "\n## 🏗️ Architecture & Code Analysis\n\n"
         content += "*This skill includes comprehensive codebase analysis*\n\n"
 
-        # Add architectural pattern summary
-        if c3_data.get("architecture"):
-            patterns = c3_data["architecture"].get("patterns", [])
-            if patterns:
-                top_pattern = patterns[0]
+        # Primary architecture: take from the first payload that has one
+        for payload in payloads:
+            arch = payload.get("architecture") or {}
+            arch_patterns = arch.get("patterns", []) if isinstance(arch, dict) else []
+            if arch_patterns:
+                top_pattern = arch_patterns[0]
                 content += f"**Primary Architecture**: {top_pattern['pattern_name']}"
                 if top_pattern.get("framework"):
                     content += f" ({top_pattern['framework']})"
                 content += f" - Confidence: {top_pattern['confidence']:.0%}\n\n"
+                break
 
-        # Add design patterns summary
-        if c3_data.get("patterns"):
-            total_patterns = sum(len(f.get("patterns", [])) for f in c3_data["patterns"])
-            if total_patterns > 0:
-                content += f"**Design Patterns**: {total_patterns} detected\n"
+        # Design patterns: aggregate across payloads
+        total_patterns = 0
+        pattern_summary: dict[str, int] = {}
+        for payload in payloads:
+            for file_data in payload.get("patterns") or []:
+                for pattern in file_data.get("patterns", []):
+                    total_patterns += 1
+                    ptype = pattern.get("pattern_type", "Unknown")
+                    pattern_summary[ptype] = pattern_summary.get(ptype, 0) + 1
+        if total_patterns > 0:
+            content += f"**Design Patterns**: {total_patterns} detected\n"
+            top_patterns = sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True)[:3]
+            if top_patterns:
+                content += (
+                    f"- Top patterns: {', '.join([f'{p[0]} ({p[1]})' for p in top_patterns])}\n"
+                )
+            content += "\n"
 
-                # Show top 3 pattern types
-                pattern_summary = {}
-                for file_data in c3_data["patterns"]:
-                    for pattern in file_data.get("patterns", []):
-                        ptype = pattern["pattern_type"]
-                        pattern_summary[ptype] = pattern_summary.get(ptype, 0) + 1
+        # Test examples: sum totals across payloads
+        total_examples = 0
+        total_high_value = 0
+        for payload in payloads:
+            examples = payload.get("test_examples") or {}
+            if isinstance(examples, dict):
+                total_examples += examples.get("total_examples", 0) or 0
+                total_high_value += examples.get("high_value_count", 0) or 0
+        if total_examples > 0:
+            content += (
+                f"**Usage Examples**: {total_examples} extracted from tests "
+                f"({total_high_value} high-value)\n\n"
+            )
 
-                top_patterns = sorted(pattern_summary.items(), key=lambda x: x[1], reverse=True)[:3]
-                if top_patterns:
-                    content += (
-                        f"- Top patterns: {', '.join([f'{p[0]} ({p[1]})' for p in top_patterns])}\n"
-                    )
-                content += "\n"
+        # How-to guides: sum guide counts
+        total_guides = 0
+        for payload in payloads:
+            guides = payload.get("how_to_guides") or {}
+            if isinstance(guides, dict):
+                total_guides += len(guides.get("guides", []) or [])
+        if total_guides > 0:
+            content += f"**How-To Guides**: {total_guides} workflow tutorials\n\n"
 
-        # Add test examples summary
-        if c3_data.get("test_examples"):
-            total = c3_data["test_examples"].get("total_examples", 0)
-            high_value = c3_data["test_examples"].get("high_value_count", 0)
-            if total > 0:
-                content += f"**Usage Examples**: {total} extracted from tests ({high_value} high-value)\n\n"
-
-        # Add how-to guides summary
-        if c3_data.get("how_to_guides"):
-            guide_count = len(c3_data["how_to_guides"].get("guides", []))
-            if guide_count > 0:
-                content += f"**How-To Guides**: {guide_count} workflow tutorials\n\n"
-
-        # Add configuration summary
-        if c3_data.get("config_patterns"):
-            config_files = c3_data["config_patterns"].get("config_files", [])
-            if config_files:
-                content += f"**Configuration Files**: {len(config_files)} analyzed\n"
-
-                # Add security warning if present
-                if c3_data["config_patterns"].get("ai_enhancements"):
-                    insights = c3_data["config_patterns"]["ai_enhancements"].get(
-                        "overall_insights", {}
-                    )
-                    security_issues = insights.get("security_issues_found", 0)
-                    if security_issues > 0:
-                        content += f"- 🔐 **Security Alert**: {security_issues} issue(s) detected\n"
-                content += "\n"
+        # Configuration: sum config files + propagate any security alerts
+        total_config_files = 0
+        total_security_issues = 0
+        for payload in payloads:
+            config = payload.get("config_patterns") or {}
+            if not isinstance(config, dict):
+                continue
+            total_config_files += len(config.get("config_files", []) or [])
+            ai_block = config.get("ai_enhancements") or {}
+            if isinstance(ai_block, dict):
+                insights = ai_block.get("overall_insights") or {}
+                if isinstance(insights, dict):
+                    total_security_issues += insights.get("security_issues_found", 0) or 0
+        if total_config_files > 0:
+            content += f"**Configuration Files**: {total_config_files} analyzed\n"
+            if total_security_issues > 0:
+                content += f"- 🔐 **Security Alert**: {total_security_issues} issue(s) detected\n"
+            content += "\n"
 
         # Add link to ARCHITECTURE.md
         content += "📖 **See** `references/codebase_analysis/ARCHITECTURE.md` for complete architectural overview.\n\n"
