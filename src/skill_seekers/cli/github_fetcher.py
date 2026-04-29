@@ -82,6 +82,9 @@ class GitHubThreeStreamFetcher:
         github_token: str | None = None,
         interactive: bool = True,
         profile_name: str | None = None,
+        issue_since: str | None = None,
+        issue_labels: list[str] | None = None,
+        issue_state: str | None = None,
     ):
         """
         Initialize fetcher.
@@ -91,11 +94,17 @@ class GitHubThreeStreamFetcher:
             github_token: Optional GitHub API token for higher rate limits
             interactive: Whether to show interactive prompts (False for CI/CD)
             profile_name: Name of the GitHub profile being used
+            issue_since: Only fetch issues updated after this ISO8601 date
+            issue_labels: Filter issues by these label names
+            issue_state: Filter issues by state ("open", "closed", or "all")
         """
         self.repo_url = repo_url
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
         self.owner, self.repo = self.parse_repo_url(repo_url)
         self.interactive = interactive
+        self.issue_since = issue_since
+        self.issue_labels = issue_labels or []
+        self.issue_state = issue_state or "all"
 
         # Initialize rate limit handler
         config = get_config_manager()
@@ -267,7 +276,7 @@ class GitHubThreeStreamFetcher:
 
     def fetch_issues(self, max_issues: int = 100) -> list[dict]:
         """
-        Fetch GitHub issues (open + closed).
+        Fetch GitHub issues with optional state/label/since filters.
 
         Args:
             max_issues: Maximum number of issues to fetch
@@ -277,11 +286,13 @@ class GitHubThreeStreamFetcher:
         """
         all_issues = []
 
-        # Fetch open issues
-        all_issues.extend(self._fetch_issues_page(state="open", max_count=max_issues // 2))
-
-        # Fetch closed issues
-        all_issues.extend(self._fetch_issues_page(state="closed", max_count=max_issues // 2))
+        if self.issue_state in ("open", "closed"):
+            # Single-state fetch: use full quota
+            all_issues.extend(self._fetch_issues_page(state=self.issue_state, max_count=max_issues))
+        else:
+            # Default "all": split quota between open and closed
+            all_issues.extend(self._fetch_issues_page(state="open", max_count=max_issues // 2))
+            all_issues.extend(self._fetch_issues_page(state="closed", max_count=max_issues // 2))
 
         return all_issues
 
@@ -308,6 +319,10 @@ class GitHubThreeStreamFetcher:
             "sort": "comments",
             "direction": "desc",
         }
+        if self.issue_since:
+            params["since"] = self.issue_since
+        if self.issue_labels:
+            params["labels"] = ",".join(self.issue_labels)
 
         try:
             response = requests.get(url, headers=headers, params=params, timeout=10)

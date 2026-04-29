@@ -448,6 +448,93 @@ class TestPineconeAdaptor:
         call_kwargs = mock_pc.create_index.call_args
         assert call_kwargs.kwargs["dimension"] == 768
 
+    def test_frontmatter_parsed_into_metadata(self, tmp_path):
+        """YAML frontmatter from per-issue files is parsed and merged into vector metadata."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        skill_dir = tmp_path / "issue-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: issue-skill\ndescription: test\n---\n\n# Skill\n\nContent.\n"
+        )
+        refs = skill_dir / "references"
+        refs.mkdir()
+        (refs / "myrepo_42.md").write_text(
+            '---\ntype: github_issue\nissue_number: 42\ntitle: "Bug"\n'
+            'state: open\nlabels: ["bug"]\ncreated_at: "2023-01-01"\n'
+            'updated_at: "2023-01-02"\nurl: "https://github.com/test/repo/issues/42"\n'
+            "---\n\n# Issue #42: Bug\n\nFull body here.\n"
+        )
+
+        adaptor = PineconeAdaptor()
+        metadata = SkillMetadata(name="issue-skill", description="test")
+        result = adaptor.format_skill_md(skill_dir, metadata)
+        data = json.loads(result)
+
+        # Find the vector for the issue file
+        issue_vecs = [v for v in data["vectors"] if v["metadata"]["file"] == "myrepo_42.md"]
+        assert len(issue_vecs) == 1
+
+        meta = issue_vecs[0]["metadata"]
+        assert meta["type"] == "github_issue"
+        assert meta["issue_number"] == 42
+        assert meta["state"] == "open"
+        assert meta["labels"] == ["bug"]
+        assert meta["url"] == "https://github.com/test/repo/issues/42"
+
+    def test_frontmatter_stripped_from_text(self, tmp_path):
+        """Frontmatter is stripped from the text content of the vector."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        skill_dir = tmp_path / "strip-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: strip-skill\ndescription: test\n---\n\n# Skill\n\nContent.\n"
+        )
+        refs = skill_dir / "references"
+        refs.mkdir()
+        (refs / "repo_1.md").write_text(
+            '---\ntype: github_issue\nissue_number: 1\ntitle: "Test"\n'
+            'state: open\nlabels: []\ncreated_at: "2023-01-01"\n'
+            'updated_at: "2023-01-02"\nurl: "https://example.com"\n---\n\n'
+            "# Issue #1: Test\n\nActual content.\n"
+        )
+
+        adaptor = PineconeAdaptor()
+        metadata = SkillMetadata(name="strip-skill", description="test")
+        result = adaptor.format_skill_md(skill_dir, metadata)
+        data = json.loads(result)
+
+        issue_vecs = [v for v in data["vectors"] if v["metadata"]["file"] == "repo_1.md"]
+        text = issue_vecs[0]["metadata"]["text"]
+        assert "---" not in text.split("\n")[0]  # No frontmatter markers
+        assert "type: github_issue" not in text
+        assert "# Issue #1: Test" in text
+        assert "Actual content." in text
+
+    def test_non_frontmatter_files_unaffected(self, tmp_path):
+        """Reference files without frontmatter are processed normally."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        skill_dir = tmp_path / "normal-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: normal-skill\ndescription: test\n---\n\n# Skill\n\nContent.\n"
+        )
+        refs = skill_dir / "references"
+        refs.mkdir()
+        (refs / "api_reference.md").write_text("# API Reference\n\nSome API docs.\n")
+
+        adaptor = PineconeAdaptor()
+        metadata = SkillMetadata(name="normal-skill", description="test")
+        result = adaptor.format_skill_md(skill_dir, metadata)
+        data = json.loads(result)
+
+        ref_vecs = [v for v in data["vectors"] if v["metadata"]["file"] == "api_reference.md"]
+        assert len(ref_vecs) == 1
+        assert ref_vecs[0]["metadata"]["type"] == "reference"
+        assert "# API Reference" in ref_vecs[0]["metadata"]["text"]
+
     def test_deterministic_ids(self, sample_skill_dir):
         """IDs are deterministic — same input produces same ID."""
         from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
@@ -464,6 +551,57 @@ class TestPineconeAdaptor:
         ids1 = [v["id"] for v in data1["vectors"]]
         ids2 = [v["id"] for v in data2["vectors"]]
         assert ids1 == ids2
+
+
+# ---------------------------------------------------------------------------
+# _parse_ref_frontmatter — malformed YAML resilience
+# ---------------------------------------------------------------------------
+
+
+class TestParseRefFrontmatter:
+    """_parse_ref_frontmatter must never raise on malformed YAML."""
+
+    def test_parse_valid_frontmatter(self):
+        """Valid YAML frontmatter parses to dict + content."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "---\nfoo: bar\nnum: 42\n---\nbody text\n"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {"foo": "bar", "num": 42}
+        assert body == "body text\n"
+
+    def test_parse_no_frontmatter(self):
+        """Content without leading --- returns empty dict + original content."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "no frontmatter here"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {}
+        assert body == content
+
+    def test_parse_malformed_yaml_does_not_raise(self):
+        """Malformed YAML returns ({}, original content) instead of raising."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        # Two flavors of broken YAML — both must fall through to the except.
+        broken_colons = "---\n: : :\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(broken_colons)
+        assert fm == {}
+        assert body == broken_colons
+
+        unbalanced = "---\n[unbalanced\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(unbalanced)
+        assert fm == {}
+        assert body == unbalanced
+
+    def test_parse_non_dict_yaml_returns_empty(self):
+        """Frontmatter that parses to a non-dict (e.g. a list) returns empty dict."""
+        from skill_seekers.cli.adaptors.pinecone_adaptor import PineconeAdaptor
+
+        content = "---\n- just\n- a list\n---\nbody"
+        fm, body = PineconeAdaptor._parse_ref_frontmatter(content)
+        assert fm == {}
+        assert body == content
 
 
 # ---------------------------------------------------------------------------

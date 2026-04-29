@@ -379,6 +379,32 @@ class TestConfigValidatorNewTypes:
         validator = ConfigValidator(config)
         assert validator.validate() is True
 
+    def test_github_issue_since_accepts_z_suffix(self):
+        """github source: issue_since with UTC 'Z' suffix passes on Python 3.10."""
+        config = self._make_config(
+            {
+                "type": "github",
+                "repo": "octocat/Hello-World",
+                "issue_since": "2024-01-01T00:00:00Z",
+            }
+        )
+        validator = ConfigValidator(config)
+        # Must not raise — Python 3.10's fromisoformat rejects raw 'Z'.
+        assert validator.validate() is True
+
+    def test_github_issue_since_rejects_garbage(self):
+        """github source: malformed issue_since still raises ValueError."""
+        config = self._make_config(
+            {
+                "type": "github",
+                "repo": "octocat/Hello-World",
+                "issue_since": "not-a-date",
+            }
+        )
+        validator = ConfigValidator(config)
+        with pytest.raises(ValueError, match="not a valid ISO8601 date"):
+            validator.validate()
+
 
 # ---------------------------------------------------------------------------
 # 3. UnifiedSkillBuilder — generic merge system

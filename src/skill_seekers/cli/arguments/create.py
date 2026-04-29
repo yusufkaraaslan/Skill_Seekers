@@ -325,6 +325,49 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Max issues to fetch (default: 100)",
         },
     },
+    "since": {
+        "flags": ("--since",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Only fetch issues updated after this date (ISO8601, UTC 'Z' suffix accepted, or YYYY-MM-DD)",
+            "metavar": "DATE",
+        },
+    },
+    "issue_labels": {
+        "flags": ("--issue-labels",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Filter issues by labels (comma-separated)",
+            "metavar": "LABELS",
+        },
+    },
+    "issue_state": {
+        "flags": ("--issue-state",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "choices": ["open", "closed", "all"],
+            "help": "Filter issues by state (default: all)",
+        },
+    },
+    "max_comments": {
+        "flags": ("--max-comments",),
+        "kwargs": {
+            "type": int,
+            "default": 0,
+            "help": "Fetch up to N comments per issue (default: 0, disabled; costs 1+ extra API call per issue, paginated)",
+            "metavar": "N",
+        },
+    },
+    "per_issue_files": {
+        "flags": ("--per-issue-files",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Write individual markdown files per issue (with YAML frontmatter)",
+        },
+    },
     "scrape_only": {
         "flags": ("--scrape-only",),
         "kwargs": {

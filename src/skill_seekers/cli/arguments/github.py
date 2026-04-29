@@ -76,6 +76,49 @@ GITHUB_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "N",
         },
     },
+    "since": {
+        "flags": ("--since",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Only fetch issues updated after this date (ISO8601, UTC 'Z' suffix accepted, or YYYY-MM-DD; e.g. 2026-01-01T00:00:00Z)",
+            "metavar": "DATE",
+        },
+    },
+    "issue_labels": {
+        "flags": ("--issue-labels",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": "Filter issues by labels (comma-separated, e.g. bug,enhancement)",
+            "metavar": "LABELS",
+        },
+    },
+    "issue_state": {
+        "flags": ("--issue-state",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "choices": ["open", "closed", "all"],
+            "help": "Filter issues by state (default: all)",
+        },
+    },
+    "max_comments": {
+        "flags": ("--max-comments",),
+        "kwargs": {
+            "type": int,
+            "default": 0,
+            "help": "Fetch up to N comments per issue (default: 0, disabled; costs 1+ extra API call per issue, paginated)",
+            "metavar": "N",
+        },
+    },
+    "per_issue_files": {
+        "flags": ("--per-issue-files",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Write individual markdown files per issue (with YAML frontmatter)",
+        },
+    },
     # Control options
     "scrape_only": {
         "flags": ("--scrape-only",),
