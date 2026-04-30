@@ -77,8 +77,8 @@ LANGUAGE_EXTENSIONS = {
     ".php": "PHP",
     ".R": "R",
     ".r": "R",
-    ".Rmd": "R",   # R Markdown
-    ".qmd": "R",   # Quarto (R-focused computational documents)
+    ".Rmd": "R",  # R Markdown
+    ".qmd": "R",  # Quarto (R-focused computational documents)
 }
 
 # Documentation file extensions

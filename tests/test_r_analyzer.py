@@ -27,7 +27,7 @@ except ImportError:
     ANALYZER_AVAILABLE = False
 
 try:
-    from tree_sitter_language_pack import get_language, get_parser as _get_ts_parser
+    from tree_sitter_language_pack import get_parser as _get_ts_parser
 
     _R_PARSER = _get_ts_parser("r")
     TREE_SITTER_AVAILABLE = True
@@ -209,7 +209,7 @@ class TestRHelpers(unittest.TestCase):
 class TestRAnalyzerIntegration(unittest.TestCase):
     """Full _analyze_r() integration tests with realistic R code."""
 
-    FEATURES_R = '''
+    FEATURES_R = """
 #' Calculate Order Flow Imbalance
 #'
 #' @param bid_volume numeric bid volume
@@ -233,7 +233,7 @@ require(TTR)
 
 # internal helper
 .normalize <- function(x) (x - mean(x)) / sd(x)
-'''
+"""
 
     def setUp(self):
         if not ANALYZER_AVAILABLE or not TREE_SITTER_AVAILABLE:
@@ -287,7 +287,7 @@ require(TTR)
         self.assertTrue(len(doc_comments) > 0)
 
     def test_r6class_extracted(self):
-        code = '''
+        code = """
 MyEnv <- R6Class("MyEnv",
   public = list(
     initialize = function(data) {
@@ -298,7 +298,7 @@ MyEnv <- R6Class("MyEnv",
     }
   )
 )
-'''
+"""
         result = self.analyzer.analyze_file("env.R", code, "R")
         class_names = [c["name"] for c in result["classes"]]
         self.assertIn("MyEnv", class_names)

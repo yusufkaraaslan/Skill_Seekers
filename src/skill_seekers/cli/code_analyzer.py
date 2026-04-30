@@ -2223,11 +2223,13 @@ class CodeAnalyzer:
                 raw = node.text.decode()
                 is_roxygen = raw.startswith("#'")
                 text = raw[2:].strip() if is_roxygen else raw[1:].strip()
-                comments.append({
-                    "line": node.start_point[0] + 1,
-                    "text": text,
-                    "type": "doc" if is_roxygen else "inline",
-                })
+                comments.append(
+                    {
+                        "line": node.start_point[0] + 1,
+                        "text": text,
+                        "type": "doc" if is_roxygen else "inline",
+                    }
+                )
 
         return {
             "classes": classes,
@@ -2264,7 +2266,9 @@ class CodeAnalyzer:
             lhs_node = node.child_by_field_name("lhs")
             rhs_node = node.child_by_field_name("rhs")
 
-        lhs_name = lhs_node.text.decode().strip() if lhs_node and lhs_node.type == "identifier" else None
+        lhs_name = (
+            lhs_node.text.decode().strip() if lhs_node and lhs_node.type == "identifier" else None
+        )
         return lhs_name, rhs_node
 
     def _r_collect_roxygen(self, assignment_node, lines: list[str]) -> str | None:
@@ -2288,7 +2292,9 @@ class CodeAnalyzer:
 
         return "\n".join(roxygen_lines) if roxygen_lines else None
 
-    def _r_extract_function(self, lhs_name: str | None, rhs_node, docstring: str | None) -> dict | None:
+    def _r_extract_function(
+        self, lhs_name: str | None, rhs_node, docstring: str | None
+    ) -> dict | None:
         """Build a function signature dict from a tree-sitter function_definition node.
 
         Returns a dict that matches the FunctionSignature dataclass layout used
@@ -2310,16 +2316,18 @@ class CodeAnalyzer:
                 if name_node and name_node.type == "dots":
                     params.append({"name": "...", "type_hint": None, "default": None})
                 elif name_node:
-                    params.append({
-                        "name": name_node.text.decode(),
-                        "type_hint": None,
-                        "default": default_node.text.decode() if default_node else None,
-                    })
+                    params.append(
+                        {
+                            "name": name_node.text.decode(),
+                            "type_hint": None,
+                            "default": default_node.text.decode() if default_node else None,
+                        }
+                    )
 
         return {
             "name": lhs_name,
             "parameters": params,
-            "return_type": None,          # R has no return type annotations
+            "return_type": None,  # R has no return type annotations
             "docstring": docstring,
             "line_number": rhs_node.start_point[0] + 1,
             "is_async": False,
@@ -2354,16 +2362,18 @@ class CodeAnalyzer:
                     method_name = method_arg.child_by_field_name("name")
                     method_val = method_arg.child_by_field_name("value")
                     if method_name and method_val and method_val.type == "function_definition":
-                        methods.append({
-                            "name": method_name.text.decode(),
-                            "parameters": [],
-                            "return_type": None,
-                            "docstring": None,
-                            "line_number": method_val.start_point[0] + 1,
-                            "is_async": False,
-                            "is_method": True,
-                            "decorators": [],
-                        })
+                        methods.append(
+                            {
+                                "name": method_name.text.decode(),
+                                "parameters": [],
+                                "return_type": None,
+                                "docstring": None,
+                                "line_number": method_val.start_point[0] + 1,
+                                "is_async": False,
+                                "is_method": True,
+                                "decorators": [],
+                            }
+                        )
 
         return {
             "name": lhs_name,
