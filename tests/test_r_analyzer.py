@@ -83,8 +83,8 @@ class TestRDispatch(unittest.TestCase):
     """analyze_file() routes language='R' to _analyze_r()."""
 
     def setUp(self):
-        if not ANALYZER_AVAILABLE:
-            self.skipTest("CodeAnalyzer not importable")
+        if not ANALYZER_AVAILABLE or not TREE_SITTER_AVAILABLE:
+            self.skipTest("CodeAnalyzer or tree-sitter-language-pack not available")
         self.analyzer = CodeAnalyzer(depth="deep")
 
     def test_r_language_returns_dict_with_functions_key(self):
