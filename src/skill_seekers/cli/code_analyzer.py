@@ -139,6 +139,8 @@ class CodeAnalyzer:
                 return self._analyze_ruby(content, file_path)
             elif language == "PHP":
                 return self._analyze_php(content, file_path)
+            elif language == "R":
+                return self._analyze_r(content, file_path)
             else:
                 logger.debug(f"No analyzer for language: {language}")
                 return {}
@@ -2147,6 +2149,262 @@ class CodeAnalyzer:
             result["test_functions"] = test_functions
 
         return result
+
+    # ------------------------------------------------------------------
+    # R language support (tree-sitter-language-pack)
+    # ------------------------------------------------------------------
+
+    def _analyze_r(self, content: str, file_path: str) -> dict[str, Any]:
+        """Analyze R file using tree-sitter-language-pack (full AST, no R runtime required).
+
+        Extracts named functions (f <- function(...) {}), R6/setRefClass classes,
+        library()/require() imports, and # / #' (roxygen2) comments.
+
+        Falls back to empty dict if tree-sitter-language-pack is not installed
+        rather than crashing — install with:
+            uv add --optional r tree-sitter tree-sitter-language-pack
+        (run from ~/PyCharmProjects/Skill_Seekers)
+        """
+        try:
+            from tree_sitter_language_pack import get_parser as _get_ts_parser
+        except ImportError:
+            logger.warning(
+                "tree-sitter-language-pack not installed; R file %s will not be analyzed. "
+                "Install with: uv add --optional r tree-sitter tree-sitter-language-pack",
+                file_path,
+            )
+            return {}
+
+        parser = _get_ts_parser("r")
+        tree = parser.parse(bytes(content, "utf8"))
+        root = tree.root_node
+        lines = content.splitlines()
+
+        functions: list[dict] = []
+        classes: list[dict] = []
+        imports: list[str] = []
+        comments: list[dict] = []
+
+        ASSIGN_OPS = {"<-", "=", "->", "<<-"}
+
+        for node in root.children:
+            node_type = node.type
+
+            # Named function or R6Class assignments (binary_operator with assignment op)
+            if node_type == "binary_operator":
+                operator = node.child_by_field_name("operator")
+                if operator is None or operator.text.decode() not in ASSIGN_OPS:
+                    continue
+                lhs_name, rhs = self._r_assignment_parts(node)
+                if rhs is None:
+                    continue
+                if rhs.type == "function_definition":
+                    docstring = self._r_collect_roxygen(node, lines)
+                    func = self._r_extract_function(lhs_name, rhs, docstring)
+                    if func:
+                        functions.append(func)
+                elif rhs.type == "call":
+                    callee = rhs.child_by_field_name("function")
+                    if callee and callee.text.decode() in ("R6Class", "setRefClass"):
+                        cls = self._r_extract_r6class(lhs_name, rhs)
+                        if cls:
+                            classes.append(cls)
+
+            # Top-level library()/require() calls
+            elif node_type == "call":
+                callee = node.child_by_field_name("function")
+                if callee and callee.text.decode() in ("library", "require"):
+                    pkg = self._r_extract_import(node)
+                    if pkg:
+                        imports.append(pkg)
+
+            # Comments: # inline, #' roxygen doc
+            elif node_type == "comment":
+                raw = node.text.decode()
+                is_roxygen = raw.startswith("#'")
+                text = raw[2:].strip() if is_roxygen else raw[1:].strip()
+                comments.append(
+                    {
+                        "line": node.start_point[0] + 1,
+                        "text": text,
+                        "type": "doc" if is_roxygen else "inline",
+                    }
+                )
+
+        return {
+            "classes": classes,
+            "functions": functions,
+            "comments": comments,
+            "imports": list(dict.fromkeys(imports)),  # deduplicate, preserve insertion order
+        }
+
+    def _r_assignment_parts(self, node) -> tuple:
+        """Return (lhs_name: str | None, rhs_node | None) from an R assignment node.
+
+        The R grammar represents all assignments (<-, =, ->) as binary_operator
+        nodes with lhs, rhs, and operator fields.  Right-assignment (val -> name)
+        has operator text '->' — for that we swap lhs/rhs so callers always get
+        (name, value) regardless of direction.
+        """
+        if node.type != "binary_operator":
+            return None, None
+
+        operator = node.child_by_field_name("operator")
+        if operator is None:
+            return None, None
+        op_text = operator.text.decode()
+
+        ASSIGN_OPS = {"<-", "=", "->", "<<-"}
+        if op_text not in ASSIGN_OPS:
+            return None, None  # arithmetic binary operator, not assignment
+
+        if op_text == "->":
+            # Right assignment: value -> name  (fields are physically lhs=value, rhs=name)
+            lhs_node = node.child_by_field_name("rhs")
+            rhs_node = node.child_by_field_name("lhs")
+        else:
+            lhs_node = node.child_by_field_name("lhs")
+            rhs_node = node.child_by_field_name("rhs")
+
+        lhs_name = (
+            lhs_node.text.decode().strip() if lhs_node and lhs_node.type == "identifier" else None
+        )
+        return lhs_name, rhs_node
+
+    def _r_collect_roxygen(self, assignment_node, lines: list[str]) -> str | None:
+        """Collect preceding #' roxygen2 comment lines as a single docstring.
+
+        Walks backwards from the assignment's start line through consecutive
+        lines that begin with '#'.  Stops at blank lines, non-comment lines,
+        or plain '# comment' lines (which are inline, not roxygen2 doc).
+
+        Returns joined roxygen2 text, or None if no roxygen2 block is found.
+        """
+        start_line = assignment_node.start_point[0]  # 0-indexed
+        roxygen_lines: list[str] = []
+
+        for i in range(start_line - 1, -1, -1):
+            stripped = lines[i].strip()
+            if stripped.startswith("#'"):
+                roxygen_lines.insert(0, stripped[2:].strip())
+            else:
+                break  # blank line, plain #comment, or code — stop collecting
+
+        return "\n".join(roxygen_lines) if roxygen_lines else None
+
+    def _r_extract_function(
+        self, lhs_name: str | None, rhs_node, docstring: str | None
+    ) -> dict | None:
+        """Build a function signature dict from a tree-sitter function_definition node.
+
+        Returns a dict that matches the FunctionSignature dataclass layout used
+        by all other _analyze_* methods so the rest of the pipeline handles R
+        functions the same way as Python/Go/etc.
+        """
+        if not lhs_name or not rhs_node or rhs_node.type != "function_definition":
+            return None
+
+        params: list[dict] = []
+        params_node = rhs_node.child_by_field_name("parameters")
+        if params_node:
+            for child in params_node.named_children:
+                if child.type != "parameter":
+                    continue
+                name_node = child.child_by_field_name("name")
+                default_node = child.child_by_field_name("default")
+
+                if name_node and name_node.type == "dots":
+                    params.append({"name": "...", "type_hint": None, "default": None})
+                elif name_node:
+                    params.append(
+                        {
+                            "name": name_node.text.decode(),
+                            "type_hint": None,
+                            "default": default_node.text.decode() if default_node else None,
+                        }
+                    )
+
+        return {
+            "name": lhs_name,
+            "parameters": params,
+            "return_type": None,  # R has no return type annotations
+            "docstring": docstring,
+            "line_number": rhs_node.start_point[0] + 1,
+            "is_async": False,
+            "is_method": False,
+            "decorators": [],
+        }
+
+    def _r_extract_r6class(self, lhs_name: str | None, call_node) -> dict | None:
+        """Extract class name and public/private methods from an R6Class(...) call node."""
+        if not lhs_name:
+            return None
+
+        methods: list[dict] = []
+        args_node = call_node.child_by_field_name("arguments")
+        if args_node:
+            for arg in args_node.named_children:
+                if arg.type != "argument":
+                    continue
+                arg_name = arg.child_by_field_name("name")
+                arg_val = arg.child_by_field_name("value")
+                if not arg_name or arg_name.text.decode() not in ("public", "private"):
+                    continue
+                if not arg_val or arg_val.type != "call":
+                    continue
+                # arg_val is list(method = function(...) {...})
+                list_args = arg_val.child_by_field_name("arguments")
+                if not list_args:
+                    continue
+                for method_arg in list_args.named_children:
+                    if method_arg.type != "argument":
+                        continue
+                    method_name = method_arg.child_by_field_name("name")
+                    method_val = method_arg.child_by_field_name("value")
+                    if method_name and method_val and method_val.type == "function_definition":
+                        methods.append(
+                            {
+                                "name": method_name.text.decode(),
+                                "parameters": [],
+                                "return_type": None,
+                                "docstring": None,
+                                "line_number": method_val.start_point[0] + 1,
+                                "is_async": False,
+                                "is_method": True,
+                                "decorators": [],
+                            }
+                        )
+
+        return {
+            "name": lhs_name,
+            "base_classes": [],
+            "methods": methods,
+            "docstring": None,
+            "line_number": call_node.start_point[0] + 1,
+        }
+
+    def _r_extract_import(self, call_node) -> str | None:
+        """Extract package name from library(pkg) or require(pkg) call node.
+
+        Handles both bare names (library(data.table)) and quoted names
+        (require("ggplot2")).  Returns the package name string, or None.
+        """
+        args_node = call_node.child_by_field_name("arguments")
+        if not args_node:
+            return None
+
+        for child in args_node.named_children:
+            if child.type != "argument":
+                continue
+            val = child.child_by_field_name("value")
+            if val is None:
+                continue
+            if val.type == "identifier":
+                return val.text.decode()
+            if val.type == "string":
+                # Strip surrounding quotes — package names never contain quotes
+                return val.text.decode().strip("\"'")
+        return None
 
 
 if __name__ == "__main__":
