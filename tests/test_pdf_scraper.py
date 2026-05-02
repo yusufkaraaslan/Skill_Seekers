@@ -435,12 +435,6 @@ class TestImageHandling(unittest.TestCase):
 
         converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
 
-        # Pre-create the images directory with a dummy image file
-        images_dir = Path(self.temp_dir) / "test_skill" / "assets" / "images"
-        images_dir.mkdir(parents=True, exist_ok=True)
-        dummy_image = images_dir / "test_page18_img1.png"
-        dummy_image.write_bytes(b"PNG")
-
         converter.extracted_data = {
             "pages": [
                 {
@@ -450,7 +444,7 @@ class TestImageHandling(unittest.TestCase):
                     "extracted_images": [
                         {
                             "filename": "test_page18_img1.png",
-                            "path": str(dummy_image),
+                            "path": "/tmp/test_page18_img1.png",
                             "page_number": 18,
                             "width": 200,
                             "height": 150,
@@ -469,11 +463,11 @@ class TestImageHandling(unittest.TestCase):
         ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
         content = ref_file.read_text()
 
-        self.assertIn("![test_page18_img1.png]", content)
+        self.assertIn("![Image from page 18]", content)
         self.assertIn("../assets/images/test_page18_img1.png", content)
 
 
-
+class TestErrorHandling(unittest.TestCase):
     """Test error handling for invalid inputs"""
 
     def setUp(self):

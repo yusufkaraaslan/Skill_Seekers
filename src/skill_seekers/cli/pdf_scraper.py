@@ -333,7 +333,9 @@ class PDFToSkillConverter(SkillConverter):
                     f.write("### Images\n\n")
                     for img in page["extracted_images"]:
                         img_filename = img["filename"]
-                        f.write(f"![{img_filename}](../assets/images/{img_filename})\n\n")
+                        page_num = img.get("page_number", page.get("page_number", ""))
+                        alt_text = f"Image from page {page_num}" if page_num else "Image"
+                        f.write(f"![{alt_text}](../assets/images/{img_filename})\n\n")
 
                 # Add images in legacy format (with raw data, not yet saved)
                 elif page.get("images"):
