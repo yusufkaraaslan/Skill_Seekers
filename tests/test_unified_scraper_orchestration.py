@@ -594,3 +594,80 @@ class TestRunOrchestration:
                 wr_mod.run_workflows = orig_wr
 
         assert "minimal" in (captured.get("workflows") or [])
+
+
+# ===========================================================================
+# Regression: issue #364 — guides loaded from fallback location
+# ===========================================================================
+
+
+class TestLoadGuideCollectionFallback:
+    """_load_guide_collection must return a falsy value when nothing is loadable.
+
+    Otherwise the ``primary or fallback`` chain in _scrape_local /
+    _run_c3_analysis short-circuits on the truthy placeholder and the real
+    guide data in the fallback location is silently dropped (issue #364:
+    output references contain an empty guide_collection.json even though
+    the cache holds 3 generated guides).
+    """
+
+    def _scraper(self):
+        return UnifiedScraper.__new__(UnifiedScraper)
+
+    def test_returns_empty_dict_when_directory_missing(self, tmp_path):
+        scraper = self._scraper()
+        result = scraper._load_guide_collection(tmp_path / "nope")
+        assert result == {}
+        assert not result  # falsy, so `or` fallback fires
+
+    def test_returns_empty_dict_when_directory_has_no_guide_files(self, tmp_path):
+        tutorials = tmp_path / "tutorials"
+        tutorials.mkdir()
+        (tutorials / "index.md").write_text("# Empty\n")
+        scraper = self._scraper()
+        result = scraper._load_guide_collection(tutorials)
+        assert result == {}
+        assert not result
+
+    def test_loads_guide_collection_when_present(self, tmp_path):
+        tutorials = tmp_path / "tutorials"
+        tutorials.mkdir()
+        payload = {
+            "total_guides": 2,
+            "guides_by_complexity": {},
+            "guides_by_use_case": {},
+            "guides": [{"id": "g1", "title": "One"}, {"id": "g2", "title": "Two"}],
+        }
+        (tutorials / "guide_collection.json").write_text(json.dumps(payload))
+        scraper = self._scraper()
+        result = scraper._load_guide_collection(tutorials)
+        assert result["total_guides"] == 2
+        assert len(result["guides"]) == 2
+
+    def test_or_fallback_picks_up_guides_from_secondary_path(self, tmp_path):
+        """Issue #364: when references/tutorials/ is missing but the original
+        tutorials/ still has the JSON, the fallback path must win."""
+        temp_output = tmp_path / "local_analysis_0_repo"
+        refs = temp_output / "references"  # not created — simulates skipped move
+        tutorials = temp_output / "tutorials"
+        tutorials.mkdir(parents=True)
+        payload = {
+            "total_guides": 3,
+            "guides_by_complexity": {},
+            "guides_by_use_case": {},
+            "guides": [
+                {"id": "g1", "title": "One"},
+                {"id": "g2", "title": "Two"},
+                {"id": "g3", "title": "Three"},
+            ],
+        }
+        (tutorials / "guide_collection.json").write_text(json.dumps(payload))
+
+        scraper = self._scraper()
+        primary = scraper._load_guide_collection(refs / "tutorials")
+        fallback = scraper._load_guide_collection(temp_output / "tutorials")
+        result = primary or fallback
+
+        assert not primary  # primary missing, must be falsy
+        assert result["total_guides"] == 3
+        assert len(result["guides"]) == 3
