@@ -201,17 +201,14 @@ class SourceDetector:
     @classmethod
     def _detect_html(cls, source: str) -> SourceInfo:
         """Detect HTML source — URL or local file.
-        
-        Tries to fetch from internet first, then falls back to local file.
-        If source is a URL (http:// or https://), route to web scraper.
-        If source is a local file path, route to html_scraper.
+
+        Routes ``http(s)://...`` inputs to the web scraper so URLs ending in
+        ``.html`` (e.g. Flutter API docs) are fetched instead of being treated
+        as missing local files. All other inputs route to the html_scraper.
         """
-        # Check if source is a URL
-        if source.startswith("http://") or source.startswith("https://"):
-            # Route to web scraper for URL-based HTML
+        if source.startswith(("http://", "https://")):
             return cls._detect_web(source)
-        
-        # Otherwise treat as local file
+
         name = os.path.splitext(os.path.basename(source))[0]
         return SourceInfo(
             type="html", parsed={"file_path": source}, suggested_name=name, raw_input=source

@@ -46,6 +46,20 @@ class TestSourceDetectorNewTypes:
         assert info.type == "html"
         assert info.parsed["file_path"] == "index.HTM"
 
+    def test_detect_html_url_routes_to_web(self):
+        """Regression: URLs ending in .html must route to web, not local html scraper."""
+        url = "https://api.flutter.dev/flutter/rendering/RenderObject-class.html"
+        info = SourceDetector.detect(url)
+        assert info.type == "web"
+        assert info.parsed["url"] == url
+
+    def test_detect_http_html_url_routes_to_web(self):
+        """Regression: http:// URLs ending in .html route to web."""
+        url = "http://example.com/page.html"
+        info = SourceDetector.detect(url)
+        assert info.type == "web"
+        assert info.parsed["url"] == url
+
     # -- PowerPoint --
     def test_detect_pptx(self):
         """Test .pptx → pptx detection."""
