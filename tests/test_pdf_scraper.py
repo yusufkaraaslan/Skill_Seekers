@@ -428,6 +428,44 @@ class TestImageHandling(unittest.TestCase):
         self.assertIn("![", content)  # Markdown image syntax
         self.assertIn("../assets/", content)  # Relative path to assets
 
+    def test_extracted_images_references_in_markdown(self):
+        """Test that extracted_images (pdf_extractor_poc format) are referenced in markdown"""
+        config = {"name": "test_skill", "pdf_path": "test.pdf"}
+        converter = self.PDFToSkillConverter(config)
+
+        converter.skill_dir = str(Path(self.temp_dir) / "test_skill")
+
+        converter.extracted_data = {
+            "pages": [
+                {
+                    "page_number": 18,
+                    "text": "Architecture diagram",
+                    "code_blocks": [],
+                    "extracted_images": [
+                        {
+                            "filename": "test_page18_img1.png",
+                            "path": "/tmp/test_page18_img1.png",
+                            "page_number": 18,
+                            "width": 200,
+                            "height": 150,
+                            "format": "png",
+                            "size_bytes": 3,
+                        }
+                    ],
+                }
+            ],
+            "total_pages": 1,
+        }
+
+        converter.build_skill()
+
+        # Check reference file has image markdown reference
+        ref_file = Path(self.temp_dir) / "test_skill" / "references" / "test.md"
+        content = ref_file.read_text()
+
+        self.assertIn("![Image from page 18]", content)
+        self.assertIn("../assets/images/test_page18_img1.png", content)
+
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling for invalid inputs"""
