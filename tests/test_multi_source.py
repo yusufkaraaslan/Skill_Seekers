@@ -503,5 +503,118 @@ class TestUnifiedSkillBuilderPdfReferences(unittest.TestCase):
             self.assertIn("3 PDF document", content)
 
 
+class TestCodebaseAnalysisIndex(unittest.TestCase):
+    """Issue #362: SKILL.md must link to a real codebase_analysis target.
+
+    Per-source ARCHITECTURE.md files live at
+    ``references/codebase_analysis/{source_id}/ARCHITECTURE.md``, but four
+    call sites historically linked to ``references/codebase_analysis/
+    ARCHITECTURE.md`` (no source_id). That link was always broken once the
+    layout became per-source-namespaced.
+
+    The fix: generate a top-level ``references/codebase_analysis/index.md``
+    aggregating all sources, and route every SKILL.md link through it.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+    def tearDown(self):
+        os.chdir(self.original_dir)
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def _run_build(self, sources_local):
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        config = {"name": "issue-362", "description": "Test"}
+        scraped_data = {
+            "documentation": [],
+            "github": [],
+            "pdf": [],
+            "local": sources_local,
+        }
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.build()
+        return builder
+
+    def test_index_md_lists_each_local_source(self):
+        sample_patterns = [
+            {
+                "file_path": "/x/foo.py",
+                "patterns": [
+                    {"pattern_type": "Singleton", "confidence": 0.88, "indicators": ["__instance"]}
+                ],
+            }
+        ]
+        builder = self._run_build(
+            [
+                {
+                    "source_id": "issue-362_local_0_repo_a",
+                    "name": "repo_a",
+                    "patterns": sample_patterns,
+                },
+                {
+                    "source_id": "issue-362_local_1_repo_b",
+                    "name": "repo_b",
+                    "patterns": sample_patterns,
+                },
+            ]
+        )
+
+        index_path = os.path.join(builder.skill_dir, "references", "codebase_analysis", "index.md")
+        self.assertTrue(os.path.isfile(index_path), "codebase_analysis/index.md must be created")
+
+        with open(index_path) as f:
+            content = f.read()
+        self.assertIn("issue-362_local_0_repo_a", content)
+        self.assertIn("issue-362_local_1_repo_b", content)
+        self.assertIn("issue-362_local_0_repo_a/ARCHITECTURE.md", content)
+        self.assertIn("issue-362_local_0_repo_a/patterns/", content)
+
+    def test_skill_md_link_resolves_to_real_file(self):
+        """The SKILL.md link to codebase_analysis must resolve on disk."""
+        sample_patterns = [
+            {
+                "file_path": "/x/foo.py",
+                "patterns": [
+                    {"pattern_type": "Singleton", "confidence": 0.88, "indicators": ["__instance"]}
+                ],
+            }
+        ]
+        builder = self._run_build(
+            [
+                {
+                    "source_id": "issue-362_local_0_repo",
+                    "name": "repo",
+                    "patterns": sample_patterns,
+                },
+            ]
+        )
+
+        skill_md = os.path.join(builder.skill_dir, "SKILL.md")
+        with open(skill_md) as f:
+            content = f.read()
+
+        import re
+
+        targets = re.findall(r"references/codebase_analysis/[^\s`)]+", content)
+        self.assertTrue(targets, "SKILL.md must mention a codebase_analysis link")
+
+        for target in targets:
+            full = os.path.join(builder.skill_dir, target)
+            self.assertTrue(
+                os.path.exists(full),
+                f"SKILL.md links to {target!r} but file does not exist on disk",
+            )
+
+    def test_no_index_when_no_codebase_data(self):
+        """No C3.x output → no index file written."""
+        builder = self._run_build([])  # no local sources at all
+        index_path = os.path.join(builder.skill_dir, "references", "codebase_analysis", "index.md")
+        self.assertFalse(os.path.exists(index_path))
+
+
 if __name__ == "__main__":
     unittest.main()

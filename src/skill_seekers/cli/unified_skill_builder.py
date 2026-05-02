@@ -384,7 +384,7 @@ This skill synthesizes knowledge from multiple sources:
         content += "Organized by source:\n\n"
         content += "- [Documentation](references/documentation/)\n"
         content += "- [GitHub](references/github/)\n"
-        content += "- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n\n"
+        content += "- [Codebase Analysis](references/codebase_analysis/index.md)\n\n"
 
         # Footer
         content += "---\n\n"
@@ -461,8 +461,8 @@ This skill synthesizes knowledge from multiple sources:
         # Update reference documentation to include PDF
         final_content = "\n".join(lines)
         final_content = final_content.replace(
-            "- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n",
-            "- [Codebase Analysis](references/codebase_analysis/ARCHITECTURE.md)\n- [PDF Documentation](references/pdf/)\n",
+            "- [Codebase Analysis](references/codebase_analysis/index.md)\n",
+            "- [Codebase Analysis](references/codebase_analysis/index.md)\n- [PDF Documentation](references/pdf/)\n",
         )
 
         return final_content
@@ -1094,6 +1094,12 @@ This skill combines knowledge from multiple sources:
         # Local sources also carry C3.x output — fixes #363
         self._generate_local_codebase_analysis_references()
 
+        # Top-level index linking each per-source ARCHITECTURE.md (#362).
+        # SKILL.md links into `references/codebase_analysis/index.md` instead of
+        # the historical `references/codebase_analysis/ARCHITECTURE.md`, which
+        # never existed once outputs became per-source-namespaced.
+        self._generate_codebase_analysis_index()
+
     def _generate_docs_references(self, docs_list: list[dict]):
         """Generate references from multiple documentation sources."""
         # Skip if no documentation sources
@@ -1420,6 +1426,57 @@ This skill combines knowledge from multiple sources:
         """Normalize a source identifier to a filesystem-safe directory name."""
         cleaned = re.sub(r"[^\w\-]", "_", raw or "").strip("_")
         return cleaned or "local"
+
+    def _generate_codebase_analysis_index(self):
+        """Write `references/codebase_analysis/index.md` (#362).
+
+        Scans the codebase_analysis directory after per-source references have
+        been written and produces a single landing page that links to each
+        source's ARCHITECTURE.md and any populated subsections (patterns,
+        examples, guides, configuration). SKILL.md uses this as a stable link
+        target so the path resolves whether the build has one source or many.
+        """
+        base = os.path.join(self.skill_dir, "references", "codebase_analysis")
+        if not os.path.isdir(base):
+            return
+
+        sources = []
+        for entry in sorted(os.listdir(base)):
+            entry_path = os.path.join(base, entry)
+            if not os.path.isdir(entry_path):
+                continue
+            if not os.path.isfile(os.path.join(entry_path, "ARCHITECTURE.md")):
+                continue
+            sources.append(entry)
+
+        if not sources:
+            return
+
+        index_path = os.path.join(base, "index.md")
+        subsections = (
+            ("patterns", "Design patterns"),
+            ("examples", "Usage examples"),
+            ("guides", "How-to guides"),
+            ("configuration", "Configuration"),
+        )
+
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write("# Codebase Analysis\n\n")
+            f.write(
+                "Architecture and code-analysis output from the C3.x pipeline, "
+                "organized by source. Each entry links to the per-source "
+                "ARCHITECTURE.md and any populated subsections.\n\n"
+            )
+
+            for source in sources:
+                f.write(f"## {source}\n\n")
+                f.write(f"- [Architecture overview]({source}/ARCHITECTURE.md)\n")
+                for sub_dir, label in subsections:
+                    if os.path.isdir(os.path.join(base, source, sub_dir)):
+                        f.write(f"- [{label}]({source}/{sub_dir}/)\n")
+                f.write("\n")
+
+        logger.info(f"📚 Created codebase analysis index: {index_path}")
 
     def _write_codebase_analysis_references(
         self,
@@ -2019,8 +2076,12 @@ This skill combines knowledge from multiple sources:
                 content += f"- 🔐 **Security Alert**: {total_security_issues} issue(s) detected\n"
             content += "\n"
 
-        # Add link to ARCHITECTURE.md
-        content += "📖 **See** `references/codebase_analysis/ARCHITECTURE.md` for complete architectural overview.\n\n"
+        # Add link to the codebase-analysis landing page (#362)
+        content += (
+            "📖 **See** `references/codebase_analysis/index.md` for the per-source "
+            "architecture overviews and detailed pattern, example, guide, and "
+            "configuration references.\n\n"
+        )
 
         return content
 
