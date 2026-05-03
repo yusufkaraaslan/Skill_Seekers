@@ -111,6 +111,11 @@ try:
 except ImportError:
     FireworksAdaptor = None
 
+try:
+    from .ibm_bob import IBMBobAdaptor
+except ImportError:
+    IBMBobAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -156,6 +161,8 @@ if TogetherAdaptor:
     ADAPTORS["together"] = TogetherAdaptor
 if FireworksAdaptor:
     ADAPTORS["fireworks"] = FireworksAdaptor
+if IBMBobAdaptor:
+    ADAPTORS["ibm-bob"] = IBMBobAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:

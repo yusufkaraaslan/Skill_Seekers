@@ -46,6 +46,20 @@ class TestSourceDetectorNewTypes:
         assert info.type == "html"
         assert info.parsed["file_path"] == "index.HTM"
 
+    def test_detect_html_url_routes_to_web(self):
+        """Regression: URLs ending in .html must route to web, not local html scraper."""
+        url = "https://api.flutter.dev/flutter/rendering/RenderObject-class.html"
+        info = SourceDetector.detect(url)
+        assert info.type == "web"
+        assert info.parsed["url"] == url
+
+    def test_detect_http_html_url_routes_to_web(self):
+        """Regression: http:// URLs ending in .html route to web."""
+        url = "http://example.com/page.html"
+        info = SourceDetector.detect(url)
+        assert info.type == "web"
+        assert info.parsed["url"] == url
+
     # -- PowerPoint --
     def test_detect_pptx(self):
         """Test .pptx → pptx detection."""
@@ -378,6 +392,32 @@ class TestConfigValidatorNewTypes:
         )
         validator = ConfigValidator(config)
         assert validator.validate() is True
+
+    def test_github_issue_since_accepts_z_suffix(self):
+        """github source: issue_since with UTC 'Z' suffix passes on Python 3.10."""
+        config = self._make_config(
+            {
+                "type": "github",
+                "repo": "octocat/Hello-World",
+                "issue_since": "2024-01-01T00:00:00Z",
+            }
+        )
+        validator = ConfigValidator(config)
+        # Must not raise — Python 3.10's fromisoformat rejects raw 'Z'.
+        assert validator.validate() is True
+
+    def test_github_issue_since_rejects_garbage(self):
+        """github source: malformed issue_since still raises ValueError."""
+        config = self._make_config(
+            {
+                "type": "github",
+                "repo": "octocat/Hello-World",
+                "issue_since": "not-a-date",
+            }
+        )
+        validator = ConfigValidator(config)
+        with pytest.raises(ValueError, match="not a valid ISO8601 date"):
+            validator.validate()
 
 
 # ---------------------------------------------------------------------------

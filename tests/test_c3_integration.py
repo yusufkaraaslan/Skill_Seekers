@@ -355,7 +355,10 @@ class TestC3Integration:
         assert "MVC" in content
         assert "Design Patterns" in content
         assert "Factory" in content
-        assert "references/codebase_analysis/ARCHITECTURE.md" in content
+        # SKILL.md links to the per-source index (#362), not the historical
+        # top-level ARCHITECTURE.md which never existed once outputs became
+        # per-source-namespaced.
+        assert "references/codebase_analysis/index.md" in content
 
 
 class TestC3AnalyzeCodebaseSignature:

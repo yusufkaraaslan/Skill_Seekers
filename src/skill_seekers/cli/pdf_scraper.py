@@ -328,8 +328,17 @@ class PDFToSkillConverter(SkillConverter):
                         lang = code.get("language", "")
                         f.write(f"```{lang}\n{code['code']}\n```\n\n")
 
-                # Add images
-                if page.get("images"):
+                # Add images extracted by pdf_extractor_poc (already saved to disk)
+                if page.get("extracted_images"):
+                    f.write("### Images\n\n")
+                    for img in page["extracted_images"]:
+                        img_filename = img["filename"]
+                        page_num = img.get("page_number", page.get("page_number", ""))
+                        alt_text = f"Image from page {page_num}" if page_num else "Image"
+                        f.write(f"![{alt_text}](../assets/images/{img_filename})\n\n")
+
+                # Add images in legacy format (with raw data, not yet saved)
+                elif page.get("images"):
                     # Create assets directory if needed
                     assets_dir = os.path.join(self.skill_dir, "assets")
                     os.makedirs(assets_dir, exist_ok=True)

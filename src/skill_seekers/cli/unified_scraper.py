@@ -1564,15 +1564,21 @@ class UnifiedScraper(SkillConverter):
         """
         Load how-to guide collection from tutorials directory.
 
+        Returns an empty dict (falsy) when the directory or any guide files
+        are missing, so callers can chain ``primary or fallback`` to fall
+        through to a secondary path. Returning a non-empty placeholder here
+        would short-circuit those chains and silently drop real guide data
+        in the fallback location (issue #364).
+
         Args:
             tutorials_dir: Path to tutorials directory
 
         Returns:
-            Dict with guide collection data
+            Dict with guide collection data, or ``{}`` when no guides found.
         """
         if not tutorials_dir.exists():
-            logger.warning(f"Tutorials directory not found: {tutorials_dir}")
-            return {"guides": []}
+            logger.debug(f"Tutorials directory not found: {tutorials_dir}")
+            return {}
 
         collection_file = tutorials_dir / "guide_collection.json"
         if collection_file.exists():
@@ -1585,6 +1591,8 @@ class UnifiedScraper(SkillConverter):
             if guide_data:
                 guides.append(guide_data)
 
+        if not guides:
+            return {}
         return {"guides": guides, "total_count": len(guides)}
 
     def _load_api_reference(self, api_dir: Path) -> dict[str, Any]:
@@ -1649,7 +1657,7 @@ class UnifiedScraper(SkillConverter):
                 directory=Path(local_repo_path),
                 output_dir=temp_output,
                 depth="deep",
-                languages=None,  # Analyze all languages
+                languages=source.get("languages"),  # Respect language filter from source config
                 file_patterns=source.get("file_patterns"),
                 build_api_reference=True,  # C2.5: API Reference
                 extract_comments=False,  # Not needed

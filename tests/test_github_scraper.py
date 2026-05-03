@@ -296,6 +296,7 @@ class TestIssuesExtraction(unittest.TestCase):
         mock_issue1.html_url = "https://github.com/facebook/react/issues/123"
         mock_issue1.body = "Issue description"
         mock_issue1.pull_request = None
+        mock_issue1.get_comments.return_value = []
 
         mock_label3 = Mock()
         mock_label3.name = "enhancement"
@@ -312,6 +313,7 @@ class TestIssuesExtraction(unittest.TestCase):
         mock_issue2.html_url = "https://github.com/facebook/react/issues/124"
         mock_issue2.body = "Feature description"
         mock_issue2.pull_request = None
+        mock_issue2.get_comments.return_value = []
 
         with patch("skill_seekers.cli.github_scraper.Github"):
             scraper = self.GitHubScraper(config)
@@ -358,6 +360,7 @@ class TestIssuesExtraction(unittest.TestCase):
         mock_issue.html_url = "https://github.com/test/repo/issues/123"
         mock_issue.body = "Issue body"
         mock_issue.pull_request = None
+        mock_issue.get_comments.return_value = []
 
         mock_pr = Mock()
         mock_pr.number = 124
@@ -400,6 +403,7 @@ class TestIssuesExtraction(unittest.TestCase):
             mock_issue.html_url = f"https://github.com/test/repo/issues/{i}"
             mock_issue.body = None
             mock_issue.pull_request = None
+            mock_issue.get_comments.return_value = []
             mock_issues.append(mock_issue)
 
         with patch("skill_seekers.cli.github_scraper.Github"):
@@ -1039,6 +1043,491 @@ class TestErrorHandling(unittest.TestCase):
             # Should handle gracefully and log warning
             scraper._extract_issues()
             # Should not crash, just log warning
+
+    def test_extract_issues_passes_state_filter(self):
+        """Test that _extract_issues passes issue_state to get_issues."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+            "issue_state": "open",
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            scraper._extract_issues()
+
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertEqual(call_kwargs["state"], "open")
+
+    def test_extract_issues_passes_labels_filter(self):
+        """Test that _extract_issues passes issue_labels as plain strings to get_issues."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+            "issue_labels": ["bug", "enhancement"],
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            scraper._extract_issues()
+
+            # PyGithub's get_issues(labels=...) accepts plain strings; we should
+            # NEVER call get_label (which costs an extra API call per label and
+            # 404s if the label doesn't exist).
+            scraper.repo.get_label.assert_not_called()
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertEqual(call_kwargs["labels"], ["bug", "enhancement"])
+
+    def test_extract_issues_since_z_suffix(self):
+        """Test that _extract_issues accepts ISO8601 'Z' (UTC) suffix on Python 3.10."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+            "issue_since": "2024-01-01T00:00:00Z",
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            # Must not raise — Python 3.10's fromisoformat rejects raw 'Z'.
+            scraper._extract_issues()
+
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertIn("since", call_kwargs)
+            since = call_kwargs["since"]
+            self.assertEqual(since.year, 2024)
+            self.assertEqual(since.month, 1)
+            self.assertEqual(since.day, 1)
+            self.assertIsNotNone(since.tzinfo)
+
+    def test_extract_issues_passes_since_filter(self):
+        """Test that _extract_issues passes issue_since to get_issues."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+            "issue_since": "2026-01-01",
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            scraper._extract_issues()
+
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertIn("since", call_kwargs)
+            self.assertEqual(call_kwargs["since"], datetime.fromisoformat("2026-01-01"))
+
+    def test_extract_issues_no_filters_by_default(self):
+        """Test that _extract_issues uses defaults when no filters set."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "max_issues": 10,
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = []
+
+            scraper._extract_issues()
+
+            call_kwargs = scraper.repo.get_issues.call_args[1]
+            self.assertEqual(call_kwargs["state"], "all")
+            self.assertNotIn("labels", call_kwargs)
+            self.assertNotIn("since", call_kwargs)
+
+    def test_issue_filter_args_in_config(self):
+        """Test that issue filter config keys are read in __init__."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "github_token": None,
+            "issue_since": "2026-03-01",
+            "issue_labels": ["bug"],
+            "issue_state": "closed",
+        }
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            self.assertEqual(scraper.issue_since, "2026-03-01")
+            self.assertEqual(scraper.issue_labels, ["bug"])
+            self.assertEqual(scraper.issue_state, "closed")
+
+
+class TestExtractIssuesFullBodyAndComments(unittest.TestCase):
+    """Test full issue body and comment fetching."""
+
+    def setUp(self):
+        if not PYGITHUB_AVAILABLE:
+            self.skipTest("PyGithub not installed")
+        from skill_seekers.cli.github_scraper import GitHubScraper
+
+        self.GitHubScraper = GitHubScraper
+
+    def _make_mock_issue(self, number=1, body="Full body text here", comments=None):
+        """Helper to create a mock issue with comments."""
+        mock_issue = Mock()
+        mock_issue.number = number
+        mock_issue.title = f"Issue {number}"
+        mock_issue.state = "open"
+        mock_issue.labels = []
+        mock_issue.milestone = None
+        mock_issue.created_at = datetime(2023, 1, 1)
+        mock_issue.updated_at = datetime(2023, 1, 2)
+        mock_issue.closed_at = None
+        mock_issue.html_url = f"https://github.com/test/repo/issues/{number}"
+        mock_issue.body = body
+        mock_issue.pull_request = None
+        mock_issue.get_comments.return_value = comments or []
+        return mock_issue
+
+    def _make_mock_comment(self, author="alice", body="Comment body", date=None):
+        """Helper to create a mock comment."""
+        comment = Mock()
+        comment.user = Mock()
+        comment.user.login = author
+        comment.created_at = date or datetime(2023, 2, 1)
+        comment.body = body
+        return comment
+
+    def test_body_truncated_by_default(self):
+        """Issue body is truncated to 500 chars by default."""
+        long_body = "x" * 2000
+        mock_issue = self._make_mock_issue(body=long_body)
+
+        config = {"repo": "test/repo", "name": "repo", "github_token": None, "max_issues": 10}
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["body"]), 500)
+
+    def test_full_body_with_per_issue_files(self):
+        """Issue body is stored in full when per_issue_files is enabled."""
+        long_body = "x" * 2000
+        mock_issue = self._make_mock_issue(body=long_body)
+
+        config = {
+            "repo": "test/repo",
+            "name": "repo",
+            "github_token": None,
+            "max_issues": 10,
+            "per_issue_files": True,
+        }
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["body"]), 2000)
+
+    def test_comments_not_fetched_by_default(self):
+        """Comments are NOT fetched when max_comments is 0 (default)."""
+        comment1 = self._make_mock_comment(author="alice", body="First comment")
+        mock_issue = self._make_mock_issue(comments=[comment1])
+
+        config = {"repo": "test/repo", "name": "repo", "github_token": None, "max_issues": 10}
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["comments"]), 0)
+
+    def test_comments_fetched(self):
+        """Comments are fetched when max_comments > 0."""
+        comment1 = self._make_mock_comment(author="alice", body="First comment")
+        comment2 = self._make_mock_comment(author="bob", body="Second comment")
+        mock_issue = self._make_mock_issue(comments=[comment1, comment2])
+
+        config = {
+            "repo": "test/repo",
+            "name": "repo",
+            "github_token": None,
+            "max_issues": 10,
+            "max_comments": 50,
+        }
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["comments"]), 2)
+            self.assertEqual(issues[0]["comments"][0]["author"], "alice")
+            self.assertEqual(issues[0]["comments"][0]["body"], "First comment")
+            self.assertEqual(issues[0]["comments"][1]["author"], "bob")
+
+    def test_max_comments_respected(self):
+        """Only max_comments comments are stored per issue."""
+        comments = [self._make_mock_comment(author=f"user{i}") for i in range(10)]
+        mock_issue = self._make_mock_issue(comments=comments)
+
+        config = {
+            "repo": "test/repo",
+            "name": "repo",
+            "github_token": None,
+            "max_issues": 10,
+            "max_comments": 3,
+        }
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+
+            scraper._extract_issues()
+
+            issues = scraper.extracted_data["issues"]
+            self.assertEqual(len(issues[0]["comments"]), 3)
+
+    def test_max_comments_config_default(self):
+        """max_comments defaults to 0 (disabled) in config."""
+        config = {"repo": "test/repo", "name": "repo", "github_token": None}
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            self.assertEqual(scraper.max_comments, 0)
+
+
+class TestPerIssueFileGeneration(unittest.TestCase):
+    """Test per-issue markdown file generation."""
+
+    def setUp(self):
+        if not PYGITHUB_AVAILABLE:
+            self.skipTest("PyGithub not installed")
+        from skill_seekers.cli.github_scraper import GitHubToSkillConverter
+
+        self.GitHubToSkillConverter = GitHubToSkillConverter
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if hasattr(self, "temp_dir"):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def _setup_converter(self, issues):
+        """Create a converter with pre-built data."""
+        name = "test-repo"
+        data_dir = os.path.join(self.temp_dir, "output")
+        os.makedirs(data_dir, exist_ok=True)
+
+        # Write extracted data
+        data = {
+            "readme": "# Test Repo",
+            "issues": issues,
+            "releases": [],
+            "file_tree": [],
+        }
+        data_file = os.path.join(data_dir, f"{name}_github_data.json")
+        with open(data_file, "w") as f:
+            json.dump(data, f)
+
+        config = {"repo": "test/test-repo", "name": name, "per_issue_files": True}
+
+        # Patch the data file path
+        with patch.object(
+            self.GitHubToSkillConverter,
+            "_load_data",
+            return_value=data,
+        ):
+            converter = self.GitHubToSkillConverter(config)
+
+        converter.data = data
+        converter.skill_dir = os.path.join(data_dir, name)
+        os.makedirs(os.path.join(converter.skill_dir, "references"), exist_ok=True)
+        return converter
+
+    def test_per_issue_files_created(self):
+        """Per-issue files live in references/issues/ with {owner}-{repo}-{n}.md naming."""
+        issues = [
+            {
+                "number": 42,
+                "title": "Bug report",
+                "state": "open",
+                "labels": ["bug"],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/test/test-repo/issues/42",
+                "body": "Full bug description here",
+                "comments": [],
+            },
+        ]
+        converter = self._setup_converter(issues)
+        converter._generate_issues_reference()
+
+        expected_file = os.path.join(
+            converter.skill_dir, "references", "issues", "test-test-repo-42.md"
+        )
+        self.assertTrue(os.path.exists(expected_file))
+
+        # Old flat path must NOT exist (regression guard for the rename).
+        old_file = os.path.join(converter.skill_dir, "references", "test-repo_42.md")
+        self.assertFalse(os.path.exists(old_file))
+
+    def test_per_issue_files_no_collision_across_repos(self):
+        """Two repos sharing a skill_dir + issue number write distinct files."""
+        issues = [
+            {
+                "number": 1,
+                "title": "Same number",
+                "state": "open",
+                "labels": [],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/alpha/proj/issues/1",
+                "body": "Issue from alpha/proj",
+                "comments": [],
+            },
+        ]
+
+        # First repo: alpha/proj
+        skill_dir = os.path.join(self.temp_dir, "shared-skill")
+        os.makedirs(os.path.join(skill_dir, "references"), exist_ok=True)
+
+        config_a = {"repo": "alpha/proj", "name": "shared-skill", "per_issue_files": True}
+        with patch.object(self.GitHubToSkillConverter, "_load_data", return_value={}):
+            converter_a = self.GitHubToSkillConverter(config_a)
+        converter_a.data = {"issues": issues}
+        converter_a.skill_dir = skill_dir
+        converter_a._generate_issues_reference()
+
+        # Second repo: beta/proj — same issue number, same skill_dir.
+        issues_b = [{**issues[0], "url": "https://github.com/beta/proj/issues/1"}]
+        config_b = {"repo": "beta/proj", "name": "shared-skill", "per_issue_files": True}
+        with patch.object(self.GitHubToSkillConverter, "_load_data", return_value={}):
+            converter_b = self.GitHubToSkillConverter(config_b)
+        converter_b.data = {"issues": issues_b}
+        converter_b.skill_dir = skill_dir
+        converter_b._generate_issues_reference()
+
+        alpha_file = os.path.join(skill_dir, "references", "issues", "alpha-proj-1.md")
+        beta_file = os.path.join(skill_dir, "references", "issues", "beta-proj-1.md")
+        self.assertTrue(os.path.exists(alpha_file))
+        self.assertTrue(os.path.exists(beta_file))
+
+    def test_per_issue_file_content(self):
+        """Per-issue file contains full body and YAML frontmatter."""
+        issues = [
+            {
+                "number": 99,
+                "title": "Feature request",
+                "state": "open",
+                "labels": ["enhancement"],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/test/repo/issues/99",
+                "body": "Please add dark mode support",
+                "comments": [],
+            },
+        ]
+        converter = self._setup_converter(issues)
+        converter._generate_issues_reference()
+
+        filepath = os.path.join(converter.skill_dir, "references", "issues", "test-test-repo-99.md")
+        content = Path(filepath).read_text()
+
+        # Check YAML frontmatter
+        self.assertTrue(content.startswith("---"))
+        self.assertIn("type: github_issue", content)
+        self.assertIn("issue_number: 99", content)
+        self.assertIn("state: open", content)
+
+        # Check body
+        self.assertIn("Please add dark mode support", content)
+
+    def test_per_issue_file_with_comments(self):
+        """Per-issue file includes comments section."""
+        issues = [
+            {
+                "number": 7,
+                "title": "Question",
+                "state": "open",
+                "labels": [],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/test/repo/issues/7",
+                "body": "How do I configure X?",
+                "comments": [
+                    {
+                        "author": "maintainer",
+                        "created_at": "2023-01-03T00:00:00",
+                        "body": "You can configure X by editing config.yaml",
+                    },
+                    {
+                        "author": "user123",
+                        "created_at": "2023-01-04T00:00:00",
+                        "body": "Thanks, that worked!",
+                    },
+                ],
+            },
+        ]
+        converter = self._setup_converter(issues)
+        converter._generate_issues_reference()
+
+        filepath = os.path.join(converter.skill_dir, "references", "issues", "test-test-repo-7.md")
+        content = Path(filepath).read_text()
+
+        self.assertIn("## Comments (2)", content)
+        self.assertIn("### maintainer", content)
+        self.assertIn("You can configure X by editing config.yaml", content)
+        self.assertIn("### user123", content)
+        self.assertIn("Thanks, that worked!", content)
+
+    def test_summary_file_still_generated(self):
+        """issues.md summary file is still generated alongside per-issue files."""
+        issues = [
+            {
+                "number": 1,
+                "title": "Test",
+                "state": "open",
+                "labels": [],
+                "created_at": "2023-01-01T00:00:00",
+                "updated_at": "2023-01-02T00:00:00",
+                "closed_at": None,
+                "url": "https://github.com/test/repo/issues/1",
+                "body": "Test body",
+                "comments": [],
+            },
+        ]
+        converter = self._setup_converter(issues)
+        converter._generate_issues_reference()
+
+        summary_file = os.path.join(converter.skill_dir, "references", "issues.md")
+        self.assertTrue(os.path.exists(summary_file))
 
 
 if __name__ == "__main__":

@@ -275,6 +275,42 @@ class UniSkillConfigValidator:
         if "max_issues" in source and not isinstance(source["max_issues"], int):
             raise ValueError(f"Source {index} (github): 'max_issues' must be an integer")
 
+        # Validate issue_since if specified (ISO8601 date string)
+        if "issue_since" in source:
+            issue_since = source["issue_since"]
+            if not isinstance(issue_since, str):
+                raise ValueError(
+                    f"Source {index} (github): 'issue_since' must be an ISO8601 date string"
+                )
+            from datetime import datetime
+
+            since_str = issue_since[:-1] + "+00:00" if issue_since.endswith("Z") else issue_since
+            try:
+                datetime.fromisoformat(since_str)
+            except ValueError as err:
+                raise ValueError(
+                    f"Source {index} (github): 'issue_since' is not a valid ISO8601 date: '{issue_since}'"
+                ) from err
+
+        # Validate issue_labels if specified
+        if "issue_labels" in source:
+            issue_labels = source["issue_labels"]
+            if not isinstance(issue_labels, list) or not all(
+                isinstance(label, str) for label in issue_labels
+            ):
+                raise ValueError(
+                    f"Source {index} (github): 'issue_labels' must be a list of strings"
+                )
+
+        # Validate issue_state if specified
+        if "issue_state" in source:
+            valid_issue_states = {"open", "closed", "all"}
+            if source["issue_state"] not in valid_issue_states:
+                raise ValueError(
+                    f"Source {index} (github): Invalid issue_state '{source['issue_state']}'. "
+                    f"Must be one of {valid_issue_states}"
+                )
+
         # Validate enable_codebase_analysis if specified (C3.5)
         if "enable_codebase_analysis" in source and not isinstance(
             source["enable_codebase_analysis"], bool

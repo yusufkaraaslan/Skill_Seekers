@@ -54,6 +54,7 @@ class TestAdaptorRegistry(unittest.TestCase):
         self.assertIsInstance(platforms, list)
         # Claude should always be available
         self.assertIn("claude", platforms)
+        self.assertIn("ibm-bob", platforms)
 
     def test_is_platform_available(self):
         """Test checking platform availability"""

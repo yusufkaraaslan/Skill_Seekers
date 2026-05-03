@@ -256,6 +256,11 @@ class GitHubScraper(SkillConverter):
         # Options
         self.include_issues = config.get("include_issues", True)
         self.max_issues = config.get("max_issues", 100)
+        self.max_comments = config.get("max_comments", 0)
+        self.issue_since = config.get("issue_since")
+        self.issue_labels = config.get("issue_labels", [])
+        self.issue_state = config.get("issue_state", "all")
+        self.per_issue_files = config.get("per_issue_files", False)
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
         self.include_code = config.get("include_code", True)
@@ -831,8 +836,26 @@ class GitHubScraper(SkillConverter):
         logger.info(f"Extracting GitHub Issues (max {self.max_issues})...")
 
         try:
-            # Fetch recent issues (open + closed)
-            issues = self.repo.get_issues(state="all", sort="updated", direction="desc")
+            # Build kwargs for get_issues
+            kwargs: dict[str, Any] = {
+                "state": self.issue_state or "all",
+                "sort": "updated",
+                "direction": "desc",
+            }
+            if self.issue_labels:
+                kwargs["labels"] = self.issue_labels
+            if self.issue_since:
+                from datetime import datetime
+
+                since_str = (
+                    self.issue_since[:-1] + "+00:00"
+                    if self.issue_since.endswith("Z")
+                    else self.issue_since
+                )
+                kwargs["since"] = datetime.fromisoformat(since_str)
+
+            # Fetch issues with filters
+            issues = self.repo.get_issues(**kwargs)
 
             issue_list = []
             for issue in itertools.islice(issues, self.max_issues):
@@ -840,6 +863,29 @@ class GitHubScraper(SkillConverter):
                 if issue.pull_request:
                     continue
 
+                # Fetch comments only when explicitly requested
+                comments_list = []
+                if self.max_comments > 0:
+                    try:
+                        for comment in issue.get_comments()[: self.max_comments]:
+                            comments_list.append(
+                                {
+                                    "author": comment.user.login if comment.user else "unknown",
+                                    "created_at": (
+                                        comment.created_at.isoformat()
+                                        if comment.created_at
+                                        else None
+                                    ),
+                                    "body": comment.body,
+                                }
+                            )
+                    except Exception as e:
+                        logger.debug(f"Could not fetch comments for issue #{issue.number}: {e}")
+
+                # data.json body field: with per_issue_files=True the full body is
+                # mirrored here AND in references/issues/*.md. With per_issue_files=False
+                # we keep only a 500-char preview to keep data.json small. Downstream
+                # packagers needing the full text should fetch the live issue.
                 issue_data = {
                     "number": issue.number,
                     "title": issue.title,
@@ -850,7 +896,12 @@ class GitHubScraper(SkillConverter):
                     "updated_at": issue.updated_at.isoformat() if issue.updated_at else None,
                     "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
                     "url": issue.html_url,
-                    "body": issue.body[:500] if issue.body else None,  # First 500 chars
+                    "body": (
+                        issue.body or None
+                        if self.per_issue_files
+                        else (issue.body[:500] if issue.body else None)
+                    ),
+                    "comments": comments_list,
                 }
                 issue_list.append(issue_data)
 
@@ -935,6 +986,9 @@ class GitHubToSkillConverter:
         """Initialize converter with configuration."""
         self.config = config
         self.name = config.get("name", config["repo"].split("/")[-1])
+        self.repo_owner = config["repo"].split("/")[0]
+        self.repo_short_name = config["repo"].split("/")[-1]
+        self.per_issue_files = config.get("per_issue_files", False)
 
         # Paths
         self.data_file = f"output/{self.name}_github_data.json"
@@ -1069,6 +1123,10 @@ Use this skill when you need to:
         skill_content += "- `references/README.md` - Complete README documentation\n"
         skill_content += "- `references/CHANGELOG.md` - Version history and changes\n"
         skill_content += "- `references/issues.md` - Recent GitHub issues\n"
+        if self.per_issue_files:
+            skill_content += (
+                "- `references/issues/` - Per-issue markdown files with YAML frontmatter\n"
+            )
         skill_content += "- `references/releases.md` - Release notes\n"
         skill_content += "- `references/file_structure.md` - Repository structure\n"
 
@@ -1315,9 +1373,10 @@ Use this skill when you need to:
             self._generate_file_structure_reference()
 
     def _generate_issues_reference(self):
-        """Generate issues.md reference file."""
+        """Generate issues.md summary and per-issue reference files."""
         issues = self.data["issues"]
 
+        # --- Summary file (issues.md) ---
         content = f"# GitHub Issues\n\nRecent issues from the repository ({len(issues)} total).\n\n"
 
         # Group by state
@@ -1344,6 +1403,68 @@ Use this skill when you need to:
         with open(issues_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Generated: {issues_path}")
+
+        # --- Per-issue files (opt-in) ---
+        if self.per_issue_files:
+            os.makedirs(f"{self.skill_dir}/references/issues", exist_ok=True)
+            for issue in issues:
+                self._write_per_issue_file(issue)
+            logger.info(f"Generated {len(issues)} per-issue files")
+
+    def _write_per_issue_file(self, issue: dict):
+        """Write a single per-issue markdown file with YAML frontmatter.
+
+        Args:
+            issue: Issue data dict with number, title, body, comments, etc.
+        """
+        number = issue["number"]
+        title = issue["title"]
+        state = issue["state"]
+        labels = issue.get("labels", [])
+        created_at = issue.get("created_at") or "N/A"
+        updated_at = issue.get("updated_at") or "N/A"
+        url = issue.get("url", "")
+        body = issue.get("body") or ""
+        comments = issue.get("comments", [])
+
+        # Escape title for YAML (wrap in quotes)
+        yaml_title = title.replace('"', '\\"')
+        labels_yaml = json.dumps(labels)
+
+        file_content = f"""---
+type: github_issue
+issue_number: {number}
+title: "{yaml_title}"
+state: {state}
+labels: {labels_yaml}
+created_at: "{created_at}"
+updated_at: "{updated_at}"
+url: "{url}"
+---
+
+# Issue #{number}: {title}
+
+**State:** {state} | **Labels:** {", ".join(labels) if labels else "None"} | **Created:** {created_at[:10]}
+**URL:** {url}
+
+## Description
+
+{body}
+"""
+
+        if comments:
+            file_content += f"\n## Comments ({len(comments)})\n"
+            for comment in comments:
+                author = comment.get("author", "unknown")
+                comment_date = comment.get("created_at", "N/A")
+                comment_body = comment.get("body", "")
+                file_content += f"\n### {author} — {comment_date}\n{comment_body}\n\n---\n"
+
+        filename = f"{self.repo_owner}-{self.repo_short_name}-{number}.md"
+        filepath = f"{self.skill_dir}/references/issues/{filename}"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(file_content)
+        logger.debug(f"Generated per-issue file: {filepath}")
 
     def _generate_releases_reference(self):
         """Generate releases.md reference file."""
