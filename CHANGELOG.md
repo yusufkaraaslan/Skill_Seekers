@@ -5,6 +5,25 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-05-03
+
+**Theme:** Quality-of-life release — packaging targets, GitHub issue workflow, codebase analysis fixes, and source detection hardening.
+
+### Added
+- **IBM Bob packaging target** — new `--target bob` adaptor and agent install support for IBM's Bob agent platform (#366)
+- **GitHub issue filtering** — `--github-issue-state`, `--github-issue-labels`, and `--github-issue-since` filters in the GitHub scraper for narrowing which issues are pulled (#367)
+- **Per-issue files** — GitHub scraper now writes one Markdown file per issue instead of a single bundle, improving navigation and downstream chunking (#367)
+- **Pinecone frontmatter** — Pinecone vector exports now include consistent YAML frontmatter for metadata round-tripping (#367)
+
+### Fixed
+- **Unified scraper now generates `codebase_analysis/` index** — local sources were producing C3.x outputs with broken SKILL.md links; the unified skill builder now wires up the index and resolves links correctly (#362, #376)
+- **Guides fallback fires correctly** — `unified_skill_builder` was emitting a truthy placeholder for empty guides which suppressed the fallback content; placeholder removed (#364, #375)
+- **HTML URLs no longer treated as local files** — `source_detector` now checks for `http(s)://` before falling through to the local-path branch, fixing false-positive routing (#373)
+- **PDF extracted images appear in markdown** — `pdf_scraper` now inserts `![](…)` references for images extracted from PDFs so they render in the generated SKILL.md (#369)
+- **C3.x output for local sources** — `unified` command was skipping the C3.x analysis pipeline for local codebase sources; now emits the full pattern/test/guide/config/router output (#363, #372)
+- **Language filter passed to C3.x clone analysis** — repos cloned for analysis now respect `--languages` instead of analyzing every file (fixes #361, #370)
+- **Unity vs Unreal detection** — Unity projects with C# imports were being misidentified as Unreal; detection now keys on C# import patterns (fixes #365, #368)
+
 ## [3.5.1] - 2026-04-12
 
 ### Added
