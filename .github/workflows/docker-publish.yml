@@ -135,5 +135,5 @@ jobs:
     - name: Test Docker Compose
       run: |
         echo "🧪 Testing Docker Compose..."
-        docker-compose config
+        docker compose config
         echo "✅ Docker Compose configuration valid"
