@@ -1497,7 +1497,7 @@ fetch_config(source="team", config_name="react-custom")
 
 ### See Also
 - [git_config_sources.md](./docs/reference/git_config_sources.md) - Complete guide
-- [configs/example-team/](configs/example-team/) - Example repository
+- `configs/example-team/` - Example repository
 - [Issue #211](https://github.com/yusufkaraaslan/Skill_Seekers/issues/211) - Original feature request
 
 ---

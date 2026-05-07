@@ -85,14 +85,14 @@ Technical reference and architecture:
 ### 📋 Planning & Design
 
 Development plans and designs:
-- [Design Plans](plans/) - Feature design documents
+- Design Plans - Feature design documents
 
 ### 📦 Archive
 
 Historical documentation and completed features:
 - [Historical](archive/historical/) - Completed features and reports
 - [Research](archive/research/) - Research notes and POCs
-- [Temporary](archive/temp/) - Temporary analysis documents
+- Temporary - Temporary analysis documents
 
 ## 🤝 Contributing
 

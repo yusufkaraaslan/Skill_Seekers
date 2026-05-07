@@ -613,14 +613,14 @@ After successful setup:
 
 1. **Read the MCP Setup Guide**: [docs/mcp_setup.md](mcp_setup.md)
 2. **Learn HTTP Transport**: [docs/http_transport.md](http_transport.md)
-3. **Explore Agent Detection**: [src/skill_seekers/mcp/agent_detector.py](../src/skill_seekers/mcp/agent_detector.py)
+3. **Explore Agent Detection**: [src/skill_seekers/mcp/agent_detector.py](../../src/skill_seekers/mcp/agent_detector.py)
 4. **Try the Quick Start**: [quickstart.md](../../quickstart.md)
 
 ## Related Documentation
 
 - [MCP Setup Guide](mcp_setup.md) - Detailed MCP integration guide
 - [HTTP Transport](http_transport.md) - HTTP transport documentation
-- [Agent Detector API](../src/skill_seekers/mcp/agent_detector.py) - Python API reference
+- [Agent Detector API](../../src/skill_seekers/mcp/agent_detector.py) - Python API reference
 - [README](../README.md) - Main documentation
 
 ## Support

@@ -314,7 +314,7 @@ When building PDF-based skills, images will be:
 
 See diagram below for the complete API flow:
 
-![API Flow](assets/images/api_flow.png)
+*(API Flow diagram - image not available)*
 
 The diagram shows...
 ```

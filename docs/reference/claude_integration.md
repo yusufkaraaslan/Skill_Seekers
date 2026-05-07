@@ -233,7 +233,7 @@ skill-seekers enhance output/react/ --target gemini --mode api    # Gemini 2.0
 skill-seekers enhance output/react/ --target openai --mode api    # GPT-4o
 ```
 
-See [Multi-Platform Guide](upload_guide.md) and [Feature Matrix](feature_matrix.md) for complete details.
+See [Multi-Platform Guide](../guides/upload_guide.md) and [Feature Matrix](feature_matrix.md) for complete details.
 
 ## Architecture
 

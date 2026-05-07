@@ -231,7 +231,7 @@ skill-seekers resume github_react_20260117_143022
 - **switch** - 自动尝试下一个可用配置文件（用于多账户设置）
 - **fail** - 立即失败并显示清晰错误（完美适用于 CI/CD）
 
-**查看完整文档**：[配置指南](docs/guides/CONFIGURATION.md)（即将推出）
+**查看完整文档**：配置指南（计划中）
 
 ### 🎯 Bootstrap 技能 - 自托管 (**全新 - v2.7.0**)
 
@@ -318,7 +318,7 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
 skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 ```
 
-**完整文档：**[docs/how_to_guides.md](docs/how_to_guides.md#ai-enhancement-new)
+**完整文档：**[docs/features/how_to_guides.md](docs/features/how_to_guides.md#ai-enhancement-new)
 
 ### ⚡ 性能和规模
 - ✅ **异步模式** - 使用 async/await 实现 2-3 倍更快的抓取（使用 `--async` 标志）
@@ -1516,7 +1516,7 @@ skill-seekers scrape --config configs/largedocs.json --async --workers 8 --no-ra
 - ✅ 内存受限
 - ❌ 小型文档（< 100 页）- 开销不值得
 
-**查看完整指南：**[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
+**查看完整指南：**`ASYNC_SUPPORT.md`（计划中）
 
 ### 7. AI 驱动的 SKILL.md 增强
 
@@ -1930,15 +1930,15 @@ skill-seekers scrape --config configs/godot.json
 
 ### 指南
 - **[docs/large_documentation.md](./docs/reference/large_documentation.md)** - 处理 10K-40K+ 页文档
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - 异步模式指南（抓取快 2-3 倍）
+- **ASYNC_SUPPORT.md** - 异步模式指南（抓取快 2-3 倍）*(计划中)*
 - **[docs/enhancement.md](./docs/features/enhancement.md)** - AI 增强指南
-- **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - 为本地增强配置终端应用
+- **TERMINAL_SELECTION.md** - 为本地增强配置终端应用 *(计划中)*
 - **[docs/upload_guide.md](./docs/guides/upload_guide.md)** - 如何上传技能到 Claude
 - **[docs/mcp_setup.md](./docs/guides/mcp_setup.md)** - MCP 集成设置
 
 ### 技术
 - **[docs/CLAUDE.md](./CLAUDE.md)** - 技术架构
-- **[STRUCTURE.md](STRUCTURE.md)** - 仓库结构
+- **STRUCTURE.md** - 仓库结构 *(计划中)*
 
 ## 🎮 准备好了吗？
 

@@ -634,4 +634,4 @@ For API-based enhancement (requires Anthropic API key):
 
 ## License
 
-MIT License - See [LICENSE](../LICENSE) for details
+MIT License - See [LICENSE](../../LICENSE) for details

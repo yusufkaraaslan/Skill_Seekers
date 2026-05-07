@@ -923,7 +923,7 @@ pytest tests/ --cov=src/skill_seekers
 - **[Code Quality Standards](../reference/code_quality.md)** - Linting and quality tools
 - **[Contributing Guide](../../CONTRIBUTING.md)** - Development guidelines
 - **[API Reference](../reference/api_reference.md)** - Programmatic testing
-- **[CI/CD Configuration](../../.github/workflows/ci.yml)** - Automated testing setup
+- **CI/CD Configuration** - Automated testing setup (`.github/workflows/tests.yml`)
 
 ---
 

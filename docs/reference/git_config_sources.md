@@ -901,7 +901,7 @@ def update_source(name: str, **kwargs) -> dict:
 - [README.md](../README.md) - Main documentation
 - [mcp_setup.md](../guides/mcp_setup.md) - MCP server setup
 - [unified_scraping.md](../features/unified_scraping.md) - Multi-source scraping
-- [configs/example-team/](../configs/example-team/) - Example repository
+- `configs/example-team/` - Example repository
 
 ---
 

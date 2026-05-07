@@ -34,6 +34,22 @@ jobs:
         echo "Checking code formatting..."
         ruff format --check src/ tests/
 
+    - name: Check filename conventions
+      run: |
+        echo "Checking .md filename conventions..."
+        # docs/ files must use snake_case (not UPPER_CASE)
+        VIOLATIONS=$(find docs/ -name "*.md" -type f \
+          | grep -v 'README\.md$' \
+          | grep -E '[A-Z]' \
+          | grep -v '.github/' || true)
+        if [ -n "$VIOLATIONS" ]; then
+          echo "ERROR: UPPER_CASE .md filenames found in docs/:"
+          echo "$VIOLATIONS"
+          echo "Rename them to snake_case (e.g. MY_FILE.md → my_file.md)"
+          exit 1
+        fi
+        echo "✓ All .md filenames follow snake_case convention"
+
     - name: Run mypy type checker
       run: |
         echo "Running mypy type checker..."

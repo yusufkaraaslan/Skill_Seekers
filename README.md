@@ -247,7 +247,7 @@ skill-seekers resume github_react_20260117_143022
 - **switch** - Automatically try next available profile (for multi-account setups)
 - **fail** - Fail immediately with clear error (perfect for CI/CD)
 
-**See complete documentation**: [Configuration Guide](docs/guides/CONFIGURATION.md) (coming soon)
+**See complete documentation**: Configuration Guide (planned)
 
 ### 🎯 Bootstrap Skill - Self-Hosting (**NEW - v2.7.0**)
 
@@ -334,7 +334,7 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
 skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 ```
 
-**Full Documentation:** [docs/how_to_guides.md](docs/how_to_guides.md#ai-enhancement-new)
+**Full Documentation:** [docs/features/how_to_guides.md](docs/features/how_to_guides.md#ai-enhancement-new)
 
 ### ⚡ Performance & Scale
 - ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)
@@ -1532,7 +1532,7 @@ skill-seekers scrape --config configs/largedocs.json --async --workers 8 --no-ra
 - ✅ Memory is constrained
 - ❌ Small docs (< 100 pages) - overhead not worth it
 
-**See full guide:** [ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)
+**See full guide:** `ASYNC_SUPPORT.md` (planned)
 
 ### 7. AI-Powered SKILL.md Enhancement
 
@@ -1946,15 +1946,15 @@ skill-seekers scrape --config configs/godot.json
 
 ### Guides
 - **[docs/large_documentation.md](./docs/reference/large_documentation.md)** - Handle 10K-40K+ page docs
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
+- **ASYNC_SUPPORT.md** - Async mode guide (2-3x faster scraping) *(planned)*
 - **[docs/enhancement.md](./docs/features/enhancement.md)** - AI enhancement guide
-- **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - Configure terminal app for local enhancement
+- **TERMINAL_SELECTION.md** - Configure terminal app for local enhancement *(planned)*
 - **[docs/upload_guide.md](./docs/guides/upload_guide.md)** - How to upload skills to Claude
 - **[docs/mcp_setup.md](./docs/guides/mcp_setup.md)** - MCP integration setup
 
 ### Technical
 - **[docs/CLAUDE.md](./CLAUDE.md)** - Technical architecture
-- **[STRUCTURE.md](STRUCTURE.md)** - Repository structure
+- **STRUCTURE.md** - Repository structure *(planned)*
 
 ## 🎮 Ready?
 

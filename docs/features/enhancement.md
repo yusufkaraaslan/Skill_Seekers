@@ -325,4 +325,4 @@ skill-seekers enhance output/react/ --target openai --mode api
 - [feature_matrix.md](../reference/feature_matrix.md) - Complete platform feature matrix
 - [multi_llm_support.md](../integrations/multi_llm_support.md) - Multi-platform guide
 - [CLAUDE.md](../../CLAUDE.md) - Architecture guide
-- [doc_scraper.py](../doc_scraper.py) - Main scraping tool
+- [doc_scraper.py](../../src/skill_seekers/cli/doc_scraper.py) - Main scraping tool

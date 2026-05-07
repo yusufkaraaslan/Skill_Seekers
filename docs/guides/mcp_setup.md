@@ -1463,9 +1463,9 @@ After successful setup:
 
 - **Issues**: [GitHub Issues](https://github.com/yusufkaraaslan/Skill_Seekers/issues)
 
-- **Agent Detection**: See [agent_detector.py](../src/skill_seekers/mcp/agent_detector.py)
+- **Agent Detection**: See [agent_detector.py](../../src/skill_seekers/mcp/agent_detector.py)
 
-- **Auto-Configuration**: See [setup_mcp.sh](../setup_mcp.sh)
+- **Auto-Configuration**: See [setup_mcp.sh](../../setup_mcp.sh)
 
 ---
 
