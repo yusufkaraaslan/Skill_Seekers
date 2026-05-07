@@ -24,7 +24,7 @@ An intelligent system that:
 
 ## 📖 Documents
 
-### 1. [SKILL_INTELLIGENCE_SYSTEM.md](SKILL_INTELLIGENCE_SYSTEM.md)
+### 1. [skill_intelligence_system.md](skill_intelligence_system.md)
 **The Roadmap** - Complete development plan
 
 **What's inside:**
@@ -44,7 +44,7 @@ An intelligent system that:
 
 ---
 
-### 2. [INTELLIGENCE_SYSTEM_ARCHITECTURE.md](INTELLIGENCE_SYSTEM_ARCHITECTURE.md)
+### 2. [intelligence_system_architecture.md](intelligence_system_architecture.md)
 **The Technical Deep Dive** - Implementation details
 
 **What's inside:**
@@ -64,7 +64,7 @@ An intelligent system that:
 
 ---
 
-### 3. [INTELLIGENCE_SYSTEM_RESEARCH.md](INTELLIGENCE_SYSTEM_RESEARCH.md)
+### 3. [intelligence_system_research.md](intelligence_system_research.md)
 **The Research Guide** - Areas to explore
 
 **What's inside:**
@@ -86,19 +86,19 @@ An intelligent system that:
 ## 🎯 Quick Start Guide
 
 **If you have 5 minutes:**
-Read the "Vision" section in SKILL_INTELLIGENCE_SYSTEM.md
+Read the "Vision" section in skill_intelligence_system.md
 
 **If you have 30 minutes:**
 1. Read the "System Overview" in all 3 docs
-2. Skim the Phase 1 milestones in SKILL_INTELLIGENCE_SYSTEM.md
-3. Look at code examples in INTELLIGENCE_SYSTEM_ARCHITECTURE.md
+2. Skim the Phase 1 milestones in skill_intelligence_system.md
+3. Look at code examples in intelligence_system_architecture.md
 
 **If you have 2 hours:**
-Read SKILL_INTELLIGENCE_SYSTEM.md front-to-back for complete understanding
+Read skill_intelligence_system.md front-to-back for complete understanding
 
 **If you want to contribute:**
 1. Read all 3 docs
-2. Pick a research topic from INTELLIGENCE_SYSTEM_RESEARCH.md
+2. Pick a research topic from intelligence_system_research.md
 3. Run experiments, fill in findings
 4. Open a PR with results
 
@@ -245,7 +245,7 @@ Before building Phase 1, research these:
 
 ### Short Term (Next 2-3 Weeks)
 1. Conduct Phase 0 research
-2. Run experiments from INTELLIGENCE_SYSTEM_RESEARCH.md
+2. Run experiments from intelligence_system_research.md
 3. Fill in findings
 4. Refine architecture based on results
 
@@ -266,13 +266,13 @@ Before building Phase 1, research these:
 ## 🤝 How to Contribute
 
 ### During Research Phase (Current)
-1. Pick a research topic from INTELLIGENCE_SYSTEM_RESEARCH.md
+1. Pick a research topic from intelligence_system_research.md
 2. Run experiments
 3. Document findings
 4. Open PR with results
 
 ### During Implementation (Future)
-1. Pick a milestone from SKILL_INTELLIGENCE_SYSTEM.md
+1. Pick a milestone from skill_intelligence_system.md
 2. Implement feature
 3. Write tests
 4. Open PR
@@ -288,9 +288,9 @@ Before building Phase 1, research these:
 
 | Document | Status | Completeness | Needs Review |
 |----------|--------|--------------|--------------|
-| SKILL_INTELLIGENCE_SYSTEM.md | ✅ Complete | 100% | Yes |
-| INTELLIGENCE_SYSTEM_ARCHITECTURE.md | ✅ Complete | 100% | Yes |
-| INTELLIGENCE_SYSTEM_RESEARCH.md | ✅ Complete | 100% | Yes |
+| skill_intelligence_system.md | ✅ Complete | 100% | Yes |
+| intelligence_system_architecture.md | ✅ Complete | 100% | Yes |
+| intelligence_system_research.md | ✅ Complete | 100% | Yes |
 | README.md (this file) | ✅ Complete | 100% | Yes |
 
 ---
@@ -303,9 +303,9 @@ Before building Phase 1, research these:
 - **Platform Adaptors:** Multi-platform support (Claude, Gemini, OpenAI, Markdown)
 
 ### Related Documentation
-- [docs/features/BOOTSTRAP_SKILL.md](../features/BOOTSTRAP_SKILL.md) - Bootstrap skill feature
-- [docs/features/BOOTSTRAP_SKILL_TECHNICAL.md](../features/BOOTSTRAP_SKILL_TECHNICAL.md) - Technical deep dive
-- [docs/features/PATTERN_DETECTION.md](../features/PATTERN_DETECTION.md) - C3.1 pattern detection
+- [docs/features/bootstrap_skill.md](../features/bootstrap_skill.md) - Bootstrap skill feature
+- [docs/features/bootstrap_skill_technical.md](../features/bootstrap_skill_technical.md) - Technical deep dive
+- [docs/features/pattern_detection.md](../features/pattern_detection.md) - C3.1 pattern detection
 
 ### External References
 - Claude Code Plugin System (when available)
@@ -316,9 +316,9 @@ Before building Phase 1, research these:
 
 ## 💬 Questions?
 
-**Architecture questions:** See INTELLIGENCE_SYSTEM_ARCHITECTURE.md
-**Timeline questions:** See SKILL_INTELLIGENCE_SYSTEM.md
-**Research questions:** See INTELLIGENCE_SYSTEM_RESEARCH.md
+**Architecture questions:** See intelligence_system_architecture.md
+**Timeline questions:** See skill_intelligence_system.md
+**Research questions:** See intelligence_system_research.md
 **Other questions:** Open an issue on GitHub
 
 ---
@@ -326,15 +326,15 @@ Before building Phase 1, research these:
 ## 🎓 Learning Path
 
 **For Product Managers:**
-→ Read: SKILL_INTELLIGENCE_SYSTEM.md (roadmap)
+→ Read: skill_intelligence_system.md (roadmap)
 → Focus: Vision, phases, success metrics
 
 **For Developers:**
-→ Read: INTELLIGENCE_SYSTEM_ARCHITECTURE.md (technical)
+→ Read: intelligence_system_architecture.md (technical)
 → Focus: Code examples, components, algorithms
 
 **For Researchers:**
-→ Read: INTELLIGENCE_SYSTEM_RESEARCH.md (experiments)
+→ Read: intelligence_system_research.md (experiments)
 → Focus: Research topics, evaluation criteria
 
 **For Contributors:**

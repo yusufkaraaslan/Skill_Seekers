@@ -2,7 +2,7 @@
 
 # Skill Seeker
 
-English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md)
+English | [简体中文](https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/readme.zh-cn.md)
 
 [![Version](https://img.shields.io/badge/version-2.7.4-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases/tag/v2.7.4)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -185,7 +185,7 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 print(f"Common issues: {len(result.github_insights['common_problems'])}")
 ```
 
-**See complete documentation**: [Three-Stream Implementation Summary](./docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**See complete documentation**: [Three-Stream Implementation Summary](./docs/archive/historical/implementation_summary_three_stream.md)
 
 ### 🔐 Smart Rate Limit Management & Configuration (**NEW - v2.7.0**)
 - ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
@@ -334,7 +334,7 @@ skill-seekers-codebase tests/ --build-how-to-guides --ai-mode local
 skill-seekers-codebase tests/ --build-how-to-guides --ai-mode none
 ```
 
-**Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Full Documentation:** [docs/how_to_guides.md](docs/how_to_guides.md#ai-enhancement-new)
 
 ### ⚡ Performance & Scale
 - ✅ **Async Mode** - 2-3x faster scraping with async/await (use `--async` flag)
@@ -425,7 +425,7 @@ skill-seekers package output/react/
 
 **Time:** ~25 minutes | **Quality:** Production-ready | **Cost:** Free
 
-📖 **New to Skill Seekers?** Check out our [Quick Start Guide](QUICKSTART.md) or [Bulletproof Guide](BULLETPROOF_QUICKSTART.md)
+📖 **New to Skill Seekers?** Check out our [Quick Start Guide](quickstart.md) or [Bulletproof Guide](bulletproof_quickstart.md)
 
 ### Option 2: Install via uv (Modern Python Tool)
 
@@ -559,7 +559,7 @@ Skill Seekers supports **4 platforms** and **5 skill modes** with full feature p
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, Generic Markdown
 **Skill Modes:** Documentation, GitHub, PDF, Unified Multi-Source, Local Repository
 
-See [Complete Feature Matrix](./docs/reference/FEATURE_MATRIX.md) for detailed platform and feature support.
+See [Complete Feature Matrix](./docs/reference/feature_matrix.md) for detailed platform and feature support.
 
 ### Quick Platform Comparison
 
@@ -725,7 +725,7 @@ def move_local_x(delta: float, snap: bool = False) -> None
 - `configs/django_unified.json` - Django docs + GitHub repo
 - `configs/fastapi_unified.json` - FastAPI docs + GitHub repo
 
-**Full Guide:** See [docs/UNIFIED_SCRAPING.md](./docs/features/UNIFIED_SCRAPING.md) for complete documentation.
+**Full Guide:** See [docs/unified_scraping.md](./docs/features/unified_scraping.md) for complete documentation.
 
 ### Private Config Repositories (**NEW - v2.2.0**)
 
@@ -835,7 +835,7 @@ add_config_source(
 fetch_config(source="example", config_name="react-custom")
 ```
 
-**Full Guide:** See [docs/GIT_CONFIG_SOURCES.md](./docs/reference/GIT_CONFIG_SOURCES.md) for complete documentation.
+**Full Guide:** See [docs/git_config_sources.md](./docs/reference/git_config_sources.md) for complete documentation.
 
 ## How It Works
 
@@ -866,7 +866,7 @@ graph LR
 2. **Git** - [Download](https://git-scm.com/) | Check: `git --version`
 3. **15-30 minutes** for first-time setup
 
-**First time user?** → **[Start Here: Bulletproof Quick Start Guide](BULLETPROOF_QUICKSTART.md)** 🎯
+**First time user?** → **[Start Here: Bulletproof Quick Start Guide](bulletproof_quickstart.md)** 🎯
 
 This guide walks you through EVERYTHING step-by-step (Python install, git clone, first skill creation).
 
@@ -913,10 +913,10 @@ Package skill at output/react/
 - ✅ **Multi-agent auto-configuration** - Setup all agents with one command
 
 **Full guides:**
-- 📘 [MCP Setup Guide](./docs/guides/MCP_SETUP.md) - Complete installation instructions
-- 🧪 [MCP Testing Guide](./docs/archive/historical/TEST_MCP_IN_CLAUDE_CODE.md) - Test all 18 tools
-- 📦 [Large Documentation Guide](./docs/reference/LARGE_DOCUMENTATION.md) - Handle 10K-40K+ pages
-- 📤 [Upload Guide](./docs/guides/UPLOAD_GUIDE.md) - How to upload skills to Claude
+- 📘 [MCP Setup Guide](./docs/guides/mcp_setup.md) - Complete installation instructions
+- 🧪 [MCP Testing Guide](./docs/archive/historical/test_mcp_in_claude_code.md) - Test all 18 tools
+- 📦 [Large Documentation Guide](./docs/reference/large_documentation.md) - Handle 10K-40K+ pages
+- 📤 [Upload Guide](./docs/guides/upload_guide.md) - How to upload skills to Claude
 
 ### Method 2: CLI (Traditional)
 
@@ -1405,7 +1405,7 @@ cd Skill_Seekers
 # 5. Result: Skills created without touching CLI!
 ```
 
-**Full Guide:** See [docs/MCP_SETUP.md](./docs/guides/MCP_SETUP.md) for detailed multi-agent setup instructions.
+**Full Guide:** See [docs/mcp_setup.md](./docs/guides/mcp_setup.md) for detailed multi-agent setup instructions.
 
 ---
 
@@ -1631,7 +1631,7 @@ python3 -m skill_seekers.cli.package_multi output/godot*/
 }
 ```
 
-**Full Guide:** [Large Documentation Guide](./docs/reference/LARGE_DOCUMENTATION.md)
+**Full Guide:** [Large Documentation Guide](./docs/reference/large_documentation.md)
 
 ### 8. Checkpoint/Resume for Long Scrapes
 
@@ -1940,17 +1940,17 @@ skill-seekers scrape --config configs/godot.json
 ## 📚 Documentation
 
 ### Getting Started
-- **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **START HERE** if you're new!
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start for experienced users
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[bulletproof_quickstart.md](bulletproof_quickstart.md)** - 🎯 **START HERE** if you're new!
+- **[quickstart.md](quickstart.md)** - Quick start for experienced users
+- **[troubleshooting.md](troubleshooting.md)** - Common issues and solutions
 
 ### Guides
-- **[docs/LARGE_DOCUMENTATION.md](./docs/reference/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
+- **[docs/large_documentation.md](./docs/reference/large_documentation.md)** - Handle 10K-40K+ page docs
 - **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
-- **[docs/ENHANCEMENT.md](./docs/features/ENHANCEMENT.md)** - AI enhancement guide
+- **[docs/enhancement.md](./docs/features/enhancement.md)** - AI enhancement guide
 - **[docs/TERMINAL_SELECTION.md](docs/TERMINAL_SELECTION.md)** - Configure terminal app for local enhancement
-- **[docs/UPLOAD_GUIDE.md](./docs/guides/UPLOAD_GUIDE.md)** - How to upload skills to Claude
-- **[docs/MCP_SETUP.md](./docs/guides/MCP_SETUP.md)** - MCP integration setup
+- **[docs/upload_guide.md](./docs/guides/upload_guide.md)** - How to upload skills to Claude
+- **[docs/mcp_setup.md](./docs/guides/mcp_setup.md)** - MCP integration setup
 
 ### Technical
 - **[docs/CLAUDE.md](./CLAUDE.md)** - Technical architecture

@@ -284,7 +284,7 @@ Fast parallel processing: --pdf docs/large.pdf --parallel --workers 8
 - Sequential: ~30-60 seconds per 100 pages
 - Parallel (8 workers): ~10-20 seconds per 100 pages (3x faster)
 
-**See:** `docs/PDF_SCRAPER.md` for complete PDF documentation guide
+**See:** `docs/pdf_scraper.md` for complete PDF documentation guide
 
 ## Example Workflows
 
@@ -622,10 +622,10 @@ For API-based enhancement (requires Anthropic API key):
 
 ## Documentation
 
-- **Full Setup Guide**: [docs/MCP_SETUP.md](../../../docs/guides/MCP_SETUP.md)
+- **Full Setup Guide**: [docs/mcp_setup.md](../../../docs/guides/mcp_setup.md)
 - **Main README**: [README.md](../../../README.md)
-- **Usage Guide**: [docs/USAGE.md](../../../docs/guides/USAGE.md)
-- **Testing Guide**: [docs/TESTING.md](../../../docs/guides/TESTING_GUIDE.md)
+- **Usage Guide**: [docs/usage.md](../../../docs/guides/usage.md)
+- **Testing Guide**: [docs/TESTING.md](../../../docs/guides/testing_guide.md)
 
 ## Support
 

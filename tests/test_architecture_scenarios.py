@@ -1,7 +1,7 @@
 """
 E2E Tests for All Architecture Document Scenarios
 
-Tests all 3 configuration examples from C3_x_Router_Architecture.md:
+Tests all 3 configuration examples from c3_x_router_architecture.md:
 1. GitHub with Three-Stream (Lines 2227-2253)
 2. Documentation + GitHub Multi-Source (Lines 2255-2286)
 3. Local Codebase (Lines 2287-2310)

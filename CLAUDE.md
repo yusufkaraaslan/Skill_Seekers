@@ -546,7 +546,7 @@ skill-seekers enhance-status output/react/ --watch
 skill-seekers enhance output/react/ --no-force
 ```
 
-See `docs/ENHANCEMENT_MODES.md` for detailed documentation.
+See `docs/enhancement_modes.md` for detailed documentation.
 
 ### Git Workflow
 
@@ -805,18 +805,18 @@ skill-seekers estimate configs/myconfig.json
 
 **For Users:**
 - [README.md](README.md) - Complete user documentation
-- [BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md) - Beginner guide
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+- [bulletproof_quickstart.md](bulletproof_quickstart.md) - Beginner guide
+- [troubleshooting.md](troubleshooting.md) - Common issues
 
 **For Developers:**
 - [CHANGELOG.md](CHANGELOG.md) - Release history
-- [ROADMAP.md](ROADMAP.md) - 136 tasks across 10 categories
-- [docs/UNIFIED_SCRAPING.md](./docs/features/UNIFIED_SCRAPING.md) - Multi-source scraping
-- [docs/MCP_SETUP.md](./docs/guides/MCP_SETUP.md) - MCP server setup
-- [docs/ENHANCEMENT_MODES.md](./docs/features/ENHANCEMENT_MODES.md) - AI enhancement modes
-- [docs/PATTERN_DETECTION.md](./docs/features/PATTERN_DETECTION.md) - C3.1 pattern detection
-- [docs/THREE_STREAM_STATUS_REPORT.md](./docs/archive/historical/THREE_STREAM_STATUS_REPORT.md) - Three-stream architecture
-- [docs/MULTI_LLM_SUPPORT.md](./docs/integrations/MULTI_LLM_SUPPORT.md) - Multi-platform support
+- [roadmap.md](roadmap.md) - 136 tasks across 10 categories
+- [docs/unified_scraping.md](./docs/features/unified_scraping.md) - Multi-source scraping
+- [docs/mcp_setup.md](./docs/guides/mcp_setup.md) - MCP server setup
+- [docs/enhancement_modes.md](./docs/features/enhancement_modes.md) - AI enhancement modes
+- [docs/pattern_detection.md](./docs/features/pattern_detection.md) - C3.1 pattern detection
+- [docs/three_stream_status_report.md](./docs/archive/historical/three_stream_status_report.md) - Three-stream architecture
+- [docs/multi_llm_support.md](./docs/integrations/multi_llm_support.md) - Multi-platform support
 
 ## 🎓 Understanding the Codebase
 

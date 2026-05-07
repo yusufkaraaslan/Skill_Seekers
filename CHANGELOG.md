@@ -30,16 +30,16 @@ This **patch release** fixes the broken Chinese language selector link that appe
 ### Fixed
 
 - **Broken Language Selector Links on PyPI**
-  - **Issue**: Chinese language link used relative URL (`README.zh-CN.md`) which only worked on GitHub
+  - **Issue**: Chinese language link used relative URL (`readme.zh-cn.md`) which only worked on GitHub
   - **Impact**: Users on PyPI clicking "简体中文" got 404 errors
-  - **Solution**: Changed to absolute GitHub URL (`https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/README.zh-CN.md`)
+  - **Solution**: Changed to absolute GitHub URL (`https://github.com/yusufkaraaslan/Skill_Seekers/blob/main/readme.zh-cn.md`)
   - **Result**: Language selector now works on PyPI, GitHub, and all platforms
-  - **Files Fixed**: `README.md`, `README.zh-CN.md`
+  - **Files Fixed**: `README.md`, `readme.zh-cn.md`
 
 ### Technical Details
 
 **Why This Happened:**
-- PyPI displays `README.md` but doesn't include `README.zh-CN.md` in the package
+- PyPI displays `README.md` but doesn't include `readme.zh-cn.md` in the package
 - Relative links break when README is rendered outside GitHub repository context
 - Absolute GitHub URLs work universally across all platforms
 
@@ -59,7 +59,7 @@ This **documentation release** adds comprehensive Chinese language support, maki
 ### Added
 
 - **🇨🇳 Chinese (Simplified) README Translation** (#260)
-  - Complete 1,962-line translation of all documentation (README.zh-CN.md)
+  - Complete 1,962-line translation of all documentation (readme.zh-cn.md)
   - Language selector badges in both English and Chinese READMEs
   - Machine translation disclaimer with invitation for community improvements
   - GitHub issue #260 created for community review and contributions
@@ -313,21 +313,21 @@ This **minor feature release** introduces intelligent GitHub rate limit handling
 
 - **📚 Comprehensive Documentation Overhaul** - Complete v2.7.0 documentation update
   - **7 new documentation files** (~3,750 lines total):
-    - `docs/reference/API_REFERENCE.md` (750 lines) - Programmatic usage guide for Python developers
-    - `docs/features/BOOTSTRAP_SKILL.md` (450 lines) - Self-hosting capability documentation
-    - `docs/reference/CODE_QUALITY.md` (550 lines) - Code quality standards and ruff linting guide
-    - `docs/guides/TESTING_GUIDE.md` (750 lines) - Complete testing reference (1200+ test suite)
-    - `docs/QUICK_REFERENCE.md` (300 lines) - One-page cheat sheet for quick command lookup
-    - `docs/guides/MIGRATION_GUIDE.md` (400 lines) - Version upgrade guides (v1.0.0 → v2.7.0)
-    - `docs/FAQ.md` (550 lines) - Comprehensive Q&A for common user questions
+    - `docs/reference/api_reference.md` (750 lines) - Programmatic usage guide for Python developers
+    - `docs/features/bootstrap_skill.md` (450 lines) - Self-hosting capability documentation
+    - `docs/reference/code_quality.md` (550 lines) - Code quality standards and ruff linting guide
+    - `docs/guides/testing_guide.md` (750 lines) - Complete testing reference (1200+ test suite)
+    - `docs/quick_reference.md` (300 lines) - One-page cheat sheet for quick command lookup
+    - `docs/guides/migration_guide.md` (400 lines) - Version upgrade guides (v1.0.0 → v2.7.0)
+    - `docs/faq.md` (550 lines) - Comprehensive Q&A for common user questions
   - **10 existing files updated**:
     - `README.md` - Updated test count badge (700+ → 1200+ tests), v2.7.0 callout
-    - `ROADMAP.md` - Added v2.7.0 completion section with task statuses
-    - `CONTRIBUTING.md` - Added link to CODE_QUALITY.md reference
+    - `roadmap.md` - Added v2.7.0 completion section with task statuses
+    - `CONTRIBUTING.md` - Added link to code_quality.md reference
     - `docs/README.md` - Quick links by use case, recent updates section
-    - `docs/guides/MCP_SETUP.md` - Fixed server_fastmcp references (PR #252)
-    - `docs/QUICK_REFERENCE.md` - Updated MCP server reference (server.py → server_fastmcp.py)
-    - `CLAUDE_INTEGRATION.md` - Updated version references
+    - `docs/guides/mcp_setup.md` - Fixed server_fastmcp references (PR #252)
+    - `docs/quick_reference.md` - Updated MCP server reference (server.py → server_fastmcp.py)
+    - `claude_integration.md` - Updated version references
     - 3 other documentation files with v2.7.0 updates
   - **Version consistency**: All version references standardized to v2.7.0
   - **Test counts**: Standardized to 1200+ tests (was inconsistent 700+ in some docs)
@@ -415,7 +415,7 @@ This **minor feature release** introduces intelligent GitHub rate limit handling
   - Result: All CI test runs now pass without fixture errors
 
 - **MCP Setup Modernization** - Updated MCP server configuration (PR #252, @MiaoDX)
-  - Fixed 41 instances of `server_fastmcp_fastmcp` → `server_fastmcp` typo in docs/guides/MCP_SETUP.md
+  - Fixed 41 instances of `server_fastmcp_fastmcp` → `server_fastmcp` typo in docs/guides/mcp_setup.md
   - Updated all 12 files to use `skill_seekers.mcp.server_fastmcp` module
   - Enhanced setup_mcp.sh with automatic venv detection (.venv, venv, $VIRTUAL_ENV)
   - Updated tests to accept `-e ".[mcp]"` format and module references
@@ -589,7 +589,7 @@ This **minor feature release** completes the C3.x codebase analysis suite with s
   - **Daemon Logging**: `.enhancement_daemon.log` for daemon mode execution logs
   - **Timeout Configuration**: Custom timeouts for different skill sizes (`--timeout` flag)
   - **CLI Integration**: All modes accessible via `skill-seekers enhance` command
-  - **Documentation**: New `docs/ENHANCEMENT_MODES.md` guide with examples
+  - **Documentation**: New `docs/enhancement_modes.md` guide with examples
   - **Use Cases**:
     - CI/CD pipelines: Force ON by default (no extra flags!)
     - Long-running tasks: `--daemon` for tasks that survive logout
@@ -606,7 +606,7 @@ This **minor feature release** completes the C3.x codebase analysis suite with s
   - MCP tool: `detect_patterns` for Claude Code integration
   - 24 comprehensive tests, 100% passing
   - 87% precision, 80% recall (tested on 100 real-world projects)
-  - Documentation: `docs/PATTERN_DETECTION.md`
+  - Documentation: `docs/pattern_detection.md`
 
 - **C3.2 Test Example Extraction** - Extract real usage examples from test files
   - Analyzes test files to extract real API usage patterns
@@ -618,7 +618,7 @@ This **minor feature release** completes the C3.x codebase analysis suite with s
   - MCP tool: `extract_test_examples` for Claude Code integration
   - 19 comprehensive tests, 100% passing
   - JSON and Markdown output formats
-  - Documentation: `docs/TEST_EXAMPLE_EXTRACTION.md`
+  - Documentation: `docs/test_example_extraction.md`
 
 - **C3.3 How-To Guide Generation with Comprehensive AI Enhancement** - Transform test workflows into step-by-step educational guides with professional AI-powered improvements
   - Automatically generates comprehensive markdown tutorials from workflow test examples
@@ -663,7 +663,7 @@ This **minor feature release** completes the C3.x codebase analysis suite with s
   - **56 comprehensive tests, 100% passing** (30 GuideEnhancer tests + 21 original + 5 integration tests)
   - Performance: 2.8s to process 50 workflows + 30-60s AI enhancement per guide
   - **Quality Metrics**: Enhanced guides have 95%+ user satisfaction, 50% reduction in support questions
-  - Documentation: `docs/HOW_TO_GUIDES.md` with AI enhancement guide
+  - Documentation: `docs/how_to_guides.md` with AI enhancement guide
 
 - **C3.4 Configuration Pattern Extraction with AI Enhancement** - Analyze and document configuration files across your codebase with optional AI-powered insights
   - **9 Supported Config Formats**: JSON, YAML, TOML, ENV, INI, Python modules, JavaScript/TypeScript configs, Dockerfile, Docker Compose
@@ -943,7 +943,7 @@ This **major feature release** adds complete multi-platform support for Claude A
   - Graceful error for markdown (no upload)
 
 #### Documentation
-- **`docs/FEATURE_MATRIX.md`** (NEW) - Comprehensive feature matrix
+- **`docs/feature_matrix.md`** (NEW) - Comprehensive feature matrix
   - Platform support comparison table
   - Skill mode support across platforms
   - CLI command support matrix
@@ -951,19 +951,19 @@ This **major feature release** adds complete multi-platform support for Claude A
   - Platform-specific examples
   - Verification checklist
 
-- **`docs/UPLOAD_GUIDE.md`** (REWRITTEN) - Multi-platform upload guide
+- **`docs/upload_guide.md`** (REWRITTEN) - Multi-platform upload guide
   - Complete guide for all 4 platforms
   - Platform selection table
   - API key setup instructions
   - Platform comparison matrices
   - Complete workflow examples
 
-- **`docs/ENHANCEMENT.md`** (UPDATED)
+- **`docs/enhancement.md`** (UPDATED)
   - Multi-platform enhancement section
   - Platform-specific model information
   - Cost comparison across platforms
 
-- **`docs/MCP_SETUP.md`** (UPDATED)
+- **`docs/mcp_setup.md`** (UPDATED)
   - Added enhance_skill to tool listings
   - Multi-platform usage examples
   - Updated tool count (10 → 18 tools)
@@ -1071,9 +1071,9 @@ None - All changes are backward compatible. Existing v2.4.0 workflows continue t
    - All packaging tools now accept `target` parameter
 
 **See full documentation:**
-- [Multi-Platform Guide](./docs/guides/UPLOAD_GUIDE.md)
-- [Feature Matrix](./docs/reference/FEATURE_MATRIX.md)
-- [Enhancement Guide](./docs/features/ENHANCEMENT.md)
+- [Multi-Platform Guide](./docs/guides/upload_guide.md)
+- [Feature Matrix](./docs/reference/feature_matrix.md)
+- [Enhancement Guide](./docs/features/enhancement.md)
 
 ### Contributors
 
@@ -1172,18 +1172,18 @@ This **major release** upgrades the MCP infrastructure to the 2025 specification
   - Debug logging support
 
 #### Documentation
-- **`docs/MCP_SETUP.md`** (completely rewritten) - Comprehensive MCP 2025 guide
+- **`docs/mcp_setup.md`** (completely rewritten) - Comprehensive MCP 2025 guide
   - Migration guide from v2.3.0
   - Transport modes explained (stdio vs HTTP)
   - Agent-specific configuration for all 5 agents
   - Troubleshooting for both transports
   - Advanced configuration (systemd, launchd services)
 
-- **`docs/HTTP_TRANSPORT.md`** (434 lines, new) - HTTP transport guide
-- **`docs/MULTI_AGENT_SETUP.md`** (643 lines, new) - Multi-agent setup guide
-- **`docs/SETUP_QUICK_REFERENCE.md`** (387 lines, new) - Quick reference card
-- **`SUMMARY_HTTP_TRANSPORT.md`** (360 lines, new) - Technical implementation details
-- **`SUMMARY_MULTI_AGENT_SETUP.md`** (556 lines, new) - Multi-agent technical summary
+- **`docs/http_transport.md`** (434 lines, new) - HTTP transport guide
+- **`docs/multi_agent_setup.md`** (643 lines, new) - Multi-agent setup guide
+- **`docs/setup_quick_reference.md`** (387 lines, new) - Quick reference card
+- **`SUMMARY_http_transport.md`** (360 lines, new) - Technical implementation details
+- **`SUMMARY_multi_agent_setup.md`** (556 lines, new) - Multi-agent technical summary
 
 #### Testing
 - **`test_mcp_fastmcp.py`** (960 lines, 63 tests) - Comprehensive FastMCP server tests
@@ -1224,7 +1224,7 @@ This **major release** upgrades the MCP infrastructure to the 2025 specification
 
 #### Documentation
 - **README.md** - Added comprehensive multi-agent section
-- **MCP_SETUP.md** - Completely rewritten for v2.4.0
+- **mcp_setup.md** - Completely rewritten for v2.4.0
 - **CLAUDE.md** - Updated with new server details
 - **Version badges** - Updated to v2.4.0
 
@@ -1383,7 +1383,7 @@ This major release adds **git-based config sources**, enabling teams to fetch co
   - Configurable via environment variable
 
 #### Documentation
-- **docs/GIT_CONFIG_SOURCES.md** (800+ lines) - Comprehensive guide
+- **docs/git_config_sources.md** (800+ lines) - Comprehensive guide
   - Quick start, architecture, authentication
   - MCP tools reference with examples
   - Use cases (small teams, enterprise, open source)
@@ -1496,7 +1496,7 @@ fetch_config(source="team", config_name="react-custom")
 - Example repository uses 'master' branch (git init default)
 
 ### See Also
-- [GIT_CONFIG_SOURCES.md](./docs/reference/GIT_CONFIG_SOURCES.md) - Complete guide
+- [git_config_sources.md](./docs/reference/git_config_sources.md) - Complete guide
 - [configs/example-team/](configs/example-team/) - Example repository
 - [Issue #211](https://github.com/yusufkaraaslan/Skill_Seekers/issues/211) - Original feature request
 
@@ -1746,7 +1746,7 @@ This is a major milestone release featuring complete restructuring for modern Py
 
 #### Documentation
 - **Updated README.md** - PyPI badges, reordered installation options
-- **ROADMAP.md** - Comprehensive roadmap with task-based approach
+- **roadmap.md** - Comprehensive roadmap with task-based approach
 - **Installation guides** - Simplified with PyPI as primary method
 - **Testing documentation** - How to run full test suite
 
@@ -1927,7 +1927,7 @@ Major enhancement to PDF extraction capabilities with Priority 2 & 3 features.
   - Command: `--no-cache` to disable (enabled by default)
 
 #### New Documentation
-- **`docs/PDF_ADVANCED_FEATURES.md`** (580 lines)
+- **`docs/pdf_advanced_features.md`** (580 lines)
   - Complete usage guide for all advanced features
   - Installation instructions
   - Performance benchmarks showing 3x speedup
@@ -2066,7 +2066,7 @@ This is the first production-ready release of Skill Seekers with complete featur
 - `generate_router` - Generate router skills via MCP
 
 #### Documentation
-- New `docs/LARGE_DOCUMENTATION.md` guide
+- New `docs/large_documentation.md` guide
 - Example config: `godot-large-example.json` (40K pages)
 
 ### Changed
@@ -2092,8 +2092,8 @@ This is the first production-ready release of Skill Seekers with complete featur
 #### Setup & Configuration
 - Automated setup script (`setup_mcp.sh`)
 - MCP configuration examples
-- Comprehensive MCP setup guide (`docs/MCP_SETUP.md`)
-- MCP testing guide (`docs/TEST_MCP_IN_CLAUDE_CODE.md`)
+- Comprehensive MCP setup guide (`docs/mcp_setup.md`)
+- MCP testing guide (`docs/test_mcp_in_claude_code.md`)
 
 #### Testing
 - 31 comprehensive unit tests for MCP server
