@@ -614,7 +614,7 @@ After successful setup:
 1. **Read the MCP Setup Guide**: [docs/MCP_SETUP.md](MCP_SETUP.md)
 2. **Learn HTTP Transport**: [docs/HTTP_TRANSPORT.md](HTTP_TRANSPORT.md)
 3. **Explore Agent Detection**: [src/skill_seekers/mcp/agent_detector.py](../src/skill_seekers/mcp/agent_detector.py)
-4. **Try the Quick Start**: [QUICKSTART.md](../QUICKSTART.md)
+4. **Try the Quick Start**: [QUICKSTART.md](../../QUICKSTART.md)
 
 ## Related Documentation
 

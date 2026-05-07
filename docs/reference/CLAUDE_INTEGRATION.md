@@ -100,7 +100,7 @@ generator = RouterGenerator(
 skill_md = generator.generate_skill_md()
 ```
 
-**See full documentation**: [Three-Stream Implementation Summary](IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**See full documentation**: [Three-Stream Implementation Summary](../archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ## Overview
 

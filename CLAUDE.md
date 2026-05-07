@@ -811,12 +811,12 @@ skill-seekers estimate configs/myconfig.json
 **For Developers:**
 - [CHANGELOG.md](CHANGELOG.md) - Release history
 - [ROADMAP.md](ROADMAP.md) - 136 tasks across 10 categories
-- [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) - Multi-source scraping
-- [docs/MCP_SETUP.md](docs/MCP_SETUP.md) - MCP server setup
-- [docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md) - AI enhancement modes
-- [docs/PATTERN_DETECTION.md](docs/PATTERN_DETECTION.md) - C3.1 pattern detection
-- [docs/THREE_STREAM_STATUS_REPORT.md](docs/THREE_STREAM_STATUS_REPORT.md) - Three-stream architecture
-- [docs/MULTI_LLM_SUPPORT.md](docs/MULTI_LLM_SUPPORT.md) - Multi-platform support
+- [docs/UNIFIED_SCRAPING.md](./docs/features/UNIFIED_SCRAPING.md) - Multi-source scraping
+- [docs/MCP_SETUP.md](./docs/guides/MCP_SETUP.md) - MCP server setup
+- [docs/ENHANCEMENT_MODES.md](./docs/features/ENHANCEMENT_MODES.md) - AI enhancement modes
+- [docs/PATTERN_DETECTION.md](./docs/features/PATTERN_DETECTION.md) - C3.1 pattern detection
+- [docs/THREE_STREAM_STATUS_REPORT.md](./docs/archive/historical/THREE_STREAM_STATUS_REPORT.md) - Three-stream architecture
+- [docs/MULTI_LLM_SUPPORT.md](./docs/integrations/MULTI_LLM_SUPPORT.md) - Multi-platform support
 
 ## 🎓 Understanding the Codebase
 

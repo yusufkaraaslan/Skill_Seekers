@@ -1457,8 +1457,8 @@ After successful setup:
 
 - **Documentation**:
   - [README.md](../README.md) - User guide
-  - [CLAUDE.md](CLAUDE.md) - Technical architecture
-  - [ENHANCEMENT.md](ENHANCEMENT.md) - Enhancement guide
+  - [CLAUDE.md](../../CLAUDE.md) - Technical architecture
+  - [ENHANCEMENT.md](../features/ENHANCEMENT.md) - Enhancement guide
   - [UPLOAD_GUIDE.md](UPLOAD_GUIDE.md) - Upload instructions
 
 - **Issues**: [GitHub Issues](https://github.com/yusufkaraaslan/Skill_Seekers/issues)

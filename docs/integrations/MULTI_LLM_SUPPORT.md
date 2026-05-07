@@ -320,7 +320,7 @@ if is_platform_available('gemini'):
 
 For detailed platform-specific instructions, see:
 
-- [Claude AI Integration](CLAUDE_INTEGRATION.md) (default)
+- [Claude AI Integration](../reference/CLAUDE_INTEGRATION.md) (default)
 - [Google Gemini Integration](GEMINI_INTEGRATION.md)
 - [OpenAI ChatGPT Integration](OPENAI_INTEGRATION.md)
 
@@ -391,7 +391,7 @@ A: Yes! The generic markdown export creates universal documentation that works w
 
 **Q: Can I contribute a new platform adaptor?**
 
-A: Absolutely! See the [Contributing Guide](../CONTRIBUTING.md) for how to add new platform adaptors.
+A: Absolutely! See the [Contributing Guide](../../CONTRIBUTING.md) for how to add new platform adaptors.
 
 ## Next Steps
 
@@ -402,6 +402,6 @@ A: Absolutely! See the [Contributing Guide](../CONTRIBUTING.md) for how to add n
 5. Upload and test your skill
 
 For more help, see:
-- [Quick Start Guide](../QUICKSTART.md)
-- [Troubleshooting Guide](../TROUBLESHOOTING.md)
+- [Quick Start Guide](../../QUICKSTART.md)
+- [Troubleshooting Guide](../../TROUBLESHOOTING.md)
 - [Platform-Specific Guides](.)

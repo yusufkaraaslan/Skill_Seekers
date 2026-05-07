@@ -123,7 +123,7 @@ Want to contribute? See:
 ### API & Tools
 - [API Documentation](../api/README.md)
 - [MCP Server](../src/skill_seekers/mcp/README.md)
-- [Config Repository](../skill-seekers-configs/README.md)
+- [Config Repository](../src/skill_seekers/mcp/README.md)
 
 ## 🔍 Finding What You Need
 
