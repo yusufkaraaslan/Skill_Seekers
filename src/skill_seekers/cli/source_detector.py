@@ -121,6 +121,11 @@ class SourceDetector:
 
         # 3. Directory detection
         if os.path.isdir(source):
+            # Peek at contents — directories dominated by .html/.htm/.xhtml files
+            # (e.g., wget mirrors, exported HTML docs) route to the html scraper
+            # instead of the codebase scraper.
+            if cls._looks_like_html_directory(source):
+                return cls._detect_html_directory(source)
             return cls._detect_local(source)
 
         # 4. GitHub patterns
@@ -213,6 +218,90 @@ class SourceDetector:
         return SourceInfo(
             type="html", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
+
+    @classmethod
+    def _detect_html_directory(cls, source: str) -> SourceInfo:
+        """Detect a directory of HTML files as an html source.
+
+        Used when a directory contains predominantly .html/.htm/.xhtml files
+        (e.g., a wget mirror or exported documentation set).
+        """
+        directory = os.path.abspath(source)
+        name = os.path.basename(directory.rstrip(os.sep)) or "html_skill"
+        return SourceInfo(
+            type="html",
+            parsed={"file_path": directory},
+            suggested_name=name,
+            raw_input=source,
+        )
+
+    # File extensions counted as HTML when peeking at directory contents.
+    _HTML_FILE_EXTENSIONS = (".html", ".htm", ".xhtml")
+
+    # Tunables for HTML-directory heuristic
+    _HTML_DIR_FILE_SAMPLE_LIMIT = 500
+    _HTML_DIR_MIN_HTML_FILES = 3
+    _HTML_DIR_MIN_HTML_RATIO = 0.5
+
+    @classmethod
+    def _looks_like_html_directory(cls, directory: str) -> bool:
+        """Return True if a directory is dominated by HTML files.
+
+        Walks the directory tree up to a sampling limit, counting HTML
+        extension files vs other regular files. Returns True when HTML files
+        meet both an absolute minimum and a ratio threshold against the rest
+        of the sampled files. Hidden directories (``.git``, ``.venv``, etc.)
+        and common build/cache dirs are skipped so a project that happens to
+        ship a few HTML report files isn't misclassified.
+        """
+        skip_dirs = {
+            ".git",
+            ".hg",
+            ".svn",
+            ".venv",
+            "venv",
+            "env",
+            "__pycache__",
+            "node_modules",
+            "dist",
+            "build",
+            "target",
+            ".tox",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+        }
+
+        html_count = 0
+        other_count = 0
+        sampled = 0
+        limit = cls._HTML_DIR_FILE_SAMPLE_LIMIT
+
+        try:
+            for root, dirs, files in os.walk(directory):
+                dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]
+                for fname in files:
+                    if fname.startswith("."):
+                        continue
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext in cls._HTML_FILE_EXTENSIONS:
+                        html_count += 1
+                    else:
+                        other_count += 1
+                    sampled += 1
+                    if sampled >= limit:
+                        break
+                if sampled >= limit:
+                    break
+        except OSError:
+            return False
+
+        if html_count < cls._HTML_DIR_MIN_HTML_FILES:
+            return False
+        total = html_count + other_count
+        if total == 0:
+            return False
+        return (html_count / total) >= cls._HTML_DIR_MIN_HTML_RATIO
 
     @classmethod
     def _detect_pptx(cls, source: str) -> SourceInfo:

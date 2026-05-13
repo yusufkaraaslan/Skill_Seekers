@@ -23,7 +23,7 @@
   - [enhance-status](#enhance-status) - Monitor enhancement
   - [estimate](#estimate) - Estimate page counts
   - [github](#github) - Scrape GitHub repository
-  - [html](#html) - Extract from local HTML files
+  - [Local HTML files (via `create`)](#local-html-files-via-create) - Extract from local HTML files
   - [install](#install) - One-command complete workflow
   - [install-agent](#install-agent) - Install to AI agent
   - [jupyter](#jupyter) - Extract from Jupyter notebooks
@@ -597,35 +597,42 @@ skill-seekers github --repo facebook/react --scrape-only
 
 ---
 
-### html
+### Local HTML files (via `create`)
 
-Extract content from local HTML files and generate skill.
+Extract content from local HTML files or directories of HTML files. Use the
+unified `create` command — the standalone `html` subcommand was removed in
+v3.x.
 
-**Purpose:** Convert local HTML documentation into AI-ready skills (for offline/exported docs).
+**Purpose:** Convert local HTML documentation into AI-ready skills (for offline
+mirrors, exported docs, wget snapshots, etc.).
 
-**Syntax:**
-```bash
-skill-seekers html [options]
-```
+**Auto-detection rules:**
 
-**Key Flags:**
+| Input | Detected as |
+|-------|-------------|
+| `page.html` / `page.htm` / `page.xhtml` | `html` (single file) |
+| Directory dominated by `.html`/`.htm`/`.xhtml` files | `html` (directory) |
+| Mixed directory (mostly code) | `local` (codebase scraper) |
+| `https://.../page.html` | `web` (fetched first) |
 
-| Flag | Description |
-|------|-------------|
-| `--html-path PATH` | Path to HTML file or directory |
-| `-n, --name` | Skill name |
-| `--from-json FILE` | Build from extracted JSON |
-| `--enhance-level` | AI enhancement (default: 0) |
-| `--dry-run` | Preview without executing |
+**Explicit override:** `--html-path PATH` forces html-scraper mode and beats
+auto-detection. Useful when a directory contains a mix of code and HTML
+files and you only want the HTML.
 
 **Examples:**
 
 ```bash
-# Single HTML file
-skill-seekers html --html-path docs/index.html --name my-docs
+# Single HTML file (auto-detected by extension)
+skill-seekers create docs/index.html --name my-docs
 
-# Directory of HTML files
-skill-seekers html --html-path ./html-export/ --name exported-docs
+# Whole directory of HTML files (auto-detected)
+skill-seekers create ./mirror_output/site/ --name site-mirror
+
+# Force HTML mode on a mixed/code-heavy directory
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/ --name myrepo-docs
+
+# --html-path alone works without a positional source
+skill-seekers create --html-path ./html-export/ --name exported-docs
 ```
 
 ---

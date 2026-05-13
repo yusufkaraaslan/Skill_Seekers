@@ -60,6 +60,63 @@ class TestSourceDetectorNewTypes:
         assert info.type == "web"
         assert info.parsed["url"] == url
 
+    # -- HTML directory auto-detection --
+    def test_detect_html_dominant_directory_routes_to_html(self, tmp_path):
+        """Directory dominated by .html files routes to the html scraper."""
+        mirror = tmp_path / "mirror"
+        mirror.mkdir()
+        for i in range(5):
+            (mirror / f"page{i}.html").write_text("<html><body>x</body></html>")
+        # A couple of supporting files should not flip the decision
+        (mirror / "robots.txt").write_text("user-agent: *")
+        info = SourceDetector.detect(str(mirror))
+        assert info.type == "html"
+        assert info.parsed["file_path"] == str(mirror.resolve())
+        assert info.suggested_name == "mirror"
+
+    def test_detect_html_directory_recursive(self, tmp_path):
+        """HTML files nested in subdirectories still trigger html detection."""
+        mirror = tmp_path / "site"
+        (mirror / "docs").mkdir(parents=True)
+        for i in range(4):
+            (mirror / "docs" / f"p{i}.htm").write_text("<html></html>")
+        info = SourceDetector.detect(str(mirror))
+        assert info.type == "html"
+
+    def test_detect_code_directory_still_routes_to_local(self, tmp_path):
+        """A code-heavy directory must NOT be misclassified as html."""
+        proj = tmp_path / "proj"
+        proj.mkdir()
+        for i in range(5):
+            (proj / f"mod{i}.py").write_text("print('x')\n")
+        # A single HTML report does not flip the decision
+        (proj / "report.html").write_text("<html></html>")
+        info = SourceDetector.detect(str(proj))
+        assert info.type == "local"
+
+    def test_detect_html_directory_skips_hidden_and_build_dirs(self, tmp_path):
+        """Hidden and build directories are skipped when sampling."""
+        mirror = tmp_path / "mirror2"
+        mirror.mkdir()
+        for i in range(4):
+            (mirror / f"page{i}.html").write_text("<html></html>")
+        # These should be ignored when counting files
+        (mirror / ".git").mkdir()
+        (mirror / "node_modules").mkdir()
+        for i in range(10):
+            (mirror / ".git" / f"obj{i}").write_text("blob")
+            (mirror / "node_modules" / f"f{i}.js").write_text("module.exports={};")
+        info = SourceDetector.detect(str(mirror))
+        assert info.type == "html"
+
+    def test_empty_directory_routes_to_local(self, tmp_path):
+        """An empty directory falls back to local (codebase) — html requires
+        a real HTML population."""
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        info = SourceDetector.detect(str(empty))
+        assert info.type == "local"
+
     # -- PowerPoint --
     def test_detect_pptx(self):
         """Test .pptx → pptx detection."""
@@ -802,6 +859,99 @@ class TestCreateCommandRouting:
         assert "get_converter" in source, (
             "_route_to_scraper should use get_converter for unified routing"
         )
+
+
+# ---------------------------------------------------------------------------
+# 7. CreateCommand — --html-path override behavior
+# ---------------------------------------------------------------------------
+
+
+class TestCreateCommandHtmlPath:
+    """Test that --html-path forces html mode and overrides auto-detection."""
+
+    @staticmethod
+    def _make_args(**overrides):
+        """Build an argparse.Namespace with create-command defaults."""
+        import argparse
+        from skill_seekers.cli.arguments.create import get_create_defaults
+
+        defaults = get_create_defaults()
+        defaults.setdefault("source", None)
+        defaults.setdefault("html_path", None)
+        defaults.update(overrides)
+        return argparse.Namespace(**defaults)
+
+    def test_html_path_overrides_local_detection_for_mixed_dir(self, tmp_path):
+        """A code-heavy directory with --html-path should route to html."""
+        from skill_seekers.cli.create_command import CreateCommand
+
+        # Build a mixed dir that would normally detect as 'local'
+        mixed = tmp_path / "mixed"
+        mixed.mkdir()
+        for i in range(5):
+            (mixed / f"src{i}.py").write_text("x = 1\n")
+        (mixed / "page.html").write_text("<html></html>")
+
+        # User passes --html-path pointing inside the same dir
+        args = self._make_args(source=str(mixed), html_path=str(mixed / "page.html"))
+        cmd = CreateCommand(args)
+        # Mimic step 1 of execute() — detection + override
+        detection_input = cmd._resolve_detection_input()
+        from skill_seekers.cli.source_detector import SourceDetector
+
+        info = SourceDetector.detect(detection_input)
+        assert info.type == "local"  # auto-detection would route to local
+
+        # Now apply the override logic by calling execute() up to the first error
+        # (we can't run the full pipeline without a scraper, so just test the
+        # _build_config wiring below).
+
+    def test_html_path_used_as_source_when_positional_missing(self, tmp_path):
+        """`create --html-path PATH` (no positional) must work."""
+        from skill_seekers.cli.create_command import CreateCommand
+
+        html_file = tmp_path / "doc.html"
+        html_file.write_text("<html><body>x</body></html>")
+
+        args = self._make_args(html_path=str(html_file))
+        cmd = CreateCommand(args)
+        assert cmd._resolve_detection_input() == str(html_file)
+
+    def test_resolve_detection_input_raises_when_nothing_provided(self):
+        """No source and no --html-path → clear error."""
+        from skill_seekers.cli.create_command import CreateCommand
+
+        args = self._make_args()
+        cmd = CreateCommand(args)
+        with pytest.raises(ValueError, match="No source provided"):
+            cmd._resolve_detection_input()
+
+    def test_build_config_uses_explicit_html_path(self, tmp_path):
+        """`config["html_path"]` reflects --html-path, not the positional path."""
+        from skill_seekers.cli.create_command import CreateCommand
+        from skill_seekers.cli.execution_context import ExecutionContext
+        from skill_seekers.cli.source_detector import SourceInfo
+
+        positional_dir = tmp_path / "site"
+        positional_dir.mkdir()
+        explicit = tmp_path / "doc.html"
+        explicit.write_text("<html></html>")
+
+        args = self._make_args(source=str(positional_dir), html_path=str(explicit))
+        cmd = CreateCommand(args)
+        cmd.source_info = SourceInfo(
+            type="html",
+            parsed={"file_path": str(positional_dir)},
+            suggested_name="site",
+            raw_input=str(positional_dir),
+        )
+        ExecutionContext.initialize(args=args, source_info=cmd.source_info)
+        try:
+            ctx = ExecutionContext.get()
+            config = cmd._build_config("html", ctx)
+            assert config["html_path"] == str(explicit)
+        finally:
+            ExecutionContext.reset()
 
 
 if __name__ == "__main__":

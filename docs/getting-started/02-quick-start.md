@@ -36,7 +36,8 @@ The `create` command auto-detects your source:
 | **EPUB Book** | `skill-seekers create book.epub` |
 | **Video** | `skill-seekers create https://youtube.com/watch?v=...` |
 | **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
-| **Local HTML** | `skill-seekers create page.html` |
+| **Local HTML (file)** | `skill-seekers create page.html` |
+| **Local HTML (directory)** | `skill-seekers create ./mirror_output/site/` |
 | **OpenAPI Spec** | `skill-seekers create api-spec.yaml` |
 | **AsciiDoc** | `skill-seekers create guide.adoc` |
 | **PowerPoint** | `skill-seekers create slides.pptx` |

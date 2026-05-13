@@ -139,8 +139,14 @@ skill-seekers create presentation.pptx
 # AsciiDoc document
 skill-seekers create guide.adoc
 
-# Local HTML file
+# Local HTML file (auto-detected by extension)
 skill-seekers create page.html
+
+# Whole directory of HTML files (auto-detected for HTML-dominant dirs)
+skill-seekers create ./mirror_output/site/
+
+# Force HTML mode on a mixed/code-heavy directory
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
 
 # RSS/Atom feed
 skill-seekers create feed.rss
