@@ -117,6 +117,28 @@ class TestSourceDetectorNewTypes:
         info = SourceDetector.detect(str(empty))
         assert info.type == "local"
 
+    def test_code_project_with_nested_html_docs_routes_to_local(self, tmp_path):
+        """A code project with a manifest at the root must route to local even
+        when a docs subtree contains hundreds of HTML files.
+
+        Regression for the bootstrap-skill macOS failure: on APFS, ``os.walk``
+        visits ``docs/`` before ``src/``/``tests/``, so a deep HTML docs export
+        used to dominate the file sample and flip the classification to
+        ``html``. The presence of ``pyproject.toml`` at the root must
+        short-circuit that misdetection.
+        """
+        proj = tmp_path / "myproj"
+        proj.mkdir()
+        (proj / "pyproject.toml").write_text("[project]\nname = 'myproj'\n")
+        (proj / "src").mkdir()
+        (proj / "src" / "mod.py").write_text("x = 1\n")
+        docs_html = proj / "docs" / "html"
+        docs_html.mkdir(parents=True)
+        for i in range(50):
+            (docs_html / f"p{i}.html").write_text("<html></html>")
+        info = SourceDetector.detect(str(proj))
+        assert info.type == "local"
+
     # -- PowerPoint --
     def test_detect_pptx(self):
         """Test .pptx → pptx detection."""

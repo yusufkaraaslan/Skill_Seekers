@@ -243,6 +243,28 @@ class SourceDetector:
     _HTML_DIR_MIN_HTML_FILES = 3
     _HTML_DIR_MIN_HTML_RATIO = 0.5
 
+    # Root-level files that mark a directory as a code project, not an HTML
+    # mirror. Presence of any of these short-circuits HTML auto-detection so
+    # docs subtrees (e.g. ``docs/UML/html/``) don't flip the classification.
+    _CODE_PROJECT_MARKERS = frozenset(
+        {
+            "pyproject.toml",
+            "setup.py",
+            "setup.cfg",
+            "package.json",
+            "cargo.toml",
+            "go.mod",
+            "pom.xml",
+            "build.gradle",
+            "build.gradle.kts",
+            "composer.json",
+            "gemfile",
+            "mix.exs",
+            "cmakelists.txt",
+            "project.godot",
+        }
+    )
+
     @classmethod
     def _looks_like_html_directory(cls, directory: str) -> bool:
         """Return True if a directory is dominated by HTML files.
@@ -253,7 +275,23 @@ class SourceDetector:
         of the sampled files. Hidden directories (``.git``, ``.venv``, etc.)
         and common build/cache dirs are skipped so a project that happens to
         ship a few HTML report files isn't misclassified.
+
+        Directory entries are sorted at every level so the sample is
+        deterministic across filesystems (Linux ext4 returns inode order;
+        macOS APFS returns alphabetical order — without sorting, the two
+        platforms reach the file-sample limit with very different files and
+        can disagree on classification).
         """
+        # If the directory looks like a code project (has a manifest file at
+        # the root), don't try to interpret it as an HTML mirror — even if it
+        # ships a large nested HTML docs export.
+        try:
+            root_entries = {name.lower() for name in os.listdir(directory)}
+        except OSError:
+            return False
+        if root_entries & cls._CODE_PROJECT_MARKERS:
+            return False
+
         skip_dirs = {
             ".git",
             ".hg",
@@ -278,9 +316,9 @@ class SourceDetector:
         limit = cls._HTML_DIR_FILE_SAMPLE_LIMIT
 
         try:
-            for root, dirs, files in os.walk(directory):
-                dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]
-                for fname in files:
+            for _root, dirs, files in os.walk(directory):
+                dirs[:] = sorted(d for d in dirs if d not in skip_dirs and not d.startswith("."))
+                for fname in sorted(files):
                     if fname.startswith("."):
                         continue
                     ext = os.path.splitext(fname)[1].lower()
