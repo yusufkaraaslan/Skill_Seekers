@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 
 from skill_seekers.cli.scan_command import (
     Detection,
+    _canonical_name_candidates,
     detect_with_ai,
     diff_against_existing,
     emit_codebase_config,
@@ -870,3 +871,122 @@ class TestCliRegistration:
         assert args.directory == "."
         assert args.no_fetch is True
         assert args.no_generate is True
+
+
+class TestCanonicalNameCandidates:
+    """Real-world hit-rate: AI returns 'Godot Engine', preset is 'godot'."""
+
+    def test_includes_original(self):
+        cands = _canonical_name_candidates("Godot Engine")
+        assert "Godot Engine" in cands
+
+    def test_includes_lowercase(self):
+        cands = _canonical_name_candidates("React")
+        assert "react" in cands
+
+    def test_includes_hyphenated_lowercase(self):
+        cands = _canonical_name_candidates("Spring Boot")
+        assert "spring-boot" in cands
+
+    def test_strips_common_suffixes(self):
+        # "Godot Engine" should produce "godot" as a fallback candidate.
+        cands = _canonical_name_candidates("Godot Engine")
+        assert "godot" in cands
+
+        cands = _canonical_name_candidates("Tailwind CSS")
+        assert "tailwind" in cands
+
+        cands = _canonical_name_candidates("Vue.js")
+        assert "vue" in cands
+
+    def test_npm_scoped_package_unscoped_form(self):
+        cands = _canonical_name_candidates("@anthropic-ai/sdk")
+        # Both the full scoped name and a slugified unscoped form should appear.
+        assert "@anthropic-ai/sdk" in cands
+        # The slash gets normalized to a hyphen for filename-safe lookups.
+        assert any("anthropic-ai-sdk" in c or "anthropic-sdk" in c for c in cands)
+
+    def test_ordered_so_exact_match_wins(self):
+        """Original input must come first so an existing exact-match preset
+        beats any normalized fallback."""
+        cands = _canonical_name_candidates("ReactQuery")
+        assert cands[0] == "ReactQuery"
+
+    def test_no_duplicates(self):
+        cands = _canonical_name_candidates("react")
+        assert len(cands) == len(set(cands))
+
+    def test_empty_or_whitespace_returns_only_self(self):
+        # Don't crash on weird inputs.
+        cands = _canonical_name_candidates("   ")
+        assert cands == ["   "] or cands == []
+
+
+class TestResolverUsesCanonicalCandidates:
+    """The resolver should try each canonical candidate against resolve_config_path."""
+
+    def _det(self, name: str):
+        return Detection(
+            name=name,
+            ecosystem="other",
+            version="4.7",
+            kind="framework",
+            confidence=1.0,
+            evidence="",
+        )
+
+    def test_resolver_tries_canonical_form_when_exact_misses(self, tmp_path: Path):
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        canonical_match = tmp_path / "godot.json"
+        canonical_match.write_text(
+            json.dumps(
+                {
+                    "name": "godot",
+                    "description": "godot",
+                    "sources": [
+                        {"type": "documentation", "base_url": "https://docs.godotengine.org"}
+                    ],
+                }
+            )
+        )
+
+        # First call (exact "Godot Engine") returns None; second (canonical "godot") hits.
+        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+            return canonical_match if name == "godot" else None
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            path, was_generated = resolve_or_generate_with_status(
+                self._det("Godot Engine"),
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=False,
+            )
+
+        assert path is not None
+        assert was_generated is False
+        # Emitted config name should reflect the *detection* name (slugified for
+        # filesystem), not the canonical name — so it stays stable on re-scan.
+        # The content includes the resolved canonical config plus detected_version.
+        data = json.loads(path.read_text())
+        assert data["detected_version"] == "4.7"
+
+    def test_resolver_returns_none_when_no_candidate_hits(self, tmp_path: Path):
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            path, _ = resolve_or_generate_with_status(
+                self._det("SomeNonsenseLib"),
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=False,
+            )
+        assert path is None

@@ -250,10 +250,24 @@ def _build_detection_prompt(bundle) -> str:
 
     lines.append(
         "Task: Identify the frameworks, libraries, tools and services this project "
-        "directly uses. Skip transitive dependencies. For each, return: name, "
-        "ecosystem (npm | pypi | cargo | go | gem | maven | composer | hex | "
-        "system | other), version (or null), kind (framework | library | tool | "
-        "service), confidence (0-1), evidence (short reason).\n\n"
+        "directly uses. Skip transitive dependencies. For each, return:\n"
+        "  - name: the CANONICAL package-manager slug, NOT a human-readable\n"
+        "    display name. Examples:\n"
+        "      • 'react'      (not 'React')\n"
+        "      • 'fastapi'    (not 'FastAPI')\n"
+        "      • 'godot'      (not 'Godot Engine')\n"
+        "      • 'tailwindcss' or 'tailwind' (not 'Tailwind CSS')\n"
+        "      • 'vue'        (not 'Vue.js')\n"
+        "      • 'spring-boot' (not 'Spring Boot')\n"
+        "      • '@anthropic-ai/sdk' for npm-scoped packages (keep the scope)\n"
+        "    Rule of thumb: what would you type after `npm install`, "
+        "`pip install`, `cargo add`, or in a config preset filename?\n"
+        "  - ecosystem: one of npm | pypi | cargo | go | gem | maven | "
+        "composer | hex | system | other\n"
+        "  - version: the version string from the manifest, or null if absent\n"
+        "  - kind: framework | library | tool | service\n"
+        "  - confidence: 0-1\n"
+        "  - evidence: short reason (which signal you used)\n\n"
         "Respond with ONLY a JSON array, no prose, no markdown fence."
     )
     return "\n".join(lines)
@@ -403,6 +417,69 @@ def _config_filename_for(detection: Detection) -> str:
     return f"{safe}.json"
 
 
+# Common suffixes appended to display names but absent from preset slugs.
+_NAME_SUFFIXES = (
+    " engine",
+    " framework",
+    " sdk",
+    " library",
+    " core",
+    " runtime",
+    ".js",
+    " js",
+    " css",
+)
+
+
+def _canonical_name_candidates(name: str) -> list[str]:
+    """Yield lookup candidates for a (possibly human-readable) detection name.
+
+    AI detectors don't always return the canonical preset slug — e.g. they say
+    ``Godot Engine`` where the registry has ``godot``, or ``Tailwind CSS``
+    where it has ``tailwind``. This helper produces up to ~5 variants in
+    priority order so the resolver can try each before giving up. The
+    original input is always first so an exact-match preset wins.
+    """
+    if not name or not name.strip() or name.isspace():
+        return [name] if name else []
+
+    seen: dict[str, None] = {}  # ordered set
+
+    def _add(candidate: str) -> None:
+        candidate = candidate.strip()
+        if candidate and candidate not in seen:
+            seen[candidate] = None
+
+    # 1. Original — exact match wins if it exists
+    _add(name)
+
+    # 2. Lowercase
+    lower = name.lower()
+    _add(lower)
+
+    # 3. Lowercase + spaces/dots → hyphens
+    hyphenated = re.sub(r"[ ._]+", "-", lower).strip("-")
+    _add(hyphenated)
+
+    # 4. Strip common suffixes (operate on the lowercase form)
+    stripped = lower
+    for suffix in _NAME_SUFFIXES:
+        if stripped.endswith(suffix):
+            stripped = stripped[: -len(suffix)].rstrip()
+            break
+    if stripped != lower:
+        _add(stripped)
+        _add(re.sub(r"[ ._]+", "-", stripped).strip("-"))
+
+    # 5. npm-scoped: @scope/name → name + scope-name slug
+    if name.startswith("@") and "/" in name:
+        scope, _, base = name[1:].partition("/")
+        _add(base)
+        _add(f"{scope}-{base}".lower())
+
+    return list(seen.keys())
+
+
 def resolve_or_generate_with_status(
     detection: Detection,
     *,
@@ -424,10 +501,18 @@ def resolve_or_generate_with_status(
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    resolved = resolve_config_path(detection.name, auto_fetch=allow_network)
     target = out_dir / _config_filename_for(detection)
 
-    if resolved is not None and resolved.exists():
+    # Try each canonical name candidate (e.g. 'Godot Engine' → 'godot') so we
+    # don't miss matches just because the AI used a human-readable name.
+    resolved: Path | None = None
+    for candidate in _canonical_name_candidates(detection.name):
+        hit = resolve_config_path(candidate, auto_fetch=allow_network)
+        if hit is not None and hit.exists():
+            resolved = hit
+            break
+
+    if resolved is not None:
         data = json.loads(resolved.read_text(encoding="utf-8"))
         data["detected_version"] = detection.version
         target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -580,10 +665,7 @@ def _print_report(result: ScanResult, *, verbose: bool, out_dir: Path) -> None:
     print(f"    ✅ {len(result.resolved)} resolved        (from local / user / API)")
     print(f"    🤖 {len(result.generated)} AI-generated    (no existing preset)")
     if result.failed:
-        print(
-            f"    ⚠️  {len(result.failed)} unresolved      "
-            f"({', '.join(result.failed)})"
-        )
+        print(f"    ⚠️  {len(result.failed)} unresolved      ({', '.join(result.failed)})")
     if result.codebase_config is not None:
         print("    📂 1 codebase config (always emitted)")
     print()
@@ -612,11 +694,12 @@ def _print_report(result: ScanResult, *, verbose: bool, out_dir: Path) -> None:
 
     # Next step hint
     if result.emitted or result.codebase_config:
-        print("  Next: run `skill-seekers create <config.json>` on each "
-              "config you want to build.")
+        print("  Next: run `skill-seekers create <config.json>` on each config you want to build.")
     elif result.failed:
-        print("  Nothing was written. Re-run without --no-fetch / "
-              "--no-generate to fetch or generate configs.")
+        print(
+            "  Nothing was written. Re-run without --no-fetch / "
+            "--no-generate to fetch or generate configs."
+        )
     print()
 
 
