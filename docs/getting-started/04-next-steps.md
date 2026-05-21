@@ -42,7 +42,17 @@ for platform in claude gemini openai langchain; do
 done
 ```
 
-### 3. Explore Enhancement Workflows
+### 3. Scan an entire project (AI-driven)
+
+Bootstrap a full knowledge base for a real project in one command — see
+[Scan a project](05-scan-a-project.md):
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# Emits one config per detected framework + my-react-app-codebase.json
+```
+
+### 4. Explore Enhancement Workflows
 
 ```bash
 # See available workflows

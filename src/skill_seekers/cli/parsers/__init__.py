@@ -26,10 +26,12 @@ from .quality_parser import QualityParser
 from .workflows_parser import WorkflowsParser
 from .sync_config_parser import SyncConfigParser
 from .doctor_parser import DoctorParser
+from .scan_parser import ScanParser
 
 # Registry of all parsers
 PARSERS = [
     CreateParser(),
+    ScanParser(),
     DoctorParser(),
     ConfigParser(),
     EnhanceParser(),

@@ -20,6 +20,7 @@ Commands:
     resume               Resume interrupted scraping job
     config               Configure GitHub tokens, API keys, and settings
     doctor               Health check for dependencies and configuration
+    scan                 AI-detect a project's tech stack and emit per-framework configs
 
 Examples:
     skill-seekers create https://react.dev
@@ -42,6 +43,8 @@ from skill_seekers.cli import __version__
 COMMAND_MODULES = {
     # Skill creation — unified entry point for all 18 source types
     "create": "skill_seekers.cli.create_command",
+    # Project knowledge base — AI-driven framework discovery (issue #327)
+    "scan": "skill_seekers.cli.scan_command",
     # Enhancement & packaging
     "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",
