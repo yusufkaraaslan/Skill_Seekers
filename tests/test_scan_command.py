@@ -15,7 +15,9 @@ from unittest.mock import MagicMock, patch
 
 from skill_seekers.cli.scan_command import (
     Detection,
+    ScanResult,
     _canonical_name_candidates,
+    _exit_code_for,
     detect_with_ai,
     diff_against_existing,
     emit_codebase_config,
@@ -200,6 +202,43 @@ class TestDiffAgainstExisting:
         assert diff.updated == []
         assert diff.removed == []
 
+    def test_no_churn_when_internal_name_differs_from_detection(self, tmp_path: Path):
+        """Regression: diff used to key existing off `data['name']` (canonical
+        preset name) but current off `Detection.name` (AI display name). Even
+        with the same package across scans, the keys mismatched and the diff
+        spammed phantom 'added X / removed Y'. Now both sides key by filename
+        slug.
+        """
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        # Simulate the file that scan would have written: filename is the slug
+        # of the AI's name ("Godot Engine" → "godot-engine.json"), but the
+        # *resolved* canonical config inside has internal name = "godot".
+        (out_dir / "godot-engine.json").write_text(
+            json.dumps(
+                {
+                    "name": "godot",  # canonical from registry, NOT matching the slug
+                    "detected_version": "4.7",
+                }
+            )
+        )
+
+        # Second-scan detection: AI returns same display name again.
+        detections = [
+            Detection(
+                name="Godot Engine",
+                ecosystem="other",
+                version="4.7",
+                kind="framework",
+                confidence=1.0,
+                evidence="",
+            ),
+        ]
+        diff = diff_against_existing(out_dir, detections)
+        assert diff.added == []
+        assert diff.updated == []
+        assert diff.removed == []
+
     def test_handles_config_without_detected_version(self, tmp_path: Path):
         """Configs without detected_version should diff as 'updated' when one arrives."""
         out = tmp_path / "out"
@@ -314,6 +353,13 @@ class TestDetectWithAI:
         detections = detect_with_ai(_bundle(), client, min_confidence=0.5)
         assert [d.name for d in detections] == ["react"]
 
+    def test_handles_agentclient_exception_gracefully(self):
+        """AgentClient auth/network errors must not crash the scan."""
+        client = MagicMock()
+        client.call.side_effect = RuntimeError("API key invalid")
+        detections = detect_with_ai(_bundle(), client)
+        assert detections == []
+
     def test_drops_entries_missing_required_fields(self):
         client = MagicMock()
         client.call.return_value = json.dumps(
@@ -401,6 +447,39 @@ class TestGenerateConfigWithAI:
         client.call.return_value = json.dumps({"name": "x"})  # no description, no sources
         cfg = generate_config_with_ai(self._det(), client)
         assert cfg is None
+
+    def test_handles_agentclient_exception_gracefully(self):
+        """Generator call raising → retries; if all retries raise → None, no crash."""
+        client = MagicMock()
+        client.call.side_effect = RuntimeError("connection refused")
+        cfg = generate_config_with_ai(self._det(), client)
+        assert cfg is None
+        # Both attempts were made — exception didn't break the retry loop.
+        assert client.call.call_count == 2
+
+    def test_rejects_name_that_breaks_registry_submission(self):
+        """submit_config_tool requires name ^[a-zA-Z0-9_-]+$. Reject up front
+        so we don't write configs that silently fail to publish later."""
+        client = MagicMock()
+        bad = json.dumps(
+            {
+                "name": "@scope/pkg",  # / and @ both forbidden by the registry regex
+                "description": "valid otherwise",
+                "sources": [{"type": "documentation", "base_url": "https://x.io"}],
+            }
+        )
+        good = json.dumps(
+            {
+                "name": "scope-pkg",  # acceptable
+                "description": "valid otherwise",
+                "sources": [{"type": "documentation", "base_url": "https://x.io"}],
+            }
+        )
+        client.call.side_effect = [bad, good]
+        cfg = generate_config_with_ai(self._det(), client)
+        assert cfg is not None
+        assert cfg["name"] == "scope-pkg"
+        assert client.call.call_count == 2
 
 
 class TestResolveOrGenerate:
@@ -549,7 +628,9 @@ class TestResolveOrGenerate:
             )
         assert was_generated is False
 
-        # Generated case
+        # Generated case — fresh out_dir so the cache shortcut doesn't fire.
+        out_dir2 = tmp_path / "out2"
+        out_dir2.mkdir()
         with (
             patch(
                 "skill_seekers.cli.scan_command.resolve_config_path",
@@ -567,7 +648,7 @@ class TestResolveOrGenerate:
         ):
             path2, was_generated2 = resolve_or_generate_with_status(
                 self._det(),
-                out_dir=out_dir,
+                out_dir=out_dir2,
                 client=MagicMock(),
                 allow_network=True,
                 allow_generate=True,
@@ -613,6 +694,7 @@ class TestMaybePublish:
         submit = MagicMock(return_value={"ok": True, "url": "https://github.com/x/y/issues/1"})
 
         with (
+            patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
             patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
             patch("builtins.input", return_value="y"),
         ):
@@ -626,23 +708,42 @@ class TestMaybePublish:
         cfg = self._write_cfg(tmp_path, "newlib")
         submit = MagicMock()
         with (
+            patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
             patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
             patch("builtins.input", return_value="n"),
         ):
             maybe_publish([cfg], skip_prompt=False)
         submit.assert_not_called()
 
+    def test_missing_github_token_skips_prompt(self, tmp_path: Path, capsys):
+        """Without GITHUB_TOKEN, don't ask 5 questions and fail 5 times."""
+        cfg = self._write_cfg(tmp_path, "newlib")
+        submit = MagicMock()
+        with (
+            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
+            patch.dict("os.environ", {}, clear=True),
+            patch("builtins.input") as input_mock,
+        ):
+            maybe_publish([cfg], skip_prompt=False)
+        # No prompt, no submission attempt
+        input_mock.assert_not_called()
+        submit.assert_not_called()
+        # User sees an actionable hint
+        captured = capsys.readouterr()
+        assert "GITHUB_TOKEN" in captured.out
+
     def test_handles_submit_failure_gracefully(self, tmp_path: Path, capsys):
         cfg = self._write_cfg(tmp_path, "newlib")
         submit = MagicMock(side_effect=RuntimeError("boom"))
         with (
+            patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
             patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
             patch("builtins.input", return_value="y"),
         ):
             # Should not raise
             maybe_publish([cfg], skip_prompt=False)
         captured = capsys.readouterr()
-        assert "failed" in captured.out.lower() or "error" in captured.out.lower()
+        assert "boom" in captured.out  # the actual exception message is surfaced
 
 
 class TestRunScan:
@@ -848,6 +949,29 @@ class TestRunScan:
         assert result.codebase_config is not None
 
 
+class TestExitCodeFor:
+    """Non-zero exit code on complete failure — for CI shell pipelines."""
+
+    def test_zero_when_codebase_emitted(self, tmp_path: Path):
+        r = ScanResult(codebase_config=tmp_path / "x-codebase.json")
+        assert _exit_code_for(r) == 0
+
+    def test_zero_when_any_framework_emitted(self, tmp_path: Path):
+        r = ScanResult(emitted=[tmp_path / "react.json"])
+        assert _exit_code_for(r) == 0
+
+    def test_one_when_nothing_emitted(self):
+        r = ScanResult()
+        assert _exit_code_for(r) == 1
+
+    def test_one_when_only_failures(self):
+        r = ScanResult(
+            detections=[Detection("x", "npm", None, "library", 0.9, "")],
+            failed=["x"],
+        )
+        assert _exit_code_for(r) == 1
+
+
 class TestCliRegistration:
     def test_scan_is_registered_in_command_modules(self):
         from skill_seekers.cli.main import COMMAND_MODULES
@@ -952,9 +1076,11 @@ class TestResolverUsesCanonicalCandidates:
             )
         )
 
-        # First call (exact "Godot Engine") returns None; second (canonical "godot") hits.
+        # First call (exact "Godot Engine.json") returns None; eventually the
+        # canonical candidate "godot.json" hits. Resolver appends .json to
+        # every candidate so local repo / user dir lookups actually find files.
         def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
-            return canonical_match if name == "godot" else None
+            return canonical_match if name == "godot.json" else None
 
         with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
             from skill_seekers.cli.scan_command import resolve_or_generate_with_status
@@ -973,6 +1099,79 @@ class TestResolverUsesCanonicalCandidates:
         # filesystem), not the canonical name — so it stays stable on re-scan.
         # The content includes the resolved canonical config plus detected_version.
         data = json.loads(path.read_text())
+        assert data["detected_version"] == "4.7"
+
+    def test_resolver_appends_json_suffix_for_local_lookup(self, tmp_path: Path):
+        """Regression: resolve_config_path checks for files literally — without
+        '.json' appended, local repo configs/ and user-dir configs/ are missed.
+        """
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        seen: list[str] = []
+
+        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+            seen.append(name)
+            return None
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            resolve_or_generate_with_status(
+                self._det("react"),
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=False,
+            )
+
+        assert seen, "resolve_config_path was never called"
+        assert all(name.endswith(".json") for name in seen), (
+            f"Resolver should append .json to every lookup; got {seen}"
+        )
+
+    def test_resolver_reuses_existing_out_dir_config(self, tmp_path: Path):
+        """Re-scan should re-use the prior-emitted config (just re-stamp version),
+        not waste an AI/API call and not blow away user edits."""
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        existing = out_dir / "react.json"
+        existing.write_text(
+            json.dumps(
+                {
+                    "name": "react",
+                    "description": "User-edited description",
+                    "sources": [{"type": "documentation", "base_url": "https://react.dev"}],
+                    "detected_version": "18.2.0",
+                    "_user_notes": "Don't overwrite me",  # simulates a manual edit
+                }
+            )
+        )
+
+        resolve_mock = MagicMock(return_value=None)
+        gen_mock = MagicMock(return_value={})
+        with (
+            patch("skill_seekers.cli.scan_command.resolve_config_path", resolve_mock),
+            patch("skill_seekers.cli.scan_command.generate_config_with_ai", gen_mock),
+        ):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            path, was_generated = resolve_or_generate_with_status(
+                self._det("react"),  # version="4.7" — different from existing 18.2.0
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=True,
+            )
+
+        assert path == existing
+        assert was_generated is False
+        # Resolver and generator should NOT have been called when cache hit.
+        resolve_mock.assert_not_called()
+        gen_mock.assert_not_called()
+        # User edits preserved; version re-stamped.
+        data = json.loads(existing.read_text())
+        assert data["_user_notes"] == "Don't overwrite me"
+        assert data["description"] == "User-edited description"
         assert data["detected_version"] == "4.7"
 
     def test_resolver_returns_none_when_no_candidate_hits(self, tmp_path: Path):

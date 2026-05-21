@@ -194,6 +194,18 @@ def _iter_source_files(root: Path):
             yield path
 
 
+def _safe_size(path: Path) -> int:
+    """Return file size, or 0 if the file vanished / is unreadable.
+
+    Used as a sort key: a broken symlink or a file removed between
+    enumeration and stat must not crash the whole scan.
+    """
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
 def collect_source_imports(
     root: Path,
     max_files: int = 30,
@@ -209,7 +221,7 @@ def collect_source_imports(
     if not candidates:
         return []
 
-    candidates.sort(key=lambda p: (-p.stat().st_size, str(p)))
+    candidates.sort(key=lambda p: (-_safe_size(p), str(p)))
     chosen = candidates[:max_files]
 
     signals: list[Signal] = []

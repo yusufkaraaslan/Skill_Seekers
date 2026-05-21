@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -24,6 +25,22 @@ logger = logging.getLogger(__name__)
 
 # Markdown code-fence wrapper (```json ... ``` or ``` ... ```) the AI often emits.
 _FENCE_RE = re.compile(r"```(?:json|JSON)?\s*\n(.*?)\n```", re.DOTALL)
+
+
+def _atomic_write_json(path: Path, data: dict) -> None:
+    """Write JSON to ``path`` atomically.
+
+    A direct ``path.write_text`` opens-truncates-then-writes; if the process
+    is interrupted mid-write the file is left half-written, and on the next
+    scan ``diff_against_existing`` will silently treat the corrupted file as
+    "removed" — potentially losing user edits. ``os.replace`` is atomic on
+    POSIX (and on Windows when the target already exists), so a crash leaves
+    either the old file or the new file, never a half-written one.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -82,7 +99,7 @@ def stamp_version(config_path: Path, version: str | None) -> None:
         data.pop("detected_version", None)
     else:
         data["detected_version"] = version
-    config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    _atomic_write_json(config_path, data)
 
 
 def emit_codebase_config(root: Path, out_dir: Path) -> Path:
@@ -152,31 +169,39 @@ def emit_codebase_config(root: Path, out_dir: Path) -> Path:
             }
         ],
     }
-    out_dir.mkdir(parents=True, exist_ok=True)
-    cfg_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    _atomic_write_json(cfg_path, config)
     return cfg_path
 
 
 def diff_against_existing(out_dir: Path, detections: list[Detection]) -> ScanDiff:
     """Compare existing configs in ``out_dir`` to the current detections.
 
-    Compares by ``name`` and the top-level ``detected_version`` field.
-    The auto-emitted ``<project>-codebase.json`` is excluded — it's not a
-    framework detection, it's always re-emitted.
+    Keyed by **filename slug** rather than the config's internal ``name``
+    field. The internal ``name`` reflects the resolved canonical preset
+    (e.g. ``godot``) but ``Detection.name`` is whatever the AI returned
+    (e.g. ``Godot Engine``) — keying off the internal name caused phantom
+    ``+ added Godot Engine / - removed godot`` on every re-scan. The
+    filename slug is determined by ``_config_filename_for(detection)``, so
+    both sides of the diff use the same stable identifier.
+    The auto-emitted ``<project>-codebase.json`` is excluded.
     """
     existing: dict[str, str | None] = {}
     if out_dir.is_dir():
         for path in sorted(out_dir.glob("*.json")):
+            stem = path.stem
+            if stem.endswith("-codebase"):
+                continue
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+            except (OSError, json.JSONDecodeError) as e:
+                logger.warning("Skipping unreadable config %s: %s", path, e)
                 continue
-            name = data.get("name")
-            if not name or name.endswith("-codebase"):
-                continue
-            existing[name] = data.get("detected_version")
+            existing[stem] = data.get("detected_version")
 
-    current = {d.name: d.version for d in detections}
+    current: dict[str, str | None] = {}
+    for d in detections:
+        slug = _config_filename_for(d).removesuffix(".json")
+        current[slug] = d.version
 
     diff = ScanDiff()
     for name, version in current.items():
@@ -285,7 +310,11 @@ def detect_with_ai(bundle, client, *, min_confidence: float = 0.4) -> list[Detec
         List of ``Detection`` objects. Empty on malformed AI output (logged).
     """
     prompt = _build_detection_prompt(bundle)
-    raw = client.call(prompt, max_tokens=4096)
+    try:
+        raw = client.call(prompt, max_tokens=4096)
+    except Exception as e:
+        logger.error("AI detector call failed: %s: %s", type(e).__name__, e)
+        return []
     if raw is None:
         logger.warning("AI detector returned no response")
         return []
@@ -379,7 +408,16 @@ def generate_config_with_ai(detection: Detection, client, *, max_attempts: int =
 
     prompt = _build_generation_prompt(detection)
     for attempt in range(max_attempts):
-        raw = client.call(prompt, max_tokens=4096)
+        try:
+            raw = client.call(prompt, max_tokens=4096)
+        except Exception as e:
+            logger.error(
+                "AI generator call failed (attempt %d): %s: %s",
+                attempt + 1,
+                type(e).__name__,
+                e,
+            )
+            continue
         if raw is None:
             logger.warning("AI generator returned no response (attempt %d)", attempt + 1)
             continue
@@ -391,6 +429,17 @@ def generate_config_with_ai(detection: Detection, client, *, max_attempts: int =
             UniSkillConfigValidator(data).validate()
         except Exception as e:
             logger.warning("AI-generated config failed validation: %s", e)
+            continue
+        # The community submission flow (submit_config_tool) additionally
+        # requires the name to match ^[a-zA-Z0-9_-]+$. Reject here so we
+        # don't silently write a config that can't be published.
+        name = str(data.get("name", ""))
+        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+            logger.warning(
+                "AI-generated config name %r is not registry-safe "
+                "(must match [a-zA-Z0-9_-]+); retrying",
+                name,
+            )
             continue
         data["detected_version"] = detection.version
         return data
@@ -412,8 +461,13 @@ from skill_seekers.cli.config_fetcher import resolve_config_path  # noqa: E402
 
 
 def _config_filename_for(detection: Detection) -> str:
-    """Filename for a detection's emitted config — `<name>.json` slugified."""
-    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", detection.name).strip("-")
+    """Filename for a detection's emitted config — lowercase slug + ``.json``.
+
+    Lowercased so the AI's casing flakiness (``React`` one run, ``react`` the
+    next) doesn't produce duplicate files that accumulate forever without
+    ever being cleaned up by the ``removed`` diff path.
+    """
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", detection.name).strip("-").lower()
     return f"{safe}.json"
 
 
@@ -503,19 +557,38 @@ def resolve_or_generate_with_status(
 
     target = out_dir / _config_filename_for(detection)
 
+    # If this exact target already exists from a prior scan, reuse it: just
+    # re-stamp the detected_version (in case it bumped) and return. Avoids
+    # re-fetching from the API and respects any manual edits the user made.
+    if target.exists():
+        try:
+            stamp_version(target, detection.version)
+            return target, False
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Existing config %s is unreadable, re-resolving: %s", target, e)
+
     # Try each canonical name candidate (e.g. 'Godot Engine' → 'godot') so we
     # don't miss matches just because the AI used a human-readable name.
+    # ``resolve_config_path`` checks (1) exact path, (2) ``configs/<name>``,
+    # (3) user config dir; all three require the ``.json`` suffix to match
+    # actual files on disk, so we append it here. The API fallback inside
+    # the function strips/re-adds it as needed.
     resolved: Path | None = None
     for candidate in _canonical_name_candidates(detection.name):
-        hit = resolve_config_path(candidate, auto_fetch=allow_network)
+        lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
+        hit = resolve_config_path(lookup, auto_fetch=allow_network)
         if hit is not None and hit.exists():
             resolved = hit
             break
 
     if resolved is not None:
-        data = json.loads(resolved.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(resolved.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Could not load resolved config %s: %s", resolved, e)
+            return None, False
         data["detected_version"] = detection.version
-        target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        _atomic_write_json(target, data)
         return target, False
 
     if not allow_generate:
@@ -524,7 +597,7 @@ def resolve_or_generate_with_status(
     generated = generate_config_with_ai(detection, client)
     if generated is None:
         return None, False
-    target.write_text(json.dumps(generated, indent=2) + "\n", encoding="utf-8")
+    _atomic_write_json(target, generated)
     return target, True
 
 
@@ -553,27 +626,54 @@ def resolve_or_generate(
 # ──────────────────────────────────────────────────────────────────────────
 
 
+_SUBMIT_TIMEOUT_SECONDS = 30
+
+
 def _submit_config_sync(config_path: Path) -> dict:
     """Synchronously submit a config via the MCP `submit_config_tool`.
 
     Wraps the async MCP tool so the CLI can call it without an event loop.
     Returns a dict with at least ``{"ok": bool, "message": str}``. Raises
-    on import errors so callers can present a clear "install [mcp] extra"
-    hint.
+    a ``RuntimeError`` with an actionable message on import failure, a
+    pre-existing event loop, or timeout — callers display the message to
+    the user.
     """
     import asyncio
 
     try:
         from skill_seekers.mcp.tools.source_tools import submit_config_tool
-    except ImportError as e:
+    except Exception as e:
+        # Broad except: covers ImportError plus secondary failures from
+        # importing MCP types when only the extras are partially installed.
         raise RuntimeError(
-            "MCP extras not installed — `pip install -e .[mcp]` to enable community submission"
+            "MCP extras unavailable — `pip install -e .[mcp]` to enable "
+            f"community submission ({type(e).__name__}: {e})"
         ) from e
 
     async def _run():
-        return await submit_config_tool({"config_path": str(config_path)})
+        return await asyncio.wait_for(
+            submit_config_tool({"config_path": str(config_path)}),
+            timeout=_SUBMIT_TIMEOUT_SECONDS,
+        )
 
-    result = asyncio.run(_run())
+    try:
+        result = asyncio.run(_run())
+    except RuntimeError as e:
+        # asyncio.run() refuses to run inside an already-running loop
+        # (Jupyter, async test harness, future async caller). Surface a
+        # clear hint instead of an opaque "cannot be called from a running
+        # event loop" trace.
+        if "running event loop" in str(e):
+            raise RuntimeError(
+                "Cannot submit from inside an already-running event loop. "
+                "Call from a plain CLI/script context, or use the MCP "
+                "submit_config tool directly."
+            ) from e
+        raise
+    except asyncio.TimeoutError as e:
+        raise RuntimeError(
+            f"Submission timed out after {_SUBMIT_TIMEOUT_SECONDS}s (GitHub API unreachable?)"
+        ) from e
 
     # submit_config_tool returns a list of mcp.types.TextContent; we expose
     # only the first message back to the CLI caller.
@@ -599,6 +699,19 @@ def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> 
         return
     if skip_prompt:
         logger.debug("--no-publish-prompt set; skipping community submission")
+        return
+
+    # Pre-check GITHUB_TOKEN — submitting requires it. If it's missing, skip
+    # the entire prompt loop with a one-line hint rather than asking the user
+    # five "yes/no" questions only to fail on each one.
+    if not os.environ.get("GITHUB_TOKEN"):
+        print()
+        print(
+            f"ℹ️  Skipping community-registry prompt for "
+            f"{len(generated_paths)} AI-generated config(s) — "
+            "GITHUB_TOKEN is not set."
+        )
+        print("   To enable submissions: `export GITHUB_TOKEN=<token>` then re-run.")
         return
 
     for path in generated_paths:
@@ -753,6 +866,21 @@ def run_scan(
     return result
 
 
+def _exit_code_for(result: ScanResult) -> int:
+    """0 on a useful scan, 1 if every detection failed or nothing emitted.
+
+    A useful scan is one where at least one framework config OR the codebase
+    config was written. Returning non-zero on total failure lets CI shell
+    pipelines (`scan && build`) detect that the scan didn't produce anything.
+    """
+    if result.emitted or result.codebase_config:
+        # Mixed success — even one resolved/generated config is a win.
+        # We still return 0 if some failed; `result.failed` is visible in the
+        # report and on stderr via logging.
+        return 0
+    return 1
+
+
 def main() -> int:
     """CLI entry point for `skill-seekers scan`."""
     import argparse
@@ -770,6 +898,11 @@ def main() -> int:
     parser.add_argument("--min-confidence", type=float, default=0.4)
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
+
+    # Surface our own logger.warning/error to the user. Without basicConfig the
+    # root logger has no handlers and every warning we log is silently dropped.
+    log_level = logging.INFO if args.verbose else logging.WARNING
+    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
     directory = Path(args.directory).resolve()
     if not directory.is_dir():
@@ -797,7 +930,7 @@ def main() -> int:
         return 130
 
     _print_report(result, verbose=args.verbose, out_dir=out_dir)
-    return 0
+    return _exit_code_for(result)
 
 
 if __name__ == "__main__":  # pragma: no cover

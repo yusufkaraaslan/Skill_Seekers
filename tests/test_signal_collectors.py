@@ -174,6 +174,18 @@ class TestCollectSourceImports:
         signals = collect_source_imports(tmp_path)
         assert signals == []
 
+    def test_broken_symlink_does_not_crash_sort(self, tmp_path: Path):
+        """A broken symlink in src/ must not crash the whole scan via p.stat()."""
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "real.py").write_text("import httpx\n")
+        (src / "broken.py").symlink_to(tmp_path / "does-not-exist")
+
+        # Must not raise; should still pick up the real file.
+        signals = collect_source_imports(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "import httpx" in combined
+
 
 class TestGetGitRemote:
     def test_returns_none_when_not_a_repo(self, tmp_path: Path):
