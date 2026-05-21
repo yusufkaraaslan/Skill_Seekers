@@ -10,6 +10,7 @@ Usage:
 """
 
 import logging
+import sys
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,17 @@ def get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter:
 
     module_path, class_name = CONVERTER_REGISTRY[source_type]
     module = importlib.import_module(module_path)
+
+    # Guard against missing optional dependency for jupyter source type
+    if source_type == "jupyter":
+        jupyter_module = sys.modules.get("skill_seekers.cli.jupyter_scraper")
+        if jupyter_module is not None and not getattr(jupyter_module, "JUPYTER_AVAILABLE", True):
+            raise RuntimeError(
+                "nbformat is required for Jupyter Notebook support.\n"
+                'Install with: pip install "skill-seekers[jupyter]"\n'
+                "Or: pip install nbformat"
+            )
+
     converter_class = getattr(module, class_name, None)
     if converter_class is None:
         raise ValueError(

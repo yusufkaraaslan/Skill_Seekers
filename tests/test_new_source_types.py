@@ -781,11 +781,11 @@ class TestCreateCommandRouting:
 
         for source_type in self.NEW_SOURCE_TYPES:
             # get_converter should not raise for known types
-            # (it may raise ImportError for missing optional deps, which is OK)
+            # (it may raise ImportError or RuntimeError for missing optional deps, which is OK)
             try:
                 converter_cls = get_converter(source_type, {"name": "test"})
                 assert converter_cls is not None, f"get_converter returned None for '{source_type}'"
-            except ImportError:
+            except (ImportError, RuntimeError):
                 # Optional dependency not installed - that's fine
                 pass
 
@@ -802,6 +802,30 @@ class TestCreateCommandRouting:
         assert "get_converter" in source, (
             "_route_to_scraper should use get_converter for unified routing"
         )
+
+    def test_get_converter_jupyter_missing_nbformat_raises_runtime(self):
+        """Test get_converter raises RuntimeError with install hint when nbformat unavailable.
+
+        This tests the guard in get_converter that catches missing jupyter dependencies
+        before the converter is instantiated. The error should include the pip install
+        command so the user knows how to fix it.
+        """
+        import sys
+        from unittest.mock import patch
+
+        from skill_seekers.cli.skill_converter import get_converter
+
+        # Simulate nbformat being unavailable by patching JUPYTER_AVAILABLE
+        mock_module = type(sys)("skill_seekers.cli.jupyter_scraper")
+        mock_module.JUPYTER_AVAILABLE = False
+
+        with patch.dict(sys.modules, {"skill_seekers.cli.jupyter_scraper": mock_module}):
+            with pytest.raises(RuntimeError) as exc_info:
+                get_converter("jupyter", {"name": "test"})
+
+            error_msg = str(exc_info.value)
+            assert "nbformat" in error_msg
+            assert "skill-seekers[jupyter]" in error_msg or "pip install" in error_msg
 
 
 if __name__ == "__main__":
