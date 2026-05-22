@@ -37,6 +37,7 @@
   - [quality](#quality) - Quality scoring
   - [resume](#resume) - Resume interrupted jobs
   - [rss](#rss) - Extract from RSS/Atom feeds
+  - [scan](#scan) - AI-detect a project's tech stack and emit per-framework configs
   - [scrape](#scrape) - Scrape documentation
   - [stream](#stream) - Stream large files
   - [unified](#unified) - Multi-source scraping
@@ -1163,6 +1164,87 @@ skill-seekers rss --feed-url https://blog.example.com/feed.xml --name blog-knowl
 # From local file, summaries only
 skill-seekers rss --feed-path ./feed.rss --no-follow-links --name feed-summaries
 ```
+
+---
+
+### scan
+
+AI-detect a project's tech stack and emit one config per detected framework, plus a `<project>-codebase.json` for the project's own code.
+
+**Purpose:** Bootstrap a complete Skill Seekers knowledge base for an existing project in one command. An AI agent inspects manifests (package.json, pyproject.toml, Cargo.toml, go.mod, Gemfile, build.gradle, pom.xml, composer.json, mix.exs, project.godot, ...), README, Dockerfile/CI, sampled source-file imports, and the git remote URL — then emits per-framework config files into a chosen output directory. Each emitted config is stamped with the detected version so re-scans report **added**, **version-bumped**, and **removed** dependencies.
+
+**Usage:**
+
+```bash
+skill-seekers scan <directory> [OPTIONS]
+```
+
+**Arguments:**
+- `directory` (required) - Project root to scan (e.g., `.`, `./my-react-app`)
+
+**Options:**
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--out <dir>` | `./configs/scanned/` | Output directory for emitted configs |
+| `--no-fetch` | off | Skip the skillseekersweb.com API fallback during resolution (offline mode) |
+| `--no-generate` | off | Skip AI generation for unmapped detections |
+| `--no-publish-prompt` | off | Suppress the interactive "Submit to community registry?" prompt (CI-friendly) |
+| `--agent <name>` | `claude` (or `$SKILL_SEEKER_AGENT`) | LOCAL agent name when no API key is set: `claude`, `codex`, `copilot`, `opencode`, `kimi`, `custom` |
+| `--min-confidence <0-1>` | `0.4` | Drop AI detections below this confidence |
+| `--verbose`, `-v` | off | Show each detection with its evidence + INFO-level logging |
+
+**Resolution chain** for each detection:
+1. **Cache hit** — `<out_dir>/<slug>.json` from a prior scan is reused (just re-stamps `detected_version`, preserving any manual edits)
+2. **Local repo / user dir** — `./configs/<name>.json` then `~/.config/skill-seekers/configs/<name>.json`
+3. **Community API** — `https://api.skillseekersweb.com/api/configs/<name>` (unless `--no-fetch`)
+4. **AI generation** — last resort (unless `--no-generate`); validated against the unified config schema and registry name regex
+
+**Examples:**
+
+```bash
+# Bootstrap a React project
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+#   → react.json, vite.json, tailwind.json, my-react-app-codebase.json
+#
+# Then build any of the emitted configs:
+skill-seekers create ./configs/scanned/react.json
+
+# Offline mode — only use local presets, never call AI or the API
+skill-seekers scan ./my-project --out ./configs/ --no-fetch --no-generate
+
+# CI-friendly — no interactive submission prompt
+skill-seekers scan . --out ./configs/ --no-publish-prompt
+
+# Tightly filter low-confidence detections
+skill-seekers scan ./my-project --min-confidence 0.7
+
+# Re-scan reports diff vs prior scan
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+#   Diff vs previous scan:
+#     + added       prisma
+#     ↻ updated     react   18.2.0 → 18.3.1
+#     - removed     moment
+```
+
+**Output:**
+- One JSON config per resolved/generated detection (lowercased slug filename, e.g. `react.json`)
+- One `<project>-codebase.json` always emitted (a `type: local` source pointed at the project root)
+- A doctor-style report on stdout showing detections, resolved/generated/unresolved counts, and the diff vs prior scan
+
+**Exit codes:**
+- `0` — at least one framework config OR the codebase config was emitted
+- `1` — directory invalid or nothing emitted (no detections AND no codebase config — extremely rare)
+- `130` — interrupted (Ctrl+C)
+
+**Required environment variables (optional):**
+- `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_API_KEY` / `MOONSHOT_API_KEY` — at least one needed for API-mode detection. Without any, falls back to LOCAL agent mode.
+- `GITHUB_TOKEN` — required *only* to submit AI-generated configs to the community registry. The scan itself runs without it (it just skips the publish prompt).
+
+**Notes:**
+- AI-generated configs whose `name` doesn't match `^[a-zA-Z0-9_-]+$` are rejected and retried — the registry submission flow requires the regex.
+- Reads up to ~64 KB of project signals (manifests, README excerpt, sampled imports). Does **not** upload source code beyond import-line samples to the AI.
+- The community-registry submission opens a GitHub issue at [skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs) — no direct git push.
 
 ---
 

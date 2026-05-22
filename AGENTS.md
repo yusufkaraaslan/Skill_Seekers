@@ -187,6 +187,7 @@ docs/                        # Documentation (guides, integrations, architecture
 ```bash
 # Core commands
 skill-seekers create <source>              # Create skill from any source (auto-detects type)
+skill-seekers scan <dir>                   # AI-detect a project's tech stack and emit per-framework configs
 skill-seekers enhance <directory>          # AI-powered enhancement
 skill-seekers package <directory>          # Package skill for target platform
 skill-seekers upload <file>                # Upload skill to target platform

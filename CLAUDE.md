@@ -54,12 +54,26 @@ Runs on push/PR to `main` or `development`. Lint job (Python 3.12, Ubuntu) + Tes
 
 ### CLI: Unified create command
 
-Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **only** entry point for skill creation — it auto-detects source type and routes to the appropriate `SkillConverter`.
+Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **primary** entry point for skill creation — it auto-detects source type and routes to the appropriate `SkillConverter`. The `scan` command (added in #327) is a separate discovery step for projects with multiple frameworks; it emits one config file per detected framework and you then run `create` on each.
 
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
+skill-seekers scan <dir>          # AI-driven discovery → emits one config per detected framework + <project>-codebase.json
 skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone)
 ```
+
+### Scan command (issue #327)
+
+`skill-seekers scan <dir>` is an AI-driven project knowledge-base bootstrapper. Pipeline in `src/skill_seekers/cli/scan_command.py`:
+
+1. `collect_signals()` in `signal_collectors.py` — deterministic, bounded gathering of manifests + README + Dockerfile/CI + sampled source-file imports + git remote.
+2. `detect_with_ai(bundle, AgentClient)` — one LLM call, structured JSON output of `{name, ecosystem, version, kind, confidence, evidence}`. Tighten the canonical-slug prompt language if you change this — the resolver depends on it.
+3. `resolve_or_generate_with_status()` — for each detection: try `out_dir/<slug>.json` (cache from prior run), then `resolve_config_path` from `config_fetcher` with multiple canonical name candidates (`_canonical_name_candidates` handles `"Godot Engine"` → `"godot"` etc.), then `generate_config_with_ai` as the last resort. Always appends `.json` to lookup names so local-disk and user-dir resolution actually finds files. Always stamps `detected_version`.
+4. `emit_codebase_config()` — always writes `<project>-codebase.json` (a `type: local` source pointed at the project root).
+5. `diff_against_existing()` — keyed by **filename slug** (not internal `data["name"]`) so re-scans don't churn when the AI returns a display name vs the registry canonical slug.
+6. `maybe_publish()` — opt-in submission of freshly AI-generated configs to the community registry via the existing MCP `submit_config_tool`. Pre-checks `GITHUB_TOKEN`; calls `asyncio.run` with a 30s timeout.
+
+Writes use `_atomic_write_json` (`os.replace` after writing to `.tmp`) so a `KeyboardInterrupt` mid-write can't corrupt configs. `main()` calls `logging.basicConfig` so `logger.warning`/`error` is visible; exit code is non-zero when no configs and no codebase config were emitted.
 
 ### SkillConverter Pattern (Template Method + Factory)
 

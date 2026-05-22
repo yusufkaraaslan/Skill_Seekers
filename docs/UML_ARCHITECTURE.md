@@ -4,7 +4,7 @@
 
 ## Overview
 
-Skill Seekers converts documentation from 18 source types into production-ready formats for 24+ AI platforms. The architecture follows a layered module design with 8 core modules and 5 utility modules. All source types are routed through a single `skill-seekers create` command via the `SkillConverter` base class + factory pattern.
+Skill Seekers converts documentation from 18 source types into production-ready formats for 24+ AI platforms. The architecture follows a layered module design with 9 core modules and 5 utility modules. Source-type ingestion is routed through a single `skill-seekers create` command via the `SkillConverter` base class + factory pattern. A separate `skill-seekers scan` command (added in #327) is the AI-driven project knowledge-base bootstrapper that emits one config per detected framework — these configs feed back into `create`.
 
 ## Package Diagram
 
@@ -12,6 +12,7 @@ Skill Seekers converts documentation from 18 source types into production-ready 
 
 **Core Modules** (upper area):
 - **CLICore** -- Git-style command dispatcher, entry point for all `skill-seekers` commands
+- **Scan** -- AI-driven project knowledge-base bootstrapper (`scan_command.py` + `signal_collectors.py`); emits one config per detected framework + a `<project>-codebase.json`
 - **Scrapers** -- 17 source-type extractors (web, GitHub, PDF, Word, EPUB, video, etc.)
 - **Adaptors** -- Strategy+Factory pattern for 20+ output platforms (Claude, Gemini, OpenAI, RAG frameworks)
 - **Analysis** -- C3.x codebase analysis pipeline (AST parsing, 10 GoF pattern detectors, guide builders)
@@ -38,6 +39,22 @@ Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules vi
 ![Scrapers](UML/exports/02_scrapers.png)
 
 18 converter classes inheriting `SkillConverter` base class (Template Method: `run()` → `extract()` → `build_skill()`). Factory: `get_converter(source_type, config)` via `CONVERTER_REGISTRY`. No `main()` entry points — all routing through `CreateCommand`. Notable: `GitHubScraper` (3-stream fetcher) + `GitHubToSkillConverter` (builder), `UnifiedScraper` (multi-source orchestrator).
+
+### Scan
+
+No UML export yet — pipeline is small, ~700 lines across `scan_command.py` and `signal_collectors.py`. Flow:
+
+1. `collect_signals(root)` (`signal_collectors.py`) → bounded `SignalBundle` (manifests, README excerpt, Dockerfile/CI, sampled source imports via regex, git remote). Total signal budget capped at ~64 KB.
+2. `detect_with_ai(bundle, AgentClient)` (`scan_command.py`) → `list[Detection]`. Single LLM call with a canonical-slug-demanding prompt. JSON extracted via raw parse → markdown fence → bracket-substring fallback.
+3. `resolve_or_generate_with_status(detection)` for each detection:
+   - **Cache hit:** `out_dir/<slug>.json` exists from a prior scan → re-stamp `detected_version`, return.
+   - **Resolve:** try each candidate from `_canonical_name_candidates` (original → lowercase → hyphenated → suffix-stripped → npm-scope-unwrap) via `resolve_config_path` (which itself walks local repo `configs/` → user `~/.config/skill-seekers/configs/` → API). Always appends `.json` so the local-disk checks match files.
+   - **Generate:** `generate_config_with_ai` produces a fresh unified config, validated by `UniSkillConfigValidator` and re-checked against the registry name regex `^[a-zA-Z0-9_-]+$`.
+4. `emit_codebase_config(root, out_dir)` — always writes `<project>-codebase.json` wrapping a `type: local` source.
+5. `diff_against_existing(out_dir, detections)` — keyed by filename slug (not internal config name) so re-scans don't churn when the AI returns a display name and the registry has the canonical slug.
+6. `maybe_publish(generated, skip_prompt)` — opt-in submission of fresh AI-generated configs to the community registry via the existing MCP `submit_config_tool` (GitHub-issue flow). Pre-checks `GITHUB_TOKEN`; bridged from sync via `asyncio.run` with a 30s `wait_for` timeout.
+
+All JSON writes use `_atomic_write_json` (temp file + `os.replace`) so SIGINT mid-write can't corrupt a config and silently flip it to "removed" on the next scan.
 
 ### Adaptors
 ![Adaptors](UML/exports/03_adaptors.png)
