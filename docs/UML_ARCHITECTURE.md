@@ -42,19 +42,22 @@ Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules vi
 
 ### Scan
 
-No UML export yet — pipeline is small, ~700 lines across `scan_command.py` and `signal_collectors.py`. Flow:
+No UML export yet — pipeline is ~1100 lines across `scan_command.py` and `signal_collectors.py`. Dispatched via the new `COMMAND_CLASSES` table (`main.py`) — `ScanCommand(args).execute()` consumes the parsed argparse namespace directly, no duplicate argparse. Flow:
 
-1. `collect_signals(root)` (`signal_collectors.py`) → bounded `SignalBundle` (manifests, README excerpt, Dockerfile/CI, sampled source imports via regex, git remote). Total signal budget capped at ~64 KB.
-2. `detect_with_ai(bundle, AgentClient)` (`scan_command.py`) → `list[Detection]`. Single LLM call with a canonical-slug-demanding prompt. JSON extracted via raw parse → markdown fence → bracket-substring fallback.
-3. `resolve_or_generate_with_status(detection)` for each detection:
-   - **Cache hit:** `out_dir/<slug>.json` exists from a prior scan → re-stamp `detected_version`, return.
-   - **Resolve:** try each candidate from `_canonical_name_candidates` (original → lowercase → hyphenated → suffix-stripped → npm-scope-unwrap) via `resolve_config_path` (which itself walks local repo `configs/` → user `~/.config/skill-seekers/configs/` → API). Always appends `.json` so the local-disk checks match files.
-   - **Generate:** `generate_config_with_ai` produces a fresh unified config, validated by `UniSkillConfigValidator` and re-checked against the registry name regex `^[a-zA-Z0-9_-]+$`.
-4. `emit_codebase_config(root, out_dir)` — always writes `<project>-codebase.json` wrapping a `type: local` source.
-5. `diff_against_existing(out_dir, detections)` — keyed by filename slug (not internal config name) so re-scans don't churn when the AI returns a display name and the registry has the canonical slug.
-6. `maybe_publish(generated, skip_prompt)` — opt-in submission of fresh AI-generated configs to the community registry via the existing MCP `submit_config_tool` (GitHub-issue flow). Pre-checks `GITHUB_TOKEN`; bridged from sync via `asyncio.run` with a 30s `wait_for` timeout.
+1. `collect_signals(root)` (`signal_collectors.py`) → `SignalBundle` with **per-kind byte budgets** (24 KB manifest / 6 KB README / 6 KB CI / 28 KB source samples, total 64 KB). Manifests cover ~50 file types; source samples are whole first-2-KB chunks (the AI parses imports — replaced the brittle regex approach in WS4). Source dirs cover web/JS monorepos + Go `cmd/` + Rust `crates/` + plus root-walk for Django/flat-Python.
+2. `detect_with_ai(bundle, AgentClient)` (`scan_command.py`) → `list[Detection]`. Single LLM call with a canonical-slug-demanding prompt. JSON extracted via raw parse → markdown fence → bracket-substring fallback. Wraps `client.call` in try/except so auth/network errors don't crash the scan.
+3. `_archive_removed(out_dir, removed_slugs)` — when a config disappears from current detections (per `diff_against_existing`), MOVE (not delete) to `out_dir/.archived/<UTC-timestamp>/`. Runs after diff, before fresh writes, so a re-emit with the same name doesn't race the move.
+4. `resolve_or_generate_with_status(detection, probe_urls=…)` for each detection (capped at `--max-ai-generations`):
+   - **Cache hit:** `out_dir/<slug>.json` exists from a prior scan → re-stamp `metadata.detected_version`, return.
+   - **Resolve:** try each candidate from `_canonical_name_candidates` (original → lowercase → hyphenated → suffix-stripped, where suffixes include CJK + European-language terms for engine/framework/library/core → npm-scope-unwrap) via `resolve_config_path` (local repo → user dir → API). Always appends `.json` to the lookup name.
+   - **Generate:** `generate_config_with_ai` produces a fresh unified config, validated by `UniSkillConfigValidator` and re-checked against the registry name regex `^[a-zA-Z0-9_-]+$`. With `probe_urls=True`: HEAD-probes `base_url` + GitHub repos; on 4xx/5xx re-prompts the AI with feedback; stamps `metadata._url_unverified` on confirmed-bad URLs.
+5. `emit_codebase_config(root, out_dir)` — always writes `<project>-codebase.json` wrapping a `type: local` source.
+6. `diff_against_existing(out_dir, detections)` — keyed by filename slug (not internal config name) so re-scans don't churn when the AI returns a display name and the registry has the canonical slug. Reads `metadata.detected_version` with backwards-compat fallback to legacy top-level placement.
+7. `maybe_publish(generated, skip_prompt)` — **async-native** (WS11). Opt-in submission via the existing MCP `submit_config_tool`. Pre-checks `GITHUB_TOKEN`. `_find_existing_issue` queries GitHub Search API for an existing open issue with the same config name (idempotency). `_submit_config` retries transient failures (rate limit, 5xx) with 0s/5s/15s backoff and a 30s per-attempt timeout. `_prompt_async` wraps `input()` via `asyncio.to_thread` so the event loop isn't blocked.
 
-All JSON writes use `_atomic_write_json` (temp file + `os.replace`) so SIGINT mid-write can't corrupt a config and silently flip it to "removed" on the next scan.
+The whole pipeline runs inside a single `asyncio.run` at `ScanCommand.execute()` — sync core (file IO, AgentClient, signal collection) inside, async publish at the edge. `--dry-run` previews steps 1-6 (without writing) and skips publish entirely.
+
+All JSON writes use `_atomic_write_json` (temp file + `os.replace`) so SIGINT mid-write can't corrupt a config and silently flip it to "removed" on the next scan. `_safe_size` guards `stat()` so broken symlinks in `src/` don't crash signal collection. `logging.basicConfig` ensures `logger.warning`/`error` reaches the user (silenced by default without it). Exit code 1 when nothing was emitted, so CI shell pipelines detect total-failure scans.
 
 ### Adaptors
 ![Adaptors](UML/exports/03_adaptors.png)
