@@ -900,7 +900,7 @@ async def _submit_config(config_path: Path) -> dict:
                 submit_config_tool({"config_path": str(config_path)}),
                 timeout=_SUBMIT_TIMEOUT_SECONDS,
             )
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             last_error = RuntimeError(
                 f"Submission timed out after {_SUBMIT_TIMEOUT_SECONDS}s (GitHub API unreachable?)"
             )
@@ -1090,7 +1090,7 @@ def run_scan(
     agent_client,
     allow_network: bool = True,
     allow_generate: bool = True,
-    skip_publish: bool = False,
+    skip_publish: bool = False,  # noqa: ARG001 — kept for back-compat; publish is now caller's responsibility
     min_confidence: float = 0.4,
     max_ai_generations: int = 10,
     dry_run: bool = False,
@@ -1099,6 +1099,11 @@ def run_scan(
     """End-to-end scan, decoupled from argparse so it can be called as a library.
 
     Args:
+        skip_publish: **kept for back-compat with prior callers**; no longer
+            consulted here. After WS11 the publish flow is async-native and
+            lives in ``ScanCommand.execute``. ``run_scan`` doesn't trigger
+            publish at all. Callers should orchestrate ``maybe_publish``
+            themselves if needed.
         max_ai_generations: cap on AI-generated configs. Once reached, remaining
             unmapped detections are listed as ``result.failed`` so the user sees
             them but no further AI calls are made. Default 10 to prevent
