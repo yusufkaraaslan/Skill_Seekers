@@ -31,27 +31,40 @@ from skill_seekers.cli.signal_collectors import Signal, SignalBundle
 
 
 class TestStampVersion:
-    def test_adds_top_level_detected_version(self, tmp_path: Path):
+    def test_writes_to_metadata_detected_version(self, tmp_path: Path):
         cfg = tmp_path / "x.json"
         cfg.write_text(json.dumps({"name": "x", "description": "d"}))
         stamp_version(cfg, "1.2.3")
         data = json.loads(cfg.read_text())
-        assert data["detected_version"] == "1.2.3"
+        assert data["metadata"]["detected_version"] == "1.2.3"
+        # NOT at top level (WS2 — schema cleanup).
+        assert "detected_version" not in data
         assert data["name"] == "x"
         assert data["description"] == "d"
 
     def test_overwrites_existing_detected_version(self, tmp_path: Path):
         cfg = tmp_path / "x.json"
+        cfg.write_text(json.dumps({"name": "x", "metadata": {"detected_version": "1.0.0"}}))
+        stamp_version(cfg, "2.0.0")
+        assert json.loads(cfg.read_text())["metadata"]["detected_version"] == "2.0.0"
+
+    def test_migrates_legacy_top_level_field_to_metadata(self, tmp_path: Path):
+        """WS2 backwards-compat: a config previously stamped at top level should
+        get migrated to metadata on the next stamp."""
+        cfg = tmp_path / "x.json"
         cfg.write_text(json.dumps({"name": "x", "detected_version": "1.0.0"}))
         stamp_version(cfg, "2.0.0")
-        assert json.loads(cfg.read_text())["detected_version"] == "2.0.0"
+        data = json.loads(cfg.read_text())
+        assert "detected_version" not in data  # top-level cleared
+        assert data["metadata"]["detected_version"] == "2.0.0"
 
     def test_none_version_clears_field(self, tmp_path: Path):
         cfg = tmp_path / "x.json"
-        cfg.write_text(json.dumps({"name": "x", "detected_version": "1.0.0"}))
+        cfg.write_text(json.dumps({"name": "x", "metadata": {"detected_version": "1.0.0"}}))
         stamp_version(cfg, None)
         data = json.loads(cfg.read_text())
         assert "detected_version" not in data
+        assert "detected_version" not in data.get("metadata", {})
 
     def test_preserves_unrelated_keys(self, tmp_path: Path):
         cfg = tmp_path / "x.json"
@@ -404,8 +417,8 @@ class TestGenerateConfigWithAI:
         cfg = generate_config_with_ai(self._det(), client)
         assert cfg["name"] == "newlib"
         assert cfg["sources"][0]["type"] == "documentation"
-        # detected_version stamped from the Detection
-        assert cfg["detected_version"] == "1.0.0"
+        # detected_version stamped from the Detection (WS2: now under metadata)
+        assert cfg["metadata"]["detected_version"] == "1.0.0"
 
     def test_extracts_from_markdown_fence(self):
         client = MagicMock()
@@ -526,7 +539,8 @@ class TestResolveOrGenerate:
         assert result_path is not None
         assert result_path.parent == out_dir
         data = json.loads(result_path.read_text())
-        assert data["detected_version"] == "18.3.0"
+        # WS2: detected_version now lives under metadata.
+        assert data["metadata"]["detected_version"] == "18.3.0"
         assert data["name"] == "react"
 
     def test_no_fetch_passes_auto_fetch_false(self, tmp_path: Path):
@@ -855,7 +869,8 @@ class TestRunScan:
         assert len(result.generated) == 1
         assert result.generated[0].name == "supernovafw.json"
         data = json.loads(result.generated[0].read_text())
-        assert data["detected_version"] == "0.1.0"
+        # WS2: detected_version now lives under metadata.
+        assert data["metadata"]["detected_version"] == "0.1.0"
 
     def test_re_scan_reports_no_changes(self, tmp_path: Path):
         proj = self._make_project(tmp_path)
@@ -1172,9 +1187,10 @@ class TestResolverUsesCanonicalCandidates:
         assert was_generated is False
         # Emitted config name should reflect the *detection* name (slugified for
         # filesystem), not the canonical name — so it stays stable on re-scan.
-        # The content includes the resolved canonical config plus detected_version.
+        # The content includes the resolved canonical config plus detected_version
+        # (WS2: nested under metadata).
         data = json.loads(path.read_text())
-        assert data["detected_version"] == "4.7"
+        assert data["metadata"]["detected_version"] == "4.7"
 
     def test_resolver_appends_json_suffix_for_local_lookup(self, tmp_path: Path):
         """Regression: resolve_config_path checks for files literally — without
@@ -1243,11 +1259,11 @@ class TestResolverUsesCanonicalCandidates:
         # Resolver and generator should NOT have been called when cache hit.
         resolve_mock.assert_not_called()
         gen_mock.assert_not_called()
-        # User edits preserved; version re-stamped.
+        # User edits preserved; version re-stamped (WS2: under metadata).
         data = json.loads(existing.read_text())
         assert data["_user_notes"] == "Don't overwrite me"
         assert data["description"] == "User-edited description"
-        assert data["detected_version"] == "4.7"
+        assert data["metadata"]["detected_version"] == "4.7"
 
     def test_resolver_returns_none_when_no_candidate_hits(self, tmp_path: Path):
         out_dir = tmp_path / "out"

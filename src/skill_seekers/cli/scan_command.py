@@ -87,18 +87,45 @@ class ScanResult:
 # ──────────────────────────────────────────────────────────────────────────
 
 
-def stamp_version(config_path: Path, version: str | None) -> None:
-    """Set (or clear, when ``version is None``) the top-level ``detected_version``.
+def _get_detected_version(data: dict) -> str | None:
+    """Read ``metadata.detected_version`` from a config dict.
 
-    Top-level placement is intentional — the existing ``metadata.version``
-    field means "config schema version" and conflating the two would be
-    ambiguous. ``detected_version`` is what re-scan compares to report bumps.
+    Backwards-compat: also falls back to the top-level ``detected_version``
+    field that earlier scan versions wrote, so existing on-disk configs from
+    the previous Unreleased build still diff correctly. Top-level always wins
+    if both are present — but writes always go to metadata now.
+    """
+    top = data.get("detected_version")
+    if top is not None:
+        return top
+    return data.get("metadata", {}).get("detected_version")
+
+
+def _set_detected_version(data: dict, version: str | None) -> None:
+    """Write/clear ``metadata.detected_version`` on a config dict in place.
+
+    Also clears any legacy top-level ``detected_version`` to prevent drift
+    between the two locations after a re-scan touches the file.
+    """
+    data.pop("detected_version", None)
+    metadata = data.setdefault("metadata", {})
+    if version is None:
+        metadata.pop("detected_version", None)
+    else:
+        metadata["detected_version"] = version
+
+
+def stamp_version(config_path: Path, version: str | None) -> None:
+    """Set (or clear, when ``version is None``) ``metadata.detected_version``.
+
+    Nested under ``metadata`` to keep the top-level config schema clean —
+    ``metadata.version`` already means "config schema version" so the
+    detected framework version belongs in the same namespace, not at root.
+    Re-scan diffs read the field via ``_get_detected_version`` so legacy
+    top-level placements from the initial Unreleased build still work.
     """
     data = json.loads(config_path.read_text(encoding="utf-8"))
-    if version is None:
-        data.pop("detected_version", None)
-    else:
-        data["detected_version"] = version
+    _set_detected_version(data, version)
     _atomic_write_json(config_path, data)
 
 
@@ -196,7 +223,7 @@ def diff_against_existing(out_dir: Path, detections: list[Detection]) -> ScanDif
             except (OSError, json.JSONDecodeError) as e:
                 logger.warning("Skipping unreadable config %s: %s", path, e)
                 continue
-            existing[stem] = data.get("detected_version")
+            existing[stem] = _get_detected_version(data)
 
     current: dict[str, str | None] = {}
     for d in detections:
@@ -441,7 +468,7 @@ def generate_config_with_ai(detection: Detection, client, *, max_attempts: int =
                 name,
             )
             continue
-        data["detected_version"] = detection.version
+        _set_detected_version(data, detection.version)
         return data
 
     logger.error(
@@ -651,7 +678,7 @@ def resolve_or_generate_with_status(
         except (OSError, json.JSONDecodeError) as e:
             logger.warning("Could not load resolved config %s: %s", resolved, e)
             return None, False
-        data["detected_version"] = detection.version
+        _set_detected_version(data, detection.version)
         _atomic_write_json(target, data)
         return target, False
 

@@ -565,7 +565,7 @@ Fields available in all config types:
 |-------|------|-------------|
 | `name` | string | Skill identifier. Must match `^[a-zA-Z0-9_-]+$` (letters, numbers, dashes, underscores). Required for community-registry submission. |
 | `description` | string | Human-readable description |
-| `detected_version` | string \| null | **Optional, stamped by `skill-seekers scan`.** The framework version detected from the project's manifest (e.g. `"18.3.1"` for React from `package.json`). Used by re-scans to report version bumps. Top-level placement is deliberate: `metadata.version` already means *config schema version*, so they don't conflict. |
+| `metadata.detected_version` | string \| null | **Optional, stamped by `skill-seekers scan`.** The framework version detected from the project's manifest (e.g. `"18.3.1"` for React from `package.json`). Lives under `metadata` alongside `metadata.version` (which is the config-schema version — different thing). Used by re-scans to report version bumps. Legacy top-level placement is still read for backwards-compat but new writes go to metadata. |
 | `rate_limit` | number | Delay between requests in seconds |
 | `output_dir` | string | Custom output directory |
 | `skip_scrape` | boolean | Use existing data |
