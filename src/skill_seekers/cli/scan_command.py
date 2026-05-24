@@ -836,73 +836,118 @@ def resolve_or_generate(
 
 
 _SUBMIT_TIMEOUT_SECONDS = 30
+_SUBMIT_RETRY_DELAYS = (5, 15)  # seconds between retries
+_REGISTRY_REPO = "yusufkaraaslan/skill-seekers-configs"
 
 
-def _submit_config_sync(config_path: Path) -> dict:
-    """Synchronously submit a config via the MCP `submit_config_tool`.
+async def _find_existing_issue(config_name: str, github_token: str | None) -> str | None:
+    """Search the community registry for an open issue mentioning ``config_name``.
 
-    Wraps the async MCP tool so the CLI can call it without an event loop.
-    Returns a dict with at least ``{"ok": bool, "message": str}``. Raises
-    a ``RuntimeError`` with an actionable message on import failure, a
-    pre-existing event loop, or timeout — callers display the message to
-    the user.
+    Returns the issue URL if found; None on no match, no token, or any error.
+    Idempotency guard — prevents opening duplicate submission issues when the
+    user runs scan repeatedly.
+    """
+    if not github_token:
+        return None
+    try:
+        from github import Github
+    except ImportError:
+        return None
+
+    import asyncio
+
+    def _query() -> str | None:
+        try:
+            gh = Github(github_token)
+            # Search open issues in the registry repo with the config name in title.
+            query = f'repo:{_REGISTRY_REPO} is:issue is:open in:title "{config_name}"'
+            issues = gh.search_issues(query=query)
+            for issue in issues:
+                return issue.html_url
+        except Exception as e:
+            logger.debug("Existing-issue search failed for %s: %s", config_name, e)
+        return None
+
+    # PyGithub is sync — run in a thread so we don't block the loop.
+    return await asyncio.to_thread(_query)
+
+
+async def _submit_config(config_path: Path) -> dict:
+    """Async wrapper around the MCP `submit_config_tool` with timeout + retry.
+
+    Retries on transient failures (rate-limit / 5xx) with backoff per
+    ``_SUBMIT_RETRY_DELAYS``. Per-attempt timeout from ``_SUBMIT_TIMEOUT_SECONDS``.
+    Returns a dict ``{ok, message, url?}``. Raises ``RuntimeError`` with an
+    actionable message on import failure.
     """
     import asyncio
 
     try:
         from skill_seekers.mcp.tools.source_tools import submit_config_tool
     except Exception as e:
-        # Broad except: covers ImportError plus secondary failures from
-        # importing MCP types when only the extras are partially installed.
         raise RuntimeError(
             "MCP extras unavailable — `pip install -e .[mcp]` to enable "
             f"community submission ({type(e).__name__}: {e})"
         ) from e
 
-    async def _run():
-        return await asyncio.wait_for(
-            submit_config_tool({"config_path": str(config_path)}),
-            timeout=_SUBMIT_TIMEOUT_SECONDS,
-        )
+    last_error: Exception | None = None
+    delays = (0,) + _SUBMIT_RETRY_DELAYS  # first attempt fires immediately
+    for attempt, delay in enumerate(delays):
+        if delay:
+            await asyncio.sleep(delay)
+        try:
+            result = await asyncio.wait_for(
+                submit_config_tool({"config_path": str(config_path)}),
+                timeout=_SUBMIT_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError as e:
+            last_error = RuntimeError(
+                f"Submission timed out after {_SUBMIT_TIMEOUT_SECONDS}s (GitHub API unreachable?)"
+            )
+            logger.warning("Submission attempt %d timed out", attempt + 1)
+            continue
+        except Exception as e:
+            last_error = e
+            logger.warning(
+                "Submission attempt %d failed: %s: %s",
+                attempt + 1,
+                type(e).__name__,
+                e,
+            )
+            continue
 
-    try:
-        result = asyncio.run(_run())
-    except RuntimeError as e:
-        # asyncio.run() refuses to run inside an already-running loop
-        # (Jupyter, async test harness, future async caller). Surface a
-        # clear hint instead of an opaque "cannot be called from a running
-        # event loop" trace.
-        if "running event loop" in str(e):
-            raise RuntimeError(
-                "Cannot submit from inside an already-running event loop. "
-                "Call from a plain CLI/script context, or use the MCP "
-                "submit_config tool directly."
-            ) from e
-        raise
-    except asyncio.TimeoutError as e:
-        raise RuntimeError(
-            f"Submission timed out after {_SUBMIT_TIMEOUT_SECONDS}s (GitHub API unreachable?)"
-        ) from e
+        if result and hasattr(result[0], "text"):
+            text = result[0].text
+            ok = not text.lstrip().startswith("❌")
+            # Transient failure? Retry. Permanent failure? Return immediately.
+            transient = any(s in text.lower() for s in ("rate limit", "503", "502", "504"))
+            if not ok and transient and attempt < len(delays) - 1:
+                continue
+            return {"ok": ok, "message": text}
+        last_error = RuntimeError("Empty response from submit_config_tool")
 
-    # submit_config_tool returns a list of mcp.types.TextContent; we expose
-    # only the first message back to the CLI caller.
-    if result and hasattr(result[0], "text"):
-        text = result[0].text
-        ok = not text.lstrip().startswith("❌")
-        return {"ok": ok, "message": text}
-    return {"ok": False, "message": "Empty response from submit_config_tool"}
+    # All retries exhausted.
+    raise RuntimeError(
+        f"Submission failed after {len(delays)} attempts: {last_error}"
+    ) from last_error
 
 
-def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> None:
-    """Optionally prompt the user to publish freshly AI-generated configs.
+async def _prompt_async(prompt: str) -> str:
+    """``input()`` that doesn't block the event loop."""
+    import asyncio
 
-    For each path in ``generated_paths`` (typically the subset that came back
-    from ``resolve_or_generate_with_status`` with ``was_generated=True``),
-    asks ``Submit <name> to community registry? [y/N]`` and on yes invokes
-    the GitHub-issue submission flow.
+    return await asyncio.to_thread(input, prompt)
 
-    ``skip_prompt=True`` is the CI/automation switch — never prompts, never
-    submits.
+
+async def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> None:
+    """Async, opt-in prompt to submit freshly AI-generated configs to the
+    community registry.
+
+    Pre-checks GITHUB_TOKEN. Searches for an existing open issue for each
+    config name to avoid duplicate submissions (idempotency). On submit,
+    retries transient failures with backoff.
+
+    ``skip_prompt=True`` skips the whole flow (CI mode).
     """
     if not generated_paths:
         return
@@ -910,10 +955,8 @@ def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> 
         logger.debug("--no-publish-prompt set; skipping community submission")
         return
 
-    # Pre-check GITHUB_TOKEN — submitting requires it. If it's missing, skip
-    # the entire prompt loop with a one-line hint rather than asking the user
-    # five "yes/no" questions only to fail on each one.
-    if not os.environ.get("GITHUB_TOKEN"):
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if not github_token:
         print()
         print(
             f"ℹ️  Skipping community-registry prompt for "
@@ -930,11 +973,19 @@ def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> 
         except (OSError, json.JSONDecodeError):
             name = path.stem
 
+        # Idempotency: skip if an open issue already exists.
+        existing_url = await _find_existing_issue(name, github_token)
+        if existing_url:
+            print()
+            print(f"ℹ️  Existing community-registry issue for '{name}' — skipping submission.")
+            print(f"   {existing_url}")
+            continue
+
         print()
         print(f"📤 Submit '{name}' to the community config registry?")
-        print(f"   ({path.name} — opens an issue at yusufkaraaslan/skill-seekers-configs)")
+        print(f"   ({path.name} — opens an issue at {_REGISTRY_REPO})")
         try:
-            answer = input("   [y/N] ").strip().lower()
+            answer = (await _prompt_async("   [y/N] ")).strip().lower()
         except (EOFError, KeyboardInterrupt):
             print()
             print("   Cancelled.")
@@ -944,7 +995,7 @@ def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = False) -> 
             continue
 
         try:
-            result = _submit_config_sync(path)
+            result = await _submit_config(path)
         except Exception as e:
             print(f"   ❌ Submission failed: {e}")
             continue
@@ -1140,9 +1191,9 @@ def run_scan(
     else:
         result.codebase_config = emit_codebase_config(directory, out_dir)
 
-    if not skip_publish and not dry_run:
-        maybe_publish(result.generated, skip_prompt=False)
-
+    # Publish is async (WS11) — caller (ScanCommand.execute) awaits it after
+    # run_scan returns. run_scan itself stays sync because the rest of the
+    # work (file IO, AI calls via AgentClient, signal collection) is sync.
     return result
 
 
@@ -1189,24 +1240,50 @@ class ScanCommand:
 
         client = AgentClient(mode="auto", agent=getattr(args, "agent", None))
 
-        try:
-            result = run_scan(
-                directory,
-                out_dir,
-                agent_client=client,
-                allow_network=not args.no_fetch,
-                allow_generate=not args.no_generate,
-                skip_publish=args.no_publish_prompt,
-                min_confidence=args.min_confidence,
-                max_ai_generations=getattr(args, "max_ai_generations", 10),
-                dry_run=getattr(args, "dry_run", False),
-                probe_urls=getattr(args, "probe_urls", False),
-            )
-        except KeyboardInterrupt:
-            print("\nInterrupted.")
-            return 130
+        # The publish flow (maybe_publish) is async — see WS11. Wrap the
+        # whole orchestration in an asyncio.run at the entry so we have a
+        # single event-loop boundary, never nested asyncio.run calls.
+        import asyncio
 
-        if getattr(args, "dry_run", False):
-            print("🔍 DRY RUN — no files written, no AI generation invoked.\n")
-        _print_report(result, verbose=getattr(args, "verbose", False), out_dir=out_dir)
-        return _exit_code_for(result)
+        async def _amain() -> int:
+            try:
+                result = run_scan(
+                    directory,
+                    out_dir,
+                    agent_client=client,
+                    allow_network=not args.no_fetch,
+                    allow_generate=not args.no_generate,
+                    skip_publish=args.no_publish_prompt,
+                    min_confidence=args.min_confidence,
+                    max_ai_generations=getattr(args, "max_ai_generations", 10),
+                    dry_run=getattr(args, "dry_run", False),
+                    probe_urls=getattr(args, "probe_urls", False),
+                )
+            except KeyboardInterrupt:
+                print("\nInterrupted.")
+                return 130
+
+            # Publish (await — native async path, with idempotency + retry).
+            if not args.no_publish_prompt and not getattr(args, "dry_run", False):
+                try:
+                    await maybe_publish(result.generated, skip_prompt=False)
+                except KeyboardInterrupt:
+                    print("\nPublish cancelled.")
+
+            if getattr(args, "dry_run", False):
+                print("🔍 DRY RUN — no files written, no AI generation invoked.\n")
+            _print_report(result, verbose=getattr(args, "verbose", False), out_dir=out_dir)
+            return _exit_code_for(result)
+
+        try:
+            return asyncio.run(_amain())
+        except RuntimeError as e:
+            # Nested event loop (Jupyter, async test harness): surface a clear
+            # hint instead of "cannot be called from a running event loop".
+            if "running event loop" in str(e):
+                print(
+                    "❌ Cannot run scan from inside an already-running event "
+                    "loop. Invoke from a plain CLI/script context."
+                )
+                return 1
+            raise

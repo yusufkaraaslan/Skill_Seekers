@@ -671,6 +671,10 @@ class TestResolveOrGenerate:
 
 
 class TestMaybePublish:
+    """WS11: maybe_publish is now async. Tests drive it with asyncio.run.
+    Patches target the async helpers (_submit_config, _prompt_async,
+    _find_existing_issue) rather than the old _submit_config_sync."""
+
     def _write_cfg(self, tmp_path: Path, name: str) -> Path:
         path = tmp_path / f"{name}.json"
         path.write_text(
@@ -684,80 +688,134 @@ class TestMaybePublish:
         )
         return path
 
-    def test_no_prompt_skips_entirely(self, tmp_path: Path, capsys):
+    def _async_mock(self, return_value=None, side_effect=None):
+        """MagicMock that returns an awaitable resolving to return_value."""
+        import asyncio
+
+        mock = MagicMock()
+
+        async def _coro(*args, **kwargs):
+            if side_effect is not None:
+                if isinstance(side_effect, BaseException) or (
+                    isinstance(side_effect, type) and issubclass(side_effect, BaseException)
+                ):
+                    raise side_effect
+                return side_effect(*args, **kwargs)
+            return return_value
+
+        mock.side_effect = lambda *a, **kw: _coro(*a, **kw)
+        return mock
+
+    def _run(self, coro):
+        import asyncio
+
+        return asyncio.run(coro)
+
+    def test_no_prompt_skips_entirely(self, tmp_path: Path):
         cfg = self._write_cfg(tmp_path, "newlib")
-        submit = MagicMock()
+        submit = self._async_mock()
 
-        with patch("skill_seekers.cli.scan_command._submit_config_sync", submit):
-            maybe_publish([cfg], skip_prompt=True)
+        with patch("skill_seekers.cli.scan_command._submit_config", submit):
+            self._run(maybe_publish([cfg], skip_prompt=True))
 
-        submit.assert_not_called()
+        assert submit.call_count == 0
 
     def test_no_generated_configs_no_prompt(self, tmp_path: Path):
-        submit = MagicMock()
+        submit = self._async_mock()
+        prompt = self._async_mock()
         with (
-            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
-            patch("builtins.input") as input_mock,
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
         ):
-            maybe_publish([], skip_prompt=False)
-        input_mock.assert_not_called()
-        submit.assert_not_called()
+            self._run(maybe_publish([], skip_prompt=False))
+        assert prompt.call_count == 0
+        assert submit.call_count == 0
 
     def test_yes_calls_submit_with_path(self, tmp_path: Path):
         cfg = self._write_cfg(tmp_path, "newlib")
-        submit = MagicMock(return_value={"ok": True, "url": "https://github.com/x/y/issues/1"})
+        submit = self._async_mock(
+            return_value={"ok": True, "message": "https://github.com/x/y/issues/1"}
+        )
+        prompt = self._async_mock(return_value="y")
+        find = self._async_mock(return_value=None)  # no existing issue
 
         with (
             patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
-            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
-            patch("builtins.input", return_value="y"),
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
+            patch("skill_seekers.cli.scan_command._find_existing_issue", find),
         ):
-            maybe_publish([cfg], skip_prompt=False)
+            self._run(maybe_publish([cfg], skip_prompt=False))
 
-        submit.assert_called_once()
+        assert submit.call_count == 1
+        # Path passed as first positional arg
         args, _ = submit.call_args
         assert args[0] == cfg
 
     def test_no_does_not_call_submit(self, tmp_path: Path):
         cfg = self._write_cfg(tmp_path, "newlib")
-        submit = MagicMock()
+        submit = self._async_mock()
+        prompt = self._async_mock(return_value="n")
+        find = self._async_mock(return_value=None)
         with (
             patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
-            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
-            patch("builtins.input", return_value="n"),
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
+            patch("skill_seekers.cli.scan_command._find_existing_issue", find),
         ):
-            maybe_publish([cfg], skip_prompt=False)
-        submit.assert_not_called()
+            self._run(maybe_publish([cfg], skip_prompt=False))
+        assert submit.call_count == 0
 
     def test_missing_github_token_skips_prompt(self, tmp_path: Path, capsys):
         """Without GITHUB_TOKEN, don't ask 5 questions and fail 5 times."""
         cfg = self._write_cfg(tmp_path, "newlib")
-        submit = MagicMock()
+        submit = self._async_mock()
+        prompt = self._async_mock()
         with (
-            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
             patch.dict("os.environ", {}, clear=True),
-            patch("builtins.input") as input_mock,
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
         ):
-            maybe_publish([cfg], skip_prompt=False)
-        # No prompt, no submission attempt
-        input_mock.assert_not_called()
-        submit.assert_not_called()
-        # User sees an actionable hint
+            self._run(maybe_publish([cfg], skip_prompt=False))
+        assert prompt.call_count == 0
+        assert submit.call_count == 0
         captured = capsys.readouterr()
         assert "GITHUB_TOKEN" in captured.out
 
     def test_handles_submit_failure_gracefully(self, tmp_path: Path, capsys):
         cfg = self._write_cfg(tmp_path, "newlib")
-        submit = MagicMock(side_effect=RuntimeError("boom"))
+        submit = self._async_mock(side_effect=RuntimeError("boom"))
+        prompt = self._async_mock(return_value="y")
+        find = self._async_mock(return_value=None)
         with (
             patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
-            patch("skill_seekers.cli.scan_command._submit_config_sync", submit),
-            patch("builtins.input", return_value="y"),
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
+            patch("skill_seekers.cli.scan_command._find_existing_issue", find),
         ):
-            # Should not raise
-            maybe_publish([cfg], skip_prompt=False)
+            self._run(maybe_publish([cfg], skip_prompt=False))
         captured = capsys.readouterr()
-        assert "boom" in captured.out  # the actual exception message is surfaced
+        assert "boom" in captured.out
+
+    def test_idempotency_existing_issue_skips_submission(self, tmp_path: Path, capsys):
+        """WS11: if an issue already exists, skip the prompt + submission."""
+        cfg = self._write_cfg(tmp_path, "newlib")
+        submit = self._async_mock()
+        prompt = self._async_mock()
+        find = self._async_mock(return_value="https://github.com/y/z/issues/42")
+
+        with (
+            patch.dict("os.environ", {"GITHUB_TOKEN": "fake"}),
+            patch("skill_seekers.cli.scan_command._submit_config", submit),
+            patch("skill_seekers.cli.scan_command._prompt_async", prompt),
+            patch("skill_seekers.cli.scan_command._find_existing_issue", find),
+        ):
+            self._run(maybe_publish([cfg], skip_prompt=False))
+
+        assert submit.call_count == 0  # no duplicate submission
+        assert prompt.call_count == 0  # no prompt either
+        captured = capsys.readouterr()
+        assert "issues/42" in captured.out
 
 
 class TestRunScan:
