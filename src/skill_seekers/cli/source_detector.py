@@ -246,24 +246,77 @@ class SourceDetector:
     # Root-level files that mark a directory as a code project, not an HTML
     # mirror. Presence of any of these short-circuits HTML auto-detection so
     # docs subtrees (e.g. ``docs/UML/html/``) don't flip the classification.
-    _CODE_PROJECT_MARKERS = frozenset(
+    # Also re-used by ``signal_collectors`` as the canonical list of manifest
+    # filenames. Public attribute — other modules import it.
+    CODE_PROJECT_MARKERS = frozenset(
         {
+            # Python
             "pyproject.toml",
             "setup.py",
             "setup.cfg",
+            "pipfile",
+            "pipfile.lock",
+            "environment.yml",
+            "environment.yaml",
+            ".tool-versions",
+            "mise.toml",
+            # JavaScript / Node / Deno / Bun
             "package.json",
+            "pnpm-workspace.yaml",
+            "bun.lockb",
+            "bunfig.toml",
+            "deno.json",
+            "deno.jsonc",
+            "turbo.json",
+            "nx.json",
+            "lerna.json",
+            # Rust / Go
             "cargo.toml",
             "go.mod",
+            # JVM
             "pom.xml",
             "build.gradle",
             "build.gradle.kts",
+            # PHP / Ruby / Elixir / Erlang
             "composer.json",
             "gemfile",
             "mix.exs",
+            "rebar.config",
+            "rebar.lock",
+            # Clojure
+            "project.clj",
+            "deps.edn",
+            "shadow-cljs.edn",
+            # Haskell / OCaml
+            "stack.yaml",
+            "cabal.project",
+            "dune-project",
+            # Nix
+            "flake.nix",
+            "flake.lock",
+            "shell.nix",
+            "default.nix",
+            # Build systems
             "cmakelists.txt",
+            "build.bazel",
+            "workspace",
+            "workspace.bazel",
+            "sconstruct",
+            "meson.build",
+            # Infrastructure as code
+            "chart.yaml",
+            "kustomization.yaml",
+            "terragrunt.hcl",
+            # Game engines
             "project.godot",
+            # Other
+            "brewfile",
         }
     )
+
+    # Backwards-compatible private alias — kept so any external code that
+    # accessed the underscore form keeps working through one deprecation cycle.
+    _CODE_PROJECT_MARKERS = CODE_PROJECT_MARKERS
 
     @classmethod
     def _looks_like_html_directory(cls, directory: str) -> bool:
@@ -289,7 +342,7 @@ class SourceDetector:
             root_entries = {name.lower() for name in os.listdir(directory)}
         except OSError:
             return False
-        if root_entries & cls._CODE_PROJECT_MARKERS:
+        if root_entries & cls.CODE_PROJECT_MARKERS:
             return False
 
         skip_dirs = {

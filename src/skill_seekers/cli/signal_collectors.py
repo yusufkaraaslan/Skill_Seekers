@@ -42,10 +42,15 @@ class SignalBundle:
 
 
 # Manifest filenames that count as code-project markers. Reuses the lowercase
-# frozenset from SourceDetector so both stay in sync.
-_MANIFEST_NAMES_LOWER = SourceDetector._CODE_PROJECT_MARKERS | {
+# frozenset from SourceDetector so both stay in sync. Extends it with
+# requirements*.txt variants which aren't project markers (presence doesn't
+# define a project) but are still relevant signals.
+_MANIFEST_NAMES_LOWER = SourceDetector.CODE_PROJECT_MARKERS | {
     "requirements.txt",
     "requirements-dev.txt",
+    "requirements-test.txt",
+    "requirements.in",
+    "requirements-dev.in",
 }
 
 # Directories we never sample source files from.
@@ -64,8 +69,31 @@ _SKIP_DIRS = {
     ".pytest_cache",
 }
 
-# Common code source roots, in priority order.
-_SOURCE_DIRS = ("src", "lib", "app", "internal", "pkg")
+# Common code source roots, in priority order. Covers:
+#   - generic: src, lib, app
+#   - Go: cmd, internal, pkg
+#   - Rust workspaces: crates
+#   - JS monorepos: packages, apps
+#   - Backend/frontend splits: backend, frontend, services
+#   - Java/Maven layout: source (less common but seen)
+# Projects that put code at root (Django apps, flat Python packages, Godot)
+# are picked up by `_iter_root_source_files` which walks one level deep.
+_SOURCE_DIRS = (
+    "src",
+    "lib",
+    "app",
+    "internal",
+    "pkg",
+    "cmd",
+    "crates",
+    "packages",
+    "apps",
+    "services",
+    "backend",
+    "frontend",
+    "source",
+    "sources",
+)
 
 # Whole-line patterns that look like imports. We capture entire lines so the
 # AI sees both module names and any quoted paths; we don't try to parse them.
@@ -179,7 +207,19 @@ def collect_dockerfile_and_ci(root: Path, max_bytes_per_file: int = 4096) -> lis
 
 
 def _iter_source_files(root: Path):
-    """Yield source files under common code dirs, skipping junk."""
+    """Yield source files for sampling.
+
+    Two passes:
+      1. Recursively walk each `_SOURCE_DIRS` subdir (canonical layouts).
+      2. Walk the project root one level deep (catches Django apps at root,
+         flat-layout Python packages, root-level Go entry files, Godot scenes
+         scattered at root, etc.).
+
+    Junk dirs (`node_modules`, `.venv`, `dist`, …) are skipped at every level.
+    """
+    seen: set[Path] = set()
+
+    # Pass 1: well-known source dirs (recursive).
     for src_name in _SOURCE_DIRS:
         src_dir = root / src_name
         if not src_dir.is_dir():
@@ -191,7 +231,38 @@ def _iter_source_files(root: Path):
                 continue
             if any(part in _SKIP_DIRS for part in path.parts):
                 continue
+            if path in seen:
+                continue
+            seen.add(path)
             yield path
+
+    # Pass 2: root + one level deep. Picks up Django apps, flat packages,
+    # root-level entry files. Caps depth at 1 to avoid double-walking
+    # _SOURCE_DIRS or wandering into docs/ trees.
+    try:
+        for entry in root.iterdir():
+            if entry.name in _SKIP_DIRS:
+                continue
+            if entry.is_file():
+                if entry.suffix.lower() in _SOURCE_EXTENSIONS and entry not in seen:
+                    seen.add(entry)
+                    yield entry
+            elif entry.is_dir() and entry.name not in _SOURCE_DIRS:
+                # One level into directories that aren't already covered.
+                try:
+                    for child in entry.iterdir():
+                        if (
+                            child.is_file()
+                            and child.suffix.lower() in _SOURCE_EXTENSIONS
+                            and not any(part in _SKIP_DIRS for part in child.parts)
+                            and child not in seen
+                        ):
+                            seen.add(child)
+                            yield child
+                except OSError:
+                    continue
+    except OSError:
+        return
 
 
 def _safe_size(path: Path) -> int:

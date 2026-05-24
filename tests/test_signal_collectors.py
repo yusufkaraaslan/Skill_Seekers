@@ -62,12 +62,43 @@ class TestCollectManifests:
         assert signals == []  # silently skipped, not raised
 
     def test_case_insensitive_manifest_match(self, tmp_path: Path):
-        # _CODE_PROJECT_MARKERS uses lowercase names but real filesystems may differ.
+        # CODE_PROJECT_MARKERS uses lowercase names but real filesystems may differ.
         (tmp_path / "Gemfile").write_text("source 'https://rubygems.org'\ngem 'rails'")
 
         signals = collect_manifests(tmp_path)
         names = {s.path.name for s in signals}
         assert "Gemfile" in names
+
+    def test_new_manifest_types_picked_up(self, tmp_path: Path):
+        """Regression for WS3: tool now recognizes manifests beyond the 2018 web-dev set."""
+        manifests = [
+            ("Pipfile", "[packages]\nrequests = '*'"),
+            ("environment.yml", "name: foo\ndependencies:\n  - numpy"),
+            ("deno.json", '{"tasks": {"start": "deno run main.ts"}}'),
+            ("flake.nix", '{ description = "my project"; }'),
+            ("Chart.yaml", "apiVersion: v2\nname: mychart"),
+            ("stack.yaml", "resolver: lts-22.0"),
+            ("project.clj", '(defproject myproj "0.1.0")'),
+            ("deps.edn", '{:deps {clojure.core {:mvn/version "1.11.0"}}}'),
+            ("dune-project", "(lang dune 3.0)"),
+            ("turbo.json", '{"pipeline": {}}'),
+            ("pnpm-workspace.yaml", "packages:\n  - 'packages/*'"),
+            ("Brewfile", "tap 'homebrew/cask'"),
+        ]
+        for name, content in manifests:
+            (tmp_path / name).write_text(content)
+
+        signals = collect_manifests(tmp_path)
+        names = {s.path.name for s in signals}
+        for name, _ in manifests:
+            assert name in names, f"{name} should be picked up but was not"
+
+    def test_requirements_variants_picked_up(self, tmp_path: Path):
+        for name in ("requirements.txt", "requirements-dev.in", "requirements.in"):
+            (tmp_path / name).write_text("httpx\n")
+        signals = collect_manifests(tmp_path)
+        names = {s.path.name for s in signals}
+        assert names == {"requirements.txt", "requirements-dev.in", "requirements.in"}
 
 
 class TestCollectReadmeExcerpt:
@@ -185,6 +216,42 @@ class TestCollectSourceImports:
         signals = collect_source_imports(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "import httpx" in combined
+
+    def test_picks_up_go_cmd_dir(self, tmp_path: Path):
+        """Regression for WS3: Go projects use cmd/ for entry points."""
+        cmd_dir = tmp_path / "cmd" / "server"
+        cmd_dir.mkdir(parents=True)
+        (cmd_dir / "main.go").write_text('package main\nimport "fmt"\n')
+        signals = collect_source_imports(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "fmt" in combined
+
+    def test_picks_up_monorepo_packages_dir(self, tmp_path: Path):
+        """Regression for WS3: Turbo/Nx-style monorepos use packages/."""
+        pkg = tmp_path / "packages" / "ui" / "src"
+        pkg.mkdir(parents=True)
+        (pkg / "Button.tsx").write_text("import React from 'react';\n")
+        signals = collect_source_imports(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "react" in combined
+
+    def test_picks_up_root_level_django_apps(self, tmp_path: Path):
+        """Regression for WS3: Django/flat-layout puts apps directly under root."""
+        # Simulate a Django project where apps live at root, not under src/
+        users_app = tmp_path / "users"
+        users_app.mkdir()
+        (users_app / "models.py").write_text("from django.db import models\n")
+        (users_app / "views.py").write_text("from django.shortcuts import render\n")
+        signals = collect_source_imports(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "django" in combined
+
+    def test_picks_up_root_level_python_entrypoint(self, tmp_path: Path):
+        """Regression for WS3: flat-layout Python (script at root) is sampled."""
+        (tmp_path / "main.py").write_text("import httpx\nimport asyncio\n")
+        signals = collect_source_imports(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "httpx" in combined
 
 
 class TestGetGitRemote:
