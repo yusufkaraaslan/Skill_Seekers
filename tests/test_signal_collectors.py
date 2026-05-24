@@ -376,3 +376,52 @@ class TestCollectSignals:
         bundle = collect_signals(tmp_path, total_byte_budget=8192)
         total = sum(len(s.content) for s in bundle.signals)
         assert total <= 8192
+
+    def test_per_kind_budget_fat_manifest_does_not_starve_readme(self, tmp_path: Path):
+        """Regression for WS5: a 50 KB package.json used to consume the entire
+        64 KB global budget and crowd out README + source samples. Per-kind
+        budgets guarantee each category gets a slice."""
+        (tmp_path / "package.json").write_text("x" * 50_000)
+        readme_marker = "UNIQUE_README_CONTENT_FOR_ASSERTION"
+        (tmp_path / "README.md").write_text(f"# Project\n\n{readme_marker}\n")
+        src = tmp_path / "src"
+        src.mkdir()
+        src_marker = "UNIQUE_SOURCE_IMPORT_FOR_ASSERTION"
+        (src / "app.py").write_text(f"import {src_marker}\n")
+
+        bundle = collect_signals(tmp_path)
+        combined = "\n".join(s.content for s in bundle.signals)
+
+        # All three kinds must be represented.
+        assert readme_marker in combined, "README starved by fat manifest"
+        assert src_marker in combined, "Source sample starved by fat manifest"
+        assert "package.json" in {s.path.name for s in bundle.signals}
+
+    def test_per_kind_budget_manifest_capped_at_kind_budget(self, tmp_path: Path):
+        """A 100 KB single manifest should be capped at the manifest budget
+        (default 24 KB), not allowed to eat into other kinds' allocations."""
+        (tmp_path / "package.json").write_text("x" * 100_000)
+        (tmp_path / "README.md").write_text("ok\n")
+
+        bundle = collect_signals(tmp_path)
+        manifest_bytes = sum(len(s.content) for s in bundle.signals if s.kind == "manifest")
+        assert manifest_bytes <= 24_000
+
+    def test_per_kind_budget_explicit_override(self, tmp_path: Path):
+        """`budgets` parameter overrides defaults."""
+        (tmp_path / "package.json").write_text("x" * 50_000)
+        (tmp_path / "README.md").write_text("y" * 50_000)
+
+        bundle = collect_signals(
+            tmp_path,
+            budgets={
+                "manifest": 1_000,
+                "readme": 1_000,
+                "dockerfile_ci": 100,
+                "source_sample": 100,
+            },
+        )
+        manifest_bytes = sum(len(s.content) for s in bundle.signals if s.kind == "manifest")
+        readme_bytes = sum(len(s.content) for s in bundle.signals if s.kind == "readme")
+        assert manifest_bytes <= 1_000
+        assert readme_bytes <= 1_000

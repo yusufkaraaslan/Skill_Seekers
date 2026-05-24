@@ -325,45 +325,97 @@ def infer_project_name(root: Path) -> str:
     return root.resolve().name
 
 
+# Per-kind byte budgets. A global FIFO caused a 50 KB package.json to
+# starve README + source samples. Per-kind allocations guarantee each
+# signal category gets a fair slice of the prompt. Unused budget in
+# earlier kinds is re-allocated to source samples (which scale with the
+# project size). Total stays at 64 KB by default.
+_DEFAULT_BUDGETS = {
+    "manifest": 24_000,
+    "readme": 6_000,
+    "dockerfile_ci": 6_000,
+    "source_sample": 28_000,
+}
+
+
 def collect_signals(
     root: Path,
     max_source_files: int = 30,
     total_byte_budget: int = 64_000,
+    budgets: dict[str, int] | None = None,
 ) -> SignalBundle:
     """Aggregate all signal collectors into a single bundle.
 
-    Signals are added in priority order (manifests → README → Dockerfile/CI
-    → source imports). When the running total exceeds ``total_byte_budget``,
-    further signals are dropped. This keeps the LLM prompt bounded even on
-    very large projects.
+    Signals are partitioned by kind, each with its own byte budget so no
+    single fat file (a 50 KB ``package.json``) can crowd out other
+    categories. Unused budget in earlier kinds is re-allocated to source
+    samples (which scale with project size, unlike manifests/README).
+
+    Args:
+        root: project root
+        max_source_files: cap for source-sample file count
+        total_byte_budget: total prompt-content budget (default 64 KB).
+            Kind-specific caps from ``_DEFAULT_BUDGETS`` are scaled
+            proportionally if this differs from 64 KB.
+        budgets: override per-kind allocations directly. When set,
+            ``total_byte_budget`` is ignored.
     """
     bundle = SignalBundle(
         git_remote=get_git_remote(root),
         project_name=infer_project_name(root),
     )
 
-    used = 0
+    # Resolve per-kind allocations.
+    if budgets is not None:
+        kind_budgets = dict(budgets)
+    elif total_byte_budget == 64_000:
+        kind_budgets = dict(_DEFAULT_BUDGETS)
+    else:
+        # Scale defaults proportionally to honor a custom total budget.
+        scale = total_byte_budget / 64_000
+        kind_budgets = {k: max(1, int(v * scale)) for k, v in _DEFAULT_BUDGETS.items()}
 
-    def _add(signals_in: list[Signal]) -> None:
-        nonlocal used
+    def _add_bounded(signals_in: list[Signal], kind_cap: int) -> int:
+        """Add ``signals_in`` up to ``kind_cap`` total bytes. Returns
+        unused budget (positive) for downstream re-allocation."""
+        used = 0
         for s in signals_in:
-            if used + len(s.content) > total_byte_budget:
-                # Truncate the final signal to fit and stop.
-                remaining = total_byte_budget - used
+            if used + len(s.content) > kind_cap:
+                remaining = kind_cap - used
                 if remaining > 0:
                     bundle.signals.append(
                         Signal(kind=s.kind, path=s.path, content=s.content[:remaining])
                     )
-                    used = total_byte_budget
-                return
+                    used = kind_cap
+                break
             bundle.signals.append(s)
             used += len(s.content)
+        return kind_cap - used
 
-    _add(collect_manifests(root))
-    readme = collect_readme_excerpt(root)
+    # Manifests first — most reliable signal of declared dependencies.
+    surplus = _add_bounded(collect_manifests(root), kind_budgets["manifest"])
+
+    # README — high-signal prose about project intent.
+    readme = collect_readme_excerpt(root, max_bytes=kind_budgets["readme"])
     if readme is not None:
-        _add([readme])
-    _add(collect_dockerfile_and_ci(root))
-    _add(collect_source_samples(root, max_files=max_source_files))
+        surplus += _add_bounded([readme], kind_budgets["readme"])
+    else:
+        surplus += kind_budgets["readme"]
+
+    # Dockerfile + CI — captures tools not in manifests (Docker, GHA, …).
+    surplus += _add_bounded(
+        collect_dockerfile_and_ci(
+            root, max_bytes_per_file=kind_budgets["dockerfile_ci"] // 4 or 1024
+        ),
+        kind_budgets["dockerfile_ci"],
+    )
+
+    # Source samples — re-allocate all upstream surplus here so small
+    # projects (no Dockerfile/CI) still saturate the budget with actual code.
+    samples_budget = kind_budgets["source_sample"] + max(0, surplus)
+    _add_bounded(
+        collect_source_samples(root, max_files=max_source_files),
+        samples_budget,
+    )
 
     return bundle
