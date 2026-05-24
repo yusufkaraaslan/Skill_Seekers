@@ -964,6 +964,119 @@ class TestRunScan:
         assert result.codebase_config is not None
 
 
+class TestProbeUrls:
+    """WS9: URL reachability probe for AI-generated configs."""
+
+    def _det(self, name="newlib"):
+        return Detection(
+            name=name,
+            ecosystem="npm",
+            version="1.0.0",
+            kind="library",
+            confidence=0.9,
+            evidence="x",
+        )
+
+    def _good_response(self):
+        return json.dumps(
+            {
+                "name": "newlib",
+                "description": "x",
+                "base_url": "https://newlib.dev",
+                "sources": [
+                    {"type": "documentation", "base_url": "https://newlib.dev"},
+                    {"type": "github", "repo": "owner/newlib"},
+                ],
+            }
+        )
+
+    def test_no_probe_skips_url_check(self):
+        client = MagicMock()
+        client.call.return_value = self._good_response()
+        # No probe call expected — would normally fire httpx.
+        with patch("httpx.Client") as httpx_mock:
+            cfg = generate_config_with_ai(self._det(), client, probe_urls=False)
+        assert cfg is not None
+        httpx_mock.assert_not_called()
+
+    def test_probe_passes_when_all_urls_ok(self):
+        client = MagicMock()
+        client.call.return_value = self._good_response()
+
+        # Stub httpx so all HEADs return 200.
+        good_resp = MagicMock()
+        good_resp.status_code = 200
+        with patch("httpx.Client") as httpx_cls:
+            httpx_cls.return_value.__enter__.return_value.head.return_value = good_resp
+            cfg = generate_config_with_ai(self._det(), client, probe_urls=True)
+        assert cfg is not None
+        # Should NOT have _url_unverified stamp when all URLs are good.
+        assert "_url_unverified" not in cfg.get("metadata", {})
+
+    def test_probe_retries_on_bad_urls_then_succeeds(self):
+        client = MagicMock()
+        # First call returns config with bad URL, second returns config with good URL
+        bad_response = json.dumps(
+            {
+                "name": "newlib",
+                "description": "x",
+                "base_url": "https://badurl.invalid",
+                "sources": [{"type": "documentation", "base_url": "https://badurl.invalid"}],
+            }
+        )
+        good_response = json.dumps(
+            {
+                "name": "newlib",
+                "description": "x",
+                "base_url": "https://newlib.dev",
+                "sources": [{"type": "documentation", "base_url": "https://newlib.dev"}],
+            }
+        )
+        client.call.side_effect = [bad_response, good_response]
+
+        good_resp = MagicMock()
+        good_resp.status_code = 200
+        bad_resp = MagicMock()
+        bad_resp.status_code = 404
+
+        # First probe: 404. Second probe: 200.
+        with patch("httpx.Client") as httpx_cls:
+            instance = httpx_cls.return_value.__enter__.return_value
+            instance.head.side_effect = [bad_resp, good_resp]
+            cfg = generate_config_with_ai(self._det(), client, probe_urls=True)
+
+        assert cfg is not None
+        assert cfg["base_url"] == "https://newlib.dev"
+        assert "_url_unverified" not in cfg.get("metadata", {})
+        # Both attempts were made.
+        assert client.call.call_count == 2
+
+    def test_probe_stamps_unverified_when_retries_exhausted(self):
+        client = MagicMock()
+        # Both attempts return configs with bad URLs.
+        bad_response = json.dumps(
+            {
+                "name": "newlib",
+                "description": "x",
+                "base_url": "https://badurl.invalid",
+                "sources": [{"type": "documentation", "base_url": "https://badurl.invalid"}],
+            }
+        )
+        client.call.side_effect = [bad_response, bad_response]
+
+        bad_resp = MagicMock()
+        bad_resp.status_code = 404
+        with patch("httpx.Client") as httpx_cls:
+            instance = httpx_cls.return_value.__enter__.return_value
+            instance.head.return_value = bad_resp
+            cfg = generate_config_with_ai(self._det(), client, probe_urls=True)
+
+        # Returns config with _url_unverified stamped so user sees what to fix.
+        assert cfg is not None
+        assert "_url_unverified" in cfg["metadata"]
+        assert "https://badurl.invalid" in cfg["metadata"]["_url_unverified"]
+
+
 class TestMaxAiGenerationsCap:
     """WS8: cap unbounded AI generation so monorepos can't surprise-bill users."""
 

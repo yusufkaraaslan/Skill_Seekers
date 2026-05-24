@@ -422,19 +422,78 @@ def _build_generation_prompt(detection: Detection) -> str:
     )
 
 
-def generate_config_with_ai(detection: Detection, client, *, max_attempts: int = 2) -> dict | None:
+def _probe_urls(config: dict, timeout: float = 5.0) -> list[str]:
+    """HEAD-probe each URL in a config; return the list of URLs that failed.
+
+    Failures = HTTP 4xx/5xx, connection error, timeout. 3xx redirects count as
+    success. Used by ``generate_config_with_ai`` when ``--probe-urls`` is on
+    to flag AI-hallucinated base_urls before the config is written.
+    """
+    try:
+        import httpx
+    except ImportError:
+        logger.warning("--probe-urls requires httpx (a core dep); skipping probe")
+        return []
+
+    urls_to_check: list[str] = []
+    base_url = config.get("base_url")
+    if isinstance(base_url, str) and base_url.startswith(("http://", "https://")):
+        urls_to_check.append(base_url)
+    for source in config.get("sources", []):
+        if not isinstance(source, dict):
+            continue
+        src_url = source.get("base_url")
+        if isinstance(src_url, str) and src_url.startswith(("http://", "https://")):
+            if src_url not in urls_to_check:
+                urls_to_check.append(src_url)
+        repo = source.get("repo")
+        if isinstance(repo, str) and "/" in repo:
+            gh_url = f"https://github.com/{repo}"
+            if gh_url not in urls_to_check:
+                urls_to_check.append(gh_url)
+
+    failed: list[str] = []
+    with httpx.Client(timeout=timeout, follow_redirects=True) as client_:
+        for url in urls_to_check:
+            try:
+                resp = client_.head(url)
+                if resp.status_code >= 400:
+                    failed.append(url)
+            except (httpx.HTTPError, OSError) as e:
+                logger.debug("URL probe failed for %s: %s", url, e)
+                failed.append(url)
+    return failed
+
+
+def generate_config_with_ai(
+    detection: Detection,
+    client,
+    *,
+    max_attempts: int = 2,
+    probe_urls: bool = False,
+) -> dict | None:
     """Ask the AI to produce a fresh unified config for an unmapped detection.
 
     Validates the result with ``UniSkillConfigValidator``. On invalid output
     re-asks once. Returns ``None`` if no valid config is produced.
 
-    The returned dict has ``detected_version`` already stamped — callers can
-    write it directly without a separate ``stamp_version`` call.
+    If ``probe_urls=True``, after a valid config is produced, HEAD-probes
+    each URL. If any fail, re-asks the AI once with feedback. If they still
+    fail, stamps ``metadata._url_unverified = [bad urls]`` and returns the
+    config anyway so the user sees the hallucination instead of silently
+    using a broken URL.
+
+    The returned dict has ``detected_version`` already stamped.
     """
     from skill_seekers.cli.config_validator import UniSkillConfigValidator
 
-    prompt = _build_generation_prompt(detection)
+    base_prompt = _build_generation_prompt(detection)
+    feedback: str | None = None
+
     for attempt in range(max_attempts):
+        prompt = base_prompt
+        if feedback is not None:
+            prompt = f"{base_prompt}\n\nIMPORTANT FEEDBACK ON PREVIOUS ATTEMPT:\n{feedback}"
         try:
             raw = client.call(prompt, max_tokens=4096)
         except Exception as e:
@@ -468,7 +527,33 @@ def generate_config_with_ai(detection: Detection, client, *, max_attempts: int =
                 name,
             )
             continue
+
+        # URL reachability probe (WS9). Always check fresh per-attempt — never
+        # carry the previous attempt's bad URLs into this attempt's verdict.
+        bad_urls: list[str] = _probe_urls(data) if probe_urls else []
+        if bad_urls:
+            logger.warning(
+                "AI-generated config for %s has %d unreachable URL(s): %s",
+                detection.name,
+                len(bad_urls),
+                ", ".join(bad_urls),
+            )
+            # Retry available → ask AI to fix and try again. Don't stamp yet.
+            if attempt < max_attempts - 1:
+                feedback = (
+                    f"Your previous response listed these URLs which returned "
+                    f"4xx/5xx or did not respond: {bad_urls}. Please verify and "
+                    f"replace with the actual official documentation URL and "
+                    f"GitHub repo for {detection.name}."
+                )
+                continue
+
         _set_detected_version(data, detection.version)
+        # If we ran out of retries with still-bad URLs (or this is the final
+        # attempt), stamp them so the user sees what to fix instead of silently
+        # shipping a broken config.
+        if bad_urls:
+            data.setdefault("metadata", {})["_url_unverified"] = list(bad_urls)
         return data
 
     logger.error(
@@ -632,6 +717,7 @@ def resolve_or_generate_with_status(
     client,
     allow_network: bool = True,
     allow_generate: bool = True,
+    probe_urls: bool = False,
 ) -> tuple[Path | None, bool]:
     """Find or build a config for ``detection`` and write it under ``out_dir``.
 
@@ -685,7 +771,7 @@ def resolve_or_generate_with_status(
     if not allow_generate:
         return None, False
 
-    generated = generate_config_with_ai(detection, client)
+    generated = generate_config_with_ai(detection, client, probe_urls=probe_urls)
     if generated is None:
         return None, False
     _atomic_write_json(target, generated)
@@ -918,6 +1004,7 @@ def run_scan(
     min_confidence: float = 0.4,
     max_ai_generations: int = 10,
     dry_run: bool = False,
+    probe_urls: bool = False,
 ) -> ScanResult:
     """End-to-end scan, decoupled from argparse so it can be called as a library.
 
@@ -989,6 +1076,7 @@ def run_scan(
             client=agent_client,
             allow_network=allow_network,
             allow_generate=local_allow_generate,
+            probe_urls=probe_urls,
         )
         if path is None:
             logger.warning("Could not resolve or generate config for %s", det.name)
@@ -1067,6 +1155,7 @@ class ScanCommand:
                 min_confidence=args.min_confidence,
                 max_ai_generations=getattr(args, "max_ai_generations", 10),
                 dry_run=getattr(args, "dry_run", False),
+                probe_urls=getattr(args, "probe_urls", False),
             )
         except KeyboardInterrupt:
             print("\nInterrupted.")

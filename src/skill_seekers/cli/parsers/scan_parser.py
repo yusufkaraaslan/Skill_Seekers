@@ -89,6 +89,17 @@ class ScanParser(SubcommandParser):
             ),
         )
         parser.add_argument(
+            "--probe-urls",
+            action="store_true",
+            help=(
+                "After AI-generating a config, HEAD-probe its base_url and any "
+                "GitHub repo URL with a 5s timeout. On 4xx/5xx, ask the AI to "
+                "retry with feedback; if still unreachable, stamp the config "
+                "with metadata._url_unverified so the user can fix it. Adds "
+                "5-10s per generated config."
+            ),
+        )
+        parser.add_argument(
             "--verbose",
             "-v",
             action="store_true",
