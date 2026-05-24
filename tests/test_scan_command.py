@@ -964,6 +964,182 @@ class TestRunScan:
         assert result.codebase_config is not None
 
 
+class TestMaxAiGenerationsCap:
+    """WS8: cap unbounded AI generation so monorepos can't surprise-bill users."""
+
+    def _make_project(self, tmp_path: Path) -> Path:
+        proj = tmp_path / "p"
+        proj.mkdir()
+        (proj / "package.json").write_text('{"name": "p"}')
+        return proj
+
+    def test_cap_stops_ai_generation_after_n_calls(self, tmp_path: Path):
+        """5 unmapped detections, cap=2 → only 2 generated, 3 listed as failed."""
+        proj = self._make_project(tmp_path)
+        out_dir = tmp_path / "out"
+
+        # AI returns 5 detections, all with low canonical match → 5 unmapped.
+        detections_json = json.dumps(
+            [
+                {
+                    "name": f"unmapped{i}",
+                    "ecosystem": "npm",
+                    "version": "1.0.0",
+                    "kind": "library",
+                    "confidence": 0.9,
+                    "evidence": "x",
+                }
+                for i in range(5)
+            ]
+        )
+
+        gen_responses = [
+            json.dumps(
+                {
+                    "name": f"unmapped{i}",
+                    "description": "x",
+                    "sources": [{"type": "documentation", "base_url": f"https://u{i}.dev"}],
+                }
+            )
+            for i in range(5)
+        ]
+
+        client = MagicMock()
+        client.call.side_effect = [detections_json] + gen_responses
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None):
+            result = run_scan(
+                proj,
+                out_dir,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=True,
+                skip_publish=True,
+                min_confidence=0.4,
+                max_ai_generations=2,
+            )
+
+        assert len(result.generated) == 2
+        assert len(result.failed) == 3
+
+    def test_cap_zero_acts_as_no_generate(self, tmp_path: Path):
+        proj = self._make_project(tmp_path)
+        out_dir = tmp_path / "out"
+
+        client = MagicMock()
+        client.call.return_value = json.dumps(
+            [
+                {
+                    "name": "x",
+                    "ecosystem": "npm",
+                    "version": "1.0.0",
+                    "kind": "library",
+                    "confidence": 0.9,
+                    "evidence": "x",
+                }
+            ]
+        )
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None):
+            result = run_scan(
+                proj,
+                out_dir,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=True,
+                skip_publish=True,
+                min_confidence=0.4,
+                max_ai_generations=0,
+            )
+
+        assert len(result.generated) == 0
+        assert result.failed == ["x"]
+
+
+class TestDryRun:
+    """WS8: dry-run previews scan output without writing or invoking AI generation."""
+
+    def _make_project(self, tmp_path: Path) -> Path:
+        proj = tmp_path / "p"
+        proj.mkdir()
+        (proj / "package.json").write_text('{"name": "p"}')
+        return proj
+
+    def test_dry_run_writes_nothing(self, tmp_path: Path):
+        proj = self._make_project(tmp_path)
+        out_dir = tmp_path / "out"
+
+        client = MagicMock()
+        client.call.return_value = json.dumps(
+            [
+                {
+                    "name": "react",
+                    "ecosystem": "npm",
+                    "version": "18.3.0",
+                    "kind": "framework",
+                    "confidence": 0.95,
+                    "evidence": "x",
+                }
+            ]
+        )
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None):
+            result = run_scan(
+                proj,
+                out_dir,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=True,
+                skip_publish=True,
+                min_confidence=0.4,
+                dry_run=True,
+            )
+
+        # Nothing on disk
+        assert not out_dir.exists() or list(out_dir.iterdir()) == []
+        # But preview paths populated for the report
+        assert result.codebase_config is not None
+        assert result.codebase_config.name == "p-codebase.json"
+        # The 1 detection went into either generated or failed (preview)
+        assert len(result.generated) + len(result.failed) == 1
+
+    def test_dry_run_does_not_call_ai_generator(self, tmp_path: Path):
+        proj = self._make_project(tmp_path)
+        out_dir = tmp_path / "out"
+
+        client = MagicMock()
+        client.call.return_value = json.dumps(
+            [
+                {
+                    "name": "react",
+                    "ecosystem": "npm",
+                    "version": "18.3.0",
+                    "kind": "framework",
+                    "confidence": 0.95,
+                    "evidence": "x",
+                }
+            ]
+        )
+
+        gen_mock = MagicMock()
+        with (
+            patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None),
+            patch("skill_seekers.cli.scan_command.generate_config_with_ai", gen_mock),
+        ):
+            run_scan(
+                proj,
+                out_dir,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=True,
+                skip_publish=True,
+                min_confidence=0.4,
+                dry_run=True,
+            )
+
+        gen_mock.assert_not_called()
+
+
 class TestExitCodeFor:
     """Non-zero exit code on complete failure — for CI shell pipelines."""
 

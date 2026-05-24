@@ -71,6 +71,24 @@ class ScanParser(SubcommandParser):
             help="Drop detections below this AI confidence (0-1, default 0.4)",
         )
         parser.add_argument(
+            "--max-ai-generations",
+            type=int,
+            default=10,
+            help=(
+                "Cap AI config generation for unmapped detections (default 10). "
+                "Prevents surprise API bills on monorepos with many unmapped deps. "
+                "Set to 0 to disable AI generation entirely (same as --no-generate)."
+            ),
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help=(
+                "Preview what scan WOULD emit without writing anything or calling "
+                "the AI for generation. Useful for cost-checking on large projects."
+            ),
+        )
+        parser.add_argument(
             "--verbose",
             "-v",
             action="store_true",

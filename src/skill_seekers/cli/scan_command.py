@@ -916,11 +916,26 @@ def run_scan(
     allow_generate: bool = True,
     skip_publish: bool = False,
     min_confidence: float = 0.4,
+    max_ai_generations: int = 10,
+    dry_run: bool = False,
 ) -> ScanResult:
-    """End-to-end scan, decoupled from argparse so it can be called as a library."""
+    """End-to-end scan, decoupled from argparse so it can be called as a library.
+
+    Args:
+        max_ai_generations: cap on AI-generated configs. Once reached, remaining
+            unmapped detections are listed as ``result.failed`` so the user sees
+            them but no further AI calls are made. Default 10 to prevent
+            surprise API bills on monorepos with many unmapped deps.
+        dry_run: if True, no files are written and no AI generation runs.
+            ``result.emitted`` / ``result.generated`` / ``result.codebase_config``
+            are populated as Path-like previews so the report shows what WOULD
+            happen. Resolution-chain hits ARE counted (they're cheap and inform
+            the preview), but writes are skipped.
+    """
     from skill_seekers.cli.signal_collectors import collect_signals
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        out_dir.mkdir(parents=True, exist_ok=True)
     bundle = collect_signals(directory)
 
     detections = detect_with_ai(bundle, agent_client, min_confidence=min_confidence)
@@ -931,13 +946,49 @@ def run_scan(
     result = ScanResult(detections=detections)
     result.diff = diff_against_existing(out_dir, detections)
 
+    # Effective generation cap. allow_generate=False shortcuts to 0.
+    effective_max_gen = 0 if not allow_generate else max_ai_generations
+    generations_used = 0
+
     for det in detections:
+        if dry_run:
+            # Preview-only: don't write, just check if the resolver would hit
+            # cache or local/API. Doesn't run AI generation in any case.
+            target = out_dir / _config_filename_for(det)
+            if target.exists():
+                result.resolved.append(target)
+                result.emitted.append(target)
+                continue
+            # Check resolution chain without writing (cheap)
+            resolved_hit = None
+            for candidate in _canonical_name_candidates(det.name):
+                lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
+                hit = resolve_config_path(lookup, auto_fetch=allow_network)
+                if hit is not None and hit.exists():
+                    resolved_hit = hit
+                    break
+            if resolved_hit is not None:
+                result.resolved.append(target)
+                result.emitted.append(target)
+            else:
+                # Would have been AI-generated (subject to cap) or failed.
+                if generations_used < effective_max_gen:
+                    result.generated.append(target)
+                    result.emitted.append(target)
+                    generations_used += 1
+                else:
+                    result.failed.append(det.name)
+            continue
+
+        # Cap AI generation count: pass allow_generate=False once we've hit the
+        # cap so the resolver doesn't keep firing AI calls.
+        local_allow_generate = allow_generate and generations_used < effective_max_gen
         path, was_generated = resolve_or_generate_with_status(
             det,
             out_dir=out_dir,
             client=agent_client,
             allow_network=allow_network,
-            allow_generate=allow_generate,
+            allow_generate=local_allow_generate,
         )
         if path is None:
             logger.warning("Could not resolve or generate config for %s", det.name)
@@ -946,12 +997,17 @@ def run_scan(
         result.emitted.append(path)
         if was_generated:
             result.generated.append(path)
+            generations_used += 1
         else:
             result.resolved.append(path)
 
-    result.codebase_config = emit_codebase_config(directory, out_dir)
+    if dry_run:
+        # Synthesize a codebase-config preview path without writing.
+        result.codebase_config = out_dir / f"{directory.resolve().name}-codebase.json"
+    else:
+        result.codebase_config = emit_codebase_config(directory, out_dir)
 
-    if not skip_publish:
+    if not skip_publish and not dry_run:
         maybe_publish(result.generated, skip_prompt=False)
 
     return result
@@ -1009,10 +1065,14 @@ class ScanCommand:
                 allow_generate=not args.no_generate,
                 skip_publish=args.no_publish_prompt,
                 min_confidence=args.min_confidence,
+                max_ai_generations=getattr(args, "max_ai_generations", 10),
+                dry_run=getattr(args, "dry_run", False),
             )
         except KeyboardInterrupt:
             print("\nInterrupted.")
             return 130
 
+        if getattr(args, "dry_run", False):
+            print("🔍 DRY RUN — no files written, no AI generation invoked.\n")
         _print_report(result, verbose=getattr(args, "verbose", False), out_dir=out_dir)
         return _exit_code_for(result)
