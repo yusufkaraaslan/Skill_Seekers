@@ -443,9 +443,12 @@ def _probe_urls(config: dict, timeout: float = 5.0) -> list[str]:
         if not isinstance(source, dict):
             continue
         src_url = source.get("base_url")
-        if isinstance(src_url, str) and src_url.startswith(("http://", "https://")):
-            if src_url not in urls_to_check:
-                urls_to_check.append(src_url)
+        if (
+            isinstance(src_url, str)
+            and src_url.startswith(("http://", "https://"))
+            and src_url not in urls_to_check
+        ):
+            urls_to_check.append(src_url)
         repo = source.get("repo")
         if isinstance(repo, str) and "/" in repo:
             gh_url = f"https://github.com/{repo}"
