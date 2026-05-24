@@ -1585,10 +1585,14 @@ class TestCanonicalNameCandidates:
         cands = _canonical_name_candidates("react")
         assert len(cands) == len(set(cands))
 
-    def test_empty_or_whitespace_returns_only_self(self):
-        # Don't crash on weird inputs.
-        cands = _canonical_name_candidates("   ")
-        assert cands == ["   "] or cands == []
+    def test_whitespace_input_returns_unchanged_singleton(self):
+        """Pure-whitespace input is returned as a one-element list (no crash,
+        no candidate generation since there's nothing to canonicalize)."""
+        assert _canonical_name_candidates("   ") == ["   "]
+
+    def test_empty_string_returns_empty_list(self):
+        """An empty string has no candidates — returns []."""
+        assert _canonical_name_candidates("") == []
 
 
 class TestResolverUsesCanonicalCandidates:

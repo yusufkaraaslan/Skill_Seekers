@@ -88,7 +88,19 @@ configs.
 ## Privacy note
 
 `scan` sends a bounded excerpt (~64 KB total) of your manifests, README,
-CI configs and import lines to the configured AI agent. It does **not**
-upload your source code. If you're working with a sensitive codebase
-and don't want any LLM call, use the existing `create ./path` flow
-directly — that runs locally.
+CI configs, and **first 2 KB of each sampled source file** to the
+configured AI agent. The whole-file sampling means actual source code
+is in the prompt — small chunks, not full files, but it is your code.
+
+If you don't want **any** AI call:
+
+- `skill-seekers scan ./path --no-fetch --no-generate` — still calls the
+  AI **detector** to identify frameworks; only skips the network/AI
+  paths for individual config generation. Not fully local.
+- `skill-seekers create ./path --enhance-level 0` — runs the local
+  codebase analysis layer (deterministic; no AI), and skips the
+  enhancement layer entirely. This is the fully-local flow.
+
+The earlier docs implied `create ./path` was AI-free by default; it
+isn't — the default enhancement level (2) sends content to the AI.
+`--enhance-level 0` is the switch that keeps everything local.
