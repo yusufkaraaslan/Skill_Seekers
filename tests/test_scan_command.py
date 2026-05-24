@@ -690,7 +690,6 @@ class TestMaybePublish:
 
     def _async_mock(self, return_value=None, side_effect=None):
         """MagicMock that returns an awaitable resolving to return_value."""
-        import asyncio
 
         mock = MagicMock()
 
