@@ -80,6 +80,7 @@ class ScanResult:
     failed: list[str] = field(default_factory=list)  # detection names with no config produced
     diff: ScanDiff | None = None
     codebase_config: Path | None = None
+    archived: list[Path] = field(default_factory=list)  # stale configs moved to .archived/
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -198,6 +199,34 @@ def emit_codebase_config(root: Path, out_dir: Path) -> Path:
     }
     _atomic_write_json(cfg_path, config)
     return cfg_path
+
+
+def _archive_removed(out_dir: Path, removed_slugs: list[str]) -> list[Path]:
+    """Move stale config files into ``out_dir/.archived/<UTC-timestamp>/``.
+
+    Never deletes — the user may have hand-edited a config they want to keep.
+    Move ensures the next scan won't re-diff it as ``added`` immediately.
+    """
+    if not removed_slugs or not out_dir.is_dir():
+        return []
+    import datetime
+    import shutil
+
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H-%M-%SZ")
+    archive_dir = out_dir / ".archived" / timestamp
+    archived: list[Path] = []
+    for slug in removed_slugs:
+        src = out_dir / f"{slug}.json"
+        if not src.exists():
+            continue
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        dest = archive_dir / src.name
+        try:
+            shutil.move(str(src), str(dest))
+            archived.append(dest)
+        except OSError as e:
+            logger.warning("Could not archive %s: %s", src, e)
+    return archived
 
 
 def diff_against_existing(out_dir: Path, detections: list[Detection]) -> ScanDiff:
@@ -979,6 +1008,13 @@ def _print_report(result: ScanResult, *, verbose: bool, out_dir: Path) -> None:
             print("  No changes since last scan.")
             print()
 
+    # Archive notice (WS10).
+    if result.archived:
+        # All archive paths share the same .archived/<ts>/ parent.
+        archive_root = result.archived[0].parent
+        print(f"  📦 Archived {len(result.archived)} stale config(s) → {archive_root.name}/")
+        print()
+
     # Where things landed
     print(f"  Output: {out_dir}")
     if result.codebase_config is not None:
@@ -1035,6 +1071,12 @@ def run_scan(
     # we're about to do.
     result = ScanResult(detections=detections)
     result.diff = diff_against_existing(out_dir, detections)
+
+    # Archive stale configs (WS10). Move (never delete) any framework config
+    # that disappeared from detections — keeps out_dir clean without losing
+    # user edits. Skipped in dry-run.
+    if not dry_run and result.diff is not None and result.diff.removed:
+        result.archived = _archive_removed(out_dir, result.diff.removed)
 
     # Effective generation cap. allow_generate=False shortcuts to 0.
     effective_max_gen = 0 if not allow_generate else max_ai_generations

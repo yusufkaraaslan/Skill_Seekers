@@ -964,6 +964,114 @@ class TestRunScan:
         assert result.codebase_config is not None
 
 
+class TestArchiveRemovedConfigs:
+    """WS10: stale configs move to .archived/<timestamp>/, not deleted."""
+
+    def _setup_project(self, tmp_path: Path):
+        proj = tmp_path / "p"
+        proj.mkdir()
+        (proj / "package.json").write_text('{"name": "p"}')
+        out = tmp_path / "out"
+        out.mkdir()
+        return proj, out
+
+    def _client_returning(self, names):
+        client = MagicMock()
+        client.call.return_value = json.dumps(
+            [
+                {
+                    "name": n,
+                    "ecosystem": "npm",
+                    "version": "1.0.0",
+                    "kind": "library",
+                    "confidence": 0.9,
+                    "evidence": "x",
+                }
+                for n in names
+            ]
+        )
+        return client
+
+    def test_removed_config_is_archived_not_deleted(self, tmp_path: Path):
+        proj, out = self._setup_project(tmp_path)
+        # Simulate a prior scan that emitted moment.json + react.json
+        stale = out / "moment.json"
+        stale.write_text(json.dumps({"name": "moment", "metadata": {"detected_version": "2.0.0"}}))
+        keep = out / "react.json"
+        keep.write_text(json.dumps({"name": "react", "metadata": {"detected_version": "18.0.0"}}))
+
+        # New scan detects only react → moment should be archived.
+        client = self._client_returning(["react"])
+        with patch(
+            "skill_seekers.cli.scan_command.resolve_config_path",
+            return_value=keep,
+        ):
+            result = run_scan(
+                proj,
+                out,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=False,
+                skip_publish=True,
+                min_confidence=0.4,
+            )
+
+        # moment.json no longer in out/, but exists in .archived/<ts>/
+        assert not stale.exists()
+        archived_root = out / ".archived"
+        assert archived_root.is_dir()
+        # Exactly one timestamped subdir, containing moment.json
+        ts_dirs = list(archived_root.iterdir())
+        assert len(ts_dirs) == 1
+        archived_files = list(ts_dirs[0].iterdir())
+        assert any(f.name == "moment.json" for f in archived_files)
+        # ScanResult.archived reflects the move
+        assert len(result.archived) == 1
+        assert result.archived[0].name == "moment.json"
+
+    def test_no_removed_means_no_archive_dir(self, tmp_path: Path):
+        proj, out = self._setup_project(tmp_path)
+        keep = out / "react.json"
+        keep.write_text(json.dumps({"name": "react", "metadata": {"detected_version": "18.0.0"}}))
+
+        client = self._client_returning(["react"])
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=keep):
+            result = run_scan(
+                proj,
+                out,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=False,
+                skip_publish=True,
+                min_confidence=0.4,
+            )
+
+        assert result.archived == []
+        assert not (out / ".archived").exists()
+
+    def test_dry_run_does_not_archive(self, tmp_path: Path):
+        proj, out = self._setup_project(tmp_path)
+        stale = out / "moment.json"
+        stale.write_text(json.dumps({"name": "moment", "metadata": {"detected_version": "2.0.0"}}))
+
+        client = self._client_returning(["react"])
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", return_value=None):
+            run_scan(
+                proj,
+                out,
+                agent_client=client,
+                allow_network=True,
+                allow_generate=False,
+                skip_publish=True,
+                min_confidence=0.4,
+                dry_run=True,
+            )
+
+        # Stale file still in place; nothing was actually moved.
+        assert stale.exists()
+        assert not (out / ".archived").exists()
+
+
 class TestProbeUrls:
     """WS9: URL reachability probe for AI-generated configs."""
 
