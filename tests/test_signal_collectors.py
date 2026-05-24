@@ -16,7 +16,7 @@ from skill_seekers.cli.signal_collectors import (
     collect_manifests,
     collect_readme_excerpt,
     collect_signals,
-    collect_source_imports,
+    collect_source_samples,
     get_git_remote,
     infer_project_name,
 )
@@ -157,14 +157,28 @@ class TestCollectDockerfileAndCi:
         assert signals == []
 
 
-class TestCollectSourceImports:
+class TestCollectSourceSamples_legacy_alias:
+    """Verify the deprecated alias still works for one release cycle."""
+
+    def test_alias_returns_same_signals(self, tmp_path: Path):
+        from skill_seekers.cli.signal_collectors import collect_source_imports
+
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "app.py").write_text("import httpx\n")
+        primary = collect_source_samples(tmp_path)
+        alias = collect_source_imports(tmp_path)
+        assert [s.content for s in primary] == [s.content for s in alias]
+
+
+class TestCollectSourceSamples:
     def test_samples_python_imports(self, tmp_path: Path):
         src = tmp_path / "src"
         src.mkdir()
         (src / "app.py").write_text(
             "import httpx\nfrom anthropic import Anthropic\nimport json\n\ndef hello(): return 1\n"
         )
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         assert signals
         combined = "\n".join(s.content for s in signals)
         assert "import httpx" in combined
@@ -176,7 +190,7 @@ class TestCollectSourceImports:
         (src / "app.js").write_text(
             "import React from 'react';\nimport { z } from 'zod';\nconst x = 1;\n"
         )
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "react" in combined
         assert "zod" in combined
@@ -186,13 +200,13 @@ class TestCollectSourceImports:
         src.mkdir()
         for i in range(50):
             (src / f"f{i}.py").write_text(f"import lib{i}\n")
-        signals = collect_source_imports(tmp_path, max_files=5)
+        signals = collect_source_samples(tmp_path, max_files=5)
         assert len(signals) <= 5
 
     def test_no_source_dir_returns_empty(self, tmp_path: Path):
         # Project root only — no src/, lib/, app/.
         (tmp_path / "README.md").write_text("# foo")
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         assert signals == []
 
     def test_skips_node_modules_and_venv(self, tmp_path: Path):
@@ -202,7 +216,7 @@ class TestCollectSourceImports:
         venv = tmp_path / ".venv" / "lib"
         venv.mkdir(parents=True)
         (venv / "x.py").write_text("import 'also-should-not-appear';")
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         assert signals == []
 
     def test_broken_symlink_does_not_crash_sort(self, tmp_path: Path):
@@ -213,7 +227,7 @@ class TestCollectSourceImports:
         (src / "broken.py").symlink_to(tmp_path / "does-not-exist")
 
         # Must not raise; should still pick up the real file.
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "import httpx" in combined
 
@@ -222,7 +236,7 @@ class TestCollectSourceImports:
         cmd_dir = tmp_path / "cmd" / "server"
         cmd_dir.mkdir(parents=True)
         (cmd_dir / "main.go").write_text('package main\nimport "fmt"\n')
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "fmt" in combined
 
@@ -231,7 +245,7 @@ class TestCollectSourceImports:
         pkg = tmp_path / "packages" / "ui" / "src"
         pkg.mkdir(parents=True)
         (pkg / "Button.tsx").write_text("import React from 'react';\n")
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "react" in combined
 
@@ -242,16 +256,62 @@ class TestCollectSourceImports:
         users_app.mkdir()
         (users_app / "models.py").write_text("from django.db import models\n")
         (users_app / "views.py").write_text("from django.shortcuts import render\n")
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "django" in combined
 
     def test_picks_up_root_level_python_entrypoint(self, tmp_path: Path):
         """Regression for WS3: flat-layout Python (script at root) is sampled."""
         (tmp_path / "main.py").write_text("import httpx\nimport asyncio\n")
-        signals = collect_source_imports(tmp_path)
+        signals = collect_source_samples(tmp_path)
         combined = "\n".join(s.content for s in signals)
         assert "httpx" in combined
+
+    def test_whole_file_sampling_captures_multiline_go_imports(self, tmp_path: Path):
+        """Regression for WS4: regex couldn't handle Go's parenthesized multi-line
+        import block. Whole-file sampling captures the whole block verbatim."""
+        cmd = tmp_path / "cmd" / "server"
+        cmd.mkdir(parents=True)
+        (cmd / "main.go").write_text(
+            "package main\n"
+            "\n"
+            "import (\n"
+            '    "fmt"\n'
+            '    "net/http"\n'
+            '    "github.com/gin-gonic/gin"\n'
+            ")\n"
+            "\n"
+            "func main() {}\n"
+        )
+        signals = collect_source_samples(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "gin-gonic/gin" in combined
+        assert "net/http" in combined
+        assert "fmt" in combined
+
+    def test_whole_file_sampling_captures_rust_mod_and_extern_crate(self, tmp_path: Path):
+        """Regression for WS4: regex missed `mod x;` and `extern crate x;`. Whole-file
+        sampling sees them as part of the raw file content."""
+        crates = tmp_path / "crates" / "core"
+        crates.mkdir(parents=True)
+        (crates / "lib.rs").write_text(
+            "extern crate serde;\nmod parser;\nmod codegen;\n\npub fn hello() {}\n"
+        )
+        signals = collect_source_samples(tmp_path)
+        combined = "\n".join(s.content for s in signals)
+        assert "extern crate serde" in combined
+        assert "mod parser" in combined
+        assert "mod codegen" in combined
+
+    def test_source_sample_kind_is_source_sample(self, tmp_path: Path):
+        """The Signal.kind for whole-file sampling is 'source_sample' (not the
+        old 'source_imports' label)."""
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "app.py").write_text("import httpx\n")
+        signals = collect_source_samples(tmp_path)
+        assert signals
+        assert all(s.kind == "source_sample" for s in signals)
 
 
 class TestGetGitRemote:
@@ -304,7 +364,7 @@ class TestCollectSignals:
         assert "readme" in kinds
         assert "dockerfile" in kinds
         # source-imports kind should appear when src/ exists
-        assert any(s.kind == "source_imports" for s in bundle.signals)
+        assert any(s.kind == "source_sample" for s in bundle.signals)
         assert bundle.project_name == tmp_path.name
 
     def test_respects_total_byte_budget(self, tmp_path: Path):

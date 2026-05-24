@@ -13,7 +13,6 @@ in an LLM prompt.
 from __future__ import annotations
 
 import logging
-import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 class Signal:
     """One piece of evidence collected from a project directory."""
 
-    kind: str  # "manifest" | "readme" | "dockerfile" | "ci" | "source_imports"
+    kind: str  # "manifest" | "readme" | "dockerfile" | "ci" | "source_sample"
     path: Path
     content: str
 
@@ -93,20 +92,6 @@ _SOURCE_DIRS = (
     "frontend",
     "source",
     "sources",
-)
-
-# Whole-line patterns that look like imports. We capture entire lines so the
-# AI sees both module names and any quoted paths; we don't try to parse them.
-_IMPORT_LINE = re.compile(
-    r"^\s*(?:"
-    r"from\s+[\w.]+\s+import\s+[^\n]+"  # python: from x import y
-    r"|import\s+[^\n;]+"  # python/js: import X / import X from 'y'
-    r"|require\s*\(\s*['\"][^'\"]+['\"]\s*\)[^\n]*"  # node: require('x')
-    r"|use\s+[\w:{}, ]+[^\n]*"  # rust/php: use x::y
-    r"|#include\s+[<\"][^>\"]+[>\"]"  # c/c++: #include <x>
-    r"|using\s+[\w.]+[^\n]*"  # c#: using X
-    r")",
-    re.MULTILINE,
 )
 
 _SOURCE_EXTENSIONS = {
@@ -277,16 +262,22 @@ def _safe_size(path: Path) -> int:
         return 0
 
 
-def collect_source_imports(
+def collect_source_samples(
     root: Path,
     max_files: int = 30,
     max_bytes_per_file: int = 2048,
 ) -> list[Signal]:
-    """Sample import/require/use lines from the largest source files.
+    """Sample the first N bytes of the largest source files for the AI.
 
-    We do *not* parse — we only extract import-shaped lines via regex and
-    hand them to the AI as additional evidence. Ordering by size (then path
-    for stability) gives deterministic samples across runs.
+    Replaces an earlier regex-based "extract import-shaped lines" approach
+    that was brittle (missed multi-line Go imports, Rust ``mod``/``extern
+    crate``, dynamic imports, etc.). Whole-file sampling delegates parsing
+    to the AI, which is strictly better at this than any regex we could
+    maintain. Costs ~2-3× more tokens per file in the prompt; bounded by
+    `max_bytes_per_file` and the per-kind budget in `collect_signals`.
+
+    Ordering by file size (then path for stability) gives deterministic
+    samples across runs.
     """
     candidates = list(_iter_source_files(root))
     if not candidates:
@@ -297,13 +288,19 @@ def collect_source_imports(
 
     signals: list[Signal] = []
     for path in chosen:
-        text = _safe_read_text(path, 64_000)
-        if text is None:
+        text = _safe_read_text(path, max_bytes_per_file)
+        if text is None or not text.strip():
             continue
-        import_lines = "\n".join(_IMPORT_LINE.findall(text))[:max_bytes_per_file]
-        if import_lines:
-            signals.append(Signal(kind="source_imports", path=path, content=import_lines))
+        signals.append(Signal(kind="source_sample", path=path, content=text))
     return signals
+
+
+# Backwards-compatible alias for the old name; deprecated, will be removed
+# once external callers update. The kind label changed too — tests should
+# look for "source_sample" not "source_imports".
+def collect_source_imports(*args, **kwargs):  # pragma: no cover - deprecated alias
+    """Deprecated alias — use ``collect_source_samples``."""
+    return collect_source_samples(*args, **kwargs)
 
 
 def get_git_remote(root: Path) -> str | None:
@@ -367,6 +364,6 @@ def collect_signals(
     if readme is not None:
         _add([readme])
     _add(collect_dockerfile_and_ci(root))
-    _add(collect_source_imports(root, max_files=max_source_files))
+    _add(collect_source_samples(root, max_files=max_source_files))
 
     return bundle
