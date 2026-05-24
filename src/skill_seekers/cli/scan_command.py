@@ -881,59 +881,47 @@ def _exit_code_for(result: ScanResult) -> int:
     return 1
 
 
-def main() -> int:
-    """CLI entry point for `skill-seekers scan`."""
-    import argparse
+class ScanCommand:
+    """Entry point for `skill-seekers scan`. Dispatched from `main.py` with
+    the already-parsed argparse namespace (no duplicate argparse here).
+    """
 
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers scan",
-        description="AI-detect a project's tech stack and emit per-framework configs",
-    )
-    parser.add_argument("directory")
-    parser.add_argument("--out", default="./configs/scanned/")
-    parser.add_argument("--no-fetch", action="store_true")
-    parser.add_argument("--no-generate", action="store_true")
-    parser.add_argument("--no-publish-prompt", action="store_true")
-    parser.add_argument("--agent", default=None)
-    parser.add_argument("--min-confidence", type=float, default=0.4)
-    parser.add_argument("--verbose", "-v", action="store_true")
-    args = parser.parse_args()
+    def __init__(self, args) -> None:
+        self.args = args
 
-    # Surface our own logger.warning/error to the user. Without basicConfig the
-    # root logger has no handlers and every warning we log is silently dropped.
-    log_level = logging.INFO if args.verbose else logging.WARNING
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
+    def execute(self) -> int:
+        args = self.args
 
-    directory = Path(args.directory).resolve()
-    if not directory.is_dir():
-        print(f"❌ Not a directory: {directory}")
-        return 1
+        # Surface our own logger.warning/error to the user. Without basicConfig
+        # the root logger has no handlers and every warning we log is silently
+        # dropped.
+        log_level = logging.INFO if getattr(args, "verbose", False) else logging.WARNING
+        logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
-    out_dir = Path(args.out).resolve()
+        directory = Path(args.directory).resolve()
+        if not directory.is_dir():
+            print(f"❌ Not a directory: {directory}")
+            return 1
 
-    from skill_seekers.cli.agent_client import AgentClient
+        out_dir = Path(args.out).resolve()
 
-    client = AgentClient(mode="auto", agent=args.agent)
+        from skill_seekers.cli.agent_client import AgentClient
 
-    try:
-        result = run_scan(
-            directory,
-            out_dir,
-            agent_client=client,
-            allow_network=not args.no_fetch,
-            allow_generate=not args.no_generate,
-            skip_publish=args.no_publish_prompt,
-            min_confidence=args.min_confidence,
-        )
-    except KeyboardInterrupt:
-        print("\nInterrupted.")
-        return 130
+        client = AgentClient(mode="auto", agent=getattr(args, "agent", None))
 
-    _print_report(result, verbose=args.verbose, out_dir=out_dir)
-    return _exit_code_for(result)
+        try:
+            result = run_scan(
+                directory,
+                out_dir,
+                agent_client=client,
+                allow_network=not args.no_fetch,
+                allow_generate=not args.no_generate,
+                skip_publish=args.no_publish_prompt,
+                min_confidence=args.min_confidence,
+            )
+        except KeyboardInterrupt:
+            print("\nInterrupted.")
+            return 130
 
-
-if __name__ == "__main__":  # pragma: no cover
-    import sys
-
-    sys.exit(main())
+        _print_report(result, verbose=getattr(args, "verbose", False), out_dir=out_dir)
+        return _exit_code_for(result)

@@ -973,10 +973,41 @@ class TestExitCodeFor:
 
 
 class TestCliRegistration:
-    def test_scan_is_registered_in_command_modules(self):
+    def test_scan_is_registered_in_command_classes(self):
+        """Scan uses the class-dispatch table (WS1) — no _reconstruct_argv hack."""
+        from skill_seekers.cli.main import COMMAND_CLASSES
+
+        assert COMMAND_CLASSES["scan"] == (
+            "skill_seekers.cli.scan_command",
+            "ScanCommand",
+        )
+
+    def test_scan_not_in_legacy_command_modules(self):
+        """Scan should NOT appear in COMMAND_MODULES — that's the legacy table."""
         from skill_seekers.cli.main import COMMAND_MODULES
 
-        assert COMMAND_MODULES["scan"] == "skill_seekers.cli.scan_command"
+        assert "scan" not in COMMAND_MODULES
+
+    def test_scan_command_class_consumes_args_namespace(self):
+        """ScanCommand(args).execute() — no internal argparse re-parsing."""
+        import argparse
+
+        from skill_seekers.cli.scan_command import ScanCommand
+
+        # Build a minimal namespace as the dispatcher would
+        args = argparse.Namespace(
+            directory="/does/not/exist",
+            out="/tmp/whatever",
+            no_fetch=True,
+            no_generate=True,
+            no_publish_prompt=True,
+            agent=None,
+            min_confidence=0.4,
+            verbose=False,
+        )
+        cmd = ScanCommand(args)
+        # Bad directory → returns 1 without raising
+        assert cmd.execute() == 1
 
     def test_scan_parser_registered(self):
         from skill_seekers.cli.parsers import get_parser_names
