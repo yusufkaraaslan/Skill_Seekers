@@ -1054,6 +1054,50 @@ class TestCanonicalNameCandidates:
         cands = _canonical_name_candidates("Vue.js")
         assert "vue" in cands
 
+    def test_strips_chinese_suffixes(self):
+        """WS7: half the user base is CJK; suffixes must work there too."""
+        # Godot in Chinese — should still resolve to "godot" after stripping.
+        cands = _canonical_name_candidates("Godot 引擎")
+        assert "godot" in cands
+
+        cands = _canonical_name_candidates("React 框架")
+        assert "react" in cands
+
+        # Traditional Chinese variant
+        cands = _canonical_name_candidates("Vue 函式庫")
+        assert "vue" in cands
+
+    def test_strips_korean_suffixes(self):
+        cands = _canonical_name_candidates("Godot 엔진")
+        assert "godot" in cands
+
+        cands = _canonical_name_candidates("React 프레임워크")
+        assert "react" in cands
+
+    def test_strips_japanese_suffixes(self):
+        cands = _canonical_name_candidates("Godot エンジン")
+        assert "godot" in cands
+
+        cands = _canonical_name_candidates("React フレームワーク")
+        assert "react" in cands
+
+        cands = _canonical_name_candidates("Lodash ライブラリ")
+        assert "lodash" in cands
+
+    def test_strips_european_language_suffixes(self):
+        """Spanish/French/Portuguese/German — common in EU/LATAM user base."""
+        # Spanish "motor" (engine)
+        cands = _canonical_name_candidates("Godot motor")
+        assert "godot" in cands
+
+        # French "cadre" (framework)
+        cands = _canonical_name_candidates("React cadre")
+        assert "react" in cands
+
+        # German "bibliothek" (library) — lowercased before matching
+        cands = _canonical_name_candidates("Lodash Bibliothek")
+        assert "lodash" in cands
+
     def test_npm_scoped_package_unscoped_form(self):
         cands = _canonical_name_candidates("@anthropic-ai/sdk")
         # Both the full scoped name and a slugified unscoped form should appear.

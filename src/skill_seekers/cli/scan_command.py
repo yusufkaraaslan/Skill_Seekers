@@ -472,7 +472,17 @@ def _config_filename_for(detection: Detection) -> str:
 
 
 # Common suffixes appended to display names but absent from preset slugs.
+# Internationalised because a large fraction of users work in CJK contexts
+# (Chinese, Korean, Japanese) where libraries are commonly referred to with
+# native-language descriptors. Without these, "戦闘エンジン" → "戦闘エンジン"
+# (unchanged), no candidate ever hits the registry. With them, the suffix
+# strips so the bare base name has a chance to resolve.
+#
+# Suffixes are tried in tuple order — first match wins (single-pass strip).
+# Both the space-prefixed and no-space form are listed for CJK where space
+# usage is inconsistent.
 _NAME_SUFFIXES = (
+    # English
     " engine",
     " framework",
     " sdk",
@@ -482,6 +492,60 @@ _NAME_SUFFIXES = (
     ".js",
     " js",
     " css",
+    # Chinese (simplified + traditional — same chars for these words)
+    " 引擎",
+    "引擎",  # engine
+    " 框架",
+    "框架",  # framework
+    " 库",
+    "库",  # library (simplified)
+    " 函式庫",
+    "函式庫",  # library (traditional)
+    " 核心",
+    "核心",  # core
+    " 运行时",
+    "运行时",  # runtime (simplified)
+    " 執行階段",
+    "執行階段",  # runtime (traditional)
+    # Korean
+    " 엔진",
+    "엔진",  # engine
+    " 프레임워크",
+    "프레임워크",  # framework
+    " 라이브러리",
+    "라이브러리",  # library
+    " 코어",
+    "코어",  # core
+    " 런타임",
+    "런타임",  # runtime
+    # Japanese
+    " エンジン",
+    "エンジン",  # engine
+    " フレームワーク",
+    "フレームワーク",  # framework
+    " ライブラリ",
+    "ライブラリ",  # library
+    " コア",
+    "コア",  # core
+    " ランタイム",
+    "ランタイム",  # runtime
+    # Spanish / Portuguese (overlap with each other on many of these)
+    " motor",  # engine
+    " marco",  # framework (es)
+    " biblioteca",  # library
+    " núcleo",  # core
+    " ejecución",  # runtime
+    # French
+    " moteur",  # engine
+    " cadre",  # framework
+    " bibliothèque",  # library
+    " noyau",  # core
+    " exécution",  # runtime
+    # German (case-insensitive via lowercasing earlier in the candidate gen)
+    " kern",  # core
+    " rahmen",  # framework
+    " bibliothek",  # library
+    " laufzeit",  # runtime
 )
 
 
