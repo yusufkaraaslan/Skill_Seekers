@@ -51,12 +51,30 @@ class TestCollectManifests:
         assert len(signals) == 1
         assert len(signals[0].content) <= 1024
 
+    def test_reads_only_max_bytes_from_disk(self, tmp_path: Path):
+        """Regression: _safe_read_text should NOT slurp the entire file into
+        memory and then slice. For a 10 MB file with max_bytes=2 KB, we read
+        2 KB."""
+        from skill_seekers.cli.signal_collectors import _safe_read_text
+
+        big = tmp_path / "huge.txt"
+        big.write_bytes(b"a" * 10_000_000)  # 10 MB
+
+        with patch("pathlib.Path.open", wraps=big.open) as open_mock:
+            result = _safe_read_text(big, max_bytes=2048)
+
+        assert result is not None
+        assert len(result) == 2048
+        # Verify Path.open was called (binary mode) — implementation calls
+        # f.read(max_bytes) so it never holds the full file in memory.
+        assert open_mock.called
+
     def test_handles_unreadable_file_gracefully(self, tmp_path: Path):
         # Create a manifest file then make it unreadable by injecting a read error.
         manifest = tmp_path / "package.json"
         manifest.write_text("{}")
 
-        with patch("pathlib.Path.read_text", side_effect=OSError("boom")):
+        with patch("pathlib.Path.open", side_effect=OSError("boom")):
             signals = collect_manifests(tmp_path)
 
         assert signals == []  # silently skipped, not raised

@@ -1178,6 +1178,30 @@ class TestProbeUrls:
         # Should NOT have _url_unverified stamp when all URLs are good.
         assert "_url_unverified" not in cfg.get("metadata", {})
 
+    def test_probe_falls_back_to_get_on_405(self):
+        """Regression: some servers return 405 Method Not Allowed on HEAD even
+        for valid URLs (older PyPI mirrors, Cloudflare-fronted sites). Probe
+        must fall back to GET so real URLs aren't flagged as unreachable."""
+        client = MagicMock()
+        client.call.return_value = self._good_response()
+
+        head_405 = MagicMock()
+        head_405.status_code = 405
+        get_200 = MagicMock()
+        get_200.status_code = 200
+
+        with patch("httpx.Client") as httpx_cls:
+            instance = httpx_cls.return_value.__enter__.return_value
+            instance.head.return_value = head_405
+            instance.get.return_value = get_200
+            cfg = generate_config_with_ai(self._det(), client, probe_urls=True)
+
+        assert cfg is not None
+        # Server returned 405 on HEAD, 200 on GET → URL is valid → no unverified stamp.
+        assert "_url_unverified" not in cfg.get("metadata", {})
+        # And GET WAS called (fallback fired).
+        assert instance.get.called
+
     def test_probe_retries_on_bad_urls_then_succeeds(self):
         client = MagicMock()
         # First call returns config with bad URL, second returns config with good URL

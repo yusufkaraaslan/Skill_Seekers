@@ -113,13 +113,25 @@ _SOURCE_EXTENSIONS = {
 
 
 def _safe_read_text(path: Path, max_bytes: int) -> str | None:
-    """Read a text file, truncated to ``max_bytes``. Returns None on any error."""
+    """Read up to ``max_bytes`` of a text file, decoded as UTF-8.
+
+    Opens in binary mode and reads only what we need rather than slurping
+    the whole file into memory and slicing. Matters when a manifest or
+    source file is huge (some auto-generated package-lock.json files run
+    into MB) and the per-kind budget here is only a few KB.
+
+    UTF-8 multi-byte characters straddling the ``max_bytes`` boundary are
+    handled by ``errors="replace"`` — a trailing partial sequence becomes
+    a replacement char instead of failing the read. Acceptable for AI-prompt
+    sampling.
+    """
     try:
-        content = path.read_text(encoding="utf-8", errors="replace")
+        with path.open("rb") as f:
+            raw = f.read(max_bytes)
     except OSError as e:
         logger.debug("Skipping unreadable file %s: %s", path, e)
         return None
-    return content[:max_bytes]
+    return raw.decode("utf-8", errors="replace")
 
 
 def collect_manifests(root: Path, max_bytes_per_file: int = 8192) -> list[Signal]:
