@@ -76,6 +76,9 @@ skill-seekers create facebook/react
 skill-seekers create manual.pdf
 skill-seekers create notebook.ipynb
 
+# AI-detect a project's tech stack — emits one config per framework
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+
 # Scrape documentation
 skill-seekers scrape --config react
 

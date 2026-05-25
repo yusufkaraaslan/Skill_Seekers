@@ -64,6 +64,7 @@ Complete feature support across all platforms and skill modes.
 | `notion` | All | Notion only | No (output is universal) | `[notion]` |
 | `chat` | All | Chat only | No (output is universal) | `[chat]` |
 | `unified` | All | Unified only | No (output is universal) | Varies by source |
+| `scan` | All | Project bootstrap | No (output is universal) | None (uses existing `AgentClient`) |
 | `enhance` | Claude, Gemini, OpenAI | All | ✅ `--target` | None |
 | `package` | All | All | ✅ `--target` | None |
 | `upload` | Claude, Gemini, OpenAI | All | ✅ `--target` | None |

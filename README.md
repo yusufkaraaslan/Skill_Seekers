@@ -109,6 +109,24 @@ skill-seekers create https://docs.django.com/ --agent codex
 skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
 ```
 
+### 🛰️ AI-driven project scan (new)
+
+Point `scan` at any project and an AI agent reads its manifests, README,
+Dockerfile/CI and sampled source imports — then emits one config per detected
+framework plus a `<project>-codebase.json` for your own code. Pins the
+detected version so re-running reports bumps:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# Then build any of them
+skill-seekers create ./configs/scanned/react.json
+```
+
+If a detection has no existing preset, the AI generates a fresh config; on
+exit you can optionally publish it back to the [community registry](https://github.com/yusufkaraaslan/skill-seekers-configs).
+
 ### Other Sources (18 Supported)
 
 ```bash

@@ -5,6 +5,29 @@ All notable changes to Skill Seeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Theme:** AI-driven project knowledge base (`skill-seekers scan`) — bootstrap a complete skill set for a project in one command, with safety/observability/coverage hardening throughout.
+
+### Added
+- **`skill-seekers scan <dir>` command** (#327) — point at any project; an AI agent inspects manifests, README, Dockerfile/CI, sampled source files (first 2 KB each), and the git remote, then emits one Skill Seekers config per detected framework plus a `<project>-codebase.json` for the project's own code. Each config stamped with `metadata.detected_version` so re-scans report added / version-bumped / removed dependencies. Internationalized canonical-name resolver (CJK + EU language suffixes) so detections like "Godot 引擎" resolve `godot`. Out-dir cache means re-scans reuse prior emissions and respect manual edits. Doctor-style report with pluralized counts and resolved / AI-generated / unresolved / archived breakdown.
+- **Coverage**: scan recognizes ~50 manifest types (Pipfile, environment.yml, deno.json, flake.nix, Chart.yaml, stack.yaml, deps.edn, dune-project, BUILD.bazel, …) and walks `src/lib/app/cmd/crates/packages/apps/services/backend/frontend` plus root-level files (catches Django, flat-layout Python, Go, Rust workspaces, JS monorepos).
+- **Cost + safety flags**: `--max-ai-generations N` (default 10) caps unbounded AI generation for monorepos; `--dry-run` previews what would be emitted without writing or invoking AI; `--probe-urls` HEAD-probes AI-generated URLs with retry-on-404; `--no-fetch` / `--no-generate` / `--no-publish-prompt` for offline / CI use.
+- **Community submission** (opt-in): freshly AI-generated configs can be submitted to the [community registry](https://github.com/yusufkaraaslan/skill-seekers-configs) via a native-async flow. Pre-checks `GITHUB_TOKEN`, idempotency-guards against duplicate issues, retries transient failures with backoff.
+- **Archival**: configs that disappear from detections are moved (not deleted) to `out_dir/.archived/<UTC-timestamp>/` so the user never loses hand-edited work and `out_dir` stays clean.
+- **Docs**: new `docs/getting-started/05-scan-a-project.md`; entries in README, FAQ, CLI Reference, Feature Matrix, Config Format, Environment Variables, and the Quick Start cross-link.
+
+### Changed
+- **CLI dispatch unified** (#327) — `scan` and `doctor` now consume the parsed-args namespace directly via `Command(args).execute()` instead of building a second `argparse.ArgumentParser`. Eliminates the `_reconstruct_argv` hack for these commands; remaining ~14 commands flagged for migration.
+- **Config schema**: `detected_version` lives under `metadata.detected_version` (alongside `metadata.version` for the config-schema version) rather than at top level. Backwards-compatible reader; old top-level placements migrate on next stamp.
+- **`SourceDetector.CODE_PROJECT_MARKERS`** is now public (was `_CODE_PROJECT_MARKERS`); cross-module callers no longer reach into a private attribute.
+
+### Fixed
+- **Correctness** (#327) — diff layer keyed by stable filename slug instead of internal config name (eliminates phantom add/remove churn); `resolve_config_path` lookups now append `.json` so local-disk + user-dir paths actually find files; out-dir cache prevents redundant API/AI calls on re-scan; lowercase filename slugs prevent duplicate-file accumulation across runs.
+- **Safety** (#327) — atomic JSON writes via `os.replace` so SIGINT mid-write can't corrupt a config and silently flip it to "removed" on the next scan; `_safe_size` guards `stat()` so a broken symlink in `src/` no longer crashes the scan; `AgentClient.call` exceptions caught and logged; AI-generated config names rejected if they fail the registry regex; URL probe catches AI hallucinations of `base_url` before writing.
+- **Observability** (#327) — `logging.basicConfig` in scan so `logger.warning`/`error` reaches the user (was silently dropped); non-zero exit code when no configs and no codebase config were emitted, so CI pipelines detect total-failure scans.
+- **Publish flow** (#327) — native async (`asyncio.run` at single entry, `asyncio.to_thread` for `input()`); pre-check `GITHUB_TOKEN` with actionable hint instead of asking N "yes/no" questions and failing N times; idempotency check (search existing open issues) prevents duplicate submissions; retry with backoff on transient failures; nested-event-loop detection with clear message instead of opaque traceback.
+
 ## [3.6.0] - 2026-05-03
 
 **Theme:** Quality-of-life release — packaging targets, GitHub issue workflow, codebase analysis fixes, and source detection hardening.

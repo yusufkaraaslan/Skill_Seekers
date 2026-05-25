@@ -92,7 +92,7 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### GITHUB_TOKEN
 
-**Purpose:** GitHub API authentication for higher rate limits.
+**Purpose:** GitHub API authentication for higher rate limits, plus authoring community-registry submissions.
 
 **Format:** `ghp_...` (personal access token) or `github_pat_...` (fine-grained)
 
@@ -100,11 +100,13 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 - `skill-seekers github`
 - `skill-seekers unified` (GitHub sources)
 - `skill-seekers analyze` (GitHub repos)
+- `skill-seekers scan` — *required* to submit AI-generated configs to the community registry (the scan itself runs without it; the publish prompt is just skipped with a hint)
 
 **Benefits:**
 - 5000 requests/hour vs 60 for unauthenticated
 - Access to private repositories
 - Higher GraphQL API limits
+- Enables opening community-config GitHub issues from `scan`
 
 **Example:**
 ```bash
@@ -272,14 +274,15 @@ export SKILL_SEEKERS_USER_AGENT="MyBot/1.0 (contact@example.com)"
 
 ### SKILL_SEEKER_AGENT
 
-**Purpose:** Default local coding agent for enhancement.
+**Purpose:** Default local coding agent for enhancement and scan detection/generation.
 
 **Default:** `claude`
 
-**Options:** `claude`, `cursor`, `windsurf`, `cline`, `continue`
+**Options:** `claude`, `codex`, `copilot`, `opencode`, `kimi`, `custom`, plus IDE-mode aliases (`cursor`, `windsurf`, `cline`, `continue`)
 
 **Used by:**
 - `skill-seekers enhance`
+- `skill-seekers scan` (overridable per-invocation via `--agent`)
 
 **Example:**
 ```bash

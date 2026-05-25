@@ -563,8 +563,10 @@ Fields available in all config types:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | string | Skill identifier (letters, numbers, dashes, underscores) |
+| `name` | string | Skill identifier. Must match `^[a-zA-Z0-9_-]+$` (letters, numbers, dashes, underscores). Required for community-registry submission. |
 | `description` | string | Human-readable description |
+| `metadata.detected_version` | string \| null | **Optional, stamped by `skill-seekers scan`.** The framework version detected from the project's manifest (e.g. `"18.3.1"` for React from `package.json`). Lives under `metadata` alongside `metadata.version` (which is the config-schema version — different thing). Used by re-scans to report version bumps. Legacy top-level placement is still read for backwards-compat but new writes go to metadata. |
+| `metadata._url_unverified` | list[str] \| absent | **Optional, stamped by `skill-seekers scan --probe-urls`.** List of URLs in this config that returned 4xx/5xx on the post-generation HEAD probe and weren't fixable by re-prompting the AI. Present only when the AI invented an unreachable `base_url` or GitHub repo. Treat as a TODO: replace the bad URLs and remove the field. Underscore prefix marks it as scan-tooling metadata, not part of the canonical schema. |
 | `rate_limit` | number | Delay between requests in seconds |
 | `output_dir` | string | Custom output directory |
 | `skip_scrape` | boolean | Use existing data |

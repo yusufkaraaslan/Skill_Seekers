@@ -54,12 +54,33 @@ Runs on push/PR to `main` or `development`. Lint job (Python 3.12, Ubuntu) + Tes
 
 ### CLI: Unified create command
 
-Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **only** entry point for skill creation — it auto-detects source type and routes to the appropriate `SkillConverter`.
+Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **primary** entry point for skill creation — it auto-detects source type and routes to the appropriate `SkillConverter`. The `scan` command (added in #327) is a separate discovery step for projects with multiple frameworks; it emits one config file per detected framework and you then run `create` on each.
 
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
+skill-seekers scan <dir>          # AI-driven discovery → emits one config per detected framework + <project>-codebase.json
 skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone)
 ```
+
+### Scan command (issue #327)
+
+`skill-seekers scan <dir>` is an AI-driven project knowledge-base bootstrapper. Pipeline in `src/skill_seekers/cli/scan_command.py`:
+
+1. `collect_signals()` in `signal_collectors.py` — deterministic, bounded gathering of manifests + README + Dockerfile/CI + sampled source files + git remote. **Per-kind byte budgets** (24 KB manifest / 6 KB README / 6 KB CI / 28 KB samples, total 64 KB) so a fat package.json can't crowd out other kinds. `_SOURCE_DIRS` covers ~14 layouts (Go `cmd/`, Rust `crates/`, JS monorepo `apps/packages/`, Maven `source/`, Django at root); also walks root one level deep for flat-layout Python.
+2. `detect_with_ai(bundle, AgentClient)` — one LLM call, structured JSON output. **Source signals are first-2-KB of each file** (whole-file sampling, no regex parsing — added in WS4 because regex missed Go multi-line imports + Rust `mod`/`extern crate`). Canonical-slug prompt + the canonical-name resolver are coupled — change one, update the other.
+3. `resolve_or_generate_with_status()` — for each detection: try `out_dir/<slug>.json` (cache from prior run), then `resolve_config_path` from `config_fetcher` with multiple canonical name candidates (`_canonical_name_candidates` handles `"Godot Engine"` → `"godot"`, plus CJK / European suffixes like `"Godot 引擎"`, `"React フレームワーク"`, `"Lodash Bibliothek"`), then `generate_config_with_ai` as the last resort. Always appends `.json` to lookup names so local-disk and user-dir resolution actually finds files. Always stamps `metadata.detected_version` (nested, not top-level — `metadata.version` already exists and means config-schema version).
+4. `emit_codebase_config()` — always writes `<project>-codebase.json` (a `type: local` source pointed at the project root).
+5. `diff_against_existing()` — keyed by **filename slug** (not internal `data["name"]`) so re-scans don't churn when the AI returns a display name vs the registry canonical slug.
+6. `_archive_removed()` — when a config disappears from detections, MOVE (not delete — user may have hand-edited) to `out_dir/.archived/<UTC-timestamp>/`. Runs after diff, before fresh writes.
+7. `maybe_publish()` — **native async** (WS11). Opt-in submission of freshly AI-generated configs to the community registry. Pre-checks `GITHUB_TOKEN`. Idempotency guard: `_find_existing_issue` queries GitHub Search API for an existing open issue with the same config name before submitting. Retries transient failures (rate limit, 5xx) with 0s/5s/15s backoff. `_prompt_async` wraps `input()` via `asyncio.to_thread` so the event loop isn't blocked.
+
+**CLI dispatch** uses the `COMMAND_CLASSES` table in `main.py` (added in WS1). `scan` and `doctor` are dispatched as `Cls(args).execute()` consuming the parsed argparse namespace directly — no `_reconstruct_argv` hack, no duplicate argparse. `ScanCommand.execute()` is the single `asyncio.run` boundary wrapping `run_scan` (sync) + `maybe_publish` (async). Remaining ~14 commands still use the legacy `COMMAND_MODULES` dispatch; they're flagged for migration.
+
+**Cost guardrails**: `--max-ai-generations N` (default 10) caps unbounded AI generation; `--dry-run` previews without writing or invoking AI; `--probe-urls` HEAD-checks AI-generated URLs with retry-on-404 and stamps `metadata._url_unverified` on confirmed-bad URLs.
+
+**Safety**: All writes use `_atomic_write_json` (`os.replace` after writing to `.tmp`) so a `KeyboardInterrupt` mid-write can't corrupt configs. `_safe_size` guards `stat()` so broken symlinks don't crash the scan. `ScanCommand.execute` calls `logging.basicConfig` so `logger.warning`/`error` is visible; exit code is non-zero when no configs and no codebase config were emitted.
+
+**Public constant**: `SourceDetector.CODE_PROJECT_MARKERS` (was `_CODE_PROJECT_MARKERS`) — shared between source_detector + signal_collectors. ~50 manifest types now (Pipfile, environment.yml, deno.json, flake.nix, Chart.yaml, deps.edn, dune-project, BUILD.bazel, …). Public so cross-module access doesn't reach into a private attribute.
 
 ### SkillConverter Pattern (Template Method + Factory)
 

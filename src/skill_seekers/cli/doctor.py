@@ -7,7 +7,6 @@ similar to `brew doctor` or `flutter doctor`.
 
 from __future__ import annotations
 
-import argparse
 import os
 import shutil
 import subprocess
@@ -290,20 +289,14 @@ def print_report(results: list[CheckResult], verbose: bool = False) -> int:
     return 1 if errors > 0 else 0
 
 
-def main() -> int:
-    """Entry point for doctor command."""
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers doctor",
-        description="Check environment health and dependencies",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Show detailed diagnostic info"
-    )
-    args = parser.parse_args()
+class DoctorCommand:
+    """Entry point for `skill-seekers doctor`. Dispatched from `main.py` with
+    the already-parsed argparse namespace (no duplicate argparse here).
+    """
 
-    results = run_all_checks()
-    return print_report(results, verbose=args.verbose)
+    def __init__(self, args) -> None:
+        self.args = args
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+    def execute(self) -> int:
+        results = run_all_checks()
+        return print_report(results, verbose=getattr(self.args, "verbose", False))

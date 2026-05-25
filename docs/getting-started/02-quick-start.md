@@ -48,6 +48,8 @@ The `create` command auto-detects your source:
 | **Slack/Discord** | `skill-seekers chat --export slack-export/` |
 | **Config File** | `skill-seekers create configs/custom.json` |
 
+For an existing project where you don't know yet which frameworks you need skills for, use `skill-seekers scan <dir>` — it AI-detects the stack and emits one config per framework. See [Scan a project](05-scan-a-project.md).
+
 ---
 
 ## Examples by Source

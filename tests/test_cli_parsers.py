@@ -22,12 +22,12 @@ class TestParserRegistry:
 
     def test_all_parsers_registered(self):
         """Test that all parsers are registered."""
-        assert len(PARSERS) == 18, f"Expected 18 parsers, got {len(PARSERS)}"
+        assert len(PARSERS) == 19, f"Expected 19 parsers, got {len(PARSERS)}"
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 18
+        assert len(names) == 19
         assert "create" in names
         assert "package" in names
         assert "upload" in names
@@ -184,9 +184,9 @@ class TestCurrentCommands:
             assert cmd not in names, f"Removed command '{cmd}' still in parser registry!"
 
     def test_command_count_matches(self):
-        """Test that we have exactly 18 commands."""
-        assert len(PARSERS) == 18
-        assert len(get_parser_names()) == 18
+        """Test that we have exactly 19 commands."""
+        assert len(PARSERS) == 19
+        assert len(get_parser_names()) == 19
 
 
 if __name__ == "__main__":

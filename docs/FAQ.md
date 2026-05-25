@@ -227,6 +227,21 @@ skill-seekers scrape --base-url https://docs.example.com --name my-framework
 skill-seekers scrape --config configs/my-framework.json
 ```
 
+### How do I create skills for an entire project at once?
+
+Use `skill-seekers scan` — an AI agent inspects the project's manifests, README, Dockerfile/CI, and source imports, then emits one config per detected framework plus a `<project>-codebase.json` for your own code:
+
+```bash
+# AI-detect frameworks and emit configs
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, typescript.json, vite.json, my-react-app-codebase.json
+
+# Then build any of them
+skill-seekers create ./configs/scanned/react.json
+```
+
+Re-running `scan` against the same output directory reports diffs (added / version-bumped / removed) so you can keep skills in sync with your real dependencies. See [CLI Reference: scan](reference/CLI_REFERENCE.md#scan) for all flags.
+
 ### Can I analyze GitHub repositories?
 
 Yes! Skill Seekers has powerful GitHub analysis:
