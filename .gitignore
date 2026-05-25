@@ -70,3 +70,9 @@ skill-seekers-configs/
 !distribution/claude-plugin/.mcp.json
 settings.json
 USER_GUIDE.md
+
+# Local tooling artifacts (per-developer state, not project state)
+# chromadb's default persistence directory
+chroma_db/
+# Superpowers SDK output
+docs/superpowers/
