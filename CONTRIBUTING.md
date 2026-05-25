@@ -274,6 +274,24 @@ Describe the tests you ran to verify your changes.
 3. Once approved, a maintainer will merge your PR
 4. Your contribution will be included in the next release!
 
+### Code Review Guidelines
+
+**Fix both, don't follow precedent.** When a reviewer flags an anti-pattern in
+your PR, do not defend it by pointing at another file that does the same thing.
+"`X.py` already does this" is not a justification — it's evidence that two
+places need fixing, not that the smell is sanctioned.
+
+The correct response is one of:
+- "Good catch — I'll fix both `new_file.py` and `existing_file.py` in this PR."
+- "Out of scope here, but I'll file a follow-up to fix `existing_file.py`."
+
+The wrong response is:
+- "But `existing_file.py` does the same thing, so this matches the convention."
+
+This rule cuts both ways: maintainers calling out an anti-pattern should be
+willing to either accept the broader fix or open the follow-up issue
+themselves. Bad-precedent-as-convention is how codebases ossify.
+
 ---
 
 ## Coding Standards
