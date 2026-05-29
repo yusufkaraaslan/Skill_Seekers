@@ -859,14 +859,60 @@ class TestCreateCommandRouting:
         from skill_seekers.cli.skill_converter import get_converter
 
         for source_type in self.NEW_SOURCE_TYPES:
-            # get_converter should not raise for known types
-            # (it may raise ImportError for missing optional deps, which is OK)
+            # get_converter should not raise for known types.
+            # ImportError/RuntimeError are acceptable: the source type's optional
+            # dependency simply isn't installed in this environment.
             try:
                 converter_cls = get_converter(source_type, {"name": "test"})
                 assert converter_cls is not None, f"get_converter returned None for '{source_type}'"
-            except ImportError:
+            except (ImportError, RuntimeError):
                 # Optional dependency not installed - that's fine
                 pass
+
+    def test_optional_dep_checks_are_wired_correctly(self):
+        """Every OPTIONAL_DEP_CHECKS entry must resolve to a real callable.
+
+        Structural guard against drift: each mapped source type must exist in
+        CONVERTER_REGISTRY, and the named dependency-check function must exist
+        and be callable in that source type's registered module.
+        """
+        import importlib
+
+        from skill_seekers.cli.skill_converter import (
+            CONVERTER_REGISTRY,
+            OPTIONAL_DEP_CHECKS,
+        )
+
+        for source_type, func_name in OPTIONAL_DEP_CHECKS.items():
+            assert source_type in CONVERTER_REGISTRY, (
+                f"OPTIONAL_DEP_CHECKS references unknown source type '{source_type}'"
+            )
+            module_path, _ = CONVERTER_REGISTRY[source_type]
+            module = importlib.import_module(module_path)
+            fn = getattr(module, func_name, None)
+            assert callable(fn), f"{module_path}.{func_name} is missing or not callable"
+
+    def test_get_converter_fails_fast_when_optional_dep_missing(self):
+        """get_converter raises the scraper's RuntimeError when its dep is absent.
+
+        Exercises the real wiring end-to-end: flip the real jupyter_scraper
+        availability flag, then confirm get_converter() surfaces the same
+        RuntimeError (with install hint) that _check_jupyter_deps() raises —
+        before the converter is instantiated.
+        """
+        from unittest.mock import patch
+
+        from skill_seekers.cli.skill_converter import get_converter
+
+        with (
+            patch("skill_seekers.cli.jupyter_scraper.JUPYTER_AVAILABLE", False),
+            pytest.raises(RuntimeError) as exc_info,
+        ):
+            get_converter("jupyter", {"name": "test"})
+
+        message = str(exc_info.value)
+        assert "nbformat" in message
+        assert "pip install" in message
 
     def test_route_to_scraper_uses_get_converter(self):
         """Test _route_to_scraper delegates to get_converter (not per-type branches)."""
