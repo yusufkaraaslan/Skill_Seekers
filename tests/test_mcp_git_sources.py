@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.mcp_only
+
 # Test if MCP is available
 try:
     import mcp  # noqa: F401

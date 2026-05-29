@@ -3,6 +3,9 @@
 Tests for cli/estimate_pages.py functionality
 """
 
+import pytest
+pytestmark = [pytest.mark.integration, pytest.mark.network]
+
 import json
 import unittest
 from pathlib import Path

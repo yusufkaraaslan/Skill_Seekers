@@ -14,6 +14,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.mcp_only
+
 # Defensive import for MCP package (may not be installed in all environments)
 try:
     from mcp.types import TextContent

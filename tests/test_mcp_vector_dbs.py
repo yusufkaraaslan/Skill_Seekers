@@ -10,6 +10,8 @@ Validates the 4 new vector database export tools:
 """
 
 import pytest
+
+pytestmark = pytest.mark.mcp_only
 from pathlib import Path
 import sys
 import tempfile

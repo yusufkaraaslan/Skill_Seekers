@@ -359,6 +359,9 @@ markers = [
     "venv: mark test as requiring virtual environment setup",
     "bootstrap: mark test as bootstrap feature specific",
     "benchmark: mark test as performance benchmark",
+    "serial: tests that must run alone (shared HTTP server, singleton mutation)",
+    "network: tests that make real HTTP calls or need Docker services",
+    "mcp_only: tests that require the mcp package installed",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

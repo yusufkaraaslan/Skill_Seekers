@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.integration, pytest.mark.serial]
+
 from skill_seekers.cli.sync_config import discover_urls, sync_config
 
 

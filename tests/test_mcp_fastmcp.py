@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+pytestmark = pytest.mark.mcp_only
+
 # WORKAROUND for shadowing issue: Temporarily change to /tmp to import external mcp
 # This avoids any local mcp/ directory being in the import path
 _original_dir = os.getcwd()

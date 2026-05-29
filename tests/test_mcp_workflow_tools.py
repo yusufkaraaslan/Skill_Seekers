@@ -11,6 +11,8 @@ Covers all 5 tools:
 from __future__ import annotations
 
 import pytest
+
+pytestmark = pytest.mark.mcp_only
 import yaml
 
 

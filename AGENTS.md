@@ -44,46 +44,46 @@ OPENAI_API_KEY         # For OpenAI support
 GITHUB_TOKEN           # For GitHub repo scraping (higher rate limits)
 ```
 
-## Build / Test / Lint Commands
+## Build / Test / Lint
 
 ```bash
-# Run ALL tests (never skip tests — all must pass before commits)
+# Full suite (never skip — all must pass)
 pytest tests/ -v
 
-# Run a single test file
-pytest tests/test_scraper_features.py -v
+# Fast iteration (skip slow, integration, E2E, network, MCP)
+pytest tests/ -m "not slow and not integration and not e2e and not network and not serial and not mcp_only" -q
 
-# Run a single test function
+# Fast parallel (install pytest-xdist first)
+pytest tests/ -n auto --dist=loadfile -m "not slow and not integration and not e2e and not network and not serial and not mcp_only" -q
+
+# 3-phase runner script (recommended for local dev)
+bash scripts/run_tests_fast.sh
+
+# Single test
 pytest tests/test_scraper_features.py::test_detect_language -v
 
-# Run a single test class method
-pytest tests/test_adaptors/test_claude_adaptor.py::TestClaudeAdaptor::test_package -v
-
-# Skip slow/integration tests
+# Skip slow/integration
 pytest tests/ -v -m "not slow and not integration"
 
 # With coverage
 pytest tests/ --cov=src/skill_seekers --cov-report=term
 
-# Lint (ruff)
+# Lint + format check (matches CI)
 ruff check src/ tests/
-ruff check src/ tests/ --fix
-
-# Format (ruff)
 ruff format --check src/ tests/
-ruff format src/ tests/
 
-# Type check (mypy)
+# Type check (non-blocking — mypy is continue-on-error in CI)
 mypy src/skill_seekers --show-error-codes --pretty
 ```
 
-**Pytest config** (from pyproject.toml): `addopts = "-v --tb=short --strict-markers"`, `asyncio_mode = "auto"`, `asyncio_default_fixture_loop_scope = "function"`.
+**Pytest config:** `asyncio_mode = "auto"`, so `@pytest.mark.asyncio` is implicit. Test markers: `slow`, `integration`, `e2e`, `venv`, `bootstrap`, `benchmark`, `asyncio`, `serial`, `network`, `mcp_only`.
 
-**Test markers:** `slow`, `integration`, `e2e`, `venv`, `bootstrap`, `benchmark`, `asyncio`.
+**CI note:** CI pins `ruff==0.15.8` (not the `>=0.14.13` dev dep). If formatting behaves differently locally, check the CI version.
 
-**Async tests:** use `@pytest.mark.asyncio`; asyncio_mode is `auto` so the decorator is often implicit.
-
-**Test count:** 160 test files (138 in `tests/`, 22 in `tests/test_adaptors/`).
+**CI test phases:** Tests are split into 3 parallel jobs:
+- `test-fast` — 3386 unit tests with xdist across OS/Python matrix
+- `test-serial` — 69 serial/integration/E2E/network tests
+- `test-mcp` — 193 MCP tests (requires `[mcp]` extras)
 
 ## Code Style
 

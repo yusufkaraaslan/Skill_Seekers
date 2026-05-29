@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = [pytest.mark.integration, pytest.mark.network]
+
 from skill_seekers.cli.browser_renderer import (
     BrowserRenderer,
     _auto_install_chromium,
