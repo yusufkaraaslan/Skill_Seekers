@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from skill_seekers.cli.conflict_detector import ConflictDetector, Conflict
 
 
@@ -45,7 +47,12 @@ class TestConflictDetectorEdgeCases:
         assert conflict.suggestion is None
 
     def test_conflict_asdict_with_all_fields(self):
-        """Conflict.asdict() should work when all optional fields are populated."""
+        """dataclasses.asdict(conflict) should produce a full, deep-copied mapping.
+
+        Mirrors the production serialization path (see ConflictDetector, which
+        emits ``asdict(c)`` for each conflict), rather than the shallow
+        ``__dict__`` attribute view.
+        """
         conflict = Conflict(
             type="signature_mismatch",
             severity="medium",
@@ -55,9 +62,15 @@ class TestConflictDetectorEdgeCases:
             difference="code has extra param c",
             suggestion="add param c to docs",
         )
-        d = conflict.__dict__
+        d = asdict(conflict)
         assert d["type"] == "signature_mismatch"
         assert d["severity"] == "medium"
         assert d["api_name"] == "my_api"
         assert d["docs_info"] == {"params": ["a", "b"]}
         assert d["code_info"] == {"params": ["a", "b", "c"]}
+        assert d["difference"] == "code has extra param c"
+        assert d["suggestion"] == "add param c to docs"
+        # asdict() recursively copies nested containers (unlike __dict__), so
+        # mutating the result must not leak back into the original instance.
+        d["docs_info"]["params"].append("mutated")
+        assert conflict.docs_info == {"params": ["a", "b"]}
