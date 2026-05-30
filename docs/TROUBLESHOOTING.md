@@ -2,6 +2,17 @@
 
 Comprehensive guide for diagnosing and resolving common issues with Skill Seekers.
 
+## Quick Fixes
+
+| Issue | Quick Fix |
+|-------|-----------|
+| `command not found` | `export PATH="$HOME/.local/bin:$PATH"` |
+| `ImportError` | `pip install -e .` |
+| `Rate limit` | Add `--rate-limit 2.0` |
+| `No content` | Check selectors in config |
+| `Enhancement fails` | Set `ANTHROPIC_API_KEY` |
+| `Out of memory` | Use `--streaming` mode |
+
 ## Table of Contents
 
 - [Installation Issues](#installation-issues)
@@ -103,7 +114,7 @@ RuntimeError: Required video visual dependencies not installed
 
 ```bash
 # Run the GPU-aware setup command
-skill-seekers video --setup
+skill-seekers create --setup
 
 # This auto-detects your GPU and installs:
 # - PyTorch (correct CUDA/ROCm/CPU variant)
@@ -172,7 +183,7 @@ FileNotFoundError: [Errno 2] No such file or directory
 ls -la configs/react.json
 
 # Use absolute path
-skill-seekers scrape --config /full/path/to/configs/react.json
+skill-seekers create --config /full/path/to/configs/react.json
 
 # Create config directory
 mkdir -p ~/.config/skill-seekers/configs
@@ -229,7 +240,7 @@ Empty SKILL.md generated
 ```bash
 # Enable debug mode
 export LOG_LEVEL=DEBUG
-skill-seekers scrape --config config.json --verbose
+skill-seekers create --config config.json --verbose
 
 # Test selectors manually
 python -c "
@@ -268,10 +279,10 @@ Progress: 50/500 pages (10%)
 
 ```bash
 # Enable async scraping (2-3x faster)
-skill-seekers scrape --config config.json --async
+skill-seekers create --config config.json --async
 
 # Reduce max pages
-skill-seekers scrape --config config.json --max-pages 100
+skill-seekers create --config config.json --max-pages 100
 
 # Increase concurrency
 # Edit config.json:
@@ -281,7 +292,7 @@ skill-seekers scrape --config config.json --max-pages 100
 }
 
 # Use caching for re-runs
-skill-seekers scrape --config config.json --use-cache
+skill-seekers create --config config.json --use-cache
 ```
 
 ### Issue: Pages Not Being Discovered
@@ -310,7 +321,7 @@ Expected 100+ pages
 }
 
 # Debug URL discovery
-skill-seekers scrape --config config.json --dry-run --verbose
+skill-seekers create --config config.json --dry-run --verbose
 ```
 
 ## GitHub API Issues
@@ -339,7 +350,7 @@ skill-seekers config --github
 # Check X-RateLimit-Reset header for timestamp
 
 # Use non-interactive mode in CI/CD
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create  owner/repo --non-interactive
 
 # Configure rate limit strategy
 skill-seekers config --github
@@ -384,12 +395,12 @@ Repository not found: owner/repo
 
 ```bash
 # Check repository name (case-sensitive)
-skill-seekers github --repo facebook/react  # Correct
-skill-seekers github --repo Facebook/React  # Wrong
+skill-seekers create  facebook/react  # Correct
+skill-seekers create  Facebook/React  # Wrong
 
 # Check if repo is private (requires token)
 export GITHUB_TOKEN=ghp_...
-skill-seekers github --repo private/repo
+skill-seekers create  private/repo
 
 # Verify repo exists
 curl https://api.github.com/repos/owner/repo
@@ -471,7 +482,7 @@ Need free alternative
 skill-seekers enhance output/react/ --mode LOCAL
 
 # Skip enhancement entirely
-skill-seekers scrape --config config.json --skip-enhance
+skill-seekers create --config config.json --skip-enhance
 
 # Estimate cost before enhancing
 # Claude API: ~$0.15-$0.30 per skill
@@ -596,7 +607,7 @@ ps aux --sort=-%mem | head -10
 htop
 
 # Reduce batch size
-skill-seekers scrape --config config.json --batch-size 10
+skill-seekers create --config config.json --batch-size 10
 
 # Enable memory limits
 # Docker:
@@ -627,7 +638,7 @@ Disk I/O bottleneck
 
 ```bash
 # Enable async operations
-skill-seekers scrape --config config.json --async
+skill-seekers create --config config.json --async
 
 # Increase concurrency
 {
@@ -675,7 +686,7 @@ tar czf benchmarks-archive.tar.gz benchmarks/
 rm -rf benchmarks/*.json
 
 # Use cloud storage
-skill-seekers scrape --config config.json \
+skill-seekers create --config config.json \
   --storage s3 \
   --bucket my-skills-bucket
 
@@ -796,7 +807,7 @@ sudo yum reinstall ca-certificates
 # As last resort (not recommended for production):
 export PYTHONHTTPSVERIFY=0
 # Or in code:
-skill-seekers scrape --config config.json --no-verify-ssl
+skill-seekers create --config config.json --no-verify-ssl
 ```
 
 ## General Debug Techniques
@@ -808,10 +819,10 @@ skill-seekers scrape --config config.json --no-verify-ssl
 export LOG_LEVEL=DEBUG
 
 # Run with verbose output
-skill-seekers scrape --config config.json --verbose
+skill-seekers create --config config.json --verbose
 
 # Save logs to file
-skill-seekers scrape --config config.json 2>&1 | tee debug.log
+skill-seekers create --config config.json 2>&1 | tee debug.log
 ```
 
 ### Collect Diagnostic Information
@@ -923,7 +934,7 @@ pip install feedparser            # RSS/Atom feed support
 pip install groff                 # Man page support (system package)
 
 # Video support (GPU-aware)
-skill-seekers video --setup
+skill-seekers create --setup
 ```
 
 ### Issue: Confluence API Authentication Fails
@@ -946,7 +957,7 @@ export CONFLUENCE_TOKEN=your-api-token
 # https://id.atlassian.com/manage-profile/security/api-tokens
 
 # Test connection
-skill-seekers confluence --space MYSPACE --dry-run
+skill-seekers create --space-key  MYSPACE --dry-run
 
 # For Confluence Server/Data Center, use personal access token:
 export CONFLUENCE_TOKEN=your-pat
@@ -973,7 +984,7 @@ export NOTION_TOKEN=secret_...
 # (click "..." menu on page → "Add connections" → select your integration)
 
 # Test connection
-skill-seekers notion --database DATABASE_ID --dry-run
+skill-seekers create --database-id  DATABASE_ID --dry-run
 ```
 
 ### Issue: Jupyter Notebook Extraction Fails
@@ -994,7 +1005,7 @@ python -c "import json; json.load(open('notebook.ipynb'))"
 pip install nbformat nbconvert
 
 # Try with explicit format version
-skill-seekers jupyter notebook.ipynb --nbformat 4
+skill-seekers create notebook.ipynb --nbformat 4
 ```
 
 ### Issue: OpenAPI Spec Parsing Fails
@@ -1019,7 +1030,7 @@ validate({'openapi': '3.0.0', ...})
 # Supported: OpenAPI 3.x and Swagger 2.0
 
 # For remote specs
-skill-seekers openapi https://api.example.com/openapi.json --name my-api
+skill-seekers create https://api.example.com/openapi.json --name my-api
 ```
 
 ### Issue: EPUB Extraction Produces Empty Output
@@ -1038,7 +1049,7 @@ pip install epubcheck
 epubcheck book.epub
 
 # Try with different content extraction
-skill-seekers epub book.epub --extract-images --verbose
+skill-seekers create book.epub --extract-images --verbose
 
 # Some DRM-protected EPUBs cannot be extracted
 # Ensure your EPUB is DRM-free
@@ -1056,8 +1067,8 @@ Error: No messages found in export
 
 ```bash
 # Specify platform explicitly
-skill-seekers chat --platform slack --export-dir ./slack-export
-skill-seekers chat --platform discord --export-dir ./discord-export
+skill-seekers create --platform  slack --export-dir ./slack-export
+skill-seekers create --platform  discord --export-dir ./discord-export
 
 # For Slack: Export from Workspace Settings → Import/Export
 # For Discord: Use DiscordChatExporter or similar tool

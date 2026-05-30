@@ -1,6 +1,6 @@
 # Documentation Architecture
 
-> **How Skill Seekers documentation is organized (v3.2.0 - 17 source types)**
+> **How Skill Seekers documentation is organized (v3.6.0 - 18 source types)**
 
 ---
 
@@ -83,7 +83,7 @@ docs/
 
 **Files:**
 - `01-core-concepts.md` - How it works
-- `02-scraping.md` - All 17 source types (docs, GitHub, PDF, video, Word, EPUB, Jupyter, HTML, OpenAPI, AsciiDoc, PPTX, RSS, man pages, Confluence, Notion, Slack/Discord, local codebase)
+- `02-scraping.md` - All 18 source types (docs, GitHub, PDF, video, Word, EPUB, Jupyter, HTML, OpenAPI, AsciiDoc, PPTX, RSS, man pages, Confluence, Notion, Slack/Discord, local codebase)
 - `03-enhancement.md` - AI enhancement
 - `04-packaging.md` - Platform export
 - `05-workflows.md` - Workflow presets
@@ -104,7 +104,7 @@ docs/
 **Files:**
 - `CLI_REFERENCE.md` - All CLI commands (including 17 source-type subcommands)
 - `MCP_REFERENCE.md` - 40 MCP tools
-- `CONFIG_FORMAT.md` - JSON schema (covers all 17 source types)
+- `CONFIG_FORMAT.md` - JSON schema (covers all 18 source types)
 - `ENVIRONMENT_VARIABLES.md` - All env vars (including Confluence, Notion, Slack tokens)
 
 ---
@@ -147,7 +147,7 @@ Example:
 ```markdown
 # Topic Guide
 
-> **Skill Seekers v3.1.0**
+> **Skill Seekers v3.6.0**
 
 ## Major Section
 

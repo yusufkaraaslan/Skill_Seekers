@@ -618,7 +618,7 @@ aws s3 cp "$BACKUP_DIR/backup_$TIMESTAMP.tar.gz" \
 
 4. **Test functionality**
    ```bash
-   skill-seekers scrape --config configs/test.json --max-pages 10
+   skill-seekers create --config configs/test.json --max-pages 10
    ```
 
 **RTO/RPO targets:**
@@ -643,7 +643,7 @@ aws s3 cp "$BACKUP_DIR/backup_$TIMESTAMP.tar.gz" \
 ps aux --sort=-%mem | head -10
 
 # Reduce batch size
-skill-seekers scrape --config config.json --batch-size 10
+skill-seekers create --config config.json --batch-size 10
 
 # Enable memory limits
 docker run --memory=4g skillseekers:latest
@@ -679,13 +679,13 @@ skill-seekers config --github
 
 ```bash
 # Enable async scraping (2-3x faster)
-skill-seekers scrape --config config.json --async
+skill-seekers create --config config.json --async
 
 # Increase concurrency
 # (adjust in config: "concurrency": 10)
 
 # Use caching
-skill-seekers scrape --config config.json --use-cache
+skill-seekers create --config config.json --use-cache
 ```
 
 #### 4. API Errors
@@ -741,7 +741,7 @@ Enable detailed logging:
 export LOG_LEVEL=DEBUG
 
 # Run with verbose output
-skill-seekers scrape --config config.json --verbose
+skill-seekers create --config config.json --verbose
 ```
 
 ### Getting Help

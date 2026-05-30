@@ -1,6 +1,6 @@
 # Frequently Asked Questions (FAQ)
 
-**Version:** 3.2.0
+**Version:** 3.6.0
 **Last Updated:** 2026-03-15
 
 ---
@@ -9,7 +9,7 @@
 
 ### What is Skill Seekers?
 
-Skill Seekers is a Python tool that converts 17 source types — documentation websites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML files, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and local codebases — into AI-ready formats for 30+ platforms: LLM platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Markdown), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev, Roo, Aider, Bolt, Kilo, Kimi Code).
+Skill Seekers is a Python tool that converts 18 source types — documentation websites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML files, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence wikis, Notion pages, Slack/Discord exports, and local codebases — into AI-ready formats for 21+ platforms: LLM platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Markdown), RAG frameworks (LangChain, LlamaIndex, Haystack), vector databases (ChromaDB, FAISS, Weaviate, Qdrant, Pinecone), and AI coding assistants (Cursor, Windsurf, Cline, Continue.dev, Roo, Aider, Bolt, Kilo, Kimi Code).
 
 **Use Cases:**
 - Create custom documentation skills for your favorite frameworks
@@ -84,7 +84,7 @@ Each platform has a dedicated adaptor for optimal formatting and upload.
 pip install skill-seekers[video-full]
 
 # 2. Auto-detect GPU and install visual deps
-skill-seekers video --setup
+skill-seekers create --setup
 ```
 
 The `--setup` command auto-detects your GPU vendor (NVIDIA CUDA, AMD ROCm, or CPU-only) and installs the correct PyTorch variant along with easyocr and other visual extraction dependencies. This avoids the ~2GB NVIDIA CUDA download that would happen if easyocr were installed via pip on non-NVIDIA systems.
@@ -96,7 +96,7 @@ The `--setup` command auto-detects your GPU vendor (NVIDIA CUDA, AMD ROCm, or CP
 
 ### What source types are supported?
 
-Skill Seekers supports **17 source types**:
+Skill Seekers supports **18 source types**:
 
 | # | Source Type | CLI Command | Auto-Detection |
 |---|------------|-------------|----------------|
@@ -214,17 +214,17 @@ echo 'export ANTHROPIC_API_KEY=sk-ant-...' >> ~/.bashrc
 
 **Using preset config:**
 ```bash
-skill-seekers scrape --config react
+skill-seekers create --config react
 ```
 
 **Using custom URL:**
 ```bash
-skill-seekers scrape --base-url https://docs.example.com --name my-framework
+skill-seekers create --base-url https://docs.example.com --name my-framework
 ```
 
 **From custom config file:**
 ```bash
-skill-seekers scrape --config configs/my-framework.json
+skill-seekers create --config configs/my-framework.json
 ```
 
 ### How do I create skills for an entire project at once?
@@ -248,10 +248,10 @@ Yes! Skill Seekers has powerful GitHub analysis:
 
 ```bash
 # Basic analysis (fast)
-skill-seekers github https://github.com/facebook/react
+skill-seekers create https://github.com/facebook/react
 
 # Deep C3.x analysis (includes patterns, tests, guides)
-skill-seekers github https://github.com/vercel/next.js --analysis-depth c3x
+skill-seekers create https://github.com/vercel/next.js --analysis-depth c3x
 ```
 
 **C3.x Features:**
@@ -268,20 +268,20 @@ Yes! PDF extraction with OCR support:
 
 ```bash
 # Basic PDF extraction
-skill-seekers pdf manual.pdf --name product-manual
+skill-seekers create --pdf manual.pdf --name product-manual
 
 # With OCR (for scanned PDFs)
-skill-seekers pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --enable-ocr
 
 # Extract images and tables
-skill-seekers pdf document.pdf --extract-images --extract-tables
+skill-seekers create --pdf document.pdf --extract-images --extract-tables
 ```
 
 ### How do I scrape a Jupyter Notebook?
 
 ```bash
 # Extract cells, outputs, and markdown from a notebook
-skill-seekers jupyter analysis.ipynb --name data-analysis
+skill-seekers create analysis.ipynb --name data-analysis
 
 # Or use auto-detection
 skill-seekers create analysis.ipynb
@@ -297,33 +297,33 @@ Jupyter extraction preserves code cells, markdown cells, and cell outputs. It wo
 export CONFLUENCE_URL=https://yourorg.atlassian.net
 export CONFLUENCE_TOKEN=your-api-token
 export CONFLUENCE_EMAIL=your-email@example.com
-skill-seekers confluence --space MYSPACE --name my-wiki
+skill-seekers create --space-key  MYSPACE --name my-wiki
 
 # From a Confluence HTML/XML export directory
-skill-seekers confluence --export-dir ./confluence-export --name my-wiki
+skill-seekers create --conf-export-path  ./confluence-export --name my-wiki
 ```
 
 **Notion:**
 ```bash
 # From Notion API
 export NOTION_TOKEN=secret_...
-skill-seekers notion --database DATABASE_ID --name my-notes
+skill-seekers create --database-id  DATABASE_ID --name my-notes
 
 # From a Notion HTML/Markdown export directory
-skill-seekers notion --export-dir ./notion-export --name my-notes
+skill-seekers create --notion-export-path  ./notion-export --name my-notes
 ```
 
 ### How do I convert Word, EPUB, or PowerPoint files?
 
 ```bash
 # Word document
-skill-seekers word report.docx --name quarterly-report
+skill-seekers create report.docx --name quarterly-report
 
 # EPUB book
-skill-seekers epub handbook.epub --name dev-handbook
+skill-seekers create handbook.epub --name dev-handbook
 
 # PowerPoint presentation
-skill-seekers pptx slides.pptx --name training-deck
+skill-seekers create slides.pptx --name training-deck
 
 # Or use auto-detection for any of them
 skill-seekers create report.docx
@@ -335,7 +335,7 @@ skill-seekers create slides.pptx
 
 ```bash
 # From a local YAML/JSON file
-skill-seekers openapi api-spec.yaml --name my-api
+skill-seekers create api-spec.yaml --name my-api
 
 # Auto-detection works too
 skill-seekers create api-spec.yaml
@@ -347,20 +347,20 @@ OpenAPI extraction parses endpoints, schemas, parameters, and examples into a st
 
 ```bash
 # RSS/Atom feed
-skill-seekers rss https://blog.example.com/feed.xml --name blog-feed
+skill-seekers create https://blog.example.com/feed.xml --name blog-feed
 
 # Man page
-skill-seekers manpage grep.1 --name grep-manual
+skill-seekers create grep.1 --name grep-manual
 ```
 
 ### How do I import from Slack or Discord?
 
 ```bash
 # From a Slack export directory
-skill-seekers chat --platform slack --export-dir ./slack-export --name team-knowledge
+skill-seekers create --platform  slack --export-dir ./slack-export --name team-knowledge
 
 # From a Discord export directory
-skill-seekers chat --platform discord --export-dir ./discord-export --name server-archive
+skill-seekers create --platform  discord --export-dir ./discord-export --name server-archive
 ```
 
 ### Can I combine multiple sources?
@@ -390,7 +390,7 @@ Yes! Unified multi-source scraping:
 
 **Run unified scraping:**
 ```bash
-skill-seekers unified --config configs/unified/my-framework.json
+skill-seekers create --config configs/unified/my-framework.json
 ```
 
 ### How do I upload skills to platforms?
@@ -558,7 +558,7 @@ skill-seekers list-configs
 **Solutions:**
 1. **Use async mode** (2-3x faster):
 ```bash
-skill-seekers scrape --config react --async
+skill-seekers create --config react --async
 ```
 
 2. **Increase rate limit** (faster requests):
@@ -598,7 +598,7 @@ skill-seekers scrape --config react --async
 }
 
 # Use verbose mode to see what's being scraped
-skill-seekers scrape --config react --verbose
+skill-seekers create --config react --verbose
 ```
 
 ### How do I fix "NetworkError: Connection failed"?
@@ -661,7 +661,7 @@ skill-seekers-mcp --transport http --port 8765
 
 ### What MCP tools are available?
 
-**26 MCP tools:**
+**40 MCP tools:**
 
 *Core Tools (9):*
 1. `list_configs` - List preset configurations
@@ -775,7 +775,7 @@ package_path = adaptor.package(skill_path, 'output/')
 
 **Use config:**
 ```bash
-skill-seekers scrape --config configs/my-framework.json
+skill-seekers create --config configs/my-framework.json
 ```
 
 ### Can I contribute preset configs?
@@ -785,7 +785,7 @@ Yes! We welcome config contributions:
 1. **Create config** in `configs/` directory
 2. **Test it** thoroughly:
 ```bash
-skill-seekers scrape --config configs/your-framework.json
+skill-seekers create --config configs/your-framework.json
 ```
 3. **Submit PR** on [GitHub](https://github.com/yusufkaraaslan/Skill_Seekers)
 
@@ -799,13 +799,13 @@ skill-seekers scrape --config configs/your-framework.json
 
 ```bash
 # Verbose output
-skill-seekers scrape --config react --verbose
+skill-seekers create --config react --verbose
 
 # Dry run (no actual scraping)
-skill-seekers scrape --config react --dry-run
+skill-seekers create --config react --dry-run
 
 # Single page test
-skill-seekers scrape --base-url https://docs.example.com/intro --max-pages 1
+skill-seekers create --base-url https://docs.example.com/intro --max-pages 1
 
 # Check selectors
 skill-seekers validate-config configs/react.json
@@ -855,6 +855,6 @@ Yes!
 
 ---
 
-**Version:** 3.2.0
+**Version:** 3.6.0
 **Last Updated:** 2026-03-15
 **Questions? Ask on [GitHub Discussions](https://github.com/yusufkaraaslan/Skill_Seekers/discussions)**

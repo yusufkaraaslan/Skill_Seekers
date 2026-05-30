@@ -1,12 +1,12 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.2.0**
+> **Complete documentation for Skill Seekers v3.6.0**
 
 ---
 
 ## Welcome!
 
-This is the official documentation for **Skill Seekers** - the universal tool for converting **17 source types** (documentation sites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases) into AI-ready skills for 30+ platforms.
+This is the official documentation for **Skill Seekers** - the universal tool for converting **18 source types** (documentation sites, GitHub repos, PDFs, videos, Word docs, EPUB books, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases) into AI-ready skills for 21+ platforms.
 
 ---
 
@@ -36,8 +36,8 @@ Explore our **User Guides**:
 
 Look up specific information:
 
-- [CLI Reference](reference/CLI_REFERENCE.md) - All 20 commands
-- [MCP Reference](reference/MCP_REFERENCE.md) - 26 MCP tools
+- [CLI Reference](reference/CLI_REFERENCE.md) - All 19 commands
+- [MCP Reference](reference/MCP_REFERENCE.md) - 40 MCP tools
 - [Config Format](reference/CONFIG_FORMAT.md) - JSON specification
 - [Environment Variables](reference/ENVIRONMENT_VARIABLES.md) - All env vars
 
@@ -46,7 +46,7 @@ Look up specific information:
 Power user features:
 
 - [MCP Server Setup](advanced/mcp-server.md) - MCP integration
-- [MCP Tools Deep Dive](advanced/mcp-tools.md) - Advanced MCP usage
+- [MCP Tools Deep Dive](advanced/mcp-server.md) - Advanced MCP usage
 - [Custom Workflows](advanced/custom-workflows.md) - Create workflows
 - [Multi-Source Scraping](advanced/multi-source.md) - Combine sources
 
@@ -70,39 +70,14 @@ skill-seekers package output/django --target claude
 ### Common Commands
 
 ```bash
-# Auto-detect any source type
+# Create from any source (auto-detects type)
 skill-seekers create https://docs.django.com/
 skill-seekers create facebook/react
 skill-seekers create manual.pdf
 skill-seekers create notebook.ipynb
 
-# AI-detect a project's tech stack — emits one config per framework
+# Scan a project for tech stack — emits one config per framework
 skill-seekers scan ./my-react-app --out ./configs/scanned/
-
-# Scrape documentation
-skill-seekers scrape --config react
-
-# Analyze GitHub repo
-skill-seekers github --repo facebook/react
-
-# Extract PDF
-skill-seekers pdf manual.pdf --name docs
-
-# Convert other formats
-skill-seekers word report.docx --name report
-skill-seekers epub book.epub --name handbook
-skill-seekers jupyter analysis.ipynb --name analysis
-skill-seekers openapi spec.yaml --name my-api
-skill-seekers pptx slides.pptx --name deck
-skill-seekers video https://youtube.com/watch?v=... --name tutorial
-
-# Import from platforms
-skill-seekers confluence --space DOCS --name wiki
-skill-seekers notion --database DB_ID --name notes
-skill-seekers chat --platform slack --export-dir ./export
-
-# Analyze local code
-skill-seekers analyze --directory ./my-project
 
 # Enhance skill
 skill-seekers enhance output/my-skill/
@@ -113,8 +88,11 @@ skill-seekers package output/my-skill/ --target claude
 # Upload
 skill-seekers upload output/my-skill-claude.zip
 
-# List workflows
-skill-seekers workflows list
+# Install complete workflow
+skill-seekers install --config react --target claude
+
+# Doctor / diagnostics
+skill-seekers doctor
 ```
 
 ---
@@ -140,17 +118,41 @@ docs/
 │   ├── 05-workflows.md
 │   └── 06-troubleshooting.md
 │
+├── guides/                  # How-to guides
+│   ├── MCP_SETUP.md
+│   ├── MIGRATION_GUIDE.md
+│   ├── TESTING_GUIDE.md
+│   └── UPLOAD_GUIDE.md
+│
+├── integrations/            # Platform integrations
+│   ├── LANGCHAIN.md
+│   ├── LLAMA_INDEX.md
+│   ├── CURSOR.md
+│   └── ...
+│
+├── features/                # Feature deep-dives
+│   ├── BOOTSTRAP_SKILL.md
+│   ├── UNIFIED_SCRAPING.md
+│   └── ENHANCEMENT.md
+│
 ├── reference/               # Technical reference
-│   ├── CLI_REFERENCE.md     # 20 commands
-│   ├── MCP_REFERENCE.md     # 26 MCP tools
+│   ├── CLI_REFERENCE.md     # 19 commands
+│   ├── MCP_REFERENCE.md     # 40 MCP tools
 │   ├── CONFIG_FORMAT.md     # JSON spec
 │   └── ENVIRONMENT_VARIABLES.md
 │
-└── advanced/                # Power user topics
-    ├── mcp-server.md
-    ├── mcp-tools.md
-    ├── custom-workflows.md
-    └── multi-source.md
+├── advanced/                # Power user topics
+│   ├── mcp-server.md
+│   ├── custom-workflows.md
+│   └── multi-source.md
+│
+├── archive/                 # Legacy docs
+├── blog/                    # Blog posts
+├── case-studies/            # Case studies
+├── plans/                   # Feature plans
+├── roadmap/                 # Roadmap
+├── strategy/                # Strategy docs
+└── zh-CN/                   # Chinese translations
 ```
 
 ---
@@ -185,9 +187,9 @@ For Cursor, Windsurf, Cline, Roo, Aider, Bolt, Kilo, Continue, Kimi Code:
 
 ## Version Information
 
-- **Current Version:** 3.2.0
+- **Current Version:** 3.6.0
 - **Last Updated:** 2026-03-15
-- **Source Types:** 17
+- **Source Types:** 18
 - **Python Required:** 3.10+
 
 ---

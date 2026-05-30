@@ -201,7 +201,7 @@ docker run --rm \
   -e GITHUB_TOKEN=$GITHUB_TOKEN \
   -v $(pwd)/output:/app/output \
   skillseekers:latest \
-  skill-seekers scrape --config configs/react.json
+  skill-seekers create --config configs/react.json
 
 # Generate skill
 docker run --rm \
