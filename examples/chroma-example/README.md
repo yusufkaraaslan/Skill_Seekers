@@ -252,7 +252,7 @@ collection = client.create_collection(
 "--config", "configs/django.json",  # Your framework
 
 # Or use CLI directly
-skill-seekers scrape --config configs/flask.json
+skill-seekers create --config configs/flask.json
 skill-seekers package output/flask --target chroma
 ```
 
@@ -391,4 +391,4 @@ chroma-example/
 ---
 
 **Last Updated:** February 2026
-**Tested With:** ChromaDB v0.4.22, Python 3.10+, skill-seekers v2.10.0
+**Tested With:** ChromaDB v0.4.22, Python 3.10+, skill-seekers v3.6.0

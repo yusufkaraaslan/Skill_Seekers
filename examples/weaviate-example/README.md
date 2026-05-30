@@ -235,7 +235,7 @@ Want to use a different documentation source? Easy:
 
 Or scrape from scratch:
 ```bash
-skill-seekers scrape --config configs/your_framework.json
+skill-seekers create --config configs/your_framework.json
 skill-seekers package output/your_framework --target weaviate
 ```
 
@@ -336,4 +336,4 @@ weaviate-example/
 ---
 
 **Last Updated:** February 2026
-**Tested With:** Weaviate v1.25.0, Python 3.10+, skill-seekers v2.10.0
+**Tested With:** Weaviate v1.25.0, Python 3.10+, skill-seekers v3.6.0

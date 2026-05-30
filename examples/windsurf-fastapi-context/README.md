@@ -18,10 +18,10 @@ Complete example showing how to use Skill Seekers to generate Windsurf rules for
 pip install skill-seekers
 
 # Generate FastAPI documentation skill
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
-# Package for Windsurf with split rules (respects 6K char limit)
-skill-seekers package output/fastapi --target markdown --split-rules
+# Package for Windsurf
+skill-seekers package output/fastapi --target markdown
 ```
 
 ### 2. Copy to Windsurf Project
@@ -176,10 +176,10 @@ router = APIRouter(prefix="/api/v1")
 
 ```bash
 # Generate smaller rule files (5K chars each)
-skill-seekers package output/fastapi --target markdown --split-rules --max-chars 5000
+skill-seekers package output/fastapi --target markdown
 
 # Generate larger rule files (5.5K chars each)
-skill-seekers package output/fastapi --target markdown --split-rules --max-chars 5500
+skill-seekers package output/fastapi --target markdown
 ```
 
 ## Troubleshooting
@@ -204,7 +204,7 @@ Cmd+Shift+P → "Reload Window"
 
 **Solution:** Re-generate with smaller max-chars
 ```bash
-skill-seekers package output/fastapi --target markdown --split-rules --max-chars 4500
+skill-seekers package output/fastapi --target markdown
 ```
 
 ### Issue: Cascade not using rules
@@ -242,10 +242,10 @@ Now Cascade can query documentation dynamically via MCP tools.
 
 ```bash
 # Generate backend rules (FastAPI)
-skill-seekers package output/fastapi --target markdown --split-rules
+skill-seekers package output/fastapi --target markdown
 
 # Generate frontend rules (React)
-skill-seekers package output/react --target markdown --split-rules
+skill-seekers package output/react --target markdown
 
 # Organize rules:
 .windsurf/rules/

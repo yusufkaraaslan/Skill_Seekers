@@ -66,7 +66,7 @@ def load_framework_docs(framework: str) -> str:
     raise FileNotFoundError(
         f"Documentation not found for framework: {framework}\n"
         f"Tried paths: {[str(p) for p in possible_paths]}\n"
-        f"Run: skill-seekers scrape --config configs/{framework}.json"
+        f"Run: skill-seekers create --config configs/{framework}.json"
     )
 
 

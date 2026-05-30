@@ -25,11 +25,11 @@ First, generate LlamaIndex nodes using Skill Seekers:
 
 ```bash
 # Option 1: Use preset config (e.g., Django)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target llama-index
 
 # Option 2: From GitHub repo
-skill-seekers github --repo django/django --name django
+skill-seekers create --repo django/django --name django
 skill-seekers package output/django --target llama-index
 
 # Output: output/django-llama-index.json

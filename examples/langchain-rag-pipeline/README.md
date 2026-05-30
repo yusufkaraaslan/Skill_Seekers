@@ -25,11 +25,11 @@ First, generate LangChain documents using Skill Seekers:
 
 ```bash
 # Option 1: Use preset config (e.g., React)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target langchain
 
 # Option 2: From GitHub repo
-skill-seekers github --repo facebook/react --name react
+skill-seekers create --repo facebook/react --name react
 skill-seekers package output/react --target langchain
 
 # Output: output/react-langchain.json
