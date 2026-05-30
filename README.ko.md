@@ -12,11 +12,11 @@
 >
 > 번역 개선에 도움을 주시려면 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260)에 참여해 주세요! 여러분의 피드백은 매우 소중합니다.
 
-[![버전](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![버전](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![라이선스: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 통합](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![테스트 통과](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![테스트 통과](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![프로젝트 보드](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 버전](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 다운로드](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **동영상** — YouTube 및 로컬 동영상에서 코드, 자막, 구조화된 지식 추출
 - 🔄 **17가지 소스 유형** — 문서 + GitHub + PDF + 동영상 + 노트북 + 위키 등을 하나의 지식 자산으로 결합
 - 🌐 **한 번 준비, 모든 대상으로 내보내기** — 재스크래핑 없이 16개 플랫폼으로 내보내기
-- ✅ **실전 검증 완료** — 2,540+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
+- ✅ **실전 검증 완료** — 3,445+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
 
 ## 빠른 시작
 
@@ -107,9 +107,9 @@ skill-seekers create guide.adoc                  # AsciiDoc 문서
 skill-seekers create slides.pptx                 # PowerPoint 프레젠테이션
 
 # 동영상 (YouTube, Vimeo 또는 로컬 파일 — skill-seekers[video] 필요)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # 처음 사용하시나요? GPU 인식 시각 종속성 자동 설치:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # 용도별 내보내기
 skill-seekers package output/django --target claude     # Claude AI 스킬
@@ -257,7 +257,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # 모든 AI 강화 기능이 설정된 엔드포인트를 사용합니다
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **참고**: `ANTHROPIC_BASE_URL`을 설정하면 GLM-4.7(智谱 AI) 또는 기타 호환 서비스와 같은 모든 Claude 호환 API 엔드포인트를 사용할 수 있습니다.
@@ -339,7 +339,7 @@ skill-seekers package output/django --target markdown
 **AI 코딩 도구를 위한 빠른 내보내기:**
 ```bash
 # 모든 AI 코딩 어시스턴트에 적용 (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude
 
 # 프로젝트에 복사 (Cursor 예시)
@@ -384,7 +384,7 @@ print(f"디자인 패턴: {len(result.code_analysis['c3_1_patterns'])}")
 print(f"Stars: {result.github_insights['metadata']['stars']}")
 ```
 
-**전체 문서**: [3-스트림 구현 요약](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**전체 문서**: [3-스트림 구현 요약](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 스마트 속도 제한 관리 및 설정
 - ✅ **다중 토큰 설정 시스템** - 여러 GitHub 계정 관리 (개인, 업무, 오픈소스)
@@ -404,10 +404,10 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 skill-seekers config --github
 
 # 프라이빗 저장소에 특정 프로필 사용
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD 모드 (즉시 실패, 프롬프트 없음)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 ```
 
 ### 🎯 부트스트랩 스킬 - 셀프 호스팅
@@ -443,16 +443,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **사용법:**
 ```bash
 # 빠른 분석 (1–2분, 기본 기능만)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # 종합 분석 (AI 포함, 20–60분)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # AI 강화 포함
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**전체 문서:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**전체 문서:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 강화 워크플로 프리셋
 
@@ -514,7 +514,7 @@ stages:
 - ✅ **캐싱 시스템** - 한 번 스크래핑, 즉시 재구축
 
 ### ✅ 품질 보증
-- ✅ **완전한 테스트** - 2,540+ 테스트, 포괄적 커버리지
+- ✅ **완전한 테스트** - 3,445+ 테스트, 포괄적 커버리지
 
 ---
 
@@ -560,7 +560,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | 모든 기능 활성화 |
 
 > **동영상 시각 종속성 (GPU 인식):** `skill-seekers[video-full]` 설치 후,
-> `skill-seekers video --setup`을 실행하여 GPU를 자동 감지하고 올바른 PyTorch
+> `skill-seekers create --setup`을 실행하여 GPU를 자동 감지하고 올바른 PyTorch
 > 빌드 + easyocr을 설치하세요. 이것이 시각 추출 종속성 설치의 권장 방법입니다.
 
 ---
@@ -601,7 +601,7 @@ Skill Seekers는 **12개 LLM 플랫폼**, **17가지 소스 유형**을 지원�
 **플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **소스 유형:** 문서 사이트, GitHub 저장소, PDF, Word (.docx), EPUB, 동영상, 로컬 코드베이스, Jupyter 노트북, 로컬 HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 채팅 내보내기
 
-전체 내용은 [전체 기능 매트릭스](docs/FEATURE_MATRIX.md)를 참조하세요.
+전체 내용은 [전체 기능 매트릭스](docs/reference/FEATURE_MATRIX.md)를 참조하세요.
 
 ### 빠른 플랫폼 비교
 
@@ -620,29 +620,29 @@ Skill Seekers는 **12개 LLM 플랫폼**, **17가지 소스 유형**을 지원�
 
 ```bash
 # 문서 사이트 스크래핑
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 설정 없이 빠른 스크래핑
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # 비동기 모드 (3배 빠름)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### PDF 추출
 
 ```bash
 # 기본 PDF 추출
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # 고급 기능
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # 표 추출
     --parallel \              # 빠른 병렬 처리
     --workers 8               # 8개 CPU 코어 사용
 
 # 스캔 PDF (필요: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### 동영상 추출
@@ -653,31 +653,31 @@ pip install skill-seekers[video]        # 자막 + 메타데이터
 pip install skill-seekers[video-full]   # + Whisper 전사 + 시각 프레임 추출
 
 # GPU 자동 감지 및 시각 종속성 설치 (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # YouTube 동영상에서 추출
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # YouTube 재생 목록에서 추출
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # 로컬 동영상 파일에서 추출
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # 시각 프레임 분석으로 추출 (video-full 종속성 필요)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # AI 강화 적용 (OCR 정리 + 완성도 높은 SKILL.md 생성)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # 동영상의 특정 구간 클리핑 (초, MM:SS, HH:MM:SS 형식 지원)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # 낮은 신뢰도 OCR 프레임에 Vision API 사용 (ANTHROPIC_API_KEY 필요)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # 이전에 추출된 데이터에서 스킬 재구축 (다운로드 건너뛰기)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **전체 가이드:** [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)에서 전체 CLI 레퍼런스,
@@ -687,14 +687,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # 기본 저장소 스크래핑
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 인증 설정 (더 높은 속도 제한)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 포함 내용 커스터마이징
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # GitHub Issues 추출
     --max-issues 100 \        # Issue 수 제한
     --include-changelog       # CHANGELOG.md 추출
@@ -706,7 +706,7 @@ skill-seekers github --repo django/django \
 
 ```bash
 # 기존 통합 설정 사용
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 
 # 또는 통합 설정 생성
 cat > configs/myframework_unified.json << 'EOF'
@@ -728,7 +728,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **충돌 감지가 자동으로 발견하는 항목:**
@@ -737,7 +737,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **시그니처 불일치**: 매개변수/타입 차이
 - ℹ️ **설명 불일치**: 설명 차이
 
-**전체 가이드:** [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) 참조.
+**전체 가이드:** [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) 참조.
 
 ### 프라이빗 설정 저장소
 
@@ -758,7 +758,7 @@ fetch_config(source="team", config_name="internal-api")
 **지원 플랫폼:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**전체 가이드:** [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) 참조.
+**전체 가이드:** [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) 참조.
 
 ## 작동 원리
 
@@ -868,7 +868,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP 통합 (26개 도구)
+## 🔌 MCP 통합 (40개 도구)
 
 Skill Seekers는 Claude Code, Cursor, Windsurf, VS Code + Cline 또는 IntelliJ IDEA에서 사용할 수 있는 MCP 서버를 제공합니다.
 
@@ -889,7 +889,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 - **벡터 DB (4개):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **클라우드 (3개):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**전체 가이드:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**전체 가이드:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -914,12 +914,12 @@ skill-seekers list-configs
 
 ```bash
 # 옵션 1: 대화형
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # 옵션 2: 프리셋 복사 후 편집
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### 설정 파일 구조
@@ -988,7 +988,7 @@ output/
 ```bash
 # 강제 재스크래핑
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### 분류가 적절하지 않나요?
@@ -998,7 +998,7 @@ skill-seekers scrape --config configs/myframework.json
 ```bash
 # 이전 데이터 삭제 후 재스크래핑
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### 강화가 작동하지 않나요?
@@ -1044,16 +1044,15 @@ skill-seekers config --github
 
 ### 시작 가이드
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **신규 사용자는 여기에서 시작!**
-- **[QUICKSTART.md](QUICKSTART.md)** - 경험 있는 사용자를 위한 빠른 시작
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - 경험 있는 사용자를 위한 빠른 시작
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - 일반적인 문제와 해결 방법
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - 한 페이지 치트 시트
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - 한 페이지 치트 시트
 
 ### 가이드
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 10K–40K+ 페이지 문서 처리
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - 비동기 모드 가이드 (2–3배 빠른 스크래핑)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI 강화 모드 가이드
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 통합 설정
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - 다중 소스 스크래핑
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K–40K+ 페이지 문서 처리
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI 강화 모드 가이드
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP 통합 설정
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - 다중 소스 스크래핑
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 동영상 추출 전체 가이드
 
 ### 통합 가이드
@@ -1078,3 +1077,73 @@ MIT 라이선스 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세
 ## 🔒 보안
 
 [![MseeP.ai 보안 평가 배지](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
+---
+
+> **참고:** 다음 섹션은 영어 README에서 가져온 것으로, 전체 번역이 진행 중입니다.
+> 최신 문서는 [README.md](../README.md)를 참조하세요.
+
+## 아키텍처
+
+Skill Seekers는 확장성을 염두에 둔 모듈형 아키텍처를 사용합니다：
+
+| 모듈 | 목적 | 주요 파일 |
+|------|------|----------|
+| **CLI** | 명령줄 인터페이스 | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | 소스 유형 변환기 | `src/skill_seekers/cli/*_scraper.py`（17 유형） |
+| **Adaptors** | 플랫폼별 패키징 | `src/skill_seekers/cli/adaptors/`（21 플랫폼） |
+| **Enhancement** | AI 기반 보강 | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | 모델 컨텍스트 프로토콜 | `src/skill_seekers/mcp/server_fastmcp.py`（40 도구） |
+
+## AI 기반 프로젝트 스캔
+
+프로젝트의 기술 스택을 자동으로 감지하고 프레임워크별로 설정 파일을 생성합니다：
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## 에이전트 무관 스킬 생성
+
+Skill Seekers는 대상 플랫폼에 관계없이 동일한 고품질 출력을 생성합니다. 한 번 스크래핑하면 어디서나 패키징할 수 있습니다.
+
+## 마켓플레이스 파이프라인
+
+스킬을 패키징하여 마켓플레이스에 게시합니다：
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## v3.6.0 신규 기능
+
+### 워크플로우 프리셋
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # 빠른
+skill-seekers create https://docs.react.dev/ --preset standard    # 균형
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # 심층
+```
+
+### 라이프사이클 플래그
+```bash
+skill-seekers create <source> --dry-run      # 스크래핑 없이 미리보기
+skill-seekers create <source> --fresh        # 캐시 무시, 전체 재스크래핑
+skill-seekers create <source> --resume       # 중단된 작업 재개
+skill-seekers create <source> --skip-scrape  # 기존 출력 재패키징
+```
+
+### 상태 확인 및 유틸리티
+```bash
+skill-seekers doctor                 # 설치 및 환경 진단
+skill-seekers sync-config            # 설정 드리프트 감지
+skill-seekers stream <source>        # 대용량 문서 스트리밍 수집
+skill-seekers update output/react/   # 증분 업데이트
+skill-seekers multilang <source>     # 다국어 스킬 생성
+skill-seekers quality output/react/  # 품질 점수
+```
+
+### RAG 청킹（패키징）
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

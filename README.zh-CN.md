@@ -10,11 +10,11 @@
 >
 > 欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 帮助改进翻译！您的反馈对我们非常宝贵。
 
-[![版本](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![版本](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 集成](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![测试通过](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![测试通过](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![项目看板](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 版本](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 下载量](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -84,7 +84,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🔄 **17 种来源类型** — 将文档 + GitHub + PDF + 视频 + 笔记本 + Wiki 等合并为一个知识资产
 - 🌐 **一次准备，导出所有目标** — 无需重新抓取即可导出到 16 个平台
 - 🎬 **视频** — 从 YouTube 和本地视频提取代码、字幕和结构化知识
-- ✅ **久经考验** — 2,540+ 测试，24+ 框架预设，生产就绪
+- ✅ **久经考验** — 3,445+ 测试，24+ 框架预设，生产就绪
 
 ## 快速开始
 
@@ -105,9 +105,9 @@ skill-seekers create guide.adoc                  # AsciiDoc 文档
 skill-seekers create slides.pptx                 # PowerPoint 演示文稿
 
 # 视频（YouTube、Vimeo 或本地文件 — 需要 skill-seekers[video]）
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # 首次使用？自动安装 GPU 感知的视觉依赖：
-skill-seekers video --setup
+skill-seekers create --setup
 
 # 根据用途导出
 skill-seekers package output/django --target claude     # Claude AI 技能
@@ -255,7 +255,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # 所有 AI 增强功能将使用配置的端点
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **注意**：设置 `ANTHROPIC_BASE_URL` 允许您使用任意 Claude 兼容的 API 端点，例如 GLM-4.7（智谱 AI）或其他兼容服务。
@@ -337,7 +337,7 @@ skill-seekers package output/django --target markdown
 **快速导出（适用于 AI 编程工具）：**
 ```bash
 # 适用于任意 AI 编程助手（Cursor、Windsurf、Cline、Continue.dev）
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude
 
 # 复制到项目（以 Cursor 为例）
@@ -382,7 +382,7 @@ print(f"设计模式: {len(result.code_analysis['c3_1_patterns'])}")
 print(f"Stars: {result.github_insights['metadata']['stars']}")
 ```
 
-**完整文档**：[三流实现总结](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**完整文档**：[三流实现总结](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 智能速率限制管理与配置
 - ✅ **多 Token 配置系统** - 管理多个 GitHub 账号（个人、工作、开源）
@@ -402,10 +402,10 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 skill-seekers config --github
 
 # 为私有仓库使用特定配置文件
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD 模式（快速失败，无提示）
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 ```
 
 ### 🎯 Bootstrap 技能 - 自托管
@@ -441,16 +441,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **使用方法：**
 ```bash
 # 快速分析（1–2 分钟，仅基础功能）
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # 全面分析（含 AI，20–60 分钟）
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # 含 AI 增强
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**完整文档：** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**完整文档：** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 增强工作流预设
 
@@ -512,7 +512,7 @@ stages:
 - ✅ **缓存系统** - 抓取一次，即时重建
 
 ### ✅ 质量保证
-- ✅ **全面测试** - 2,540+ 测试，全面覆盖
+- ✅ **全面测试** - 3,445+ 测试，全面覆盖
 
 ---
 
@@ -555,7 +555,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | 全部功能 |
 
 > **视频视觉依赖（GPU 感知）：** 安装 `skill-seekers[video-full]` 后，运行
-> `skill-seekers video --setup` 自动检测您的 GPU 并安装正确的 PyTorch
+> `skill-seekers create --setup` 自动检测您的 GPU 并安装正确的 PyTorch
 > 版本 + easyocr。这是安装视觉提取依赖的推荐方式。
 
 ---
@@ -597,7 +597,7 @@ Skill Seekers 支持 **12 个 LLM 平台**、**17 种来源类型**和 **5 种�
 **来源类型：** 文档网站、GitHub 仓库、PDF、Word、EPUB、视频、本地代码库、Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录
 **技能模式：** 文档、GitHub、PDF、统一多源、本地仓库
 
-完整信息请查看 [完整功能矩阵](docs/FEATURE_MATRIX.md)。
+完整信息请查看 [完整功能矩阵](docs/reference/FEATURE_MATRIX.md)。
 
 ### 快速平台对比
 
@@ -616,29 +616,29 @@ Skill Seekers 支持 **12 个 LLM 平台**、**17 种来源类型**和 **5 种�
 
 ```bash
 # 抓取文档网站
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 快速抓取（无需配置）
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # 异步模式（快 3 倍）
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### PDF 提取
 
 ```bash
 # 基础 PDF 提取
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # 高级功能
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # 提取表格
     --parallel \              # 快速并行处理
     --workers 8               # 使用 8 个 CPU 核心
 
 # 扫描 PDF（需要: pip install pytesseract Pillow）
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### 视频提取
@@ -649,31 +649,31 @@ pip install skill-seekers[video]        # 字幕 + 元数据
 pip install skill-seekers[video-full]   # + Whisper 转录 + 视觉帧提取
 
 # 自动检测 GPU 并安装视觉依赖（PyTorch + easyocr）
-skill-seekers video --setup
+skill-seekers create --setup
 
 # 从 YouTube 视频提取
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # 从 YouTube 播放列表提取
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # 从本地视频文件提取
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # 使用视觉帧分析提取（需要 video-full 依赖）
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # 使用 AI 增强（清理 OCR + 生成精美 SKILL.md）
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # 裁剪视频的特定片段（支持秒数、MM:SS、HH:MM:SS 格式）
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # 使用 Vision API 处理低置信度 OCR 帧（需要 ANTHROPIC_API_KEY）
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # 从之前提取的数据重建技能（跳过下载）
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **完整指南：** 参见 [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) 了解完整 CLI 参考、
@@ -683,14 +683,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # 基础仓库抓取
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 配置认证（更高速率限制）
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 自定义包含内容
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # 提取 GitHub Issues
     --max-issues 100 \        # 限制 issue 数量
     --include-changelog       # 提取 CHANGELOG.md
@@ -702,7 +702,7 @@ skill-seekers github --repo django/django \
 
 ```bash
 # 使用现有统一配置
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 
 # 或创建统一配置
 cat > configs/myframework_unified.json << 'EOF'
@@ -724,7 +724,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **冲突检测自动发现：**
@@ -733,7 +733,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **签名不匹配**：参数/类型不同
 - ℹ️ **描述不匹配**：解释不同
 
-**完整指南：** 参见 [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)。
+**完整指南：** 参见 [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)。
 
 ### 私有配置仓库
 
@@ -754,7 +754,7 @@ fetch_config(source="team", config_name="internal-api")
 **支持的平台：**
 - GitHub（`GITHUB_TOKEN`）、GitLab（`GITLAB_TOKEN`）、Gitea（`GITEA_TOKEN`）、Bitbucket（`BITBUCKET_TOKEN`）
 
-**完整指南：** 参见 [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md)。
+**完整指南：** 参见 [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md)。
 
 ## 工作原理
 
@@ -864,7 +864,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP 集成（27 个工具）
+## 🔌 MCP 集成（40 个工具）
 
 Skill Seekers 提供 MCP 服务器，可在 Claude Code、Cursor、Windsurf、VS Code + Cline 或 IntelliJ IDEA 中使用。
 
@@ -887,7 +887,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 > `scrape_generic` 支持 10 种新来源类型：Jupyter 笔记本、本地 HTML、OpenAPI/Swagger 规范、AsciiDoc 文档、PowerPoint 演示文稿、RSS/Atom 订阅源、Man 手册页、Confluence 维基、Notion 页面、Slack/Discord 聊天记录。
 
-**完整指南：** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**完整指南：** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -912,12 +912,12 @@ skill-seekers list-configs
 
 ```bash
 # 选项 1：交互式
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # 选项 2：复制并编辑预设
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### 配置文件结构
@@ -986,7 +986,7 @@ output/
 ```bash
 # 强制重新抓取
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### 分类不理想？
@@ -996,7 +996,7 @@ skill-seekers scrape --config configs/myframework.json
 ```bash
 # 删除旧数据并重新抓取
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### 增强不工作？
@@ -1040,16 +1040,15 @@ skill-seekers config --github
 
 ### 入门指南
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **新用户从这里开始！**
-- **[QUICKSTART.md](QUICKSTART.md)** - 有经验用户的快速入门
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - 有经验用户的快速入门
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - 常见问题和解决方案
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - 单页速查表
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - 单页速查表
 
 ### 指南
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 处理 10K–40K+ 页文档
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - 异步模式指南（快 2–3 倍）
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI 增强模式指南
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 集成设置
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - 多源抓取
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 处理 10K–40K+ 页文档
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI 增强模式指南
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP 集成设置
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - 多源抓取
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 视频提取完整指南
 
 ### 集成指南
@@ -1068,3 +1067,73 @@ MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
 ---
 
 祝您构建技能愉快！ 🚀
+
+---
+
+> **注意：** 以下节选自英文版 README，完整翻译正在进行中。
+> 最新文档请参阅 [README.md](../README.md)。
+
+## 架构
+
+Skill Seekers 采用模块化架构，旨在实现可扩展性：
+
+| 模块 | 用途 | 关键文件 |
+|------|------|----------|
+| **CLI** | 命令行界面 | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | 源类型转换器 | `src/skill_seekers/cli/*_scraper.py`（17 种类型） |
+| **Adaptors** | 平台特定打包 | `src/skill_seekers/cli/adaptors/`（21 个平台） |
+| **Enhancement** | AI 驱动的增强 | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | 模型上下文协议 | `src/skill_seekers/mcp/server_fastmcp.py`（40 个工具） |
+
+## AI 驱动的项目扫描
+
+自动检测项目的技术栈，并为每个框架生成一个配置文件：
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## 与代理无关的技能生成
+
+Skill Seekers 无论目标平台如何，都能生成相同的高质量输出。一次抓取，到处打包。
+
+## 市场流水线
+
+将技能打包并发布到市场：
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## v3.6.0 新增功能
+
+### 工作流预设
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # 快速
+skill-seekers create https://docs.react.dev/ --preset standard    # 平衡
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # 深度
+```
+
+### 生命周期标志
+```bash
+skill-seekers create <source> --dry-run      # 不抓取预览
+skill-seekers create <source> --fresh        # 忽略缓存，完整重新抓取
+skill-seekers create <source> --resume       # 恢复中断的任务
+skill-seekers create <source> --skip-scrape  # 重新打包现有输出
+```
+
+### 健康检查与工具
+```bash
+skill-seekers doctor                 # 诊断安装与环境
+skill-seekers sync-config            # 配置漂移检测
+skill-seekers stream <source>        # 大型文档流式摄取
+skill-seekers update output/react/   # 增量更新
+skill-seekers multilang <source>     # 多语言技能生成
+skill-seekers quality output/react/  # 质量评分
+```
+
+### RAG 分块（打包）
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

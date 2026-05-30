@@ -12,11 +12,11 @@
 >
 > अनुवाद सुधारने में मदद करने के लिए [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) पर सम्पर्क करें! आपकी प्रतिक्रिया हमारे लिए बहुत मूल्यवान है।
 
-[![संस्करण](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![संस्करण](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![लाइसेंस: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP एकीकरण](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![परीक्षण पास](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![परीक्षण पास](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![परियोजना बोर्ड](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI संस्करण](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - डाउनलोड](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **वीडियो** — YouTube और स्थानीय वीडियो से कोड, ट्रांसक्रिप्ट और संरचित ज्ञान निकालें
 - 🔄 **बहु-स्रोत** — 17 स्रोत प्रकारों (डॉक्स, GitHub, PDF, वीडियो, नोटबुक, विकी आदि) को एक ज्ञान संपत्ति में मिलाएँ
 - 🌐 **एक बार तैयारी, हर लक्ष्य** — बिना दोबारा स्क्रैप किए 16 प्लेटफ़ॉर्म पर निर्यात करें
-- ✅ **युद्ध-परीक्षित** — 2,540+ परीक्षण, 24+ फ़्रेमवर्क प्रीसेट, प्रोडक्शन-तैयार
+- ✅ **युद्ध-परीक्षित** — 3,445+ परीक्षण, 24+ फ़्रेमवर्क प्रीसेट, प्रोडक्शन-तैयार
 
 ## 🚀 त्वरित शुरुआत (3 कमांड)
 
@@ -143,18 +143,18 @@ skill-seekers create feed.rss
 skill-seekers create curl.1
 
 # वीडियो (YouTube, Vimeo, या स्थानीय फ़ाइल — skill-seekers[video] आवश्यक)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # पहली बार? GPU-सक्षम विज़ुअल डिपेंडेंसी स्वचालित रूप से इंस्टॉल करें:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Confluence विकी
-skill-seekers confluence --space TEAM --name wiki
+skill-seekers create --space-key  TEAM --name wiki
 
 # Notion पेज
-skill-seekers notion --database-id ... --name docs
+skill-seekers create --database-id ... --name docs
 
 # Slack/Discord चैट एक्सपोर्ट
-skill-seekers chat --export-dir ./slack-export --name team-chat
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
 ### हर जगह निर्यात करें
@@ -317,7 +317,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # सभी AI एन्हांसमेंट सुविधाएँ कॉन्फ़िगर किए गए एंडपॉइंट का उपयोग करेंगी
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **नोट**: `ANTHROPIC_BASE_URL` सेट करने से आप किसी भी Claude-संगत API एंडपॉइंट का उपयोग कर सकते हैं, जैसे GLM-4.7 (智谱 AI) या अन्य संगत सेवाएँ।
@@ -399,7 +399,7 @@ skill-seekers package output/django --target markdown
 **AI कोडिंग टूल के लिए त्वरित निर्यात:**
 ```bash
 # किसी भी AI कोडिंग सहायक के लिए (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude  # या --target markdown
 
 # अपने प्रोजेक्ट में कॉपी करें (Cursor के लिए उदाहरण)
@@ -456,7 +456,7 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 print(f"सामान्य समस्याएँ: {len(result.github_insights['common_problems'])}")
 ```
 
-**पूर्ण दस्तावेज़ीकरण**: [तीन-धारा कार्यान्वयन सारांश](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**पूर्ण दस्तावेज़ीकरण**: [तीन-धारा कार्यान्वयन सारांश](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 स्मार्ट दर सीमा प्रबंधन और कॉन्फ़िगरेशन
 - ✅ **बहु-टोकन कॉन्फ़िगरेशन सिस्टम** - एकाधिक GitHub खातों का प्रबंधन (व्यक्तिगत, कार्य, OSS)
@@ -490,10 +490,10 @@ print(f"सामान्य समस्याएँ: {len(result.github_insig
 skill-seekers config --github
 
 # निजी रिपो के लिए विशिष्ट प्रोफ़ाइल उपयोग करें
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD मोड (तेज़ विफलता, कोई प्रॉम्प्ट नहीं)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 
 # बाधित कार्य पुनः शुरू करें
 skill-seekers resume --list
@@ -555,16 +555,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **उपयोग:**
 ```bash
 # त्वरित विश्लेषण (1-2 मिनट, केवल बुनियादी सुविधाएँ)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # AI के साथ व्यापक विश्लेषण (20-60 मिनट, सभी सुविधाएँ)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # AI एन्हांसमेंट के साथ
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**पूर्ण दस्तावेज़ीकरण:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**पूर्ण दस्तावेज़ीकरण:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 एन्हांसमेंट वर्कफ़्लो प्रीसेट
 
@@ -626,7 +626,7 @@ stages:
 - ✅ **कैशिंग सिस्टम** - एक बार स्क्रैप करें, तुरंत पुनर्निर्माण करें
 
 ### ✅ गुणवत्ता आश्वासन
-- ✅ **पूर्ण परीक्षित** - 2,540+ परीक्षण व्यापक कवरेज के साथ
+- ✅ **पूर्ण परीक्षित** - 3,445+ परीक्षण व्यापक कवरेज के साथ
 
 ---
 
@@ -672,7 +672,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | सब कुछ सक्षम |
 
 > **वीडियो विज़ुअल डिपेंडेंसी (GPU-सक्षम):** `skill-seekers[video-full]` इंस्टॉल करने के बाद,
-> `skill-seekers video --setup` चलाएँ ताकि आपका GPU स्वचालित रूप से पहचाना जा सके और सही PyTorch
+> `skill-seekers create --setup` चलाएँ ताकि आपका GPU स्वचालित रूप से पहचाना जा सके और सही PyTorch
 > संस्करण + easyocr इंस्टॉल किया जा सके। यह विज़ुअल निष्कर्षण डिपेंडेंसी इंस्टॉल करने का अनुशंसित तरीका है।
 
 ---
@@ -719,7 +719,7 @@ Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत
 **प्लेटफ़ॉर्म:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **स्रोत प्रकार:** डॉक्यूमेंटेशन वेबसाइट, GitHub रिपो, PDF, Word (.docx), EPUB, वीडियो, स्थानीय कोडबेस, Jupyter Notebook, स्थानीय HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord चैट एक्सपोर्ट
 
-विस्तृत प्लेटफ़ॉर्म और फ़ीचर समर्थन के लिए [पूर्ण फ़ीचर मैट्रिक्स](docs/FEATURE_MATRIX.md) देखें।
+विस्तृत प्लेटफ़ॉर्म और फ़ीचर समर्थन के लिए [पूर्ण फ़ीचर मैट्रिक्स](docs/reference/FEATURE_MATRIX.md) देखें।
 
 ### त्वरित प्लेटफ़ॉर्म तुलना
 
@@ -738,29 +738,29 @@ Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत
 
 ```bash
 # डॉक्यूमेंटेशन वेबसाइट स्क्रैप करें
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # बिना कॉन्फ़िग के त्वरित स्क्रैप
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # एसिंक मोड के साथ (3 गुना तेज़)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### PDF निष्कर्षण
 
 ```bash
 # बुनियादी PDF निष्कर्षण
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # उन्नत सुविधाएँ
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # तालिकाएँ निकालें
     --parallel \              # तेज़ समानांतर प्रसंस्करण
     --workers 8               # 8 CPU कोर उपयोग करें
 
 # स्कैन किए गए PDF (आवश्यक: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### वीडियो निष्कर्षण
@@ -771,31 +771,31 @@ pip install skill-seekers[video]        # ट्रांसक्रिप्�
 pip install skill-seekers[video-full]   # + Whisper ट्रांसक्रिप्शन + विज़ुअल फ़्रेम निष्कर्षण
 
 # GPU स्वचालित पहचान और विज़ुअल डिपेंडेंसी इंस्टॉल (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # YouTube वीडियो से निकालें
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # YouTube प्लेलिस्ट से निकालें
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # स्थानीय वीडियो फ़ाइल से निकालें
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # विज़ुअल फ़्रेम विश्लेषण के साथ निकालें (video-full डिपेंडेंसी आवश्यक)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # AI एन्हांसमेंट के साथ (OCR साफ़ करें + पॉलिश SKILL.md जनरेट करें)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # वीडियो का विशिष्ट भाग क्लिप करें (सेकंड, MM:SS, HH:MM:SS समर्थित)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # कम-विश्वसनीय OCR फ़्रेम के लिए Vision API उपयोग करें (ANTHROPIC_API_KEY आवश्यक)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # पहले से निकाले गए डेटा से कौशल पुनर्निर्माण करें (डाउनलोड छोड़ें)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **पूर्ण गाइड:** पूर्ण CLI संदर्भ, विज़ुअल पाइपलाइन विवरण, AI एन्हांसमेंट विकल्प
@@ -805,14 +805,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # बुनियादी रिपॉज़िटरी स्क्रैपिंग
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # प्रमाणीकरण के साथ (उच्च दर सीमा)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # शामिल सामग्री कस्टमाइज़ करें
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # GitHub Issues निकालें
     --max-issues 100 \        # issue संख्या सीमित करें
     --include-changelog       # CHANGELOG.md निकालें
@@ -824,8 +824,8 @@ skill-seekers github --repo django/django \
 
 ```bash
 # मौजूदा एकीकृत कॉन्फ़िग का उपयोग करें
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
+skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # या एकीकृत कॉन्फ़िग बनाएँ
 cat > configs/myframework_unified.json << 'EOF'
@@ -847,7 +847,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **विरोध पहचान स्वचालित रूप से खोजती है:**
@@ -856,7 +856,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **हस्ताक्षर बेमेल**: भिन्न पैरामीटर/टाइप
 - ℹ️ **विवरण बेमेल**: भिन्न स्पष्टीकरण
 
-**पूर्ण गाइड:** [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) देखें।
+**पूर्ण गाइड:** [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) देखें।
 
 ### निजी कॉन्फ़िग रिपॉज़िटरी
 
@@ -878,7 +878,7 @@ fetch_config(source="team", config_name="internal-api")
 **समर्थित प्लेटफ़ॉर्म:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**पूर्ण गाइड:** [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) देखें।
+**पूर्ण गाइड:** [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) देखें।
 
 ## यह कैसे काम करता है
 
@@ -988,7 +988,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP एकीकरण (26 टूल)
+## 🔌 MCP एकीकरण (40 टूल)
 
 Skill Seekers Claude Code, Cursor, Windsurf, VS Code + Cline, या IntelliJ IDEA से उपयोग के लिए MCP सर्वर प्रदान करता है।
 
@@ -1003,13 +1003,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**सभी 26 टूल उपलब्ध:**
+**सभी 40 टूल उपलब्ध:**
 - **मूल (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **विस्तारित (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **वेक्टर DB (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **क्लाउड (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**पूर्ण गाइड:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**पूर्ण गाइड:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -1034,12 +1034,12 @@ skill-seekers list-configs
 
 ```bash
 # विकल्प 1: इंटरैक्टिव
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # विकल्प 2: प्रीसेट कॉपी करें और संपादित करें
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### कॉन्फ़िग फ़ाइल संरचना
@@ -1108,7 +1108,7 @@ output/
 ```bash
 # बलपूर्वक पुनः स्क्रैप करें
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### श्रेणियाँ अच्छी नहीं हैं?
@@ -1118,7 +1118,7 @@ skill-seekers scrape --config configs/myframework.json
 ```bash
 # पुराना डेटा हटाएँ और पुनः स्क्रैप करें
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### एन्हांसमेंट काम नहीं कर रहा?
@@ -1164,16 +1164,15 @@ skill-seekers config --github
 
 ### शुरुआत करना
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **नए हैं? यहाँ से शुरू करें!**
-- **[QUICKSTART.md](QUICKSTART.md)** - अनुभवी उपयोगकर्ताओं के लिए त्वरित शुरुआत
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - अनुभवी उपयोगकर्ताओं के लिए त्वरित शुरुआत
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - सामान्य समस्याएँ और समाधान
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - एक-पेज चीट शीट
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - एक-पेज चीट शीट
 
 ### मार्गदर्शिकाएँ
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 10K-40K+ पेज दस्तावेज़ संभालें
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - एसिंक मोड गाइड (2-3 गुना तेज़ स्क्रैपिंग)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI एन्हांसमेंट मोड गाइड
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP एकीकरण सेटअप
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - बहु-स्रोत स्क्रैपिंग
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K-40K+ पेज दस्तावेज़ संभालें
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI एन्हांसमेंट मोड गाइड
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP एकीकरण सेटअप
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - बहु-स्रोत स्क्रैपिंग
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - वीडियो निष्कर्षण गाइड
 
 ### एकीकरण मार्गदर्शिकाएँ
@@ -1198,3 +1197,73 @@ MIT लाइसेंस - विवरण के लिए [LICENSE](LICENSE) 
 ## 🔒 सुरक्षा
 
 [![MseeP.ai सुरक्षा मूल्यांकन बैज](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
+---
+
+> **नोट:** निम्नलिखित अनुभाग अंग्रेजी README से लिए गए हैं और पूर्ण अनुवाद की प्रतीक्षा में हैं।
+> सबसे अद्यतित दस्तावेज़ीकरण के लिए, [README.md](../README.md) देखें।
+
+## वास्तुकला
+
+Skill Seekers एक मॉड्यूलर वास्तुकला का उपयोग करता है जो विस्तारशीलता के लिए डिज़ाइन की गई है:
+
+| मॉड्यूल | उद्देश्य | मुख्य फ़ाइलें |
+|---------|---------|--------------|
+| **CLI** | कमांड-लाइन इंटरफ़ेस | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | स्रोत-प्रकार कनवर्टर | `src/skill_seekers/cli/*_scraper.py` (17 प्रकार) |
+| **Adaptors** | प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग | `src/skill_seekers/cli/adaptors/` (21 प्लेटफ़ॉर्म) |
+| **Enhancement** | AI-संचालित समृद्धि | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | मॉडल संदर्भ प्रोटोकॉल | `src/skill_seekers/mcp/server_fastmcp.py` (40 उपकरण) |
+
+## AI-संचालित प्रोजेक्ट स्कैन
+
+एक प्रोजेक्ट की तकनीक स्टैक को स्वचालित रूप से पहचानें और प्रत्येक फ्रेमवर्क के लिए एक कॉन्फ़िगरेशन उत्पन्न करें:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## एजेंट-अज्ञेय कौशल जनरेशन
+
+Skill Seekers लक्षित प्लेटफ़ॉर्म की परवाह किए बिना समान उच्च-गुणवत्ता वाला आउटपुट उत्पन्न करता है। एक बार स्क्रैप करें, हर जगह पैकेज करें।
+
+## मार्केटप्लेस पाइपलाइन
+
+मार्केटप्लेस में कौशल पैकेज और प्रकाशित करें:
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## v3.6.0 में नया
+
+### वर्कफ़्लो प्रीसेट
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # तेज़
+skill-seekers create https://docs.react.dev/ --preset standard    # संतुलित
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # गहन
+```
+
+### लाइफ़साइकिल फ्लैग्स
+```bash
+skill-seekers create <source> --dry-run      # स्क्रैपिंग के बिना पूर्वावलोकन
+skill-seekers create <source> --fresh        # कैश को अनदेखा करें, पूर्ण पुनः स्क्रैप
+skill-seekers create <source> --resume       # रुके हुए कार्य को फिर से शुरू करें
+skill-seekers create <source> --skip-scrape  # मौजूदा आउटपुट को पुनः पैकेज करें
+```
+
+### स्वास्थ्य जाँच और उपयोगिताएँ
+```bash
+skill-seekers doctor                 # इंस्टॉलेशन और परिवेश का निदान करें
+skill-seekers sync-config            # कॉन्फ़िगरेशन ड्रिफ्ट का पता लगाएँ
+skill-seekers stream <source>        # बड़े दस्तावेज़ों के लिए स्ट्रीमिंग इनजेस्टन
+skill-seekers update output/react/   # वृद्धिशील अपडेट
+skill-seekers multilang <source>     # बहुभाषी कौशल जनरेशन
+skill-seekers quality output/react/  # गुणवत्ता स्कोरिंग
+```
+
+### RAG चंकिंग (पैकेजिंग)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

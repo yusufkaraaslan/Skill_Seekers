@@ -12,11 +12,11 @@
 >
 > Çeviriyi iyileştirmemize yardımcı olmak için [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) üzerinden geri bildirimlerinizi paylaşabilirsiniz!
 
-[![Sürüm](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Sürüm](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Lisans: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Entegrasyonu](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Test Geçti](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![Test Geçti](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Proje Panosu](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI Sürümü](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - İndirmeler](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Videolar** — YouTube ve yerel videolardan kod, altyazı ve yapılandırılmış bilgi çıkarma
 - 🔄 **Çoklu kaynak** — 17 kaynak türünü (dokümantasyon, GitHub, PDF, video, not defterleri, vikiler ve daha fazlası) tek bir bilgi varlığında birleştirme
 - 🌐 **Bir hazırlık, her hedef** — Yeniden tarama yapmadan aynı varlığı 16 platforma dışa aktarma
-- ✅ **Savaşta test edilmiş** — 2.540+ test, 24+ çerçeve ön ayarı, üretime hazır
+- ✅ **Savaşta test edilmiş** — 3.445+ test, 24+ çerçeve ön ayarı, üretime hazır
 
 ## 🚀 Hızlı Başlangıç (3 Komut)
 
@@ -143,18 +143,18 @@ skill-seekers create feed.rss
 skill-seekers create curl.1
 
 # Video (YouTube, Vimeo veya yerel dosya — skill-seekers[video] gerektirir)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # İlk kez mi? GPU destekli görsel bağımlılıkları otomatik kur:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Confluence vikisi
-skill-seekers confluence --space TEAM --name wiki
+skill-seekers create --space-key  TEAM --name wiki
 
 # Notion sayfaları
-skill-seekers notion --database-id ... --name docs
+skill-seekers create --database-id ... --name docs
 
 # Slack/Discord sohbet dışa aktarımı
-skill-seekers chat --export-dir ./slack-export --name team-chat
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
 ### Her Yere Dışa Aktar
@@ -317,7 +317,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # Tüm AI zenginleştirme özellikleri yapılandırılmış uç noktayı kullanacaktır
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **Not**: `ANTHROPIC_BASE_URL` ayarlamak, GLM-4.7 veya diğer uyumlu hizmetler gibi herhangi bir Claude uyumlu API uç noktasını kullanmanıza olanak tanır.
@@ -403,7 +403,7 @@ Herhangi bir çerçeve dokümantasyonunu 4+ AI asistanı için uzman kodlama ba�
 **AI Kodlama Araçları İçin Hızlı Dışa Aktarma:**
 ```bash
 # Herhangi bir AI kodlama asistanı için (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude  # veya --target markdown
 
 # Projenize kopyalayın (Cursor örneği)
@@ -460,7 +460,7 @@ print(f"Yıldızlar: {result.github_insights['metadata']['stars']}")
 print(f"Yaygın sorunlar: {len(result.github_insights['common_problems'])}")
 ```
 
-**Tam dokümantasyonu görüntüle**: [Üç Akışlı Uygulama Özeti](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**Tam dokümantasyonu görüntüle**: [Üç Akışlı Uygulama Özeti](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Akıllı İstek Hızı Limiti Yönetimi ve Yapılandırma
 - ✅ **Çoklu Token Yapılandırma Sistemi** - Birden fazla GitHub hesabını yönetme (kişisel, iş, açık kaynak)
@@ -494,10 +494,10 @@ print(f"Yaygın sorunlar: {len(result.github_insights['common_problems'])}")
 skill-seekers config --github
 
 # Özel depolar için belirli profil kullanma
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD modu (hızlı başarısızlık, istem yok)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 
 # Kesilen işe devam etme
 skill-seekers resume --list
@@ -559,16 +559,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **Kullanım:**
 ```bash
 # Hızlı analiz (1-2 dk, yalnızca temel özellikler)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # AI ile kapsamlı analiz (20-60 dk, tüm özellikler)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # AI zenginleştirme ile
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**Tam Dokümantasyon:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Tam Dokümantasyon:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 Zenginleştirme İş Akışı Ön Ayarları
 
@@ -630,7 +630,7 @@ stages:
 - ✅ **Önbellekleme Sistemi** - Bir kez tara, anında yeniden oluştur
 
 ### ✅ Kalite Güvencesi
-- ✅ **Tam Test Kapsamı** - 2.540+ test ile kapsamlı kapsam
+- ✅ **Tam Test Kapsamı** - 3.445+ test ile kapsamlı kapsam
 
 ---
 
@@ -676,7 +676,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | Her şey etkin |
 
 > **Video görsel bağımlılıkları (GPU destekli):** `skill-seekers[video-full]` kurulumundan sonra
-> `skill-seekers video --setup` komutunu çalıştırarak GPU'nuzu otomatik algılayın ve doğru PyTorch
+> `skill-seekers create --setup` komutunu çalıştırarak GPU'nuzu otomatik algılayın ve doğru PyTorch
 > sürümünü + easyocr'ı yükleyin. Bu, görsel çıkarma bağımlılıklarını yüklemenin önerilen yoludur.
 
 ---
@@ -723,7 +723,7 @@ Skill Seekers **12 LLM platformu**, **17 kaynak türü** ve tüm hedeflerde tam 
 **Platformlar:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Kaynak Türleri:** Dokümantasyon siteleri, GitHub depoları, PDF'ler, Word (.docx), EPUB, Video, Yerel kod tabanları, Jupyter Not Defterleri, Yerel HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom beslemeleri, Man sayfaları, Confluence vikileri, Notion sayfaları, Slack/Discord sohbet dışa aktarımları
 
-Ayrıntılı platform ve özellik desteği için [Tam Özellik Matrisi](docs/FEATURE_MATRIX.md) bölümüne bakın.
+Ayrıntılı platform ve özellik desteği için [Tam Özellik Matrisi](docs/reference/FEATURE_MATRIX.md) bölümüne bakın.
 
 ### Hızlı Platform Karşılaştırması
 
@@ -742,29 +742,29 @@ Ayrıntılı platform ve özellik desteği için [Tam Özellik Matrisi](docs/FEA
 
 ```bash
 # Dokümantasyon sitesini tara
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Yapılandırma olmadan hızlı tarama
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # Asenkron mod ile (3 kat daha hızlı)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### PDF Çıkarma
 
 ```bash
 # Temel PDF çıkarma
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # Gelişmiş özellikler
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # Tabloları çıkar
     --parallel \              # Hızlı paralel işleme
     --workers 8               # 8 CPU çekirdeği kullan
 
 # Taranmış PDF'ler (gerekli: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### Video Çıkarma
@@ -775,31 +775,31 @@ pip install skill-seekers[video]        # Altyazılar + meta veri
 pip install skill-seekers[video-full]   # + Whisper transkripsiyonu + görsel kare çıkarma
 
 # GPU'yu otomatik algıla ve görsel bağımlılıkları kur (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # YouTube videosundan çıkar
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # YouTube oynatma listesinden çıkar
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # Yerel video dosyasından çıkar
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # Görsel kare analizi ile çıkar (video-full bağımlılıkları gerektirir)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # AI zenginleştirme ile (OCR'ı temizle + cilalı SKILL.md oluştur)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # Videonun belirli bir bölümünü kırp (saniye, DD:SS, SS:DD:SS destekler)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # Düşük güvenilirlikli OCR kareleri için Vision API kullan (ANTHROPIC_API_KEY gerektirir)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # Daha önce çıkarılmış verilerden yeteneği yeniden oluştur (indirmeyi atla)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **Tam kılavuz:** Eksiksiz CLI referansı, görsel hat ayrıntıları, AI zenginleştirme seçenekleri
@@ -809,14 +809,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # Temel depo tarama
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Kimlik doğrulama ile (daha yüksek hız limitleri)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Nelerin dahil edileceğini özelleştir
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # GitHub Issues çıkar
     --max-issues 100 \        # Issue sayısını sınırla
     --include-changelog       # CHANGELOG.md çıkar
@@ -828,8 +828,8 @@ skill-seekers github --repo django/django \
 
 ```bash
 # Mevcut birleşik yapılandırmaları kullan
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
+skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # Veya birleşik yapılandırma oluştur
 cat > configs/myframework_unified.json << 'EOF'
@@ -851,7 +851,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **Çakışma Tespiti otomatik olarak şunları bulur:**
@@ -860,7 +860,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **İmza uyuşmazlığı**: Farklı parametreler/türler
 - ℹ️ **Açıklama uyuşmazlığı**: Farklı açıklamalar
 
-**Tam Kılavuz:** Eksiksiz dokümantasyon için [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) bölümüne bakın.
+**Tam Kılavuz:** Eksiksiz dokümantasyon için [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) bölümüne bakın.
 
 ### Özel Yapılandırma Depoları
 
@@ -882,7 +882,7 @@ fetch_config(source="team", config_name="internal-api")
 **Desteklenen Platformlar:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**Tam Kılavuz:** Eksiksiz dokümantasyon için [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) bölümüne bakın.
+**Tam Kılavuz:** Eksiksiz dokümantasyon için [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) bölümüne bakın.
 
 ## Nasıl Çalışır
 
@@ -992,7 +992,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP Entegrasyonu (26 Araç)
+## 🔌 MCP Entegrasyonu (40 Araç)
 
 Skill Seekers, Claude Code, Cursor, Windsurf, VS Code + Cline veya IntelliJ IDEA'dan kullanılmak üzere bir MCP sunucusu sağlar.
 
@@ -1007,13 +1007,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**Mevcut tüm 26 araç:**
+**Mevcut tüm 40 araç:**
 - **Çekirdek (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **Genişletilmiş (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **Vektör Veritabanı (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **Bulut (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**Tam Kılavuz:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**Tam Kılavuz:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -1038,12 +1038,12 @@ skill-seekers list-configs
 
 ```bash
 # Seçenek 1: Etkileşimli
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Seçenek 2: Bir ön ayarı kopyalayıp düzenleme
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Yapılandırma Dosyası Yapısı
@@ -1112,7 +1112,7 @@ output/
 ```bash
 # Yeniden taramaya zorla
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Kategoriler İyi Değil mi?
@@ -1122,7 +1122,7 @@ Yapılandırmadaki `categories` bölümünü daha iyi anahtar kelimelerle düzen
 ```bash
 # Eski verileri sil ve yeniden tara
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### Zenginleştirme Çalışmıyor mu?
@@ -1168,16 +1168,15 @@ skill-seekers config --github
 
 ### Başlarken
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 Yeniyseniz **BURADAN BAŞLAYIN!**
-- **[QUICKSTART.md](QUICKSTART.md)** - Deneyimli kullanıcılar için hızlı başlangıç
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - Deneyimli kullanıcılar için hızlı başlangıç
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Yaygın sorunlar ve çözümler
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - Tek sayfalık hızlı referans
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - Tek sayfalık hızlı referans
 
 ### Kılavuzlar
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 10K-40K+ sayfalık dokümantasyonu işleme
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Asenkron mod kılavuzu (2-3 kat daha hızlı tarama)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI zenginleştirme modları kılavuzu
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP entegrasyon kurulumu
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Çoklu kaynak tarama
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K-40K+ sayfalık dokümantasyonu işleme
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI zenginleştirme modları kılavuzu
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP entegrasyon kurulumu
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - Çoklu kaynak tarama
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - Video çıkarma kılavuzu
 
 ### Entegrasyon Kılavuzları
@@ -1202,3 +1201,73 @@ Keyifli yetenek oluşturmalar! 🚀
 ## 🔒 Güvenlik
 
 [![MseeP.ai Güvenlik Değerlendirme Rozeti](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
+---
+
+> **Not:** Aşağıdaki bölümler İngilizce README'den alınmıştır ve tam çeviri beklemektedir.
+> En güncel dokümantasyon için bkz. [README.md](../README.md).
+
+## Mimari
+
+Skill Seekers, genişletilebilirliğe yönelik tasarlanmış modüler bir mimari kullanır:
+
+| Modül | Amaç | Anahtar Dosyalar |
+|-------|------|------------------|
+| **CLI** | Komut satırı arayüzü | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | Kaynak türü dönüştürücüleri | `src/skill_seekers/cli/*_scraper.py` (17 tür) |
+| **Adaptors** | Platforma özgü paketleme | `src/skill_seekers/cli/adaptors/` (21 platform) |
+| **Enhancement** | AI destekli zenginleştirme | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | Model Bağlam Protokolü | `src/skill_seekers/mcp/server_fastmcp.py` (40 araç) |
+
+## AI destekli proje taraması
+
+Bir projenin teknoloji yığınını otomatik olarak algılayın ve her çerçeve için bir yapılandırma dosyası oluşturun:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## Ajan Bağımsız Beceri Oluşturma
+
+Skill Seekers, hedef platformdan bağımsız olarak aynı yüksek kaliteli çıktıyı üretir. Bir kez tarayın, her yerde paketleyin.
+
+## Market Hattı
+
+Becerileri markette paketleyin ve yayınlayın:
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## v3.6.0'daki Yenilikler
+
+### İş Akışı Ön Ayarları
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # Hızlı
+skill-seekers create https://docs.react.dev/ --preset standard    # Dengeli
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # Derin
+```
+
+### Yaşam Döngüsü Bayrakları
+```bash
+skill-seekers create <source> --dry-run      # Tarama olmadan önizleme
+skill-seekers create <source> --fresh        # Önbelleği yoksay, tam yeniden tarama
+skill-seekers create <source> --resume       # Kesintiye uğrayan işi sürdür
+skill-seekers create <source> --skip-scrape  # Mevcut çıktıyı yeniden paketle
+```
+
+### Sağlık Kontrolü ve Araçlar
+```bash
+skill-seekers doctor                 # Kurulum ve ortamı teşhis et
+skill-seekers sync-config            # Yapılandırma sapması algılama
+skill-seekers stream <source>        # Büyük dokümanlar için akış alımı
+skill-seekers update output/react/   # Artımlı güncelleme
+skill-seekers multilang <source>     # Çok dilli beceri oluşturma
+skill-seekers quality output/react/  # Kalite puanlama
+```
+
+### RAG Parçalama (paketleme)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

@@ -10,11 +10,11 @@
 >
 > 翻訳の改善にご協力いただける方は、[GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) からフィードバックをお寄せください。
 
-[![バージョン](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![バージョン](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![ライセンス: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 統合](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![テスト通過](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![テスト通過](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![プロジェクトボード](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI バージョン](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - ダウンロード数](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -105,9 +105,9 @@ skill-seekers create guide.adoc                  # AsciiDoc ドキュメント
 skill-seekers create slides.pptx                 # PowerPoint プレゼンテーション
 
 # 動画（YouTube、Vimeo、またはローカルファイル — skill-seekers[video] が必要）
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # 初回使用時は GPU 対応のビジュアル依存関係を自動インストール：
-skill-seekers video --setup
+skill-seekers create --setup
 
 # 用途に応じてエクスポート
 skill-seekers package output/django --target claude     # Claude AI スキル
@@ -255,7 +255,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # すべての AI 強化機能は設定されたエンドポイントを使用します
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **注意**：`ANTHROPIC_BASE_URL` を設定すると、GLM-4.7（智谱 AI）やその他の互換サービスなど、任意の Claude 互換 API エンドポイントを使用できます。
@@ -337,7 +337,7 @@ skill-seekers package output/django --target markdown
 **AI コーディングツール向けクイックエクスポート：**
 ```bash
 # 任意の AI コーディングアシスタント向け（Cursor、Windsurf、Cline、Continue.dev）
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude
 
 # プロジェクトにコピー（Cursor の場合）
@@ -382,7 +382,7 @@ print(f"デザインパターン: {len(result.code_analysis['c3_1_patterns'])}")
 print(f"Stars: {result.github_insights['metadata']['stars']}")
 ```
 
-**完全なドキュメント**：[3 ストリーム実装サマリー](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**完全なドキュメント**：[3 ストリーム実装サマリー](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 スマートレート制限管理と設定
 - ✅ **マルチトークン設定システム** - 複数の GitHub アカウント（個人、仕事、OSS）を管理
@@ -402,10 +402,10 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 skill-seekers config --github
 
 # プライベートリポジトリ用に特定のプロファイルを使用
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD モード（即時失敗、プロンプトなし）
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 ```
 
 ### 🎯 Bootstrap スキル — セルフホスティング
@@ -441,16 +441,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **使用方法：**
 ```bash
 # クイック分析（1〜2 分、基本機能のみ）
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # 包括的分析（AI 付き、20〜60 分）
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # AI 強化付き
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**完全なドキュメント：** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**完全なドキュメント：** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 強化ワークフロープリセット
 
@@ -555,7 +555,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | 全機能 |
 
 > **動画ビジュアル依存関係（GPU 対応）：** `skill-seekers[video-full]` をインストールした後、
-> `skill-seekers video --setup` を実行して GPU を自動検出し、正しい PyTorch
+> `skill-seekers create --setup` を実行して GPU を自動検出し、正しい PyTorch
 > バージョン + easyocr をインストールします。これはビジュアル抽出依存関係のインストールに推奨される方法です。
 
 ---
@@ -597,7 +597,7 @@ Skill Seekers は **12 の LLM プラットフォーム**、**17 種類のソー
 **ソースタイプ：** ドキュメントサイト、GitHub リポジトリ、PDF、Word、EPUB、動画、ローカルコードベース、Jupyter Notebook、ローカル HTML、OpenAPI/Swagger 仕様、AsciiDoc ドキュメント、PowerPoint プレゼンテーション、RSS/Atom フィード、Man ページ、Confluence Wiki、Notion ページ、Slack/Discord チャットエクスポート
 **スキルモード：** ドキュメント、GitHub、PDF、統合マルチソース、ローカルリポジトリ
 
-詳細は [完全な機能マトリックス](docs/FEATURE_MATRIX.md) をご覧ください。
+詳細は [完全な機能マトリックス](docs/reference/FEATURE_MATRIX.md) をご覧ください。
 
 ### プラットフォーム簡易比較
 
@@ -616,29 +616,29 @@ Skill Seekers は **12 の LLM プラットフォーム**、**17 種類のソー
 
 ```bash
 # ドキュメントサイトをスクレイプ
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 設定なしでクイックスクレイプ
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # 非同期モード（3 倍高速）
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### PDF 抽出
 
 ```bash
 # 基本 PDF 抽出
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # 高度な機能
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # テーブル抽出
     --parallel \              # 高速並列処理
     --workers 8               # 8 CPU コアを使用
 
 # スキャン PDF（必要：pip install pytesseract Pillow）
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### 動画抽出
@@ -649,31 +649,31 @@ pip install skill-seekers[video]        # 字幕 + メタデータ
 pip install skill-seekers[video-full]   # + Whisper 文字起こし + ビジュアルフレーム抽出
 
 # GPU 自動検出とビジュアル依存関係のインストール（PyTorch + easyocr）
-skill-seekers video --setup
+skill-seekers create --setup
 
 # YouTube 動画から抽出
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # YouTube プレイリストから抽出
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # ローカル動画ファイルから抽出
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # ビジュアルフレーム分析付きで抽出（video-full 依存関係が必要）
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # AI 強化付き（OCR クリーンアップ + 洗練された SKILL.md を生成）
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # 動画の特定セクションをトリミング（秒数、MM:SS、HH:MM:SS 形式に対応）
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # 低信頼度 OCR フレームに Vision API を使用（ANTHROPIC_API_KEY が必要）
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # 以前に抽出したデータからスキルを再構築（ダウンロードをスキップ）
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **完全ガイド：** [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) で完全な CLI リファレンス、
@@ -683,14 +683,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # 基本リポジトリスクレイピング
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 認証付き（より高いレート制限）
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # 含めるコンテンツのカスタマイズ
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # GitHub Issues を抽出
     --max-issues 100 \        # Issue 数を制限
     --include-changelog       # CHANGELOG.md を抽出
@@ -702,7 +702,7 @@ skill-seekers github --repo django/django \
 
 ```bash
 # 既存の統合設定を使用
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 
 # または統合設定を作成
 cat > configs/myframework_unified.json << 'EOF'
@@ -724,7 +724,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **コンフリクト検出が自動的に発見するもの：**
@@ -733,7 +733,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **シグネチャ不一致**：パラメータ/型が異なる
 - ℹ️ **説明の不一致**：説明が異なる
 
-**完全ガイド：** [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) を参照してください。
+**完全ガイド：** [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) を参照してください。
 
 ### プライベート設定リポジトリ
 
@@ -754,7 +754,7 @@ fetch_config(source="team", config_name="internal-api")
 **サポートされるプラットフォーム：**
 - GitHub（`GITHUB_TOKEN`）、GitLab（`GITLAB_TOKEN`）、Gitea（`GITEA_TOKEN`）、Bitbucket（`BITBUCKET_TOKEN`）
 
-**完全ガイド：** [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) を参照してください。
+**完全ガイド：** [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) を参照してください。
 
 ## 仕組み
 
@@ -864,7 +864,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP 統合（27 ツール）
+## 🔌 MCP 統合（40 ツール）
 
 Skill Seekers は Claude Code、Cursor、Windsurf、VS Code + Cline、IntelliJ IDEA で使用できる MCP サーバーを提供します。
 
@@ -887,7 +887,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 > `scrape_generic` は 10 種類の新しいソースタイプをサポート：Jupyter Notebook、ローカル HTML、OpenAPI/Swagger 仕様、AsciiDoc ドキュメント、PowerPoint プレゼンテーション、RSS/Atom フィード、Man ページ、Confluence Wiki、Notion ページ、Slack/Discord チャットエクスポート。
 
-**完全ガイド：** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**完全ガイド：** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -912,12 +912,12 @@ skill-seekers list-configs
 
 ```bash
 # オプション 1：対話式
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # オプション 2：プリセットをコピーして編集
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### 設定ファイルの構造
@@ -986,7 +986,7 @@ output/
 ```bash
 # 強制再スクレイプ
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### カテゴリ分類が不適切な場合
@@ -996,7 +996,7 @@ skill-seekers scrape --config configs/myframework.json
 ```bash
 # 古いデータを削除して再スクレイプ
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### 強化が動作しない場合
@@ -1040,16 +1040,15 @@ skill-seekers config --github
 
 ### はじめに
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **初めての方はこちらから！**
-- **[QUICKSTART.md](QUICKSTART.md)** - 経験者向けクイックスタート
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - 経験者向けクイックスタート
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - よくある問題と解決策
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - 1 ページチートシート
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - 1 ページチートシート
 
 ### ガイド
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - 10K〜40K 以上のページの処理
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - 非同期モードガイド（2〜3 倍高速スクレイピング）
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI 強化モードガイド
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP 統合セットアップ
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - マルチソーススクレイピング
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K〜40K 以上のページの処理
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI 強化モードガイド
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP 統合セットアップ
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - マルチソーススクレイピング
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - 動画抽出完全ガイド
 
 ### 統合ガイド
@@ -1068,3 +1067,73 @@ MIT ライセンス - 詳細は [LICENSE](LICENSE) ファイルを参照して�
 ---
 
 スキル構築をお楽しみください！ 🚀
+
+---
+
+> **注記：** 以下のセクションは英語版 README からのもので、完全な翻訳を待っています。
+> 最新のドキュメントは [README.md](../README.md) をご覧ください。
+
+## アーキテクチャ
+
+Skill Seekers は拡張性を考慮したモジュール型アーキテクチャを採用しています：
+
+| モジュール | 目的 | 主要ファイル |
+|-----------|------|-------------|
+| **CLI** | コマンドラインインターフェース | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | ソースタイプコンバーター | `src/skill_seekers/cli/*_scraper.py`（17 種類） |
+| **Adaptors** | プラットフォーム固有のパッケージング | `src/skill_seekers/cli/adaptors/`（21 プラットフォーム） |
+| **Enhancement** | AI 駆動のエンリッチメント | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | モデルコンテキストプロトコル | `src/skill_seekers/mcp/server_fastmcp.py`（40 ツール） |
+
+## AI 駆動のプロジェクトスキャン
+
+プロジェクトの技術スタックを自動検出し、フレームワークごとに設定ファイルを生成します：
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## エージェント非依存のスキル生成
+
+Skill Seekers は対象プラットフォームに関わらず、同じ高品質な出力を生成します。一度スクレイピングすれば、どこでもパッケージングできます。
+
+## マーケットプレイスパイプライン
+
+スキルをパッケージ化してマーケットプレイスに公開します：
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## v3.6.0 の新機能
+
+### ワークフロープリセット
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # 高速
+skill-seekers create https://docs.react.dev/ --preset standard    # バランス
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # 深い
+```
+
+### ライフサイクルフラグ
+```bash
+skill-seekers create <source> --dry-run      # スクレイピングなしでプレビュー
+skill-seekers create <source> --fresh        # キャッシュを無視して完全に再スクレイピング
+skill-seekers create <source> --resume       # 中断したジョブを再開
+skill-seekers create <source> --skip-scrape  # 既存の出力を再パッケージング
+```
+
+### ヘルスチェックとユーティリティ
+```bash
+skill-seekers doctor                 # インストールと環境の診断
+skill-seekers sync-config            # 設定のドリフト検出
+skill-seekers stream <source>        # 大規模ドキュメントのストリーミング取り込み
+skill-seekers update output/react/   # 増分更新
+skill-seekers multilang <source>     # 多言語スキル生成
+skill-seekers quality output/react/  # 品質スコアリング
+```
+
+### RAG チャンキング（パッケージング）
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

@@ -10,11 +10,11 @@
 >
 > Этот документ был автоматически переведён с помощью ИИ. Несмотря на наши усилия по обеспечению качества, возможны неточные выражения.
 
-[![Версия](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Версия](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP-интеграция](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Тесты пройдены](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![Тесты пройдены](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Доска проекта](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI версия](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Загрузки](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -84,7 +84,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Видео** — извлечение кода, субтитров и структурированных знаний из YouTube и локальных видео
 - 🔄 **Множество источников** — объединение 17 типов источников (документация, GitHub, PDF, видео, ноутбуки, вики и другие) в единую базу знаний
 - 🌐 **Одна подготовка — все платформы** — экспорт одного актива на 16 платформ без повторного сканирования
-- ✅ **Проверено в бою** — 2 540+ тестов, 24+ пресетов для фреймворков, готово к продакшену
+- ✅ **Проверено в бою** — 3 445+ тестов, 24+ пресетов для фреймворков, готово к продакшену
 
 ## Быстрый старт
 
@@ -105,9 +105,9 @@ skill-seekers create guide.adoc                  # Документ AsciiDoc
 skill-seekers create slides.pptx                 # Презентация PowerPoint
 
 # Видео (YouTube, Vimeo или локальный файл — требуется skill-seekers[video])
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # Первый запуск? Автоматическая установка зависимостей с поддержкой GPU:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Экспорт по назначению
 skill-seekers package output/django --target claude     # Claude AI навык
@@ -255,7 +255,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # Все функции ИИ-улучшения будут использовать настроенный эндпоинт
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **Примечание**: Установка `ANTHROPIC_BASE_URL` позволяет использовать любой Claude-совместимый API-эндпоинт, например GLM-4.7 или другие совместимые сервисы.
@@ -337,7 +337,7 @@ skill-seekers package output/django --target markdown
 **Быстрый экспорт для ИИ-инструментов программирования:**
 ```bash
 # Для любого ИИ-помощника (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude
 
 # Скопируйте в свой проект (пример для Cursor)
@@ -382,7 +382,7 @@ print(f"Паттерны проектирования: {len(result.code_analysis
 print(f"Звёзды: {result.github_insights['metadata']['stars']}")
 ```
 
-**Полная документация**: [Сводка по реализации трёхпоточной архитектуры](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**Полная документация**: [Сводка по реализации трёхпоточной архитектуры](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Умное управление лимитами запросов и конфигурация
 - ✅ **Система конфигурации с несколькими токенами** — управление несколькими аккаунтами GitHub (личный, рабочий, open source)
@@ -402,10 +402,10 @@ print(f"Звёзды: {result.github_insights['metadata']['stars']}")
 skill-seekers config --github
 
 # Использование определённого профиля для приватных репозиториев
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # Режим CI/CD (быстрый отказ, без запросов)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 ```
 
 ### 🎯 Bootstrap-навык — самохостинг
@@ -441,16 +441,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **Использование:**
 ```bash
 # Быстрый анализ (1–2 мин, только базовые функции)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # Комплексный анализ (с ИИ, 20–60 мин)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # С ИИ-улучшением
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**Полная документация:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Полная документация:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 Пресеты рабочих процессов улучшения
 
@@ -512,7 +512,7 @@ stages:
 - ✅ **Система кэширования** — сканируйте один раз, пересобирайте мгновенно
 
 ### ✅ Контроль качества
-- ✅ **Полное покрытие тестами** — 2 540+ тестов с обширным покрытием
+- ✅ **Полное покрытие тестами** — 3 445+ тестов с обширным покрытием
 
 ---
 
@@ -558,7 +558,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | Всё включено |
 
 > **Визуальные зависимости для видео (с поддержкой GPU):** После установки `skill-seekers[video-full]` запустите
-> `skill-seekers video --setup` для автоопределения вашего GPU и установки правильной сборки PyTorch
+> `skill-seekers create --setup` для автоопределения вашего GPU и установки правильной сборки PyTorch
 > + easyocr. Это рекомендуемый способ установки зависимостей для визуального извлечения.
 
 ---
@@ -599,7 +599,7 @@ Skill Seekers поддерживает **12 LLM-платформ**, **17 тип�
 **Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Типы источников:** Документация сайтов, репозитории GitHub, PDF, Word (.docx), EPUB, видео, локальные кодовые базы, Jupyter-ноутбуки, локальный HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты чатов Slack/Discord
 
-Подробности см. в [Полной матрице функций](docs/FEATURE_MATRIX.md).
+Подробности см. в [Полной матрице функций](docs/reference/FEATURE_MATRIX.md).
 
 ### Быстрое сравнение платформ
 
@@ -618,29 +618,29 @@ Skill Seekers поддерживает **12 LLM-платформ**, **17 тип�
 
 ```bash
 # Сканирование документации сайта
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Быстрое сканирование без конфигурации
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # Асинхронный режим (в 3 раза быстрее)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### Извлечение из PDF
 
 ```bash
 # Базовое извлечение из PDF
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # Расширенные функции
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # Извлечение таблиц
     --parallel \              # Быстрая параллельная обработка
     --workers 8               # Использование 8 ядер CPU
 
 # Сканированные PDF (требуется: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### Извлечение из видео
@@ -651,31 +651,31 @@ pip install skill-seekers[video]        # Субтитры + метаданны�
 pip install skill-seekers[video-full]   # + Whisper транскрипция + извлечение визуальных кадров
 
 # Автоопределение GPU и установка визуальных зависимостей (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Извлечение из видео YouTube
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # Извлечение из плейлиста YouTube
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # Извлечение из локального видеофайла
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # Извлечение с анализом визуальных кадров (требуются зависимости video-full)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # С ИИ-улучшением (очистка OCR + генерация отполированного SKILL.md)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # Обрезка определённого фрагмента видео (поддерживаются секунды, MM:SS, HH:MM:SS)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # Использование Vision API для OCR-кадров с низкой достоверностью (требуется ANTHROPIC_API_KEY)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # Пересборка навыка из ранее извлечённых данных (пропуск загрузки)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **Полное руководство:** см. [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) для полной справки по CLI,
@@ -685,14 +685,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # Базовое сканирование репозитория
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # С аутентификацией (более высокие лимиты запросов)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Настройка содержимого
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # Извлечение GitHub Issues
     --max-issues 100 \        # Ограничение количества issues
     --include-changelog       # Извлечение CHANGELOG.md
@@ -704,7 +704,7 @@ skill-seekers github --repo django/django \
 
 ```bash
 # Использование готовых унифицированных конфигураций
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 
 # Или создание унифицированной конфигурации
 cat > configs/myframework_unified.json << 'EOF'
@@ -726,7 +726,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **Обнаружение конфликтов автоматически находит:**
@@ -735,7 +735,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **Несовпадение сигнатур**: различные параметры/типы
 - ℹ️ **Несовпадение описаний**: различные пояснения
 
-**Полное руководство:** см. [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md).
+**Полное руководство:** см. [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md).
 
 ### Приватные репозитории конфигураций
 
@@ -756,7 +756,7 @@ fetch_config(source="team", config_name="internal-api")
 **Поддерживаемые платформы:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**Полное руководство:** см. [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md).
+**Полное руководство:** см. [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md).
 
 ## Как это работает
 
@@ -866,7 +866,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP-интеграция (26 инструментов)
+## 🔌 MCP-интеграция (40 инструментов)
 
 Skill Seekers поставляется с MCP-сервером для использования из Claude Code, Cursor, Windsurf, VS Code + Cline или IntelliJ IDEA.
 
@@ -881,13 +881,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**Все 26 инструментов:**
+**Все 40 инструментов:**
 - **Основные (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **Расширенные (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **Векторные БД (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **Облачные (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**Полное руководство:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**Полное руководство:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -912,12 +912,12 @@ skill-seekers list-configs
 
 ```bash
 # Вариант 1: Интерактивный
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Вариант 2: Копирование и редактирование пресета
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Структура файла конфигурации
@@ -986,7 +986,7 @@ output/
 ```bash
 # Принудительное повторное сканирование
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Категоризация не устраивает?
@@ -996,7 +996,7 @@ skill-seekers scrape --config configs/myframework.json
 ```bash
 # Удалите старые данные и просканируйте заново
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### Улучшение не работает?
@@ -1042,16 +1042,15 @@ skill-seekers config --github
 
 ### Начало работы
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** — 🎯 **НАЧНИТЕ ЗДЕСЬ**, если вы новичок!
-- **[QUICKSTART.md](QUICKSTART.md)** — Быстрый старт для опытных пользователей
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** — Быстрый старт для опытных пользователей
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — Распространённые проблемы и решения
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** — Краткая справка на одну страницу
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** — Краткая справка на одну страницу
 
 ### Руководства
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** — Работа с документами на 10K–40K+ страниц
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** — Руководство по асинхронному режиму (в 2–3 раза быстрее)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** — Руководство по режимам ИИ-улучшения
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** — Настройка MCP-интеграции
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** — Мультиисточниковое сканирование
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** — Работа с документами на 10K–40K+ страниц
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** — Руководство по режимам ИИ-улучшения
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** — Настройка MCP-интеграции
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** — Мультиисточниковое сканирование
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** — Полное руководство по извлечению из видео
 
 ### Руководства по интеграции
@@ -1076,3 +1075,73 @@ skill-seekers config --github
 ## 🔒 Безопасность
 
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
+---
+
+> **Примечание:** Следующие разделы взяты из английского README и ожидают полного перевода.
+> Для получения наиболее актуальной документации см. [README.md](../README.md).
+
+## Архитектура
+
+Skill Seekers использует модульную архитектуру, ориентированную на расширяемость:
+
+| Модуль | Назначение | Ключевые файлы |
+|--------|------------|----------------|
+| **CLI** | Интерфейс командной строки | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | Конвертеры типов источников | `src/skill_seekers/cli/*_scraper.py` (17 типов) |
+| **Adaptors** | Платформенно-специфичная упаковка | `src/skill_seekers/cli/adaptors/` (21 платформа) |
+| **Enhancement** | Обогащение на базе ИИ | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | Протокол контекста модели | `src/skill_seekers/mcp/server_fastmcp.py` (40 инструментов) |
+
+## Сканирование проекта с помощью ИИ
+
+Автоматическое определение технологического стека проекта и создание одного конфигурационного файла на каждый фреймворк:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## Генерация навыков, независимая от агента
+
+Skill Seekers генерирует одинаково высококачественный результат независимо от целевой платформы. Сканируйте один раз, упаковывайте везде.
+
+## Конвейер маркетплейса
+
+Упаковка и публикация навыков в маркетплейсе:
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## Новое в v3.6.0
+
+### Предустановки рабочих процессов
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # Быстрый
+skill-seekers create https://docs.react.dev/ --preset standard    # Сбалансированный
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # Глубокий
+```
+
+### Флаги жизненного цикла
+```bash
+skill-seekers create <source> --dry-run      # Предпросмотр без сканирования
+skill-seekers create <source> --fresh        # Игнорировать кэш, полное пересканирование
+skill-seekers create <source> --resume       # Возобновить прерванную задачу
+skill-seekers create <source> --skip-scrape  # Переупаковать существующий результат
+```
+
+### Проверка здоровья и утилиты
+```bash
+skill-seekers doctor                 # Диагностика установки и окружения
+skill-seekers sync-config            # Обнаружение отклонений конфигурации
+skill-seekers stream <source>        # Потоковое поглощение для больших документов
+skill-seekers update output/react/   # Инкрементальное обновление
+skill-seekers multilang <source>     # Генерация навыков на нескольких языках
+skill-seekers quality output/react/  # Оценка качества
+```
+
+### RAG-фрагментация (упаковка)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
