@@ -81,7 +81,7 @@ For clients that use JSON config (Claude Desktop, Claude Code, Cursor):
 }
 ```
 
-## Available Tools (35)
+## Available Tools (40)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -93,6 +93,8 @@ For clients that use JSON config (Claude Desktop, Claude Code, Cursor):
 | Sources | 5 | Fetch, submit, manage config sources |
 | Vector DB | 4 | Export to Weaviate, Chroma, FAISS, Qdrant |
 | Workflows | 5 | List, get, create, update, delete workflows |
+| Quality | 3 | Quality checks, estimate scope, resume operations |
+| Agent Install | 2 | Install agent, extract test examples |
 
 ## Maintenance
 

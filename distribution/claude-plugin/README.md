@@ -28,7 +28,7 @@ pip install skill-seekers[mcp]
 
 ## What's Included
 
-### MCP Server (35 tools)
+### MCP Server (40 tools)
 
 The plugin bundles the Skill Seekers MCP server providing tools for:
 - Scraping documentation, GitHub repos, PDFs, videos, and 13 other source types
