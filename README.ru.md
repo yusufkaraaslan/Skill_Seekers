@@ -13,17 +13,19 @@
 [![Версия](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP-интеграция](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![MCP-интеграция](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![Тесты пройдены](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Доска проекта](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI версия](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Загрузки](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Версия Python](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![Веб-сайт](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 Слой данных для ИИ-систем.** Skill Seekers преобразует документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, вики и более 17 типов источников в структурированные базы знаний — готовые к использованию в ИИ-навыках (Claude, Gemini, OpenAI), RAG-конвейерах (LangChain, LlamaIndex, Pinecone) и ИИ-помощниках для программирования (Cursor, Windsurf, Cline) за считанные минуты.
+**🧠 Слой данных для ИИ-систем.** Skill Seekers преобразует документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, вики и более 18 типов источников в структурированные базы знаний — готовые к использованию в ИИ-навыках (Claude, Gemini, OpenAI), RAG-конвейерах (LangChain, LlamaIndex, Pinecone) и ИИ-помощниках для программирования (Cursor, Windsurf, Cline) за считанные минуты.
 
 > 🌐 **[Посетите SkillSeekersWeb.com](https://skillseekersweb.com/)** — просматривайте 24+ готовых конфигураций, делитесь своими настройками и получайте доступ к полной документации!
 
@@ -82,7 +84,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **Качество ИИ-навыков** — файлы SKILL.md на 500+ строк с примерами, шаблонами и руководствами
 - 📊 **Готовые к RAG блоки** — умная разбивка сохраняет блоки кода и контекст
 - 🎬 **Видео** — извлечение кода, субтитров и структурированных знаний из YouTube и локальных видео
-- 🔄 **Множество источников** — объединение 17 типов источников (документация, GitHub, PDF, видео, ноутбуки, вики и другие) в единую базу знаний
+- 🔄 **Множество источников** — объединение 18 типов источников (документация, GitHub, PDF, видео, ноутбуки, вики и другие) в единую базу знаний
 - 🌐 **Одна подготовка — все платформы** — экспорт одного актива на 16 платформ без повторного сканирования
 - ✅ **Проверено в бою** — 3 445+ тестов, 24+ пресетов для фреймворков, готово к продакшену
 
@@ -122,7 +124,7 @@ skill-seekers package output/django --target cursor     # Cursor IDE конте�
 
 ## Что такое Skill Seekers?
 
-Skill Seekers — это **слой данных для ИИ-систем**, который преобразует 17 типов источников — документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, документы Word/EPUB/AsciiDoc, спецификации OpenAPI/Swagger, презентации PowerPoint, RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты Slack/Discord и другое — в структурированные базы знаний для всех ИИ-целей:
+Skill Seekers — это **слой данных для ИИ-систем**, который преобразует 18 типов источников — документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, документы Word/EPUB/AsciiDoc, спецификации OpenAPI/Swagger, презентации PowerPoint, RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты Slack/Discord и другое — в структурированные базы знаний для всех ИИ-целей:
 
 | Сценарий использования | Что вы получаете | Примеры |
 |----------------------|-----------------|---------|
@@ -133,7 +135,7 @@ Skill Seekers — это **слой данных для ИИ-систем**, к�
 
 Skill Seekers заменяет дни ручной предобработки следующими шагами:
 
-1. **Сбор** — документация, репозитории GitHub, локальные кодовые базы, PDF, видео, Jupyter-ноутбуки, вики и более 17 типов источников
+1. **Сбор** — документация, репозитории GitHub, локальные кодовые базы, PDF, видео, Jupyter-ноутбуки, вики и более 18 типов источников
 2. **Анализ** — глубокий AST-разбор, обнаружение паттернов, извлечение API
 3. **Структурирование** — категоризированные справочные файлы с метаданными
 4. **Улучшение** — генерация SKILL.md с помощью ИИ (Claude, Gemini или локально)
@@ -207,7 +209,7 @@ Skill Seekers заменяет дни ручной предобработки с
 - ✅ **Обратная совместимость** — устаревшие одноисточниковые конфигурации продолжают работать
 
 ### 🤖 Поддержка нескольких LLM-платформ
-- ✅ **12 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **21 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Универсальное сканирование** — одна и та же документация для всех платформ
 - ✅ **Платформоспецифичная упаковка** — оптимизированные форматы для каждой LLM
 - ✅ **Экспорт одной командой** — флаг `--target` для выбора платформы
@@ -594,7 +596,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Матрица функций
 
-Skill Seekers поддерживает **12 LLM-платформ**, **17 типов источников** и полный паритет функций по всем целевым платформам.
+Skill Seekers поддерживает **21 LLM-платформ**, **18 типов источников** и полный паритет функций по всем целевым платформам.
 
 **Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Типы источников:** Документация сайтов, репозитории GitHub, PDF, Word (.docx), EPUB, видео, локальные кодовые базы, Jupyter-ноутбуки, локальный HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты чатов Slack/Discord

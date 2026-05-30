@@ -84,7 +84,7 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob skill dire
 - 📊 **RAG-ready chunks** — Smart chunking preserves code blocks and maintains context
 - 🎬 **Videos** — Extract code, transcripts, and structured knowledge from YouTube and local videos
 - 🔄 **Multi-source** — Combine 18 source types (docs, GitHub, PDFs, videos, notebooks, wikis, and more) into one knowledge asset
-- 🌐 **One prep, every target** — Export the same asset to 20 platforms (12 LLM + 8 RAG/vector) without re-scraping
+- 🌐 **One prep, every target** — Export the same asset to 21 platforms without re-scraping
 - ✅ **Battle-tested** — 3,445+ tests, 24+ framework presets, production-ready
 
 ## 🚀 Quick Start (3 Commands)
@@ -300,7 +300,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
 ### 🤖 Multi-LLM Platform Support
-- ✅ **12 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
+- ✅ **21 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **Universal Scraping** - Same documentation works for all platforms
 - ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
 - ✅ **One-Command Export** - `--target` flag selects platform
@@ -1085,7 +1085,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**All 26 tools available:**
+**All 40 tools available:**
 - **Core (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **Extended (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **Vector DB (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`

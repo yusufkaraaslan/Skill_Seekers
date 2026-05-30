@@ -15,12 +15,14 @@
 [![संस्करण](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![लाइसेंस: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP एकीकरण](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![MCP एकीकरण](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![परीक्षण पास](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![परियोजना बोर्ड](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI संस्करण](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - डाउनलोड](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Python संस्करण](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![वेबसाइट](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -269,7 +271,7 @@ Skill Seekers **AI सिस्टम के लिए डेटा लेयर
 - ✅ **पश्चगामी संगत** - पुराने एकल-स्रोत कॉन्फ़िग अभी भी काम करते हैं
 
 ### 🤖 बहु-LLM प्लेटफ़ॉर्म समर्थन
-- ✅ **12 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **21 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **सार्वभौमिक स्क्रैपिंग** - समान दस्तावेज़ सभी प्लेटफ़ॉर्म के लिए काम करते हैं
 - ✅ **प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग** - प्रत्येक LLM के लिए अनुकूलित प्रारूप
 - ✅ **एक-कमांड निर्यात** - `--target` फ़्लैग प्लेटफ़ॉर्म चुनता है
@@ -714,7 +716,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 फ़ीचर मैट्रिक्स
 
-Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
+Skill Seekers **21 LLM प्लेटफ़ॉर्म**, **17 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
 
 **प्लेटफ़ॉर्म:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **स्रोत प्रकार:** डॉक्यूमेंटेशन वेबसाइट, GitHub रिपो, PDF, Word (.docx), EPUB, वीडियो, स्थानीय कोडबेस, Jupyter Notebook, स्थानीय HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord चैट एक्सपोर्ट
@@ -1210,7 +1212,7 @@ Skill Seekers एक मॉड्यूलर वास्तुकला का
 | मॉड्यूल | उद्देश्य | मुख्य फ़ाइलें |
 |---------|---------|--------------|
 | **CLI** | कमांड-लाइन इंटरफ़ेस | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | स्रोत-प्रकार कनवर्टर | `src/skill_seekers/cli/*_scraper.py` (17 प्रकार) |
+| **Scrapers** | स्रोत-प्रकार कनवर्टर | `src/skill_seekers/cli/*_scraper.py` (18 प्रकार) |
 | **Adaptors** | प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग | `src/skill_seekers/cli/adaptors/` (21 प्लेटफ़ॉर्म) |
 | **Enhancement** | AI-संचालित समृद्धि | `src/skill_seekers/cli/enhance_command.py` |
 | **MCP Server** | मॉडल संदर्भ प्रोटोकॉल | `src/skill_seekers/mcp/server_fastmcp.py` (40 उपकरण) |

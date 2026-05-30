@@ -15,12 +15,14 @@
 [![Sürüm](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Lisans: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP Entegrasyonu](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![MCP Entegrasyonu](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![Test Geçti](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Proje Panosu](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI Sürümü](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - İndirmeler](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Python Sürümü](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![Web Sitesi](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Twitter Takip](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Yıldızları](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -84,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **AI Yetenek kalitesi** — Örnekler, desenler ve kılavuzlar içeren 500+ satırlık SKILL.md dosyaları
 - 📊 **RAG-hazır parçalar** — Kod bloklarını koruyan ve bağlamı sürdüren akıllı parçalama
 - 🎬 **Videolar** — YouTube ve yerel videolardan kod, altyazı ve yapılandırılmış bilgi çıkarma
-- 🔄 **Çoklu kaynak** — 17 kaynak türünü (dokümantasyon, GitHub, PDF, video, not defterleri, vikiler ve daha fazlası) tek bir bilgi varlığında birleştirme
+- 🔄 **Çoklu kaynak** — 18 kaynak türünü (dokümantasyon, GitHub, PDF, video, not defterleri, vikiler ve daha fazlası) tek bir bilgi varlığında birleştirme
 - 🌐 **Bir hazırlık, her hedef** — Yeniden tarama yapmadan aynı varlığı 16 platforma dışa aktarma
 - ✅ **Savaşta test edilmiş** — 3.445+ test, 24+ çerçeve ön ayarı, üretime hazır
 
@@ -168,7 +170,7 @@ done
 
 ## Skill Seekers Nedir?
 
-Skill Seekers, **yapay zeka sistemleri için veri katmanıdır**. 17 kaynak türünü — dokümantasyon siteleri, GitHub depoları, PDF'ler, videolar, Jupyter Not Defterleri, Word/EPUB/AsciiDoc belgeleri, OpenAPI spesifikasyonları, PowerPoint sunumları, RSS beslemeleri, man sayfaları, Confluence vikileri, Notion sayfaları, Slack/Discord dışa aktarımları ve daha fazlasını — her AI hedefi için yapılandırılmış bilgi varlıklarına dönüştürür:
+Skill Seekers, **yapay zeka sistemleri için veri katmanıdır**. 18 kaynak türünü — dokümantasyon siteleri, GitHub depoları, PDF'ler, videolar, Jupyter Not Defterleri, Word/EPUB/AsciiDoc belgeleri, OpenAPI spesifikasyonları, PowerPoint sunumları, RSS beslemeleri, man sayfaları, Confluence vikileri, Notion sayfaları, Slack/Discord dışa aktarımları ve daha fazlasını — her AI hedefi için yapılandırılmış bilgi varlıklarına dönüştürür:
 
 | Kullanım Alanı | Elde Ettiğiniz | Örnekler |
 |----------------|---------------|----------|
@@ -269,7 +271,7 @@ Skill Seekers, günlerce süren manuel ön işleme çalışması yerine şunlar�
 - ✅ **Geriye Dönük Uyumluluk** - Eski tek kaynaklı yapılandırmalar çalışmaya devam eder
 
 ### 🤖 Çoklu LLM Platform Desteği
-- ✅ **12 LLM Platformu** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **21 LLM Platformu** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Evrensel Tarama** - Aynı dokümantasyon tüm platformlar için çalışır
 - ✅ **Platforma Özel Paketleme** - Her LLM için optimize edilmiş formatlar
 - ✅ **Tek Komutla Dışa Aktarma** - `--target` bayrağı ile platform seçimi
@@ -718,7 +720,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Özellik Matrisi
 
-Skill Seekers **12 LLM platformu**, **17 kaynak türü** ve tüm hedeflerde tam özellik eşitliğini destekler.
+Skill Seekers **21 LLM platformu**, **18 kaynak türü** ve tüm hedeflerde tam özellik eşitliğini destekler.
 
 **Platformlar:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Kaynak Türleri:** Dokümantasyon siteleri, GitHub depoları, PDF'ler, Word (.docx), EPUB, Video, Yerel kod tabanları, Jupyter Not Defterleri, Yerel HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom beslemeleri, Man sayfaları, Confluence vikileri, Notion sayfaları, Slack/Discord sohbet dışa aktarımları

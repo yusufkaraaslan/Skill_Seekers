@@ -15,12 +15,14 @@
 [![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Lizenz: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP-Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![MCP-Integration](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![Getestet](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Projektboard](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI-Version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Python-Version](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![Website](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Repo Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -83,7 +85,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - **99 % schneller** — Tage manueller Datenaufbereitung → 15–45 Minuten
 - **KI-Skill-Qualität** — Über 500 Zeilen SKILL.md-Dateien mit Beispielen, Mustern und Anleitungen
 - **RAG-fertige Chunks** — Intelligentes Chunking bewahrt Codeblöcke und Kontext
-- **17 Quelltypen** — Dokumentation + GitHub + PDF + Videos + Notebooks + Wikis u. v. m. zu einer Wissensressource vereinen
+- **18 Quelltypen** — Dokumentation + GitHub + PDF + Videos + Notebooks + Wikis u. v. m. zu einer Wissensressource vereinen
 - **Einmal aufbereiten, überall exportieren** — Export auf 16 Plattformen ohne erneutes Scrapen
 - **Videos** — Code, Transkripte und strukturiertes Wissen aus YouTube- und lokalen Videos extrahieren
 - **Kampferprobt** — Über 3.445 Tests, 24+ Framework-Presets, produktionsreif
@@ -124,7 +126,7 @@ skill-seekers package output/django --target cursor     # Cursor IDE Kontext
 
 ## Was ist Skill Seekers?
 
-Skill Seekers ist die **Datenschicht für KI-Systeme** und transformiert 17 Quelltypen — Dokumentationswebsites, GitHub-Repositories, PDFs, Videos, Jupyter-Notebooks, Word-/EPUB-/AsciiDoc-Dokumente, OpenAPI/Swagger-Spezifikationen, PowerPoint-Präsentationen, RSS/Atom-Feeds, Man-Pages, Confluence-Wikis, Notion-Seiten, Slack-/Discord-Chatexporte und mehr — in strukturierte Wissensressourcen für jedes KI-Ziel:
+Skill Seekers ist die **Datenschicht für KI-Systeme** und transformiert 18 Quelltypen — Dokumentationswebsites, GitHub-Repositories, PDFs, Videos, Jupyter-Notebooks, Word-/EPUB-/AsciiDoc-Dokumente, OpenAPI/Swagger-Spezifikationen, PowerPoint-Präsentationen, RSS/Atom-Feeds, Man-Pages, Confluence-Wikis, Notion-Seiten, Slack-/Discord-Chatexporte und mehr — in strukturierte Wissensressourcen für jedes KI-Ziel:
 
 | Anwendungsfall | Ergebnis | Beispiele |
 |----------------|----------|-----------|
@@ -209,7 +211,7 @@ Anstatt tagelange manuelle Vorverarbeitung durchzuführen, erledigt Skill Seeker
 - **Abwärtskompatibel** - Bestehende Einzelquellen-Konfigurationen funktionieren weiterhin
 
 ### Multi-LLM-Plattformunterstützung
-- **12 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- **21 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - **Universelles Scraping** - Dieselbe Dokumentation funktioniert für alle Plattformen
 - **Plattformspezifische Paketierung** - Optimierte Formate für jedes LLM
 - **Ein-Befehl-Export** - `--target`-Flag wählt die Plattform
@@ -596,7 +598,7 @@ Phase 5: Zu Claude hochladen (optional, erfordert API Key)
 
 ## Funktionsmatrix
 
-Skill Seekers unterstützt **12 LLM-Plattformen**, **17 Quelltypen** und vollständige Funktionsparität für alle Ziele.
+Skill Seekers unterstützt **21 LLM-Plattformen**, **18 Quelltypen** und vollständige Funktionsparität für alle Ziele.
 
 **Plattformen:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Quelltypen:** Dokumentationswebsites, GitHub-Repos, PDFs, Word (.docx), EPUB, Video, lokale Codebasen, Jupyter-Notebooks, lokales HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS-/Atom-Feeds, Man-Pages, Confluence-Wikis, Notion-Seiten, Slack-/Discord-Chatexporte

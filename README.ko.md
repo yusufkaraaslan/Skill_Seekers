@@ -15,12 +15,14 @@
 [![버전](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![라이선스: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP 통합](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![MCP 통합](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![테스트 통과](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![프로젝트 보드](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 버전](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 다운로드](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Python 버전](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![공식 웹사이트](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Twitter 팔로우](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -84,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **AI 스킬 품질** — 예제, 패턴, 가이드를 포함한 500줄 이상의 SKILL.md 파일
 - 📊 **RAG 준비 완료 청킹** — 코드 블록을 보존하고 컨텍스트를 유지하는 스마트 청킹
 - 🎬 **동영상** — YouTube 및 로컬 동영상에서 코드, 자막, 구조화된 지식 추출
-- 🔄 **17가지 소스 유형** — 문서 + GitHub + PDF + 동영상 + 노트북 + 위키 등을 하나의 지식 자산으로 결합
+- 🔄 **18가지 소스 유형** — 문서 + GitHub + PDF + 동영상 + 노트북 + 위키 등을 하나의 지식 자산으로 결합
 - 🌐 **한 번 준비, 모든 대상으로 내보내기** — 재스크래핑 없이 16개 플랫폼으로 내보내기
 - ✅ **실전 검증 완료** — 3,445+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
 
@@ -124,7 +126,7 @@ skill-seekers package output/django --target cursor     # Cursor IDE 컨텍스�
 
 ## Skill Seekers란?
 
-Skill Seekers는 **AI 시스템을 위한 데이터 레이어**로, 17가지 소스 유형 — 문서 사이트, GitHub 저장소, PDF, 동영상, Jupyter 노트북, Word/EPUB/AsciiDoc 문서, OpenAPI/Swagger 스펙, PowerPoint 프레젠테이션, RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 내보내기 등 — 을 모든 AI 대상에 적합한 구조화된 지식 자산으로 변환합니다:
+Skill Seekers는 **AI 시스템을 위한 데이터 레이어**로, 18가지 소스 유형 — 문서 사이트, GitHub 저장소, PDF, 동영상, Jupyter 노트북, Word/EPUB/AsciiDoc 문서, OpenAPI/Swagger 스펙, PowerPoint 프레젠테이션, RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 내보내기 등 — 을 모든 AI 대상에 적합한 구조화된 지식 자산으로 변환합니다:
 
 | 사용 사례 | 얻을 수 있는 것 | 예시 |
 |----------|---------------|------|
@@ -596,7 +598,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 기능 매트릭스
 
-Skill Seekers는 **12개 LLM 플랫폼**, **17가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
+Skill Seekers는 **12개 LLM 플랫폼**, **18가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
 
 **플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **소스 유형:** 문서 사이트, GitHub 저장소, PDF, Word (.docx), EPUB, 동영상, 로컬 코드베이스, Jupyter 노트북, 로컬 HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 채팅 내보내기

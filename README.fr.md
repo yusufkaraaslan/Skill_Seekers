@@ -15,12 +15,14 @@
 [![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Licence : MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Intégration MCP](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
+[![Intégration MCP](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
 [![Tests réussis](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Tableau de projet](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![Version PyPI](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Téléchargements](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Version Python](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![Site web](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Suivre sur Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![Étoiles GitHub](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -84,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **Qualité des compétences IA** — Fichiers SKILL.md de 500+ lignes avec exemples, patterns et guides
 - 📊 **Fragments prêts pour le RAG** — Découpage intelligent préservant les blocs de code et le contexte
 - 🎬 **Vidéos** — Extraction de code, transcriptions et connaissances structurées depuis YouTube et vidéos locales
-- 🔄 **Multi-sources** — Combinez 17 types de sources (docs, GitHub, PDF, vidéos, notebooks, wikis, etc.) en une seule ressource
+- 🔄 **Multi-sources** — Combinez 18 types de sources (docs, GitHub, PDF, vidéos, notebooks, wikis, etc.) en une seule ressource
 - 🌐 **Une préparation, toutes les cibles** — Exportez la même ressource vers 16 plateformes sans re-scraping
 - ✅ **Éprouvé en production** — 3 445+ tests, 24+ préréglages de frameworks, prêt pour la production
 
@@ -168,7 +170,7 @@ done
 
 ## Qu'est-ce que Skill Seekers ?
 
-Skill Seekers est la **couche de données pour les systèmes d'IA**. Il transforme 17 types de sources — sites de documentation, dépôts GitHub, PDF, vidéos, notebooks Jupyter, documents Word/EPUB/AsciiDoc, spécifications OpenAPI, présentations PowerPoint, flux RSS, pages de manuel, wikis Confluence, pages Notion, exports Slack/Discord, et plus encore — en ressources de connaissances structurées pour toutes les cibles IA :
+Skill Seekers est la **couche de données pour les systèmes d'IA**. Il transforme 18 types de sources — sites de documentation, dépôts GitHub, PDF, vidéos, notebooks Jupyter, documents Word/EPUB/AsciiDoc, spécifications OpenAPI, présentations PowerPoint, flux RSS, pages de manuel, wikis Confluence, pages Notion, exports Slack/Discord, et plus encore — en ressources de connaissances structurées pour toutes les cibles IA :
 
 | Cas d'usage | Ce que vous obtenez | Exemples |
 |-------------|---------------------|----------|
@@ -719,7 +721,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Matrice de fonctionnalités
 
-Skill Seekers prend en charge **12 plateformes LLM**, **17 types de sources** et une parité fonctionnelle complète sur toutes les cibles.
+Skill Seekers prend en charge **12 plateformes LLM**, **18 types de sources** et une parité fonctionnelle complète sur toutes les cibles.
 
 **Plateformes :** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown générique, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Types de sources :** Sites de documentation, dépôts GitHub, PDF, Word (.docx), EPUB, Vidéo, Bases de code locales, Notebooks Jupyter, HTML local, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), Flux RSS/Atom, Pages de manuel, Wikis Confluence, Pages Notion, Exports chat Slack/Discord
