@@ -9,15 +9,19 @@ on:
     paths:
       - 'src/skill_seekers/cli/adaptors/**'
       - 'src/skill_seekers/mcp/tools/vector_db_tools.py'
-      - 'tests/test_*adaptor.py'
+      - 'tests/test_*adaptor*.py'
       - 'tests/test_mcp_vector_dbs.py'
+      - 'tests/test_docker_smoke.py'
+      - 'tests/test_upload_integration.py'
   pull_request:
     branches: [ main, development ]
     paths:
       - 'src/skill_seekers/cli/adaptors/**'
       - 'src/skill_seekers/mcp/tools/vector_db_tools.py'
-      - 'tests/test_*adaptor.py'
+      - 'tests/test_*adaptor*.py'
       - 'tests/test_mcp_vector_dbs.py'
+      - 'tests/test_docker_smoke.py'
+      - 'tests/test_upload_integration.py'
   workflow_dispatch:
 
 jobs:
