@@ -1,13 +1,13 @@
 # Core Concepts
 
-> **Skill Seekers v3.2.0**  
+> **Skill Seekers v3.6.0**  
 > **Understanding how Skill Seekers works**
 
 ---
 
 ## Overview
 
-Skill Seekers transforms documentation, code, and content into **structured knowledge assets** that AI systems can use effectively. It supports **17 source types** including documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more.
+Skill Seekers transforms documentation, code, and content into **structured knowledge assets** that AI systems can use effectively. It supports **18 source types** including documentation sites, GitHub repos, PDFs, videos, notebooks, wikis, and more.
 
 ```
 Raw Content → Skill Seekers → AI-Ready Skill
@@ -113,7 +113,7 @@ skill-seekers create https://docs.example.com/
 **Command:**
 ```bash
 skill-seekers create owner/repo
-skill-seekers github --repo owner/repo
+skill-seekers create  owner/repo
 ```
 
 **Best for:**
@@ -136,7 +136,7 @@ skill-seekers github --repo owner/repo
 **Command:**
 ```bash
 skill-seekers create manual.pdf
-skill-seekers pdf --pdf manual.pdf
+skill-seekers create --pdf manual.pdf
 ```
 
 **Best for:**
@@ -159,7 +159,7 @@ skill-seekers pdf --pdf manual.pdf
 **Command:**
 ```bash
 skill-seekers create ./my-project
-skill-seekers analyze --directory ./my-project
+skill-seekers scan  ./my-project
 ```
 
 **Best for:**
@@ -198,7 +198,7 @@ skill-seekers create book.epub
 **Command:**
 ```bash
 skill-seekers create https://www.youtube.com/watch?v=...
-skill-seekers video --url https://www.youtube.com/watch?v=...
+skill-seekers create --video-url  https://www.youtube.com/watch?v=...
 ```
 
 ---
@@ -210,7 +210,7 @@ skill-seekers video --url https://www.youtube.com/watch?v=...
 **Command:**
 ```bash
 skill-seekers create analysis.ipynb
-skill-seekers jupyter --notebook analysis.ipynb
+skill-seekers create analysis.ipynb
 ```
 
 ---
@@ -222,7 +222,7 @@ skill-seekers jupyter --notebook analysis.ipynb
 **Command:**
 ```bash
 skill-seekers create page.html
-skill-seekers html --file page.html
+skill-seekers create page.html
 ```
 
 ---
@@ -234,7 +234,7 @@ skill-seekers html --file page.html
 **Command:**
 ```bash
 skill-seekers create api-spec.yaml
-skill-seekers openapi --spec api-spec.yaml
+skill-seekers create api-spec.yaml
 ```
 
 ---
@@ -246,7 +246,7 @@ skill-seekers openapi --spec api-spec.yaml
 **Command:**
 ```bash
 skill-seekers create guide.adoc
-skill-seekers asciidoc --file guide.adoc
+skill-seekers create guide.adoc
 ```
 
 ---
@@ -258,7 +258,7 @@ skill-seekers asciidoc --file guide.adoc
 **Command:**
 ```bash
 skill-seekers create slides.pptx
-skill-seekers pptx --file slides.pptx
+skill-seekers create slides.pptx
 ```
 
 ---
@@ -270,7 +270,7 @@ skill-seekers pptx --file slides.pptx
 **Command:**
 ```bash
 skill-seekers create feed.rss
-skill-seekers rss --feed feed.rss
+skill-seekers create feed.rss
 ```
 
 ---
@@ -282,7 +282,7 @@ skill-seekers rss --feed feed.rss
 **Command:**
 ```bash
 skill-seekers create grep.1
-skill-seekers manpage --file grep.1
+skill-seekers create grep.1
 ```
 
 ---
@@ -293,7 +293,7 @@ skill-seekers manpage --file grep.1
 
 **Command:**
 ```bash
-skill-seekers confluence --space DEV --base-url https://wiki.example.com
+skill-seekers create --space-key  DEV --base-url https://wiki.example.com
 ```
 
 ---
@@ -304,7 +304,7 @@ skill-seekers confluence --space DEV --base-url https://wiki.example.com
 
 **Command:**
 ```bash
-skill-seekers notion --database abc123
+skill-seekers create --database-id  abc123
 ```
 
 ---
@@ -315,7 +315,7 @@ skill-seekers notion --database abc123
 
 **Command:**
 ```bash
-skill-seekers chat --export slack-export/
+skill-seekers create --chat-export-path  slack-export/
 ```
 
 ---
@@ -507,7 +507,7 @@ cat > configs/my-project.json << 'EOF'
 EOF
 
 # Run unified scraping
-skill-seekers unified --config configs/my-project.json
+skill-seekers create --config configs/my-project.json
 ```
 
 **Benefits:**

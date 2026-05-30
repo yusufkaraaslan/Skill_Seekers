@@ -1,6 +1,6 @@
 # Next Steps
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.6.0**  
 > **Where to go after creating your first skill**
 
 ---
@@ -294,9 +294,9 @@ skill-seekers package <dir> --target <p>   # Package
 skill-seekers upload <file> --target <p>   # Upload
 
 # Analysis
-skill-seekers analyze --directory <dir>    # Local codebase
-skill-seekers github --repo <owner/repo>   # GitHub repo
-skill-seekers pdf --pdf <file>             # PDF
+skill-seekers scan  <dir>    # Local codebase
+skill-seekers create  <owner/repo>   # GitHub repo
+skill-seekers create --pdf <file>             # PDF
 
 # Utilities
 skill-seekers estimate <config>            # Page estimation

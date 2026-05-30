@@ -1,6 +1,6 @@
 # Your First Skill - Complete Walkthrough
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.6.0**  
 > **Step-by-step guide to creating your first skill**
 
 ---
@@ -20,7 +20,7 @@ A skill from the **Django documentation** that you can use with Claude AI.
 # Ensure skill-seekers is installed
 skill-seekers --version
 
-# Should output: skill-seekers 3.1.0
+# Should output: skill-seekers 3.6.0
 ```
 
 ---
