@@ -446,7 +446,7 @@ mcp/
 
 1. **AI coding agent** (Claude Code, Cursor, Windsurf, etc.) sends MCP requests to the server
 2. **Server** routes requests to appropriate tool functions
-3. **Tools** call CLI scripts (`doc_scraper.py`, `estimate_pages.py`, etc.)
+3. **Tools** call the CLI (`skill-seekers create`, `skill-seekers estimate`, etc.)
 4. **CLI scripts** perform actual work (scraping, packaging, etc.)
 5. **Results** returned to the agent via MCP protocol
 
@@ -547,9 +547,8 @@ pip install -e ".[mcp]"
 1. Verify `cwd` in config points to repository root
 2. Check CLI tools exist:
    ```bash
-   ls src/skill_seekers/cli/doc_scraper.py
-   ls src/skill_seekers/cli/estimate_pages.py
-   ls src/skill_seekers/cli/package_skill.py
+   which skill-seekers
+   skill-seekers create --help
    ```
 
 3. Test CLI tools directly:
@@ -572,7 +571,7 @@ pip install -e ".[mcp]"
 python3 -m venv venv
 source venv/bin/activate
 pip install -e ".[mcp]"
-pip install requests beautifulsoup4
+pip install -e .
 which python3  # Copy this path
 ```
 

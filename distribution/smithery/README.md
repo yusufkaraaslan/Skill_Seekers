@@ -50,7 +50,7 @@ Update the server page with metadata:
 **Display name:** Skill Seekers — AI Skill & RAG Toolkit
 
 **Description:**
-> Transform 17 source types into AI-ready skills and RAG knowledge. Ingest documentation sites, GitHub repos, PDFs, Jupyter notebooks, videos, Confluence, Notion, Slack/Discord exports, and more. Package for 16+ LLM platforms including Claude, GPT, Gemini, LangChain, LlamaIndex, and vector databases.
+> Transform 18 source types into AI-ready skills and RAG knowledge. Ingest documentation sites, GitHub repos, PDFs, Jupyter notebooks, videos, Confluence, Notion, Slack/Discord exports, and more. Package for 21+ LLM platforms including Claude, GPT, Gemini, LangChain, LlamaIndex, and vector databases.
 
 **Tags:** `ai`, `rag`, `documentation`, `skills`, `preprocessing`, `mcp`, `knowledge-base`, `vector-database`
 
