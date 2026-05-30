@@ -35,10 +35,9 @@ yes | skill-seekers package output/my-skill/ --no-open
 
 | Flag | Description |
 |------|-------------|
-| `--depth surface/deep/full` | Analysis depth |
+| `--preset quick/standard/comprehensive` | Analysis preset |
 | `--skip-patterns` | Skip pattern detection |
 | `--skip-test-examples` | Skip test extraction |
-| `--ai-mode none/api/local` | AI enhancement |
 
 ---
 
