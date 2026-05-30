@@ -353,6 +353,7 @@ class TestScrapingTools:
 
         assert isinstance(result, str)
 
+    @pytest.mark.network
     async def test_scrape_github_options(self):
         """Test GitHub scraping with various options."""
         result = await server_fastmcp.scrape_github(

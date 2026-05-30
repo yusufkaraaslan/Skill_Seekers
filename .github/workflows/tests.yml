@@ -124,7 +124,7 @@ jobs:
     - name: Run MCP tests
       run: |
         python -m pytest tests/ \
-          -m "mcp_only" \
+          -m "mcp_only and not network" \
           -v --timeout=180
       timeout-minutes: 10
 
