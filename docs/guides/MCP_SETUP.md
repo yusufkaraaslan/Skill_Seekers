@@ -1,22 +1,22 @@
-# Complete MCP Setup Guide - MCP 2025 (v2.7.0)
+# Complete MCP Setup Guide - MCP 2025 (v3.6.0)
 
 Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI coding agents.
 
-**Version 3.1.0-dev Highlights:**
+**Version 3.6.0 Highlights:**
 - ✅ **MCP SDK v1.25.0** - Latest protocol support (upgraded from v1.18.0)
 - ✅ **FastMCP Framework** - Modern, decorator-based server implementation
 - ✅ **Dual Transport** - HTTP + stdio support (choose based on agent)
-- ✅ **26 MCP Tools** - Core (9), Extended (10), Vector DB (4), Cloud (3)
+- ✅ **40 MCP Tools** - Config (3), Scraping (4), Packaging (4), Splitting (2), Source (5), Enhancement (3), Install (4), Quality (3), Vector DB (5), Cloud (3), Utility (4)
 - ✅ **Multi-Agent Support** - Claude Code, Cursor, Windsurf, VS Code + Cline, IntelliJ IDEA
 - ✅ **Auto-Configuration** - One-line setup with `./setup_mcp.sh`
-- ✅ **Production Ready** - 1,880+ comprehensive tests, 100% pass rate
+- ✅ **Production Ready** - 3,445+ comprehensive tests
 
 ---
 
 ## Table of Contents
 
-- [What's New in v2.4.0](#whats-new-in-v240)
-- [Migration from v2.3.0](#migration-from-v230)
+- [What's New in v3.6.0](#whats-new-in-v360)
+- [Migration to v3.6.0](#migration-to-v360)
 - [Prerequisites](#prerequisites)
 - [Quick Start (Recommended)](#quick-start-recommended)
 - [Manual Installation](#manual-installation)
@@ -29,7 +29,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 
 ---
 
-## What's New in v2.4.0
+## What's New in v3.6.0
 
 ### MCP 2025 Upgrade
 
@@ -51,7 +51,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 
 ### New Features
 
-**26 MCP Tools** (expanded from 9):
+**40 MCP Tools** (expanded from 9):
 
 **Config Tools (3):**
 - `generate_config` - Generate config for any documentation site
@@ -100,7 +100,7 @@ Step-by-step guide to set up the Skill Seeker MCP server with 5 supported AI cod
 
 ---
 
-## Migration from v2.3.0
+## Migration to v3.6.0
 
 If you're upgrading from v2.3.0, follow these steps:
 
@@ -180,7 +180,7 @@ In any connected agent:
 List all available MCP tools
 ```
 
-You should see 26 tools (up from 9 in v2.3.0).
+You should see 40 tools (up from 9 in v2.3.0).
 
 ### 5. Optional: Run Auto-Configuration
 
@@ -273,7 +273,7 @@ In your agent:
 List all available MCP tools
 ```
 
-You should see 17 Skill Seeker tools.
+You should see 40 Skill Seeker tools.
 
 ---
 
@@ -605,7 +605,7 @@ In your AI coding agent, type:
 List all available MCP tools
 ```
 
-You should see **17 Skill Seeker tools**:
+You should see **40 Skill Seeker tools**:
 
 **Config Tools:**
 - `generate_config` - Generate config for documentation site
@@ -762,7 +762,7 @@ Agent: [Scraping internal documentation...]
 
 ### Example 4: Multi-Platform Support
 
-Skill Seekers supports packaging and uploading to 12 LLM platforms: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown.
+Skill Seekers supports packaging and uploading to 21 LLM platforms: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown.
 
 ```
 User: Scrape docs using configs/react.json
@@ -1478,7 +1478,7 @@ SETUP:
 3. Restart agent
 
 VERIFY:
-- "List all available MCP tools" (should show 26 tools)
+- "List all available MCP tools" (should show 40 tools)
 - "List all available configs" (should show 24 configs)
 
 GENERATE SKILL:

@@ -22,13 +22,13 @@ Break large PDFs into smaller, manageable chunks:
 **Usage:**
 ```bash
 # Default chunking (10 pages per chunk)
-python3 cli/pdf_extractor_poc.py input.pdf
+skill-seekers create input.pdf
 
 # Custom chunk size (20 pages per chunk)
-python3 cli/pdf_extractor_poc.py input.pdf --pdf-pages-per-chunk 20
+skill-seekers create input.pdf --pdf-pages-per-chunk 20
 
 # Disable chunking (single chunk with all pages)
-python3 cli/pdf_extractor_poc.py input.pdf --pdf-pages-per-chunk 0
+skill-seekers create input.pdf --pdf-pages-per-chunk 0
 ```
 
 ### ✅ 2. Chapter/Section Detection
@@ -261,7 +261,7 @@ def create_chunks(self, pages):
 
 ```bash
 # Extract with default 10-page chunks
-python3 cli/pdf_extractor_poc.py manual.pdf -o manual.json
+skill-seekers create manual.pdf -o manual.json
 
 # Output includes chunks
 cat manual.json | jq '.total_chunks'
@@ -272,7 +272,7 @@ cat manual.json | jq '.total_chunks'
 
 ```bash
 # Large PDF with bigger chunks (50 pages each)
-python3 cli/pdf_extractor_poc.py large_manual.pdf --pdf-pages-per-chunk 50 -o output.json -v
+skill-seekers create large_manual.pdf --pdf-pages-per-chunk 50 -o output.json -v
 
 # Verbose output shows:
 # 📦 Creating chunks (chunk_size=50)...
@@ -286,7 +286,7 @@ python3 cli/pdf_extractor_poc.py large_manual.pdf --pdf-pages-per-chunk 50 -o ou
 
 ```bash
 # Process all pages as single chunk
-python3 cli/pdf_extractor_poc.py small_doc.pdf --pdf-pages-per-chunk 0 -o output.json
+skill-seekers create small_doc.pdf --pdf-pages-per-chunk 0 -o output.json
 ```
 
 ---
@@ -369,7 +369,7 @@ Create a test PDF with chapters:
 3. Page 30: "Chapter 3: API Reference"
 
 ```bash
-python3 cli/pdf_extractor_poc.py test.pdf -o test.json --pdf-pages-per-chunk 20 -v
+skill-seekers create test.pdf -o test.json --pdf-pages-per-chunk 20 -v
 
 # Verify chapters detected
 cat test.json | jq '.chapters'
@@ -403,7 +403,7 @@ Create a test PDF with code spanning pages:
 - Page 2 starts with: `    for i in range(10):\n        total += i`
 
 ```bash
-python3 cli/pdf_extractor_poc.py test.pdf -o test.json -v
+skill-seekers create test.pdf -o test.json -v
 
 # Check for merged code blocks
 cat test.json | jq '.pages[0].code_samples[] | select(.merged_from_next_page == true)'
@@ -441,10 +441,10 @@ The chunking feature lays groundwork for:
 **Example workflow:**
 ```bash
 # Extract large manual with chapters
-python3 cli/pdf_extractor_poc.py large_manual.pdf --pdf-pages-per-chunk 25 -o manual.json
+skill-seekers create large_manual.pdf --pdf-pages-per-chunk 25 -o manual.json
 
 # Future: Build skill from chunks
-python3 cli/build_skill_from_pdf.py manual.json
+skill-seekers create manual.json
 
 # Result: SKILL.md organized by detected chapters
 ```

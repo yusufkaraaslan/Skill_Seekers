@@ -13,10 +13,13 @@ import unittest
 
 import pytest
 
+
 from skill_seekers.cli.doc_scraper import DocToSkillConverter
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+
+pytestmark = [pytest.mark.integration, pytest.mark.network]
 
 
 @pytest.mark.integration

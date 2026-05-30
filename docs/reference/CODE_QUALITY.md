@@ -1,6 +1,6 @@
 # Code Quality Standards
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready
 
@@ -220,7 +220,7 @@ def process(self, data):
 
 ## Recent Code Quality Improvements
 
-### v2.7.0 Fixes (January 18, 2026)
+### v3.6.0 Fixes (January 18, 2026)
 
 Fixed **all 21 ruff linting errors** across the codebase:
 
@@ -329,7 +329,7 @@ pytest tests/ -m asyncio
    - Platform integration testing
 
 4. **MCP Tests** (63 tests)
-   - All 26 MCP tools
+   - All 40 MCP tools
    - Transport mode testing (stdio, HTTP)
    - Error handling validation
 
@@ -742,7 +742,7 @@ gh pr create --title "Add your feature" --body "Description..."
 
 ## Quality Metrics
 
-### Current Status (v2.7.0)
+### Current Status (v3.6.0)
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
@@ -818,6 +818,6 @@ open htmlcov/index.html
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready

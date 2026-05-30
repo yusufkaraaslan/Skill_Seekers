@@ -1,6 +1,6 @@
 # Environment Variables Reference - Skill Seekers
 
-> **Version:** 3.1.0  
+> **Version:** 3.6.0  
 > **Last Updated:** 2026-02-16  
 > **Complete environment variable reference**
 
@@ -97,9 +97,9 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 **Format:** `ghp_...` (personal access token) or `github_pat_...` (fine-grained)
 
 **Used by:**
-- `skill-seekers github`
-- `skill-seekers unified` (GitHub sources)
-- `skill-seekers analyze` (GitHub repos)
+- `skill-seekers create`
+- `skill-seekers create` (GitHub sources)
+- `skill-seekers scan` (GitHub repos)
 
 **Benefits:**
 - 5000 requests/hour vs 60 for unauthenticated
@@ -259,7 +259,7 @@ export SKILL_SEEKERS_TIMEOUT=60
 
 **Purpose:** Custom User-Agent header.
 
-**Default:** `Skill-Seekers/3.1.0`
+**Default:** `Skill-Seekers/3.6.0`
 
 **Example:**
 ```bash
@@ -662,7 +662,7 @@ Example:
 # Default: rate_limit = 0.5
 export SKILL_SEEKERS_RATE_LIMIT=1.0  # Env var overrides default
 # Config file: rate_limit = 0.2      # Config overrides env
-skill-seekers scrape --rate-limit 2.0  # Flag overrides all
+skill-seekers create --rate-limit 2.0  # Flag overrides all
 ```
 
 ---

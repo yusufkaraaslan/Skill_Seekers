@@ -294,3 +294,53 @@ def test_download_rejects_html_redirect():
 
     # Should return None (rejected as non-markdown)
     assert content is None
+
+
+class TestLlmsTxtDetector:
+    """Merged from test_llms_txt_detector.py"""
+
+    def test_detect_llms_txt_variants(self):
+        from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
+        from unittest.mock import Mock, patch
+
+        detector = LlmsTxtDetector("https://hono.dev/docs")
+        with patch("skill_seekers.cli.llms_txt_detector.requests.head") as mock_head:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_head.return_value = mock_response
+            variants = detector.detect()
+            assert variants is not None
+            assert variants["url"] == "https://hono.dev/llms-full.txt"
+
+    def test_detect_no_llms_txt(self):
+        from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
+        from unittest.mock import Mock, patch
+
+        detector = LlmsTxtDetector("https://example.com/docs")
+        with patch("skill_seekers.cli.llms_txt_detector.requests.head") as mock_head:
+            mock_response = Mock()
+            mock_response.status_code = 404
+            mock_head.return_value = mock_response
+            variants = detector.detect()
+            assert variants is None
+            assert mock_head.call_count == 3
+
+    def test_detect_all_variants(self):
+        from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
+        from unittest.mock import Mock, patch
+
+        detector = LlmsTxtDetector("https://hono.dev/docs")
+        with patch("skill_seekers.cli.llms_txt_detector.requests.head") as mock_head:
+
+            def mock_response(url, **_kwargs):
+                response = Mock()
+                if "llms" in url:
+                    response.status_code = 200
+                else:
+                    response.status_code = 404
+                return response
+
+            mock_head.side_effect = mock_response
+            variants = detector.detect_all()
+            assert len(variants) == 3
+            assert any(v["variant"] == "full" for v in variants)

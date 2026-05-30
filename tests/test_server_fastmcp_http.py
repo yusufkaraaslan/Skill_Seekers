@@ -18,12 +18,15 @@ try:
 except ImportError:
     STARLETTE_AVAILABLE = False
 
+
 from skill_seekers.mcp.server_fastmcp import mcp
 
-# Skip all tests if starlette is not installed
-pytestmark = pytest.mark.skipif(
-    not STARLETTE_AVAILABLE, reason="starlette not installed (pip install starlette httpx)"
-)
+pytestmark = [
+    pytest.mark.mcp_only,
+    pytest.mark.skipif(
+        not STARLETTE_AVAILABLE, reason="starlette not installed (pip install starlette httpx)"
+    ),
+]
 
 
 class TestFastMCPHTTP:

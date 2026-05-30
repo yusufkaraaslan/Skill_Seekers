@@ -1,6 +1,6 @@
 # Migration Guide
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready
 
@@ -10,13 +10,15 @@
 
 This guide helps you upgrade Skill Seekers between major versions. Each section covers breaking changes, new features, and step-by-step migration instructions.
 
-**Current Version:** v2.7.0
+**Current Version:** v3.6.0
 
 **Supported Upgrade Paths:**
-- v2.6.0 → v2.7.0 (Latest)
-- v2.5.0 → v2.6.0 or v2.7.0
+- v3.5.0 → v3.6.0 (Latest)
+- v3.0.0 → v3.5.0 or v3.6.0
+- v2.7.0 → v3.6.0
+- v2.5.0 → v2.7.0 or v3.6.0
 - v2.1.0 → v2.5.0+
-- v1.0.0 → v2.x.0
+- v1.0.0 → v2.x.0 or v3.x.0
 
 ---
 
@@ -35,41 +37,37 @@ pip install --upgrade skill-seekers[all-llms]
 
 ---
 
-## v2.6.0 → v2.7.0 (Latest)
+## v3.5.0 → v3.6.0 (Latest)
 
-**Release Date:** January 18, 2026
+**Release Date:** May 2026
 **Type:** Minor release (backward compatible)
 
 ### Summary of Changes
 
 ✅ **Fully Backward Compatible** - No breaking changes
-- Code quality improvements (21 ruff fixes)
-- Version synchronization
-- Bug fixes (case-sensitivity, test fixtures)
-- Documentation updates
+- 40 MCP tools (up from 27)
+- 21 package targets (up from 12)
+- 18 source types (17 + config)
+- 19 CLI commands
+- Documentation overhaul and version synchronization
 
 ### What's New
 
-1. **Code Quality**
-   - All 21 ruff linting errors fixed
-   - Zero linting errors across codebase
-   - Improved code maintainability
+1. **MCP Expansion**
+   - 40 comprehensive MCP tools (up from 27)
+   - FastMCP-based server with stdio + HTTP transports
+   - Marketplace tools, workflow tools, vector DB exports
 
-2. **Version Synchronization**
-   - All `__init__.py` files now show correct version
-   - Fixed version mismatch bug (Issue #248)
+2. **Platform Expansion**
+   - 21 package targets (up from 12)
+   - New: IBM Bob, LangChain, LlamaIndex, Haystack, Pinecone, Weaviate, Chroma, FAISS, Qdrant
 
-3. **Bug Fixes**
-   - Case-insensitive regex in install workflow (Issue #236)
-   - Test fixture issues resolved
-   - 1200+ tests passing (up from 700+)
+3. **Source Types**
+   - 17 source types + unified config type = 18 total
+   - Generic scraper delegates to all source types
 
-4. **Documentation**
-   - Comprehensive documentation overhaul
-   - New API reference guide
-   - Bootstrap skill documentation
-   - Code quality standards
-   - Testing guide
+4. **CLI Commands**
+   - 19 total commands: create, scan, doctor, enhance, package, upload, install, install-agent, estimate, split, workflows, and source-specific commands
 
 ### Migration Steps
 
@@ -80,7 +78,7 @@ pip install --upgrade skill-seekers[all-llms]
 pip install --upgrade skill-seekers[all-llms]
 
 # Verify
-skill-seekers --version  # Should show 2.7.0
+skill-seekers --version  # Should show 3.6.0
 
 # Run tests (optional)
 pytest tests/ -v
@@ -88,12 +86,12 @@ pytest tests/ -v
 
 ### Compatibility
 
-| Feature | v2.6.0 | v2.7.0 | Notes |
+| Feature | v3.5.0 | v3.6.0 | Notes |
 |---------|--------|--------|-------|
 | CLI commands | ✅ | ✅ | Fully compatible |
 | Config files | ✅ | ✅ | No changes needed |
-| MCP tools | 17 tools | 18 tools | `enhance_skill` added |
-| Platform adaptors | ✅ | ✅ | No API changes |
+| MCP tools | 27 tools | 40 tools | Additive only |
+| Platform adaptors | 12 | 21 | Opt-in new targets |
 | Python versions | 3.10-3.13 | 3.10-3.13 | Same support |
 
 ---
@@ -234,10 +232,10 @@ python -m skill_seekers.mcp.server
 pip install --upgrade skill-seekers
 
 # New unified scraping
-skill-seekers unified --config configs/unified/react-unified.json
+skill-seekers create --config configs/unified/react-unified.json
 
 # GitHub analysis
-skill-seekers github https://github.com/facebook/react
+skill-seekers create https://github.com/facebook/react
 ```
 
 ### Compatibility
@@ -275,9 +273,9 @@ pdf-scraper manual.pdf
 **After (v2.0.0+):**
 ```bash
 # Unified CLI
-skill-seekers scrape --config react
-skill-seekers github https://github.com/facebook/react
-skill-seekers pdf manual.pdf
+skill-seekers create --config react
+skill-seekers create https://github.com/facebook/react
+skill-seekers create --pdf manual.pdf
 ```
 
 **Migration:**
@@ -360,7 +358,7 @@ upload-skill output/react-claude.zip
 **After:**
 ```bash
 #!/bin/bash
-skill-seekers scrape --config react
+skill-seekers create --config react
 skill-seekers package output/react/ --target claude
 skill-seekers upload output/react-claude.zip --target claude
 
@@ -439,7 +437,7 @@ doc-scraper --config react.json
 **Solution:**
 ```bash
 # Use new CLI
-skill-seekers scrape --config react
+skill-seekers create --config react
 ```
 
 ### Issue 2: Config Validation Errors
@@ -452,7 +450,7 @@ InvalidConfigError: Missing 'sources' key
 **Solution:**
 ```bash
 # Old configs still work for single-source
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Or convert to unified format
 # Add 'sources' wrapper
@@ -507,7 +505,7 @@ source test-env/bin/activate
 pip install skill-seekers[all-llms]
 
 # Test your workflows
-skill-seekers scrape --config react --dry-run
+skill-seekers create --config react --dry-run
 ```
 
 ### 2. Backup Existing Configs
@@ -537,10 +535,10 @@ pytest tests/ -v
 
 ```bash
 # Pin to specific version in requirements.txt
-skill-seekers==2.7.0
+skill-seekers==3.6.0
 
 # Or use version range
-skill-seekers>=2.7.0,<3.0.0
+skill-seekers>=3.5.0,<4.0.0
 ```
 
 ---
@@ -550,11 +548,11 @@ skill-seekers>=2.7.0,<3.0.0
 If migration fails, rollback to previous version:
 
 ```bash
-# Rollback to v2.6.0
-pip install skill-seekers==2.6.0
+# Rollback to v3.5.0
+pip install skill-seekers==3.5.0
 
-# Rollback to v2.5.0
-pip install skill-seekers==2.5.0
+# Rollback to v2.7.0
+pip install skill-seekers==2.7.0
 
 # Restore configs
 cp -r configs.backup/* configs/
@@ -581,14 +579,14 @@ When reporting migration issues:
 
 **Issue Template:**
 ```markdown
-**Old Version:** 2.5.0
-**New Version:** 2.7.0
+**Old Version:** 3.5.0
+**New Version:** 3.6.0
 **Python Version:** 3.11.7
 **OS:** Ubuntu 22.04
 
 **What I did:**
 1. Upgraded with pip install --upgrade skill-seekers
-2. Ran skill-seekers scrape --config react
+2. Ran skill-seekers create --config react
 
 **Expected:** Scraping completes successfully
 **Actual:** Error: ...
@@ -606,6 +604,10 @@ When reporting migration issues:
 
 | Version | Release Date | Type | Key Changes |
 |---------|-------------|------|-------------|
+| v3.6.0 | 2026-05-30 | Minor | 40 MCP tools, 21 platforms, 18 source types |
+| v3.5.0 | 2026-04-09 | Minor | MCP expansion, docs overhaul |
+| v3.2.0 | 2026-03-15 | Minor | 17 source types, generic scraper |
+| v3.1.0 | 2026-02-18 | Minor | Enhancement workflows, bootstrap skill |
 | v2.7.0 | 2026-01-18 | Minor | Code quality, bug fixes, docs |
 | v2.6.0 | 2026-01-14 | Minor | C3.x suite, multi-platform |
 | v2.5.0 | 2025-11-29 | Minor | Unified scraping, GitHub, PDF |
@@ -614,6 +616,6 @@ When reporting migration issues:
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready

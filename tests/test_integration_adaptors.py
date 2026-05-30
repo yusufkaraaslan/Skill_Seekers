@@ -20,6 +20,7 @@ import time
 
 import pytest
 
+
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
 import contextlib
@@ -81,6 +82,8 @@ pip install vector-db-client
 
 ```python
 from vector_db import Client
+
+pytestmark = [pytest.mark.integration, pytest.mark.network]
 
 client = Client("http://localhost:8080")
 client.add_documents(["doc1", "doc2"])

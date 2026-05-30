@@ -436,10 +436,10 @@ That's it! Follow these practices and your skills will work better with Claude.
 
 ## 8. Tips for Specific Source Types
 
-Skill Seekers supports **17 source types**. Here are tips for getting the best results from each category:
+Skill Seekers supports **18 source types**. Here are tips for getting the best results from each category:
 
 ### Documentation (Web)
-- Always test CSS selectors before large scrapes: `skill-seekers scrape --max-pages 3 --verbose`
+- Always test CSS selectors before large scrapes: `skill-seekers create --max-pages 3 --verbose`
 - Use `--async` for large sites (2-3x faster)
 
 ### GitHub Repos
@@ -452,7 +452,7 @@ Skill Seekers supports **17 source types**. Here are tips for getting the best r
 - EPUB works best with DRM-free files
 
 ### Video
-- Run `skill-seekers video --setup` first to install GPU-optimized dependencies
+- Run `skill-seekers create --setup` first to install GPU-optimized dependencies
 - YouTube and Vimeo URLs are auto-detected; local video files also work
 
 ### Jupyter Notebooks

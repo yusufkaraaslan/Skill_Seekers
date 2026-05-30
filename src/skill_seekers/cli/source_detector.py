@@ -121,6 +121,11 @@ class SourceDetector:
 
         # 3. Directory detection
         if os.path.isdir(source):
+            # Peek at contents — directories dominated by .html/.htm/.xhtml files
+            # (e.g., wget mirrors, exported HTML docs) route to the html scraper
+            # instead of the codebase scraper.
+            if cls._looks_like_html_directory(source):
+                return cls._detect_html_directory(source)
             return cls._detect_local(source)
 
         # 4. GitHub patterns
@@ -213,6 +218,181 @@ class SourceDetector:
         return SourceInfo(
             type="html", parsed={"file_path": source}, suggested_name=name, raw_input=source
         )
+
+    @classmethod
+    def _detect_html_directory(cls, source: str) -> SourceInfo:
+        """Detect a directory of HTML files as an html source.
+
+        Used when a directory contains predominantly .html/.htm/.xhtml files
+        (e.g., a wget mirror or exported documentation set).
+        """
+        directory = os.path.abspath(source)
+        name = os.path.basename(directory.rstrip(os.sep)) or "html_skill"
+        return SourceInfo(
+            type="html",
+            parsed={"file_path": directory},
+            suggested_name=name,
+            raw_input=source,
+        )
+
+    # File extensions counted as HTML when peeking at directory contents.
+    _HTML_FILE_EXTENSIONS = (".html", ".htm", ".xhtml")
+
+    # Tunables for HTML-directory heuristic
+    _HTML_DIR_FILE_SAMPLE_LIMIT = 500
+    _HTML_DIR_MIN_HTML_FILES = 3
+    _HTML_DIR_MIN_HTML_RATIO = 0.5
+
+    # Root-level files that mark a directory as a code project, not an HTML
+    # mirror. Presence of any of these short-circuits HTML auto-detection so
+    # docs subtrees (e.g. ``docs/UML/html/``) don't flip the classification.
+    # Also re-used by ``signal_collectors`` as the canonical list of manifest
+    # filenames. Public attribute — other modules import it.
+    CODE_PROJECT_MARKERS = frozenset(
+        {
+            # Python
+            "pyproject.toml",
+            "setup.py",
+            "setup.cfg",
+            "pipfile",
+            "pipfile.lock",
+            "environment.yml",
+            "environment.yaml",
+            ".tool-versions",
+            "mise.toml",
+            # JavaScript / Node / Deno / Bun
+            "package.json",
+            "pnpm-workspace.yaml",
+            "bun.lockb",
+            "bunfig.toml",
+            "deno.json",
+            "deno.jsonc",
+            "turbo.json",
+            "nx.json",
+            "lerna.json",
+            # Rust / Go
+            "cargo.toml",
+            "go.mod",
+            # JVM
+            "pom.xml",
+            "build.gradle",
+            "build.gradle.kts",
+            # PHP / Ruby / Elixir / Erlang
+            "composer.json",
+            "gemfile",
+            "mix.exs",
+            "rebar.config",
+            "rebar.lock",
+            # Clojure
+            "project.clj",
+            "deps.edn",
+            "shadow-cljs.edn",
+            # Haskell / OCaml
+            "stack.yaml",
+            "cabal.project",
+            "dune-project",
+            # Nix
+            "flake.nix",
+            "flake.lock",
+            "shell.nix",
+            "default.nix",
+            # Build systems
+            "cmakelists.txt",
+            "build.bazel",
+            "workspace",
+            "workspace.bazel",
+            "sconstruct",
+            "meson.build",
+            # Infrastructure as code
+            "chart.yaml",
+            "kustomization.yaml",
+            "terragrunt.hcl",
+            # Game engines
+            "project.godot",
+            # Other
+            "brewfile",
+        }
+    )
+
+    # Backwards-compatible private alias — kept so any external code that
+    # accessed the underscore form keeps working through one deprecation cycle.
+    _CODE_PROJECT_MARKERS = CODE_PROJECT_MARKERS
+
+    @classmethod
+    def _looks_like_html_directory(cls, directory: str) -> bool:
+        """Return True if a directory is dominated by HTML files.
+
+        Walks the directory tree up to a sampling limit, counting HTML
+        extension files vs other regular files. Returns True when HTML files
+        meet both an absolute minimum and a ratio threshold against the rest
+        of the sampled files. Hidden directories (``.git``, ``.venv``, etc.)
+        and common build/cache dirs are skipped so a project that happens to
+        ship a few HTML report files isn't misclassified.
+
+        Directory entries are sorted at every level so the sample is
+        deterministic across filesystems (Linux ext4 returns inode order;
+        macOS APFS returns alphabetical order — without sorting, the two
+        platforms reach the file-sample limit with very different files and
+        can disagree on classification).
+        """
+        # If the directory looks like a code project (has a manifest file at
+        # the root), don't try to interpret it as an HTML mirror — even if it
+        # ships a large nested HTML docs export.
+        try:
+            root_entries = {name.lower() for name in os.listdir(directory)}
+        except OSError:
+            return False
+        if root_entries & cls.CODE_PROJECT_MARKERS:
+            return False
+
+        skip_dirs = {
+            ".git",
+            ".hg",
+            ".svn",
+            ".venv",
+            "venv",
+            "env",
+            "__pycache__",
+            "node_modules",
+            "dist",
+            "build",
+            "target",
+            ".tox",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+        }
+
+        html_count = 0
+        other_count = 0
+        sampled = 0
+        limit = cls._HTML_DIR_FILE_SAMPLE_LIMIT
+
+        try:
+            for _root, dirs, files in os.walk(directory):
+                dirs[:] = sorted(d for d in dirs if d not in skip_dirs and not d.startswith("."))
+                for fname in sorted(files):
+                    if fname.startswith("."):
+                        continue
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext in cls._HTML_FILE_EXTENSIONS:
+                        html_count += 1
+                    else:
+                        other_count += 1
+                    sampled += 1
+                    if sampled >= limit:
+                        break
+                if sampled >= limit:
+                    break
+        except OSError:
+            return False
+
+        if html_count < cls._HTML_DIR_MIN_HTML_FILES:
+            return False
+        total = html_count + other_count
+        if total == 0:
+            return False
+        return (html_count / total) >= cls._HTML_DIR_MIN_HTML_RATIO
 
     @classmethod
     def _detect_pptx(cls, source: str) -> SourceInfo:

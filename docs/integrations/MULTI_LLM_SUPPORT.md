@@ -20,7 +20,7 @@ No changes needed! All existing workflows continue to work:
 
 ```bash
 # Scrape documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for Claude (default)
 skill-seekers package output/react/
@@ -39,7 +39,7 @@ pip install skill-seekers[gemini]
 export GOOGLE_API_KEY=AIzaSy...
 
 # Scrape documentation (same as always)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for Gemini
 skill-seekers package output/react/ --target gemini
@@ -63,7 +63,7 @@ pip install skill-seekers[openai]
 export OPENAI_API_KEY=sk-proj-...
 
 # Scrape documentation (same as always)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for OpenAI
 skill-seekers package output/react/ --target openai
@@ -196,7 +196,7 @@ export MINIMAX_API_KEY=your-key
 
 ```bash
 # 1. Scrape
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance (optional but recommended)
 skill-seekers enhance output/react/
@@ -218,7 +218,7 @@ pip install skill-seekers[gemini]
 export GOOGLE_API_KEY=AIzaSy...
 
 # 1. Scrape (universal)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance for Gemini
 skill-seekers enhance output/react/ --target gemini
@@ -240,7 +240,7 @@ pip install skill-seekers[openai]
 export OPENAI_API_KEY=sk-proj-...
 
 # 1. Scrape (universal)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance with GPT-4o
 skill-seekers enhance output/react/ --target openai
@@ -262,7 +262,7 @@ pip install skill-seekers[minimax]
 export MINIMAX_API_KEY=your-key
 
 # 1. Scrape (universal)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance with MiniMax-M2.7
 skill-seekers enhance output/react/ --target minimax
@@ -283,7 +283,7 @@ skill-seekers upload react-minimax.zip --target minimax
 pip install skill-seekers[all-llms]
 
 # Scrape once
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for all platforms
 skill-seekers package output/react/ --target claude
@@ -447,6 +447,6 @@ A: Absolutely! See the [Contributing Guide](../CONTRIBUTING.md) for how to add n
 5. Upload and test your skill
 
 For more help, see:
-- [Quick Start Guide](../QUICKSTART.md)
+- [Quick Start Guide](../docs/archive/legacy/QUICKSTART.md)
 - [Troubleshooting Guide](../TROUBLESHOOTING.md)
 - [Platform-Specific Guides](.)

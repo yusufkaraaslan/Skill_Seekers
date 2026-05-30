@@ -1,97 +1,97 @@
-# Quick Start Guide
+# 快速入门指南
 
-> **Skill Seekers v3.2.0**  
-> **Create your first skill in 3 commands**
+> **Skill Seekers v3.6.0**  
+> **用 3 条命令创建你的第一个 skill**
 
 ---
 
-## The 3 Commands
+## 3 条命令
 
 ```bash
-# 1. Install Skill Seekers
+# 1. 安装 Skill Seekers
 pip install skill-seekers
 
-# 2. Create a skill from any source
+# 2. 从任意来源创建 skill
 skill-seekers create https://docs.django.com/
 
-# 3. Package it for your AI platform
+# 3. 打包为你的 AI 平台
 skill-seekers package output/django --target claude
 ```
 
-**That's it!** You now have `output/django-claude.zip` ready to upload.
+**完成了！** 你现在拥有 `output/django-claude.zip`，可以直接上传。
 
 ---
 
-## What You Can Create From
+## 你可以从什么来源创建
 
-The `create` command auto-detects your source (17 source types supported):
+`create` 命令自动检测你的来源（支持 17 种来源类型）：
 
-| Source Type | Example Command |
+| 来源类型 | 示例命令 |
 |-------------|-----------------|
-| **Documentation** | `skill-seekers create https://docs.react.dev/` |
-| **GitHub Repo** | `skill-seekers create facebook/react` |
-| **Local Code** | `skill-seekers create ./my-project` |
-| **PDF File** | `skill-seekers create manual.pdf` |
-| **Word Document** | `skill-seekers create report.docx` |
-| **EPUB Book** | `skill-seekers create book.epub` |
+| **文档网站** | `skill-seekers create https://docs.react.dev/` |
+| **GitHub 仓库** | `skill-seekers create facebook/react` |
+| **本地代码** | `skill-seekers create ./my-project` |
+| **PDF 文件** | `skill-seekers create manual.pdf` |
+| **Word 文档** | `skill-seekers create report.docx` |
+| **EPUB 电子书** | `skill-seekers create book.epub` |
 | **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
-| **Local HTML** | `skill-seekers create page.html` |
+| **本地 HTML** | `skill-seekers create page.html` |
 | **OpenAPI/Swagger** | `skill-seekers create api-spec.yaml` |
 | **AsciiDoc** | `skill-seekers create guide.adoc` |
 | **PowerPoint** | `skill-seekers create slides.pptx` |
-| **RSS/Atom Feed** | `skill-seekers create feed.rss` |
+| **RSS/Atom 订阅** | `skill-seekers create feed.rss` |
 | **Man Page** | `skill-seekers create curl.1` |
-| **Config File** | `skill-seekers create configs/custom.json` |
+| **配置文件** | `skill-seekers create configs/custom.json` |
 
 ---
 
-## Examples by Source
+## 按来源分类的示例
 
-### Documentation Website
+### 文档网站
 
 ```bash
-# React documentation
+# React 文档
 skill-seekers create https://react.dev/
 skill-seekers package output/react --target claude
 
-# Django documentation  
+# Django 文档  
 skill-seekers create https://docs.djangoproject.com/
 skill-seekers package output/django --target claude
 ```
 
-### GitHub Repository
+### GitHub 仓库
 
 ```bash
-# React source code
+# React 源代码
 skill-seekers create facebook/react
 skill-seekers package output/react --target claude
 
-# Your own repo
+# 你自己的仓库
 skill-seekers create yourusername/yourrepo
 skill-seekers package output/yourrepo --target claude
 ```
 
-### Local Project
+### 本地项目
 
 ```bash
-# Your codebase
+# 你的代码库
 skill-seekers create ./my-project
 skill-seekers package output/my-project --target claude
 
-# Specific directory
+# 特定目录
 cd ~/projects/my-api
 skill-seekers create .
 skill-seekers package output/my-api --target claude
 ```
 
-### PDF Document
+### PDF 文档
 
 ```bash
-# Technical manual
+# 技术手册
 skill-seekers create manual.pdf --name product-docs
 skill-seekers package output/product-docs --target claude
 
-# Research paper
+# 研究论文
 skill-seekers create paper.pdf --name research
 skill-seekers package output/research --target claude
 ```
@@ -99,117 +99,117 @@ skill-seekers package output/research --target claude
 ### Jupyter Notebook
 
 ```bash
-# Data analysis notebook
+# 数据分析 notebook
 skill-seekers create analysis.ipynb --name data-analysis
 skill-seekers package output/data-analysis --target claude
 ```
 
-### OpenAPI/Swagger Spec
+### OpenAPI/Swagger 规范
 
 ```bash
-# API specification
+# API 规范
 skill-seekers create api-spec.yaml --name my-api
 skill-seekers package output/my-api --target claude
 ```
 
-### PowerPoint Presentation
+### PowerPoint 演示文稿
 
 ```bash
-# Slide deck
+# 幻灯片
 skill-seekers create slides.pptx --name presentation
 skill-seekers package output/presentation --target claude
 ```
 
-### Other Source Types
+### 其他来源类型
 
 ```bash
 # Confluence wiki
-skill-seekers confluence --space-key DEV --name team-wiki
+skill-seekers create --space-key DEV --name team-wiki
 
-# Notion pages
-skill-seekers notion --database-id abc123 --name my-notes
+# Notion 页面
+skill-seekers create --database-id abc123 --name my-notes
 
-# RSS/Atom feed
-skill-seekers rss --feed-url https://blog.example.com/feed --name blog
+# RSS/Atom 订阅
+skill-seekers create feed.rss --name blog
 
 # Man pages
-skill-seekers manpage --man-path curl.1 --name curl-docs
+skill-seekers create curl.1 --name curl-docs
 
-# Slack/Discord export
-skill-seekers chat --export-path ./slack-export/ --name team-chat
+# Slack/Discord 导出
+skill-seekers create --chat-export-path ./slack-export/ --name team-chat
 ```
 
 ---
 
-## Common Options
+## 常用选项
 
-### Specify a Name
+### 指定名称
 
 ```bash
 skill-seekers create https://docs.example.com/ --name my-docs
 ```
 
-### Add Description
+### 添加描述
 
 ```bash
 skill-seekers create facebook/react --description "React source code analysis"
 ```
 
-### Dry Run (Preview)
+### 试运行（预览）
 
 ```bash
 skill-seekers create https://docs.react.dev/ --dry-run
 ```
 
-### Skip Enhancement (Faster)
+### 跳过增强（更快）
 
 ```bash
 skill-seekers create https://docs.react.dev/ --enhance-level 0
 ```
 
-### Use a Preset
+### 使用预设
 
 ```bash
-# Quick analysis (1-2 min)
+# 快速分析（1-2 分钟）
 skill-seekers create ./my-project --preset quick
 
-# Comprehensive analysis (20-60 min)
+# 全面分析（20-60 分钟）
 skill-seekers create ./my-project --preset comprehensive
 ```
 
 ---
 
-## Package for Different Platforms
+## 打包到不同平台
 
-### Claude AI (Default)
+### Claude AI（默认）
 
 ```bash
 skill-seekers package output/my-skill/
-# Creates: output/my-skill-claude.zip
+# 生成：output/my-skill-claude.zip
 ```
 
 ### Google Gemini
 
 ```bash
 skill-seekers package output/my-skill/ --target gemini
-# Creates: output/my-skill-gemini.tar.gz
+# 生成：output/my-skill-gemini.tar.gz
 ```
 
 ### OpenAI ChatGPT
 
 ```bash
 skill-seekers package output/my-skill/ --target openai
-# Creates: output/my-skill-openai.zip
+# 生成：output/my-skill-openai.zip
 ```
 
 ### LangChain
 
 ```bash
 skill-seekers package output/my-skill/ --target langchain
-# Creates: output/my-skill-langchain/ directory
+# 生成：output/my-skill-langchain/ 目录
 ```
 
-### Multiple Platforms
+### 多平台
 
 ```bash
 for platform in claude gemini openai; do
@@ -219,23 +219,23 @@ done
 
 ---
 
-## Upload to Platform
+## 上传到平台
 
-### Upload to Claude
+### 上传到 Claude
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 skill-seekers upload output/my-skill-claude.zip --target claude
 ```
 
-### Upload to Gemini
+### 上传到 Gemini
 
 ```bash
 export GOOGLE_API_KEY=AIza...
 skill-seekers upload output/my-skill-gemini.tar.gz --target gemini
 ```
 
-### Auto-Upload After Package
+### 打包后自动上传
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -244,84 +244,84 @@ skill-seekers package output/my-skill/ --target claude --upload
 
 ---
 
-## Complete One-Command Workflow
+## 完整的一键工作流
 
-Use `install` for everything in one step:
+使用 `install` 一步到位：
 
 ```bash
-# Complete: scrape → enhance → package → upload
+# 完整流程：抓取 → 增强 → 打包 → 上传
 export ANTHROPIC_API_KEY=sk-ant-...
 skill-seekers install --config react --target claude
 
-# Skip upload
+# 跳过上传
 skill-seekers install --config react --target claude --no-upload
 ```
 
 ---
 
-## Output Structure
+## 输出结构
 
-After running `create`, you'll have:
+运行 `create` 后，你将获得：
 
 ```
 output/
-├── django/                    # The skill
-│   ├── SKILL.md              # Main skill file
-│   ├── references/           # Organized documentation
+├── django/                    # Skill 目录
+│   ├── SKILL.md              # 主 skill 文件
+│   ├── references/           # 整理的文档
 │   │   ├── index.md
 │   │   ├── getting_started.md
 │   │   └── api_reference.md
-│   └── .skill-seekers/       # Metadata
+│   └── .skill-seekers/       # 元数据
 │
-└── django-claude.zip         # Packaged skill (after package)
+└── django-claude.zip         # 打包后的 skill（打包后生成）
 ```
 
 ---
 
-## Time Estimates
+## 时间估算
 
-| Source Type | Size | Time |
+| 来源类型 | 大小 | 时间 |
 |-------------|------|------|
-| Small docs (< 50 pages) | ~10 MB | 2-5 min |
-| Medium docs (50-200 pages) | ~50 MB | 10-20 min |
-| Large docs (200-500 pages) | ~200 MB | 30-60 min |
-| GitHub repo (< 1000 files) | varies | 5-15 min |
-| Local project | varies | 2-10 min |
-| PDF (< 100 pages) | ~5 MB | 1-3 min |
+| 小型文档（< 50 页） | ~10 MB | 2-5 分钟 |
+| 中型文档（50-200 页） | ~50 MB | 10-20 分钟 |
+| 大型文档（200-500 页） | ~200 MB | 30-60 分钟 |
+| GitHub 仓库（< 1000 个文件） | varies | 5-15 分钟 |
+| 本地项目 | varies | 2-10 分钟 |
+| PDF（< 100 页） | ~5 MB | 1-3 分钟 |
 
-*Times include scraping + enhancement (level 2). Use `--enhance-level 0` to skip enhancement.*
+*时间包含抓取 + 增强（level 2）。使用 `--enhance-level 0` 可跳过增强。*
 
 ---
 
-## Quick Tips
+## 快速提示
 
-### Test First with Dry Run
+### 先用试运行测试
 
 ```bash
 skill-seekers create https://docs.example.com/ --dry-run
 ```
 
-### Use Presets for Faster Results
+### 使用预设获得更快结果
 
 ```bash
-# Quick mode for testing
+# 测试用快速模式
 skill-seekers create https://docs.react.dev/ --preset quick
 ```
 
-### Skip Enhancement for Speed
+### 跳过增强以加快速度
 
 ```bash
 skill-seekers create https://docs.react.dev/ --enhance-level 0
-skill-seekers enhance output/react/  # Enhance later
+skill-seekers enhance output/react/  # 稍后增强
 ```
 
-### Check Available Configs
+### 检查可用配置
 
 ```bash
 skill-seekers estimate --all
 ```
 
-### Resume Interrupted Jobs
+### 恢复中断的任务
 
 ```bash
 skill-seekers resume --list
@@ -330,48 +330,48 @@ skill-seekers resume <job-id>
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Your First Skill](03-your-first-skill.md) - Complete walkthrough
-- [Core Concepts](../user-guide/01-core-concepts.md) - Understand how it works
-- [Scraping Guide](../user-guide/02-scraping.md) - All scraping options
+- [你的第一个 Skill](03-your-first-skill.md) - 完整演练
+- [核心概念](../user-guide/01-core-concepts.md) - 了解工作原理
+- [抓取指南](../user-guide/02-scraping.md) - 所有抓取选项
 
 ---
 
-## Troubleshooting
+## 故障排除
 
 ### "command not found"
 
 ```bash
-# Add to PATH
+# 添加到 PATH
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ### "No module named 'skill_seekers'"
 
 ```bash
-# Reinstall
+# 重新安装
 pip install --force-reinstall skill-seekers
 ```
 
-### Scraping too slow
+### 抓取太慢
 
 ```bash
-# Use async mode
+# 使用异步模式
 skill-seekers create https://docs.react.dev/ --async --workers 5
 ```
 
-### Out of memory
+### 内存不足
 
 ```bash
-# Use streaming mode
+# 使用流式模式
 skill-seekers package output/large-skill/ --streaming
 ```
 
 ---
 
-## See Also
+## 参见
 
-- [Installation Guide](01-installation.md) - Detailed installation
-- [CLI Reference](../reference/CLI_REFERENCE.md) - All commands
-- [Config Format](../reference/CONFIG_FORMAT.md) - Custom configurations
+- [安装指南](01-installation.md) - 详细安装说明
+- [CLI 参考](../reference/CLI_REFERENCE.md) - 所有命令
+- [配置格式](../reference/CONFIG_FORMAT.md) - 自定义配置

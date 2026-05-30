@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🎯 Current Status (January 8, 2026)
 
-**Version:** v2.6.0 (Three-Stream GitHub Architecture - Phases 1-5 Complete!)
+**Version:** v3.6.0
 **Active Development:** Phase 6 pending (Documentation & Examples)
 
 ### Recent Updates (January 2026):
 
-**🚀 MAJOR RELEASE: Three-Stream GitHub Architecture (v2.6.0)**
+**🚀 MAJOR RELEASE: Three-Stream GitHub Architecture**
 - **✅ Phases 1-5 Complete** (26 hours implementation, 81 tests passing)
 - **NEW: GitHub Three-Stream Fetcher** - Split repos into Code, Docs, Insights streams
 - **NEW: Unified Codebase Analyzer** - Works with GitHub URLs + local paths, C3.x as analysis depth
@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Recent Updates (December 2025):
 
-**🎉 MAJOR RELEASE: Multi-Platform Feature Parity! (v2.5.0)**
+**🎉 MAJOR RELEASE: Multi-Platform Feature Parity!**
 - **🌐 Multi-LLM Support**: Full support for 12 platforms - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Generic Markdown
 - **🔄 Complete Feature Parity**: All skill modes work with all platforms
 - **🏗️ Platform Adaptors**: Clean architecture with platform-specific implementations
@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **📚 Comprehensive Documentation**: Complete guides for all platforms
 - **🧪 Test Coverage**: 1,880+ tests passing, extensive platform compatibility testing
 
-**🚀 NEW: Three-Stream GitHub Architecture (v2.6.0)**
+**🚀 NEW: Three-Stream GitHub Architecture**
 - **📊 Three-Stream Fetcher**: Split GitHub repos into Code, Docs, and Insights streams
 - **🔬 Unified Codebase Analyzer**: Works with GitHub URLs and local paths
 - **🎯 Enhanced Router Generation**: GitHub insights + C3.x patterns for better routing
@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Three-Stream GitHub Architecture
 
-**New in v2.6.0**: GitHub repositories are now analyzed using a three-stream architecture:
+GitHub repositories are analyzed using a three-stream architecture:
 
 **STREAM 1: Code** (for C3.x analysis)
 - Files: `*.py, *.js, *.ts, *.go, *.rs, *.java, etc.`
@@ -116,50 +116,50 @@ pip3 install requests beautifulsoup4
 
 ### Run with a preset configuration
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json
-python3 cli/doc_scraper.py --config configs/react.json
-python3 cli/doc_scraper.py --config configs/vue.json
-python3 cli/doc_scraper.py --config configs/django.json
-python3 cli/doc_scraper.py --config configs/fastapi.json
+skill-seekers create --config configs/godot.json
+skill-seekers create --config configs/react.json
+skill-seekers create --config configs/vue.json
+skill-seekers create --config configs/django.json
+skill-seekers create --config configs/fastapi.json
 ```
 
 ### Interactive mode (for new frameworks)
 ```bash
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 ```
 
 ### Quick mode (minimal config)
 ```bash
-python3 cli/doc_scraper.py --name react --url https://react.dev/ --description "React framework"
+skill-seekers create --name react --url https://react.dev/ --description "React framework"
 ```
 
 ### Skip scraping (use cached data)
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+skill-seekers create --config configs/godot.json --skip-scrape
 ```
 
 ### Resume interrupted scrapes
 ```bash
 # If scrape was interrupted
-python3 cli/doc_scraper.py --config configs/godot.json --resume
+skill-seekers create --config configs/godot.json --resume
 
 # Start fresh (clear checkpoint)
-python3 cli/doc_scraper.py --config configs/godot.json --fresh
+skill-seekers create --config configs/godot.json --fresh
 ```
 
 ### Large documentation (10K-40K+ pages)
 ```bash
 # 1. Estimate page count
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-python3 cli/split_config.py configs/godot.json --strategy router
+skill-seekers create configs/godot.json --strategy router
 
 # 3. Generate router skill
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # 4. Package multiple skills
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 ```
 
 ### AI-powered SKILL.md enhancement
@@ -167,16 +167,16 @@ python3 cli/package_multi.py output/godot*/
 # Option 1: During scraping (API-based, requires ANTHROPIC_API_KEY)
 pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
-python3 cli/doc_scraper.py --config configs/react.json --enhance
+skill-seekers create --config configs/react.json --enhance
 
 # Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-python3 cli/doc_scraper.py --config configs/react.json --enhance-local
+skill-seekers create --config configs/react.json --enhance-local
 
 # Option 3: Standalone after scraping (API-based)
-python3 cli/enhance_skill.py output/react/
+skill-seekers enhance output/react/
 
 # Option 4: Standalone after scraping (LOCAL, no API key)
-python3 cli/enhance_skill_local.py output/react/
+skill-seekers enhance output/react/
 ```
 
 The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) opens a new terminal with Claude Code, which analyzes reference files and enhances SKILL.md automatically. This requires Claude Code Max plan but no API key.
@@ -199,7 +199,7 @@ The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) ope
 ### Test with limited pages (edit config first)
 Set `"max_pages": 20` in the config file to test with fewer pages.
 
-## Multi-Platform Support (v2.5.0+)
+## Multi-Platform Support
 
 **4 Platforms Fully Supported:**
 - **Claude AI** (default) - ZIP format, Skills API, MCP integration
@@ -385,11 +385,11 @@ Config files in `configs/*.json` contain:
 ### First time scraping (with scraping)
 ```bash
 # 1. Scrape + Build
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers create --config configs/godot.json
 # Time: 20-40 minutes
 
 # 2. Package
-python3 cli/package_skill.py output/godot/
+skill-seekers package output/godot/
 
 # Result: godot.zip
 ```
@@ -397,45 +397,45 @@ python3 cli/package_skill.py output/godot/
 ### Using cached data (fast iteration)
 ```bash
 # 1. Use existing data
-python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+skill-seekers create --config configs/godot.json --skip-scrape
 # Time: 1-3 minutes
 
 # 2. Package
-python3 cli/package_skill.py output/godot/
+skill-seekers package output/godot/
 ```
 
 ### Creating a new framework config
 ```bash
 # Option 1: Interactive
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 
 # Option 2: Copy and modify
 cp configs/react.json configs/myframework.json
 # Edit configs/myframework.json
-python3 cli/doc_scraper.py --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Large documentation workflow (40K pages)
 ```bash
 # 1. Estimate page count (fast, 1-2 minutes)
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-python3 cli/split_config.py configs/godot.json --strategy router --target-pages 5000
+skill-seekers create configs/godot.json --strategy router --target-pages 5000
 
 # Creates: godot-scripting.json, godot-2d.json, godot-3d.json, etc.
 
 # 3. Scrape all in parallel (4-8 hours instead of 20-40!)
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 
 # 4. Generate intelligent router skill
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # 5. Package all skills
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 
 # 6. Upload all .zip files to Claude
 # Result: Router automatically directs queries to the right sub-skill!

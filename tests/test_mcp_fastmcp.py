@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+pytestmark = pytest.mark.mcp_only
+
 # WORKAROUND for shadowing issue: Temporarily change to /tmp to import external mcp
 # This avoids any local mcp/ directory being in the import path
 _original_dir = os.getcwd()
@@ -331,16 +333,29 @@ class TestScrapingTools:
         assert isinstance(result, str)
 
     async def test_scrape_github_basic(self):
-        """Test basic GitHub scraping."""
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(returncode=0, stdout="GitHub scraping completed")
+        """Test basic GitHub scraping wiring (in-process converter, no network).
 
+        scrape_github routes through get_converter("github", config).run();
+        mock that collaborator so the test verifies the wiring without a real
+        GitHub API scrape.
+        """
+        mock_converter = Mock()
+        mock_converter.run.return_value = 0
+
+        with patch(
+            "skill_seekers.cli.skill_converter.get_converter",
+            return_value=mock_converter,
+        ) as mock_get_converter:
             result = await server_fastmcp.scrape_github(
                 repo="facebook/react", name="react-github-test"
             )
 
-            assert isinstance(result, str)
+        mock_get_converter.assert_called_once()
+        assert mock_get_converter.call_args.args[0] == "github"
+        mock_converter.run.assert_called_once()
+        assert isinstance(result, str)
 
+    @pytest.mark.network
     async def test_scrape_github_with_token(self):
         """Test GitHub scraping with authentication token."""
         result = await server_fastmcp.scrape_github(
@@ -349,6 +364,7 @@ class TestScrapingTools:
 
         assert isinstance(result, str)
 
+    @pytest.mark.network
     async def test_scrape_github_options(self):
         """Test GitHub scraping with various options."""
         result = await server_fastmcp.scrape_github(

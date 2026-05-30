@@ -83,6 +83,30 @@ CONVERTER_REGISTRY: dict[str, tuple[str, str]] = {
 }
 
 
+# Source types backed by an optional dependency. Maps the source type to the
+# name of the module-level dependency-check function in its registered scraper
+# module (see CONVERTER_REGISTRY). Each such function is the single source of
+# truth for its install hint: it raises RuntimeError when the dependency is
+# missing and is a no-op otherwise. get_converter() calls it so a missing
+# optional dependency fails fast — at converter lookup — instead of partway
+# through extraction.
+#
+# 'chat' is intentionally excluded: its requirement (slack_sdk vs discord.py)
+# depends on the configured platform, so it is checked at runtime from config.
+OPTIONAL_DEP_CHECKS: dict[str, str] = {
+    "word": "_check_word_deps",
+    "epub": "_check_epub_deps",
+    "video": "check_video_dependencies",
+    "jupyter": "_check_jupyter_deps",
+    "openapi": "_check_yaml_deps",
+    "asciidoc": "_check_asciidoc_deps",
+    "pptx": "_check_pptx_deps",
+    "rss": "_check_feedparser_deps",
+    "confluence": "_check_atlassian_deps",
+    "notion": "_check_notion_deps",
+}
+
+
 def get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter:
     """Get the appropriate converter for a source type.
 
@@ -95,6 +119,8 @@ def get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter:
 
     Raises:
         ValueError: If source type is not supported.
+        RuntimeError: If the source type's optional dependency is not installed
+            (raised by the scraper's own dependency check, with an install hint).
     """
     import importlib
 
@@ -106,6 +132,15 @@ def get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter:
 
     module_path, class_name = CONVERTER_REGISTRY[source_type]
     module = importlib.import_module(module_path)
+
+    # Fail fast on a missing optional dependency, delegating to the scraper's
+    # own dependency check so the install hint stays defined in one place.
+    dep_check_name = OPTIONAL_DEP_CHECKS.get(source_type)
+    if dep_check_name is not None:
+        dep_check = getattr(module, dep_check_name, None)
+        if callable(dep_check):
+            dep_check()
+
     converter_class = getattr(module, class_name, None)
     if converter_class is None:
         raise ValueError(

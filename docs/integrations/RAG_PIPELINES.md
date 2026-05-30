@@ -89,7 +89,7 @@ import json
 # ============================================================
 
 # One-time setup: Generate structured docs
-# $ skill-seekers scrape --config configs/react.json
+# $ skill-seekers create --config configs/react.json
 # $ skill-seekers package output/react --target langchain
 
 # Load preprocessed documents
@@ -597,7 +597,7 @@ def lambda_handler(event, context):
 **Deployment:**
 ```bash
 # 1. Preprocess docs with Skill Seekers
-skill-seekers scrape --config configs/product-docs.json
+skill-seekers create --config configs/product-docs.json
 skill-seekers package output/product-docs --target langchain
 
 # 2. One-time: Upsert to Pinecone (can be separate Lambda or script)
@@ -852,7 +852,7 @@ jobs:
 
       - name: Regenerate documentation
         run: |
-          skill-seekers scrape --config configs/product-docs.json
+          skill-seekers create --config configs/product-docs.json
           skill-seekers package output/product-docs --target langchain
 
       - name: Upload to S3 (for Lambda to pick up)
@@ -912,8 +912,8 @@ jobs:
 **Solution:**
 ```bash
 # 1. Preprocess all product docs
-skill-seekers scrape --config configs/product-a.json
-skill-seekers scrape --config configs/product-b.json
+skill-seekers create --config configs/product-a.json
+skill-seekers create --config configs/product-b.json
 # ... repeat for all products
 
 # 2. Package for LangChain
@@ -952,7 +952,7 @@ docker-compose up -d
 ```bash
 # 1. Generate merchant-specific docs
 for merchant in merchants/*; do
-  skill-seekers analyze --directory $merchant/docs
+  skill-seekers scan  $merchant/docs
   skill-seekers package output/$merchant --target langchain
 done
 
@@ -986,8 +986,8 @@ serverless deploy
 **Solution:**
 ```bash
 # 1. Scrape all sources
-skill-seekers scrape --config configs/docs.json
-skill-seekers unified --docs-config configs/docs.json \
+skill-seekers create --config configs/docs.json
+skill-seekers create --config --docs-config configs/docs.json \
   --github internal/repo \
   --name internal-kb
 
@@ -1043,4 +1043,4 @@ kubectl apply -f k8s/
 
 **Last Updated:** February 5, 2026
 **Tested With:** LangChain 0.1.0+, LlamaIndex 0.10.0+, Pinecone 3.0+
-**Skill Seekers Version:** v2.9.0+
+**Skill Seekers Version:** v3.6.0

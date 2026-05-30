@@ -1,6 +1,6 @@
-# Bootstrap Skill - Self-Hosting (v3.1.0-dev)
+# Bootstrap Skill - Self-Hosting (v3.6.0)
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Feature:** Bootstrap Skill (Dogfooding)
 **Status:** ✅ Production Ready
 **Last Updated:** 2026-02-18
@@ -142,7 +142,7 @@ cat scripts/skill_header.md output/skill-seekers/SKILL.md > merged.md
 ```markdown
 ---
 name: skill-seekers
-version: 2.7.0
+version: 3.6.0
 description: |
   Documentation-to-AI skill conversion tool. Use when working with
   Skill Seekers codebase, CLI commands, or API integration.
@@ -232,7 +232,7 @@ Edit `scripts/skill_header.md` to customize the introduction:
 ```markdown
 ---
 name: skill-seekers
-version: 2.7.0
+version: 3.6.0
 description: |
   YOUR CUSTOM DESCRIPTION HERE
 tags: [your, custom, tags]
@@ -358,7 +358,7 @@ cat scripts/skill_header.md | head -10
 # Should start with:
 # ---
 # name: skill-seekers
-# version: 2.7.0
+# version: 3.6.0
 # ...
 # ---
 ```
@@ -620,7 +620,7 @@ The header should provide context and quick start, not duplicate auto-generated 
 ```markdown
 ---
 name: skill-seekers
-version: 2.7.0
+version: 3.6.0
 description: Brief description
 ---
 
@@ -682,7 +682,7 @@ echo "✅ Validation passed"
 
 ## Changelog
 
-### v2.7.0 (2026-01-18)
+### v3.6.0 (2026-05-30)
 - ✅ Bootstrap skill feature introduced
 - ✅ Dynamic frontmatter detection (not hardcoded)
 - ✅ Comprehensive validation system
@@ -691,6 +691,6 @@ echo "✅ Validation passed"
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready

@@ -48,7 +48,22 @@ class CreateCommand:
         """
         # 1. Detect source type
         try:
-            self.source_info = SourceDetector.detect(self.args.source)
+            detection_input = self._resolve_detection_input()
+            self.source_info = SourceDetector.detect(detection_input)
+            # Honor explicit --html-path: force html mode even if auto-detection
+            # would route to a different scraper (e.g., codebase for a mixed dir).
+            html_path = getattr(self.args, "html_path", None)
+            if html_path and self.source_info.type != "html":
+                logger.info(
+                    "Overriding detected type %r with html (--html-path set)",
+                    self.source_info.type,
+                )
+                import os as _os
+
+                if _os.path.isdir(html_path):
+                    self.source_info = SourceDetector._detect_html_directory(html_path)
+                else:
+                    self.source_info = SourceDetector._detect_html(html_path)
             logger.info(f"Detected source type: {self.source_info.type}")
             logger.debug(f"Parsed info: {self.source_info.parsed}")
         except ValueError as e:
@@ -119,6 +134,31 @@ class CreateCommand:
                     f"--{arg_name.replace('_', '-')} is not applicable for "
                     f"{self.source_info.type} sources and will be ignored"
                 )
+
+    def _resolve_detection_input(self) -> str:
+        """Resolve which input string to pass to SourceDetector.
+
+        Normally this is the positional ``source`` argument, but ``--html-path``
+        is a long-standing explicit override for the HTML scraper. When the
+        positional source is missing, ``--html-path`` substitutes for it so
+        ``skill-seekers create --html-path PATH`` works without a positional.
+
+        Returns:
+            String to pass to ``SourceDetector.detect()``.
+
+        Raises:
+            ValueError: If neither a positional source nor --html-path is set.
+        """
+        source = getattr(self.args, "source", None)
+        if source:
+            return source
+        html_path = getattr(self.args, "html_path", None)
+        if html_path:
+            return html_path
+        raise ValueError(
+            "No source provided. Pass a URL, path, or repo as the positional "
+            "argument (e.g., 'skill-seekers create ./docs')."
+        )
 
     def _is_explicitly_set(self, arg_name: str, arg_value: Any) -> bool:
         """Check if an argument was explicitly set by the user.
@@ -317,7 +357,11 @@ class CreateCommand:
             config["notebook_path"] = parsed.get("file_path", self.source_info.raw_input)
 
         elif source_type == "html":
-            config["html_path"] = parsed.get("file_path", self.source_info.raw_input)
+            # --html-path explicitly overrides the positional source path.
+            html_path = getattr(self.args, "html_path", None) or parsed.get(
+                "file_path", self.source_info.raw_input
+            )
+            config["html_path"] = html_path
 
         elif source_type == "openapi":
             file_path = parsed.get("file_path", self.source_info.raw_input)

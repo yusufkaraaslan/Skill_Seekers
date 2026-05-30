@@ -1,6 +1,6 @@
 # Skill Seekers — Claude Code Plugin
 
-Transform 17 source types into AI-ready skills and RAG knowledge, directly from Claude Code.
+Transform 18 source types into AI-ready skills and RAG knowledge, directly from Claude Code.
 
 ## Installation
 
@@ -28,11 +28,11 @@ pip install skill-seekers[mcp]
 
 ## What's Included
 
-### MCP Server (35 tools)
+### MCP Server (40 tools)
 
 The plugin bundles the Skill Seekers MCP server providing tools for:
 - Scraping documentation, GitHub repos, PDFs, videos, and 13 other source types
-- Packaging skills for 16+ LLM platforms
+- Packaging skills for 21+ LLM platforms
 - Exporting to vector databases (Weaviate, Chroma, FAISS, Qdrant)
 - Managing configs, workflows, and sources
 

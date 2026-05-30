@@ -1,34 +1,34 @@
-# Documentation Architecture
+# 文档架构
 
-> **How Skill Seekers documentation is organized**
-
----
-
-## Philosophy
-
-Our documentation follows these principles:
-
-1. **Progressive Disclosure** - Start simple, add complexity as needed
-2. **Task-Oriented** - Organized by what users want to do
-3. **Single Source of Truth** - One authoritative reference per topic
-4. **Version Current** - Always reflect the latest release
+> **Skill Seekers 文档的组织方式**
 
 ---
 
-## Directory Structure
+## 理念
+
+我们的文档遵循以下原则：
+
+1. **渐进式披露** — 从简单开始，按需增加复杂度
+2. **任务导向** — 按用户想要完成的任务来组织
+3. **单一事实来源** — 每个主题只有一个权威参考
+4. **反映当前版本** — 始终反映最新版本
+
+---
+
+## 目录结构
 
 ```
 docs/
-├── README.md              # Entry point - navigation hub
-├── ARCHITECTURE.md        # This file
+├── README.md              # 入口 - 导航中心
+├── ARCHITECTURE.md        # 本文档
 │
-├── getting-started/       # New users (lowest cognitive load)
+├── getting-started/       # 新用户（最低认知负荷）
 │   ├── 01-installation.md
 │   ├── 02-quick-start.md
 │   ├── 03-your-first-skill.md
 │   └── 04-next-steps.md
 │
-├── user-guide/            # Common tasks (practical focus)
+├── user-guide/            # 常见任务（实用导向）
 │   ├── 01-core-concepts.md
 │   ├── 02-scraping.md
 │   ├── 03-enhancement.md
@@ -36,13 +36,13 @@ docs/
 │   ├── 05-workflows.md
 │   └── 06-troubleshooting.md
 │
-├── reference/             # Technical details (comprehensive)
+├── reference/             # 技术细节（全面详尽）
 │   ├── CLI_REFERENCE.md
 │   ├── MCP_REFERENCE.md
 │   ├── CONFIG_FORMAT.md
 │   └── ENVIRONMENT_VARIABLES.md
 │
-└── advanced/              # Power users (specialized)
+└── advanced/              # 高级用户（专业化）
     ├── mcp-server.md
     ├── mcp-tools.md
     ├── custom-workflows.md
@@ -51,103 +51,103 @@ docs/
 
 ---
 
-## Category Guidelines
+## 分类指南
 
-### Getting Started
+### 入门指南 (Getting Started)
 
-**Purpose:** Get new users to their first success quickly
+**目的：** 让新用户快速获得首次成功
 
-**Characteristics:**
-- Minimal prerequisites
-- Step-by-step instructions
-- Copy-paste ready commands
-- Screenshots/output examples
+**特点：**
+- 最低前置要求
+- 分步说明
+- 可直接复制粘贴的命令
+- 截图/输出示例
 
-**Files:**
-- `01-installation.md` - Install the tool
-- `02-quick-start.md` - 3 commands to first skill
-- `03-your-first-skill.md` - Complete walkthrough
-- `04-next-steps.md` - Where to go after first success
-
----
-
-### User Guide
-
-**Purpose:** Teach common tasks and concepts
-
-**Characteristics:**
-- Task-oriented
-- Practical examples
-- Best practices
-- Common patterns
-
-**Files:**
-- `01-core-concepts.md` - How it works
-- `02-scraping.md` - All scraping options
-- `03-enhancement.md` - AI enhancement
-- `04-packaging.md` - Platform export
-- `05-workflows.md` - Workflow presets
-- `06-troubleshooting.md` - Problem solving
+**文件：**
+- `01-installation.md` - 安装工具
+- `02-quick-start.md` - 3 条命令创建第一个 skill
+- `03-your-first-skill.md` - 完整演练
+- `04-next-steps.md` - 首次成功后的去向
 
 ---
 
-### Reference
+### 用户指南 (User Guide)
 
-**Purpose:** Authoritative technical information
+**目的：** 教授常见任务和概念
 
-**Characteristics:**
-- Comprehensive
-- Precise
-- Organized for lookup
-- Always accurate
+**特点：**
+- 任务导向
+- 实用示例
+- 最佳实践
+- 常见模式
 
-**Files:**
-- `CLI_REFERENCE.md` - All 20 CLI commands
-- `MCP_REFERENCE.md` - 26 MCP tools
+**文件：**
+- `01-core-concepts.md` - 工作原理
+- `02-scraping.md` - 所有抓取选项
+- `03-enhancement.md` - AI 增强
+- `04-packaging.md` - 平台导出
+- `05-workflows.md` - 工作流预设
+- `06-troubleshooting.md` - 问题排查
+
+---
+
+### 参考文档 (Reference)
+
+**目的：** 权威的技术信息
+
+**特点：**
+- 全面详尽
+- 精确准确
+- 便于查阅
+- 始终准确
+
+**文件：**
+- `CLI_REFERENCE.md` - 全部 20 个 CLI 命令
+- `MCP_REFERENCE.md` - 26 个 MCP 工具
 - `CONFIG_FORMAT.md` - JSON schema
-- `ENVIRONMENT_VARIABLES.md` - All env vars
+- `ENVIRONMENT_VARIABLES.md` - 所有环境变量
 
 ---
 
-### Advanced
+### 高级主题 (Advanced)
 
-**Purpose:** Specialized topics for power users
+**目的：** 面向高级用户的专门主题
 
-**Characteristics:**
-- Assumes basic knowledge
-- Deep dives
-- Complex scenarios
-- Integration topics
+**特点：**
+- 假定具备基础知识
+- 深入探讨
+- 复杂场景
+- 集成主题
 
-**Files:**
-- `mcp-server.md` - MCP server setup
-- `mcp-tools.md` - Advanced MCP usage
-- `custom-workflows.md` - Creating workflows
-- `multi-source.md` - Unified scraping
+**文件：**
+- `mcp-server.md` - MCP server 设置
+- `mcp-tools.md` - 高级 MCP 用法
+- `custom-workflows.md` - 创建工作流
+- `multi-source.md` - 统一抓取
 
 ---
 
-## Naming Conventions
+## 命名规范
 
-### Files
+### 文件
 
-- **getting-started:** `01-topic.md` (numbered for order)
-- **user-guide:** `01-topic.md` (numbered for order)
-- **reference:** `TOPIC_REFERENCE.md` (uppercase, descriptive)
-- **advanced:** `topic.md` (lowercase, specific)
+- **getting-started:** `01-topic.md`（编号表示顺序）
+- **user-guide:** `01-topic.md`（编号表示顺序）
+- **reference:** `TOPIC_REFERENCE.md`（大写，描述性强）
+- **advanced:** `topic.md`（小写，具体明确）
 
-### Headers
+### 标题
 
-- H1: Title with version
-- H2: Major sections
-- H3: Subsections
-- H4: Details
+- H1: 带版本的标题
+- H2: 主要章节
+- H3: 子章节
+- H4: 细节
 
-Example:
+示例：
 ```markdown
 # Topic Guide
 
-> **Skill Seekers v3.1.0**
+> **Skill Seekers v3.6.0**
 
 ## Major Section
 
@@ -158,106 +158,106 @@ Example:
 
 ---
 
-## Cross-References
+## 交叉引用
 
-Link to related docs using relative paths:
+使用相对路径链接到相关文档：
 
 ```markdown
-<!-- Within same directory -->
+<!-- 同一目录内 -->
 See [Troubleshooting](06-troubleshooting.md)
 
-<!-- Up one directory, then into reference -->
+<!-- 向上进入 reference 目录 -->
 See [CLI Reference](../reference/CLI_REFERENCE.md)
 
-<!-- Up two directories (to root) -->
+<!-- 向上两级（到根目录） -->
 See [Contributing](../../CONTRIBUTING.md)
 ```
 
 ---
 
-## Maintenance
+## 维护
 
-### Keeping Docs Current
+### 保持文档最新
 
-1. **Update with code changes** - Docs must match implementation
-2. **Version in header** - Keep version current
-3. **Last updated date** - Track freshness
-4. **Deprecate old files** - Don't delete, redirect
+1. **随代码更新** — 文档必须与实现保持一致
+2. **标题中的版本** — 保持版本最新
+3. **最后更新日期** — 追踪时效性
+4. **废弃旧文件** — 不要删除，而是重定向
 
-### Review Checklist
+### 审阅清单
 
-Before committing docs:
+提交文档前：
 
-- [ ] Commands actually work (tested)
-- [ ] No phantom commands documented
-- [ ] Links work
-- [ ] Version number correct
-- [ ] Date updated
-
----
-
-## Adding New Documentation
-
-### New User Guide
-
-1. Add to `user-guide/` with next number
-2. Update `docs/README.md` navigation
-3. Add to table of contents
-4. Link from related guides
-
-### New Reference
-
-1. Add to `reference/` with `_REFERENCE` suffix
-2. Update `docs/README.md` navigation
-3. Link from user guides
-4. Add to troubleshooting if relevant
-
-### New Advanced Topic
-
-1. Add to `advanced/` with descriptive name
-2. Update `docs/README.md` navigation
-3. Link from appropriate user guide
+- [ ] 命令确实可用（已测试）
+- [ ] 没有记录不存在的命令
+- [ ] 链接可用
+- [ ] 版本号正确
+- [ ] 日期已更新
 
 ---
 
-## Deprecation Strategy
+## 添加新文档
 
-When content becomes outdated:
+### 新用户指南
 
-1. **Don't delete immediately** - Breaks external links
-2. **Add deprecation notice**:
+1. 添加到 `user-guide/` 并使用下一个编号
+2. 更新 `docs/README.md` 导航
+3. 添加到目录
+4. 从相关指南中链接
+
+### 新参考文档
+
+1. 添加到 `reference/` 并带有 `_REFERENCE` 后缀
+2. 更新 `docs/README.md` 导航
+3. 从用户指南链接
+4. 如相关，添加到 troubleshooting
+
+### 新高级主题
+
+1. 添加到 `advanced/` 并使用描述性名称
+2. 更新 `docs/README.md` 导航
+3. 从适当的用户指南链接
+
+---
+
+## 废弃策略
+
+当内容过时时：
+
+1. **不要立即删除** — 会破坏外部链接
+2. **添加废弃通知**：
    ```markdown
-   > ⚠️ **DEPRECATED**: This document is outdated.
-   > See [New Guide](path/to/new.md) for current information.
+   > ⚠️ **已废弃**：本文档已过时。
+   > 请参阅 [New Guide](path/to/new.md) 获取当前信息。
    ```
-3. **Move to archive** after 6 months:
+3. **6 个月后移至存档**：
    ```
    docs/archive/legacy/
    ```
-4. **Update navigation** to remove deprecated links
+4. **更新导航** 以移除废弃链接
 
 ---
 
-## Contributing
+## 贡献
 
-### Doc Changes
+### 文档修改
 
-1. Edit relevant file
-2. Test all commands
-3. Update version/date
-4. Submit PR
+1. 编辑相关文件
+2. 测试所有命令
+3. 更新版本/日期
+4. 提交 PR
 
-### New Doc
+### 新文档
 
-1. Choose appropriate category
-2. Follow naming conventions
-3. Add to README.md
-4. Cross-link related docs
+1. 选择合适的分类
+2. 遵循命名规范
+3. 添加到 README.md
+4. 交叉链接相关文档
 
 ---
 
-## See Also
+## 参见
 
-- [Docs README](README.md) - Navigation hub
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [Repository README](../README.md) - Project overview
+- [文档 README](README.md) - 导航中心
+- [贡献指南](../CONTRIBUTING.md) - 如何贡献
+- [仓库 README](../README.md) - 项目概览

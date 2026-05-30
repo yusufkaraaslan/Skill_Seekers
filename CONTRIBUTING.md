@@ -48,7 +48,7 @@ feature branches
 
 - **Feature branches** - Your work
   - Created from `development`
-  - Named descriptively (e.g., `add-github-scraping`)
+  - Named descriptively (e.g., `feature/123-add-github-scraping`)
   - Merged back to `development` via PR
 
 ### Workflow Example
@@ -117,7 +117,7 @@ When creating a bug report, include:
 
 **Steps to Reproduce:**
 1. Create config with empty categories: `"categories": {}`
-2. Run `python3 cli/doc_scraper.py --config configs/test.json`
+2. Run `skill-seekers create --config configs/test.json`
 3. See error
 
 **Expected:** Should use auto-inferred categories
@@ -195,9 +195,9 @@ We actively welcome your pull requests!
 
 2. **Install dependencies**
    ```bash
-   pip install requests beautifulsoup4
-   pip install pytest pytest-cov
-   pip install -r mcp/requirements.txt
+   pip install -e .
+   pip install -e ".[dev]"
+   pip install -e ".[all]"
    ```
 
 3. **Create a feature branch from development**
@@ -273,6 +273,24 @@ Describe the tests you ran to verify your changes.
 2. Address any feedback or requested changes
 3. Once approved, a maintainer will merge your PR
 4. Your contribution will be included in the next release!
+
+### Code Review Guidelines
+
+**Fix both, don't follow precedent.** When a reviewer flags an anti-pattern in
+your PR, do not defend it by pointing at another file that does the same thing.
+"`X.py` already does this" is not a justification — it's evidence that two
+places need fixing, not that the smell is sanctioned.
+
+The correct response is one of:
+- "Good catch — I'll fix both `new_file.py` and `existing_file.py` in this PR."
+- "Out of scope here, but I'll file a follow-up to fix `existing_file.py`."
+
+The wrong response is:
+- "But `existing_file.py` does the same thing, so this matches the convention."
+
+This rule cuts both ways: maintainers calling out an anti-pattern should be
+willing to either accept the broader fix or open the follow-up issue
+themselves. Bad-precedent-as-convention is how codebases ossify.
 
 ---
 
@@ -380,21 +398,6 @@ uvx ruff format --check src/ tests/
 pytest tests/ -v
 ```
 
-**Pre-commit Setup (Optional):**
-
-You can set up pre-commit hooks to automatically run Ruff before each commit:
-
-```bash
-# Install pre-commit
-pip install pre-commit
-
-# Set up hooks (if .pre-commit-config.yaml exists)
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
 ---
 
 ## Testing
@@ -409,7 +412,7 @@ python -m pytest tests/ -v
 python -m pytest tests/test_mcp_server.py -v
 
 # Run with coverage
-python -m pytest tests/ --cov=cli --cov=mcp --cov-report=term
+python -m pytest tests/ --cov=src/skill_seekers --cov-report=term
 ```
 
 ### Writing Tests
@@ -494,7 +497,7 @@ Skill_Seekers/
     └── workflows/          # CI/CD workflows
 ```
 
-**Scraper pattern (17 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
+**Scraper pattern (18 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
 
 ### UML Architecture
 

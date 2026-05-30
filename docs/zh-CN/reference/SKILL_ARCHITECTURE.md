@@ -1,107 +1,107 @@
-# Skill Architecture Guide: Layering and Splitting
+# 技能架构指南：分层与拆分
 
-Complete guide for architecting complex multi-skill systems using the router/dispatcher pattern.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When to Split Skills](#when-to-split-skills)
-- [The Router Pattern](#the-router-pattern)
-- [Manual Skill Architecture](#manual-skill-architecture)
-- [Best Practices](#best-practices)
-- [Complete Examples](#complete-examples)
-- [Implementation Guide](#implementation-guide)
-- [Troubleshooting](#troubleshooting)
+使用路由器/分发器模式构建复杂多技能系统的完整指南。
 
 ---
 
-## Overview
+## 目录
 
-### The 500-Line Guideline
-
-Claude recommends keeping skill files under **500 lines** for optimal performance. This guideline exists because:
-
-- ✅ **Better parsing** - AI can more effectively understand focused content
-- ✅ **Context efficiency** - Only relevant information loaded per task
-- ✅ **Maintainability** - Easier to debug, update, and manage
-- ✅ **Single responsibility** - Each skill does one thing well
-
-### The Problem with Monolithic Skills
-
-As applications grow complex, developers often create skills that:
-
-- ❌ **Exceed 500 lines** - Too much information for effective parsing
-- ❌ **Mix concerns** - Handle multiple unrelated responsibilities
-- ❌ **Waste context** - Load entire file even when only small portion is relevant
-- ❌ **Hard to maintain** - Changes require careful navigation of large file
-
-### The Solution: Skill Layering
-
-**Skill layering** involves:
-
-1. **Splitting** - Breaking large skill into focused sub-skills
-2. **Routing** - Creating master skill that directs queries to appropriate sub-skill
-3. **Loading** - Only activating relevant sub-skills per task
-
-**Result:** Build sophisticated applications while maintaining 500-line guideline per skill.
+- [概述](#overview)
+- [何时拆分技能](#when-to-split-skills)
+- [路由器模式](#the-router-pattern)
+- [手动技能架构](#manual-skill-architecture)
+- [最佳实践](#best-practices)
+- [完整示例](#complete-examples)
+- [实现指南](#implementation-guide)
+- [故障排除](#troubleshooting)
 
 ---
 
-## When to Split Skills
+## 概述
 
-### Decision Matrix
+### 500 行指南
 
-| Skill Size | Complexity | Recommendation |
+Claude 建议将技能文件保持在 **500 行以内**以获得最佳性能。此指南存在的原因：
+
+- ✅ **更好的解析** - AI 可以更有效地理解聚焦的内容
+- ✅ **上下文效率** - 每个任务只加载相关信息
+- ✅ **可维护性** - 更易于调试、更新和管理
+- ✅ **单一职责** - 每个技能做好一件事
+
+### 单体技能的问题
+
+随着应用变得越来越复杂，开发者常创建具有以下问题的技能：
+
+- ❌ **超过 500 行** - 信息太多，无法有效解析
+- ❌ **混合关注点** - 处理多个不相关的职责
+- ❌ **浪费上下文** - 即使只有一小部分相关，也会加载整个文件
+- ❌ **难以维护** - 更改需要仔细浏览大文件
+
+### 解决方案：技能分层
+
+**技能分层** 包括：
+
+1. **拆分** - 将大技能拆分为聚焦的子技能
+2. **路由** - 创建主技能，将查询引导到适当的子技能
+3. **加载** - 每个任务只激活相关的子技能
+
+**结果：** 在构建复杂应用的同时，保持每个技能在 500 行指南内。
+
+---
+
+## 何时拆分技能
+
+### 决策矩阵
+
+| 技能大小 | 复杂度 | 建议 |
 |-----------|-----------|----------------|
-| < 500 lines | Single concern | ✅ **Keep monolithic** |
-| 500-1000 lines | Related concerns | ⚠️ **Consider splitting** |
-| 1000+ lines | Multiple concerns | ❌ **Must split** |
+| < 500 行 | 单一关注点 | ✅ **保持单体** |
+| 500-1000 行 | 相关关注点 | ⚠️ **考虑拆分** |
+| 1000+ 行 | 多个关注点 | ❌ **必须拆分** |
 
-### Split Indicators
+### 拆分指标
 
-**You should split when:**
+**你应该在以下情况拆分：**
 
-- ✅ Skill exceeds 500 lines
-- ✅ Multiple distinct responsibilities (CRUD, workflows, etc.)
-- ✅ Different team members maintain different sections
-- ✅ Only portions are relevant to specific tasks
-- ✅ Context window frequently exceeded
+- ✅ 技能超过 500 行
+- ✅ 多个不同的职责（CRUD、工作流等）
+- ✅ 不同的团队成员维护不同部分
+- ✅ 只有部分与特定任务相关
+- ✅ 频繁超出上下文窗口
 
-**You can keep monolithic when:**
+**你可以在以下情况保持单体：**
 
-- ✅ Under 500 lines
-- ✅ Single, cohesive responsibility
-- ✅ All content frequently relevant together
-- ✅ Simple, focused use case
+- ✅ 少于 500 行
+- ✅ 单一、内聚的职责
+- ✅ 所有内容经常一起使用
+- ✅ 简单、聚焦的用例
 
 ---
 
-## The Router Pattern
+## 路由器模式
 
-### What is a Router Skill?
+### 什么是路由器技能？
 
-A **router skill** (also called **dispatcher** or **hub** skill) is a lightweight master skill that:
+**路由器技能**（也称为**分发器**或**中心**技能）是一个轻量级主技能，它：
 
-1. **Analyzes** the user's query
-2. **Identifies** which sub-skill(s) are relevant
-3. **Directs** Claude to activate appropriate sub-skill(s)
-4. **Coordinates** responses from multiple sub-skills if needed
+1. **分析** 用户的查询
+2. **识别** 哪些子技能相关
+3. **引导** Claude 激活适当的子技能
+4. **协调** 多个子技能的响应（如需要）
 
-### How It Works
+### 工作原理
 
 ```
-User Query: "How do I book a flight to Paris?"
+用户查询："How do I book a flight to Paris?"
      ↓
-Router Skill: Analyzes keywords → "flight", "book"
+路由器技能：分析关键词 → "flight", "book"
      ↓
-Activates: flight_booking sub-skill
+激活：flight_booking 子技能
      ↓
-Response: Flight booking guidance (only this skill loaded)
+响应：仅加载此技能的航班预订指南
 ```
 
-### Router Skill Structure
+### 路由器技能结构
 
 ```markdown
 # Travel Planner (Router)
@@ -144,17 +144,17 @@ Based on your question keywords:
 
 ---
 
-## Manual Skill Architecture
+## 手动技能架构
 
-### Example 1: E-Commerce Platform
+### 示例 1：电商平台
 
-**Problem:** E-commerce skill is 2000+ lines covering catalog, cart, checkout, orders, and admin.
+**问题：** 电商技能有 2000+ 行，涵盖目录、购物车、结账、订单和管理。
 
-**Solution:** Split into focused sub-skills with router.
+**解决方案：** 拆分为带路由器的聚焦子技能。
 
-#### Sub-Skills
+#### 子技能
 
-**1. `ecommerce.md` (Router - 150 lines)**
+**1. `ecommerce.md`（路由器 - 150 行）**
 ```markdown
 # E-Commerce Platform (Router)
 
@@ -173,7 +173,7 @@ order/track/return → order_management
 admin/inventory/analytics → admin_tools
 ```
 
-**2. `product_catalog.md` (350 lines)**
+**2. `product_catalog.md`（350 行）**
 ```markdown
 # Product Catalog
 
@@ -187,7 +187,7 @@ Product browsing, searching, filtering, recommendations.
 ...
 ```
 
-**3. `shopping_cart.md` (280 lines)**
+**3. `shopping_cart.md`（280 行）**
 ```markdown
 # Shopping Cart
 
@@ -200,21 +200,21 @@ Managing cart items, quantities, totals.
 ...
 ```
 
-**Result:**
-- Router: 150 lines ✅
-- Each sub-skill: 200-400 lines ✅
-- Total functionality: Unchanged
-- Context efficiency: 5x improvement
+**结果：**
+- 路由器：150 行 ✅
+- 每个子技能：200-400 行 ✅
+- 总功能：不变
+- 上下文效率：5 倍提升
 
 ---
 
-### Example 2: Code Assistant
+### 示例 2：代码助手
 
-**Problem:** Code assistant handles debugging, refactoring, documentation, testing - 1800+ lines.
+**问题：** 代码助手处理调试、重构、文档、测试 - 1800+ 行。
 
-**Solution:** Specialized sub-skills with smart routing.
+**解决方案：** 带智能路由的专门子技能。
 
-#### Architecture
+#### 架构
 
 ```
 code_assistant.md (Router - 200 lines)
@@ -224,7 +224,7 @@ code_assistant.md (Router - 200 lines)
 └── testing.md (400 lines)
 ```
 
-#### Router Logic
+#### 路由器逻辑
 
 ```markdown
 # Code Assistant (Router)
@@ -246,11 +246,11 @@ test, unit, integration, coverage, assert, mock
 
 ---
 
-### Example 3: Data Pipeline
+### 示例 3：数据流水线
 
-**Problem:** ETL pipeline skill covers extraction, transformation, loading, validation, monitoring.
+**问题：** ETL 流水线技能涵盖提取、转换、加载、验证、监控。
 
-**Solution:** Pipeline stages as sub-skills.
+**解决方案：** 流水线阶段作为子技能。
 
 ```
 data_pipeline.md (Router)
@@ -263,54 +263,54 @@ data_pipeline.md (Router)
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. Single Responsibility Principle
+### 1. 单一职责原则
 
-**Each sub-skill should have ONE clear purpose.**
+**每个子技能应该只有一个明确的目的。**
 
-❌ **Bad:** `user_management.md` handles auth, profiles, permissions, notifications
-✅ **Good:**
-- `user_authentication.md` - Login, logout, sessions
-- `user_profiles.md` - Profile CRUD
-- `user_permissions.md` - Roles, access control
-- `user_notifications.md` - Email, push, alerts
+❌ **不佳：** `user_management.md` 处理认证、个人资料、权限、通知
+✅ **良好：**
+- `user_authentication.md` - 登录、登出、会话
+- `user_profiles.md` - 个人资料 CRUD
+- `user_permissions.md` - 角色、访问控制
+- `user_notifications.md` - 邮件、推送、提醒
 
-### 2. Clear Routing Keywords
+### 2. 清晰的路由关键词
 
-**Make routing keywords explicit and unambiguous.**
+**使路由关键词明确且无歧义。**
 
-❌ **Bad:** Vague keywords like "data", "user", "process"
-✅ **Good:** Specific keywords like "login", "authenticate", "extract", "transform"
+❌ **不佳：** 模糊的关键词如 "data"、"user"、"process"
+✅ **良好：** 具体的关键词如 "login"、"authenticate"、"extract"、"transform"
 
-### 3. Minimize Router Complexity
+### 3. 最小化路由器复杂度
 
-**Keep router lightweight - just routing logic.**
+**保持路由器轻量——只包含路由逻辑。**
 
-❌ **Bad:** Router contains actual implementation code
-✅ **Good:** Router only contains:
-- Sub-skill descriptions
-- Routing keywords
-- Usage examples
-- No implementation details
+❌ **不佳：** 路由器包含实际的实现代码
+✅ **良好：** 路由器只包含：
+- 子技能描述
+- 路由关键词
+- 使用示例
+- 无实现细节
 
-### 4. Logical Grouping
+### 4. 逻辑分组
 
-**Group by responsibility, not by code structure.**
+**按职责分组，而不是按代码结构。**
 
-❌ **Bad:** Split by file type (controllers, models, views)
-✅ **Good:** Split by feature (user_auth, product_catalog, order_processing)
+❌ **不佳：** 按文件类型拆分（controllers、models、views）
+✅ **良好：** 按功能拆分（user_auth、product_catalog、order_processing）
 
-### 5. Avoid Over-Splitting
+### 5. 避免过度拆分
 
-**Don't create sub-skills for trivial distinctions.**
+**不要为琐碎的区别创建子技能。**
 
-❌ **Bad:** Separate skills for "add_user" and "update_user"
-✅ **Good:** Single "user_management" skill covering all CRUD
+❌ **不佳：** "add_user" 和 "update_user" 的单独技能
+✅ **良好：** 涵盖所有 CRUD 的单个 "user_management" 技能
 
-### 6. Document Dependencies
+### 6. 记录依赖关系
 
-**Explicitly state when sub-skills work together.**
+**明确说明子技能何时协同工作。**
 
 ```markdown
 ## Multi-Skill Operations
@@ -322,11 +322,11 @@ data_pipeline.md (Router)
 4. order_management - Create order record
 ```
 
-### 7. Maintain Consistent Structure
+### 7. 保持结构一致
 
-**Use same SKILL.md structure across all sub-skills.**
+**在所有子技能中使用相同的 SKILL.md 结构。**
 
-Standard sections:
+标准章节：
 ```markdown
 # Skill Name
 
@@ -348,11 +348,11 @@ Standard sections:
 
 ---
 
-## Complete Examples
+## 完整示例
 
-### Travel Planner (Full Implementation)
+### Travel Planner（完整实现）
 
-#### Directory Structure
+#### 目录结构
 
 ```
 skills/
@@ -364,7 +364,7 @@ skills/
 └── budget_tracking.md (340 lines)
 ```
 
-#### travel_planner.md (Router)
+#### travel_planner.md（路由器）
 
 ```markdown
 ---
@@ -483,7 +483,7 @@ Some requests require multiple skills working together:
 The router handles complexity automatically - just ask naturally!
 ```
 
-#### flight_booking.md (Sub-Skill)
+#### flight_booking.md（子技能）
 
 ```markdown
 ---
@@ -617,18 +617,18 @@ All flight booking documentation is in `references/`:
 
 ---
 
-## Implementation Guide
+## 实现指南
 
-### Step 1: Identify Split Points
+### 第 1 步：识别拆分点
 
-**Analyze your monolithic skill:**
+**分析你的单体技能：**
 
-1. List all major responsibilities
-2. Group related functionality
-3. Identify natural boundaries
-4. Count lines per group
+1. 列出所有主要职责
+2. 将相关功能分组
+3. 识别自然边界
+4. 计算每组行数
 
-**Example:**
+**示例：**
 
 ```
 user_management.md (1800 lines)
@@ -639,17 +639,17 @@ user_management.md (1800 lines)
 └── Activity logs (370 lines) ← Sub-skill
 ```
 
-### Step 2: Extract Sub-Skills
+### 第 2 步：提取子技能
 
-**For each identified group:**
+**对于每个识别出的组：**
 
-1. Create new `{subskill}.md` file
-2. Copy relevant content
-3. Add proper frontmatter
-4. Ensure 200-500 line range
-5. Remove dependencies on other groups
+1. 创建新的 `{subskill}.md` 文件
+2. 复制相关内容
+3. 添加适当的 frontmatter
+4. 确保 200-500 行范围
+5. 移除对其他组的依赖
 
-**Template:**
+**模板：**
 
 ```markdown
 ---
@@ -675,9 +675,9 @@ description: {clear, specific description}
 [Documentation structure]
 ```
 
-### Step 3: Create Router
+### 第 3 步：创建路由器
 
-**Router skill template:**
+**路由器技能模板：**
 
 ```markdown
 ---
@@ -723,16 +723,16 @@ Based on query keywords:
 - "{complex_query}" → {subskill_1} + {subskill_2}
 ```
 
-### Step 4: Define Routing Keywords
+### 第 4 步：定义路由关键词
 
-**Best practices:**
+**最佳实践：**
 
-- Use 5-10 keywords per sub-skill
-- Include synonyms and variations
-- Be specific, not generic
-- Test with real queries
+- 每个子技能使用 5-10 个关键词
+- 包含同义词和变体
+- 要具体，不要通用
+- 用真实查询测试
 
-**Example:**
+**示例：**
 
 ```markdown
 ### user_authentication
@@ -742,9 +742,9 @@ Based on query keywords:
 - Variations: log-in, log-out, sign-in, sign-out
 ```
 
-### Step 5: Test Routing
+### 第 5 步：测试路由
 
-**Create test queries:**
+**创建测试查询：**
 
 ```markdown
 ## Test Routing (Internal Notes)
@@ -762,13 +762,13 @@ Should route to multiple skills:
 ✓ "Create account and set up profile" → user_authentication + user_profiles
 ```
 
-### Step 6: Update References
+### 第 6 步：更新引用
 
-**In each sub-skill:**
+**在每个子技能中：**
 
-1. Link to router for context
-2. Reference related sub-skills
-3. Update navigation paths
+1. 链接到路由器以获取上下文
+2. 引用相关的子技能
+3. 更新导航路径
 
 ```markdown
 ## Related Skills
@@ -780,55 +780,55 @@ This skill is part of the {System Name} suite:
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Router Not Activating Correct Sub-Skill
+### 路由器未正确激活子技能
 
-**Problem:** Query routed to wrong sub-skill
+**问题：** 查询路由到错误的子技能
 
-**Solutions:**
-1. Add missing keywords to router
-2. Use more specific routing keywords
-3. Add disambiguation examples
-4. Test with variations of query phrasing
+**解决方案：**
+1. 向路由器添加缺失的关键词
+2. 使用更具体的路由关键词
+3. 添加消除歧义的示例
+4. 用查询措辞的变体测试
 
-### Sub-Skills Too Granular
+### 子技能过于细粒度
 
-**Problem:** Too many tiny sub-skills (< 200 lines each)
+**问题：** 太多微小的子技能（每个 < 200 行）
 
-**Solution:**
-- Merge related sub-skills
-- Use sections within single skill instead
-- Aim for 300-500 lines per sub-skill
+**解决方案：**
+- 合并相关的子技能
+- 改为在单个技能中使用章节
+- 每个子技能目标 300-500 行
 
-### Sub-Skills Too Large
+### 子技能过大
 
-**Problem:** Sub-skills still exceeding 500 lines
+**问题：** 子技能仍然超过 500 行
 
-**Solution:**
-- Further split into more granular concerns
-- Consider 3-tier architecture (router → category routers → specific skills)
-- Move reference documentation to separate files
+**解决方案：**
+- 进一步拆分为更细粒度的关注点
+- 考虑 3 层架构（路由器 → 类别路由器 → 特定技能）
+- 将参考文档移到单独的文件
 
-### Cross-Skill Dependencies
+### 跨技能依赖
 
-**Problem:** Sub-skills frequently need each other
+**问题：** 子技能经常需要彼此
 
-**Solutions:**
-1. Create shared reference documentation
-2. Use router to coordinate multi-skill operations
-3. Reconsider split boundaries (may be too granular)
+**解决方案：**
+1. 创建共享的参考文档
+2. 使用路由器协调多技能操作
+3. 重新考虑拆分边界（可能过于细粒度）
 
-### Router Logic Too Complex
+### 路由器逻辑过于复杂
 
-**Problem:** Router has extensive conditional logic
+**问题：** 路由器有大量条件逻辑
 
-**Solution:**
-- Simplify to keyword-based routing
-- Create intermediate routers (2-tier)
-- Document explicit routing table
+**解决方案：**
+- 简化为基于关键词的路由
+- 创建中间路由器（2 层）
+- 记录显式的路由表
 
-**Example 2-tier:**
+**2 层示例：**
 
 ```
 main_router.md
@@ -844,34 +844,34 @@ main_router.md
 
 ---
 
-## Adapting Auto-Generated Routers
+## 适配自动生成的路由器
 
-Skill Seeker auto-generates router skills for large documentation using `generate_router.py`.
+Skill Seeker 使用 `generate_router.py` 为大型文档自动生成路由器技能。
 
-**You can adapt this for manual skills:**
+**你可以将其适配为手动技能：**
 
-### 1. Study the Pattern
+### 1. 研究模式
 
 ```bash
-# Generate a router from documentation configs
-python3 cli/split_config.py configs/godot.json --strategy router
-python3 cli/generate_router.py configs/godot-*.json
+# 从文档配置生成路由器
+skill-seekers create configs/godot.json --strategy router
+skill-seekers create configs/godot-*.json
 
-# Examine generated router SKILL.md
+# 检查生成的路由器 SKILL.md
 cat output/godot/SKILL.md
 ```
 
-### 2. Extract the Template
+### 2. 提取模板
 
-The generated router has:
-- Sub-skill descriptions
-- Keyword-based routing
-- Usage examples
-- Multi-skill coordination notes
+生成的路由器包含：
+- 子技能描述
+- 基于关键词的路由
+- 使用示例
+- 多技能协调说明
 
-### 3. Customize for Your Use Case
+### 3. 定制你的用例
 
-Replace documentation-specific content with your application logic:
+将文档特定内容替换为你的应用逻辑：
 
 ```markdown
 # Generated (documentation):
@@ -887,44 +887,44 @@ Keywords: order, purchase, payment, checkout, fulfillment
 
 ---
 
-## Summary
+## 总结
 
-### Key Takeaways
+### 关键要点
 
-1. ✅ **500-line guideline** is important for optimal Claude performance
-2. ✅ **Router pattern** enables sophisticated applications while staying within limits
-3. ✅ **Single responsibility** - Each sub-skill does one thing well
-4. ✅ **Context efficiency** - Only load what's needed per task
-5. ✅ **Proven approach** - Already used successfully for large documentation
+1. ✅ **500 行指南** 对最佳 Claude 性能很重要
+2. ✅ **路由器模式** 可在保持限制的同时实现复杂应用
+3. ✅ **单一职责** - 每个子技能做好一件事
+4. ✅ **上下文效率** - 每个任务只加载所需内容
+5. ✅ **经过验证的方法** - 已成功用于大型文档
 
-### When to Apply This Pattern
+### 何时应用此模式
 
-**Do use skill layering when:**
-- Skill exceeds 500 lines
-- Multiple distinct responsibilities
-- Different parts rarely used together
-- Team wants modular maintenance
+**在以下情况使用技能分层：**
+- 技能超过 500 行
+- 多个不同的职责
+- 不同部分很少一起使用
+- 团队希望模块化维护
 
-**Don't use skill layering when:**
-- Skill under 500 lines
-- Single, cohesive responsibility
-- All content frequently relevant together
-- Simplicity is priority
+**在以下情况不使用技能分层：**
+- 技能少于 500 行
+- 单一、内聚的职责
+- 所有内容经常一起使用
+- 简洁性是优先事项
 
-### Next Steps
+### 后续步骤
 
-1. Review your existing skills for split candidates
-2. Create router + sub-skills following templates above
-3. Test routing with real queries
-4. Refine keywords based on usage
-5. Iterate and improve
+1. 审查现有技能，寻找拆分候选
+2. 按照上述模板创建路由器 + 子技能
+3. 用真实查询测试路由
+4. 根据使用情况优化关键词
+5. 迭代改进
 
 ---
 
-## Additional Resources
+## 其他资源
 
-- **Auto-Generated Routers:** See `docs/LARGE_DOCUMENTATION.md` for automated splitting of scraped documentation
-- **Router Implementation:** See `src/skill_seekers/cli/generate_router.py` for reference implementation
-- **Examples:** See configs in `configs/` for real-world router patterns
+- **自动生成的路由器：** 请参阅 `docs/LARGE_DOCUMENTATION.md` 了解抓取文档的自动拆分
+- **路由器实现：** 请参阅 `src/skill_seekers/cli/generate_router.py` 了解参考实现
+- **示例：** 请参阅 `configs/` 中的配置了解真实的路由器模式
 
-**Questions or feedback?** Open an issue on GitHub!
+**有问题或反馈？** 在 GitHub 上打开一个 issue！

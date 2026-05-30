@@ -243,24 +243,22 @@ python3 -m pip install -e .
 Let's make sure everything works:
 
 ```bash
-# Test the main script can run
-skill-seekers scrape --help
+# Test the CLI is installed correctly
+skill-seekers create --help
 ```
 
 **✅ Success looks like:**
 ```
-usage: doc_scraper.py [-h] [--config CONFIG] [--interactive] ...
+usage: skill-seekers create [-h] ...
 ```
 
-**❌ If you see "No such file or directory":**
+**❌ If you see "command not found":**
 ```bash
-# Check you're in the right directory
-pwd
-# Should show path ending in /Skill_Seekers
+# Ensure the package is installed
+pip install -e .
 
-# List files
-ls cli/
-# Should show: doc_scraper.py, estimate_pages.py, etc.
+# Verify installation
+skill-seekers --version
 ```
 
 ---
@@ -289,7 +287,7 @@ cat > configs/test.json << 'EOF'
 EOF
 
 # Run the scraper
-skill-seekers scrape --config configs/test.json
+skill-seekers create --config configs/test.json
 ```
 
 **Note for Windows users:** The `cat > file << 'EOF'` syntax doesn't work in PowerShell. Instead, create the file manually:
@@ -312,7 +310,7 @@ skill-seekers scrape --config configs/test.json
 "@ | Out-File -FilePath configs/test.json -Encoding utf8
 
 # Then run the scraper
-skill-seekers scrape --config configs/test.json
+skill-seekers create --config configs/test.json
 ```
 
 **What happens:**
@@ -335,7 +333,7 @@ Page 2/5: Editor Setup
 
 ```bash
 # Use the React preset
-skill-seekers scrape --config configs/react.json --max-pages 50
+skill-seekers create --config configs/react.json --max-pages 50
 ```
 
 **⏱️ Time:** ~5 minutes
@@ -399,10 +397,10 @@ You now have a working Skill Seeker installation! Here's what you can do:
 ls configs/
 
 # Try Vue.js
-skill-seekers scrape --config configs/vue.json --max-pages 50
+skill-seekers create --config configs/vue.json --max-pages 50
 
 # Try Django
-skill-seekers scrape --config configs/django.json --max-pages 50
+skill-seekers create --config configs/django.json --max-pages 50
 ```
 
 ### Try Other Source Types (17 Supported!)
@@ -418,20 +416,20 @@ skill-seekers create analysis.ipynb              # Jupyter Notebook
 skill-seekers create spec.yaml                   # OpenAPI/Swagger spec
 skill-seekers create slides.pptx                 # PowerPoint
 
-# Or use specific subcommands
-skill-seekers video https://youtube.com/watch?v=abc  # Video
-skill-seekers confluence --space DOCS                 # Confluence wiki
-skill-seekers notion --database DB_ID                 # Notion
-skill-seekers rss https://blog.example.com/feed.xml   # RSS feed
-skill-seekers manpage grep.1                          # Man page
-skill-seekers chat --platform slack --export-dir ./export  # Slack/Discord
+# More source types
+skill-seekers create --video-url https://youtube.com/watch?v=abc  # Video
+skill-seekers create --space-key DOCS                            # Confluence wiki
+skill-seekers create --database-id DB_ID                         # Notion
+skill-seekers create feed.rss                                    # RSS feed
+skill-seekers create grep.1                                      # Man page
+skill-seekers create --chat-export-path ./slack-export           # Slack/Discord
 ```
 
 ### Create Custom Skills
 
 ```bash
 # Interactive mode - answer questions
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Or create config for any website
 skill-seekers scrape \
@@ -458,7 +456,7 @@ cat > ~/.config/skill-seekers/configs/myproject.json << 'EOF'
 EOF
 
 # Use it
-skill-seekers scrape --config myproject.json
+skill-seekers create --config myproject.json
 ```
 
 **Option 2: Current Directory (Project-Specific)**
@@ -469,14 +467,14 @@ mkdir -p configs
 nano configs/myproject.json
 
 # Use it
-skill-seekers scrape --config configs/myproject.json
+skill-seekers create --config configs/myproject.json
 ```
 
 **Option 3: Absolute Path**
 
 ```bash
 # Use any file path
-skill-seekers scrape --config /full/path/to/config.json
+skill-seekers create --config /full/path/to/config.json
 ```
 
 The tool searches in this order: exact path → `./configs/` → `~/.config/skill-seekers/configs/` → API presets
@@ -494,7 +492,7 @@ If you have Claude Code installed:
 # "Package the skill at output/svelte/"
 ```
 
-**See:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md) for full MCP setup
+**See:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md) for full MCP setup
 
 ---
 
@@ -511,29 +509,31 @@ If you have Claude Code installed:
 
 ### "Permission denied" errors
 
-**Problem:** Can't install packages or run scripts
+**Problem:** Can't install packages
 
 **Solution:**
 ```bash
-# Use --user flag
-pip3 install --user requests beautifulsoup4
+# Use --user flag for pip
+pip3 install --user skill-seekers
 
-# Or make script executable
-chmod +x cli/doc_scraper.py
+# Or use a virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
 ```
 
 ### "No such file or directory"
 
-**Problem:** Can't find cli/doc_scraper.py
+**Problem:** CLI not found or config file path incorrect
 
-**Solution:** You're not in the right directory
+**Solution:** Ensure you're using the CLI command correctly
 ```bash
-# Go to the Skill_Seekers directory
-cd ~/Projects/Skill_Seekers  # Adjust your path
+# Verify installation
+skill-seekers --version
+# Should show version 3.6.0+
 
-# Verify
-ls cli/
-# Should show doc_scraper.py
+# Verify config file exists at expected path
+ls configs/
 ```
 
 ### "ModuleNotFoundError" or "command not found: skill-seekers"
@@ -542,15 +542,11 @@ ls cli/
 
 **Solution:**
 ```bash
-# Make sure virtual environment is activated (you should see (venv) in prompt)
-source venv/bin/activate  # macOS/Linux
-# Windows: venv\Scripts\activate
-
-# Install the package
+# Install the package in editable mode
 pip install -e .
 
-# If that fails, try:
-python3 -m pip install -e .
+# Or if you need dev tools
+pip install -e ".[dev]"
 ```
 
 ### Scraping is slow or fails
@@ -560,7 +556,7 @@ python3 -m pip install -e .
 **Solution:**
 ```bash
 # Use smaller max_pages for testing
-skill-seekers scrape --config configs/react.json --max-pages 10
+skill-seekers create --config configs/react.json --max-pages 10
 
 # Check internet connection
 ping google.com
@@ -585,7 +581,7 @@ curl -I https://docs.yoursite.com
 
 - **Read the full README:** [README.md](README.md)
 - **Learn about presets:** [configs/](configs/)
-- **Try MCP integration:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+- **Try MCP integration:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 - **Advanced usage:** [docs/](docs/)
 
 ---
@@ -596,7 +592,7 @@ curl -I https://docs.yoursite.com
 # Your typical workflow:
 
 # 1. Create/use a config
-skill-seekers scrape --config configs/react.json --max-pages 50
+skill-seekers create --config configs/react.json --max-pages 50
 
 # 2. Package it
 skill-seekers package output/react/

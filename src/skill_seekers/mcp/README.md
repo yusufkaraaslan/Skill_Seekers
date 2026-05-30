@@ -357,7 +357,7 @@ Agent: 📄 Scraping PDF documentation...
        ✅ Found 45 code blocks (Python, JavaScript, C++)
        ✅ Extracted 12 images
        ✅ Created skill at output/api-docs/
-       📦 Package with: python3 cli/package_skill.py output/api-docs/
+       📦 Package with: skill-seekers package output/api-docs/
 
 User: Package skill at output/api-docs/
 
@@ -387,7 +387,7 @@ Agent: ✅ Split complete!
 User: Scrape all godot sub-skills in parallel
 
 Agent: [Starts scraping all 5 configs in parallel...]
-       ✅ All skills created in 4-8 hours instead of 20-40!
+       ✅ All skills created in ~4-8 hours instead of 20-40 (estimated, not benchmarked)!
 
 User: Generate router for configs/godot-*.json
 
@@ -446,7 +446,7 @@ mcp/
 
 1. **AI coding agent** (Claude Code, Cursor, Windsurf, etc.) sends MCP requests to the server
 2. **Server** routes requests to appropriate tool functions
-3. **Tools** call CLI scripts (`doc_scraper.py`, `estimate_pages.py`, etc.)
+3. **Tools** call the CLI (`skill-seekers create`, `skill-seekers estimate`, etc.)
 4. **CLI scripts** perform actual work (scraping, packaging, etc.)
 5. **Results** returned to the agent via MCP protocol
 
@@ -467,7 +467,7 @@ Tools use `subprocess.run()` to call CLI scripts:
 ```python
 result = subprocess.run([
     sys.executable,
-    str(CLI_DIR / "doc_scraper.py"),
+    str(SRC_DIR / "skill_seekers" / "cli" / "doc_scraper.py"),
     "--config", config_path
 ], capture_output=True, text=True)
 ```
@@ -477,10 +477,10 @@ result = subprocess.run([
 The MCP server has comprehensive test coverage:
 
 ```bash
-# Run MCP server tests (25 tests)
-python3 -m pytest tests/test_mcp_server.py -v
+# Run MCP server tests (40 tests)
+python3 -m pytest tests/test_mcp_server.py tests/test_mcp_fastmcp.py -v
 
-# Expected output: 25 passed in ~0.3s
+# Expected output: ~40 passed in ~0.5s
 ```
 
 ### Test Coverage
@@ -499,7 +499,7 @@ python3 -m pytest tests/test_mcp_server.py -v
 - **Tool routing** (2 tests)
 - **Integration** (1 test)
 
-**Total: 34 tests | Pass rate: 100%**
+**Total: 40 tests | Pass rate: 100%**
 
 ## Troubleshooting
 
@@ -537,7 +537,7 @@ python3 -m pytest tests/test_mcp_server.py -v
 ### "ModuleNotFoundError: No module named 'mcp'"
 
 ```bash
-pip3 install -r mcp/requirements.txt
+pip install -e ".[mcp]"
 ```
 
 ### Tools Appear But Don't Work
@@ -547,14 +547,13 @@ pip3 install -r mcp/requirements.txt
 1. Verify `cwd` in config points to repository root
 2. Check CLI tools exist:
    ```bash
-   ls cli/doc_scraper.py
-   ls cli/estimate_pages.py
-   ls cli/package_skill.py
+   which skill-seekers
+   skill-seekers create --help
    ```
 
 3. Test CLI tools directly:
    ```bash
-   python3 cli/doc_scraper.py --help
+   python -m skill_seekers.cli.doc_scraper --help
    ```
 
 ### Slow Operations
@@ -571,8 +570,8 @@ pip3 install -r mcp/requirements.txt
 # Create venv
 python3 -m venv venv
 source venv/bin/activate
-pip install -r mcp/requirements.txt
-pip install requests beautifulsoup4
+pip install -e ".[mcp]"
+pip install -e .
 which python3  # Copy this path
 ```
 
@@ -583,7 +582,7 @@ Configure your AI coding agent to use venv Python (example for Claude Code):
   "mcpServers": {
     "skill-seeker": {
       "command": "/path/to/Skill_Seekers/venv/bin/python3",
-      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "cwd": "/path/to/Skill_Seekers"
     }
   }
@@ -599,7 +598,7 @@ Enable verbose logging:
   "mcpServers": {
     "skill-seeker": {
       "command": "python3",
-      "args": ["-u", "/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["-u", "-m", "skill_seekers.mcp.server_fastmcp"],
       "cwd": "/path/to/Skill_Seekers",
       "env": {
         "DEBUG": "1"
@@ -618,7 +617,7 @@ For API-based enhancement (requires Anthropic API key):
   "mcpServers": {
     "skill-seeker": {
       "command": "python3",
-      "args": ["/path/to/Skill_Seekers/mcp/server.py"],
+      "args": ["-m", "skill_seekers.mcp.server_fastmcp"],
       "cwd": "/path/to/Skill_Seekers",
       "env": {
         "ANTHROPIC_API_KEY": "sk-ant-your-key-here"
@@ -640,17 +639,17 @@ For API-based enhancement (requires Anthropic API key):
 | Generate router | 10-30s | Creates router SKILL.md |
 | Scrape docs | 15-45min | First time only |
 | Scrape docs (40K pages) | 20-40hrs | Sequential |
-| Scrape docs (40K pages, parallel) | 4-8hrs | 5 skills in parallel |
+| Scrape docs (40K pages, parallel) | ~4-8hrs (estimated) | 5 skills in parallel |
 | Scrape (cached) | <1min | With `skip_scrape` |
 | Package skill | 5-10s | Creates .zip |
 | Package multi | 30-60s | Packages 5-10 skills |
 
 ## Documentation
 
-- **Full Setup Guide**: [docs/MCP_SETUP.md](../docs/MCP_SETUP.md)
+- **Full Setup Guide**: [docs/guides/MCP_SETUP.md](../docs/guides/MCP_SETUP.md)
 - **Main README**: [README.md](../README.md)
-- **Usage Guide**: [docs/USAGE.md](../docs/USAGE.md)
-- **Testing Guide**: [docs/TESTING.md](../docs/TESTING.md)
+- **Usage Guide**: [docs/README.md](../docs/README.md)
+- **Testing Guide**: [docs/guides/TESTING_GUIDE.md](../docs/guides/TESTING_GUIDE.md)
 
 ## Support
 

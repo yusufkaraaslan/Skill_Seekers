@@ -557,5 +557,62 @@ class TestJSONWorkflow(unittest.TestCase):
         self.assertEqual(converter.extracted_data["total_pages"], 1)
 
 
+class TestPDFExtractionReal(unittest.TestCase):
+    """Test extraction and build with real PDF fixture files."""
+
+    def setUp(self):
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+        from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
+        self.PDFToSkillConverter = PDFToSkillConverter
+        self.temp_dir = tempfile.mkdtemp()
+        self.fixture_dir = Path(__file__).parent / "fixtures" / "synthetic"
+
+    def tearDown(self):
+        if hasattr(self, "temp_dir"):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_extract_real_pdf(self):
+        pdf_path = self.fixture_dir / "document.pdf"
+        if not pdf_path.exists():
+            self.skipTest("Fixture document.pdf not found")
+        config = {"name": "test_pdf_real", "pdf_path": str(pdf_path)}
+        converter = self.PDFToSkillConverter(config)
+        ok = converter.extract()
+        self.assertTrue(ok)
+        result = converter.extracted_data
+        self.assertIsNotNone(result)
+        self.assertIn("pages", result)
+        self.assertGreater(len(result["pages"]), 0)
+        self.assertGreater(result["total_pages"], 0)
+
+    def test_extracted_data_structure(self):
+        pdf_path = self.fixture_dir / "document.pdf"
+        if not pdf_path.exists():
+            self.skipTest("Fixture document.pdf not found")
+        config = {"name": "test_pdf_real", "pdf_path": str(pdf_path)}
+        converter = self.PDFToSkillConverter(config)
+        converter.extract()
+        result = converter.extracted_data
+        self.assertIsInstance(result, dict)
+        self.assertIn("pages", result)
+        self.assertIn("total_pages", result)
+        for key in ["page_number", "text"]:
+            found = any(key in p for p in result["pages"])
+            self.assertTrue(found, f"Key {key} not found in any page")
+        self.assertIn("total_code_blocks", result)
+        self.assertIn("total_images", result)
+        self.assertIn("extracted_images", result)
+        self.assertIn("metadata", result)
+        self.assertIn("languages_detected", result)
+
+    def test_extract_handles_missing_file(self):
+        config = {"name": "test_missing", "pdf_path": "nonexistent.pdf"}
+        converter = self.PDFToSkillConverter(config)
+        with self.assertRaises((FileNotFoundError, RuntimeError, Exception)):
+            converter.extract()
+
+
 if __name__ == "__main__":
     unittest.main()

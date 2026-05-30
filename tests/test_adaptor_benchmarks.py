@@ -385,6 +385,48 @@ class TestAdaptorBenchmarks(unittest.TestCase):
         self.assertLess(full_time, 0.5, "Full skill processing too slow")
 
 
+class TestCrossPlatformPackageSizes(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.output_dir = Path(self.temp_dir.name) / "output"
+        self.output_dir.mkdir()
+        skill_dir = Path(self.temp_dir.name) / "bench-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Test Skill\n\n" + "Content. " * 200)
+        (skill_dir / "references").mkdir()
+        for i in range(5):
+            (skill_dir / "references" / f"ref_{i}.md").write_text(f"# Ref {i}\n\nContent. " * 300)
+        self.skill_dir = skill_dir
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_all_adaptors_produce_non_empty_package(self):
+        metadata = SkillMetadata(name="test-bench", description="Benchmark test")
+        platforms = [
+            "claude",
+            "gemini",
+            "openai",
+            "markdown",
+            "langchain",
+            "llama-index",
+            "opencode",
+            "minimax",
+            "deepseek",
+            "kimi",
+            "qwen",
+            "openrouter",
+            "together",
+            "fireworks",
+            "ibm-bob",
+        ]
+        for platform in platforms:
+            adaptor = get_adaptor(platform)
+            adaptor.format_skill_md(self.skill_dir, metadata)
+            pkg = adaptor.package(self.skill_dir, self.output_dir)
+            self.assertTrue(pkg.exists(), f"{platform} package not created")
+            self.assertGreater(pkg.stat().st_size, 0, f"{platform} package is empty")
+
+
 if __name__ == "__main__":
-    # Run benchmarks
     unittest.main(verbosity=2)

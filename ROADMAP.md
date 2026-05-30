@@ -4,30 +4,30 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 
 ---
 
-## 🎯 Current Status: v3.2.0 ✅
+## 🎯 Current Status: v3.6.0 ✅
 
-**Latest Release:** v3.2.0 (March 2026)
+**Latest Release:** v3.6.0 (May 2026)
 
 **What Works:**
-- ✅ **17 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
+- ✅ **18 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
 - ✅ Unified multi-source scraping with generic merge for any source combination
 - ✅ 40 MCP tools fully functional
-- ✅ Multi-platform support (16 platforms: Claude, Gemini, OpenAI, LangChain, LlamaIndex, Haystack, ChromaDB, FAISS, Weaviate, Qdrant, Cursor, Windsurf, Cline, Continue.dev, Pinecone, Markdown)
+- ✅ Multi-platform support (21 platforms: Claude, Gemini, OpenAI, DeepSeek, Qwen, Fireworks, Together, OpenRouter, IBM BoB, Kimi, MiniMax, OpenCode, LangChain, LlamaIndex, Haystack, Pinecone, ChromaDB, FAISS, Weaviate, Qdrant, Markdown)
 - ✅ Auto-upload to all platforms
-- ✅ 24 preset configs (including 7 unified configs)
+- ✅ 12 preset configs (including unified configs)
 - ✅ Large docs support (40K+ pages with router skills)
 - ✅ C3.x codebase analysis suite (C3.1-C3.10)
 - ✅ Bootstrap skill feature - self-hosting capability
-- ✅ 1,880+ tests passing
-- ✅ Unified `create` command with auto-detection for all 17 source types
-- ✅ Enhancement workflow presets (5 bundled: default, minimal, security-focus, architecture-comprehensive, api-documentation)
+- ✅ 3,445+ tests passing
+- ✅ Unified `create` command with auto-detection for all 18 source types
+- ✅ 68 YAML workflow presets
 - ✅ Cloud storage integration (S3, GCS, Azure)
 - ✅ Source auto-detection via `source_detector.py`
 
 **Recent Improvements (v3.2.0):**
 - ✅ **10 new source types**: Word, EPUB, video, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord
 - ✅ **Generic merge system**: `_generic_merge()` in `unified_skill_builder.py` handles arbitrary source combinations
-- ✅ **Unified CLI**: `create` command auto-detects all 17 source types
+- ✅ **Unified CLI**: `create` command auto-detects all 18 source types
 - ✅ **Workflow Presets**: YAML-based enhancement presets with CLI management
 - ✅ **Progressive Disclosure**: Default help shows 13 universal flags, detailed help per source
 - ✅ **Bug Fixes**: Markdown parser h1 filtering, paragraph length filtering
@@ -60,9 +60,9 @@ Small tasks that build community features incrementally
   - **Features:** 6 REST endpoints, auto-categorization, auto-tags, filtering, SSL enabled
 - [x] **Task A1.2:** Add MCP tool `fetch_config` to download from website ✅ **COMPLETE**
   - **Features:** List 24 configs, filter by category, download by name
-- [ ] **Task A1.3:** Add MCP tool `submit_config` to submit custom configs
+- [x] **Task A1.3:** Add MCP tool `submit_config` to submit custom configs ✅ **COMPLETE**
   - **Purpose:** Allow users to submit custom configs via MCP (creates GitHub issue)
-  - **Time:** 2-3 hours
+  - **Completed:** May 2026
 - [ ] **Task A1.4:** Create static config catalog website (GitHub Pages)
   - **Purpose:** Read-only catalog to browse/search configs
   - **Time:** 2-3 hours
@@ -79,7 +79,7 @@ Small tasks that build community features incrementally
   - **Purpose:** Auto-detect missing skills from user queries
   - **Time:** 4-6 hours
 
-**Start Next:** Pick A1.3 (MCP submit tool)
+**Start Next:** Pick A1.4 (static config catalog website)
 
 #### A2: Knowledge Sharing (Website Feature)
 - [ ] **Task A2.1:** Design knowledge database schema
@@ -155,15 +155,15 @@ Generate skills from actual code repositories
   - 10 GoF patterns, 9 languages, 87% precision
 - [x] **Task C3.2:** Extract usage examples from test files ✅ **v2.6.0**
   - 5 categories, 9 languages, 80%+ high-confidence examples
-- [ ] **Task C3.3:** Build "how to" guides from code
-- [ ] **Task C3.4:** Extract configuration patterns
-- [ ] **Task C3.5:** Create architectural overview
+- [x] **Task C3.3:** Build "how to" guides from code ✅ **COMPLETE**
+- [x] **Task C3.4:** Extract configuration patterns ✅ **COMPLETE**
+- [x] **Task C3.5:** Create architectural overview ✅ **COMPLETE**
 - [x] **Task C3.6:** AI Enhancement for Pattern Detection ✅ **v2.6.0**
   - Claude API integration for enhanced insights
 - [x] **Task C3.7:** Architectural Pattern Detection ✅ **v2.6.0**
   - Detects 8 architectural patterns, framework-aware
 
-**Start Next:** Pick C3.3 (build guides from workflow examples)
+**Start Next:** Pick C1.1 (GitHub API client)
 
 ---
 
@@ -178,7 +178,7 @@ Small improvements to existing MCP tools
 
 #### E1: New MCP Tools
 - [x] **Task E1.3:** Add `scrape_pdf` MCP tool ✅
-- [ ] **Task E1.1:** Add `fetch_config` MCP tool
+- [x] **Task E1.1:** Add `fetch_config` MCP tool ✅ **COMPLETE**
 - [ ] **Task E1.2:** Add `fetch_knowledge` MCP tool
 - [ ] **Task E1.4-E1.9:** Additional format scrapers
 
@@ -296,35 +296,15 @@ Small standalone tools that add value
 
 ## 📅 Release Planning
 
-### Release: v2.7.0 (Estimated: February 2026)
-**Focus:** Router Quality Improvements & Multi-Source Maturity
-
-**Planned Features:**
-- Router skill quality improvements
-- Enhanced multi-source synthesis
-- Source-parity for all scrapers
-- AI enhancement improvements
-- Documentation refinements
-
-### Release: v2.8.0 (Estimated: Q1 2026)
-**Focus:** Web Presence & Community Growth
-
-**Planned Features:**
-- GitHub Pages website (skillseekersweb.com)
-- Interactive documentation
-- Config submission workflow
-- Community showcase
-- Video tutorials
-
-### Release: v2.9.0 (Estimated: Q2 2026)
+### Release: v3.7.0 (Estimated: Q3 2026)
 **Focus:** Developer Experience & Integrations
 
 **Planned Features:**
-- Web UI for config generation
 - CI/CD integration examples
 - Docker containerization
 - Enhanced scraping formats (Sphinx, Docusaurus detection)
 - Performance optimizations
+- Real-time documentation monitoring
 
 ---
 
@@ -360,16 +340,16 @@ Small standalone tools that add value
 
 ## 📈 Metrics & Goals
 
-### Current State (v3.2.0) ✅
-- ✅ 17 source types supported
-- ✅ 24 preset configs (14 official + 10 test/examples)
-- ✅ 1,880+ tests (excellent coverage)
+### Current State (v3.6.0) ✅
+- ✅ 18 source types supported (17 + config)
+- ✅ 12 preset configs
+- ✅ 3,445+ tests (excellent coverage)
 - ✅ 40 MCP tools
-- ✅ 4 platform adaptors (Claude, Gemini, OpenAI, Markdown)
+- ✅ 21 platform adaptors
 - ✅ C3.x codebase analysis suite complete
 - ✅ Multi-source synthesis with generic merge for any combination
 
-### Goals for v2.7-v2.9
+### Goals for v3.7+
 - 🎯 Professional website live
 - 🎯 50+ preset configs
 - 🎯 Video tutorial series (5+ videos)
@@ -420,8 +400,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📊 Progress Tracking
 
-**Completed Tasks:** 10+ (C3.1, C3.2, C3.6, C3.7, A1.1, A1.2, A1.7, E1.3, E2.6, F1.5)
-**In Progress:** Router quality improvements (v2.7.0)
+**Completed Tasks:** 15+ (C3.1, C3.2, C3.3, C3.4, C3.5, C3.6, C3.7, A1.1, A1.2, A1.3, A1.7, E1.1, E1.3, E2.6, F1.5)
+**In Progress:** v3.7.0 planning
 **Total Available Tasks:** 136
 
 **No pressure, no deadlines, just progress!** ✨
@@ -447,7 +427,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
-**Last Updated:** March 15, 2026
+**Last Updated:** May 30, 2026
 **Philosophy:** Small steps → Consistent progress → Compound results
 
 **Together, we're building the future of documentation-to-AI skill conversion!** 🚀

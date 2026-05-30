@@ -24,8 +24,8 @@ pip install haystack-ai
 ### 1. Generate React Documentation Skill
 
 ```bash
-# Scrape React documentation
-skill-seekers scrape --config configs/react.json --max-pages 100
+# Create React documentation
+skill-seekers create --config configs/react.json --max-pages 100
 
 # Package for Haystack
 skill-seekers package output/react --target haystack
@@ -132,7 +132,7 @@ For better retrieval quality, use semantic chunking:
 
 ```bash
 # Generate with chunking
-skill-seekers scrape --config configs/react.json --max-pages 100 --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+skill-seekers create --config configs/react.json --max-pages 100 --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
 
 # Use chunked output
 python quickstart.py --chunked
@@ -243,7 +243,7 @@ pip install haystack-ai
 **Solution:** Run scraping first
 
 ```bash
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target haystack
 ```
 
@@ -253,7 +253,7 @@ skill-seekers package output/react --target haystack
 
 ```bash
 # Semantic chunking
-skill-seekers scrape --config configs/react.json --chunk-for-rag
+skill-seekers create --config configs/react.json --chunk-for-rag
 
 # Or use vector embeddings (see Advanced Usage)
 ```

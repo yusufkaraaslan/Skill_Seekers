@@ -5,7 +5,7 @@ description: Automatically detect source types and build AI skills using Skill S
 
 # Skill Builder
 
-You have access to the Skill Seekers MCP server which provides 35 tools for converting knowledge sources into AI-ready skills.
+You have access to the Skill Seekers MCP server which provides 40 tools for converting knowledge sources into AI-ready skills.
 
 ## When to Use This Skill
 

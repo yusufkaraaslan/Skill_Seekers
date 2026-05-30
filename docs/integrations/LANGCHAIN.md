@@ -54,7 +54,7 @@ skill-seekers --version
 
 ```bash
 # Example: React framework documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package as LangChain Documents
 skill-seekers package output/react --target langchain
@@ -101,19 +101,19 @@ for doc in results:
 **Option A: Use Preset Config (Fastest)**
 ```bash
 # Available presets: react, vue, django, fastapi, etc.
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 ```
 
 **Option B: From GitHub Repository**
 ```bash
 # Scrape from GitHub repo (includes code + docs)
-skill-seekers github --repo facebook/react --name react-skill
+skill-seekers create  facebook/react --name react-skill
 ```
 
 **Option C: Custom Documentation**
 ```bash
 # Create custom config for your docs
-skill-seekers scrape --config configs/my-docs.json
+skill-seekers create --config configs/my-docs.json
 ```
 
 ### Step 2: Generate LangChain Format
@@ -323,7 +323,7 @@ print(f"✅ Loaded {len(all_documents)} documents from {len(sources)} sources")
 Use tested configurations to avoid scraping issues:
 ```bash
 ls configs/  # See available presets
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 ```
 
 ### 2. Test Queries Before Full Pipeline
@@ -366,7 +366,7 @@ print(f"Estimated tokens: {total_tokens * 1.3:.0f}")  # Rough estimate
 **Step 1: Generate Documents**
 ```bash
 # Scrape React docs
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Convert to LangChain format
 skill-seekers package output/react --target langchain
@@ -515,4 +515,4 @@ pip install faiss-cpu  # For FAISS
 
 **Last Updated:** February 5, 2026
 **Tested With:** LangChain v0.1.0+, OpenAI Embeddings
-**Skill Seekers Version:** v2.9.0+
+**Skill Seekers Version:** v3.6.0

@@ -1,6 +1,6 @@
 # Bootstrap Skill - Technical Deep Dive
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Feature:** Bootstrap Skill Technical Analysis
 **Status:** ✅ Production Ready
 **Last Updated:** 2026-02-18
@@ -148,7 +148,7 @@ Fails fast with helpful installation instructions.
 **Step 2: Codebase Analysis (lines 37-45)**
 ```bash
 rm -rf "$OUTPUT_DIR" 2>/dev/null || true
-uv run skill-seekers analyze \
+uv run skill-seekers scan \
     --directory "$PROJECT_ROOT" \
     --output "$OUTPUT_DIR" \
     --depth deep \
@@ -664,6 +664,6 @@ The Bootstrap Skill is a **meta-application** that demonstrates Skill Seekers' c
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Technical Deep Dive Complete

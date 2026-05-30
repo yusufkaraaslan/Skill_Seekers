@@ -590,11 +590,18 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
 
     async def test_submit_config_requires_token(self):
         """Should error without GitHub token"""
-        args = {
-            "config_json": '{"name": "test", "description": "Test", "sources": [{"type": "documentation", "base_url": "https://example.com"}]}'
-        }
-        result = await skill_seeker_server.submit_config_tool(args)
-        self.assertIn("GitHub token required", result[0].text)
+        import os
+
+        saved = os.environ.pop("GITHUB_TOKEN", None)
+        try:
+            args = {
+                "config_json": '{"name": "test", "description": "Test", "sources": [{"type": "documentation", "base_url": "https://example.com"}]}'
+            }
+            result = await skill_seeker_server.submit_config_tool(args)
+            self.assertIn("GitHub token required", result[0].text)
+        finally:
+            if saved:
+                os.environ["GITHUB_TOKEN"] = saved
 
     async def test_submit_config_validates_required_fields(self):
         """Should reject config missing required fields"""

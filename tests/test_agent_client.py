@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Tests for the AgentClient unified AI client."""
+"""Tests for the AgentClient unified AI client.
+
+NOTE: Uses @patch.dict(os.environ, ..., clear=True) which clears all env vars
+during individual tests. This is safe for sequential execution but means this
+file should run in a dedicated worker (--dist=loadfile) under pytest-xdist.
+"""
 
 import os
 import subprocess

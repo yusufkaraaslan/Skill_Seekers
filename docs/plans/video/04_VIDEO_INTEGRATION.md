@@ -2,7 +2,8 @@
 
 **Date:** February 27, 2026
 **Document:** 04 of 07
-**Status:** Planning
+**Status:** Implemented
+**Note:** Video support is live in Skill Seekers v3.6.0 (`video_scraper.py`, `video_models.py`, `video_setup.py`).
 
 ---
 
@@ -26,14 +27,14 @@
 
 ```bash
 # Dedicated video scraping command
-skill-seekers video --url https://youtube.com/watch?v=abc123
-skill-seekers video --playlist https://youtube.com/playlist?list=PLxxx
-skill-seekers video --channel https://youtube.com/@channelname
-skill-seekers video --path ./recording.mp4
-skill-seekers video --directory ./recordings/
+skill-seekers create --video-url  https://youtube.com/watch?v=abc123
+skill-seekers create --video-playlist https://youtube.com/playlist?list=PLxxx
+skill-seekers create --video-url --channel https://youtube.com/@channelname
+skill-seekers create --video-url --path ./recording.mp4
+skill-seekers create --video-url --directory ./recordings/
 
 # With options
-skill-seekers video --url <URL> \
+skill-seekers create --video-url  <URL> \
     --output output/react-videos/ \
     --visual \
     --whisper-model large-v3 \

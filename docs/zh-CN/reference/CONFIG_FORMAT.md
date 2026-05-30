@@ -1,44 +1,44 @@
-# Config Format Reference - Skill Seekers
+# 配置格式参考 - Skill Seekers
 
-> **Version:** 3.1.0  
-> **Last Updated:** 2026-02-16  
-> **Complete JSON configuration specification**
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Single-Source Config](#single-source-config)
-  - [Documentation Source](#documentation-source)
-  - [GitHub Source](#github-source)
-  - [PDF Source](#pdf-source)
-  - [Local Source](#local-source)
-- [Unified (Multi-Source) Config](#unified-multi-source-config)
-- [Common Fields](#common-fields)
-- [Selectors](#selectors)
-- [Categories](#categories)
-- [URL Patterns](#url-patterns)
-- [Examples](#examples)
+> **版本：** 3.6.0  
+> **最后更新：** 2026-02-16  
+> **完整 JSON 配置规范**
 
 ---
 
-## Overview
+## 目录
 
-Skill Seekers uses JSON configuration files to define scraping targets. There are two types:
+- [概述](#overview)
+- [单源配置](#single-source-config)
+  - [文档来源](#documentation-source)
+  - [GitHub 来源](#github-source)
+  - [PDF 来源](#pdf-source)
+  - [本地来源](#local-source)
+- [统一（多源）配置](#unified-multi-source-config)
+- [公共字段](#common-fields)
+- [选择器](#selectors)
+- [类别](#categories)
+- [URL 模式](#url-patterns)
+- [示例](#examples)
 
-| Type | Use Case | File |
+---
+
+## 概述
+
+Skill Seekers 使用 JSON 配置文件定义抓取目标。有两种类型：
+
+| 类型 | 使用场景 | 文件 |
 |------|----------|------|
-| **Single-Source** | One source (docs, GitHub, PDF, or local) | `*.json` |
-| **Unified** | Multiple sources combined | `*-unified.json` |
+| **单源** | 单一来源（文档、GitHub、PDF 或本地） | `*.json` |
+| **统一** | 合并多个来源 | `*-unified.json` |
 
 ---
 
-## Single-Source Config
+## 单源配置
 
-### Documentation Source
+### 文档来源
 
-For scraping documentation websites.
+用于抓取文档网站。
 
 ```json
 {
@@ -73,28 +73,28 @@ For scraping documentation websites.
 }
 ```
 
-#### Documentation Fields
+#### 文档字段
 
-| Field | Type | Required | Default | Description |
+| 字段 | 类型 | 必需 | 默认值 | 描述 |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Skill name (alphanumeric, dashes, underscores) |
-| `base_url` | string | Yes | - | Base documentation URL |
-| `description` | string | No | "" | Skill description for SKILL.md |
-| `start_urls` | array | No | `[base_url]` | URLs to start crawling from |
-| `selectors` | object | No | see below | CSS selectors for content extraction |
-| `url_patterns` | object | No | `{}` | Include/exclude URL patterns |
-| `categories` | object | No | `{}` | Content categorization rules |
-| `rate_limit` | number | No | 0.5 | Seconds between requests |
-| `max_pages` | number | No | 500 | Maximum pages to scrape |
-| `merge_mode` | string | No | "claude-enhanced" | Merge strategy |
-| `extract_api` | boolean | No | false | Extract API references |
-| `llms_txt_url` | string | No | auto | Path to llms.txt file |
+| `name` | string | 是 | - | 技能名称（字母数字、破折号、下划线） |
+| `base_url` | string | 是 | - | 基础文档 URL |
+| `description` | string | 否 | "" | 用于 SKILL.md 的技能描述 |
+| `start_urls` | array | 否 | `[base_url]` | 开始爬取的 URL |
+| `selectors` | object | 否 | 见下文 | 用于内容提取的 CSS 选择器 |
+| `url_patterns` | object | 否 | `{}` | 包含/排除 URL 模式 |
+| `categories` | object | 否 | `{}` | 内容分类规则 |
+| `rate_limit` | number | 否 | 0.5 | 请求间隔（秒） |
+| `max_pages` | number | 否 | 500 | 最大抓取页数 |
+| `merge_mode` | string | 否 | "claude-enhanced" | 合并策略 |
+| `extract_api` | boolean | 否 | false | 提取 API 参考 |
+| `llms_txt_url` | string | 否 | auto | llms.txt 文件路径 |
 
 ---
 
-### GitHub Source
+### GitHub 来源
 
-For analyzing GitHub repositories.
+用于分析 GitHub 仓库。
 
 ```json
 {
@@ -123,31 +123,31 @@ For analyzing GitHub repositories.
 }
 ```
 
-#### GitHub Fields
+#### GitHub 字段
 
-| Field | Type | Required | Default | Description |
+| 字段 | 类型 | 必需 | 默认值 | 描述 |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Skill name |
-| `type` | string | Yes | - | Must be `"github"` |
-| `repo` | string | Yes | - | Repository in `owner/repo` format |
-| `description` | string | No | "" | Skill description |
-| `enable_codebase_analysis` | boolean | No | true | Analyze source code |
-| `code_analysis_depth` | string | No | "standard" | `surface`, `standard`, `deep` |
-| `fetch_issues` | boolean | No | true | Fetch GitHub issues |
-| `max_issues` | number | No | 100 | Maximum issues to fetch |
-| `issue_labels` | array | No | [] | Filter by labels |
-| `fetch_releases` | boolean | No | true | Fetch releases |
-| `max_releases` | number | No | 20 | Maximum releases |
-| `fetch_changelog` | boolean | No | true | Extract CHANGELOG |
-| `analyze_commit_history` | boolean | No | false | Analyze commits |
-| `file_patterns` | array | No | [] | Include file patterns |
-| `exclude_patterns` | array | No | [] | Exclude file patterns |
+| `name` | string | 是 | - | 技能名称 |
+| `type` | string | 是 | - | 必须为 `"github"` |
+| `repo` | string | 是 | - | `owner/repo` 格式的仓库 |
+| `description` | string | 否 | "" | 技能描述 |
+| `enable_codebase_analysis` | boolean | 否 | true | 分析源代码 |
+| `code_analysis_depth` | string | 否 | "standard" | `surface`、`standard`、`deep` |
+| `fetch_issues` | boolean | 否 | true | 获取 GitHub issues |
+| `max_issues` | number | 否 | 100 | 最大获取 issues 数 |
+| `issue_labels` | array | 否 | [] | 按标签筛选 |
+| `fetch_releases` | boolean | 否 | true | 获取 releases |
+| `max_releases` | number | 否 | 20 | 最大 releases 数 |
+| `fetch_changelog` | boolean | 否 | true | 提取 CHANGELOG |
+| `analyze_commit_history` | boolean | 否 | false | 分析 commits |
+| `file_patterns` | array | 否 | [] | 包含文件模式 |
+| `exclude_patterns` | array | 否 | [] | 排除文件模式 |
 
 ---
 
-### PDF Source
+### PDF 来源
 
-For extracting content from PDF files.
+用于从 PDF 文件提取内容。
 
 ```json
 {
@@ -173,30 +173,30 @@ For extracting content from PDF files.
 }
 ```
 
-#### PDF Fields
+#### PDF 字段
 
-| Field | Type | Required | Default | Description |
+| 字段 | 类型 | 必需 | 默认值 | 描述 |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Skill name |
-| `type` | string | Yes | - | Must be `"pdf"` |
-| `pdf_path` | string | Yes | - | Path to PDF file |
-| `description` | string | No | "" | Skill description |
-| `enable_ocr` | boolean | No | false | OCR for scanned PDFs |
-| `password` | string | No | "" | PDF password if encrypted |
-| `extract_images` | boolean | No | false | Extract embedded images |
-| `image_output_dir` | string | No | auto | Directory for images |
-| `extract_tables` | boolean | No | false | Extract tables |
-| `table_format` | string | No | "markdown" | `markdown`, `json`, `csv` |
-| `page_range` | array | No | all | `[start, end]` page range |
-| `split_by_chapters` | boolean | No | false | Split by detected chapters |
-| `chunk_size` | number | No | 1000 | Characters per chunk |
-| `chunk_overlap` | number | No | 100 | Overlap between chunks |
+| `name` | string | 是 | - | 技能名称 |
+| `type` | string | 是 | - | 必须为 `"pdf"` |
+| `pdf_path` | string | 是 | - | PDF 文件路径 |
+| `description` | string | 否 | "" | 技能描述 |
+| `enable_ocr` | boolean | 否 | false | 扫描版 PDF 的 OCR |
+| `password` | string | 否 | "" | 加密 PDF 的密码 |
+| `extract_images` | boolean | 否 | false | 提取嵌入的图像 |
+| `image_output_dir` | string | 否 | auto | 图像存放目录 |
+| `extract_tables` | boolean | 否 | false | 提取表格 |
+| `table_format` | string | 否 | "markdown" | `markdown`、`json`、`csv` |
+| `page_range` | array | 否 | all | `[start, end]` 页码范围 |
+| `split_by_chapters` | boolean | 否 | false | 按检测到的章节拆分 |
+| `chunk_size` | number | 否 | 1000 | 每块字符数 |
+| `chunk_overlap` | number | 否 | 100 | 块之间重叠 |
 
 ---
 
-### Local Source
+### 本地来源
 
-For analyzing local codebases.
+用于分析本地代码库。
 
 ```json
 {
@@ -223,32 +223,32 @@ For analyzing local codebases.
 }
 ```
 
-#### Local Fields
+#### 本地字段
 
-| Field | Type | Required | Default | Description |
+| 字段 | 类型 | 必需 | 默认值 | 描述 |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Skill name |
-| `type` | string | Yes | - | Must be `"local"` |
-| `directory` | string | Yes | - | Path to directory |
-| `description` | string | No | "" | Skill description |
-| `languages` | array | No | auto | Languages to analyze |
-| `file_patterns` | array | No | all | Include patterns |
-| `exclude_patterns` | array | No | common | Exclude patterns |
-| `analysis_depth` | string | No | "standard" | `quick`, `standard`, `comprehensive` |
-| `extract_api` | boolean | No | true | Extract API documentation |
-| `extract_patterns` | boolean | No | true | Detect patterns |
-| `extract_test_examples` | boolean | No | true | Extract test examples |
-| `extract_how_to_guides` | boolean | No | true | Generate guides |
-| `extract_config_patterns` | boolean | No | true | Extract config patterns |
-| `include_comments` | boolean | No | true | Include code comments |
-| `include_docstrings` | boolean | No | true | Include docstrings |
-| `include_readme` | boolean | No | true | Include README |
+| `name` | string | 是 | - | 技能名称 |
+| `type` | string | 是 | - | 必须为 `"local"` |
+| `directory` | string | 是 | - | 目录路径 |
+| `description` | string | 否 | "" | 技能描述 |
+| `languages` | array | 否 | auto | 要分析的语言 |
+| `file_patterns` | array | 否 | all | 包含模式 |
+| `exclude_patterns` | array | 否 | common | 排除模式 |
+| `analysis_depth` | string | 否 | "standard" | `quick`、`standard`、`comprehensive` |
+| `extract_api` | boolean | 否 | true | 提取 API 文档 |
+| `extract_patterns` | boolean | 否 | true | 检测模式 |
+| `extract_test_examples` | boolean | 否 | true | 提取测试示例 |
+| `extract_how_to_guides` | boolean | 否 | true | 生成指南 |
+| `extract_config_patterns` | boolean | 否 | true | 提取配置模式 |
+| `include_comments` | boolean | 否 | true | 包含代码注释 |
+| `include_docstrings` | boolean | 否 | true | 包含 docstrings |
+| `include_readme` | boolean | 否 | true | 包含 README |
 
 ---
 
-## Unified (Multi-Source) Config
+## 统一（多源）配置
 
-Combine multiple sources into one skill with conflict detection.
+将多个来源合并为一个技能，并带有冲突检测。
 
 ```json
 {
@@ -303,22 +303,22 @@ Combine multiple sources into one skill with conflict detection.
 }
 ```
 
-#### Unified Fields
+#### 统一字段
 
-| Field | Type | Required | Default | Description |
+| 字段 | 类型 | 必需 | 默认值 | 描述 |
 |-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Combined skill name |
-| `description` | string | No | "" | Skill description |
-| `merge_mode` | string | No | "claude-enhanced" | `rule-based`, `claude-enhanced` |
-| `sources` | array | Yes | - | List of source configs |
-| `conflict_detection` | object | No | `{}` | Conflict detection settings |
-| `output_structure` | object | No | `{}` | Output organization |
+| `name` | string | 是 | - | 合并后的技能名称 |
+| `description` | string | 否 | "" | 技能描述 |
+| `merge_mode` | string | 否 | "claude-enhanced" | `rule-based`、`claude-enhanced` |
+| `sources` | array | 是 | - | 来源配置列表 |
+| `conflict_detection` | object | 否 | `{}` | 冲突检测设置 |
+| `output_structure` | object | 否 | `{}` | 输出组织 |
 
-#### Source Types in Unified Config
+#### 统一配置中的来源类型
 
-Each source in the `sources` array can be:
+`sources` 数组中的每个来源可以是：
 
-| Type | Required Fields |
+| 类型 | 必填字段 |
 |------|-----------------|
 | `docs` | `base_url` |
 | `github` | `repo` |
@@ -327,24 +327,24 @@ Each source in the `sources` array can be:
 
 ---
 
-## Common Fields
+## 公共字段
 
-Fields available in all config types:
+所有配置类型中可用的字段：
 
-| Field | Type | Description |
+| 字段 | 类型 | 描述 |
 |-------|------|-------------|
-| `name` | string | Skill identifier (letters, numbers, dashes, underscores) |
-| `description` | string | Human-readable description |
-| `rate_limit` | number | Delay between requests in seconds |
-| `output_dir` | string | Custom output directory |
-| `skip_scrape` | boolean | Use existing data |
-| `enhance_level` | number | 0=off, 1=SKILL.md, 2=+config, 3=full |
+| `name` | string | 技能标识符（字母、数字、破折号、下划线） |
+| `description` | string | 人类可读的描述 |
+| `rate_limit` | number | 请求间隔（秒） |
+| `output_dir` | string | 自定义输出目录 |
+| `skip_scrape` | boolean | 使用现有数据 |
+| `enhance_level` | number | 0=关闭，1=SKILL.md，2=+config，3=完整 |
 
 ---
 
-## Selectors
+## 选择器
 
-CSS selectors for content extraction from HTML:
+从 HTML 提取内容的 CSS 选择器：
 
 ```json
 {
@@ -360,11 +360,11 @@ CSS selectors for content extraction from HTML:
 }
 ```
 
-### Default Selectors
+### 默认选择器
 
-If not specified, these defaults are used:
+如果未指定，将使用以下默认值：
 
-| Element | Default Selector |
+| 元素 | 默认选择器 |
 |---------|-----------------|
 | `main_content` | `article, main, .content, #content, [role='main']` |
 | `title` | `h1, .page-title, title` |
@@ -373,9 +373,9 @@ If not specified, these defaults are used:
 
 ---
 
-## Categories
+## 类别
 
-Map URL patterns to content categories:
+将 URL 模式映射到内容类别：
 
 ```json
 {
@@ -404,13 +404,13 @@ Map URL patterns to content categories:
 }
 ```
 
-Categories appear as sections in the generated SKILL.md.
+类别在生成的 SKILL.md 中显示为章节。
 
 ---
 
-## URL Patterns
+## URL 模式
 
-Control which URLs are included or excluded:
+控制包含或排除哪些 URL：
 
 ```json
 {
@@ -434,18 +434,18 @@ Control which URLs are included or excluded:
 }
 ```
 
-### Pattern Rules
+### 模式规则
 
-- Patterns are matched against the URL path
-- Use `*` for wildcards: `/api/v*/`
-- Use `**` for recursive: `/docs/**/*.html`
-- Exclude takes precedence over include
+- 模式与 URL 路径匹配
+- 使用 `*` 作为通配符：`/api/v*/`
+- 使用 `**` 作为递归通配符：`/docs/**/*.html`
+- 排除优先于包含
 
 ---
 
-## Examples
+## 示例
 
-### React Documentation
+### React 文档
 
 ```json
 {
@@ -494,7 +494,7 @@ Control which URLs are included or excluded:
 }
 ```
 
-### Unified Multi-Source
+### 统一多源
 
 ```json
 {
@@ -523,7 +523,7 @@ Control which URLs are included or excluded:
 }
 ```
 
-### Local Project
+### 本地项目
 
 ```json
 {
@@ -542,25 +542,25 @@ Control which URLs are included or excluded:
 
 ---
 
-## Validation
+## 验证
 
-Validate your config before scraping:
+抓取前验证你的配置：
 
 ```bash
-# Using CLI
-skill-seekers scrape --config my-config.json --dry-run
+# 使用 CLI
+skill-seekers create --config my-config.json --dry-run
 
-# Using MCP tool
+# 使用 MCP 工具
 validate_config({"config": "my-config.json"})
 ```
 
 ---
 
-## See Also
+## 另请参阅
 
-- [CLI Reference](CLI_REFERENCE.md) - Command reference
-- [Environment Variables](ENVIRONMENT_VARIABLES.md) - Configuration environment
+- [CLI 参考](CLI_REFERENCE.md) - 命令参考
+- [环境变量](ENVIRONMENT_VARIABLES.md) - 配置环境
 
 ---
 
-*For more examples, see `configs/` directory in the repository*
+*更多示例，请参阅仓库中的 `configs/` 目录*

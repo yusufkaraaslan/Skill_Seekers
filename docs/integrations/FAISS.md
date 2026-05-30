@@ -89,7 +89,7 @@ pip install skill-seekers[all-llms]
 
 ```bash
 # Step 1: Scrape documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Step 2: Package for LangChain (FAISS-compatible)
 skill-seekers package output/react --target langchain
@@ -237,25 +237,25 @@ index.add(vectors)
 
 **Option A: Documentation Website**
 ```bash
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 ```
 
 **Option B: GitHub Repository**
 ```bash
-skill-seekers github --repo django/django --name django
+skill-seekers create  django/django --name django
 skill-seekers package output/django --target langchain
 ```
 
 **Option C: Local Codebase**
 ```bash
-skill-seekers analyze --directory /path/to/repo
+skill-seekers scan  /path/to/repo
 skill-seekers package output/codebase --target langchain
 ```
 
 **Option D: RAG-Optimized Chunking**
 ```bash
-skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
+skill-seekers create --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
 skill-seekers package output/fastapi --target langchain
 ```
 
@@ -551,7 +551,7 @@ gpu_index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index)
 
 | Aspect | Without Skill Seekers | With Skill Seekers |
 |--------|----------------------|-------------------|
-| **Data Preparation** | Custom scraping + embedding generation | One command: `skill-seekers scrape` |
+| **Data Preparation** | Custom scraping + embedding generation | One command: `skill-seekers create` |
 | **Index Creation** | Manual FAISS setup with numpy arrays | LangChain wrapper handles complexity |
 | **ID Tracking** | Manual mapping of IDs to documents | Automatic docstore integration |
 | **Metadata** | Separate storage required | Built into LangChain Documents |

@@ -279,7 +279,7 @@ def main():
     if not Path(DOCS_PATH).exists():
         print(f"❌ Documents not found at: {DOCS_PATH}")
         print("\nGenerate documents first:")
-        print("  1. skill-seekers scrape --config configs/django.json")
+        print("  1. skill-seekers create --config configs/django.json")
         print("  2. skill-seekers package output/django --target langchain")
         print("\nOr adjust DOCS_PATH in the script to point to your documents.")
         return

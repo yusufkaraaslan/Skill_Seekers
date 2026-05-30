@@ -430,5 +430,32 @@ class TestSavePageContentFiltering(unittest.TestCase):
         self.assertEqual(len(os.listdir(pages_dir)), 1)
 
 
+class TestLlmsTxtParseMarkdown(unittest.TestCase):
+    """Merged from test_llms_txt_parser.py"""
+
+    def test_parse_markdown_sections(self):
+        from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+
+        sample_content = """# Getting Started
+Welcome to the docs.
+## Installation
+Run: npm install
+## Usage
+Import the library:
+```javascript
+import { app } from 'framework'
+```
+# API Reference
+Main API documentation here.
+"""
+        parser = LlmsTxtParser(sample_content)
+        pages = parser.parse()
+        self.assertGreaterEqual(len(pages), 2)
+        self.assertEqual(pages[0]["title"], "Getting Started")
+        self.assertEqual(pages[1]["title"], "API Reference")
+        self.assertEqual(len(pages[0]["code_samples"]), 1)
+        self.assertEqual(pages[0]["code_samples"][0]["language"], "javascript")
+
+
 if __name__ == "__main__":
     unittest.main()

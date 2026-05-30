@@ -1,6 +1,6 @@
 # Code Quality Standards
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready
 
@@ -818,6 +818,6 @@ open htmlcov/index.html
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Status:** ✅ Production Ready

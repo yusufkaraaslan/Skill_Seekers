@@ -6,11 +6,11 @@
 
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
-[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP Integration](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-3194%2B%20Passing-brightgreen.svg)](tests/)
+[![MCP Integration](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
+[![Tested](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -72,9 +72,9 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob skill dire
 | **LlamaIndex TextNodes** | `--target llama-index` | Query engines, chat engines |
 | **Haystack Documents** | `--target haystack` | Enterprise RAG pipelines |
 | **Pinecone-ready** (Markdown) | `--target markdown` | Vector upsert |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | Local vector DBs |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | Local vector DBs |
 | **IBM Bob Skill** (directory) | `--target ibm-bob` | IBM Bob project/global skills |
-| **Cursor** `.cursorrules` | `--target claude` → copy | Cursor IDE AI context |
+| **Cursor** `.cursorrules` | `--target markdown` → copy SKILL.md | Cursor IDE `.cursorrules` |
 | **Windsurf / Cline / Continue** | `--target claude` → copy | VS Code, IntelliJ, Vim |
 
 ### Why it matters
@@ -84,8 +84,8 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob skill dire
 - 📊 **RAG-ready chunks** — Smart chunking preserves code blocks and maintains context
 - 🎬 **Videos** — Extract code, transcripts, and structured knowledge from YouTube and local videos
 - 🔄 **Multi-source** — Combine 18 source types (docs, GitHub, PDFs, videos, notebooks, wikis, and more) into one knowledge asset
-- 🌐 **One prep, every target** — Export the same asset to 20 platforms (12 LLM + 8 RAG/vector) without re-scraping
-- ✅ **Battle-tested** — 3,194+ tests, 24+ framework presets, production-ready
+- 🌐 **One prep, every target** — Export the same asset to 21 platforms without re-scraping
+- ✅ **Battle-tested** — 3,445+ tests, 24+ framework presets, production-ready
 
 ## 🚀 Quick Start (3 Commands)
 
@@ -108,6 +108,24 @@ skill-seekers create https://docs.django.com/ --agent kimi
 skill-seekers create https://docs.django.com/ --agent codex
 skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
 ```
+
+### 🛰️ AI-driven project scan (new)
+
+Point `scan` at any project and an AI agent reads its manifests, README,
+Dockerfile/CI and sampled source imports — then emits one config per detected
+framework plus a `<project>-codebase.json` for your own code. Pins the
+detected version so re-running reports bumps:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# Then build any of them
+skill-seekers create ./configs/scanned/react.json
+```
+
+If a detection has no existing preset, the AI generates a fresh config; on
+exit you can optionally publish it back to the [community registry](https://github.com/yusufkaraaslan/skill-seekers-configs).
 
 ### Other Sources (18 Supported)
 
@@ -139,8 +157,14 @@ skill-seekers create presentation.pptx
 # AsciiDoc document
 skill-seekers create guide.adoc
 
-# Local HTML file
+# Local HTML file (auto-detected by extension)
 skill-seekers create page.html
+
+# Whole directory of HTML files (auto-detected for HTML-dominant dirs)
+skill-seekers create ./mirror_output/site/
+
+# Force HTML mode on a mixed/code-heavy directory
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
 
 # RSS/Atom feed
 skill-seekers create feed.rss
@@ -149,18 +173,18 @@ skill-seekers create feed.rss
 skill-seekers create curl.1
 
 # Video (YouTube, Vimeo, or local file — requires skill-seekers[video])
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # First time? Auto-install GPU-aware visual deps:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Confluence wiki
-skill-seekers confluence --space TEAM --name wiki
+skill-seekers create --space-key TEAM --name wiki
 
 # Notion pages
-skill-seekers notion --database-id ... --name docs
+skill-seekers create --database-id ... --name docs
 
 # Slack/Discord chat export
-skill-seekers chat --export-dir ./slack-export --name team-chat
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
 ### Export Everywhere
@@ -276,7 +300,7 @@ Instead of spending days on manual preprocessing, Skill Seekers:
 - ✅ **Backward Compatible** - Legacy single-source configs still work
 
 ### 🤖 Multi-LLM Platform Support
-- ✅ **12 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
+- ✅ **21 LLM Platforms** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **Universal Scraping** - Same documentation works for all platforms
 - ✅ **Platform-Specific Packaging** - Optimized formats for each LLM
 - ✅ **One-Command Export** - `--target` flag selects platform
@@ -331,7 +355,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # All AI enhancement features will use the configured endpoint
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **Note**: Setting `ANTHROPIC_BASE_URL` allows you to use any Claude-compatible API endpoint, such as GLM-4.7 (智谱 AI) or other compatible services.
@@ -420,7 +444,7 @@ Transform any framework documentation into expert coding context for 4+ AI assis
 **Quick Export for AI Coding Tools:**
 ```bash
 # For any AI coding assistant (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude  # or --target markdown
 
 # Copy to your project (example for Cursor)
@@ -477,7 +501,7 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 print(f"Common issues: {len(result.github_insights['common_problems'])}")
 ```
 
-**See complete documentation**: [Three-Stream Implementation Summary](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**See complete documentation**: [Three-Stream Implementation Summary](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Smart Rate Limit Management & Configuration
 - ✅ **Multi-Token Configuration System** - Manage multiple GitHub accounts (personal, work, OSS)
@@ -511,10 +535,10 @@ print(f"Common issues: {len(result.github_insights['common_problems'])}")
 skill-seekers config --github
 
 # Use specific profile for private repos
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD mode (fail fast, no prompts)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 
 # Resume interrupted job
 skill-seekers resume --list
@@ -576,16 +600,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **Usage:**
 ```bash
 # Quick analysis (1-2 min, basic features only)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # Comprehensive analysis with AI (20-60 min, all features)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # With AI enhancement
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**Full Documentation:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Full Documentation:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 Enhancement Workflow Presets
 
@@ -656,7 +680,7 @@ stages:
 - ✅ **End-to-End Pipeline** - From documentation source to published marketplace entry
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 2,540+ tests with comprehensive coverage
+- ✅ **Fully Tested** - 3,445+ tests with comprehensive coverage
 
 ---
 
@@ -702,7 +726,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | Everything enabled |
 
 > **Video visual deps (GPU-aware):** After installing `skill-seekers[video-full]`, run
-> `skill-seekers video --setup` to auto-detect your GPU and install the correct PyTorch
+> `skill-seekers create --setup` to auto-detect your GPU and install the correct PyTorch
 > variant + easyocr. This is the recommended way to install visual extraction dependencies.
 
 ---
@@ -744,12 +768,12 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Feature Matrix
 
-Skill Seekers supports **12 LLM platforms**, **8 RAG/vector targets**, **18 source types**, and full feature parity across all targets.
+Skill Seekers supports **21 LLM platforms**, **8 RAG/vector targets**, **18 source types**, and full feature parity across all targets.
 
 **Platforms:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generic Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 **Source Types:** Documentation websites, GitHub repos, PDFs, Word (.docx), EPUB, Video, Local codebases, Jupyter Notebooks, Local HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom feeds, Man pages, Confluence wikis, Notion pages, Slack/Discord chat exports
 
-See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and feature support.
+See [Complete Feature Matrix](docs/reference/FEATURE_MATRIX.md) for detailed platform and feature support.
 
 ### Quick Platform Comparison
 
@@ -768,32 +792,32 @@ See [Complete Feature Matrix](docs/FEATURE_MATRIX.md) for detailed platform and 
 
 ```bash
 # Scrape documentation website
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Quick scrape without config
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # With async mode (3x faster)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 
 # Use a specific AI agent for enhancement
-skill-seekers scrape --config configs/react.json --agent kimi
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### PDF Extraction
 
 ```bash
 # Basic PDF extraction
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # Advanced features
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # Extract tables
     --parallel \              # Fast parallel processing
     --workers 8               # Use 8 CPU cores
 
 # Scanned PDFs (requires: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### Video Extraction
@@ -804,31 +828,31 @@ pip install skill-seekers[video]        # Transcripts + metadata
 pip install skill-seekers[video-full]   # + Whisper + visual frame extraction
 
 # Auto-detect GPU and install visual deps (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Extract from YouTube video
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # Extract from a YouTube playlist
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # Extract from a local video file
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # Extract with visual frame analysis (requires video-full deps)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # With AI enhancement (cleans OCR + generates polished SKILL.md)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # Clip a specific section of a video (supports seconds, MM:SS, HH:MM:SS)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # Use Vision API for low-confidence OCR frames (requires ANTHROPIC_API_KEY)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # Re-build skill from previously extracted data (skip download)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **Full guide:** See [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) for complete CLI reference,
@@ -838,14 +862,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # Basic repository scraping
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # With authentication (higher rate limits)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Customize what to include
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # Extract GitHub Issues
     --max-issues 100 \        # Limit issue count
     --include-changelog       # Extract CHANGELOG.md
@@ -857,8 +881,8 @@ skill-seekers github --repo django/django \
 
 ```bash
 # Use existing unified configs
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
+skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # Or create unified config
 cat > configs/myframework_unified.json << 'EOF'
@@ -880,7 +904,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **Conflict Detection automatically finds:**
@@ -889,7 +913,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **Signature mismatch**: Different parameters/types
 - ℹ️ **Description mismatch**: Different explanations
 
-**Full Guide:** See [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) for complete documentation.
+**Full Guide:** See [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) for complete documentation.
 
 ### Private Config Repositories
 
@@ -911,7 +935,7 @@ fetch_config(source="team", config_name="internal-api")
 **Supported Platforms:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**Full Guide:** See [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) for complete documentation.
+**Full Guide:** See [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) for complete documentation.
 
 ## How It Works
 
@@ -1046,7 +1070,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 MCP Integration (26 Tools)
+## 🔌 MCP Integration (40 Tools)
 
 Skill Seekers ships an MCP server for use from Claude Code, Cursor, Windsurf, VS Code + Cline, or IntelliJ IDEA.
 
@@ -1061,13 +1085,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**All 26 tools available:**
+**All 40 tools available:**
 - **Core (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **Extended (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **Vector DB (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **Cloud (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**Full Guide:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**Full Guide:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -1077,7 +1101,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # List all presets
-skill-seekers list-configs
+# skill-seekers list-configs  # Not available in v3.6.0
 ```
 
 | Category | Presets |
@@ -1092,12 +1116,12 @@ skill-seekers list-configs
 
 ```bash
 # Option 1: Interactive
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Option 2: Copy and edit a preset
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Config File Structure
@@ -1166,7 +1190,7 @@ output/
 ```bash
 # Force re-scrape
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Categories Not Good?
@@ -1176,7 +1200,7 @@ Edit the config `categories` section with better keywords.
 ```bash
 # Delete old data and re-scrape
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### Enhancement Not Working?
@@ -1218,13 +1242,62 @@ skill-seekers config --github
 
 ---
 
+## 🆕 New in v3.6.0
+
+### Workflow Presets
+Control analysis depth with `--preset`:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick      # Fast, surface-level
+skill-seekers create https://docs.react.dev/ --preset standard   # Balanced (default)
+skill-seekers create https://docs.react.dev/ --preset comprehensive # Deep, exhaustive
+```
+
+### Lifecycle Flags
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # Preview without scraping
+skill-seekers create https://docs.react.dev/ --fresh      # Ignore cache, full re-scrape
+skill-seekers create https://docs.react.dev/ --resume     # Resume interrupted job
+skill-seekers create https://docs.react.dev/ --skip-scrape # Re-package existing output
+```
+
+### Health Check & Utilities
+```bash
+skill-seekers doctor                    # Diagnose installation & environment
+skill-seekers sync-config               # Detect config drift
+skill-seekers stream <source>           # Streaming ingestion for large docs
+skill-seekers update output/react/      # Incremental update
+skill-seekers multilang <source>        # Multi-language skill generation
+skill-seekers quality output/react/     # Quality scoring
+```
+
+### RAG Chunking Options (package)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### Marketplace Publishing
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### Additional Optional Dependencies
+| Extra | Install | Purpose |
+|-------|---------|---------|
+| `browser` | `pip install "skill-seekers[browser]"` | Headless Playwright for SPA sites |
+| `embedding` | `pip install "skill-seekers[embedding]"` | Embedding server support |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` etc. | Cloud storage upload |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | Combined vector DB upload deps |
+
+---
+
 ## 📚 Documentation
 
 ### Getting Started
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **START HERE** if you're new!
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start for experienced users
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - Quick start for experienced users
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - One-page cheat sheet
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - One-page cheat sheet
 
 ### Architecture
 - **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - UML architecture overview with 14 diagrams
@@ -1233,11 +1306,10 @@ skill-seekers config --github
 - **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML project file (open with [StarUML](https://staruml.io/))
 
 ### Guides
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Async mode guide (2-3x faster scraping)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - AI enhancement modes guide
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - MCP integration setup
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Multi-source scraping
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - Handle 10K-40K+ page docs
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - AI enhancement modes guide
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - MCP integration setup
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - Multi-source scraping
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - Video extraction guide
 
 ### Integration Guides

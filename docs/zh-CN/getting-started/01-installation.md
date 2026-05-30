@@ -1,191 +1,191 @@
-# Installation Guide
+# 安装指南
 
-> **Skill Seekers v3.2.0**
+> **Skill Seekers v3.6.0**
 
-Get Skill Seekers installed and running in under 5 minutes.
+在 5 分钟内完成 Skill Seekers 的安装并运行。
 
 ---
 
-## System Requirements
+## 系统要求
 
-| Requirement | Minimum | Recommended |
+| 要求 | 最低配置 | 推荐配置 |
 |-------------|---------|-------------|
-| **Python** | 3.10 | 3.11 or 3.12 |
-| **RAM** | 4 GB | 8 GB+ |
-| **Disk** | 500 MB | 2 GB+ |
-| **OS** | Linux, macOS, Windows (WSL) | Linux, macOS |
+| **Python** | 3.10 | 3.11 或 3.12 |
+| **内存** | 4 GB | 8 GB+ |
+| **磁盘** | 500 MB | 2 GB+ |
+| **操作系统** | Linux, macOS, Windows (WSL) | Linux, macOS |
 
 ---
 
-## Quick Install
+## 快速安装
 
-### Option 1: pip (Recommended)
+### 选项 1：pip（推荐）
 
 ```bash
-# Basic installation
+# 基础安装
 pip install skill-seekers
 
-# With all platform support
+# 支持所有平台
 pip install skill-seekers[all-llms]
 
-# Verify installation
+# 验证安装
 skill-seekers --version
 ```
 
-### Option 2: pipx (Isolated)
+### 选项 2：pipx（隔离环境）
 
 ```bash
-# Install pipx if not available
+# 如果尚未安装 pipx
 pip install pipx
 pipx ensurepath
 
-# Install skill-seekers
+# 安装 skill-seekers
 pipx install skill-seekers[all-llms]
 ```
 
-### Option 3: Development (from source)
+### 选项 3：开发模式（从源码安装）
 
 ```bash
-# Clone repository
+# 克隆仓库
 git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
 cd Skill_Seekers
 
-# Install in editable mode
+# 以可编辑模式安装
 pip install -e ".[all-llms,dev]"
 
-# Verify
+# 验证
 skill-seekers --version
 ```
 
 ---
 
-## Installation Options
+## 安装选项
 
-### Minimal Install
+### 最小安装
 
-Just the core functionality:
+仅包含核心功能：
 
 ```bash
 pip install skill-seekers
 ```
 
-**Includes:**
-- Documentation scraping
-- Basic packaging
-- Local enhancement (Claude Code)
+**包含：**
+- 文档抓取
+- 基础打包
+- 本地增强（Claude Code）
 
-### Full Install
+### 完整安装
 
-All features and platforms:
+包含所有功能和平台：
 
 ```bash
 pip install skill-seekers[all-llms]
 ```
 
-**Includes:**
-- Claude AI support
-- Google Gemini support
-- OpenAI ChatGPT support
-- All vector databases
+**包含：**
+- Claude AI 支持
+- Google Gemini 支持
+- OpenAI ChatGPT 支持
+- 所有向量数据库
 - MCP server
-- Cloud storage (S3, GCS, Azure)
+- 云存储（S3, GCS, Azure）
 
-### Custom Install
+### 自定义安装
 
-Install only what you need:
+仅安装您需要的部分：
 
 ```bash
-# Specific platform only
+# 仅安装特定平台
 pip install skill-seekers[gemini]      # Google Gemini
 pip install skill-seekers[openai]      # OpenAI
 pip install skill-seekers[chroma]      # ChromaDB
 
-# Multiple extras
+# 安装多个扩展
 pip install skill-seekers[gemini,openai,chroma]
 
-# Development
+# 开发工具
 pip install skill-seekers[dev]
 ```
 
 ---
 
-## Available Extras
+## 可用的扩展包
 
-| Extra | Description | Install Command |
+| 扩展包 | 描述 | 安装命令 |
 |-------|-------------|-----------------|
-| `gemini` | Google Gemini support | `pip install skill-seekers[gemini]` |
-| `openai` | OpenAI ChatGPT support | `pip install skill-seekers[openai]` |
+| `gemini` | Google Gemini 支持 | `pip install skill-seekers[gemini]` |
+| `openai` | OpenAI ChatGPT 支持 | `pip install skill-seekers[openai]` |
 | `mcp` | MCP server | `pip install skill-seekers[mcp]` |
-| `video` | YouTube/Vimeo subtitles & metadata | `pip install skill-seekers[video]` |
-| `video-full` | + Whisper transcription & visual frames | `pip install skill-seekers[video-full]` |
-| `jupyter` | Jupyter Notebook extraction | `pip install skill-seekers[jupyter]` |
-| `ocr` | OCR support (scanned PDFs, visual frames) | `pip install skill-seekers[ocr]` |
-| `confluence` | Confluence wiki support | `pip install skill-seekers[confluence]` |
-| `notion` | Notion pages support | `pip install skill-seekers[notion]` |
-| `chroma` | ChromaDB export | `pip install skill-seekers[chroma]` |
-| `weaviate` | Weaviate export | `pip install skill-seekers[weaviate]` |
-| `qdrant` | Qdrant export | `pip install skill-seekers[qdrant]` |
-| `faiss` | FAISS export | `pip install skill-seekers[faiss]` |
-| `s3` | AWS S3 storage | `pip install skill-seekers[s3]` |
+| `video` | YouTube/Vimeo 字幕与元数据 | `pip install skill-seekers[video]` |
+| `video-full` | + Whisper 转录与视觉帧 | `pip install skill-seekers[video-full]` |
+| `jupyter` | Jupyter Notebook 提取 | `pip install skill-seekers[jupyter]` |
+| `ocr` | OCR 支持（扫描版 PDF、视觉帧） | `pip install skill-seekers[ocr]` |
+| `confluence` | Confluence wiki 支持 | `pip install skill-seekers[confluence]` |
+| `notion` | Notion 页面支持 | `pip install skill-seekers[notion]` |
+| `chroma` | ChromaDB 导出 | `pip install skill-seekers[chroma]` |
+| `weaviate` | Weaviate 导出 | `pip install skill-seekers[weaviate]` |
+| `qdrant` | Qdrant 导出 | `pip install skill-seekers[qdrant]` |
+| `faiss` | FAISS 导出 | `pip install skill-seekers[faiss]` |
+| `s3` | AWS S3 存储 | `pip install skill-seekers[s3]` |
 | `gcs` | Google Cloud Storage | `pip install skill-seekers[gcs]` |
 | `azure` | Azure Blob Storage | `pip install skill-seekers[azure]` |
 | `embedding` | Embedding server | `pip install skill-seekers[embedding]` |
-| `all-llms` | All LLM platforms | `pip install skill-seekers[all-llms]` |
-| `all` | Everything | `pip install skill-seekers[all]` |
-| `dev` | Development tools | `pip install skill-seekers[dev]` |
+| `all-llms` | 所有 LLM 平台 | `pip install skill-seekers[all-llms]` |
+| `all` | 全部功能 | `pip install skill-seekers[all]` |
+| `dev` | 开发工具 | `pip install skill-seekers[dev]` |
 
 ---
 
-## Post-Installation Setup
+## 安装后设置
 
-### 1. Configure API Keys (Optional)
+### 1. 配置 API 密钥（可选）
 
-For AI enhancement and uploads:
+用于 AI 增强和上传：
 
 ```bash
-# Interactive configuration wizard
+# 交互式配置向导
 skill-seekers config
 
-# Or set environment variables
+# 或设置环境变量
 export ANTHROPIC_API_KEY=sk-ant-...
 export GITHUB_TOKEN=ghp_...
 ```
 
-### 2. Verify Installation
+### 2. 验证安装
 
 ```bash
-# Check version
+# 检查版本
 skill-seekers --version
 
-# See all commands
+# 查看所有命令
 skill-seekers --help
 
-# Test configuration
+# 测试配置
 skill-seekers config --test
 ```
 
-### 3. Quick Test
+### 3. 快速测试
 
 ```bash
-# List available presets
+# 列出可用预设
 skill-seekers estimate --all
 
-# Do a dry run
+# 试运行
 skill-seekers create https://docs.python.org/3/ --dry-run
 ```
 
 ---
 
-## Platform-Specific Notes
+## 平台特定说明
 
 ### macOS
 
 ```bash
-# Using Homebrew Python
+# 使用 Homebrew Python
 brew install python@3.12
 pip3.12 install skill-seekers[all-llms]
 
-# Or with pyenv
+# 或使用 pyenv
 pyenv install 3.12
 pyenv global 3.12
 pip install skill-seekers[all-llms]
@@ -194,36 +194,36 @@ pip install skill-seekers[all-llms]
 ### Linux (Ubuntu/Debian)
 
 ```bash
-# Install Python and pip
+# 安装 Python 和 pip
 sudo apt update
 sudo apt install python3-pip python3-venv
 
-# Install skill-seekers
+# 安装 skill-seekers
 pip3 install skill-seekers[all-llms]
 
-# Make available system-wide
+# 全局可用
 sudo ln -s ~/.local/bin/skill-seekers /usr/local/bin/
 ```
 
 ### Windows
 
-**Recommended:** Use WSL2
+**推荐：** 使用 WSL2
 
 ```powershell
-# Or use Windows directly (PowerShell)
+# 或直接使用 Windows（PowerShell）
 python -m pip install skill-seekers[all-llms]
 
-# Add to PATH if needed
+# 如需添加到 PATH
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$env:APPDATA\Python\Python312\Scripts", "User")
 ```
 
 ### Docker
 
 ```bash
-# Pull image
+# 拉取镜像
 docker pull skillseekers/skill-seekers:latest
 
-# Run
+# 运行
 docker run -it --rm \
   -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
   -v $(pwd)/output:/output \
@@ -233,45 +233,45 @@ docker run -it --rm \
 
 ---
 
-## Troubleshooting
+## 故障排除
 
 ### "command not found: skill-seekers"
 
 ```bash
-# Add pip bin to PATH
+# 将 pip bin 添加到 PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-# Or reinstall with --user
+# 或使用 --user 重新安装
 pip install --user --force-reinstall skill-seekers
 ```
 
-### Permission denied
+### 权限被拒绝
 
 ```bash
-# Don't use sudo with pip
-# Instead:
+# 不要对 pip 使用 sudo
+# 替代方案：
 pip install --user skill-seekers
 
-# Or use a virtual environment
+# 或使用虚拟环境
 python3 -m venv venv
 source venv/bin/activate
 pip install skill-seekers[all-llms]
 ```
 
-### Import errors
+### 导入错误
 
 ```bash
-# For development installs, ensure editable mode
+# 对于开发安装，确保使用可编辑模式
 pip install -e .
 
-# Check installation
+# 检查安装
 python -c "import skill_seekers; print(skill_seekers.__version__)"
 ```
 
-### Version conflicts
+### 版本冲突
 
 ```bash
-# Use virtual environment
+# 使用虚拟环境
 python3 -m venv skill-seekers-env
 source skill-seekers-env/bin/activate
 pip install skill-seekers[all-llms]
@@ -279,51 +279,51 @@ pip install skill-seekers[all-llms]
 
 ---
 
-## Upgrade
+## 升级
 
 ```bash
-# Upgrade to latest
+# 升级到最新版本
 pip install --upgrade skill-seekers
 
-# Upgrade with all extras
+# 升级所有扩展
 pip install --upgrade skill-seekers[all-llms]
 
-# Check current version
+# 检查当前版本
 skill-seekers --version
 
-# See what's new
+# 查看更新内容
 pip show skill-seekers
 ```
 
 ---
 
-## Uninstall
+## 卸载
 
 ```bash
 pip uninstall skill-seekers
 
-# Clean up config (optional)
+# 清理配置（可选）
 rm -rf ~/.config/skill-seekers/
 rm -rf ~/.cache/skill-seekers/
 ```
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Quick Start Guide](02-quick-start.md) - Create your first skill in 3 commands
-- [Your First Skill](03-your-first-skill.md) - Complete walkthrough
+- [快速入门指南](02-quick-start.md) - 3 条命令创建第一个 skill
+- [你的第一个 Skill](03-your-first-skill.md) - 完整演练
 
 ---
 
-## Getting Help
+## 获取帮助
 
 ```bash
-# Command help
+# 命令帮助
 skill-seekers --help
 skill-seekers create --help
 
-# Documentation
+# 文档
 # https://github.com/yusufkaraaslan/Skill_Seekers/tree/main/docs
 
 # Issues

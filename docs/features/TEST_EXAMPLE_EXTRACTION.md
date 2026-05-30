@@ -67,7 +67,7 @@ extract_test_examples(directory="tests/", min_confidence=0.7)
 
 ```bash
 # Combine with codebase analysis
-skill-seekers analyze --directory . --extract-test-examples
+skill-seekers scan --directory . --extract-test-examples
 ```
 
 ## Output Formats

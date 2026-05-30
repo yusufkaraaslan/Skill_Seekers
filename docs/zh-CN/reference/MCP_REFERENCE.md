@@ -1,160 +1,160 @@
-# MCP Reference - Skill Seekers
+# MCP 参考 - Skill Seekers
 
-> **Version:** 3.2.0  
-> **Last Updated:** 2026-03-15  
-> **Complete reference for 27 MCP tools**
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-  - [What is MCP?](#what-is-mcp)
-  - [Transport Modes](#transport-modes)
-  - [Starting the Server](#starting-the-server)
-- [Tool Categories](#tool-categories)
-  - [Core Tools (9)](#core-tools)
-  - [Extended Tools (9)](#extended-tools)
-  - [Config Source Tools (5)](#config-source-tools)
-  - [Config Splitting Tools (2)](#config-splitting-tools)
-  - [Vector Database Tools (4)](#vector-database-tools)
-  - [Workflow Tools (5)](#workflow-tools)
-- [Tool Reference](#tool-reference)
-- [Common Patterns](#common-patterns)
-- [Error Handling](#error-handling)
+> **版本：** 3.6.0  
+> **最后更新：** 2026-03-15  
+> **40 个 MCP 工具的完整参考**
 
 ---
 
-## Overview
+## 目录
 
-### What is MCP?
+- [概述](#overview)
+  - [什么是 MCP？](#what-is-mcp)
+  - [传输模式](#transport-modes)
+  - [启动服务器](#starting-the-server)
+- [工具类别](#tool-categories)
+  - [核心工具（9 个）](#core-tools)
+  - [扩展工具（9 个）](#extended-tools)
+  - [配置源工具（5 个）](#config-source-tools)
+  - [配置拆分工具（2 个）](#config-splitting-tools)
+  - [向量数据库工具（4 个）](#vector-database-tools)
+  - [工作流工具（5 个）](#workflow-tools)
+- [工具参考](#tool-reference)
+- [常见模式](#common-patterns)
+- [错误处理](#error-handling)
 
-MCP (Model Context Protocol) allows AI agents like Claude Code to interact with Skill Seekers through a standardized interface. Instead of running CLI commands, you can use natural language:
+---
+
+## 概述
+
+### 什么是 MCP？
+
+MCP（Model Context Protocol）允许 Claude Code 等 AI 代理通过标准化接口与 Skill Seekers 交互。无需运行 CLI 命令，你可以使用自然语言：
 
 ```
-"Scrape the React documentation and create a skill"
-"Package the output/react skill for Claude"
-"List available workflow presets"
+"抓取 React 文档并创建一个技能"
+"将 output/react 技能打包给 Claude"
+"列出可用的工作流预设"
 ```
 
-### Transport Modes
+### 传输模式
 
-The MCP server supports two transport modes:
+MCP 服务器支持两种传输模式：
 
-| Mode | Use Case | Command |
+| 模式 | 使用场景 | 命令 |
 |------|----------|---------|
-| **stdio** | Claude Code, VS Code + Cline | `skill-seekers-mcp` |
-| **HTTP** | Cursor, Windsurf, HTTP clients | `skill-seekers-mcp --transport http --port 8765` |
+| **stdio** | Claude Code、VS Code + Cline | `skill-seekers-mcp` |
+| **HTTP** | Cursor、Windsurf、HTTP 客户端 | `skill-seekers-mcp --transport http --port 8765` |
 
-### Starting the Server
+### 启动服务器
 
 ```bash
-# stdio mode (default)
+# stdio 模式（默认）
 skill-seekers-mcp
 
-# HTTP mode
+# HTTP 模式
 skill-seekers-mcp --transport http --port 8765
 
-# With custom host
+# 自定义主机
 skill-seekers-mcp --transport http --host 0.0.0.0 --port 8765
 ```
 
 ---
 
-## Tool Categories
+## 工具类别
 
-### Core Tools (9)
+### 核心工具（9 个）
 
-Essential tools for basic skill creation workflow:
+基本技能创建工作流的必备工具：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `list_configs` | List preset configurations |
-| `generate_config` | Generate config from docs URL |
-| `validate_config` | Validate config structure |
-| `estimate_pages` | Estimate page count |
-| `scrape_docs` | Scrape documentation |
-| `package_skill` | Package to .zip |
-| `upload_skill` | Upload to platform |
-| `enhance_skill` | AI enhancement |
-| `install_skill` | Complete workflow |
+| `list_configs` | 列出预设配置 |
+| `generate_config` | 从文档 URL 生成配置 |
+| `validate_config` | 验证配置结构 |
+| `estimate_pages` | 估算页数 |
+| `scrape_docs` | 抓取文档 |
+| `package_skill` | 打包为 .zip |
+| `upload_skill` | 上传到平台 |
+| `enhance_skill` | AI 增强 |
+| `install_skill` | 完整工作流 |
 
-### Extended Tools (10)
+### 扩展工具（10 个）
 
-Advanced scraping and analysis tools:
+高级抓取和分析工具：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `scrape_github` | GitHub repository analysis |
-| `scrape_pdf` | PDF extraction |
-| `scrape_generic` | Generic scraper for 10 new source types (jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat) |
-| `scrape_codebase` | Local codebase analysis |
-| `unified_scrape` | Multi-source scraping |
-| `detect_patterns` | Pattern detection |
-| `extract_test_examples` | Extract usage examples from tests |
-| `build_how_to_guides` | Generate how-to guides |
-| `extract_config_patterns` | Extract configuration patterns |
-| `detect_conflicts` | Find doc/code discrepancies |
+| `scrape_github` | GitHub 仓库分析 |
+| `scrape_pdf` | PDF 提取 |
+| `scrape_generic` | 10 种新来源类型的通用抓取器（jupyter、html、openapi、asciidoc、pptx、rss、manpage、confluence、notion、chat） |
+| `scrape_codebase` | 本地代码库分析 |
+| `unified_scrape` | 多源抓取 |
+| `detect_patterns` | 模式检测 |
+| `extract_test_examples` | 从测试中提取使用示例 |
+| `build_how_to_guides` | 生成操作指南 |
+| `extract_config_patterns` | 提取配置模式 |
+| `detect_conflicts` | 查找文档/代码差异 |
 
-### Config Source Tools (5)
+### 配置源工具（5 个）
 
-Manage configuration sources:
+管理配置来源：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `add_config_source` | Register git repo as config source |
-| `list_config_sources` | List registered sources |
-| `remove_config_source` | Remove config source |
-| `fetch_config` | Fetch configs from git |
-| `submit_config` | Submit config to source |
+| `add_config_source` | 将 Git 仓库注册为配置源 |
+| `list_config_sources` | 列出已注册的源 |
+| `remove_config_source` | 移除配置源 |
+| `fetch_config` | 从 Git 获取配置 |
+| `submit_config` | 向源提交配置 |
 
-### Config Splitting Tools (2)
+### 配置拆分工具（2 个）
 
-Handle large documentation:
+处理大型文档：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `split_config` | Split large config |
-| `generate_router` | Generate router skill |
+| `split_config` | 拆分大型配置 |
+| `generate_router` | 生成路由器技能 |
 
-### Vector Database Tools (4)
+### 向量数据库工具（4 个）
 
-Export to vector databases:
+导出到向量数据库：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `export_to_weaviate` | Export to Weaviate |
-| `export_to_chroma` | Export to ChromaDB |
-| `export_to_faiss` | Export to FAISS |
-| `export_to_qdrant` | Export to Qdrant |
+| `export_to_weaviate` | 导出到 Weaviate |
+| `export_to_chroma` | 导出到 ChromaDB |
+| `export_to_faiss` | 导出到 FAISS |
+| `export_to_qdrant` | 导出到 Qdrant |
 
-### Workflow Tools (5)
+### 工作流工具（5 个）
 
-Manage enhancement workflows:
+管理增强工作流：
 
-| Tool | Purpose |
+| 工具 | 用途 |
 |------|---------|
-| `list_workflows` | List all workflows |
-| `get_workflow` | Get workflow YAML |
-| `create_workflow` | Create new workflow |
-| `update_workflow` | Update workflow |
-| `delete_workflow` | Delete workflow |
+| `list_workflows` | 列出所有工作流 |
+| `get_workflow` | 获取工作流 YAML |
+| `create_workflow` | 创建新工作流 |
+| `update_workflow` | 更新工作流 |
+| `delete_workflow` | 删除工作流 |
 
 ---
 
-## Tool Reference
+## 工具参考
 
 ---
 
-### Core Tools
+### 核心工具
 
 #### list_configs
 
-List all available preset configurations.
+列出所有可用的预设配置。
 
-**Parameters:** None
+**参数：** 无
 
-**Returns:** Array of config objects
+**返回：** 配置对象数组
 
 ```json
 {
@@ -168,9 +168,9 @@ List all available preset configurations.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "List available configurations"
 "What configs are available?"
 "Show me the preset configs"
@@ -180,21 +180,21 @@ List all available preset configurations.
 
 #### generate_config
 
-Generate a configuration file from a documentation URL.
+从文档 URL 生成配置文件。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `url` | string | Yes | Documentation URL |
-| `name` | string | No | Config name (auto-detected) |
-| `description` | string | No | Description (auto-detected) |
+| `url` | string | 是 | 文档 URL |
+| `name` | string | 否 | 配置名称（自动检测） |
+| `description` | string | 否 | 描述（自动检测） |
 
-**Returns:** Config JSON object
+**返回：** 配置 JSON 对象
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Generate a config for https://docs.django.com/"
 "Create a Django config"
 "Make a config from the React docs URL"
@@ -204,15 +204,15 @@ Generate a configuration file from a documentation URL.
 
 #### validate_config
 
-Validate a configuration file structure.
+验证配置文件结构。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | object/string | Yes | Config object or file path |
+| `config` | object/string | 是 | 配置对象或文件路径 |
 
-**Returns:** Validation result
+**返回：** 验证结果
 
 ```json
 {
@@ -222,9 +222,9 @@ Validate a configuration file structure.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Validate this config: {config_json}"
 "Check if my config is valid"
 "Validate configs/react.json"
@@ -234,16 +234,16 @@ Validate a configuration file structure.
 
 #### estimate_pages
 
-Estimate total pages for documentation scraping.
+估算文档抓取的总页数。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | object/string | Yes | Config object or file path |
-| `max_discovery` | number | No | Max pages to discover (default: 1000) |
+| `config` | object/string | 是 | 配置对象或文件路径 |
+| `max_discovery` | number | 否 | 最大发现页数（默认：1000） |
 
-**Returns:** Estimation results
+**返回：** 估算结果
 
 ```json
 {
@@ -253,9 +253,9 @@ Estimate total pages for documentation scraping.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Estimate pages for the React config"
 "How many pages will Django docs have?"
 "Estimate with max 500 pages"
@@ -265,18 +265,18 @@ Estimate total pages for documentation scraping.
 
 #### scrape_docs
 
-Scrape documentation website and generate skill.
+抓取文档网站并生成技能。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | object/string | Yes | Config object or file path |
-| `enhance_level` | number | No | 0-3 (default: 2) |
-| `max_pages` | number | No | Override max pages |
-| `dry_run` | boolean | No | Preview only |
+| `config` | object/string | 是 | 配置对象或文件路径 |
+| `enhance_level` | number | 否 | 0-3（默认：2） |
+| `max_pages` | number | 否 | 覆盖最大页数 |
+| `dry_run` | boolean | 否 | 仅预览 |
 
-**Returns:** Scraping results
+**返回：** 抓取结果
 
 ```json
 {
@@ -287,9 +287,9 @@ Scrape documentation website and generate skill.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Scrape the React documentation"
 "Scrape Django with enhancement level 3"
 "Do a dry run of the Vue docs scrape"
@@ -299,17 +299,17 @@ Scrape documentation website and generate skill.
 
 #### package_skill
 
-Package skill directory into uploadable format.
+将技能目录打包为可上传格式。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill directory |
-| `target` | string | No | Platform (default: claude) |
-| `streaming` | boolean | No | Use streaming mode |
+| `skill_directory` | string | 是 | 技能目录路径 |
+| `target` | string | 否 | 平台（默认：claude） |
+| `streaming` | boolean | 否 | 使用流式模式 |
 
-**Returns:** Package info
+**返回：** 包信息
 
 ```json
 {
@@ -319,9 +319,9 @@ Package skill directory into uploadable format.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Package the React skill for Claude"
 "Create a Gemini package for output/django/"
 "Package with streaming mode"
@@ -331,17 +331,17 @@ Package skill directory into uploadable format.
 
 #### upload_skill
 
-Upload skill package to LLM platform.
+将技能包上传到 LLM 平台。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `package_path` | string | Yes | Path to package file |
-| `target` | string | No | Platform (default: claude) |
-| `api_key` | string | No | Platform API key |
+| `package_path` | string | 是 | 包文件路径 |
+| `target` | string | 否 | 平台（默认：claude） |
+| `api_key` | string | 否 | 平台 API 密钥 |
 
-**Returns:** Upload result
+**返回：** 上传结果
 
 ```json
 {
@@ -351,9 +351,9 @@ Upload skill package to LLM platform.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Upload the React package to Claude"
 "Upload output/django-gemini.tar.gz to Gemini"
 ```
@@ -362,17 +362,17 @@ Upload skill package to LLM platform.
 
 #### enhance_skill
 
-AI-powered enhancement of SKILL.md.
+AI 驱动的 SKILL.md 增强。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill directory |
-| `mode` | string | No | API or LOCAL (default: auto) |
-| `workflow` | string | No | Workflow preset name |
+| `skill_directory` | string | 是 | 技能目录路径 |
+| `mode` | string | 否 | API 或 LOCAL（默认：auto） |
+| `workflow` | string | 否 | 工作流预设名称 |
 
-**Returns:** Enhancement result
+**返回：** 增强结果
 
 ```json
 {
@@ -382,9 +382,9 @@ AI-powered enhancement of SKILL.md.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Enhance the React skill"
 "Enhance with security-focus workflow"
 "Run enhancement in API mode"
@@ -394,18 +394,18 @@ AI-powered enhancement of SKILL.md.
 
 #### install_skill
 
-Complete workflow: scrape → enhance → package → upload.
+完整工作流：抓取 → 增强 → 打包 → 上传。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | object/string | Yes | Config object or file path |
-| `target` | string | No | Platform (default: claude) |
-| `enhance` | boolean | No | Enable enhancement (default: true) |
-| `upload` | boolean | No | Auto-upload (default: true) |
+| `config` | object/string | 是 | 配置对象或文件路径 |
+| `target` | string | 否 | 平台（默认：claude） |
+| `enhance` | boolean | 否 | 启用增强（默认：true） |
+| `upload` | boolean | 否 | 自动上传（默认：true） |
 
-**Returns:** Installation result
+**返回：** 安装结果
 
 ```json
 {
@@ -416,9 +416,9 @@ Complete workflow: scrape → enhance → package → upload.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Install the React skill"
 "Install Django for Gemini with no upload"
 "Complete install of the Vue config"
@@ -426,25 +426,25 @@ Complete workflow: scrape → enhance → package → upload.
 
 ---
 
-### Extended Tools
+### 扩展工具
 
 #### scrape_github
 
-Scrape GitHub repository.
+抓取 GitHub 仓库。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `repo` | string | Yes | Owner/repo format |
-| `token` | string | No | GitHub token |
-| `name` | string | No | Skill name |
-| `include_issues` | boolean | No | Include issues (default: true) |
-| `include_releases` | boolean | No | Include releases (default: true) |
+| `repo` | string | 是 | owner/repo 格式 |
+| `token` | string | 否 | GitHub token |
+| `name` | string | 否 | 技能名称 |
+| `include_issues` | boolean | 否 | 包含 issues（默认：true） |
+| `include_releases` | boolean | 否 | 包含 releases（默认：true） |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Scrape the facebook/react repository"
 "Analyze the Django GitHub repo"
 "Scrape vercel/next.js with issues"
@@ -454,19 +454,19 @@ Scrape GitHub repository.
 
 #### scrape_pdf
 
-Extract content from PDF file.
+从 PDF 文件提取内容。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `pdf_path` | string | Yes | Path to PDF file |
-| `name` | string | No | Skill name |
-| `enable_ocr` | boolean | No | Enable OCR for scanned PDFs |
+| `pdf_path` | string | 是 | PDF 文件路径 |
+| `name` | string | 否 | 技能名称 |
+| `enable_ocr` | boolean | 否 | 为扫描版 PDF 启用 OCR |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Scrape the manual.pdf file"
 "Extract content from API-docs.pdf"
 "Process scanned.pdf with OCR"
@@ -476,19 +476,19 @@ Extract content from PDF file.
 
 #### scrape_codebase
 
-Analyze local codebase.
+分析本地代码库。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `directory` | string | Yes | Path to directory |
-| `preset` | string | No | quick/standard/comprehensive |
-| `languages` | array | No | Language filters |
+| `directory` | string | 是 | 目录路径 |
+| `preset` | string | 否 | quick/standard/comprehensive |
+| `languages` | array | 否 | 语言筛选 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Analyze the ./my-project directory"
 "Scrape this codebase with comprehensive preset"
 "Analyze only Python and JavaScript files"
@@ -498,18 +498,18 @@ Analyze local codebase.
 
 #### unified_scrape
 
-Multi-source scraping (docs + GitHub + PDF).
+多源抓取（文档 + GitHub + PDF）。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | object/string | Yes | Unified config |
-| `merge_mode` | string | No | rule-based or claude-enhanced |
+| `config` | object/string | 是 | 统一配置 |
+| `merge_mode` | string | 否 | rule-based 或 claude-enhanced |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Run unified scraping with my-config.json"
 "Combine docs and GitHub for React"
 "Multi-source scrape with claude-enhanced merge"
@@ -519,20 +519,20 @@ Multi-source scraping (docs + GitHub + PDF).
 
 #### detect_patterns
 
-Detect code patterns in repository.
+检测仓库中的代码模式。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `directory` | string | Yes | Path to directory |
-| `pattern_types` | array | No | Types to detect |
+| `directory` | string | 是 | 目录路径 |
+| `pattern_types` | array | 否 | 要检测的类型 |
 
-**Returns:** Detected patterns
+**返回：** 检测到的模式
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Detect patterns in this codebase"
 "Find architectural patterns"
 "Show me the code patterns"
@@ -542,20 +542,20 @@ Detect code patterns in repository.
 
 #### extract_test_examples
 
-Extract usage examples from test files.
+从测试文件提取使用示例。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `directory` | string | Yes | Path to test directory |
-| `language` | string | No | Primary language |
+| `directory` | string | 是 | 测试目录路径 |
+| `language` | string | 否 | 主要语言 |
 
-**Returns:** Test examples
+**返回：** 测试示例
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Extract test examples from tests/"
 "Get Python test examples"
 "Find usage examples in the test suite"
@@ -565,20 +565,20 @@ Extract usage examples from test files.
 
 #### build_how_to_guides
 
-Generate how-to guides from codebase.
+从代码库生成操作指南。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `directory` | string | Yes | Path to directory |
-| `topics` | array | No | Specific topics |
+| `directory` | string | 是 | 目录路径 |
+| `topics` | array | 否 | 特定主题 |
 
-**Returns:** Generated guides
+**返回：** 生成的指南
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Build how-to guides for this project"
 "Generate guides about authentication"
 "Create how-to documentation"
@@ -588,19 +588,19 @@ Generate how-to guides from codebase.
 
 #### extract_config_patterns
 
-Extract configuration patterns.
+提取配置模式。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `directory` | string | Yes | Path to directory |
+| `directory` | string | 是 | 目录路径 |
 
-**Returns:** Config patterns
+**返回：** 配置模式
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Extract config patterns from this project"
 "Find configuration examples"
 "Show me how this project is configured"
@@ -610,16 +610,16 @@ Extract configuration patterns.
 
 #### detect_conflicts
 
-Find discrepancies between documentation and code.
+查找文档和代码之间的差异。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `docs_source` | string | Yes | Docs config or directory |
-| `code_source` | string | Yes | Code directory or repo |
+| `docs_source` | string | 是 | 文档配置或目录 |
+| `code_source` | string | 是 | 代码目录或仓库 |
 
-**Returns:** Conflict report
+**返回：** 冲突报告
 
 ```json
 {
@@ -633,9 +633,9 @@ Find discrepancies between documentation and code.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Detect conflicts between docs and code"
 "Find discrepancies in React"
 "Compare documentation to implementation"
@@ -645,33 +645,33 @@ Find discrepancies between documentation and code.
 
 #### scrape_generic
 
-Generic scraper for new source types. Supports 10 source types that were added in v3.2.0.
+新来源类型的通用抓取器。支持 v3.6.0 中添加的 10 种来源类型。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `source_type` | string | Yes | One of: `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `confluence`, `notion`, `rss`, `manpage`, `chat` |
-| `name` | string | Yes | Skill name for the output |
-| `path` | string | No | File or directory path (for file-based sources) |
-| `url` | string | No | URL (for URL-based sources like confluence, notion, rss) |
+| `source_type` | string | 是 | 其中之一：`jupyter`、`html`、`openapi`、`asciidoc`、`pptx`、`confluence`、`notion`、`rss`、`manpage`、`chat` |
+| `name` | string | 是 | 输出的技能名称 |
+| `path` | string | 否 | 文件或目录路径（用于基于文件的来源） |
+| `url` | string | 否 | URL（用于基于 URL 的来源，如 confluence、notion、rss） |
 
-**Supported Source Types:**
+**支持的来源类型：**
 
-| Source Type | Description | Input |
+| 来源类型 | 描述 | 输入 |
 |-------------|-------------|-------|
-| `jupyter` | Jupyter Notebook (.ipynb) | `path` |
-| `html` | Local HTML files | `path` |
-| `openapi` | OpenAPI/Swagger specification | `path` |
-| `asciidoc` | AsciiDoc documents | `path` |
-| `pptx` | PowerPoint presentations | `path` |
-| `rss` | RSS/Atom feeds | `url` or `path` |
-| `manpage` | Unix man pages | `path` |
-| `confluence` | Confluence wiki | `url` or `path` |
-| `notion` | Notion pages/databases | `url` or `path` |
-| `chat` | Slack/Discord exports | `path` |
+| `jupyter` | Jupyter Notebook（.ipynb） | `path` |
+| `html` | 本地 HTML 文件 | `path` |
+| `openapi` | OpenAPI/Swagger 规范 | `path` |
+| `asciidoc` | AsciiDoc 文档 | `path` |
+| `pptx` | PowerPoint 演示文稿 | `path` |
+| `rss` | RSS/Atom 订阅源 | `url` 或 `path` |
+| `manpage` | Unix man 手册页 | `path` |
+| `confluence` | Confluence 维基 | `url` 或 `path` |
+| `notion` | Notion 页面/数据库 | `url` 或 `path` |
+| `chat` | Slack/Discord 导出 | `path` |
 
-**Returns:** Scraping results
+**返回：** 抓取结果
 
 ```json
 {
@@ -681,9 +681,9 @@ Generic scraper for new source types. Supports 10 source types that were added i
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Scrape the Jupyter notebook analysis.ipynb"
 "Extract content from slides.pptx"
 "Process the OpenAPI spec at api-spec.yaml"
@@ -693,23 +693,23 @@ Generic scraper for new source types. Supports 10 source types that were added i
 
 ---
 
-### Config Source Tools
+### 配置源工具
 
 #### add_config_source
 
-Register a git repository as a config source.
+将 Git 仓库注册为配置源。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Source name |
-| `url` | string | Yes | Git repository URL |
-| `branch` | string | No | Git branch (default: main) |
+| `name` | string | 是 | 源名称 |
+| `url` | string | 是 | Git 仓库 URL |
+| `branch` | string | 否 | Git 分支（默认：main） |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Add my-configs repo as a source"
 "Register https://github.com/org/configs as configs"
 ```
@@ -718,15 +718,15 @@ Register a git repository as a config source.
 
 #### list_config_sources
 
-List all registered config sources.
+列出所有已注册的配置源。
 
-**Parameters:** None
+**参数：** 无
 
-**Returns:** List of sources
+**返回：** 源列表
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "List my config sources"
 "Show registered sources"
 ```
@@ -735,17 +735,17 @@ List all registered config sources.
 
 #### remove_config_source
 
-Remove a config source.
+移除配置源。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Source name |
+| `name` | string | 是 | 源名称 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Remove the configs source"
 "Delete my old config source"
 ```
@@ -754,18 +754,18 @@ Remove a config source.
 
 #### fetch_config
 
-Fetch configs from a git source.
+从 Git 源获取配置。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `source` | string | Yes | Source name |
-| `config_name` | string | No | Specific config to fetch |
+| `source` | string | 是 | 源名称 |
+| `config_name` | string | 否 | 要获取的特定配置 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Fetch configs from my source"
 "Get the react config from configs source"
 ```
@@ -774,41 +774,41 @@ Fetch configs from a git source.
 
 #### submit_config
 
-Submit a config to a source.
+向源提交配置。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `source` | string | Yes | Source name |
-| `config_path` | string | Yes | Path to config file |
+| `source` | string | 是 | 源名称 |
+| `config_path` | string | 是 | 配置文件路径 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Submit my-config.json to configs source"
 "Add this config to my source"
 ```
 
 ---
 
-### Config Splitting Tools
+### 配置拆分工具
 
 #### split_config
 
-Split large configuration into smaller chunks.
+将大型配置拆分为更小的块。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | string | Yes | Config file path |
-| `max_pages_per_chunk` | number | No | Pages per chunk (default: 100) |
-| `output_dir` | string | No | Output directory |
+| `config` | string | 是 | 配置文件路径 |
+| `max_pages_per_chunk` | number | 否 | 每块页数（默认：100） |
+| `output_dir` | string | 否 | 输出目录 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Split the large config into chunks"
 "Break up this 500-page config"
 "Split with 50 pages per chunk"
@@ -818,41 +818,41 @@ Split large configuration into smaller chunks.
 
 #### generate_router
 
-Generate a router skill for large documentation.
+为大型文档生成路由器技能。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `config` | string | Yes | Config file path |
-| `output_dir` | string | No | Output directory |
+| `config` | string | 是 | 配置文件路径 |
+| `output_dir` | string | 否 | 输出目录 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Generate a router for this large config"
 "Create a router skill for Django docs"
 ```
 
 ---
 
-### Vector Database Tools
+### 向量数据库工具
 
 #### export_to_weaviate
 
-Export skill to Weaviate vector database.
+将技能导出到 Weaviate 向量数据库。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill |
-| `weaviate_url` | string | No | Weaviate URL |
-| `class_name` | string | No | Class/collection name |
+| `skill_directory` | string | 是 | 技能路径 |
+| `weaviate_url` | string | 否 | Weaviate URL |
+| `class_name` | string | 否 | 类/集合名称 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Export React skill to Weaviate"
 "Send to Weaviate at localhost:8080"
 ```
@@ -861,19 +861,19 @@ Export skill to Weaviate vector database.
 
 #### export_to_chroma
 
-Export skill to ChromaDB.
+将技能导出到 ChromaDB。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill |
-| `collection_name` | string | No | Collection name |
-| `persist_directory` | string | No | Storage directory |
+| `skill_directory` | string | 是 | 技能路径 |
+| `collection_name` | string | 否 | 集合名称 |
+| `persist_directory` | string | 否 | 存储目录 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Export to ChromaDB"
 "Send Django skill to Chroma"
 ```
@@ -882,18 +882,18 @@ Export skill to ChromaDB.
 
 #### export_to_faiss
 
-Export skill to FAISS index.
+将技能导出到 FAISS 索引。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill |
-| `output_path` | string | No | Index file path |
+| `skill_directory` | string | 是 | 技能路径 |
+| `output_path` | string | 否 | 索引文件路径 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Export to FAISS index"
 "Create FAISS index for this skill"
 ```
@@ -902,34 +902,34 @@ Export skill to FAISS index.
 
 #### export_to_qdrant
 
-Export skill to Qdrant.
+将技能导出到 Qdrant。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `skill_directory` | string | Yes | Path to skill |
-| `collection_name` | string | No | Collection name |
-| `qdrant_url` | string | No | Qdrant URL |
+| `skill_directory` | string | 是 | 技能路径 |
+| `collection_name` | string | 否 | 集合名称 |
+| `qdrant_url` | string | 否 | Qdrant URL |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Export to Qdrant"
 "Send skill to Qdrant vector DB"
 ```
 
 ---
 
-### Workflow Tools
+### 工作流工具
 
 #### list_workflows
 
-List all available workflow presets.
+列出所有可用的工作流预设。
 
-**Parameters:** None
+**参数：** 无
 
-**Returns:**
+**返回：**
 ```json
 {
   "workflows": [
@@ -939,9 +939,9 @@ List all available workflow presets.
 }
 ```
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "List available workflows"
 "What workflow presets do I have?"
 ```
@@ -950,19 +950,19 @@ List all available workflow presets.
 
 #### get_workflow
 
-Get full YAML content of a workflow.
+获取工作流的完整 YAML 内容。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Workflow name |
+| `name` | string | 是 | 工作流名称 |
 
-**Returns:** Workflow YAML
+**返回：** 工作流 YAML
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Show me the security-focus workflow"
 "Get the YAML for the default workflow"
 ```
@@ -971,18 +971,18 @@ Get full YAML content of a workflow.
 
 #### create_workflow
 
-Create a new workflow.
+创建新工作流。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Workflow name |
-| `yaml_content` | string | Yes | Workflow YAML |
+| `name` | string | 是 | 工作流名称 |
+| `yaml_content` | string | 是 | 工作流 YAML |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Create a workflow called my-workflow"
 "Save this YAML as a new workflow"
 ```
@@ -991,18 +991,18 @@ Create a new workflow.
 
 #### update_workflow
 
-Update an existing workflow.
+更新现有工作流。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Workflow name |
-| `yaml_content` | string | Yes | New YAML content |
+| `name` | string | 是 | 工作流名称 |
+| `yaml_content` | string | 是 | 新的 YAML 内容 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Update my-custom workflow"
 "Modify the security-focus workflow"
 ```
@@ -1011,114 +1011,114 @@ Update an existing workflow.
 
 #### delete_workflow
 
-Delete a user workflow.
+删除用户工作流。
 
-**Parameters:**
+**参数：**
 
-| Name | Type | Required | Description |
+| 名称 | 类型 | 必需 | 描述 |
 |------|------|----------|-------------|
-| `name` | string | Yes | Workflow name |
+| `name` | string | 是 | 工作流名称 |
 
-**Example:**
+**示例：**
 ```python
-# Natural language
+# 自然语言
 "Delete my-old-workflow"
 "Remove the test workflow"
 ```
 
 ---
 
-## Common Patterns
+## 常见模式
 
-### Pattern 1: Quick Documentation Skill
+### 模式 1：快速文档技能
 
 ```python
-# Natural language sequence:
+# 自然语言序列：
 "List available configs"
 "Scrape the react config"
 "Package output/react for Claude"
 ```
 
-Tools: `list_configs` → `scrape_docs` → `package_skill`
+工具：`list_configs` → `scrape_docs` → `package_skill`
 
 ---
 
-### Pattern 2: GitHub Repository Analysis
+### 模式 2：GitHub 仓库分析
 
 ```python
-# Natural language sequence:
+# 自然语言序列：
 "Scrape the facebook/react GitHub repo"
 "Enhance the output/react skill"
 "Package it for Gemini"
 ```
 
-Tools: `scrape_github` → `enhance_skill` → `package_skill`
+工具：`scrape_github` → `enhance_skill` → `package_skill`
 
 ---
 
-### Pattern 3: Complete One-Command
+### 模式 3：完整单命令
 
 ```python
-# Natural language:
+# 自然语言：
 "Install the Django skill for Claude"
 ```
 
-Tool: `install_skill`
+工具：`install_skill`
 
 ---
 
-### Pattern 4: Multi-Source with Workflows
+### 模式 4：带工作流的多源
 
 ```python
-# Natural language sequence:
+# 自然语言序列：
 "List available workflows"
 "Run unified scrape with my-unified.json"
 "Apply security-focus and api-documentation workflows"
 "Package for Claude"
 ```
 
-Tools: `list_workflows` → `unified_scrape` → `enhance_skill` → `package_skill`
+工具：`list_workflows` → `unified_scrape` → `enhance_skill` → `package_skill`
 
 ---
 
-### Pattern 5: Generic Source Types
+### 模式 5：通用来源类型
 
 ```python
-# Natural language sequence:
+# 自然语言序列：
 "Scrape the Jupyter notebook analysis.ipynb"
 "Enhance the output/analysis skill"
 "Package it for Claude"
 ```
 
-Tools: `scrape_generic` → `enhance_skill` → `package_skill`
+工具：`scrape_generic` → `enhance_skill` → `package_skill`
 
 ---
 
-### Pattern 6: Vector Database Export
+### 模式 6：向量数据库导出
 
 ```python
-# Natural language sequence:
+# 自然语言序列：
 "Scrape the Django documentation"
 "Export to ChromaDB"
 ```
 
-Tools: `scrape_docs` → `export_to_chroma`
+工具：`scrape_docs` → `export_to_chroma`
 
 ---
 
-## Error Handling
+## 错误处理
 
-### Common Errors
+### 常见错误
 
-| Error | Cause | Solution |
+| 错误 | 原因 | 解决方案 |
 |-------|-------|----------|
-| `ConfigNotFoundError` | Config doesn't exist | Check config name or path |
-| `InvalidConfigError` | Config malformed | Use `validate_config` |
-| `ScrapingError` | Network or selector issue | Check URL and selectors |
-| `RateLimitError` | Too many requests | Wait or use token |
-| `EnhancementError` | AI enhancement failed | Check API key or Claude Code |
+| `ConfigNotFoundError` | 配置不存在 | 检查配置名称或路径 |
+| `InvalidConfigError` | 配置格式错误 | 使用 `validate_config` |
+| `ScrapingError` | 网络或选择器问题 | 检查 URL 和选择器 |
+| `RateLimitError` | 请求过多 | 等待或使用 token |
+| `EnhancementError` | AI 增强失败 | 检查 API 密钥或 Claude Code |
 
-### Error Response Format
+### 错误响应格式
 
 ```json
 {
@@ -1131,12 +1131,12 @@ Tools: `scrape_docs` → `export_to_chroma`
 
 ---
 
-## See Also
+## 另请参阅
 
-- [CLI Reference](CLI_REFERENCE.md) - Command-line interface
-- [Config Format](CONFIG_FORMAT.md) - JSON configuration
-- [MCP Setup Guide](../advanced/mcp-server.md) - Server configuration
+- [CLI 参考](CLI_REFERENCE.md) - 命令行界面
+- [配置格式](CONFIG_FORMAT.md) - JSON 配置
+- [MCP 设置指南](../advanced/mcp-server.md) - 服务器配置
 
 ---
 
-*For tool help: Ask the AI agent about specific tools*
+*获取工具帮助：向 AI 代理询问特定工具*

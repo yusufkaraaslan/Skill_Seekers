@@ -13,6 +13,8 @@ from skill_seekers.cli.browser_renderer import (
     _check_playwright_available,
 )
 
+pytestmark = [pytest.mark.integration, pytest.mark.network]
+
 # Skip all real browser tests when Playwright is not installed
 _has_playwright = _check_playwright_available()
 requires_playwright = pytest.mark.skipif(

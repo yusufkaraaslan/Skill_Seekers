@@ -1,6 +1,6 @@
 # Workflows Guide
 
-> **Skill Seekers v3.2.0**  
+> **Skill Seekers v3.6.0**  
 > **Enhancement workflow presets for specialized analysis**
 
 ---
@@ -258,7 +258,7 @@ stages:
 
 **Example:**
 ```bash
-skill-seekers unified --config configs/multi-source.json \
+skill-seekers create --config configs/multi-source.json \
   --enhance-workflow complex-merge
 ```
 
@@ -563,7 +563,7 @@ skill-seekers create <source> \
 
 ## Workflow Support Across All Scrapers
 
-Workflows are supported by **all 17 source types** in Skill Seekers:
+Workflows are supported by **all 18 source types** in Skill Seekers:
 
 | Scraper | Command | Workflow Support |
 |---------|---------|------------------|
@@ -591,19 +591,19 @@ Workflows are supported by **all 17 source types** in Skill Seekers:
 
 ```bash
 # Documentation website
-skill-seekers scrape https://docs.example.com --enhance-workflow security-focus
+skill-seekers create https://docs.example.com --enhance-workflow security-focus
 
 # GitHub repository
-skill-seekers github --repo owner/repo --enhance-workflow api-documentation
+skill-seekers create  owner/repo --enhance-workflow api-documentation
 
 # Local codebase
-skill-seekers analyze --directory ./my-project --enhance-workflow architecture-comprehensive
+skill-seekers scan  ./my-project --enhance-workflow architecture-comprehensive
 
 # PDF document
-skill-seekers pdf --pdf manual.pdf --enhance-workflow minimal
+skill-seekers create --pdf manual.pdf --enhance-workflow minimal
 
 # Unified config (multi-source)
-skill-seekers unified --config configs/multi-source.json --enhance-workflow security-focus
+skill-seekers create --config configs/multi-source.json --enhance-workflow security-focus
 
 # Auto-detect source type
 skill-seekers create ./my-project --enhance-workflow security-focus
@@ -640,7 +640,7 @@ Unified configs support defining workflows at the top level:
 
 ```bash
 # Config has security-focus, CLI overrides with api-documentation
-skill-seekers unified config.json --enhance-workflow api-documentation
+skill-seekers create --config config.json --enhance-workflow api-documentation
 ```
 
 ---

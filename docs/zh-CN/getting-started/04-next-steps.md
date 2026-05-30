@@ -1,57 +1,57 @@
-# Next Steps
+# 下一步
 
-> **Skill Seekers v3.1.0**  
-> **Where to go after creating your first skill**
-
----
-
-## You've Created Your First Skill! 🎉
-
-Now what? Here's your roadmap to becoming a Skill Seekers power user.
+> **Skill Seekers v3.6.0**  
+> **创建你的第一个 skill 之后该去哪里**
 
 ---
 
-## Immediate Next Steps
+## 你已创建了你的第一个 Skill！🎉
 
-### 1. Try Different Sources
+现在呢？这里是你成为 Skill Seekers 高级用户的路线图。
 
-You've done documentation. Now try:
+---
+
+## 立即下一步
+
+### 1. 尝试不同来源
+
+你已经做过文档抓取。现在试试：
 
 ```bash
-# GitHub repository
+# GitHub 仓库
 skill-seekers create facebook/react --name react
 
-# Local project
+# 本地项目
 skill-seekers create ./my-project --name my-project
 
-# PDF document
+# PDF 文档
 skill-seekers create manual.pdf --name manual
 ```
 
-### 2. Package for Multiple Platforms
+### 2. 打包到多个平台
 
-Your skill works everywhere:
+你的 skill 可以在任何地方工作：
 
 ```bash
-# Create once
+# 创建一次
 skill-seekers create https://docs.djangoproject.com/ --name django
 
-# Package for all platforms
+# 打包到所有平台
 for platform in claude gemini openai langchain; do
   skill-seekers package output/django/ --target $platform
 done
 ```
 
-### 3. Explore Enhancement Workflows
+### 3. 探索增强工作流
 
 ```bash
-# See available workflows
+# 查看可用工作流
 skill-seekers workflows list
 
-# Apply security-focused analysis
+# 应用安全聚焦分析
 skill-seekers create ./my-project --enhance-workflow security-focus
 
-# Chain multiple workflows
+# 链式多个工作流
 skill-seekers create ./my-project \
   --enhance-workflow security-focus \
   --enhance-workflow api-documentation
@@ -59,262 +59,262 @@ skill-seekers create ./my-project \
 
 ---
 
-## Learning Path
+## 学习路径
 
-### Beginner (You Are Here)
+### 初学者（你在这里）
 
-✅ Created your first skill  
-⬜ Try different source types  
-⬜ Package for multiple platforms  
-⬜ Use preset configs
+✅ 创建了第一个 skill  
+⬜ 尝试不同的来源类型  
+⬜ 打包到多个平台  
+⬜ 使用预设配置
 
-**Resources:**
-- [Core Concepts](../user-guide/01-core-concepts.md)
-- [Scraping Guide](../user-guide/02-scraping.md)
-- [Packaging Guide](../user-guide/04-packaging.md)
+**资源：**
+- [核心概念](../user-guide/01-core-concepts.md)
+- [抓取指南](../user-guide/02-scraping.md)
+- [打包指南](../user-guide/04-packaging.md)
 
-### Intermediate
+### 中级
 
-⬜ Custom configurations  
-⬜ Multi-source scraping  
-⬜ Enhancement workflows  
-⬜ Vector database export  
-⬜ MCP server setup
+⬜ 自定义配置  
+⬜ 多来源抓取  
+⬜ 增强工作流  
+⬜ 向量数据库导出  
+⬜ MCP server 设置
 
-**Resources:**
-- [Config Format](../reference/CONFIG_FORMAT.md)
-- [Enhancement Guide](../user-guide/03-enhancement.md)
-- [Advanced: Multi-Source](../advanced/multi-source.md)
-- [Advanced: MCP Server](../advanced/mcp-server.md)
+**资源：**
+- [配置格式](../reference/CONFIG_FORMAT.md)
+- [增强指南](../user-guide/03-enhancement.md)
+- [高级：多来源](../advanced/multi-source.md)
+- [高级：MCP Server](../advanced/mcp-server.md)
 
-### Advanced
+### 高级
 
-⬜ Custom workflow creation  
-⬜ Integration with CI/CD  
-⬜ API programmatic usage  
-⬜ Contributing to project
+⬜ 自定义工作流创建  
+⬜ 与 CI/CD 集成  
+⬜ API 程序化使用  
+⬜ 为项目做贡献
 
-**Resources:**
-- [Advanced: Custom Workflows](../advanced/custom-workflows.md)
-- [MCP Reference](../reference/MCP_REFERENCE.md)
-- [API Reference](../advanced/api-reference.md)
-- [Contributing Guide](../../CONTRIBUTING.md)
+**资源：**
+- [高级：自定义工作流](../advanced/custom-workflows.md)
+- [MCP 参考](../reference/MCP_REFERENCE.md)
+- [API 参考](../advanced/api-reference.md)
+- [贡献指南](../../CONTRIBUTING.md)
 
 ---
 
-## Common Use Cases
+## 常见用例
 
-### Use Case 1: Team Documentation
+### 用例 1：团队文档
 
-**Goal:** Create skills for all your team's frameworks
+**目标：** 为你团队的所有框架创建 skills
 
 ```bash
-# Create a script
+# 创建一个脚本
 for framework in django react vue fastapi; do
   echo "Processing $framework..."
   skill-seekers install --config $framework --target claude
 done
 ```
 
-### Use Case 2: GitHub Repository Analysis
+### 用例 2：GitHub 仓库分析
 
-**Goal:** Analyze your codebase for AI assistance
+**目标：** 分析你的代码库以获得 AI 辅助
 
 ```bash
-# Analyze your repo
+# 分析你的仓库
 skill-seekers create your-org/your-repo --preset comprehensive
 
-# Install to Cursor for coding assistance
+# 安装到 Cursor 以获得编码辅助
 skill-seekers install-agent output/your-repo/ --agent cursor
 ```
 
-### Use Case 3: RAG Pipeline
+### 用例 3：RAG Pipeline
 
-**Goal:** Feed documentation into vector database
+**目标：** 将文档输入向量数据库
 
 ```bash
-# Create skill
+# 创建 skill
 skill-seekers create https://docs.djangoproject.com/ --name django
 
-# Export to ChromaDB
+# 导出到 ChromaDB
 skill-seekers package output/django/ --target chroma
+```
 
-# Or export directly
+```python
+# 或直接导出（Python API）
+from skill_seekers.package import export_to_chroma
 export_to_chroma(skill_directory="output/django/")
 ```
 
-### Use Case 4: Documentation Monitoring
+### 用例 4：文档监控
 
-**Goal:** Keep skills up-to-date automatically
+**目标：** 自动保持 skills 最新
 
 ```bash
-# Check for updates
+# 检查更新
 skill-seekers update --config django --check-only
 
-# Update if changed
+# 如有变化则更新
 skill-seekers update --config django
 ```
 
 ---
 
-## By Interest Area
+## 按兴趣领域
 
-### For AI Skill Builders
+### 面向 AI Skill 构建者
 
-Building skills for Claude, Gemini, or ChatGPT?
+为 Claude、Gemini 或 ChatGPT 构建 skills？
 
-**Learn:**
-- Enhancement workflows for better quality
-- Multi-source combining for comprehensive skills
-- Quality scoring before upload
+**学习：**
+- 提升质量的增强工作流
+- 多来源组合以获得全面的 skills
+- 上传前的质量评分
 
-**Commands:**
+**命令：**
 ```bash
 skill-seekers quality output/my-skill/ --report
 skill-seekers create ./my-project --enhance-workflow architecture-comprehensive
 ```
 
-### For RAG Engineers
+### 面向 RAG 工程师
 
-Building retrieval-augmented generation systems?
+构建检索增强生成系统？
 
-**Learn:**
-- Vector database exports (Chroma, Weaviate, Qdrant, FAISS)
-- Chunking strategies
-- Embedding integration
+**学习：**
+- 向量数据库导出（Chroma、Weaviate、Qdrant、FAISS）
+- 分块策略
+- Embedding 集成
 
-**Commands:**
+**命令：**
 ```bash
 skill-seekers package output/my-skill/ --target chroma
 skill-seekers package output/my-skill/ --target weaviate
 skill-seekers package output/my-skill/ --target langchain
 ```
 
-### For AI Coding Assistant Users
+### 面向 AI 编码助手用户
 
-Using Cursor, Windsurf, or Cline?
+使用 Cursor、Windsurf 或 Cline？
 
-**Learn:**
-- Local codebase analysis
-- Agent installation
-- Pattern detection
+**学习：**
+- 本地代码库分析
+- Agent 安装
+- 模式检测
 
-**Commands:**
+**命令：**
 ```bash
 skill-seekers create ./my-project --preset comprehensive
 skill-seekers install-agent output/my-project/ --agent cursor
 ```
 
-### For DevOps/SRE
+### 面向 DevOps/SRE
 
-Automating documentation workflows?
+自动化文档工作流？
 
-**Learn:**
-- CI/CD integration
-- MCP server setup
-- Config sources
+**学习：**
+- CI/CD 集成
+- MCP server 设置
+- 配置来源
 
-**Commands:**
+**命令：**
 ```bash
-# Start MCP server
-skill-seekers-mcp --transport http --port 8765
-
-# Add config source
-skill-seekers workflows add-config-source my-org https://github.com/my-org/configs
+# 启动 MCP server
+python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ```
 
 ---
 
-## Recommended Reading Order
+## 推荐阅读顺序
 
-### Quick Reference (5 minutes each)
+### 快速参考（每篇 5 分钟）
 
-1. [CLI Reference](../reference/CLI_REFERENCE.md) - All commands
-2. [Config Format](../reference/CONFIG_FORMAT.md) - JSON specification
-3. [Environment Variables](../reference/ENVIRONMENT_VARIABLES.md) - Settings
+1. [CLI 参考](../reference/CLI_REFERENCE.md) - 所有命令
+2. [配置格式](../reference/CONFIG_FORMAT.md) - JSON 规范
+3. [环境变量](../reference/ENVIRONMENT_VARIABLES.md) - 设置
 
-### User Guides (10-15 minutes each)
+### 用户指南（每篇 10-15 分钟）
 
-1. [Core Concepts](../user-guide/01-core-concepts.md) - How it works
-2. [Scraping Guide](../user-guide/02-scraping.md) - Source options
-3. [Enhancement Guide](../user-guide/03-enhancement.md) - AI options
-4. [Workflows Guide](../user-guide/05-workflows.md) - Preset workflows
-5. [Troubleshooting](../user-guide/06-troubleshooting.md) - Common issues
+1. [核心概念](../user-guide/01-core-concepts.md) - 工作原理
+2. [抓取指南](../user-guide/02-scraping.md) - 来源选项
+3. [增强指南](../user-guide/03-enhancement.md) - AI 选项
+4. [工作流指南](../user-guide/05-workflows.md) - 预设工作流
+5. [故障排除](../user-guide/06-troubleshooting.md) - 常见问题
 
-### Advanced Topics (20+ minutes each)
+### 高级主题（每篇 20+ 分钟）
 
-1. [Multi-Source Scraping](../advanced/multi-source.md)
-2. [MCP Server Setup](../advanced/mcp-server.md)
-3. [Custom Workflows](../advanced/custom-workflows.md)
-4. [API Reference](../advanced/api-reference.md)
+1. [多来源抓取](../advanced/multi-source.md)
+2. [MCP Server 设置](../advanced/mcp-server.md)
+3. [自定义工作流](../advanced/custom-workflows.md)
+4. [API 参考](../advanced/api-reference.md)
 
 ---
 
-## Join the Community
+## 加入社区
 
-### Get Help
+### 获取帮助
 
 - **GitHub Issues:** https://github.com/yusufkaraaslan/Skill_Seekers/issues
-- **Discussions:** Share use cases and get advice
-- **Discord:** [Link in README]
+- **Discussions:** 分享用例并获得建议
+- **Discord:** [README 中的链接]
 
-### Contribute
+### 贡献
 
-- **Bug reports:** Help improve the project
-- **Feature requests:** Suggest new capabilities
-- **Documentation:** Improve these docs
-- **Code:** Submit PRs
+- **Bug 报告：** 帮助改进项目
+- **功能请求：** 建议新功能
+- **文档：** 改进这些文档
+- **代码：** 提交 PR
 
-See [Contributing Guide](../../CONTRIBUTING.md)
+请参阅 [贡献指南](../../CONTRIBUTING.md)
 
-### Stay Updated
+### 保持更新
 
-- **Watch** the GitHub repository
-- **Star** the project
-- **Follow** on Twitter: @_yUSyUS_
+- **Watch** GitHub 仓库
+- **Star** 这个项目
+- **Follow** Twitter：@_yUSyUS_
 
 ---
 
-## Quick Command Reference
+## 快速命令参考
 
 ```bash
-# Core workflow
-skill-seekers create <source>              # Create skill
-skill-seekers package <dir> --target <p>   # Package
-skill-seekers upload <file> --target <p>   # Upload
+# 核心工作流
+skill-seekers create <source>              # 创建 skill
+skill-seekers package <dir> --target <p>   # 打包
+skill-seekers upload <file> --target <p>   # 上传
 
-# Analysis
-skill-seekers analyze --directory <dir>    # Local codebase
-skill-seekers github --repo <owner/repo>   # GitHub repo
-skill-seekers pdf --pdf <file>             # PDF
+# 分析
+skill-seekers scan  <dir>    # 本地代码库
+skill-seekers create  <owner/repo>   # GitHub 仓库
+skill-seekers create --pdf <file>             # PDF
 
-# Utilities
-skill-seekers estimate <config>            # Page estimation
-skill-seekers quality <dir>                # Quality check
-skill-seekers resume                       # Resume job
-skill-seekers workflows list               # List workflows
+# 工具
+skill-seekers estimate <config>            # 页面估算
+skill-seekers quality <dir>                # 质量检查
+skill-seekers resume                       # 恢复任务
+skill-seekers workflows list               # 列出工作流
 
 # MCP server
-skill-seekers-mcp                          # Start MCP server
+skill-seekers-mcp                          # 启动 MCP server
 ```
 
 ---
 
-## Remember
+## 记住
 
-- **Start simple** - Use `create` with defaults
-- **Dry run first** - Use `--dry-run` to preview
-- **Iterate** - Enhance, package, test, repeat
-- **Share** - Package for multiple platforms
-- **Automate** - Use `install` for one-command workflows
+- **从简单开始** - 使用 `create` 加默认参数
+- **先试运行** - 使用 `--dry-run` 预览
+- **迭代** - 增强、打包、测试、重复
+- **分享** - 打包到多个平台
+- **自动化** - 使用 `install` 实现一键工作流
 
 ---
 
-## You're Ready!
+## 你已经准备好了！
 
-Go build something amazing. The documentation is your oyster. 🦪
+去构建一些令人惊叹的东西吧。文档就是你的牡蛎。🦪
 
 ```bash
-# Your next skill awaits
+# 你的下一个 skill 在等你
 skill-seekers create <your-source-here>
 ```

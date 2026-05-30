@@ -10,16 +10,18 @@ Validates the 4 new vector database export tools:
 """
 
 import pytest
-from pathlib import Path
-import sys
-import tempfile
-import json
-import asyncio
+
+pytestmark = pytest.mark.mcp_only
+from pathlib import Path  # noqa: E402
+import sys  # noqa: E402
+import tempfile  # noqa: E402
+import json  # noqa: E402
+import asyncio  # noqa: E402
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from skill_seekers.mcp.tools.vector_db_tools import (
+from skill_seekers.mcp.tools.vector_db_tools import (  # noqa: E402
     export_to_weaviate_impl,
     export_to_chroma_impl,
     export_to_faiss_impl,

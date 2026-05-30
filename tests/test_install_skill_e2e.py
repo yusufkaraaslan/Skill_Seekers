@@ -44,6 +44,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.mcp_only
+
 # Defensive import for MCP package (may not be installed in all environments)
 try:
     from mcp.types import TextContent
@@ -54,7 +56,7 @@ except ImportError:
     TextContent = None  # Placeholder
 
 # Import the MCP tool to test
-from skill_seekers.mcp.tools.packaging_tools import install_skill_tool
+from skill_seekers.mcp.tools.packaging_tools import install_skill_tool  # noqa: E402
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")

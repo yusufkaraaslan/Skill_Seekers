@@ -1,40 +1,40 @@
-# Core Concepts
+# 核心概念
 
-> **Skill Seekers v3.1.0**  
-> **Understanding how Skill Seekers works**
+> **Skill Seekers v3.6.0**
+> **了解 Skill Seekers 的工作原理**
 
 ---
 
-## Overview
+## 概述
 
-Skill Seekers transforms documentation, code, and content into **structured knowledge assets** that AI systems can use effectively.
+Skill Seekers 将文档、代码和内容转换为 AI 系统可以有效使用的**结构化知识资产**。
 
 ```
-Raw Content → Skill Seekers → AI-Ready Skill
+原始内容 → Skill Seekers → AI 就绪的 Skill
      ↓                              ↓
-  (docs, code,               (SKILL.md +
-   PDFs, repos)                references)
+  (文档、代码、               (SKILL.md +
+   PDF、仓库)                  参考文件)
 ```
 
 ---
 
-## What is a Skill?
+## 什么是 Skill？
 
-A **skill** is a structured knowledge package containing:
+**Skill** 是一个结构化的知识包，包含以下内容：
 
 ```
 output/my-skill/
-├── SKILL.md              # Main file (400+ lines typically)
-├── references/           # Categorized content
-│   ├── index.md         # Navigation
+├── SKILL.md              # 主文件（通常 400+ 行）
+├── references/           # 分类内容
+│   ├── index.md         # 导航
 │   ├── getting_started.md
 │   ├── api_reference.md
 │   └── ...
-├── .skill-seekers/      # Metadata
-└── assets/              # Images, downloads
+├── .skill-seekers/      # 元数据
+└── assets/              # 图片、下载文件
 ```
 
-### SKILL.md Structure
+### SKILL.md 结构
 
 ```markdown
 # My Framework Skill
@@ -63,265 +63,264 @@ npm install my-framework
 ...
 ```
 
-### Why This Structure?
+### 为什么采用这种结构？
 
-| Element | Purpose |
+| 元素 | 用途 |
 |---------|---------|
-| **Overview** | Quick context for AI |
-| **Quick Reference** | Common patterns at a glance |
-| **Categories** | Organized deep dives |
-| **Code Examples** | Copy-paste ready snippets |
+| **Overview** | 为 AI 提供快速上下文 |
+| **Quick Reference** | 快速查看常用模式 |
+| **Categories** | 有组织的深度内容 |
+| **Code Examples** | 可直接复制粘贴的代码片段 |
 
 ---
 
-## Source Types
+## 源类型
 
-Skill Seekers works with four types of sources:
+Skill Seekers 支持四种类型的来源：
 
-### 1. Documentation Websites
+### 1. 文档网站
 
-**What:** Web-based documentation (ReadTheDocs, Docusaurus, GitBook, etc.)
+**类型：** 基于 Web 的文档（ReadTheDocs、Docusaurus、GitBook 等）
 
-**Examples:**
-- React docs (react.dev)
-- Django docs (docs.djangoproject.com)
-- Kubernetes docs (kubernetes.io)
+**示例：**
+- React 文档 (react.dev)
+- Django 文档 (docs.djangoproject.com)
+- Kubernetes 文档 (kubernetes.io)
 
-**Command:**
+**命令：**
 ```bash
 skill-seekers create https://docs.example.com/
 ```
 
-**Best for:**
-- Framework documentation
-- API references
-- Tutorials and guides
+**适用于：**
+- 框架文档
+- API 参考
+- 教程和指南
 
 ---
 
-### 2. GitHub Repositories
+### 2. GitHub 仓库
 
-**What:** Source code repositories with analysis
+**类型：** 经过分析的源代码仓库
 
-**Extracts:**
-- Code structure and APIs
-- README and documentation
-- Issues and discussions
-- Releases and changelog
+**提取内容：**
+- 代码结构和 API
+- README 和文档
+- Issues 和 Discussions
+- Releases 和 Changelog
 
-**Command:**
+**命令：**
 ```bash
 skill-seekers create owner/repo
-skill-seekers github --repo owner/repo
+skill-seekers create  owner/repo
 ```
 
-**Best for:**
-- Understanding codebases
-- API implementation details
-- Contributing guidelines
+**适用于：**
+- 理解代码库
+- API 实现细节
+- 贡献指南
 
 ---
 
-### 3. PDF Documents
+### 3. PDF 文档
 
-**What:** PDF manuals, papers, documentation
+**类型：** PDF 手册、论文、文档
 
-**Handles:**
-- Text extraction
-- OCR for scanned PDFs
-- Table extraction
-- Image extraction
+**处理能力：**
+- 文本提取
+- 扫描版 PDF 的 OCR
+- 表格提取
+- 图片提取
 
-**Command:**
+**命令：**
 ```bash
 skill-seekers create manual.pdf
-skill-seekers pdf --pdf manual.pdf
+skill-seekers create --pdf manual.pdf
 ```
 
-**Best for:**
-- Product manuals
-- Research papers
-- Legacy documentation
+**适用于：**
+- 产品手册
+- 研究论文
+- 遗留文档
 
 ---
 
-### 4. Local Codebases
+### 4. 本地代码库
 
-**What:** Your local projects and code
+**类型：** 你的本地项目和代码
 
-**Analyzes:**
-- Source code structure
-- Comments and docstrings
-- Test files
-- Configuration patterns
+**分析内容：**
+- 源代码结构
+- 注释和文档字符串
+- 测试文件
+- 配置模式
 
-**Command:**
+**命令：**
 ```bash
 skill-seekers create ./my-project
-skill-seekers analyze --directory ./my-project
+skill-seekers scan  ./my-project
 ```
 
-**Best for:**
-- Your own projects
-- Internal tools
-- Code review preparation
+**适用于：**
+- 你自己的项目
+- 内部工具
+- 代码审查准备
 
 ---
 
-## The Workflow
+## 工作流程
 
-### Phase 1: Ingest
+### 阶段 1：摄取（Ingest）
 
 ```
 ┌─────────────┐     ┌──────────────┐
-│   Source    │────▶│   Scraper    │
-│ (URL/repo/  │     │ (extracts    │
-│  PDF/local) │     │  content)    │
+│   来源      │────▶│   抓取器     │
+│ (URL/仓库/  │     │ (提取        │
+│  PDF/本地)  │     │  内容)       │
 └─────────────┘     └──────────────┘
 ```
 
-- Detects source type automatically
-- Crawls and downloads content
-- Respects rate limits
-- Extracts text, code, metadata
+- 自动检测源类型
+- 爬取和下载内容
+- 遵守速率限制
+- 提取文本、代码、元数据
 
 ---
 
-### Phase 2: Structure
+### 阶段 2：结构化（Structure）
 
 ```
 ┌──────────────┐     ┌──────────────┐
-│   Raw Data   │────▶│   Builder    │
-│ (pages/files/│     │ (organizes   │
-│  commits)    │     │  by category)│
+│   原始数据   │────▶│   构建器     │
+│ (页面/文件/  │     │ (按类别      │
+│  提交)       │     │  组织)       │
 └──────────────┘     └──────────────┘
 ```
 
-- Categorizes content by topic
-- Extracts code examples
-- Builds navigation structure
-- Creates reference files
+- 按主题分类内容
+- 提取代码示例
+- 构建导航结构
+- 创建参考文件
 
 ---
 
-### Phase 3: Enhance (Optional)
+### 阶段 3：增强（Enhance）（可选）
 
 ```
 ┌──────────────┐     ┌──────────────┐
-│   SKILL.md   │────▶│  Enhancer    │
-│  (basic)     │     │ (AI improves │
-│              │     │  quality)    │
+│   SKILL.md   │────▶│  增强器      │
+│  (基础版)    │     │ (AI 改进     │
+│              │     │  质量)       │
 └──────────────┘     └──────────────┘
 ```
 
-- AI reviews and improves content
-- Adds examples and patterns
-- Fixes formatting
-- Enhances navigation
+- AI 审查和改进内容
+- 添加示例和模式
+- 修复格式
+- 增强导航
 
-**Modes:**
-- **API:** Uses Claude API (fast, costs ~$0.10-0.30)
-- **LOCAL:** Uses Claude Code (free, requires Claude Code Max)
+**模式：**
+- **API：** 使用 Claude API（快速，费用约 $0.10-0.30）
+- **LOCAL：** 使用 Claude Code（免费，需要 Claude Code Max）
 
 ---
 
-### Phase 4: Package
+### 阶段 4：打包（Package）
 
 ```
 ┌──────────────┐     ┌──────────────┐
-│   Skill Dir  │────▶│   Packager   │
-│ (structured  │     │ (creates     │
-│  content)    │     │  platform    │
-│              │     │  format)     │
+│   Skill 目录 │────▶│   打包器     │
+│ (结构化      │     │ (创建        │
+│  内容)       │     │  平台格式)   │
 └──────────────┘     └──────────────┘
 ```
 
-- Formats for target platform
-- Creates archives (ZIP, tar.gz)
-- Optimizes for size
-- Validates structure
+- 格式化为目标平台格式
+- 创建归档文件（ZIP、tar.gz）
+- 优化大小
+- 验证结构
 
 ---
 
-### Phase 5: Upload (Optional)
+### 阶段 5：上传（Upload）（可选）
 
 ```
 ┌──────────────┐     ┌──────────────┐
-│   Package    │────▶│   Platform   │
+│   包         │────▶│   平台       │
 │ (.zip/.tar)  │     │ (Claude/     │
-│              │     │  Gemini/etc) │
+│              │     │  Gemini 等)  │
 └──────────────┘     └──────────────┘
 ```
 
-- Uploads to target platform
-- Configures settings
-- Returns skill ID/URL
+- 上传到目标平台
+- 配置设置
+- 返回 skill ID/URL
 
 ---
 
-## Enhancement Levels
+## 增强级别
 
-Control how much AI enhancement is applied:
+控制应用多少 AI 增强：
 
-| Level | What Happens | Use Case |
+| 级别 | 效果 | 使用场景 |
 |-------|--------------|----------|
-| **0** | No enhancement | Fast scraping, manual review |
-| **1** | SKILL.md only | Basic improvement |
-| **2** | + architecture/config | **Recommended** - good balance |
-| **3** | Full enhancement | Maximum quality, takes longer |
+| **0** | 不增强 | 快速抓取，手动审查 |
+| **1** | 仅 SKILL.md | 基础改进 |
+| **2** | + 架构/配置 | **推荐** - 良好平衡 |
+| **3** | 完全增强 | 最高质量，耗时更长 |
 
-**Default:** Level 2
+**默认：** Level 2
 
 ```bash
-# Skip enhancement (fastest)
+# 跳过增强（最快）
 skill-seekers create <source> --enhance-level 0
 
-# Full enhancement (best quality)
+# 完全增强（最佳质量）
 skill-seekers create <source> --enhance-level 3
 ```
 
 ---
 
-## Target Platforms
+## 目标平台
 
-Package skills for different AI systems:
+将 skill 打包为不同 AI 系统的格式：
 
-| Platform | Format | Use |
+| 平台 | 格式 | 用途 |
 |----------|--------|-----|
 | **Claude AI** | ZIP + YAML | Claude Code, Claude API |
 | **Gemini** | tar.gz | Google Gemini |
 | **OpenAI** | ZIP + Vector | ChatGPT, Assistants API |
-| **LangChain** | Documents | RAG pipelines |
-| **LlamaIndex** | TextNodes | Query engines |
-| **ChromaDB** | Collection | Vector search |
-| **Weaviate** | Objects | Vector database |
-| **Cursor** | .cursorrules | IDE AI assistant |
-| **Windsurf** | .windsurfrules | IDE AI assistant |
+| **LangChain** | Documents | RAG 管道 |
+| **LlamaIndex** | TextNodes | 查询引擎 |
+| **ChromaDB** | Collection | 向量搜索 |
+| **Weaviate** | Objects | 向量数据库 |
+| **Cursor** | .cursorrules | IDE AI 助手 |
+| **Windsurf** | .windsurfrules | IDE AI 助手 |
 
 ---
 
-## Configuration
+## 配置
 
-### Simple (Auto-Detect)
+### 简单模式（自动检测）
 
 ```bash
-# Just provide the source
+# 只需提供来源
 skill-seekers create https://docs.react.dev/
 ```
 
-### Preset Configs
+### 预设配置
 
 ```bash
-# Use predefined configuration
+# 使用预定义配置
 skill-seekers create --config react
 ```
 
-**Available presets:** `react`, `vue`, `django`, `fastapi`, `godot`, etc.
+**可用预设：** `react`, `vue`, `django`, `fastapi`, `godot` 等。
 
-### Custom Config
+### 自定义配置
 
 ```bash
-# Create custom config
+# 创建自定义配置
 cat > configs/my-docs.json << 'EOF'
 {
   "name": "my-docs",
@@ -333,16 +332,16 @@ EOF
 skill-seekers create --config configs/my-docs.json
 ```
 
-See [Config Format](../reference/CONFIG_FORMAT.md) for full specification.
+查看 [Config Format](../reference/CONFIG_FORMAT.md) 获取完整规范。
 
 ---
 
-## Multi-Source Skills
+## 多来源 Skill
 
-Combine multiple sources into one skill:
+将多个来源合并为一个 skill：
 
 ```bash
-# Create unified config
+# 创建统一配置
 cat > configs/my-project.json << 'EOF'
 {
   "name": "my-project",
@@ -354,79 +353,79 @@ cat > configs/my-project.json << 'EOF'
 }
 EOF
 
-# Run unified scraping
-skill-seekers unified --config configs/my-project.json
+# 运行统一抓取
+skill-seekers create --config configs/my-project.json
 ```
 
-**Benefits:**
-- Single skill with complete context
-- Automatic conflict detection
-- Cross-referenced content
+**优势：**
+- 单一 skill，完整上下文
+- 自动冲突检测
+- 交叉引用内容
 
 ---
 
-## Caching and Resumption
+## 缓存与恢复
 
-### How Caching Works
+### 缓存工作原理
 
 ```
-First scrape:    Downloads all pages → saves to output/{name}_data/
-Second scrape:   Reuses cached data → fast rebuild
+首次抓取:    下载所有页面 → 保存到 output/{name}_data/
+第二次抓取:  复用缓存数据 → 快速重建
 ```
 
-### Skip Scraping
+### 跳过抓取
 
 ```bash
-# Use cached data, just rebuild
+# 使用缓存数据，仅重建
 skill-seekers create --config react --skip-scrape
 ```
 
-### Resume Interrupted Jobs
+### 恢复中断的任务
 
 ```bash
-# List resumable jobs
+# 列出可恢复的任务
 skill-seekers resume --list
 
-# Resume specific job
+# 恢复特定任务
 skill-seekers resume job-abc123
 ```
 
 ---
 
-## Rate Limiting
+## 速率限制
 
-Be respectful to servers:
+尊重服务器：
 
 ```bash
-# Default: 0.5 seconds between requests
+# 默认：请求间隔 0.5 秒
 skill-seekers create <source>
 
-# Faster (for your own servers)
+# 更快（用于你自己的服务器）
 skill-seekers create <source> --rate-limit 0.1
 
-# Slower (for rate-limited sites)
+# 更慢（用于有限速的网站）
 skill-seekers create <source> --rate-limit 2.0
 ```
 
-**Why it matters:**
-- Prevents being blocked
-- Respects server resources
-- Good citizenship
+**为什么重要：**
+- 防止被封禁
+- 尊重服务器资源
+- 良好的网络公民意识
 
 ---
 
-## Key Takeaways
+## 关键要点
 
-1. **Skills are structured knowledge** - Not just raw text
-2. **Auto-detection works** - Usually don't need custom configs
-3. **Enhancement improves quality** - Level 2 is the sweet spot
-4. **Package once, use everywhere** - Same skill, multiple platforms
-5. **Cache saves time** - Rebuild without re-scraping
+1. **Skill 是结构化知识** - 不仅仅是原始文本
+2. **自动检测有效** - 通常不需要自定义配置
+3. **增强提高质量** - Level 2 是最佳平衡点
+4. **一次打包，处处使用** - 同一个 skill，多种平台
+5. **缓存节省时间** - 无需重新抓取即可重建
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Scraping Guide](02-scraping.md) - Deep dive into source options
-- [Enhancement Guide](03-enhancement.md) - AI enhancement explained
-- [Config Format](../reference/CONFIG_FORMAT.md) - Custom configurations
+- [抓取指南](02-scraping.md) - 深入探讨来源选项
+- [增强指南](03-enhancement.md) - AI 增强详解
+- [Config Format](../reference/CONFIG_FORMAT.md) - 自定义配置

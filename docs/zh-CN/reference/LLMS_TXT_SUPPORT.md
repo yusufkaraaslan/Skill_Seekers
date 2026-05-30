@@ -26,7 +26,7 @@ The llms.txt convention is a growing standard where documentation sites provide 
 No config changes needed. Just run normally:
 
 ```bash
-python3 cli/doc_scraper.py --config configs/hono.json
+skill-seekers create --config configs/hono.json
 ```
 
 ### Explicit URL

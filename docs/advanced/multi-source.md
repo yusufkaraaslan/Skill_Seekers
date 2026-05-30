@@ -1,13 +1,13 @@
 # Multi-Source Scraping Guide
 
-> **Skill Seekers v3.2.0**  
-> **Combine 17 source types into one unified skill**
+> **Skill Seekers v3.6.0**  
+> **Combine 18 source types into one unified skill**
 
 ---
 
 ## What is Multi-Source Scraping?
 
-Combine multiple sources into a single, comprehensive skill. Skill Seekers supports **17 source types** that can be freely mixed and matched:
+Combine multiple sources into a single, comprehensive skill. Skill Seekers supports **18 source types** that can be freely mixed and matched:
 
 ```
 ┌──────────────┐
@@ -342,20 +342,20 @@ Combine multiple sources into a single, comprehensive skill. Skill Seekers suppo
 ### Basic Command
 
 ```bash
-skill-seekers unified --config react-complete.json
+skill-seekers create --config react-complete.json
 ```
 
 ### With Options
 
 ```bash
 # Fresh start (ignore cache)
-skill-seekers unified --config react-complete.json --fresh
+skill-seekers create --config react-complete.json --fresh
 
 # Dry run
-skill-seekers unified --config react-complete.json --dry-run
+skill-seekers create --config react-complete.json --dry-run
 
 # Rule-based merging
-skill-seekers unified --config react-complete.json --merge-mode rule-based
+skill-seekers create --config react-complete.json --merge-mode rule-based
 ```
 
 ---
@@ -372,7 +372,7 @@ Uses AI to intelligently merge sources:
 - Best quality, slower
 
 ```bash
-skill-seekers unified --config my-config.json --merge-mode claude-enhanced
+skill-seekers create --config my-config.json --merge-mode claude-enhanced
 ```
 
 ### rule-based
@@ -384,7 +384,7 @@ Uses defined rules for merging:
 - Less sophisticated
 
 ```bash
-skill-seekers unified --config my-config.json --merge-mode rule-based
+skill-seekers create --config my-config.json --merge-mode rule-based
 ```
 
 ### Generic Merge System
@@ -396,7 +396,7 @@ When combining source types beyond the standard docs+github+pdf trio, the **gene
 For complex multi-source projects, use the `complex-merge.yaml` workflow preset to apply AI-powered merging:
 
 ```bash
-skill-seekers unified --config my-config.json \
+skill-seekers create --config my-config.json \
   --enhance-workflow complex-merge
 ```
 
@@ -522,7 +522,7 @@ output/react-complete/
 skill-seekers create <source1>
 
 # Then add sources
-skill-seekers unified --config my-config.json --dry-run
+skill-seekers create --config my-config.json --dry-run
 ```
 
 ---
@@ -544,7 +544,7 @@ ls downloads/manual.pdf
 cat output/my-skill/conflicts.json
 
 # Adjust merge_mode
-skill-seekers unified --config my-config.json --merge-mode rule-based
+skill-seekers create --config my-config.json --merge-mode rule-based
 ```
 
 ### "Out of memory"

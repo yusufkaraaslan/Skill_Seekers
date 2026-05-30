@@ -1,57 +1,57 @@
-# Scraping Guide
+# 抓取指南
 
-> **Skill Seekers v3.1.0**  
-> **Complete guide to all scraping options**
+> **Skill Seekers v3.6.0**
+> **所有抓取选项的完整指南**
 
 ---
 
-## Overview
+## 概述
 
-Skill Seekers can extract knowledge from four types of sources:
+Skill Seekers 可以从四种类型的来源中提取知识：
 
-| Source | Command | Best For |
+| 来源 | 命令 | 适用于 |
 |--------|---------|----------|
-| **Documentation** | `create <url>` | Web docs, tutorials, API refs |
-| **GitHub** | `create <repo>` | Source code, issues, releases |
-| **PDF** | `create <file.pdf>` | Manuals, papers, reports |
-| **Local** | `create <./path>` | Your projects, internal code |
+| **文档** | `create <url>` | 网页文档、教程、API 参考 |
+| **GitHub** | `create <repo>` | 源代码、issues、releases |
+| **PDF** | `create <file.pdf>` | 手册、论文、报告 |
+| **本地** | `create <./path>` | 你的项目、内部代码 |
 
 ---
 
-## Documentation Scraping
+## 文档抓取
 
-### Basic Usage
+### 基本用法
 
 ```bash
-# Auto-detect and scrape
+# 自动检测并抓取
 skill-seekers create https://docs.react.dev/
 
-# With custom name
+# 使用自定义名称
 skill-seekers create https://docs.react.dev/ --name react-docs
 
-# With description
+# 使用描述
 skill-seekers create https://docs.react.dev/ \
   --description "React JavaScript library documentation"
 ```
 
-### Using Preset Configs
+### 使用预设配置
 
 ```bash
-# List available presets
+# 列出可用预设
 skill-seekers estimate --all
 
-# Use preset
+# 使用预设
 skill-seekers create --config react
 skill-seekers create --config django
 skill-seekers create --config fastapi
 ```
 
-**Available presets:** See `configs/` directory in repository.
+**可用预设：** 查看仓库中的 `configs/` 目录。
 
-### Custom Configuration
+### 自定义配置
 
 ```bash
-# Create config file
+# 创建配置文件
 cat > configs/my-docs.json << 'EOF'
 {
   "name": "my-framework",
@@ -70,123 +70,123 @@ cat > configs/my-docs.json << 'EOF'
 }
 EOF
 
-# Use config
+# 使用配置
 skill-seekers create --config configs/my-docs.json
 ```
 
-See [Config Format](../reference/CONFIG_FORMAT.md) for all options.
+查看 [Config Format](../reference/CONFIG_FORMAT.md) 获取所有选项。
 
-### Advanced Options
+### 高级选项
 
 ```bash
-# Limit pages (for testing)
+# 限制页面数（用于测试）
 skill-seekers create <url> --max-pages 50
 
-# Adjust rate limit
+# 调整速率限制
 skill-seekers create <url> --rate-limit 1.0
 
-# Parallel workers (faster)
+# 并行工作者（更快）
 skill-seekers create <url> --workers 5 --async
 
-# Dry run (preview)
+# 试运行（预览）
 skill-seekers create <url> --dry-run
 
-# Resume interrupted
+# 恢复中断的任务
 skill-seekers create <url> --resume
 
-# Fresh start (ignore cache)
+# 重新开始（忽略缓存）
 skill-seekers create <url> --fresh
 ```
 
 ---
 
-## GitHub Repository Scraping
+## GitHub 仓库抓取
 
-### Basic Usage
+### 基本用法
 
 ```bash
-# By repo name
+# 通过仓库名称
 skill-seekers create facebook/react
 
-# With explicit flag
-skill-seekers github --repo facebook/react
+# 使用显式标志
+skill-seekers create  facebook/react
 
-# With custom name
-skill-seekers github --repo facebook/react --name react-source
+# 使用自定义名称
+skill-seekers create  facebook/react --name react-source
 ```
 
-### With GitHub Token
+### 使用 GitHub Token
 
 ```bash
-# Set token for higher rate limits
+# 设置 token 以获得更高的速率限制
 export GITHUB_TOKEN=ghp_...
 
-# Use token
-skill-seekers github --repo facebook/react
+# 使用 token
+skill-seekers create  facebook/react
 ```
 
-**Benefits of token:**
-- 5000 requests/hour vs 60
-- Access to private repos
-- Higher GraphQL limits
+**使用 token 的优势：**
+- 每小时 5000 次请求，而非 60 次
+- 可访问私有仓库
+- 更高的 GraphQL 限制
 
-### What Gets Extracted
+### 提取内容
 
-| Data | Default | Flag to Disable |
+| 数据 | 默认 | 禁用标志 |
 |------|---------|-----------------|
-| Source code | ✅ | `--scrape-only` |
+| 源代码 | ✅ | `--scrape-only` |
 | README | ✅ | - |
 | Issues | ✅ | `--no-issues` |
 | Releases | ✅ | `--no-releases` |
 | Changelog | ✅ | `--no-changelog` |
 
-### Control What to Fetch
+### 控制抓取内容
 
 ```bash
-# Skip issues (faster)
-skill-seekers github --repo facebook/react --no-issues
+# 跳过 issues（更快）
+skill-seekers create  facebook/react --no-issues
 
-# Limit issues
-skill-seekers github --repo facebook/react --max-issues 50
+# 限制 issues 数量
+skill-seekers create  facebook/react --max-issues 50
 
-# Scrape only (no build)
-skill-seekers github --repo facebook/react --scrape-only
+# 仅抓取（不构建）
+skill-seekers create  facebook/react --scrape-only
 
-# Non-interactive (CI/CD)
-skill-seekers github --repo facebook/react --non-interactive
+# 非交互模式（CI/CD）
+skill-seekers create  facebook/react --non-interactive
 ```
 
 ---
 
-## PDF Extraction
+## PDF 提取
 
-### Basic Usage
+### 基本用法
 
 ```bash
-# Direct file
+# 直接文件
 skill-seekers create manual.pdf --name product-manual
 
-# With explicit command
-skill-seekers pdf --pdf manual.pdf --name docs
+# 使用显式命令
+skill-seekers create --pdf manual.pdf --name docs
 ```
 
-### OCR for Scanned PDFs
+### 扫描版 PDF 的 OCR
 
 ```bash
-# Enable OCR
-skill-seekers pdf --pdf scanned.pdf --enable-ocr
+# 启用 OCR
+skill-seekers create --pdf scanned.pdf --enable-ocr
 ```
 
-**Requirements:**
+**要求：**
 ```bash
 pip install skill-seekers[pdf-ocr]
-# Also requires: tesseract-ocr (system package)
+# 还需要: tesseract-ocr（系统包）
 ```
 
-### Password-Protected PDFs
+### 受密码保护的 PDF
 
 ```bash
-# In config file
+# 在配置文件中
 {
   "name": "secure-docs",
   "pdf_path": "protected.pdf",
@@ -194,10 +194,10 @@ pip install skill-seekers[pdf-ocr]
 }
 ```
 
-### Page Range
+### 页面范围
 
 ```bash
-# Extract specific pages (via config)
+# 提取特定页面（通过配置）
 {
   "pdf_path": "manual.pdf",
   "page_range": [1, 100]
@@ -206,63 +206,63 @@ pip install skill-seekers[pdf-ocr]
 
 ---
 
-## Local Codebase Analysis
+## 本地代码库分析
 
-### Basic Usage
+### 基本用法
 
 ```bash
-# Current directory
+# 当前目录
 skill-seekers create .
 
-# Specific directory
+# 特定目录
 skill-seekers create ./my-project
 
-# With explicit command
-skill-seekers analyze --directory ./my-project
+# 使用显式命令
+skill-seekers scan  ./my-project
 ```
 
-### Analysis Presets
+### 分析预设
 
 ```bash
-# Quick analysis (1-2 min)
-skill-seekers analyze --directory ./my-project --preset quick
+# 快速分析（1-2 分钟）
+skill-seekers scan  ./my-project --preset quick
 
-# Standard analysis (5-10 min) - default
-skill-seekers analyze --directory ./my-project --preset standard
+# 标准分析（5-10 分钟）- 默认
+skill-seekers scan  ./my-project --preset standard
 
-# Comprehensive (20-60 min)
-skill-seekers analyze --directory ./my-project --preset comprehensive
+# 全面分析（20-60 分钟）
+skill-seekers scan  ./my-project --preset comprehensive
 ```
 
-### What Gets Analyzed
+### 分析内容
 
-| Feature | Quick | Standard | Comprehensive |
+| 功能 | 快速 | 标准 | 全面 |
 |---------|-------|----------|---------------|
-| Code structure | ✅ | ✅ | ✅ |
-| API extraction | ✅ | ✅ | ✅ |
-| Comments | - | ✅ | ✅ |
-| Patterns | - | ✅ | ✅ |
-| Test examples | - | - | ✅ |
-| How-to guides | - | - | ✅ |
-| Config patterns | - | - | ✅ |
+| 代码结构 | ✅ | ✅ | ✅ |
+| API 提取 | ✅ | ✅ | ✅ |
+| 注释 | - | ✅ | ✅ |
+| 模式 | - | ✅ | ✅ |
+| 测试示例 | - | - | ✅ |
+| 操作指南 | - | - | ✅ |
+| 配置模式 | - | - | ✅ |
 
-### Language Filtering
+### 语言过滤
 
 ```bash
-# Specific languages
-skill-seekers analyze --directory ./my-project \
+# 特定语言
+skill-seekers scan  ./my-project \
   --languages Python,JavaScript
 
-# File patterns
-skill-seekers analyze --directory ./my-project \
+# 文件模式
+skill-seekers scan  ./my-project \
   --file-patterns "*.py,*.js"
 ```
 
-### Skip Features
+### 跳过功能
 
 ```bash
-# Skip heavy features
-skill-seekers analyze --directory ./my-project \
+# 跳过重型功能
+skill-seekers scan  ./my-project \
   --skip-dependency-graph \
   --skip-patterns \
   --skip-test-examples
@@ -270,104 +270,104 @@ skill-seekers analyze --directory ./my-project \
 
 ---
 
-## Common Scraping Patterns
+## 常见抓取模式
 
-### Pattern 1: Test First
+### 模式 1：先测试
 
 ```bash
-# Dry run to preview
+# 试运行预览
 skill-seekers create <source> --dry-run
 
-# Small test scrape
+# 小规模测试抓取
 skill-seekers create <source> --max-pages 10
 
-# Full scrape
+# 完整抓取
 skill-seekers create <source>
 ```
 
-### Pattern 2: Iterative Development
+### 模式 2：迭代开发
 
 ```bash
-# Scrape without enhancement (fast)
+# 不增强抓取（快速）
 skill-seekers create <source> --enhance-level 0
 
-# Review output
+# 检查输出
 ls output/my-skill/
 cat output/my-skill/SKILL.md
 
-# Enhance later
+# 稍后增强
 skill-seekers enhance output/my-skill/
 ```
 
-### Pattern 3: Parallel Processing
+### 模式 3：并行处理
 
 ```bash
-# Fast async scraping
+# 快速异步抓取
 skill-seekers create <url> --async --workers 5
 
-# Even faster (be careful with rate limits)
+# 更快（注意速率限制）
 skill-seekers create <url> --async --workers 10 --rate-limit 0.2
 ```
 
-### Pattern 4: Resume Capability
+### 模式 4：恢复能力
 
 ```bash
-# Start scraping
+# 开始抓取
 skill-seekers create <source>
-# ...interrupted...
+# ...中断...
 
-# Resume later
+# 稍后恢复
 skill-seekers resume --list
 skill-seekers resume <job-id>
 ```
 
 ---
 
-## Troubleshooting Scraping
+## 抓取故障排除
 
-### "No content extracted"
+### "未提取到内容"
 
-**Problem:** Wrong CSS selectors
+**问题：** CSS 选择器错误
 
-**Solution:**
+**解决方案：**
 ```bash
-# Find correct selectors
+# 查找正确的选择器
 curl -s <url> | grep -i 'article\|main\|content'
 
-# Update config
+# 更新配置
 {
   "selectors": {
-    "main_content": "div.content"  // or "article", "main", etc.
+    "main_content": "div.content"
   }
 }
 ```
 
-### "Rate limit exceeded"
+### "超出速率限制"
 
-**Problem:** Too many requests
+**问题：** 请求过多
 
-**Solution:**
+**解决方案：**
 ```bash
-# Slow down
+# 减速
 skill-seekers create <url> --rate-limit 2.0
 
-# Or use GitHub token for GitHub repos
+# 或对 GitHub 仓库使用 token
 export GITHUB_TOKEN=ghp_...
 ```
 
-### "Too many pages"
+### "页面过多"
 
-**Problem:** Site is larger than expected
+**问题：** 网站比预期大
 
-**Solution:**
+**解决方案：**
 ```bash
-# Estimate first
+# 先估算
 skill-seekers estimate configs/my-config.json
 
-# Limit pages
+# 限制页面数
 skill-seekers create <url> --max-pages 100
 
-# Adjust URL patterns
+# 调整 URL 模式
 {
   "url_patterns": {
     "exclude": ["/blog/", "/archive/", "/search"]
@@ -375,35 +375,35 @@ skill-seekers create <url> --max-pages 100
 }
 ```
 
-### "Memory error"
+### "内存错误"
 
-**Problem:** Site too large for memory
+**问题：** 网站太大，内存不足
 
-**Solution:**
+**解决方案：**
 ```bash
-# Use streaming mode
+# 使用流式模式
 skill-seekers create <url> --streaming
 
-# Or smaller chunks
+# 或更小的分块
 skill-seekers create <url> --chunk-tokens 500
 ```
 
 ---
 
-## Performance Tips
+## 性能提示
 
-| Tip | Command | Impact |
+| 提示 | 命令 | 影响 |
 |-----|---------|--------|
-| Use presets | `--config react` | Faster setup |
-| Async mode | `--async --workers 5` | 3-5x faster |
-| Skip enhancement | `--enhance-level 0` | Skip 60 sec |
-| Use cache | `--skip-scrape` | Instant rebuild |
-| Resume | `--resume` | Continue interrupted |
+| 使用预设 | `--config react` | 更快的设置 |
+| 异步模式 | `--async --workers 5` | 快 3-5 倍 |
+| 跳过增强 | `--enhance-level 0` | 跳过 60 秒 |
+| 使用缓存 | `--skip-scrape` | 即时重建 |
+| 恢复 | `--resume` | 继续中断的任务 |
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Enhancement Guide](03-enhancement.md) - Improve skill quality
-- [Packaging Guide](04-packaging.md) - Export to platforms
-- [Config Format](../reference/CONFIG_FORMAT.md) - Advanced configuration
+- [增强指南](03-enhancement.md) - 提升 skill 质量
+- [打包指南](04-packaging.md) - 导出到平台
+- [Config Format](../reference/CONFIG_FORMAT.md) - 高级配置

@@ -50,7 +50,7 @@ Complete guide for scraping and managing large documentation sites with Skill Se
 
 ```bash
 # Just use the config as-is
-python3 cli/doc_scraper.py --config configs/react.json
+skill-seekers create --config configs/react.json
 ```
 
 **Pros:** Simple, one skill to maintain
@@ -63,7 +63,7 @@ python3 cli/doc_scraper.py --config configs/react.json
 
 ```bash
 # Auto-split by categories
-python3 cli/split_config.py configs/godot.json --strategy category
+skill-seekers create configs/godot.json --strategy category
 
 # Creates:
 # - godot-scripting.json
@@ -83,7 +83,7 @@ python3 cli/split_config.py configs/godot.json --strategy category
 
 ```bash
 # Create router + sub-skills
-python3 cli/split_config.py configs/godot.json --strategy router
+skill-seekers create configs/godot.json --strategy router
 
 # Creates:
 # - godot.json (router/hub)
@@ -102,7 +102,7 @@ python3 cli/split_config.py configs/godot.json --strategy router
 
 ```bash
 # Split every 5000 pages
-python3 cli/split_config.py configs/bigdocs.json --strategy size --target-pages 5000
+skill-seekers create configs/bigdocs.json --strategy size --target-pages 5000
 
 # Creates:
 # - bigdocs-part1.json
@@ -122,29 +122,29 @@ python3 cli/split_config.py configs/bigdocs.json --strategy size --target-pages 
 
 ```bash
 # 1. Create config
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 # Name: godot
 # URL: https://docs.godotengine.org
 # ... fill in prompts ...
 
 # 2. Estimate pages (discovers it's large)
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 # Output: ⚠️  40,000 pages detected - splitting recommended
 
 # 3. Auto-split with router
-python3 cli/split_config.py configs/godot.json --strategy router
+skill-seekers create configs/godot.json --strategy router
 
 # 4. Scrape all sub-skills
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 
 # 5. Generate router
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # 6. Package all
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 
 # 7. Upload all .zip files to Claude
 ```
@@ -168,7 +168,7 @@ nano configs/godot.json
 }
 
 # 2. Split
-python3 cli/split_config.py configs/godot.json
+skill-seekers create configs/godot.json
 
 # 3. Continue as above...
 ```
@@ -183,7 +183,7 @@ python3 cli/split_config.py configs/godot.json
 
 **Step 1: Estimate**
 ```bash
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 
 # Output:
 # Estimated: 40,000 pages
@@ -192,7 +192,7 @@ python3 cli/estimate_pages.py configs/godot.json
 
 **Step 2: Split Configuration**
 ```bash
-python3 cli/split_config.py configs/godot.json --strategy router --target-pages 5000
+skill-seekers create configs/godot.json --strategy router --target-pages 5000
 
 # Creates:
 # configs/godot.json (router)
@@ -206,11 +206,11 @@ python3 cli/split_config.py configs/godot.json --strategy router --target-pages 
 **Step 3: Scrape Sub-Skills (Parallel)**
 ```bash
 # Open multiple terminals or use background jobs
-python3 cli/doc_scraper.py --config configs/godot-scripting.json &
-python3 cli/doc_scraper.py --config configs/godot-2d.json &
-python3 cli/doc_scraper.py --config configs/godot-3d.json &
-python3 cli/doc_scraper.py --config configs/godot-physics.json &
-python3 cli/doc_scraper.py --config configs/godot-shaders.json &
+skill-seekers create --config configs/godot-scripting.json &
+skill-seekers create --config configs/godot-2d.json &
+skill-seekers create --config configs/godot-3d.json &
+skill-seekers create --config configs/godot-physics.json &
+skill-seekers create --config configs/godot-shaders.json &
 
 # Wait for all to complete
 wait
@@ -220,7 +220,7 @@ wait
 
 **Step 4: Generate Router**
 ```bash
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # Creates:
 # output/godot/SKILL.md (router skill)
@@ -228,7 +228,7 @@ python3 cli/generate_router.py configs/godot-*.json
 
 **Step 5: Package All**
 ```bash
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 
 # Creates:
 # output/godot.zip (router)
@@ -252,15 +252,15 @@ Upload all 6 .zip files to Claude. The router will intelligently direct queries 
 
 ```bash
 # 1. Split
-python3 cli/split_config.py configs/vue.json --strategy category
+skill-seekers create configs/vue.json --strategy category
 
 # 2. Scrape each
 for config in configs/vue-*.json; do
-  python3 cli/doc_scraper.py --config $config
+  skill-seekers create --config $config
 done
 
 # 3. Package
-python3 cli/package_multi.py output/vue*/
+skill-seekers package output/vue*/
 
 # 4. Upload all to Claude
 ```
@@ -275,13 +275,13 @@ python3 cli/package_multi.py output/vue*/
 
 ```bash
 # Small focused skills (3K-5K pages) - more skills, very focused
-python3 cli/split_config.py config.json --target-pages 3000
+skill-seekers create config.json --target-pages 3000
 
 # Medium skills (5K-8K pages) - balanced (RECOMMENDED)
-python3 cli/split_config.py config.json --target-pages 5000
+skill-seekers create config.json --target-pages 5000
 
 # Larger skills (8K-10K pages) - fewer skills, broader
-python3 cli/split_config.py config.json --target-pages 8000
+skill-seekers create config.json --target-pages 8000
 ```
 
 ### 2. **Use Parallel Scraping**
@@ -289,12 +289,12 @@ python3 cli/split_config.py config.json --target-pages 8000
 ```bash
 # Serial (slow - 40 hours)
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config
+  skill-seekers create --config $config
 done
 
 # Parallel (fast - 8 hours) ⭐
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 ```
@@ -306,7 +306,7 @@ wait
 nano configs/godot-2d.json
 # Set: "max_pages": 50
 
-python3 cli/doc_scraper.py --config configs/godot-2d.json
+skill-seekers create --config configs/godot-2d.json
 
 # If output looks good, increase to full
 ```
@@ -323,7 +323,7 @@ python3 cli/doc_scraper.py --config configs/godot-2d.json
 }
 
 # If scrape fails, resume
-python3 cli/doc_scraper.py --config config.json --resume
+skill-seekers create --config config.json --resume
 ```
 
 ---
@@ -334,7 +334,7 @@ python3 cli/doc_scraper.py --config config.json --resume
 
 ```bash
 # 1. Split by AWS services
-python3 cli/split_config.py configs/aws.json --strategy router --target-pages 5000
+skill-seekers create configs/aws.json --strategy router --target-pages 5000
 
 # Creates ~10 skills:
 # - aws (router)
@@ -356,7 +356,7 @@ python3 cli/split_config.py configs/aws.json --strategy router --target-pages 50
 # Too large even with splitting - use selective categories
 
 # Only scrape key topics
-python3 cli/split_config.py configs/microsoft.json --strategy category
+skill-seekers create configs/microsoft.json --strategy category
 
 # Edit configs to include only:
 # - microsoft-azure (Azure docs only)
@@ -376,7 +376,7 @@ python3 cli/split_config.py configs/microsoft.json --strategy category
 
 ```bash
 # Instead of 5K per skill, use 8K
-python3 cli/split_config.py config.json --target-pages 8000
+skill-seekers create config.json --target-pages 8000
 
 # Or manually combine categories in config
 ```
@@ -399,12 +399,12 @@ nano output/godot/SKILL.md
 
 ```bash
 # Scrape 2-3 at a time instead of all
-python3 cli/doc_scraper.py --config config1.json &
-python3 cli/doc_scraper.py --config config2.json &
+skill-seekers create --config config1.json &
+skill-seekers create --config config2.json &
 wait
 
-python3 cli/doc_scraper.py --config config3.json &
-python3 cli/doc_scraper.py --config config4.json &
+skill-seekers create --config config3.json &
+skill-seekers create --config config4.json &
 wait
 ```
 
@@ -414,11 +414,11 @@ wait
 
 **For 40K+ Page Documentation:**
 
-1. ✅ **Estimate first**: `python3 cli/estimate_pages.py config.json`
-2. ✅ **Split with router**: `python3 cli/split_config.py config.json --strategy router`
+1. ✅ **Estimate first**: `skill-seekers estimate config.json`
+2. ✅ **Split with router**: `skill-seekers create config.json --strategy router`
 3. ✅ **Scrape in parallel**: Multiple terminals or background jobs
-4. ✅ **Generate router**: `python3 cli/generate_router.py configs/*-*.json`
-5. ✅ **Package all**: `python3 cli/package_multi.py output/*/`
+4. ✅ **Generate router**: `skill-seekers create configs/*-*.json`
+5. ✅ **Package all**: `skill-seekers package output/*/`
 6. ✅ **Upload to Claude**: All .zip files
 
 **Result:** Intelligent, fast, focused skills that work seamlessly together!

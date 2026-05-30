@@ -119,10 +119,10 @@ The `--detect-patterns` flag integrates with codebase analysis:
 
 ```bash
 # Analyze codebase + detect patterns
-skill-seekers analyze --directory src/ --detect-patterns
+skill-seekers scan --directory src/ --detect-patterns
 
 # With other features
-skill-seekers analyze \
+skill-seekers scan \
   --directory src/ \
   --detect-patterns \
   --build-api-reference \

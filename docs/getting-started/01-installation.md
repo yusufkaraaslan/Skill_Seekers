@@ -1,6 +1,6 @@
 # Installation Guide
 
-> **Skill Seekers v3.2.0**
+> **Skill Seekers v3.6.0**
 
 Get Skill Seekers installed and running in under 5 minutes.
 
@@ -140,7 +140,7 @@ pip install skill-seekers[dev]
 | `all` | Everything | `pip install skill-seekers[all]` |
 | `dev` | Development tools | `pip install skill-seekers[dev]` |
 
-> **Video visual deps:** After installing `skill-seekers[video-full]`, run `skill-seekers video --setup` to auto-detect your GPU (NVIDIA/AMD/CPU) and install the correct PyTorch variant + easyocr.
+> **Video visual deps:** After installing `skill-seekers[video-full]`, run `skill-seekers create --setup` to auto-detect your GPU (NVIDIA/AMD/CPU) and install the correct PyTorch variant + easyocr.
 
 ---
 

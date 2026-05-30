@@ -1,6 +1,6 @@
 # Scraping Guide
 
-> **Skill Seekers v3.2.0**
+> **Skill Seekers v3.6.0**
 > **Complete guide to all scraping options**
 
 ---
@@ -132,10 +132,10 @@ skill-seekers create <url> --fresh
 skill-seekers create facebook/react
 
 # With explicit flag
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # With custom name
-skill-seekers github --repo facebook/react --name react-source
+skill-seekers create  facebook/react --name react-source
 ```
 
 ### With GitHub Token
@@ -145,7 +145,7 @@ skill-seekers github --repo facebook/react --name react-source
 export GITHUB_TOKEN=ghp_...
 
 # Use token
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 ```
 
 **Benefits of token:**
@@ -167,16 +167,16 @@ skill-seekers github --repo facebook/react
 
 ```bash
 # Skip issues (faster)
-skill-seekers github --repo facebook/react --no-issues
+skill-seekers create  facebook/react --no-issues
 
 # Limit issues
-skill-seekers github --repo facebook/react --max-issues 50
+skill-seekers create  facebook/react --max-issues 50
 
 # Scrape only (no build)
-skill-seekers github --repo facebook/react --scrape-only
+skill-seekers create  facebook/react --scrape-only
 
 # Non-interactive (CI/CD)
-skill-seekers github --repo facebook/react --non-interactive
+skill-seekers create  facebook/react --non-interactive
 ```
 
 ---
@@ -190,14 +190,14 @@ skill-seekers github --repo facebook/react --non-interactive
 skill-seekers create manual.pdf --name product-manual
 
 # With explicit command
-skill-seekers pdf --pdf manual.pdf --name docs
+skill-seekers create --pdf manual.pdf --name docs
 ```
 
 ### OCR for Scanned PDFs
 
 ```bash
 # Enable OCR
-skill-seekers pdf --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --enable-ocr
 ```
 
 **Requirements:**
@@ -241,20 +241,20 @@ skill-seekers create .
 skill-seekers create ./my-project
 
 # With explicit command
-skill-seekers analyze --directory ./my-project
+skill-seekers scan  ./my-project
 ```
 
 ### Analysis Presets
 
 ```bash
 # Quick analysis (1-2 min)
-skill-seekers analyze --directory ./my-project --preset quick
+skill-seekers scan  ./my-project --preset quick
 
 # Standard analysis (5-10 min) - default
-skill-seekers analyze --directory ./my-project --preset standard
+skill-seekers scan  ./my-project --preset standard
 
 # Comprehensive (20-60 min)
-skill-seekers analyze --directory ./my-project --preset comprehensive
+skill-seekers scan  ./my-project --preset comprehensive
 ```
 
 ### What Gets Analyzed
@@ -273,11 +273,11 @@ skill-seekers analyze --directory ./my-project --preset comprehensive
 
 ```bash
 # Specific languages
-skill-seekers analyze --directory ./my-project \
+skill-seekers scan  ./my-project \
   --languages Python,JavaScript
 
 # File patterns
-skill-seekers analyze --directory ./my-project \
+skill-seekers scan  ./my-project \
   --file-patterns "*.py,*.js"
 ```
 
@@ -285,7 +285,7 @@ skill-seekers analyze --directory ./my-project \
 
 ```bash
 # Skip heavy features
-skill-seekers analyze --directory ./my-project \
+skill-seekers scan  ./my-project \
   --skip-dependency-graph \
   --skip-patterns \
   --skip-test-examples
@@ -305,7 +305,7 @@ skill-seekers create https://www.youtube.com/watch?v=dQw4w9WgXcQ
 skill-seekers create presentation.mp4
 
 # With explicit command
-skill-seekers video --url https://www.youtube.com/watch?v=...
+skill-seekers create --video-url  https://www.youtube.com/watch?v=...
 ```
 
 ### Visual Analysis
@@ -313,10 +313,10 @@ skill-seekers video --url https://www.youtube.com/watch?v=...
 ```bash
 # Install full video support (includes Whisper + scene detection)
 pip install skill-seekers[video-full]
-skill-seekers video --setup  # auto-detect GPU and install PyTorch
+skill-seekers create --setup  # auto-detect GPU and install PyTorch
 
 # Extract with visual analysis
-skill-seekers video --url <url> --visual-analysis
+skill-seekers create --video-url  <url> --visual-analysis
 ```
 
 **Requirements:**
@@ -336,7 +336,7 @@ pip install skill-seekers[video-full]   # + Whisper, scene detection
 skill-seekers create report.docx --name project-report
 
 # With explicit command
-skill-seekers word --file report.docx
+skill-seekers create report.docx
 ```
 
 **Handles:** Text, tables, headings, images, embedded metadata.
@@ -352,7 +352,7 @@ skill-seekers word --file report.docx
 skill-seekers create programming-guide.epub --name guide
 
 # With explicit command
-skill-seekers epub --file programming-guide.epub
+skill-seekers create programming-guide.epub
 ```
 
 **Handles:** Chapters, metadata, table of contents, embedded images.
@@ -368,7 +368,7 @@ skill-seekers epub --file programming-guide.epub
 skill-seekers create analysis.ipynb --name data-analysis
 
 # With explicit command
-skill-seekers jupyter --notebook analysis.ipynb
+skill-seekers create analysis.ipynb
 ```
 
 **Requirements:**
@@ -389,7 +389,7 @@ pip install skill-seekers[jupyter]
 skill-seekers create docs.html --name offline-docs
 
 # With explicit command
-skill-seekers html --file docs.html
+skill-seekers create docs.html
 ```
 
 **Handles:** Full HTML parsing, text extraction, link resolution.
@@ -405,7 +405,7 @@ skill-seekers html --file docs.html
 skill-seekers create api-spec.yaml --name my-api
 
 # With explicit command
-skill-seekers openapi --spec api-spec.yaml
+skill-seekers create api-spec.yaml
 ```
 
 **Extracts:** Endpoints, request/response schemas, authentication info, examples.
@@ -421,7 +421,7 @@ skill-seekers openapi --spec api-spec.yaml
 skill-seekers create guide.adoc --name dev-guide
 
 # With explicit command
-skill-seekers asciidoc --file guide.adoc
+skill-seekers create guide.adoc
 ```
 
 **Requirements:**
@@ -442,7 +442,7 @@ pip install skill-seekers[asciidoc]
 skill-seekers create slides.pptx --name presentation
 
 # With explicit command
-skill-seekers pptx --file slides.pptx
+skill-seekers create slides.pptx
 ```
 
 **Requirements:**
@@ -466,7 +466,7 @@ skill-seekers create blog.rss --name blog-archive
 skill-seekers create updates.atom --name updates
 
 # With explicit command
-skill-seekers rss --feed blog.rss
+skill-seekers create blog.rss
 ```
 
 **Requirements:**
@@ -487,7 +487,7 @@ pip install skill-seekers[rss]
 skill-seekers create curl.1 --name curl-manual
 
 # With explicit command
-skill-seekers manpage --file curl.1
+skill-seekers create curl.1
 ```
 
 **Handles:** Sections (NAME, SYNOPSIS, DESCRIPTION, OPTIONS, etc.), formatting.
@@ -500,13 +500,13 @@ skill-seekers manpage --file curl.1
 
 ```bash
 # From Confluence API
-skill-seekers confluence \
+skill-seekers create \
   --base-url https://wiki.example.com \
   --space DEV \
   --name team-docs
 
 # From Confluence export directory
-skill-seekers confluence --export-dir ./confluence-export/
+skill-seekers create --export-dir ./confluence-export/
 ```
 
 **Requirements:**
@@ -525,10 +525,10 @@ pip install skill-seekers[confluence]
 ```bash
 # From Notion API
 export NOTION_API_KEY=secret_...
-skill-seekers notion --database abc123 --name product-wiki
+skill-seekers create --database-id  abc123 --name product-wiki
 
 # From Notion export directory
-skill-seekers notion --export-dir ./notion-export/
+skill-seekers create --export-dir ./notion-export/
 ```
 
 **Requirements:**
@@ -546,10 +546,10 @@ pip install skill-seekers[notion]
 
 ```bash
 # From Slack export
-skill-seekers chat --export slack-export/ --name team-discussions
+skill-seekers create --chat-export-path  slack-export/ --name team-discussions
 
 # From Discord export
-skill-seekers chat --export discord-export/ --name server-archive
+skill-seekers create --chat-export-path  discord-export/ --name server-archive
 ```
 
 **Requirements:**

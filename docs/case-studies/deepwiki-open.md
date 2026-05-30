@@ -86,7 +86,7 @@ pip install -e .
 **CLI Mode:**
 ```bash
 # Direct GitHub repository processing
-skill-seekers github --repo AsyncFuncAI/deepwiki-open --name deepwiki-skill
+skill-seekers create  AsyncFuncAI/deepwiki-open --name deepwiki-skill
 
 # Output: Structured skill package ready for Claude
 ```
@@ -190,7 +190,7 @@ Claude API (via DeepWiki-open)
 1. **Pre-Processing (Skill Seekers)**
    ```bash
    # Extract comprehensive documentation
-   skill-seekers github --repo AsyncFuncAI/deepwiki-open --name deepwiki-skill
+   skill-seekers create  AsyncFuncAI/deepwiki-open --name deepwiki-skill
 
    # Output structure:
    output/deepwiki-skill/

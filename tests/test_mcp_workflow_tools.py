@@ -11,7 +11,9 @@ Covers all 5 tools:
 from __future__ import annotations
 
 import pytest
-import yaml
+
+pytestmark = pytest.mark.mcp_only
+import yaml  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

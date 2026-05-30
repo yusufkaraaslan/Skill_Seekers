@@ -678,5 +678,53 @@ class TestWordSourceDetection(unittest.TestCase):
         self.assertEqual(source_info.type, "pdf")
 
 
+class TestWordExtractionReal(unittest.TestCase):
+    """Test extraction and build with real DOCX fixture files."""
+
+    def setUp(self):
+        from skill_seekers.cli.word_scraper import WordToSkillConverter, WORD_AVAILABLE
+
+        if not WORD_AVAILABLE:
+            self.skipTest("mammoth and python-docx not installed")
+        self.WordToSkillConverter = WordToSkillConverter
+        self.temp_dir = tempfile.mkdtemp()
+        self.fixture_dir = Path(__file__).parent / "fixtures" / "synthetic"
+
+    def tearDown(self):
+        if hasattr(self, "temp_dir"):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_extract_real_docx(self):
+        docx_path = self.fixture_dir / "document.docx"
+        if not docx_path.exists():
+            self.skipTest("Fixture document.docx not found")
+        config = {"name": "test_word_real", "docx_path": str(docx_path)}
+        converter = self.WordToSkillConverter(config)
+        ok = converter.extract()
+        self.assertTrue(ok)
+        result = converter.extracted_data
+        self.assertIsNotNone(result)
+        self.assertIn("pages", result)
+        self.assertGreater(len(result["pages"]), 0)
+
+    def test_extracted_data_structure(self):
+        docx_path = self.fixture_dir / "document.docx"
+        if not docx_path.exists():
+            self.skipTest("Fixture document.docx not found")
+        config = {"name": "test_word_real", "docx_path": str(docx_path)}
+        converter = self.WordToSkillConverter(config)
+        converter.extract()
+        result = converter.extracted_data
+        self.assertIsInstance(result, dict)
+        self.assertIn("pages", result)
+        self.assertIn("metadata", result)
+
+    def test_extract_handles_missing_file(self):
+        config = {"name": "test_missing", "docx_path": "nonexistent.docx"}
+        converter = self.WordToSkillConverter(config)
+        with self.assertRaises((FileNotFoundError, RuntimeError, Exception)):
+            converter.extract()
+
+
 if __name__ == "__main__":
     unittest.main()

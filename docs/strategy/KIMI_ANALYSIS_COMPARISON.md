@@ -1,5 +1,7 @@
 # Kimi's Vision Analysis & Synthesis
 
+> 🗄️ **Historical / Archived** — This document captures the February 2026 strategic analysis that informed the hybrid universal infrastructure approach. Many recommendations (RAG integrations, multi-LLM support, expanded adaptors) have since been implemented in Skill Seekers v3.6.0.
+
 **Date:** February 2, 2026
 **Purpose:** Compare Kimi's broader infrastructure vision with our integration strategy
 
@@ -103,20 +105,20 @@ CodeSee, Sourcery, Stepsize, Swimm - medium priority
 **Add:**
 ```bash
 # RAG-optimized formats
-skill-seekers scrape --format langchain      # LangChain Document format
-skill-seekers scrape --format llama-index    # LlamaIndex Node format
-skill-seekers scrape --format haystack       # Haystack Document format
-skill-seekers scrape --format pinecone       # Pinecone metadata format
+skill-seekers create --format langchain      # LangChain Document format
+skill-seekers create --format llama-index    # LlamaIndex Node format
+skill-seekers create --format haystack       # Haystack Document format
+skill-seekers create --format pinecone       # Pinecone metadata format
 
 # Code assistant formats
-skill-seekers scrape --format continue       # Continue.dev context format
-skill-seekers scrape --format aider          # Aider .aider.context.md format
-skill-seekers scrape --format cody           # Cody context format
+skill-seekers create --format continue       # Continue.dev context format
+skill-seekers create --format aider          # Aider .aider.context.md format
+skill-seekers create --format cody           # Cody context format
 
 # Wiki formats
-skill-seekers scrape --format obsidian       # Obsidian vault with backlinks
-skill-seekers scrape --format notion         # Notion blocks
-skill-seekers scrape --format confluence     # Confluence storage format
+skill-seekers create --format obsidian       # Obsidian vault with backlinks
+skill-seekers create --format notion         # Notion blocks
+skill-seekers create --format confluence     # Confluence storage format
 ```
 
 **Implementation:**
@@ -138,7 +140,7 @@ skill-seekers scrape --format confluence     # Confluence storage format
 
 ```bash
 # New flag for embedding-optimized chunking
-skill-seekers scrape --chunk-for-rag \
+skill-seekers create --chunk-for-rag \
     --chunk-tokens 512 \
     --chunk-overlap-tokens 50 \
     --add-metadata

@@ -50,7 +50,7 @@ Update the server page with metadata:
 **Display name:** Skill Seekers — AI Skill & RAG Toolkit
 
 **Description:**
-> Transform 17 source types into AI-ready skills and RAG knowledge. Ingest documentation sites, GitHub repos, PDFs, Jupyter notebooks, videos, Confluence, Notion, Slack/Discord exports, and more. Package for 16+ LLM platforms including Claude, GPT, Gemini, LangChain, LlamaIndex, and vector databases.
+> Transform 18 source types into AI-ready skills and RAG knowledge. Ingest documentation sites, GitHub repos, PDFs, Jupyter notebooks, videos, Confluence, Notion, Slack/Discord exports, and more. Package for 21+ LLM platforms including Claude, GPT, Gemini, LangChain, LlamaIndex, and vector databases.
 
 **Tags:** `ai`, `rag`, `documentation`, `skills`, `preprocessing`, `mcp`, `knowledge-base`, `vector-database`
 
@@ -81,7 +81,7 @@ For clients that use JSON config (Claude Desktop, Claude Code, Cursor):
 }
 ```
 
-## Available Tools (35)
+## Available Tools (40)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -93,6 +93,8 @@ For clients that use JSON config (Claude Desktop, Claude Code, Cursor):
 | Sources | 5 | Fetch, submit, manage config sources |
 | Vector DB | 4 | Export to Weaviate, Chroma, FAISS, Qdrant |
 | Workflows | 5 | List, get, create, update, delete workflows |
+| Quality | 3 | Quality checks, estimate scope, resume operations |
+| Agent Install | 2 | Install agent, extract test examples |
 
 ## Maintenance
 

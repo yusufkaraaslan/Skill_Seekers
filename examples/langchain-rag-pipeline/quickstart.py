@@ -146,7 +146,7 @@ def main():
     if not Path(DOCS_PATH).exists():
         print(f"❌ Documents not found at: {DOCS_PATH}")
         print("\nGenerate documents first:")
-        print("  1. skill-seekers scrape --config configs/react.json")
+        print("  1. skill-seekers create --config configs/react.json")
         print("  2. skill-seekers package output/react --target langchain")
         return
 

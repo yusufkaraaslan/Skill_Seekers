@@ -7,6 +7,8 @@ tags: [research, codebase, epub, input-format, scraper]
 status: complete
 ---
 
+> 🗄️ **Historical — completed** — This research informed the EPUB implementation that is now live in Skill Seekers v3.6.0.
+
 # Research: What files would be affected to add .epub support for input
 
 ## Research Question

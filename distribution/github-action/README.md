@@ -15,8 +15,8 @@ Transform documentation, GitHub repos, PDFs, videos, and 13 other source types i
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `source` | Yes | — | Source URL, file path, or `owner/repo` |
-| `command` | No | `create` | Command: `create`, `scrape`, `github`, `pdf`, `video`, `analyze`, `unified` |
-| `target` | No | `claude` | Target platform: `claude`, `openai`, `gemini`, `langchain`, `llamaindex`, `markdown` |
+| `command` | No | `create` | Command: `create`, `scan`, `doctor`, `enhance`, `enhance-status`, `package`, `upload`, `install`, `install-agent`, `estimate`, `extract-test-examples`, `resume`, `quality`, `config`, `workflows`, `sync-config`, `stream`, `update`, `multilang` |
+| `target` | No | `claude` | Target platform: `claude`, `openai`, `gemini`, `langchain`, `llama-index`, `markdown` |
 | `config` | No | — | Path to JSON config file |
 | `output-dir` | No | `output` | Output directory |
 | `extra-args` | No | — | Additional CLI arguments |
@@ -62,7 +62,7 @@ jobs:
 - uses: yusufkaraaslan/skill-seekers-action@v3
   with:
     source: 'pallets/flask'
-    command: 'github'
+    command: 'create'
     target: 'claude'
 ```
 
@@ -74,7 +74,7 @@ jobs:
 - uses: yusufkaraaslan/skill-seekers-action@v3
   with:
     source: 'docs/api-reference.pdf'
-    command: 'pdf'
+    command: 'create'
 ```
 
 ### Unified multi-source build with config
@@ -85,7 +85,7 @@ jobs:
 - uses: yusufkaraaslan/skill-seekers-action@v3
   with:
     config: 'configs/my-project.json'
-    command: 'unified'
+    command: 'create'
     target: 'openai'
 ```
 

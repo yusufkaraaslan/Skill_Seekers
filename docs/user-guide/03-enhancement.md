@@ -1,6 +1,6 @@
 # Enhancement Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.6.0**  
 > **AI-powered quality improvement for skills**
 
 ---

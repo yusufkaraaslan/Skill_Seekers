@@ -18,13 +18,17 @@ Complete example showing how to use Skill Seekers to generate Cursor rules for R
 pip install skill-seekers
 
 # Generate React documentation skill
-skill-seekers scrape --config configs/react.json --max-pages 100
+skill-seekers create --config configs/react.json --max-pages 100
 
-# Package for Cursor
+# Package for Claude (produces a ZIP)
 skill-seekers package output/react --target claude
+
+# For Cursor, use markdown target and copy manually:
+skill-seekers package output/react --target markdown
 ```
 
-This creates `output/react-claude.zip` containing `SKILL.md` (the Cursor rules file).
+This creates `output/react-claude.zip` containing `SKILL.md` (the Claude rules file).
+For Cursor IDE, copy the markdown output to `.cursorrules`.
 
 ### 2. Extract and Copy Rules
 
@@ -113,10 +117,10 @@ def main():
     print("Cursor Rules Generator - React Example")
     print("=" * 60)
 
-    # Step 1: Scrape React docs
+    # Step 1: Create React docs
     if not run_command(
-        ["skill-seekers", "scrape", "--config", "configs/react.json", "--max-pages", "100"],
-        "Scraping React documentation"
+        ["skill-seekers", "create", "--config", "configs/react.json", "--max-pages", "100"],
+        "Creating React documentation"
     ):
         sys.exit(1)
 
@@ -340,7 +344,7 @@ pip install skill-seekers
 **Solution:** Check internet connection, or use smaller --max-pages value
 
 ```bash
-skill-seekers scrape --config configs/react.json --max-pages 50
+skill-seekers create --config configs/react.json --max-pages 50
 ```
 
 ## Next Steps

@@ -1,17 +1,17 @@
 # Unified Multi-Source Scraping
 
-**Version:** 3.2.0 (17 source types supported)
+**Version:** 3.6.0 (18 source types supported)
 
 ## Overview
 
-Unified multi-source scraping allows you to combine knowledge from multiple sources into a single comprehensive skill. Instead of choosing between documentation, GitHub repositories, PDF manuals, or any of the 17 supported source types, you can extract and intelligently merge information from all of them.
+Unified multi-source scraping allows you to combine knowledge from multiple sources into a single comprehensive skill. Instead of choosing between documentation, GitHub repositories, PDF manuals, or any of the 18 supported source types, you can extract and intelligently merge information from all of them.
 
 ## Why Unified Scraping?
 
 **The Problem**: Documentation and code often drift apart over time. Official docs might be outdated, missing features that exist in code, or documenting features that have been removed. Separately scraping docs and code creates two incomplete skills.
 
 **The Solution**: Unified scraping:
-- Extracts information from **17 source types** (documentation, GitHub, PDFs, videos, Word docs, EPUB, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases)
+- Extracts information from **18 source types** (documentation, GitHub, PDFs, videos, Word docs, EPUB, Jupyter notebooks, local HTML, OpenAPI specs, AsciiDoc, PowerPoint, RSS/Atom feeds, man pages, Confluence, Notion, Slack/Discord, and local codebases)
 - **Detects conflicts** between documentation and actual code implementation
 - **Intelligently merges** conflicting information with transparency
 - **Generic merge system** combines any combination of source types via pairwise synthesis
@@ -50,7 +50,7 @@ Create a config file with multiple sources:
 ### 2. Scrape and Build
 
 ```bash
-python3 cli/unified_scraper.py --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 ```
 
 The tool will:
@@ -63,7 +63,7 @@ The tool will:
 ### 3. Package and Upload
 
 ```bash
-python3 cli/package_skill.py output/react/
+skill-seekers package output/react/
 ```
 
 ## Config Format
@@ -362,7 +362,7 @@ Fast, deterministic merging using predefined rules:
 
 **Example**:
 ```bash
-python3 cli/unified_scraper.py --config config.json --merge-mode rule-based
+skill-seekers create --config config.json --merge-mode rule-based
 ```
 
 ### Claude-Enhanced Merge
@@ -381,7 +381,7 @@ AI-powered reconciliation using local Claude Code:
 
 **Example**:
 ```bash
-python3 cli/unified_scraper.py --config config.json --merge-mode claude-enhanced
+skill-seekers create --config config.json --merge-mode claude-enhanced
 ```
 
 ## Skill Output Structure
@@ -620,16 +620,16 @@ useEffect(callback: () => void | (() => void), deps?: readonly any[])
 
 ```bash
 # Basic usage
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 
 # Override merge mode
-skill-seekers unified --config configs/react_unified.json --merge-mode claude-enhanced
+skill-seekers create --config configs/react_unified.json --merge-mode claude-enhanced
 
 # Fresh start (clear cached data)
-skill-seekers unified --config configs/react_unified.json --fresh
+skill-seekers create --config configs/react_unified.json --fresh
 
 # Dry run (preview without executing)
-skill-seekers unified --config configs/react_unified.json --dry-run
+skill-seekers create --config configs/react_unified.json --dry-run
 ```
 
 ### Enhancement Workflow Options
@@ -638,25 +638,25 @@ All workflow flags are now supported:
 
 ```bash
 # Apply workflow preset
-skill-seekers unified --config configs/react_unified.json --enhance-workflow security-focus
+skill-seekers create --config configs/react_unified.json --enhance-workflow security-focus
 
 # Multiple workflows (chained)
-skill-seekers unified --config configs/react_unified.json \
+skill-seekers create --config configs/react_unified.json \
   --enhance-workflow security-focus \
   --enhance-workflow api-documentation
 
 # Custom enhancement stage
-skill-seekers unified --config configs/react_unified.json \
+skill-seekers create --config configs/react_unified.json \
   --enhance-stage "cleanup:Remove boilerplate content"
 
 # Workflow variables
-skill-seekers unified --config configs/react_unified.json \
+skill-seekers create --config configs/react_unified.json \
   --enhance-workflow my-workflow \
   --var focus_area=performance \
   --var detail_level=high
 
 # Preview workflows without executing
-skill-seekers unified --config configs/react_unified.json \
+skill-seekers create --config configs/react_unified.json \
   --enhance-workflow security-focus \
   --workflow-dry-run
 ```
@@ -667,10 +667,10 @@ Override enhancement settings from CLI:
 
 ```bash
 # Override enhance level for all sources
-skill-seekers unified --config configs/react_unified.json --enhance-level 3
+skill-seekers create --config configs/react_unified.json --enhance-level 3
 
 # Provide API key (or use ANTHROPIC_API_KEY env var)
-skill-seekers unified --config configs/react_unified.json --api-key YOUR_API_KEY
+skill-seekers create --config configs/react_unified.json --api-key YOUR_API_KEY
 ```
 
 ### Workflow Configuration in JSON
@@ -759,7 +759,7 @@ The tool will:
 Run integration tests:
 
 ```bash
-python3 cli/test_unified_simple.py
+pytest tests/ -k unified_simple
 ```
 
 Tests validate:
@@ -925,7 +925,7 @@ For issues, questions, or suggestions:
 
 ## Changelog
 
-**v3.2.0 (March 2026)**: 17 source types supported
+**v3.6.0 (May 2026)**: 18 source types supported
 - ✅ 13 new source types: Word, EPUB, Video, Jupyter, HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, Man pages, Confluence, Notion, Slack/Discord
 - ✅ Generic merge system (`_generic_merge()`) for combining any source type combination
 - ✅ Pairwise synthesis for docs+github+pdf combos

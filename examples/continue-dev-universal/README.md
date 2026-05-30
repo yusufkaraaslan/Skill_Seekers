@@ -18,7 +18,7 @@ Complete example showing how to use Skill Seekers to create IDE-agnostic context
 pip install skill-seekers[mcp]
 
 # Generate Vue.js documentation
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 skill-seekers package output/vue --target markdown
 ```
 
@@ -212,11 +212,11 @@ Add more frameworks easily:
 
 ```bash
 # Generate React docs
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target markdown
 
 # Generate Django docs
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target markdown
 
 # Server automatically serves both at:
@@ -437,7 +437,7 @@ cat ~/.continue/config.json
 
 **Solution:** Re-generate and restart
 ```bash
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 skill-seekers package output/vue --target markdown
 
 # Restart server (will load new docs)

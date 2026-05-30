@@ -1,6 +1,6 @@
 # API Reference - Programmatic Usage
 
-**Version:** 3.2.0
+**Version:** 3.6.0
 **Last Updated:** 2026-03-15
 **Status:** ✅ Production Ready
 
@@ -552,7 +552,7 @@ Skill Seekers uses JSON configuration files to define scraping behavior.
 
 ### Unified Config Schema (Multi-Source)
 
-Supports all 17 source types: `documentation`, `github`, `pdf`, `local`, `word`, `video`, `epub`, `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `rss`, `manpage`, `confluence`, `notion`, `chat`.
+Supports all 18 source types: `documentation`, `github`, `pdf`, `local`, `word`, `video`, `epub`, `jupyter`, `html`, `openapi`, `asciidoc`, `pptx`, `rss`, `manpage`, `confluence`, `notion`, `chat`, `config`.
 
 ```json
 {
@@ -1013,6 +1013,6 @@ monitor_enhancement('output/react/', watch=True)
 
 ---
 
-**Version:** 3.2.0
+**Version:** 3.6.0
 **Last Updated:** 2026-03-15
 **Status:** ✅ Production Ready

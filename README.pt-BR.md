@@ -12,15 +12,17 @@
 >
 > Ajude a melhorar a tradução através do [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260)! Seu feedback é muito valioso para nós.
 
-[![Versão](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Versão](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Licença: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Integração MCP](https://img.shields.io/badge/MCP-Integrated-blue.svg)](https://modelcontextprotocol.io)
-[![Testes Aprovados](https://img.shields.io/badge/Tests-2540%2B%20Passing-brightgreen.svg)](tests/)
+[![Integração MCP](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
+[![Testes Aprovados](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
 [![Quadro do Projeto](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![Versão PyPI](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Versão Python](https://img.shields.io/pypi/pyversions/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skill-seekers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skill-seekers)
+<a href="https://trendshift.io/repositories/18329" target="_blank"><img src="https://trendshift.io/api/badge/repositories/18329" alt="Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 [![Site Oficial](https://img.shields.io/badge/Website-skillseekersweb.com-blue.svg)](https://skillseekersweb.com/)
 [![Seguir no Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
@@ -86,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Vídeos** — Extraia código, transcrições e conhecimento estruturado do YouTube e vídeos locais
 - 🔄 **Multi-fonte** — Combine 17 tipos de fontes (docs, GitHub, PDFs, vídeos, notebooks, wikis e mais) em um único ativo de conhecimento
 - 🌐 **Uma preparação, todos os destinos** — Exporte o mesmo ativo para 16 plataformas sem precisar recoletá-lo
-- ✅ **Testado em batalha** — Mais de 2.540 testes, mais de 24 presets de frameworks, pronto para produção
+- ✅ **Testado em batalha** — Mais de 3.445 testes, mais de 24 presets de frameworks, pronto para produção
 
 ## 🚀 Início Rápido (3 Comandos)
 
@@ -143,18 +145,18 @@ skill-seekers create feed.rss
 skill-seekers create curl.1
 
 # Vídeo (YouTube, Vimeo ou arquivo local — requer skill-seekers[video])
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # Primeira vez? Instale automaticamente as dependências visuais com detecção de GPU:
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Wiki Confluence
-skill-seekers confluence --space TEAM --name wiki
+skill-seekers create --space-key  TEAM --name wiki
 
 # Páginas Notion
-skill-seekers notion --database-id ... --name docs
+skill-seekers create --database-id ... --name docs
 
 # Exportação de chat Slack/Discord
-skill-seekers chat --export-dir ./slack-export --name team-chat
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
 ### Exporte para Qualquer Lugar
@@ -303,7 +305,7 @@ export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
 
 # Todas as funcionalidades de aprimoramento com IA usarão o endpoint configurado
 skill-seekers enhance output/react/
-skill-seekers analyze --directory . --enhance
+skill-seekers scan . --enhance
 ```
 
 **Nota**: Configurar `ANTHROPIC_BASE_URL` permite que você use qualquer endpoint de API compatível com Claude, como GLM-4.7 ou outros serviços compatíveis.
@@ -389,7 +391,7 @@ Transforme qualquer documentação de framework em contexto especializado de pro
 **Exportação Rápida para Ferramentas de Programação com IA:**
 ```bash
 # Para qualquer assistente de programação com IA (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude  # ou --target markdown
 
 # Copie para seu projeto (exemplo para Cursor)
@@ -435,18 +437,18 @@ result = analyzer.analyze(
 )
 
 # Acesse o fluxo de código (análise C3.x)
-print(f"Padrões de design: {len(result.code_analysis['c3_1_patterns'])}")
-print(f"Exemplos de teste: {result.code_analysis['c3_2_examples_count']}")
+print(f"Design patterns: {len(result.code_analysis['c3_1_patterns'])}")
+print(f"Test examples: {result.code_analysis['c3_2_examples_count']}")
 
 # Acesse o fluxo de docs (documentação do repositório)
 print(f"README: {result.github_docs['readme'][:100]}")
 
 # Acesse o fluxo de insights (metadados do GitHub)
 print(f"Stars: {result.github_insights['metadata']['stars']}")
-print(f"Problemas comuns: {len(result.github_insights['common_problems'])}")
+print(f"Common issues: {len(result.github_insights['common_problems'])}")
 ```
 
-**Documentação completa**: [Resumo da Implementação de Três Fluxos](docs/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**Documentação completa**: [Resumo da Implementação de Três Fluxos](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ### 🔐 Gerenciamento Inteligente de Rate Limit e Configuração
 - ✅ **Sistema de Configuração Multi-Token** - Gerencie múltiplas contas GitHub (pessoal, trabalho, OSS)
@@ -480,10 +482,10 @@ print(f"Problemas comuns: {len(result.github_insights['common_problems'])}")
 skill-seekers config --github
 
 # Use perfil específico para repos privados
-skill-seekers github --repo mycompany/private-repo --profile work
+skill-seekers create mycompany/private-repo --profile work
 
 # Modo CI/CD (falha rápida, sem prompts)
-skill-seekers github --repo owner/repo --non-interactive
+skill-seekers create owner/repo --non-interactive
 
 # Retomar trabalho interrompido
 skill-seekers resume --list
@@ -545,16 +547,16 @@ cp -r output/skill-seekers ~/.claude/skills/
 **Uso:**
 ```bash
 # Análise rápida (1-2 min, apenas funcionalidades básicas)
-skill-seekers analyze --directory tests/ --quick
+skill-seekers scan tests/ --quick
 
 # Análise abrangente com IA (20-60 min, todas as funcionalidades)
-skill-seekers analyze --directory tests/ --comprehensive
+skill-seekers scan tests/ --comprehensive
 
 # Com aprimoramento por IA
-skill-seekers analyze --directory tests/ --enhance
+skill-seekers scan tests/ --enhance
 ```
 
-**Documentação Completa:** [docs/HOW_TO_GUIDES.md](docs/HOW_TO_GUIDES.md#ai-enhancement-new)
+**Documentação Completa:** [docs/features/HOW_TO_GUIDES.md](docs/features/HOW_TO_GUIDES.md#ai-enhancement-new)
 
 ### 🔄 Presets de Workflow de Aprimoramento
 
@@ -595,15 +597,15 @@ skill-seekers workflows remove my-wf-a my-wf-b
 **Formato de preset YAML:**
 ```yaml
 name: security-focus
-description: "Revisão focada em segurança: vulnerabilidades, autenticação, tratamento de dados"
+description: "Security-focused review: vulnerabilities, auth, data handling"
 version: "1.0"
 stages:
   - name: vulnerabilities
     type: custom
-    prompt: "Revise vulnerabilidades OWASP top 10 e vulnerabilidades de segurança comuns..."
+    prompt: "Review for OWASP top 10 and common security vulnerabilities..."
   - name: auth-review
     type: custom
-    prompt: "Examine padrões de autenticação e autorização..."
+    prompt: "Examine authentication and authorisation patterns..."
     uses_history: true
 ```
 
@@ -616,7 +618,7 @@ stages:
 - ✅ **Sistema de Cache** - Colete uma vez, reconstrua instantaneamente
 
 ### ✅ Garantia de Qualidade
-- ✅ **Totalmente Testado** - Mais de 2.540 testes com cobertura abrangente
+- ✅ **Totalmente Testado** - Mais de 3.445 testes com cobertura abrangente
 
 ---
 
@@ -662,7 +664,7 @@ skill-seekers-setup
 | `pip install skill-seekers[all]` | Tudo habilitado |
 
 > **Dependências visuais de vídeo (detecção de GPU):** Após instalar `skill-seekers[video-full]`, execute
-> `skill-seekers video --setup` para detectar automaticamente sua GPU e instalar a variante
+> `skill-seekers create --setup` para detectar automaticamente sua GPU e instalar a variante
 > correta do PyTorch + easyocr. Esta é a forma recomendada de instalar as dependências de extração visual.
 
 ---
@@ -709,7 +711,7 @@ O Skill Seekers suporta **12 plataformas LLM**, **17 tipos de fontes** e paridad
 **Plataformas:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Markdown Genérico, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Tipos de Fontes:** Sites de documentação, repositórios GitHub, PDFs, Word (.docx), EPUB, Vídeo, Codebases locais, Jupyter Notebooks, HTML local, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), feeds RSS/Atom, Man pages, wikis Confluence, páginas Notion, exportações de chat Slack/Discord
 
-Consulte a [Matriz Completa de Funcionalidades](docs/FEATURE_MATRIX.md) para suporte detalhado por plataforma e funcionalidade.
+Consulte a [Matriz Completa de Funcionalidades](docs/reference/FEATURE_MATRIX.md) para suporte detalhado por plataforma e funcionalidade.
 
 ### Comparação Rápida de Plataformas
 
@@ -728,29 +730,29 @@ Consulte a [Matriz Completa de Funcionalidades](docs/FEATURE_MATRIX.md) para sup
 
 ```bash
 # Coletar site de documentação
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Coleta rápida sem configuração
-skill-seekers scrape --url https://react.dev --name react
+skill-seekers create https://react.dev --name react
 
 # Com modo assíncrono (3x mais rápido)
-skill-seekers scrape --config configs/godot.json --async --workers 8
+skill-seekers create --config configs/godot.json --async --workers 8
 ```
 
 ### Extração de PDF
 
 ```bash
 # Extração básica de PDF
-skill-seekers pdf --pdf docs/manual.pdf --name myskill
+skill-seekers create --pdf docs/manual.pdf --name myskill
 
 # Funcionalidades avançadas
-skill-seekers pdf --pdf docs/manual.pdf --name myskill \
+skill-seekers create --pdf docs/manual.pdf --name myskill \
     --extract-tables \        # Extrair tabelas
     --parallel \              # Processamento paralelo rápido
     --workers 8               # Usar 8 núcleos de CPU
 
 # PDFs digitalizados (requer: pip install pytesseract Pillow)
-skill-seekers pdf --pdf docs/scanned.pdf --name myskill --ocr
+skill-seekers create --pdf docs/scanned.pdf --name myskill --ocr
 ```
 
 ### Extração de Vídeo
@@ -761,31 +763,31 @@ pip install skill-seekers[video]        # Transcrições + metadados
 pip install skill-seekers[video-full]   # + Whisper + extração visual de frames
 
 # Detectar GPU automaticamente e instalar dependências visuais (PyTorch + easyocr)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Extrair de vídeo do YouTube
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
+skill-seekers create --video-url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name mytutorial
 
 # Extrair de uma playlist do YouTube
-skill-seekers video --playlist https://www.youtube.com/playlist?list=... --name myplaylist
+skill-seekers create --video-playlist https://www.youtube.com/playlist?list=... --name myplaylist
 
 # Extrair de um arquivo de vídeo local
-skill-seekers video --video-file recording.mp4 --name myrecording
+skill-seekers create --video-file recording.mp4 --name myrecording
 
 # Extrair com análise visual de frames (requer dependências video-full)
-skill-seekers video --url https://www.youtube.com/watch?v=... --name mytutorial --visual
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial --visual
 
 # Com aprimoramento por IA (limpa OCR + gera SKILL.md polido)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --enhance-level 2
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --enhance-level 2
 
 # Recortar seção específica de um vídeo (suporta segundos, MM:SS, HH:MM:SS)
-skill-seekers video --url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --start-time 1:30 --end-time 5:00
 
 # Usar Vision API para frames OCR de baixa confiança (requer ANTHROPIC_API_KEY)
-skill-seekers video --url https://www.youtube.com/watch?v=... --visual --vision-ocr
+skill-seekers create --video-url https://www.youtube.com/watch?v=... --visual --vision-ocr
 
 # Reconstruir skill a partir de dados previamente extraídos (pular download)
-skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
+skill-seekers create --from-json output/mytutorial/video_data/extracted_data.json --name mytutorial
 ```
 
 > **Guia completo:** Consulte [docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md) para referência CLI completa,
@@ -795,14 +797,14 @@ skill-seekers video --from-json output/mytutorial/video_data/extracted_data.json
 
 ```bash
 # Coleta básica de repositório
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Com autenticação (rate limits mais altos)
 export GITHUB_TOKEN=ghp_your_token_here
-skill-seekers github --repo facebook/react
+skill-seekers create facebook/react
 
 # Personalizar o que incluir
-skill-seekers github --repo django/django \
+skill-seekers create django/django \
     --include-issues \        # Extrair GitHub Issues
     --max-issues 100 \        # Limitar quantidade de issues
     --include-changelog       # Extrair CHANGELOG.md
@@ -814,8 +816,8 @@ skill-seekers github --repo django/django \
 
 ```bash
 # Use configs unificadas existentes
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
+skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # Ou crie uma config unificada
 cat > configs/myframework_unified.json << 'EOF'
@@ -837,7 +839,7 @@ cat > configs/myframework_unified.json << 'EOF'
 }
 EOF
 
-skill-seekers unified --config configs/myframework_unified.json
+skill-seekers create --config configs/myframework_unified.json
 ```
 
 **A Detecção de Conflitos encontra automaticamente:**
@@ -846,7 +848,7 @@ skill-seekers unified --config configs/myframework_unified.json
 - ⚠️ **Assinatura incompatível**: Parâmetros/tipos diferentes
 - ℹ️ **Descrição incompatível**: Explicações diferentes
 
-**Guia Completo:** Consulte [docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md) para documentação completa.
+**Guia Completo:** Consulte [docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md) para documentação completa.
 
 ### Repositórios Privados de Configuração
 
@@ -868,7 +870,7 @@ fetch_config(source="team", config_name="internal-api")
 **Plataformas Suportadas:**
 - GitHub (`GITHUB_TOKEN`), GitLab (`GITLAB_TOKEN`), Gitea (`GITEA_TOKEN`), Bitbucket (`BITBUCKET_TOKEN`)
 
-**Guia Completo:** Consulte [docs/GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) para documentação completa.
+**Guia Completo:** Consulte [docs/reference/GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) para documentação completa.
 
 ## Como Funciona
 
@@ -978,7 +980,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 
 ---
 
-## 🔌 Integração MCP (26 Ferramentas)
+## 🔌 Integração MCP (40 Ferramentas)
 
 O Skill Seekers inclui um servidor MCP para uso com Claude Code, Cursor, Windsurf, VS Code + Cline ou IntelliJ IDEA.
 
@@ -993,13 +995,13 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**Todas as 26 ferramentas disponíveis:**
+**Todas as 40 ferramentas disponíveis:**
 - **Núcleo (9):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **Estendidas (10):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **Bancos Vetoriais (4):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
 - **Nuvem (3):** `cloud_upload`, `cloud_download`, `cloud_list`
 
-**Guia Completo:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+**Guia Completo:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
 
 ---
 
@@ -1009,7 +1011,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # Listar todos os presets
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | Categoria | Presets |
@@ -1024,12 +1026,12 @@ skill-seekers list-configs
 
 ```bash
 # Opção 1: Interativo
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Opção 2: Copie e edite um preset
 cp configs/react.json configs/myframework.json
 nano configs/myframework.json
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Estrutura do Arquivo de Configuração
@@ -1037,7 +1039,7 @@ skill-seekers scrape --config configs/myframework.json
 ```json
 {
   "name": "myframework",
-  "description": "Quando usar esta skill",
+  "description": "When to use this skill",
   "base_url": "https://docs.myframework.com/",
   "selectors": {
     "main_content": "article",
@@ -1098,7 +1100,7 @@ output/
 ```bash
 # Forçar re-coleta
 rm -rf output/myframework_data/
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Categorias Não Estão Boas?
@@ -1108,7 +1110,7 @@ Edite a seção `categories` da configuração com palavras-chave melhores.
 ```bash
 # Apague dados antigos e recolete
 rm -rf output/godot_data/
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 ### Aprimoramento Não Funciona?
@@ -1154,16 +1156,15 @@ skill-seekers config --github
 
 ### Primeiros Passos
 - **[BULLETPROOF_QUICKSTART.md](BULLETPROOF_QUICKSTART.md)** - 🎯 **COMECE AQUI** se você é novo!
-- **[QUICKSTART.md](QUICKSTART.md)** - Início rápido para usuários experientes
+- **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - Início rápido para usuários experientes
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Problemas comuns e soluções
-- **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - Folha de referência rápida
+- **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - Folha de referência rápida
 
 ### Guias
-- **[docs/LARGE_DOCUMENTATION.md](docs/LARGE_DOCUMENTATION.md)** - Processar docs de 10K-40K+ páginas
-- **[ASYNC_SUPPORT.md](ASYNC_SUPPORT.md)** - Guia do modo assíncrono (coleta 2-3x mais rápida)
-- **[docs/ENHANCEMENT_MODES.md](docs/ENHANCEMENT_MODES.md)** - Guia de modos de aprimoramento com IA
-- **[docs/MCP_SETUP.md](docs/MCP_SETUP.md)** - Configuração da integração MCP
-- **[docs/UNIFIED_SCRAPING.md](docs/UNIFIED_SCRAPING.md)** - Coleta multi-fonte
+- **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - Processar docs de 10K-40K+ páginas
+- **[docs/features/ENHANCEMENT_MODES.md](docs/features/ENHANCEMENT_MODES.md)** - Guia de modos de aprimoramento com IA
+- **[docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)** - Configuração da integração MCP
+- **[docs/features/UNIFIED_SCRAPING.md](docs/features/UNIFIED_SCRAPING.md)** - Coleta multi-fonte
 - **[docs/VIDEO_GUIDE.md](docs/VIDEO_GUIDE.md)** - Guia de extração de vídeo
 
 ### Guias de Integração
@@ -1188,3 +1189,73 @@ Bom trabalho construindo skills! 🚀
 ## 🔒 Segurança
 
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
+
+---
+
+> **Nota:** As seções a seguir são da README em inglês e estavam pendentes de tradução completa.
+> Para a documentação mais atualizada, consulte [README.md](../README.md).
+
+## Arquitetura
+
+Skill Seekers usa uma arquitetura modular projetada para extensibilidade:
+
+| Módulo | Propósito | Arquivos principais |
+|--------|-----------|---------------------|
+| **CLI** | Interface de linha de comando | `src/skill_seekers/cli/main.py` |
+| **Scrapers** | Conversores por tipo de fonte | `src/skill_seekers/cli/*_scraper.py` (17 tipos) |
+| **Adaptors** | Empacotamento específico por plataforma | `src/skill_seekers/cli/adaptors/` (21 plataformas) |
+| **Enhancement** | Enriquecimento com IA | `src/skill_seekers/cli/enhance_command.py` |
+| **MCP Server** | Model Context Protocol | `src/skill_seekers/mcp/server_fastmcp.py` (40 ferramentas) |
+
+## Escaneamento de projeto com IA
+
+Detecta automaticamente a stack tecnológica de um projeto e emite uma configuração por framework:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+```
+
+## Geração de skills agnóstica ao agente
+
+Skill Seekers gera a mesma saída de alta qualidade independentemente da plataforma de destino. Coleta uma vez, empacota em qualquer lugar.
+
+## Pipeline do Marketplace
+
+Empacote e publique skills no marketplace:
+
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+## Novidades na v3.6.0
+
+### Presets de workflow
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # Rápido
+skill-seekers create https://docs.react.dev/ --preset standard    # Equilibrado
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # Aprofundado
+```
+
+### Flags de ciclo de vida
+```bash
+skill-seekers create <source> --dry-run      # Pré-visualização sem coleta
+skill-seekers create <source> --fresh        # Ignorar cache, coleta completa
+skill-seekers create <source> --resume       # Retomar job interrompido
+skill-seekers create <source> --skip-scrape  # Reempacotar saída existente
+```
+
+### Health Check e utilitários
+```bash
+skill-seekers doctor                 # Diagnosticar instalação e ambiente
+skill-seekers sync-config            # Detecção de divergência de configuração
+skill-seekers stream <source>        # Ingestão por streaming para documentos grandes
+skill-seekers update output/react/   # Atualização incremental
+skill-seekers multilang <source>     # Geração de skills multilíngue
+skill-seekers quality output/react/  # Pontuação de qualidade
+```
+
+### RAG Chunking (package)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```

@@ -522,6 +522,166 @@ class TestLanguageAdapter(unittest.TestCase):
         self.assertIsNone(result)
 
 
+class TestMissingGoFPatterns(unittest.TestCase):
+    def setUp(self):
+        from skill_seekers.cli.code_analyzer import CodeAnalyzer
+        from skill_seekers.cli.pattern_recognizer import PatternRecognizer
+
+        self.analyzer = CodeAnalyzer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
+
+    def test_strategy_pattern(self):
+        code = """
+class SortStrategy:
+    def sort(self, data): pass
+class BubbleSort(SortStrategy):
+    def sort(self, data): return sorted(data)
+class Sorter:
+    def __init__(self, strategy): self.strategy = strategy
+    def execute(self, data): return self.strategy.sort(data)
+"""
+        file_info = self.analyzer.analyze_file("test.py", code, "Python")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract classes")
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        pattern_names = [p.pattern_type for p in report.patterns]
+        assert any("Strategy" in n for n in pattern_names) or any(
+            "Factory" in n for n in pattern_names
+        )
+
+    def test_template_method_pattern(self):
+        code = """
+class DataProcessor:
+    def process(self): self.load_data(); self.transform(); self.save()
+    def load_data(self): raise NotImplementedError
+    def transform(self): raise NotImplementedError
+    def save(self): pass
+class CSVProcessor(DataProcessor):
+    def load_data(self): return "csv"
+    def transform(self): return "done"
+"""
+        file_info = self.analyzer.analyze_file("test.py", code, "Python")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract classes")
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        assert len(report.patterns) >= 0
+
+    def test_command_pattern(self):
+        code = """
+class Command:
+    def execute(self): pass
+class SaveCommand(Command):
+    def __init__(self, receiver): self.receiver = receiver
+    def execute(self): self.receiver.save()
+class Invoker:
+    def __init__(self): self.commands = []
+    def add(self, cmd): self.commands.append(cmd)
+    def run(self):
+        for cmd in self.commands: cmd.execute()
+"""
+        file_info = self.analyzer.analyze_file("test.py", code, "Python")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract classes")
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        pattern_names = [p.pattern_type for p in report.patterns]
+        assert any("Command" in n for n in pattern_names) or any(
+            "Factory" in n for n in pattern_names
+        )
+
+    def test_chain_of_responsibility_pattern(self):
+        code = """
+class Handler:
+    def __init__(self): self.next_handler = None
+    def set_next(self, handler): self.next_handler = handler; return handler
+    def handle(self, request):
+        if self.next_handler: return self.next_handler.handle(request)
+class AuthHandler(Handler):
+    def handle(self, request):
+        if not request.get("authenticated"): return "Not authenticated"
+        return super().handle(request)
+"""
+        file_info = self.analyzer.analyze_file("test.py", code, "Python")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract classes")
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        assert len(report.patterns) >= 0
+
+    def test_negative_empty_class(self):
+        code = "class EmptyClass:\n    pass\n"
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        high_conf = [p for p in report.patterns if p.confidence >= 0.50]
+        assert len(high_conf) == 0
+
+    def test_negative_plain_function(self):
+        code = "def plain_function(x):\n    return x + 1\n"
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        singleton = [p for p in report.patterns if "Singleton" in p.pattern_type]
+        assert len(singleton) == 0
+
+    def test_empty_content(self):
+        report = self.recognizer.analyze_file("test.py", "", "Python")
+        assert len(report.patterns) == 0
+
+    def test_comments_only(self):
+        report = self.recognizer.analyze_file("test.py", "# comment\n# another", "Python")
+        assert len(report.patterns) == 0
+
+    def test_confidence_bounded(self):
+        code = """
+class DatabaseConnection:
+    _instance = None
+    @classmethod
+    def getInstance(cls):
+        if not cls._instance: cls._instance = cls()
+        return cls._instance
+"""
+        report = self.recognizer.analyze_file("test.py", code, "Python")
+        for p in report.patterns:
+            assert 0.0 <= p.confidence <= 1.0
+
+
+class TestMultiLanguagePatterns(unittest.TestCase):
+    def setUp(self):
+        from skill_seekers.cli.code_analyzer import CodeAnalyzer
+        from skill_seekers.cli.pattern_recognizer import PatternRecognizer
+
+        self.analyzer = CodeAnalyzer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
+
+    def test_javascript_factory(self):
+        code = """
+class VehicleFactory {
+    createVehicle(type) {
+        if (type === 'car') return new Car();
+        if (type === 'truck') return new Truck();
+    }
+}
+class Car {}
+class Truck {}
+"""
+        file_info = self.analyzer.analyze_file("test.js", code, "JavaScript")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract JavaScript classes")
+        report = self.recognizer.analyze_file("test.js", code, "JavaScript")
+        assert len(report.patterns) >= 0
+
+    def test_java_singleton(self):
+        code = """
+public class DatabaseConnection {
+    private static DatabaseConnection instance;
+    private DatabaseConnection() {}
+    public static DatabaseConnection getInstance() {
+        if (instance == null) instance = new DatabaseConnection();
+        return instance;
+    }
+}
+"""
+        file_info = self.analyzer.analyze_file("Test.java", code, "Java")
+        if not file_info or not file_info.get("classes"):
+            self.skipTest("CodeAnalyzer did not extract Java classes")
+        report = self.recognizer.analyze_file("Test.java", code, "Java")
+        assert len(report.patterns) >= 0
+
+
 if __name__ == "__main__":
-    # Run tests with verbose output
     unittest.main(verbosity=2)

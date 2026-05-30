@@ -1,7 +1,7 @@
 # Documentation Updates Summary
 
 **Date:** 2026-02-22  
-**Version:** 3.1.0  
+**Version:** 3.6.0  
 **Purpose:** Document all documentation updates related to CLI flag synchronization
 
 ---

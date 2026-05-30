@@ -1622,5 +1622,53 @@ class TestEpubEdgeCases(unittest.TestCase):
         self.assertIn("EPUB 3 content", section3["text"])
 
 
+class TestEpubExtractionReal(unittest.TestCase):
+    """Test extraction and build with real EPUB fixture files."""
+
+    def setUp(self):
+        from skill_seekers.cli.epub_scraper import EpubToSkillConverter, EPUB_AVAILABLE
+
+        if not EPUB_AVAILABLE:
+            self.skipTest("ebooklib not installed")
+        self.EpubToSkillConverter = EpubToSkillConverter
+        self.temp_dir = tempfile.mkdtemp()
+        self.fixture_dir = Path(__file__).parent / "fixtures" / "synthetic"
+
+    def tearDown(self):
+        if hasattr(self, "temp_dir"):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_extract_real_epub(self):
+        epub_path = self.fixture_dir / "document.epub"
+        if not epub_path.exists():
+            self.skipTest("Fixture document.epub not found")
+        config = {"name": "test_epub_real", "epub_path": str(epub_path)}
+        converter = self.EpubToSkillConverter(config)
+        ok = converter.extract()
+        self.assertTrue(ok)
+        result = converter.extracted_data
+        self.assertIsNotNone(result)
+        self.assertIn("pages", result)
+        self.assertGreater(len(result["pages"]), 0)
+
+    def test_extracted_data_structure(self):
+        epub_path = self.fixture_dir / "document.epub"
+        if not epub_path.exists():
+            self.skipTest("Fixture document.epub not found")
+        config = {"name": "test_epub_real", "epub_path": str(epub_path)}
+        converter = self.EpubToSkillConverter(config)
+        converter.extract()
+        result = converter.extracted_data
+        self.assertIsInstance(result, dict)
+        self.assertIn("pages", result)
+        self.assertIn("metadata", result)
+
+    def test_extract_handles_missing_file(self):
+        config = {"name": "test_missing", "epub_path": "nonexistent.epub"}
+        converter = self.EpubToSkillConverter(config)
+        with self.assertRaises((FileNotFoundError, RuntimeError, Exception)):
+            converter.extract()
+
+
 if __name__ == "__main__":
     unittest.main()

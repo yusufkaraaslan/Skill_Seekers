@@ -677,7 +677,15 @@ JUPYTER_ARGUMENTS: dict[str, dict[str, Any]] = {
 HTML_ARGUMENTS: dict[str, dict[str, Any]] = {
     "html_path": {
         "flags": ("--html-path",),
-        "kwargs": {"type": str, "help": "Local HTML file or directory path", "metavar": "PATH"},
+        "kwargs": {
+            "type": str,
+            "help": (
+                "Local HTML file or directory path. Forces html-scraper mode "
+                "and overrides auto-detection (useful when a directory mixes "
+                "HTML with other files)."
+            ),
+            "metavar": "PATH",
+        },
     },
 }
 

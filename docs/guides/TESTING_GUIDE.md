@@ -1,6 +1,6 @@
 # Testing Guide
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Test Count:** 1,880+ tests
 **Coverage:** >85%
@@ -250,7 +250,7 @@ pytest tests/test_*_e2e.py -v -n auto
 
 ### 4. MCP Tests (63 tests)
 
-Test MCP server and all 26 MCP tools.
+Test MCP server and all 40 MCP tools.
 
 #### Example: Testing MCP Tool
 
@@ -927,7 +927,7 @@ pytest tests/ --cov=src/skill_seekers
 
 ---
 
-**Version:** 3.1.0-dev
+**Version:** 3.6.0
 **Last Updated:** 2026-02-18
 **Test Count:** 1,880+ tests
 **Coverage:** >85%

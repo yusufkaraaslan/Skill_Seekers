@@ -57,7 +57,7 @@ skill-seekers --version
 
 ```bash
 # Example: Vue.js framework
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 
 # Package for Continue (markdown format)
 skill-seekers package output/vue --target markdown
@@ -188,10 +188,10 @@ Create `myframework-config.json`:
 
 ```bash
 # Analyze codebase patterns
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # Or local codebase
-skill-seekers analyze --directory /path/to/repo --comprehensive
+skill-seekers scan  /path/to/repo --comprehensive
 ```
 
 ### Step 2: Optimize for Continue.dev
@@ -432,9 +432,9 @@ Tools → Continue → Show Logs
 
 ```bash
 # Generate frontend context
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 # Generate backend context
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # Start context server with both
 python custom_multi_context_server.py
@@ -791,11 +791,11 @@ async def get_docs(framework: str):
 #!/bin/bash
 
 # Update Vue docs
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 skill-seekers package output/vue --target markdown
 
 # Update FastAPI docs
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target markdown
 
 # Restart context server
@@ -907,7 +907,7 @@ Continue will:
 
 ```bash
 # 1. Generate documentation
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target markdown
 
 # 2. Start context server (team server)
@@ -1101,7 +1101,7 @@ git push
 
 ## 📖 Next Steps
 
-1. **Try another framework:** `skill-seekers scrape --config configs/react.json`
+1. **Try another framework:** `skill-seekers create --config configs/react.json`
 2. **Set up team server:** Share context across team
 3. **Build RAG pipeline:** Deep search with `--target langchain`
 4. **Create custom TypeScript provider:** Advanced customization

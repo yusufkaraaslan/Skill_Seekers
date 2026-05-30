@@ -13,16 +13,16 @@ Supports YouTube videos, YouTube playlists, local video files, and pre-extracted
 pip install "skill-seekers[video]"
 
 # Extract a YouTube tutorial (transcript only)
-skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID
+skill-seekers create --video-url  https://www.youtube.com/watch?v=VIDEO_ID
 
 # Install visual extraction dependencies (auto-detects your GPU)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Extract with on-screen code recognition
-skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID --visual
+skill-seekers create --video-url  https://www.youtube.com/watch?v=VIDEO_ID --visual
 
 # Extract with AI enhancement (cleans OCR, synthesizes tutorial)
-skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID --visual --enhance-level 2
+skill-seekers create --video-url  https://www.youtube.com/watch?v=VIDEO_ID --visual --enhance-level 2
 ```
 
 ---
@@ -52,7 +52,7 @@ This installs `faster-whisper`, `scenedetect`, `opencv-python-headless`, and `py
 Then run the setup command to install GPU-aware dependencies (PyTorch and EasyOCR):
 
 ```bash
-skill-seekers video --setup
+skill-seekers create --setup
 ```
 
 ### GPU Setup (`--setup`)
@@ -139,13 +139,13 @@ These flags are available on all Skill Seekers commands:
 Provide a YouTube URL with `--url`. The tool extracts metadata (title, channel, duration, chapters, tags, view count) via `yt-dlp` and fetches transcripts via the YouTube Transcript API.
 
 ```bash
-skill-seekers video --url https://www.youtube.com/watch?v=dQw4w9WgXcQ --name my-tutorial
+skill-seekers create --video-url  https://www.youtube.com/watch?v=dQw4w9WgXcQ --name my-tutorial
 ```
 
 Shortened URLs also work:
 
 ```bash
-skill-seekers video --url https://youtu.be/dQw4w9WgXcQ
+skill-seekers create --video-url  https://youtu.be/dQw4w9WgXcQ
 ```
 
 ### YouTube Playlists
@@ -153,7 +153,7 @@ skill-seekers video --url https://youtu.be/dQw4w9WgXcQ
 Provide a playlist URL with `--playlist`. Every video in the playlist is processed sequentially and combined into a single skill.
 
 ```bash
-skill-seekers video --playlist "https://www.youtube.com/playlist?list=PLxxxxxxx" --name course-name
+skill-seekers create --video-playlist "https://www.youtube.com/playlist?list=PLxxxxxxx" --name course-name
 ```
 
 Note: `--start-time` and `--end-time` cannot be used with playlists.
@@ -163,7 +163,7 @@ Note: `--start-time` and `--end-time` cannot be used with playlists.
 Provide a file path with `--video-file`. Metadata is extracted from the file itself. If a subtitle file (`.srt` or `.vtt`) exists alongside the video with the same base name, it is used automatically.
 
 ```bash
-skill-seekers video --video-file recording.mp4 --name my-recording
+skill-seekers create --video-file recording.mp4 --name my-recording
 ```
 
 For transcript extraction from local files without subtitles, the tool falls back to Whisper speech-to-text (requires `faster-whisper` from the `video-full` extras).
@@ -173,7 +173,7 @@ For transcript extraction from local files without subtitles, the tool falls bac
 If you have already run extraction and saved the JSON data, you can rebuild the skill without re-downloading or re-processing:
 
 ```bash
-skill-seekers video --from-json output/my-tutorial_video_extracted.json --name my-tutorial
+skill-seekers create --from-json output/my-tutorial_video_extracted.json --name my-tutorial
 ```
 
 This skips all network requests and video processing -- it only runs the skill-building step.
@@ -331,13 +331,13 @@ Both transcript segments and chapters are filtered to the specified range. When 
 
 ```bash
 # Extract only minutes 5 through 15
-skill-seekers video --url https://youtu.be/VIDEO_ID --start-time 5:00 --end-time 15:00
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --start-time 5:00 --end-time 15:00
 
 # Extract from 2 minutes onward
-skill-seekers video --url https://youtu.be/VIDEO_ID --start-time 120
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --start-time 120
 
 # Extract the first 10 minutes
-skill-seekers video --url https://youtu.be/VIDEO_ID --end-time 10:00
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --end-time 10:00
 ```
 
 Restrictions:
@@ -352,20 +352,20 @@ Restrictions:
 ### Basic transcript extraction from a YouTube video
 
 ```bash
-skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID --name react-hooks-tutorial
+skill-seekers create --video-url  https://www.youtube.com/watch?v=VIDEO_ID --name react-hooks-tutorial
 ```
 
 ### Visual extraction with on-screen code recognition
 
 ```bash
-skill-seekers video --url https://youtu.be/VIDEO_ID --name godot-signals --visual
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --name godot-signals --visual
 ```
 
 ### Full pipeline with AI enhancement (recommended for production skills)
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers video --url https://youtu.be/VIDEO_ID --name django-rest-api \
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --name django-rest-api \
     --visual --enhance-level 2
 ```
 
@@ -373,27 +373,27 @@ skill-seekers video --url https://youtu.be/VIDEO_ID --name django-rest-api \
 
 ```bash
 # Place recording.srt alongside recording.mp4
-skill-seekers video --video-file ./recording.mp4 --name my-lecture
+skill-seekers create --video-file ./recording.mp4 --name my-lecture
 ```
 
 ### Extract a specific section of a long video
 
 ```bash
-skill-seekers video --url https://youtu.be/VIDEO_ID --name auth-chapter \
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --name auth-chapter \
     --start-time 15:30 --end-time 42:00 --visual
 ```
 
 ### Process an entire YouTube playlist as one skill
 
 ```bash
-skill-seekers video --playlist "https://www.youtube.com/playlist?list=PLxxxxxxx" \
+skill-seekers create --video-playlist "https://www.youtube.com/playlist?list=PLxxxxxxx" \
     --name python-crash-course --languages en
 ```
 
 ### Rebuild a skill from previously extracted data
 
 ```bash
-skill-seekers video --from-json output/my-tutorial_video_extracted.json \
+skill-seekers create --from-json output/my-tutorial_video_extracted.json \
     --name my-tutorial --enhance-level 2
 ```
 
@@ -401,7 +401,7 @@ skill-seekers video --from-json output/my-tutorial_video_extracted.json \
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers video --url https://youtu.be/VIDEO_ID --name cpp-tutorial \
+skill-seekers create --video-url  https://youtu.be/VIDEO_ID --name cpp-tutorial \
     --visual --vision-ocr --enhance-level 2
 ```
 
@@ -423,7 +423,7 @@ Visual extraction requires the full dependency set:
 
 ```bash
 pip install "skill-seekers[video-full]"
-skill-seekers video --setup
+skill-seekers create --setup
 ```
 
 ### GPU not detected by `--setup`

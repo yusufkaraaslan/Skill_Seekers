@@ -1,6 +1,6 @@
 # Environment Variables Reference - Skill Seekers
 
-> **Version:** 3.1.0  
+> **Version:** 3.6.0  
 > **Last Updated:** 2026-02-16  
 > **Complete environment variable reference**
 
@@ -92,19 +92,21 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### GITHUB_TOKEN
 
-**Purpose:** GitHub API authentication for higher rate limits.
+**Purpose:** GitHub API authentication for higher rate limits, plus authoring community-registry submissions.
 
 **Format:** `ghp_...` (personal access token) or `github_pat_...` (fine-grained)
 
 **Used by:**
-- `skill-seekers github`
-- `skill-seekers unified` (GitHub sources)
-- `skill-seekers analyze` (GitHub repos)
+- `skill-seekers create` (GitHub repos)
+- `skill-seekers create --config` (unified multi-source)
+- `skill-seekers scan` (local codebases)
+- `skill-seekers scan` — *required* to submit AI-generated configs to the community registry (the scan itself runs without it; the publish prompt is just skipped with a hint)
 
 **Benefits:**
 - 5000 requests/hour vs 60 for unauthenticated
 - Access to private repositories
 - Higher GraphQL API limits
+- Enables opening community-config GitHub issues from `scan`
 
 **Example:**
 ```bash
@@ -259,7 +261,7 @@ export SKILL_SEEKERS_TIMEOUT=60
 
 **Purpose:** Custom User-Agent header.
 
-**Default:** `Skill-Seekers/3.1.0`
+**Default:** `Skill-Seekers/3.6.0`
 
 **Example:**
 ```bash
@@ -272,14 +274,15 @@ export SKILL_SEEKERS_USER_AGENT="MyBot/1.0 (contact@example.com)"
 
 ### SKILL_SEEKER_AGENT
 
-**Purpose:** Default local coding agent for enhancement.
+**Purpose:** Default local coding agent for enhancement and scan detection/generation.
 
 **Default:** `claude`
 
-**Options:** `claude`, `cursor`, `windsurf`, `cline`, `continue`
+**Options:** `claude`, `codex`, `copilot`, `opencode`, `kimi`, `custom`, plus IDE-mode aliases (`cursor`, `windsurf`, `cline`, `continue`)
 
 **Used by:**
 - `skill-seekers enhance`
+- `skill-seekers scan` (overridable per-invocation via `--agent`)
 
 **Example:**
 ```bash
@@ -662,7 +665,7 @@ Example:
 # Default: rate_limit = 0.5
 export SKILL_SEEKERS_RATE_LIMIT=1.0  # Env var overrides default
 # Config file: rate_limit = 0.2      # Config overrides env
-skill-seekers scrape --rate-limit 2.0  # Flag overrides all
+skill-seekers create --rate-limit 2.0  # Flag overrides all
 ```
 
 ---

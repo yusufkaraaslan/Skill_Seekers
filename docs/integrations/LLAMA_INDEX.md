@@ -54,7 +54,7 @@ skill-seekers --version
 
 ```bash
 # Example: Django framework documentation
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # Package as LlamaIndex Nodes
 skill-seekers package output/django --target llama-index
@@ -105,19 +105,19 @@ print(response)
 **Option A: Use Preset Config (Fastest)**
 ```bash
 # Available presets: django, fastapi, vue, etc.
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 ```
 
 **Option B: From GitHub Repository**
 ```bash
 # Scrape from GitHub repo
-skill-seekers github --repo django/django --name django-skill
+skill-seekers create  django/django --name django-skill
 ```
 
 **Option C: Custom Documentation**
 ```bash
 # Create custom config
-skill-seekers scrape --config configs/my-docs.json
+skill-seekers create --config configs/my-docs.json
 ```
 
 ### Step 2: Generate LlamaIndex Format
@@ -376,7 +376,7 @@ print(f"Used {len(response.source_nodes)} source nodes")
 **Step 1: Generate Nodes**
 ```bash
 # Scrape FastAPI docs
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # Convert to LlamaIndex format
 skill-seekers package output/fastapi --target llama-index
@@ -525,4 +525,4 @@ pip install llama-index-embeddings-openai  # For OpenAI embeddings
 
 **Last Updated:** February 5, 2026
 **Tested With:** LlamaIndex v0.10.0+, OpenAI GPT-4
-**Skill Seekers Version:** v2.9.0+
+**Skill Seekers Version:** v3.6.0

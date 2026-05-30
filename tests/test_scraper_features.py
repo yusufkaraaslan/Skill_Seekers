@@ -797,5 +797,83 @@ Also check [Guide](https://docs.example.com/guide/intro.md).
             self.assertNotIn("]", url, f"Raw bracket found in enqueued URL: {url}")
 
 
+class TestDocScraperEntrypoint(unittest.TestCase):
+    """Merged from test_doc_scraper_entrypoint.py"""
+
+    def test_run_scraping_uses_scrape_all(self):
+        from unittest.mock import patch
+        from skill_seekers.cli.doc_scraper import _run_scraping
+
+        class DummyConverter:
+            def __init__(self):
+                self.scrape_all_called = False
+                self.build_skill_called = False
+                self.save_checkpoint_called = False
+
+            def checkpoint_exists(self):
+                return False
+
+            def load_checkpoint(self):
+                pass
+
+            def clear_checkpoint(self):
+                pass
+
+            def scrape_all(self):
+                self.scrape_all_called = True
+
+            def build_skill(self):
+                self.build_skill_called = True
+
+            def save_checkpoint(self):
+                self.save_checkpoint_called = True
+
+        converter = DummyConverter()
+        with patch(
+            "skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda *_a, **_kw: converter
+        ):
+            result = _run_scraping({"name": "demo", "base_url": "https://example.com"})
+        self.assertIs(result, converter)
+        self.assertTrue(converter.scrape_all_called)
+        self.assertTrue(converter.build_skill_called)
+
+    def test_run_scraping_keyboard_interrupt(self):
+        from unittest.mock import patch
+        from skill_seekers.cli.doc_scraper import _run_scraping
+
+        class DummyConverter:
+            def __init__(self):
+                self.scrape_all_called = False
+                self.build_skill_called = False
+                self.save_checkpoint_called = False
+
+            def checkpoint_exists(self):
+                return False
+
+            def load_checkpoint(self):
+                pass
+
+            def clear_checkpoint(self):
+                pass
+
+            def scrape_all(self):
+                raise KeyboardInterrupt
+
+            def build_skill(self):
+                self.build_skill_called = True
+
+            def save_checkpoint(self):
+                self.save_checkpoint_called = True
+
+        converter = DummyConverter()
+        with patch(
+            "skill_seekers.cli.doc_scraper.DocToSkillConverter", lambda *_a, **_kw: converter
+        ):
+            result = _run_scraping({"name": "demo", "base_url": "https://example.com"})
+        self.assertIsNone(result)
+        self.assertTrue(converter.save_checkpoint_called)
+        self.assertFalse(converter.build_skill_called)
+
+
 if __name__ == "__main__":
     unittest.main()

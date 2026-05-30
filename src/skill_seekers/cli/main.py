@@ -20,6 +20,7 @@ Commands:
     resume               Resume interrupted scraping job
     config               Configure GitHub tokens, API keys, and settings
     doctor               Health check for dependencies and configuration
+    scan                 AI-detect a project's tech stack and emit per-framework configs
 
 Examples:
     skill-seekers create https://react.dev
@@ -38,10 +39,28 @@ import sys
 from skill_seekers.cli import __version__
 
 
+# Command classes — commands that consume the parsed args namespace directly
+# (no _reconstruct_argv hack). New commands should be added here, not to
+# COMMAND_MODULES. The legacy table below will shrink as commands migrate.
+#
+# Why a class instead of a function? It's the pattern CreateCommand already
+# uses: `Cls(args).execute() -> int`. Lets the dispatcher pass the namespace
+# without each command re-parsing argv.
+COMMAND_CLASSES: dict[str, tuple[str, str]] = {
+    "create": ("skill_seekers.cli.create_command", "CreateCommand"),
+    "scan": ("skill_seekers.cli.scan_command", "ScanCommand"),
+    "doctor": ("skill_seekers.cli.doctor", "DoctorCommand"),
+}
+
+
 # Command module mapping (command name -> module path)
+#
+# LEGACY: dispatch uses _reconstruct_argv + module.main() which re-parses argv.
+# All entries here also appear in this table for backwards-compat; once a command
+# is migrated to COMMAND_CLASSES above, remove it from here. TODO: migrate the
+# remaining ~14 commands so _reconstruct_argv can be deleted.
 COMMAND_MODULES = {
-    # Skill creation — unified entry point for all 18 source types
-    "create": "skill_seekers.cli.create_command",
+    # NOTE: "create", "scan", "doctor" migrated to COMMAND_CLASSES above.
     # Enhancement & packaging
     "enhance": "skill_seekers.cli.enhance_command",
     "enhance-status": "skill_seekers.cli.enhance_status",
@@ -56,7 +75,6 @@ COMMAND_MODULES = {
     "quality": "skill_seekers.cli.quality_metrics",
     # Configuration & workflows
     "config": "skill_seekers.cli.config_command",
-    "doctor": "skill_seekers.cli.doctor",
     "workflows": "skill_seekers.cli.workflows_command",
     "sync-config": "skill_seekers.cli.sync_config",
     # Advanced (less common)
@@ -193,45 +211,59 @@ def main(argv: list[str] | None = None) -> int:
     # enhance_command) with the correct config_path and source_info. Do NOT initialize
     # it here — commands need to set config_path which requires source detection first.
 
-    # Get command module
+    # Class-based dispatch (new, preferred): pass parsed args to Command(args).execute()
+    class_entry = COMMAND_CLASSES.get(args.command)
+    if class_entry is not None:
+        # create command: handle --help-* progressive-disclosure flags before execute
+        if args.command == "create":
+            from skill_seekers.cli.arguments.create import add_create_arguments
+
+            help_modes = {
+                "_help_web": "web",
+                "_help_github": "github",
+                "_help_local": "local",
+                "_help_pdf": "pdf",
+                "_help_word": "word",
+                "_help_epub": "epub",
+                "_help_video": "video",
+                "_help_config": "config",
+                "_help_advanced": "advanced",
+                "_help_all": "all",
+            }
+            for attr, mode in help_modes.items():
+                if getattr(args, attr, False):
+                    help_parser = argparse.ArgumentParser(
+                        prog="skill-seekers create",
+                        description=f"Create skill — {mode} options",
+                        formatter_class=argparse.RawDescriptionHelpFormatter,
+                    )
+                    add_create_arguments(help_parser, mode=mode)
+                    help_parser.print_help()
+                    return 0
+
+        module_path, class_name = class_entry
+        try:
+            module = importlib.import_module(module_path)
+            command_cls = getattr(module, class_name)
+            return int(command_cls(args).execute())
+        except KeyboardInterrupt:
+            print("\n\nInterrupted by user", file=sys.stderr)
+            return 130
+        except Exception as e:
+            error_msg = str(e) if str(e) else f"{type(e).__name__} occurred"
+            print(f"Error: {error_msg}", file=sys.stderr)
+            import traceback
+
+            if hasattr(args, "verbose") and getattr(args, "verbose", False):
+                traceback.print_exc()
+            return 1
+
+    # Get command module (legacy dispatch path)
     module_name = COMMAND_MODULES.get(args.command)
     if not module_name:
         print(f"Error: Unknown command '{args.command}'", file=sys.stderr)
         parser.print_help()
         return 1
-
-    # create command: call directly with parsed args (no argv reconstruction)
-    if args.command == "create":
-        # Handle --help-* flags before execute (no source needed for help)
-        from skill_seekers.cli.arguments.create import add_create_arguments
-
-        help_modes = {
-            "_help_web": "web",
-            "_help_github": "github",
-            "_help_local": "local",
-            "_help_pdf": "pdf",
-            "_help_word": "word",
-            "_help_epub": "epub",
-            "_help_video": "video",
-            "_help_config": "config",
-            "_help_advanced": "advanced",
-            "_help_all": "all",
-        }
-        for attr, mode in help_modes.items():
-            if getattr(args, attr, False):
-                help_parser = argparse.ArgumentParser(
-                    prog="skill-seekers create",
-                    description=f"Create skill — {mode} options",
-                    formatter_class=argparse.RawDescriptionHelpFormatter,
-                )
-                add_create_arguments(help_parser, mode=mode)
-                help_parser.print_help()
-                return 0
-
-        from skill_seekers.cli.create_command import CreateCommand
-
-        command = CreateCommand(args)
-        return command.execute()
 
     # Standard delegation for all other commands
     try:

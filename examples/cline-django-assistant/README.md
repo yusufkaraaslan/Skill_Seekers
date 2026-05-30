@@ -18,7 +18,7 @@ Complete example showing how to use Skill Seekers to generate Cline rules for Dj
 pip install skill-seekers[mcp]
 
 # Generate Django documentation skill
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # Package for Cline (markdown format)
 skill-seekers package output/django --target markdown
@@ -144,7 +144,7 @@ With MCP server configured, Cline can:
 
 2. **Generate fresh rules**
    ```
-   Cline task: "Use skill-seekers MCP to scrape latest Django 5.0 docs"
+   Cline task: "Use skill-seekers MCP to create latest Django 5.0 docs"
    ```
 
 3. **Package skills on-demand**

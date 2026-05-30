@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-> **Skill Seekers v3.2.0**  
+> **Skill Seekers v3.6.0**  
 > **Create your first skill in 3 commands**
 
 ---
@@ -36,16 +36,19 @@ The `create` command auto-detects your source:
 | **EPUB Book** | `skill-seekers create book.epub` |
 | **Video** | `skill-seekers create https://youtube.com/watch?v=...` |
 | **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
-| **Local HTML** | `skill-seekers create page.html` |
+| **Local HTML (file)** | `skill-seekers create page.html` |
+| **Local HTML (directory)** | `skill-seekers create ./mirror_output/site/` |
 | **OpenAPI Spec** | `skill-seekers create api-spec.yaml` |
 | **AsciiDoc** | `skill-seekers create guide.adoc` |
 | **PowerPoint** | `skill-seekers create slides.pptx` |
 | **RSS/Atom Feed** | `skill-seekers create feed.rss` |
 | **Man Page** | `skill-seekers create grep.1` |
-| **Confluence** | `skill-seekers confluence --space DEV` |
-| **Notion** | `skill-seekers notion --database abc123` |
-| **Slack/Discord** | `skill-seekers chat --export slack-export/` |
+| **Confluence** | `skill-seekers create --space-key  DEV` |
+| **Notion** | `skill-seekers create --database-id  abc123` |
+| **Slack/Discord** | `skill-seekers create --chat-export-path  slack-export/` |
 | **Config File** | `skill-seekers create configs/custom.json` |
+
+For an existing project where you don't know yet which frameworks you need skills for, use `skill-seekers scan <dir>` — it AI-detects the stack and emits one config per framework. See [Scan a project](05-scan-a-project.md).
 
 ---
 
@@ -133,13 +136,13 @@ skill-seekers create rust-book.epub --name rust-guide
 
 ```bash
 # Confluence wiki space
-skill-seekers confluence --space DEV --name team-docs
+skill-seekers create --space-key  DEV --name team-docs
 
 # Notion workspace
-skill-seekers notion --database abc123 --name product-wiki
+skill-seekers create --database-id  abc123 --name product-wiki
 
 # Slack/Discord export
-skill-seekers chat --export slack-export/ --name team-chat
+skill-seekers create --chat-export-path  slack-export/ --name team-chat
 ```
 
 ---

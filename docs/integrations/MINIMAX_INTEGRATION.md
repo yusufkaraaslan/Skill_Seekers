@@ -53,7 +53,7 @@ Add to your `~/.bashrc`, `~/.zshrc`, or `.env` file for persistence.
 
 ```bash
 # Scrape documentation website
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Or use quick preset
 skill-seekers create https://docs.python.org/3/ --preset quick
@@ -364,7 +364,7 @@ prompt += "\n\nADDITIONAL FOCUS: Emphasize React 18 concurrent features."
 ```bash
 # Process multiple frameworks
 for framework in react vue angular; do
-    skill-seekers scrape --config configs/${framework}.json
+    skill-seekers create --config configs/${framework}.json
     skill-seekers enhance output/${framework}/ --target minimax
     skill-seekers package output/${framework}/ --target minimax --output ${framework}-minimax.zip
 done

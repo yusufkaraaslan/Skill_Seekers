@@ -1,8 +1,8 @@
 # Config Format Reference - Skill Seekers
 
-> **Version:** 3.2.0
+> **Version:** 3.6.0
 > **Last Updated:** 2026-03-15
-> **Complete JSON configuration specification for 17 source types**
+> **Complete JSON configuration specification for 18 source types**
 
 ---
 
@@ -563,8 +563,10 @@ Fields available in all config types:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | string | Skill identifier (letters, numbers, dashes, underscores) |
+| `name` | string | Skill identifier. Must match `^[a-zA-Z0-9_-]+$` (letters, numbers, dashes, underscores). Required for community-registry submission. |
 | `description` | string | Human-readable description |
+| `metadata.detected_version` | string \| null | **Optional, stamped by `skill-seekers scan`.** The framework version detected from the project's manifest (e.g. `"18.3.1"` for React from `package.json`). Lives under `metadata` alongside `metadata.version` (which is the config-schema version — different thing). Used by re-scans to report version bumps. Legacy top-level placement is still read for backwards-compat but new writes go to metadata. |
+| `metadata._url_unverified` | list[str] \| absent | **Optional, stamped by `skill-seekers scan --probe-urls`.** List of URLs in this config that returned 4xx/5xx on the post-generation HEAD probe and weren't fixable by re-prompting the AI. Present only when the AI invented an unreachable `base_url` or GitHub repo. Treat as a TODO: replace the bad URLs and remove the field. Underscore prefix marks it as scan-tooling metadata, not part of the canonical schema. |
 | `rate_limit` | number | Delay between requests in seconds |
 | `output_dir` | string | Custom output directory |
 | `skip_scrape` | boolean | Use existing data |
@@ -839,7 +841,7 @@ Validate your config before scraping:
 
 ```bash
 # Using CLI
-skill-seekers scrape --config my-config.json --dry-run
+skill-seekers create --config my-config.json --dry-run
 
 # Using MCP tool
 validate_config({"config": "my-config.json"})

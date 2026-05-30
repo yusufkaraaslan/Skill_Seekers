@@ -25,23 +25,23 @@ pip3 install requests beautifulsoup4
 
 **Option A: Use a Preset (Easiest)**
 ```bash
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 ```
 
 **Option B: Interactive Mode**
 ```bash
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 ```
 
 **Option C: Quick Command**
 ```bash
-skill-seekers scrape --name react --url https://react.dev/
+skill-seekers create --name react --url https://react.dev/
 ```
 
 **Option D: Unified Multi-Source (NEW - v2.0.0)**
 ```bash
 # Combine documentation + GitHub code in one skill
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 ```
 *Detects conflicts between docs and code automatically!*
 
@@ -68,25 +68,25 @@ skill-seekers package output/godot/
 
 ```bash
 # Godot Engine
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 
 # React
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Vue.js
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 
 # Django
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # FastAPI
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # Unified Multi-Source (NEW!)
-skill-seekers unified --config configs/react_unified.json
-skill-seekers unified --config configs/django_unified.json
-skill-seekers unified --config configs/fastapi_unified.json
-skill-seekers unified --config configs/godot_unified.json
+skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
+skill-seekers create --config configs/fastapi_unified.json
+skill-seekers create --config configs/godot_unified.json
 ```
 
 ---
@@ -96,7 +96,7 @@ skill-seekers unified --config configs/godot_unified.json
 If you already scraped once:
 
 ```bash
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 
 # When prompted:
 ✓ Found existing data: 245 pages
@@ -107,7 +107,7 @@ Use existing data? (y/n): y
 
 Or use `--skip-scrape`:
 ```bash
-skill-seekers scrape --config configs/godot.json --skip-scrape
+skill-seekers create --config configs/godot.json --skip-scrape
 ```
 
 ---
@@ -119,7 +119,7 @@ skill-seekers scrape --config configs/godot.json --skip-scrape
 pip3 install requests beautifulsoup4
 
 # 2. Scrape React docs with LOCAL enhancement
-skill-seekers scrape --config configs/react.json --enhance-local
+skill-seekers create --config configs/react.json --enhance-local
 # Wait 15-30 minutes (scraping) + 60 seconds (enhancement)
 
 # 3. Package
@@ -131,7 +131,7 @@ skill-seekers package output/react/
 **Alternative: Enhancement after scraping**
 ```bash
 # 2a. Scrape only (no enhancement)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2b. Enhance later
 skill-seekers enhance output/react/
@@ -155,7 +155,7 @@ Edit config file:
 ### Rebuild Instantly
 ```bash
 # After first scrape, you can rebuild instantly:
-skill-seekers scrape --config configs/react.json --skip-scrape
+skill-seekers create --config configs/react.json --skip-scrape
 ```
 
 ### Create Custom Config
@@ -167,7 +167,7 @@ cp configs/react.json configs/myframework.json
 nano configs/myframework.json
 
 # Use it
-skill-seekers scrape --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ---
@@ -198,10 +198,10 @@ See **README.md** for:
 
 ```bash
 # Godot
-skill-seekers scrape --config configs/godot.json
+skill-seekers create --config configs/godot.json
 
 # Or interactive
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 ```
 
 That's it! 🚀

@@ -2,7 +2,8 @@
 
 **Date:** February 27, 2026
 **Feature ID:** V1.0
-**Status:** Planning
+**Status:** Implemented
+**Note:** Video support is live in Skill Seekers v3.6.0 (`video_scraper.py`, `video_models.py`, `video_setup.py`).
 **Priority:** High
 **Estimated Complexity:** Large (multi-sprint feature)
 

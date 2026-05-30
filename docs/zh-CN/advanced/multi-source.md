@@ -1,13 +1,13 @@
-# Multi-Source Scraping Guide
+# 多源抓取指南
 
-> **Skill Seekers v3.1.0**  
-> **Combine documentation, code, and PDFs into one skill**
+> **Skill Seekers v3.6.0**  
+> **将文档、代码和 PDF 合并为一个技能**
 
 ---
 
-## What is Multi-Source Scraping?
+## 什么是多源抓取？
 
-Combine multiple sources into a single, comprehensive skill:
+将多个来源合并为单个综合技能：
 
 ```
 ┌──────────────┐
@@ -28,29 +28,29 @@ Combine multiple sources into a single, comprehensive skill:
 
 ---
 
-## When to Use Multi-Source
+## 何时使用多源
 
-### Use Cases
+### 使用场景
 
-| Scenario | Sources | Benefit |
+| 场景 | 来源 | 优势 |
 |----------|---------|---------|
-| Framework + Examples | Docs + GitHub repo | Theory + practice |
-| Product + API | Docs + OpenAPI spec | Usage + reference |
-| Legacy + Current | PDF + Web docs | Complete history |
-| Internal + External | Local code + Public docs | Full context |
+| 框架 + 示例 | 文档 + GitHub 仓库 | 理论 + 实践 |
+| 产品 + API | 文档 + OpenAPI 规范 | 用法 + 参考 |
+| 旧版 + 当前 | PDF + 网页文档 | 完整历史 |
+| 内部 + 外部 | 本地代码 + 公共文档 | 完整上下文 |
 
-### Benefits
+### 优势
 
-- **Single source of truth** - One skill with all context
-- **Conflict detection** - Find doc/code discrepancies
-- **Cross-references** - Link between sources
-- **Comprehensive** - No gaps in knowledge
+- **单一事实来源** - 一个技能包含所有上下文
+- **冲突检测** - 发现文档/代码差异
+- **交叉引用** - 来源之间建立链接
+- **全面性** - 知识无缺口
 
 ---
 
-## Creating Unified Configs
+## 创建统一配置
 
-### Basic Structure
+### 基本结构
 
 ```json
 {
@@ -75,9 +75,9 @@ Combine multiple sources into a single, comprehensive skill:
 
 ---
 
-## Source Types
+## 来源类型
 
-### 1. Documentation
+### 1. 文档
 
 ```json
 {
@@ -92,7 +92,7 @@ Combine multiple sources into a single, comprehensive skill:
 }
 ```
 
-### 2. GitHub Repository
+### 2. GitHub 仓库
 
 ```json
 {
@@ -105,7 +105,7 @@ Combine multiple sources into a single, comprehensive skill:
 }
 ```
 
-### 3. PDF Document
+### 3. PDF 文档
 
 ```json
 {
@@ -116,7 +116,7 @@ Combine multiple sources into a single, comprehensive skill:
 }
 ```
 
-### 4. Local Codebase
+### 4. 本地代码库
 
 ```json
 {
@@ -129,9 +129,9 @@ Combine multiple sources into a single, comprehensive skill:
 
 ---
 
-## Complete Example
+## 完整示例
 
-### React Complete Skill
+### React 完整技能
 
 ```json
 {
@@ -190,63 +190,63 @@ Combine multiple sources into a single, comprehensive skill:
 
 ---
 
-## Running Unified Scraping
+## 运行统一抓取
 
-### Basic Command
+### 基础命令
 
 ```bash
-skill-seekers unified --config react-complete.json
+skill-seekers create --config react-complete.json
 ```
 
-### With Options
+### 带选项
 
 ```bash
-# Fresh start (ignore cache)
-skill-seekers unified --config react-complete.json --fresh
+# 全新开始（忽略缓存）
+skill-seekers create --config react-complete.json --fresh
 
-# Dry run
-skill-seekers unified --config react-complete.json --dry-run
+# 干运行
+skill-seekers create --config react-complete.json --dry-run
 
-# Rule-based merging
-skill-seekers unified --config react-complete.json --merge-mode rule-based
+# 基于规则的合并
+skill-seekers create --config react-complete.json --merge-mode rule-based
 ```
 
 ---
 
-## Merge Modes
+## 合并模式
 
-### claude-enhanced (Default)
+### claude-enhanced（默认）
 
-Uses AI to intelligently merge sources:
+使用 AI 智能合并来源：
 
-- Detects relationships between content
-- Resolves conflicts intelligently
-- Creates cross-references
-- Best quality, slower
+- 检测内容之间的关系
+- 智能解决冲突
+- 创建交叉引用
+- 最佳质量，较慢
 
 ```bash
-skill-seekers unified --config my-config.json --merge-mode claude-enhanced
+skill-seekers create --config my-config.json --merge-mode claude-enhanced
 ```
 
 ### rule-based
 
-Uses defined rules for merging:
+使用定义的规则进行合并：
 
-- Faster
-- Deterministic
-- Less sophisticated
+- 更快
+- 确定性
+- 较不复杂
 
 ```bash
-skill-seekers unified --config my-config.json --merge-mode rule-based
+skill-seekers create --config my-config.json --merge-mode rule-based
 ```
 
 ---
 
-## Conflict Detection
+## 冲突检测
 
-### Automatic Detection
+### 自动检测
 
-Finds discrepancies between sources:
+发现来源之间的差异：
 
 ```json
 {
@@ -270,15 +270,15 @@ Finds discrepancies between sources:
 }
 ```
 
-### Conflict Report
+### 冲突报告
 
-After scraping, check for conflicts:
+抓取后，检查冲突：
 
 ```bash
-# Conflicts are reported in output
+# 冲突在输出中报告
 ls output/react-complete/conflicts.json
 
-# Or use MCP tool
+# 或使用 MCP 工具
 detect_conflicts({
   "docs_source": "output/react-docs",
   "code_source": "output/react-source"
@@ -287,32 +287,32 @@ detect_conflicts({
 
 ---
 
-## Output Structure
+## 输出结构
 
-### Merged Output
+### 合并输出
 
 ```
 output/react-complete/
-├── SKILL.md                    # Combined skill
+├── SKILL.md                    # 合并后的技能
 ├── references/
-│   ├── index.md               # Master index
-│   ├── getting_started.md     # From docs
-│   ├── api_reference.md       # From docs
-│   ├── source_overview.md     # From GitHub
-│   ├── code_examples.md       # From GitHub
-│   └── patterns.md            # From PDF
+│   ├── index.md               # 主索引
+│   ├── getting_started.md     # 来自文档
+│   ├── api_reference.md       # 来自文档
+│   ├── source_overview.md     # 来自 GitHub
+│   ├── code_examples.md       # 来自 GitHub
+│   └── patterns.md            # 来自 PDF
 ├── .skill-seekers/
-│   ├── manifest.json          # Metadata
-│   ├── sources.json           # Source list
-│   └── conflicts.json         # Detected conflicts
-└── cross-references.json      # Links between sources
+│   ├── manifest.json          # 元数据
+│   ├── sources.json           # 来源列表
+│   └── conflicts.json         # 检测到的冲突
+└── cross-references.json      # 来源之间的链接
 ```
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. Name Sources Clearly
+### 1. 清晰命名来源
 
 ```json
 {
@@ -324,19 +324,19 @@ output/react-complete/
 }
 ```
 
-### 2. Limit Source Scope
+### 2. 限制来源范围
 
 ```json
 {
   "type": "github",
   "name": "core-source",
   "repo": "owner/repo",
-  "file_patterns": ["src/**/*.py"],  // Only core files
+  "file_patterns": ["src/**/*.py"],  // 仅核心文件
   "exclude_patterns": ["tests/**", "docs/**"]
 }
 ```
 
-### 3. Enable Conflict Detection
+### 3. 启用冲突检测
 
 ```json
 {
@@ -346,29 +346,29 @@ output/react-complete/
 }
 ```
 
-### 4. Use Appropriate Merge Mode
+### 4. 使用适当的合并模式
 
-- **claude-enhanced** - Best quality, for important skills
-- **rule-based** - Faster, for testing or large datasets
+- **claude-enhanced** - 最佳质量，用于重要技能
+- **rule-based** - 更快，用于测试或大型数据集
 
-### 5. Test Incrementally
+### 5. 增量测试
 
 ```bash
-# Test with one source first
+# 首先用一个来源测试
 skill-seekers create <source1>
 
-# Then add sources
-skill-seekers unified --config my-config.json --dry-run
+# 然后添加来源
+skill-seekers create --config my-config.json --dry-run
 ```
 
 ---
 
-## Troubleshooting
+## 故障排除
 
 ### "Source not found"
 
 ```bash
-# Check all sources exist
+# 检查所有来源是否存在
 curl -I https://docs.example.com/
 ls downloads/manual.pdf
 ```
@@ -376,25 +376,25 @@ ls downloads/manual.pdf
 ### "Merge conflicts"
 
 ```bash
-# Check conflicts report
+# 检查冲突报告
 cat output/my-skill/conflicts.json
 
-# Adjust merge_mode
-skill-seekers unified --config my-config.json --merge-mode rule-based
+# 调整 merge_mode
+skill-seekers create --config my-config.json --merge-mode rule-based
 ```
 
 ### "Out of memory"
 
 ```bash
-# Process sources separately
-# Then merge manually
+# 分别处理来源
+# 然后手动合并
 ```
 
 ---
 
-## Examples
+## 示例
 
-### Framework + Examples
+### 框架 + 示例
 
 ```json
 {
@@ -406,7 +406,7 @@ skill-seekers unified --config my-config.json --merge-mode rule-based
 }
 ```
 
-### API + Documentation
+### API + 文档
 
 ```json
 {
@@ -418,7 +418,7 @@ skill-seekers unified --config my-config.json --merge-mode rule-based
 }
 ```
 
-### Legacy + Current
+### 旧版 + 当前
 
 ```json
 {
@@ -432,8 +432,8 @@ skill-seekers unified --config my-config.json --merge-mode rule-based
 
 ---
 
-## See Also
+## 另请参阅
 
-- [Config Format](../reference/CONFIG_FORMAT.md) - Full JSON specification
-- [Scraping Guide](../user-guide/02-scraping.md) - Individual source options
-- [MCP Reference](../reference/MCP_REFERENCE.md) - unified_scrape tool
+- [配置格式](../reference/CONFIG_FORMAT.md) - 完整 JSON 规范
+- [抓取指南](../user-guide/02-scraping.md) - 单个来源选项
+- [MCP 参考](../reference/MCP_REFERENCE.md) - unified_scrape 工具

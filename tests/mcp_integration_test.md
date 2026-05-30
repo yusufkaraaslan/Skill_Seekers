@@ -25,7 +25,7 @@ Test documentation for Skill Seeker MCP server with Claude Code.
 - [ ] Python 3.7+ installed
 - [ ] Claude Code installed and running
 - [ ] Repository cloned
-- [ ] MCP dependencies installed (`pip3 install -r mcp/requirements.txt`)
+- [ ] Package installed (`pip install -e .`)
 - [ ] CLI dependencies installed (`pip3 install requests beautifulsoup4`)
 - [ ] MCP server configured in `~/.config/claude-code/mcp.json`
 - [ ] Claude Code restarted after configuration
@@ -417,7 +417,8 @@ Scrape docs using configs/react.json with max 100 pages
     "skill-seeker": {
       "command": "python3",
       "args": [
-        "/path/to/Skill_Seekers/mcp/server.py"
+        "-m",
+        "skill_seekers.mcp.server_fastmcp"
       ],
       "cwd": "/path/to/Skill_Seekers"
     }
@@ -520,12 +521,12 @@ echo "Checking Claude Code..."
 
 # 2. Install dependencies
 echo "Installing dependencies..."
-pip3 install -r mcp/requirements.txt
+pip install -e .
 pip3 install requests beautifulsoup4
 
 # 3. Verify installation
 echo "Verifying MCP server..."
-timeout 2 python3 mcp/server.py || echo "Server can start"
+timeout 2 python -m skill_seekers.mcp.server_fastmcp || echo "Server can start"
 
 # 4. Create test output directory
 echo "Creating test directories..."

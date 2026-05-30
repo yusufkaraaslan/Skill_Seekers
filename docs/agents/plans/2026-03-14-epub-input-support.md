@@ -7,6 +7,8 @@ tags: [plan, epub, scraper, input-format]
 status: complete
 ---
 
+> 🗄️ **Historical — completed** — This plan was fully executed. EPUB input support is live in Skill Seekers v3.6.0 (`epub_scraper.py`, `arguments/epub.py`, `parsers/epub_parser.py`, 107+ tests).
+
 # Add EPUB Input Support — Implementation Plan
 
 ## Overview
@@ -85,7 +87,7 @@ $ skill-seekers create programming-rust.epub
 
 ### Verification:
 - [x] `skill-seekers create book.epub` produces valid output directory
-- [x] `skill-seekers epub --epub book.epub --name mybook` works standalone
+- [x] `skill-seekers create book.epub --name mybook` works standalone
 - [x] `skill-seekers create book.epub --dry-run` shows config without processing
 - [x] All ~2,540+ existing tests still pass (982 passed, 1 pre-existing failure)
 - [x] New test suite has 100+ tests covering happy path, errors, and edge cases (107 tests, 14 classes)
@@ -146,8 +148,8 @@ Converts EPUB e-books into skills.
 Uses ebooklib for EPUB parsing, BeautifulSoup for XHTML content extraction.
 
 Usage:
-    skill-seekers epub --epub book.epub --name myskill
-    skill-seekers epub --from-json book_extracted.json
+    skill-seekers create book.epub --name myskill
+    skill-seekers create book_extracted.json
 """
 
 import argparse
@@ -699,7 +701,7 @@ skill-seekers-epub = "skill_seekers.cli.epub_scraper:main"
 - [x] `ruff check src/skill_seekers/cli/source_detector.py src/skill_seekers/cli/arguments/epub.py src/skill_seekers/cli/parsers/epub_parser.py src/skill_seekers/cli/create_command.py` passes
 - [x] `ruff format --check src/skill_seekers/cli/` passes
 - [x] `pip install -e ".[epub]"` installs with all entry points
-- [x] `skill-seekers epub --help` shows EPUB-specific help
+- [x] `skill-seekers create --help` shows EPUB-specific help
 - [x] `skill-seekers create --help-epub` shows EPUB arguments (via standalone entry point `skill-seekers-create`)
 - [x] `skill-seekers create nonexistent.epub` gives clear error about missing file
 - [x] Existing tests still pass: `pytest tests/ -v -x -m "not slow and not integration"` (875 passed, 1 pre-existing unrelated failure in test_git_sources_e2e)
@@ -1059,7 +1061,7 @@ Update CLAUDE.md and CHANGELOG.md to reflect the new EPUB support.
 
 Add to Commands section (after pdf line):
 ```
-skill-seekers epub --epub book.epub --name myskill
+skill-seekers create book.epub --name myskill
 ```
 
 Add to "Unified create" examples:
@@ -1132,7 +1134,7 @@ Add to "Adding things → New create command flags" section:
 ### Manual Testing Steps:
 1. `pip install -e ".[epub]"` — verify install
 2. `skill-seekers create book.epub` with a real EPUB file — verify output directory structure
-3. `skill-seekers epub --epub book.epub --dry-run` — verify dry run output
+3. `skill-seekers create book.epub --dry-run` — verify dry run output
 4. `skill-seekers create drm-book.epub` — verify DRM error message
 5. `skill-seekers create nonexistent.epub` — verify file-not-found error
 6. Open generated `SKILL.md` — verify content quality and structure
