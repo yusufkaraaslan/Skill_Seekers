@@ -55,7 +55,7 @@ skill-seekers --version
 
 ```bash
 # Example: FastAPI framework
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # Package for Windsurf (markdown format)
 skill-seekers package output/fastapi --target markdown
@@ -157,10 +157,10 @@ Create `myframework-config.json`:
 
 ```bash
 # Analyze open-source codebase
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # Or local codebase
-skill-seekers analyze --directory /path/to/repo --comprehensive
+skill-seekers scan  /path/to/repo --comprehensive
 ```
 
 ### Step 2: Optimize for Windsurf
@@ -312,11 +312,11 @@ skill-seekers package output/react --target markdown --split-rules --max-chars 5
 
 ```bash
 # Generate backend rules (FastAPI)
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target markdown --split-rules
 
 # Generate frontend rules (React)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target markdown --split-rules
 
 # Organize rules directory:
@@ -542,7 +542,7 @@ Use this pattern in all endpoints.
 
 ```bash
 # Framework updates quarterly
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target markdown --split-rules
 
 # Check what changed
@@ -688,7 +688,7 @@ Cascade will:
 
 ```bash
 # Generate Godot documentation + codebase analysis
-skill-seekers github --repo godotengine/godot-demo-projects
+skill-seekers create  godotengine/godot-demo-projects
 skill-seekers package output/godot-demo-projects --target markdown --split-rules
 
 # Create rules structure:
@@ -969,7 +969,7 @@ EventBus.game_over.emit(final_score)
 
 ## 📖 Next Steps
 
-1. **Try another framework:** `skill-seekers scrape --config configs/vue.json`
+1. **Try another framework:** `skill-seekers create --config configs/vue.json`
 2. **Combine multiple frameworks:** Create modular rules for full-stack projects
 3. **Integrate with MCP:** Add live documentation access via MCP servers
 4. **Build RAG pipeline:** Use `--target langchain` for deep search

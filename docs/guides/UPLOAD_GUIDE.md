@@ -233,7 +233,7 @@ react-markdown.zip
 
 ```bash
 # 1. Scrape documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance (recommended)
 skill-seekers enhance output/react/
@@ -249,7 +249,7 @@ skill-seekers upload output/react.zip
 
 ```bash
 # 1. Scrape once (universal)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Enhance once (or per-platform if desired)
 skill-seekers enhance output/react/
@@ -307,7 +307,7 @@ ls -lh output/react.zip
 
 Make sure you scraped and built first:
 ```bash
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react/
 ```
 

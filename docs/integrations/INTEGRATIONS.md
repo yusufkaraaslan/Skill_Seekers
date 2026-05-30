@@ -35,7 +35,7 @@ Transform documentation into RAG-ready formats for AI-powered search and retriev
 **Quick Example:**
 ```bash
 # Generate LangChain documents
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target langchain
 
 # Use in RAG pipeline
@@ -57,7 +57,7 @@ Direct upload to vector databases without RAG frameworks:
 **Quick Example:**
 ```bash
 # Generate Pinecone format
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target pinecone
 
 # Upsert to Pinecone
@@ -82,7 +82,7 @@ Give AI coding assistants expert knowledge of your frameworks:
 **Quick Example:**
 ```bash
 # For any AI coding assistant (Cursor, Windsurf, Cline, Continue.dev)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target markdown  # or --target claude
 
 # Copy to your project
@@ -117,7 +117,7 @@ Upload documentation as custom skills to AI chat platforms:
 **Quick Example:**
 ```bash
 # Generate Claude skill
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 skill-seekers package output/vue --target claude
 
 # Upload to Claude
@@ -207,7 +207,7 @@ Do you need RAG/search?
 
 ```bash
 # 1. Generate RAG pipeline (LangChain)
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain --chunk-for-rag
 
 # 2. Generate AI coding context (Cursor)
@@ -230,7 +230,7 @@ python rag_search.py "How to implement custom Django middleware?"
 
 ```bash
 # 1. Generate documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 2. Set up Continue.dev HTTP server (team server)
 python context_server.py --host 0.0.0.0 --port 8765
@@ -256,11 +256,11 @@ python context_server.py --host 0.0.0.0 --port 8765
 
 ```bash
 # 1. Generate backend context (FastAPI)
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target markdown
 
 # 2. Generate frontend context (Vue)
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 skill-seekers package output/vue --target markdown
 
 # 3. For Cursor (modular rules):
@@ -285,10 +285,10 @@ cat output/vue-markdown/SKILL.md >> .cursorrules
 
 ```bash
 # 1. Scrape public documentation
-skill-seekers scrape --config configs/custom-framework.json
+skill-seekers create --config configs/custom-framework.json
 
 # 2. Analyze internal codebase
-skill-seekers analyze --directory /path/to/internal/repo --comprehensive
+skill-seekers scan  /path/to/internal/repo --comprehensive
 
 # 3. Merge both:
 skill-seekers merge-sources \
@@ -311,7 +311,7 @@ skill-seekers package output/complete-knowledge --target [platform]
 **Phase 1:** Single framework, single tool
 ```bash
 # Week 1: Just Cursor + React
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target claude
 cp output/react-claude/SKILL.md .cursorrules
 ```
@@ -370,7 +370,7 @@ cat output/react-markdown/SKILL.md >> .cursorrules
 **Monthly:** Framework documentation
 ```bash
 # Check for framework updates
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 # If new version, re-package
 skill-seekers package output/react --target [your-platform]
 ```
@@ -378,7 +378,7 @@ skill-seekers package output/react --target [your-platform]
 **Quarterly:** Codebase analysis
 ```bash
 # Re-analyze internal codebase for new patterns
-skill-seekers analyze --directory . --comprehensive
+skill-seekers scan  . --comprehensive
 ```
 
 **Yearly:** Architecture review
@@ -468,7 +468,7 @@ This project uses Cursor with custom rules:
 ### For RAG Pipelines:
 ```bash
 # Generate LangChain documents
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target langchain
 
 # Use in RAG pipeline
@@ -478,7 +478,7 @@ python examples/langchain-rag-pipeline/quickstart.py
 ### For AI Coding:
 ```bash
 # Generate Cursor rules
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target claude
 
 # Copy to project
@@ -488,7 +488,7 @@ cp output/django-claude/SKILL.md my-project/.cursorrules
 ### For Vector Databases:
 ```bash
 # Generate Pinecone format
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target pinecone
 
 # Upsert to Pinecone
@@ -498,7 +498,7 @@ python examples/pinecone-upsert/quickstart.py
 ### For Multi-IDE Teams:
 ```bash
 # Generate documentation
-skill-seekers scrape --config configs/vue.json
+skill-seekers create --config configs/vue.json
 
 # Start HTTP context server
 python examples/continue-dev-universal/context_server.py
@@ -547,4 +547,4 @@ python examples/continue-dev-universal/context_server.py
 ---
 
 **Last Updated:** February 7, 2026
-**Skill Seekers Version:** v2.10.0+
+**Skill Seekers Version:** v3.6.0

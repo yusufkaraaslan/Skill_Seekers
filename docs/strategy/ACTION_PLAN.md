@@ -1,9 +1,11 @@
 # Action Plan: Hybrid Universal Infrastructure Strategy
 
+> 🗄️ **Historical / Archived** — This document captures the February 2026 strategic planning phase. Many deliverables (integration guides, adaptors, examples) have since been implemented in Skill Seekers v3.6.0. See `docs/integrations/` and `examples/` for current state.
+
 **Start Date:** February 2, 2026
 **Timeline:** 4 weeks
 **Strategy:** Hybrid approach combining RAG ecosystem + AI coding tools
-**Status:** ✅ Ready to Execute
+**Status:** ✅ Executed — Integration guides and examples delivered
 
 ---
 
@@ -62,7 +64,7 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
    src/skill_seekers/cli/adaptors/langchain.py
 
    # New command
-   skill-seekers scrape --format langchain
+   skill-seekers create --format langchain
 
    # Output: LangChain Document objects
    [
@@ -83,7 +85,7 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
 
 2. **LlamaIndex Integration** (6-8 hours)
    ```bash
-   skill-seekers scrape --format llama-index
+   skill-seekers create --format llama-index
 
    # Output: LlamaIndex Node objects
    ```
@@ -364,7 +366,7 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
 
 2. **Implement Chunking for RAG** (8-12 hours)
    ```bash
-   skill-seekers scrape --chunk-for-rag \
+   skill-seekers create --chunk-for-rag \
        --chunk-tokens 512 \
        --chunk-overlap-tokens 50 \
        --preserve-code-blocks
@@ -388,7 +390,7 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
 
 3. **Haystack Integration** (4-6 hours)
    ```bash
-   skill-seekers scrape --format haystack
+   skill-seekers create --format haystack
    ```
 
    **Tasks:**
@@ -398,7 +400,7 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
 
 4. **Continue.dev Context Format** (3-4 hours)
    ```bash
-   skill-seekers scrape --format continue
+   skill-seekers create --format continue
 
    # Output: .continue/context/[framework].md
    ```

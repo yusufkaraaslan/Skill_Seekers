@@ -30,7 +30,7 @@ Both analyze reference documentation and extract the best examples and guidance.
 python3 cli/enhance_skill_local.py output/steam-inventory/
 
 # Option 2: Integrated with scraper
-python3 cli/doc_scraper.py --config configs/steam-inventory.json --enhance-local
+skill-seekers create --config configs/steam-inventory.json --enhance-local
 ```
 
 **What happens:**
@@ -71,7 +71,7 @@ python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
 python3 cli/enhance_skill.py output/steam-inventory/
 
 # Integrated with scraper
-python3 cli/doc_scraper.py --config configs/steam-inventory.json --enhance
+skill-seekers create --config configs/steam-inventory.json --enhance
 
 # Dry run (see what would be done)
 python3 cli/enhance_skill.py output/react/ --dry-run
@@ -143,7 +143,7 @@ python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
 ### "No reference files found"
 Make sure you've run the scraper first:
 ```bash
-python3 cli/doc_scraper.py --config configs/react.json
+skill-seekers create --config configs/react.json
 ```
 
 ### "anthropic package not installed"

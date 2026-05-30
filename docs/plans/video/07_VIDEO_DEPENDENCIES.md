@@ -2,9 +2,10 @@
 
 **Date:** February 27, 2026
 **Document:** 07 of 07
-**Status:** Planning
+**Status:** Implemented
+**Note:** Video support is live in Skill Seekers v3.6.0 (`video_scraper.py`, `video_models.py`, `video_setup.py`).
 
-> **Status: IMPLEMENTED** — `skill-seekers video --setup` (see `video_setup.py`, 835 lines, 60 tests)
+> **Status: IMPLEMENTED** — `skill-seekers create --setup` (see `video_setup.py`, 835 lines, 60 tests)
 > - GPU auto-detection: NVIDIA (nvidia-smi/CUDA), AMD (rocminfo/ROCm), CPU fallback
 > - Correct PyTorch index URL selection per GPU vendor
 > - EasyOCR removed from pip extras, installed at runtime via --setup

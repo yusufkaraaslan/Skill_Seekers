@@ -65,10 +65,10 @@ skill-seekers --version
 
 ```bash
 # Example: React framework skill
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # OR use GitHub repo
-skill-seekers github --repo facebook/react --name react-skill
+skill-seekers create  facebook/react --name react-skill
 
 # Enhance quality (optional, recommended)
 skill-seekers enhance output/react/ --mode LOCAL
@@ -111,17 +111,17 @@ Popular frameworks with preset configs:
 
 **Option A: Use Preset Config (Fastest)**
 ```bash
-skill-seekers scrape --config configs/[framework].json
+skill-seekers create --config configs/[framework].json
 ```
 
 **Option B: From GitHub Repo (Most Comprehensive)**
 ```bash
-skill-seekers github --repo owner/repo --name skill-name
+skill-seekers create  owner/repo --name skill-name
 ```
 
 **Option C: Unified (Docs + Code + PDF)**
 ```bash
-skill-seekers unified --config configs/[framework]_unified.json
+skill-seekers create --config configs/[framework]_unified.json
 ```
 
 ### Step 4: Enhance Quality (Optional but Recommended)
@@ -205,7 +205,7 @@ The LOCAL mode enhancement is free and significantly improves quality (2-3/10 â†
 Re-generate skills when frameworks release major updates:
 ```bash
 # Quick update (uses cache)
-skill-seekers scrape --config configs/react.json --skip-scrape=false
+skill-seekers create --config configs/react.json --skip-scrape=false
 ```
 
 ### 4. Combine Multiple Sources
@@ -234,7 +234,7 @@ For production code, use unified scraping:
 
 **After Skill Seekers:**
 ```bash
-skill-seekers github --repo facebook/react --name react-skill
+skill-seekers create  facebook/react --name react-skill
 skill-seekers enhance output/react-skill/ --mode LOCAL
 ```
 
@@ -250,10 +250,10 @@ skill-seekers enhance output/react-skill/ --mode LOCAL
 **Solution:**
 ```bash
 # Scrape internal docs
-skill-seekers scrape --config configs/internal-framework.json
+skill-seekers create --config configs/internal-framework.json
 
 # Add code examples from repo
-skill-seekers github --repo company/internal-framework
+skill-seekers create  company/internal-framework
 
 # Merge both sources
 skill-seekers merge-sources output/internal-docs/ output/internal-framework/
@@ -268,9 +268,9 @@ skill-seekers merge-sources output/internal-docs/ output/internal-framework/
 **Solution:**
 ```bash
 # Generate skill for each
-skill-seekers scrape --config configs/react.json
-skill-seekers scrape --config configs/fastapi.json
-skill-seekers scrape --config configs/postgresql.json
+skill-seekers create --config configs/react.json
+skill-seekers create --config configs/fastapi.json
+skill-seekers create --config configs/postgresql.json
 
 # [Tool] now has complete knowledge of your stack
 ```
@@ -538,7 +538,7 @@ Result: Incomplete suggestions, outdated patterns, missing features.
 Generate comprehensive skills BEFORE using [Tool]:
 
 ```bash
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 skill-seekers enhance output/react/ --mode LOCAL
 ```
 
@@ -592,7 +592,7 @@ I started using Skill Seekers to generate comprehensive skills before using [Too
 **The Setup (5 minutes):**
 ```bash
 pip install skill-seekers
-skill-seekers github --repo [org]/[framework]
+skill-seekers create  [org]/[framework]
 skill-seekers enhance output/[framework]/ --mode LOCAL
 ```
 

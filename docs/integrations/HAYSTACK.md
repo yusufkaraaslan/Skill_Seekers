@@ -54,7 +54,7 @@ skill-seekers --version
 
 ```bash
 # Example: Django framework documentation
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # Package as Haystack Documents
 skill-seekers package output/django --target haystack
@@ -105,16 +105,16 @@ Skill Seekers supports multiple documentation sources:
 
 ```bash
 # Official framework documentation
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # GitHub repository
-skill-seekers github --repo tiangolo/fastapi
+skill-seekers create  tiangolo/fastapi
 
 # PDF documentation
-skill-seekers pdf --file docs/manual.pdf
+skill-seekers create --pdf --file docs/manual.pdf
 
 # Combine multiple sources
-skill-seekers unified \
+skill-seekers create --config \
   --docs https://fastapi.tiangolo.com/ \
   --github tiangolo/fastapi \
   --output output/fastapi-complete
@@ -146,7 +146,7 @@ Create a custom config for your documentation:
 Save as `configs/my-framework.json` and use:
 
 ```bash
-skill-seekers scrape --config configs/my-framework.json
+skill-seekers create --config configs/my-framework.json
 ```
 
 ### Step 3: Package for Haystack
@@ -156,7 +156,7 @@ skill-seekers scrape --config configs/my-framework.json
 skill-seekers package output/my-framework --target haystack
 
 # With semantic chunking for better retrieval
-skill-seekers scrape --config configs/my-framework.json --chunk-for-rag
+skill-seekers create --config configs/my-framework.json --chunk-for-rag
 skill-seekers package output/my-framework --target haystack
 
 # Output files:
@@ -316,7 +316,7 @@ print(response["llm"]["replies"][0])
 
 ```bash
 # Enable semantic chunking (preserves code blocks, respects paragraphs)
-skill-seekers scrape --config configs/django.json \
+skill-seekers create --config configs/django.json \
   --chunk-for-rag \
   --chunk-tokens 512 \
   --chunk-overlap-tokens 50
@@ -331,7 +331,7 @@ skill-seekers package output/django --target haystack
 
 ```bash
 # Combine official docs + GitHub issues + PDF guides
-skill-seekers unified \
+skill-seekers create --config \
   --docs https://docs.example.com/ \
   --github owner/repo \
   --pdf guides/*.pdf \
@@ -416,10 +416,10 @@ results = retriever.run(
 
 ```bash
 # Initial scrape
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 
 # Later: Update only changed pages
-skill-seekers scrape --config configs/fastapi.json --skip-existing
+skill-seekers create --config configs/fastapi.json --skip-existing
 
 # Merge with existing documents
 python scripts/merge_documents.py \
@@ -437,7 +437,7 @@ python scripts/merge_documents.py \
 
 ```bash
 # Enable chunking for frameworks with long pages
-skill-seekers scrape --config configs/django.json \
+skill-seekers create --config configs/django.json \
   --chunk-for-rag \
   --chunk-tokens 512 \
   --chunk-overlap-tokens 50
@@ -485,7 +485,7 @@ for query in test_queries:
 
 ```bash
 # Include version in metadata
-skill-seekers scrape --config configs/django.json --metadata version=4.2
+skill-seekers create --config configs/django.json --metadata version=4.2
 
 # Query specific versions
 results = retriever.run(
@@ -504,7 +504,7 @@ Complete example of building a FastAPI documentation chatbot:
 
 ```bash
 # Scrape FastAPI docs with chunking
-skill-seekers scrape --config configs/fastapi.json \
+skill-seekers create --config configs/fastapi.json \
   --chunk-for-rag \
   --chunk-tokens 512 \
   --chunk-overlap-tokens 50 \
@@ -693,10 +693,10 @@ skill-seekers package output/fastapi --target haystack --force
 **Solutions:**
 ```bash
 # 1. Enable semantic chunking
-skill-seekers scrape --config configs/fastapi.json --chunk-for-rag
+skill-seekers create --config configs/fastapi.json --chunk-for-rag
 
 # 2. Adjust chunk size
-skill-seekers scrape --config configs/fastapi.json \
+skill-seekers create --config configs/fastapi.json \
   --chunk-for-rag \
   --chunk-tokens 768 \  # Larger chunks for more context
   --chunk-overlap-tokens 100  # More overlap for continuity
@@ -819,7 +819,7 @@ results = retriever.run(
 
 ```bash
 pip install skill-seekers haystack-ai
-skill-seekers scrape --config configs/your-framework.json --chunk-for-rag
+skill-seekers create --config configs/your-framework.json --chunk-for-rag
 skill-seekers package output/your-framework --target haystack
 ```
 

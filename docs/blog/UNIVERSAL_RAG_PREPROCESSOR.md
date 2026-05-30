@@ -19,7 +19,7 @@
 **Try it now:**
 ```bash
 pip install skill-seekers
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 ```
 
@@ -83,7 +83,7 @@ for url in all_urls:  # How do you even get all URLs?
 
 ```bash
 # 15 minutes total:
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 
 # That's it. You're done with preprocessing.
@@ -178,7 +178,7 @@ Skill Seekers sits between your documentation sources and your RAG stack:
 
 **After Skill Seekers:**
 ```bash
-skill-seekers scrape --config configs/django.json  # 15 minutes
+skill-seekers create --config configs/django.json  # 15 minutes
 skill-seekers package output/django --target langchain
 
 # Load and deploy
@@ -206,7 +206,7 @@ python deploy_rag.py  # Your RAG pipeline
 **After Skill Seekers:**
 ```bash
 # Combine all sources
-skill-seekers unified \
+skill-seekers create --config \
   --docs-config configs/internal-docs.json \
   --github internal/repos \
   --name knowledge-base
@@ -237,7 +237,7 @@ python deploy_private_rag.py
 **After Skill Seekers:**
 ```bash
 # Generate .cursorrules file
-skill-seekers scrape --config configs/fastapi.json
+skill-seekers create --config configs/fastapi.json
 skill-seekers package output/fastapi --target markdown
 cp output/fastapi-markdown/SKILL.md .cursorrules
 
@@ -337,7 +337,7 @@ Use a preset configuration for popular frameworks:
 pip install skill-seekers
 
 # Generate LangChain documents
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target langchain
 
 # Load into your RAG pipeline
@@ -368,7 +368,7 @@ cat > configs/my-docs.json << 'EOF'
 EOF
 
 # Scrape
-skill-seekers scrape --config configs/my-docs.json
+skill-seekers create --config configs/my-docs.json
 skill-seekers package output/my-framework --target llama-index
 ```
 
@@ -378,7 +378,7 @@ Combine multiple sources with AI enhancement:
 
 ```bash
 # Combine docs + GitHub + local code
-skill-seekers unified \
+skill-seekers create --config \
   --docs-config configs/fastapi.json \
   --github fastapi/fastapi \
   --directory ./my-fastapi-project \
@@ -564,7 +564,7 @@ RAG systems are powerful, but they're only as good as their data. Until now, dat
 
 ```bash
 pip install skill-seekers
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 
 # You're 15 minutes away from production-ready RAG data.

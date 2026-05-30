@@ -17,30 +17,39 @@ Complete feature support across all platforms and skill modes.
 | **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
 | **Together AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
+| **IBM Bob** | Directory | ❌ Manual | ❌ None | None |
+| **LangChain** | JSON | ❌ Manual | ❌ None | None |
+| **LlamaIndex** | JSON | ❌ Manual | ❌ None | None |
+| **Haystack** | JSON | ❌ Manual | ❌ None | None |
+| **Pinecone** | Vectors | ❌ Manual | ❌ None | PINECONE_API_KEY |
+| **Weaviate** | Vectors | ❌ Manual | ❌ None | None |
+| **Chroma** | Vectors | ❌ Manual | ❌ None | None |
+| **FAISS** | Index | ❌ Manual | ❌ None | None |
+| **Qdrant** | Vectors | ❌ Manual | ❌ None | None |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
 
 ## Skill Mode Support
 
 | Mode | Description | Platforms | CLI Command | `create` Detection |
 |------|-------------|-----------|-------------|-------------------|
-| **Documentation** | Scrape HTML docs | All 12 | `scrape` | `https://...` URLs |
-| **GitHub** | Analyze repositories | All 12 | `github` | `owner/repo` or github.com URLs |
-| **PDF** | Extract from PDFs | All 12 | `pdf` | `.pdf` extension |
-| **Word** | Extract from DOCX | All 12 | `word` | `.docx` extension |
-| **EPUB** | Extract from EPUB | All 12 | `epub` | `.epub` extension |
-| **Video** | Video transcription | All 12 | `video` | YouTube/Vimeo URLs, video extensions |
-| **Local Repo** | Local codebase analysis | All 12 | `analyze` | Directory paths |
-| **Jupyter** | Extract from notebooks | All 12 | `jupyter` | `.ipynb` extension |
-| **HTML** | Extract local HTML files | All 12 | `html` | `.html`/`.htm` extension |
-| **OpenAPI** | Extract API specs | All 12 | `openapi` | `.yaml`/`.yml` with OpenAPI content |
-| **AsciiDoc** | Extract AsciiDoc files | All 12 | `asciidoc` | `.adoc`/`.asciidoc` extension |
-| **PowerPoint** | Extract from PPTX | All 12 | `pptx` | `.pptx` extension |
-| **RSS/Atom** | Extract from feeds | All 12 | `rss` | `.rss`/`.atom` extension |
-| **Man Pages** | Extract man pages | All 12 | `manpage` | `.1`-`.8`/`.man` extension |
-| **Confluence** | Extract from Confluence | All 12 | `confluence` | API or export directory |
-| **Notion** | Extract from Notion | All 12 | `notion` | API or export directory |
-| **Chat** | Extract Slack/Discord | All 12 | `chat` | Export directory or API |
-| **Unified** | Multi-source combination | All 12 | `unified` | N/A (config-driven) |
+| **Documentation** | Scrape HTML docs | All 21 | `scrape` | `https://...` URLs |
+| **GitHub** | Analyze repositories | All 21 | `github` | `owner/repo` or github.com URLs |
+| **PDF** | Extract from PDFs | All 21 | `pdf` | `.pdf` extension |
+| **Word** | Extract from DOCX | All 21 | `word` | `.docx` extension |
+| **EPUB** | Extract from EPUB | All 21 | `epub` | `.epub` extension |
+| **Video** | Video transcription | All 21 | `video` | YouTube/Vimeo URLs, video extensions |
+| **Local Repo** | Local codebase analysis | All 21 | `analyze` | Directory paths |
+| **Jupyter** | Extract from notebooks | All 21 | `jupyter` | `.ipynb` extension |
+| **HTML** | Extract local HTML files | All 21 | `html` | `.html`/`.htm` extension |
+| **OpenAPI** | Extract API specs | All 21 | `openapi` | `.yaml`/`.yml` with OpenAPI content |
+| **AsciiDoc** | Extract AsciiDoc files | All 21 | `asciidoc` | `.adoc`/`.asciidoc` extension |
+| **PowerPoint** | Extract from PPTX | All 21 | `pptx` | `.pptx` extension |
+| **RSS/Atom** | Extract from feeds | All 21 | `rss` | `.rss`/`.atom` extension |
+| **Man Pages** | Extract man pages | All 21 | `manpage` | `.1`-`.8`/`.man` extension |
+| **Confluence** | Extract from Confluence | All 21 | `confluence` | API or export directory |
+| **Notion** | Extract from Notion | All 21 | `notion` | API or export directory |
+| **Chat** | Extract Slack/Discord | All 21 | `chat` | Export directory or API |
+| **Unified** | Multi-source combination | All 21 | `unified` | N/A (config-driven) |
 
 ## CLI Command Support
 
@@ -136,21 +145,21 @@ Complete feature support across all platforms and skill modes.
 ```
 Config → Scrape → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**Platforms:** All 12
+**Platforms:** All 21
 **Modes:** Docs, GitHub, PDF
 
 ### Unified Multi-Source Workflow
 ```
 Config → Scrape All → Detect Conflicts → Merge → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**Platforms:** All 12
+**Platforms:** All 21
 **Modes:** Unified only
 
 ### Complete Installation Workflow
 ```
 install --target X → Fetch → Scrape → Enhance → Package → Upload
 ```
-**Platforms:** All 12
+**Platforms:** All 21
 **Modes:** All (via config type detection)
 
 ## API Key Requirements
@@ -185,7 +194,7 @@ pip install skill-seekers[all-llms]
 ### Package for Multiple Platforms (Same Skill)
 ```bash
 # Scrape once (platform-agnostic)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for all platforms
 skill-seekers package output/react/ --target claude
@@ -250,12 +259,12 @@ skill-seekers split --config configs/react_unified.json --strategy source
 # - react-github.json (GitHub only)
 
 # Then scrape each separately
-skill-seekers unified --config react-documentation.json
-skill-seekers unified --config react-github.json
+skill-seekers create --config react-documentation.json
+skill-seekers create --config react-github.json
 
 # Or scrape in parallel for speed
-skill-seekers unified --config react-documentation.json &
-skill-seekers unified --config react-github.json &
+skill-seekers create --config react-documentation.json &
+skill-seekers create --config react-github.json &
 wait
 ```
 
@@ -362,7 +371,7 @@ A: Yes! Enhancement adds platform-specific formatting:
 - OpenAI: Plain text assistant instructions
 
 **Q: Do all skill modes work with all platforms?**
-A: Yes! All 17 source types work with all 12 LLM platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, Markdown).
+A: Yes! All 18 source types work with all 21 platforms (Claude, Gemini, OpenAI, MiniMax, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, IBM Bob, LangChain, LlamaIndex, Haystack, Pinecone, Weaviate, Chroma, FAISS, Qdrant, and Markdown).
 
 ## See Also
 

@@ -1,6 +1,6 @@
 # Custom Workflows Guide
 
-> **Skill Seekers v3.1.0**  
+> **Skill Seekers v3.6.0**  
 > **Create custom AI enhancement workflows**
 
 ---

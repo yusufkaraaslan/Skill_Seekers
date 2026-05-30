@@ -71,7 +71,7 @@ pip install skill-seekers[all-llms]
 
 ```bash
 # Step 1: Scrape documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Step 2: Package for Weaviate (creates LangChain format)
 skill-seekers package output/react --target langchain
@@ -192,25 +192,25 @@ helm install weaviate weaviate/weaviate \
 
 **Option A: Documentation Website**
 ```bash
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 ```
 
 **Option B: GitHub Repository**
 ```bash
-skill-seekers github --repo django/django --name django
+skill-seekers create  django/django --name django
 skill-seekers package output/django --target langchain
 ```
 
 **Option C: Local Codebase**
 ```bash
-skill-seekers analyze --directory /path/to/repo
+skill-seekers scan  /path/to/repo
 skill-seekers package output/codebase --target langchain
 ```
 
 **Option D: RAG-Optimized Chunking**
 ```bash
-skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
+skill-seekers create --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
 skill-seekers package output/fastapi --target langchain
 ```
 
@@ -938,7 +938,7 @@ print(schema.get("multiTenancyConfig", {}).get("enabled"))  # Should be True
 | Aspect | Without Skill Seekers | With Skill Seekers |
 |--------|----------------------|-------------------|
 | **Schema Design** | Manual property definition for each framework | Auto-formatted with consistent structure |
-| **Data Ingestion** | Custom scraping + parsing logic | One command: `skill-seekers scrape` |
+| **Data Ingestion** | Custom scraping + parsing logic | One command: `skill-seekers create` |
 | **Metadata** | Manual extraction from docs | Auto-extracted (category, source, file, type) |
 | **Multi-Framework** | Separate schemas and databases | Single tenant-based schema |
 | **Hybrid Search** | Complex query construction | Pre-optimized for BM25 + vector |
@@ -960,7 +960,7 @@ print(schema.get("multiTenancyConfig", {}).get("enabled"))  # Should be True
 
 2. **Implement Semantic Chunking:**
    ```bash
-   skill-seekers scrape --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
+   skill-seekers create --config configs/fastapi.json --chunk-for-rag --chunk-tokens 512
    ```
 
 3. **Set Up Multi-Tenancy:**

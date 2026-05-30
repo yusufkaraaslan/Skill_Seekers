@@ -55,7 +55,7 @@ skill-seekers --version
 
 ```bash
 # Example: Django framework
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # Package for Cursor
 skill-seekers package output/django --target markdown
@@ -113,28 +113,28 @@ cat output/react-markdown/SKILL.md >> /path/to/your/project/.cursorrules
 **Option A: Framework Documentation**
 ```bash
 # Available presets: django, fastapi, react, vue, etc.
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 skill-seekers package output/react --target markdown
 ```
 
 **Option B: GitHub Repository**
 ```bash
 # Scrape from GitHub repo
-skill-seekers github --repo facebook/react --name react
+skill-seekers create  facebook/react --name react
 skill-seekers package output/react --target markdown
 ```
 
 **Option C: Local Codebase**
 ```bash
 # Analyze your own codebase
-skill-seekers analyze --directory /path/to/repo --comprehensive
+skill-seekers scan  /path/to/repo --comprehensive
 skill-seekers package output/codebase --target markdown
 ```
 
 **Option D: Multiple Sources**
 ```bash
 # Combine docs + code
-skill-seekers unified \
+skill-seekers create --config \
   --docs-config configs/fastapi.json \
   --github fastapi/fastapi \
   --name fastapi-complete
@@ -172,7 +172,7 @@ cat output/django/references/models.md >> .cursorrules
 **Strategy 3: Router Approach**
 ```bash
 # Use router skill (generates high-level overview)
-skill-seekers unified \
+skill-seekers create --config \
   --docs-config configs/django.json \
   --build-router
 
@@ -232,9 +232,9 @@ You are an expert in [Framework Name]. Follow these guidelines:
 
 ```bash
 # Generate rules for full-stack project
-skill-seekers scrape --config configs/fastapi.json
-skill-seekers scrape --config configs/react.json
-skill-seekers scrape --config configs/postgresql.json
+skill-seekers create --config configs/fastapi.json
+skill-seekers create --config configs/react.json
+skill-seekers create --config configs/postgresql.json
 
 skill-seekers package output/fastapi --target markdown
 skill-seekers package output/react --target markdown
@@ -263,7 +263,7 @@ cat output/postgresql-markdown/SKILL.md >> .cursorrules
 
 ```bash
 # Analyze your codebase
-skill-seekers analyze --directory . --comprehensive
+skill-seekers scan  . --comprehensive
 
 # Extract patterns and architecture
 cat output/codebase/SKILL.md > .cursorrules
@@ -437,7 +437,7 @@ class Product(models.Model):
 crontab -e
 
 # Add line to regenerate rules monthly
-0 0 1 * * cd ~/projects && skill-seekers scrape --config configs/django.json && skill-seekers package output/django --target markdown && cp output/django-markdown/SKILL.md ~/.cursorrules
+0 0 1 * * cd ~/projects && skill-seekers create --config configs/django.json && skill-seekers package output/django --target markdown && cp output/django-markdown/SKILL.md ~/.cursorrules
 ```
 
 ---
@@ -697,4 +697,4 @@ cat output/django/references/views.md > views/.cursorrules
 
 **Last Updated:** February 5, 2026
 **Tested With:** Cursor 0.41+, Claude Sonnet 4.5
-**Skill Seekers Version:** v2.9.0+
+**Skill Seekers Version:** v3.6.0

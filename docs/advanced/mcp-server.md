@@ -1,6 +1,6 @@
 # MCP Server Setup Guide
 
-> **Skill Seekers v3.2.0**  
+> **Skill Seekers v3.6.0**  
 > **Integrate with AI agents via Model Context Protocol**
 
 ---
@@ -143,7 +143,7 @@ skill-seekers-mcp --transport http --port 8765
 
 ## Available Tools
 
-27 tools organized by category:
+40 tools organized by category:
 
 ### Core Tools (9)
 - `list_configs` - List presets

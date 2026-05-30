@@ -1,6 +1,6 @@
 # CLI Reference - Skill Seekers
 
-> **Version:** 3.2.0
+> **Version:** 3.6.0
 > **Last Updated:** 2026-03-15
 > **Complete reference for all 30 CLI commands**
 
@@ -53,7 +53,7 @@
 
 ## Overview
 
-Skill Seekers provides a unified CLI for converting documentation, GitHub repositories, PDFs, videos, notebooks, wikis, and 17 total source types into AI-ready skills for 16+ LLM platforms and RAG pipelines.
+Skill Seekers provides a unified CLI for converting documentation, GitHub repositories, PDFs, videos, notebooks, wikis, and 18 source types (17 + config) into AI-ready skills for 21+ LLM platforms and RAG pipelines.
 
 ### Installation
 
@@ -75,7 +75,7 @@ skill-seekers --version
 
 ### Global Flags
 
-These flags work with **all scraper commands** (scrape, github, analyze, pdf, create):
+These flags work with **all source-type subcommands and `create`**:
 
 | Flag | Description |
 |------|-------------|
@@ -120,7 +120,7 @@ Analyze local codebase and extract code knowledge.
 
 **Syntax:**
 ```bash
-skill-seekers analyze --directory DIR [options]
+skill-seekers scan  DIR [options]
 ```
 
 **Arguments:**
@@ -162,19 +162,19 @@ skill-seekers analyze --directory DIR [options]
 
 ```bash
 # Basic analysis with defaults
-skill-seekers analyze --directory ./my-project
+skill-seekers scan  ./my-project
 
 # Quick analysis (1-2 min)
-skill-seekers analyze --directory ./my-project --preset quick
+skill-seekers scan  ./my-project --preset quick
 
 # Comprehensive analysis with all features
-skill-seekers analyze --directory ./my-project --preset comprehensive
+skill-seekers scan  ./my-project --preset comprehensive
 
 # Specific languages only
-skill-seekers analyze --directory ./my-project --languages Python,JavaScript
+skill-seekers scan  ./my-project --languages Python,JavaScript
 
 # Skip heavy features for faster analysis
-skill-seekers analyze --directory ./my-project --skip-dependency-graph --skip-patterns
+skill-seekers scan  ./my-project --skip-dependency-graph --skip-patterns
 ```
 
 **Exit Codes:**
@@ -191,7 +191,7 @@ Extract content from AsciiDoc files and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers asciidoc [options]
+skill-seekers create <asciidoc-file> [options]
 ```
 
 **Key Flags:**
@@ -208,10 +208,10 @@ skill-seekers asciidoc [options]
 
 ```bash
 # Single file
-skill-seekers asciidoc --asciidoc-path guide.adoc --name my-guide
+skill-seekers create guide.adoc --name my-guide
 
 # Directory of AsciiDoc files
-skill-seekers asciidoc --asciidoc-path ./docs/ --name project-docs
+skill-seekers create ./docs/ --name project-docs
 ```
 
 ---
@@ -224,7 +224,7 @@ Extract knowledge from Slack or Discord chat exports.
 
 **Syntax:**
 ```bash
-skill-seekers chat [options]
+skill-seekers create [options]
 ```
 
 **Key Flags:**
@@ -243,10 +243,10 @@ skill-seekers chat [options]
 
 ```bash
 # From Slack export
-skill-seekers chat --export-path ./slack-export/ --name team-knowledge
+skill-seekers create --chat-export-path -path ./slack-export/ --name team-knowledge
 
 # From Discord via API
-skill-seekers chat --platform discord --token $DISCORD_TOKEN --channel general --name discord-docs
+skill-seekers create --platform  discord --token $DISCORD_TOKEN --channel general --name discord-docs
 ```
 
 ---
@@ -297,7 +297,7 @@ Extract content from Confluence wikis.
 
 **Syntax:**
 ```bash
-skill-seekers confluence [options]
+skill-seekers create [options]
 ```
 
 **Key Flags:**
@@ -317,11 +317,11 @@ skill-seekers confluence [options]
 
 ```bash
 # Via API
-skill-seekers confluence --base-url https://wiki.example.com --space-key DEV \
+skill-seekers create --base-url https://wiki.example.com --space-key DEV \
   --username user@example.com --token $CONFLUENCE_TOKEN --name dev-wiki
 
 # From export
-skill-seekers confluence --export-path ./confluence-export/ --name team-docs
+skill-seekers create --export-path ./confluence-export/ --name team-docs
 ```
 
 ---
@@ -550,7 +550,7 @@ Scrape GitHub repository and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers github [options]
+skill-seekers create [options]
 ```
 
 **Flags:**
@@ -581,19 +581,19 @@ skill-seekers github [options]
 
 ```bash
 # Basic repo analysis
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # With GitHub token (higher rate limits)
-skill-seekers github --repo facebook/react --token $GITHUB_TOKEN
+skill-seekers create  facebook/react --token $GITHUB_TOKEN
 
 # Skip issues for faster scraping
-skill-seekers github --repo facebook/react --no-issues
+skill-seekers create  facebook/react --no-issues
 
 # Dry run to preview
-skill-seekers github --repo facebook/react --dry-run
+skill-seekers create  facebook/react --dry-run
 
 # Scrape only, build later
-skill-seekers github --repo facebook/react --scrape-only
+skill-seekers create  facebook/react --scrape-only
 ```
 
 ---
@@ -731,7 +731,7 @@ Extract content from Jupyter Notebook files and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers jupyter [options]
+skill-seekers create <notebook.ipynb> [options]
 ```
 
 **Key Flags:**
@@ -748,10 +748,10 @@ skill-seekers jupyter [options]
 
 ```bash
 # Single notebook
-skill-seekers jupyter --notebook analysis.ipynb --name data-analysis
+skill-seekers create analysis.ipynb --name data-analysis
 
 # Directory of notebooks
-skill-seekers jupyter --notebook ./notebooks/ --name ml-tutorials
+skill-seekers create ./notebooks/ --name ml-tutorials
 ```
 
 ---
@@ -764,7 +764,7 @@ Extract content from Unix/Linux man pages and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers manpage [options]
+skill-seekers create <manpage.1> [options]
 ```
 
 **Key Flags:**
@@ -781,10 +781,10 @@ skill-seekers manpage [options]
 
 ```bash
 # By name (system man pages)
-skill-seekers manpage --man-names ls,grep,find,awk --name unix-essentials
+skill-seekers create --man-names ls,grep,find,awk --name unix-essentials
 
 # From directory
-skill-seekers manpage --man-path /usr/share/man/man1/ --sections 1 --name section1-cmds
+skill-seekers create --man-path /usr/share/man/man1/ --sections 1 --name section1-cmds
 ```
 
 ---
@@ -829,7 +829,7 @@ Extract content from Notion workspaces.
 
 **Syntax:**
 ```bash
-skill-seekers notion [options]
+skill-seekers create [options]
 ```
 
 **Key Flags:**
@@ -848,10 +848,10 @@ skill-seekers notion [options]
 
 ```bash
 # Via API
-skill-seekers notion --database-id abc123 --token $NOTION_TOKEN --name team-docs
+skill-seekers create --database-id -id abc123 --token $NOTION_TOKEN --name team-docs
 
 # From export
-skill-seekers notion --export-path ./notion-export/ --name project-wiki
+skill-seekers create --export-path ./notion-export/ --name project-wiki
 ```
 
 ---
@@ -864,7 +864,7 @@ Extract content from OpenAPI/Swagger specifications and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers openapi [options]
+skill-seekers create <openapi.yaml> [options]
 ```
 
 **Key Flags:**
@@ -882,10 +882,10 @@ skill-seekers openapi [options]
 
 ```bash
 # From local file
-skill-seekers openapi --spec api/openapi.yaml --name my-api
+skill-seekers create api/openapi.yaml --name my-api
 
 # From URL
-skill-seekers openapi --spec-url https://petstore.swagger.io/v2/swagger.json --name petstore
+skill-seekers create-url https://petstore.swagger.io/v2/swagger.json --name petstore
 ```
 
 ---
@@ -980,7 +980,7 @@ Extract content from PDF and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers pdf [options]
+skill-seekers create --pdf [options]
 ```
 
 **Flags:**
@@ -1007,16 +1007,16 @@ skill-seekers pdf [options]
 
 ```bash
 # Direct PDF path
-skill-seekers pdf --pdf manual.pdf --name product-manual
+skill-seekers create --pdf manual.pdf --name product-manual
 
 # With config file
-skill-seekers pdf --config configs/manual.json
+skill-seekers create --pdf --config configs/manual.json
 
 # Enable enhancement
-skill-seekers pdf --pdf manual.pdf --enhance-level 2
+skill-seekers create --pdf manual.pdf --enhance-level 2
 
 # Dry run to preview
-skill-seekers pdf --pdf manual.pdf --name test --dry-run
+skill-seekers create --pdf manual.pdf --name test --dry-run
 ```
 
 ---
@@ -1029,7 +1029,7 @@ Extract content from PowerPoint files and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers pptx [options]
+skill-seekers create <slides.pptx> [options]
 ```
 
 **Key Flags:**
@@ -1046,10 +1046,10 @@ skill-seekers pptx [options]
 
 ```bash
 # Extract from presentation
-skill-seekers pptx --pptx training-slides.pptx --name training-material
+skill-seekers create training-slides.pptx --name training-material
 
 # With enhancement
-skill-seekers pptx --pptx architecture.pptx --name arch-overview --enhance-level 2
+skill-seekers create architecture.pptx --name arch-overview --enhance-level 2
 ```
 
 ---
@@ -1140,7 +1140,7 @@ Extract content from RSS/Atom feeds and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers rss [options]
+skill-seekers create <feed.rss> [options]
 ```
 
 **Key Flags:**
@@ -1159,10 +1159,10 @@ skill-seekers rss [options]
 
 ```bash
 # From URL
-skill-seekers rss --feed-url https://blog.example.com/feed.xml --name blog-knowledge
+skill-seekers create https://blog.example.com/feed.xml --name blog-knowledge
 
 # From local file, summaries only
-skill-seekers rss --feed-path ./feed.rss --no-follow-links --name feed-summaries
+skill-seekers create ./feed.rss --no-follow-links --name feed-summaries
 ```
 
 ---
@@ -1278,7 +1278,7 @@ Scrape documentation website and generate skill.
 
 **Syntax:**
 ```bash
-skill-seekers scrape [url] [options]
+skill-seekers create [url] [options]
 ```
 
 **Arguments:**
@@ -1319,25 +1319,25 @@ skill-seekers scrape [url] [options]
 
 ```bash
 # With preset config
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Quick mode
-skill-seekers scrape --name react --url https://react.dev/
+skill-seekers create --name react --url https://react.dev/
 
 # Interactive mode
-skill-seekers scrape --interactive
+skill-seekers create --interactive
 
 # Dry run
-skill-seekers scrape --config configs/react.json --dry-run
+skill-seekers create --config configs/react.json --dry-run
 
 # Fast async scraping
-skill-seekers scrape --config configs/react.json --async --workers 5
+skill-seekers create --config configs/react.json --async --workers 5
 
 # Skip scrape, rebuild from cache
-skill-seekers scrape --config configs/react.json --skip-scrape
+skill-seekers create --config configs/react.json --skip-scrape
 
 # Resume interrupted scrape
-skill-seekers scrape --config configs/react.json --resume
+skill-seekers create --config configs/react.json --resume
 ```
 
 ---
@@ -1381,7 +1381,7 @@ Multi-source scraping combining docs + GitHub + PDF.
 
 **Syntax:**
 ```bash
-skill-seekers unified --config FILE [options]
+skill-seekers create --config FILE [options]
 ```
 
 **Arguments:**
@@ -1409,13 +1409,13 @@ skill-seekers unified --config FILE [options]
 
 ```bash
 # Unified scraping
-skill-seekers unified --config configs/react-unified.json
+skill-seekers create --config configs/react-unified.json
 
 # Fresh start
-skill-seekers unified --config configs/react-unified.json --fresh
+skill-seekers create --config configs/react-unified.json --fresh
 
 # Rule-based merging
-skill-seekers unified --config configs/react-unified.json --merge-mode rule-based
+skill-seekers create --config configs/react-unified.json --merge-mode rule-based
 ```
 
 **Config Format:**
@@ -1523,16 +1523,16 @@ Extract skills from video tutorials (YouTube, Vimeo, or local files).
 
 ```bash
 # Setup (first time — auto-detects GPU, installs PyTorch + visual deps)
-skill-seekers video --setup
+skill-seekers create --setup
 
 # Extract from YouTube
-skill-seekers video --url https://www.youtube.com/watch?v=VIDEO_ID --name my-skill
+skill-seekers create --video-url  https://www.youtube.com/watch?v=VIDEO_ID --name my-skill
 
 # With visual frame extraction (requires --setup first)
-skill-seekers video --url VIDEO_URL --name my-skill --visual
+skill-seekers create --video-url  VIDEO_URL --name my-skill --visual
 
 # Local video file
-skill-seekers video --url /path/to/video.mp4 --name my-skill
+skill-seekers create --video-url  /path/to/video.mp4 --name my-skill
 ```
 
 ### Key Flags
@@ -1625,7 +1625,7 @@ skill-seekers workflows validate ./my-workflow.yaml
 skill-seekers estimate configs/react.json
 
 # 2. Scrape documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # 3. Enhance SKILL.md (optional, recommended)
 skill-seekers enhance output/react/
@@ -1641,7 +1641,7 @@ skill-seekers upload output/react-claude.zip
 
 ```bash
 # 1. Analyze repository
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # 2. Package
 skill-seekers package output/react/ --target claude
@@ -1654,7 +1654,7 @@ skill-seekers upload output/react-claude.zip
 
 ```bash
 # 1. Analyze codebase
-skill-seekers analyze --directory ./my-project
+skill-seekers scan  ./my-project
 
 # 2. Package
 skill-seekers package output/codebase/ --target claude
@@ -1667,7 +1667,7 @@ skill-seekers install-agent output/codebase/ --agent cursor
 
 ```bash
 # 1. Extract PDF
-skill-seekers pdf --pdf manual.pdf --name product-docs
+skill-seekers create --pdf manual.pdf --name product-docs
 
 # 2. Package
 skill-seekers package output/product-docs/ --target claude
@@ -1678,7 +1678,7 @@ skill-seekers package output/product-docs/ --target claude
 ```bash
 # 1. Create unified config (configs/my-project.json)
 # 2. Run unified scraping
-skill-seekers unified --config configs/my-project.json
+skill-seekers create --config configs/my-project.json
 
 # 3. Package
 skill-seekers package output/my-project/ --target claude
@@ -1727,7 +1727,7 @@ pip install -e .
 ### Rate limiting
 ```bash
 # Increase rate limit
-skill-seekers scrape --config react.json --rate-limit 1.0
+skill-seekers create --config react.json --rate-limit 1.0
 ```
 
 ### Out of memory

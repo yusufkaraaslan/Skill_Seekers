@@ -69,7 +69,7 @@ export OPENAI_API_KEY=sk-...
 
 ```bash
 # Example: React documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Package for Pinecone (uses LangChain format)
 skill-seekers package output/react --target langchain
@@ -207,19 +207,19 @@ pc.create_index(
 
 **Option A: Documentation Website**
 ```bash
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 skill-seekers package output/django --target langchain
 ```
 
 **Option B: GitHub Repository**
 ```bash
-skill-seekers github --repo django/django --name django
+skill-seekers create  django/django --name django
 skill-seekers package output/django --target langchain
 ```
 
 **Option C: Local Codebase**
 ```bash
-skill-seekers analyze --directory /path/to/repo
+skill-seekers scan  /path/to/repo
 skill-seekers package output/codebase --target langchain
 ```
 
@@ -858,4 +858,4 @@ results = index.query(
 
 **Last Updated:** February 5, 2026
 **Tested With:** Pinecone Serverless, OpenAI ada-002, GPT-4
-**Skill Seekers Version:** v2.9.0+
+**Skill Seekers Version:** v3.6.0

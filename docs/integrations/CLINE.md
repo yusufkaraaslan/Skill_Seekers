@@ -57,7 +57,7 @@ skill-seekers --version
 
 ```bash
 # Example: Django framework
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 
 # Package for Cline (markdown format)
 skill-seekers package output/django --target markdown
@@ -158,10 +158,10 @@ Create `myframework-config.json`:
 
 ```bash
 # Analyze codebase patterns
-skill-seekers github --repo facebook/react
+skill-seekers create  facebook/react
 
 # Or local codebase
-skill-seekers analyze --directory /path/to/repo --comprehensive
+skill-seekers scan  /path/to/repo --comprehensive
 ```
 
 ### Step 2: Optimize for Cline
@@ -379,11 +379,11 @@ Watch for:
 
 ```bash
 # Generate backend rules
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 cp output/django-markdown/SKILL.md .clinerules.backend
 
 # Generate frontend rules
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 cp output/react-markdown/SKILL.md .clinerules.frontend
 
 # Add project conventions
@@ -650,7 +650,7 @@ Cline calls MCP tool → gets latest docs → applies to task
 
 ```bash
 # Quarterly framework updates
-skill-seekers scrape --config configs/django.json
+skill-seekers create --config configs/django.json
 cp output/django-markdown/SKILL.md .clinerules
 
 # Check what changed
@@ -1033,7 +1033,7 @@ export function useFetch<T>(url: string): UseFetchResult<T> {
 
 ## 📖 Next Steps
 
-1. **Try another framework:** `skill-seekers scrape --config configs/fastapi.json`
+1. **Try another framework:** `skill-seekers create --config configs/fastapi.json`
 2. **Set up MCP server:** Dynamic documentation access
 3. **Create memory bank:** Persistent project knowledge
 4. **Build RAG pipeline:** Deep documentation search with `--target langchain`

@@ -44,10 +44,10 @@ skill-seekers upload --target gemini --api-key AIzaSy...
 
 ```bash
 # Use any config (scraping is platform-agnostic)
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Or use a unified config for multi-source
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 ```
 
 **Result:** `output/react/` skill directory with references
@@ -393,7 +393,7 @@ After upload, test with sample questions:
 
 ```bash
 # Re-scrape updated documentation
-skill-seekers scrape --config configs/react.json
+skill-seekers create --config configs/react.json
 
 # Re-enhance and upload
 skill-seekers enhance output/react/ --target gemini

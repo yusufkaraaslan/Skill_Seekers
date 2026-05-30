@@ -415,17 +415,17 @@ transforms:
 
 ## Implementation Schedule
 
-### Week 1: Critical Fixes
-- [ ] Remove `[:5]` limit in `enhance_skill_local.py` (P0)
-- [ ] Remove `[:500]` truncation from reference files (P1)
-- [ ] Remove `[:5]` table row limit (P1)
+### Stage 1: Critical Fixes ✅ COMPLETED
+- [x] Remove `[:5]` limit in `enhance_skill_local.py` (P0)
+- [x] Remove `[:500]` truncation from reference files (P1)
+- [x] Remove `[:5]` table row limit (P1)
 
-### Week 2: Notifications & Integration
+### Stage 2: Notifications & Integration ⏳ PENDING
 - [ ] Implement SMTP notifications (P0)
 - [ ] Implement auto-update in sync monitor (P1)
 - [ ] Fix language detection in how-to guides (P1)
 
-### Week 3: Configurability
+### Stage 3: Configurability ⏳ PENDING
 - [ ] Add `--max-patterns`, `--max-issues` CLI flags (P2)
 - [ ] Add verbose mode for display limits (P2)
 - [ ] Add `--max-code-blocks` for enhancement (P2)

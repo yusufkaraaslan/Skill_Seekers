@@ -11,7 +11,7 @@
 
 # Quick Reference - Skill Seekers Cheat Sheet
 
-**Version:** 3.1.0-dev | **Quick Commands** | **One-Page Reference**
+**Version:** 3.6.0 | **Quick Commands** | **One-Page Reference**
 
 ---
 
@@ -36,49 +36,49 @@ pip install -e ".[all-llms,dev]"
 
 ```bash
 # Scrape with preset config
-skill-seekers scrape --config react
+skill-seekers create --config react
 
 # Scrape custom site
-skill-seekers scrape --base-url https://docs.example.com --name my-framework
+skill-seekers create --base-url https://docs.example.com --name my-framework
 
 # Rebuild without re-scraping
-skill-seekers scrape --config react --skip-scrape
+skill-seekers create --config react --skip-scrape
 
 # Async scraping (2-3x faster)
-skill-seekers scrape --config react --async
+skill-seekers create --config react --async
 ```
 
 ### GitHub Repository Analysis
 
 ```bash
 # Basic analysis
-skill-seekers github https://github.com/facebook/react
+skill-seekers create https://github.com/facebook/react
 
 # Deep C3.x analysis (patterns, tests, guides)
-skill-seekers github https://github.com/vercel/next.js --analysis-depth c3x
+skill-seekers create https://github.com/vercel/next.js --analysis-depth c3x
 
 # With GitHub token (higher rate limits)
-GITHUB_TOKEN=ghp_... skill-seekers github https://github.com/org/repo
+GITHUB_TOKEN=ghp_... skill-seekers create https://github.com/org/repo
 ```
 
 ### PDF Extraction
 
 ```bash
 # Extract from PDF
-skill-seekers pdf manual.pdf --name product-manual
+skill-seekers create --pdf manual.pdf --name product-manual
 
 # With OCR (scanned PDFs)
-skill-seekers pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --enable-ocr
 
 # Large PDF (chunked processing)
-skill-seekers pdf large.pdf --pdf-pages-per-chunk 50
+skill-seekers create --pdf large.pdf --pdf-pages-per-chunk 50
 ```
 
 ### Multi-Source Scraping
 
 ```bash
 # Unified scraping (docs + GitHub + PDF)
-skill-seekers unified --config configs/unified/react-unified.json
+skill-seekers create --config configs/unified/react-unified.json
 
 # Merge separate sources
 skill-seekers merge-sources \
@@ -192,7 +192,7 @@ skill-seekers install vue --target markdown
 
 ```bash
 # 1. Scrape documentation
-skill-seekers scrape --config react
+skill-seekers create --config react
 
 # 2. Package for Claude
 skill-seekers package output/react/ --target claude
@@ -206,7 +206,7 @@ skill-seekers upload output/react-claude.zip --target claude
 
 ```bash
 # 1. Analyze repository with C3.x features
-skill-seekers github https://github.com/facebook/react --analysis-depth c3x
+skill-seekers create https://github.com/facebook/react --analysis-depth c3x
 
 # 2. Package for multiple platforms
 skill-seekers package output/react/ --target claude,gemini,openai
@@ -226,7 +226,7 @@ skill-seekers package output/react/ --target claude,gemini,openai
 }
 
 # 2. Run unified scraping
-skill-seekers unified --config configs/unified/my-framework.json
+skill-seekers create --config configs/unified/my-framework.json
 
 # 3. Enhance with AI
 skill-seekers enhance output/my-framework/
@@ -358,10 +358,10 @@ skill-seekers list-configs
 
 ```bash
 # Use async mode (2-3x faster)
-skill-seekers scrape --config react --async
+skill-seekers create --config react --async
 
 # Rebuild without re-scraping
-skill-seekers scrape --config react --skip-scrape
+skill-seekers create --config react --skip-scrape
 ```
 
 ### Save API Costs
@@ -388,10 +388,10 @@ skill-seekers split-config configs/large.json --output configs/split/
 
 ```bash
 # Verbose output
-skill-seekers scrape --config react --verbose
+skill-seekers create --config react --verbose
 
 # Dry run (no actual scraping)
-skill-seekers scrape --config react --dry-run
+skill-seekers create --config react --dry-run
 
 # Show config without scraping
 skill-seekers validate-config configs/react.json
@@ -451,7 +451,7 @@ wait
 ```bash
 # Command help
 skill-seekers --help
-skill-seekers scrape --help
+skill-seekers create --help
 skill-seekers install --help
 
 # Version info
@@ -474,4 +474,4 @@ skill-seekers validate-config configs/my-config.json
 
 ---
 
-**Version:** 3.1.0-dev | **Test Count:** 1,880+ | **MCP Tools:** 26 | **Platforms:** 16+ (Claude, Gemini, OpenAI, LangChain, LlamaIndex, ChromaDB, FAISS, Cursor, Windsurf, and more)
+**Version:** 3.6.0 | **Test Count:** 1,880+ | **MCP Tools:** 26 | **Platforms:** 16+ (Claude, Gemini, OpenAI, LangChain, LlamaIndex, ChromaDB, FAISS, Cursor, Windsurf, and more)

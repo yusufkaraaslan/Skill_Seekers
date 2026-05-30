@@ -1,8 +1,8 @@
 # Config Format Reference - Skill Seekers
 
-> **Version:** 3.2.0
+> **Version:** 3.6.0
 > **Last Updated:** 2026-03-15
-> **Complete JSON configuration specification for 17 source types**
+> **Complete JSON configuration specification for 18 source types**
 
 ---
 
@@ -841,7 +841,7 @@ Validate your config before scraping:
 
 ```bash
 # Using CLI
-skill-seekers scrape --config my-config.json --dry-run
+skill-seekers create --config my-config.json --dry-run
 
 # Using MCP tool
 validate_config({"config": "my-config.json"})

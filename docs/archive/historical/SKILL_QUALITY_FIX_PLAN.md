@@ -297,7 +297,7 @@ skill-seekers enhance output/httpx/ --mode local
 
 **Test:**
 ```bash
-skill-seekers unified --config configs/httpx_comprehensive.json
+skill-seekers create --config configs/httpx_comprehensive.json
 wc -l output/httpx/SKILL.md  # Should be 300-400 lines
 grep "httpx_docs" output/httpx/SKILL.md  # Should return nothing
 ```
