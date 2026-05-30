@@ -85,6 +85,7 @@ class TestCheckPage:
     def test_deleted_page(self, mock_get, detector):
         old_hash = detector.compute_hash("gone")
         from requests.exceptions import RequestException
+
         mock_get.side_effect = RequestException("Connection refused")
 
         change = detector.check_page("https://example.com", old_hash=old_hash)
@@ -219,14 +220,13 @@ class TestHeaderChanges:
         mock_head.return_value.headers = {"ETag": '"new-etag"'}
         mock_head.return_value.raise_for_status = MagicMock()
 
-        changed = detector.check_header_changes(
-            "https://example.com", old_etag='"old-etag"'
-        )
+        changed = detector.check_header_changes("https://example.com", old_etag='"old-etag"')
         assert changed is True
 
     @patch("skill_seekers.sync.detector.requests.head")
     def test_request_error_counts_as_change(self, mock_head, detector):
         from requests.exceptions import RequestException
+
         mock_head.side_effect = RequestException("timeout")
 
         changed = detector.check_header_changes("https://example.com")

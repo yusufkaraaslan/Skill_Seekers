@@ -6,7 +6,6 @@ Tests all MCP tools and server functionality
 
 import json
 import os
-import os
 import shutil
 import sys
 import tempfile
@@ -592,6 +591,7 @@ class TestSubmitConfigTool(unittest.IsolatedAsyncioTestCase):
     async def test_submit_config_requires_token(self):
         """Should error without GitHub token"""
         import os
+
         saved = os.environ.pop("GITHUB_TOKEN", None)
         try:
             args = {

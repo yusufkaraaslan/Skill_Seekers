@@ -13,7 +13,7 @@ from __future__ import annotations
 import pytest
 
 pytestmark = pytest.mark.mcp_only
-import yaml
+import yaml  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

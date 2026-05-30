@@ -93,15 +93,17 @@ class TestManyPages:
         """Verify that constructing 500 pages doesn't hit O(N^2) behavior."""
         pages = []
         for i in range(500):
-            pages.append({
-                "page_number": i + 1,
-                "title": f"Page {i + 1}",
-                "text": f"Content for page {i + 1} " + "x" * 200,
-                "links": [f"https://example.com/page/{j}" for j in range(5)],
-                "code_samples": [],
-                "images": [],
-                "headings": [{"level": "h2", "text": f"Heading {i}"}],
-            })
+            pages.append(
+                {
+                    "page_number": i + 1,
+                    "title": f"Page {i + 1}",
+                    "text": f"Content for page {i + 1} " + "x" * 200,
+                    "links": [f"https://example.com/page/{j}" for j in range(5)],
+                    "code_samples": [],
+                    "images": [],
+                    "headings": [{"level": "h2", "text": f"Heading {i}"}],
+                }
+            )
 
         assert len(pages) == 500
         assert pages[0]["page_number"] == 1

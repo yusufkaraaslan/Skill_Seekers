@@ -432,8 +432,10 @@ class TestSavePageContentFiltering(unittest.TestCase):
 
 class TestLlmsTxtParseMarkdown(unittest.TestCase):
     """Merged from test_llms_txt_parser.py"""
+
     def test_parse_markdown_sections(self):
         from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
+
         sample_content = """# Getting Started
 Welcome to the docs.
 ## Installation

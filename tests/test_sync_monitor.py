@@ -2,9 +2,7 @@
 
 import json
 import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-from datetime import datetime
+from unittest.mock import patch
 from skill_seekers.sync.monitor import SyncMonitor
 from skill_seekers.sync.models import ChangeReport, ChangeType, PageChange, SyncState
 
@@ -38,7 +36,9 @@ class TestMonitorInit:
         config_path, _ = sample_config
         with (
             patch.object(SyncMonitor, "_save_state"),
-            patch.object(SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")),
+            patch.object(
+                SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")
+            ),
         ):
             m = SyncMonitor(config_path=str(config_path))
             assert m.skill_name == "test-skill"
@@ -50,7 +50,9 @@ class TestMonitorInit:
         config_path, _ = sample_config
         with (
             patch.object(SyncMonitor, "_save_state"),
-            patch.object(SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")),
+            patch.object(
+                SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")
+            ),
         ):
             m = SyncMonitor(config_path=str(config_path), check_interval=1800)
             assert m.check_interval == 1800
@@ -59,7 +61,9 @@ class TestMonitorInit:
         config_path, _ = sample_config
         with (
             patch.object(SyncMonitor, "_save_state"),
-            patch.object(SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")),
+            patch.object(
+                SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")
+            ),
         ):
             m = SyncMonitor(config_path=str(config_path), auto_update=True)
             assert m.auto_update is True
@@ -73,7 +77,9 @@ class TestMonitorInit:
 
         with (
             patch.object(SyncMonitor, "_save_state"),
-            patch.object(SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")),
+            patch.object(
+                SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")
+            ),
         ):
             m = SyncMonitor(config_path=str(config_path), on_change=cb)
             assert m.on_change is cb
@@ -86,7 +92,7 @@ class TestCheckNow:
         assert report.skill_name == "test-skill"
 
     def test_check_now_updates_state(self, monitor):
-        report = monitor.check_now()
+        monitor.check_now()
         assert monitor.state.last_check is not None
         assert monitor.state.total_checks == 1
         assert monitor.state.status == "idle"
@@ -104,11 +110,22 @@ class TestCheckNow:
 
             m.state.page_hashes = {"https://example.com/docs": old_hash}
 
-            with patch.object(m.detector, "check_pages", return_value=ChangeReport(
-                skill_name="test-skill",
-                total_pages=1,
-                modified=[PageChange(url="https://example.com/docs", change_type=ChangeType.MODIFIED, old_hash=old_hash, new_hash="newhash")],
-            )):
+            with patch.object(
+                m.detector,
+                "check_pages",
+                return_value=ChangeReport(
+                    skill_name="test-skill",
+                    total_pages=1,
+                    modified=[
+                        PageChange(
+                            url="https://example.com/docs",
+                            change_type=ChangeType.MODIFIED,
+                            old_hash=old_hash,
+                            new_hash="newhash",
+                        )
+                    ],
+                ),
+            ):
                 m.check_now()
                 assert m.state.total_changes == 1
                 assert "https://example.com/docs" in m.state.page_hashes
@@ -123,7 +140,14 @@ class TestCheckNow:
         mock_change = ChangeReport(
             skill_name="test-skill",
             total_pages=1,
-            modified=[PageChange(url="https://example.com/docs", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")],
+            modified=[
+                PageChange(
+                    url="https://example.com/docs",
+                    change_type=ChangeType.MODIFIED,
+                    old_hash="a",
+                    new_hash="b",
+                )
+            ],
         )
 
         with (
@@ -196,11 +220,12 @@ class TestContextManager:
         config_path, _ = sample_config
         with (
             patch.object(SyncMonitor, "_save_state"),
-            patch.object(SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")),
+            patch.object(
+                SyncMonitor, "_load_state", return_value=SyncState(skill_name="test-skill")
+            ),
             patch.object(SyncMonitor, "check_now"),
         ):
-            m = SyncMonitor(config_path=str(config_path),
-                check_interval=86400)
+            m = SyncMonitor(config_path=str(config_path), check_interval=86400)
             m._thread = None
 
             with patch.object(m, "start") as mock_start, patch.object(m, "stop") as mock_stop:
@@ -221,7 +246,7 @@ class TestErrorHandling:
                 state_file=str(tmp_path / "state.json"),
             )
 
-            with patch.object(m.detector, "check_pages", side_effect=RuntimeError("Test error")):
+            with patch.object(m.detector, "check_pages", side_effect=RuntimeError("Test error")):  # noqa: SIM117
                 with pytest.raises(RuntimeError, match="Test error"):
                     m.check_now()
 

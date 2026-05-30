@@ -1627,6 +1627,7 @@ class TestEpubExtractionReal(unittest.TestCase):
 
     def setUp(self):
         from skill_seekers.cli.epub_scraper import EpubToSkillConverter, EPUB_AVAILABLE
+
         if not EPUB_AVAILABLE:
             self.skipTest("ebooklib not installed")
         self.EpubToSkillConverter = EpubToSkillConverter

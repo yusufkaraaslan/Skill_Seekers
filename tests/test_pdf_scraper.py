@@ -564,6 +564,7 @@ class TestPDFExtractionReal(unittest.TestCase):
         if not PYMUPDF_AVAILABLE:
             self.skipTest("PyMuPDF not installed")
         from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
         self.PDFToSkillConverter = PDFToSkillConverter
         self.temp_dir = tempfile.mkdtemp()
         self.fixture_dir = Path(__file__).parent / "fixtures" / "synthetic"

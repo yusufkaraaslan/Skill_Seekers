@@ -522,7 +522,6 @@ class TestLanguageAdapter(unittest.TestCase):
         self.assertIsNone(result)
 
 
-
 class TestMissingGoFPatterns(unittest.TestCase):
     def setUp(self):
         from skill_seekers.cli.code_analyzer import CodeAnalyzer
@@ -546,7 +545,9 @@ class Sorter:
             self.skipTest("CodeAnalyzer did not extract classes")
         report = self.recognizer.analyze_file("test.py", code, "Python")
         pattern_names = [p.pattern_type for p in report.patterns]
-        assert any("Strategy" in n for n in pattern_names) or any("Factory" in n for n in pattern_names)
+        assert any("Strategy" in n for n in pattern_names) or any(
+            "Factory" in n for n in pattern_names
+        )
 
     def test_template_method_pattern(self):
         code = """
@@ -583,7 +584,9 @@ class Invoker:
             self.skipTest("CodeAnalyzer did not extract classes")
         report = self.recognizer.analyze_file("test.py", code, "Python")
         pattern_names = [p.pattern_type for p in report.patterns]
-        assert any("Command" in n for n in pattern_names) or any("Factory" in n for n in pattern_names)
+        assert any("Command" in n for n in pattern_names) or any(
+            "Factory" in n for n in pattern_names
+        )
 
     def test_chain_of_responsibility_pattern(self):
         code = """
@@ -679,63 +682,6 @@ public class DatabaseConnection {
         report = self.recognizer.analyze_file("Test.java", code, "Java")
         assert len(report.patterns) >= 0
 
-class TestMissingGoFPatterns(unittest.TestCase):
-    def setUp(self):
-        from skill_seekers.cli.code_analyzer import CodeAnalyzer
-        from skill_seekers.cli.pattern_recognizer import PatternRecognizer
-        self.analyzer = CodeAnalyzer(depth="deep")
-        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
-
-    def test_strategy_pattern(self):
-        code = "class SortStrategy:\n    def sort(self, data): pass\nclass BubbleSort(SortStrategy):\n    def sort(self, data): return sorted(data)\nclass Sorter:\n    def __init__(self, strategy): self.strategy = strategy\n    def execute(self, data): return self.strategy.sort(data)\n"
-        report = self.recognizer.analyze_file("test.py", code, "Python")
-        pattern_names = [p.pattern_type for p in report.patterns]
-        assert any("Strategy" in n for n in pattern_names) or any("Factory" in n for n in pattern_names)
-
-    def test_chain_of_responsibility_pattern(self):
-        code = "class Handler:\n    def __init__(self): self.next_handler = None\n    def set_next(self, handler): self.next_handler = handler; return handler\n    def handle(self, request):\n        if self.next_handler: return self.next_handler.handle(request)\nclass AuthHandler(Handler):\n    def handle(self, request):\n        if not request.get('authenticated'): return 'Not authenticated'\n        return super().handle(request)\n"
-        report = self.recognizer.analyze_file("test.py", code, "Python")
-        assert len(report.patterns) >= 0
-
-    def test_negative_empty_class(self):
-        code = "class EmptyClass:\n    pass\n"
-        report = self.recognizer.analyze_file("test.py", code, "Python")
-        high_conf = [p for p in report.patterns if p.confidence >= 0.50]
-        assert len(high_conf) == 0
-
-    def test_negative_plain_function(self):
-        code = "def plain_function(x):\n    return x + 1\n"
-        report = self.recognizer.analyze_file("test.py", code, "Python")
-        singleton = [p for p in report.patterns if "Singleton" in p.pattern_type]
-        assert len(singleton) == 0
-
-    def test_empty_content(self):
-        report = self.recognizer.analyze_file("test.py", "", "Python")
-        assert len(report.patterns) == 0
-
-    def test_confidence_bounded(self):
-        code = "class DB:\n    _instance = None\n    @classmethod\n    def getInstance(cls):\n        if not cls._instance: cls._instance = cls()\n        return cls._instance\n"
-        report = self.recognizer.analyze_file("test.py", code, "Python")
-        for p in report.patterns:
-            assert 0.0 <= p.confidence <= 1.0
-
-class TestMultiLanguagePatterns(unittest.TestCase):
-    def setUp(self):
-        from skill_seekers.cli.code_analyzer import CodeAnalyzer
-        from skill_seekers.cli.pattern_recognizer import PatternRecognizer
-        self.analyzer = CodeAnalyzer(depth="deep")
-        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
-
-    def test_javascript_factory(self):
-        code = "class VehicleFactory {\n    createVehicle(type) {\n        if (type === 'car') return new Car();\n        if (type === 'truck') return new Truck();\n    }\n}\nclass Car {}\nclass Truck {}\n"
-        report = self.recognizer.analyze_file("test.js", code, "JavaScript")
-        assert len(report.patterns) >= 0
-
-    def test_java_singleton(self):
-        code = "class DB {\n    private static DB instance;\n    private DB() {}\n    public static DB getInstance() {\n        if (instance == null) instance = new DB();\n        return instance;\n    }\n}\n"
-        report = self.recognizer.analyze_file("Test.java", code, "Java")
-        assert len(report.patterns) >= 0
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

@@ -4,13 +4,14 @@ Tests for cli/estimate_pages.py functionality
 """
 
 import pytest
-pytestmark = [pytest.mark.integration, pytest.mark.network]
 
 import json
 import unittest
 from pathlib import Path
 
 from skill_seekers.cli.estimate_pages import estimate_pages
+
+pytestmark = [pytest.mark.integration, pytest.mark.network]
 
 
 class TestEstimatePages(unittest.TestCase):

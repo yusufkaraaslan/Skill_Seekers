@@ -4,7 +4,6 @@ Tests that the system gracefully handles non-standard encodings,
 byte order marks, mixed newlines, and binary files.
 """
 
-import pytest
 from skill_seekers.cli.code_analyzer import CodeAnalyzer
 
 

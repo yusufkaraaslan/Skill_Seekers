@@ -9,7 +9,6 @@ Usage:
 
 import subprocess
 import shutil
-import time
 
 import pytest
 
@@ -35,9 +34,10 @@ RUN pip install -e .
 CMD ["skill-seekers", "--version"]
 """)
 
-        result = subprocess.run(
+        subprocess.run(
             ["docker", "build", "-t", "skill-seekers-test", "-f", str(dockerfile), "."],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
             cwd=str(tmp_path),
             timeout=120,
         )
@@ -48,7 +48,8 @@ CMD ["skill-seekers", "--version"]
         try:
             result = subprocess.run(
                 ["skill-seekers", "--help"],
-                capture_output=True, text=True,
+                capture_output=True,
+                text=True,
                 timeout=10,
             )
             assert result.returncode == 0
@@ -61,11 +62,15 @@ CMD ["skill-seekers", "--version"]
         try:
             result = subprocess.run(
                 ["skill-seekers", "--version"],
-                capture_output=True, text=True,
+                capture_output=True,
+                text=True,
                 timeout=10,
             )
             assert result.returncode == 0
             import re
-            assert re.search(r"\d+\.\d+\.\d+", result.stdout), f"Expected version in: {result.stdout}"
+
+            assert re.search(r"\d+\.\d+\.\d+", result.stdout), (
+                f"Expected version in: {result.stdout}"
+            )
         except FileNotFoundError:
             pytest.skip("skill-seekers CLI not on PATH")

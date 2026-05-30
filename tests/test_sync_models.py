@@ -72,7 +72,14 @@ class TestChangeReport:
         report = ChangeReport(
             skill_name="test-skill",
             total_pages=10,
-            modified=[PageChange(url="https://example.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")],
+            modified=[
+                PageChange(
+                    url="https://example.com",
+                    change_type=ChangeType.MODIFIED,
+                    old_hash="a",
+                    new_hash="b",
+                )
+            ],
         )
         assert report.has_changes is True
 
@@ -85,7 +92,11 @@ class TestChangeReport:
             skill_name="test-skill",
             total_pages=10,
             added=[PageChange(url="https://a.com", change_type=ChangeType.ADDED)],
-            modified=[PageChange(url="https://b.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")],
+            modified=[
+                PageChange(
+                    url="https://b.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b"
+                )
+            ],
             deleted=[PageChange(url="https://c.com", change_type=ChangeType.DELETED)],
         )
         assert report.change_count == 3
@@ -165,9 +176,7 @@ class TestSyncState:
         assert len(state.page_hashes) == 1
 
     def test_error_state(self):
-        state = SyncState(
-            skill_name="test-skill", status="error", error="Connection refused"
-        )
+        state = SyncState(skill_name="test-skill", status="error", error="Connection refused")
         assert state.status == "error"
         assert state.error == "Connection refused"
 
@@ -189,10 +198,12 @@ class TestWebhookPayload:
         report = ChangeReport(
             skill_name="test-skill",
             total_pages=10,
-            modified=[PageChange(url="https://a.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")],
+            modified=[
+                PageChange(
+                    url="https://a.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b"
+                )
+            ],
         )
-        payload = WebhookPayload(
-            event="sync_complete", skill_name="test-skill", changes=report
-        )
+        payload = WebhookPayload(event="sync_complete", skill_name="test-skill", changes=report)
         assert payload.changes == report
         assert payload.changes.has_changes is True

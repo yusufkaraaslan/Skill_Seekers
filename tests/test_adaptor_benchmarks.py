@@ -403,9 +403,23 @@ class TestCrossPlatformPackageSizes(unittest.TestCase):
 
     def test_all_adaptors_produce_non_empty_package(self):
         metadata = SkillMetadata(name="test-bench", description="Benchmark test")
-        platforms = ["claude", "gemini", "openai", "markdown", "langchain", "llama-index",
-                     "opencode", "minimax", "deepseek", "kimi", "qwen", "openrouter",
-                     "together", "fireworks", "ibm-bob"]
+        platforms = [
+            "claude",
+            "gemini",
+            "openai",
+            "markdown",
+            "langchain",
+            "llama-index",
+            "opencode",
+            "minimax",
+            "deepseek",
+            "kimi",
+            "qwen",
+            "openrouter",
+            "together",
+            "fireworks",
+            "ibm-bob",
+        ]
         for platform in platforms:
             adaptor = get_adaptor(platform)
             adaptor.format_skill_md(self.skill_dir, metadata)

@@ -10,7 +10,6 @@ platform-specific output.
 """
 
 import json
-import os
 import tempfile
 import zipfile
 from pathlib import Path
@@ -84,13 +83,13 @@ class TestOpenAICompatibleAdaptors:
     def test_get_adaptor_returns_instance(self, platform):
         adaptor = get_adaptor(platform)
         assert adaptor is not None
-        assert adaptor.PLATFORM == platform
+        assert platform == adaptor.PLATFORM
 
     def test_platform_info(self, platform):
         adaptor = get_adaptor(platform)
         expected = PLATFORM_EXPECTED[platform]
-        assert adaptor.PLATFORM == platform
-        assert adaptor.PLATFORM_NAME == expected["name"]
+        assert platform == adaptor.PLATFORM
+        assert expected["name"] == adaptor.PLATFORM_NAME
 
     def test_endpoint_contains_platform(self, platform):
         adaptor = get_adaptor(platform)
@@ -115,7 +114,7 @@ class TestOpenAICompatibleAdaptors:
 
     def test_format_skill_md_no_frontmatter(self, platform):
         adaptor = get_adaptor(platform)
-        expected = PLATFORM_EXPECTED[platform]
+        PLATFORM_EXPECTED[platform]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             skill_dir = Path(temp_dir)
@@ -126,7 +125,9 @@ class TestOpenAICompatibleAdaptors:
 
             formatted = adaptor.format_skill_md(skill_dir, metadata)
 
-            assert not formatted.startswith("---"), "OpenAI-compatible adaptors should NOT have YAML frontmatter"
+            assert not formatted.startswith("---"), (
+                "OpenAI-compatible adaptors should NOT have YAML frontmatter"
+            )
             assert "You are an expert assistant" in formatted
             assert "test-skill" in formatted
             assert "Test skill description" in formatted
@@ -148,7 +149,7 @@ class TestOpenAICompatibleAdaptors:
 
     def test_package_creates_zip(self, platform):
         adaptor = get_adaptor(platform)
-        expected = PLATFORM_EXPECTED[platform]
+        PLATFORM_EXPECTED[platform]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             skill_dir = Path(temp_dir) / "test-skill"
@@ -167,8 +168,12 @@ class TestOpenAICompatibleAdaptors:
 
             with zipfile.ZipFile(package_path, "r") as zf:
                 names = zf.namelist()
-                assert "system_instructions.txt" in names, f"system_instructions.txt missing for {platform}"
-                assert any(f"{platform}_metadata.json" in n for n in names), f"metadata missing for {platform}"
+                assert "system_instructions.txt" in names, (
+                    f"system_instructions.txt missing for {platform}"
+                )
+                assert any(f"{platform}_metadata.json" in n for n in names), (
+                    f"metadata missing for {platform}"
+                )
                 assert any("knowledge_files" in n for n in names)
 
     def test_package_metadata_content(self, platform):
@@ -212,7 +217,9 @@ class TestOpenAICompatibleAdaptors:
             with zipfile.ZipFile(package_path, "r") as zf:
                 names = zf.namelist()
                 assert "system_instructions.txt" in names
-                assert not any("knowledge_files" in n for n in names), f"Should have no knowledge_files for {platform}"
+                assert not any("knowledge_files" in n for n in names), (
+                    f"Should have no knowledge_files for {platform}"
+                )
 
     def test_upload_missing_file(self, platform):
         adaptor = get_adaptor(platform)
@@ -231,7 +238,9 @@ class TestOpenAICompatibleAdaptors:
     def test_validate_api_key(self, platform):
         adaptor = get_adaptor(platform)
         assert not adaptor.validate_api_key(""), f"Empty key should be invalid for {platform}"
-        assert not adaptor.validate_api_key("   "), f"Whitespace key should be invalid for {platform}"
+        assert not adaptor.validate_api_key("   "), (
+            f"Whitespace key should be invalid for {platform}"
+        )
         assert adaptor.validate_api_key("valid-long-enough-key-string")
         assert adaptor.validate_api_key("another-valid-key-12345")
 
@@ -263,7 +272,7 @@ class TestOpenAICompatibleAdaptors:
 
             package_path = adaptor.package(skill_dir, output_dir)
 
-            result = adaptor.upload(package_path, "test-api-key")
+            adaptor.upload(package_path, "test-api-key")
 
             assert mock_openai_class.called
             called_args = mock_openai_class.call_args

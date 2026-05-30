@@ -7,7 +7,6 @@ Usage:
     python tests/fixtures/generate_fixtures.py
 """
 
-import io
 import zipfile
 from pathlib import Path
 
@@ -41,7 +40,9 @@ def generate_pdf():
 
     page3 = doc.new_page()
     page3.insert_text(fitz.Point(72, 72), "Chapter 2: Advanced Usage")
-    page3.insert_text(fitz.Point(72, 100), "This chapter covers advanced features and configuration.")
+    page3.insert_text(
+        fitz.Point(72, 100), "This chapter covers advanced features and configuration."
+    )
     page3.insert_text(fitz.Point(72, 128), "| Setting | Default | Description |")
     page3.insert_text(fitz.Point(72, 144), "| timeout | 30 | Request timeout in seconds |")
     page3.insert_text(fitz.Point(72, 160), "| retries | 3 | Number of retry attempts |")
@@ -74,8 +75,11 @@ def generate_docx():
 
     doc.add_heading("Code Example", level=2)
     doc.add_paragraph(
-        "def process_data(items):\n" "    results = []\n" "    for item in items:\n"
-        "        results.append(item * 2)\n" "    return results"
+        "def process_data(items):\n"
+        "    results = []\n"
+        "    for item in items:\n"
+        "        results.append(item * 2)\n"
+        "    return results"
     )
 
     table = doc.add_table(rows=3, cols=2, style="Light Grid Accent 1")
@@ -143,7 +147,10 @@ def generate_epub():
 
     book.add_item(c1)
     book.add_item(c2)
-    book.toc = [epub.Link("chap1.xhtml", "Chapter 1", "chap1"), epub.Link("chap2.xhtml", "Chapter 2", "chap2")]
+    book.toc = [
+        epub.Link("chap1.xhtml", "Chapter 1", "chap1"),
+        epub.Link("chap2.xhtml", "Chapter 2", "chap2"),
+    ]
     book.spine = ["nav", c1, c2]
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
@@ -173,7 +180,7 @@ def _generate_epub_manual():
         "<dc:title>Test EPUB Document</dc:title>"
         '<dc:creator id="author">Skill Seekers Test</dc:creator>'
         "<dc:language>en</dc:language>"
-        "<dc:identifier id=\"book-id\">test-epub-001</dc:identifier>"
+        '<dc:identifier id="book-id">test-epub-001</dc:identifier>'
         "<dc:description>Testing Skill Seekers EPUB scraper integration</dc:description>"
         "</metadata>"
         "<manifest>"
@@ -221,7 +228,7 @@ def _generate_epub_manual():
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" '
         'xmlns:epub="http://www.idpf.org/2007/ops">'
-        '<head><title>Table of Contents</title></head>'
+        "<head><title>Table of Contents</title></head>"
         "<body>"
         '<nav epub:type="toc">'
         "<ol>"
@@ -238,7 +245,7 @@ def _generate_epub_manual():
         "<head>"
         '<meta name="dtb:uid" content="test-epub-001"/>'
         "</head>"
-        '<docTitle><text>Test EPUB</text></docTitle>'
+        "<docTitle><text>Test EPUB</text></docTitle>"
         "<navMap>"
         '<navPoint id="ch1" playOrder="1"><navLabel><text>Chapter 1</text></navLabel>'
         '<content src="chap1.xhtml"/></navPoint>'

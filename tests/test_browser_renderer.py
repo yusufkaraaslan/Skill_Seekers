@@ -7,13 +7,13 @@ from __future__ import annotations
 
 import pytest
 
-pytestmark = [pytest.mark.integration, pytest.mark.network]
-
 from skill_seekers.cli.browser_renderer import (
     BrowserRenderer,
     _auto_install_chromium,
     _check_playwright_available,
 )
+
+pytestmark = [pytest.mark.integration, pytest.mark.network]
 
 # Skip all real browser tests when Playwright is not installed
 _has_playwright = _check_playwright_available()

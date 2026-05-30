@@ -1195,19 +1195,21 @@ class Product {
         self.assertEqual(cls["name"], "Product")
 
 
-
 class TestEdgeCases(unittest.TestCase):
     def setUp(self):
         from skill_seekers.cli.code_analyzer import CodeAnalyzer
+
         self.analyzer = CodeAnalyzer(depth="deep")
 
     def test_empty_file(self):
         result = self.analyzer.analyze_file("empty.py", "", "Python")
-        if result: self.assertIn("classes", result)
+        if result:
+            self.assertIn("classes", result)
 
     def test_whitespace_only(self):
         result = self.analyzer.analyze_file("ws.py", "\n\n   \n", "Python")
-        if result: self.assertIn("classes", result)
+        if result:
+            self.assertIn("classes", result)
 
     def test_comments_only(self):
         code = "# This is a comment\n# Another comment\n"
@@ -1218,7 +1220,8 @@ class TestEdgeCases(unittest.TestCase):
     def test_walrus_operator(self):
         code = "def process(data):\n    if (n := len(data)) > 10:\n        return f'L: {n}'\n    return f'S: {n}'\n"
         result = self.analyzer.analyze_file("walrus.py", code, "Python")
-        if result: self.assertIn("functions", result)
+        if result:
+            self.assertIn("functions", result)
 
     def test_syntax_error(self):
         result = self.analyzer.analyze_file("broken.py", "def broken(", "Python")
@@ -1227,24 +1230,28 @@ class TestEdgeCases(unittest.TestCase):
     def test_swift_language(self):
         code = "struct Person { var name: String; func greet() -> String { return 'Hello' } }"
         result = self.analyzer.analyze_file("Person.swift", code, "Swift")
-        if result: self.assertIn("classes", result)
+        if result:
+            self.assertIn("classes", result)
 
     def test_dart_language(self):
         code = "class Calc { double add(double a, double b) => a + b; }"
         result = self.analyzer.analyze_file("calc.dart", code, "Dart")
-        if result: self.assertIn("classes", result)
+        if result:
+            self.assertIn("classes", result)
 
     def test_data_class(self):
         code = "from dataclasses import dataclass\n@dataclass\nclass Point:\n    x: float\n    y: float\n    def distance(self) -> float:\n        return (self.x ** 2 + self.y ** 2) ** 0.5\n"
         result = self.analyzer.analyze_file("point.py", code, "Python")
         if result:
             classes = result.get("classes", [])
-            if classes: self.assertEqual(classes[0]["name"], "Point")
+            if classes:
+                self.assertEqual(classes[0]["name"], "Point")
 
 
 class TestUnknownLanguage(unittest.TestCase):
     def setUp(self):
         from skill_seekers.cli.code_analyzer import CodeAnalyzer
+
         self.analyzer = CodeAnalyzer(depth="deep")
 
     def test_unknown_language_surface(self):
@@ -1255,6 +1262,7 @@ class TestUnknownLanguage(unittest.TestCase):
     def test_unknown_language_deep(self):
         result = self.analyzer.analyze_file("test.xyz", "some content", "xyz")
         self.assertIsInstance(result, dict)
+
 
 if __name__ == "__main__":
     # Run tests with verbose output

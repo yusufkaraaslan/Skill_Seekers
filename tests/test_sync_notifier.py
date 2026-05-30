@@ -21,7 +21,11 @@ def changed_payload():
         skill_name="test-skill",
         total_pages=5,
         added=[PageChange(url="https://new.page", change_type=ChangeType.ADDED)],
-        modified=[PageChange(url="https://mod.page", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")],
+        modified=[
+            PageChange(
+                url="https://mod.page", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b"
+            )
+        ],
         deleted=[PageChange(url="https://del.page", change_type=ChangeType.DELETED)],
     )
     return WebhookPayload(event="change_detected", skill_name="test-skill", changes=report)
@@ -36,7 +40,9 @@ class TestNotifier:
         assert n.email_recipients == []
 
     def test_init_with_urls(self):
-        n = Notifier(webhook_url="https://hooks.example.com", slack_webhook="https://hooks.slack.com/xxx")
+        n = Notifier(
+            webhook_url="https://hooks.example.com", slack_webhook="https://hooks.slack.com/xxx"
+        )
         assert n.webhook_url == "https://hooks.example.com"
         assert n.slack_webhook == "https://hooks.slack.com/xxx"
 
@@ -100,7 +106,12 @@ class TestNotifier:
     @patch("skill_seekers.sync.notifier.requests.post")
     def test_send_slack_many_modified(self, mock_post, capsys):
         modified = [
-            PageChange(url=f"https://page{i}.com", change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b")
+            PageChange(
+                url=f"https://page{i}.com",
+                change_type=ChangeType.MODIFIED,
+                old_hash="a",
+                new_hash="b",
+            )
             for i in range(10)
         ]
         report = ChangeReport(skill_name="test-skill", total_pages=10, modified=modified)
@@ -117,9 +128,11 @@ class TestNotifier:
         assert captured.out == ""
 
     def test_send_uses_all_channels(self, sample_payload, capsys):
-        with patch.object(Notifier, "_send_webhook") as mock_webhook, patch.object(
-            Notifier, "_send_slack"
-        ) as mock_slack, patch.object(Notifier, "_send_email") as mock_email:
+        with (
+            patch.object(Notifier, "_send_webhook") as mock_webhook,
+            patch.object(Notifier, "_send_slack") as mock_slack,
+            patch.object(Notifier, "_send_email") as mock_email,
+        ):
             n = Notifier(
                 webhook_url="https://hooks.example.com",
                 slack_webhook="https://hooks.slack.com/xxx",

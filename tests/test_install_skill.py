@@ -26,7 +26,7 @@ except ImportError:
     TextContent = None  # Placeholder
 
 # Import the function to test
-from skill_seekers.mcp.tools.packaging_tools import install_skill_tool
+from skill_seekers.mcp.tools.packaging_tools import install_skill_tool  # noqa: E402
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
@@ -40,6 +40,7 @@ class TestInstallSkillValidation:
 
         assert len(result) == 1
         assert isinstance(result[0], TextContent)
+
         assert "❌ Error: Must provide either config_name or config_path" in result[0].text
         assert "Examples:" in result[0].text
 

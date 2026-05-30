@@ -683,6 +683,7 @@ class TestWordExtractionReal(unittest.TestCase):
 
     def setUp(self):
         from skill_seekers.cli.word_scraper import WordToSkillConverter, WORD_AVAILABLE
+
         if not WORD_AVAILABLE:
             self.skipTest("mammoth and python-docx not installed")
         self.WordToSkillConverter = WordToSkillConverter

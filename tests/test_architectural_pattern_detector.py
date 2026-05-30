@@ -324,89 +324,13 @@ class TestReportSerialization:
         assert "patterns" in data
         assert "frameworks_detected" in data
 
+
 def _make_file(lang, file_path, imports=None):
     return {"file": file_path, "language": lang, "imports": imports or []}
 
+
 def _run_detector(directory, files_analysis, enhance_with_ai=False):
     from skill_seekers.cli.architectural_pattern_detector import ArchitecturalPatternDetector
+
     detector = ArchitecturalPatternDetector(enhance_with_ai=enhance_with_ai)
     return detector.analyze(directory, files_analysis)
-
-class TestDjangoDetection:
-    def test_django_via_imports(self, tmp_path):
-        files = [_make_file("Python", "app/models.py", ["django.db"]), _make_file("Python", "app/views.py", ["django.views"])]
-        report = _run_detector(tmp_path, files)
-        assert "Django" in report.frameworks_detected
-
-    def test_django_via_manage_py(self, tmp_path):
-        (tmp_path / "manage.py").touch()
-        (tmp_path / "settings.py").touch()
-        files = [_make_file("Python", "project/settings.py", ["django"])]
-        report = _run_detector(tmp_path, files)
-        assert "Django" in report.frameworks_detected
-
-class TestFlaskDetection:
-    def test_flask_via_imports(self, tmp_path):
-        files = [_make_file("Python", "app.py", ["flask"]), _make_file("Python", "server.py", ["flask"])]
-        report = _run_detector(tmp_path, files)
-        assert "Flask" in report.frameworks_detected
-
-    def test_flask_via_wsgi(self, tmp_path):
-        (tmp_path / "wsgi.py").touch()
-        files = [_make_file("Python", "app.py", ["flask"])]
-        report = _run_detector(tmp_path, files)
-        assert "Flask" in report.frameworks_detected
-
-class TestSpringDetection:
-    def test_spring_via_imports(self, tmp_path):
-        files = [_make_file("Java", "src/UserService.java", ["org.springframework"])]
-        report = _run_detector(tmp_path, files)
-        assert "Spring" in report.frameworks_detected
-
-class TestAngularDetection:
-    def test_angular_via_imports(self, tmp_path):
-        files = [_make_file("TypeScript", "src/app.module.ts", ["@angular"])]
-        report = _run_detector(tmp_path, files)
-        assert "Angular" in report.frameworks_detected
-
-class TestExpressDetection:
-    def test_express_via_imports(self, tmp_path):
-        files = [_make_file("JavaScript", "app.js", ["express"])]
-        report = _run_detector(tmp_path, files)
-        assert "Express" in report.frameworks_detected
-
-class TestRailsDetection:
-    def test_rails_via_imports(self, tmp_path):
-        files = [_make_file("Ruby", "config/routes.rb", ["rails"])]
-        report = _run_detector(tmp_path, files)
-        assert "Rails" in report.frameworks_detected
-
-class TestGodotDetection:
-    def test_godot_via_project_file(self, tmp_path):
-        (tmp_path / "project.godot").write_text("[application]")
-        files = [_make_file("GDScript", "main.gd")]
-        report = _run_detector(tmp_path, files)
-        assert "Godot" in report.frameworks_detected
-
-class TestWebFrameworkFiltering:
-    def test_csharp_project_not_web(self, tmp_path):
-        (tmp_path / "package.json").write_text('{"dependencies":{"react":"18.0.0"}}')
-        files = [_make_file("C#", "Program.cs", ["Microsoft.AspNetCore"])]
-        report = _run_detector(tmp_path, files)
-        assert "ASP.NET" in report.frameworks_detected
-        assert "React" not in report.frameworks_detected
-
-class TestEmptyProject:
-    def test_no_files_no_detection(self, tmp_path):
-        report = _run_detector(tmp_path, [])
-        assert report.frameworks_detected == []
-        assert report.total_files_analyzed == 0
-
-class TestReportSerialization:
-    def test_report_to_dict(self, tmp_path):
-        files = [_make_file("Python", "app.py", ["flask"])]
-        report = _run_detector(tmp_path, files)
-        data = report.to_dict()
-        assert isinstance(data, dict)
-        assert "patterns" in data
-        assert "frameworks_detected" in data

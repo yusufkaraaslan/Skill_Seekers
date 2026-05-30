@@ -3,15 +3,15 @@
 Uses starlette TestClient for in-process HTTP testing.
 """
 
-import json
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 try:
     from starlette.testclient import TestClient
     from skill_seekers.embedding.server import app as _embedding_app
+
     STARLETTE_AVAILABLE = True
-except ImportError:
+except (ImportError, SystemExit):
     STARLETTE_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not STARLETTE_AVAILABLE, reason="Starlette not installed")
@@ -21,8 +21,18 @@ pytestmark = pytest.mark.skipif(not STARLETTE_AVAILABLE, reason="Starlette not i
 def mock_generator():
     with patch("skill_seekers.embedding.server.generator") as mock_gen:
         mock_gen.list_models.return_value = [
-            {"name": "text-embedding-3-small", "provider": "openai", "dimensions": 1536, "max_tokens": 8191},
-            {"name": "text-embedding-3-large", "provider": "openai", "dimensions": 3072, "max_tokens": 8191},
+            {
+                "name": "text-embedding-3-small",
+                "provider": "openai",
+                "dimensions": 1536,
+                "max_tokens": 8191,
+            },
+            {
+                "name": "text-embedding-3-large",
+                "provider": "openai",
+                "dimensions": 3072,
+                "max_tokens": 8191,
+            },
         ]
         mock_gen.generate.return_value = [0.1, 0.2, 0.3]
         mock_gen.generate_batch.return_value = ([[0.1, 0.2], [0.3, 0.4]], 2)
@@ -49,7 +59,7 @@ def mock_cache():
 
 
 @pytest.fixture
-def client(mock_generator, mock_cache):
+def client(mock_generator, mock_cache):  # noqa: ARG001
     with TestClient(_embedding_app) as c:
         yield c
 
@@ -91,7 +101,9 @@ class TestModels:
 
 class TestEmbedText:
     def test_embed_single_text(self, client):
-        response = client.post("/embed", json={"text": "Hello world", "model": "text-embedding-3-small"})
+        response = client.post(
+            "/embed", json={"text": "Hello world", "model": "text-embedding-3-small"}
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["model"] == "text-embedding-3-small"
@@ -102,7 +114,9 @@ class TestEmbedText:
         mock_cache.has.return_value = True
         mock_cache.get.return_value = [0.5, 0.6, 0.7]
 
-        response = client.post("/embed", json={"text": "cached text", "model": "text-embedding-3-small"})
+        response = client.post(
+            "/embed", json={"text": "cached text", "model": "text-embedding-3-small"}
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["cached"] is True
@@ -133,7 +147,9 @@ class TestEmbedSkill:
     def test_embed_skill(self, client, tmp_path):
         skill_dir = tmp_path / "test-skill"
         skill_dir.mkdir()
-        (skill_dir / "SKILL.md").write_text("# Test Skill\n\nThis is a test skill with enough content\n" * 5)
+        (skill_dir / "SKILL.md").write_text(
+            "# Test Skill\n\nThis is a test skill with enough content\n" * 5
+        )
 
         response = client.post("/embed/skill", json={"skill_path": str(skill_dir)})
         assert response.status_code == 200
