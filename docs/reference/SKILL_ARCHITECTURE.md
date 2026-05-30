@@ -854,8 +854,8 @@ Skill Seeker auto-generates router skills for large documentation using `generat
 
 ```bash
 # Generate a router from documentation configs
-python3 cli/split_config.py configs/godot.json --strategy router
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot.json --strategy router
+skill-seekers create configs/godot-*.json
 
 # Examine generated router SKILL.md
 cat output/godot/SKILL.md
@@ -923,7 +923,7 @@ Keywords: order, purchase, payment, checkout, fulfillment
 
 ## Additional Resources
 
-- **Auto-Generated Routers:** See `docs/LARGE_DOCUMENTATION.md` for automated splitting of scraped documentation
+- **Auto-Generated Routers:** See `docs/reference/LARGE_DOCUMENTATION.md` for automated splitting of scraped documentation
 - **Router Implementation:** See `src/skill_seekers/cli/generate_router.py` for reference implementation
 - **Examples:** See configs in `configs/` for real-world router patterns
 

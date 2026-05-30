@@ -87,7 +87,7 @@ cp output/fastapi-markdown/SKILL.md /path/to/your/project/.windsurfrules
 
 ```bash
 # Skill Seekers automatically splits large files
-skill-seekers package output/react --target markdown --split-rules
+skill-seekers package output/react --target markdown
 
 # This creates multiple rule files:
 # output/react-markdown/rules/
@@ -171,18 +171,10 @@ Windsurf has strict limits:
 - **Per rule file:** 6,000 characters max
 - **Combined global + local:** 12,000 characters max
 
-**Use split-rules flag:**
-
-```bash
-# Automatically split large documentation
-skill-seekers package output/django --target markdown --split-rules
-
-# This creates modular rules:
-# - core-concepts.md      (Always On)
-# - api-reference.md      (Model Decision)
-# - best-practices.md     (Always On)
-# - troubleshooting.md    (Manual @mention)
-```
+**Use automatic splitting:**
+   ```bash
+   skill-seekers package output/react --target markdown
+   ```
 
 **Rule Activation Modes**
 
@@ -299,7 +291,7 @@ find .windsurf/rules -name "*.md" -exec wc -c {} \;
 
 # Ensure no file exceeds 6,000 characters
 # If too large, split further:
-skill-seekers package output/react --target markdown --split-rules --max-chars 5000
+skill-seekers package output/react --target markdown
 ```
 
 ---
@@ -313,11 +305,11 @@ skill-seekers package output/react --target markdown --split-rules --max-chars 5
 ```bash
 # Generate backend rules (FastAPI)
 skill-seekers create --config configs/fastapi.json
-skill-seekers package output/fastapi --target markdown --split-rules
+skill-seekers package output/fastapi --target markdown
 
 # Generate frontend rules (React)
 skill-seekers create --config configs/react.json
-skill-seekers package output/react --target markdown --split-rules
+skill-seekers package output/react --target markdown
 
 # Organize rules directory:
 .windsurf/rules/
@@ -543,7 +535,7 @@ Use this pattern in all endpoints.
 ```bash
 # Framework updates quarterly
 skill-seekers create --config configs/react.json
-skill-seekers package output/react --target markdown --split-rules
+skill-seekers package output/react --target markdown
 
 # Check what changed
 diff -r .windsurf/rules/react-old/ .windsurf/rules/react-new/
@@ -689,7 +681,7 @@ Cascade will:
 ```bash
 # Generate Godot documentation + codebase analysis
 skill-seekers create  godotengine/godot-demo-projects
-skill-seekers package output/godot-demo-projects --target markdown --split-rules
+skill-seekers package output/godot-demo-projects --target markdown
 
 # Create rules structure:
 .windsurf/rules/
@@ -801,14 +793,14 @@ EventBus.game_over.emit(final_score)
 
 **Solutions:**
 
-1. **Use split-rules flag**
+1. **Use automatic splitting**
    ```bash
-   skill-seekers package output/react --target markdown --split-rules
+   skill-seekers package output/react --target markdown
    ```
 
 2. **Set custom max-chars**
    ```bash
-   skill-seekers package output/django --target markdown --split-rules --max-chars 5000
+   skill-seekers package output/django --target markdown
    ```
 
 3. **Manual splitting**

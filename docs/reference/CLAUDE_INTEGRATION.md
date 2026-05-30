@@ -150,16 +150,16 @@ skill-seekers create --config configs/godot.json --fresh
 ### Large documentation (10K-40K+ pages)
 ```bash
 # 1. Estimate page count
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-python3 cli/split_config.py configs/godot.json --strategy router
+skill-seekers create configs/godot.json --strategy router
 
 # 3. Generate router skill
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # 4. Package multiple skills
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 ```
 
 ### AI-powered SKILL.md enhancement
@@ -173,10 +173,10 @@ skill-seekers create --config configs/react.json --enhance
 skill-seekers create --config configs/react.json --enhance-local
 
 # Option 3: Standalone after scraping (API-based)
-python3 cli/enhance_skill.py output/react/
+skill-seekers enhance output/react/
 
 # Option 4: Standalone after scraping (LOCAL, no API key)
-python3 cli/enhance_skill_local.py output/react/
+skill-seekers enhance output/react/
 ```
 
 The LOCAL enhancement option (`--enhance-local` or `enhance_skill_local.py`) opens a new terminal with Claude Code, which analyzes reference files and enhances SKILL.md automatically. This requires Claude Code Max plan but no API key.
@@ -389,7 +389,7 @@ skill-seekers create --config configs/godot.json
 # Time: 20-40 minutes
 
 # 2. Package
-python3 cli/package_skill.py output/godot/
+skill-seekers package output/godot/
 
 # Result: godot.zip
 ```
@@ -401,7 +401,7 @@ skill-seekers create --config configs/godot.json --skip-scrape
 # Time: 1-3 minutes
 
 # 2. Package
-python3 cli/package_skill.py output/godot/
+skill-seekers package output/godot/
 ```
 
 ### Creating a new framework config
@@ -418,10 +418,10 @@ skill-seekers create --config configs/myframework.json
 ### Large documentation workflow (40K pages)
 ```bash
 # 1. Estimate page count (fast, 1-2 minutes)
-python3 cli/estimate_pages.py configs/godot.json
+skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-python3 cli/split_config.py configs/godot.json --strategy router --target-pages 5000
+skill-seekers create configs/godot.json --strategy router --target-pages 5000
 
 # Creates: godot-scripting.json, godot-2d.json, godot-3d.json, etc.
 
@@ -432,10 +432,10 @@ done
 wait
 
 # 4. Generate intelligent router skill
-python3 cli/generate_router.py configs/godot-*.json
+skill-seekers create configs/godot-*.json
 
 # 5. Package all skills
-python3 cli/package_multi.py output/godot*/
+skill-seekers package output/godot*/
 
 # 6. Upload all .zip files to Claude
 # Result: Router automatically directs queries to the right sub-skill!

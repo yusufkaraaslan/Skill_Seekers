@@ -264,7 +264,7 @@ src/skill_seekers/mcp/server_fastmcp.py
 docs/MULTI_AGENT_SETUP.md       # Comprehensive guide
 docs/SETUP_QUICK_REFERENCE.md   # This file
 docs/HTTP_TRANSPORT.md          # HTTP transport guide
-docs/MCP_SETUP.md               # MCP integration guide
+docs/guides/MCP_SETUP.md               # MCP integration guide
 ```
 
 ### Config Paths (Linux)

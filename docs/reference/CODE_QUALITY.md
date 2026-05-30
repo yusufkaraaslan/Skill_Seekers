@@ -220,7 +220,7 @@ def process(self, data):
 
 ## Recent Code Quality Improvements
 
-### v2.7.0 Fixes (January 18, 2026)
+### v3.6.0 Fixes (January 18, 2026)
 
 Fixed **all 21 ruff linting errors** across the codebase:
 
@@ -742,7 +742,7 @@ gh pr create --title "Add your feature" --body "Description..."
 
 ## Quality Metrics
 
-### Current Status (v2.7.0)
+### Current Status (v3.6.0)
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|

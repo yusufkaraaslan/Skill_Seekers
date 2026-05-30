@@ -27,7 +27,7 @@ Both analyze reference documentation and extract the best examples and guidance.
 
 ```bash
 # Option 1: Standalone enhancement
-python3 cli/enhance_skill_local.py output/steam-inventory/
+skill-seekers enhance output/steam-inventory/
 
 # Option 2: Integrated with scraper
 skill-seekers create --config configs/steam-inventory.json --enhance-local
@@ -61,20 +61,20 @@ pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # Option 2: Pass directly with --api-key
-python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
+skill-seekers enhance output/react/ --api-key sk-ant-...
 ```
 
 ### Usage
 
 ```bash
 # Standalone enhancement
-python3 cli/enhance_skill.py output/steam-inventory/
+skill-seekers enhance output/steam-inventory/
 
 # Integrated with scraper
 skill-seekers create --config configs/steam-inventory.json --enhance
 
 # Dry run (see what would be done)
-python3 cli/enhance_skill.py output/react/ --dry-run
+skill-seekers enhance output/react/ --dry-run
 ```
 
 ## What It Does
@@ -137,7 +137,7 @@ bool success = SteamInventory()->GetAllItems( &resultHandle );
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 # or
-python3 cli/enhance_skill.py output/react/ --api-key sk-ant-...
+skill-seekers enhance output/react/ --api-key sk-ant-...
 ```
 
 ### "No reference files found"
@@ -157,7 +157,7 @@ pip3 install anthropic
 mv output/steam-inventory/SKILL.md.backup output/steam-inventory/SKILL.md
 
 # Try again (it may generate different content)
-python3 cli/enhance_skill.py output/steam-inventory/
+skill-seekers enhance output/steam-inventory/
 ```
 
 ## Tips

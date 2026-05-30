@@ -447,6 +447,6 @@ A: Absolutely! See the [Contributing Guide](../CONTRIBUTING.md) for how to add n
 5. Upload and test your skill
 
 For more help, see:
-- [Quick Start Guide](../QUICKSTART.md)
+- [Quick Start Guide](../docs/archive/legacy/QUICKSTART.md)
 - [Troubleshooting Guide](../TROUBLESHOOTING.md)
 - [Platform-Specific Guides](.)

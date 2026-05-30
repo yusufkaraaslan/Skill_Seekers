@@ -77,7 +77,7 @@ result = await mcp.call_tool("scrape_pdf", {
 
 ✅ Skill built successfully: output/mymanual/
 
-📦 Next step: Package with: python3 cli/package_skill.py output/mymanual/
+📦 Next step: Package with: skill-seekers package output/mymanual/
 ```
 
 ### Mode 2: Direct PDF
@@ -101,7 +101,7 @@ result = await mcp.call_tool("scrape_pdf", {
 
 ```python
 # Step 1: Extract to JSON (separate tool or CLI)
-# python3 cli/pdf_extractor_poc.py manual.pdf -o manual_extracted.json
+# skill-seekers create manual.pdf -o manual_extracted.json
 
 # Step 2: Build skill from JSON via MCP
 result = await mcp.call_tool("scrape_pdf", {

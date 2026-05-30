@@ -50,7 +50,7 @@ Create a config file with multiple sources:
 ### 2. Scrape and Build
 
 ```bash
-python3 cli/unified_scraper.py --config configs/react_unified.json
+skill-seekers create --config configs/react_unified.json
 ```
 
 The tool will:
@@ -63,7 +63,7 @@ The tool will:
 ### 3. Package and Upload
 
 ```bash
-python3 cli/package_skill.py output/react/
+skill-seekers package output/react/
 ```
 
 ## Config Format
@@ -362,7 +362,7 @@ Fast, deterministic merging using predefined rules:
 
 **Example**:
 ```bash
-python3 cli/unified_scraper.py --config config.json --merge-mode rule-based
+skill-seekers create --config config.json --merge-mode rule-based
 ```
 
 ### Claude-Enhanced Merge
@@ -381,7 +381,7 @@ AI-powered reconciliation using local Claude Code:
 
 **Example**:
 ```bash
-python3 cli/unified_scraper.py --config config.json --merge-mode claude-enhanced
+skill-seekers create --config config.json --merge-mode claude-enhanced
 ```
 
 ## Skill Output Structure
@@ -759,7 +759,7 @@ The tool will:
 Run integration tests:
 
 ```bash
-python3 cli/test_unified_simple.py
+pytest tests/ -k unified_simple
 ```
 
 Tests validate:
@@ -925,7 +925,7 @@ For issues, questions, or suggestions:
 
 ## Changelog
 
-**v3.6.0 (May 2026)**: 17 source types supported
+**v3.6.0 (May 2026)**: 18 source types supported
 - ✅ 13 new source types: Word, EPUB, Video, Jupyter, HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, Man pages, Confluence, Notion, Slack/Discord
 - ✅ Generic merge system (`_generic_merge()`) for combining any source type combination
 - ✅ Pairwise synthesis for docs+github+pdf combos
