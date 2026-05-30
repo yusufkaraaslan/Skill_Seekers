@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Skill Seekers** converts documentation from 17 source types into production-ready formats for 24+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
+**Skill Seekers** converts documentation from 18 source types into production-ready formats for 21+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
 
 **Version:** 3.5.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 

@@ -12,7 +12,7 @@ Comprehensive context file for AI coding agents working with the Skill Seekers p
 
 ### Key Capabilities
 
-- **17 source types:** documentation (web), GitHub, PDF, Word (.docx), EPUB, video, local codebase, Jupyter, HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord chat
+- **18 source types:** documentation (web), GitHub, PDF, Word (.docx), EPUB, video, local codebase, Jupyter, HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord chat
 - **21+ export targets:** Claude, Gemini, OpenAI, DeepSeek, Qwen, Fireworks, Together, OpenRouter, IBM BoB, Kimi, MiniMax, OpenCode, LangChain, LlamaIndex, Haystack, Pinecone, Chroma, Weaviate, Qdrant, FAISS, Markdown, and more
 - **Unified pipeline:** One scraping command → export to any platform without re-scraping
 - **MCP server:** 40 tools for AI assistants to scrape, package, and manage skills
@@ -343,7 +343,7 @@ class UnifiedScraper:
             "documentation": [],
             "github": [],
             "pdf": [],
-            # ... 17 source types
+            # ... 18 source types
         }
     
     def run(self) -> Path:

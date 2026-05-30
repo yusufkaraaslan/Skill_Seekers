@@ -492,7 +492,7 @@ If you have Claude Code installed:
 # "Package the skill at output/svelte/"
 ```
 
-**See:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md) for full MCP setup
+**See:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md) for full MCP setup
 
 ---
 

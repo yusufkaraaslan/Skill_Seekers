@@ -9,7 +9,7 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 **Latest Release:** v3.6.0 (May 2026)
 
 **What Works:**
-- ✅ **17 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
+- ✅ **18 source types** — documentation, GitHub, PDF, video, Word, EPUB, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord, local codebase
 - ✅ Unified multi-source scraping with generic merge for any source combination
 - ✅ 40 MCP tools fully functional
 - ✅ Multi-platform support (21 platforms: Claude, Gemini, OpenAI, DeepSeek, Qwen, Fireworks, Together, OpenRouter, IBM BoB, Kimi, MiniMax, OpenCode, LangChain, LlamaIndex, Haystack, Pinecone, ChromaDB, FAISS, Weaviate, Qdrant, Markdown)
@@ -19,7 +19,7 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 - ✅ C3.x codebase analysis suite (C3.1-C3.10)
 - ✅ Bootstrap skill feature - self-hosting capability
 - ✅ 3,445+ tests passing
-- ✅ Unified `create` command with auto-detection for all 17 source types
+- ✅ Unified `create` command with auto-detection for all 18 source types
 - ✅ 68 YAML workflow presets
 - ✅ Cloud storage integration (S3, GCS, Azure)
 - ✅ Source auto-detection via `source_detector.py`
@@ -27,7 +27,7 @@ Transform Skill Seekers into the easiest way to create Claude AI skills from **a
 **Recent Improvements (v3.2.0):**
 - ✅ **10 new source types**: Word, EPUB, video, Jupyter, local HTML, OpenAPI, AsciiDoc, PowerPoint, RSS/Atom, man pages, Confluence, Notion, Slack/Discord
 - ✅ **Generic merge system**: `_generic_merge()` in `unified_skill_builder.py` handles arbitrary source combinations
-- ✅ **Unified CLI**: `create` command auto-detects all 17 source types
+- ✅ **Unified CLI**: `create` command auto-detects all 18 source types
 - ✅ **Workflow Presets**: YAML-based enhancement presets with CLI management
 - ✅ **Progressive Disclosure**: Default help shows 13 universal flags, detailed help per source
 - ✅ **Bug Fixes**: Markdown parser h1 filtering, paragraph length filtering

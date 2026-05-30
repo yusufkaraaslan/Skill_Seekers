@@ -497,7 +497,7 @@ Skill_Seekers/
     └── workflows/          # CI/CD workflows
 ```
 
-**Scraper pattern (17 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
+**Scraper pattern (18 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
 
 ### UML Architecture
 
