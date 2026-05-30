@@ -48,7 +48,7 @@ feature branches
 
 - **Feature branches** - Your work
   - Created from `development`
-  - Named descriptively (e.g., `add-github-scraping`)
+  - Named descriptively (e.g., `feature/123-add-github-scraping`)
   - Merged back to `development` via PR
 
 ### Workflow Example
@@ -117,7 +117,7 @@ When creating a bug report, include:
 
 **Steps to Reproduce:**
 1. Create config with empty categories: `"categories": {}`
-2. Run `python3 cli/doc_scraper.py --config configs/test.json`
+2. Run `skill-seekers create --config configs/test.json`
 3. See error
 
 **Expected:** Should use auto-inferred categories
@@ -195,9 +195,9 @@ We actively welcome your pull requests!
 
 2. **Install dependencies**
    ```bash
-   pip install requests beautifulsoup4
-   pip install pytest pytest-cov
-   pip install -r mcp/requirements.txt
+   pip install -e .
+   pip install -e ".[dev]"
+   pip install -e ".[all]"
    ```
 
 3. **Create a feature branch from development**
@@ -398,21 +398,6 @@ uvx ruff format --check src/ tests/
 pytest tests/ -v
 ```
 
-**Pre-commit Setup (Optional):**
-
-You can set up pre-commit hooks to automatically run Ruff before each commit:
-
-```bash
-# Install pre-commit
-pip install pre-commit
-
-# Set up hooks (if .pre-commit-config.yaml exists)
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
 ---
 
 ## Testing
@@ -427,7 +412,7 @@ python -m pytest tests/ -v
 python -m pytest tests/test_mcp_server.py -v
 
 # Run with coverage
-python -m pytest tests/ --cov=cli --cov=mcp --cov-report=term
+python -m pytest tests/ --cov=src/skill_seekers --cov-report=term
 ```
 
 ### Writing Tests

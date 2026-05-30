@@ -27,7 +27,7 @@ python3: command not found
 
 3. **Use python instead of python3:**
    ```bash
-   python cli/doc_scraper.py --help
+   python -m skill_seekers --help
    ```
 
 ### Module Not Found
@@ -40,18 +40,22 @@ ModuleNotFoundError: No module named 'mcp'
 ```
 
 **Solutions:**
-1. **Install dependencies:**
+1. **Install the package in editable mode (critical first step):**
    ```bash
-   pip3 install requests beautifulsoup4
-   pip3 install -r mcp/requirements.txt  # For MCP
+   pip install -e .
    ```
 
-2. **Use --user flag if permission denied:**
+2. **Install MCP extras if needed:**
    ```bash
-   pip3 install --user requests beautifulsoup4
+   pip install -e ".[mcp]"
    ```
 
-3. **Check pip is working:**
+3. **Use --user flag if permission denied:**
+   ```bash
+   pip install --user -e .
+   ```
+
+4. **Check pip is working:**
    ```bash
    pip3 --version
    ```
@@ -66,19 +70,19 @@ Permission denied: '/usr/local/lib/python3.x/...'
 **Solutions:**
 1. **Use --user flag:**
    ```bash
-   pip3 install --user requests beautifulsoup4
+   pip3 install --user -e .
    ```
 
 2. **Use sudo (not recommended):**
    ```bash
-   sudo pip3 install requests beautifulsoup4
+   sudo pip install -e .
    ```
 
 3. **Use virtual environment (best practice):**
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   pip install requests beautifulsoup4
+   pip install -e .
    ```
 
 ---
@@ -89,7 +93,7 @@ Permission denied: '/usr/local/lib/python3.x/...'
 
 **Error:**
 ```
-FileNotFoundError: [Errno 2] No such file or directory: 'cli/doc_scraper.py'
+FileNotFoundError: [Errno 2] No such file or directory: 'src/skill_seekers/cli/main.py'
 ```
 
 **Solutions:**
@@ -99,12 +103,17 @@ FileNotFoundError: [Errno 2] No such file or directory: 'cli/doc_scraper.py'
    # Should show: .../Skill_Seekers
 
    ls
-   # Should show: README.md, cli/, mcp/, configs/
+   # Should show: README.md, src/, configs/, tests/
    ```
 
 2. **Change to the correct directory:**
    ```bash
    cd ~/Projects/Skill_Seekers  # Adjust path
+   ```
+
+3. **Ensure the package is installed:**
+   ```bash
+   pip install -e .
    ```
 
 ### Config File Not Found
@@ -130,7 +139,7 @@ The tool searches for configs in this order:
    cp myconfig.json ~/.config/skill-seekers/configs/
 
    # Now you can use it from anywhere
-   skill-seekers scrape --config myconfig.json
+   skill-seekers create --config myconfig.json
    ```
 
 2. **Place config in current directory (project-specific):**
@@ -138,12 +147,12 @@ The tool searches for configs in this order:
    mkdir -p configs
    cp myconfig.json configs/
 
-   skill-seekers scrape --config configs/myconfig.json
+   skill-seekers create --config configs/myconfig.json
    ```
 
 3. **Use absolute path:**
    ```bash
-   skill-seekers scrape --config /full/path/to/myconfig.json
+   skill-seekers create --config /full/path/to/myconfig.json
    ```
 
 4. **Check if it's a preset config (auto-downloads):**
@@ -152,12 +161,12 @@ The tool searches for configs in this order:
    skill-seekers estimate --all
 
    # Use preset (auto-fetched from API)
-   skill-seekers scrape --config react.json
+   skill-seekers create --config react.json
    ```
 
 5. **Create new config interactively:**
    ```bash
-   skill-seekers scrape --interactive
+   skill-seekers create --interactive
    ```
 
 ---
@@ -182,8 +191,10 @@ The tool searches for configs in this order:
    {
      "mcpServers": {
        "skill-seeker": {
+         "command": "python",
          "args": [
-           "/Users/yourname/Projects/Skill_Seekers/mcp/server.py"
+           "-m",
+           "skill_seekers.mcp.server_fastmcp"
          ]
        }
      }
@@ -195,7 +206,7 @@ The tool searches for configs in this order:
 3. **Test server manually:**
    ```bash
    cd ~/Projects/Skill_Seekers
-   python3 mcp/server.py
+   python -m skill_seekers.mcp.server_fastmcp
    # Should start without errors (Ctrl+C to stop)
    ```
 
@@ -244,15 +255,15 @@ nano ~/.config/claude-code/mcp.json
    }
    ```
 
-2. **Verify files exist:**
+2. **Verify package is installed:**
    ```bash
-   ls cli/doc_scraper.py
-   ls mcp/server.py
+   pip list | grep skill-seekers
+   python -c "import skill_seekers; print(skill_seekers.__version__)"
    ```
 
 3. **Test CLI tools directly:**
    ```bash
-   skill-seekers scrape --help
+   skill-seekers create --help
    ```
 
 ---
@@ -271,7 +282,7 @@ nano ~/.config/claude-code/mcp.json
 
 2. **Use smaller max_pages for testing:**
    ```bash
-   skill-seekers scrape --config configs/test.json --max-pages 5
+   skill-seekers create --config configs/test.json --max-pages 5
    ```
 
 3. **Increase rate_limit in config:**
@@ -371,7 +382,7 @@ sudo apt install python3-pip
 **Solution:**
 ```bash
 # Use --user flag
-pip3 install --user requests beautifulsoup4
+pip3 install --user -e .
 ```
 
 ### Windows (WSL)
@@ -401,24 +412,23 @@ Use these to check your setup:
 # 1. Check Python
 python3 --version  # Should be 3.10+
 
-# 2. Check dependencies
-pip3 list | grep requests
-pip3 list | grep beautifulsoup4
-pip3 list | grep mcp
+# 2. Check package is installed
+pip list | grep skill-seekers
+python -c "import skill_seekers; print(skill_seekers.__version__)"
 
-# 3. Check files exist
-ls cli/doc_scraper.py
-ls mcp/server.py
+# 3. Check source layout
+ls src/skill_seekers/cli/
+ls src/skill_seekers/mcp/
 ls configs/
 
 # 4. Check MCP config
 cat ~/.config/claude-code/mcp.json
 
 # 5. Test scraper
-skill-seekers scrape --help
+skill-seekers create --help
 
 # 6. Test MCP server
-timeout 3 python3 mcp/server.py || echo "Server OK"
+timeout 3 python -m skill_seekers.mcp.server_fastmcp || echo "Server OK"
 
 # 7. Check git repo
 git status
@@ -464,7 +474,7 @@ If none of these solutions work:
 
 - [ ] In the Skill_Seekers directory? (`pwd`)
 - [ ] Python 3.10+ installed? (`python3 --version`)
-- [ ] Dependencies installed? (`pip3 list | grep requests`)
+- [ ] Package installed? (`pip list | grep skill-seekers`)
 - [ ] Config file exists? (`ls configs/yourconfig.json`)
 - [ ] Internet connection working? (`ping google.com`)
 - [ ] For MCP: Config uses absolute paths? (not `$REPO_PATH`)
