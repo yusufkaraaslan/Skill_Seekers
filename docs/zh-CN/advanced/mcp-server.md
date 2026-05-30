@@ -1,80 +1,80 @@
-# MCP Server Setup Guide
+# MCP 服务器设置指南
 
-> **Skill Seekers v3.2.0**  
+> **Skill Seekers v3.6.0**  
 > **通过 Model Context Protocol 与 AI 代理集成**
 
 ---
 
-## What is MCP?
+## 什么是 MCP？
 
-MCP (Model Context Protocol) lets AI agents like Claude Code control Skill Seekers through natural language:
+MCP（Model Context Protocol）让 Claude Code 等 AI 代理通过自然语言控制 Skill Seekers：
 
 ```
-You: "Scrape the React documentation"
+You: "抓取 React 文档"
 Claude: ▶️ scrape_docs({"url": "https://react.dev/"})
-        ✅ Done! Created output/react/
+        ✅ 完成！已创建 output/react/
 ```
 
 ---
 
-## Installation
+## 安装
 
 ```bash
-# Install with MCP support
+# 安装附带 MCP 支持
 pip install skill-seekers[mcp]
 
-# Verify
+# 验证
 skill-seekers-mcp --version
 ```
 
 ---
 
-## Transport Modes
+## 传输模式
 
-### stdio Mode (Default)
+### stdio 模式（默认）
 
-For Claude Code, VS Code + Cline:
+用于 Claude Code、VS Code + Cline：
 
 ```bash
 skill-seekers-mcp
 ```
 
-**Use when:**
-- Running in Claude Code
-- Direct integration with terminal-based agents
-- Simple local setup
+**适用场景：**
+- 在 Claude Code 中运行
+- 与基于终端的代理直接集成
+- 简单的本地设置
 
 ---
 
-### HTTP Mode
+### HTTP 模式
 
-For Cursor, Windsurf, HTTP clients:
+用于 Cursor、Windsurf、HTTP 客户端：
 
 ```bash
-# Start HTTP server
+# 启动 HTTP 服务器
 skill-seekers-mcp --transport http --port 8765
 
-# Custom host
+# 自定义主机
 skill-seekers-mcp --transport http --host 0.0.0.0 --port 8765
 ```
 
-**Use when:**
-- IDE integration (Cursor, Windsurf)
-- Remote access needed
-- Multiple clients
+**适用场景：**
+- IDE 集成（Cursor、Windsurf）
+- 需要远程访问
+- 多个客户端
 
 ---
 
-## Claude Code Integration
+## Claude Code 集成
 
-### Automatic Setup
+### 自动设置
 
 ```bash
-# In Claude Code, run:
+# 在 Claude Code 中运行：
 /claude add-mcp-server skill-seekers
 ```
 
-Or manually add to `~/.claude/mcp.json`:
+或手动添加到 `~/.claude/mcp.json`：
 
 ```json
 {
@@ -90,54 +90,54 @@ Or manually add to `~/.claude/mcp.json`:
 }
 ```
 
-### Usage
+### 使用
 
-Once connected, ask Claude:
-
-```
-"List available configs"
-"Scrape the Django documentation"
-"Package output/react for Gemini"
-"Enhance output/my-skill with security-focus workflow"
-```
-
----
-
-## Cursor IDE Integration
-
-### Setup
-
-1. Start MCP server:
-```bash
-skill-seekers-mcp --transport http --port 8765
-```
-
-2. In Cursor Settings → MCP:
-   - Name: `skill-seekers`
-   - URL: `http://localhost:8765`
-
-### Usage
-
-In Cursor chat:
+连接后，询问 Claude：
 
 ```
-"Create a skill from the current project"
-"Analyze this codebase and generate a cursorrules file"
+"列出可用配置"
+"抓取 Django 文档"
+"将 output/react 打包给 Gemini"
+"使用 security-focus 工作流增强 output/my-skill"
 ```
 
 ---
 
-## Windsurf Integration
+## Cursor IDE 集成
 
-### Setup
+### 设置
 
-1. Start MCP server:
+1. 启动 MCP 服务器：
 ```bash
 skill-seekers-mcp --transport http --port 8765
 ```
 
-2. In Windsurf Settings:
-   - Add MCP server endpoint: `http://localhost:8765`
+2. 在 Cursor 设置 → MCP 中：
+   - 名称：`skill-seekers`
+   - URL：`http://localhost:8765`
+
+### 使用
+
+在 Cursor 聊天中：
+
+```
+"从当前项目创建一个技能"
+"分析此代码库并生成 cursorrules 文件"
+```
+
+---
+
+## Windsurf 集成
+
+### 设置
+
+1. 启动 MCP 服务器：
+```bash
+skill-seekers-mcp --transport http --port 8765
+```
+
+2. 在 Windsurf 设置中：
+   - 添加 MCP 服务器端点：`http://localhost:8765`
 
 ---
 
@@ -183,7 +183,7 @@ skill-seekers-mcp --transport http --port 8765
 
 ### scrape_generic 工具
 
-`scrape_generic` 是 v3.2.0 新增的 10 种来源类型的通用入口。它将请求委托给相应的 CLI 抓取器模块。
+`scrape_generic` 是 v3.6.0 新增的 10 种来源类型的通用入口。它将请求委托给相应的 CLI 抓取器模块。
 
 **支持的来源类型：** `jupyter`（Jupyter 笔记本）、`html`（本地 HTML）、`openapi`（OpenAPI/Swagger 规范）、`asciidoc`（AsciiDoc 文档）、`pptx`（PowerPoint 演示文稿）、`rss`（RSS/Atom 订阅源）、`manpage`（Man 手册页）、`confluence`（Confluence 维基）、`notion`（Notion 页面）、`chat`（Slack/Discord 聊天记录）
 
@@ -216,9 +216,9 @@ skill-seekers-mcp --transport http --port 8765
 
 ---
 
-## Common Workflows
+## 常见工作流
 
-### Workflow 1: Documentation Skill
+### 工作流 1：文档技能
 
 ```
 User: "Create a skill from React docs"
@@ -232,7 +232,7 @@ Claude: ▶️ scrape_docs({"url": "https://react.dev/"})
         Skill ready! Upload to Claude?
 ```
 
-### Workflow 2: GitHub Analysis
+### 工作流 2：GitHub 分析
 
 ```
 User: "Analyze the facebook/react repo"
@@ -244,7 +244,7 @@ Claude: ▶️ scrape_github({"repo": "facebook/react"})
         ✅ Enhanced with architecture analysis
 ```
 
-### Workflow 3: Multi-Platform Export
+### 工作流 3：多平台导出
 
 ```
 User: "Create Django skill for all platforms"
@@ -259,11 +259,11 @@ Claude: ▶️ scrape_docs({"config": "django"})
 
 ---
 
-## Configuration
+## 配置
 
-### Environment Variables
+### 环境变量
 
-Set in `~/.claude/mcp.json` or before starting server:
+在 `~/.claude/mcp.json` 中设置，或在启动服务器前设置：
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -272,82 +272,82 @@ export OPENAI_API_KEY=sk-...
 export GITHUB_TOKEN=ghp_...
 ```
 
-### Server Options
+### 服务器选项
 
 ```bash
-# Debug mode
+# 调试模式
 skill-seekers-mcp --verbose
 
-# Custom port
+# 自定义端口
 skill-seekers-mcp --port 8080
 
-# Allow all origins (CORS)
+# 允许所有来源（CORS）
 skill-seekers-mcp --cors
 ```
 
 ---
 
-## Security
+## 安全
 
-### Local Only (stdio)
+### 仅限本地（stdio）
 
 ```bash
-# Only accessible by local Claude Code
+# 仅本地 Claude Code 可访问
 skill-seekers-mcp
 ```
 
-### HTTP with Auth
+### 带认证的 HTTP
 
 ```bash
-# Use reverse proxy with auth
-# nginx, traefik, etc.
+# 使用带认证的反向代理
+# nginx、traefik 等
 ```
 
-### API Key Protection
+### API 密钥保护
 
 ```bash
-# Don't hardcode keys
-# Use environment variables
-# Or secret management
+# 不要硬编码密钥
+# 使用环境变量
+# 或使用密钥管理
 ```
 
 ---
 
-## Troubleshooting
+## 故障排除
 
 ### "Server not found"
 
 ```bash
-# Check if running
+# 检查是否在运行
 curl http://localhost:8765/health
 
-# Restart
+# 重启
 skill-seekers-mcp --transport http --port 8765
 ```
 
 ### "Tool not available"
 
 ```bash
-# Check version
+# 检查版本
 skill-seekers-mcp --version
 
-# Update
+# 更新
 pip install --upgrade skill-seekers[mcp]
 ```
 
 ### "Connection refused"
 
 ```bash
-# Check port
+# 检查端口
 lsof -i :8765
 
-# Use different port
+# 使用不同端口
 skill-seekers-mcp --port 8766
 ```
 
 ---
 
-## See Also
+## 另请参阅
 
 - [MCP 参考文档](../reference/MCP_REFERENCE.md) - 完整工具参考
 - [MCP 工具深入](mcp-tools.md) - 高级用法

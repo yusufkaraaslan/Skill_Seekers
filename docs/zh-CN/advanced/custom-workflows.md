@@ -1,13 +1,13 @@
-# Custom Workflows Guide
+# 自定义工作流指南
 
-> **Skill Seekers v3.1.0**  
-> **Create custom AI enhancement workflows**
+> **Skill Seekers v3.6.0**  
+> **创建自定义 AI 增强工作流**
 
 ---
 
-## What are Custom Workflows?
+## 什么是自定义工作流？
 
-Workflows are YAML-defined, multi-stage AI enhancement pipelines:
+工作流是 YAML 定义的多阶段 AI 增强流水线：
 
 ```yaml
 my-workflow.yaml
@@ -24,7 +24,7 @@ my-workflow.yaml
 
 ---
 
-## Basic Workflow Structure
+## 基本工作流结构
 
 ```yaml
 name: my-custom
@@ -46,32 +46,32 @@ stages:
 
 ---
 
-## Workflow Fields
+## 工作流字段
 
-### Top Level
+### 顶层
 
-| Field | Required | Description |
+| 字段 | 必需 | 描述 |
 |-------|----------|-------------|
-| `name` | Yes | Workflow identifier |
-| `description` | No | Human-readable description |
-| `variables` | No | Configurable variables |
-| `stages` | Yes | Array of stage definitions |
+| `name` | 是 | 工作流标识符 |
+| `description` | 否 | 人类可读的描述 |
+| `variables` | 否 | 可配置变量 |
+| `stages` | 是 | 阶段定义数组 |
 
-### Stage Fields
+### 阶段字段
 
-| Field | Required | Description |
+| 字段 | 必需 | 描述 |
 |-------|----------|-------------|
-| `name` | Yes | Stage identifier |
-| `type` | Yes | `builtin` or `custom` |
-| `target` | Yes | `skill_md` or `references` |
-| `prompt` | Yes | AI prompt text |
-| `uses_history` | No | Access previous stage results |
+| `name` | 是 | 阶段标识符 |
+| `type` | 是 | `builtin` 或 `custom` |
+| `target` | 是 | `skill_md` 或 `references` |
+| `prompt` | 是 | AI 提示文本 |
+| `uses_history` | 否 | 访问前一阶段结果 |
 
 ---
 
-## Creating Your First Workflow
+## 创建你的第一个工作流
 
-### Example: Performance Analysis
+### 示例：性能分析
 
 ```yaml
 # performance.yaml
@@ -104,16 +104,16 @@ stages:
       - Optimization techniques
 ```
 
-### Install and Use
+### 安装与使用
 
 ```bash
-# Add workflow
+# 添加工作流
 skill-seekers workflows add performance.yaml
 
-# Use it
+# 使用它
 skill-seekers create <source> --enhance-workflow performance-focus
 
-# With custom variables
+# 使用自定义变量
 skill-seekers create <source> \
   --enhance-workflow performance-focus \
   --var target_latency=50ms \
@@ -122,11 +122,11 @@ skill-seekers create <source> \
 
 ---
 
-## Stage Types
+## 阶段类型
 
 ### builtin
 
-Uses built-in enhancement logic:
+使用内置增强逻辑：
 
 ```yaml
 stages:
@@ -138,7 +138,7 @@ stages:
 
 ### custom
 
-Full custom prompt control:
+完全自定义提示控制：
 
 ```yaml
 stages:
@@ -152,11 +152,11 @@ stages:
 
 ---
 
-## Targets
+## 目标
 
 ### skill_md
 
-Enhances the main SKILL.md file:
+增强主 SKILL.md 文件：
 
 ```yaml
 stages:
@@ -167,7 +167,7 @@ stages:
 
 ### references
 
-Enhances reference files:
+增强参考文件：
 
 ```yaml
 stages:
@@ -178,9 +178,9 @@ stages:
 
 ---
 
-## Variables
+## 变量
 
-### Defining Variables
+### 定义变量
 
 ```yaml
 variables:
@@ -189,7 +189,7 @@ variables:
   include_examples: true
 ```
 
-### Using Variables
+### 使用变量
 
 ```yaml
 stages:
@@ -200,7 +200,7 @@ stages:
       Include examples: {include_examples}
 ```
 
-### Overriding at Runtime
+### 运行时覆盖
 
 ```bash
 skill-seekers create <source> \
@@ -211,9 +211,9 @@ skill-seekers create <source> \
 
 ---
 
-## History Passing
+## 历史传递
 
-Access results from previous stages:
+访问前一阶段的结果：
 
 ```yaml
 stages:
@@ -235,7 +235,7 @@ stages:
 
 ---
 
-## Advanced Example: Security Review
+## 高级示例：安全审查
 
 ```yaml
 name: comprehensive-security
@@ -282,30 +282,30 @@ stages:
 
 ---
 
-## Validation
+## 验证
 
-### Validate Before Installing
+### 安装前验证
 
 ```bash
 skill-seekers workflows validate ./my-workflow.yaml
 ```
 
-### Common Errors
+### 常见错误
 
-| Error | Cause | Fix |
+| 错误 | 原因 | 修复 |
 |-------|-------|-----|
-| `Missing 'stages'` | No stages array | Add stages: |
-| `Invalid type` | Not builtin/custom | Check type field |
-| `Undefined variable` | Used but not defined | Add to variables: |
+| `Missing 'stages'` | 无 stages 数组 | 添加 stages: |
+| `Invalid type` | 不是 builtin/custom | 检查 type 字段 |
+| `Undefined variable` | 已使用但未定义 | 添加到 variables: |
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. Start Simple
+### 1. 从简单开始
 
 ```yaml
-# Start with 1-2 stages
+# 从 1-2 个阶段开始
 name: simple
 description: Simple workflow
 stages:
@@ -315,21 +315,21 @@ stages:
     prompt: "Improve SKILL.md"
 ```
 
-### 2. Use Clear Stage Names
+### 2. 使用清晰的阶段名称
 
 ```yaml
-# Good
+# 良好
 stages:
   - name: security-overview
   - name: vulnerability-analysis
   
-# Bad
+# 不佳
 stages:
   - name: stage1
   - name: step2
 ```
 
-### 3. Document Variables
+### 3. 记录变量
 
 ```yaml
 variables:
@@ -340,23 +340,23 @@ variables:
   compliance: "owasp"
 ```
 
-### 4. Test Incrementally
+### 4. 增量测试
 
 ```bash
-# Test with dry run
+# 使用干运行测试
 skill-seekers create <source> \
   --enhance-workflow my-workflow \
   --workflow-dry-run
 
-# Then actually run
+# 然后实际运行
 skill-seekers create <source> \
   --enhance-workflow my-workflow
 ```
 
-### 5. Chain for Complex Analysis
+### 5. 链式调用以进行复杂分析
 
 ```bash
-# Use multiple workflows
+# 使用多个工作流
 skill-seekers create <source> \
   --enhance-workflow security-focus \
   --enhance-workflow performance-focus
@@ -364,37 +364,37 @@ skill-seekers create <source> \
 
 ---
 
-## Sharing Workflows
+## 共享工作流
 
-### Export Workflow
+### 导出工作流
 
 ```bash
-# Get workflow content
+# 获取工作流内容
 skill-seekers workflows show my-workflow > my-workflow.yaml
 ```
 
-### Share with Team
+### 与团队共享
 
 ```bash
-# Add to version control
+# 添加到版本控制
 git add my-workflow.yaml
 git commit -m "Add custom security workflow"
 
-# Team members install
+# 团队成员安装
 skill-seekers workflows add my-workflow.yaml
 ```
 
-### Publish
+### 发布
 
-Submit to Skill Seekers community:
+提交到 Skill Seekers 社区：
 - GitHub Discussions
-- Skill Seekers website
-- Documentation contributions
+- Skill Seekers 网站
+- 文档贡献
 
 ---
 
-## See Also
+## 另请参阅
 
-- [Workflows Guide](../user-guide/05-workflows.md) - Using workflows
-- [MCP Reference](../reference/MCP_REFERENCE.md) - Workflows via MCP
-- [Enhancement Guide](../user-guide/03-enhancement.md) - Enhancement fundamentals
+- [工作流指南](../user-guide/05-workflows.md) - 使用工作流
+- [MCP 参考](../reference/MCP_REFERENCE.md) - 通过 MCP 使用工作流
+- [增强指南](../user-guide/03-enhancement.md) - 增强基础

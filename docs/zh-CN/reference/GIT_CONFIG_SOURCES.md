@@ -819,7 +819,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Use MCP fetch_config or direct Python
-          skill-seekers scrape --config <fetched_config>
+          skill-seekers create --config <fetched_config>
 ```
 
 ---

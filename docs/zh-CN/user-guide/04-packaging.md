@@ -1,111 +1,111 @@
-# Packaging Guide
+# 打包指南
 
-> **Skill Seekers v3.5.0**
-> **Export skills to AI platforms and vector databases**
+> **Skill Seekers v3.6.0**
+> **将 skill 导出到 AI 平台和向量数据库**
 
 ---
 
-## Overview
+## 概述
 
-Packaging converts your skill directory into a platform-specific format:
+打包将你的 skill 目录转换为特定于平台的格式：
 
 ```
-output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format}
+output/my-skill/ ──▶ 打包器 ──▶ output/my-skill-{platform}.{format}
     ↓                                ↓
-(SKILL.md +        Platform-specific  (ZIP, tar.gz,
- references)        formatting        directories,
-                                     FAISS index)
+(SKILL.md +        平台特定的      (ZIP, tar.gz,
+ references)        格式化          目录,
+                                     FAISS 索引)
 ```
 
 ---
 
-## Supported Platforms
+## 支持的平台
 
-| Platform | Format | Extension | Best For |
+| 平台 | 格式 | 扩展名 | 适用于 |
 |----------|--------|-----------|----------|
 | **Claude AI** | ZIP + YAML | `.zip` | Claude Code, Claude API |
-| **Google Gemini** | tar.gz | `.tar.gz` | Gemini skills |
+| **Google Gemini** | tar.gz | `.tar.gz` | Gemini skill |
 | **OpenAI ChatGPT** | ZIP + Vector | `.zip` | Custom GPTs |
 | **OpenCode** | Directory | directory | OpenCode agent |
-| **Kimi** | ZIP | `.zip` | Kimi platform |
-| **DeepSeek** | ZIP | `.zip` | DeepSeek platform |
-| **Qwen** | ZIP | `.zip` | Qwen platform |
+| **Kimi** | ZIP | `.zip` | Kimi 平台 |
+| **DeepSeek** | ZIP | `.zip` | DeepSeek 平台 |
+| **Qwen** | ZIP | `.zip` | Qwen 平台 |
 | **OpenRouter** | ZIP | `.zip` | OpenRouter |
 | **Together AI** | ZIP | `.zip` | Together AI |
 | **Fireworks AI** | ZIP | `.zip` | Fireworks AI |
-| **LangChain** | Documents | directory | RAG pipelines |
-| **LlamaIndex** | TextNodes | directory | Query engines |
-| **Haystack** | Documents | directory | Enterprise RAG |
-| **Pinecone** | Markdown | `.zip` | Vector upsert |
-| **ChromaDB** | Collection | `.zip` | Local vector DB |
-| **Weaviate** | Objects | `.zip` | Vector database |
-| **Qdrant** | Points | `.zip` | Vector database |
-| **FAISS** | Index | `.faiss` | Local similarity |
-| **Markdown** | ZIP | `.zip` | Universal export |
-| **Cursor** | .cursorrules | file | IDE AI context |
-| **Windsurf** | .windsurfrules | file | IDE AI context |
+| **LangChain** | Documents | directory | RAG 管道 |
+| **LlamaIndex** | TextNodes | directory | 查询引擎 |
+| **Haystack** | Documents | directory | 企业级 RAG |
+| **Pinecone** | Markdown | `.zip` | 向量上传 |
+| **ChromaDB** | Collection | `.zip` | 本地向量数据库 |
+| **Weaviate** | Objects | `.zip` | 向量数据库 |
+| **Qdrant** | Points | `.zip` | 向量数据库 |
+| **FAISS** | Index | `.faiss` | 本地相似性搜索 |
+| **Markdown** | ZIP | `.zip` | 通用导出 |
+| **Cursor** | .cursorrules | file | IDE AI 上下文 |
+| **Windsurf** | .windsurfrules | file | IDE AI 上下文 |
 | **Cline** | .clinerules | file | VS Code AI |
 
 ---
 
-## Basic Packaging
+## 基础打包
 
-### Package for Claude (Default)
+### 为 Claude 打包（默认）
 
 ```bash
-# Default packaging
+# 默认打包
 skill-seekers package output/my-skill/
 
-# Explicit target
+# 显式指定目标
 skill-seekers package output/my-skill/ --target claude
 
-# Output: output/my-skill-claude.zip
+# 输出: output/my-skill-claude.zip
 ```
 
-### Package for Other Platforms
+### 为其他平台打包
 
 ```bash
 # Google Gemini
 skill-seekers package output/my-skill/ --target gemini
-# Output: output/my-skill-gemini.tar.gz
+# 输出: output/my-skill-gemini.tar.gz
 
 # OpenAI
 skill-seekers package output/my-skill/ --target openai
-# Output: output/my-skill-openai.zip
+# 输出: output/my-skill-openai.zip
 
 # LangChain
 skill-seekers package output/my-skill/ --target langchain
-# Output: output/my-skill-langchain/ directory
+# 输出: output/my-skill-langchain/ 目录
 
 # ChromaDB
 skill-seekers package output/my-skill/ --target chroma
-# Output: output/my-skill-chroma.zip
+# 输出: output/my-skill-chroma.zip
 ```
 
 ---
 
-## Multi-Platform Packaging
+## 多平台打包
 
-### Package for All Platforms
+### 为所有平台打包
 
 ```bash
-# Create skill once
+# 创建 skill
 skill-seekers create <source>
 
-# Package for multiple platforms
+# 为多个平台打包
 for platform in claude gemini openai langchain; do
   echo "Packaging for $platform..."
   skill-seekers package output/my-skill/ --target $platform
 done
 
-# Results:
+# 结果:
 # output/my-skill-claude.zip
 # output/my-skill-gemini.tar.gz
 # output/my-skill-openai.zip
 # output/my-skill-langchain/
 ```
 
-### Batch Packaging Script
+### 批量打包脚本
 
 ```bash
 #!/bin/bash
@@ -128,86 +128,86 @@ echo "🎉 All platforms packaged!"
 
 ---
 
-## Packaging Options
+## 打包选项
 
-### Skip Quality Check
+### 跳过质量检查
 
 ```bash
-# Skip validation (faster)
+# 跳过验证（更快）
 skill-seekers package output/my-skill/ --skip-quality-check
 ```
 
-### Don't Open Output Folder
+### 不打开输出文件夹
 
 ```bash
-# Prevent opening folder after packaging
+# 打包后阻止打开文件夹
 skill-seekers package output/my-skill/ --no-open
 ```
 
-### Auto-Upload After Packaging
+### 打包后自动上传
 
 ```bash
-# Package and upload
+# 打包并上传
 export ANTHROPIC_API_KEY=sk-ant-...
 skill-seekers package output/my-skill/ --target claude --upload
 ```
 
 ---
 
-## Streaming Mode
+## 流式模式
 
-For very large skills, use streaming to reduce memory usage:
+对于非常大的 skill，使用流式模式以减少内存使用：
 
 ```bash
-# Enable streaming
+# 启用流式模式
 skill-seekers package output/large-skill/ --streaming
 
-# Custom chunk size
+# 自定义分块大小
 skill-seekers package output/large-skill/ \
   --streaming \
   --streaming-chunk-chars 2000 \
   --streaming-overlap-chars 100
 ```
 
-**When to use:**
-- Skills > 500 pages
-- Limited RAM (< 8GB)
-- Batch processing many skills
+**何时使用：**
+- Skill > 500 页
+- 内存有限（< 8GB）
+- 批量处理多个 skill
 
 ---
 
-## RAG Chunking
+## RAG 分块
 
-Optimize for Retrieval-Augmented Generation:
+为检索增强生成（Retrieval-Augmented Generation）优化：
 
 ```bash
-# Enable semantic chunking
+# 启用语义分块
 skill-seekers package output/my-skill/ \
   --target langchain \
   --chunk-for-rag \
   --chunk-tokens 512
 
-# Custom chunk size
+# 自定义分块大小
 skill-seekers package output/my-skill/ \
   --target chroma \
   --chunk-tokens 256 \
   --chunk-overlap-tokens 50
 ```
 
-**Chunking Options:**
+**分块选项：**
 
-| Option | Default | Description |
+| 选项 | 默认值 | 描述 |
 |--------|---------|-------------|
-| `--chunk-for-rag` | auto | Enable chunking |
-| `--chunk-tokens` | 512 | Tokens per chunk |
-| `--chunk-overlap-tokens` | 50 | Overlap between chunks (tokens) |
-| `--no-preserve-code-blocks` | - | Allow splitting code blocks |
+| `--chunk-for-rag` | auto | 启用分块 |
+| `--chunk-tokens` | 512 | 每个分块的 token 数 |
+| `--chunk-overlap-tokens` | 50 | 分块之间的重叠（token） |
+| `--no-preserve-code-blocks` | - | 允许分割代码块 |
 
-> **自动缩放重叠:** 当 `--chunk-tokens` 设置为非默认值但 `--chunk-overlap-tokens` 保持默认值 (50) 时，重叠会自动缩放为 `max(50, chunk_tokens / 10)`，以在较大的分块中实现更好的上下文保留。
+> **Auto-scaling overlap:** 当 `--chunk-tokens` 设置为非默认值但 `--chunk-overlap-tokens` 保持默认值 (50) 时，重叠会自动缩放为 `max(50, chunk_tokens / 10)`，以在较大的分块中实现更好的上下文保留。
 
 ---
 
-## Platform-Specific Details
+## 平台特定详情
 
 ### Claude AI
 
@@ -215,19 +215,19 @@ skill-seekers package output/my-skill/ \
 skill-seekers package output/my-skill/ --target claude
 ```
 
-**Upload:**
+**上传：**
 ```bash
-# Auto-upload
+# 自动上传
 skill-seekers package output/my-skill/ --target claude --upload
 
-# Manual upload
+# 手动上传
 skill-seekers upload output/my-skill-claude.zip --target claude
 ```
 
-**Format:**
-- ZIP archive
-- Contains SKILL.md + references/
-- Includes YAML manifest
+**格式：**
+- ZIP 归档
+- 包含 SKILL.md + references/
+- 包含 YAML 清单
 
 ---
 
@@ -237,15 +237,15 @@ skill-seekers upload output/my-skill-claude.zip --target claude
 skill-seekers package output/my-skill/ --target gemini
 ```
 
-**Upload:**
+**上传：**
 ```bash
 export GOOGLE_API_KEY=AIza...
 skill-seekers upload output/my-skill-gemini.tar.gz --target gemini
 ```
 
-**Format:**
-- tar.gz archive
-- Optimized for Gemini's format
+**格式：**
+- tar.gz 归档
+- 针对 Gemini 格式优化
 
 ---
 
@@ -255,15 +255,15 @@ skill-seekers upload output/my-skill-gemini.tar.gz --target gemini
 skill-seekers package output/my-skill/ --target openai
 ```
 
-**Upload:**
+**上传：**
 ```bash
 export OPENAI_API_KEY=sk-...
 skill-seekers upload output/my-skill-openai.zip --target openai
 ```
 
-**Format:**
-- ZIP with vector embeddings
-- Ready for Assistants API
+**格式：**
+- 带向量嵌入的 ZIP
+- 可用于 Assistants API
 
 ---
 
@@ -273,19 +273,19 @@ skill-seekers upload output/my-skill-openai.zip --target openai
 skill-seekers package output/my-skill/ --target langchain
 ```
 
-**Usage:**
+**用法：**
 ```python
 from langchain.document_loaders import DirectoryLoader
 
 loader = DirectoryLoader("output/my-skill-langchain/")
 docs = loader.load()
 
-# Use in RAG pipeline
+# 用于 RAG 管道
 ```
 
-**Format:**
-- Directory of Document objects
-- JSON metadata
+**格式：**
+- Document 对象目录
+- JSON 元数据
 
 ---
 
@@ -295,18 +295,18 @@ docs = loader.load()
 skill-seekers package output/my-skill/ --target chroma
 ```
 
-**Upload:**
+**上传：**
 ```bash
-# Local ChromaDB
+# 本地 ChromaDB
 skill-seekers upload output/my-skill-chroma.zip --target chroma
 
-# With custom URL
+# 使用自定义 URL
 skill-seekers upload output/my-skill-chroma.zip \
   --target chroma \
   --chroma-url http://localhost:8000
 ```
 
-**Usage:**
+**用法：**
 ```python
 import chromadb
 
@@ -322,9 +322,9 @@ collection = client.get_collection("my-skill")
 skill-seekers package output/my-skill/ --target weaviate
 ```
 
-**Upload:**
+**上传：**
 ```bash
-# Local Weaviate
+# 本地 Weaviate
 skill-seekers upload output/my-skill-weaviate.zip --target weaviate
 
 # Weaviate Cloud
@@ -339,14 +339,14 @@ skill-seekers upload output/my-skill-weaviate.zip \
 ### Cursor IDE
 
 ```bash
-# Package (actually creates .cursorrules file)
+# 打包（实际创建 .cursorrules 文件）
 skill-seekers package output/my-skill/ --target cursor
 
-# Or install directly
+# 或直接安装
 skill-seekers install-agent output/my-skill/ --agent cursor
 ```
 
-**Result:** `.cursorrules` file in your project root.
+**结果：** 项目根目录中的 `.cursorrules` 文件。
 
 ---
 
@@ -356,155 +356,155 @@ skill-seekers install-agent output/my-skill/ --agent cursor
 skill-seekers install-agent output/my-skill/ --agent windsurf
 ```
 
-**Result:** `.windsurfrules` file in your project root.
+**结果：** 项目根目录中的 `.windsurfrules` 文件。
 
 ---
 
-## Quality Check
+## 质量检查
 
-Before packaging, skills are validated:
+打包前，skill 会被验证：
 
 ```bash
-# Check quality
+# 检查质量
 skill-seekers quality output/my-skill/
 
-# Detailed report
+# 详细报告
 skill-seekers quality output/my-skill/ --report
 
-# Set minimum threshold
+# 设置最低阈值
 skill-seekers quality output/my-skill/ --threshold 7.0
 ```
 
-**Quality Metrics:**
-- SKILL.md completeness
-- Code example coverage
-- Navigation structure
-- Reference file organization
+**质量指标：**
+- SKILL.md 完整性
+- 代码示例覆盖率
+- 导航结构
+- 参考文件组织
 
 ---
 
-## Output Structure
+## 输出结构
 
-### After Packaging
+### 打包后
 
 ```
 output/
-├── my-skill/                    # Source skill
+├── my-skill/                    # 源 skill
 │   ├── SKILL.md
 │   └── references/
 │
-├── my-skill-claude.zip          # Claude package
-├── my-skill-gemini.tar.gz       # Gemini package
-├── my-skill-openai.zip          # OpenAI package
-├── my-skill-langchain/          # LangChain directory
-├── my-skill-chroma.zip          # ChromaDB package
-└── my-skill-weaviate.zip        # Weaviate package
+├── my-skill-claude.zip          # Claude 包
+├── my-skill-gemini.tar.gz       # Gemini 包
+├── my-skill-openai.zip          # OpenAI 包
+├── my-skill-langchain/          # LangChain 目录
+├── my-skill-chroma.zip          # ChromaDB 包
+└── my-skill-weaviate.zip        # Weaviate 包
 ```
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### "Package validation failed"
+### "包验证失败"
 
-**Problem:** SKILL.md is missing or malformed
+**问题：** SKILL.md 缺失或格式错误
 
-**Solution:**
+**解决方案：**
 ```bash
-# Check skill structure
+# 检查 skill 结构
 ls output/my-skill/
 
-# Rebuild if needed
+# 如果需要则重建
 skill-seekers create --config my-config --skip-scrape
 
-# Or recreate
+# 或重新创建
 skill-seekers create <source>
 ```
 
-### "Target platform not supported"
+### "不支持目标平台"
 
-**Problem:** Typo in target name
+**问题：** 目标名称拼写错误
 
-**Solution:**
+**解决方案：**
 ```bash
-# Check available targets
+# 检查可用目标
 skill-seekers package --help
 
-# Common targets: claude, gemini, openai, langchain, chroma, weaviate
+# 常见目标: claude, gemini, openai, langchain, chroma, weaviate
 ```
 
-### "Upload failed"
+### "上传失败"
 
-**Problem:** Missing API key
+**问题：** 缺少 API key
 
-**Solution:**
+**解决方案：**
 ```bash
-# Set API key
+# 设置 API key
 export ANTHROPIC_API_KEY=sk-ant-...
 export GOOGLE_API_KEY=AIza...
 export OPENAI_API_KEY=sk-...
 
-# Try again
+# 重试
 skill-seekers upload output/my-skill-claude.zip --target claude
 ```
 
-### "Out of memory"
+### "内存不足"
 
-**Problem:** Skill too large for memory
+**问题：** Skill 太大，内存不足
 
-**Solution:**
+**解决方案：**
 ```bash
-# Use streaming mode
+# 使用流式模式
 skill-seekers package output/my-skill/ --streaming
 
-# Smaller chunks
+# 更小的分块
 skill-seekers package output/my-skill/ --streaming --streaming-chunk-chars 1000
 ```
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. Package Once, Use Everywhere
+### 1. 一次打包，处处使用
 
 ```bash
-# Create once
+# 创建一次
 skill-seekers create <source>
 
-# Package for all needed platforms
+# 为所有需要的平台打包
 for platform in claude gemini langchain; do
   skill-seekers package output/my-skill/ --target $platform
 done
 ```
 
-### 2. Check Quality Before Packaging
+### 2. 打包前检查质量
 
 ```bash
-# Validate first
+# 先验证
 skill-seekers quality output/my-skill/ --threshold 6.0
 
-# Then package
+# 然后打包
 skill-seekers package output/my-skill/
 ```
 
-### 3. Use Streaming for Large Skills
+### 3. 对大型 skill 使用流式模式
 
 ```bash
-# Automatically detected, but can force
+# 自动检测，但可以强制使用
 skill-seekers package output/large-skill/ --streaming
 ```
 
-### 4. Keep Original Skill Directory
+### 4. 保留原始 Skill 目录
 
-Don't delete `output/my-skill/` after packaging - you might want to:
-- Re-package for other platforms
-- Apply different workflows
-- Update and re-enhance
+打包后不要删除 `output/my-skill/` —— 你可能需要：
+- 为其他平台重新打包
+- 应用不同的工作流
+- 更新并重新增强
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Workflows Guide](05-workflows.md) - Apply workflows before packaging
-- [MCP Reference](../reference/MCP_REFERENCE.md) - Package via MCP
-- [Vector DB Integrations](../integrations/) - Platform-specific guides
+- [工作流指南](05-workflows.md) - 打包前应用工作流
+- [MCP Reference](../reference/MCP_REFERENCE.md) - 通过 MCP 打包
+- [Vector DB Integrations](../integrations/) - 平台特定指南

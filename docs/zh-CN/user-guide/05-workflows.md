@@ -1,16 +1,16 @@
-# Workflows Guide
+# 工作流指南
 
-> **Skill Seekers v3.1.0**  
-> **Enhancement workflow presets for specialized analysis**
+> **Skill Seekers v3.6.0**
+> **用于专门分析的增强工作流预设**
 
 ---
 
-## What are Workflows?
+## 什么是工作流？
 
-Workflows are **multi-stage AI enhancement pipelines** that apply specialized analysis to your skills:
+工作流是**多阶段 AI 增强管道**，对你的 skill 应用专门分析：
 
 ```
-Basic Skill ──▶ Workflow: Security-Focus ──▶ Security-Enhanced Skill
+基础 Skill ──▶ 工作流: Security-Focus ──▶ 安全增强的 Skill
                     Stage 1: Overview
                     Stage 2: Vulnerability Analysis
                     Stage 3: Best Practices
@@ -19,29 +19,29 @@ Basic Skill ──▶ Workflow: Security-Focus ──▶ Security-Enhanced Skill
 
 ---
 
-## Built-in Presets
+## 内置预设
 
-Skill Seekers includes 5 built-in workflow presets:
+Skill Seekers 包含 5 个内置工作流预设：
 
-| Preset | Stages | Best For |
+| 预设 | 阶段 | 适用于 |
 |--------|--------|----------|
-| `default` | 2 | General improvement |
-| `minimal` | 1 | Light touch-up |
-| `security-focus` | 4 | Security analysis |
-| `architecture-comprehensive` | 7 | Deep architecture review |
-| `api-documentation` | 3 | API documentation focus |
+| `default` | 2 | 通用改进 |
+| `minimal` | 1 | 轻度润色 |
+| `security-focus` | 4 | 安全分析 |
+| `architecture-comprehensive` | 7 | 深度架构审查 |
+| `api-documentation` | 3 | API 文档重点 |
 
 ---
 
-## Using Workflows
+## 使用工作流
 
-### List Available Workflows
+### 列出可用工作流
 
 ```bash
 skill-seekers workflows list
 ```
 
-**Output:**
+**输出：**
 ```
 Bundled Workflows:
   - default (built-in)
@@ -54,25 +54,25 @@ User Workflows:
   - my-custom (user)
 ```
 
-### Apply a Workflow
+### 应用工作流
 
 ```bash
-# During skill creation
+# 在 skill 创建期间
 skill-seekers create <source> --enhance-workflow security-focus
 
-# Multiple workflows (chained)
+# 多个工作流（链式）
 skill-seekers create <source> \
   --enhance-workflow security-focus \
   --enhance-workflow api-documentation
 ```
 
-### Show Workflow Content
+### 显示工作流内容
 
 ```bash
 skill-seekers workflows show security-focus
 ```
 
-**Output:**
+**输出：**
 ```yaml
 name: security-focus
 description: Security analysis workflow
@@ -92,12 +92,12 @@ stages:
 
 ---
 
-## Workflow Presets Explained
+## 工作流预设详解
 
-### Default Workflow
+### Default 工作流
 
-**Stages:** 2
-**Purpose:** General improvement
+**阶段：** 2
+**用途：** 通用改进
 
 ```yaml
 stages:
@@ -107,14 +107,14 @@ stages:
     prompt: Enhance content quality and examples
 ```
 
-**Use when:** You want standard enhancement without specific focus.
+**何时使用：** 你希望进行标准增强，无需特定重点。
 
 ---
 
-### Minimal Workflow
+### Minimal 工作流
 
-**Stages:** 1
-**Purpose:** Light touch-up
+**阶段：** 1
+**用途：** 轻度润色
 
 ```yaml
 stages:
@@ -122,14 +122,14 @@ stages:
     prompt: Basic formatting and cleanup
 ```
 
-**Use when:** You need quick, minimal enhancement.
+**何时使用：** 你需要快速、最小化的增强。
 
 ---
 
-### Security-Focus Workflow
+### Security-Focus 工作流
 
-**Stages:** 4
-**Purpose:** Security analysis and recommendations
+**阶段：** 4
+**用途：** 安全分析和建议
 
 ```yaml
 stages:
@@ -146,23 +146,23 @@ stages:
     prompt: Map to OWASP, CWE, and other standards...
 ```
 
-**Use for:**
-- Security libraries
-- Authentication systems
-- API frameworks
-- Any code handling sensitive data
+**适用于：**
+- 安全库
+- 认证系统
+- API 框架
+- 任何处理敏感数据的代码
 
-**Example:**
+**示例：**
 ```bash
 skill-seekers create oauth2-server --enhance-workflow security-focus
 ```
 
 ---
 
-### Architecture-Comprehensive Workflow
+### Architecture-Comprehensive 工作流
 
-**Stages:** 7
-**Purpose:** Deep architectural analysis
+**阶段：** 7
+**用途：** 深度架构分析
 
 ```yaml
 stages:
@@ -188,13 +188,13 @@ stages:
     prompt: Document operational concerns...
 ```
 
-**Use for:**
-- Large frameworks
-- Distributed systems
-- Microservices
-- Enterprise platforms
+**适用于：**
+- 大型框架
+- 分布式系统
+- 微服务
+- 企业平台
 
-**Example:**
+**示例：**
 ```bash
 skill-seekers create kubernetes/kubernetes \
   --enhance-workflow architecture-comprehensive
@@ -202,10 +202,10 @@ skill-seekers create kubernetes/kubernetes \
 
 ---
 
-### API-Documentation Workflow
+### API-Documentation 工作流
 
-**Stages:** 3
-**Purpose:** API-focused enhancement
+**阶段：** 3
+**用途：** API 重点增强
 
 ```yaml
 stages:
@@ -219,13 +219,13 @@ stages:
     prompt: Document error codes and handling...
 ```
 
-**Use for:**
+**适用于：**
 - REST APIs
-- GraphQL services
+- GraphQL 服务
 - SDKs
-- Library documentation
+- 库文档
 
-**Example:**
+**示例：**
 ```bash
 skill-seekers create https://api.example.com/docs \
   --enhance-workflow api-documentation
@@ -233,9 +233,9 @@ skill-seekers create https://api.example.com/docs \
 
 ---
 
-## Chaining Multiple Workflows
+## 链式多个工作流
 
-Apply multiple workflows sequentially:
+顺序应用多个工作流：
 
 ```bash
 skill-seekers create <source> \
@@ -243,20 +243,20 @@ skill-seekers create <source> \
   --enhance-workflow api-documentation
 ```
 
-**Execution order:**
-1. Run `security-focus` workflow
-2. Run `api-documentation` workflow on results
-3. Final skill has both security and API focus
+**执行顺序：**
+1. 运行 `security-focus` 工作流
+2. 在结果上运行 `api-documentation` 工作流
+3. 最终的 skill 同时具有安全和 API 重点
 
-**Use case:** API with security considerations
+**使用场景：** 带安全考虑的 API
 
 ---
 
-## Custom Workflows
+## 自定义工作流
 
-### Create Custom Workflow
+### 创建自定义工作流
 
-Create a YAML file:
+创建一个 YAML 文件：
 
 ```yaml
 # my-workflow.yaml
@@ -289,30 +289,30 @@ stages:
       Previous results: {previous_results}
 ```
 
-### Install Workflow
+### 安装工作流
 
 ```bash
-# Add to user workflows
+# 添加到用户工作流
 skill-seekers workflows add my-workflow.yaml
 
-# With custom name
+# 使用自定义名称
 skill-seekers workflows add my-workflow.yaml --name perf-guide
 ```
 
-### Use Custom Workflow
+### 使用自定义工作流
 
 ```bash
 skill-seekers create <source> --enhance-workflow performance-focus
 ```
 
-### Update Workflow
+### 更新工作流
 
 ```bash
-# Edit the file, then:
+# 编辑文件，然后：
 skill-seekers workflows add my-workflow.yaml --name performance-focus
 ```
 
-### Remove Workflow
+### 移除工作流
 
 ```bash
 skill-seekers workflows remove performance-focus
@@ -320,11 +320,11 @@ skill-seekers workflows remove performance-focus
 
 ---
 
-## Workflow Variables
+## 工作流变量
 
-Pass variables to workflows at runtime:
+在运行时向工作流传递变量：
 
-### In Workflow Definition
+### 在工作流定义中
 
 ```yaml
 variables:
@@ -332,7 +332,7 @@ variables:
   focus_area: "security"
 ```
 
-### Override at Runtime
+### 在运行时覆盖
 
 ```bash
 skill-seekers create <source> \
@@ -341,7 +341,7 @@ skill-seekers create <source> \
   --var focus_area=performance
 ```
 
-### Use in Prompts
+### 在 Prompt 中使用
 
 ```yaml
 stages:
@@ -353,18 +353,18 @@ stages:
 
 ---
 
-## Inline Stages
+## 内联阶段
 
-Add one-off enhancement stages without creating a workflow file:
+无需创建工作流文件即可添加一次性增强阶段：
 
 ```bash
 skill-seekers create <source> \
   --enhance-stage "performance:Analyze performance characteristics"
 ```
 
-**Format:** `name:prompt`
+**格式：** `name:prompt`
 
-**Multiple stages:**
+**多个阶段：**
 ```bash
 skill-seekers create <source> \
   --enhance-stage "perf:Analyze performance" \
@@ -374,9 +374,9 @@ skill-seekers create <source> \
 
 ---
 
-## Workflow Dry Run
+## 工作流试运行
 
-Preview what a workflow will do without executing:
+预览工作流将执行的操作，而不实际执行：
 
 ```bash
 skill-seekers create <source> \
@@ -384,7 +384,7 @@ skill-seekers create <source> \
   --workflow-dry-run
 ```
 
-**Output:**
+**输出：**
 ```
 Workflow: security-focus
 Stages:
@@ -410,77 +410,77 @@ Estimated time: ~4 minutes
 
 ---
 
-## Workflow Validation
+## 工作流验证
 
-Validate workflow syntax:
+验证工作流语法：
 
 ```bash
-# Validate bundled workflow
+# 验证内置工作流
 skill-seekers workflows validate security-focus
 
-# Validate file
+# 验证文件
 skill-seekers workflows validate ./my-workflow.yaml
 ```
 
 ---
 
-## Copying Workflows
+## 复制工作流
 
-Copy bundled workflows to customize:
+复制内置工作流以进行自定义：
 
 ```bash
-# Copy single workflow
+# 复制单个工作流
 skill-seekers workflows copy security-focus
 
-# Copy multiple
+# 复制多个
 skill-seekers workflows copy security-focus api-documentation minimal
 
-# Edit the copy
+# 编辑副本
 nano ~/.config/skill-seekers/workflows/security-focus.yaml
 ```
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. Start with Default
+### 1. 从 Default 开始
 
 ```bash
-# Default is good for most cases
+# 默认值适用于大多数情况
 skill-seekers create <source>
 ```
 
-### 2. Add Specific Workflows as Needed
+### 2. 根据需要添加特定工作流
 
 ```bash
-# Security-focused project
+# 安全重点的项目
 skill-seekers create auth-library --enhance-workflow security-focus
 
-# API project
+# API 项目
 skill-seekers create api-framework --enhance-workflow api-documentation
 ```
 
-### 3. Chain for Comprehensive Analysis
+### 3. 链式组合以进行全面分析
 
 ```bash
-# Large framework: architecture + security
+# 大型框架：架构 + 安全
 skill-seekers create kubernetes/kubernetes \
   --enhance-workflow architecture-comprehensive \
   --enhance-workflow security-focus
 ```
 
-### 4. Create Custom for Specialized Needs
+### 4. 为专门需求创建自定义工作流
 
 ```bash
-# Create custom workflow for your domain
+# 为你的领域创建自定义工作流
 skill-seekers workflows add ml-workflow.yaml
 skill-seekers create ml-framework --enhance-workflow ml-focus
 ```
 
-### 5. Use Variables for Flexibility
+### 5. 使用变量以获得灵活性
 
 ```bash
-# Same workflow, different targets
+# 同一工作流，不同目标
 skill-seekers create <source> \
   --enhance-workflow my-workflow \
   --var audience=beginners
@@ -492,37 +492,37 @@ skill-seekers create <source> \
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### "Workflow not found"
+### "未找到工作流"
 
 ```bash
-# List available
+# 列出可用工作流
 skill-seekers workflows list
 
-# Check spelling
+# 检查拼写
 skill-seekers create <source> --enhance-workflow security-focus
 ```
 
-### "Invalid workflow YAML"
+### "无效的工作流 YAML"
 
 ```bash
-# Validate
+# 验证
 skill-seekers workflows validate ./my-workflow.yaml
 
-# Common issues:
-# - Missing 'stages' key
-# - Invalid YAML syntax
-# - Undefined variable references
+# 常见问题：
+# - 缺少 'stages' 键
+# - 无效的 YAML 语法
+# - 未定义的变量引用
 ```
 
-### "Workflow stage failed"
+### "工作流阶段失败"
 
 ```bash
-# Check stage details
+# 检查阶段详情
 skill-seekers workflows show my-workflow
 
-# Try with dry run
+# 尝试试运行
 skill-seekers create <source> \
   --enhance-workflow my-workflow \
   --workflow-dry-run
@@ -530,21 +530,21 @@ skill-seekers create <source> \
 
 ---
 
-## Summary
+## 总结
 
-| Approach | When to Use |
+| 方法 | 何时使用 |
 |----------|-------------|
-| **Default** | Most cases |
-| **Security-Focus** | Security-sensitive projects |
-| **Architecture** | Large frameworks, systems |
-| **API-Docs** | API frameworks, libraries |
-| **Custom** | Specialized domains |
-| **Chaining** | Multiple perspectives needed |
+| **Default** | 大多数情况 |
+| **Security-Focus** | 安全敏感项目 |
+| **Architecture** | 大型框架、系统 |
+| **API-Docs** | API 框架、库 |
+| **Custom** | 专门领域 |
+| **Chaining** | 需要多重视角 |
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Custom Workflows](../advanced/custom-workflows.md) - Advanced workflow creation
-- [Enhancement Guide](03-enhancement.md) - Enhancement fundamentals
-- [MCP Reference](../reference/MCP_REFERENCE.md) - Workflows via MCP
+- [Custom Workflows](../advanced/custom-workflows.md) - 高级工作流创建
+- [Enhancement Guide](03-enhancement.md) - 增强基础
+- [MCP Reference](../reference/MCP_REFERENCE.md) - 通过 MCP 使用工作流

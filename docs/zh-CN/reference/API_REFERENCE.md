@@ -1,46 +1,46 @@
-# API Reference - Programmatic Usage
+# API 参考 - 程序化使用
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
-**Status:** ✅ Production Ready
-
----
-
-## Overview
-
-Skill Seekers can be used programmatically for integration into other tools, automation scripts, and CI/CD pipelines. This guide covers the public APIs available for developers who want to embed Skill Seekers functionality into their own applications.
-
-**Use Cases:**
-- Automated documentation skill generation in CI/CD
-- Batch processing multiple documentation sources
-- Custom skill generation workflows
-- Integration with internal tooling
-- Automated skill updates on documentation changes
+**版本：** 3.6.0
+**最后更新：** 2026-02-18
+**状态：** ✅ 生产就绪
 
 ---
 
-## Installation
+## 概述
 
-### Basic Installation
+Skill Seekers 可通过编程方式使用，以便集成到其他工具、自动化脚本和 CI/CD 流水线中。本指南面向希望将 Skill Seekers 功能嵌入到自有应用中的开发者，介绍所有可用的公共 API。
+
+**使用场景：**
+- CI/CD 中的自动化文档技能生成
+- 批量处理多个文档源
+- 自定义技能生成工作流
+- 与内部工具集成
+- 文档变更时自动更新技能
+
+---
+
+## 安装
+
+### 基础安装
 
 ```bash
 pip install skill-seekers
 ```
 
-### With Platform Dependencies
+### 附带平台依赖
 
 ```bash
-# Google Gemini support
+# Google Gemini 支持
 pip install skill-seekers[gemini]
 
-# OpenAI ChatGPT support
+# OpenAI ChatGPT 支持
 pip install skill-seekers[openai]
 
-# All platform support
+# 所有平台支持
 pip install skill-seekers[all-llms]
 ```
 
-### Development Installation
+### 开发安装
 
 ```bash
 git clone https://github.com/yusufkaraaslan/Skill_Seekers.git
@@ -50,23 +50,23 @@ pip install -e ".[all-llms]"
 
 ---
 
-## Core APIs
+## 核心 API
 
-### 1. Documentation Scraping API
+### 1. 文档抓取 API
 
-Extract content from documentation websites using BFS traversal and smart categorization.
+使用 BFS 遍历和智能分类从文档网站提取内容。
 
-#### Basic Usage
+#### 基本用法
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all, build_skill
 import json
 
-# Load configuration
+# 加载配置
 with open('configs/react.json', 'r') as f:
     config = json.load(f)
 
-# Scrape documentation
+# 抓取文档
 pages = scrape_all(
     base_url=config['base_url'],
     selectors=config['selectors'],
@@ -76,7 +76,7 @@ pages = scrape_all(
 
 print(f"Scraped {len(pages)} pages")
 
-# Build skill from scraped data
+# 根据抓取的数据构建技能
 skill_path = build_skill(
     config_name='react',
     output_dir='output/react',
@@ -86,12 +86,12 @@ skill_path = build_skill(
 print(f"Skill created at: {skill_path}")
 ```
 
-#### Advanced Scraping Options
+#### 高级抓取选项
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all
 
-# Custom scraping with advanced options
+# 使用高级选项自定义抓取
 pages = scrape_all(
     base_url='https://docs.example.com',
     selectors={
@@ -102,49 +102,49 @@ pages = scrape_all(
     config={
         'name': 'my-framework',
         'description': 'Custom framework documentation',
-        'rate_limit': 0.5,  # 0.5 second delay between requests
-        'max_pages': 500,   # Limit to 500 pages
+        'rate_limit': 0.5,  # 请求间隔 0.5 秒
+        'max_pages': 500,   # 限制为 500 页
         'url_patterns': {
             'include': ['/docs/'],
             'exclude': ['/blog/', '/changelog/']
         }
     },
     output_dir='output/my-framework_data',
-    use_async=True  # Enable async scraping (2-3x faster)
+    use_async=True  # 启用异步抓取（快 2-3 倍）
 )
 ```
 
-#### Rebuilding Without Scraping
+#### 不抓取直接重建
 
 ```python
 from skill_seekers.cli.doc_scraper import build_skill
 
-# Rebuild skill from existing data (fast!)
+# 从现有数据重建技能（快！）
 skill_path = build_skill(
     config_name='react',
     output_dir='output/react',
-    data_dir='output/react_data',  # Use existing scraped data
-    skip_scrape=True  # Don't re-scrape
+    data_dir='output/react_data',  # 使用已抓取的数据
+    skip_scrape=True  # 不再重新抓取
 )
 ```
 
 ---
 
-### 2. GitHub Repository Analysis API
+### 2. GitHub 仓库分析 API
 
-Analyze GitHub repositories with three-stream architecture (Code + Docs + Insights).
+使用三流架构（代码 + 文档 + 洞察）分析 GitHub 仓库。
 
-#### Basic GitHub Analysis
+#### 基本 GitHub 分析
 
 ```python
 from skill_seekers.cli.github_scraper import scrape_github_repo
 
-# Analyze GitHub repository
+# 分析 GitHub 仓库
 result = scrape_github_repo(
     repo_url='https://github.com/facebook/react',
     output_dir='output/react-github',
-    analysis_depth='c3x',  # Options: 'basic' or 'c3x'
-    github_token='ghp_...'  # Optional: higher rate limits
+    analysis_depth='c3x',  # 选项：'basic' 或 'c3x'
+    github_token='ghp_...'  # 可选：更高的速率限制
 )
 
 print(f"Analysis complete: {result['skill_path']}")
@@ -152,37 +152,37 @@ print(f"Code files analyzed: {result['stats']['code_files']}")
 print(f"Patterns detected: {result['stats']['patterns']}")
 ```
 
-#### Stream-Specific Analysis
+#### 特定流分析
 
 ```python
 from skill_seekers.cli.github_scraper import scrape_github_repo
 
-# Focus on specific streams
+# 聚焦特定流
 result = scrape_github_repo(
     repo_url='https://github.com/vercel/next.js',
     output_dir='output/nextjs',
     analysis_depth='c3x',
-    enable_code_stream=True,      # C3.x codebase analysis
-    enable_docs_stream=True,      # README, docs/, wiki
-    enable_insights_stream=True,  # GitHub metadata, issues
-    include_tests=True,           # Extract test examples
-    include_patterns=True,        # Detect design patterns
-    include_how_to_guides=True    # Generate guides from tests
+    enable_code_stream=True,      # C3.x 代码库分析
+    enable_docs_stream=True,      # README、docs/、wiki
+    enable_insights_stream=True,  # GitHub 元数据、issues
+    include_tests=True,           # 提取测试示例
+    include_patterns=True,        # 检测设计模式
+    include_how_to_guides=True    # 从测试生成指南
 )
 ```
 
 ---
 
-### 3. PDF Extraction API
+### 3. PDF 提取 API
 
-Extract content from PDF documents with OCR and image support.
+通过 OCR 和图像支持从 PDF 文档提取内容。
 
-#### Basic PDF Extraction
+#### 基本 PDF 提取
 
 ```python
 from skill_seekers.cli.pdf_scraper import scrape_pdf
 
-# Extract from single PDF
+# 从单个 PDF 提取
 skill_path = scrape_pdf(
     pdf_path='documentation.pdf',
     output_dir='output/pdf-skill',
@@ -193,38 +193,38 @@ skill_path = scrape_pdf(
 print(f"PDF skill created: {skill_path}")
 ```
 
-#### Advanced PDF Processing
+#### 高级 PDF 处理
 
 ```python
 from skill_seekers.cli.pdf_scraper import scrape_pdf
 
-# PDF extraction with all features
+# 使用全部功能提取 PDF
 skill_path = scrape_pdf(
     pdf_path='large-manual.pdf',
     output_dir='output/manual',
     skill_name='product-manual',
     description='Product manual documentation',
-    enable_ocr=True,              # OCR for scanned PDFs
-    extract_images=True,          # Extract embedded images
-    extract_tables=True,          # Parse tables
-    chunk_size=50,                # Pages per chunk (large PDFs)
-    language='eng',               # OCR language
-    dpi=300                       # Image DPI for OCR
+    enable_ocr=True,              # 扫描版 PDF 的 OCR
+    extract_images=True,          # 提取嵌入的图像
+    extract_tables=True,          # 解析表格
+    chunk_size=50,                # 每块页数（大 PDF）
+    language='eng',               # OCR 语言
+    dpi=300                       # OCR 图像 DPI
 )
 ```
 
 ---
 
-### 4. Unified Multi-Source Scraping API
+### 4. 统一多源抓取 API
 
-Combine multiple sources (docs + GitHub + PDF) into a single unified skill.
+将多个来源（文档 + GitHub + PDF）合并为单个统一技能。
 
-#### Unified Scraping
+#### 统一抓取
 
 ```python
 from skill_seekers.cli.unified_scraper import unified_scrape
 
-# Scrape from multiple sources
+# 从多个来源抓取
 result = unified_scrape(
     config_path='configs/unified/react-unified.json',
     output_dir='output/react-complete'
@@ -235,12 +235,12 @@ print(f"Sources merged: {result['sources']}")
 print(f"Conflicts detected: {result['conflicts']}")
 ```
 
-#### Conflict Detection
+#### 冲突检测
 
 ```python
 from skill_seekers.cli.unified_scraper import detect_conflicts
 
-# Detect discrepancies between sources
+# 检测来源之间的差异
 conflicts = detect_conflicts(
     docs_dir='output/react_data',
     github_dir='output/react-github',
@@ -255,19 +255,19 @@ for conflict in conflicts:
 
 ---
 
-### 5. Skill Packaging API
+### 5. 技能打包 API
 
-Package skills for different LLM platforms using the platform adaptor architecture.
+使用平台适配器架构为不同 LLM 平台打包技能。
 
-#### Basic Packaging
+#### 基础打包
 
 ```python
 from skill_seekers.cli.adaptors import get_adaptor
 
-# Get platform-specific adaptor
-adaptor = get_adaptor('claude')  # Options: claude, gemini, openai, markdown
+# 获取平台特定适配器
+adaptor = get_adaptor('claude')  # 选项：claude、gemini、openai、markdown
 
-# Package skill
+# 打包技能
 package_path = adaptor.package(
     skill_dir='output/react/',
     output_path='output/'
@@ -276,12 +276,12 @@ package_path = adaptor.package(
 print(f"Claude skill package: {package_path}")
 ```
 
-#### Multi-Platform Packaging
+#### 多平台打包
 
 ```python
 from skill_seekers.cli.adaptors import get_adaptor
 
-# Package for all platforms
+# 为所有平台打包
 platforms = ['claude', 'gemini', 'openai', 'markdown']
 
 for platform in platforms:
@@ -293,29 +293,29 @@ for platform in platforms:
     print(f"{platform.capitalize()} package: {package_path}")
 ```
 
-#### Custom Packaging Options
+#### 自定义打包选项
 
 ```python
 from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('gemini')
 
-# Gemini-specific packaging (.tar.gz format)
+# Gemini 特定打包（.tar.gz 格式）
 package_path = adaptor.package(
     skill_dir='output/react/',
     output_path='output/',
-    compress_level=9,  # Maximum compression
+    compress_level=9,  # 最大压缩
     include_metadata=True
 )
 ```
 
 ---
 
-### 6. Skill Upload API
+### 6. 技能上传 API
 
-Upload packaged skills to LLM platforms via their APIs.
+通过各平台 API 将打包的技能上传到 LLM 平台。
 
-#### Claude AI Upload
+#### Claude AI 上传
 
 ```python
 import os
@@ -323,7 +323,7 @@ from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('claude')
 
-# Upload to Claude AI
+# 上传到 Claude AI
 result = adaptor.upload(
     package_path='output/react-claude.zip',
     api_key=os.getenv('ANTHROPIC_API_KEY')
@@ -332,7 +332,7 @@ result = adaptor.upload(
 print(f"Uploaded to Claude AI: {result['skill_id']}")
 ```
 
-#### Google Gemini Upload
+#### Google Gemini 上传
 
 ```python
 import os
@@ -340,7 +340,7 @@ from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('gemini')
 
-# Upload to Google Gemini
+# 上传到 Google Gemini
 result = adaptor.upload(
     package_path='output/react-gemini.tar.gz',
     api_key=os.getenv('GOOGLE_API_KEY')
@@ -349,7 +349,7 @@ result = adaptor.upload(
 print(f"Gemini corpus ID: {result['corpus_id']}")
 ```
 
-#### OpenAI ChatGPT Upload
+#### OpenAI ChatGPT 上传
 
 ```python
 import os
@@ -357,7 +357,7 @@ from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('openai')
 
-# Upload to OpenAI Vector Store
+# 上传到 OpenAI Vector Store
 result = adaptor.upload(
     package_path='output/react-openai.zip',
     api_key=os.getenv('OPENAI_API_KEY')
@@ -368,11 +368,11 @@ print(f"Vector store ID: {result['vector_store_id']}")
 
 ---
 
-### 7. AI Enhancement API
+### 7. AI 增强 API
 
-Enhance skills with AI-powered improvements using platform-specific models.
+使用平台特定模型通过 AI 驱动的改进来增强技能。
 
-#### API Mode Enhancement
+#### API 模式增强
 
 ```python
 import os
@@ -380,7 +380,7 @@ from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('claude')
 
-# Enhance using Claude API
+# 使用 Claude API 增强
 result = adaptor.enhance(
     skill_dir='output/react/',
     mode='api',
@@ -391,32 +391,32 @@ print(f"Enhanced skill: {result['enhanced_path']}")
 print(f"Quality score: {result['quality_score']}/10")
 ```
 
-#### LOCAL Mode Enhancement
+#### LOCAL 模式增强
 
 ```python
 from skill_seekers.cli.adaptors import get_adaptor
 
 adaptor = get_adaptor('claude')
 
-# Enhance using Claude Code CLI (free!)
+# 使用 Claude Code CLI 增强（免费！）
 result = adaptor.enhance(
     skill_dir='output/react/',
     mode='LOCAL',
-    execution_mode='headless',  # Options: headless, background, daemon
-    timeout=300  # 5 minute timeout
+    execution_mode='headless',  # 选项：headless、background、daemon
+    timeout=300  # 5 分钟超时
 )
 
 print(f"Enhanced skill: {result['enhanced_path']}")
 ```
 
-#### Background Enhancement with Monitoring
+#### 后台增强与监控
 
 ```python
 from skill_seekers.cli.enhance_skill_local import enhance_skill
 from skill_seekers.cli.enhance_status import monitor_enhancement
 import time
 
-# Start background enhancement
+# 启动后台增强
 result = enhance_skill(
     skill_dir='output/react/',
     mode='background'
@@ -425,7 +425,7 @@ result = enhance_skill(
 pid = result['pid']
 print(f"Enhancement started in background (PID: {pid})")
 
-# Monitor progress
+# 监控进度
 while True:
     status = monitor_enhancement('output/react/')
     print(f"Status: {status['state']}, Progress: {status['progress']}%")
@@ -437,29 +437,29 @@ while True:
         print(f"Enhancement failed: {status['error']}")
         break
 
-    time.sleep(5)  # Check every 5 seconds
+    time.sleep(5)  # 每 5 秒检查一次
 ```
 
 ---
 
-### 8. Complete Workflow Automation API
+### 8. 完整工作流自动化 API
 
-Automate the entire workflow: fetch config → scrape → enhance → package → upload.
+自动化整个工作流：获取配置 → 抓取 → 增强 → 打包 → 上传。
 
-#### One-Command Install
+#### 单命令安装
 
 ```python
 import os
 from skill_seekers.cli.install_skill import install_skill
 
-# Complete workflow automation
+# 完整工作流自动化
 result = install_skill(
-    config_name='react',  # Use preset config
-    target='claude',      # Target platform
+    config_name='react',  # 使用预设配置
+    target='claude',      # 目标平台
     api_key=os.getenv('ANTHROPIC_API_KEY'),
-    enhance=True,         # Enable AI enhancement
-    upload=True,          # Upload to platform
-    force=True            # Skip confirmations
+    enhance=True,         # 启用 AI 增强
+    upload=True,          # 上传到平台
+    force=True            # 跳过确认
 )
 
 print(f"Skill installed: {result['skill_id']}")
@@ -467,30 +467,30 @@ print(f"Package path: {result['package_path']}")
 print(f"Time taken: {result['duration']}s")
 ```
 
-#### Custom Config Install
+#### 自定义配置安装
 
 ```python
 from skill_seekers.cli.install_skill import install_skill
 
-# Install with custom configuration
+# 使用自定义配置安装
 result = install_skill(
     config_path='configs/custom/my-framework.json',
     target='gemini',
     api_key=os.getenv('GOOGLE_API_KEY'),
     enhance=True,
     upload=True,
-    analysis_depth='c3x',  # Deep codebase analysis
-    enable_router=True     # Generate router for large docs
+    analysis_depth='c3x',  # 深度代码库分析
+    enable_router=True     # 为大型文档生成路由器
 )
 ```
 
 ---
 
-## Configuration Objects
+## 配置对象
 
-### Config Schema
+### 配置 Schema
 
-Skill Seekers uses JSON configuration files to define scraping behavior.
+Skill Seekers 使用 JSON 配置文件定义抓取行为。
 
 ```json
 {
@@ -520,28 +520,28 @@ Skill Seekers uses JSON configuration files to define scraping behavior.
 }
 ```
 
-### Required Fields
+### 必填字段
 
-| Field | Type | Description |
+| 字段 | 类型 | 描述 |
 |-------|------|-------------|
-| `name` | string | Skill name (alphanumeric + hyphens) |
-| `description` | string | When to use this skill |
-| `base_url` | string | Documentation website URL |
-| `selectors` | object | CSS selectors for content extraction |
+| `name` | string | 技能名称（字母数字 + 连字符） |
+| `description` | string | 何时使用此技能 |
+| `base_url` | string | 文档网站 URL |
+| `selectors` | object | 用于内容提取的 CSS 选择器 |
 
-### Optional Fields
+### 可选字段
 
-| Field | Type | Default | Description |
+| 字段 | 类型 | 默认值 | 描述 |
 |-------|------|---------|-------------|
-| `url_patterns.include` | array | `[]` | URL path patterns to include |
-| `url_patterns.exclude` | array | `[]` | URL path patterns to exclude |
-| `categories` | object | `{}` | Category keywords mapping |
-| `rate_limit` | float | `0.5` | Delay between requests (seconds) |
-| `max_pages` | int | `500` | Maximum pages to scrape |
-| `llms_txt_url` | string | `null` | URL to llms.txt file |
-| `enable_async` | bool | `false` | Enable async scraping (faster) |
+| `url_patterns.include` | array | `[]` | 包含的 URL 路径模式 |
+| `url_patterns.exclude` | array | `[]` | 排除的 URL 路径模式 |
+| `categories` | object | `{}` | 类别关键词映射 |
+| `rate_limit` | float | `0.5` | 请求间隔（秒） |
+| `max_pages` | int | `500` | 最大抓取页数 |
+| `llms_txt_url` | string | `null` | llms.txt 文件 URL |
+| `enable_async` | bool | `false` | 启用异步抓取（更快） |
 
-### Unified Config Schema (Multi-Source)
+### 统一配置 Schema（多源）
 
 ```json
 {
@@ -571,14 +571,14 @@ Skill Seekers uses JSON configuration files to define scraping behavior.
 
 ---
 
-## Advanced Options
+## 高级选项
 
-### Custom Selectors
+### 自定义选择器
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all
 
-# Custom CSS selectors for complex sites
+# 复杂站点的自定义 CSS 选择器
 pages = scrape_all(
     base_url='https://complex-site.com',
     selectors={
@@ -592,33 +592,33 @@ pages = scrape_all(
 )
 ```
 
-### URL Pattern Matching
+### URL 模式匹配
 
 ```python
-# Advanced URL filtering
+# 高级 URL 过滤
 config = {
     'url_patterns': {
         'include': [
-            '/docs/',           # Exact path match
-            '/api/**',          # Wildcard: all subpaths
-            '/guides/v2.*'      # Regex: version-specific
+            '/docs/',           # 精确路径匹配
+            '/api/**',          # 通配符：所有子路径
+            '/guides/v2.*'      # 正则：特定版本
         ],
         'exclude': [
             '/blog/',
             '/changelog/',
-            '**/*.png',         # Exclude images
-            '**/*.pdf'          # Exclude PDFs
+            '**/*.png',         # 排除图像
+            '**/*.pdf'          # 排除 PDF
         ]
     }
 }
 ```
 
-### Category Inference
+### 类别推断
 
 ```python
 from skill_seekers.cli.doc_scraper import infer_categories
 
-# Auto-detect categories from URL structure
+# 从 URL 结构自动检测类别
 categories = infer_categories(
     pages=[
         {'url': 'https://docs.example.com/getting-started/intro'},
@@ -637,9 +637,9 @@ print(categories)
 
 ---
 
-## Error Handling
+## 错误处理
 
-### Common Exceptions
+### 常见异常
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all
@@ -658,19 +658,19 @@ try:
     )
 except NetworkError as e:
     print(f"Network error: {e}")
-    # Retry with exponential backoff
+    # 使用指数退避重试
 except InvalidConfigError as e:
     print(f"Invalid config: {e}")
-    # Fix configuration and retry
+    # 修复配置后重试
 except RateLimitError as e:
     print(f"Rate limited: {e}")
-    # Increase rate_limit in config
+    # 在配置中增加 rate_limit
 except ScrapingError as e:
     print(f"Scraping failed: {e}")
-    # Check selectors and URL patterns
+    # 检查选择器和 URL 模式
 ```
 
-### Retry Logic
+### 重试逻辑
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all
@@ -684,7 +684,7 @@ def scrape_with_retry(base_url, config):
         config=config
     )
 
-# Automatically retries on network errors
+# 网络错误时自动重试
 pages = scrape_with_retry(
     base_url='https://docs.example.com',
     config={'name': 'example', 'selectors': {...}}
@@ -693,9 +693,9 @@ pages = scrape_with_retry(
 
 ---
 
-## Testing Your Integration
+## 测试你的集成
 
-### Unit Tests
+### 单元测试
 
 ```python
 import pytest
@@ -708,7 +708,7 @@ def test_basic_scraping():
         selectors={'main_content': 'article'},
         config={
             'name': 'test-framework',
-            'max_pages': 10  # Limit for testing
+            'max_pages': 10  # 测试时限制
         }
     )
 
@@ -731,7 +731,7 @@ def test_config_validation():
     assert len(errors) == 0
 ```
 
-### Integration Tests
+### 集成测试
 
 ```python
 import pytest
@@ -743,9 +743,9 @@ def test_end_to_end_workflow():
     """Test complete skill installation workflow."""
     result = install_skill(
         config_name='react',
-        target='markdown',  # No API key needed for markdown
-        enhance=False,      # Skip AI enhancement
-        upload=False,       # Don't upload
+        target='markdown',  # markdown 不需要 API key
+        enhance=False,      # 跳过 AI 增强
+        upload=False,       # 不上传
         force=True
     )
 
@@ -771,40 +771,40 @@ def test_multi_platform_packaging():
 
 ---
 
-## Performance Optimization
+## 性能优化
 
-### Async Scraping
+### 异步抓取
 
 ```python
 from skill_seekers.cli.doc_scraper import scrape_all
 
-# Enable async for 2-3x speed improvement
+# 启用异步可获得 2-3 倍速度提升
 pages = scrape_all(
     base_url='https://docs.example.com',
     selectors={'main_content': 'article'},
     config={'name': 'example'},
-    use_async=True  # 2-3x faster
+    use_async=True  # 快 2-3 倍
 )
 ```
 
-### Caching and Rebuilding
+### 缓存与重建
 
 ```python
 from skill_seekers.cli.doc_scraper import build_skill
 
-# First scrape (slow - 15-45 minutes)
+# 首次抓取（慢 - 15-45 分钟）
 build_skill(config_name='react', output_dir='output/react')
 
-# Rebuild without re-scraping (fast - <1 minute)
+# 不重新抓取直接重建（快 - <1 分钟）
 build_skill(
     config_name='react',
     output_dir='output/react',
     data_dir='output/react_data',
-    skip_scrape=True  # Use cached data
+    skip_scrape=True  # 使用缓存数据
 )
 ```
 
-### Batch Processing
+### 批量处理
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
@@ -821,7 +821,7 @@ def install_config(config_name):
         force=True
     )
 
-# Process 4 configs in parallel
+# 并行处理 4 个配置
 with ThreadPoolExecutor(max_workers=4) as executor:
     results = list(executor.map(install_config, configs))
 
@@ -831,7 +831,7 @@ for config, result in zip(configs, results):
 
 ---
 
-## CI/CD Integration Examples
+## CI/CD 集成示例
 
 ### GitHub Actions
 
@@ -840,7 +840,7 @@ name: Generate Skills
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at midnight
+    - cron: '0 0 * * *'  # 每天午夜
   workflow_dispatch:
 
 jobs:
@@ -889,10 +889,10 @@ generate_skills:
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. **Use Configuration Files**
-Store configs in version control for reproducibility:
+### 1. **使用配置文件**
+将配置放入版本控制以确保可复现性：
 ```python
 import json
 with open('configs/my-framework.json') as f:
@@ -900,76 +900,76 @@ with open('configs/my-framework.json') as f:
 scrape_all(config=config)
 ```
 
-### 2. **Enable Async for Large Sites**
+### 2. **为大型站点启用异步**
 ```python
 pages = scrape_all(base_url=url, config=config, use_async=True)
 ```
 
-### 3. **Cache Scraped Data**
+### 3. **缓存抓取的数据**
 ```python
-# Scrape once
+# 抓取一次
 scrape_all(config=config, output_dir='output/data')
 
-# Rebuild many times (fast!)
+# 多次重建（快！）
 build_skill(config_name='framework', data_dir='output/data', skip_scrape=True)
 ```
 
-### 4. **Use Platform Adaptors**
+### 4. **使用平台适配器**
 ```python
-# Good: Platform-agnostic
+# 良好：与平台无关
 adaptor = get_adaptor(target_platform)
 adaptor.package(skill_dir)
 
-# Bad: Hardcoded for one platform
+# 不佳：硬编码单个平台
 # create_zip_for_claude(skill_dir)
 ```
 
-### 5. **Handle Errors Gracefully**
+### 5. **优雅地处理错误**
 ```python
 try:
     result = install_skill(config_name='framework', target='claude')
 except NetworkError:
-    # Retry logic
+    # 重试逻辑
 except InvalidConfigError:
-    # Fix config
+    # 修复配置
 ```
 
-### 6. **Monitor Background Enhancements**
+### 6. **监控后台增强**
 ```python
-# Start enhancement
+# 启动增强
 enhance_skill(skill_dir='output/react/', mode='background')
 
-# Monitor progress
+# 监控进度
 monitor_enhancement('output/react/', watch=True)
 ```
 
 ---
 
-## API Reference Summary
+## API 参考摘要
 
-| API | Module | Use Case |
+| API | 模块 | 使用场景 |
 |-----|--------|----------|
-| **Documentation Scraping** | `doc_scraper` | Extract from docs websites |
-| **GitHub Analysis** | `github_scraper` | Analyze code repositories |
-| **PDF Extraction** | `pdf_scraper` | Extract from PDF files |
-| **Unified Scraping** | `unified_scraper` | Multi-source scraping |
-| **Skill Packaging** | `adaptors` | Package for LLM platforms |
-| **Skill Upload** | `adaptors` | Upload to platforms |
-| **AI Enhancement** | `adaptors` | Improve skill quality |
-| **Complete Workflow** | `install_skill` | End-to-end automation |
+| **文档抓取** | `doc_scraper` | 从文档网站提取 |
+| **GitHub 分析** | `github_scraper` | 分析代码仓库 |
+| **PDF 提取** | `pdf_scraper` | 从 PDF 文件提取 |
+| **统一抓取** | `unified_scraper` | 多源抓取 |
+| **技能打包** | `adaptors` | 为 LLM 平台打包 |
+| **技能上传** | `adaptors` | 上传到平台 |
+| **AI 增强** | `adaptors` | 提升技能质量 |
+| **完整工作流** | `install_skill` | 端到端自动化 |
 
 ---
 
-## Additional Resources
+## 其他资源
 
-- **[Main Documentation](../../README.md)** - Complete user guide
-- **[Usage Guide](../guides/USAGE.md)** - CLI usage examples
-- **[MCP Setup](../guides/MCP_SETUP.md)** - MCP server integration
-- **[Multi-LLM Support](../integrations/MULTI_LLM_SUPPORT.md)** - Platform comparison
-- **[CHANGELOG](../../CHANGELOG.md)** - Version history and API changes
+- **[主文档](../../README.md)** - 完整用户指南
+- **[使用指南](../guides/USAGE.md)** - CLI 使用示例
+- **[MCP 设置](../guides/MCP_SETUP.md)** - MCP 服务器集成
+- **[多 LLM 支持](../integrations/MULTI_LLM_SUPPORT.md)** - 平台对比
+- **[CHANGELOG](../../CHANGELOG.md)** - 版本历史和 API 变更
 
 ---
 
-**Version:** 3.1.0-dev
-**Last Updated:** 2026-02-18
-**Status:** ✅ Production Ready
+**版本：** 3.6.0
+**最后更新：** 2026-02-18
+**状态：** ✅ 生产就绪

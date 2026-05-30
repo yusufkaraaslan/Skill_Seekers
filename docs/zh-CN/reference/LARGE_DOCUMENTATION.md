@@ -50,7 +50,7 @@ Complete guide for scraping and managing large documentation sites with Skill Se
 
 ```bash
 # Just use the config as-is
-python3 cli/doc_scraper.py --config configs/react.json
+skill-seekers create --config configs/react.json
 ```
 
 **Pros:** Simple, one skill to maintain
@@ -122,7 +122,7 @@ python3 cli/split_config.py configs/bigdocs.json --strategy size --target-pages 
 
 ```bash
 # 1. Create config
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 # Name: godot
 # URL: https://docs.godotengine.org
 # ... fill in prompts ...
@@ -136,7 +136,7 @@ python3 cli/split_config.py configs/godot.json --strategy router
 
 # 4. Scrape all sub-skills
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 
@@ -206,11 +206,11 @@ python3 cli/split_config.py configs/godot.json --strategy router --target-pages 
 **Step 3: Scrape Sub-Skills (Parallel)**
 ```bash
 # Open multiple terminals or use background jobs
-python3 cli/doc_scraper.py --config configs/godot-scripting.json &
-python3 cli/doc_scraper.py --config configs/godot-2d.json &
-python3 cli/doc_scraper.py --config configs/godot-3d.json &
-python3 cli/doc_scraper.py --config configs/godot-physics.json &
-python3 cli/doc_scraper.py --config configs/godot-shaders.json &
+skill-seekers create --config configs/godot-scripting.json &
+skill-seekers create --config configs/godot-2d.json &
+skill-seekers create --config configs/godot-3d.json &
+skill-seekers create --config configs/godot-physics.json &
+skill-seekers create --config configs/godot-shaders.json &
 
 # Wait for all to complete
 wait
@@ -256,7 +256,7 @@ python3 cli/split_config.py configs/vue.json --strategy category
 
 # 2. Scrape each
 for config in configs/vue-*.json; do
-  python3 cli/doc_scraper.py --config $config
+  skill-seekers create --config $config
 done
 
 # 3. Package
@@ -289,12 +289,12 @@ python3 cli/split_config.py config.json --target-pages 8000
 ```bash
 # Serial (slow - 40 hours)
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config
+  skill-seekers create --config $config
 done
 
 # Parallel (fast - 8 hours) ⭐
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 ```
@@ -306,7 +306,7 @@ wait
 nano configs/godot-2d.json
 # Set: "max_pages": 50
 
-python3 cli/doc_scraper.py --config configs/godot-2d.json
+skill-seekers create --config configs/godot-2d.json
 
 # If output looks good, increase to full
 ```
@@ -323,7 +323,7 @@ python3 cli/doc_scraper.py --config configs/godot-2d.json
 }
 
 # If scrape fails, resume
-python3 cli/doc_scraper.py --config config.json --resume
+skill-seekers create --config config.json --resume
 ```
 
 ---
@@ -399,12 +399,12 @@ nano output/godot/SKILL.md
 
 ```bash
 # Scrape 2-3 at a time instead of all
-python3 cli/doc_scraper.py --config config1.json &
-python3 cli/doc_scraper.py --config config2.json &
+skill-seekers create --config config1.json &
+skill-seekers create --config config2.json &
 wait
 
-python3 cli/doc_scraper.py --config config3.json &
-python3 cli/doc_scraper.py --config config4.json &
+skill-seekers create --config config3.json &
+skill-seekers create --config config4.json &
 wait
 ```
 

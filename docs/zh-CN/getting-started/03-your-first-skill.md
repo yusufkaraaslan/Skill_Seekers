@@ -1,59 +1,59 @@
-# Your First Skill - Complete Walkthrough
+# 你的第一个 Skill — 完整演练
 
-> **Skill Seekers v3.1.0**  
-> **Step-by-step guide to creating your first skill**
-
----
-
-## What We'll Build
-
-A skill from the **Django documentation** that you can use with Claude AI.
-
-**Time required:** ~15-20 minutes  
-**Result:** A comprehensive Django skill with ~400 lines of structured documentation
+> **Skill Seekers v3.6.0**  
+> **创建你的第一个 skill 的分步指南**
 
 ---
 
-## Prerequisites
+## 我们要构建什么
+
+一个来自 **Django 文档** 的 skill，可与 Claude AI 一起使用。
+
+**所需时间：** ~15-20 分钟  
+**结果：** 一份包含约 400 行结构化文档的综合 Django skill
+
+---
+
+## 前置条件
 
 ```bash
-# Ensure skill-seekers is installed
+# 确保 skill-seekers 已安装
 skill-seekers --version
 
-# Should output: skill-seekers 3.1.0
+# 应输出：skill-seekers 3.1.0
 ```
 
 ---
 
-## Step 1: Choose Your Source
+## 第 1 步：选择你的来源
 
-For this walkthrough, we'll use Django documentation. You can use any of these:
+在本演练中，我们将使用 Django 文档。你也可以使用以下任意一种：
 
 ```bash
-# Option A: Django docs (what we'll use)
+# 选项 A：Django 文档（我们将使用的）
 https://docs.djangoproject.com/
 
-# Option B: React docs
+# 选项 B：React 文档
 https://react.dev/
 
-# Option C: Your own project
+# 选项 C：你自己的项目
 ./my-project
 
-# Option D: GitHub repo
+# 选项 D：GitHub 仓库
 facebook/react
 ```
 
 ---
 
-## Step 2: Preview with Dry Run
+## 第 2 步：使用试运行预览
 
-Before scraping, let's preview what will happen:
+在抓取之前，让我们预览将要发生的事情：
 
 ```bash
 skill-seekers create https://docs.djangoproject.com/ --dry-run
 ```
 
-**Expected output:**
+**预期输出：**
 ```
 🔍 Dry Run Preview
 ==================
@@ -75,26 +75,26 @@ Configuration:
 ✅ Preview complete. Run without --dry-run to execute.
 ```
 
-This shows you exactly what will happen without actually scraping.
+这向你展示了将要发生的事情，而不会实际进行抓取。
 
 ---
 
-## Step 3: Create the Skill
+## 第 3 步：创建 Skill
 
-Now let's actually create it:
+现在让我们实际创建它：
 
 ```bash
 skill-seekers create https://docs.djangoproject.com/ --name django
 ```
 
-**What happens:**
-1. **Detection** - Recognizes as documentation website
-2. **Crawling** - Discovers pages starting from the base URL
-3. **Scraping** - Downloads and extracts content (~5-10 min)
-4. **Processing** - Organizes into categories
-5. **Enhancement** - AI improves SKILL.md quality (~60 sec)
+**发生了什么：**
+1. **检测** — 识别为文档网站
+2. **爬取** — 从基础 URL 发现页面
+3. **抓取** — 下载并提取内容（~5-10 分钟）
+4. **处理** — 按类别组织
+5. **增强** — AI 提升 SKILL.md 质量（~60 秒）
 
-**Progress output:**
+**进度输出：**
 ```
 🚀 Creating skill: django
 📍 Source: https://docs.djangoproject.com/
@@ -126,21 +126,21 @@ Rate: 1.8 pages/sec | ETA: 37 seconds
 
 ---
 
-## Step 4: Explore the Output
+## 第 4 步：探索输出
 
-Let's see what was created:
+让我们看看创建了什么：
 
 ```bash
 ls -la output/django/
 ```
 
-**Output:**
+**输出：**
 ```
 output/django/
-├── .skill-seekers/           # Metadata
+├── .skill-seekers/           # 元数据
 │   └── manifest.json
-├── SKILL.md                  # Main skill file ⭐
-├── references/               # Organized docs
+├── SKILL.md                  # 主 skill 文件 ⭐
+├── references/               # 整理的文档
 │   ├── index.md
 │   ├── getting_started.md
 │   ├── models.md
@@ -149,16 +149,16 @@ output/django/
 │   ├── forms.md
 │   ├── admin.md
 │   └── security.md
-└── assets/                   # Images (if any)
+└── assets/                   # 图片（如果有）
 ```
 
-### View SKILL.md
+### 查看 SKILL.md
 
 ```bash
 head -50 output/django/SKILL.md
 ```
 
-**You'll see:**
+**你将看到：**
 ```markdown
 # Django Skill
 
@@ -190,7 +190,7 @@ python manage.py startapp myapp
 ...
 ```
 
-### Check References
+### 检查参考文献
 
 ```bash
 ls output/django/references/
@@ -199,15 +199,15 @@ cat output/django/references/models.md | head -30
 
 ---
 
-## Step 5: Package for Claude
+## 第 5 步：打包到 Claude
 
-Now package it for Claude AI:
+现在为 Claude AI 打包：
 
 ```bash
 skill-seekers package output/django/ --target claude
 ```
 
-**Output:**
+**输出：**
 ```
 📦 Packaging skill: django
 🎯 Target: Claude AI
@@ -223,27 +223,27 @@ Next steps:
 
 ---
 
-## Step 6: Upload to Claude
+## 第 6 步：上传到 Claude
 
-### Option A: Auto-Upload
+### 选项 A：自动上传
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 skill-seekers upload output/django-claude.zip --target claude
 ```
 
-### Option B: Manual Upload
+### 选项 B：手动上传
 
-1. Open [Claude Code](https://claude.ai/code) or Claude Desktop
-2. Go to "Skills" or "Projects"
-3. Click "Create Skill" or "Upload"
-4. Select `output/django-claude.zip`
+1. 打开 [Claude Code](https://claude.ai/code) 或 Claude Desktop
+2. 进入 "Skills" 或 "Projects"
+3. 点击 "Create Skill" 或 "Upload"
+4. 选择 `output/django-claude.zip`
 
 ---
 
-## Step 7: Use Your Skill
+## 第 7 步：使用你的 Skill
 
-Once uploaded, you can ask Claude:
+上传后，你可以向 Claude 提问：
 
 ```
 "How do I create a Django model with foreign keys?"
@@ -252,62 +252,62 @@ Once uploaded, you can ask Claude:
 "Explain Django's ORM query optimization"
 ```
 
-Claude will use your skill to provide accurate, contextual answers.
+Claude 将使用你的 skill 提供准确、有上下文的回答。
 
 ---
 
-## Alternative: Skip Enhancement for Speed
+## 替代方案：跳过增强以加快速度
 
-If you want faster results (no AI enhancement):
+如果你想要更快的结果（无需 AI 增强）：
 
 ```bash
-# Create without enhancement
+# 创建但不增强
 skill-seekers create https://docs.djangoproject.com/ --name django --enhance-level 0
 
-# Package
+# 打包
 skill-seekers package output/django/ --target claude
 
-# Enhances later if needed
+# 如有需要，稍后增强
 skill-seekers enhance output/django/
 ```
 
 ---
 
-## Alternative: Use a Preset Config
+## 替代方案：使用预设配置
 
-Instead of auto-detection, use a preset:
+不使用自动检测，而是使用预设：
 
 ```bash
-# See available presets
+# 查看可用预设
 skill-seekers estimate --all
 
-# Use Django preset
+# 使用 Django 预设
 skill-seekers create --config django
 skill-seekers package output/django/ --target claude
 ```
 
 ---
 
-## What You Learned
+## 你学到了什么
 
-✅ **Create** - `skill-seekers create <source>` auto-detects and scrapes  
-✅ **Dry Run** - `--dry-run` previews without executing  
-✅ **Enhancement** - AI automatically improves SKILL.md quality  
+✅ **Create** - `skill-seekers create <source>` 自动检测并抓取  
+✅ **Dry Run** - `--dry-run` 预览而不执行  
+✅ **Enhancement** - AI 自动提升 SKILL.md 质量  
 ✅ **Package** - `skill-seekers package <dir> --target <platform>`  
-✅ **Upload** - Direct upload or manual import  
+✅ **Upload** - 直接上传或手动导入  
 
 ---
 
-## Common Variations
+## 常见变体
 
-### GitHub Repository
+### GitHub 仓库
 
 ```bash
 skill-seekers create facebook/react --name react
 skill-seekers package output/react/ --target claude
 ```
 
-### Local Project
+### 本地项目
 
 ```bash
 cd ~/projects/my-api
@@ -315,52 +315,52 @@ skill-seekers create . --name my-api
 skill-seekers package output/my-api/ --target claude
 ```
 
-### PDF Document
+### PDF 文档
 
 ```bash
 skill-seekers create manual.pdf --name docs
 skill-seekers package output/docs/ --target claude
 ```
 
-### Multi-Platform
+### 多平台
 
 ```bash
-# Create once
+# 创建一次
 skill-seekers create https://docs.djangoproject.com/ --name django
 
-# Package for multiple platforms
+# 打包到多个平台
 skill-seekers package output/django/ --target claude
 skill-seekers package output/django/ --target gemini
 skill-seekers package output/django/ --target openai
 
-# Upload to each
+# 上传到每个平台
 skill-seekers upload output/django-claude.zip --target claude
 skill-seekers upload output/django-gemini.tar.gz --target gemini
 ```
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Scraping Interrupted
+### 抓取中断
 
 ```bash
-# Resume from checkpoint
+# 从检查点恢复
 skill-seekers resume --list
 skill-seekers resume <job-id>
 ```
 
-### Too Many Pages
+### 页面过多
 
 ```bash
-# Limit pages
+# 限制页面数
 skill-seekers create https://docs.djangoproject.com/ --max-pages 100
 ```
 
-### Wrong Content Extracted
+### 提取了错误的内容
 
 ```bash
-# Use custom config with selectors
+# 使用带有选择器的自定义配置
 cat > configs/django.json << 'EOF'
 {
   "name": "django",
@@ -376,21 +376,21 @@ skill-seekers create --config configs/django.json
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Next Steps](04-next-steps.md) - Where to go from here
-- [Core Concepts](../user-guide/01-core-concepts.md) - Understand the system
-- [Scraping Guide](../user-guide/02-scraping.md) - Advanced scraping options
-- [Enhancement Guide](../user-guide/03-enhancement.md) - AI enhancement deep dive
+- [下一步](04-next-steps.md) - 从这里去哪里
+- [核心概念](../user-guide/01-core-concepts.md) - 了解系统
+- [抓取指南](../user-guide/02-scraping.md) - 高级抓取选项
+- [增强指南](../user-guide/03-enhancement.md) - AI 增强深入探讨
 
 ---
 
-## Summary
+## 总结
 
-| Step | Command | Time |
+| 步骤 | 命令 | 时间 |
 |------|---------|------|
-| 1 | `skill-seekers create https://docs.djangoproject.com/` | ~15 min |
-| 2 | `skill-seekers package output/django/ --target claude` | ~5 sec |
-| 3 | `skill-seekers upload output/django-claude.zip` | ~10 sec |
+| 1 | `skill-seekers create https://docs.djangoproject.com/` | ~15 分钟 |
+| 2 | `skill-seekers package output/django/ --target claude` | ~5 秒 |
+| 3 | `skill-seekers upload output/django-claude.zip` | ~10 秒 |
 
-**Total:** ~15 minutes to a production-ready AI skill! 🎉
+**总计：** ~15 分钟获得一个可用于生产环境的 AI skill！🎉

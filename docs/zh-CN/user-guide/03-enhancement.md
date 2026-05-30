@@ -1,175 +1,175 @@
-# Enhancement Guide
+# 增强指南
 
-> **Skill Seekers v3.1.0**  
-> **AI-powered quality improvement for skills**
+> **Skill Seekers v3.6.0**
+> **AI 驱动的 skill 质量提升**
 
 ---
 
-## What is Enhancement?
+## 什么是增强？
 
-Enhancement uses AI to improve the quality of generated SKILL.md files:
+增强使用 AI 来提升生成的 SKILL.md 文件的质量：
 
 ```
-Basic SKILL.md ──▶ AI Enhancer ──▶ Enhanced SKILL.md
-(100 lines)         (60 sec)        (400+ lines)
+基础 SKILL.md ──▶ AI 增强器 ──▶ 增强后的 SKILL.md
+(100 行)         (60 秒)        (400+ 行)
      ↓                                  ↓
-  Sparse                          Comprehensive
-  examples                        with patterns,
-                                  navigation, depth
+  稀疏的                          全面的
+  示例                            包含模式、
+                                  导航和深度内容
 ```
 
 ---
 
-## Enhancement Levels
+## 增强级别
 
-Choose how much enhancement to apply:
+选择应用多少增强：
 
-| Level | What Happens | Time | Cost |
+| 级别 | 效果 | 时间 | 费用 |
 |-------|--------------|------|------|
-| **0** | No enhancement | 0 sec | Free |
-| **1** | SKILL.md only | ~30 sec | Low |
-| **2** | + architecture/config | ~60 sec | Medium |
-| **3** | Full enhancement | ~2 min | Higher |
+| **0** | 不增强 | 0 秒 | 免费 |
+| **1** | 仅 SKILL.md | ~30 秒 | 低 |
+| **2** | + 架构/配置 | ~60 秒 | 中等 |
+| **3** | 完全增强 | ~2 分钟 | 较高 |
 
-**Default:** Level 2 (recommended balance)
+**默认：** Level 2（推荐的平衡点）
 
 ---
 
-## Enhancement Modes
+## 增强模式
 
-### API Mode (Default if key available)
+### API 模式（如果密钥可用则默认）
 
-Uses Claude API for fast enhancement.
+使用 Claude API 进行快速增强。
 
-**Requirements:**
+**要求：**
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-**Usage:**
+**用法：**
 ```bash
-# Auto-detects API mode
+# 自动检测 API 模式
 skill-seekers create <source>
 
-# Explicit
+# 显式指定
 skill-seekers enhance output/my-skill/ --agent api
 ```
 
-**Pros:**
-- Fast (~60 seconds)
-- No local setup needed
+**优点：**
+- 快速（~60 秒）
+- 无需本地设置
 
-**Cons:**
-- Costs ~$0.10-0.30 per skill
-- Requires API key
+**缺点：**
+- 每个 skill 费用约 $0.10-0.30
+- 需要 API key
 
 ---
 
-### LOCAL Mode (Default if no key)
+### LOCAL 模式（无密钥则默认）
 
-Uses Claude Code (free with Max plan).
+使用 Claude Code（Max 套餐免费）。
 
-**Requirements:**
-- Claude Code installed
-- Claude Code Max subscription
+**要求：**
+- 已安装 Claude Code
+- Claude Code Max 订阅
 
-**Usage:**
+**用法：**
 ```bash
-# Auto-detects LOCAL mode (no API key)
+# 自动检测 LOCAL 模式（无 API key）
 skill-seekers create <source>
 
-# Explicit
+# 显式指定
 skill-seekers enhance output/my-skill/ --agent local
 ```
 
-**Pros:**
-- Free (with Claude Code Max)
-- Better quality (full context)
+**优点：**
+- 免费（使用 Claude Code Max）
+- 更好的质量（完整上下文）
 
-**Cons:**
-- Requires Claude Code
-- Slightly slower (~60-120 sec)
+**缺点：**
+- 需要 Claude Code
+- 稍慢（~60-120 秒）
 
 ---
 
-## How to Enhance
+## 如何增强
 
-### During Creation
+### 创建期间
 
 ```bash
-# Default enhancement (level 2)
+# 默认增强（level 2）
 skill-seekers create <source>
 
-# No enhancement (fastest)
+# 不增强（最快）
 skill-seekers create <source> --enhance-level 0
 
-# Maximum enhancement
+# 最大增强
 skill-seekers create <source> --enhance-level 3
 ```
 
-### After Creation
+### 创建之后
 
 ```bash
-# Enhance existing skill
+# 增强现有 skill
 skill-seekers enhance output/my-skill/
 
-# With specific agent
+# 使用特定 agent
 skill-seekers enhance output/my-skill/ --agent local
 
-# With timeout
+# 设置超时
 skill-seekers enhance output/my-skill/ --timeout 1200
 ```
 
-### Background Mode
+### 后台模式
 
 ```bash
-# Run in background
+# 后台运行
 skill-seekers enhance output/my-skill/ --background
 
-# Check status
+# 检查状态
 skill-seekers enhance-status output/my-skill/
 
-# Watch in real-time
+# 实时查看
 skill-seekers enhance-status output/my-skill/ --watch
 ```
 
 ---
 
-## Enhancement Workflows
+## 增强工作流
 
-Apply specialized AI analysis with preset workflows.
+使用预设工作流应用专门的 AI 分析。
 
-### Built-in Presets
+### 内置预设
 
-| Preset | Stages | Focus |
+| 预设 | 阶段 | 重点 |
 |--------|--------|-------|
-| `default` | 2 | General improvement |
-| `minimal` | 1 | Light touch-up |
-| `security-focus` | 4 | Security analysis |
-| `architecture-comprehensive` | 7 | Deep architecture |
-| `api-documentation` | 3 | API docs focus |
+| `default` | 2 | 通用改进 |
+| `minimal` | 1 | 轻度润色 |
+| `security-focus` | 4 | 安全分析 |
+| `architecture-comprehensive` | 7 | 深度架构 |
+| `api-documentation` | 3 | API 文档重点 |
 
-### Using Workflows
+### 使用工作流
 
 ```bash
-# Apply workflow
+# 应用工作流
 skill-seekers create <source> --enhance-workflow security-focus
 
-# Chain multiple workflows
+# 链式多个工作流
 skill-seekers create <source> \
   --enhance-workflow security-focus \
   --enhance-workflow api-documentation
 
-# List available
+# 列出可用工作流
 skill-seekers workflows list
 
-# Show workflow content
+# 显示工作流内容
 skill-seekers workflows show security-focus
 ```
 
-### Custom Workflows
+### 自定义工作流
 
-Create your own YAML workflow:
+创建你自己的 YAML 工作流：
 
 ```yaml
 # my-workflow.yaml
@@ -182,251 +182,251 @@ stages:
 ```
 
 ```bash
-# Add workflow
+# 添加工作流
 skill-seekers workflows add my-workflow.yaml
 
-# Use it
+# 使用它
 skill-seekers create <source> --enhance-workflow my-custom
 ```
 
 ---
 
-## What Enhancement Adds
+## 增强添加的内容
 
-### Level 1: SKILL.md Improvement
+### Level 1：SKILL.md 改进
 
-- Better structure and organization
-- Improved descriptions
-- Fixed formatting
-- Added navigation
+- 更好的结构和组织
+- 改进的描述
+- 修复格式
+- 添加导航
 
-### Level 2: Architecture & Config (Default)
+### Level 2：架构与配置（默认）
 
-Everything in Level 1, plus:
+Level 1 的所有内容，加上：
 
-- Architecture overview
-- Configuration examples
-- Pattern documentation
-- Best practices
+- 架构概述
+- 配置示例
+- 模式文档
+- 最佳实践
 
-### Level 3: Full Enhancement
+### Level 3：完全增强
 
-Everything in Level 2, plus:
+Level 2 的所有内容，加上：
 
-- Deep code examples
-- Common pitfalls
-- Performance tips
-- Integration guides
-
----
-
-## Enhancement Workflow Details
-
-### Security-Focus Workflow
-
-4 stages:
-1. **Security Overview** - Identify security features
-2. **Vulnerability Analysis** - Common issues
-3. **Best Practices** - Secure coding patterns
-4. **Compliance** - Security standards
-
-### Architecture-Comprehensive Workflow
-
-7 stages:
-1. **System Overview** - High-level architecture
-2. **Component Analysis** - Key components
-3. **Data Flow** - How data moves
-4. **Integration Points** - External connections
-5. **Scalability** - Performance considerations
-6. **Deployment** - Infrastructure
-7. **Maintenance** - Operational concerns
-
-### API-Documentation Workflow
-
-3 stages:
-1. **Endpoint Catalog** - All API endpoints
-2. **Request/Response** - Detailed examples
-3. **Error Handling** - Common errors
+- 深度代码示例
+- 常见陷阱
+- 性能提示
+- 集成指南
 
 ---
 
-## Monitoring Enhancement
+## 增强工作流详情
 
-### Check Status
+### Security-Focus 工作流
+
+4 个阶段：
+1. **安全概述** - 识别安全功能
+2. **漏洞分析** - 常见问题
+3. **最佳实践** - 安全编码模式
+4. **合规性** - 安全标准
+
+### Architecture-Comprehensive 工作流
+
+7 个阶段：
+1. **系统概述** - 高层架构
+2. **组件分析** - 关键组件
+3. **数据流** - 数据如何流动
+4. **集成点** - 外部连接
+5. **可扩展性** - 性能考虑
+6. **部署** - 基础设施
+7. **维护** - 运维问题
+
+### API-Documentation 工作流
+
+3 个阶段：
+1. **端点目录** - 所有 API 端点
+2. **请求/响应** - 详细示例
+3. **错误处理** - 常见错误
+
+---
+
+## 监控增强
+
+### 检查状态
 
 ```bash
-# Current status
+# 当前状态
 skill-seekers enhance-status output/my-skill/
 
-# JSON output (for scripting)
+# JSON 输出（用于脚本）
 skill-seekers enhance-status output/my-skill/ --json
 
-# Watch mode
+# 查看模式
 skill-seekers enhance-status output/my-skill/ --watch --interval 10
 ```
 
-### Process Status Values
+### 进程状态值
 
-| Status | Meaning |
+| 状态 | 含义 |
 |--------|---------|
-| `running` | Enhancement in progress |
-| `completed` | Successfully finished |
-| `failed` | Error occurred |
-| `pending` | Waiting to start |
+| `running` | 增强进行中 |
+| `completed` | 成功完成 |
+| `failed` | 发生错误 |
+| `pending` | 等待开始 |
 
 ---
 
-## When to Skip Enhancement
+## 何时跳过增强
 
-Skip enhancement when:
+在以下情况跳过增强：
 
-- **Testing:** Quick iteration during development
-- **Large batches:** Process many skills, enhance best ones later
-- **Custom processing:** You have your own enhancement pipeline
-- **Time critical:** Need results immediately
+- **测试：** 开发期间快速迭代
+- **批量处理：** 处理多个 skill，稍后增强最佳 skill
+- **自定义处理：** 你有自己的增强管道
+- **时间紧迫：** 需要立即获取结果
 
 ```bash
-# Skip during creation
+# 创建期间跳过
 skill-seekers create <source> --enhance-level 0
 
-# Enhance best ones later
+# 稍后增强最佳 skill
 skill-seekers enhance output/best-skill/
 ```
 
 ---
 
-## Enhancement Best Practices
+## 增强最佳实践
 
-### 1. Use Level 2 for Most Cases
+### 1. 大多数情况下使用 Level 2
 
 ```bash
-# Default is usually perfect
+# 默认值通常很合适
 skill-seekers create <source>
 ```
 
-### 2. Apply Domain-Specific Workflows
+### 2. 应用领域特定的工作流
 
 ```bash
-# Security review
+# 安全审查
 skill-seekers create <source> --enhance-workflow security-focus
 
-# API focus
+# API 重点
 skill-seekers create <source> --enhance-workflow api-documentation
 ```
 
-### 3. Chain for Comprehensive Analysis
+### 3. 链式组合以进行全面分析
 
 ```bash
-# Multiple perspectives
+# 多个视角
 skill-seekers create <source> \
   --enhance-workflow security-focus \
   --enhance-workflow architecture-comprehensive
 ```
 
-### 4. Use LOCAL Mode for Quality
+### 4. 使用 LOCAL 模式以获得质量
 
 ```bash
-# Better results with Claude Code
-export ANTHROPIC_API_KEY=""  # Unset to force LOCAL
+# 使用 Claude Code 获得更好结果
+export ANTHROPIC_API_KEY=""  # 取消设置以强制使用 LOCAL
 skill-seekers enhance output/my-skill/
 ```
 
-### 5. Enhance Iteratively
+### 5. 迭代增强
 
 ```bash
-# Create without enhancement
+# 创建时不增强
 skill-seekers create <source> --enhance-level 0
 
-# Review and enhance
+# 审查并增强
 skill-seekers enhance output/my-skill/
-# Review again...
-skill-seekers enhance output/my-skill/  # Run again for more polish
+# 再次审查...
+skill-seekers enhance output/my-skill/  # 再次运行以进一步润色
 ```
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### "Enhancement failed: No API key"
+### "增强失败：无 API key"
 
-**Solution:**
+**解决方案：**
 ```bash
-# Set API key
+# 设置 API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# Or use LOCAL mode
+# 或使用 LOCAL 模式
 skill-seekers enhance output/my-skill/ --agent local
 ```
 
-### "Enhancement timeout"
+### "增强超时"
 
-**Solution:**
+**解决方案：**
 ```bash
-# Increase timeout
+# 增加超时
 skill-seekers enhance output/my-skill/ --timeout 1200
 
-# Or use background mode
+# 或使用后台模式
 skill-seekers enhance output/my-skill/ --background
 ```
 
-### "Claude Code not found" (LOCAL mode)
+### "未找到 Claude Code"（LOCAL 模式）
 
-**Solution:**
+**解决方案：**
 ```bash
-# Install Claude Code
-# See: https://claude.ai/code
+# 安装 Claude Code
+# 参见: https://claude.ai/code
 
-# Or switch to API mode
+# 或切换到 API 模式
 export ANTHROPIC_API_KEY=sk-ant-...
 skill-seekers enhance output/my-skill/ --agent api
 ```
 
-### "Workflow not found"
+### "未找到工作流"
 
-**Solution:**
+**解决方案：**
 ```bash
-# List available workflows
+# 列出可用工作流
 skill-seekers workflows list
 
-# Check spelling
+# 检查拼写
 skill-seekers create <source> --enhance-workflow security-focus
 ```
 
 ---
 
-## Cost Estimation
+## 费用估算
 
-### API Mode Costs
+### API 模式费用
 
-| Skill Size | Level 1 | Level 2 | Level 3 |
+| Skill 大小 | Level 1 | Level 2 | Level 3 |
 |------------|---------|---------|---------|
-| Small (< 50 pages) | $0.02 | $0.05 | $0.10 |
-| Medium (50-200 pages) | $0.05 | $0.10 | $0.20 |
-| Large (200-500 pages) | $0.10 | $0.20 | $0.40 |
+| 小型 (< 50 页) | $0.02 | $0.05 | $0.10 |
+| 中型 (50-200 页) | $0.05 | $0.10 | $0.20 |
+| 大型 (200-500 页) | $0.10 | $0.20 | $0.40 |
 
-*Costs are approximate and depend on actual content.*
+*费用为近似值，取决于实际内容。*
 
-### LOCAL Mode Costs
+### LOCAL 模式费用
 
-Free with Claude Code Max subscription (~$20/month).
+使用 Claude Code Max 订阅免费（约 $20/月）。
 
 ---
 
-## Summary
+## 总结
 
-| Approach | When to Use |
+| 方法 | 何时使用 |
 |----------|-------------|
-| **Level 0** | Testing, batch processing |
-| **Level 2 (default)** | Most use cases |
-| **Level 3** | Maximum quality needed |
-| **API Mode** | Speed, no Claude Code |
-| **LOCAL Mode** | Quality, free with Max |
-| **Workflows** | Domain-specific needs |
+| **Level 0** | 测试、批量处理 |
+| **Level 2 (默认)** | 大多数使用场景 |
+| **Level 3** | 需要最高质量 |
+| **API 模式** | 速度优先，无 Claude Code |
+| **LOCAL 模式** | 质量优先，Max 套餐免费 |
+| **工作流** | 领域特定需求 |
 
 ---
 
-## Next Steps
+## 下一步
 
-- [Workflows Guide](05-workflows.md) - Custom workflow creation
-- [Packaging Guide](04-packaging.md) - Export enhanced skills
-- [MCP Reference](../reference/MCP_REFERENCE.md) - Enhancement via MCP
+- [工作流指南](05-workflows.md) - 自定义工作流创建
+- [打包指南](04-packaging.md) - 导出增强后的 skill
+- [MCP Reference](../reference/MCP_REFERENCE.md) - 通过 MCP 增强

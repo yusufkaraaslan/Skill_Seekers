@@ -116,35 +116,35 @@ pip3 install requests beautifulsoup4
 
 ### Run with a preset configuration
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json
-python3 cli/doc_scraper.py --config configs/react.json
-python3 cli/doc_scraper.py --config configs/vue.json
-python3 cli/doc_scraper.py --config configs/django.json
-python3 cli/doc_scraper.py --config configs/fastapi.json
+skill-seekers create --config configs/godot.json
+skill-seekers create --config configs/react.json
+skill-seekers create --config configs/vue.json
+skill-seekers create --config configs/django.json
+skill-seekers create --config configs/fastapi.json
 ```
 
 ### Interactive mode (for new frameworks)
 ```bash
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 ```
 
 ### Quick mode (minimal config)
 ```bash
-python3 cli/doc_scraper.py --name react --url https://react.dev/ --description "React framework"
+skill-seekers create --name react --url https://react.dev/ --description "React framework"
 ```
 
 ### Skip scraping (use cached data)
 ```bash
-python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+skill-seekers create --config configs/godot.json --skip-scrape
 ```
 
 ### Resume interrupted scrapes
 ```bash
 # If scrape was interrupted
-python3 cli/doc_scraper.py --config configs/godot.json --resume
+skill-seekers create --config configs/godot.json --resume
 
 # Start fresh (clear checkpoint)
-python3 cli/doc_scraper.py --config configs/godot.json --fresh
+skill-seekers create --config configs/godot.json --fresh
 ```
 
 ### Large documentation (10K-40K+ pages)
@@ -167,10 +167,10 @@ python3 cli/package_multi.py output/godot*/
 # Option 1: During scraping (API-based, requires ANTHROPIC_API_KEY)
 pip3 install anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
-python3 cli/doc_scraper.py --config configs/react.json --enhance
+skill-seekers create --config configs/react.json --enhance
 
 # Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-python3 cli/doc_scraper.py --config configs/react.json --enhance-local
+skill-seekers create --config configs/react.json --enhance-local
 
 # Option 3: Standalone after scraping (API-based)
 python3 cli/enhance_skill.py output/react/
@@ -385,7 +385,7 @@ Config files in `configs/*.json` contain:
 ### First time scraping (with scraping)
 ```bash
 # 1. Scrape + Build
-python3 cli/doc_scraper.py --config configs/godot.json
+skill-seekers create --config configs/godot.json
 # Time: 20-40 minutes
 
 # 2. Package
@@ -397,7 +397,7 @@ python3 cli/package_skill.py output/godot/
 ### Using cached data (fast iteration)
 ```bash
 # 1. Use existing data
-python3 cli/doc_scraper.py --config configs/godot.json --skip-scrape
+skill-seekers create --config configs/godot.json --skip-scrape
 # Time: 1-3 minutes
 
 # 2. Package
@@ -407,12 +407,12 @@ python3 cli/package_skill.py output/godot/
 ### Creating a new framework config
 ```bash
 # Option 1: Interactive
-python3 cli/doc_scraper.py --interactive
+skill-seekers create --interactive
 
 # Option 2: Copy and modify
 cp configs/react.json configs/myframework.json
 # Edit configs/myframework.json
-python3 cli/doc_scraper.py --config configs/myframework.json
+skill-seekers create --config configs/myframework.json
 ```
 
 ### Large documentation workflow (40K pages)
@@ -427,7 +427,7 @@ python3 cli/split_config.py configs/godot.json --strategy router --target-pages 
 
 # 3. Scrape all in parallel (4-8 hours instead of 20-40!)
 for config in configs/godot-*.json; do
-  python3 cli/doc_scraper.py --config $config &
+  skill-seekers create --config $config &
 done
 wait
 
