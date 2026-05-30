@@ -332,6 +332,7 @@ class TestScrapingTools:
 
         assert isinstance(result, str)
 
+    @pytest.mark.network
     async def test_scrape_github_basic(self):
         """Test basic GitHub scraping."""
         with patch("subprocess.run") as mock_run:
@@ -343,6 +344,7 @@ class TestScrapingTools:
 
             assert isinstance(result, str)
 
+    @pytest.mark.network
     async def test_scrape_github_with_token(self):
         """Test GitHub scraping with authentication token."""
         result = await server_fastmcp.scrape_github(

@@ -96,6 +96,8 @@ jobs:
     - name: Run serial/integration/E2E tests
       run: |
         python -m pytest tests/ \
+          --ignore=tests/test_bootstrap_skill_e2e.py \
+          --ignore=tests/test_bootstrap_skill.py \
           -m "integration or e2e or slow or network or serial" \
           -v --timeout=300
       timeout-minutes: 25
@@ -140,6 +142,14 @@ jobs:
           fi
           if [ "${{ needs.test-fast.result }}" != "success" ]; then
             echo "❌ Fast tests failed!"
+            exit 1
+          fi
+          if [ "${{ needs.test-serial.result }}" == "failure" ]; then
+            echo "❌ Serial/integration tests failed!"
+            exit 1
+          fi
+          if [ "${{ needs.test-mcp.result }}" == "failure" ]; then
+            echo "❌ MCP tests failed!"
             exit 1
           fi
           echo "✅ All checks passed!"
