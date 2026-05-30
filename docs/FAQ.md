@@ -546,7 +546,7 @@ skill-seekers generate-router output/large-docs/
 
 **List all:**
 ```bash
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 ---

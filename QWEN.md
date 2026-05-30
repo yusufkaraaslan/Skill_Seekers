@@ -173,7 +173,7 @@ skill-seekers package output/react --target openai      # OpenAI
 skill-seekers package output/react --target cursor      # .cursorrules
 
 # Multi-source unified scraping
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create configs/react_unified.json
 ```
 
 ### All 20+ Commands
@@ -715,5 +715,5 @@ pytest tests/ --cov=src/skill_seekers
 # Usage
 skill-seekers create https://docs.python.org/
 skill-seekers package output/python --target claude
-skill-seekers unified --config configs/react_unified.json
+skill-seekers create configs/react_unified.json
 ```

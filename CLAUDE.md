@@ -59,7 +59,7 @@ Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **prima
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
 skill-seekers scan <dir>          # AI-driven discovery → emits one config per detected framework + <project>-codebase.json
-skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks, --format langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone)
+skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks/langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone/ibm-bob)
 ```
 
 ### Scan command (issue #327)
@@ -122,18 +122,18 @@ src/skill_seekers/cli/adaptors/
 ├── openrouter.py            # --target openrouter
 ├── together.py              # --target together
 ├── fireworks.py             # --target fireworks
-├── langchain.py             # --format langchain
-├── llama_index.py           # --format llama-index
-├── haystack.py              # --format haystack
-├── chroma.py                # --format chroma
-├── faiss_helpers.py         # --format faiss
-├── qdrant.py                # --format qdrant
-├── weaviate.py              # --format weaviate
-├── pinecone_adaptor.py      # --format pinecone
-└── streaming_adaptor.py     # --format streaming
+├── langchain.py             # --target langchain
+├── llama_index.py           # --target llama-index
+├── haystack.py              # --target haystack
+├── chroma.py                # --target chroma
+├── faiss_helpers.py         # --target faiss
+├── qdrant.py                # --target qdrant
+├── weaviate.py              # --target weaviate
+├── pinecone_adaptor.py      # --target pinecone
+└── streaming_adaptor.py     # --target streaming
 ```
 
-`--target` = LLM platforms, `--format` = RAG/vector DBs. All adaptors are imported with `try/except ImportError` so missing optional deps don't break the registry.
+All adaptors use `--target`. All adaptors are imported with `try/except ImportError` so missing optional deps don't break the registry.
 
 ### 18 Source Type Converters
 

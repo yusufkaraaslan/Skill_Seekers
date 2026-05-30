@@ -897,7 +897,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # すべてのプリセットを一覧表示
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | カテゴリ | プリセット |

@@ -1024,7 +1024,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # Lister tous les préréglages
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | Catégorie | Préréglages |

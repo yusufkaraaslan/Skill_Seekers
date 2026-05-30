@@ -30,7 +30,7 @@ When the user provides a source via `$ARGUMENTS`:
 
 ## Target Platforms
 
-`claude` (default), `openai`, `gemini`, `langchain`, `llamaindex`, `haystack`, `markdown`, `chroma`, `weaviate`, `faiss`, `qdrant`, `pinecone`, `deepseek`, `kimi`, `qwen`, `fireworks`, `openrouter`, `together`, `minimax`, `opencode`, `ibm-bob`
+`claude` (default), `openai`, `gemini`, `langchain`, `llama-index`, `haystack`, `markdown`, `chroma`, `weaviate`, `faiss`, `qdrant`, `pinecone`, `deepseek`, `kimi`, `qwen`, `fireworks`, `openrouter`, `together`, `minimax`, `opencode`, `ibm-bob`
 
 > **IDE-specific installs** (`cursor`, `windsurf`, `continue`, `cline`) are not standalone `--target` values. Use `skill-seekers install-agent` or manually copy the output from `--target markdown` or `--target claude`.
 

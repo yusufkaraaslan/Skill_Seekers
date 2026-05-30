@@ -899,7 +899,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # 모든 프리셋 나열
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | 카테고리 | 프리셋 |

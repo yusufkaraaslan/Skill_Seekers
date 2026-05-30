@@ -1019,7 +1019,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # सभी प्रीसेट सूचीबद्ध करें
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | श्रेणी | प्रीसेट |

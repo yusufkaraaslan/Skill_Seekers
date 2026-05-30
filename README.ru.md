@@ -897,7 +897,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # Список всех пресетов
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | Категория | Пресеты |

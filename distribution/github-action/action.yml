@@ -15,7 +15,7 @@ inputs:
     required: false
     default: 'create'
   target:
-    description: 'Output target platform: claude, openai, gemini, langchain, llamaindex, markdown, cursor, windsurf'
+    description: 'Output target platform: claude, openai, gemini, langchain, llama-index, markdown, cursor, windsurf'
     required: false
     default: 'claude'
   config:

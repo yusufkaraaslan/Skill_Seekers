@@ -897,7 +897,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # 列出所有预设
-skill-seekers list-configs
+skill-seekers create --list-configs
 ```
 
 | 类别 | 预设 |
