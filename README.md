@@ -6,7 +6,7 @@
 
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
-[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
@@ -341,24 +341,51 @@ skill-seekers package output/react/ --target markdown
 ```
 
 <details>
-<summary>🔧 <strong>Environment Variables for Claude-Compatible APIs (e.g., GLM-4.7)</strong></summary>
+<summary>🔧 <strong>Use your own AI provider (OpenAI-compatible endpoints + subscriptions, no Anthropic credits needed)</strong></summary>
 
-Skill Seekers supports any Claude-compatible API endpoint:
+The optional AI **enhancement** step (used by `create`, `scan`, and `enhance`) does **not** require an Anthropic key. You have three ways to power it:
+
+**1. Use a subscription you already pay for — no API credits at all (LOCAL agent mode)**
+
+Skill Seekers can shell out to a coding-agent CLI you're already logged into, so enhancement runs on your existing plan instead of metered API tokens:
 
 ```bash
-# Option 1: Official Anthropic API (default)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Option 2: GLM-4.7 Claude-compatible API
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# All AI enhancement features will use the configured endpoint
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → your ChatGPT Plus
+skill-seekers create <source> --agent claude    # Claude Code      → your Claude Pro/Max
 ```
 
-**Note**: Setting `ANTHROPIC_BASE_URL` allows you to use any Claude-compatible API endpoint, such as GLM-4.7 (智谱 AI) or other compatible services.
+Supported agents: `claude`, `codex`, `copilot`, `opencode`, `kimi`, and `custom`
+(pair `--agent custom` with `--agent-cmd "<your-cli> ..."` to drive any other tool).
+
+**2. Any OpenAI-compatible provider (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM, …)**
+
+All of these expose an OpenAI-compatible `/v1` endpoint. Point Skill Seekers at one with three env vars — it detects `OPENAI_API_KEY`, and the OpenAI SDK honors `OPENAI_BASE_URL` automatically:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # provider endpoint (see table)
+export OPENAI_MODEL="<a model that provider offers>"     # required — default gpt-4o won't exist elsewhere
+skill-seekers create <source>
+```
+
+| Provider     | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> Provider detection picks the **first** API-key env var it finds (`ANTHROPIC_API_KEY` → `MOONSHOT_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY`). If you want the OpenAI-compatible route, make sure the higher-priority keys are unset.
+
+**3. Claude-compatible endpoints (e.g. GLM, proxies)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+Google Gemini (`GOOGLE_API_KEY`) and Kimi/Moonshot (`MOONSHOT_API_KEY`) are also supported natively. See **[Environment Variables Reference](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)** for the full list, including per-provider model overrides.
 
 </details>
 
@@ -1101,7 +1128,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # List all presets
-# skill-seekers list-configs  # Not available in v3.6.0
+# skill-seekers list-configs  # Not available in v3.7.0
 ```
 
 | Category | Presets |

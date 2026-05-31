@@ -1,6 +1,6 @@
 # Environment Variables Reference - Skill Seekers
 
-> **Version:** 3.6.0  
+> **Version:** 3.7.0  
 > **Last Updated:** 2026-02-16  
 > **Complete environment variable reference**
 
@@ -11,6 +11,7 @@
 - [Overview](#overview)
 - [API Keys](#api-keys)
 - [Platform Configuration](#platform-configuration)
+- [LLM Provider Selection](#llm-provider-selection)
 - [Paths and Directories](#paths-and-directories)
 - [Scraping Behavior](#scraping-behavior)
 - [Enhancement Settings](#enhancement-settings)
@@ -75,17 +76,38 @@ export GOOGLE_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### OPENAI_API_KEY
 
-**Purpose:** OpenAI API access for upload and embeddings.
+**Purpose:** OpenAI (and OpenAI-compatible) API access for enhancement, upload, and embeddings.
 
 **Format:** `sk-...`
 
 **Used by:**
+- `skill-seekers create` / `scan` / `enhance` (AI enhancement, API mode)
 - `skill-seekers upload` (OpenAI target)
 - Embedding generation for vector DBs
 
 **Example:**
 ```bash
 export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+> Combine with `OPENAI_BASE_URL` + `OPENAI_MODEL` to route enhancement through any
+> OpenAI-compatible provider (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM).
+> See [LLM Provider Selection](#llm-provider-selection).
+
+---
+
+### MOONSHOT_API_KEY
+
+**Purpose:** Moonshot AI (Kimi) API access for enhancement (API mode).
+
+**Format:** `sk-...`
+
+**Used by:**
+- `skill-seekers create` / `scan` / `enhance` (enhancement, Kimi/Moonshot)
+
+**Example:**
+```bash
+export MOONSHOT_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ---
@@ -130,6 +152,61 @@ export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 **Example:**
 ```bash
 export ANTHROPIC_BASE_URL=https://custom-api.example.com
+```
+
+---
+
+### OPENAI_BASE_URL
+
+**Purpose:** Custom OpenAI-compatible API endpoint for enhancement.
+
+**Default:** `https://api.openai.com/v1`
+
+**Use case:** Any OpenAI-compatible provider — OpenRouter, Groq, Cerebras, Mistral,
+NVIDIA NIM, local servers (Ollama, vLLM, LM Studio), proxies.
+
+**Example:**
+```bash
+export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+```
+
+> Read automatically by the OpenAI SDK. Pair with `OPENAI_API_KEY` and `OPENAI_MODEL`.
+
+---
+
+## LLM Provider Selection
+
+The AI **enhancement** step (`create`, `scan`, `enhance`) supports multiple providers
+through one abstraction. The provider is chosen by the **first** API key found, in this
+order: `ANTHROPIC_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → `MOONSHOT_API_KEY` →
+`GOOGLE_API_KEY` → `OPENAI_API_KEY`. If none is set, it falls back to **LOCAL agent
+mode** (`--agent`, no API key required — uses your Claude Pro / ChatGPT Plus subscription).
+
+### Any OpenAI-compatible provider (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM)
+
+```bash
+export OPENAI_API_KEY="<provider key>"
+export OPENAI_BASE_URL="https://api.groq.com/openai/v1"   # provider endpoint
+export OPENAI_MODEL="llama-3.3-70b-versatile"             # a model that provider offers
+skill-seekers create <source>
+```
+
+| Provider     | `OPENAI_BASE_URL`                     |
+|--------------|---------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`        |
+| Groq         | `https://api.groq.com/openai/v1`      |
+| Cerebras     | `https://api.cerebras.ai/v1`          |
+| Mistral      | `https://api.mistral.ai/v1`           |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1` |
+
+> Set `OPENAI_MODEL` — the OpenAI default (`gpt-4o`) won't exist on other providers.
+> Ensure no higher-priority key (e.g. `ANTHROPIC_API_KEY`) is set, or it wins.
+
+### Subscriptions instead of API credits (LOCAL mode)
+
+```bash
+skill-seekers create <source> --agent codex    # ChatGPT Plus via Codex CLI
+skill-seekers create <source> --agent claude   # Claude Pro/Max via Claude Code
 ```
 
 ---
@@ -261,7 +338,7 @@ export SKILL_SEEKERS_TIMEOUT=60
 
 **Purpose:** Custom User-Agent header.
 
-**Default:** `Skill-Seekers/3.6.0`
+**Default:** `Skill-Seekers/3.7.0`
 
 **Example:**
 ```bash
@@ -291,36 +368,64 @@ export SKILL_SEEKER_AGENT=cursor
 
 ---
 
-### SKILL_SEEKERS_ENHANCE_TIMEOUT
+### SKILL_SEEKER_AGENT_CMD
 
-**Purpose:** Timeout for AI enhancement operations.
+**Purpose:** Custom CLI command template for `--agent custom` (LOCAL mode).
 
-**Default:** `600` (seconds = 10 minutes)
+**Used by:** `skill-seekers create` / `scan` / `enhance` when `SKILL_SEEKER_AGENT=custom`.
+
+**Example:**
+```bash
+export SKILL_SEEKER_AGENT=custom
+export SKILL_SEEKER_AGENT_CMD="my-llm-cli --prompt-file {prompt_file}"
+```
+
+---
+
+### SKILL_SEEKER_MODEL
+
+**Purpose:** Global model override for API-mode enhancement (wins over all
+per-provider model vars below).
+
+**Example:**
+```bash
+export SKILL_SEEKER_MODEL=llama-3.3-70b-versatile
+```
+
+---
+
+### Per-provider model overrides
+
+Used only when `SKILL_SEEKER_MODEL` is unset. Each falls back to a per-provider default.
+
+| Variable          | Provider           | Default (if unset)          |
+|-------------------|--------------------|-----------------------------|
+| `ANTHROPIC_MODEL` | Anthropic          | `claude-sonnet-4-20250514`  |
+| `OPENAI_MODEL`    | OpenAI/-compatible | `gpt-4o`                    |
+| `GOOGLE_MODEL`    | Gemini             | `gemini-2.0-flash`          |
+| `MOONSHOT_MODEL`  | Moonshot/Kimi      | `moonshot-v1-auto`          |
+
+```bash
+export OPENAI_MODEL=llama-3.3-70b-versatile
+```
+
+---
+
+### SKILL_SEEKER_ENHANCE_TIMEOUT
+
+**Purpose:** Timeout for AI enhancement operations (seconds).
+
+**Default:** `2700` (45 minutes)
+
+**Special values:** `unlimited`, `none`, or `0` map to a 24-hour ceiling.
 
 **Example:**
 ```bash
 # For large skills
-export SKILL_SEEKERS_ENHANCE_TIMEOUT=1200
-```
+export SKILL_SEEKER_ENHANCE_TIMEOUT=3600
 
-**Override:** Use `--timeout` flag.
-
----
-
-### ANTHROPIC_MODEL
-
-**Purpose:** Claude model for API enhancement.
-
-**Default:** `claude-3-5-sonnet-20241022`
-
-**Options:**
-- `claude-3-5-sonnet-20241022` (recommended)
-- `claude-3-opus-20240229` (highest quality, more expensive)
-- `claude-3-haiku-20240307` (fastest, cheapest)
-
-**Example:**
-```bash
-export ANTHROPIC_MODEL=claude-3-opus-20240229
+# No practical limit
+export SKILL_SEEKER_ENHANCE_TIMEOUT=unlimited
 ```
 
 ---
