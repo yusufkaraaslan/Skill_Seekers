@@ -50,7 +50,7 @@ Skill Seekers ist ein Multi-Repository-Projekt. Hier finden Sie alles:
 
 ## Die Datenschicht für KI-Systeme
 
-**Skill Seekers ist die universelle Vorverarbeitungsschicht**, die zwischen Rohdokumentation und jedem KI-System steht, das diese konsumiert. Ob Sie Claude-Skills, eine LangChain-RAG-Pipeline oder eine Cursor-`.cursorrules`-Datei erstellen — die Datenaufbereitung ist identisch. Sie führen sie einmal durch und exportieren für alle Zielplattformen.
+**Skill Seekers ist die universelle Vorverarbeitungsschicht**, die zwischen Rohdokumentation und jedem KI-System sthet, das diese konsumiert. Ob Sie Claude-Skills, eine LangChain-RAG-Pipeline oder eine Cursor-`.cursorrules`-Datei erstellen — die Datenaufbereitung ist identisch. Sie führen sie einmal durch und exportieren für alle Zielplattformen.
 
 ```bash
 # Ein Befehl → strukturierte Wissensressource
@@ -208,7 +208,7 @@ Anstatt tagelange manuelle Vorverarbeitung durchzuführen, erledigt Skill Seeker
 - **Transparente Berichte** - Nebeneinander-Vergleich mit Warnhinweisen
 - **Dokumentationslückenanalyse** - Erkennt veraltete Dokumentation und undokumentierte Funktionen
 - **Einzelne Wahrheitsquelle** - Ein Skill zeigt sowohl Absicht (Dokumentation) als auch Realität (Code)
-- **Abwärtskompatibel** - Bestehende Einzelquellen-Konfigurationen funktionieren weiterhin
+- **Abwärtskompatibel** - Bestheende Einzelquellen-Konfigurationen funktionieren weiterhin
 
 ### Multi-LLM-Plattformunterstützung
 - **21 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
@@ -216,7 +216,7 @@ Anstatt tagelange manuelle Vorverarbeitung durchzuführen, erledigt Skill Seeker
 - **Plattformspezifische Paketierung** - Optimierte Formate für jedes LLM
 - **Ein-Befehl-Export** - `--target`-Flag wählt die Plattform
 - **Optionale Abhängigkeiten** - Nur installieren, was Sie benötigen
-- **100 % abwärtskompatibel** - Bestehende Claude-Workflows bleiben unverändert
+- **100 % abwärtskompatibel** - Bestheende Claude-Workflows bleiben unverändert
 
 | Plattform | Format | Upload | Verbesserung | API Key | Benutzerdefinierter Endpunkt |
 |-----------|--------|--------|-------------|---------|------------------------------|
@@ -1132,7 +1132,7 @@ skill-seekers create https://docs.react.dev/ --preset comprehensive  # Tiefgehen
 skill-seekers create <source> --dry-run      # Vorschau ohne Scraping
 skill-seekers create <source> --fresh        # Cache ignorieren, vollständiges Re-Scraping
 skill-seekers create <source> --resume       # Unterbrochenen Job fortsetzen
-skill-seekers create <source> --skip-scrape  # Bestehende Ausgabe neu paketieren
+skill-seekers create <source> --skip-scrape  # Bestheende Ausgabe neu paketieren
 ```
 
 ### Health Check & Utilities
