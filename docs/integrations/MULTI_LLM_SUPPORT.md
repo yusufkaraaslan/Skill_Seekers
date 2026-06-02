@@ -159,7 +159,7 @@ pip install -e .[all-llms]
 - SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
 - Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
 - API: OpenAI-compatible chat completions
-- Enhancement: MiniMax-M2.7
+- Enhancement: MiniMax-M3 (M2.7 still selectable)
 
 **Generic Markdown:**
 - Format: ZIP archive
@@ -264,7 +264,7 @@ export MINIMAX_API_KEY=your-key
 # 1. Scrape (universal)
 skill-seekers create --config configs/react.json
 
-# 2. Enhance with MiniMax-M2.7
+# 2. Enhance with MiniMax-M3
 skill-seekers enhance output/react/ --target minimax
 
 # 3. Package for MiniMax
@@ -424,7 +424,7 @@ A: Yes, each platform uses its own enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
-- MiniMax: MiniMax-M2.7
+- MiniMax: MiniMax-M3
 
 **Q: What if I don't want to upload automatically?**
 

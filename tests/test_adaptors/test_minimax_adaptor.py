@@ -157,7 +157,7 @@ class TestMiniMaxAdaptor(unittest.TestCase):
                 metadata = json.loads(metadata_content)
                 self.assertEqual(metadata["platform"], "minimax")
                 self.assertEqual(metadata["name"], "test-skill")
-                self.assertEqual(metadata["model"], "MiniMax-M2.7")
+                self.assertEqual(metadata["model"], "MiniMax-M3")
                 self.assertIn("minimax", metadata["api_base"])
 
     def test_package_output_path_as_file(self):
@@ -335,7 +335,7 @@ class TestMiniMaxAdaptor(unittest.TestCase):
 
     def test_config_initialization(self):
         """Test adaptor initializes with config"""
-        config = {"custom_model": "MiniMax-M2.5"}
+        config = {"custom_model": "MiniMax-M2.7"}
         adaptor = get_adaptor("minimax", config)
         self.assertEqual(adaptor.config, config)
 

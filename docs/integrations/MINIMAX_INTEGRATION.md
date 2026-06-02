@@ -6,12 +6,12 @@ Complete guide for using Skill Seekers with MiniMax AI platform.
 
 ## Overview
 
-**MiniMax AI** is a Chinese AI company offering OpenAI-compatible APIs with their M2.7 model. Skill Seekers packages documentation for use with MiniMax's platform.
+**MiniMax AI** is a Chinese AI company offering OpenAI-compatible APIs with their flagship M3 model (M2.7 is still selectable). Skill Seekers packages documentation for use with MiniMax's platform.
 
 ### Key Features
 
 - **OpenAI-Compatible API**: Uses standard OpenAI client library
-- **MiniMax-M2.7 Model**: Powerful LLM for enhancement and chat
+- **MiniMax-M3 Model**: Powerful default LLM for enhancement and chat (M2.7 also supported via `--model`)
 - **Simple ZIP Format**: Easy packaging with system instructions
 - **Knowledge Files**: Reference documentation included in package
 
@@ -59,13 +59,13 @@ skill-seekers create --config configs/react.json
 skill-seekers create https://docs.python.org/3/ --preset quick
 ```
 
-### Step 2: Enhance with MiniMax-M2.7
+### Step 2: Enhance with MiniMax-M3
 
 ```bash
 # Enhance SKILL.md using MiniMax AI
 skill-seekers enhance output/react/ --target minimax
 
-# With custom model (if available)
+# With custom model (e.g. pinning the previous-generation M2.7)
 skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
 ```
 
@@ -73,7 +73,7 @@ This step:
 - Reads reference documentation
 - Generates enhanced system instructions
 - Creates backup of original SKILL.md
-- Uses MiniMax-M2.7 for AI enhancement
+- Uses MiniMax-M3 for AI enhancement by default
 
 ### Step 3: Package for MiniMax
 
@@ -138,7 +138,7 @@ client = OpenAI(
 
 # Use with chat completions
 response = client.chat.completions.create(
-    model="MiniMax-M2.7",
+    model="MiniMax-M3",
     messages=[
         {"role": "system", "content": system_instructions},
         {"role": "user", "content": "How do I create a React component?"}
@@ -174,7 +174,7 @@ context = "\n\n".join([f"## {kf['name']}\n{kf['content'][:5000]}"
                      for kf in knowledge_files[:5]])
 
 response = client.chat.completions.create(
-    model="MiniMax-M2.7",
+    model="MiniMax-M3",
     messages=[
         {"role": "system", "content": system_instructions},
         {"role": "user", "content": f"Context: {context}\n\nQuestion: What are React hooks?"}
@@ -325,7 +325,7 @@ skill-seekers package output/react/ --target minimax --output react-v2.0-minimax
 |---------|---------|--------|--------|--------|
 | **Format** | ZIP | ZIP | tar.gz | ZIP |
 | **Upload** | Validation | Full API | Full API | Full API |
-| **Enhancement** | MiniMax-M2.7 | Claude Sonnet | Gemini 2.0 | GPT-4o |
+| **Enhancement** | MiniMax-M3 | Claude Sonnet | Gemini 2.0 | GPT-4o |
 | **API Type** | OpenAI-compatible | Anthropic | Google | OpenAI |
 | **Key Format** | JWT (eyJ...) | sk-ant... | AIza... | sk-... |
 | **Knowledge Files** | Included in ZIP | Included | Included | Vector Store |
