@@ -219,6 +219,47 @@ class TestOpenAICompatibleBase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             self.assertFalse(self.adaptor.enhance(Path(temp_dir), "key"))
 
+    @patch("openai.OpenAI")
+    def test_enhance_uses_default_model_when_no_custom_model(self, mock_openai_class):
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Enhanced"
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            skill_dir = Path(temp_dir)
+            (skill_dir / "references").mkdir()
+            (skill_dir / "references" / "test.md").write_text("# Test\nContent")
+            (skill_dir / "SKILL.md").write_text("Original")
+
+            ConcreteTestAdaptor().enhance(skill_dir, "test-api-key")
+
+        called_model = mock_client.chat.completions.create.call_args.kwargs["model"]
+        self.assertEqual(called_model, "test-model-v1")
+
+    @patch("openai.OpenAI")
+    def test_enhance_honors_custom_model_from_config(self, mock_openai_class):
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Enhanced"
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+
+        adaptor = ConcreteTestAdaptor({"custom_model": "test-model-v2"})
+        with tempfile.TemporaryDirectory() as temp_dir:
+            skill_dir = Path(temp_dir)
+            (skill_dir / "references").mkdir()
+            (skill_dir / "references" / "test.md").write_text("# Test\nContent")
+            (skill_dir / "SKILL.md").write_text("Original")
+
+            adaptor.enhance(skill_dir, "test-api-key")
+
+        called_model = mock_client.chat.completions.create.call_args.kwargs["model"]
+        self.assertEqual(called_model, "test-model-v2")
+
 
 if __name__ == "__main__":
     unittest.main()

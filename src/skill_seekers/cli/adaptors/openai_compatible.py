@@ -36,6 +36,10 @@ class OpenAICompatibleAdaptor(SkillAdaptor):
     ENV_VAR_NAME = ""
     PLATFORM_URL = ""
 
+    def _resolve_model(self) -> str:
+        """Model to use: ``config['custom_model']`` if set, else DEFAULT_MODEL."""
+        return self.config.get("custom_model") or self.DEFAULT_MODEL
+
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
         Format SKILL.md as system instructions (no YAML frontmatter).
@@ -148,7 +152,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 "name": skill_dir.name,
                 "version": "1.0.0",
                 "created_with": "skill-seekers",
-                "model": self.DEFAULT_MODEL,
+                "model": self._resolve_model(),
                 "api_base": self.DEFAULT_API_ENDPOINT,
             }
 
@@ -315,7 +319,8 @@ Always prioritize accuracy by consulting the attached documentation files before
 
         prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
 
-        print(f"\nAsking {self.PLATFORM_NAME} ({self.DEFAULT_MODEL}) to enhance SKILL.md...")
+        model = self._resolve_model()
+        print(f"\nAsking {self.PLATFORM_NAME} ({model}) to enhance SKILL.md...")
         print(f"   Input: {len(prompt):,} characters")
 
         try:
@@ -325,7 +330,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             )
 
             response = client.chat.completions.create(
-                model=self.DEFAULT_MODEL,
+                model=model,
                 messages=[
                     {
                         "role": "system",
