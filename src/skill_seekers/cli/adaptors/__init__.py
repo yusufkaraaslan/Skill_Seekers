@@ -116,6 +116,11 @@ try:
 except ImportError:
     IBMBobAdaptor = None
 
+try:
+    from .atlas import AtlasAdaptor
+except ImportError:
+    AtlasAdaptor = None
+
 
 # Registry of available adaptors
 ADAPTORS: dict[str, type[SkillAdaptor]] = {}
@@ -163,6 +168,8 @@ if FireworksAdaptor:
     ADAPTORS["fireworks"] = FireworksAdaptor
 if IBMBobAdaptor:
     ADAPTORS["ibm-bob"] = IBMBobAdaptor
+if AtlasAdaptor:
+    ADAPTORS["atlas"] = AtlasAdaptor
 
 
 def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:

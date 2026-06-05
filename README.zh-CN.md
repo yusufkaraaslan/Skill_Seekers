@@ -25,6 +25,14 @@
 [![关注 Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
+
+> 🎁 **[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers)** 是全模态、OpenAI 兼容的 AI 推理平台（DeepSeek、Qwen、GLM、Kimi、MiniMax 等）。Skill Seekers 已支持把它作为打包/增强目标——用 `--target atlas` 并配置 `ATLAS_API_KEY`。详见 [多 LLM 支持](docs/integrations/MULTI_LLM_SUPPORT.md)。
+
 **🧠 AI 系统的数据层。** Skill Seekers 将文档网站、GitHub 仓库、PDF、视频、Jupyter 笔记本、Wiki 等 17 种以上来源类型转换为结构化知识资产——可在几分钟内为 AI 技能（Claude、Gemini、OpenAI）、RAG 流水线（LangChain、LlamaIndex、Pinecone）和 AI 编程助手（Cursor、Windsurf、Cline）提供支持。
 
 > 🌐 **[访问 SkillSeekersWeb.com](https://skillseekersweb.com/)** - 浏览 24+ 个预设配置，分享您的配置，访问完整文档！
