@@ -10,7 +10,6 @@ import os
 import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 try:
@@ -31,10 +30,9 @@ CLI_DIR = Path(__file__).parent.parent.parent / "cli"
 
 def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple[str, str, int]:
     """
-    Run subprocess with real-time output streaming.
+    Run subprocess w/o pipe buffering and real-time output streaming.
 
-    This solves the blocking issue where long-running processes (like scraping)
-    would cause MCP to appear frozen. Now we stream output as it comes.
+    Uses stdout/stderr threads to read output as it comes, preventing hanging on large outputs.
 
     Args:
         cmd: Command to run as list of strings
@@ -43,63 +41,42 @@ def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple[
     Returns:
         Tuple of (stdout, stderr, returncode)
     """
+    import threading
+
     try:
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=1,  # Line buffered
             universal_newlines=True,
         )
 
-        stdout_lines = []
-        stderr_lines = []
-        start_time = time.time()
+        stdout_lines: list[str] = []
+        stderr_lines: list[str] = []
 
-        # Read output line by line as it comes
-        while True:
-            # Check timeout
-            if timeout and (time.time() - start_time) > timeout:
-                process.kill()
-                stderr_lines.append(f"\n⚠️ Process killed after {timeout}s timeout")
-                break
+        def _read(stream, target: list[str]) -> None:
+            for line in stream:
+                target.append(line)
 
-            # Check if process finished
-            if process.poll() is not None:
-                break
+        t_out = threading.Thread(target=_read, args=(process.stdout, stdout_lines))
+        t_err = threading.Thread(target=_read, args=(process.stderr, stderr_lines))
+        t_out.daemon = True
+        t_err.daemon = True
+        t_out.start()
+        t_err.start()
 
-            # Read available output (non-blocking)
-            try:
-                import select
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()  # Ensure process has terminated
+            stderr_lines.append(f"\nTimeout: process killed after exceeding {timeout} seconds.")
 
-                readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
+        t_out.join()
+        t_err.join()
 
-                if process.stdout in readable:
-                    line = process.stdout.readline()
-                    if line:
-                        stdout_lines.append(line)
-
-                if process.stderr in readable:
-                    line = process.stderr.readline()
-                    if line:
-                        stderr_lines.append(line)
-            except Exception:
-                # Fallback for Windows (no select)
-                time.sleep(0.1)
-
-        # Get any remaining output
-        remaining_stdout, remaining_stderr = process.communicate()
-        if remaining_stdout:
-            stdout_lines.append(remaining_stdout)
-        if remaining_stderr:
-            stderr_lines.append(remaining_stderr)
-
-        stdout = "".join(stdout_lines)
-        stderr = "".join(stderr_lines)
-        returncode = process.returncode
-
-        return stdout, stderr, returncode
+        return "".join(stdout_lines), "".join(stderr_lines), process.returncode or 0
 
     except Exception as e:
         return "", f"Error running subprocess: {str(e)}", 1
