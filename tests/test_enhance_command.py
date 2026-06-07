@@ -276,6 +276,21 @@ class TestEnhanceArgumentParsing:
         with pytest.raises(SystemExit):
             parser.parse_args(["output/react", "--target", "notaplatform"])
 
+    def test_target_minimax_accepted(self, tmp_path):
+        """MiniMax (and other OpenAI-compatible adaptors) must be valid targets."""
+        args = self._parse(["output/react", "--target", "minimax"], tmp_path)
+        assert args.target == "minimax"
+
+    def test_model_flag_stored(self, tmp_path):
+        args = self._parse(
+            ["output/react", "--target", "minimax", "--model", "MiniMax-M2.7"], tmp_path
+        )
+        assert args.model == "MiniMax-M2.7"
+
+    def test_model_defaults_none(self, tmp_path):
+        args = self._parse(["output/react"], tmp_path)
+        assert args.model is None
+
 
 # ---------------------------------------------------------------------------
 # main() CLI integration — dry-run + root detection

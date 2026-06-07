@@ -157,7 +157,7 @@ class TestMiniMaxAdaptor(unittest.TestCase):
                 metadata = json.loads(metadata_content)
                 self.assertEqual(metadata["platform"], "minimax")
                 self.assertEqual(metadata["name"], "test-skill")
-                self.assertEqual(metadata["model"], "MiniMax-M2.7")
+                self.assertEqual(metadata["model"], "MiniMax-M3")
                 self.assertIn("minimax", metadata["api_base"])
 
     def test_package_output_path_as_file(self):
@@ -335,9 +335,37 @@ class TestMiniMaxAdaptor(unittest.TestCase):
 
     def test_config_initialization(self):
         """Test adaptor initializes with config"""
-        config = {"custom_model": "MiniMax-M2.5"}
+        config = {"custom_model": "MiniMax-M2.7"}
         adaptor = get_adaptor("minimax", config)
         self.assertEqual(adaptor.config, config)
+
+    def test_minimax_is_an_enhancement_platform(self):
+        """MiniMax must be selectable as an enhancement target (regression)."""
+        from skill_seekers.cli.adaptors import get_enhancement_platforms
+
+        self.assertIn("minimax", get_enhancement_platforms())
+
+    @patch("openai.OpenAI")
+    def test_enhance_honors_custom_model_pin(self, mock_openai_class):
+        """`--model MiniMax-M2.7` (config custom_model) must reach the API call."""
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Enhanced"
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+
+        adaptor = get_adaptor("minimax", {"custom_model": "MiniMax-M2.7"})
+        with tempfile.TemporaryDirectory() as temp_dir:
+            skill_dir = Path(temp_dir)
+            (skill_dir / "references").mkdir()
+            (skill_dir / "references" / "guide.md").write_text("# Guide\nContent")
+            (skill_dir / "SKILL.md").write_text("Original")
+
+            adaptor.enhance(skill_dir, "test-api-key")
+
+        called_model = mock_client.chat.completions.create.call_args.kwargs["model"]
+        self.assertEqual(called_model, "MiniMax-M2.7")
 
     def test_default_config(self):
         """Test adaptor initializes with empty config by default"""

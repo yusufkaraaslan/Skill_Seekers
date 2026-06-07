@@ -383,7 +383,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             client = OpenAI(api_key=api_key)
 
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=self.config.get("custom_model") or "gpt-4o",
                 messages=[
                     {
                         "role": "system",

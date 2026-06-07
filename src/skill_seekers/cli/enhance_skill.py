@@ -528,11 +528,19 @@ Examples:
     parser.add_argument(
         "--api-key", type=str, help="Platform API key (or set environment variable)"
     )
+    from skill_seekers.cli.adaptors import get_enhancement_platforms
+
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "kimi"],
+        choices=get_enhancement_platforms(),
         default=None,
         help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Override the enhancement model (e.g. 'MiniMax-M2.7'). Defaults to the platform default.",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without calling API"
@@ -579,7 +587,8 @@ Examples:
     try:
         from skill_seekers.cli.adaptors import get_adaptor
 
-        adaptor = get_adaptor(args.target)
+        adaptor_config = {"custom_model": args.model} if getattr(args, "model", None) else None
+        adaptor = get_adaptor(args.target, adaptor_config)
 
         if not adaptor.supports_enhancement():
             print(f"❌ Error: {adaptor.PLATFORM_NAME} does not support AI enhancement")

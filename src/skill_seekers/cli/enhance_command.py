@@ -122,6 +122,9 @@ def _run_api_mode(args, target: str) -> int:
     ]
     if api_key:
         argv.extend(["--api-key", api_key])
+    model = getattr(args, "model", None)
+    if model:
+        argv.extend(["--model", model])
     if getattr(args, "dry_run", False):
         argv.append("--dry-run")
 

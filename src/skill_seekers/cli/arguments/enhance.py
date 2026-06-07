@@ -21,8 +21,10 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
     "target": {
         "flags": ("--target",),
         "kwargs": {
+            # choices is filled at parser-build time from
+            # get_enhancement_platforms() so it can never drift from the
+            # adaptors that actually support enhancement.
             "type": str,
-            "choices": ["claude", "gemini", "openai", "kimi"],
             "help": (
                 "AI platform for enhancement (uses API mode). "
                 "Auto-detected from env vars if not specified: "
@@ -30,6 +32,18 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
                 "Falls back to LOCAL mode (AI coding agent) when no API keys are found."
             ),
             "metavar": "PLATFORM",
+        },
+    },
+    "model": {
+        "flags": ("--model",),
+        "kwargs": {
+            "type": str,
+            "help": (
+                "Override the enhancement model for the target platform "
+                "(API mode only), e.g. 'MiniMax-M2.7'. "
+                "Defaults to the platform's default model."
+            ),
+            "metavar": "MODEL",
         },
     },
     "api_key": {
@@ -113,8 +127,20 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
 
 
 def add_enhance_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add all enhance command arguments to a parser."""
+    """Add all enhance command arguments to a parser.
+
+    The ``--target`` choices are resolved dynamically from the adaptors that
+    report ``supports_enhancement()`` so newly added enhancement-capable
+    platforms (minimax, deepseek, qwen, ...) are accepted without touching
+    this list.
+    """
+    from skill_seekers.cli.adaptors import get_enhancement_platforms
+
+    enhancement_platforms = get_enhancement_platforms()
+
     for arg_name, arg_def in ENHANCE_ARGUMENTS.items():
         flags = arg_def["flags"]
-        kwargs = arg_def["kwargs"]
+        kwargs = dict(arg_def["kwargs"])
+        if arg_name == "target":
+            kwargs["choices"] = enhancement_platforms
         parser.add_argument(*flags, **kwargs)
