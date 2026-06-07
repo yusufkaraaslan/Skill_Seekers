@@ -8,9 +8,10 @@ Extracted from server.py for better modularity.
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
+
+from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
 try:
     from mcp.types import TextContent
@@ -26,60 +27,6 @@ except ImportError:
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
-
-
-def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple[str, str, int]:
-    """
-    Run subprocess w/o pipe buffering and real-time output streaming.
-
-    Uses stdout/stderr threads to read output as it comes, preventing hanging on large outputs.
-
-    Args:
-        cmd: Command to run as list of strings
-        timeout: Maximum time to wait in seconds (None for no timeout)
-
-    Returns:
-        Tuple of (stdout, stderr, returncode)
-    """
-    import threading
-
-    try:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            universal_newlines=True,
-        )
-
-        stdout_lines: list[str] = []
-        stderr_lines: list[str] = []
-
-        def _read(stream, target: list[str]) -> None:
-            for line in stream:
-                target.append(line)
-
-        t_out = threading.Thread(target=_read, args=(process.stdout, stdout_lines))
-        t_err = threading.Thread(target=_read, args=(process.stderr, stderr_lines))
-        t_out.daemon = True
-        t_err.daemon = True
-        t_out.start()
-        t_err.start()
-
-        try:
-            process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()  # Ensure process has terminated
-            stderr_lines.append(f"\nTimeout: process killed after exceeding {timeout} seconds.")
-
-        t_out.join()
-        t_err.join()
-
-        return "".join(stdout_lines), "".join(stderr_lines), process.returncode or 0
-
-    except Exception as e:
-        return "", f"Error running subprocess: {str(e)}", 1
 
 
 async def package_skill_tool(args: dict) -> list[TextContent]:
