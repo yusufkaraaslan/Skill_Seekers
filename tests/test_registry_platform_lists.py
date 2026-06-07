@@ -14,7 +14,6 @@ from skill_seekers.cli.adaptors import (
     get_adaptor,
     get_enhancement_platforms,
     get_upload_platforms,
-    list_platforms,
 )
 
 
