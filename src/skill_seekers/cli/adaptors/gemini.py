@@ -279,6 +279,10 @@ See the references directory for complete documentation with examples and best p
         """
         return "GOOGLE_API_KEY"
 
+    def supports_upload(self) -> bool:
+        """Gemini supports uploading skills via the Gemini API."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """
         Gemini supports AI enhancement via Gemini 2.5 Flash.

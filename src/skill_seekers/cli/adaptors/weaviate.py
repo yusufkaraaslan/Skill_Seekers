@@ -463,6 +463,10 @@ class WeaviateAdaptor(SkillAdaptor):
         """
         return ""
 
+    def supports_upload(self) -> bool:
+        """Weaviate supports pushing objects to a Weaviate instance."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """
         Weaviate format doesn't support AI enhancement.

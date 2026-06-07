@@ -154,6 +154,21 @@ class SkillAdaptor(ABC):
         """
         return False
 
+    def supports_upload(self) -> bool:
+        """
+        Whether this platform's ``upload()`` performs a real upload/push.
+
+        Default is False. Adaptors whose ``upload()`` only returns an
+        "unsupported" message (e.g. markdown, or vector-DB adaptors that direct
+        users to a client library) leave this False; only adaptors that actually
+        push to a remote platform override it to True. Used to derive the
+        ``--target`` choices for the upload command from the registry.
+
+        Returns:
+            True if platform can upload skills
+        """
+        return False
+
     def enhance(self, _skill_dir: Path, _api_key: str) -> bool:
         """
         Optionally enhance SKILL.md using platform's AI.

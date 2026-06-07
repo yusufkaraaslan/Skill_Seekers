@@ -119,9 +119,13 @@ Phases:
 
     parser.add_argument("--dry-run", action="store_true", help="Preview workflow without executing")
 
+    from skill_seekers.cli.adaptors import get_enhancement_platforms
+
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "kimi", "markdown"],
+        # install requires AI enhancement, so targets are the enhancement-capable
+        # platforms (derived from the registry) plus markdown (export-only).
+        choices=get_enhancement_platforms() + ["markdown"],
         default=None,
         help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
     )

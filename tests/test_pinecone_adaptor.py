@@ -858,11 +858,14 @@ class TestPineconeInPackageChoices:
     """Test pinecone is in package CLI choices."""
 
     def test_pinecone_in_package_arguments(self):
-        """pinecone is listed in package --target choices."""
-        from skill_seekers.cli.arguments.package import PACKAGE_ARGUMENTS
+        """pinecone is listed in package --target choices (now registry-derived)."""
+        import argparse
+        from skill_seekers.cli.arguments.package import add_package_arguments
 
-        choices = PACKAGE_ARGUMENTS["target"]["kwargs"]["choices"]
-        assert "pinecone" in choices
+        parser = argparse.ArgumentParser()
+        add_package_arguments(parser)
+        target = next(a for a in parser._actions if a.dest == "target")
+        assert "pinecone" in target.choices
 
 
 # ---------------------------------------------------------------------------

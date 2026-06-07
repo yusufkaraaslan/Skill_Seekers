@@ -307,6 +307,10 @@ version: {metadata.version}
         """
         return "ANTHROPIC_API_KEY"
 
+    def supports_upload(self) -> bool:
+        """Claude supports uploading skills via the Anthropic API."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """
         Claude supports AI enhancement via Anthropic API.

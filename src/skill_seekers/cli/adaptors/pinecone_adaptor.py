@@ -440,6 +440,10 @@ class PineconeAdaptor(SkillAdaptor):
         """Return the expected env var for Pinecone API key."""
         return "PINECONE_API_KEY"
 
+    def supports_upload(self) -> bool:
+        """Pinecone supports upserting vectors to a Pinecone index."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """Pinecone format doesn't support AI enhancement."""
         return False
