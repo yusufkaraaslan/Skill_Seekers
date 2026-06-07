@@ -1,6 +1,6 @@
 # Multi-Platform Upload Guide
 
-Skill Seekers supports uploading to **21 LLM platforms**: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown export.
+Skill Seekers supports automatic upload to **10 LLM platforms** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI — and to the **Chroma, Weaviate, and Pinecone** vector databases. The valid `--target` values are derived from the adaptor registry (`skill-seekers upload --help`). Generic Markdown is **export-only** (package it, no upload).
 
 ## Quick Platform Selection
 

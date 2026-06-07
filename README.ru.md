@@ -209,7 +209,7 @@ Skill Seekers заменяет дни ручной предобработки с
 - ✅ **Обратная совместимость** — устаревшие одноисточниковые конфигурации продолжают работать
 
 ### 🤖 Поддержка нескольких LLM-платформ
-- ✅ **21 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **12 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - ✅ **Универсальное сканирование** — одна и та же документация для всех платформ
 - ✅ **Платформоспецифичная упаковка** — оптимизированные форматы для каждой LLM
 - ✅ **Экспорт одной командой** — флаг `--target` для выбора платформы
@@ -596,7 +596,7 @@ skill-seekers install --config react --dry-run
 
 ## 📊 Матрица функций
 
-Skill Seekers поддерживает **21 LLM-платформ**, **18 типов источников** и полный паритет функций по всем целевым платформам.
+Skill Seekers поддерживает **12 LLM-платформ**, **18 типов источников** и полный паритет функций по всем целевым платформам.
 
 **Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Типы источников:** Документация сайтов, репозитории GitHub, PDF, Word (.docx), EPUB, видео, локальные кодовые базы, Jupyter-ноутбуки, локальный HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты чатов Slack/Discord

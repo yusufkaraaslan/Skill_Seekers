@@ -762,7 +762,7 @@ Agent: [Scraping internal documentation...]
 
 ### Example 4: Multi-Platform Support
 
-Skill Seekers supports packaging and uploading to 21 LLM platforms: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown.
+Skill Seekers supports packaging for **12 LLM platforms**: Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI, and Generic Markdown (export-only). Automatic upload is available for the API-backed LLM platforms (all of the above except OpenCode and Markdown) plus the Chroma, Weaviate, and Pinecone vector databases.
 
 ```
 User: Scrape docs using configs/react.json

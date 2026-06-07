@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.8.0.dev0_
 
+**Theme:** MiniMax-M3, model selection, and registry-driven platform targets — plus a Windows subprocess fix and codebase de-duplication.
+
+### Added
+- **`--model` flag for `enhance` and `package`** (#395, #398) — override the platform's default model, e.g. `skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7` or `skill-seekers package output/react/ --target minimax --model MiniMax-M2.7`. Honored uniformly across all enhancement adaptors and recorded in package metadata. Resurrects the previously-dead `custom_model` config key.
+- **MiniMax-M3 is the new default MiniMax model** (#395) — fresh `--target minimax` runs use M3; the previous-generation M2.7 remains selectable via `--model`. Docs (`MINIMAX_INTEGRATION.md`, `MULTI_LLM_SUPPORT.md`) refreshed.
+- **More enhancement targets** (#395) — `enhance --target` now accepts every enhancement-capable adaptor (adds `minimax`, `deepseek`, `qwen`, `openrouter`, `together`, `fireworks`); previously only `claude`/`gemini`/`openai`/`kimi` were reachable.
+- **More upload targets + `supports_upload()` capability** (#400) — `upload --target` now accepts every adaptor with a real upload, adding `minimax`, `deepseek`, `qwen`, `openrouter`, `together`, `fireworks`, and `pinecone`. New `supports_upload()` adaptor method and `get_upload_platforms()` helper.
+
+### Changed
+- **Platform `--target` choices are derived from the adaptor registry** (#400) — `enhance`, `upload`, `package`, and `install` now compute their choices from `get_enhancement_platforms()` / `get_upload_platforms()` / `list_platforms()` instead of hand-maintained lists, so newly registered adaptors appear automatically and the lists can no longer drift. Non-breaking (each new list is a superset of the old).
+
+### Fixed
+- **Windows: large subprocess output no longer freezes MCP tools** (#397) — `run_subprocess_with_streaming` replaced its `select()`-based polling loop (unsupported on Windows pipes) with reader threads, and now bounds the timeout reliably. Previously `scrape_docs`/`scrape_github` and other tools could deadlock on a full (>64 KB) pipe buffer on Windows. The fix is applied to the single shared implementation, so all callers benefit.
+
+### Internal
+- **De-duplicated copy-pasted code into shared modules** — `mcp/tools/subprocess_utils.py` (the streaming subprocess helper, #397), `mcp/tools/_common.py` (`TextContent` fallback + `CLI_DIR`, #401), and `cli/scraper_utils.py` (`score_code_quality` + `extract_table_from_html`, #402). Behavior preserved (parity-tested); ~hundreds of duplicated lines removed.
+
 ## [3.7.0] - 2026-05-30
 
 **Theme:** AI-driven project knowledge base (`skill-seekers scan`) — bootstrap a complete skill set for a project in one command, with safety/observability/coverage hardening throughout.
