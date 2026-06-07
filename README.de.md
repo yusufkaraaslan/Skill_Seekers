@@ -211,7 +211,7 @@ Anstatt tagelange manuelle Vorverarbeitung durchzuführen, erledigt Skill Seeker
 - **Abwärtskompatibel** - Bestheende Einzelquellen-Konfigurationen funktionieren weiterhin
 
 ### Multi-LLM-Plattformunterstützung
-- **21 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- **12 LLM-Plattformen** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 - **Universelles Scraping** - Dieselbe Dokumentation funktioniert für alle Plattformen
 - **Plattformspezifische Paketierung** - Optimierte Formate für jedes LLM
 - **Ein-Befehl-Export** - `--target`-Flag wählt die Plattform
@@ -598,7 +598,7 @@ Phase 5: Zu Claude hochladen (optional, erfordert API Key)
 
 ## Funktionsmatrix
 
-Skill Seekers unterstützt **21 LLM-Plattformen**, **18 Quelltypen** und vollständige Funktionsparität für alle Ziele.
+Skill Seekers unterstützt **12 LLM-Plattformen**, **18 Quelltypen** und vollständige Funktionsparität für alle Ziele.
 
 **Plattformen:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Generisches Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Quelltypen:** Dokumentationswebsites, GitHub-Repos, PDFs, Word (.docx), EPUB, Video, lokale Codebasen, Jupyter-Notebooks, lokales HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS-/Atom-Feeds, Man-Pages, Confluence-Wikis, Notion-Seiten, Slack-/Discord-Chatexporte
