@@ -26,6 +26,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Comment, Tag
 
 from .skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 logger = logging.getLogger(__name__)
 
@@ -1701,51 +1702,3 @@ class HtmlToSkillConverter(SkillConverter):
 # ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
-
-
-def _score_code_quality(code: str) -> float:
-    """Simple quality heuristic for code blocks (0-10 scale).
-
-    Scores based on line count, presence of definitions, imports,
-    indentation, and operator usage. Short snippets are penalized.
-
-    Args:
-        code: Source code string.
-
-    Returns:
-        Quality score between 0.0 and 10.0.
-    """
-    if not code:
-        return 0.0
-
-    score = 5.0
-    lines = code.strip().split("\n")
-    line_count = len(lines)
-
-    # More lines = more substantial
-    if line_count >= 10:
-        score += 2.0
-    elif line_count >= 5:
-        score += 1.0
-
-    # Has function/class definitions
-    if re.search(r"\b(def |class |function |func |fn )", code):
-        score += 1.5
-
-    # Has imports/require
-    if re.search(r"\b(import |from .+ import|require\(|#include|using )", code):
-        score += 0.5
-
-    # Has indentation (structured code)
-    if re.search(r"^    ", code, re.MULTILINE):
-        score += 0.5
-
-    # Has assignment, operators, or common code syntax
-    if re.search(r"[=:{}()\[\]]", code):
-        score += 0.3
-
-    # Very short snippets get penalized
-    if len(code) < 30:
-        score -= 2.0
-
-    return min(10.0, max(0.0, score))
