@@ -42,6 +42,7 @@ def package_skill(
     open_folder_after=True,
     skip_quality_check=False,
     target="claude",
+    model=None,
     streaming=False,
     chunk_size=4000,
     chunk_overlap=200,
@@ -59,6 +60,7 @@ def package_skill(
         open_folder_after: Whether to open the output folder after packaging
         skip_quality_check: Skip quality checks before packaging
         target: Target LLM platform ('claude', 'gemini', 'openai', 'markdown')
+        model: Override the model recorded in package metadata (platform default if None)
         streaming: Use streaming ingestion for large docs
         chunk_size: Maximum characters per chunk (streaming mode)
         chunk_overlap: Overlap between chunks (streaming mode)
@@ -106,7 +108,7 @@ def package_skill(
     try:
         from skill_seekers.cli.adaptors import get_adaptor
 
-        adaptor = get_adaptor(target)
+        adaptor = get_adaptor(target, {"custom_model": model} if model else None)
     except (ImportError, ValueError) as e:
         print(f"❌ Error: {e}")
         return False, None
@@ -231,6 +233,7 @@ Examples:
         open_folder_after=not args.no_open,
         skip_quality_check=args.skip_quality_check,
         target=args.target,
+        model=args.model,
         streaming=args.streaming,
         chunk_size=args.streaming_chunk_chars,
         chunk_overlap=args.streaming_overlap_chars,
@@ -250,7 +253,7 @@ Examples:
             from skill_seekers.cli.adaptors import get_adaptor
 
             # Get adaptor for target platform
-            adaptor = get_adaptor(args.target)
+            adaptor = get_adaptor(args.target, {"custom_model": args.model} if args.model else None)
 
             # Get API key from environment
             api_key = os.environ.get(adaptor.get_env_var_name(), "").strip()

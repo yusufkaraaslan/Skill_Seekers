@@ -81,8 +81,8 @@ This step:
 # Package as MiniMax-compatible ZIP
 skill-seekers package output/react/ --target minimax
 
-# Custom output path
-skill-seekers package output/react/ --target minimax --output my-skill.zip
+# Pin a specific model in the package metadata (default: MiniMax-M3)
+skill-seekers package output/react/ --target minimax --model MiniMax-M2.7
 ```
 
 **Output structure:**

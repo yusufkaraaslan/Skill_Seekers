@@ -73,6 +73,55 @@ class TestPackageSkill(unittest.TestCase):
                 self.assertTrue(any("references/index.md" in name for name in names))
                 self.assertTrue(any("references/getting_started.md" in name for name in names))
 
+    def test_package_model_override_recorded_in_metadata(self):
+        """`package --target minimax --model X` records X in the package metadata."""
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = self.create_test_skill_directory(tmpdir)
+
+            success, zip_path = package_skill(
+                skill_dir,
+                open_folder_after=False,
+                skip_quality_check=True,
+                target="minimax",
+                model="MiniMax-M2.7",
+            )
+
+            self.assertTrue(success)
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                metadata = json.loads(zf.read("minimax_metadata.json").decode("utf-8"))
+            self.assertEqual(metadata["model"], "MiniMax-M2.7")
+
+    def test_package_default_model_when_no_override(self):
+        """Without --model, the package metadata keeps the platform default."""
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = self.create_test_skill_directory(tmpdir)
+
+            success, zip_path = package_skill(
+                skill_dir,
+                open_folder_after=False,
+                skip_quality_check=True,
+                target="minimax",
+            )
+
+            self.assertTrue(success)
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                metadata = json.loads(zf.read("minimax_metadata.json").decode("utf-8"))
+            self.assertEqual(metadata["model"], "MiniMax-M3")
+
+    def test_package_arguments_accept_model_flag(self):
+        """The package CLI parser exposes --model."""
+        import argparse
+        from skill_seekers.cli.arguments.package import add_package_arguments
+
+        parser = argparse.ArgumentParser()
+        add_package_arguments(parser)
+        args = parser.parse_args(["output/react", "--target", "minimax", "--model", "MiniMax-M2.7"])
+        self.assertEqual(args.model, "MiniMax-M2.7")
+
     def test_package_excludes_backup_files(self):
         """Test that .backup files are excluded from zip"""
         with tempfile.TemporaryDirectory() as tmpdir:
