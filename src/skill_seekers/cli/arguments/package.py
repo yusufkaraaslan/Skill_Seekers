@@ -67,6 +67,19 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "PLATFORM",
         },
     },
+    "model": {
+        "flags": ("--model",),
+        "kwargs": {
+            "type": str,
+            "default": None,
+            "help": (
+                "Override the model recorded in the package metadata for the "
+                "target platform, e.g. 'MiniMax-M2.7'. Defaults to the "
+                "platform's default model."
+            ),
+            "metavar": "MODEL",
+        },
+    },
     "upload": {
         "flags": ("--upload",),
         "kwargs": {
