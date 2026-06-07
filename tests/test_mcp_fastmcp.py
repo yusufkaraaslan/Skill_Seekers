@@ -450,8 +450,10 @@ class TestPackagingTools:
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("# Test Skill")
 
-        with patch("skill_seekers.mcp.tools.packaging_tools.subprocess.run") as mock_run:
-            mock_run.return_value = Mock(returncode=0, stdout="Packaging completed")
+        with patch(
+            "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+        ) as mock_run:
+            mock_run.return_value = ("Packaging completed", "", 0)
 
             result = await server_fastmcp.package_skill(skill_dir=str(skill_dir), auto_upload=False)
 
@@ -473,8 +475,10 @@ class TestPackagingTools:
         zip_path = temp_dirs["output"] / "test-skill.zip"
         zip_path.write_text("fake zip content")
 
-        with patch("skill_seekers.mcp.tools.packaging_tools.subprocess.run") as mock_run:
-            mock_run.return_value = Mock(returncode=0, stdout="Upload successful")
+        with patch(
+            "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
+        ) as mock_run:
+            mock_run.return_value = ("Upload successful", "", 0)
 
             result = await server_fastmcp.upload_skill(skill_zip=str(zip_path))
 

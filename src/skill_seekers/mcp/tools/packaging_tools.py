@@ -8,10 +8,10 @@ Extracted from server.py for better modularity.
 import json
 import os
 import re
-import subprocess
 import sys
-import time
 from pathlib import Path
+
+from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
 try:
     from mcp.types import TextContent
@@ -27,82 +27,6 @@ except ImportError:
 
 # Path to CLI tools
 CLI_DIR = Path(__file__).parent.parent.parent / "cli"
-
-
-def run_subprocess_with_streaming(cmd: list[str], timeout: int = None) -> tuple[str, str, int]:
-    """
-    Run subprocess with real-time output streaming.
-
-    This solves the blocking issue where long-running processes (like scraping)
-    would cause MCP to appear frozen. Now we stream output as it comes.
-
-    Args:
-        cmd: Command to run as list of strings
-        timeout: Maximum time to wait in seconds (None for no timeout)
-
-    Returns:
-        Tuple of (stdout, stderr, returncode)
-    """
-    try:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,  # Line buffered
-            universal_newlines=True,
-        )
-
-        stdout_lines = []
-        stderr_lines = []
-        start_time = time.time()
-
-        # Read output line by line as it comes
-        while True:
-            # Check timeout
-            if timeout and (time.time() - start_time) > timeout:
-                process.kill()
-                stderr_lines.append(f"\n⚠️ Process killed after {timeout}s timeout")
-                break
-
-            # Check if process finished
-            if process.poll() is not None:
-                break
-
-            # Read available output (non-blocking)
-            try:
-                import select
-
-                readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
-
-                if process.stdout in readable:
-                    line = process.stdout.readline()
-                    if line:
-                        stdout_lines.append(line)
-
-                if process.stderr in readable:
-                    line = process.stderr.readline()
-                    if line:
-                        stderr_lines.append(line)
-            except Exception:
-                # Fallback for Windows (no select)
-                time.sleep(0.1)
-
-        # Get any remaining output
-        remaining_stdout, remaining_stderr = process.communicate()
-        if remaining_stdout:
-            stdout_lines.append(remaining_stdout)
-        if remaining_stderr:
-            stderr_lines.append(remaining_stderr)
-
-        stdout = "".join(stdout_lines)
-        stderr = "".join(stderr_lines)
-        returncode = process.returncode
-
-        return stdout, stderr, returncode
-
-    except Exception as e:
-        return "", f"Error running subprocess: {str(e)}", 1
 
 
 async def package_skill_tool(args: dict) -> list[TextContent]:
