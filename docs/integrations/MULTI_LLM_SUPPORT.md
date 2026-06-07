@@ -420,11 +420,26 @@ A: Yes, each platform requires its own API key. Set them as environment variable
 
 **Q: Can I enhance with different models?**
 
-A: Yes, each platform uses its own enhancement model:
+A: Yes. Each platform has a default enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
 - MiniMax: MiniMax-M3
+- Kimi / DeepSeek / Qwen / OpenRouter / Together / Fireworks: each platform's own default
+
+Override the default for any platform with `--model`, e.g. to pin the
+previous-generation MiniMax model:
+
+```bash
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
+```
+
+**Q: Which platforms can enhance SKILL.md?**
+
+A: Any platform whose adaptor supports AI enhancement: `claude`, `gemini`,
+`openai`, `minimax`, `kimi`, `deepseek`, `qwen`, `openrouter`, `together`,
+`fireworks`. Pass one with `--target`; the valid list is also shown in
+`skill-seekers enhance --help`.
 
 **Q: What if I don't want to upload automatically?**
 
