@@ -4,16 +4,7 @@ Provides the ``sync_config`` tool that diffs a config's start_urls against
 the live docs site and optionally applies the update.
 """
 
-try:
-    from mcp.types import TextContent
-except ImportError:
-
-    class TextContent:
-        """Fallback TextContent for when MCP is not installed."""
-
-        def __init__(self, type: str, text: str):
-            self.type = type
-            self.text = text
+from skill_seekers.mcp.tools._common import TextContent
 
 
 async def sync_config_tool(args: dict) -> list[TextContent]:

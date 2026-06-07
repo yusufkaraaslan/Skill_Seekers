@@ -7,24 +7,13 @@ focused skills and generating router/hub skills for managing split documentation
 
 import glob
 import sys
-from pathlib import Path
 
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
-try:
-    from mcp.types import TextContent
-except ImportError:
-    # Graceful degradation: Create a simple fallback class for testing
-    class TextContent:
-        """Fallback TextContent for when MCP is not installed"""
-
-        def __init__(self, type: str, text: str):
-            self.type = type
-            self.text = text
+from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
 
 
 # Path to CLI tools
-CLI_DIR = Path(__file__).parent.parent.parent / "cli"
 
 
 async def split_config(args: dict) -> list[TextContent]:

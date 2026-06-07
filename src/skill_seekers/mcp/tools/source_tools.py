@@ -15,20 +15,8 @@ import re
 from pathlib import Path
 
 # MCP types (imported conditionally)
-try:
-    from mcp.types import TextContent
+from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
 
-    MCP_AVAILABLE = True
-except ImportError:
-    # Graceful degradation: Create a simple fallback class for testing
-    class TextContent:
-        """Fallback TextContent for when MCP is not installed"""
-
-        def __init__(self, type: str, text: str):
-            self.type = type
-            self.text = text
-
-    MCP_AVAILABLE = False
 
 import httpx
 
@@ -376,7 +364,6 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
         import sys
         from pathlib import Path
 
-        CLI_DIR = Path(__file__).parent.parent.parent / "cli"
         sys.path.insert(0, str(CLI_DIR))
         from config_validator import ConfigValidator
     except ImportError:
