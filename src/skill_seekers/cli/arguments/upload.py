@@ -21,8 +21,9 @@ UPLOAD_ARGUMENTS: dict[str, dict[str, Any]] = {
     "target": {
         "flags": ("--target",),
         "kwargs": {
+            # choices is filled at parser-build time from get_upload_platforms()
+            # so it can never drift from the adaptors that actually upload.
             "type": str,
-            "choices": ["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
             "default": None,
             "help": "Target platform (auto-detected from API keys, or 'claude' if none set)",
             "metavar": "PLATFORM",
@@ -100,8 +101,19 @@ UPLOAD_ARGUMENTS: dict[str, dict[str, Any]] = {
 
 
 def add_upload_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add all upload command arguments to a parser."""
+    """Add all upload command arguments to a parser.
+
+    The ``--target`` choices are resolved dynamically from the adaptors that
+    report ``supports_upload()`` so newly added upload-capable platforms are
+    accepted without touching this list.
+    """
+    from skill_seekers.cli.adaptors import get_upload_platforms
+
+    upload_platforms = get_upload_platforms()
+
     for arg_name, arg_def in UPLOAD_ARGUMENTS.items():
         flags = arg_def["flags"]
-        kwargs = arg_def["kwargs"]
+        kwargs = dict(arg_def["kwargs"])
+        if arg_name == "target":
+            kwargs["choices"] = upload_platforms
         parser.add_argument(*flags, **kwargs)

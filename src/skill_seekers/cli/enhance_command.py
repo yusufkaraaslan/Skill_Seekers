@@ -76,8 +76,10 @@ def _pick_mode(args) -> tuple[str, str | None]:
         return "api", target
 
     # 2. Config default_agent preference (if a matching key is available).
+    from skill_seekers.cli.adaptors import get_enhancement_platforms
+
     config_agent = _get_config_default_agent()
-    if config_agent in ("claude", "gemini", "openai", "kimi") and api_keys.get(config_agent):
+    if config_agent in get_enhancement_platforms() and api_keys.get(config_agent):
         return "api", config_agent
 
     # 3. Auto-detect from environment variables.

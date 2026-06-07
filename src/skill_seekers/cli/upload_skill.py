@@ -160,9 +160,13 @@ Examples:
 
     parser.add_argument("package_file", help="Path to skill package file (e.g., output/react.zip)")
 
+    from skill_seekers.cli.adaptors import get_upload_platforms
+
     parser.add_argument(
         "--target",
-        choices=["claude", "gemini", "openai", "kimi", "chroma", "weaviate"],
+        # derived from adaptors that report supports_upload() so the list can't
+        # drift from the adaptors that actually upload.
+        choices=get_upload_platforms(),
         default=None,
         help="Target platform (auto-detected from API keys, or 'claude' if none set)",
     )

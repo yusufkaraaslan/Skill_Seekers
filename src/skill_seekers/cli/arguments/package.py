@@ -38,30 +38,9 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
     "target": {
         "flags": ("--target",),
         "kwargs": {
+            # choices is filled at parser-build time from list_platforms() so it
+            # can never drift from the ADAPTORS registry.
             "type": str,
-            "choices": [
-                "claude",
-                "gemini",
-                "openai",
-                "kimi",
-                "minimax",
-                "opencode",
-                "deepseek",
-                "qwen",
-                "openrouter",
-                "together",
-                "fireworks",
-                "ibm-bob",
-                "markdown",
-                "langchain",
-                "llama-index",
-                "haystack",
-                "weaviate",
-                "chroma",
-                "faiss",
-                "qdrant",
-                "pinecone",
-            ],
             "default": None,
             "help": "Target LLM platform (auto-detected from API keys, or 'markdown' if none set)",
             "metavar": "PLATFORM",
@@ -185,10 +164,21 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
 
 
 def add_package_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add all package command arguments to a parser."""
+    """Add all package command arguments to a parser.
+
+    The ``--target`` choices are resolved dynamically from the ADAPTORS registry
+    (``list_platforms()``) so newly registered platforms are accepted without
+    touching this list.
+    """
+    from skill_seekers.cli.adaptors import list_platforms
+
+    platforms = list_platforms()
+
     for arg_name, arg_def in PACKAGE_ARGUMENTS.items():
         flags = arg_def["flags"]
-        kwargs = arg_def["kwargs"]
+        kwargs = dict(arg_def["kwargs"])
+        if arg_name == "target":
+            kwargs["choices"] = platforms
         parser.add_argument(*flags, **kwargs)
 
     # Deprecated alias for backward compatibility (removed in v4.0.0)

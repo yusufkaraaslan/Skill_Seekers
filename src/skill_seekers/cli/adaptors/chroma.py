@@ -378,6 +378,10 @@ class ChromaAdaptor(SkillAdaptor):
         """
         return ""
 
+    def supports_upload(self) -> bool:
+        """Chroma supports pushing documents to a ChromaDB instance."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """
         Chroma format doesn't support AI enhancement.

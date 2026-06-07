@@ -280,6 +280,10 @@ Always prioritize accuracy by consulting the attached documentation files before
         """Get environment variable name for API key."""
         return self.ENV_VAR_NAME
 
+    def supports_upload(self) -> bool:
+        """OpenAI-compatible platforms support uploading via their API."""
+        return True
+
     def supports_enhancement(self) -> bool:
         """OpenAI-compatible platforms support enhancement."""
         return True
