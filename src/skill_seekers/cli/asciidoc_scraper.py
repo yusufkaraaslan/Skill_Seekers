@@ -30,6 +30,7 @@ except ImportError:
     ASCIIDOC_AVAILABLE = False
 
 from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 logger = logging.getLogger(__name__)
 
@@ -87,29 +88,6 @@ def infer_description_from_asciidoc(metadata: dict | None = None, name: str = ""
         if name
         else "Use when referencing this documentation"
     )
-
-
-def _score_code_quality(code: str) -> float:
-    """Simple quality heuristic for code blocks (0-10 scale)."""
-    if not code:
-        return 0.0
-    score = 5.0
-    line_count = len(code.strip().split("\n"))
-    if line_count >= 10:
-        score += 2.0
-    elif line_count >= 5:
-        score += 1.0
-    if re.search(r"\b(def |class |function |func |fn )", code):
-        score += 1.5
-    if re.search(r"\b(import |from .+ import|require\(|#include|using )", code):
-        score += 0.5
-    if re.search(r"^    ", code, re.MULTILINE):
-        score += 0.5
-    if re.search(r"[=:{}()\[\]]", code):
-        score += 0.3
-    if len(code) < 30:
-        score -= 2.0
-    return min(10.0, max(0.0, score))
 
 
 class AsciiDocToSkillConverter(SkillConverter):

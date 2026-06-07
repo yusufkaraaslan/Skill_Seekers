@@ -29,6 +29,8 @@ except ImportError:
 from bs4 import BeautifulSoup, Comment
 
 from .skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
+from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
 
 logger = logging.getLogger(__name__)
 
@@ -1007,71 +1009,3 @@ def _build_section(
         "tables": tables,
         "images": images,
     }
-
-
-def _extract_table_from_html(table_elem) -> dict | None:
-    """Extract headers and rows from a BeautifulSoup <table> element."""
-    headers = []
-    rows = []
-
-    # Try <thead> first for headers
-    thead = table_elem.find("thead")
-    if thead:
-        header_row = thead.find("tr")
-        if header_row:
-            headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
-
-    # Body rows
-    tbody = table_elem.find("tbody") or table_elem
-    for row in tbody.find_all("tr"):
-        cells = [td.get_text(strip=True) for td in row.find_all(["td", "th"])]
-        # Skip the header row we already captured
-        if cells and cells != headers:
-            rows.append(cells)
-
-    # If no explicit thead, use first row as header
-    if not headers and rows:
-        headers = rows.pop(0)
-
-    if not headers and not rows:
-        return None
-
-    return {"headers": headers, "rows": rows}
-
-
-def _score_code_quality(code: str) -> float:
-    """Simple quality heuristic for code blocks (0-10 scale)."""
-    if not code:
-        return 0.0
-
-    score = 5.0
-    lines = code.strip().split("\n")
-    line_count = len(lines)
-
-    # More lines = more substantial
-    if line_count >= 10:
-        score += 2.0
-    elif line_count >= 5:
-        score += 1.0
-
-    # Has function/class definitions
-    if re.search(r"\b(def |class |function |func |fn )", code):
-        score += 1.5
-
-    # Has imports/require
-    if re.search(r"\b(import |from .+ import|require\(|#include|using )", code):
-        score += 0.5
-
-    # Has indentation (common in Python, JS, etc.)
-    if re.search(r"^    ", code, re.MULTILINE):
-        score += 0.5
-
-    # Has assignment, operators, or common code syntax
-    if re.search(r"[=:{}()\[\]]", code):
-        score += 0.3
-
-    # Very short snippets get penalized
-    if len(code) < 30:
-        score -= 2.0
-
-    return min(10.0, max(0.0, score))

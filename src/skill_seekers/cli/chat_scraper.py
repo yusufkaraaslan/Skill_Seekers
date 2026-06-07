@@ -43,6 +43,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 # Optional dependency guard — Slack SDK
 try:
@@ -201,41 +202,6 @@ def _check_discord_deps() -> None:
 # ---------------------------------------------------------------------------
 # Helper: code quality scoring (consistent with other scrapers)
 # ---------------------------------------------------------------------------
-
-
-def _score_code_quality(code: str) -> float:
-    """Score code quality on a 0-10 scale using heuristics.
-
-    Args:
-        code: Source code text to score.
-
-    Returns:
-        Float quality score between 0.0 and 10.0.
-    """
-    if not code:
-        return 0.0
-
-    score = 5.0
-    lines = code.strip().split("\n")
-    line_count = len(lines)
-
-    if line_count >= 10:
-        score += 2.0
-    elif line_count >= 5:
-        score += 1.0
-
-    if re.search(r"\b(def |class |function |func |fn )", code):
-        score += 1.5
-    if re.search(r"\b(import |from .+ import|require\(|#include|using )", code):
-        score += 0.5
-    if re.search(r"^    ", code, re.MULTILINE):
-        score += 0.5
-    if re.search(r"[=:{}()\[\]]", code):
-        score += 0.3
-    if len(code) < 30:
-        score -= 2.0
-
-    return min(10.0, max(0.0, score))
 
 
 # ---------------------------------------------------------------------------

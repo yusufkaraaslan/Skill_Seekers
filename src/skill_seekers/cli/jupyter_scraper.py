@@ -29,6 +29,7 @@ except ImportError:
     JUPYTER_AVAILABLE = False
 
 from .skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import score_code_quality
 
 logger = logging.getLogger(__name__)
 
@@ -438,7 +439,7 @@ class JupyterToSkillConverter(SkillConverter):
                     {
                         "code": code,
                         "language": lang,
-                        "quality_score": _score_code_quality(code),
+                        "quality_score": score_code_quality(code, notebook_mode=True),
                     }
                 )
         prose_text = code_block_pattern.sub("", text).strip()
@@ -476,7 +477,7 @@ class JupyterToSkillConverter(SkillConverter):
                 {
                     "code": source.strip(),
                     "language": language,
-                    "quality_score": _score_code_quality(source),
+                    "quality_score": score_code_quality(source, notebook_mode=True),
                     "execution_count": execution_count,
                 }
             )
@@ -1058,34 +1059,3 @@ class JupyterToSkillConverter(SkillConverter):
 # ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
-
-
-def _score_code_quality(code: str) -> float:
-    """Simple quality heuristic for code blocks (0–10 scale)."""
-    if not code:
-        return 0.0
-    score = 5.0
-    lines = code.strip().split("\n")
-    line_count = len(lines)
-    if line_count >= 10:
-        score += 2.0
-    elif line_count >= 5:
-        score += 1.0
-    if re.search(r"\b(def |class |function |func |fn )", code):
-        score += 1.5
-    if re.search(r"\b(import |from .+ import|require\(|#include|using )", code):
-        score += 0.5
-    if re.search(r"^    ", code, re.MULTILINE):
-        score += 0.5
-    if re.search(r"[=:{}()\[\]]", code):
-        score += 0.3
-    if re.search(r'""".*?"""|\'\'\'.*?\'\'\'', code, re.DOTALL):
-        score += 0.3
-    if re.search(r"^%", code, re.MULTILINE):
-        score += 0.2
-    if len(code) < 30:
-        score -= 2.0
-    non_magic = [ln for ln in lines if ln.strip() and not ln.strip().startswith(("%", "!"))]
-    if line_count > 0 and not non_magic:
-        score -= 1.0
-    return min(10.0, max(0.0, score))
