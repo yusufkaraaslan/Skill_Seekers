@@ -9,20 +9,7 @@ This module contains tools for managing plugin marketplace repositories:
 """
 
 # MCP types (imported conditionally)
-try:
-    from mcp.types import TextContent
-
-    MCP_AVAILABLE = True
-except ImportError:
-
-    class TextContent:
-        """Fallback TextContent for when MCP is not installed"""
-
-        def __init__(self, type: str, text: str):
-            self.type = type
-            self.text = text
-
-    MCP_AVAILABLE = False
+from skill_seekers.mcp.tools._common import TextContent
 
 
 async def add_marketplace_tool(args: dict) -> list[TextContent]:
