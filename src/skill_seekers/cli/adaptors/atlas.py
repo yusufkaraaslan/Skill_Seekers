@@ -16,4 +16,4 @@ class AtlasAdaptor(OpenAICompatibleAdaptor):
     DEFAULT_API_ENDPOINT = "https://api.atlascloud.ai/v1"
     DEFAULT_MODEL = "deepseek-ai/deepseek-v4-pro"
     ENV_VAR_NAME = "ATLAS_API_KEY"
-    PLATFORM_URL = "https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers"
+    PLATFORM_URL = "https://www.atlascloud.ai/"
