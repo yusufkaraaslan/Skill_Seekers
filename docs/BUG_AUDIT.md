@@ -152,11 +152,14 @@ All ✅ Fixed; verified by the guide/scraper suites + new regression tests where
 | MED-02 | Slack: per-channel try/except so one channel can't abort all; `conversations_history` retries on 429 with `Retry-After`. |
 | MED-03 | Discord: `ClientTimeout(30)`, 429 `Retry-After` retry, and a guarded `before` cursor (`.get("id")`). |
 
-Deferred (Medium, need a product call or larger refactor):
-- **DOC-04** — `DEFAULT_MAX_PAGES = -1` (unbounded default crawl). Changing the default to finite is a user-visible behavior change; left for an explicit decision.
-- **DOC-07 + MED-04** — broken SKILL.md nav links across 7 scrapers (pdf/html/word/epub/jupyter/asciidoc/pptx); systemic — needs a shared filename helper per scraper.
-- **ADP-01** — dead `--streaming`; needs adaptor inheritance/registry wiring.
-- **CLI-04** — `_reconstruct_argv` → `COMMAND_CLASSES` migration; large.
+### Medium tier — batch 3 (systemic nav-link fix)
+
+| ID | Status | Fix summary |
+|----|--------|-------------|
+| DOC-07 + MED-04 | ✅ Fixed | **Broken SKILL.md nav links across all 7 scrapers** (pdf/html/word/epub/jupyter/asciidoc/pptx). Each scraper now routes its SKILL.md nav, `index.md`, and reference-file writer through ONE filename helper (`_reference_filename`, or the pre-existing `_ref_filename` for asciidoc/jupyter), so nav links match the actual range/basename filenames instead of pointing at nonexistent `sanitize(title).md`. Regression test: `test_pdf_scraper.py::...test_reference_filename_matches_nav_and_index`. |
+
+Deferred (Medium):
+- **DOC-04** — `DEFAULT_MAX_PAGES = -1` (unbounded default crawl). Changing the default to finite is a user-visible behavior change; left for an explicit decision (not selected for fixing).
 
 > **Test-harness note:** the *full* `pytest tests/` run is unsafe to execute repeatedly — `@pytest.mark.slow` tests like `test_bootstrap_skill::test_bootstrap_script_runs` and the `test_create_integration_basic` subprocess tests invoke the real `create` pipeline, which spawns live LLM agents (a fork-bomb). Verify with targeted per-module test files and `-m "not slow and not integration"`.
 

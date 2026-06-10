@@ -273,37 +273,35 @@ class PDFToSkillConverter(SkillConverter):
         print(f"\n✅ Skill built successfully: {self.skill_dir}/")
         print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
 
+    def _reference_filename(self, cat_data, section_num, total_sections):
+        """Basename of a category's reference file — the single source of truth
+        shared by the file writer, index.md, and the SKILL.md nav, so the links
+        can't drift from the actual filenames (DOC-07)."""
+        pages = cat_data.get("pages") or []
+        if not pages:
+            return f"section_{section_num:02d}.md"
+        page_nums = [p["page_number"] for p in pages]
+        page_range = f"p{min(page_nums)}-p{max(page_nums)}"
+        pdf_basename = Path(self.pdf_path).stem if self.pdf_path else ""
+        if total_sections == 1:
+            return f"{pdf_basename}.md" if pdf_basename else "main.md"
+        base_name = pdf_basename if pdf_basename else "section"
+        return f"{base_name}_{page_range}.md"
+
     def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
         """Generate a reference markdown file for a category"""
-        # Calculate page range for filename - use PDF basename
-        pages = cat_data["pages"]
-        if pages:
-            page_nums = [p["page_number"] for p in pages]
-            page_range = f"p{min(page_nums)}-p{max(page_nums)}"
+        filename = (
+            f"{self.skill_dir}/references/"
+            f"{self._reference_filename(cat_data, section_num, total_sections)}"
+        )
 
-            # Get PDF basename for cleaner filename
-            pdf_basename = ""
-            if self.pdf_path:
-                pdf_basename = Path(self.pdf_path).stem
-
-            # If only one section or section covers most pages, use simple name
-            if total_sections == 1:
-                filename = (
-                    f"{self.skill_dir}/references/{pdf_basename}.md"
-                    if pdf_basename
-                    else f"{self.skill_dir}/references/main.md"
-                )
-            else:
-                # Multiple sections: use PDF basename + page range
-                base_name = pdf_basename if pdf_basename else "section"
-                filename = f"{self.skill_dir}/references/{base_name}_{page_range}.md"
-        else:
-            filename = f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        pages = cat_data.get("pages") or []
+        page_nums = [p["page_number"] for p in pages]
 
         with open(filename, "w", encoding="utf-8") as f:
             # Include original title in file content for reference
             f.write(f"# {cat_data['title']}\n\n")
-            if pages:
+            if page_nums:
                 f.write(f"**Pages**: {min(page_nums)}-{max(page_nums)}\n\n")
 
             for page in cat_data["pages"]:
@@ -363,11 +361,6 @@ class PDFToSkillConverter(SkillConverter):
         """Generate reference index"""
         filename = f"{self.skill_dir}/references/index.md"
 
-        # Get PDF basename
-        pdf_basename = ""
-        if self.pdf_path:
-            pdf_basename = Path(self.pdf_path).stem
-
         total_sections = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -379,20 +372,12 @@ class PDFToSkillConverter(SkillConverter):
                 pages = cat_data["pages"]
                 page_count = len(pages)
 
-                # Calculate page range for link - use PDF basename
+                # Filename via the shared helper so links match the real files.
+                link_filename = self._reference_filename(cat_data, section_num, total_sections)
                 if pages:
                     page_nums = [p["page_number"] for p in pages]
-                    page_range = f"p{min(page_nums)}-p{max(page_nums)}"
                     page_range_str = f"Pages {min(page_nums)}-{max(page_nums)}"
-
-                    # Use same logic as _generate_reference_file
-                    if total_sections == 1:
-                        link_filename = f"{pdf_basename}.md" if pdf_basename else "main.md"
-                    else:
-                        base_name = pdf_basename if pdf_basename else "section"
-                        link_filename = f"{base_name}_{page_range}.md"
                 else:
-                    link_filename = f"section_{section_num:02d}.md"
                     page_range_str = "N/A"
 
                 f.write(
@@ -527,9 +512,10 @@ class PDFToSkillConverter(SkillConverter):
             # Navigation
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
-            for _cat_key, cat_data in categorized.items():
-                cat_file = self._sanitize_filename(cat_data["title"])
-                f.write(f"- `references/{cat_file}.md` - {cat_data['title']}\n")
+            total_sections = len(categorized)
+            for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
+                cat_file = self._reference_filename(cat_data, section_num, total_sections)
+                f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
             f.write("\n")
             f.write("See `references/index.md` for complete documentation structure.\n\n")
 
