@@ -424,13 +424,6 @@ LOCAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Skip how-to guide generation",
         },
     },
-    "skip_config": {
-        "flags": ("--skip-config",),
-        "kwargs": {
-            "action": "store_true",
-            "help": "Skip configuration extraction",
-        },
-    },
     "skip_docs": {
         "flags": ("--skip-docs",),
         "kwargs": {
@@ -453,7 +446,9 @@ LOCAL_ARGUMENTS: dict[str, dict[str, Any]] = {
         },
     },
     "skip_config_patterns": {
-        "flags": ("--skip-config-patterns",),
+        # --skip-config is a back-compat alias (its old dest `skip_config` was
+        # orphaned — read nowhere); both flags set skip_config_patterns.
+        "flags": ("--skip-config-patterns", "--skip-config"),
         "kwargs": {
             "action": "store_true",
             "help": "Skip configuration pattern extraction",

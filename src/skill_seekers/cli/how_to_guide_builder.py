@@ -569,7 +569,7 @@ class GuideGenerator:
             sections.append(self._create_prerequisites(guide))
 
         # Step-by-step guide
-        sections.append(self._create_steps_section(guide.steps))
+        sections.append(self._create_steps_section(guide.steps, guide.language))
 
         # Complete example
         sections.append(self._create_complete_example(guide))
@@ -631,13 +631,13 @@ class GuideGenerator:
         if guide.workflows and guide.workflows[0].get("setup_code"):
             setup_code = guide.workflows[0]["setup_code"]
             lines.append("**Setup Required:**")
-            lines.append("```python")
+            lines.append(f"```{guide.language}")
             lines.append(setup_code)
             lines.append("```")
 
         return "\n".join(lines)
 
-    def _create_steps_section(self, steps: list[WorkflowStep]) -> str:
+    def _create_steps_section(self, steps: list[WorkflowStep], language: str = "python") -> str:
         """Create step-by-step guide section"""
         lines = ["## Step-by-Step Guide"]
         lines.append("")
@@ -652,7 +652,7 @@ class GuideGenerator:
                 lines.append("")
 
             # Code
-            lines.append("```python")
+            lines.append(f"```{language}")
             lines.append(step.code)
             lines.append("```")
             lines.append("")
@@ -665,7 +665,7 @@ class GuideGenerator:
             # Verification checkpoint
             if step.verification:
                 lines.append("**Verification:**")
-                lines.append("```python")
+                lines.append(f"```{language}")
                 lines.append(step.verification)
                 lines.append("```")
                 lines.append("")
@@ -681,7 +681,7 @@ class GuideGenerator:
         """Create complete working example"""
         lines = ["## Complete Example"]
         lines.append("")
-        lines.append("```python")
+        lines.append(f"```{guide.language}")
 
         # If we have workflows, use the first one's code
         if guide.workflows:
@@ -1102,11 +1102,10 @@ class HowToGuideBuilder:
         related_examples = ai_analysis.get("related_examples", [])
         guide.related_guides = [f"How To: {ex}" for ex in related_examples]
 
-        # Enhance step explanations
-        for step in guide.steps:
-            # Add explanation to steps based on best practices
-            if best_practices and step.step_number <= len(best_practices):
-                step.explanation = best_practices[step.step_number - 1]
+        # NOTE: best_practices are general guidance, not per-step explanations —
+        # they're surfaced via guide.variations above. Previously they were also
+        # mapped onto step explanations positionally (step N -> best_practice[N]),
+        # which overwrote real step explanations with unrelated strings.
 
     def _create_collection(self, guides: list[HowToGuide]) -> GuideCollection:
         """Create GuideCollection from guides"""

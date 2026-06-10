@@ -485,7 +485,10 @@ class DependencyAnalyzer:
         multi_import_pattern = r"import\s*\((.*?)\)"
         for match in re.finditer(multi_import_pattern, content, re.DOTALL):
             block = match.group(1)
-            block_start = match.start()
+            # Start of the block BODY (group 1), not the whole match — the latter
+            # begins at `import (`, so adding the in-block offset to it skewed
+            # every grouped-import line number by the width of `import (`.
+            block_start = match.start(1)
 
             # Extract individual imports from block
             import_line_pattern = r'(?:(\w+)\s+)?"([^"]+)"'

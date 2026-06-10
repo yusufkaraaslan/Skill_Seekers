@@ -251,6 +251,11 @@ class AgentClient:
 
                 genai.configure(api_key=self.api_key)
                 return genai
+            else:
+                # Unknown provider: don't silently fall through to `return None`
+                # (mode would stay "api" and every _call_api returns None with no
+                # LOCAL fallback). Raise so the except below routes it correctly.
+                raise ValueError(f"Unknown API provider: {self.provider!r}")
         except ImportError as e:
             logger.info(f"{self.provider} SDK not installed, falling back to LOCAL mode: {e}")
             self.mode = "local"

@@ -33,7 +33,9 @@ except ImportError:
     DocsStream = None
     InsightsStream = None
 
-logging.basicConfig(level=logging.INFO)
+# NOTE: no logging.basicConfig() here — this is a library module (imported
+# transitively via generate_router); configuring the root logger from import can
+# override the CLI's own logging setup depending on import order.
 logger = logging.getLogger(__name__)
 
 
@@ -762,8 +764,10 @@ def merge_sources(
             solutions = len(github_streams.insights_stream.known_solutions)
             logger.info(f"  - Insights stream: {problems} problems, {solutions} solutions")
 
-    # Merge based on mode
-    if mode == "claude-enhanced":
+    # Merge based on mode. Accept the canonical "ai-enhanced" spelling as a
+    # synonym for "claude-enhanced" (direct callers passed it and silently fell
+    # through to rule-based merging).
+    if mode in ("claude-enhanced", "ai-enhanced"):
         merger = ClaudeEnhancedMerger(docs_data, github_data, conflicts, github_streams)
     else:
         merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
@@ -789,7 +793,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mode",
         "-m",
-        choices=["rule-based", "claude-enhanced"],
+        choices=["rule-based", "claude-enhanced", "ai-enhanced"],
         default="rule-based",
         help="Merge mode",
     )

@@ -268,7 +268,10 @@ class PythonTestAnalyzer:
         """Extract setUp method code"""
         for node in class_node.body:
             if isinstance(node, ast.FunctionDef) and node.name == "setUp":
-                return ast.unparse(node.body)
+                # node.body is a list of statements; ast.unparse expects a single
+                # node. Unparse each statement and join (don't rely on the
+                # undocumented unparse-of-list behavior).
+                return "\n".join(ast.unparse(stmt) for stmt in node.body)
         return None
 
     def _extract_fixtures(self, func_node: ast.FunctionDef) -> str | None:
@@ -736,13 +739,6 @@ class GenericTestAnalyzer:
         "c plus plus": "cpp",
     }
 
-    # Language name normalization mapping
-    LANGUAGE_ALIASES = {
-        "c#": "csharp",
-        "c++": "cpp",
-        "c plus plus": "cpp",
-    }
-
     def extract(self, file_path: str, code: str, language: str) -> list[TestExample]:
         """Extract examples from test file using regex patterns"""
         examples = []
@@ -761,7 +757,10 @@ class GenericTestAnalyzer:
         test_functions = re.finditer(patterns["test_function"], code)
 
         for match in test_functions:
-            test_name = match.group(1)
+            # Alternation patterns (Kotlin/GDScript/C#) put the test name in
+            # group 2 or 3, so group(1) is None ("Test: None"). Take the first
+            # non-empty group, falling back to the whole match.
+            test_name = next((g for g in match.groups() if g), match.group(0))
 
             # Get test function body (approximate - find next function start)
             start_pos = match.end()

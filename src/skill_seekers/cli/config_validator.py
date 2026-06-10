@@ -30,7 +30,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-logging.basicConfig(level=logging.INFO)
+# NOTE: no logging.basicConfig() here — this is a library module; configuring the
+# root logger from import can override the CLI's own logging setup (e.g. scan's
+# --verbose) depending on import order.
 logger = logging.getLogger(__name__)
 
 
