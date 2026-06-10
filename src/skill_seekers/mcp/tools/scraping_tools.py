@@ -13,6 +13,7 @@ This module contains all scraping-related MCP tool implementations:
 Extracted from server.py for better modularity and organization.
 """
 
+import contextvars
 import io
 import json
 import logging
@@ -27,7 +28,9 @@ from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streami
 from skill_seekers.mcp.tools._common import TextContent
 
 
-# Path to CLI tools
+# Per-call token so concurrent _run_converter calls (which all attach a handler
+# to the shared "skill_seekers" logger) only capture their OWN log records.
+_capture_token: contextvars.ContextVar = contextvars.ContextVar("ss_capture_token", default=None)
 
 
 def _run_converter(converter, progress_msg: str) -> list:
@@ -41,8 +44,14 @@ def _run_converter(converter, progress_msg: str) -> list:
         List[TextContent] with success/error message.
     """
     log_capture = io.StringIO()
+    token = object()
+    _capture_token.set(token)
     handler = logging.StreamHandler(log_capture)
     handler.setLevel(logging.INFO)
+    # Only capture records emitted within THIS call's context. The handler is
+    # attached to the shared "skill_seekers" logger, so without this filter a
+    # concurrent converter tool call's logs would leak into this StringIO.
+    handler.addFilter(lambda _record: _capture_token.get() is token)
     sk_logger = logging.getLogger("skill_seekers")
     sk_logger.addHandler(handler)
     try:

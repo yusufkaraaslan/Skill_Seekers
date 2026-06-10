@@ -1678,7 +1678,7 @@ class TestResolverUsesCanonicalCandidates:
         # First call (exact "Godot Engine.json") returns None; eventually the
         # canonical candidate "godot.json" hits. Resolver appends .json to
         # every candidate so local repo / user dir lookups actually find files.
-        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
             return canonical_match if name == "godot.json" else None
 
         with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
@@ -1709,7 +1709,7 @@ class TestResolverUsesCanonicalCandidates:
         out_dir.mkdir()
         seen: list[str] = []
 
-        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
             seen.append(name)
             return None
 

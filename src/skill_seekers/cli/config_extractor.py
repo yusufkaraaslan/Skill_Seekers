@@ -341,29 +341,37 @@ class ConfigFileDetector:
 
         return None
 
+    @staticmethod
+    def _path_has_word(path_lower: str, words: list[str]) -> bool:
+        """Token-boundary match so short/common tokens like 'db'/'ci'/'api'/'log'
+        don't match inside unrelated names ('db' in 'dbeaver', 'log' in 'blog')."""
+        return any(re.search(rf"\b{re.escape(w)}\b", path_lower) for w in words)
+
     def _infer_purpose(self, file_path: Path, _config_type: str) -> str:
         """Infer configuration purpose from file path and name"""
         path_lower = str(file_path).lower()
         filename = file_path.name.lower()
 
         # Database configs
-        if any(word in path_lower for word in ["database", "db", "postgres", "mysql", "mongo"]):
+        if self._path_has_word(path_lower, ["database", "db", "postgres", "mysql", "mongo"]):
             return "database_configuration"
 
         # API configs
-        if any(word in path_lower for word in ["api", "rest", "graphql", "endpoint"]):
+        if self._path_has_word(path_lower, ["api", "rest", "graphql", "endpoint"]):
             return "api_configuration"
 
         # Logging configs
-        if any(word in path_lower for word in ["log", "logger", "logging"]):
+        if self._path_has_word(path_lower, ["log", "logger", "logging"]):
             return "logging_configuration"
 
         # Docker configs
         if "docker" in filename:
             return "docker_configuration"
 
-        # CI/CD configs
-        if any(word in path_lower for word in [".travis", ".gitlab", ".github", "ci", "cd"]):
+        # CI/CD configs (dotted markers as substrings; 'ci'/'cd' need a boundary)
+        if any(token in path_lower for token in [".travis", ".gitlab", ".github"]) or (
+            self._path_has_word(path_lower, ["ci", "cd"])
+        ):
             return "ci_cd_configuration"
 
         # Package configs
@@ -597,11 +605,16 @@ class ConfigParser:
         for line in lines:
             line = line.strip()
 
-            # Extract ENV variables
+            # Extract ENV variables. Docker supports BOTH "ENV KEY=VALUE" and the
+            # legacy space form "ENV KEY VALUE" — the latter was dropped because
+            # split("=") yielded a single part.
             if line.startswith("ENV "):
-                parts = line[4:].split("=", 1)
-                if len(parts) == 2:
-                    key, value = parts
+                rest = line[4:].strip()
+                if "=" in rest:
+                    key, value = rest.split("=", 1)
+                else:
+                    key, _, value = rest.partition(" ")
+                if key.strip():
                     setting = ConfigSetting(
                         key=key.strip(),
                         value=value.strip(),

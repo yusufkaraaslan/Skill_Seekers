@@ -256,8 +256,13 @@ Always prioritize accuracy by consulting the attached documentation files before
                         skill_name = metadata.get("name", skill_name)
                         model = metadata.get("model", model)
 
+                # Vector Stores were promoted from client.beta.vector_stores to
+                # the top-level client.vector_stores in newer OpenAI SDKs; prefer
+                # the top-level path and fall back to beta on older SDKs.
+                vs_api = getattr(client, "vector_stores", None) or client.beta.vector_stores
+
                 # Create vector store
-                vector_store = client.beta.vector_stores.create(name=f"{skill_name} Documentation")
+                vector_store = vs_api.create(name=f"{skill_name} Documentation")
 
                 # Upload reference files to vector store
                 vector_files_dir = temp_path / "vector_store_files"
@@ -272,7 +277,7 @@ Always prioritize accuracy by consulting the attached documentation files before
 
                     # Attach files to vector store
                     if file_ids:
-                        client.beta.vector_stores.files.create_batch(
+                        vs_api.files.create_batch(
                             vector_store_id=vector_store.id, file_ids=file_ids
                         )
 

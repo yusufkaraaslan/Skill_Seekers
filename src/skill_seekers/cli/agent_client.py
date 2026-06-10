@@ -366,9 +366,15 @@ class AgentClient:
         except Exception as e:
             error_type = type(e).__name__
             error_module = type(e).__module__ or ""
+            # Prefer the HTTP status code when the SDK exception carries one — the
+            # name-substring checks below misfire (a 429 whose exception class
+            # doesn't contain "rate" would otherwise get a generic message).
+            status = getattr(e, "status_code", None) or getattr(
+                getattr(e, "response", None), "status_code", None
+            )
 
             # Rate limit errors
-            if "rate" in error_type.lower() or "ratelimit" in error_type.lower():
+            if status == 429 or "rate" in error_type.lower() or "ratelimit" in error_type.lower():
                 logger.error(
                     f"{self.provider} API rate limited: {e}. "
                     "Retry after waiting or reduce request frequency."
@@ -376,7 +382,11 @@ class AgentClient:
                 return None
 
             # Auth / permission errors
-            if "auth" in error_type.lower() or "permission" in error_type.lower():
+            if (
+                status in (401, 403)
+                or "auth" in error_type.lower()
+                or "permission" in error_type.lower()
+            ):
                 logger.error(
                     f"{self.provider} API authentication failed: {e}. "
                     "Check your API key is valid and has sufficient permissions."

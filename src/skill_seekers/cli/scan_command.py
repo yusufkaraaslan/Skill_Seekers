@@ -804,7 +804,9 @@ def resolve_or_generate_with_status(
     resolved: Path | None = None
     for candidate in _canonical_name_candidates(detection.name):
         lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
-        hit = resolve_config_path(lookup, auto_fetch=allow_network)
+        # Fetch into out_dir (scan re-writes there anyway) rather than polluting
+        # ./configs/ in the current working directory.
+        hit = resolve_config_path(lookup, auto_fetch=allow_network, fetch_destination=str(out_dir))
         if hit is not None and hit.exists():
             resolved = hit
             break
@@ -1140,6 +1142,20 @@ def run_scan(
     bundle = collect_signals(directory)
 
     detections = detect_with_ai(bundle, agent_client, min_confidence=min_confidence)
+
+    # Dedup detections that map to the same config filename slug (e.g. the AI
+    # returns both "Godot" and "Godot Engine" -> both resolve to godot.json).
+    # The diff already keys by slug; without deduping here the write loop below
+    # would write and count the same config twice.
+    _seen_slugs: set[str] = set()
+    _deduped_detections = []
+    for _det in detections:
+        _slug = _config_filename_for(_det)
+        if _slug in _seen_slugs:
+            continue
+        _seen_slugs.add(_slug)
+        _deduped_detections.append(_det)
+    detections = _deduped_detections
 
     # Snapshot the prior state of out_dir BEFORE we write anything so the
     # diff reflects changes introduced by this scan, not by the writes
