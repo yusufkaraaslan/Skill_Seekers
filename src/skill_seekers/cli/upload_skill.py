@@ -111,7 +111,7 @@ def upload_skill_api(package_path, target="claude", api_key=None, **kwargs):
         return False, f"Unexpected error: {str(e)}"
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser(
         description="Upload a skill package to LLM platforms and vector databases",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -211,7 +211,8 @@ Examples:
         "--cluster-url", help="Weaviate Cloud cluster URL (e.g., https://xxx.weaviate.network)"
     )
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Auto-detect target platform if not specified
     if args.target is None:

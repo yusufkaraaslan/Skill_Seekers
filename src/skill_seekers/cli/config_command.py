@@ -522,7 +522,7 @@ def test_connections():
     input("\nPress Enter to continue...")
 
 
-def main():
+def main(args=None):
     """Main entry point for config command."""
     import argparse
 
@@ -533,7 +533,8 @@ def main():
     parser.add_argument("--test", action="store_true", help="Test connections and exit")
     parser.add_argument("--welcome", action="store_true", help="Show welcome message")
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     config = get_config_manager()
 

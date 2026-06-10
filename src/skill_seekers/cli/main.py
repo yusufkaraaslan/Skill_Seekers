@@ -53,12 +53,12 @@ COMMAND_CLASSES: dict[str, tuple[str, str]] = {
 }
 
 
-# Command module mapping (command name -> module path)
+# Command module mapping (command name -> module path).
 #
-# LEGACY: dispatch uses _reconstruct_argv + module.main() which re-parses argv.
-# All entries here also appear in this table for backwards-compat; once a command
-# is migrated to COMMAND_CLASSES above, remove it from here. TODO: migrate the
-# remaining ~14 commands so _reconstruct_argv can be deleted.
+# Dispatch passes the parsed central namespace straight to module.main(args=...);
+# each module's main() accepts an optional `args` and only re-parses argv when
+# invoked standalone (the skill-seekers-<cmd> entry points). The old
+# _reconstruct_argv argv round-trip has been removed.
 COMMAND_MODULES = {
     # NOTE: "create", "scan", "doctor" migrated to COMMAND_CLASSES above.
     # Enhancement & packaging
@@ -128,64 +128,6 @@ For more information: https://github.com/yusufkaraaslan/Skill_Seekers
     register_parsers(subparsers)
 
     return parser
-
-
-def _reconstruct_argv(command: str, args: argparse.Namespace) -> list[str]:
-    """Reconstruct sys.argv from args namespace for command module.
-
-    DEPRECATED: Use ExecutionContext instead. This function is kept for
-    backward compatibility and will be removed in a future version.
-
-    Args:
-        command: Command name
-        args: Parsed arguments namespace
-
-    Returns:
-        List of command-line arguments for the command module
-    """
-    argv = [f"{command}_command.py"]
-
-    # Convert args to sys.argv format
-    for key, value in vars(args).items():
-        if key == "command":
-            continue
-
-        # Handle internal/progressive help flags for create command
-        # Convert _help_web to --help-web etc.
-        if key.startswith("_help_"):
-            if value:
-                # Convert _help_web -> --help-web
-                help_flag = key.replace("_help_", "help-")
-                argv.append(f"--{help_flag}")
-            continue
-
-        # Handle positional arguments (no -- prefix)
-        if key in [
-            "source",  # create command
-            "directory",
-            "file",
-            "job_id",
-            "skill_directory",
-            "zip_file",
-            "input_file",
-        ]:
-            if value is not None and value != "":
-                argv.append(str(value))
-            continue
-
-        # Handle flags and options
-        arg_name = f"--{key.replace('_', '-')}"
-
-        if isinstance(value, bool):
-            if value:
-                argv.append(arg_name)
-        elif isinstance(value, list):
-            for item in value:
-                argv.extend([arg_name, str(item)])
-        elif value is not None:
-            argv.extend([arg_name, str(value)])
-
-    return argv
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -258,28 +200,23 @@ def main(argv: list[str] | None = None) -> int:
                 traceback.print_exc()
             return 1
 
-    # Get command module (legacy dispatch path)
+    # Module dispatch: pass the already-parsed central namespace straight to
+    # module.main(args=...). Each command module's main() accepts an optional
+    # `args` and only re-parses argv when called standalone (skill-seekers-X
+    # entry points). This replaces the old _reconstruct_argv hack, which
+    # serialized the namespace back to argv and re-parsed it — fragile and, on
+    # commands whose subparser dests drift from the module's own parser (e.g.
+    # `workflows`), outright broken ("unrecognized arguments").
     module_name = COMMAND_MODULES.get(args.command)
     if not module_name:
         print(f"Error: Unknown command '{args.command}'", file=sys.stderr)
         parser.print_help()
         return 1
 
-    # Standard delegation for all other commands
     try:
-        # Import and execute command module
         module = importlib.import_module(module_name)
-
-        # Reconstruct sys.argv for command module
-        original_argv = sys.argv.copy()
-        sys.argv = _reconstruct_argv(args.command, args)
-
-        # Execute command
-        try:
-            result = module.main()
-            return result if result is not None else 0
-        finally:
-            sys.argv = original_argv
+        result = module.main(args=args)
+        return result if result is not None else 0
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user", file=sys.stderr)

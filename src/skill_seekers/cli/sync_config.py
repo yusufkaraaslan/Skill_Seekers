@@ -301,7 +301,7 @@ def sync_config(
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
+def main(args=None) -> None:
     """CLI entry point for ``skill-seekers sync-config``."""
     from skill_seekers.cli.arguments.sync_config import add_sync_config_arguments
 
@@ -310,7 +310,8 @@ def main() -> None:
         description="Sync a config's start_urls against what's live on the docs site.",
     )
     add_sync_config_arguments(parser)
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     setup_logging(verbose=args.verbose, quiet=args.quiet)
 

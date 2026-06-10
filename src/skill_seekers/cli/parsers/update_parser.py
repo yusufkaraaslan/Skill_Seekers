@@ -20,6 +20,9 @@ class UpdateParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add update-specific arguments."""
-        parser.add_argument("skill_directory", help="Skill directory to update")
+        # dest must match incremental_updater.main (args.skill_dir).
+        parser.add_argument(
+            "skill_dir", metavar="skill_directory", help="Skill directory to update"
+        )
         parser.add_argument("--check-changes", action="store_true", help="Check for changes only")
         parser.add_argument("--force", action="store_true", help="Force update all files")

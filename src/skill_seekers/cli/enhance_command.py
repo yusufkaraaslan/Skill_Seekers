@@ -180,7 +180,7 @@ def _run_local_mode(args) -> int:
 # ---------------------------------------------------------------------------
 
 
-def main() -> int:
+def main(args=None) -> int:
     import argparse
 
     from skill_seekers.cli.arguments.enhance import add_enhance_arguments
@@ -218,7 +218,8 @@ Examples:
 """,
     )
     add_enhance_arguments(parser)
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Validate skill directory
     skill_dir = Path(args.skill_directory)

@@ -20,7 +20,8 @@ class StreamParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add stream-specific arguments."""
-        parser.add_argument("input_file", help="Large file to stream")
+        # dest must match streaming_ingest.main (args.input).
+        parser.add_argument("input", metavar="input_file", help="Large file to stream")
         parser.add_argument(
             "--streaming-chunk-chars",
             type=int,

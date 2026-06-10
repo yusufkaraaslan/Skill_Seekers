@@ -200,7 +200,7 @@ def package_skill(
     return True, package_path
 
 
-def main():
+def main(args=None):
     from skill_seekers.cli.arguments.package import add_package_arguments
 
     parser = argparse.ArgumentParser(
@@ -226,7 +226,8 @@ Examples:
     )
 
     add_package_arguments(parser)
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     success, package_path = package_skill(
         args.skill_directory,

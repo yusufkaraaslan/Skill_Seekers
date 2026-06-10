@@ -130,14 +130,15 @@ def clean_old_jobs():
         print()
 
 
-def main():
+def main(args=None):
     """Main entry point for resume command."""
     parser = argparse.ArgumentParser(description="Resume interrupted Skill Seekers jobs")
     parser.add_argument("job_id", nargs="?", help="Job ID to resume")
     parser.add_argument("--list", action="store_true", help="List all resumable jobs")
     parser.add_argument("--clean", action="store_true", help="Clean up old progress files")
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Handle options
     if args.list:
