@@ -295,11 +295,22 @@ class CodeAnalyzer:
             class_name = match.group(1)
             base_class = match.group(2) if match.group(2) else None
 
-            # Try to extract methods (simplified)
+            # Extract methods. Find the MATCHING closing brace by counting
+            # braces — `content.find("}")` returns the first method's closing
+            # brace, which truncated the class body and dropped every later
+            # method.
             class_block_start = match.end()
-            # This is a simplification - proper parsing would track braces
-            class_block_end = content.find("}", class_block_start)
-            if class_block_end != -1:
+            brace_count = 1
+            class_block_end = class_block_start
+            for i, char in enumerate(content[class_block_start:], class_block_start):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        class_block_end = i
+                        break
+            if class_block_end > class_block_start:
                 class_body = content[class_block_start:class_block_end]
                 methods = self._extract_js_methods(class_body)
             else:
@@ -392,15 +403,37 @@ class CodeAnalyzer:
         """Extract method signatures from class body."""
         methods = []
 
-        # Match method definitions
-        method_pattern = r"(?:async\s+)?(\w+)\s*\(([^)]*)\)"
+        # Match method DECLARATIONS only: `[modifiers] name(params) {`.
+        # Requiring the trailing `{` (method body) excludes call-sites like
+        # `this.helper(b);` / `setTimeout(cb, 100)` that the old pattern
+        # mis-counted as methods. The keyword set excludes control-flow that
+        # also takes the `name(...) {` shape.
+        non_methods = {
+            "if",
+            "for",
+            "while",
+            "switch",
+            "catch",
+            "function",
+            "return",
+            "do",
+            "else",
+            "with",
+        }
+        # `(?::\s*[^={;\n]+)?` tolerates a TypeScript return-type annotation
+        # between the params and the body brace (e.g. `greet(): string {`,
+        # `load(): Promise<void> {`). Without it, TS class methods with return
+        # types were silently dropped from the method list. Non-capturing so the
+        # name/params group indices are unchanged.
+        method_pattern = (
+            r"(?:(?:async|static|get|set)\s+)*(\w+)\s*\(([^)]*)\)\s*(?::\s*[^={;\n]+)?\s*\{"
+        )
         for match in re.finditer(method_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
             is_async = "async" in match.group(0)
 
-            # Skip constructor keyword detection
-            if method_name in ["if", "for", "while", "switch"]:
+            if method_name in non_methods:
                 continue
 
             params = self._parse_js_parameters(params_str)
@@ -1376,13 +1409,20 @@ class CodeAnalyzer:
             if return_type:
                 return_type = return_type.strip()
 
-            # Skip if inside a class body (heuristic: check indentation)
-            line_start = content.rfind("\n", 0, match.start()) + 1
-            indent = match.start() - line_start
-            if indent > 4:
+            # Skip if inside a class/object body: track brace depth from the
+            # start of the file to this match (depth > 0 ⇒ nested, handled by
+            # _extract_kotlin_methods). Brace-counting is more reliable than the
+            # old indentation heuristic, which mis-handled tabs / 2-space styles.
+            prefix = content[: match.start()]
+            if prefix.count("{") - prefix.count("}") > 0:
                 continue
 
-            is_suspend = "suspend" in content[max(0, match.start() - 50) : match.start()]
+            # `suspend` (and other modifiers) are captured inside the match, so
+            # test the matched text — a fixed look-behind window read the wrong
+            # bytes (a neighboring declaration, or missed the modifier entirely).
+            # Word-boundary match so a function NAMED e.g. `suspendCoroutine`
+            # isn't mis-flagged as a suspend function.
+            is_suspend = re.search(r"\bsuspend\b", match.group(0)) is not None
             params = self._parse_kotlin_parameters(params_str)
 
             functions.append(
@@ -1873,7 +1913,7 @@ class CodeAnalyzer:
 
         # Extract resource header
         header_match = re.search(
-            r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s+', content
+            r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s*[\]\s]', content
         )
         if header_match:
             resource_type = header_match.group(1)
@@ -1983,9 +2023,14 @@ class CodeAnalyzer:
             classes.append(
                 {
                     "name": class_name,
-                    "bases": [extends] if extends else [],
+                    # Must be "base_classes" (not "bases") — PatternRecognizer's
+                    # _convert_to_signatures reads cls["base_classes"]; using the
+                    # wrong key silently disables all GDScript inheritance-based
+                    # pattern detection (Strategy/Template-Method/Observer).
+                    "base_classes": [extends] if extends else [],
                     "methods": [],
-                    "line_number": content[: class_match.start()].count("\n") + 1,
+                    "docstring": None,
+                    "line_number": self._offset_to_line(class_match.start()),
                 }
             )
 
@@ -2038,13 +2083,19 @@ class CodeAnalyzer:
             signal_name, params = match.groups()
             line_number = self._offset_to_line(match.start())
 
-            # Extract documentation comment above signal (## or #)
+            # Extract documentation comment above signal (## or #).
+            # lines[-1] is the signal's own line prefix (indentation/empty), so
+            # the doc comment is the nearest preceding NON-blank line — using
+            # lines[-1] always missed it for signals at column 0 or indented.
             doc_comment = None
-            lines = content[: match.start()].split("\n")
-            if len(lines) >= 2:
-                prev_line = lines[-1].strip()
-                if prev_line.startswith("##") or prev_line.startswith("#"):
-                    doc_comment = prev_line.lstrip("#").strip()
+            prefix_lines = content[: match.start()].split("\n")
+            for prev in reversed(prefix_lines[:-1]):
+                stripped = prev.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("#"):
+                    doc_comment = stripped.lstrip("#").strip()
+                break
 
             signals.append(
                 {

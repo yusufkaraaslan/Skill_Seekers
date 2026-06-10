@@ -10,7 +10,11 @@ cannot silently change scores.
 import pathlib
 import unittest
 
-from skill_seekers.cli.scraper_utils import score_code_quality, extract_table_from_html
+from skill_seekers.cli.scraper_utils import (
+    score_code_quality,
+    extract_table_from_html,
+    parse_leading_int,
+)
 
 # Representative inputs with their pinned scores (captured from the pre-merge
 # implementations: standard == the 6-module/asciidoc variant; notebook == jupyter).
@@ -79,6 +83,41 @@ class TestExtractTable(unittest.TestCase):
 
         table = BeautifulSoup("<table></table>", "html.parser").find("table")
         self.assertIsNone(extract_table_from_html(table))
+
+    def test_body_row_equal_to_header_is_kept(self):
+        """DOC-13: a body row whose text equals the header must NOT be dropped —
+        the old `cells != headers` skip discarded legitimate data rows."""
+        from bs4 import BeautifulSoup
+
+        html = (
+            "<table><thead><tr><th>A</th><th>B</th></tr></thead>"
+            "<tbody><tr><td>A</td><td>B</td></tr><tr><td>1</td><td>2</td></tr></tbody></table>"
+        )
+        table = BeautifulSoup(html, "html.parser").find("table")
+        self.assertEqual(
+            extract_table_from_html(table),
+            {"headers": ["A", "B"], "rows": [["A", "B"], ["1", "2"]]},
+        )
+
+
+class TestParseLeadingInt(unittest.TestCase):
+    """DOC-15: width/height attrs like '100%'/'50px' must not crash int()."""
+
+    def test_percentage(self):
+        self.assertEqual(parse_leading_int("100%"), 100)
+
+    def test_pixels(self):
+        self.assertEqual(parse_leading_int("50px"), 50)
+
+    def test_plain_int(self):
+        self.assertEqual(parse_leading_int("30"), 30)
+        self.assertEqual(parse_leading_int(30), 30)
+
+    def test_non_numeric_and_none_use_default(self):
+        self.assertEqual(parse_leading_int("auto"), 0)
+        self.assertEqual(parse_leading_int(""), 0)
+        self.assertEqual(parse_leading_int(None), 0)
+        self.assertEqual(parse_leading_int(None, default=7), 7)
 
 
 class TestNoDuplicateDefinitions(unittest.TestCase):

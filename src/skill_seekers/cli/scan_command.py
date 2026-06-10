@@ -391,7 +391,18 @@ def detect_with_ai(bundle, client, *, min_confidence: float = 0.4) -> list[Detec
         kind = entry.get("kind")
         if not name or not ecosystem or not kind:
             continue  # required fields missing
-        confidence = float(entry.get("confidence", 0.0))
+        # The AI sometimes returns a non-numeric confidence (e.g. "high") or
+        # null despite the prompt; coerce defensively so one bad entry can't
+        # crash the whole scan with an unhandled ValueError/TypeError.
+        try:
+            confidence = float(entry.get("confidence", 0.0))
+        except (TypeError, ValueError):
+            logger.warning(
+                "Dropping detection %r: non-numeric confidence %r",
+                entry.get("name"),
+                entry.get("confidence"),
+            )
+            continue
         if confidence < min_confidence:
             continue
         detections.append(
@@ -423,7 +434,7 @@ _GENERATE_SCHEMA_HINT = """\
       "type": "github",
       "repo": "<owner/repo>",
       "enable_codebase_analysis": true,
-      "code_analysis_depth": "standard",
+      "code_analysis_depth": "deep",
       "fetch_issues": false
     }
   ],
@@ -793,7 +804,9 @@ def resolve_or_generate_with_status(
     resolved: Path | None = None
     for candidate in _canonical_name_candidates(detection.name):
         lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
-        hit = resolve_config_path(lookup, auto_fetch=allow_network)
+        # Fetch into out_dir (scan re-writes there anyway) rather than polluting
+        # ./configs/ in the current working directory.
+        hit = resolve_config_path(lookup, auto_fetch=allow_network, fetch_destination=str(out_dir))
         if hit is not None and hit.exists():
             resolved = hit
             break
@@ -1130,6 +1143,20 @@ def run_scan(
 
     detections = detect_with_ai(bundle, agent_client, min_confidence=min_confidence)
 
+    # Dedup detections that map to the same config filename slug (e.g. the AI
+    # returns both "Godot" and "Godot Engine" -> both resolve to godot.json).
+    # The diff already keys by slug; without deduping here the write loop below
+    # would write and count the same config twice.
+    _seen_slugs: set[str] = set()
+    _deduped_detections = []
+    for _det in detections:
+        _slug = _config_filename_for(_det)
+        if _slug in _seen_slugs:
+            continue
+        _seen_slugs.add(_slug)
+        _deduped_detections.append(_det)
+    detections = _deduped_detections
+
     # Snapshot the prior state of out_dir BEFORE we write anything so the
     # diff reflects changes introduced by this scan, not by the writes
     # we're about to do.
@@ -1155,11 +1182,13 @@ def run_scan(
                 result.resolved.append(target)
                 result.emitted.append(target)
                 continue
-            # Check resolution chain without writing (cheap)
+            # Check resolution chain WITHOUT writing or hitting the network:
+            # auto_fetch would download + write ./configs/<name>.json, violating
+            # the dry-run "no files written / no network" contract.
             resolved_hit = None
             for candidate in _canonical_name_candidates(det.name):
                 lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
-                hit = resolve_config_path(lookup, auto_fetch=allow_network)
+                hit = resolve_config_path(lookup, auto_fetch=False)
                 if hit is not None and hit.exists():
                     resolved_hit = hit
                     break

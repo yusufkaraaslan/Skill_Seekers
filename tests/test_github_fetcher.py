@@ -314,6 +314,30 @@ class TestGitHubAPI:
         assert mock_get.call_count == 2
 
     @patch("requests.get")
+    def test_fetch_issues_follows_pagination(self, mock_get):
+        """Regression (MED-01): >100 issues must paginate via Link: rel=next,
+        not silently cap at one 100-item page."""
+
+        def make_resp(count, has_next):
+            r = Mock()
+            r.json.return_value = [
+                {"title": f"Issue {n}", "number": n, "state": "open", "comments": 0, "labels": []}
+                for n in range(count)
+            ]
+            r.raise_for_status = Mock()
+            r.headers = {"Link": '<...>; rel="next"'} if has_next else {}
+            return r
+
+        # Page 1: full 100 + next link; page 2: 50 + no next link.
+        mock_get.side_effect = [make_resp(100, True), make_resp(50, False)]
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        issues = fetcher._fetch_issues_page(state="open", max_count=150)
+
+        assert len(issues) == 150
+        assert mock_get.call_count == 2
+
+    @patch("requests.get")
     def test_fetch_issues_filters_pull_requests(self, mock_get):
         """Test that pull requests are filtered out of issues."""
         mock_response = Mock()

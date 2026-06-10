@@ -64,6 +64,10 @@ _MAX_ARTICLE_TEXT_LENGTH = 50_000
 
 # Delay between HTTP requests when following links (seconds)
 _REQUEST_DELAY = 1.0
+# Global wall-clock budget for following article links. Link-following is serial
+# (15s/request + a 1s delay), so a 50-entry feed with slow hosts could take ~13
+# minutes; cap the total so a slow feed can't stall the scrape.
+_FOLLOW_TIME_BUDGET = 180.0
 
 
 def _check_feedparser_deps() -> None:
@@ -138,8 +142,8 @@ class RssToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = f"output/{self.name}"
-        self.data_file: str = f"output/{self.name}_extracted.json"
+        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
+        self.data_file: str = f"{self.skill_dir}_extracted.json"
 
         # Internal state
         self.extracted_data: dict[str, Any] | None = None
@@ -191,7 +195,14 @@ class RssToSkillConverter(SkillConverter):
         if self.follow_links:
             print(f"\n🌐 Following article links (max {len(articles)})...")
             scraped_count = 0
+            deadline = time.monotonic() + _FOLLOW_TIME_BUDGET
             for i, article in enumerate(articles):
+                if time.monotonic() > deadline:
+                    print(
+                        f"   ⏱️  Link-following time budget ({_FOLLOW_TIME_BUDGET:.0f}s) "
+                        f"reached; stopping at {i}/{len(articles)} articles."
+                    )
+                    break
                 link = article.get("link", "")
                 if not link:
                     continue

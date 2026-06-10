@@ -20,6 +20,7 @@ class MultilangParser(SubcommandParser):
 
     def add_arguments(self, parser):
         """Add multilang-specific arguments."""
-        parser.add_argument("skill_directory", help="Skill directory path")
+        # dest must match multilang_support.main (args.skill_dir).
+        parser.add_argument("skill_dir", metavar="skill_directory", help="Skill directory path")
         parser.add_argument("--languages", nargs="+", help="Languages to process (e.g., en es fr)")
         parser.add_argument("--detect", action="store_true", help="Auto-detect languages")

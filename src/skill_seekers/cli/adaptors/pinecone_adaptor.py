@@ -12,13 +12,14 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from .streaming_adaptor import StreamingAdaptorMixin
 from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 # Pinecone metadata value limit: 40 KB per vector
 PINECONE_METADATA_BYTES_LIMIT = 40_000
 
 
-class PineconeAdaptor(SkillAdaptor):
+class PineconeAdaptor(StreamingAdaptorMixin, SkillAdaptor):
     """
     Pinecone vector database adaptor.
 
@@ -325,10 +326,16 @@ class PineconeAdaptor(SkillAdaptor):
 
         try:
             from pinecone import Pinecone, ServerlessSpec
-        except (ImportError, Exception):
+        except ImportError:
             return {
                 "success": False,
                 "message": "pinecone not installed. Run: pip install 'pinecone>=5.0.0'",
+            }
+        except Exception as e:
+            # Installed but failed to import — don't misreport as "not installed".
+            return {
+                "success": False,
+                "message": f"pinecone failed to import: {e}",
             }
 
         api_key = api_key or os.getenv("PINECONE_API_KEY")

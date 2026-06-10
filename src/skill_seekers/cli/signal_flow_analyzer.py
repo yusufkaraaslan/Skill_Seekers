@@ -169,7 +169,7 @@ class SignalFlowAnalyzer:
         """Calculate signal usage statistics."""
         total_signals = len(self.signal_declarations)
         total_connections = sum(len(conns) for conns in self.signal_connections.values())
-        total_emissions = sum(len(emits) for emits in self.signal_emissions.items())
+        total_emissions = sum(len(emits) for emits in self.signal_emissions.values())
 
         # Find most connected signals
         most_connected = sorted(

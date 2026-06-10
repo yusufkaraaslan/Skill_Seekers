@@ -178,13 +178,12 @@ class WorkflowAnalyzer:
         # Detect prerequisites
         metadata = self._detect_prerequisites(workflow)
 
-        # Find verification points
-        verifications = self._find_verification_points(code)
-
-        # Associate verifications with steps
-        for i, step in enumerate(steps):
-            if i < len(verifications):
-                step.verification = verifications[i]
+        # NOTE: do NOT positionally re-associate verifications here.
+        # _extract_steps_python already pairs each step with the assertion that
+        # immediately follows it. `_find_verification_points(code)` returns ALL
+        # assert lines in document order — a different-length/order list — so
+        # `verifications[i]` attached the wrong (or a duplicate) check to a step.
+        # The heuristic (non-Python) path simply has no per-step verification.
 
         # Calculate complexity
         metadata["complexity_level"] = self._calculate_complexity(steps, workflow)
@@ -200,8 +199,14 @@ class WorkflowAnalyzer:
             tree = ast.parse(code)
             statements = []
 
-            # Collect all statements
-            for node in ast.walk(tree):
+            # Steps live at the top level of the test-function wrapper (the
+            # common case); descend ONE level into it, else use the module body.
+            # Don't ast.walk() — that flattens nested control flow (if/for/with)
+            # out of context and scrambles step order.
+            body = tree.body
+            if len(body) == 1 and isinstance(body[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
+                body = body[0].body
+            for node in body:
                 if isinstance(node, (ast.Assign, ast.Expr, ast.Assert)):
                     statements.append(node)
 
@@ -564,7 +569,7 @@ class GuideGenerator:
             sections.append(self._create_prerequisites(guide))
 
         # Step-by-step guide
-        sections.append(self._create_steps_section(guide.steps))
+        sections.append(self._create_steps_section(guide.steps, guide.language))
 
         # Complete example
         sections.append(self._create_complete_example(guide))
@@ -626,13 +631,13 @@ class GuideGenerator:
         if guide.workflows and guide.workflows[0].get("setup_code"):
             setup_code = guide.workflows[0]["setup_code"]
             lines.append("**Setup Required:**")
-            lines.append("```python")
+            lines.append(f"```{guide.language}")
             lines.append(setup_code)
             lines.append("```")
 
         return "\n".join(lines)
 
-    def _create_steps_section(self, steps: list[WorkflowStep]) -> str:
+    def _create_steps_section(self, steps: list[WorkflowStep], language: str = "python") -> str:
         """Create step-by-step guide section"""
         lines = ["## Step-by-Step Guide"]
         lines.append("")
@@ -647,7 +652,7 @@ class GuideGenerator:
                 lines.append("")
 
             # Code
-            lines.append("```python")
+            lines.append(f"```{language}")
             lines.append(step.code)
             lines.append("```")
             lines.append("")
@@ -660,7 +665,7 @@ class GuideGenerator:
             # Verification checkpoint
             if step.verification:
                 lines.append("**Verification:**")
-                lines.append("```python")
+                lines.append(f"```{language}")
                 lines.append(step.verification)
                 lines.append("```")
                 lines.append("")
@@ -676,7 +681,7 @@ class GuideGenerator:
         """Create complete working example"""
         lines = ["## Complete Example"]
         lines.append("")
-        lines.append("```python")
+        lines.append(f"```{guide.language}")
 
         # If we have workflows, use the first one's code
         if guide.workflows:
@@ -786,7 +791,10 @@ class GuideGenerator:
         for use_case in sorted(by_use_case.keys()):
             case_guides = by_use_case[use_case]
             lines.append(f"### {use_case} ({len(case_guides)} guides)")
-            for guide in sorted(case_guides, key=lambda g: g.complexity_level):
+            _difficulty_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
+            for guide in sorted(
+                case_guides, key=lambda g: _difficulty_rank.get(g.complexity_level, 1)
+            ):
                 # Create filename from guide title
                 filename = guide.title.lower().replace(" ", "-").replace(":", "")
                 lines.append(
@@ -1094,11 +1102,10 @@ class HowToGuideBuilder:
         related_examples = ai_analysis.get("related_examples", [])
         guide.related_guides = [f"How To: {ex}" for ex in related_examples]
 
-        # Enhance step explanations
-        for step in guide.steps:
-            # Add explanation to steps based on best practices
-            if best_practices and step.step_number <= len(best_practices):
-                step.explanation = best_practices[step.step_number - 1]
+        # NOTE: best_practices are general guidance, not per-step explanations —
+        # they're surfaced via guide.variations above. Previously they were also
+        # mapped onto step explanations positionally (step N -> best_practice[N]),
+        # which overwrote real step explanations with unrelated strings.
 
     def _create_collection(self, guides: list[HowToGuide]) -> GuideCollection:
         """Create GuideCollection from guides"""

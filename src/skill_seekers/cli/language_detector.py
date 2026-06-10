@@ -704,8 +704,10 @@ class LanguageDetector:
                 if lang in KNOWN_LANGUAGES:
                     return lang
 
-            # Handle bare class name
-            if cls.lower() in KNOWN_LANGUAGES:
+            # Handle bare class name. Skip ambiguous single-letter classes:
+            # "c"/"r" are common CSS utility classes, not C/R code blocks — they
+            # need a brush:/language-/lang- prefix to count as a language.
+            if cls.lower() in KNOWN_LANGUAGES and cls.lower() not in ("c", "r"):
                 return cls.lower()
 
         return None

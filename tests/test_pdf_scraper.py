@@ -52,6 +52,22 @@ class TestPDFToSkillConverter(unittest.TestCase):
         self.assertEqual(converter.name, "test_skill")
         self.assertEqual(converter.pdf_path, "test.pdf")
 
+    def test_reference_filename_matches_nav_and_index(self):
+        """Regression (DOC-07): nav/index/writer all derive the reference
+        filename from _reference_filename, so links match real files (range-based
+        names, not sanitized titles)."""
+        converter = self.PDFToSkillConverter({"name": "guide", "pdf_path": "guide.pdf"})
+        cat = {"title": "Getting Started", "pages": [{"page_number": 3}, {"page_number": 7}]}
+
+        # Multi-section → basename + page range derived from the PDF stem.
+        multi = converter._reference_filename(cat, section_num=2, total_sections=3)
+        self.assertEqual(multi, "guide_p3-p7.md")
+        # Single-section → bare PDF stem.
+        single = converter._reference_filename(cat, section_num=1, total_sections=1)
+        self.assertEqual(single, "guide.md")
+        # Never the old sanitized-title form.
+        self.assertNotIn("getting", multi.lower())
+
     def test_init_with_config(self):
         """Test initialization with config file"""
         # Create test config

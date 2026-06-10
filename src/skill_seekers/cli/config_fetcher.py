@@ -130,7 +130,9 @@ def list_available_configs(category: str | None = None, timeout: float = 30.0) -
         return []
 
 
-def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Path | None:
+def resolve_config_path(
+    config_path: str, auto_fetch: bool = True, fetch_destination: str = "configs"
+) -> Path | None:
     """
     Resolve config path with automatic API fallback.
 
@@ -143,6 +145,9 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Path | Non
     Args:
         config_path: Config file path or name
         auto_fetch: Automatically fetch from API if not found locally (default: True)
+        fetch_destination: Directory to save an API-fetched config (default: 'configs').
+            Callers with their own output dir (e.g. scan) pass it here so the fetch
+            doesn't pollute ./configs/.
 
     Returns:
         Path to config file, or None if not found
@@ -193,7 +198,7 @@ def resolve_config_path(config_path: str, auto_fetch: bool = True) -> Path | Non
         logger.info(
             "\n💡 Config not found locally, attempting to fetch from SkillSeekersWeb.com API..."
         )
-        fetched_path = fetch_config_from_api(config_name, destination="configs")
+        fetched_path = fetch_config_from_api(config_name, destination=fetch_destination)
         if fetched_path and fetched_path.exists():
             return fetched_path.resolve()
 

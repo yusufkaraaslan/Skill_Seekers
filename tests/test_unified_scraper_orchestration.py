@@ -671,3 +671,52 @@ class TestLoadGuideCollectionFallback:
         assert not primary  # primary missing, must be falsy
         assert result["total_guides"] == 3
         assert len(result["guides"]) == 3
+
+
+# ===========================================================================
+# Unified --output / cache-flow integration (CLI-02 unified path)
+# ===========================================================================
+
+
+class TestUnifiedCacheFlow:
+    """Locks the refactored unified flow: sub-converters write straight into the
+    cache via output_dir in their sub-config, and the unified scraper reads back
+    from there — no output/ staging, no move."""
+
+    def test_documentation_written_to_cache_and_read_back(self, tmp_path, monkeypatch):
+        import os
+
+        # Isolate cwd so the "no stray ./output/" check is meaningful (the repo's
+        # ./output may hold unrelated leftovers from other runs).
+        monkeypatch.chdir(tmp_path)
+
+        scraper = _make_scraper(tmp_path=tmp_path)
+        Path(scraper.sources_dir).mkdir(parents=True, exist_ok=True)
+        source = {"base_url": "https://docs.example.com/", "type": "documentation"}
+
+        captured = {}
+
+        def fake_scrape(config, **_kwargs):
+            # Simulate DocToSkillConverter honoring config["output_dir"].
+            out = config["output_dir"]
+            captured["output_dir"] = out
+            os.makedirs(f"{out}_data", exist_ok=True)
+            os.makedirs(os.path.join(out, "references"), exist_ok=True)
+            with open(os.path.join(f"{out}_data", "summary.json"), "w") as f:
+                json.dump({"pages": [{"url": "https://docs.example.com/a"}], "total_pages": 1}, f)
+            return 0
+
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation", side_effect=fake_scrape):
+            scraper._scrape_documentation(source)
+
+        # Sub-config output_dir was redirected into the cache (never bare output/).
+        assert captured["output_dir"].startswith(scraper.sources_dir)
+
+        docs = scraper.scraped_data["documentation"]
+        assert len(docs) == 1
+        assert docs[0]["total_pages"] == 1
+        assert docs[0]["data_file"].startswith(scraper.sources_dir)
+        assert docs[0]["refs_dir"].startswith(scraper.sources_dir)
+        assert not docs[0]["data_file"].startswith("output/")
+        # The flow must not create a stray ./output/<name>_docs staging dir.
+        assert not (Path.cwd() / "output" / f"{scraper.name}_docs").exists()

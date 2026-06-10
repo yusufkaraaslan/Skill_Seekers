@@ -136,8 +136,8 @@ class OpenAPIToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_extracted.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_extracted.json"
 
         # Internal state
         self.spec_data: dict[str, Any] = {}
@@ -777,31 +777,39 @@ class OpenAPIToSkillConverter(SkillConverter):
         schema: dict[str, Any],
         spec: dict[str, Any],
         depth: int = 0,
+        _visited: set[str] | None = None,
     ) -> dict[str, Any]:
         """Flatten a schema by resolving references and simplifying structure.
 
         Handles $ref, allOf, oneOf, anyOf composition. Limits recursion depth
-        to prevent infinite loops in circular references.
+        and tracks visited $ref names so a self-referential schema is stubbed
+        on cycle (rather than expanded to the depth cap).
 
         Args:
             schema: Schema object to flatten.
             spec: Full spec for $ref resolution.
             depth: Current recursion depth (max 10).
+            _visited: $ref names currently being expanded (cycle guard).
 
         Returns:
             Flattened schema dictionary.
         """
+        if _visited is None:
+            _visited = set()
         if not schema or not isinstance(schema, dict) or depth > 10:
             return schema if isinstance(schema, dict) else {}
 
         # Resolve top-level $ref
         if "$ref" in schema:
             ref_name = schema["$ref"].split("/")[-1]
+            if ref_name in _visited:
+                # Cycle: emit a stub instead of re-expanding the same type.
+                return {"type": "object", "_ref_name": ref_name, "_circular_ref": True}
             resolved = self._resolve_ref(schema, spec)
             if resolved is schema:
                 # Could not resolve — return stub
                 return {"type": "object", "$ref": schema["$ref"], "_ref_name": ref_name}
-            result = self._flatten_schema(resolved, spec, depth + 1)
+            result = self._flatten_schema(resolved, spec, depth + 1, _visited | {ref_name})
             result["_ref_name"] = ref_name
             return result
 
@@ -813,7 +821,7 @@ class OpenAPIToSkillConverter(SkillConverter):
             merged_properties: dict[str, Any] = {}
             merged_required: list[str] = []
             for sub_schema in result["allOf"]:
-                flat = self._flatten_schema(sub_schema, spec, depth + 1)
+                flat = self._flatten_schema(sub_schema, spec, depth + 1, _visited)
                 merged_properties.update(flat.get("properties", {}))
                 merged_required.extend(flat.get("required", []))
                 # Merge other fields (description, type, etc.)
@@ -832,24 +840,24 @@ class OpenAPIToSkillConverter(SkillConverter):
         for combinator in ("oneOf", "anyOf"):
             if combinator in result:
                 result[combinator] = [
-                    self._flatten_schema(s, spec, depth + 1) for s in result[combinator]
+                    self._flatten_schema(s, spec, depth + 1, _visited) for s in result[combinator]
                 ]
 
         # Flatten nested properties
         if "properties" in result:
             flat_props: dict[str, Any] = {}
             for prop_name, prop_schema in result["properties"].items():
-                flat_props[prop_name] = self._flatten_schema(prop_schema, spec, depth + 1)
+                flat_props[prop_name] = self._flatten_schema(prop_schema, spec, depth + 1, _visited)
             result["properties"] = flat_props
 
         # Flatten items (for array types)
         if "items" in result and isinstance(result["items"], dict):
-            result["items"] = self._flatten_schema(result["items"], spec, depth + 1)
+            result["items"] = self._flatten_schema(result["items"], spec, depth + 1, _visited)
 
         # Flatten additionalProperties
         if "additionalProperties" in result and isinstance(result["additionalProperties"], dict):
             result["additionalProperties"] = self._flatten_schema(
-                result["additionalProperties"], spec, depth + 1
+                result["additionalProperties"], spec, depth + 1, _visited
             )
 
         return result

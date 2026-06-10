@@ -40,6 +40,26 @@ CONFIDENCE_THRESHOLDS = {
 DEFAULT_MIN_CONFIDENCE = CONFIDENCE_THRESHOLDS["low"]
 
 
+def _base_root(name: str) -> str:
+    """Normalize a base-class name for comparison.
+
+    Strips generic arguments and any namespace/qualifier prefix so that e.g.
+    ``"BaseStrategy<Foo>"`` and ``"ns.BaseStrategy"`` both compare equal to
+    ``"BaseStrategy"``. Without this, generic/qualified bases (common in
+    C#/Java/Kotlin) never match a bare class name and inheritance-based pattern
+    detection (Strategy/Template-Method/Observer/Chain) silently misses them.
+    """
+    if not name:
+        return ""
+    return name.split("<", 1)[0].split(".")[-1].strip()
+
+
+def _matches_base(name: str, bases: list[str]) -> bool:
+    """True if ``name`` matches any entry of ``bases`` after normalization."""
+    root = _base_root(name)
+    return any(_base_root(b) == root for b in bases)
+
+
 @dataclass
 class PatternInstance:
     """Single detected pattern instance"""
@@ -450,7 +470,7 @@ class SingletonDetector(BasePatternDetector):
         # Check for class-level instance storage
         # This would require checking class attributes (future enhancement)
 
-        if has_instance_method or has_init_control and confidence >= 0.5:
+        if (has_instance_method or has_init_control) and confidence >= 0.5:
             return PatternInstance(
                 pattern_type=self.pattern_type,
                 category=self.category,
@@ -802,7 +822,7 @@ class StrategyDetector(BasePatternDetector):
                 cls.name
                 for cls in all_classes
                 if cls.base_classes
-                and base_class in cls.base_classes
+                and _matches_base(base_class, cls.base_classes)
                 and cls.name != class_sig.name
             ]
 
@@ -816,7 +836,9 @@ class StrategyDetector(BasePatternDetector):
 
         # Check if this is a strategy base class
         # (has subclasses in same file)
-        subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
+        subclasses = [
+            cls.name for cls in all_classes if _matches_base(class_sig.name, cls.base_classes)
+        ]
 
         if len(subclasses) >= 2:
             evidence.append(f"Strategy base with implementations: {', '.join(subclasses[:3])}")
@@ -922,7 +944,7 @@ class DecoratorDetector(BasePatternDetector):
                 cls.name
                 for cls in all_classes
                 if cls.base_classes
-                and base_class in cls.base_classes
+                and _matches_base(base_class, cls.base_classes)
                 and cls.name != class_sig.name
             ]
 
@@ -1294,7 +1316,9 @@ class TemplateMethodDetector(BasePatternDetector):
         class_lower = class_sig.name.lower()
         if any(keyword in class_lower for keyword in template_keywords):
             # Check if has subclasses
-            subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
+            subclasses = [
+                cls.name for cls in all_classes if _matches_base(class_sig.name, cls.base_classes)
+            ]
 
             if subclasses:
                 return PatternInstance(
@@ -1321,7 +1345,9 @@ class TemplateMethodDetector(BasePatternDetector):
         # 3. Has template method that orchestrates
 
         # Check for subclasses
-        subclasses = [cls.name for cls in all_classes if class_sig.name in cls.base_classes]
+        subclasses = [
+            cls.name for cls in all_classes if _matches_base(class_sig.name, cls.base_classes)
+        ]
 
         if len(subclasses) >= 1:
             evidence.append(f"Base class with {len(subclasses)} implementations")
@@ -1473,7 +1499,7 @@ class ChainOfResponsibilityDetector(BasePatternDetector):
                 cls.name
                 for cls in all_classes
                 if cls.base_classes
-                and base_class in cls.base_classes
+                and _matches_base(base_class, cls.base_classes)
                 and cls.name != class_sig.name
             ]
 
@@ -1535,10 +1561,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
             # Strategy: Duck typing common in Python
-            elif (
-                pattern.pattern_type == "Strategy"
-                and "duck typing" in evidence_str
-                or "protocol" in evidence_str
+            elif pattern.pattern_type == "Strategy" and (
+                "duck typing" in evidence_str or "protocol" in evidence_str
             ):
                 pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
@@ -1556,10 +1580,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
             # Observer: Event emitters are built-in
-            elif (
-                pattern.pattern_type == "Observer"
-                and "eventemitter" in evidence_str
-                or "event" in evidence_str
+            elif pattern.pattern_type == "Observer" and (
+                "eventemitter" in evidence_str or "event" in evidence_str
             ):
                 pattern.confidence = min(pattern.confidence + 0.1, 1.0)
                 pattern.evidence.append("EventEmitter pattern detected")

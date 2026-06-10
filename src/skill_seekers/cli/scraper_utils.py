@@ -15,6 +15,21 @@ Single home for small utilities that were copy-pasted across many
 import re
 
 
+def parse_leading_int(value, default: int = 0) -> int:
+    """Parse the leading integer from a dimension-ish value, defensively.
+
+    HTML/EPUB/Word width/height attributes can be ``"100%"``, ``"50px"``,
+    ``""`` or ``None``; a bare ``int("100%")`` raises ``ValueError`` (crashing
+    image extraction) or silently drops the image. Returns the leading integer
+    (``"100%"`` -> 100, ``"50px"`` -> 50) or ``default`` when there's none
+    (``"auto"``/``""``/``None`` -> ``default``).
+    """
+    if value is None:
+        return default
+    match = re.match(r"\s*(-?\d+)", str(value))
+    return int(match.group(1)) if match else default
+
+
 def score_code_quality(code: str, *, notebook_mode: bool = False) -> float:
     """Heuristic quality score for a code block (0.0-10.0).
 
@@ -92,12 +107,18 @@ def extract_table_from_html(table_elem) -> dict | None:
         if header_row:
             headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
 
-    # Body rows
-    tbody = table_elem.find("tbody") or table_elem
-    for row in tbody.find_all("tr"):
+    # Body rows. Prefer an explicit <tbody>; otherwise take rows directly under
+    # the table but skip any that belong to <thead> — skipping STRUCTURALLY, not
+    # by value, so a legitimate body row that merely duplicates the header text
+    # isn't dropped.
+    tbody = table_elem.find("tbody")
+    if tbody is not None:
+        body_rows = tbody.find_all("tr")
+    else:
+        body_rows = [r for r in table_elem.find_all("tr") if r.find_parent("thead") is None]
+    for row in body_rows:
         cells = [td.get_text(strip=True) for td in row.find_all(["td", "th"])]
-        # Skip the header row we already captured
-        if cells and cells != headers:
+        if cells:
             rows.append(cells)
 
     # If no explicit thead, use first row as header

@@ -742,3 +742,95 @@ class TestEnhanceDispatcher:
                 main()
 
         assert api_called == [], "_run_api_enhance should not be called without API keys"
+
+
+class TestHeadlessSuccessGate:
+    """Regression for ENH-03: a condensing (smaller) SKILL.md rewrite must count
+    as success. Headless mode previously required the file to GROW, so a valid
+    summarizing enhancement was reported as a failure."""
+
+    def test_smaller_rewrite_counts_as_success(self, tmp_path, monkeypatch):
+        import os
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("X" * 5000, encoding="utf-8")  # large initial
+
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        def fake_run_agent_command(*_args, **_kwargs):
+            # Simulate an agent that CONDENSES the skill (smaller file) and
+            # advances mtime.
+            skill_md.write_text("Y" * 100, encoding="utf-8")
+            future = skill_md.stat().st_mtime + 10
+            os.utime(skill_md, (future, future))
+            return (MagicMock(returncode=0), None)
+
+        monkeypatch.setattr(enhancer, "_run_agent_command", fake_run_agent_command)
+
+        prompt_file = tmp_path / "prompt.txt"
+        prompt_file.write_text("enhance", encoding="utf-8")
+
+        assert enhancer._run_headless(prompt_file, timeout=60) is True
+
+    def test_failed_retry_returns_false_without_crashing(self, tmp_path, monkeypatch):
+        """Regression: when the exit-75 retry ALSO fails, _run_headless must
+        return False cleanly. A bad de-indent of the ENH-03 fix moved the
+        `if new_mtime > initial_mtime:` check outside the returncode/exists
+        guards, so a failed retry hit `UnboundLocalError: new_mtime` instead of
+        falling through to the 'Retry also failed' path."""
+        import skill_seekers.cli.enhance_skill_local as esl
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("original", encoding="utf-8")
+
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        # 1st call: EX_TEMPFAIL (75) -> triggers retry. Retry: non-zero -> failure.
+        results = [
+            (MagicMock(returncode=75, stdout="", stderr="temp fail"), None),
+            (MagicMock(returncode=1, stdout="", stderr="still failing"), None),
+        ]
+        monkeypatch.setattr(enhancer, "_run_agent_command", lambda *_a, **_k: results.pop(0))
+        monkeypatch.setattr(esl.time, "sleep", lambda _s: None)  # skip the 5s backoff
+
+        prompt_file = tmp_path / "prompt.txt"
+        prompt_file.write_text("enhance", encoding="utf-8")
+
+        assert enhancer._run_headless(prompt_file, timeout=60) is False
+
+    def test_successful_retry_counts_as_success(self, tmp_path, monkeypatch):
+        """A successful exit-75 retry (SKILL.md rewritten, mtime advanced) is a
+        success — covers the inner success branch of the retry path."""
+        import os
+
+        import skill_seekers.cli.enhance_skill_local as esl
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("original", encoding="utf-8")
+
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        state = {"calls": 0}
+
+        def fake_run_agent_command(*_args, **_kwargs):
+            state["calls"] += 1
+            if state["calls"] == 1:
+                return (MagicMock(returncode=75, stdout="", stderr="temp fail"), None)
+            # Retry succeeds: rewrite the file and advance mtime.
+            skill_md.write_text("enhanced on retry", encoding="utf-8")
+            future = skill_md.stat().st_mtime + 10
+            os.utime(skill_md, (future, future))
+            return (MagicMock(returncode=0, stdout="", stderr=""), None)
+
+        monkeypatch.setattr(enhancer, "_run_agent_command", fake_run_agent_command)
+        monkeypatch.setattr(esl.time, "sleep", lambda _s: None)
+
+        prompt_file = tmp_path / "prompt.txt"
+        prompt_file.write_text("enhance", encoding="utf-8")
+
+        assert enhancer._run_headless(prompt_file, timeout=60) is True

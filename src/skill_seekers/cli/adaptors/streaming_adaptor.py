@@ -10,12 +10,8 @@ import json
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any
-import sys
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from streaming_ingest import StreamingIngester, IngestionProgress
+from skill_seekers.cli.streaming_ingest import StreamingIngester, IngestionProgress
 
 
 class StreamingAdaptorMixin:

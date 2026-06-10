@@ -13,10 +13,13 @@ This module contains all scraping-related MCP tool implementations:
 Extracted from server.py for better modularity and organization.
 """
 
+import contextvars
 import io
 import json
 import logging
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
@@ -25,7 +28,9 @@ from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streami
 from skill_seekers.mcp.tools._common import TextContent
 
 
-# Path to CLI tools
+# Per-call token so concurrent _run_converter calls (which all attach a handler
+# to the shared "skill_seekers" logger) only capture their OWN log records.
+_capture_token: contextvars.ContextVar = contextvars.ContextVar("ss_capture_token", default=None)
 
 
 def _run_converter(converter, progress_msg: str) -> list:
@@ -39,8 +44,14 @@ def _run_converter(converter, progress_msg: str) -> list:
         List[TextContent] with success/error message.
     """
     log_capture = io.StringIO()
+    token = object()
+    _capture_token.set(token)
     handler = logging.StreamHandler(log_capture)
     handler.setLevel(logging.INFO)
+    # Only capture records emitted within THIS call's context. The handler is
+    # attached to the shared "skill_seekers" logger, so without this filter a
+    # concurrent converter tool call's logs would leak into this StringIO.
+    handler.addFilter(lambda _record: _capture_token.get() is token)
     sk_logger = logging.getLogger("skill_seekers")
     sk_logger.addHandler(handler)
     try:
@@ -144,6 +155,7 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     config_path = args["config_path"]
     unlimited = args.get("unlimited", False)
     dry_run = args.get("dry_run", False)
+    skip_scrape = args.get("skip_scrape", False)
     merge_mode = args.get("merge_mode")
 
     # Load config to detect format
@@ -165,9 +177,12 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             # For legacy configs
             config["max_pages"] = None
 
-        # Create temporary config file
-        temp_config_path = config_path.replace(".json", "_unlimited_temp.json")
-        with open(temp_config_path, "w") as f:
+        # Create a UNIQUE temporary config file. The previous
+        # config_path.replace(".json", "_unlimited_temp.json") collided when two
+        # unlimited scrapes of the same config ran concurrently, and rewrote any
+        # ".json" substring elsewhere in the path.
+        fd, temp_config_path = tempfile.mkstemp(suffix="_unlimited.json", prefix="skillseeker_")
+        with os.fdopen(fd, "w") as f:
             json.dump(config, f, indent=2)
 
         config_to_use = temp_config_path
@@ -190,6 +205,13 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             from skill_seekers.cli.unified_scraper import UnifiedScraper
 
             converter = UnifiedScraper(config_to_use, merge_mode=merge_mode)
+            # dry_run is honored by UnifiedScraper. skip_scrape is NOT yet
+            # honored on the unified multi-source path (it would need to reload
+            # each source's cached data from .skillseeker-cache before building);
+            # the attribute is set for forward-compat but currently has no effect
+            # here. Single-source configs DO honor skip_scrape (SkillConverter.run).
+            converter.dry_run = dry_run
+            converter.skip_scrape = skip_scrape
         else:
             from skill_seekers.cli.skill_converter import get_converter
 
@@ -210,8 +232,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
                 source_type = "web"  # default fallback
 
             converter = get_converter(source_type, config_to_pass)
-            if dry_run:
-                converter.dry_run = True
+            converter.dry_run = dry_run
+            converter.skip_scrape = skip_scrape
 
         result = _run_converter(converter, progress_msg)
     finally:

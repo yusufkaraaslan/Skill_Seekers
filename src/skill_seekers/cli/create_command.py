@@ -9,7 +9,6 @@ import logging
 import argparse
 from typing import Any
 
-from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
@@ -83,6 +82,10 @@ class CreateCommand:
         config_path = getattr(self.args, "config", None) or (
             self.source_info.parsed.get("config_path") if self.source_info else None
         )
+        # Reset first so a 2nd in-process create() rebuilds the context instead
+        # of silently reusing the previous invocation's name/output/settings
+        # (initialize() is a no-op guard once initialized).
+        ExecutionContext.reset()
         ExecutionContext.initialize(
             args=self.args,
             config_path=config_path,
@@ -234,6 +237,13 @@ class CreateCommand:
             "name": name,
             "description": getattr(self.args, "description", None)
             or f"Use when working with {name}",
+            # Pass --output through to EVERY source type (not just local), so the
+            # converter writes to the requested directory and the enhancement
+            # step targets the same place.
+            "output_dir": ctx.output.output_dir or f"output/{name}",
+            # --dry-run is held on the context; pass it so converters that
+            # support a preview mode (e.g. web) actually honor it.
+            "dry_run": ctx.output.dry_run,
         }
 
         if source_type == "web":
@@ -252,14 +262,17 @@ class CreateCommand:
                     "resume": ctx.scraping.resume,
                     "fresh": ctx.scraping.fresh,
                     "skip_scrape": ctx.scraping.skip_scrape,
-                    "selectors": {"title": "title", "code_blocks": "pre code"},
-                    "url_patterns": {"include": [], "exclude": []},
                 }
             )
-            # Load from config file if provided
+            # Load from config file if provided. `selectors`/`url_patterns` have
+            # no CLI flag, so apply the hardcoded defaults only AFTER the merge —
+            # otherwise `_merge_json_config` (which only fills missing keys) would
+            # let the hardcoded values shadow the user's config-file values.
             config_path = getattr(self.args, "config", None)
             if config_path:
                 self._merge_json_config(config, config_path)
+            config.setdefault("selectors", {"title": "title", "code_blocks": "pre code"})
+            config.setdefault("url_patterns", {"include": [], "exclude": []})
 
         elif source_type == "github":
             repo = parsed.get("repo", self.source_info.raw_input)
@@ -267,7 +280,11 @@ class CreateCommand:
                 {
                     "repo": repo,
                     "local_repo_path": getattr(self.args, "local_repo_path", None),
-                    "include_issues": getattr(self.args, "include_issues", True),
+                    # The parser registers NEGATIVE flags (--no-issues/--no-changelog/
+                    # --no-releases); read those and invert. Reading the positive
+                    # include_* keys (which never exist on the namespace) made the
+                    # opt-outs dead — they always defaulted to True.
+                    "include_issues": not getattr(self.args, "no_issues", False),
                     "max_issues": getattr(self.args, "max_issues", 100),
                     "max_comments": getattr(self.args, "max_comments", 0),
                     "per_issue_files": getattr(self.args, "per_issue_files", False),
@@ -278,9 +295,10 @@ class CreateCommand:
                     ),
                     "issue_state": getattr(self.args, "issue_state", None) or "all",
                     "issue_since": getattr(self.args, "since", None),
-                    "include_changelog": getattr(self.args, "include_changelog", True),
-                    "include_releases": getattr(self.args, "include_releases", True),
-                    "include_code": getattr(self.args, "include_code", True),
+                    "include_changelog": not getattr(self.args, "no_changelog", False),
+                    "include_releases": not getattr(self.args, "no_releases", False),
+                    # No --no-code flag exists; code analysis is always on for github.
+                    "include_code": True,
                 }
             )
             config_path = getattr(self.args, "config", None)
@@ -294,7 +312,7 @@ class CreateCommand:
                     "directory": directory,
                     "depth": ctx.analysis.depth,
                     "output_dir": ctx.output.output_dir or f"output/{name}",
-                    "languages": getattr(self.args, "languages", None),
+                    "languages": ctx.scraping.languages or None,
                     "file_patterns": ctx.analysis.file_patterns,
                     "detect_patterns": not ctx.analysis.skip_patterns,
                     "extract_test_examples": not ctx.analysis.skip_test_examples,
@@ -401,7 +419,7 @@ class CreateCommand:
                     "space_key": getattr(self.args, "space_key", ""),
                     "username": getattr(self.args, "username", ""),
                     "token": getattr(self.args, "token", ""),
-                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
+                    "max_pages": ctx.scraping.max_pages,
                 }
             )
 
@@ -412,7 +430,7 @@ class CreateCommand:
                     "database_id": getattr(self.args, "database_id", None),
                     "page_id": getattr(self.args, "page_id", None),
                     "token": getattr(self.args, "notion_token", None),
-                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
+                    "max_pages": ctx.scraping.max_pages,
                 }
             )
 

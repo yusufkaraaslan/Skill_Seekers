@@ -21,7 +21,7 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 import requests
@@ -70,6 +70,42 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _SAFE_TITLE_RE = re.compile(r"[^\w\s-]")
 _SAFE_TITLE_SEP_RE = re.compile(r"[-\s]+")
 _DISPLAY_NAME_RE = re.compile(r"[^a-zA-Z0-9_-]+")
+
+# Tracking / analytics query params that don't change page content. Stripping
+# them before dedup stops the same page being crawled once per tracking variant
+# (a crawler trap), while preserving content-distinguishing params like ?lang=.
+_TRACKING_PARAM_PREFIXES = ("utm_",)
+_TRACKING_PARAMS = {
+    "fbclid",
+    "gclid",
+    "gclsrc",
+    "dclid",
+    "msclkid",
+    "mc_cid",
+    "mc_eid",
+    # NOTE: bare "ref" is intentionally NOT stripped — some doc sites / SPA
+    # routers use ?ref= as a content/routing selector (e.g. GitHub ?ref=branch),
+    # so dropping it could collapse two distinct pages into one and lose a page.
+    # "ref_src" (Twitter referrer source) is unambiguous tracking, so keep it.
+    "ref_src",
+}
+
+
+def _normalize_url(url: str) -> str:
+    """Drop tracking params and sort the remaining query for stable dedup."""
+    try:
+        parts = urlparse(url)
+        if not parts.query:
+            return url
+        kept = [
+            (k, v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True)
+            if k.lower() not in _TRACKING_PARAMS
+            and not k.lower().startswith(_TRACKING_PARAM_PREFIXES)
+        ]
+        return urlunparse(parts._replace(query=urlencode(sorted(kept))))
+    except Exception:
+        return url
 
 
 def infer_description_from_docs(
@@ -201,12 +237,15 @@ class DocToSkillConverter(SkillConverter):
             str(normalized_config.get("display_name", self.name)).strip() or self.name
         )
         self.base_url = normalized_config["base_url"]
-        self.dry_run = dry_run
-        self.resume = resume
+        # Honor dry_run from the ctor param OR the config dict — the create
+        # command (via get_converter) passes it through config["dry_run"], not
+        # the ctor, so without the config fallback --dry-run was a no-op.
+        self.dry_run = dry_run or bool(config.get("dry_run", False))
+        self.resume = resume or bool(config.get("resume", False))
 
         # Paths
-        self.data_dir = f"output/{self.name}_data"
-        self.skill_dir = f"output/{self.name}"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_dir = f"{self.skill_dir}_data"
         self.checkpoint_file = f"{self.data_dir}/checkpoint.json"
 
         # Checkpoint config
@@ -265,15 +304,17 @@ class DocToSkillConverter(SkillConverter):
 
             self.lock = threading.Lock()
 
-        # Create directories (unless dry-run)
-        if not dry_run:
+        # Create directories (unless dry-run). Use self.dry_run/self.resume,
+        # not the ctor params — a config-supplied dry_run (the create path) was
+        # otherwise ignored here and still created empty output dirs.
+        if not self.dry_run:
             os.makedirs(f"{self.data_dir}/pages", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
 
         # Load checkpoint if resuming
-        if resume and not dry_run:
+        if self.resume and not self.dry_run:
             self.load_checkpoint()
 
     def _enqueue_url(self, url: str) -> None:
@@ -331,8 +372,14 @@ class DocToSkillConverter(SkillConverter):
         }
 
         try:
-            with open(self.checkpoint_file, "w", encoding="utf-8") as f:
+            # Atomic write: a second Ctrl-C during a direct open(...,'w') can
+            # truncate the checkpoint, and load_checkpoint then silently starts
+            # fresh — losing all crawl progress. Write a temp file, then
+            # os.replace() it into place (atomic on the same filesystem).
+            tmp_file = f"{self.checkpoint_file}.tmp"
+            with open(tmp_file, "w", encoding="utf-8") as f:
                 json.dump(checkpoint_data, f, indent=2)
+            os.replace(tmp_file, self.checkpoint_file)
             logger.info("  💾 Checkpoint saved (%d pages)", self.pages_scraped)
         except Exception as e:
             logger.warning("  ⚠️  Failed to save checkpoint: %s", e)
@@ -432,6 +479,9 @@ class DocToSkillConverter(SkillConverter):
             href = urljoin(url, str(link.get("href") or ""))
             # Strip anchor fragments to avoid treating #anchors as separate pages
             href = href.split("#")[0]
+            # Drop tracking params so ?utm=…/&fbclid=… variants don't crawl the
+            # same page repeatedly (preserves meaningful queries like ?lang=).
+            href = _normalize_url(href)
             if href not in seen_links and self.is_valid_url(href):
                 seen_links.add(href)
                 page["links"].append(href)
@@ -1610,14 +1660,19 @@ class DocToSkillConverter(SkillConverter):
 
         max_pages = self.config.get("max_pages", DEFAULT_MAX_PAGES)
 
-        # Handle unlimited mode
-        if max_pages is None or max_pages == -1:
+        # Handle unlimited mode. Dry-run ALWAYS caps the preview at 20 — even for
+        # an unlimited config — otherwise an async --dry-run would crawl the whole
+        # site (the sync path already caps unconditionally).
+        if self.dry_run:
+            unlimited = False
+            preview_limit = 20
+        elif max_pages is None or max_pages == -1:
             logger.warning("⚠️  UNLIMITED MODE: No page limit (will scrape all pages)\n")
             unlimited = True
             preview_limit = float("inf")
         else:
             unlimited = False
-            preview_limit = 20 if self.dry_run else max_pages
+            preview_limit = max_pages
 
         # Create semaphore for concurrency control
         semaphore = asyncio.Semaphore(self.workers)
@@ -1823,7 +1878,10 @@ class DocToSkillConverter(SkillConverter):
 
             categorized = False
 
-            # Match against pre-lowercased keywords
+            # Score every category, then assign to the HIGHEST-scoring one (not
+            # the first to cross the threshold — that made categorization depend
+            # on config dict order and frequently filed pages under a weak match).
+            scores: dict[str, int] = {}
             for cat, keywords in lowered_defs.items():
                 score = 0
                 for keyword in keywords:
@@ -1833,11 +1891,13 @@ class DocToSkillConverter(SkillConverter):
                         score += 2
                     if keyword in content:
                         score += 1
-
                 if score >= MIN_CATEGORIZATION_SCORE:  # Threshold for categorization
-                    categories[cat].append(page)
-                    categorized = True
-                    break
+                    scores[cat] = score
+
+            if scores:
+                best_cat = max(scores, key=lambda c: scores[c])
+                categories[best_cat].append(page)
+                categorized = True
 
             if not categorized:
                 categories["other"].append(page)
@@ -2488,7 +2548,7 @@ def _run_enhancement(
     """Run enhancement using context settings."""
     from pathlib import Path
 
-    skill_dir = f"output/{config['name']}"
+    skill_dir = config.get("output_dir") or f"output/{config['name']}"
 
     logger.info("\n" + "=" * 60)
     logger.info(f"🤖 Enhancing SKILL.md (level {ctx.enhancement.level})")

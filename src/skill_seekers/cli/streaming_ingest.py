@@ -374,7 +374,7 @@ class StreamingIngester:
         return "\n".join(lines)
 
 
-def main():
+def main(args=None):
     """CLI entry point for streaming ingestion."""
     import argparse
 
@@ -388,7 +388,15 @@ def main():
     )
     parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
     parser.add_argument("--checkpoint", help="Checkpoint file path")
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        # Central dispatch passes the unified namespace; backfill any args
+        # this module's parser defines but the central one doesn't, so the
+        # reads below never hit a missing attribute.
+        for _a in parser._actions:
+            if _a.dest != "help" and not hasattr(args, _a.dest):
+                setattr(args, _a.dest, _a.default)
 
     # Initialize ingester
     ingester = StreamingIngester(

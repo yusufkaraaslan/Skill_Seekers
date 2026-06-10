@@ -483,6 +483,32 @@ class TestBenchmarkRunner:
         remaining_names = {f.stem for f in remaining}
         assert "test_00000007" in remaining_names or "test_00000008" in remaining_names
 
+    def test_cleanup_old_real_timestamp_format_groups_by_name(self, tmp_path):
+        """Regression (INF-02): files saved as name_YYYYMMDD_HHMMSS across
+        different days must group under one name, not per-day. Previously the
+        date was folded into the group key, so nothing was pruned across days."""
+        import os
+        import json as _json
+
+        runner = BenchmarkRunner(output_dir=tmp_path)
+        base = time.time()
+        # Same benchmark "scraping", three runs spanning two days.
+        names = [
+            "scraping_20260609_120000",
+            "scraping_20260610_120000",
+            "scraping_20260610_130000",
+        ]
+        for i, stem in enumerate(names):
+            p = tmp_path / f"{stem}.json"
+            p.write_text(_json.dumps({"name": "scraping", "total_duration": 1.0}))
+            os.utime(p, (base + i, base + i))
+
+        runner.cleanup_old(keep_latest=1)
+        remaining = list(tmp_path.glob("scraping_*.json"))
+        # All three group under "scraping" → only the newest is kept.
+        assert len(remaining) == 1
+        assert remaining[0].stem == "scraping_20260610_130000"
+
 
 class TestBenchmarkModels:
     """Test benchmark model classes."""

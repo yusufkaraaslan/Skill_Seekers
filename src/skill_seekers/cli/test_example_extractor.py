@@ -214,14 +214,15 @@ class PythonTestAnalyzer:
 
     def _is_test_class(self, node: ast.ClassDef) -> bool:
         """Check if class is a test class"""
-        # unittest.TestCase pattern
+        # unittest.TestCase pattern. Match a base class that *is* a TestCase
+        # (bare `TestCase` or `*TestCase`) — the old `"Test" in base.id`
+        # substring matched unrelated bases like `LatestConfig`/`TestableMixin`.
         for base in node.bases:
-            if (
-                isinstance(base, ast.Name)
-                and "Test" in base.id
-                or isinstance(base, ast.Attribute)
-                and base.attr == "TestCase"
+            if isinstance(base, ast.Name) and (
+                base.id == "TestCase" or base.id.endswith("TestCase")
             ):
+                return True
+            if isinstance(base, ast.Attribute) and base.attr == "TestCase":
                 return True
         return False
 
@@ -267,7 +268,10 @@ class PythonTestAnalyzer:
         """Extract setUp method code"""
         for node in class_node.body:
             if isinstance(node, ast.FunctionDef) and node.name == "setUp":
-                return ast.unparse(node.body)
+                # node.body is a list of statements; ast.unparse expects a single
+                # node. Unparse each statement and join (don't rely on the
+                # undocumented unparse-of-list behavior).
+                return "\n".join(ast.unparse(stmt) for stmt in node.body)
         return None
 
     def _extract_fixtures(self, func_node: ast.FunctionDef) -> str | None:
@@ -391,7 +395,7 @@ class PythonTestAnalyzer:
                     complexity_score=self._calculate_complexity(code),
                     confidence=0.8,
                     tags=tags,
-                    dependencies=imports,
+                    dependencies=list(imports),
                 )
                 examples.append(example)
 
@@ -443,7 +447,7 @@ class PythonTestAnalyzer:
                         complexity_score=self._calculate_complexity(code),
                         confidence=0.85,
                         tags=tags,
-                        dependencies=imports,
+                        dependencies=list(imports),
                     )
                     examples.append(example)
 
@@ -487,7 +491,7 @@ class PythonTestAnalyzer:
                         complexity_score=self._calculate_complexity(code),
                         confidence=0.75,
                         tags=tags,
-                        dependencies=imports,
+                        dependencies=list(imports),
                     )
                     examples.append(example)
 
@@ -529,7 +533,7 @@ class PythonTestAnalyzer:
                 complexity_score=min(1.0, len(func_node.body) / 10),
                 confidence=0.9,
                 tags=tags + ["workflow", "integration"],
-                dependencies=imports,
+                dependencies=list(imports),
             )
             examples.append(example)
 
@@ -735,13 +739,6 @@ class GenericTestAnalyzer:
         "c plus plus": "cpp",
     }
 
-    # Language name normalization mapping
-    LANGUAGE_ALIASES = {
-        "c#": "csharp",
-        "c++": "cpp",
-        "c plus plus": "cpp",
-    }
-
     def extract(self, file_path: str, code: str, language: str) -> list[TestExample]:
         """Extract examples from test file using regex patterns"""
         examples = []
@@ -760,7 +757,10 @@ class GenericTestAnalyzer:
         test_functions = re.finditer(patterns["test_function"], code)
 
         for match in test_functions:
-            test_name = match.group(1)
+            # Alternation patterns (Kotlin/GDScript/C#) put the test name in
+            # group 2 or 3, so group(1) is None ("Test: None"). Take the first
+            # non-empty group, falling back to the whole match.
+            test_name = next((g for g in match.groups() if g), match.group(0))
 
             # Get test function body (approximate - find next function start)
             start_pos = match.end()
@@ -1126,7 +1126,7 @@ class TestExampleExtractor:
 # ============================================================================
 
 
-def main():
+def main(args=None):
     """Main entry point for CLI"""
     parser = argparse.ArgumentParser(
         description="Extract usage examples from test files",
@@ -1173,7 +1173,14 @@ Examples:
         help="Search directory recursively (default: True)",
     )
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        # Central dispatch passes the unified namespace; backfill any args this
+        # parser defines but the central one doesn't.
+        for _a in parser._actions:
+            if _a.dest != "help" and not hasattr(args, _a.dest):
+                setattr(args, _a.dest, _a.default)
 
     # Validate arguments
     if not args.directory and not args.file:

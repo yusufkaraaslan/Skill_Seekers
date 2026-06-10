@@ -98,7 +98,10 @@ class ScrapingSettings(BaseModel):
     resume: bool = Field(default=False, description="Resume from checkpoint")
     fresh: bool = Field(default=False, description="Clear checkpoint and start fresh")
     skip_scrape: bool = Field(default=False, description="Skip scraping, use existing data")
-    languages: list[str] = Field(default_factory=lambda: ["en"], description="Language preferences")
+    languages: list[str] | None = Field(
+        default=None,
+        description="Code-language filter for local analysis (e.g. ['Python','Go']); None = all",
+    )
 
 
 class AnalysisSettings(BaseModel):
@@ -116,16 +119,6 @@ class AnalysisSettings(BaseModel):
     skip_docs: bool = Field(default=False, description="Skip documentation extraction")
     no_comments: bool = Field(default=False, description="Skip comment extraction")
     file_patterns: list[str] | None = Field(default=None, description="File patterns to analyze")
-
-
-class RAGSettings(BaseModel):
-    """RAG (Retrieval-Augmented Generation) configuration."""
-
-    chunk_for_rag: bool = Field(default=False, description="Enable semantic chunking")
-    chunk_tokens: int = Field(default=512, description="Chunk size in tokens")
-    chunk_overlap_tokens: int = Field(default=50, description="Overlap between chunks")
-    preserve_code_blocks: bool = Field(default=True, description="Don't split code blocks")
-    preserve_paragraphs: bool = Field(default=True, description="Respect paragraph boundaries")
 
 
 class ExecutionContext(BaseModel):
@@ -156,7 +149,9 @@ class ExecutionContext(BaseModel):
     output: OutputSettings = Field(default_factory=OutputSettings)
     scraping: ScrapingSettings = Field(default_factory=ScrapingSettings)
     analysis: AnalysisSettings = Field(default_factory=AnalysisSettings)
-    rag: RAGSettings = Field(default_factory=RAGSettings)
+    # NOTE: RAG/chunking config intentionally lives on the `package` command
+    # (which owns its own, richer args and runs as a separate process). It is not
+    # part of this create/scrape context, which never performs chunking.
 
     # Private attributes
     _raw_args: dict[str, Any] = PrivateAttr(default_factory=dict)
@@ -274,7 +269,6 @@ class ExecutionContext(BaseModel):
         enhancement = DEFAULTS["enhancement"]
         output = DEFAULTS["output"]
         analysis = DEFAULTS["analysis"]
-        rag = DEFAULTS["rag"]
 
         return {
             "enhancement": {
@@ -317,7 +311,7 @@ class ExecutionContext(BaseModel):
                 "resume": False,
                 "fresh": False,
                 "skip_scrape": False,
-                "languages": list(scraping["languages"]),
+                "languages": list(scraping["languages"]) if scraping.get("languages") else None,
             },
             "analysis": {
                 "depth": analysis["depth"],
@@ -330,13 +324,6 @@ class ExecutionContext(BaseModel):
                 "skip_docs": analysis["skip_docs"],
                 "no_comments": analysis["no_comments"],
                 "file_patterns": None,
-            },
-            "rag": {
-                "chunk_for_rag": rag["chunk_for_rag"],
-                "chunk_tokens": rag["chunk_tokens"],
-                "chunk_overlap_tokens": rag["chunk_overlap_tokens"],
-                "preserve_code_blocks": rag["preserve_code_blocks"],
-                "preserve_paragraphs": rag["preserve_paragraphs"],
             },
         }
 
@@ -386,13 +373,22 @@ class ExecutionContext(BaseModel):
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
             }
+            # Copy all scraping-tuning keys the file provides — not just
+            # max_pages/rate_limit/browser. Otherwise workers/async_mode/browser
+            # timing from a web config file are dropped (they never reach
+            # ctx.scraping, so _build_config's pre-merge defaults shadow them).
             scraping: dict[str, Any] = {}
-            if "max_pages" in file_data:
-                scraping["max_pages"] = file_data["max_pages"]
-            if "rate_limit" in file_data:
-                scraping["rate_limit"] = file_data["rate_limit"]
-            if "browser" in file_data:
-                scraping["browser"] = file_data["browser"]
+            for key in (
+                "max_pages",
+                "rate_limit",
+                "browser",
+                "browser_wait_until",
+                "browser_extra_wait",
+                "workers",
+                "async_mode",
+            ):
+                if key in file_data:
+                    scraping[key] = file_data[key]
             if scraping:
                 config["scraping"] = scraping
 
@@ -469,16 +465,29 @@ class ExecutionContext(BaseModel):
             config.setdefault("analysis", {})["skip_test_examples"] = True
         if getattr(args, "skip_how_to_guides", False):
             config.setdefault("analysis", {})["skip_how_to_guides"] = True
+        # --skip-config is a legacy alias for --skip-config-patterns; honor both.
+        if getattr(args, "skip_config_patterns", False) or getattr(args, "skip_config", False):
+            config.setdefault("analysis", {})["skip_config_patterns"] = True
+        if getattr(args, "skip_api_reference", False):
+            config.setdefault("analysis", {})["skip_api_reference"] = True
+        if getattr(args, "skip_dependency_graph", False):
+            config.setdefault("analysis", {})["skip_dependency_graph"] = True
+        if getattr(args, "skip_docs", False):
+            config.setdefault("analysis", {})["skip_docs"] = True
+        if getattr(args, "no_comments", False):
+            config.setdefault("analysis", {})["no_comments"] = True
+        if getattr(args, "languages", None):
+            config.setdefault("scraping", {})["languages"] = [
+                lang.strip() for lang in args.languages.split(",") if lang.strip()
+            ]
         if getattr(args, "file_patterns", None):
             config.setdefault("analysis", {})["file_patterns"] = [
                 p.strip() for p in args.file_patterns.split(",")
             ]
 
-        # RAG
-        if getattr(args, "chunk_for_rag", False):
-            config.setdefault("rag", {})["chunk_for_rag"] = True
-        if hasattr(args, "chunk_tokens") and args.chunk_tokens is not None:
-            config.setdefault("rag", {})["chunk_tokens"] = args.chunk_tokens
+        # Enhancement timeout (also accepted on the create path, not just enhance).
+        if getattr(args, "timeout", None) is not None:
+            config.setdefault("enhancement", {})["timeout"] = args.timeout
 
         return config
 
@@ -516,7 +525,13 @@ class ExecutionContext(BaseModel):
         """Get configured AgentClient from context."""
         from skill_seekers.cli.agent_client import AgentClient
 
-        return AgentClient(mode=self.enhancement.mode, agent=self.enhancement.agent)
+        # Forward api_key too — without it a CLI-supplied --api-key (held in the
+        # context) is lost and AgentClient falls back to env-var detection only.
+        return AgentClient(
+            mode=self.enhancement.mode,
+            agent=self.enhancement.agent,
+            api_key=self.enhancement.api_key,
+        )
 
     @contextlib.contextmanager
     def override(self, **kwargs: Any) -> Generator[ExecutionContext, None, None]:

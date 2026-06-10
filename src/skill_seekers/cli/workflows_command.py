@@ -254,54 +254,68 @@ def cmd_validate(name_or_path: str) -> int:
         return 1
 
 
-def main(argv=None) -> None:
-    """Entry point for skill-seekers-workflows."""
+def main(argv=None, args=None) -> None:
+    """Entry point for skill-seekers-workflows.
+
+    Two call styles:
+      - standalone (`skill-seekers-workflows …` / tests): main(argv_list)
+      - unified CLI dispatch: main(args=<namespace from the central parser>),
+        whose subcommand dest is ``workflows_action`` (not ``action``).
+    """
     import argparse
 
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers-workflows",
-        description="Manage enhancement workflow presets",
-    )
-    subparsers = parser.add_subparsers(dest="action", metavar="ACTION")
+    parser = None
+    if args is not None:
+        action = getattr(args, "workflows_action", None)
+    else:
+        parser = argparse.ArgumentParser(
+            prog="skill-seekers-workflows",
+            description="Manage enhancement workflow presets",
+        )
+        subparsers = parser.add_subparsers(dest="action", metavar="ACTION")
 
-    subparsers.add_parser("list", help="List all workflows (bundled + user)")
+        subparsers.add_parser("list", help="List all workflows (bundled + user)")
 
-    show_p = subparsers.add_parser("show", help="Print YAML content of a workflow")
-    show_p.add_argument("workflow_name")
+        show_p = subparsers.add_parser("show", help="Print YAML content of a workflow")
+        show_p.add_argument("workflow_name")
 
-    copy_p = subparsers.add_parser("copy", help="Copy bundled workflow(s) to user dir")
-    copy_p.add_argument("workflow_names", nargs="+")
+        copy_p = subparsers.add_parser("copy", help="Copy bundled workflow(s) to user dir")
+        copy_p.add_argument("workflow_names", nargs="+")
 
-    add_p = subparsers.add_parser("add", help="Install custom YAML file(s) into user dir")
-    add_p.add_argument("files", nargs="+")
-    add_p.add_argument("--name")
+        add_p = subparsers.add_parser("add", help="Install custom YAML file(s) into user dir")
+        add_p.add_argument("files", nargs="+")
+        add_p.add_argument("--name")
 
-    remove_p = subparsers.add_parser("remove", help="Delete user workflow(s)")
-    remove_p.add_argument("workflow_names", nargs="+")
+        remove_p = subparsers.add_parser("remove", help="Delete user workflow(s)")
+        remove_p.add_argument("workflow_names", nargs="+")
 
-    validate_p = subparsers.add_parser("validate", help="Validate a workflow by name or file")
-    validate_p.add_argument("workflow_name")
+        validate_p = subparsers.add_parser("validate", help="Validate a workflow by name or file")
+        validate_p.add_argument("workflow_name")
 
-    args = parser.parse_args(argv)
+        args = parser.parse_args(argv)
+        action = args.action
 
-    if args.action is None:
-        parser.print_help()
+    if action is None:
+        if parser is not None:
+            parser.print_help()
+        else:
+            print("Usage: skill-seekers workflows {list,show,copy,add,remove,validate}")
         sys.exit(0)
 
     rc = 0
-    if args.action == "list":
+    if action == "list":
         rc = cmd_list()
-    elif args.action == "show":
+    elif action == "show":
         rc = cmd_show(args.workflow_name)
-    elif args.action == "copy":
+    elif action == "copy":
         rc = cmd_copy(args.workflow_names)
-    elif args.action == "add":
+    elif action == "add":
         rc = cmd_add(args.files, getattr(args, "name", None))
-    elif args.action == "remove":
+    elif action == "remove":
         rc = cmd_remove(args.workflow_names)
-    elif args.action == "validate":
+    elif action == "validate":
         rc = cmd_validate(args.workflow_name)
-    else:
+    elif parser is not None:
         parser.print_help()
 
     sys.exit(rc)

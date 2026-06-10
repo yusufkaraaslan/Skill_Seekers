@@ -1,5 +1,7 @@
 """Estimate subcommand parser."""
 
+from skill_seekers.cli.constants import DEFAULT_MAX_DISCOVERY
+
 from .base import SubcommandParser
 
 
@@ -22,4 +24,13 @@ class EstimateParser(SubcommandParser):
         """Add estimate-specific arguments."""
         parser.add_argument("config", nargs="?", help="Config JSON file")
         parser.add_argument("--all", action="store_true", help="List all available configs")
-        parser.add_argument("--max-discovery", type=int, help="Max pages to discover")
+        parser.add_argument(
+            "--max-discovery",
+            type=int,
+            default=DEFAULT_MAX_DISCOVERY,
+            help=(
+                f"Maximum pages to discover (default: {DEFAULT_MAX_DISCOVERY}, use -1 for unlimited). "
+                "Without a default the unified CLI passed None, which estimate_pages treats as "
+                "unlimited."
+            ),
+        )

@@ -6,7 +6,9 @@ Implements platform-specific handling for Claude AI (Anthropic) skills.
 Refactored from upload_skill.py and enhance_skill.py.
 """
 
+import json
 import os
+import shutil
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -72,10 +74,12 @@ This skill contains comprehensive documentation organized into categorized refer
 See `references/index.md` for complete documentation structure.
 """
 
-        # Format with YAML frontmatter
+        # Format with YAML frontmatter. Quote name/description (json.dumps yields
+        # a valid double-quoted YAML scalar) so a colon-space or leading special
+        # char in the text can't produce invalid YAML.
         return f"""---
-name: {metadata.name}
-description: {metadata.description}
+name: {json.dumps(metadata.name)}
+description: {json.dumps(metadata.description)}
 version: {metadata.version}
 ---
 
@@ -391,17 +395,35 @@ version: {metadata.version}
                 messages=[{"role": "user", "content": prompt}],
             )
 
+            # Validate the response BEFORE touching the original file: the
+            # backup-then-overwrite below is destructive, so a truncated or
+            # empty response must not be allowed to replace a good SKILL.md.
+            if getattr(message, "stop_reason", None) == "max_tokens":
+                print(
+                    "❌ Enhancement response truncated (hit max_tokens); "
+                    "leaving original SKILL.md intact."
+                )
+                return False
+
             enhanced_content = message.content[0].text
+            if not enhanced_content or not enhanced_content.strip():
+                print("❌ Empty enhancement response; leaving original SKILL.md intact.")
+                return False
+
             print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
-            # Backup original
+            # Save atomically: write to a temp file, back up the original by
+            # COPY (not rename — so the original survives if anything here
+            # fails), then os.replace() the temp into place. The old
+            # rename-then-write left only SKILL.md.backup (no SKILL.md) if the
+            # write failed after the rename.
+            tmp_path = skill_md_path.with_suffix(".md.tmp")
+            tmp_path.write_text(enhanced_content, encoding="utf-8")
             if skill_md_path.exists():
                 backup_path = skill_md_path.with_suffix(".md.backup")
-                skill_md_path.rename(backup_path)
+                shutil.copy2(skill_md_path, backup_path)
                 print(f"  💾 Backed up original to: {backup_path.name}")
-
-            # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding="utf-8")
+            os.replace(tmp_path, skill_md_path)
             print("  ✅ Saved enhanced SKILL.md")
 
             return True

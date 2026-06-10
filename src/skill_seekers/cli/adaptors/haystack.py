@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from .streaming_adaptor import StreamingAdaptorMixin
 from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
-class HaystackAdaptor(SkillAdaptor):
+class HaystackAdaptor(StreamingAdaptorMixin, SkillAdaptor):
     """
     Haystack platform adaptor.
 

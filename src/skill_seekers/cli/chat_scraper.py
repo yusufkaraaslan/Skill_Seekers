@@ -257,8 +257,8 @@ class ChatToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = f"output/{self.name}"
-        self.data_file: str = f"output/{self.name}_extracted.json"
+        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
+        self.data_file: str = f"{self.skill_dir}_extracted.json"
 
         # Extracted data (populated by extract_chat or load_extracted_data)
         self.extracted_data: dict | None = None
@@ -651,23 +651,39 @@ class ChatToSkillConverter(SkillConverter):
                 channel_ids = [self.channel]
                 channel_names = {self.channel: self.channel}
             else:
-                # List all accessible channels
-                result = client.conversations_list(
-                    types="public_channel,private_channel",
-                    limit=200,
-                )
-                channels = result.get("channels", [])
+                # List ALL accessible channels — paginate via next_cursor. A
+                # single conversations_list call caps at the page limit and
+                # silently truncates workspaces with >limit channels.
+                channels = []
+                cursor = None
+                while True:
+                    result = client.conversations_list(
+                        types="public_channel,private_channel",
+                        limit=200,
+                        cursor=cursor,
+                    )
+                    channels.extend(result.get("channels", []))
+                    cursor = (result.get("response_metadata") or {}).get("next_cursor")
+                    if not cursor:
+                        break
                 channel_ids = [ch["id"] for ch in channels]
                 channel_names = {ch["id"]: ch.get("name", ch["id"]) for ch in channels}
                 print(f"   Found {len(channel_ids)} channel(s)")
 
             for ch_id in channel_ids:
                 ch_name = channel_names.get(ch_id, ch_id)
-                ch_messages = self._fetch_slack_channel_messages(client, ch_id, ch_name)
+                # Isolate each channel: one inaccessible/rate-limited channel
+                # must not abort the whole run and discard already-fetched data.
+                try:
+                    ch_messages = self._fetch_slack_channel_messages(client, ch_id, ch_name)
+                except SlackApiError as e:
+                    print(f"   ⚠️  Skipping #{ch_name}: {e.response.get('error', e)}")
+                    continue
                 messages.extend(ch_messages)
                 print(f"   📡 #{ch_name}: {len(ch_messages)} messages")
 
         except SlackApiError as e:
+            # Only reached for the channel-listing call above.
             raise RuntimeError(
                 f"Slack API error: {e.response['error']}\n"
                 "Check your token permissions (channels:history, channels:read)."
@@ -701,7 +717,24 @@ class ChatToSkillConverter(SkillConverter):
             if cursor:
                 kwargs["cursor"] = cursor
 
-            result = client.conversations_history(**kwargs)
+            # Slack rate-limits conversations.history (Tier-3, ~50/min) with a
+            # 429 + Retry-After; honor it with a couple of retries instead of
+            # letting it abort the channel.
+            result = None
+            for _attempt in range(3):
+                try:
+                    result = client.conversations_history(**kwargs)
+                    break
+                except SlackApiError as e:
+                    if getattr(e.response, "status_code", None) == 429:
+                        import time
+
+                        retry_after = int(e.response.headers.get("Retry-After", "5"))
+                        time.sleep(retry_after)
+                        continue
+                    raise
+            if result is None:
+                break
             batch = result.get("messages", [])
             if not batch:
                 break
@@ -829,8 +862,11 @@ class ChatToSkillConverter(SkillConverter):
             base_url = "https://discord.com/api/v10"
             headers = {"Authorization": f"Bot {self.token}"}
 
+            # Bound every request so a stalled connection can't hang forever.
+            timeout = aiohttp.ClientTimeout(total=30)
+
             # Get channel info
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(
                     f"{base_url}/channels/{self.channel}", headers=headers
                 ) as resp:
@@ -846,6 +882,7 @@ class ChatToSkillConverter(SkillConverter):
                 # Fetch messages with pagination (before= cursor)
                 before: str | None = None
                 fetched = 0
+                rate_limit_retries = 0
 
                 while fetched < self.max_messages:
                     params: dict[str, str | int] = {"limit": min(100, self.max_messages - fetched)}
@@ -857,6 +894,23 @@ class ChatToSkillConverter(SkillConverter):
                         headers=headers,
                         params=params,
                     ) as resp:
+                        # Honor Discord rate limits (429 + Retry-After) instead
+                        # of silently truncating the fetch — but bound the
+                        # retries (mirroring the Slack path) so a persistently
+                        # rate-limited endpoint can't loop forever.
+                        if resp.status == 429:
+                            rate_limit_retries += 1
+                            if rate_limit_retries > 3:
+                                logger.warning(
+                                    "Discord rate limit (429) persisted after 3 retries; "
+                                    "stopping with %d message(s) collected.",
+                                    len(messages),
+                                )
+                                break
+                            retry_after = float(resp.headers.get("Retry-After", "1"))
+                            await asyncio.sleep(retry_after)
+                            continue
+                        rate_limit_retries = 0  # reset after any non-429 response
                         if resp.status != 200:
                             body = await resp.text()
                             logger.warning("Discord API error fetching messages: %s", body)
@@ -872,7 +926,12 @@ class ChatToSkillConverter(SkillConverter):
                             messages.append(parsed)
 
                     fetched += len(batch)
-                    before = batch[-1]["id"]
+                    # Guard the cursor: a malformed last message shouldn't crash
+                    # the whole fetch with a KeyError.
+                    last_id = batch[-1].get("id")
+                    if not last_id:
+                        break
+                    before = last_id
 
             print(f"   📡 #{channel_name}: {len(messages)} messages")
             return messages

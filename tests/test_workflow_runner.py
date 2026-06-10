@@ -269,6 +269,40 @@ class TestRunWorkflowsInlineStages:
         assert stage["name"] == "stage_1"
         assert stage["prompt"] == "analyze everything"
 
+    def test_inline_stages_from_config_execute(self):
+        """Regression for RT-06/I2: inline stages declared in a CONFIG file reach
+        ctx.enhancement.stages, not argv. The inline engine must be built from the
+        resolved list — reading args.enhance_stage (None here) dropped config
+        stages silently (and raised TypeError on the None default)."""
+        args = make_args(enhance_workflow=None, enhance_stage=None)
+
+        mock_ctx = MagicMock()
+        mock_ctx.enhancement.workflows = []
+        mock_ctx.enhancement.stages = ["security:Check security", "cleanup:Tidy up"]
+
+        mock_engine = MagicMock()
+        mock_engine.workflow.name = "inline_workflow"
+        mock_engine.workflow.stages = [MagicMock(), MagicMock()]
+
+        with (
+            patch(
+                "skill_seekers.cli.execution_context.ExecutionContext.get",
+                return_value=mock_ctx,
+            ),
+            patch(
+                "skill_seekers.cli.enhancement_workflow.WorkflowEngine",
+                return_value=mock_engine,
+            ) as MockEngine,
+        ):
+            executed, names = run_workflows(args)
+
+        assert executed is True
+        assert "inline_workflow" in names
+        mock_engine.run.assert_called_once()
+        # Built from the CONFIG stages, not argv.
+        stages = MockEngine.call_args[1]["workflow_data"]["stages"]
+        assert [s["name"] for s in stages] == ["security", "cleanup"]
+
 
 class TestRunWorkflowsMixed:
     """Both --enhance-workflow and --enhance-stage provided."""

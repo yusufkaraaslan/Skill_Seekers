@@ -344,7 +344,7 @@ def install_to_all_agents(
     return results
 
 
-def main() -> int:
+def main(args=None) -> int:
     """
     Main entry point for install-agent CLI.
 
@@ -389,7 +389,8 @@ Supported agents:
         "--dry-run", action="store_true", help="Preview installation without making changes"
     )
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Convert skill directory to Path
     skill_dir = Path(args.skill_directory)

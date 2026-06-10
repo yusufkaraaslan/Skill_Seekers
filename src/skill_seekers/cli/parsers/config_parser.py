@@ -28,3 +28,4 @@ class ConfigParser(SubcommandParser):
             "--show", action="store_true", help="Show current configuration and exit"
         )
         parser.add_argument("--test", action="store_true", help="Test connections and exit")
+        parser.add_argument("--welcome", action="store_true", help="Show welcome message")

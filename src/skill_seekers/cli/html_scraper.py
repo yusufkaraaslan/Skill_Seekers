@@ -26,6 +26,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Comment, Tag
 
 from .skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 logger = logging.getLogger(__name__)
@@ -134,8 +135,8 @@ class HtmlToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_extracted.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_extracted.json"
 
         # Categories config
         self.categories: dict = config.get("categories", {})
@@ -863,12 +864,17 @@ class HtmlToSkillConverter(SkillConverter):
             if header_row:
                 headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
 
-        # Body rows
-        tbody = table_elem.find("tbody") or table_elem
-        for row in tbody.find_all("tr"):
+        # Body rows. Prefer an explicit <tbody>; otherwise take rows directly
+        # under the table but skip <thead> rows STRUCTURALLY (not by value) so a
+        # legitimate body row that duplicates the header text isn't dropped.
+        tbody = table_elem.find("tbody")
+        if tbody is not None:
+            body_rows = tbody.find_all("tr")
+        else:
+            body_rows = [r for r in table_elem.find_all("tr") if r.find_parent("thead") is None]
+        for row in body_rows:
             cells = [td.get_text(strip=True) for td in row.find_all(["td", "th"])]
-            # Skip the header row we already captured
-            if cells and cells != headers:
+            if cells:
                 rows.append(cells)
 
         # If no explicit thead, use first row as header
@@ -908,8 +914,8 @@ class HtmlToSkillConverter(SkillConverter):
             "src": resolved_src,
             "alt": img_elem.get("alt", ""),
             "title": img_elem.get("title", ""),
-            "width": int(img_elem.get("width", 0) or 0),
-            "height": int(img_elem.get("height", 0) or 0),
+            "width": _parse_leading_int(img_elem.get("width")),
+            "height": _parse_leading_int(img_elem.get("height")),
             "data": b"",  # Placeholder; actual image data loaded separately
         }
 
@@ -1240,6 +1246,22 @@ class HtmlToSkillConverter(SkillConverter):
     # Private generators
     # ------------------------------------------------------------------
 
+    def _reference_filename(self, cat_data: dict, section_num: int, total_sections: int) -> str:
+        """Basename of a category's reference file — single source of truth shared
+        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
+        sections = cat_data.get("pages") or []
+        if not sections:
+            return f"section_{section_num:02d}.md"
+        section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
+        base = ""
+        if self.html_path:
+            path = Path(self.html_path)
+            base = path.stem if path.is_file() else self.name
+        if total_sections == 1:
+            return f"{base}.md" if base else "main.md"
+        base_name = base if base else "section"
+        return f"{base_name}_s{min(section_nums)}-s{max(section_nums)}.md"
+
     def _generate_reference_file(
         self,
         _cat_key: str,
@@ -1259,28 +1281,10 @@ class HtmlToSkillConverter(SkillConverter):
             total_sections: Total number of categories for filename logic.
         """
         sections = cat_data["pages"]
-
-        # Determine filename
-        html_basename = ""
-        if self.html_path:
-            path = Path(self.html_path)
-            html_basename = path.stem if path.is_file() else self.name
-
-        if sections:
-            section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-
-            if total_sections == 1:
-                filename = (
-                    f"{self.skill_dir}/references/{html_basename}.md"
-                    if html_basename
-                    else f"{self.skill_dir}/references/main.md"
-                )
-            else:
-                sec_range = f"s{min(section_nums)}-s{max(section_nums)}"
-                base_name = html_basename if html_basename else "section"
-                filename = f"{self.skill_dir}/references/{base_name}_{sec_range}.md"
-        else:
-            filename = f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        filename = (
+            f"{self.skill_dir}/references/"
+            f"{self._reference_filename(cat_data, section_num, total_sections)}"
+        )
 
         with open(filename, "w", encoding="utf-8") as f:
             f.write(f"# {cat_data['title']}\n\n")
@@ -1370,11 +1374,6 @@ class HtmlToSkillConverter(SkillConverter):
         """
         filename = f"{self.skill_dir}/references/index.md"
 
-        html_basename = ""
-        if self.html_path:
-            path = Path(self.html_path)
-            html_basename = path.stem if path.is_file() else self.name
-
         total_categories = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -1386,18 +1385,11 @@ class HtmlToSkillConverter(SkillConverter):
                 sections = cat_data["pages"]
                 section_count = len(sections)
 
+                link_filename = self._reference_filename(cat_data, section_num, total_categories)
                 if sections:
                     section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
                     sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-
-                    if total_categories == 1:
-                        link_filename = f"{html_basename}.md" if html_basename else "main.md"
-                    else:
-                        sec_range = f"s{min(section_nums)}-s{max(section_nums)}"
-                        base_name = html_basename if html_basename else "section"
-                        link_filename = f"{base_name}_{sec_range}.md"
                 else:
-                    link_filename = f"section_{section_num:02d}.md"
                     sec_range_str = "N/A"
 
                 f.write(
@@ -1559,9 +1551,10 @@ class HtmlToSkillConverter(SkillConverter):
             # Navigation
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
-            for _cat_key, cat_data in categorized.items():
-                cat_file = self._sanitize_filename(cat_data["title"])
-                f.write(f"- `references/{cat_file}.md` - {cat_data['title']}\n")
+            total_sections = len(categorized)
+            for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
+                cat_file = self._reference_filename(cat_data, section_num, total_sections)
+                f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
             f.write("\n")
             f.write("See `references/index.md` for complete documentation structure.\n\n")
 

@@ -485,7 +485,10 @@ class DependencyAnalyzer:
         multi_import_pattern = r"import\s*\((.*?)\)"
         for match in re.finditer(multi_import_pattern, content, re.DOTALL):
             block = match.group(1)
-            block_start = match.start()
+            # Start of the block BODY (group 1), not the whole match — the latter
+            # begins at `import (`, so adding the in-block offset to it skewed
+            # every grouped-import line number by the width of `import (`.
+            block_start = match.start(1)
 
             # Extract individual imports from block
             import_line_pattern = r'(?:(\w+)\s+)?"([^"]+)"'
@@ -790,26 +793,46 @@ class DependencyAnalyzer:
         This is a simplified resolution - a full implementation would need
         to handle module resolution rules for each language.
         """
-        # For now, just return the imported module if it exists in our file_nodes
-        # In a real implementation, this would resolve relative paths, handle
-        # module resolution (node_modules, Python packages, etc.)
+        # file_nodes is keyed by slash file paths (e.g. "src/pkg/mod.py"), but
+        # imported_module is usually a dotted/namespaced name (e.g. "pkg.mod").
+        # Convert dots to slashes and try common source extensions, matching both
+        # exactly and as a path suffix (keys carry a package/src prefix). Without
+        # this, almost no import resolved and the dependency graph was edgeless.
+        exts = (
+            "",
+            ".py",
+            ".js",
+            ".ts",
+            ".tsx",
+            ".jsx",
+            ".h",
+            ".hpp",
+            ".cpp",
+            ".go",
+            ".rs",
+            ".java",
+            ".kt",
+            ".rb",
+            ".php",
+        )
 
-        if imported_module in self.file_nodes:
-            return imported_module
+        # Candidate base paths: as-is, and dotted → slash (relative leading dots
+        # collapse to a leading slash, which we strip).
+        slash = imported_module.replace(".", "/").lstrip("/")
+        bases = [imported_module, slash]
 
-        # Try common variations
-        variations = [
-            imported_module,
-            f"{imported_module}.py",
-            f"{imported_module}.js",
-            f"{imported_module}.ts",
-            f"{imported_module}.h",
-            f"{imported_module}.cpp",
-        ]
+        # 1) Exact match against file_nodes keys (fast).
+        for base in bases:
+            for ext in exts:
+                cand = base + ext
+                if cand in self.file_nodes:
+                    return cand
 
-        for var in variations:
-            if var in self.file_nodes:
-                return var
+        # 2) Path-suffix match (a single pass over file_nodes).
+        suffixes = tuple(f"/{base}{ext}" for base in bases for ext in exts)
+        for key in self.file_nodes:
+            if key.endswith(suffixes):
+                return key
 
         return None
 

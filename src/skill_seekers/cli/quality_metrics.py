@@ -530,7 +530,7 @@ class QualityAnalyzer:
         return "\n".join(lines)
 
 
-def main():
+def main(args=None):
     """CLI entry point for quality metrics."""
     import argparse
     from pathlib import Path
@@ -540,7 +540,15 @@ def main():
     parser.add_argument("--report", action="store_true", help="Generate detailed report")
     parser.add_argument("--output", help="Output path for JSON report")
     parser.add_argument("--threshold", type=float, default=7.0, help="Quality threshold (0-10)")
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        # Central dispatch passes the unified namespace; backfill any args
+        # this module's parser defines but the central one doesn't, so the
+        # reads below never hit a missing attribute.
+        for _a in parser._actions:
+            if _a.dest != "help" and not hasattr(args, _a.dest):
+                setattr(args, _a.dest, _a.default)
 
     # Analyze skill
     skill_dir = Path(args.skill_dir)
@@ -563,6 +571,17 @@ def main():
 
     report_path.write_text(json.dumps(asdict(report), indent=2, default=str))
     print(f"\n✅ Report saved: {report_path}")
+
+    # Quality gating: --threshold was parsed but never enforced (main always
+    # returned 0, so the gate was a no-op). overall_score.total_score is 0-100
+    # while --threshold is 0-10, so compare on the same scale.
+    total_score = report.overall_score.total_score  # 0-100
+    if total_score < args.threshold * 10:
+        print(
+            f"❌ Quality score {total_score / 10:.1f}/10 is below the "
+            f"threshold of {args.threshold:.1f}/10"
+        )
+        return 1
     return 0
 
 

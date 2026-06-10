@@ -345,7 +345,7 @@ def list_all_configs():
     return 0
 
 
-def main():
+def main(args=None):
     """Main entry point"""
     import argparse
 
@@ -395,7 +395,15 @@ Examples:
         help="HTTP request timeout in seconds (default: 30)",
     )
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        # Central dispatch passes the unified namespace; backfill any args
+        # this module's parser defines but the central one doesn't, so the
+        # reads below never hit a missing attribute.
+        for _a in parser._actions:
+            if _a.dest != "help" and not hasattr(args, _a.dest):
+                setattr(args, _a.dest, _a.default)
 
     # Handle --all flag
     if args.all:

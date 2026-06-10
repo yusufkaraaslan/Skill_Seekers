@@ -425,3 +425,117 @@ class TestDetectDefaultTarget:
     @patch.dict(os.environ, {}, clear=True)
     def test_no_key_defaults_to_markdown(self):
         assert AgentClient.detect_default_target() == "markdown"
+
+
+class TestCallApiTruncation:
+    """Regression for ENH-01: a max_tokens-truncated API response must NOT be
+    returned — callers overwrite SKILL.md / parse JSON with this text, so a
+    truncated body silently corrupts their output."""
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch.object(AgentClient, "_init_api_client", return_value=MagicMock())
+    def test_anthropic_truncated_returns_none(self, _mock_init):
+        client = AgentClient(mode="api", api_key="sk-ant-x")
+        client.provider = "anthropic"
+        msg = MagicMock()
+        msg.stop_reason = "max_tokens"
+        msg.content = [MagicMock(text="half a SKILL.md that was cut off")]
+        client.client.messages.create.return_value = msg
+        assert client._call_api("prompt", max_tokens=10) is None
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch.object(AgentClient, "_init_api_client", return_value=MagicMock())
+    def test_anthropic_complete_returns_text(self, _mock_init):
+        client = AgentClient(mode="api", api_key="sk-ant-x")
+        client.provider = "anthropic"
+        msg = MagicMock()
+        msg.stop_reason = "end_turn"
+        msg.content = [MagicMock(text="full content")]
+        client.client.messages.create.return_value = msg
+        assert client._call_api("prompt", max_tokens=4096) == "full content"
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch.object(AgentClient, "_init_api_client", return_value=MagicMock())
+    def test_openai_length_finish_returns_none(self, _mock_init):
+        client = AgentClient(mode="api", api_key="sk-openai-x")
+        client.provider = "openai"
+        choice = MagicMock()
+        choice.finish_reason = "length"
+        choice.message.content = "truncated"
+        resp = MagicMock()
+        resp.choices = [choice]
+        client.client.chat.completions.create.return_value = resp
+        assert client._call_api("prompt", max_tokens=10) is None
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch.object(AgentClient, "_init_api_client", return_value=MagicMock())
+    def test_openai_forwards_caller_timeout(self, _mock_init):
+        """Regression for ENH-06: the OpenAI branch must forward the caller's
+        timeout. It alone still hardcoded timeout=120s, so large enhancement
+        prompts died at 2 minutes."""
+        client = AgentClient(mode="api", api_key="sk-openai-x")
+        client.provider = "openai"
+        choice = MagicMock()
+        choice.finish_reason = "stop"
+        choice.message.content = "ok"
+        resp = MagicMock()
+        resp.choices = [choice]
+        client.client.chat.completions.create.return_value = resp
+
+        client._call_api("prompt", max_tokens=4096, timeout=999)
+
+        _, kwargs = client.client.chat.completions.create.call_args
+        assert kwargs["timeout"] == 999
+
+
+class TestProviderOverride:
+    """Regression for ENH-02: a Moonshot/Kimi sk- key must not be misrouted to
+    OpenAI when an explicit provider override is set."""
+
+    @patch.dict(os.environ, {"SKILL_SEEKER_PROVIDER": "moonshot"}, clear=True)
+    def test_forced_moonshot_for_sk_key(self):
+        assert AgentClient._detect_provider_from_key("sk-somekey") == "moonshot"
+
+    @patch.dict(os.environ, {"SKILL_SEEKER_PROVIDER": "kimi"}, clear=True)
+    def test_kimi_alias_maps_to_moonshot(self):
+        assert AgentClient._detect_provider_from_key("sk-somekey") == "moonshot"
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_sk_key_without_override_still_openai(self):
+        assert AgentClient._detect_provider_from_key("sk-somekey") == "openai"
+
+
+class TestKimiOutputParsing:
+    """Regression for ENH-04: multi-line / apostrophe-containing Kimi output."""
+
+    def test_multiline_text_part_preserved(self):
+        raw = "TurnBegin(x)\nTextPart(type='text', text='line1\nline2\nline3')\nTurnEnd(x)"
+        assert AgentClient._parse_kimi_output(raw) == "line1\nline2\nline3"
+
+    def test_apostrophe_in_text_not_truncated(self):
+        raw = "TextPart(type='text', text='don't stop')\nTurnEnd()"
+        assert AgentClient._parse_kimi_output(raw) == "don't stop"
+
+
+class TestCallLocalStrayJson:
+    """Regression for ENH-05: a stray .json in the agent cwd must NOT shadow the
+    real stdout response when no output_file was requested."""
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_stray_json_does_not_shadow_stdout(self):
+        from pathlib import Path
+
+        client = AgentClient(mode="local", agent="claude")
+
+        def fake_run(_cmd, **kwargs):
+            # Simulate the agent writing an incidental json into its cwd.
+            Path(kwargs["cwd"], "scratch.json").write_text('{"junk": true}')
+            result = MagicMock()
+            result.returncode = 0
+            result.stdout = "REAL STDOUT RESPONSE"
+            result.stderr = ""
+            return result
+
+        with patch("subprocess.run", side_effect=fake_run):
+            out = client.call("hello")  # local mode, output_file=None
+        assert out == "REAL STDOUT RESPONSE"

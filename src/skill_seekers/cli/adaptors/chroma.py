@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from .streaming_adaptor import StreamingAdaptorMixin
 from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
-class ChromaAdaptor(SkillAdaptor):
+class ChromaAdaptor(StreamingAdaptorMixin, SkillAdaptor):
     """
     Chroma vector database adaptor.
 
@@ -233,10 +234,17 @@ class ChromaAdaptor(SkillAdaptor):
         """
         try:
             import chromadb
-        except (ImportError, Exception):
+        except ImportError:
             return {
                 "success": False,
                 "message": "chromadb not installed. Run: pip install chromadb",
+            }
+        except Exception as e:
+            # Installed but failed to import (e.g. version/dependency conflict) —
+            # don't misreport it as "not installed".
+            return {
+                "success": False,
+                "message": f"chromadb failed to import: {e}",
             }
 
         # Load package

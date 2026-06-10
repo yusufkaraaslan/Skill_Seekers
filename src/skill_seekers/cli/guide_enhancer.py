@@ -129,17 +129,39 @@ class GuideEnhancer:
 
         try:
             data = json.loads(response)
-            return [
-                StepEnhancement(
-                    step_index=item.get("step_index", i),
-                    explanation=item.get("explanation", ""),
-                    variations=item.get("variations", []),
-                )
-                for i, item in enumerate(data.get("step_descriptions", []))
-            ]
+            return self._parse_step_enhancements(data.get("step_descriptions", []))
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"⚠️  Failed to parse step descriptions: {e}")
             return []
+
+    @staticmethod
+    def _parse_step_enhancements(items: list) -> list[StepEnhancement]:
+        """Build StepEnhancements, mapping each to its step by the model's
+        explicit ``step_index``. Only fall back to enumerate position when NO
+        item carries an index — otherwise a dropped/reordered entry would shift
+        every subsequent explanation onto the wrong step.
+        """
+        any_explicit = any(
+            isinstance(it, dict) and isinstance(it.get("step_index"), int) for it in items
+        )
+        result: list[StepEnhancement] = []
+        for i, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            if any_explicit:
+                idx = item.get("step_index")
+                if not isinstance(idx, int):
+                    continue  # skip indexless items when others are indexed
+            else:
+                idx = i  # no indices provided at all → best-effort positional
+            result.append(
+                StepEnhancement(
+                    step_index=idx,
+                    explanation=item.get("explanation", ""),
+                    variations=item.get("variations", []),
+                )
+            )
+        return result
 
     def enhance_troubleshooting(self, guide_data: dict) -> list[TroubleshootingItem]:
         """
@@ -304,7 +326,11 @@ class GuideEnhancer:
             Enhanced guide data
         """
         prompt = self._create_enhancement_prompt(guide_data)
-        response = self._call_claude_local(prompt)
+        # _call_ai routes to API or LOCAL via AgentClient; there is no
+        # _call_claude_local method (calling it raised AttributeError, which the
+        # broad except in enhance_guide swallowed — silently disabling LOCAL-mode
+        # enhancement).
+        response = self._call_ai(prompt)
 
         if not response:
             return guide_data
@@ -550,14 +576,9 @@ IMPORTANT: Return ONLY valid JSON.
 
             # Step descriptions
             if "step_descriptions" in data:
-                enhanced["step_enhancements"] = [
-                    StepEnhancement(
-                        step_index=item.get("step_index", i),
-                        explanation=item.get("explanation", ""),
-                        variations=item.get("variations", []),
-                    )
-                    for i, item in enumerate(data["step_descriptions"])
-                ]
+                enhanced["step_enhancements"] = self._parse_step_enhancements(
+                    data["step_descriptions"]
+                )
 
             # Troubleshooting
             if "troubleshooting" in data:

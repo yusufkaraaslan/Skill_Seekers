@@ -897,7 +897,11 @@ rm {prompt_file}
                     new_mtime = self.skill_md_path.stat().st_mtime
                     new_size = self.skill_md_path.stat().st_size
 
-                    if new_mtime > initial_mtime and new_size > initial_size:
+                    # Success = the file was rewritten (mtime advanced). Do NOT
+                    # also require it to GROW — a valid enhancement may condense
+                    # SKILL.md, and the background/daemon paths only check the
+                    # return code, so requiring growth made the modes disagree.
+                    if new_mtime > initial_mtime:
                         print(f"✅ Enhancement complete! ({elapsed:.1f} seconds)")
                         print(f"   SKILL.md updated: {new_size:,} bytes")
                         print()
@@ -947,7 +951,11 @@ rm {prompt_file}
                         if self.skill_md_path.exists():
                             new_mtime = self.skill_md_path.stat().st_mtime
                             new_size = self.skill_md_path.stat().st_size
-                            if new_mtime > initial_mtime and new_size > initial_size:
+                            # Success = the file was rewritten (mtime advanced). Do NOT
+                            # also require it to GROW — a valid enhancement may condense
+                            # SKILL.md, and the background/daemon paths only check the
+                            # return code, so requiring growth made the modes disagree.
+                            if new_mtime > initial_mtime:
                                 print(f"✅ Enhancement complete on retry! ({elapsed:.1f} seconds)")
                                 print(f"   SKILL.md updated: {new_size:,} bytes")
                                 print()
@@ -1289,7 +1297,7 @@ def _detect_api_target() -> tuple[str, str] | None:
     """
     Auto-detect which API platform to use for enhancement based on env vars.
 
-    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY
+    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY > MOONSHOT_API_KEY
 
     Returns:
         (target, api_key) tuple if an API key is found, else None.
@@ -1305,6 +1313,12 @@ def _detect_api_target() -> tuple[str, str] | None:
     openai_key = os.environ.get("OPENAI_API_KEY")
     if openai_key:
         return ("openai", openai_key)
+
+    # Moonshot/Kimi was previously dropped here, so a Moonshot-only user fell
+    # through to LOCAL mode despite having a valid API key.
+    moonshot_key = os.environ.get("MOONSHOT_API_KEY")
+    if moonshot_key:
+        return ("kimi", moonshot_key)
 
     return None
 

@@ -37,9 +37,11 @@ Run with: pytest tests/test_install_skill.py tests/test_install_skill_e2e.py -v
 """
 
 import json
+import os
 import subprocess
 import sys
-from pathlib import Path
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -57,6 +59,53 @@ except ImportError:
 
 # Import the MCP tool to test
 from skill_seekers.mcp.tools.packaging_tools import install_skill_tool  # noqa: E402
+
+
+# --- Local, offline fixture server for the "real scrape" e2e test -------------
+# The real-scrape e2e test must exercise the genuine scrape -> build -> enhance
+# pipeline WITHOUT depending on an external site. httpbin was flaky and, worse,
+# the test used to globally patch os.environ.get -> returning the API key for
+# REQUESTS_CA_BUNDLE/SSL_CERT_FILE too, which broke TLS and silently sabotaged
+# its own scrape (it only ever passed because a now-fixed bug built a skill from
+# the failed scrape). We serve a small fixed HTML doc from localhost instead, so
+# the scrape is real but deterministic and offline.
+_FIXTURE_DOC_HTML = b"""<!DOCTYPE html>
+<html>
+  <head><title>Example Docs - Getting Started</title></head>
+  <body>
+    <h1>Getting Started</h1>
+    <p>Welcome to the Example library documentation. This page is served
+    locally so the end-to-end scrape test never touches the public network.</p>
+    <h2>Installation</h2>
+    <pre><code>pip install example</code></pre>
+    <h2>Quick Usage</h2>
+    <p>Import the package and call <code>example.run()</code> to begin
+    processing. The function returns a result object you can inspect.</p>
+  </body>
+</html>
+"""
+
+
+class _FixtureDocHandler(BaseHTTPRequestHandler):
+    """Serve the fixture doc for the root page; 404 for llms.txt/robots/etc.
+
+    The 404s let the scraper fall through its llms.txt/sitemap probes to plain
+    HTML scraping -- the deterministic path this test covers.
+    """
+
+    def do_GET(self):  # noqa: N802 (stdlib-defined name)
+        if self.path in ("/", "/index.html"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(_FIXTURE_DOC_HTML)))
+            self.end_headers()
+            self.wfile.write(_FIXTURE_DOC_HTML)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, *_args):  # silence per-request stderr logging
+        pass
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
@@ -454,26 +503,37 @@ class TestInstallSkillE2E_RealFiles:
     """E2E tests with real file operations (no mocking except upload)"""
 
     @pytest.fixture
-    def real_test_config(self, tmp_path):
-        """Create a real minimal config that can be scraped"""
-        # Use the test-manual.json config which is designed for testing
-        test_config_path = Path("configs/test-manual.json")
-        if test_config_path.exists():
-            return str(test_config_path.absolute())
+    def local_docs_server(self):
+        """Run a localhost HTTP server serving one fixture doc page (offline)."""
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _FixtureDocHandler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{port}/"
+        finally:
+            server.shutdown()
+            server.server_close()
 
-        # Fallback: create minimal config (new unified format with sources array)
+    @pytest.fixture
+    def real_test_config(self, tmp_path, local_docs_server):
+        """Create a real, scrapeable config pointed at the local fixture server."""
         config = {
             "name": "test-real-e2e",
             "description": "Real E2E test",
             "sources": [
                 {
                     "type": "documentation",
-                    "base_url": "https://httpbin.org/html",  # Simple HTML endpoint
-                    "selectors": {"main_content": "body", "title": "title", "code_blocks": "code"},
+                    "base_url": local_docs_server,
+                    "selectors": {
+                        "main_content": "body",
+                        "title": "title",
+                        "code_blocks": "code",
+                    },
                     "url_patterns": {"include": [], "exclude": []},
                     "categories": {},
-                    "rate_limit": 0.5,
-                    "max_pages": 1,  # Just one page for speed
+                    "rate_limit": 0.0,
+                    "max_pages": 1,  # Single fixture page
                 }
             ],
         }
@@ -489,22 +549,50 @@ class TestInstallSkillE2E_RealFiles:
     async def test_e2e_real_scrape_with_mocked_enhancement(self, real_test_config, tmp_path):
         """E2E test with real scraping but mocked enhancement/upload"""
 
-        # Only mock enhancement and upload (let scraping run for real)
+        # Mock only enhancement and upload -- the scrape runs for real against
+        # the local fixture server. We clear the provider API keys (scoped via
+        # patch.dict) so the build-time enhancement (UnifiedScraper PHASE 6,
+        # AUTO -> API mode) finds no key and skips fast, instead of making a
+        # real, slow, retrying call to a provider API. (The old test patched
+        # os.environ.get wholesale, which also fed the fake key to
+        # REQUESTS_CA_BUNDLE / SSL_CERT_FILE and broke TLS, sabotaging the
+        # scrape.) The install_skill enhancement phase is mocked below, so it
+        # needs no key either.
         with (
             patch(
                 "skill_seekers.mcp.tools.packaging_tools.run_subprocess_with_streaming"
             ) as mock_enhance,
             patch("skill_seekers.mcp.tools.packaging_tools.upload_skill_tool") as mock_upload,
-            patch("os.environ.get") as mock_env,
+            # The unified build runs its OWN AI enhancement on each source
+            # (UnifiedScraper / doc_scraper `_run_enhancement`, default level 2).
+            # With no API key it falls back to LOCAL mode and spawns a real
+            # coding-agent subprocess (~90s, or a 45-min timeout). Stub it to a
+            # fast no-op so this e2e exercises scrape -> build -> install-enhance
+            # without any real agent/API call.
+            patch(
+                "skill_seekers.cli.enhance_skill_local.LocalSkillEnhancer.run",
+                return_value=True,
+            ),
+            patch.dict(
+                os.environ,
+                dict.fromkeys(
+                    [
+                        "ANTHROPIC_API_KEY",
+                        "ANTHROPIC_AUTH_TOKEN",
+                        "MOONSHOT_API_KEY",
+                        "GOOGLE_API_KEY",
+                        "OPENAI_API_KEY",
+                    ],
+                    "",
+                ),
+                clear=False,
+            ),
         ):
             # Mock enhancement (avoid needing Claude Code)
             mock_enhance.return_value = ("✅ Enhancement complete", "", 0)
 
             # Mock upload (avoid needing API key)
             mock_upload.return_value = [TextContent(type="text", text="✅ Upload successful")]
-
-            # Mock API key present
-            mock_env.return_value = "sk-ant-test-key"
 
             # Run with real scraping
             result = await install_skill_tool(

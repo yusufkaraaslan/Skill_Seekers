@@ -276,8 +276,8 @@ class GitHubScraper(SkillConverter):
             logger.info(f"Code analysis depth: {self.code_analysis_depth}")
 
         # Output paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_github_data.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_github_data.json"
 
         # Extracted data storage
         self.extracted_data = {
@@ -688,10 +688,17 @@ class GitHubScraper(SkillConverter):
         try:
             from collections import deque
 
+            # Cap the walk: each directory is a separate API call, so an unbounded
+            # tree on a huge repo could exhaust the rate-limit quota.
+            max_tree_items = 5000
             contents = deque(self.repo.get_contents(""))
             file_tree = []
+            truncated = False
 
             while contents:
+                if len(file_tree) >= max_tree_items:
+                    truncated = True
+                    break
                 file_content = contents.popleft()
 
                 file_info = {
@@ -705,6 +712,10 @@ class GitHubScraper(SkillConverter):
                     contents.extend(self.repo.get_contents(file_content.path))
 
             self.extracted_data["file_tree"] = file_tree
+            if truncated:
+                logger.warning(
+                    "File tree truncated at %d items to preserve API quota", max_tree_items
+                )
             logger.info(f"File tree built (GitHub API mode): {len(file_tree)} items")
 
         except GithubException as e:
@@ -969,7 +980,11 @@ class GitHubScraper(SkillConverter):
 
     def _save_data(self):
         """Save extracted data to JSON file."""
-        os.makedirs("output", exist_ok=True)
+        # Create the actual parent of data_file. self.data_file derives from
+        # self.skill_dir (config["output_dir"]), so with a nested --output the
+        # parent isn't "output/" — hardcoding it raised FileNotFoundError here
+        # (this runs during extract, before build_skill makes skill_dir).
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
 
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(self.extracted_data, f, indent=2, ensure_ascii=False)
@@ -991,8 +1006,8 @@ class GitHubToSkillConverter:
         self.per_issue_files = config.get("per_issue_files", False)
 
         # Paths
-        self.data_file = f"output/{self.name}_github_data.json"
-        self.skill_dir = f"output/{self.name}"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_github_data.json"
 
         # Load extracted data
         self.data = self._load_data()

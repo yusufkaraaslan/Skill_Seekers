@@ -144,6 +144,35 @@ class TestExecutionContextFromArgs:
         assert ctx.analysis.skip_how_to_guides is True
         assert ctx.analysis.file_patterns == ["*.py", "*.js"]
 
+    def test_analysis_skip_flags_all_wired(self):
+        """Regression: the previously-inert skip flags must reach the context."""
+        args = argparse.Namespace(
+            name="test",
+            skip_config_patterns=True,
+            skip_api_reference=True,
+            skip_dependency_graph=True,
+            skip_docs=True,
+            no_comments=True,
+        )
+        ctx = ExecutionContext.initialize(args=args)
+        assert ctx.analysis.skip_config_patterns is True
+        assert ctx.analysis.skip_api_reference is True
+        assert ctx.analysis.skip_dependency_graph is True
+        assert ctx.analysis.skip_docs is True
+        assert ctx.analysis.no_comments is True
+
+    def test_skip_config_alias(self):
+        """--skip-config is a legacy alias for --skip-config-patterns."""
+        args = argparse.Namespace(name="test", skip_config=True)
+        ctx = ExecutionContext.initialize(args=args)
+        assert ctx.analysis.skip_config_patterns is True
+
+    def test_languages_arg_maps_to_code_filter(self):
+        """--languages must reach ctx.scraping.languages (code-language filter)."""
+        args = argparse.Namespace(name="test", languages="Python, Go")
+        ctx = ExecutionContext.initialize(args=args)
+        assert ctx.scraping.languages == ["Python", "Go"]
+
     def test_workflow_args(self):
         """Should extract workflow args correctly."""
         args = argparse.Namespace(
@@ -159,18 +188,15 @@ class TestExecutionContextFromArgs:
         assert ctx.enhancement.stages == ["stage1:prompt1"]
         assert ctx.enhancement.workflow_vars == {"key1": "value1", "key2": "value2"}
 
-    def test_rag_args(self):
-        """Should extract RAG args correctly."""
-        args = argparse.Namespace(
-            name="test",
-            chunk_for_rag=True,
-            chunk_tokens=1024,
-        )
+    # NOTE: RAG/chunking config was removed from ExecutionContext — it belongs to
+    # the separate `package` command (which owns its own args and runs as its own
+    # process), so there is nothing to assert about ctx.rag here.
 
+    def test_dry_run_arg_reaches_output(self):
+        """Regression: --dry-run must reach ctx.output.dry_run."""
+        args = argparse.Namespace(name="test", dry_run=True)
         ctx = ExecutionContext.initialize(args=args)
-
-        assert ctx.rag.chunk_for_rag is True
-        assert ctx.rag.chunk_tokens == 1024
+        assert ctx.output.dry_run is True
 
     def test_api_mode_detection(self):
         """Should detect API mode from api_key."""
@@ -266,6 +292,12 @@ class TestExecutionContextFromConfigFile:
             "max_pages": 500,
             "rate_limit": 0.5,
             "browser": True,
+            # These were previously dropped (only max_pages/rate_limit/browser
+            # were copied from a web config file).
+            "workers": 8,
+            "async_mode": True,
+            "browser_wait_until": "networkidle",
+            "browser_extra_wait": 750,
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -280,6 +312,11 @@ class TestExecutionContextFromConfigFile:
             assert ctx.scraping.max_pages == 500
             assert ctx.scraping.rate_limit == 0.5
             assert ctx.scraping.browser is True
+            # Regression: workers/async_mode/browser timing must be honored too.
+            assert ctx.scraping.workers == 8
+            assert ctx.scraping.async_mode is True
+            assert ctx.scraping.browser_wait_until == "networkidle"
+            assert ctx.scraping.browser_extra_wait == 750
         finally:
             os.unlink(config_path)
 
@@ -500,12 +537,9 @@ class TestExecutionContextDefaults:
         # Scraping defaults
         assert ctx.scraping.browser is False
         assert ctx.scraping.workers == 1
-        assert ctx.scraping.languages == ["en"]
+        # languages is the code-language filter for local analysis; None = all.
+        assert ctx.scraping.languages is None
 
         # Analysis defaults
         assert ctx.analysis.depth == "surface"
         assert ctx.analysis.skip_patterns is False
-
-        # RAG defaults
-        assert ctx.rag.chunk_for_rag is False
-        assert ctx.rag.chunk_tokens == 512

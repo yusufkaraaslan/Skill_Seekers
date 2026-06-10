@@ -117,7 +117,8 @@ class UnifiedScraper(SkillConverter):
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
-        self.output_dir = f"output/{self.name}"  # Final skill only
+        # Honor --output (config["output_dir"]) for the final skill.
+        self.output_dir = self.config.get("output_dir") or f"output/{self.name}"
 
         # Use hidden cache directory for intermediate files
         self.cache_dir = f".skillseeker-cache/{self.name}"
@@ -253,7 +254,11 @@ class UnifiedScraper(SkillConverter):
                 logger.error(f"Error scraping {source_type}: {e}")
                 logger.info("Continuing with other sources...")
 
-        logger.info(f"\n✅ Scraped {len(self.scraped_data)} sources successfully")
+        # Count items actually scraped, not the number of bucket types (always
+        # ~17). Returns the total so run() can detect a total failure.
+        scraped_count = sum(len(v) for v in self.scraped_data.values())
+        logger.info(f"\n✅ Scraped {scraped_count} source item(s) successfully")
+        return scraped_count
 
     def _scrape_documentation(self, source: dict[str, Any]):
         """Scrape documentation website."""
@@ -333,6 +338,14 @@ class UnifiedScraper(SkillConverter):
             doc_config["browser"] = True
             logger.info("  🌐 Browser mode enabled (JavaScript rendering via Playwright)")
 
+        # Write the sub-skill directly into the cache (no output/ staging, no move).
+        # Clean any stale copy first so re-runs start fresh.
+        docs_skill_dir = os.path.join(self.sources_dir, doc_config["name"])
+        for stale in (docs_skill_dir, f"{docs_skill_dir}_data"):
+            if os.path.exists(stale):
+                shutil.rmtree(stale)
+        doc_config["output_dir"] = docs_skill_dir
+
         # Import and call directly
         try:
             from skill_seekers.cli.doc_scraper import scrape_documentation
@@ -361,8 +374,8 @@ class UnifiedScraper(SkillConverter):
             logger.debug(f"Traceback: {traceback.format_exc()}")
             return
 
-        # Load scraped data
-        docs_data_file = f"output/{doc_config['name']}_data/summary.json"
+        # Load scraped data — the sub-converter wrote straight into the cache.
+        docs_data_file = f"{docs_skill_dir}_data/summary.json"
 
         if os.path.exists(docs_data_file):
             with open(docs_data_file, encoding="utf-8") as f:
@@ -376,41 +389,13 @@ class UnifiedScraper(SkillConverter):
                     "pages": summary.get("pages", []),
                     "total_pages": summary.get("total_pages", 0),
                     "data_file": docs_data_file,
-                    "refs_dir": "",  # Will be set after moving to cache
+                    "refs_dir": os.path.join(docs_skill_dir, "references"),
                 }
             )
 
             logger.info(f"✅ Documentation: {summary.get('total_pages', 0)} pages scraped")
         else:
             logger.warning("Documentation data file not found")
-
-        # Move intermediate files to cache to keep output/ clean
-        docs_output_dir = f"output/{doc_config['name']}"
-        docs_data_dir = f"output/{doc_config['name']}_data"
-
-        if os.path.exists(docs_output_dir):
-            cache_docs_dir = os.path.join(self.sources_dir, f"{doc_config['name']}")
-            if os.path.exists(cache_docs_dir):
-                shutil.rmtree(cache_docs_dir)
-            shutil.move(docs_output_dir, cache_docs_dir)
-            logger.info(f"📦 Moved docs output to cache: {cache_docs_dir}")
-
-            # Update refs_dir in scraped_data with cache location
-            refs_dir_path = os.path.join(cache_docs_dir, "references")
-            if self.scraped_data["documentation"]:
-                self.scraped_data["documentation"][-1]["refs_dir"] = refs_dir_path
-
-        if os.path.exists(docs_data_dir):
-            cache_data_dir = os.path.join(self.data_dir, f"{doc_config['name']}_data")
-            if os.path.exists(cache_data_dir):
-                shutil.rmtree(cache_data_dir)
-            shutil.move(docs_data_dir, cache_data_dir)
-            logger.info(f"📦 Moved docs data to cache: {cache_data_dir}")
-
-            # Update data_file path to point to cache location
-            if self.scraped_data["documentation"]:
-                cached_data_file = os.path.join(cache_data_dir, "summary.json")
-                self.scraped_data["documentation"][-1]["data_file"] = cached_data_file
 
     def _clone_github_repo(self, repo_name: str, idx: int = 0) -> str | None:
         """
@@ -526,6 +511,16 @@ class UnifiedScraper(SkillConverter):
         if "exclude_dirs_additional" in source:
             github_config["exclude_dirs_additional"] = source["exclude_dirs_additional"]
 
+        # Write the GitHub sub-skill + its data file straight into the cache
+        # (no output/ staging, no move). Clean any stale copy first.
+        github_skill_dir = os.path.join(self.sources_dir, github_config["name"])
+        github_converter_data = f"{github_skill_dir}_github_data.json"
+        if os.path.isdir(github_skill_dir):
+            shutil.rmtree(github_skill_dir)
+        if os.path.exists(github_converter_data):
+            os.remove(github_converter_data)
+        github_config["output_dir"] = github_skill_dir
+
         # Scrape
         logger.info(f"Scraping GitHub repository: {source['repo']}")
         scraper = GitHubScraper(github_config)
@@ -557,9 +552,9 @@ class UnifiedScraper(SkillConverter):
         with open(github_data_file, "w", encoding="utf-8") as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
-        # ALSO save to the location GitHubToSkillConverter expects (with C3.x data!)
-        converter_data_file = f"output/{github_config['name']}_github_data.json"
-        with open(converter_data_file, "w", encoding="utf-8") as f:
+        # ALSO save to the location GitHubToSkillConverter expects (its data_file
+        # is "{skill_dir}_github_data.json"), now written straight into the cache.
+        with open(github_converter_data, "w", encoding="utf-8") as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
         # Append to list instead of overwriting (multi-source support)
@@ -573,37 +568,17 @@ class UnifiedScraper(SkillConverter):
             }
         )
 
-        # Build standalone SKILL.md for synthesis using GitHubToSkillConverter
+        # Build standalone SKILL.md for synthesis using GitHubToSkillConverter.
+        # github_config["output_dir"] points into the cache, so the converter
+        # writes its skill there directly (no output/ staging, no move).
         try:
             from skill_seekers.cli.github_scraper import GitHubToSkillConverter
 
-            # Use github_config which has the correct name field
-            # Converter will load from output/{name}_github_data.json which now has C3.x data
             converter = GitHubToSkillConverter(config=github_config)
             converter.build_skill()
             logger.info("✅ GitHub: Standalone SKILL.md created")
         except Exception as e:
             logger.warning(f"⚠️  Failed to build standalone GitHub SKILL.md: {e}")
-
-        # Move intermediate files to cache to keep output/ clean
-        github_output_dir = f"output/{github_config['name']}"
-        github_data_file_path = f"output/{github_config['name']}_github_data.json"
-
-        if os.path.exists(github_output_dir):
-            cache_github_dir = os.path.join(self.sources_dir, github_config["name"])
-            if os.path.exists(cache_github_dir):
-                shutil.rmtree(cache_github_dir)
-            shutil.move(github_output_dir, cache_github_dir)
-            logger.info(f"📦 Moved GitHub output to cache: {cache_github_dir}")
-
-        if os.path.exists(github_data_file_path):
-            cache_github_data = os.path.join(
-                self.data_dir, f"{github_config['name']}_github_data.json"
-            )
-            if os.path.exists(cache_github_data):
-                os.remove(cache_github_data)
-            shutil.move(github_data_file_path, cache_github_data)
-            logger.info(f"📦 Moved GitHub data to cache: {cache_github_data}")
 
         logger.info("✅ GitHub: Repository scraped successfully")
 
@@ -1904,7 +1879,13 @@ class UnifiedScraper(SkillConverter):
 
         try:
             # Phase 1: Scrape all sources
-            self.scrape_all_sources()
+            scraped_count = self.scrape_all_sources()
+
+            # Abort if every source failed — otherwise we'd build (and report
+            # success for) an empty skill from no data.
+            if not scraped_count:
+                logger.error("❌ All sources failed to scrape (no data collected); aborting build.")
+                return 1
 
             # Phase 2: Detect conflicts (if applicable)
             conflicts = self.detect_conflicts()
@@ -2015,23 +1996,28 @@ class UnifiedScraper(SkillConverter):
                             if not agent:
                                 agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
 
-                        # Read timeout from config enhancement block
-                        timeout_val = enhancement_config.get("timeout")
-                        if timeout_val is not None:
-                            if isinstance(timeout_val, str) and timeout_val.lower() in (
-                                "unlimited",
-                                "none",
-                            ):
-                                timeout_val = 86400  # 24 hours
+                        # Prefer the context's resolved timeout (CLI/env/config
+                        # already merged); fall back to the raw config block only
+                        # if the context is unavailable.
+                        try:
+                            timeout_val = ExecutionContext.get().enhancement.timeout
+                        except Exception:
+                            timeout_val = enhancement_config.get("timeout")
+                            if timeout_val is not None:
+                                if isinstance(timeout_val, str) and timeout_val.lower() in (
+                                    "unlimited",
+                                    "none",
+                                ):
+                                    timeout_val = 86400  # 24 hours
+                                else:
+                                    try:
+                                        timeout_val = int(timeout_val)
+                                        if timeout_val <= 0:
+                                            timeout_val = 86400
+                                    except (ValueError, TypeError):
+                                        timeout_val = 2700
                             else:
-                                try:
-                                    timeout_val = int(timeout_val)
-                                    if timeout_val <= 0:
-                                        timeout_val = 86400
-                                except (ValueError, TypeError):
-                                    timeout_val = 2700
-                        else:
-                            timeout_val = 2700
+                                timeout_val = 2700
 
                         enhancer = LocalSkillEnhancer(
                             self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
@@ -2057,7 +2043,13 @@ class UnifiedScraper(SkillConverter):
                     try:
                         from skill_seekers.cli.agent_client import AgentClient
 
-                        client = AgentClient(mode="api")
+                        # Forward the context's api_key so a CLI --api-key isn't
+                        # dropped (AgentClient would otherwise env-detect only).
+                        try:
+                            _api_key = ExecutionContext.get().enhancement.api_key
+                        except Exception:
+                            _api_key = None
+                        client = AgentClient(mode="api", api_key=_api_key)
                         if client.client:
                             # Read references and current SKILL.md
                             references = ""

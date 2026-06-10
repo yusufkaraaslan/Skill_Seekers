@@ -285,6 +285,42 @@ class User {
         method_names = [m["name"] for m in user_class["methods"]]
         self.assertGreater(len(method_names), 0)
 
+    def test_javascript_class_methods_after_first_not_dropped(self):
+        """Regression for CBA-03: the class body must be delimited by the
+        MATCHING closing brace, not the first '}', or every method after the
+        first is silently dropped."""
+        code = """
+class Service {
+    constructor() { this.x = 1; }
+    foo() { return this.x; }
+    bar() { return 2; }
+    baz() { return 3; }
+}
+"""
+        result = self.analyzer.analyze_file("svc.js", code, "JavaScript")
+        names = {m["name"] for m in result["classes"][0]["methods"]}
+        self.assertTrue({"foo", "bar", "baz"}.issubset(names))
+
+    def test_typescript_class_methods_with_return_types_not_dropped(self):
+        """Regression for CBA-14: a TS class method written `name(...): Type {`
+        has a return-type annotation between the params `)` and the body `{`.
+        The method-extraction regex must tolerate it, or every annotated method
+        is silently dropped (and method-count heuristics under-count)."""
+        code = """
+class Greeter {
+    greet(name: string): string { return name; }
+    add(a: number, b: number): number { return a + b; }
+    load(): Promise<void> { return Promise.resolve(); }
+    plain() { return 1; }
+}
+"""
+        result = self.analyzer.analyze_file("greeter.ts", code, "TypeScript")
+        names = {m["name"] for m in result["classes"][0]["methods"]}
+        self.assertTrue(
+            {"greet", "add", "load", "plain"}.issubset(names),
+            f"TS methods with return types were dropped: got {names}",
+        )
+
     def test_typescript_type_annotations(self):
         """Test TypeScript type annotation extraction.
 
@@ -1262,6 +1298,36 @@ class TestUnknownLanguage(unittest.TestCase):
     def test_unknown_language_deep(self):
         result = self.analyzer.analyze_file("test.xyz", "some content", "xyz")
         self.assertIsInstance(result, dict)
+
+
+class TestGDScriptParsing(unittest.TestCase):
+    """Tests for GDScript parsing (regression for CBA-13)."""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth="deep")
+
+    def test_gdscript_extends_populates_base_classes(self):
+        """class_name ... extends ... must expose 'base_classes' (not 'bases').
+
+        PatternRecognizer._convert_to_signatures reads cls['base_classes'];
+        using the wrong key silently zeroes all GDScript inheritance-based
+        pattern detection.
+        """
+        code = "class_name PlayerController extends CharacterBody2D\n\nfunc _ready():\n    pass\n"
+        result = self.analyzer.analyze_file("player.gd", code, "GDScript")
+        classes = result["classes"]
+        self.assertEqual(len(classes), 1)
+        cls = classes[0]
+        self.assertEqual(cls["name"], "PlayerController")
+        self.assertIn("base_classes", cls)
+        self.assertEqual(cls["base_classes"], ["CharacterBody2D"])
+        self.assertNotIn("bases", cls)
+
+    def test_gdscript_no_extends_has_empty_base_classes(self):
+        code = "class_name Utils\n\nfunc helper():\n    pass\n"
+        result = self.analyzer.analyze_file("utils.gd", code, "GDScript")
+        cls = result["classes"][0]
+        self.assertEqual(cls["base_classes"], [])
 
 
 if __name__ == "__main__":

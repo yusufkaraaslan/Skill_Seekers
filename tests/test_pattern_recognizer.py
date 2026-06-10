@@ -683,5 +683,26 @@ public class DatabaseConnection {
         assert len(report.patterns) >= 0
 
 
+class TestBaseClassMatching(unittest.TestCase):
+    """Regression for CBA-04: generic/qualified base names must match a bare
+    class name so inheritance-based patterns (Strategy/Template-Method/Observer)
+    aren't silently missed."""
+
+    def test_base_root_normalizes(self):
+        from skill_seekers.cli.pattern_recognizer import _base_root
+
+        self.assertEqual(_base_root("BaseStrategy<Foo>"), "BaseStrategy")
+        self.assertEqual(_base_root("ns.pkg.BaseStrategy"), "BaseStrategy")
+        self.assertEqual(_base_root("Plain"), "Plain")
+        self.assertEqual(_base_root(""), "")
+
+    def test_matches_base_handles_generics_and_qualifiers(self):
+        from skill_seekers.cli.pattern_recognizer import _matches_base
+
+        self.assertTrue(_matches_base("BaseStrategy", ["BaseStrategy<Foo>"]))
+        self.assertTrue(_matches_base("Base", ["ns.Base"]))
+        self.assertFalse(_matches_base("BaseStrategy", ["OtherBase"]))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

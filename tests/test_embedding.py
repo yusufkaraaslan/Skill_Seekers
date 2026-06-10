@@ -365,3 +365,15 @@ def test_cache_persistence():
 
     finally:
         Path(tmp_path).unlink(missing_ok=True)
+
+
+def test_compute_hash_includes_normalize():
+    """Regression (INF-01): the cache key must include `normalize`, else a
+    normalize=False request returns a cached normalize=True vector."""
+    from skill_seekers.embedding.generator import EmbeddingGenerator
+
+    h_true = EmbeddingGenerator.compute_hash("hello world", "model-x", True)
+    h_false = EmbeddingGenerator.compute_hash("hello world", "model-x", False)
+    assert h_true != h_false
+    # Same inputs → stable key.
+    assert h_true == EmbeddingGenerator.compute_hash("hello world", "model-x", True)

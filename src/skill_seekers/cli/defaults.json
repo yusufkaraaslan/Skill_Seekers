@@ -11,7 +11,7 @@
     "browser_wait_until": "domcontentloaded",
     "browser_extra_wait": 0,
     "checkpoint_interval": 1000,
-    "languages": ["en"]
+    "languages": null
   },
 
   "enhancement": {

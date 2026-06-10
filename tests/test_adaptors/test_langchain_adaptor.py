@@ -177,5 +177,44 @@ class TestLangChainAdaptor:
         assert documents[0]["metadata"]["type"] == "reference"
 
 
+class TestStreamingWiring:
+    """Regression (ADP-01): RAG/vector adaptors expose package_streaming so the
+    --streaming flag actually streams instead of silently falling back."""
+
+    def test_rag_and_vector_adaptors_support_streaming(self):
+        for platform in [
+            "langchain",
+            "llama-index",
+            "chroma",
+            "haystack",
+            "weaviate",
+            "qdrant",
+            "faiss",
+            "pinecone",
+        ]:
+            adaptor = get_adaptor(platform)
+            assert hasattr(adaptor, "package_streaming"), platform
+
+    def test_non_streaming_target_has_no_package_streaming(self):
+        # claude/markdown produce single-doc packages, not chunk streams.
+        assert not hasattr(get_adaptor("claude"), "package_streaming")
+
+    def test_streaming_package_end_to_end(self, tmp_path):
+        sk = tmp_path / "myskill"
+        (sk / "references").mkdir(parents=True)
+        (sk / "SKILL.md").write_text(
+            "---\nname: myskill\ndescription: x\n---\n# Hello\n" + "content line\n" * 80
+        )
+        (sk / "references" / "api.md").write_text("# API\n" + "detail\n" * 200)
+
+        out = get_adaptor("langchain").package_streaming(
+            sk, tmp_path, chunk_size=500, chunk_overlap=50, batch_size=10
+        )
+        assert out.exists()
+        data = json.loads(out.read_text())
+        assert data["streaming"] is True
+        assert data["total_chunks"] > 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

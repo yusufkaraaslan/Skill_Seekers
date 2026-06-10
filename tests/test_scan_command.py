@@ -366,6 +366,33 @@ class TestDetectWithAI:
         detections = detect_with_ai(_bundle(), client, min_confidence=0.5)
         assert [d.name for d in detections] == ["react"]
 
+    def test_non_numeric_confidence_is_dropped_not_crash(self):
+        """Regression for SCAN-02: a non-numeric confidence must drop that one
+        entry, not crash the whole scan with ValueError/TypeError."""
+        client = MagicMock()
+        client.call.return_value = json.dumps(
+            [
+                {
+                    "name": "react",
+                    "ecosystem": "npm",
+                    "version": "18.3.0",
+                    "kind": "framework",
+                    "confidence": "high",  # non-numeric — would crash float()
+                    "evidence": "x",
+                },
+                {
+                    "name": "vue",
+                    "ecosystem": "npm",
+                    "version": "3.4.0",
+                    "kind": "framework",
+                    "confidence": 0.9,
+                    "evidence": "y",
+                },
+            ]
+        )
+        detections = detect_with_ai(_bundle(), client)
+        assert [d.name for d in detections] == ["vue"]
+
     def test_handles_agentclient_exception_gracefully(self):
         """AgentClient auth/network errors must not crash the scan."""
         client = MagicMock()
@@ -1651,7 +1678,7 @@ class TestResolverUsesCanonicalCandidates:
         # First call (exact "Godot Engine.json") returns None; eventually the
         # canonical candidate "godot.json" hits. Resolver appends .json to
         # every candidate so local repo / user dir lookups actually find files.
-        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
             return canonical_match if name == "godot.json" else None
 
         with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
@@ -1682,7 +1709,7 @@ class TestResolverUsesCanonicalCandidates:
         out_dir.mkdir()
         seen: list[str] = []
 
-        def fake_resolve(name, auto_fetch=True):  # noqa: ARG001 — mirrors real signature
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
             seen.append(name)
             return None
 
@@ -1762,3 +1789,20 @@ class TestResolverUsesCanonicalCandidates:
                 allow_generate=False,
             )
         assert path is None
+
+
+class TestGenerateSchemaHintDepth:
+    """Regression for SCAN-01: the AI schema hint's ``code_analysis_depth`` must
+    be a value the validator accepts. Otherwise every github config the AI
+    faithfully generates from the hint is rejected by UniSkillConfigValidator
+    and the scan never produces an AI-generated config."""
+
+    def test_schema_hint_depth_is_a_valid_level(self):
+        import re
+
+        from skill_seekers.cli.config_validator import UniSkillConfigValidator
+        from skill_seekers.cli.scan_command import _GENERATE_SCHEMA_HINT
+
+        match = re.search(r'"code_analysis_depth":\s*"([^"]+)"', _GENERATE_SCHEMA_HINT)
+        assert match, "schema hint no longer advertises code_analysis_depth"
+        assert match.group(1) in UniSkillConfigValidator.VALID_DEPTH_LEVELS

@@ -31,6 +31,7 @@ from bs4 import BeautifulSoup, Comment
 from .skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
+from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,8 @@ class EpubToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_extracted.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_extracted.json"
 
         # Categories config
         self.categories = config.get("categories", {})
@@ -520,30 +521,26 @@ class EpubToSkillConverter(SkillConverter):
         print(f"\n✅ Skill built successfully: {self.skill_dir}/")
         print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
 
+    def _reference_filename(self, cat_data, section_num, total_sections):
+        """Basename of a category's reference file — single source of truth shared
+        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
+        sections = cat_data.get("pages") or []
+        if not sections:
+            return f"section_{section_num:02d}.md"
+        section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
+        base = Path(self.epub_path).stem if self.epub_path else ""
+        if total_sections == 1:
+            return f"{base}.md" if base else "main.md"
+        base_name = base if base else "section"
+        return f"{base_name}_s{min(section_nums)}-s{max(section_nums)}.md"
+
     def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
         """Generate a reference markdown file for a category."""
-        sections = cat_data["pages"]
-
-        # Use epub basename for filename
-        epub_basename = ""
-        if self.epub_path:
-            epub_basename = Path(self.epub_path).stem
-
-        if sections:
-            section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-
-            if total_sections == 1:
-                filename = (
-                    f"{self.skill_dir}/references/{epub_basename}.md"
-                    if epub_basename
-                    else f"{self.skill_dir}/references/main.md"
-                )
-            else:
-                sec_range = f"s{min(section_nums)}-s{max(section_nums)}"
-                base_name = epub_basename if epub_basename else "section"
-                filename = f"{self.skill_dir}/references/{base_name}_{sec_range}.md"
-        else:
-            filename = f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        filename = (
+            f"{self.skill_dir}/references/"
+            f"{self._reference_filename(cat_data, section_num, total_sections)}"
+        )
+        sections = cat_data.get("pages") or []
 
         with open(filename, "w", encoding="utf-8") as f:
             f.write(f"# {cat_data['title']}\n\n")
@@ -607,7 +604,9 @@ class EpubToSkillConverter(SkillConverter):
                         img_filename = f"section_{sec_num}_img_{img_index}.png"
                         img_path = os.path.join(assets_dir, img_filename)
 
-                        if isinstance(img_data, (bytes, bytearray)):
+                        # Require NON-EMPTY bytes — b"" passed the isinstance
+                        # check and produced a 0-byte PNG plus a broken ![] link.
+                        if isinstance(img_data, (bytes, bytearray)) and len(img_data) > 0:
                             with open(img_path, "wb") as img_file:
                                 img_file.write(img_data)
                             f.write(f"![Image {img_index}](../assets/{img_filename})\n\n")
@@ -620,10 +619,6 @@ class EpubToSkillConverter(SkillConverter):
         """Generate reference index."""
         filename = f"{self.skill_dir}/references/index.md"
 
-        epub_basename = ""
-        if self.epub_path:
-            epub_basename = Path(self.epub_path).stem
-
         total_sections = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -635,18 +630,11 @@ class EpubToSkillConverter(SkillConverter):
                 sections = cat_data["pages"]
                 section_count = len(sections)
 
+                link_filename = self._reference_filename(cat_data, section_num, total_sections)
                 if sections:
                     section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
                     sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-
-                    if total_sections == 1:
-                        link_filename = f"{epub_basename}.md" if epub_basename else "main.md"
-                    else:
-                        sec_range = f"s{min(section_nums)}-s{max(section_nums)}"
-                        base_name = epub_basename if epub_basename else "section"
-                        link_filename = f"{base_name}_{sec_range}.md"
                 else:
-                    link_filename = f"section_{section_num:02d}.md"
                     sec_range_str = "N/A"
 
                 f.write(
@@ -797,9 +785,10 @@ class EpubToSkillConverter(SkillConverter):
             # Navigation
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
-            for _cat_key, cat_data in categorized.items():
-                cat_file = self._sanitize_filename(cat_data["title"])
-                f.write(f"- `references/{cat_file}.md` - {cat_data['title']}\n")
+            total_sections = len(categorized)
+            for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
+                cat_file = self._reference_filename(cat_data, section_num, total_sections)
+                f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
             f.write("\n")
             f.write("See `references/index.md` for complete documentation structure.\n\n")
 
@@ -988,8 +977,8 @@ def _build_section(
                     {
                         "index": len(images),
                         "data": b"",  # EPUB images handled separately via manifest
-                        "width": int(elem.get("width", 0) or 0),
-                        "height": int(elem.get("height", 0) or 0),
+                        "width": _parse_leading_int(elem.get("width")),
+                        "height": _parse_leading_int(elem.get("height")),
                     }
                 )
             continue

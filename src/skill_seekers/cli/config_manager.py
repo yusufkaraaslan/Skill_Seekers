@@ -294,9 +294,11 @@ class ConfigManager:
     # API Keys Management
 
     def set_api_key(self, provider: str, key: str):
-        """Set API key for a provider (anthropic, google, openai)."""
+        """Set API key for a provider (anthropic, google, openai, moonshot)."""
         if provider not in self.config["api_keys"]:
-            raise ValueError(f"Unknown provider: {provider}. Use: anthropic, google, openai")
+            raise ValueError(
+                f"Unknown provider: {provider}. Use: anthropic, google, openai, moonshot"
+            )
 
         self.config["api_keys"][provider] = key
         self.save_config()
@@ -315,6 +317,7 @@ class ConfigManager:
             "anthropic": "ANTHROPIC_API_KEY",
             "google": "GOOGLE_API_KEY",
             "openai": "OPENAI_API_KEY",
+            "moonshot": "MOONSHOT_API_KEY",
         }
 
         env_var = env_map.get(provider)
@@ -506,7 +509,7 @@ class ConfigManager:
 
         # API Keys
         print("API Keys:")
-        for provider in ["anthropic", "google", "openai"]:
+        for provider in ["anthropic", "google", "openai", "moonshot"]:
             key = self.get_api_key(provider)
             status = "✅ Set" if key else "❌ Not set"
             source = ""

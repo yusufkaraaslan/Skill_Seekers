@@ -127,7 +127,7 @@ def watch_status(skill_dir, interval=2):
         sys.exit(0)
 
 
-def main():
+def main(args=None):
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -161,7 +161,8 @@ Examples:
         "--interval", type=int, default=2, help="Watch update interval in seconds (default: 2)"
     )
 
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
 
     # Watch mode
     if args.watch:
