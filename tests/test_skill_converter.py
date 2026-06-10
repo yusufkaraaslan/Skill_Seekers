@@ -25,3 +25,20 @@ class TestSkillConverterOutputDir:
     def test_blank_output_dir_falls_back_to_default(self):
         conv = SkillConverter({"name": "react", "output_dir": ""})
         assert conv.skill_dir == "output/react"
+
+
+class TestDocConverterDryRunFromConfig:
+    """Regression: --dry-run reaches converters via config['dry_run'] (the create
+    command passes it through config, not the ctor), so it must be honored."""
+
+    def test_dry_run_from_config(self):
+        from skill_seekers.cli.doc_scraper import DocToSkillConverter
+
+        conv = DocToSkillConverter({"name": "t", "base_url": "https://x.io/", "dry_run": True})
+        assert conv.dry_run is True
+
+    def test_dry_run_defaults_false(self):
+        from skill_seekers.cli.doc_scraper import DocToSkillConverter
+
+        conv = DocToSkillConverter({"name": "t", "base_url": "https://x.io/"})
+        assert conv.dry_run is False

@@ -9,7 +9,6 @@ import logging
 import argparse
 from typing import Any
 
-from skill_seekers.cli.defaults import DEFAULTS
 from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
 from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
@@ -238,6 +237,9 @@ class CreateCommand:
             # converter writes to the requested directory and the enhancement
             # step targets the same place.
             "output_dir": ctx.output.output_dir or f"output/{name}",
+            # --dry-run is held on the context; pass it so converters that
+            # support a preview mode (e.g. web) actually honor it.
+            "dry_run": ctx.output.dry_run,
         }
 
         if source_type == "web":
@@ -306,7 +308,7 @@ class CreateCommand:
                     "directory": directory,
                     "depth": ctx.analysis.depth,
                     "output_dir": ctx.output.output_dir or f"output/{name}",
-                    "languages": getattr(self.args, "languages", None),
+                    "languages": ctx.scraping.languages or None,
                     "file_patterns": ctx.analysis.file_patterns,
                     "detect_patterns": not ctx.analysis.skip_patterns,
                     "extract_test_examples": not ctx.analysis.skip_test_examples,
@@ -413,7 +415,7 @@ class CreateCommand:
                     "space_key": getattr(self.args, "space_key", ""),
                     "username": getattr(self.args, "username", ""),
                     "token": getattr(self.args, "token", ""),
-                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
+                    "max_pages": ctx.scraping.max_pages,
                 }
             )
 
@@ -424,7 +426,7 @@ class CreateCommand:
                     "database_id": getattr(self.args, "database_id", None),
                     "page_id": getattr(self.args, "page_id", None),
                     "token": getattr(self.args, "notion_token", None),
-                    "max_pages": getattr(self.args, "max_pages", DEFAULTS["scraping"]["max_pages"]),
+                    "max_pages": ctx.scraping.max_pages,
                 }
             )
 

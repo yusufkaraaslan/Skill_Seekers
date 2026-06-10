@@ -31,6 +31,14 @@ def collect_workflow_vars(args: argparse.Namespace, extra: dict | None = None) -
     vars_: dict = {}
     if extra:
         vars_.update(extra)
+    # Config-file workflow_vars (reach only the context, not argv) come next,
+    # below scraper metadata but below explicit --var flags.
+    try:
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        vars_.update(ExecutionContext.get().enhancement.workflow_vars or {})
+    except Exception:
+        pass
     if getattr(args, "var", None):
         for assignment in args.var:
             if "=" in assignment:
@@ -94,6 +102,19 @@ def run_workflows(
     named_workflows: list[str] = getattr(args, "enhance_workflow", None) or []
     inline_stages: list[str] = getattr(args, "enhance_stage", None) or []
     dry_run: bool = getattr(args, "workflow_dry_run", False)
+
+    # Fall back to the ExecutionContext (single source of truth) so workflows
+    # declared in a config file — which only reach ctx.enhancement, not argv —
+    # still run, not just CLI --enhance-workflow/--enhance-stage.
+    if not named_workflows and not inline_stages:
+        try:
+            from skill_seekers.cli.execution_context import ExecutionContext
+
+            ctx = ExecutionContext.get()
+            named_workflows = list(ctx.enhancement.workflows)
+            inline_stages = list(ctx.enhancement.stages)
+        except Exception:
+            pass
 
     if not named_workflows and not inline_stages:
         return False, []

@@ -15,9 +15,12 @@ Hierarchy:
 import argparse
 from typing import Any
 
-# Default chunking constants used by RAG and package arguments
-DEFAULT_CHUNK_TOKENS = 512
-DEFAULT_CHUNK_OVERLAP_TOKENS = 50
+from skill_seekers.cli.defaults import DEFAULTS
+
+# Default chunking constants used by RAG and package arguments.
+# Sourced from defaults.json (single source of truth) rather than hardcoded.
+DEFAULT_CHUNK_TOKENS = DEFAULTS["rag"]["chunk_tokens"]
+DEFAULT_CHUNK_OVERLAP_TOKENS = DEFAULTS["rag"]["chunk_overlap_tokens"]
 
 # Common argument definitions as data structure
 # These are arguments that appear in MULTIPLE commands

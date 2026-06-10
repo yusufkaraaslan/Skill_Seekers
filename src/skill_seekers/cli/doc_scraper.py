@@ -201,8 +201,11 @@ class DocToSkillConverter(SkillConverter):
             str(normalized_config.get("display_name", self.name)).strip() or self.name
         )
         self.base_url = normalized_config["base_url"]
-        self.dry_run = dry_run
-        self.resume = resume
+        # Honor dry_run from the ctor param OR the config dict — the create
+        # command (via get_converter) passes it through config["dry_run"], not
+        # the ctor, so without the config fallback --dry-run was a no-op.
+        self.dry_run = dry_run or bool(config.get("dry_run", False))
+        self.resume = resume or bool(config.get("resume", False))
 
         # Paths
         self.skill_dir = config.get("output_dir") or f"output/{self.name}"

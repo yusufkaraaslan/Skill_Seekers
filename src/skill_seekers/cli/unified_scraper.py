@@ -1986,23 +1986,28 @@ class UnifiedScraper(SkillConverter):
                             if not agent:
                                 agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
 
-                        # Read timeout from config enhancement block
-                        timeout_val = enhancement_config.get("timeout")
-                        if timeout_val is not None:
-                            if isinstance(timeout_val, str) and timeout_val.lower() in (
-                                "unlimited",
-                                "none",
-                            ):
-                                timeout_val = 86400  # 24 hours
+                        # Prefer the context's resolved timeout (CLI/env/config
+                        # already merged); fall back to the raw config block only
+                        # if the context is unavailable.
+                        try:
+                            timeout_val = ExecutionContext.get().enhancement.timeout
+                        except Exception:
+                            timeout_val = enhancement_config.get("timeout")
+                            if timeout_val is not None:
+                                if isinstance(timeout_val, str) and timeout_val.lower() in (
+                                    "unlimited",
+                                    "none",
+                                ):
+                                    timeout_val = 86400  # 24 hours
+                                else:
+                                    try:
+                                        timeout_val = int(timeout_val)
+                                        if timeout_val <= 0:
+                                            timeout_val = 86400
+                                    except (ValueError, TypeError):
+                                        timeout_val = 2700
                             else:
-                                try:
-                                    timeout_val = int(timeout_val)
-                                    if timeout_val <= 0:
-                                        timeout_val = 86400
-                                except (ValueError, TypeError):
-                                    timeout_val = 2700
-                        else:
-                            timeout_val = 2700
+                                timeout_val = 2700
 
                         enhancer = LocalSkillEnhancer(
                             self.output_dir, force=True, agent=agent, agent_cmd=agent_cmd
@@ -2028,7 +2033,13 @@ class UnifiedScraper(SkillConverter):
                     try:
                         from skill_seekers.cli.agent_client import AgentClient
 
-                        client = AgentClient(mode="api")
+                        # Forward the context's api_key so a CLI --api-key isn't
+                        # dropped (AgentClient would otherwise env-detect only).
+                        try:
+                            _api_key = ExecutionContext.get().enhancement.api_key
+                        except Exception:
+                            _api_key = None
+                        client = AgentClient(mode="api", api_key=_api_key)
                         if client.client:
                             # Read references and current SKILL.md
                             references = ""

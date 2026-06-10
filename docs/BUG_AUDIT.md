@@ -83,6 +83,24 @@ Regression tests added — Critical: `test_agent_client.py::TestCallApiTruncatio
 | CFG-02 | ✅ Fixed | **Web config-file `workers`/`async_mode`/`browser_wait_until`/`browser_extra_wait` dropped.** `ExecutionContext._load_config_file` copied only `max_pages`/`rate_limit`/`browser`; now copies all scraping-tuning keys. Test: `test_execution_context.py::...test_simple_web_config_format`. |
 | CFG-03 | ℹ️ Noted | `--config` is only merged for `web`/`github` source types; for `pdf`/`video`/etc. the documented path is the unified `sources` config (which reads per-source keys correctly). Low impact; left as a design note. |
 
+### Runtime-config (ExecutionContext) audit — is every field wired through args→context→consumer, with no bypasses?
+
+The singleton claims "all components read from this context instead of parsing their own argv." Audit found it was **not** the single source of truth: ~12 registered flags never reached the context, several consumers bypassed it, and two sections were dead. All fixed (regression tests in `test_execution_context.py`).
+
+| ID | Status | Fix summary |
+|----|--------|-------------|
+| RT-01 | ✅ Fixed | **5 analysis `--skip-*` flags inert.** `--skip-config-patterns`/`--skip-api-reference`/`--skip-dependency-graph`/`--skip-docs`/`--no-comments` were never mapped in `_args_to_data`, yet `create_command` reads those exact `ctx.analysis.*` fields → the skipped steps ran anyway. Now mapped. |
+| RT-02 | ✅ Fixed | **`--skip-config` orphan dest** now aliased to `skip_config_patterns`. |
+| RT-03 | ✅ Fixed | **`--dry-run` dead on `create`.** `ctx.output.dry_run` was set but never put in the converter config; `_build_config` now passes `"dry_run"`, and `doc_scraper` reads `config["dry_run"]` (was only honoring the unused ctor param). |
+| RT-04 | ✅ Fixed | **`--timeout` not wired on `create`** → mapped to `ctx.enhancement.timeout` in `_args_to_data`. |
+| RT-05 | ✅ Fixed | **`get_agent_client()` dropped `api_key`** → a CLI `--api-key` was lost and AgentClient env-detected only. Now forwarded. |
+| RT-06 | ✅ Fixed | **Config-file `workflows`/`stages`/`workflow_vars` never ran** — `run_workflows`/`collect_workflow_vars` read only argv. Now fall back to `ctx.enhancement.*` so config-declared workflows execute. |
+| RT-07 | ✅ Fixed | **Confluence/Notion `max_pages` bypass** — read `getattr(self.args, …)` (dropping config-file `max_pages`); now read `ctx.scraping.max_pages`. |
+| RT-08 | ✅ Fixed | **`unified_scraper` dropped `ctx.enhancement.timeout` and `api_key`** (re-read raw config / built `AgentClient(mode="api")`); now use the context. |
+| RT-09 | ✅ Fixed | **`scraping.languages` was a dead field with a name collision** (default `["en"]`, read nowhere; `--languages` is a *code*-filter the local converter read from argv, which would have broken if fed `["en"]`). Repurposed the field as the code-language filter (`default=None`), wired `--languages` into it, and `create_command` now reads `ctx.scraping.languages`. |
+| RT-10 | ✅ Fixed (removed) | **`rag.*` section was write-only/dead.** Chunking lives in the separate `package` command, which parses its own (richer) args and runs as its own process — the create/scrape context never chunks and `ctx.rag` was read nowhere. Removed `RAGSettings` from the context. As cleanup, `common.py` now sources `DEFAULT_CHUNK_TOKENS`/`_OVERLAP` from `defaults.json` (was hardcoded `512`/`50`), so `defaults.json`'s `rag` block is the single source of truth for package chunking. *(Deviation: the earlier plan said "wire rag via package"; on inspection that's unsound — `create` and `package` are separate processes, so a create-time context can't reach package. Removal is the honest fix.)* |
+| RT-11 | ✅ Kept (not a bug) | **`source.*`** is read nowhere in production (consumers use `create_command.self.source_info`), but it is **tested public API** and legitimately belongs in an execution context. Retained — removing tested API to chase a cosmetic dual-representation would be over-reach. |
+
 > **Test-harness note:** the *full* `pytest tests/` run is unsafe to execute repeatedly — `@pytest.mark.slow` tests like `test_bootstrap_skill::test_bootstrap_script_runs` and the `test_create_integration_basic` subprocess tests invoke the real `create` pipeline, which spawns live LLM agents (a fork-bomb). Verify with targeted per-module test files and `-m "not slow and not integration"`.
 
 ---
