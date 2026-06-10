@@ -135,7 +135,7 @@ if FASTAPI_AVAILABLE:
         try:
             # Check cache
             cached = False
-            hash_key = generator.compute_hash(request.text, request.model)
+            hash_key = generator.compute_hash(request.text, request.model, request.normalize)
 
             if cache and cache.has(hash_key):
                 embedding = cache.get(hash_key)
@@ -179,7 +179,7 @@ if FASTAPI_AVAILABLE:
             text_indices = []
 
             for idx, text in enumerate(request.texts):
-                hash_key = generator.compute_hash(text, request.model)
+                hash_key = generator.compute_hash(text, request.model, request.normalize)
 
                 if cache and cache.has(hash_key):
                     cached_embedding = cache.get(hash_key)
@@ -206,7 +206,7 @@ if FASTAPI_AVAILABLE:
                     embeddings[idx] = embedding
 
                     if cache:
-                        hash_key = generator.compute_hash(text, request.model)
+                        hash_key = generator.compute_hash(text, request.model, request.normalize)
                         cache.set(hash_key, embedding, request.model)
 
             dimensions = len(embeddings[0]) if embeddings else 0

@@ -176,20 +176,37 @@ class Benchmark:
             with benchmark.memory("embed_docs"):
                 generate_embeddings()
         """
+        import threading
+
         process = psutil.Process()
 
         # Get memory before
         mem_before = process.memory_info().rss / (1024**2)  # MB
 
-        # Track peak during operation
-        peak_memory = mem_before
+        # Track the TRUE peak by sampling RSS on a background thread for the
+        # duration of the block — `max(before, after)` alone missed transient
+        # spikes that allocate and free inside the operation.
+        peak = [mem_before]
+        stop = threading.Event()
+
+        def _sample() -> None:
+            while not stop.wait(0.05):
+                try:
+                    peak[0] = max(peak[0], process.memory_info().rss / (1024**2))
+                except Exception:
+                    break
+
+        sampler = threading.Thread(target=_sample, daemon=True)
+        sampler.start()
 
         try:
             yield
         finally:
+            stop.set()
+            sampler.join(timeout=1.0)
             # Get memory after
             mem_after = process.memory_info().rss / (1024**2)  # MB
-            peak_memory = max(peak_memory, mem_after)
+            peak_memory = max(peak[0], mem_after)
 
             usage = MemoryUsage(
                 operation=operation,

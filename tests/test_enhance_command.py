@@ -155,11 +155,27 @@ class TestPickModeAutoDetect:
         assert mode == "api"
         assert target == "openai"
 
+    def test_moonshot_key_selects_kimi(self, monkeypatch):
+        """Regression (ENH-12): a Moonshot-only user must reach API mode, not
+        be silently dropped to LOCAL."""
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
+
+        from skill_seekers.cli.enhance_command import _pick_mode
+
+        mode, target = _pick_mode(_make_args())
+        assert mode == "api"
+        assert target == "kimi"
+
     def test_no_keys_falls_back_to_local(self, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
 
         from skill_seekers.cli.enhance_command import _pick_mode
 

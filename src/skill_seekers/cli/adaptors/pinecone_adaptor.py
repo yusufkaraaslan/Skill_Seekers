@@ -325,10 +325,16 @@ class PineconeAdaptor(SkillAdaptor):
 
         try:
             from pinecone import Pinecone, ServerlessSpec
-        except (ImportError, Exception):
+        except ImportError:
             return {
                 "success": False,
                 "message": "pinecone not installed. Run: pip install 'pinecone>=5.0.0'",
+            }
+        except Exception as e:
+            # Installed but failed to import — don't misreport as "not installed".
+            return {
+                "success": False,
+                "message": f"pinecone failed to import: {e}",
             }
 
         api_key = api_key or os.getenv("PINECONE_API_KEY")

@@ -133,7 +133,14 @@ async def list_configs(_args: dict) -> list[TextContent]:
                 config = json.load(f)
                 name = config.get("name", config_file.stem)
                 desc = config.get("description", "No description")
+                # Unified configs (what generate_config produces) keep base_url
+                # under sources[]; fall back to it so the URL isn't blank.
                 url = config.get("base_url", "")
+                if not url:
+                    for src in config.get("sources", []):
+                        if isinstance(src, dict) and src.get("base_url"):
+                            url = src["base_url"]
+                            break
 
                 result += f"  • {config_file.name}\n"
                 result += f"    Name: {name}\n"

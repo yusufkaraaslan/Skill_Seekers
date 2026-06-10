@@ -286,17 +286,22 @@ class AgentClient:
             timeout = get_default_timeout()
 
         if self.mode == "api":
-            return self._call_api(prompt, max_tokens)
+            return self._call_api(prompt, max_tokens, timeout)
         elif self.mode == "local":
             return self._call_local(prompt, timeout, output_file, cwd)
         return None
 
-    def _call_api(self, prompt: str, max_tokens: int = 4096) -> str | None:
+    def _call_api(
+        self, prompt: str, max_tokens: int = 4096, timeout: int | None = None
+    ) -> str | None:
         """Call via API using the detected provider."""
         if not self.client:
             return None
 
         model = self.get_model(self.provider)
+        # Honor the caller's timeout (default 45m / SKILL_SEEKER_ENHANCE_TIMEOUT)
+        # instead of a hardcoded 120s that killed large enhancement prompts.
+        request_timeout = timeout if timeout is not None else get_default_timeout()
 
         try:
             if self.provider in ("anthropic", "moonshot"):
@@ -304,7 +309,7 @@ class AgentClient:
                     model=model,
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
-                    timeout=120,
+                    timeout=request_timeout,
                 )
                 # Treat a max_tokens truncation as a failure: callers overwrite
                 # SKILL.md / parse JSON with this text, so returning a truncated
@@ -336,7 +341,21 @@ class AgentClient:
 
             elif self.provider == "google":
                 gmodel = self.client.GenerativeModel(model)
-                response = gmodel.generate_content(prompt)
+                # Honor max_tokens + timeout (were ignored → output capped at the
+                # model default, request unbounded), and reject a truncated reply.
+                response = gmodel.generate_content(
+                    prompt,
+                    generation_config={"max_output_tokens": max_tokens},
+                    request_options={"timeout": request_timeout},
+                )
+                candidates = getattr(response, "candidates", None) or []
+                # Gemini finish_reason 2 == MAX_TOKENS (truncated).
+                if candidates and getattr(candidates[0], "finish_reason", None) == 2:
+                    logger.warning(
+                        "Gemini response truncated at max_tokens=%s; returning None.",
+                        max_tokens,
+                    )
+                    return None
                 return response.text
 
         except Exception as e:

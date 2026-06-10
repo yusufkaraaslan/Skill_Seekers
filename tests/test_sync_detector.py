@@ -247,3 +247,25 @@ class TestHeaderChanges:
 
         assert "https://a.com" in changed
         assert "https://b.com" not in changed
+
+
+class TestHeaderChangeNoValidators:
+    def test_no_validators_assumes_changed(self):
+        """Regression (INF-05): when the server sends neither Last-Modified nor
+        ETag, the header check must report 'changed' (so a content fetch
+        verifies) instead of silently 'unchanged'."""
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.sync.detector import ChangeDetector
+
+        det = ChangeDetector()
+        resp = MagicMock()
+        resp.headers = {}
+        resp.raise_for_status = lambda: None
+        with patch("skill_seekers.sync.detector.requests.head", return_value=resp):
+            assert (
+                det.check_header_changes(
+                    "https://x.com", old_modified="Mon, 01 Jan 2024 00:00:00 GMT", old_etag='"abc"'
+                )
+                is True
+            )

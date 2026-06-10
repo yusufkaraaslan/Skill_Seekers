@@ -254,7 +254,11 @@ class UnifiedScraper(SkillConverter):
                 logger.error(f"Error scraping {source_type}: {e}")
                 logger.info("Continuing with other sources...")
 
-        logger.info(f"\n✅ Scraped {len(self.scraped_data)} sources successfully")
+        # Count items actually scraped, not the number of bucket types (always
+        # ~17). Returns the total so run() can detect a total failure.
+        scraped_count = sum(len(v) for v in self.scraped_data.values())
+        logger.info(f"\n✅ Scraped {scraped_count} source item(s) successfully")
+        return scraped_count
 
     def _scrape_documentation(self, source: dict[str, Any]):
         """Scrape documentation website."""
@@ -1875,7 +1879,13 @@ class UnifiedScraper(SkillConverter):
 
         try:
             # Phase 1: Scrape all sources
-            self.scrape_all_sources()
+            scraped_count = self.scrape_all_sources()
+
+            # Abort if every source failed — otherwise we'd build (and report
+            # success for) an empty skill from no data.
+            if not scraped_count:
+                logger.error("❌ All sources failed to scrape (no data collected); aborting build.")
+                return 1
 
             # Phase 2: Detect conflicts (if applicable)
             conflicts = self.detect_conflicts()

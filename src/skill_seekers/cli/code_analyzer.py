@@ -403,15 +403,30 @@ class CodeAnalyzer:
         """Extract method signatures from class body."""
         methods = []
 
-        # Match method definitions
-        method_pattern = r"(?:async\s+)?(\w+)\s*\(([^)]*)\)"
+        # Match method DECLARATIONS only: `[modifiers] name(params) {`.
+        # Requiring the trailing `{` (method body) excludes call-sites like
+        # `this.helper(b);` / `setTimeout(cb, 100)` that the old pattern
+        # mis-counted as methods. The keyword set excludes control-flow that
+        # also takes the `name(...) {` shape.
+        non_methods = {
+            "if",
+            "for",
+            "while",
+            "switch",
+            "catch",
+            "function",
+            "return",
+            "do",
+            "else",
+            "with",
+        }
+        method_pattern = r"(?:(?:async|static|get|set)\s+)*(\w+)\s*\(([^)]*)\)\s*\{"
         for match in re.finditer(method_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
             is_async = "async" in match.group(0)
 
-            # Skip constructor keyword detection
-            if method_name in ["if", "for", "while", "switch"]:
+            if method_name in non_methods:
                 continue
 
             params = self._parse_js_parameters(params_str)
@@ -1387,13 +1402,18 @@ class CodeAnalyzer:
             if return_type:
                 return_type = return_type.strip()
 
-            # Skip if inside a class body (heuristic: check indentation)
-            line_start = content.rfind("\n", 0, match.start()) + 1
-            indent = match.start() - line_start
-            if indent > 4:
+            # Skip if inside a class/object body: track brace depth from the
+            # start of the file to this match (depth > 0 ⇒ nested, handled by
+            # _extract_kotlin_methods). Brace-counting is more reliable than the
+            # old indentation heuristic, which mis-handled tabs / 2-space styles.
+            prefix = content[: match.start()]
+            if prefix.count("{") - prefix.count("}") > 0:
                 continue
 
-            is_suspend = "suspend" in content[max(0, match.start() - 50) : match.start()]
+            # `suspend` (and other modifiers) are captured inside the match, so
+            # test the matched text — a fixed look-behind window read the wrong
+            # bytes (a neighboring declaration, or missed the modifier entirely).
+            is_suspend = "suspend" in match.group(0)
             params = self._parse_kotlin_parameters(params_str)
 
             functions.append(
@@ -1884,7 +1904,7 @@ class CodeAnalyzer:
 
         # Extract resource header
         header_match = re.search(
-            r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s+', content
+            r'\[gd_resource type="(.+?)"(?:\s+script_class="(.+?)")?\s*[\]\s]', content
         )
         if header_match:
             resource_type = header_match.group(1)
@@ -2054,13 +2074,19 @@ class CodeAnalyzer:
             signal_name, params = match.groups()
             line_number = self._offset_to_line(match.start())
 
-            # Extract documentation comment above signal (## or #)
+            # Extract documentation comment above signal (## or #).
+            # lines[-1] is the signal's own line prefix (indentation/empty), so
+            # the doc comment is the nearest preceding NON-blank line — using
+            # lines[-1] always missed it for signals at column 0 or indented.
             doc_comment = None
-            lines = content[: match.start()].split("\n")
-            if len(lines) >= 2:
-                prev_line = lines[-1].strip()
-                if prev_line.startswith("##") or prev_line.startswith("#"):
-                    doc_comment = prev_line.lstrip("#").strip()
+            prefix_lines = content[: match.start()].split("\n")
+            for prev in reversed(prefix_lines[:-1]):
+                stripped = prev.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("#"):
+                    doc_comment = stripped.lstrip("#").strip()
+                break
 
             signals.append(
                 {

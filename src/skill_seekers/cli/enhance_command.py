@@ -83,13 +83,15 @@ def _pick_mode(args) -> tuple[str, str | None]:
         return "api", config_agent
 
     # 3. Auto-detect from environment variables.
-    #    Priority: Anthropic > Gemini > OpenAI.
+    #    Priority: Anthropic > Gemini > OpenAI > Moonshot/Kimi.
     if api_keys["claude"]:
         return "api", "claude"
     if api_keys["gemini"]:
         return "api", "gemini"
     if api_keys["openai"]:
         return "api", "openai"
+    if api_keys["kimi"]:
+        return "api", "kimi"
 
     # 4. No API keys found → LOCAL mode.
     return "local", None
@@ -112,6 +114,7 @@ def _run_api_mode(args, target: str) -> int:
             "claude": api_keys["claude"],
             "gemini": api_keys["gemini"],
             "openai": api_keys["openai"],
+            "kimi": api_keys["kimi"],
         }
         api_key = env_map.get(target)
 

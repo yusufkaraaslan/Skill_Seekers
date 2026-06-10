@@ -1166,11 +1166,13 @@ def run_scan(
                 result.resolved.append(target)
                 result.emitted.append(target)
                 continue
-            # Check resolution chain without writing (cheap)
+            # Check resolution chain WITHOUT writing or hitting the network:
+            # auto_fetch would download + write ./configs/<name>.json, violating
+            # the dry-run "no files written / no network" contract.
             resolved_hit = None
             for candidate in _canonical_name_candidates(det.name):
                 lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
-                hit = resolve_config_path(lookup, auto_fetch=allow_network)
+                hit = resolve_config_path(lookup, auto_fetch=False)
                 if hit is not None and hit.exists():
                     resolved_hit = hit
                     break

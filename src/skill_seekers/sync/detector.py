@@ -266,6 +266,13 @@ class ChangeDetector:
             new_modified = response.headers.get("Last-Modified")
             new_etag = response.headers.get("ETag")
 
+            # If the server provides no usable validators, we can't rule out a
+            # change from headers alone — report "changed" so a content fetch
+            # verifies (matches the except branch). Returning False here silently
+            # dropped genuinely-changed pages on validator-less servers.
+            if not new_modified and not new_etag:
+                return True
+
             # Check if headers indicate change
             if old_modified and new_modified and old_modified != new_modified:
                 return True

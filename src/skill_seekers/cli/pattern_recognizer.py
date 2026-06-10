@@ -1561,10 +1561,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.1, 1.0)
 
             # Strategy: Duck typing common in Python
-            elif (
-                pattern.pattern_type == "Strategy"
-                and "duck typing" in evidence_str
-                or "protocol" in evidence_str
+            elif pattern.pattern_type == "Strategy" and (
+                "duck typing" in evidence_str or "protocol" in evidence_str
             ):
                 pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
@@ -1582,10 +1580,8 @@ class LanguageAdapter:
                     pattern.confidence = min(pattern.confidence + 0.05, 1.0)
 
             # Observer: Event emitters are built-in
-            elif (
-                pattern.pattern_type == "Observer"
-                and "eventemitter" in evidence_str
-                or "event" in evidence_str
+            elif pattern.pattern_type == "Observer" and (
+                "eventemitter" in evidence_str or "event" in evidence_str
             ):
                 pattern.confidence = min(pattern.confidence + 0.1, 1.0)
                 pattern.evidence.append("EventEmitter pattern detected")

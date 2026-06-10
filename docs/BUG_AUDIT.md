@@ -101,6 +101,39 @@ The singleton claims "all components read from this context instead of parsing t
 | RT-10 | ✅ Fixed (removed) | **`rag.*` section was write-only/dead.** Chunking lives in the separate `package` command, which parses its own (richer) args and runs as its own process — the create/scrape context never chunks and `ctx.rag` was read nowhere. Removed `RAGSettings` from the context. As cleanup, `common.py` now sources `DEFAULT_CHUNK_TOKENS`/`_OVERLAP` from `defaults.json` (was hardcoded `512`/`50`), so `defaults.json`'s `rag` block is the single source of truth for package chunking. *(Deviation: the earlier plan said "wire rag via package"; on inspection that's unsound — `create` and `package` are separate processes, so a create-time context can't reach package. Removal is the honest fix.)* |
 | RT-11 | ✅ Kept (not a bug) | **`source.*`** is read nowhere in production (consumers use `create_command.self.source_info`), but it is **tested public API** and legitimately belongs in an execution context. Retained — removing tested API to chase a cosmetic dual-representation would be over-reach. |
 
+### Medium tier — batch 1 (codebase-analysis + enhancement + infra + scan/config + adaptors)
+
+All ✅ Fixed; verified by existing suites + new regression tests where behavioral.
+
+| ID | Fix summary |
+|----|-------------|
+| CBA-05 / CBA-06 | Parenthesized the `A and B or C` precedence so the `"protocol"`/`"event"` clause no longer boosts *every* pattern type. |
+| CBA-07 | `_resolve_import` converts dotted module names → slash paths + suffix-matches `file_nodes`, so the dependency graph has edges (cycle detection was empty for all dotted-import languages). |
+| CBA-08 | Kotlin top-level-fn detection uses brace-depth, not the brittle `indent > 4`. |
+| CBA-09 | Kotlin `is_suspend` reads `match.group(0)` (the matched modifiers), not a fixed look-behind window. |
+| CBA-10 | `gd_resource` regex ends with `\s*[\]\s]` so `script_class` is captured on compact headers. |
+| CBA-14 | JS method extractor requires a trailing `{` (declarations only) + a fuller keyword blocklist, so call-sites like `setTimeout(...)` aren't counted as methods (unmasked by the CBA-03 brace fix). |
+| CBA-15 | GDScript signal doc comment = nearest preceding non-blank line (was always `None` for col-0/indented signals). |
+| ENH-06 | `_call_api` threads the caller's `timeout` (was hardcoded 120s, killing large prompts). |
+| ENH-07 | `scrape_all_sources` reports the count of items scraped (was the bucket count, always ~17) and returns it. |
+| ENH-08 | `run()` aborts with non-zero when every source failed (was building an empty skill + exit 0). |
+| ENH-09 | "Official Documentation" URL filters `type == "documentation"` (was `sources[0]`). |
+| ENH-10 | `DEBUG:` synthesis logs downgraded to `logger.debug`. |
+| ENH-11 | Gemini API honors `max_output_tokens`/`timeout` and rejects a truncated reply. |
+| ENH-12 | Moonshot/Kimi added to the auto-detect priority in `enhance_command._pick_mode` + `enhance_skill_local._detect_api_target` (Moonshot-only users were dropped to LOCAL). |
+| SCAN-03 | `get_api_key`/`set_api_key` include `moonshot` → `MOONSHOT_API_KEY`. |
+| SCAN-04 | `scan --dry-run` resolves with `auto_fetch=False` (no network, no stray `./configs/` write). |
+| MCP-06 | `list_configs` falls back to `sources[].base_url` for unified configs. |
+| ADP-02 | `chroma`/`pinecone` split `except ImportError` from `except Exception` (don't misreport a broken-but-installed package as "not installed"). |
+| CLI-03 | `CreateCommand.execute` calls `ExecutionContext.reset()` first so a 2nd in-process create rebuilds the context. |
+| INF-01 | Embedding cache key includes `normalize` (`{model}:{int(normalize)}:{text}`); threaded through `server.py`. |
+| INF-02 | `cleanup_old` strips the full `_YYYYMMDD_HHMMSS` timestamp via regex (retention was per-name-per-day). |
+| INF-03 | `memory()` samples RSS on a background thread to capture the true peak. |
+| INF-04 | `compare()` guards division by zero on instant ops. |
+| INF-05 | `check_header_changes` returns `True` when the server provides no `Last-Modified`/`ETag` validators. |
+
+Still open (Medium): CBB-04/05/06/07/08/13 (guides), DOC-02..07 (doc scrapers), MED-01..04 (remote scrapers), ADP-01 (streaming wiring), CLI-04 (`_reconstruct_argv` migration — large).
+
 > **Test-harness note:** the *full* `pytest tests/` run is unsafe to execute repeatedly — `@pytest.mark.slow` tests like `test_bootstrap_skill::test_bootstrap_script_runs` and the `test_create_integration_basic` subprocess tests invoke the real `create` pipeline, which spawns live LLM agents (a fork-bomb). Verify with targeted per-module test files and `-m "not slow and not integration"`.
 
 ---

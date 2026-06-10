@@ -3,6 +3,7 @@ Benchmark execution and orchestration.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 from collections.abc import Callable
@@ -157,7 +158,11 @@ class BenchmarkRunner:
             if op in baseline_timings:
                 baseline_timing = baseline_timings[op]
 
-                speedup = baseline_timing.duration / current_timing.duration
+                speedup = (
+                    baseline_timing.duration / current_timing.duration
+                    if current_timing.duration
+                    else float("inf")
+                )
 
                 if speedup > 1.1:  # >10% faster
                     improvements.append(
@@ -192,7 +197,11 @@ class BenchmarkRunner:
                     )
 
         # Overall speedup
-        speedup_factor = baseline.total_duration / current.total_duration
+        speedup_factor = (
+            baseline.total_duration / current.total_duration
+            if current.total_duration
+            else float("inf")
+        )
 
         # Memory change
         baseline_peak = max([m.peak_mb for m in baseline.memory], default=0)
@@ -289,15 +298,21 @@ class BenchmarkRunner:
         by_name: dict[str, list[Path]] = {}
 
         for path in self.output_dir.glob("*.json"):
-            # Extract name from filename (name_timestamp.json)
-            parts = path.stem.split("_")
-            if len(parts) >= 2:
-                name = "_".join(parts[:-1])  # Everything except timestamp
+            # Extract name from filename. save() writes name_YYYYMMDD_HHMMSS.json,
+            # so strip that full timestamp suffix (date + time) — the old
+            # single-token strip left the date glued on, making retention
+            # per-name-per-day instead of per-name. Fall back to stripping one
+            # trailing token for other naming schemes.
+            stem = path.stem
+            ts_match = re.search(r"_\d{8}_\d{6}$", stem)
+            if ts_match:
+                name = stem[: ts_match.start()]
+            elif "_" in stem:
+                name = stem.rsplit("_", 1)[0]
+            else:
+                name = stem
 
-                if name not in by_name:
-                    by_name[name] = []
-
-                by_name[name].append(path)
+            by_name.setdefault(name, []).append(path)
 
         # Keep only latest N for each name
         removed = 0

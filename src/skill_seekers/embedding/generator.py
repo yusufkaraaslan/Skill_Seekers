@@ -412,7 +412,12 @@ class EmbeddingGenerator:
         return vec.tolist()
 
     @staticmethod
-    def compute_hash(text: str, model: str) -> str:
-        """Compute cache key for text and model."""
-        content = f"{model}:{text}"
+    def compute_hash(text: str, model: str, normalize: bool = True) -> str:
+        """Compute cache key for text, model, and normalize flag.
+
+        `normalize` MUST be part of the key — a normalize=False request after a
+        cached normalize=True (or vice-versa) would otherwise return the wrong
+        (differently-scaled) vector for the same text+model.
+        """
+        content = f"{model}:{int(normalize)}:{text}"
         return hashlib.sha256(content.encode()).hexdigest()

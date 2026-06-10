@@ -278,7 +278,7 @@ description: {desc}
 
 This skill synthesizes knowledge from multiple sources:
 
-- ✅ **Official Documentation**: {self.config.get("sources", [{}])[0].get("base_url", "N/A")}
+- ✅ **Official Documentation**: {[s for s in self.config.get("sources", []) if s.get("type") == "documentation"][0].get("base_url", "N/A") if [s for s in self.config.get("sources", []) if s.get("type") == "documentation"] else "N/A"}
 - ✅ **GitHub Repository**: {[s for s in self.config.get("sources", []) if s.get("type") == "github"][0].get("repo", "N/A") if [s for s in self.config.get("sources", []) if s.get("type") == "github"] else "N/A"}
 
 """
@@ -325,12 +325,13 @@ This skill synthesizes knowledge from multiple sources:
 
         if "Quick Reference" in github_sections:
             # Include GitHub's Quick Reference (contains design patterns summary)
-            logger.info(
-                f"DEBUG: Including GitHub Quick Reference ({len(github_sections['Quick Reference'])} chars)"
+            logger.debug(
+                "Including GitHub Quick Reference (%d chars)",
+                len(github_sections["Quick Reference"]),
             )
             content += github_sections["Quick Reference"] + "\n\n"
         else:
-            logger.warning("DEBUG: GitHub Quick Reference section NOT FOUND!")
+            logger.debug("GitHub Quick Reference section not present in source SKILL.md")
 
         # Design Patterns (GitHub only - C3.1 analysis)
         if "Design Patterns Detected" in github_sections:

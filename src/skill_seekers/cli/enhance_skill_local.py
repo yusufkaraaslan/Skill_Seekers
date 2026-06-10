@@ -1297,7 +1297,7 @@ def _detect_api_target() -> tuple[str, str] | None:
     """
     Auto-detect which API platform to use for enhancement based on env vars.
 
-    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY
+    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY > MOONSHOT_API_KEY
 
     Returns:
         (target, api_key) tuple if an API key is found, else None.
@@ -1313,6 +1313,12 @@ def _detect_api_target() -> tuple[str, str] | None:
     openai_key = os.environ.get("OPENAI_API_KEY")
     if openai_key:
         return ("openai", openai_key)
+
+    # Moonshot/Kimi was previously dropped here, so a Moonshot-only user fell
+    # through to LOCAL mode despite having a valid API key.
+    moonshot_key = os.environ.get("MOONSHOT_API_KEY")
+    if moonshot_key:
+        return ("kimi", moonshot_key)
 
     return None
 

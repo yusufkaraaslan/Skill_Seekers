@@ -82,6 +82,10 @@ class CreateCommand:
         config_path = getattr(self.args, "config", None) or (
             self.source_info.parsed.get("config_path") if self.source_info else None
         )
+        # Reset first so a 2nd in-process create() rebuilds the context instead
+        # of silently reusing the previous invocation's name/output/settings
+        # (initialize() is a no-op guard once initialized).
+        ExecutionContext.reset()
         ExecutionContext.initialize(
             args=self.args,
             config_path=config_path,
