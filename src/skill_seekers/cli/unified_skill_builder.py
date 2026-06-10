@@ -54,7 +54,8 @@ class UnifiedSkillBuilder:
 
         self.name = config["name"]
         self.description = config["description"]
-        self.skill_dir = f"output/{self.name}"
+        # Honor --output (config["output_dir"]) for the final skill.
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
 
         # Create directories
         os.makedirs(self.skill_dir, exist_ok=True)

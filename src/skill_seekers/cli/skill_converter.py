@@ -28,7 +28,10 @@ class SkillConverter:
     def __init__(self, config: dict[str, Any]):
         self.config = config
         self.name = config.get("name", "unnamed")
-        self.skill_dir = f"output/{self.name}"
+        # Honor an explicit output dir (from --output) when provided; otherwise
+        # default to output/<name>. Subclasses that re-assign skill_dir do the
+        # same so --output is respected for every source type.
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
 
     def run(self) -> int:
         """Main entry point — extract source and build skill.

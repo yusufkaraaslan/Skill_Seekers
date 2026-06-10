@@ -213,8 +213,8 @@ class JupyterToSkillConverter(SkillConverter):
         self.description = (
             config.get("description") or f"Use when referencing {self.name} notebook documentation"
         )
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_extracted.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_extracted.json"
         self.categories = config.get("categories", {})
         self.extracted_data: dict | None = None
 

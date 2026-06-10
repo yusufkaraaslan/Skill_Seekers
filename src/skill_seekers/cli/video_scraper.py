@@ -351,8 +351,8 @@ class VideoToSkillConverter(SkillConverter):
         self.end_time: float | None = config.get("end_time")
 
         # Paths
-        self.skill_dir = config.get("output") or f"output/{self.name}"
-        self.data_file = f"output/{self.name}_video_extracted.json"
+        self.skill_dir = config.get("output_dir") or config.get("output") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_video_extracted.json"
 
         # Results
         self.result: VideoScraperResult | None = None

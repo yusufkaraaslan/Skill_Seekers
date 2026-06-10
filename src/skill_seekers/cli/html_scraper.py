@@ -134,8 +134,8 @@ class HtmlToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_extracted.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_extracted.json"
 
         # Categories config
         self.categories: dict = config.get("categories", {})

@@ -386,13 +386,22 @@ class ExecutionContext(BaseModel):
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
             }
+            # Copy all scraping-tuning keys the file provides — not just
+            # max_pages/rate_limit/browser. Otherwise workers/async_mode/browser
+            # timing from a web config file are dropped (they never reach
+            # ctx.scraping, so _build_config's pre-merge defaults shadow them).
             scraping: dict[str, Any] = {}
-            if "max_pages" in file_data:
-                scraping["max_pages"] = file_data["max_pages"]
-            if "rate_limit" in file_data:
-                scraping["rate_limit"] = file_data["rate_limit"]
-            if "browser" in file_data:
-                scraping["browser"] = file_data["browser"]
+            for key in (
+                "max_pages",
+                "rate_limit",
+                "browser",
+                "browser_wait_until",
+                "browser_extra_wait",
+                "workers",
+                "async_mode",
+            ):
+                if key in file_data:
+                    scraping[key] = file_data[key]
             if scraping:
                 config["scraping"] = scraping
 

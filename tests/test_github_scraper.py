@@ -666,6 +666,22 @@ class TestGitHubToSkillConverter(unittest.TestCase):
             self.assertTrue((skill_dir / "SKILL.md").exists())
             self.assertTrue((skill_dir / "references").exists())
 
+    def test_honors_output_dir_for_skill_and_data_paths(self):
+        """Regression for CLI-02: --output (config['output_dir']) must drive
+        skill_dir AND the derived data_file (which is assigned after skill_dir)."""
+        config = {
+            "repo": "facebook/react",
+            "name": "react",
+            "output_dir": "/tmp/custom-react",
+        }
+        with patch(
+            "skill_seekers.cli.github_scraper.GitHubToSkillConverter._load_data"
+        ) as mock_load:
+            mock_load.return_value = self.mock_data
+            converter = self.GitHubToSkillConverter(config)
+        self.assertEqual(converter.skill_dir, "/tmp/custom-react")
+        self.assertEqual(converter.data_file, "/tmp/custom-react_github_data.json")
+
 
 class TestSymlinkHandling(unittest.TestCase):
     """Test symlink handling (Issue #225)"""

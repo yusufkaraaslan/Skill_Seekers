@@ -266,6 +266,12 @@ class TestExecutionContextFromConfigFile:
             "max_pages": 500,
             "rate_limit": 0.5,
             "browser": True,
+            # These were previously dropped (only max_pages/rate_limit/browser
+            # were copied from a web config file).
+            "workers": 8,
+            "async_mode": True,
+            "browser_wait_until": "networkidle",
+            "browser_extra_wait": 750,
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -280,6 +286,11 @@ class TestExecutionContextFromConfigFile:
             assert ctx.scraping.max_pages == 500
             assert ctx.scraping.rate_limit == 0.5
             assert ctx.scraping.browser is True
+            # Regression: workers/async_mode/browser timing must be honored too.
+            assert ctx.scraping.workers == 8
+            assert ctx.scraping.async_mode is True
+            assert ctx.scraping.browser_wait_until == "networkidle"
+            assert ctx.scraping.browser_extra_wait == 750
         finally:
             os.unlink(config_path)
 

@@ -257,8 +257,8 @@ class ChatToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = f"output/{self.name}"
-        self.data_file: str = f"output/{self.name}_extracted.json"
+        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
+        self.data_file: str = f"{self.skill_dir}_extracted.json"
 
         # Extracted data (populated by extract_chat or load_extracted_data)
         self.extracted_data: dict | None = None

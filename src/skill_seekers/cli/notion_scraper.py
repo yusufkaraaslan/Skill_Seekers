@@ -96,8 +96,8 @@ class NotionToSkillConverter(SkillConverter):
         _raw_max = config.get("max_pages", DEFAULT_MAX_PAGES)
         self._unlimited: bool = _raw_max is None or _raw_max < 0
         self.max_pages: int = _raw_max if not self._unlimited else float("inf")
-        self.skill_dir: str = f"output/{self.name}"
-        self.data_file: str = f"output/{self.name}_notion_data.json"
+        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
+        self.data_file: str = f"{self.skill_dir}_notion_data.json"
         self._client: Any = None
         self.extracted_data: dict[str, Any] | None = None
         self._pages_fetched: int = 0

@@ -205,8 +205,8 @@ class DocToSkillConverter(SkillConverter):
         self.resume = resume
 
         # Paths
-        self.data_dir = f"output/{self.name}_data"
-        self.skill_dir = f"output/{self.name}"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_dir = f"{self.skill_dir}_data"
         self.checkpoint_file = f"{self.data_dir}/checkpoint.json"
 
         # Checkpoint config
@@ -2488,7 +2488,7 @@ def _run_enhancement(
     """Run enhancement using context settings."""
     from pathlib import Path
 
-    skill_dir = f"output/{config['name']}"
+    skill_dir = config.get("output_dir") or f"output/{config['name']}"
 
     logger.info("\n" + "=" * 60)
     logger.info(f"🤖 Enhancing SKILL.md (level {ctx.enhancement.level})")

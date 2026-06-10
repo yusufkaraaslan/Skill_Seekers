@@ -276,8 +276,8 @@ class GitHubScraper(SkillConverter):
             logger.info(f"Code analysis depth: {self.code_analysis_depth}")
 
         # Output paths
-        self.skill_dir = f"output/{self.name}"
-        self.data_file = f"output/{self.name}_github_data.json"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_github_data.json"
 
         # Extracted data storage
         self.extracted_data = {
@@ -991,8 +991,8 @@ class GitHubToSkillConverter:
         self.per_issue_files = config.get("per_issue_files", False)
 
         # Paths
-        self.data_file = f"output/{self.name}_github_data.json"
-        self.skill_dir = f"output/{self.name}"
+        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.data_file = f"{self.skill_dir}_github_data.json"
 
         # Load extracted data
         self.data = self._load_data()

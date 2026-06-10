@@ -108,8 +108,8 @@ class AsciiDocToSkillConverter(SkillConverter):
         self.description: str = (
             config.get("description") or f"Use when referencing {self.name} documentation"
         )
-        self.skill_dir: str = f"output/{self.name}"
-        self.data_file: str = f"output/{self.name}_extracted.json"
+        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
+        self.data_file: str = f"{self.skill_dir}_extracted.json"
         self.categories: dict = config.get("categories", {})
         self.extracted_data: dict | None = None
 
