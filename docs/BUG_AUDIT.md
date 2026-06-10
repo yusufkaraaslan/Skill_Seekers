@@ -101,7 +101,33 @@ After the fixes above, every commit in this PR was re-reviewed independently (on
 - **Streaming adaptor format (ADP-01 follow-up):** all 8 RAG/vector adaptors emit a *generic* streamed format rather than each platform's native shape (only the unregistered example classes override the converter). `--streaming` works; per-platform fidelity is a follow-up.
 - **Unified multi-source `skip_scrape` (I1 remainder):** honoring it requires reloading each source's `.skillseeker-cache` before build — a real feature, not a one-liner.
 - **Kotlin brace-depth / `is_suspend` corpus robustness (CBA-08, CBA-11):** the brace-depth nesting check is fooled by braces inside strings/comments; a robust fix needs a string/comment-aware scan (shared with the still-open CBA-11).
-- **DOC-04** and the **Low tier (67)** remain as previously stated.
+### Low-tier disposition (2026-06-11)
+
+After fixing the ~12 impactful Low items above, the remaining Low tier was triaged
+and batch-fixed. Issues #405–#408 track the 4 larger deferred items.
+
+**Fixed in this PR (data-loss/crash + minor correctness):**
+DOC-11, DOC-13, DOC-14, DOC-15, DOC-17, MED-06, MED-11, MED-12, MED-14, MED-17,
+MED-18, ENH-13, ENH-14, ENH-15, ENH-17, ADP-03, ADP-05, ADP-06, MCP-11, MCP-15,
+MCP-16, SCAN-06, CLI-08, CLI-09, INF-06, CBA-12, CBA-16, CBB-09, CBB-11, CBB-14,
+CBB-15, CBB-16 (plus the re-review R/I/P items). MED-16 was already fixed in batch 2.
+
+**Intentionally NOT changed / deferred (with reason):**
+- **Product decisions (left as-is, like DOC-04):** MCP-10 (sync caps at 500 — a
+  sensible safety bound), CLI-07 (a failed *optional* enhancement returning a
+  non-zero exit from `create` is a behavior change — needs a maintainer call).
+- **Cosmetic / doc-only (dropped):** ADP-07 (docstring), CLI-05 (a misleading
+  success-log path), MED-13 (type-annotation lie), MCP-08 (param typing), MED-09,
+  MED-10 (already corrected/dead per Appendix).
+- **Needs a larger/riskier change (deferred):** MCP-17 (per-call log capture needs
+  contextvar-scoped filtering — a thread/handler swap would be wrong for asyncio),
+  MED-08 (RSS time-budget needs a concurrency/budget rework), ADP-04 (OpenAI
+  vector-store SDK-version juggling), MED-07/MED-15 (OpenAPI `$ref` cycle/bundle
+  handling), SCAN-05/SCAN-07 (thread an out-dir through the fetch path / dedup the
+  scan main loop without disturbing the diff+archive flow), CBB-10, MCP-09,
+  ENH-16. These are catalogued above and are good follow-up-PR candidates.
+
+- The original **DOC-04** decision stands (issue #408): keep `-1` (unbounded).
 
 ---
 

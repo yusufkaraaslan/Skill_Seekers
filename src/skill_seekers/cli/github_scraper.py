@@ -688,10 +688,17 @@ class GitHubScraper(SkillConverter):
         try:
             from collections import deque
 
+            # Cap the walk: each directory is a separate API call, so an unbounded
+            # tree on a huge repo could exhaust the rate-limit quota.
+            max_tree_items = 5000
             contents = deque(self.repo.get_contents(""))
             file_tree = []
+            truncated = False
 
             while contents:
+                if len(file_tree) >= max_tree_items:
+                    truncated = True
+                    break
                 file_content = contents.popleft()
 
                 file_info = {
@@ -705,6 +712,10 @@ class GitHubScraper(SkillConverter):
                     contents.extend(self.repo.get_contents(file_content.path))
 
             self.extracted_data["file_tree"] = file_tree
+            if truncated:
+                logger.warning(
+                    "File tree truncated at %d items to preserve API quota", max_tree_items
+                )
             logger.info(f"File tree built (GitHub API mode): {len(file_tree)} items")
 
         except GithubException as e:
