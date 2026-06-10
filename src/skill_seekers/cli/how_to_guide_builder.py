@@ -204,9 +204,7 @@ class WorkflowAnalyzer:
             # Don't ast.walk() — that flattens nested control flow (if/for/with)
             # out of context and scrambles step order.
             body = tree.body
-            if len(body) == 1 and isinstance(
-                body[0], (ast.FunctionDef, ast.AsyncFunctionDef)
-            ):
+            if len(body) == 1 and isinstance(body[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
                 body = body[0].body
             for node in body:
                 if isinstance(node, (ast.Assign, ast.Expr, ast.Assert)):

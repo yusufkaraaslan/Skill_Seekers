@@ -952,16 +952,16 @@ rm {prompt_file}
                             new_mtime = self.skill_md_path.stat().st_mtime
                             new_size = self.skill_md_path.stat().st_size
                             # Success = the file was rewritten (mtime advanced). Do NOT
-                    # also require it to GROW — a valid enhancement may condense
-                    # SKILL.md, and the background/daemon paths only check the
-                    # return code, so requiring growth made the modes disagree.
-                    if new_mtime > initial_mtime:
-                        print(f"✅ Enhancement complete on retry! ({elapsed:.1f} seconds)")
-                        print(f"   SKILL.md updated: {new_size:,} bytes")
-                        print()
-                        with contextlib.suppress(Exception):
-                            os.unlink(prompt_file)
-                        return True
+                            # also require it to GROW — a valid enhancement may condense
+                            # SKILL.md, and the background/daemon paths only check the
+                            # return code, so requiring growth made the modes disagree.
+                            if new_mtime > initial_mtime:
+                                print(f"✅ Enhancement complete on retry! ({elapsed:.1f} seconds)")
+                                print(f"   SKILL.md updated: {new_size:,} bytes")
+                                print()
+                                with contextlib.suppress(Exception):
+                                    os.unlink(prompt_file)
+                                return True
                     print(f"❌ Retry also failed (exit code: {result_retry.returncode})")
                     if result_retry.stderr:
                         stderr_lines = result_retry.stderr.strip().split("\n")
