@@ -969,7 +969,11 @@ class GitHubScraper(SkillConverter):
 
     def _save_data(self):
         """Save extracted data to JSON file."""
-        os.makedirs("output", exist_ok=True)
+        # Create the actual parent of data_file. self.data_file derives from
+        # self.skill_dir (config["output_dir"]), so with a nested --output the
+        # parent isn't "output/" — hardcoding it raised FileNotFoundError here
+        # (this runs during extract, before build_skill makes skill_dir).
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
 
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(self.extracted_data, f, indent=2, ensure_ascii=False)

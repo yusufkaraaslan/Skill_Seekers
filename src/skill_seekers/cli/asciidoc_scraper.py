@@ -688,10 +688,6 @@ class AsciiDocToSkillConverter(SkillConverter):
     def _generate_index(self, categorized: dict) -> None:
         """Generate references/index.md."""
         filename = f"{self.skill_dir}/references/index.md"
-        adoc_base = ""
-        if self.asciidoc_path:
-            p = Path(self.asciidoc_path)
-            adoc_base = p.stem if p.is_file() else ""
         total = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -702,12 +698,11 @@ class AsciiDocToSkillConverter(SkillConverter):
                 if pages:
                     nums = [s.get("section_number", j + 1) for j, s in enumerate(pages)]
                     rng = f"Sections {min(nums)}-{max(nums)}"
-                    if total == 1:
-                        lf = f"{adoc_base or 'main'}.md"
-                    else:
-                        lf = f"{adoc_base or 'section'}_s{min(nums)}-s{max(nums)}.md"
                 else:
-                    lf, rng = f"section_{i:02d}.md", "N/A"
+                    rng = "N/A"
+                # Route through the shared helper so the index link always
+                # matches the reference file the writer creates (no drift).
+                lf = os.path.basename(self._ref_filename(cd, i, total))
                 f.write(f"- [{cd['title']}]({lf}) ({cnt} sections, {rng})\n")
 
             f.write("\n## Statistics\n\n")

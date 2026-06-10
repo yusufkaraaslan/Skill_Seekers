@@ -420,7 +420,14 @@ class CodeAnalyzer:
             "else",
             "with",
         }
-        method_pattern = r"(?:(?:async|static|get|set)\s+)*(\w+)\s*\(([^)]*)\)\s*\{"
+        # `(?::\s*[^={;\n]+)?` tolerates a TypeScript return-type annotation
+        # between the params and the body brace (e.g. `greet(): string {`,
+        # `load(): Promise<void> {`). Without it, TS class methods with return
+        # types were silently dropped from the method list. Non-capturing so the
+        # name/params group indices are unchanged.
+        method_pattern = (
+            r"(?:(?:async|static|get|set)\s+)*(\w+)\s*\(([^)]*)\)\s*(?::\s*[^={;\n]+)?\s*\{"
+        )
         for match in re.finditer(method_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
@@ -1413,7 +1420,9 @@ class CodeAnalyzer:
             # `suspend` (and other modifiers) are captured inside the match, so
             # test the matched text — a fixed look-behind window read the wrong
             # bytes (a neighboring declaration, or missed the modifier entirely).
-            is_suspend = "suspend" in match.group(0)
+            # Word-boundary match so a function NAMED e.g. `suspendCoroutine`
+            # isn't mis-flagged as a suspend function.
+            is_suspend = re.search(r"\bsuspend\b", match.group(0)) is not None
             params = self._parse_kotlin_parameters(params_str)
 
             functions.append(

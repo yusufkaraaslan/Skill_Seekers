@@ -65,6 +65,25 @@ class TestEstimatePages(unittest.TestCase):
         self.assertIn("discovered", result)
 
 
+class TestEstimateParserDefault(unittest.TestCase):
+    """Regression for CLI-04: the unified `estimate` subcommand parser must give
+    --max-discovery a finite default. Without it argparse leaves it None, which
+    estimate_pages() treats as UNLIMITED — so `skill-seekers estimate <cfg>`
+    crawled the whole site instead of stopping at the 1000-page cap."""
+
+    def test_max_discovery_has_finite_default(self):
+        import argparse
+
+        from skill_seekers.cli.constants import DEFAULT_MAX_DISCOVERY
+        from skill_seekers.cli.parsers.estimate_parser import EstimateParser
+
+        parser = argparse.ArgumentParser()
+        EstimateParser().add_arguments(parser)
+        ns = parser.parse_args(["someconfig.json"])
+        self.assertIsNotNone(ns.max_discovery)
+        self.assertEqual(ns.max_discovery, DEFAULT_MAX_DISCOVERY)
+
+
 class TestEstimatePagesCLI(unittest.TestCase):
     """Test estimate_pages command-line interface (via entry point)"""
 

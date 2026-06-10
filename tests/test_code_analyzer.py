@@ -301,6 +301,26 @@ class Service {
         names = {m["name"] for m in result["classes"][0]["methods"]}
         self.assertTrue({"foo", "bar", "baz"}.issubset(names))
 
+    def test_typescript_class_methods_with_return_types_not_dropped(self):
+        """Regression for CBA-14: a TS class method written `name(...): Type {`
+        has a return-type annotation between the params `)` and the body `{`.
+        The method-extraction regex must tolerate it, or every annotated method
+        is silently dropped (and method-count heuristics under-count)."""
+        code = """
+class Greeter {
+    greet(name: string): string { return name; }
+    add(a: number, b: number): number { return a + b; }
+    load(): Promise<void> { return Promise.resolve(); }
+    plain() { return 1; }
+}
+"""
+        result = self.analyzer.analyze_file("greeter.ts", code, "TypeScript")
+        names = {m["name"] for m in result["classes"][0]["methods"]}
+        self.assertTrue(
+            {"greet", "add", "load", "plain"}.issubset(names),
+            f"TS methods with return types were dropped: got {names}",
+        )
+
     def test_typescript_type_annotations(self):
         """Test TypeScript type annotation extraction.
 

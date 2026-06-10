@@ -47,13 +47,18 @@ def collect_workflow_vars(args: argparse.Namespace, extra: dict | None = None) -
     return vars_
 
 
-def _build_inline_engine(args: argparse.Namespace):
-    """Build a WorkflowEngine from --enhance-stage flags."""
+def _build_inline_engine(inline_stages: list, agent=None):
+    """Build a WorkflowEngine from inline stage specs.
+
+    Takes the already-resolved ``inline_stages`` list (CLI ``--enhance-stage``
+    OR config-file ``ctx.enhancement.stages``) rather than re-reading
+    ``args.enhance_stage`` — config-only stages never appear on argv, so reading
+    argv dropped them silently (and raised TypeError on the None default).
+    """
     from skill_seekers.cli.enhancement_workflow import WorkflowEngine
 
-    agent = getattr(args, "agent", None)
     stages = []
-    for i, spec in enumerate(args.enhance_stage, 1):
+    for i, spec in enumerate(inline_stages, 1):
         if ":" in spec:
             name, prompt = spec.split(":", 1)
         else:
@@ -176,7 +181,7 @@ def run_workflows(
         logger.info(header)
 
         try:
-            engine = _build_inline_engine(args)
+            engine = _build_inline_engine(inline_stages, agent=agent)
         except Exception as exc:
             logger.error(f"❌ Failed to build inline workflow: {exc}")
         else:

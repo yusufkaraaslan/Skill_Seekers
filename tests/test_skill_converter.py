@@ -42,3 +42,42 @@ class TestDocConverterDryRunFromConfig:
 
         conv = DocToSkillConverter({"name": "t", "base_url": "https://x.io/"})
         assert conv.dry_run is False
+
+
+class TestSkipScrape:
+    """Regression for MCP-03: setting converter.skip_scrape must actually skip
+    extract() (the network scrape) and build from existing data. Previously
+    run() ignored the attribute, so skip_scrape was a no-op and data was
+    re-scraped anyway."""
+
+    @staticmethod
+    def _recorder_class():
+        class _Recorder(SkillConverter):
+            SOURCE_TYPE = "test"
+
+            def __init__(self, config):
+                super().__init__(config)
+                self.extracted = False
+                self.built = False
+
+            def extract(self):
+                self.extracted = True
+
+            def build_skill(self):
+                self.built = True
+                return True
+
+        return _Recorder
+
+    def test_skip_scrape_skips_extract_but_still_builds(self):
+        conv = self._recorder_class()({"name": "react", "output_dir": "/tmp/x"})
+        conv.skip_scrape = True
+        assert conv.run() == 0
+        assert conv.extracted is False  # scrape skipped
+        assert conv.built is True  # build still ran (from existing data)
+
+    def test_default_runs_extract(self):
+        conv = self._recorder_class()({"name": "react", "output_dir": "/tmp/x"})
+        assert conv.run() == 0
+        assert conv.extracted is True
+        assert conv.built is True

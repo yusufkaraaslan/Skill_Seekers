@@ -509,7 +509,7 @@ class ConfigManager:
 
         # API Keys
         print("API Keys:")
-        for provider in ["anthropic", "google", "openai"]:
+        for provider in ["anthropic", "google", "openai", "moonshot"]:
             key = self.get_api_key(provider)
             status = "✅ Set" if key else "❌ Not set"
             source = ""

@@ -467,6 +467,26 @@ class TestCallApiTruncation:
         client.client.chat.completions.create.return_value = resp
         assert client._call_api("prompt", max_tokens=10) is None
 
+    @patch.dict(os.environ, {}, clear=True)
+    @patch.object(AgentClient, "_init_api_client", return_value=MagicMock())
+    def test_openai_forwards_caller_timeout(self, _mock_init):
+        """Regression for ENH-06: the OpenAI branch must forward the caller's
+        timeout. It alone still hardcoded timeout=120s, so large enhancement
+        prompts died at 2 minutes."""
+        client = AgentClient(mode="api", api_key="sk-openai-x")
+        client.provider = "openai"
+        choice = MagicMock()
+        choice.finish_reason = "stop"
+        choice.message.content = "ok"
+        resp = MagicMock()
+        resp.choices = [choice]
+        client.client.chat.completions.create.return_value = resp
+
+        client._call_api("prompt", max_tokens=4096, timeout=999)
+
+        _, kwargs = client.client.chat.completions.create.call_args
+        assert kwargs["timeout"] == 999
+
 
 class TestProviderOverride:
     """Regression for ENH-02: a Moonshot/Kimi sk- key must not be misrouted to

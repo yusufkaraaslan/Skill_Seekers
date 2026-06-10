@@ -61,6 +61,50 @@ Worked through the audit Critical → Low. Every Critical and High finding is fi
 
 ---
 
+## Independent re-review of this PR — 2026-06-10 (second pass)
+
+After the fixes above, every commit in this PR was re-reviewed independently (one reviewer per commit) to verify the fixes are correct, complete, and don't introduce regressions — i.e. not taking the audit's own self-grade at face value. The reviewers confirmed the large majority of fixes are correct, and surfaced the following issues, **all now resolved in this PR** (each with a regression test unless noted):
+
+### Regressions this PR had introduced (now fixed)
+
+| ID | Sev | Fix |
+|----|-----|-----|
+| **ENH-03-bis** | Blocker | The ENH-03 retry path was mis-indented: when the exit-75 retry failed, `new_mtime` was unbound → `UnboundLocalError`. Re-nested under the returncode/exists guards. Tests: `test_enhance_skill_local.py::TestHeadlessSuccessGate::{test_failed_retry_returns_false_without_crashing,test_successful_retry_counts_as_success}`. |
+| **R1 (CLI-04-bis)** | High | `skill-seekers estimate <cfg>` crawled **unlimited** instead of capping at 1000 — the unified `estimate_parser`'s `--max-discovery` had no default (`None`), which `estimate_pages()` treats as unlimited. Added `default=DEFAULT_MAX_DISCOVERY`. Test: `test_estimate_pages.py::TestEstimateParserDefault`. |
+| **R2 (CBA-14-bis)** | Medium | The JS method regex required `)` immediately before `{`, silently dropping **TypeScript** class methods with return-type annotations (`greet(): string {`). Made the return type optional in the pattern. Test: `test_code_analyzer.py::...::test_typescript_class_methods_with_return_types_not_dropped`. |
+| **R3 (CLI-02-bis)** | Medium | `github_scraper._save_data()` did `os.makedirs("output")` but wrote to a `--output`-derived `data_file`, raising `FileNotFoundError` for `create owner/repo --output <nested/path>`. Now creates `dirname(data_file)`. Test: `test_github_scraper.py::...::test_save_data_creates_nested_output_parent`. |
+
+### Audit fixes that were incomplete / over-claimed (now corrected)
+
+| ID | Sev | Resolution |
+|----|-----|-----------|
+| **I1 (MCP-03)** | High | `skip_scrape` was a no-op (set an attribute no converter read). Now honored at the `SkillConverter.run()` chokepoint (skip `extract()`, build from existing on-disk data) — covers the **single-source** path. The **unified multi-source** path still does not honor it (would require reloading each source's cache before build); the comment in `scraping_tools.py` now says so, and it is **tracked below**. Test: `test_skill_converter.py::TestSkipScrape`. |
+| **I2 (RT-06)** | Medium | Config-file **inline** `stages` never ran — `_build_inline_engine` re-read `args.enhance_stage` (None for config-only) instead of the resolved list. Now takes the resolved `inline_stages`. Test: `test_workflow_runner.py::...::test_inline_stages_from_config_execute`. |
+| **I3 (ENH-06)** | Low | The OpenAI branch of `_call_api` still hardcoded `timeout=120`; now forwards the caller's `request_timeout`. Test: `test_agent_client.py::...::test_openai_forwards_caller_timeout`. |
+| **I4 (RT-04)** | Low | RT-04 claimed `--timeout` is wired on `create`, but the flag isn't registered there, so the mapping is inert on that path (it only fires for config dicts carrying `timeout`). **Claim corrected here** — no CLI flag added (avoids new surface area for an over-claim). |
+
+### Low-tier / pre-existing issues fixed opportunistically
+
+| ID | Area | Fix |
+|----|------|-----|
+| **CBA-09** | Kotlin | `is_suspend` used a substring test, mis-flagging a function *named* `suspendCoroutine`. Now word-boundary (`\bsuspend\b`). Test in `test_kotlin_support.py`. |
+| **P1** | chat | Discord 429 retry was unbounded (hang risk) — the Slack path in the same commit was bounded; Discord now caps consecutive 429s at 3 and stops with partial data. |
+| **P2** | doc | `_normalize_url` stripped `?ref=`, which is content-bearing on some sites (GitHub `?ref=branch`, SPA routers) → could collapse distinct pages. `ref` removed from the strip set (`ref_src` kept). Tests in `test_scraper_features.py::TestNormalizeUrl`. |
+| **P3** | doc | `--dry-run` supplied via config still created empty output dirs (the ctor used the param, not `self.dry_run`). Now uses `self.dry_run`/`self.resume`. |
+| **P5** | adaptors | `claude.py` enhancement did rename-then-write, leaving only `SKILL.md.backup` if the write failed. Now writes to a temp file, copies the backup, then `os.replace()` (atomic). |
+| **P6** | mcp | `submit_config` dedup used GitHub's fuzzy title search (`[CONFIG] react` matched `react-native`). Added an exact-title guard. |
+| **P8** | scrapers | asciidoc/jupyter `_generate_index` still had inline filename logic (drift risk vs the nav helper). Both index generators now route through `_ref_filename`, so index links and reference files share one source of truth. |
+| **P9** | config | `config status` omitted the Moonshot key row; added it. |
+
+### Deferred (genuine larger work — not safe to do inline; tracked here)
+
+- **Streaming adaptor format (ADP-01 follow-up):** all 8 RAG/vector adaptors emit a *generic* streamed format rather than each platform's native shape (only the unregistered example classes override the converter). `--streaming` works; per-platform fidelity is a follow-up.
+- **Unified multi-source `skip_scrape` (I1 remainder):** honoring it requires reloading each source's `.skillseeker-cache` before build — a real feature, not a one-liner.
+- **Kotlin brace-depth / `is_suspend` corpus robustness (CBA-08, CBA-11):** the brace-depth nesting check is fooled by braces inside strings/comments; a robust fix needs a string/comment-aware scan (shared with the still-open CBA-11).
+- **DOC-04** and the **Low tier (67)** remain as previously stated.
+
+---
+
 ## Fix log — 2026-06-10
 
 All 5 Criticals + all 18 High findings fixed with regression tests (lint/format clean; affected suites green). A few mechanical/wide fixes (CLI-01, CLI-02, CBB-02/03/12, MCP-02..05) are covered by the broad suite rather than dedicated new tests.

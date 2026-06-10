@@ -113,6 +113,27 @@ class TestGitHubScraperInitialization(unittest.TestCase):
             token = scraper._get_token()
             self.assertEqual(token, "env_token")
 
+    def test_save_data_creates_nested_output_parent(self):
+        """Regression: _save_data must create the real parent of data_file.
+        With a nested --output, data_file derives from output_dir, but the old
+        code only ever mkdir'd 'output/' — so the write raised FileNotFoundError
+        (this runs during extract, before build_skill creates skill_dir)."""
+        nested = self.output_dir / "deep" / "sub" / "myskill"
+        config = {
+            "repo": "facebook/react",
+            "name": "myskill",
+            "github_token": None,
+            "output_dir": str(nested),
+        }
+        scraper = self.GitHubScraper(config)
+        scraper.extracted_data = {"hello": "world"}
+
+        scraper._save_data()  # must not raise FileNotFoundError
+
+        self.assertTrue(os.path.exists(scraper.data_file))
+        with open(scraper.data_file) as f:
+            self.assertEqual(json.load(f), {"hello": "world"})
+
 
 class TestREADMEExtraction(unittest.TestCase):
     """Test README extraction (C1.2)"""

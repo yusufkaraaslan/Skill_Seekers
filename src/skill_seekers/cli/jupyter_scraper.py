@@ -827,7 +827,6 @@ class JupyterToSkillConverter(SkillConverter):
     def _generate_index(self, categorized: dict[str, dict]) -> None:
         """Generate reference index file."""
         filename = f"{self.skill_dir}/references/index.md"
-        nb_base = self._nb_basename()
         total_cats = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -838,13 +837,11 @@ class JupyterToSkillConverter(SkillConverter):
                 if pages:
                     snums = [s.get("section_number", i + 1) for i, s in enumerate(pages)]
                     rng = f"Sections {min(snums)}-{max(snums)}"
-                    if total_cats == 1:
-                        link = f"{nb_base}.md" if nb_base else "main.md"
-                    else:
-                        base = nb_base or "section"
-                        link = f"{base}_s{min(snums)}-s{max(snums)}.md"
                 else:
-                    link, rng = f"section_{section_num:02d}.md", "N/A"
+                    rng = "N/A"
+                # Route through the shared helper so the index link always
+                # matches the reference file the writer creates (no drift).
+                link = os.path.basename(self._ref_filename(pages, section_num, total_cats))
                 f.write(f"- [{cd['title']}]({link}) ({count} sections, {rng})\n")
 
             f.write("\n## Statistics\n\n")

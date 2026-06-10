@@ -328,7 +328,7 @@ class AgentClient:
                     model=model,
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
-                    timeout=120,
+                    timeout=request_timeout,
                 )
                 if response.choices and response.choices[0].finish_reason == "length":
                     logger.warning(

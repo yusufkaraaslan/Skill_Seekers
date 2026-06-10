@@ -570,11 +570,18 @@ Please fix these issues and try again.
             # config (e.g. a retry after a transient failure), return it instead
             # of opening a duplicate.
             try:
+                expected_title = f"[CONFIG] {config_name}"
                 existing = gh.search_issues(
                     f"repo:yusufkaraaslan/skill-seekers-configs is:issue is:open "
-                    f'in:title "[CONFIG] {config_name}"'
+                    f'in:title "{expected_title}"'
                 )
                 for found in existing:
+                    # GitHub title search is fuzzy substring matching, so
+                    # "[CONFIG] react" also matches "[CONFIG] react-native".
+                    # Require an exact title match before treating it as a
+                    # duplicate, or we'd suppress a legitimate distinct config.
+                    if found.title.strip() != expected_title:
+                        continue
                     return [
                         TextContent(
                             type="text",

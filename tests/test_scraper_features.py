@@ -875,5 +875,35 @@ class TestDocScraperEntrypoint(unittest.TestCase):
         self.assertFalse(converter.build_skill_called)
 
 
+class TestNormalizeUrl(unittest.TestCase):
+    """DOC-03 tracking-param stripping, and the P2 fix: `?ref=` is content-
+    bearing on some sites (GitHub ?ref=branch, SPA routers) so it must NOT be
+    stripped, or distinct pages collapse into one and a page is lost."""
+
+    def setUp(self):
+        from skill_seekers.cli.doc_scraper import _normalize_url
+
+        self._normalize_url = _normalize_url
+
+    def test_strips_tracking_params(self):
+        self.assertEqual(
+            self._normalize_url("https://x.io/docs?utm_source=tw&fbclid=abc"),
+            "https://x.io/docs",
+        )
+
+    def test_preserves_ref_query_param(self):
+        # ref is content-bearing — must survive normalization.
+        self.assertEqual(
+            self._normalize_url("https://x.io/docs?ref=branch"),
+            "https://x.io/docs?ref=branch",
+        )
+
+    def test_preserves_content_params_and_sorts(self):
+        self.assertEqual(
+            self._normalize_url("https://x.io/p?b=2&a=1&utm_medium=x"),
+            "https://x.io/p?a=1&b=2",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

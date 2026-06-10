@@ -83,7 +83,10 @@ _TRACKING_PARAMS = {
     "msclkid",
     "mc_cid",
     "mc_eid",
-    "ref",
+    # NOTE: bare "ref" is intentionally NOT stripped — some doc sites / SPA
+    # routers use ?ref= as a content/routing selector (e.g. GitHub ?ref=branch),
+    # so dropping it could collapse two distinct pages into one and lose a page.
+    # "ref_src" (Twitter referrer source) is unambiguous tracking, so keep it.
     "ref_src",
 }
 
@@ -301,15 +304,17 @@ class DocToSkillConverter(SkillConverter):
 
             self.lock = threading.Lock()
 
-        # Create directories (unless dry-run)
-        if not dry_run:
+        # Create directories (unless dry-run). Use self.dry_run/self.resume,
+        # not the ctor params — a config-supplied dry_run (the create path) was
+        # otherwise ignored here and still created empty output dirs.
+        if not self.dry_run:
             os.makedirs(f"{self.data_dir}/pages", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
             os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
 
         # Load checkpoint if resuming
-        if resume and not dry_run:
+        if self.resume and not self.dry_run:
             self.load_checkpoint()
 
     def _enqueue_url(self, url: str) -> None:

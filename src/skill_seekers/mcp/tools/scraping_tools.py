@@ -191,9 +191,11 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             from skill_seekers.cli.unified_scraper import UnifiedScraper
 
             converter = UnifiedScraper(config_to_use, merge_mode=merge_mode)
-            # Honor dry_run/skip_scrape for unified configs too (was dropped —
-            # only the legacy branch set dry_run, and skip_scrape was ignored
-            # entirely, so cached data was re-scraped from the network).
+            # dry_run is honored by UnifiedScraper. skip_scrape is NOT yet
+            # honored on the unified multi-source path (it would need to reload
+            # each source's cached data from .skillseeker-cache before building);
+            # the attribute is set for forward-compat but currently has no effect
+            # here. Single-source configs DO honor skip_scrape (SkillConverter.run).
             converter.dry_run = dry_run
             converter.skip_scrape = skip_scrape
         else:

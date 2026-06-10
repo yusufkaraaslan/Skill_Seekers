@@ -873,6 +873,7 @@ class ChatToSkillConverter(SkillConverter):
                 # Fetch messages with pagination (before= cursor)
                 before: str | None = None
                 fetched = 0
+                rate_limit_retries = 0
 
                 while fetched < self.max_messages:
                     params: dict[str, str | int] = {"limit": min(100, self.max_messages - fetched)}
@@ -885,11 +886,22 @@ class ChatToSkillConverter(SkillConverter):
                         params=params,
                     ) as resp:
                         # Honor Discord rate limits (429 + Retry-After) instead
-                        # of silently truncating the fetch.
+                        # of silently truncating the fetch — but bound the
+                        # retries (mirroring the Slack path) so a persistently
+                        # rate-limited endpoint can't loop forever.
                         if resp.status == 429:
+                            rate_limit_retries += 1
+                            if rate_limit_retries > 3:
+                                logger.warning(
+                                    "Discord rate limit (429) persisted after 3 retries; "
+                                    "stopping with %d message(s) collected.",
+                                    len(messages),
+                                )
+                                break
                             retry_after = float(resp.headers.get("Retry-After", "1"))
                             await asyncio.sleep(retry_after)
                             continue
+                        rate_limit_retries = 0  # reset after any non-429 response
                         if resp.status != 200:
                             body = await resp.text()
                             logger.warning("Discord API error fetching messages: %s", body)

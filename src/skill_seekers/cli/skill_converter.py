@@ -40,8 +40,18 @@ class SkillConverter:
             Exit code (0 for success, non-zero for failure).
         """
         try:
-            logger.info(f"Extracting from {self.SOURCE_TYPE} source: {self.name}")
-            self.extract()
+            # skip_scrape: reuse existing on-disk scraped data and go straight to
+            # build (build_skill loads from disk). Previously callers set
+            # converter.skip_scrape but run() ignored it, so it was a no-op and
+            # cached data was re-scraped from the network anyway.
+            if getattr(self, "skip_scrape", False):
+                logger.info(
+                    f"⏭️  Skipping extraction for {self.SOURCE_TYPE} source: {self.name} "
+                    "(skip_scrape set — building from existing data)"
+                )
+            else:
+                logger.info(f"Extracting from {self.SOURCE_TYPE} source: {self.name}")
+                self.extract()
             result = self.build_skill()
             if result is False:
                 logger.error(f"❌ {self.SOURCE_TYPE} build_skill() reported failure")

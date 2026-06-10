@@ -330,6 +330,19 @@ class TestKotlinCodeAnalyzer:
         method_names = {m["name"] for m in http["methods"]}
         assert "get" in method_names or "get" in all_func_names
 
+    def test_suspend_modifier_not_confused_with_function_name(self):
+        """Regression for CBA-09: is_suspend must word-boundary match the
+        `suspend` MODIFIER, not any substring — a function NAMED
+        `suspendCoroutine` is not itself a suspend function."""
+        code = (
+            'suspend fun fetchData(): String {\n    return "data"\n}\n\n'
+            "fun suspendCoroutine(block: () -> Unit) {\n    block()\n}\n"
+        )
+        result = self.analyzer.analyze_file("Coroutines.kt", code, "Kotlin")
+        funcs = {f["name"]: f for f in result["functions"]}
+        assert funcs["fetchData"]["is_async"] is True
+        assert funcs["suspendCoroutine"]["is_async"] is False
+
     def test_analyze_top_level_functions(self):
         result = self.analyzer.analyze_file("Extensions.kt", KOTLIN_EXTENSION_FUNCTIONS, "Kotlin")
         func_names = {f["name"] for f in result["functions"]}

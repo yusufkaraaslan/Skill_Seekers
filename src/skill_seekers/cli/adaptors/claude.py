@@ -7,6 +7,7 @@ Refactored from upload_skill.py and enhance_skill.py.
 """
 
 import os
+import shutil
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -408,14 +409,18 @@ version: {metadata.version}
 
             print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
-            # Backup original
+            # Save atomically: write to a temp file, back up the original by
+            # COPY (not rename — so the original survives if anything here
+            # fails), then os.replace() the temp into place. The old
+            # rename-then-write left only SKILL.md.backup (no SKILL.md) if the
+            # write failed after the rename.
+            tmp_path = skill_md_path.with_suffix(".md.tmp")
+            tmp_path.write_text(enhanced_content, encoding="utf-8")
             if skill_md_path.exists():
                 backup_path = skill_md_path.with_suffix(".md.backup")
-                skill_md_path.rename(backup_path)
+                shutil.copy2(skill_md_path, backup_path)
                 print(f"  💾 Backed up original to: {backup_path.name}")
-
-            # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding="utf-8")
+            os.replace(tmp_path, skill_md_path)
             print("  ✅ Saved enhanced SKILL.md")
 
             return True
