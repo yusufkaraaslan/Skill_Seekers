@@ -31,6 +31,36 @@ IDs are subsystem-prefixed: `SCAN` (scan+config), `CLI` (core/dispatch), `ADP` (
 
 ---
 
+## Resolution status (this PR)
+
+Worked through the audit Critical → Low. Every Critical and High finding is fixed, and the entire Medium tier is fixed except one deferred item. Each fix carries a regression test where behavioral; the rest are covered by existing suites. Lint + format are clean throughout.
+
+| Tier | Total | Fixed | Remaining |
+|------|-------|-------|-----------|
+| Critical | 5 | 5 | 0 |
+| High | 18 | 18 | 0 |
+| Medium | 45* | 44 | 1 (DOC-04) |
+| Low | 67* | 0 | 67 (not in scope for this PR) |
+
+\* Medium/Low counts include sub-findings; the body tables enumerate each fixed ID.
+
+**Delivered as 8 commits:**
+1. Critical + High behavioral bugs (each with a regression test).
+2. `--output` honored for every source type + config-file precedence (CLI-01/02, CFG-01/02).
+3. `ExecutionContext` made the real single source of truth (RT-01..11): ~12 inert flags wired, 4 bypasses fixed, dead `rag` section removed, `--languages`/`--dry-run` wired.
+4. Medium batch 1 — codebase-analysis, enhancement, infra, scan/config, adaptors.
+5. Medium batch 2 — guides + document/remote scrapers.
+6. DOC-07/MED-04 — SKILL.md nav links fixed across all 7 scrapers.
+7. ADP-01 — `--streaming` wired into the 8 RAG/vector adaptors (was dead for every target).
+8. CLI-04 — all 15 commands migrated off `_reconstruct_argv` to namespace dispatch (also fixed a pre-existing live bug: `skill-seekers workflows …` was broken).
+
+**Remaining / out of scope:**
+- **DOC-04** (Medium, deferred): `DEFAULT_MAX_PAGES = -1` means a config without `max_pages` crawls unbounded. The fix (a finite default) is a **user-visible behavior change** for existing configs, so it's left for a maintainer product decision rather than changed unilaterally.
+- **Low tier (67):** cosmetic / rare-trigger / dead-code / type-annotation items — catalogued in the body, not addressed in this PR.
+- **`tests/test_bootstrap_skill*.py`** were hardened (out of band) to guard a fork-bomb: the bootstrap/`create` subprocess tests spawn real `skill-seekers create` runs (and LLM enhance agents). Because of this, the *full* `pytest tests/` is unsafe to run repeatedly; verification used targeted per-module suites + `-m "not slow and not integration"`.
+
+---
+
 ## Fix log — 2026-06-10
 
 All 5 Criticals + all 18 High findings fixed with regression tests (lint/format clean; affected suites green). A few mechanical/wide fixes (CLI-01, CLI-02, CBB-02/03/12, MCP-02..05) are covered by the broad suite rather than dedicated new tests.
