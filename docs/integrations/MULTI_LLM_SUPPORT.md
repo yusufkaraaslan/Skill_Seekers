@@ -10,6 +10,7 @@ Skill Seekers supports multiple LLM platforms through a clean adaptor system. Th
 | **Google Gemini** | ✅ Full Support | tar.gz | ✅ Automatic | ✅ Yes | GOOGLE_API_KEY |
 | **OpenAI ChatGPT** | ✅ Full Support | ZIP + Vector Store | ✅ Automatic | ✅ Yes | OPENAI_API_KEY |
 | **MiniMax AI** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | MINIMAX_API_KEY |
+| **Atlas Cloud** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | ATLAS_API_KEY |
 | **Generic Markdown** | ✅ Export Only | ZIP | ❌ Manual | ❌ No | None |
 
 ## Quick Start

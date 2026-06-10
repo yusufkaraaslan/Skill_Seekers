@@ -21,6 +21,7 @@ from skill_seekers.cli.adaptors.base import SkillMetadata
 
 
 PLATFORMS = [
+    "atlas",
     "deepseek",
     "fireworks",
     "kimi",
@@ -30,6 +31,13 @@ PLATFORMS = [
 ]
 
 PLATFORM_EXPECTED = {
+    "atlas": {
+        "name": "Atlas Cloud",
+        "endpoint_contains": "atlascloud",
+        "model_truthy": True,
+        "env_var": "ATLAS_API_KEY",
+        "api_base_contains": "atlascloud",
+    },
     "deepseek": {
         "name": "DeepSeek AI",
         "endpoint_contains": "deepseek",

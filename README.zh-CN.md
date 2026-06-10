@@ -1139,3 +1139,15 @@ skill-seekers quality output/react/  # 质量评分
 ```bash
 skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
 ```
+
+---
+
+## 💛 赞助商
+
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
+
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — 全模态、OpenAI 兼容的 AI 推理平台。Skill Seekers 通过 `--target atlas`（配置 `ATLAS_API_KEY`）支持将其作为打包/增强目标。
