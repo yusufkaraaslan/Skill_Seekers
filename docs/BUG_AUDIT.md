@@ -157,6 +157,7 @@ All ✅ Fixed; verified by the guide/scraper suites + new regression tests where
 | ID | Status | Fix summary |
 |----|--------|-------------|
 | DOC-07 + MED-04 | ✅ Fixed | **Broken SKILL.md nav links across all 7 scrapers** (pdf/html/word/epub/jupyter/asciidoc/pptx). Each scraper now routes its SKILL.md nav, `index.md`, and reference-file writer through ONE filename helper (`_reference_filename`, or the pre-existing `_ref_filename` for asciidoc/jupyter), so nav links match the actual range/basename filenames instead of pointing at nonexistent `sanitize(title).md`. Regression test: `test_pdf_scraper.py::...test_reference_filename_matches_nav_and_index`. |
+| ADP-01 | ✅ Fixed | **`--streaming` was dead for every target.** `StreamingAdaptorMixin` was never inherited, so `hasattr(adaptor, "package_streaming")` was always False. Fixed the mixin's fragile `sys.path` import (now `from skill_seekers.cli.streaming_ingest import …`) and made all 8 RAG/vector adaptors (langchain, llama-index, chroma, haystack, weaviate, qdrant, faiss, pinecone) inherit it. `--streaming` now produces a real streamed package; non-streaming targets (claude/markdown) still fall back with the announced message. Regression + end-to-end test in `test_adaptors/test_langchain_adaptor.py`. |
 
 Deferred (Medium):
 - **DOC-04** — `DEFAULT_MAX_PAGES = -1` (unbounded default crawl). Changing the default to finite is a user-visible behavior change; left for an explicit decision (not selected for fixing).
