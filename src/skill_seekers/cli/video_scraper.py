@@ -304,7 +304,14 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
             messages=[{"role": "user", "content": prompt}],
         )
         result = response.content[0].text
-        if result and len(result) > len(content) * 0.5:
+        # Require a COMPLETE response before overwriting the reference file: a
+        # response truncated at max_tokens can still exceed 50% of the input yet
+        # silently corrupt the reference. (stop_reason == "end_turn" => complete.)
+        if (
+            result
+            and getattr(response, "stop_reason", None) == "end_turn"
+            and len(result) > len(content) * 0.5
+        ):
             with open(ref_path, "w", encoding="utf-8") as f:
                 f.write(result)
             logger.info(f"AI-cleaned reference: {os.path.basename(ref_path)}")

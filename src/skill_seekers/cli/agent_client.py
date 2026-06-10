@@ -448,7 +448,7 @@ class AgentClient:
                 if output_file:
                     full_prompt += f"\n\nWrite your response to: {resp_file}\n"
 
-                prompt_file.write_text(full_prompt)
+                prompt_file.write_text(full_prompt, encoding="utf-8")
 
                 # Build command from preset
                 cmd = []

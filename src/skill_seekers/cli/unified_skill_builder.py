@@ -451,7 +451,10 @@ This skill synthesizes knowledge from multiple sources:
         if pdf_content_lines and insertion_index != -1:
             lines[insertion_index:insertion_index] = pdf_content_lines
         elif pdf_content_lines:
-            # Append at end before footer
+            # Append before the trailing footer if present, otherwise at the very
+            # end. ENH-17: when the base SKILL.md had no Code Examples / API
+            # Reference / Reference Documentation heading AND no trailing footer,
+            # the assembled PDF content was silently discarded.
             footer_index = -1
             for i, line in enumerate(lines):
                 if line.startswith("---") and i > len(lines) - 5:
@@ -459,6 +462,8 @@ This skill synthesizes knowledge from multiple sources:
                     break
             if footer_index != -1:
                 lines[footer_index:footer_index] = pdf_content_lines
+            else:
+                lines.extend(pdf_content_lines)
 
         # Update reference documentation to include PDF
         final_content = "\n".join(lines)

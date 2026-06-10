@@ -28,6 +28,7 @@ except ImportError:
 from .skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
+from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 
 logger = logging.getLogger(__name__)
 
@@ -809,8 +810,8 @@ def _build_section(
                         {
                             "index": len(images),
                             "data": img_bytes,
-                            "width": int(elem.get("width", 0) or 0),
-                            "height": int(elem.get("height", 0) or 0),
+                            "width": _parse_leading_int(elem.get("width")),
+                            "height": _parse_leading_int(elem.get("height")),
                         }
                     )
                 except Exception:

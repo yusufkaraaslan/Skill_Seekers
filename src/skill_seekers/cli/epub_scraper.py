@@ -31,6 +31,7 @@ from bs4 import BeautifulSoup, Comment
 from .skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
+from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 
 logger = logging.getLogger(__name__)
 
@@ -603,7 +604,9 @@ class EpubToSkillConverter(SkillConverter):
                         img_filename = f"section_{sec_num}_img_{img_index}.png"
                         img_path = os.path.join(assets_dir, img_filename)
 
-                        if isinstance(img_data, (bytes, bytearray)):
+                        # Require NON-EMPTY bytes — b"" passed the isinstance
+                        # check and produced a 0-byte PNG plus a broken ![] link.
+                        if isinstance(img_data, (bytes, bytearray)) and len(img_data) > 0:
                             with open(img_path, "wb") as img_file:
                                 img_file.write(img_data)
                             f.write(f"![Image {img_index}](../assets/{img_filename})\n\n")
@@ -974,8 +977,8 @@ def _build_section(
                     {
                         "index": len(images),
                         "data": b"",  # EPUB images handled separately via manifest
-                        "width": int(elem.get("width", 0) or 0),
-                        "height": int(elem.get("height", 0) or 0),
+                        "width": _parse_leading_int(elem.get("width")),
+                        "height": _parse_leading_int(elem.get("height")),
                     }
                 )
             continue

@@ -602,6 +602,13 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append(package_output)
             output_lines.append("")
 
+            # Abort if packaging failed — package_skill_tool emits "❌ Error:" on
+            # a non-zero exit. Without this, a failed package still fabricated a
+            # zip_path below and the workflow marched on to upload a missing file.
+            if "❌ Error:" in package_output:
+                output_lines.append("❌ Packaging failed; aborting before upload.")
+                return [TextContent(type="text", text="\n".join(output_lines))]
+
             # Extract package path from output (supports .zip and .tar.gz).
             # package_skill.py prints "   Output: <path>" and
             # "✅ Package created: <path>" — NOT "Saved to:", so match those.

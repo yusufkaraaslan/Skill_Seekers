@@ -26,6 +26,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Comment, Tag
 
 from .skill_converter import SkillConverter
+from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 logger = logging.getLogger(__name__)
@@ -863,12 +864,17 @@ class HtmlToSkillConverter(SkillConverter):
             if header_row:
                 headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
 
-        # Body rows
-        tbody = table_elem.find("tbody") or table_elem
-        for row in tbody.find_all("tr"):
+        # Body rows. Prefer an explicit <tbody>; otherwise take rows directly
+        # under the table but skip <thead> rows STRUCTURALLY (not by value) so a
+        # legitimate body row that duplicates the header text isn't dropped.
+        tbody = table_elem.find("tbody")
+        if tbody is not None:
+            body_rows = tbody.find_all("tr")
+        else:
+            body_rows = [r for r in table_elem.find_all("tr") if r.find_parent("thead") is None]
+        for row in body_rows:
             cells = [td.get_text(strip=True) for td in row.find_all(["td", "th"])]
-            # Skip the header row we already captured
-            if cells and cells != headers:
+            if cells:
                 rows.append(cells)
 
         # If no explicit thead, use first row as header
@@ -908,8 +914,8 @@ class HtmlToSkillConverter(SkillConverter):
             "src": resolved_src,
             "alt": img_elem.get("alt", ""),
             "title": img_elem.get("title", ""),
-            "width": int(img_elem.get("width", 0) or 0),
-            "height": int(img_elem.get("height", 0) or 0),
+            "width": _parse_leading_int(img_elem.get("width")),
+            "height": _parse_leading_int(img_elem.get("height")),
             "data": b"",  # Placeholder; actual image data loaded separately
         }
 

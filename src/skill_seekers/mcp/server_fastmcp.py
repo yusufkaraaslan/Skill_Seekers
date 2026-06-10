@@ -205,6 +205,7 @@ async def generate_config(
     max_pages: int = 100,
     unlimited: bool = False,
     rate_limit: float = 0.5,
+    force: bool = False,
 ) -> str:
     """
     Generate a config file for documentation scraping.
@@ -216,6 +217,7 @@ async def generate_config(
         max_pages: Maximum pages to scrape (default: 100, use -1 for unlimited)
         unlimited: Remove all limits - scrape all pages (default: false). Overrides max_pages.
         rate_limit: Delay between requests in seconds (default: 0.5)
+        force: Overwrite an existing config of the same name (default: false).
 
     Returns:
         Success message with config path and next steps, or error message.
@@ -227,6 +229,7 @@ async def generate_config(
         "max_pages": max_pages,
         "unlimited": unlimited,
         "rate_limit": rate_limit,
+        "force": force,
     }
     result = await generate_config_impl(args)
     # Extract text from TextContent objects

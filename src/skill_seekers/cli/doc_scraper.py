@@ -372,8 +372,14 @@ class DocToSkillConverter(SkillConverter):
         }
 
         try:
-            with open(self.checkpoint_file, "w", encoding="utf-8") as f:
+            # Atomic write: a second Ctrl-C during a direct open(...,'w') can
+            # truncate the checkpoint, and load_checkpoint then silently starts
+            # fresh — losing all crawl progress. Write a temp file, then
+            # os.replace() it into place (atomic on the same filesystem).
+            tmp_file = f"{self.checkpoint_file}.tmp"
+            with open(tmp_file, "w", encoding="utf-8") as f:
                 json.dump(checkpoint_data, f, indent=2)
+            os.replace(tmp_file, self.checkpoint_file)
             logger.info("  💾 Checkpoint saved (%d pages)", self.pages_scraped)
         except Exception as e:
             logger.warning("  ⚠️  Failed to save checkpoint: %s", e)

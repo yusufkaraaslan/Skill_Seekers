@@ -651,12 +651,21 @@ class ChatToSkillConverter(SkillConverter):
                 channel_ids = [self.channel]
                 channel_names = {self.channel: self.channel}
             else:
-                # List all accessible channels
-                result = client.conversations_list(
-                    types="public_channel,private_channel",
-                    limit=200,
-                )
-                channels = result.get("channels", [])
+                # List ALL accessible channels — paginate via next_cursor. A
+                # single conversations_list call caps at the page limit and
+                # silently truncates workspaces with >limit channels.
+                channels = []
+                cursor = None
+                while True:
+                    result = client.conversations_list(
+                        types="public_channel,private_channel",
+                        limit=200,
+                        cursor=cursor,
+                    )
+                    channels.extend(result.get("channels", []))
+                    cursor = (result.get("response_metadata") or {}).get("next_cursor")
+                    if not cursor:
+                        break
                 channel_ids = [ch["id"] for ch in channels]
                 channel_names = {ch["id"]: ch.get("name", ch["id"]) for ch in channels}
                 print(f"   Found {len(channel_ids)} channel(s)")

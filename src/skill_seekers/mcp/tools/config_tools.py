@@ -51,6 +51,7 @@ async def generate_config(args: dict) -> list[TextContent]:
     max_pages = args.get("max_pages", 100)
     unlimited = args.get("unlimited", False)
     rate_limit = args.get("rate_limit", DEFAULTS["scraping"]["rate_limit"])
+    force = args.get("force", False)
 
     # Handle unlimited mode
     if unlimited or max_pages == -1:
@@ -79,6 +80,19 @@ async def generate_config(args: dict) -> list[TextContent]:
     # Save to configs directory
     config_path = Path("configs") / f"{name}.json"
     config_path.parent.mkdir(exist_ok=True)
+
+    # Don't silently clobber an existing (possibly hand-edited) config.
+    if config_path.exists() and not force:
+        return [
+            TextContent(
+                type="text",
+                text=(
+                    f"⚠️ Config already exists: {config_path}\n\n"
+                    "Not overwriting. Pass force=true to replace it "
+                    "(this discards any manual edits)."
+                ),
+            )
+        ]
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)

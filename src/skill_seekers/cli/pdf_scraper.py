@@ -343,12 +343,20 @@ class PDFToSkillConverter(SkillConverter):
 
                     f.write("### Images\n\n")
                     for img in page["images"]:
+                        # Guard the raw image data: a missing "data" key raised
+                        # KeyError and a non-bytes/empty value either crashed
+                        # (TypeError) or wrote a 0-byte PNG with a broken ![] link
+                        # — aborting the whole reference-file write.
+                        img_data = img.get("data")
+                        if not (isinstance(img_data, (bytes, bytearray)) and len(img_data) > 0):
+                            continue
+
                         # Save image to assets
                         img_filename = f"page_{page['page_number']}_img_{img['index']}.png"
                         img_path = os.path.join(assets_dir, img_filename)
 
                         with open(img_path, "wb") as img_file:
-                            img_file.write(img["data"])
+                            img_file.write(img_data)
 
                         # Add markdown image reference
                         f.write(f"![Image {img['index']}](../assets/{img_filename})\n\n")
