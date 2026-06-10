@@ -16,7 +16,9 @@ Extracted from server.py for better modularity and organization.
 import io
 import json
 import logging
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
@@ -166,9 +168,12 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             # For legacy configs
             config["max_pages"] = None
 
-        # Create temporary config file
-        temp_config_path = config_path.replace(".json", "_unlimited_temp.json")
-        with open(temp_config_path, "w") as f:
+        # Create a UNIQUE temporary config file. The previous
+        # config_path.replace(".json", "_unlimited_temp.json") collided when two
+        # unlimited scrapes of the same config ran concurrently, and rewrote any
+        # ".json" substring elsewhere in the path.
+        fd, temp_config_path = tempfile.mkstemp(suffix="_unlimited.json", prefix="skillseeker_")
+        with os.fdopen(fd, "w") as f:
             json.dump(config, f, indent=2)
 
         config_to_use = temp_config_path

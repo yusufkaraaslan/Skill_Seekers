@@ -6,6 +6,7 @@ Implements platform-specific handling for Claude AI (Anthropic) skills.
 Refactored from upload_skill.py and enhance_skill.py.
 """
 
+import json
 import os
 import shutil
 import zipfile
@@ -73,10 +74,12 @@ This skill contains comprehensive documentation organized into categorized refer
 See `references/index.md` for complete documentation structure.
 """
 
-        # Format with YAML frontmatter
+        # Format with YAML frontmatter. Quote name/description (json.dumps yields
+        # a valid double-quoted YAML scalar) so a colon-space or leading special
+        # char in the text can't produce invalid YAML.
         return f"""---
-name: {metadata.name}
-description: {metadata.description}
+name: {json.dumps(metadata.name)}
+description: {json.dumps(metadata.description)}
 version: {metadata.version}
 ---
 

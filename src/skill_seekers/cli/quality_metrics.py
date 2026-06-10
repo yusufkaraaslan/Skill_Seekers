@@ -571,6 +571,17 @@ def main(args=None):
 
     report_path.write_text(json.dumps(asdict(report), indent=2, default=str))
     print(f"\n✅ Report saved: {report_path}")
+
+    # Quality gating: --threshold was parsed but never enforced (main always
+    # returned 0, so the gate was a no-op). overall_score.total_score is 0-100
+    # while --threshold is 0-10, so compare on the same scale.
+    total_score = report.overall_score.total_score  # 0-100
+    if total_score < args.threshold * 10:
+        print(
+            f"❌ Quality score {total_score / 10:.1f}/10 is below the "
+            f"threshold of {args.threshold:.1f}/10"
+        )
+        return 1
     return 0
 
 

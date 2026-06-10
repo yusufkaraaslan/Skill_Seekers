@@ -347,14 +347,29 @@ Always prioritize accuracy by consulting the attached documentation files before
             )
 
             enhanced_content = response.choices[0].message.content
+
+            # Validate BEFORE touching the original: a truncated or empty response
+            # must not replace a good SKILL.md (ADP-06 / ENH-01).
+            finish_reason = getattr(response.choices[0], "finish_reason", None)
+            if finish_reason == "length":
+                print("  ❌ Enhancement truncated (hit max_tokens); leaving SKILL.md intact.")
+                return False
+            if not enhanced_content or not enhanced_content.strip():
+                print("  ❌ Empty enhancement response; leaving SKILL.md intact.")
+                return False
+
             print(f"  Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
+            # Atomic save: write a temp file, copy the backup, then replace the
+            # original. The old rename-then-write left only SKILL.md.backup (no
+            # SKILL.md) if the write failed after the rename.
+            tmp_path = skill_md_path.with_suffix(".md.tmp")
+            tmp_path.write_text(enhanced_content, encoding="utf-8")
             if skill_md_path.exists():
                 backup_path = skill_md_path.with_suffix(".md.backup")
-                skill_md_path.rename(backup_path)
+                backup_path.write_bytes(skill_md_path.read_bytes())
                 print(f"  Backed up original to: {backup_path.name}")
-
-            skill_md_path.write_text(enhanced_content, encoding="utf-8")
+            tmp_path.replace(skill_md_path)
             print("  Saved enhanced SKILL.md")
 
             return True

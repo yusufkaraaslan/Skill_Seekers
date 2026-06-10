@@ -314,9 +314,11 @@ class ManPageToSkillConverter(SkillConverter):
             if real_suffix not in MAN_FILE_EXTENSIONS:
                 continue
 
-            # Filter by requested sections
+            # Filter by requested sections — but only when we actually know the
+            # section. A section-less .man page has section_num=None and must not
+            # be dropped just because --sections was given.
             section_num = self._section_from_suffix(real_suffix)
-            if self.sections and section_num not in self.sections:
+            if self.sections and section_num is not None and section_num not in self.sections:
                 continue
 
             raw = self._read_man_file(str(actual_path))
