@@ -201,6 +201,14 @@ class AgentClient:
     @staticmethod
     def _detect_provider_from_key(api_key: str) -> str:
         """Detect provider from API key prefix or fall back to env var check."""
+        # Explicit override wins. Moonshot/Kimi keys also start with "sk-", so a
+        # directly-passed Moonshot key (without MOONSHOT_API_KEY also exported)
+        # would otherwise be misclassified as OpenAI and hit the wrong endpoint.
+        forced = os.environ.get("SKILL_SEEKER_PROVIDER", "").strip().lower()
+        if forced == "kimi":
+            forced = "moonshot"
+        if forced in ("anthropic", "moonshot", "openai", "google"):
+            return forced
         if api_key.startswith("sk-ant-"):
             return "anthropic"
         if api_key.startswith("sk-"):
@@ -298,6 +306,16 @@ class AgentClient:
                     messages=[{"role": "user", "content": prompt}],
                     timeout=120,
                 )
+                # Treat a max_tokens truncation as a failure: callers overwrite
+                # SKILL.md / parse JSON with this text, so returning a truncated
+                # body silently corrupts their output.
+                if getattr(response, "stop_reason", None) == "max_tokens":
+                    logger.warning(
+                        "API response truncated at max_tokens=%s; returning None "
+                        "to avoid using incomplete content.",
+                        max_tokens,
+                    )
+                    return None
                 return response.content[0].text
 
             elif self.provider == "openai":
@@ -307,6 +325,13 @@ class AgentClient:
                     messages=[{"role": "user", "content": prompt}],
                     timeout=120,
                 )
+                if response.choices and response.choices[0].finish_reason == "length":
+                    logger.warning(
+                        "API response truncated at max_tokens=%s; returning None "
+                        "to avoid using incomplete content.",
+                        max_tokens,
+                    )
+                    return None
                 return response.choices[0].message.content
 
             elif self.provider == "google":
@@ -360,6 +385,20 @@ class AgentClient:
         cwd: str | Path | None = None,
     ) -> str | None:
         """Call via LOCAL CLI agent using agent presets."""
+        # Recursion guard. A LOCAL agent (e.g. ``claude``) spawned for
+        # enhancement may itself run the test suite, and a test that shells out
+        # to ``skill-seekers create`` would spawn yet another enhance agent —
+        # a fork-bomb of real LLM processes. We mark the child environment when
+        # spawning an agent (see ``env`` below) and refuse to spawn a nested one
+        # here, so an inner ``create`` keeps its base SKILL.md instead of
+        # recursing.
+        if os.environ.get("SKILL_SEEKER_ENHANCE_ACTIVE") == "1":
+            logger.warning(
+                "⚠️  Skipping LOCAL enhancement: already running inside a Skill "
+                "Seekers enhance agent (SKILL_SEEKER_ENHANCE_ACTIVE=1); refusing "
+                "to spawn a nested agent to avoid recursion."
+            )
+            return None
         if timeout is None:
             timeout = get_default_timeout()
         # Handle custom agent from env var
@@ -402,6 +441,10 @@ class AgentClient:
 
                 # Execute — pipe stdin for agents that read from it (e.g., codex)
                 stdin_input = full_prompt if preset.get("uses_stdin") else None
+                # Mark the child environment so a nested ``skill-seekers create``
+                # (e.g. if this agent runs the test suite) won't spawn another
+                # enhance agent — see the recursion guard at the top of this method.
+                child_env = {**os.environ, "SKILL_SEEKER_ENHANCE_ACTIVE": "1"}
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
@@ -409,6 +452,7 @@ class AgentClient:
                     timeout=timeout,
                     cwd=str(cwd or temp_path),
                     input=stdin_input,
+                    env=child_env,
                 )
 
                 if result.returncode != 0:
@@ -416,15 +460,14 @@ class AgentClient:
                     if result.stderr and result.stderr.strip():
                         logger.error(f"{self.agent_display} stderr: {result.stderr.strip()}")
 
-                # Try to read output file first
-                resp_path = Path(resp_file)
-                if resp_path.exists():
-                    return resp_path.read_text(encoding="utf-8")
-
-                # Try any JSON file in temp dir
-                for json_file in temp_path.glob("*.json"):
-                    if json_file.name != "prompt.json":
-                        return json_file.read_text(encoding="utf-8")
+                # Only trust a written response file when the caller explicitly
+                # requested one (output_file). Otherwise no agent was instructed
+                # to write a file, and a stray *.json the agent happens to create
+                # in its cwd would shadow the real stdout response.
+                if output_file:
+                    resp_path = Path(resp_file)
+                    if resp_path.exists():
+                        return resp_path.read_text(encoding="utf-8")
 
                 # Fall back to stdout (with agent-specific parsing)
                 if result.stdout and result.stdout.strip():
@@ -464,7 +507,15 @@ class AgentClient:
         """
         import re
 
-        text_parts = re.findall(r"TextPart\(type='text', text='(.+?)'\)", raw_output)
+        # DOTALL so multi-line SKILL.md content matches; anchor the closing
+        # "')" to the next record boundary (or end) so an apostrophe inside the
+        # text doesn't truncate the capture.
+        text_parts = re.findall(
+            r"TextPart\(type='text', text='(.*?)'\)\s*"
+            r"(?=TextPart\(|ThinkPart\(|StepEnd\(|StepBegin\(|TurnEnd\(|TurnBegin\(|\Z)",
+            raw_output,
+            re.DOTALL,
+        )
         if text_parts:
             return "\n".join(text_parts)
         # Fallback: return raw if no TextPart found

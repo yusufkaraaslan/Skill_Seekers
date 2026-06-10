@@ -418,22 +418,31 @@ compatibility: {compatibility}
             return self._generate_dynamic_examples(routing_keywords)
 
         examples = []
-        common_problems = self.github_issues.get("common_problems", [])
+        # Work on a COPY — this list is shared with self.github_issues (and the
+        # underlying insights stream), and later sections ("Common Issues", the
+        # issues reference file) read it. Mutating it here would delete issues
+        # from those sections. Track consumed issues by index instead of
+        # `.remove()`-ing from the shared list.
+        common_problems = list(self.github_issues.get("common_problems", []))
 
         if not common_problems:
             return self._generate_dynamic_examples(routing_keywords)
+
+        used_indices: set[int] = set()
 
         # Match issues to skills based on labels (generate up to 3 examples)
         for skill_name, keywords in list(routing_keywords.items())[:3]:
             skill_keywords_lower = [k.lower() for k in keywords]
             matched_issue = None
 
-            # Find first issue matching this skill's keywords
-            for issue in common_problems:
+            # Find first unused issue matching this skill's keywords
+            for idx, issue in enumerate(common_problems):
+                if idx in used_indices:
+                    continue
                 issue_labels = [label.lower() for label in issue.get("labels", [])]
                 if any(label in skill_keywords_lower for label in issue_labels):
                     matched_issue = issue
-                    common_problems.remove(issue)  # Don't reuse same issue
+                    used_indices.add(idx)  # don't reuse the same issue
                     break
 
             if matched_issue:

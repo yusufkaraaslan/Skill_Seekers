@@ -6,6 +6,7 @@ Pushes validated config files to registered config source repositories.
 Follows the same pattern as MarketplacePublisher but for configs.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -137,10 +138,16 @@ class ConfigPublisher:
         from skill_seekers.mcp.source_manager import SourceManager
 
         manager = SourceManager()
-        source = manager.get_source(source_name)
-        if not source:
+        # get_source raises KeyError on a miss (it never returns falsy), so the
+        # old `if not source:` branch was dead and an unknown name escaped as a
+        # raw KeyError. Translate it to the intended helpful ValueError.
+        try:
+            source = manager.get_source(source_name)
+        except KeyError:
             available = [s["name"] for s in manager.list_sources()]
-            raise ValueError(f"Source '{source_name}' not found. Available sources: {available}")
+            raise ValueError(
+                f"Source '{source_name}' not found. Available sources: {available}"
+            ) from None
 
         git_url = source["git_url"]
         branch = source.get("branch", "main")
@@ -153,20 +160,24 @@ class ConfigPublisher:
                 f"Token not found. Set {token_env} environment variable for source '{source_name}'"
             )
 
-        # 5. Clone/pull source repo (full clone for push support)
+        # 5. Clone/pull source repo (full clone for push support).
+        # Authenticate clone/pull/push through an explicit token URL; keep the
+        # token OUT of the cached .git/config by storing a tokenless origin.
+        # (Relying on `origin` for pull/push fails auth on private repos because
+        # origin is intentionally tokenless.)
         cache_name = f"source_{source_name}"
         repo_path = self.git_repo.cache_dir / cache_name
-        clone_url = self.git_repo.inject_token(git_url, token) if token else git_url
+        token_url = self.git_repo.inject_token(git_url, token)
 
         try:
             if repo_path.exists() and (repo_path / ".git").exists():
                 repo_obj = git.Repo(repo_path)
-                repo_obj.remotes.origin.pull(branch)
+                repo_obj.git.pull(token_url, branch)
                 logger.info(f"📥 Pulled latest from {source_name}/{branch}")
             else:
-                repo_obj = git.Repo.clone_from(clone_url, repo_path, branch=branch)
+                repo_obj = git.Repo.clone_from(token_url, repo_path, branch=branch)
                 logger.info(f"📥 Cloned {source_name} repo")
-            # Clear token from cached .git/config by resetting to non-token URL
+            # Clear token from cached .git/config by resetting origin to non-token URL
             repo_obj.remotes.origin.set_url(git_url)
         except git.GitCommandError as e:
             raise RuntimeError(f"Failed to clone/pull source repo: {e}") from e
@@ -176,11 +187,13 @@ class ConfigPublisher:
             category = detect_category(config)
             logger.info(f"📂 Auto-detected category: {category}")
 
-        # 7. Check if config already exists
+        # 7. Check if config already exists (capture BEFORE the copy below, which
+        # would otherwise always make target_file.exists() True).
         target_dir = repo_path / "configs" / category
         target_file = target_dir / f"{config_name}.json"
+        existed_before = target_file.exists()
 
-        if target_file.exists() and not force:
+        if existed_before and not force:
             raise ValueError(
                 f"Config '{config_name}' already exists in {source_name}/configs/{category}/. "
                 "Use force=True to overwrite."
@@ -199,24 +212,26 @@ class ConfigPublisher:
             target_branch = f"config/{config_name}"
             repo.git.checkout("-b", target_branch)
 
-        repo.index.add([str(target_file.relative_to(repo_path))])
-
-        action = "update" if target_file.exists() and force else "add"
-        commit_msg = f"feat: {action} {config_name} config in {category}"
-        commit = repo.index.commit(commit_msg)
-
-        # Push
         try:
-            repo.remotes.origin.push(target_branch)
+            repo.index.add([str(target_file.relative_to(repo_path))])
+
+            action = "update" if existed_before else "add"
+            commit_msg = f"feat: {action} {config_name} config in {category}"
+            commit = repo.index.commit(commit_msg)
+
+            # Push through the token URL (origin is stored tokenless).
+            repo.git.push(token_url, target_branch)
             logger.info(f"🚀 Pushed to {source_name}/{target_branch}")
         except git.GitCommandError as e:
             raise RuntimeError(
                 f"Failed to push to {source_name}. Check permissions for {token_env}. Error: {e}"
             ) from e
-
-        # Switch back to main if we created a branch
-        if create_branch:
-            repo.git.checkout(branch)
+        finally:
+            # Always return the cached repo to the base branch so the next run
+            # starts from a clean, expected state — even if the push failed.
+            if create_branch:
+                with contextlib.suppress(git.GitCommandError):
+                    repo.git.checkout(branch)
 
         return {
             "success": True,

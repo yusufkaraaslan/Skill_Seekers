@@ -608,5 +608,26 @@ class TestGuideEnhancerResponseParsing:
         assert result["title"] == "Test"
 
 
+class TestEnhanceViaLocalRegression:
+    """Regression for CBB-01: _enhance_via_local must call the real _call_ai.
+
+    The bug called a non-existent _call_claude_local; the AttributeError was
+    swallowed by enhance_guide's broad except, so LOCAL-mode enhancement
+    silently returned the guide unenhanced.
+    """
+
+    def test_enhance_via_local_routes_through_call_ai(self):
+        enhancer = GuideEnhancer(mode="none")
+        guide = {"title": "X", "steps": [], "language": "python"}
+        with patch.object(GuideEnhancer, "_call_ai", return_value="") as mock_ai:
+            result = enhancer._enhance_via_local(guide)
+        mock_ai.assert_called_once()
+        # Falsy AI response → original guide returned unchanged (no AttributeError).
+        assert result == guide
+
+    def test_call_claude_local_method_does_not_exist(self):
+        assert not hasattr(GuideEnhancer, "_call_claude_local")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

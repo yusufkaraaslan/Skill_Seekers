@@ -391,7 +391,21 @@ version: {metadata.version}
                 messages=[{"role": "user", "content": prompt}],
             )
 
+            # Validate the response BEFORE touching the original file: the
+            # backup-then-overwrite below is destructive, so a truncated or
+            # empty response must not be allowed to replace a good SKILL.md.
+            if getattr(message, "stop_reason", None) == "max_tokens":
+                print(
+                    "❌ Enhancement response truncated (hit max_tokens); "
+                    "leaving original SKILL.md intact."
+                )
+                return False
+
             enhanced_content = message.content[0].text
+            if not enhanced_content or not enhanced_content.strip():
+                print("❌ Empty enhancement response; leaving original SKILL.md intact.")
+                return False
+
             print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
             # Backup original

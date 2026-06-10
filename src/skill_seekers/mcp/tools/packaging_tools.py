@@ -519,8 +519,13 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append(scrape_output)
             output_lines.append("")
 
-            # Check for success
-            if "❌" in scrape_output:
+            # Check for success using the SPECIFIC failure markers _run_converter
+            # emits — not any "❌", which can appear in benign page content/logs
+            # and would abort the workflow on a non-fatal warning.
+            if (
+                "❌ Converter returned non-zero exit code" in scrape_output
+                or "❌ Converter raised an exception" in scrape_output
+            ):
                 return [
                     TextContent(
                         type="text",
@@ -597,9 +602,13 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             output_lines.append(package_output)
             output_lines.append("")
 
-            # Extract package path from output (supports .zip and .tar.gz)
-            # Expected format: "Saved to: output/react.zip" or "Saved to: output/react-gemini.tar.gz"
-            match = re.search(r"(?i)saved to:\s*(.+\.(?:zip|tar\.gz))", package_output)
+            # Extract package path from output (supports .zip and .tar.gz).
+            # package_skill.py prints "   Output: <path>" and
+            # "✅ Package created: <path>" — NOT "Saved to:", so match those.
+            match = re.search(
+                r"(?i)(?:output|package created|saved to):\s*(.+\.(?:zip|tar\.gz))",
+                package_output,
+            )
             if match:
                 workflow_state["zip_path"] = match.group(1).strip()
             else:

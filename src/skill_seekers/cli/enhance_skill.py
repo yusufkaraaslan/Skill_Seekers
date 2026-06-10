@@ -79,6 +79,15 @@ class SkillEnhancer:
                 messages=[{"role": "user", "content": prompt}],
             )
 
+            # Refuse truncated output: the caller backs up then overwrites SKILL.md,
+            # so saving a max_tokens-truncated body would silently corrupt the skill.
+            if getattr(message, "stop_reason", None) == "max_tokens":
+                print(
+                    "❌ Error: AI response was truncated (hit max_tokens). "
+                    "Refusing to overwrite SKILL.md with incomplete content."
+                )
+                return None
+
             # Handle response content - newer SDK versions may include ThinkingBlock
             # Find the TextBlock containing the actual response
             enhanced_content = None

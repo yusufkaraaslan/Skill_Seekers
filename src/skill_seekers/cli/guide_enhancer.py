@@ -304,7 +304,11 @@ class GuideEnhancer:
             Enhanced guide data
         """
         prompt = self._create_enhancement_prompt(guide_data)
-        response = self._call_claude_local(prompt)
+        # _call_ai routes to API or LOCAL via AgentClient; there is no
+        # _call_claude_local method (calling it raised AttributeError, which the
+        # broad except in enhance_guide swallowed — silently disabling LOCAL-mode
+        # enhancement).
+        response = self._call_ai(prompt)
 
         if not response:
             return guide_data

@@ -566,6 +566,28 @@ Please fix these issues and try again.
 - [ ] API updated
 """
 
+            # Idempotency guard: if an open submission already exists for this
+            # config (e.g. a retry after a transient failure), return it instead
+            # of opening a duplicate.
+            try:
+                existing = gh.search_issues(
+                    f"repo:yusufkaraaslan/skill-seekers-configs is:issue is:open "
+                    f'in:title "[CONFIG] {config_name}"'
+                )
+                for found in existing:
+                    return [
+                        TextContent(
+                            type="text",
+                            text=(
+                                f"ℹ️ A submission for '{config_name}' is already open:\n"
+                                f"{found.html_url}\n\nNo duplicate issue was created."
+                            ),
+                        )
+                    ]
+            except Exception:
+                # A search hiccup shouldn't block submission — fall through.
+                pass
+
             # Create issue
             issue = repo.create_issue(
                 title=f"[CONFIG] {config_name}",

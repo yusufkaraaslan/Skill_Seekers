@@ -144,6 +144,7 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
     config_path = args["config_path"]
     unlimited = args.get("unlimited", False)
     dry_run = args.get("dry_run", False)
+    skip_scrape = args.get("skip_scrape", False)
     merge_mode = args.get("merge_mode")
 
     # Load config to detect format
@@ -190,6 +191,11 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             from skill_seekers.cli.unified_scraper import UnifiedScraper
 
             converter = UnifiedScraper(config_to_use, merge_mode=merge_mode)
+            # Honor dry_run/skip_scrape for unified configs too (was dropped —
+            # only the legacy branch set dry_run, and skip_scrape was ignored
+            # entirely, so cached data was re-scraped from the network).
+            converter.dry_run = dry_run
+            converter.skip_scrape = skip_scrape
         else:
             from skill_seekers.cli.skill_converter import get_converter
 
@@ -210,8 +216,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
                 source_type = "web"  # default fallback
 
             converter = get_converter(source_type, config_to_pass)
-            if dry_run:
-                converter.dry_run = True
+            converter.dry_run = dry_run
+            converter.skip_scrape = skip_scrape
 
         result = _run_converter(converter, progress_msg)
     finally:

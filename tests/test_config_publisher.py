@@ -158,7 +158,9 @@ class TestPublishErrors:
         config_file.write_text(json.dumps({"name": "test-config"}))
 
         mock_manager = MagicMock()
-        mock_manager.get_source.return_value = None
+        # Real SourceManager.get_source RAISES KeyError on a miss (it never
+        # returns falsy); publish() must translate that into a helpful ValueError.
+        mock_manager.get_source.side_effect = KeyError("Source 'nonexistent' not found")
         mock_manager.list_sources.return_value = []
 
         publisher = ConfigPublisher.__new__(ConfigPublisher)
@@ -284,6 +286,8 @@ class TestPublishSuccess:
         assert result["category"] == "testing"
         assert len(result["commit_sha"]) == 8
         assert result["branch"] == "main"
+        # MCP-07: a brand-new config is an "add".
+        assert "add" in result["message"]
 
         # Verify the file exists in the cached clone
         cached_repo = cache_dir / "source_local-test"
@@ -349,6 +353,8 @@ class TestPublishSuccess:
 
         assert result["success"] is True
         assert result["config_name"] == "overwrite-config"
+        # MCP-07: overwriting a pre-existing config is an "update", not an "add".
+        assert "update" in result["message"]
 
         # Verify the file has updated content
         cached_repo = cache_dir / "source_local-test"
@@ -400,3 +406,54 @@ class TestPublishSuccess:
 
         assert result["success"] is True
         assert result["category"] == "web-frameworks"
+
+    def test_publish_twice_reuses_cache(self, tmp_path):
+        """Second publish to the same source hits the cached-repo re-pull path
+        (regression for ★MCP-13: it previously pulled via a tokenless origin)."""
+        import git as gitmodule
+
+        working_path = tmp_path / "working"
+        working_path.mkdir()
+        _init_repo_with_main_branch(working_path)
+        bare_repo_path = tmp_path / "remote.git"
+        gitmodule.Repo.clone_from(str(working_path), str(bare_repo_path), bare=True)
+
+        mock_source = {
+            "name": "local-test",
+            "git_url": f"file://{bare_repo_path}",
+            "branch": "main",
+            "token_env": "DUMMY_TOKEN",
+        }
+        mock_manager = MagicMock()
+        mock_manager.get_source.return_value = mock_source
+
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        publisher = ConfigPublisher.__new__(ConfigPublisher)
+        from skill_seekers.mcp.git_repo import GitConfigRepo
+
+        publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
+
+        def _publish(name):
+            cfg = tmp_path / f"{name}.json"
+            cfg.write_text(json.dumps({"name": name, "description": "x"}))
+            with (
+                patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
+                patch(
+                    "skill_seekers.mcp.source_manager.SourceManager",
+                    return_value=mock_manager,
+                ),
+                patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
+            ):
+                return publisher.publish(
+                    config_path=cfg, source_name="local-test", category="custom"
+                )
+
+        first = _publish("first-config")
+        second = _publish("second-config")  # exercises the cached-repo pull branch
+
+        assert first["success"] is True
+        assert second["success"] is True
+        cached_repo = cache_dir / "source_local-test"
+        assert (cached_repo / "configs" / "custom" / "first-config.json").exists()
+        assert (cached_repo / "configs" / "custom" / "second-config.json").exists()

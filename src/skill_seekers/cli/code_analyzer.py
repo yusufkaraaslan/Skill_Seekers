@@ -295,11 +295,22 @@ class CodeAnalyzer:
             class_name = match.group(1)
             base_class = match.group(2) if match.group(2) else None
 
-            # Try to extract methods (simplified)
+            # Extract methods. Find the MATCHING closing brace by counting
+            # braces — `content.find("}")` returns the first method's closing
+            # brace, which truncated the class body and dropped every later
+            # method.
             class_block_start = match.end()
-            # This is a simplification - proper parsing would track braces
-            class_block_end = content.find("}", class_block_start)
-            if class_block_end != -1:
+            brace_count = 1
+            class_block_end = class_block_start
+            for i, char in enumerate(content[class_block_start:], class_block_start):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        class_block_end = i
+                        break
+            if class_block_end > class_block_start:
                 class_body = content[class_block_start:class_block_end]
                 methods = self._extract_js_methods(class_body)
             else:
@@ -1983,9 +1994,14 @@ class CodeAnalyzer:
             classes.append(
                 {
                     "name": class_name,
-                    "bases": [extends] if extends else [],
+                    # Must be "base_classes" (not "bases") — PatternRecognizer's
+                    # _convert_to_signatures reads cls["base_classes"]; using the
+                    # wrong key silently disables all GDScript inheritance-based
+                    # pattern detection (Strategy/Template-Method/Observer).
+                    "base_classes": [extends] if extends else [],
                     "methods": [],
-                    "line_number": content[: class_match.start()].count("\n") + 1,
+                    "docstring": None,
+                    "line_number": self._offset_to_line(class_match.start()),
                 }
             )
 

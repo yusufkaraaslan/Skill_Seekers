@@ -391,7 +391,7 @@ class PythonTestAnalyzer:
                     complexity_score=self._calculate_complexity(code),
                     confidence=0.8,
                     tags=tags,
-                    dependencies=imports,
+                    dependencies=list(imports),
                 )
                 examples.append(example)
 
@@ -443,7 +443,7 @@ class PythonTestAnalyzer:
                         complexity_score=self._calculate_complexity(code),
                         confidence=0.85,
                         tags=tags,
-                        dependencies=imports,
+                        dependencies=list(imports),
                     )
                     examples.append(example)
 
@@ -487,7 +487,7 @@ class PythonTestAnalyzer:
                         complexity_score=self._calculate_complexity(code),
                         confidence=0.75,
                         tags=tags,
-                        dependencies=imports,
+                        dependencies=list(imports),
                     )
                     examples.append(example)
 
@@ -529,7 +529,7 @@ class PythonTestAnalyzer:
                 complexity_score=min(1.0, len(func_node.body) / 10),
                 confidence=0.9,
                 tags=tags + ["workflow", "integration"],
-                dependencies=imports,
+                dependencies=list(imports),
             )
             examples.append(example)
 

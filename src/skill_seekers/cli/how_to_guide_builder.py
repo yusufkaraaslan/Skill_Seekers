@@ -178,13 +178,12 @@ class WorkflowAnalyzer:
         # Detect prerequisites
         metadata = self._detect_prerequisites(workflow)
 
-        # Find verification points
-        verifications = self._find_verification_points(code)
-
-        # Associate verifications with steps
-        for i, step in enumerate(steps):
-            if i < len(verifications):
-                step.verification = verifications[i]
+        # NOTE: do NOT positionally re-associate verifications here.
+        # _extract_steps_python already pairs each step with the assertion that
+        # immediately follows it. `_find_verification_points(code)` returns ALL
+        # assert lines in document order — a different-length/order list — so
+        # `verifications[i]` attached the wrong (or a duplicate) check to a step.
+        # The heuristic (non-Python) path simply has no per-step verification.
 
         # Calculate complexity
         metadata["complexity_level"] = self._calculate_complexity(steps, workflow)

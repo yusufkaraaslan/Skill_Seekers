@@ -742,3 +742,34 @@ class TestEnhanceDispatcher:
                 main()
 
         assert api_called == [], "_run_api_enhance should not be called without API keys"
+
+
+class TestHeadlessSuccessGate:
+    """Regression for ENH-03: a condensing (smaller) SKILL.md rewrite must count
+    as success. Headless mode previously required the file to GROW, so a valid
+    summarizing enhancement was reported as a failure."""
+
+    def test_smaller_rewrite_counts_as_success(self, tmp_path, monkeypatch):
+        import os
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("X" * 5000, encoding="utf-8")  # large initial
+
+        enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+
+        def fake_run_agent_command(*_args, **_kwargs):
+            # Simulate an agent that CONDENSES the skill (smaller file) and
+            # advances mtime.
+            skill_md.write_text("Y" * 100, encoding="utf-8")
+            future = skill_md.stat().st_mtime + 10
+            os.utime(skill_md, (future, future))
+            return (MagicMock(returncode=0), None)
+
+        monkeypatch.setattr(enhancer, "_run_agent_command", fake_run_agent_command)
+
+        prompt_file = tmp_path / "prompt.txt"
+        prompt_file.write_text("enhance", encoding="utf-8")
+
+        assert enhancer._run_headless(prompt_file, timeout=60) is True

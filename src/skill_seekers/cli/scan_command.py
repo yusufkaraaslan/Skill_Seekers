@@ -391,7 +391,18 @@ def detect_with_ai(bundle, client, *, min_confidence: float = 0.4) -> list[Detec
         kind = entry.get("kind")
         if not name or not ecosystem or not kind:
             continue  # required fields missing
-        confidence = float(entry.get("confidence", 0.0))
+        # The AI sometimes returns a non-numeric confidence (e.g. "high") or
+        # null despite the prompt; coerce defensively so one bad entry can't
+        # crash the whole scan with an unhandled ValueError/TypeError.
+        try:
+            confidence = float(entry.get("confidence", 0.0))
+        except (TypeError, ValueError):
+            logger.warning(
+                "Dropping detection %r: non-numeric confidence %r",
+                entry.get("name"),
+                entry.get("confidence"),
+            )
+            continue
         if confidence < min_confidence:
             continue
         detections.append(
@@ -423,7 +434,7 @@ _GENERATE_SCHEMA_HINT = """\
       "type": "github",
       "repo": "<owner/repo>",
       "enable_codebase_analysis": true,
-      "code_analysis_depth": "standard",
+      "code_analysis_depth": "deep",
       "fetch_issues": false
     }
   ],
