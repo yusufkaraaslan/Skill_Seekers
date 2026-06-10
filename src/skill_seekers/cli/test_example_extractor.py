@@ -214,14 +214,15 @@ class PythonTestAnalyzer:
 
     def _is_test_class(self, node: ast.ClassDef) -> bool:
         """Check if class is a test class"""
-        # unittest.TestCase pattern
+        # unittest.TestCase pattern. Match a base class that *is* a TestCase
+        # (bare `TestCase` or `*TestCase`) — the old `"Test" in base.id`
+        # substring matched unrelated bases like `LatestConfig`/`TestableMixin`.
         for base in node.bases:
-            if (
-                isinstance(base, ast.Name)
-                and "Test" in base.id
-                or isinstance(base, ast.Attribute)
-                and base.attr == "TestCase"
+            if isinstance(base, ast.Name) and (
+                base.id == "TestCase" or base.id.endswith("TestCase")
             ):
+                return True
+            if isinstance(base, ast.Attribute) and base.attr == "TestCase":
                 return True
         return False
 

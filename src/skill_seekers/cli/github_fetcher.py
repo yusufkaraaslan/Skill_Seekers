@@ -315,7 +315,7 @@ class GitHubThreeStreamFetcher:
 
         params = {
             "state": state,
-            "per_page": min(max_count, 100),  # GitHub API limit
+            "per_page": 100,  # GitHub API max page size
             "sort": "comments",
             "direction": "desc",
         }
@@ -325,19 +325,32 @@ class GitHubThreeStreamFetcher:
             params["labels"] = ",".join(self.issue_labels)
 
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=10)
+            # Follow Link: rel="next" pagination until we have max_count issues.
+            # A single page caps at 100, so without this any max_count > 100 was
+            # silently truncated (and PR filtering reduced it further).
+            collected: list[dict] = []
+            page = 1
+            while len(collected) < max_count:
+                params["page"] = page
+                response = requests.get(url, headers=headers, params=params, timeout=10)
 
-            # Check for rate limit
-            if not self.rate_limiter.check_response(response):
-                raise RateLimitError("Rate limit exceeded and cannot continue")
+                if not self.rate_limiter.check_response(response):
+                    raise RateLimitError("Rate limit exceeded and cannot continue")
 
-            response.raise_for_status()
-            issues = response.json()
+                response.raise_for_status()
+                batch = response.json()
+                if not batch:
+                    break
 
-            # Filter out pull requests (they appear in issues endpoint)
-            issues = [issue for issue in issues if "pull_request" not in issue]
+                # Filter out pull requests (they appear in the issues endpoint).
+                collected.extend(i for i in batch if "pull_request" not in i)
 
-            return issues
+                link_header = response.headers.get("Link", "") or ""
+                if not isinstance(link_header, str) or 'rel="next"' not in link_header:
+                    break
+                page += 1
+
+            return collected[:max_count]
         except RateLimitError:
             raise
         except Exception as e:

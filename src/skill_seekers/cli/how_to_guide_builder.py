@@ -199,8 +199,16 @@ class WorkflowAnalyzer:
             tree = ast.parse(code)
             statements = []
 
-            # Collect all statements
-            for node in ast.walk(tree):
+            # Steps live at the top level of the test-function wrapper (the
+            # common case); descend ONE level into it, else use the module body.
+            # Don't ast.walk() — that flattens nested control flow (if/for/with)
+            # out of context and scrambles step order.
+            body = tree.body
+            if len(body) == 1 and isinstance(
+                body[0], (ast.FunctionDef, ast.AsyncFunctionDef)
+            ):
+                body = body[0].body
+            for node in body:
                 if isinstance(node, (ast.Assign, ast.Expr, ast.Assert)):
                     statements.append(node)
 
@@ -785,7 +793,10 @@ class GuideGenerator:
         for use_case in sorted(by_use_case.keys()):
             case_guides = by_use_case[use_case]
             lines.append(f"### {use_case} ({len(case_guides)} guides)")
-            for guide in sorted(case_guides, key=lambda g: g.complexity_level):
+            _difficulty_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
+            for guide in sorted(
+                case_guides, key=lambda g: _difficulty_rank.get(g.complexity_level, 1)
+            ):
                 # Create filename from guide title
                 filename = guide.title.lower().replace(" ", "-").replace(":", "")
                 lines.append(

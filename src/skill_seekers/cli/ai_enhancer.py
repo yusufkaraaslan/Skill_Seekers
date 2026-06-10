@@ -328,7 +328,9 @@ class TestExampleEnhancer(AIEnhancer):
         # Prepare prompt
         example_descriptions = []
         for idx, ex in enumerate(examples):
-            desc = f"{idx + 1}. {ex.get('category', 'unknown')} - {ex.get('test_name', 'unknown')}"
+            desc = (
+                f"[index={idx}] {ex.get('category', 'unknown')} - {ex.get('test_name', 'unknown')}"
+            )
             desc += f"\n   Code: {ex.get('code', '')[:100]}..."
             if ex.get("expected_behavior"):
                 desc += f"\n   Expected: {ex['expected_behavior']}"
@@ -339,13 +341,15 @@ class TestExampleEnhancer(AIEnhancer):
 {chr(10).join(example_descriptions)}
 
 For EACH example, provide (in JSON format):
+0. "index": The integer index shown in [index=N] for this example (echo it back)
 1. "explanation": What this example demonstrates (1-2 sentences, beginner-friendly)
 2. "best_practices": List of best practices shown in this example
 3. "common_mistakes": Common mistakes this example helps avoid
 4. "related_examples": Related test scenarios or patterns
 5. "tutorial_group": Suggested tutorial category (e.g., "User Authentication", "Database Operations")
 
-Format as JSON array matching input order. Focus on educational value.
+Format as a JSON array. Always include the "index" field so each analysis maps
+back to its example. Focus on educational value.
 """
 
         response = self._call_claude(prompt, max_tokens=2000)
@@ -356,17 +360,27 @@ Format as JSON array matching input order. Focus on educational value.
         try:
             analyses = json.loads(response)
 
-            # Merge AI analysis into examples
+            # Map analyses back to examples by the echoed "index" so a dropped or
+            # reordered entry doesn't shift every later example's analysis onto
+            # the wrong example. Fall back to positional only if no indices echoed.
+            by_index = {
+                a["index"]: a
+                for a in analyses
+                if isinstance(a, dict) and isinstance(a.get("index"), int)
+            }
             for idx, example in enumerate(examples):
-                if idx < len(analyses):
+                analysis = by_index.get(idx)
+                if analysis is None and not by_index and idx < len(analyses):
                     analysis = analyses[idx]
-                    example["ai_analysis"] = {
-                        "explanation": analysis.get("explanation", ""),
-                        "best_practices": analysis.get("best_practices", []),
-                        "common_mistakes": analysis.get("common_mistakes", []),
-                        "related_examples": analysis.get("related_examples", []),
-                        "tutorial_group": analysis.get("tutorial_group", ""),
-                    }
+                if not isinstance(analysis, dict):
+                    continue
+                example["ai_analysis"] = {
+                    "explanation": analysis.get("explanation", ""),
+                    "best_practices": analysis.get("best_practices", []),
+                    "common_mistakes": analysis.get("common_mistakes", []),
+                    "related_examples": analysis.get("related_examples", []),
+                    "tutorial_group": analysis.get("tutorial_group", ""),
+                }
 
             return examples
 

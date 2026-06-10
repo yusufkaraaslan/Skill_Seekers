@@ -132,7 +132,31 @@ All ✅ Fixed; verified by existing suites + new regression tests where behavior
 | INF-04 | `compare()` guards division by zero on instant ops. |
 | INF-05 | `check_header_changes` returns `True` when the server provides no `Last-Modified`/`ETag` validators. |
 
-Still open (Medium): CBB-04/05/06/07/08/13 (guides), DOC-02..07 (doc scrapers), MED-01..04 (remote scrapers), ADP-01 (streaming wiring), CLI-04 (`_reconstruct_argv` migration — large).
+### Medium tier — batch 2 (guides + document scrapers + remote scrapers)
+
+All ✅ Fixed; verified by the guide/scraper suites + new regression tests where behavioral.
+
+| ID | Fix summary |
+|----|-------------|
+| CBB-04 | `_extract_steps_python` descends one level into the test-function wrapper (else module body) instead of `ast.walk`, which flattened nested control flow out of context. |
+| CBB-05 | `ai_enhancer` batch analysis maps back by an echoed `index` (was positional → a dropped/reordered entry shifted every later example's analysis). |
+| CBB-06 | `_is_test_class` matches a base that *is* a `TestCase` (bare/`*TestCase`), not the `"Test" in base.id` substring that matched `LatestConfig`/`TestableMixin`. |
+| CBB-07 | Index TOC sorts by a difficulty rank map (was alphabetical → advanced/beginner/intermediate). |
+| CBB-08 | c3x failure returns `analysis_type="c3x_failed"` (distinct from empty) and the temp dir is removed in `finally` (was leaked every run). |
+| CBB-13 | `guide_enhancer` step-enhancements map by the model's explicit `step_index`; positional fallback only when none are indexed (extracted to `_parse_step_enhancements`). |
+| DOC-02 | `smart_categorize` assigns to the highest-scoring category (was the first over threshold → config-order dependent). |
+| DOC-03 | Link extraction strips tracking params (`utm_*`/`fbclid`/…) + sorts the query before dedup, so tracking variants don't re-crawl the same page (preserves `?lang=`). |
+| DOC-05 | PDF cross-page code merge requires a real continuation token / unbalanced bracket / block-opener colon (was `any([...])` ≈ always true) and keeps both pages' `code_blocks_count` consistent. |
+| DOC-06 | Async `--dry-run` caps the preview at 20 even for unlimited configs (matches sync; was previewing the whole site). |
+| MED-01 | `github_fetcher` follows `Link: rel="next"` pagination (was a single ≤100 page). Regression test added. |
+| MED-02 | Slack: per-channel try/except so one channel can't abort all; `conversations_history` retries on 429 with `Retry-After`. |
+| MED-03 | Discord: `ClientTimeout(30)`, 429 `Retry-After` retry, and a guarded `before` cursor (`.get("id")`). |
+
+Deferred (Medium, need a product call or larger refactor):
+- **DOC-04** — `DEFAULT_MAX_PAGES = -1` (unbounded default crawl). Changing the default to finite is a user-visible behavior change; left for an explicit decision.
+- **DOC-07 + MED-04** — broken SKILL.md nav links across 7 scrapers (pdf/html/word/epub/jupyter/asciidoc/pptx); systemic — needs a shared filename helper per scraper.
+- **ADP-01** — dead `--streaming`; needs adaptor inheritance/registry wiring.
+- **CLI-04** — `_reconstruct_argv` → `COMMAND_CLASSES` migration; large.
 
 > **Test-harness note:** the *full* `pytest tests/` run is unsafe to execute repeatedly — `@pytest.mark.slow` tests like `test_bootstrap_skill::test_bootstrap_script_runs` and the `test_create_integration_basic` subprocess tests invoke the real `create` pipeline, which spawns live LLM agents (a fork-bomb). Verify with targeted per-module test files and `-m "not slow and not integration"`.
 

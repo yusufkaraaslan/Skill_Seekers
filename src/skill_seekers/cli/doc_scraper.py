@@ -21,7 +21,7 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 import requests
@@ -70,6 +70,39 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _SAFE_TITLE_RE = re.compile(r"[^\w\s-]")
 _SAFE_TITLE_SEP_RE = re.compile(r"[-\s]+")
 _DISPLAY_NAME_RE = re.compile(r"[^a-zA-Z0-9_-]+")
+
+# Tracking / analytics query params that don't change page content. Stripping
+# them before dedup stops the same page being crawled once per tracking variant
+# (a crawler trap), while preserving content-distinguishing params like ?lang=.
+_TRACKING_PARAM_PREFIXES = ("utm_",)
+_TRACKING_PARAMS = {
+    "fbclid",
+    "gclid",
+    "gclsrc",
+    "dclid",
+    "msclkid",
+    "mc_cid",
+    "mc_eid",
+    "ref",
+    "ref_src",
+}
+
+
+def _normalize_url(url: str) -> str:
+    """Drop tracking params and sort the remaining query for stable dedup."""
+    try:
+        parts = urlparse(url)
+        if not parts.query:
+            return url
+        kept = [
+            (k, v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True)
+            if k.lower() not in _TRACKING_PARAMS
+            and not k.lower().startswith(_TRACKING_PARAM_PREFIXES)
+        ]
+        return urlunparse(parts._replace(query=urlencode(sorted(kept))))
+    except Exception:
+        return url
 
 
 def infer_description_from_docs(
@@ -435,6 +468,9 @@ class DocToSkillConverter(SkillConverter):
             href = urljoin(url, str(link.get("href") or ""))
             # Strip anchor fragments to avoid treating #anchors as separate pages
             href = href.split("#")[0]
+            # Drop tracking params so ?utm=…/&fbclid=… variants don't crawl the
+            # same page repeatedly (preserves meaningful queries like ?lang=).
+            href = _normalize_url(href)
             if href not in seen_links and self.is_valid_url(href):
                 seen_links.add(href)
                 page["links"].append(href)
@@ -1613,14 +1649,19 @@ class DocToSkillConverter(SkillConverter):
 
         max_pages = self.config.get("max_pages", DEFAULT_MAX_PAGES)
 
-        # Handle unlimited mode
-        if max_pages is None or max_pages == -1:
+        # Handle unlimited mode. Dry-run ALWAYS caps the preview at 20 — even for
+        # an unlimited config — otherwise an async --dry-run would crawl the whole
+        # site (the sync path already caps unconditionally).
+        if self.dry_run:
+            unlimited = False
+            preview_limit = 20
+        elif max_pages is None or max_pages == -1:
             logger.warning("⚠️  UNLIMITED MODE: No page limit (will scrape all pages)\n")
             unlimited = True
             preview_limit = float("inf")
         else:
             unlimited = False
-            preview_limit = 20 if self.dry_run else max_pages
+            preview_limit = max_pages
 
         # Create semaphore for concurrency control
         semaphore = asyncio.Semaphore(self.workers)
@@ -1826,7 +1867,10 @@ class DocToSkillConverter(SkillConverter):
 
             categorized = False
 
-            # Match against pre-lowercased keywords
+            # Score every category, then assign to the HIGHEST-scoring one (not
+            # the first to cross the threshold — that made categorization depend
+            # on config dict order and frequently filed pages under a weak match).
+            scores: dict[str, int] = {}
             for cat, keywords in lowered_defs.items():
                 score = 0
                 for keyword in keywords:
@@ -1836,11 +1880,13 @@ class DocToSkillConverter(SkillConverter):
                         score += 2
                     if keyword in content:
                         score += 1
-
                 if score >= MIN_CATEGORIZATION_SCORE:  # Threshold for categorization
-                    categories[cat].append(page)
-                    categorized = True
-                    break
+                    scores[cat] = score
+
+            if scores:
+                best_cat = max(scores, key=lambda c: scores[c])
+                categories[best_cat].append(page)
+                categorized = True
 
             if not categorized:
                 categories["other"].append(page)

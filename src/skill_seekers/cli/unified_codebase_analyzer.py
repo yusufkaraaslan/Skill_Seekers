@@ -245,6 +245,7 @@ class UnifiedCodebaseAnalyzer:
         # Run full C3.x analysis using existing codebase_scraper
         print("🔍 Running C3.x components (patterns, examples, guides, configs, architecture)...")
 
+        temp_output: Path | None = None
         try:
             # Import codebase analyzer
             import tempfile
@@ -289,10 +290,11 @@ class UnifiedCodebaseAnalyzer:
             print(f"⚠️  C3.x analysis failed: {e}")
             print("   Falling back to basic analysis with placeholders")
 
-            # Fall back to placeholders
+            # Distinct analysis_type so callers can tell a genuine empty result
+            # from a hard failure (was "c3x", indistinguishable from success).
             c3x = {
                 **basic,
-                "analysis_type": "c3x",
+                "analysis_type": "c3x_failed",
                 "c3_1_patterns": [],
                 "c3_2_examples": [],
                 "c3_2_examples_count": 0,
@@ -303,6 +305,12 @@ class UnifiedCodebaseAnalyzer:
             }
 
             return c3x
+        finally:
+            # Always remove the temp analysis dir (was leaked on every run).
+            if temp_output is not None:
+                import shutil
+
+                shutil.rmtree(temp_output, ignore_errors=True)
 
     def _load_c3x_results(self, output_dir: Path) -> dict:
         """

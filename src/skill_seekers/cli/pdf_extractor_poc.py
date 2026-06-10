@@ -603,24 +603,34 @@ class PDFExtractor:
                 last_code["language"] == first_next_code["language"]
                 and last_code["detection_method"] == first_next_code["detection_method"]
             ):
-                # Check if last code block looks incomplete (doesn't end with closing brace/etc)
+                # Only merge when the block looks genuinely UNFINISHED. The old
+                # `any([not endswith("}"), not endswith(";"), ...])` was true for
+                # almost every snippet (a block can't end with both } and ;), so
+                # it merged unrelated adjacent blocks. Require a real continuation
+                # token (trailing comma/backslash, or an unbalanced bracket).
                 last_code_text = last_code["code"].rstrip()
-                continuation_indicators = [
-                    not last_code_text.endswith("}"),
-                    not last_code_text.endswith(";"),
-                    last_code_text.endswith(","),
-                    last_code_text.endswith("\\"),
-                ]
+                opens = sum(last_code_text.count(c) for c in "({[")
+                closes = sum(last_code_text.count(c) for c in ")}]")
+                is_incomplete = (
+                    # trailing continuation/operator, or a block-opener colon
+                    # (e.g. `def f():` whose body continues on the next page)
+                    last_code_text.endswith((",", "\\", "+", "(", "[", "{", "=", ":"))
+                    or opens > closes
+                )
 
-                if any(continuation_indicators):
+                if is_incomplete:
                     # Merge the code blocks
                     merged_code = last_code["code"] + "\n" + first_next_code["code"]
                     last_code["code"] = merged_code
                     last_code["merged_from_next_page"] = True
 
-                    # Remove the first code block from next page
+                    # Remove the first code block from next page and keep BOTH
+                    # pages' counts consistent with their code_samples lists
+                    # (the next-page count was decremented but the current page's
+                    # was never updated).
                     next_page["code_samples"].pop(0)
-                    next_page["code_blocks_count"] -= 1
+                    current_page["code_blocks_count"] = len(current_page["code_samples"])
+                    next_page["code_blocks_count"] = len(next_page["code_samples"])
 
                     self.log(f"  Merged code block from page {i + 1} to {i + 2}")
 
