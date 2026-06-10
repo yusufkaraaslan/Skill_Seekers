@@ -456,7 +456,7 @@ class ConfluenceToSkillConverter(SkillConverter):
         pages: list[dict[str, Any]] = []
         start = 0
         limit = 50  # Confluence API page size
-        expand_fields = "body.storage,version,ancestors,metadata.labels"
+        expand_fields = "body.storage,version,ancestors,metadata.labels,history"
 
         print(f"  Fetching pages (max {self.max_pages})...")
 
@@ -491,10 +491,16 @@ class ConfluenceToSkillConverter(SkillConverter):
                 labels_data = page_data.get("metadata", {}).get("labels", {}).get("results", [])
                 labels = [lbl.get("name", "") for lbl in labels_data if lbl.get("name")]
 
-                # Version and dates
+                # Version and dates. history.createdDate is the true creation
+                # time for ALL pages; version.when is the last-edit time (it only
+                # equals "created" on a version-1 page), so an edited page used to
+                # report an empty created date.
                 version_info = page_data.get("version", {})
                 version_number = version_info.get("number", 1)
-                created = version_info.get("when", "") if version_number == 1 else ""
+                history = page_data.get("history", {})
+                created = history.get("createdDate") or (
+                    version_info.get("when", "") if version_number == 1 else ""
+                )
                 modified = version_info.get("when", "")
 
                 # Build page URL

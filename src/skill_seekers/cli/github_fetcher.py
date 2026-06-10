@@ -290,9 +290,14 @@ class GitHubThreeStreamFetcher:
             # Single-state fetch: use full quota
             all_issues.extend(self._fetch_issues_page(state=self.issue_state, max_count=max_issues))
         else:
-            # Default "all": split quota between open and closed
-            all_issues.extend(self._fetch_issues_page(state="open", max_count=max_issues // 2))
-            all_issues.extend(self._fetch_issues_page(state="closed", max_count=max_issues // 2))
+            # Default "all": fetch open first, then fill the REMAINING quota with
+            # closed. A rigid //2 split under-fetched when one state had fewer
+            # than half the quota and never reallocated the unused half.
+            open_issues = self._fetch_issues_page(state="open", max_count=max_issues)
+            all_issues.extend(open_issues)
+            remaining = max_issues - len(open_issues)
+            if remaining > 0:
+                all_issues.extend(self._fetch_issues_page(state="closed", max_count=remaining))
 
         return all_issues
 
