@@ -107,25 +107,23 @@ After fixing the ~12 impactful Low items above, the remaining Low tier was triag
 and batch-fixed. Issues #405–#408 track the 4 larger deferred items.
 
 **Fixed in this PR (data-loss/crash + minor correctness):**
-DOC-11, DOC-13, DOC-14, DOC-15, DOC-17, MED-06, MED-11, MED-12, MED-14, MED-17,
-MED-18, ENH-13, ENH-14, ENH-15, ENH-17, ADP-03, ADP-05, ADP-06, MCP-11, MCP-15,
-MCP-16, SCAN-06, CLI-08, CLI-09, INF-06, CBA-12, CBA-16, CBB-09, CBB-11, CBB-14,
-CBB-15, CBB-16 (plus the re-review R/I/P items). MED-16 was already fixed in batch 2.
+DOC-11, DOC-13, DOC-14, DOC-15, DOC-17, MED-06, MED-07, MED-08, MED-11, MED-12,
+MED-14, MED-17, MED-18, ENH-13, ENH-14, ENH-15, ENH-16, ENH-17, ADP-03, ADP-04,
+ADP-05, ADP-06, MCP-11, MCP-15, MCP-16, MCP-17, SCAN-05, SCAN-06, SCAN-07, CLI-08,
+CLI-09, INF-06, CBA-12, CBA-16, CBB-09, CBB-10, CBB-11, CBB-14, CBB-15, CBB-16
+(plus the re-review R/I/P items). MED-16 was already fixed in batch 2.
 
-**Intentionally NOT changed / deferred (with reason):**
+**Intentionally NOT changed (with reason):**
 - **Product decisions (left as-is, like DOC-04):** MCP-10 (sync caps at 500 — a
   sensible safety bound), CLI-07 (a failed *optional* enhancement returning a
   non-zero exit from `create` is a behavior change — needs a maintainer call).
 - **Cosmetic / doc-only (dropped):** ADP-07 (docstring), CLI-05 (a misleading
   success-log path), MED-13 (type-annotation lie), MCP-08 (param typing), MED-09,
   MED-10 (already corrected/dead per Appendix).
-- **Needs a larger/riskier change (deferred):** MCP-17 (per-call log capture needs
-  contextvar-scoped filtering — a thread/handler swap would be wrong for asyncio),
-  MED-08 (RSS time-budget needs a concurrency/budget rework), ADP-04 (OpenAI
-  vector-store SDK-version juggling), MED-07/MED-15 (OpenAPI `$ref` cycle/bundle
-  handling), SCAN-05/SCAN-07 (thread an out-dir through the fetch path / dedup the
-  scan main loop without disturbing the diff+archive flow), CBB-10, MCP-09,
-  ENH-16. These are catalogued above and are good follow-up-PR candidates.
+- **Still deferred (genuinely larger work):** MED-15 (OpenAPI external/multi-file
+  `$ref` bundling — needs a pre-bundle pass; the MED-07 *cycle* guard is fixed),
+  MCP-09 (a truly structured MCP error channel — the text already carries ✅/❌
+  markers).
 
 - The original **DOC-04** decision stands (issue #408): keep `-1` (unbounded).
 
