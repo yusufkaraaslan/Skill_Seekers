@@ -293,117 +293,19 @@ See the references directory for complete documentation with examples and best p
         return True
 
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
+        """Enhance SKILL.md using the Gemini API (via AgentClient).
+
+        Routing through AgentClient also gives gemini the truncation gate and
+        atomic backup save its hand-rolled implementation lacked.
         """
-        Enhance SKILL.md using Gemini 2.5 Flash API.
-
-        Args:
-            skill_dir: Path to skill directory
-            api_key: Google API key
-
-        Returns:
-            True if enhancement succeeded
-        """
-        # Check for google-generativeai library
-        try:
-            import google.generativeai as genai
-        except ImportError:
-            print("❌ Error: google-generativeai package not installed")
-            print("Install with: pip install google-generativeai")
-            return False
-
-        skill_dir = Path(skill_dir)
-        references_dir = skill_dir / "references"
-        skill_md_path = skill_dir / "SKILL.md"
-
-        # Read reference files
-        print("📖 Reading reference documentation...")
-        references = self._read_reference_files(references_dir)
-
-        if not references:
-            print("❌ No reference files found to analyze")
-            return False
-
-        print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
-        print(f"  ✓ Total size: {total_size:,} characters\n")
-
-        # Read current SKILL.md
-        current_skill_md = None
-        if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding="utf-8")
-            print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
-        else:
-            print("  ℹ No existing SKILL.md, will create new one")
-
-        # Build enhancement prompt
-        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
-
-        print("\n🤖 Asking Gemini to enhance SKILL.md...")
-        print(f"   Input: {len(prompt):,} characters")
-
-        try:
-            genai.configure(api_key=api_key)
-
-            model = genai.GenerativeModel(self.config.get("custom_model") or "gemini-2.5-flash")
-
-            response = model.generate_content(prompt)
-
-            enhanced_content = response.text
-            print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
-
-            # Backup original
-            if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix(".md.backup")
-                skill_md_path.rename(backup_path)
-                print(f"  💾 Backed up original to: {backup_path.name}")
-
-            # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding="utf-8")
-            print("  ✅ Saved enhanced SKILL.md")
-
-            return True
-
-        except Exception as e:
-            print(f"❌ Error calling Gemini API: {e}")
-            return False
-
-    def _read_reference_files(
-        self, references_dir: Path, max_chars: int = 200000
-    ) -> dict[str, str]:
-        """
-        Read reference markdown files from skill directory.
-
-        Args:
-            references_dir: Path to references directory
-            max_chars: Maximum total characters to read
-
-        Returns:
-            Dictionary mapping filename to content
-        """
-        if not references_dir.exists():
-            return {}
-
-        references = {}
-        total_chars = 0
-
-        # Read all .md files recursively (including subdirectories)
-        for ref_file in sorted(references_dir.rglob("*.md")):
-            if total_chars >= max_chars:
-                break
-
-            try:
-                content = ref_file.read_text(encoding="utf-8")
-                # Limit individual file size
-                if len(content) > 30000:
-                    content = content[:30000] + "\n\n...(truncated)"
-
-                references[ref_file.name] = content
-                total_chars += len(content)
-
-            except Exception as e:
-                print(f"  ⚠️  Could not read {ref_file.name}: {e}")
-
-        return references
+        return self._enhance_skill_md_via_client(
+            skill_dir,
+            api_key,
+            provider="google",
+            model=self.config.get("custom_model") or "gemini-2.5-flash",
+            # The previous direct-SDK call used the model's default temperature.
+            temperature=None,
+        )
 
     def _build_enhancement_prompt(
         self, skill_name: str, references: dict[str, str], current_skill_md: str = None

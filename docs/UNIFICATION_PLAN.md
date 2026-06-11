@@ -11,7 +11,7 @@
 |---|---|---|
 | 1 — CLI drift & preset bugs | **done** (2026-06-11) | `refactor/phase-1-quick-fixes` |
 | 2 — DocumentSkillBuilder | **done** (2026-06-11) | `refactor/phase-2-document-skill-builder` |
-| 3 — Enhancement consolidation | pending | |
+| 3 — Enhancement consolidation | **done** (2026-06-11; 3.1 deferred) | `refactor/phase-3-enhancement-consolidation` |
 | 4 — UnifiedScraper conformance | pending | |
 | 5 — Config / dispatch / MCP platform | pending | |
 
@@ -90,6 +90,36 @@ keys; code-example ordering).
    (frontmatter incl. json.dumps quoting + version keys).
    Per-scraper hooks: source_type_label, base stem, metadata keys.
 3. Port scrapers one at a time, golden-file tests comparing pre/post output.
+
+### Phase 3 results (2026-06-11)
+
+AgentClient is now the single AI transport for every text-based call:
+- AgentClient gained provider/base_url/model overrides, system prompts,
+  temperature, and a ThinkingBlock-safe anthropic response reader.
+- `SkillAdaptor._enhance_skill_md_via_client` (adaptors/base.py) is the one
+  SKILL.md enhancement flow; claude/openai/gemini/openai_compatible
+  `enhance()` are now ~10-line routing declarations. This also FIXED two
+  latent bugs: gemini and openai adaptors had no truncation gate and used
+  the destructive rename-then-write save. One canonical
+  `_read_reference_files` (was 4 copies).
+- enhance_skill.SkillEnhancer routed through AgentClient (import-time
+  sys.exit removed); unified_scraper Phase-6 API save is atomic;
+  doc_scraper's path already routed via adaptors.
+- video_scraper's reference cleaner goes through AgentClient.
+  video_visual's frame classification is the DOCUMENTED EXCEPTION
+  (multimodal; AgentClient is text-only today).
+- `build_local_agent_command()` in agent_client is the single
+  preset-template/permissions-flag handler; LocalSkillEnhancer delegates.
+
+Deferred to **Phase 3.1** (consumers depend on per-feature prompts/output
+contracts — blind merges would silently change AI quality):
+- Collapse AIEnhancer (ai_enhancer.py) / UnifiedEnhancer hierarchies and
+  merge guide_enhancer/config_enhancer; extract their duplicated
+  parallel-batching first.
+- LocalSkillEnhancer terminal/background/daemon orchestration is kept; the
+  remaining overlap with AgentClient._call_local is the prompt-file +
+  subprocess loop (small).
+- AgentClient multimodal support (would absorb video_visual).
 
 ## Phase 3 — Enhancement consolidation (medium-large)
 

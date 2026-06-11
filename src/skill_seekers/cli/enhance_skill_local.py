@@ -61,7 +61,7 @@ import contextlib
 # Single source of truth for agent presets and name normalization — this
 # module previously carried its own copies, whose kimi preset silently
 # diverged from agent_client's ({skill_dir} vs {cwd}, missing parse_output).
-from skill_seekers.cli.agent_client import AGENT_PRESETS
+from skill_seekers.cli.agent_client import AGENT_PRESETS, build_local_agent_command
 from skill_seekers.cli.agent_client import normalize_agent_name as _normalize_agent_name
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
@@ -195,34 +195,15 @@ class LocalSkillEnhancer:
         return agent_name, cmd_override, display_name
 
     def _build_agent_command(self, prompt_file, include_permissions_flag):
-        if self.agent_cmd:
-            cmd_parts = shlex.split(self.agent_cmd)
-            supports_skip_permissions = False
-        else:
-            preset = AGENT_PRESETS[self.agent]
-            cmd_parts = list(preset["command"])
-            supports_skip_permissions = preset.get("supports_skip_permissions", False)
-
-        if (
-            include_permissions_flag
-            and supports_skip_permissions
-            and "--dangerously-skip-permissions" not in cmd_parts
-        ):
-            cmd_parts.insert(1, "--dangerously-skip-permissions")
-
-        uses_prompt_file = False
-        for idx, arg in enumerate(cmd_parts):
-            if "{prompt_file}" in arg:
-                cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
-                uses_prompt_file = True
-            if "{skill_dir}" in arg:
-                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir.resolve()))
-            if "{cwd}" in arg:
-                # Shared presets use {cwd}; for local enhancement the working
-                # directory IS the skill directory.
-                cmd_parts[idx] = arg.replace("{cwd}", str(self.skill_dir.resolve()))
-
-        return cmd_parts, uses_prompt_file
+        # Single home for the preset-template handling — for local enhancement
+        # the working directory IS the skill directory.
+        return build_local_agent_command(
+            self.agent,
+            prompt_file,
+            self.skill_dir.resolve(),
+            include_permissions_flag=include_permissions_flag,
+            agent_cmd=self.agent_cmd,
+        )
 
     def _format_agent_command(self, prompt_file, include_permissions_flag):
         cmd_parts, uses_prompt_file = self._build_agent_command(

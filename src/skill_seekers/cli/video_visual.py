@@ -564,6 +564,10 @@ def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str
         return "", 0.0
 
     try:
+        # DOCUMENTED EXCEPTION to the "all AI calls go through AgentClient"
+        # rule (docs/UNIFICATION_PLAN.md Phase 3): this is a multimodal
+        # (image) request and AgentClient only supports text prompts today.
+        # If AgentClient grows multimodal support, route this through it.
         import anthropic
 
         # Read image as base64

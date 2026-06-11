@@ -625,3 +625,72 @@ class TestAgentPresetsSingleSource:
         # The fields whose absence caused the original divergence:
         assert AGENT_PRESETS["kimi"]["parse_output"] == "kimi"
         assert "{cwd}" in AGENT_PRESETS["kimi"]["command"]
+
+
+class TestAgentClientOverrides:
+    """provider/base_url/model overrides + system/temperature passthrough —
+    what the platform adaptors need to route their enhance() calls through
+    AgentClient instead of hand-rolled SDK clients."""
+
+    def _client(self, monkeypatch, **kwargs):
+        # Avoid real SDK init: patch _init_api_client and inject a fake client.
+        from unittest.mock import MagicMock
+
+        from skill_seekers.cli.agent_client import AgentClient
+
+        monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+        return AgentClient(mode="api", api_key="sk-whatever", **kwargs)
+
+    def test_provider_override_beats_key_prefix(self, monkeypatch):
+        client = self._client(monkeypatch, provider="openai")
+        assert client.provider == "openai"  # "sk-whatever" would detect as openai anyway
+        client2 = self._client(monkeypatch, provider="anthropic")
+        assert client2.provider == "anthropic"
+
+    def test_model_override_used_in_api_call(self, monkeypatch):
+        client = self._client(monkeypatch, provider="anthropic", model="my-model")
+        msg = client.client.messages.create.return_value
+        msg.stop_reason = "end_turn"
+        msg.content = [type("B", (), {"text": "out"})()]
+        assert client.call("hi") == "out"
+        assert client.client.messages.create.call_args.kwargs["model"] == "my-model"
+
+    def test_system_and_temperature_anthropic(self, monkeypatch):
+        client = self._client(monkeypatch, provider="anthropic")
+        msg = client.client.messages.create.return_value
+        msg.stop_reason = "end_turn"
+        msg.content = [type("B", (), {"text": "out"})()]
+        client.call("hi", system="be terse", temperature=0.3)
+        kwargs = client.client.messages.create.call_args.kwargs
+        assert kwargs["system"] == "be terse"
+        assert kwargs["temperature"] == 0.3
+
+    def test_system_and_temperature_openai(self, monkeypatch):
+        client = self._client(monkeypatch, provider="openai")
+        resp = client.client.chat.completions.create.return_value
+        resp.choices = [
+            type(
+                "C", (), {"finish_reason": "stop", "message": type("M", (), {"content": "out"})()}
+            )()
+        ]
+        client.call("hi", system="be terse", temperature=0.3)
+        kwargs = client.client.chat.completions.create.call_args.kwargs
+        assert kwargs["messages"][0] == {"role": "system", "content": "be terse"}
+        assert kwargs["messages"][1]["role"] == "user"
+        assert kwargs["temperature"] == 0.3
+
+    def test_base_url_reaches_openai_client(self, monkeypatch):
+        import sys
+        from unittest.mock import MagicMock
+
+        from skill_seekers.cli.agent_client import AgentClient
+
+        fake_openai = MagicMock()
+        monkeypatch.setitem(sys.modules, "openai", fake_openai)
+        AgentClient(
+            mode="api",
+            api_key="sk-x",
+            provider="openai",
+            base_url="https://api.example.com/v1",
+        )
+        assert fake_openai.OpenAI.call_args.kwargs["base_url"] == "https://api.example.com/v1"

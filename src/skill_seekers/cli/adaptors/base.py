@@ -216,6 +216,131 @@ class SkillAdaptor(ABC):
         """Atomically replace SKILL.md with a backup — see save_skill_md_atomic()."""
         save_skill_md_atomic(skill_md_path, content, log_prefix=log_prefix)
 
+    def _read_reference_files(
+        self, references_dir: Path, max_chars: int = 200000
+    ) -> dict[str, str]:
+        """
+        Read reference markdown files from skill directory.
+
+        Single canonical copy — claude/openai/gemini carried byte-identical
+        versions and openai_compatible a cosmetic variant.
+
+        Args:
+            references_dir: Path to references directory
+            max_chars: Maximum total characters to read
+
+        Returns:
+            Dictionary mapping filename to content
+        """
+        if not references_dir.exists():
+            return {}
+
+        references = {}
+        total_chars = 0
+
+        for ref_file in sorted(references_dir.rglob("*.md")):
+            if total_chars >= max_chars:
+                break
+
+            try:
+                content = ref_file.read_text(encoding="utf-8")
+                # Truncate very large files
+                if len(content) > 30000:
+                    content = content[:30000] + "\n\n...(truncated)"
+
+                references[ref_file.name] = content
+                total_chars += len(content)
+
+            except Exception as e:
+                print(f"  ⚠ Could not read {ref_file.name}: {e}")
+
+        return references
+
+    def _enhance_skill_md_via_client(
+        self,
+        skill_dir: Path,
+        api_key: str,
+        *,
+        provider: str,
+        base_url: str | None = None,
+        model: str | None = None,
+        system: str | None = None,
+        temperature: float | None = 0.3,
+    ) -> bool:
+        """Shared SKILL.md enhancement flow for all API-capable adaptors.
+
+        read references → build prompt (per-adaptor ``_build_enhancement_prompt``)
+        → AgentClient (single AI transport: central truncation gate, timeout
+        policy, error classification) → atomic save with backup.
+
+        Adaptors supply only their provider/endpoint/model/system parameters —
+        they must NOT hand-roll SDK clients (that's how gemini/openai shipped
+        without a truncation gate and with a rename-then-write save).
+        """
+        from skill_seekers.cli.agent_client import AgentClient
+
+        skill_dir = Path(skill_dir)
+        references_dir = skill_dir / "references"
+        skill_md_path = skill_dir / "SKILL.md"
+
+        # Read reference files
+        print("📖 Reading reference documentation...")
+        references = self._read_reference_files(references_dir)
+
+        if not references:
+            print("❌ No reference files found to analyze")
+            return False
+
+        print(f"  ✓ Read {len(references)} reference files")
+        total_size = sum(len(c) for c in references.values())
+        print(f"  ✓ Total size: {total_size:,} characters\n")
+
+        # Read current SKILL.md
+        current_skill_md = None
+        if skill_md_path.exists():
+            current_skill_md = skill_md_path.read_text(encoding="utf-8")
+            print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
+        else:
+            print("  ℹ No existing SKILL.md, will create new one")
+
+        # Build enhancement prompt
+        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
+
+        print(f"\n🤖 Asking {self.PLATFORM_NAME} to enhance SKILL.md...")
+        print(f"   Input: {len(prompt):,} characters")
+
+        try:
+            client = AgentClient(
+                mode="api",
+                api_key=api_key,
+                provider=provider,
+                base_url=base_url,
+                model=model,
+            )
+        except RuntimeError as e:
+            print(f"❌ {e}")
+            return False
+        # A missing SDK makes AgentClient fall back to LOCAL mode — an adaptor
+        # enhancement must use the platform API or fail, never spawn a CLI agent.
+        if client.mode != "api" or client.client is None:
+            print(f"❌ {self.PLATFORM_NAME} SDK not available for API enhancement")
+            return False
+
+        enhanced_content = client.call(
+            prompt, max_tokens=4096, system=system, temperature=temperature
+        )
+        # AgentClient returns None on truncation (max_tokens), rate limits,
+        # auth and connection errors — all logged there with classification.
+        if not enhanced_content or not enhanced_content.strip():
+            print("❌ Empty or truncated enhancement response; leaving SKILL.md intact.")
+            return False
+
+        print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
+
+        self._save_skill_md_atomic(skill_md_path, enhanced_content)
+
+        return True
+
     def _read_existing_content(self, skill_dir: Path) -> str:
         """
         Helper to read existing SKILL.md content (without frontmatter).

@@ -2106,8 +2106,11 @@ class UnifiedScraper(SkillConverter):
                             )
                             enhanced = client.call(prompt, max_tokens=8192)
                             if enhanced:
-                                shutil.copy2(skill_md_path, skill_md_path + ".backup")
-                                Path(skill_md_path).write_text(enhanced, encoding="utf-8")
+                                from skill_seekers.cli.adaptors.base import (
+                                    save_skill_md_atomic,
+                                )
+
+                                save_skill_md_atomic(Path(skill_md_path), enhanced)
                                 logger.info(
                                     f"✅ SKILL.md enhanced (API mode via {client.provider})"
                                 )

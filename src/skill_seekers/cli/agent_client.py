@@ -25,6 +25,7 @@ Usage:
 
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -186,6 +187,63 @@ def normalize_agent_name(agent_name: str) -> str:
     return aliases.get(normalized, normalized)
 
 
+def build_local_agent_command(
+    agent: str,
+    prompt_file: str | Path,
+    workdir: str | Path,
+    *,
+    include_permissions_flag: bool = True,
+    agent_cmd: str | None = None,
+) -> tuple[list[str], bool]:
+    """Build the subprocess argv for a LOCAL agent run.
+
+    Single home for preset-template handling: placeholder substitution
+    ({prompt_file}, {cwd}, {skill_dir} — the latter two are synonyms for the
+    working directory) and the conditional --dangerously-skip-permissions
+    insert. Used by AgentClient._call_local and LocalSkillEnhancer, which
+    previously each hand-rolled this and drifted.
+
+    Args:
+        agent: Preset name (must exist in AGENT_PRESETS) — ignored when
+            ``agent_cmd`` is given.
+        prompt_file: Path substituted for {prompt_file}.
+        workdir: Path substituted for {cwd}/{skill_dir}.
+        include_permissions_flag: Insert --dangerously-skip-permissions for
+            presets that support it (headless runs); interactive callers may
+            pass False.
+        agent_cmd: Custom command template overriding the preset.
+
+    Returns:
+        (cmd_parts, uses_prompt_file) — ``uses_prompt_file`` is True when the
+        template consumed {prompt_file}; otherwise the prompt should be piped
+        via stdin.
+    """
+    if agent_cmd:
+        cmd_parts = shlex.split(agent_cmd)
+        supports_skip = False
+    else:
+        preset = AGENT_PRESETS[agent]
+        cmd_parts = list(preset["command"])
+        supports_skip = preset.get("supports_skip_permissions", False)
+
+    if (
+        include_permissions_flag
+        and supports_skip
+        and "--dangerously-skip-permissions" not in cmd_parts
+    ):
+        cmd_parts.insert(1, "--dangerously-skip-permissions")
+
+    uses_prompt_file = False
+    out = []
+    for arg in cmd_parts:
+        if "{prompt_file}" in arg:
+            arg = arg.replace("{prompt_file}", str(prompt_file))
+            uses_prompt_file = True
+        arg = arg.replace("{cwd}", str(workdir)).replace("{skill_dir}", str(workdir))
+        out.append(arg)
+    return out, uses_prompt_file
+
+
 class AgentClient:
     """
     Unified AI client that routes to API or LOCAL agent based on configuration.
@@ -198,6 +256,9 @@ class AgentClient:
         mode: str = "auto",
         agent: str | None = None,
         api_key: str | None = None,
+        provider: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
     ):
         """
         Initialize the agent client.
@@ -207,6 +268,13 @@ class AgentClient:
             agent: LOCAL mode agent name ("claude", "kimi", "codex", "copilot", "opencode", "custom")
                    Resolved from: arg → env SKILL_SEEKER_AGENT → "claude"
             api_key: API key override. If None, auto-detected from env vars.
+            provider: API provider override ("anthropic", "moonshot", "openai",
+                "google"). Skips key-prefix detection — required for
+                OpenAI-compatible platforms whose keys don't follow OpenAI's
+                prefix (MiniMax, DeepSeek, Together, ...).
+            base_url: Custom API endpoint (anthropic- and openai-SDK providers).
+                Overrides env-based endpoints.
+            model: Model override; defaults to get_model(provider).
         """
         # Resolve agent name: param > ExecutionContext > env var > default
         try:
@@ -220,13 +288,15 @@ class AgentClient:
         self.agent = normalize_agent_name(agent or ctx_agent or env_agent or "claude")
         self.agent_display = AGENT_PRESETS.get(self.agent, {}).get("display_name", self.agent)
 
-        # Detect API key and provider
+        # Detect API key and provider (explicit provider override wins)
+        self.base_url = base_url
+        self.model = model
         if api_key:
             self.api_key = api_key
-            # Detect provider from key prefix or env vars
-            self.provider = self._detect_provider_from_key(api_key)
+            self.provider = provider or self._detect_provider_from_key(api_key)
         else:
-            self.api_key, self.provider = self.detect_api_key()
+            self.api_key, detected = self.detect_api_key()
+            self.provider = provider or detected
 
         # Determine mode (keep original for error handling decisions)
         self._requested_mode = mode
@@ -275,7 +345,7 @@ class AgentClient:
                 import anthropic
 
                 kwargs = {"api_key": self.api_key}
-                base_url = os.environ.get("ANTHROPIC_BASE_URL")
+                base_url = self.base_url or os.environ.get("ANTHROPIC_BASE_URL")
                 if base_url:
                     kwargs["base_url"] = base_url
                 return anthropic.Anthropic(**kwargs)
@@ -284,12 +354,15 @@ class AgentClient:
 
                 return anthropic.Anthropic(
                     api_key=self.api_key,
-                    base_url="https://api.moonshot.cn/v1",
+                    base_url=self.base_url or "https://api.moonshot.cn/v1",
                 )
             elif self.provider == "openai":
                 from openai import OpenAI
 
-                return OpenAI(api_key=self.api_key)
+                kwargs = {"api_key": self.api_key}
+                if self.base_url:
+                    kwargs["base_url"] = self.base_url
+                return OpenAI(**kwargs)
             elif self.provider == "google":
                 import google.generativeai as genai
 
@@ -317,6 +390,8 @@ class AgentClient:
         timeout: int | None = None,
         output_file: str | Path | None = None,
         cwd: str | Path | None = None,
+        system: str | None = None,
+        temperature: float | None = None,
     ) -> str | None:
         """
         Call the AI agent (API or LOCAL mode).
@@ -327,6 +402,9 @@ class AgentClient:
             timeout: Timeout in seconds (default from SKILL_SEEKER_ENHANCE_TIMEOUT or 2700 = 45m)
             output_file: Path for agent to write output (LOCAL mode, some agents)
             cwd: Working directory for LOCAL mode subprocess
+            system: Optional system prompt (API mode only)
+            temperature: Optional sampling temperature (API mode only;
+                None = provider default)
 
         Returns:
             Response text, or None on failure
@@ -335,30 +413,43 @@ class AgentClient:
         # timeout via get_default_timeout(), so defaulting in call() too left
         # two places to update when the policy changes.
         if self.mode == "api":
-            return self._call_api(prompt, max_tokens, timeout)
+            return self._call_api(
+                prompt, max_tokens, timeout, system=system, temperature=temperature
+            )
         elif self.mode == "local":
             return self._call_local(prompt, timeout, output_file, cwd)
         return None
 
     def _call_api(
-        self, prompt: str, max_tokens: int = 4096, timeout: int | None = None
+        self,
+        prompt: str,
+        max_tokens: int = 4096,
+        timeout: int | None = None,
+        system: str | None = None,
+        temperature: float | None = None,
     ) -> str | None:
         """Call via API using the detected provider."""
         if not self.client:
             return None
 
-        model = self.get_model(self.provider)
+        model = self.model or self.get_model(self.provider)
         # Honor the caller's timeout (default 45m / SKILL_SEEKER_ENHANCE_TIMEOUT)
         # instead of a hardcoded 120s that killed large enhancement prompts.
         request_timeout = timeout if timeout is not None else get_default_timeout()
 
         try:
             if self.provider in ("anthropic", "moonshot"):
+                kwargs = {}
+                if system is not None:
+                    kwargs["system"] = system
+                if temperature is not None:
+                    kwargs["temperature"] = temperature
                 response = self.client.messages.create(
                     model=model,
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
                     timeout=request_timeout,
+                    **kwargs,
                 )
                 # Treat a max_tokens truncation as a failure: callers overwrite
                 # SKILL.md / parse JSON with this text, so returning a truncated
@@ -370,14 +461,28 @@ class AgentClient:
                         max_tokens,
                     )
                     return None
-                return response.content[0].text
+                # Newer SDKs may prepend ThinkingBlocks — return the first
+                # block that carries text instead of assuming content[0].
+                for block in response.content:
+                    if hasattr(block, "text"):
+                        return block.text
+                logger.warning("No text content found in API response")
+                return None
 
             elif self.provider == "openai":
+                messages = []
+                if system is not None:
+                    messages.append({"role": "system", "content": system})
+                messages.append({"role": "user", "content": prompt})
+                kwargs = {}
+                if temperature is not None:
+                    kwargs["temperature"] = temperature
                 response = self.client.chat.completions.create(
                     model=model,
                     max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
                     timeout=request_timeout,
+                    **kwargs,
                 )
                 if response.choices and response.choices[0].finish_reason == "length":
                     logger.warning(
@@ -389,12 +494,18 @@ class AgentClient:
                 return response.choices[0].message.content
 
             elif self.provider == "google":
-                gmodel = self.client.GenerativeModel(model)
+                gmodel_kwargs = {}
+                if system is not None:
+                    gmodel_kwargs["system_instruction"] = system
+                gmodel = self.client.GenerativeModel(model, **gmodel_kwargs)
+                generation_config = {"max_output_tokens": max_tokens}
+                if temperature is not None:
+                    generation_config["temperature"] = temperature
                 # Honor max_tokens + timeout (were ignored → output capped at the
                 # model default, request unbounded), and reject a truncated reply.
                 response = gmodel.generate_content(
                     prompt,
-                    generation_config={"max_output_tokens": max_tokens},
+                    generation_config=generation_config,
                     request_options={"timeout": request_timeout},
                 )
                 candidates = getattr(response, "candidates", None) or []
@@ -509,21 +620,19 @@ class AgentClient:
 
                 prompt_file.write_text(full_prompt, encoding="utf-8")
 
-                # Build command from preset
-                cmd = []
-                for part in preset["command"]:
-                    part = part.replace("{prompt_file}", str(prompt_file))
-                    part = part.replace("{cwd}", str(cwd or temp_path))
-                    part = part.replace("{skill_dir}", str(cwd or temp_path))
-                    cmd.append(part)
-                # Headless invocation: always skip permission prompts when the
-                # agent supports it (the flag is no longer baked into the
-                # shared preset so interactive callers can omit it).
-                if (
-                    preset.get("supports_skip_permissions")
-                    and "--dangerously-skip-permissions" not in cmd
-                ):
-                    cmd.insert(1, "--dangerously-skip-permissions")
+                # Build command via the shared builder (headless: always
+                # skip permission prompts when the preset supports it). The
+                # custom-agent case carries its template in preset["command"],
+                # so substitute through the same path.
+                if self.agent == "custom":
+                    cmd = []
+                    for part in preset["command"]:
+                        part = part.replace("{prompt_file}", str(prompt_file))
+                        part = part.replace("{cwd}", str(cwd or temp_path))
+                        part = part.replace("{skill_dir}", str(cwd or temp_path))
+                        cmd.append(part)
+                else:
+                    cmd, _ = build_local_agent_command(self.agent, prompt_file, cwd or temp_path)
 
                 # Execute — pipe stdin for agents that read from it (e.g., codex)
                 stdin_input = full_prompt if preset.get("uses_stdin") else None
