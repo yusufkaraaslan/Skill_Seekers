@@ -16,7 +16,7 @@
 [![लाइसेंस: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP एकीकरण](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![परीक्षण पास](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![परीक्षण पास](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![परियोजना बोर्ड](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI संस्करण](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - डाउनलोड](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -88,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **वीडियो** — YouTube और स्थानीय वीडियो से कोड, ट्रांसक्रिप्ट और संरचित ज्ञान निकालें
 - 🔄 **बहु-स्रोत** — 17 स्रोत प्रकारों (डॉक्स, GitHub, PDF, वीडियो, नोटबुक, विकी आदि) को एक ज्ञान संपत्ति में मिलाएँ
 - 🌐 **एक बार तैयारी, हर लक्ष्य** — बिना दोबारा स्क्रैप किए 16 प्लेटफ़ॉर्म पर निर्यात करें
-- ✅ **युद्ध-परीक्षित** — 3,445+ परीक्षण, 24+ फ़्रेमवर्क प्रीसेट, प्रोडक्शन-तैयार
+- ✅ **युद्ध-परीक्षित** — 3,700+ परीक्षण, 24+ फ़्रेमवर्क प्रीसेट, प्रोडक्शन-तैयार
 
 ## 🚀 त्वरित शुरुआत (3 कमांड)
 
@@ -628,7 +628,7 @@ stages:
 - ✅ **कैशिंग सिस्टम** - एक बार स्क्रैप करें, तुरंत पुनर्निर्माण करें
 
 ### ✅ गुणवत्ता आश्वासन
-- ✅ **पूर्ण परीक्षित** - 3,445+ परीक्षण व्यापक कवरेज के साथ
+- ✅ **पूर्ण परीक्षित** - 3,700+ परीक्षण व्यापक कवरेज के साथ
 
 ---
 
@@ -1262,7 +1262,7 @@ skill-seekers sync-config            # कॉन्फ़िगरेशन ड�
 skill-seekers stream <source>        # बड़े दस्तावेज़ों के लिए स्ट्रीमिंग इनजेस्टन
 skill-seekers update output/react/   # वृद्धिशील अपडेट
 skill-seekers multilang <source>     # बहुभाषी कौशल जनरेशन
-skill-seekers quality output/react/  # गुणवत्ता स्कोरिंग
+skill-seekers quality output/react/  # गुणवत्ता रिपोर्ट (गेट के लिए --threshold 7 जोड़ें: 7/10 से नीचे गैर-शून्य निकास कोड)
 ```
 
 ### RAG चंकिंग (पैकेजिंग)

@@ -174,7 +174,7 @@ skill-seekers create --pdf manual.pdf --name docs
 
 ```bash
 # 启用 OCR
-skill-seekers create --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --ocr
 ```
 
 **要求：**
@@ -218,20 +218,20 @@ skill-seekers create .
 skill-seekers create ./my-project
 
 # 使用显式命令
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 ```
 
 ### 分析预设
 
 ```bash
 # 快速分析（1-2 分钟）
-skill-seekers scan  ./my-project --preset quick
+skill-seekers create ./my-project --preset quick
 
 # 标准分析（5-10 分钟）- 默认
-skill-seekers scan  ./my-project --preset standard
+skill-seekers create ./my-project --preset standard
 
 # 全面分析（20-60 分钟）
-skill-seekers scan  ./my-project --preset comprehensive
+skill-seekers create ./my-project --preset comprehensive
 ```
 
 ### 分析内容
@@ -250,11 +250,11 @@ skill-seekers scan  ./my-project --preset comprehensive
 
 ```bash
 # 特定语言
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --languages Python,JavaScript
 
 # 文件模式
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --file-patterns "*.py,*.js"
 ```
 
@@ -262,7 +262,7 @@ skill-seekers scan  ./my-project \
 
 ```bash
 # 跳过重型功能
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --skip-dependency-graph \
   --skip-patterns \
   --skip-test-examples

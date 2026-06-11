@@ -16,7 +16,7 @@
 [![라이선스: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 통합](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![테스트 통과](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![테스트 통과](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![프로젝트 보드](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 버전](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 다운로드](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -88,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **동영상** — YouTube 및 로컬 동영상에서 코드, 자막, 구조화된 지식 추출
 - 🔄 **18가지 소스 유형** — 문서 + GitHub + PDF + 동영상 + 노트북 + 위키 등을 하나의 지식 자산으로 결합
 - 🌐 **한 번 준비, 모든 대상으로 내보내기** — 재스크래핑 없이 16개 플랫폼으로 내보내기
-- ✅ **실전 검증 완료** — 3,445+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
+- ✅ **실전 검증 완료** — 3,700+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
 
 ## 빠른 시작
 
@@ -516,7 +516,7 @@ stages:
 - ✅ **캐싱 시스템** - 한 번 스크래핑, 즉시 재구축
 
 ### ✅ 품질 보증
-- ✅ **완전한 테스트** - 3,445+ 테스트, 포괄적 커버리지
+- ✅ **완전한 테스트** - 3,700+ 테스트, 포괄적 커버리지
 
 ---
 
@@ -1142,7 +1142,7 @@ skill-seekers sync-config            # 설정 드리프트 감지
 skill-seekers stream <source>        # 대용량 문서 스트리밍 수집
 skill-seekers update output/react/   # 증분 업데이트
 skill-seekers multilang <source>     # 다국어 스킬 생성
-skill-seekers quality output/react/  # 품질 점수
+skill-seekers quality output/react/  # 품질 리포트 (--threshold 7 추가로 게이트 적용: 7/10 미만이면 0이 아닌 종료 코드)
 ```
 
 ### RAG 청킹（패키징）

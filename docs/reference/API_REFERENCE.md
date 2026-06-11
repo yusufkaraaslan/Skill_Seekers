@@ -379,75 +379,59 @@ print(f"Vector store ID: {result['vector_store_id']}")
 
 ### 7. AI Enhancement API
 
-Enhance skills with AI-powered improvements using platform-specific models.
+Enhance skills with AI-powered improvements. All API-mode enhancement routes
+through the shared `AgentClient` (`skill_seekers.cli.agent_client`), which
+centralizes provider selection (Anthropic/Gemini/OpenAI/Moonshot), model and
+base-URL overrides, the truncation gate, timeout policy, and atomic
+backup-then-save of SKILL.md.
 
-#### API Mode Enhancement
+#### API Mode Enhancement (per-platform adaptor)
 
 ```python
 import os
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
 
-adaptor = get_adaptor('claude')
+adaptor = get_adaptor('claude')  # also: gemini, openai, and OpenAI-compatible targets
 
-# Enhance using Claude API
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='api',
-    api_key=os.getenv('ANTHROPIC_API_KEY')
+# Enhance SKILL.md via the platform's API (returns True on success).
+# The original is backed up to SKILL.md.backup and the save is atomic.
+ok = adaptor.enhance(
+    Path('output/react/'),
+    os.getenv('ANTHROPIC_API_KEY'),
 )
-
-print(f"Enhanced skill: {result['enhanced_path']}")
-print(f"Quality score: {result['quality_score']}/10")
 ```
 
-#### LOCAL Mode Enhancement
+#### Direct AgentClient usage
 
 ```python
-from skill_seekers.cli.adaptors import get_adaptor
+from skill_seekers.cli.agent_client import AgentClient
 
-adaptor = get_adaptor('claude')
-
-# Enhance using Claude Code CLI (free!)
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='LOCAL',
-    execution_mode='headless',  # Options: headless, background, daemon
-    timeout=300  # 5 minute timeout
-)
-
-print(f"Enhanced skill: {result['enhanced_path']}")
+client = AgentClient(mode='api')          # or mode='local' (spawns a local agent)
+reply = client.call('Summarize this skill...', timeout=600)
 ```
 
-#### Background Enhancement with Monitoring
+#### LOCAL Mode Enhancement (local coding agent, free)
 
 ```python
-from skill_seekers.cli.enhance_skill_local import enhance_skill
-from skill_seekers.cli.enhance_status import monitor_enhancement
-import time
+from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-# Start background enhancement
-result = enhance_skill(
-    skill_dir='output/react/',
-    mode='background'
+enhancer = LocalSkillEnhancer(
+    'output/react/',
+    agent='claude',        # claude, codex, copilot, opencode, kimi, custom
 )
-
-pid = result['pid']
-print(f"Enhancement started in background (PID: {pid})")
-
-# Monitor progress
-while True:
-    status = monitor_enhancement('output/react/')
-    print(f"Status: {status['state']}, Progress: {status['progress']}%")
-
-    if status['state'] == 'completed':
-        print(f"Enhanced skill: {status['output_path']}")
-        break
-    elif status['state'] == 'failed':
-        print(f"Enhancement failed: {status['error']}")
-        break
-
-    time.sleep(5)  # Check every 5 seconds
+enhancer.run(background=True)   # or headless=True (default), daemon=True
 ```
+
+Monitor background runs from the CLI:
+
+```bash
+skill-seekers enhance-status output/react/ --watch
+```
+
+> LOCAL mode sets `SKILL_SEEKER_ENHANCE_ACTIVE=1` in the spawned agent's
+> environment and refuses to start when it is already set, preventing
+> recursive agent spawns.
 
 ---
 
@@ -890,8 +874,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          skill-seekers install react --target claude --enhance --upload
-          skill-seekers install vue --target gemini --enhance --upload
+          skill-seekers install --config react --target claude
+          skill-seekers install --config vue --target gemini
 
       - name: Archive Skills
         uses: actions/upload-artifact@v3

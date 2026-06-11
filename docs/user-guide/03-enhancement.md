@@ -50,13 +50,17 @@ export GOOGLE_API_KEY=...             # Gemini
 export OPENAI_API_KEY=...             # OpenAI
 ```
 
+If several keys are set, the first in priority order wins: Anthropic → Gemini →
+OpenAI → Moonshot/Kimi. Force a specific one with `SKILL_SEEKER_PROVIDER`
+(see [Environment Variables](../reference/ENVIRONMENT_VARIABLES.md)).
+
 **Usage:**
 ```bash
 # Auto-detects API mode
 skill-seekers create <source>
 
-# Explicit
-skill-seekers enhance output/my-skill/ --agent api
+# Explicit target platform (API mode)
+skill-seekers enhance output/my-skill/ --target claude
 ```
 
 **Pros:**
@@ -124,7 +128,7 @@ skill-seekers create <source> --enhance-level 3
 skill-seekers enhance output/my-skill/
 
 # With specific agent
-skill-seekers enhance output/my-skill/ --agent local
+skill-seekers enhance output/my-skill/ --agent claude
 
 # With timeout
 skill-seekers enhance output/my-skill/ --timeout 1200
@@ -364,8 +368,8 @@ skill-seekers enhance output/my-skill/  # Run again for more polish
 # Set API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# Or use LOCAL mode
-skill-seekers enhance output/my-skill/ --agent local
+# Or use LOCAL mode (auto-selected when no API key; pick an installed agent)
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 ### "Enhancement timeout"
@@ -386,9 +390,9 @@ skill-seekers enhance output/my-skill/ --background
 # Install Claude Code
 # See: https://claude.ai/code
 
-# Or switch to API mode
+# Or switch to API mode (used automatically once a key is set)
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers enhance output/my-skill/ --agent api
+skill-seekers enhance output/my-skill/
 ```
 
 ### "Workflow not found"

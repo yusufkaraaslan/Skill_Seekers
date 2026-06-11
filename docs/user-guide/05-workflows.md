@@ -597,7 +597,7 @@ skill-seekers create https://docs.example.com --enhance-workflow security-focus
 skill-seekers create  owner/repo --enhance-workflow api-documentation
 
 # Local codebase
-skill-seekers scan  ./my-project --enhance-workflow architecture-comprehensive
+skill-seekers create ./my-project --enhance-workflow architecture-comprehensive
 
 # PDF document
 skill-seekers create --pdf manual.pdf --enhance-workflow minimal

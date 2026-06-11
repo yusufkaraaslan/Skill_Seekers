@@ -165,14 +165,12 @@ Returns `TextContent` with:
 
 ### MCP Server Changes
 
-**Location:** `skill_seeker_mcp/server.py`
+**Location:** `src/skill_seekers/mcp/tools/scraping_tools.py`
 
-**Changes:**
-1. Added `scrape_pdf` to `list_tools()` (lines 220-249)
-2. Added handler in `call_tool()` (lines 276-277)
-3. Implemented `scrape_pdf_tool()` function (lines 591-625)
-
-### Code Implementation
+The current implementation runs **in-process**: `scrape_pdf_tool()` builds a
+PDF config dict and calls `get_converter("pdf", config)` via the shared
+`_run_converter()` helper — no subprocess. The snippet below is the original
+(historical) subprocess-based implementation, kept for context:
 
 ```python
 async def scrape_pdf_tool(args: dict) -> list[TextContent]:
@@ -369,7 +367,7 @@ assert "✅ Skill built successfully" in result[0].text
 
 ### Async Execution
 
-The MCP tool runs `pdf_scraper.py` synchronously via `subprocess.run()`. For long-running PDFs:
+The MCP tool runs the PDF converter synchronously in-process. For long-running PDFs:
 - Client waits for completion
 - No progress updates during extraction
 - Consider using `--from-json` mode for faster iteration

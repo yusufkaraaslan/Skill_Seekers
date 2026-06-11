@@ -97,14 +97,14 @@ skill-seekers --version
 
 **语法：**
 ```bash
-skill-seekers scan  DIR [options]
+skill-seekers create DIR [options]
 ```
 
 **参数：**
 
 | 名称 | 必需 | 描述 |
 |------|----------|-------------|
-| `--directory DIR` | 是 | 要分析的目录 |
+| `DIR`（位置参数，或 `--directory DIR`） | 是 | 要分析的目录 |
 | `--output DIR` | 否 | 输出目录（默认：output/codebase/） |
 
 **标志：**
@@ -130,19 +130,19 @@ skill-seekers scan  DIR [options]
 
 ```bash
 # 使用默认值进行基础分析
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 
 # 快速分析（1-2 分钟）
-skill-seekers scan  ./my-project --preset quick
+skill-seekers create ./my-project --preset quick
 
 # 全面分析，包含所有功能
-skill-seekers scan  ./my-project --preset comprehensive
+skill-seekers create ./my-project --preset comprehensive
 
 # 仅特定语言
-skill-seekers scan  ./my-project --languages Python,JavaScript
+skill-seekers create ./my-project --languages Python,JavaScript
 
 # 跳过重型功能以加快分析
-skill-seekers scan  ./my-project --skip-dependency-graph --skip-patterns
+skill-seekers create ./my-project --skip-dependency-graph --skip-patterns
 ```
 
 **退出码：**
@@ -388,7 +388,9 @@ skill-seekers estimate [config] [options]
 | 短 | 长 | 默认值 | 描述 |
 |-------|------|---------|-------------|
 | | `--all` | | 列出所有可用配置 |
-| | `--max-discovery` | 1000 | 最大发现页面数 |
+| `-m` | `--max-discovery` | 1000 | 最大发现页面数（`-1` 表示无限制） |
+| `-u` | `--unlimited` | | 取消发现限制（等同于 `--max-discovery -1`） |
+| `-t` | `--timeout` | 30 | HTTP 请求超时（秒） |
 
 **示例：**
 
@@ -398,6 +400,9 @@ skill-seekers estimate configs/react.json
 
 # 快速估算（100 页）
 skill-seekers estimate configs/react.json --max-discovery 100
+
+# 发现全部页面，给较慢的站点更多时间
+skill-seekers estimate configs/react.json --unlimited --timeout 60
 
 # 列出所有可用预设
 skill-seekers estimate --all
@@ -543,30 +548,39 @@ skill-seekers install-agent output/react/ --agent cursor --force
 
 多语言文档支持。
 
-**用途：** 抓取并合并多语言文档。
+**用途：** 检测、报告并导出已抓取技能目录中包含的语言。
 
 **语法：**
 ```bash
-skill-seekers multilang --config CONFIG [options]
+skill-seekers multilang SKILL_DIRECTORY [options]
 ```
+
+**参数：**
+
+| 名称 | 必需 | 描述 |
+|------|----------|-------------|
+| `SKILL_DIRECTORY` | 是 | 技能目录路径 |
 
 **标志：**
 
 | 短 | 长 | 描述 |
 |-------|------|-------------|
-| `-c` | `--config` | 配置 JSON 文件 |
-| | `--primary` | 主要语言 |
-| | `--languages` | 逗号分隔的语言 |
-| | `--merge-strategy` | 合并方式：parallel、hierarchical |
+| | `--detect` | 自动检测语言 |
+| | `--report` | 生成翻译报告 |
+| | `--export` | 按语言导出到指定目录 |
+| | `--languages` | 将 `--detect`/`--export` 限制为这些语言（空格分隔，例如 `en es fr`） |
 
 **示例：**
 
 ```bash
-# 多语言抓取
-skill-seekers multilang --config configs/react-i18n.json
+# 检测技能中的语言
+skill-seekers multilang output/react/ --detect
 
-# 特定语言
-skill-seekers multilang --config configs/docs.json --languages en,zh,es
+# 翻译覆盖率报告
+skill-seekers multilang output/react/ --report
+
+# 按语言导出目录树，仅英语和西班牙语
+skill-seekers multilang output/react/ --export output/by-lang/ --languages en es
 ```
 
 ---
@@ -684,8 +698,8 @@ skill-seekers create --pdf [options]
 # 直接 PDF 路径
 skill-seekers create --pdf manual.pdf --name product-manual
 
-# 使用配置文件
-skill-seekers create --pdf --config configs/manual.json
+# 使用配置文件（PDF 路径由配置中的 source 提供）
+skill-seekers create --config configs/manual.json
 
 # 启用增强
 skill-seekers create --pdf manual.pdf --enhance-level 2
@@ -715,18 +729,22 @@ skill-seekers quality SKILL_DIRECTORY [options]
 | 短 | 长 | 描述 |
 |-------|------|-------------|
 | | `--report` | 生成详细报告 |
-| | `--threshold` | 质量阈值（0-10） |
+| | `--output` | JSON 报告的输出路径 |
+| | `--threshold` | 质量门禁阈值（0-10）。设置后，技能得分低于阈值时以非零退出码退出；未设置时该命令仅报告（退出码 0） |
 
 **示例：**
 
 ```bash
-# 基础质量检查
+# 基础质量检查（仅报告，始终以 0 退出）
 skill-seekers quality output/react/
 
 # 详细报告
 skill-seekers quality output/react/ --report
 
-# 低于阈值则失败
+# 将报告保存为 JSON
+skill-seekers quality output/react/ --output quality.json
+
+# 质量门禁：低于阈值则失败（非零退出码）
 skill-seekers quality output/react/ --threshold 7.0
 ```
 
@@ -851,25 +869,36 @@ skill-seekers create --config configs/react.json --resume
 
 **语法：**
 ```bash
-skill-seekers stream --config CONFIG [options]
+skill-seekers stream INPUT_FILE [options]
 ```
+
+**参数：**
+
+| 名称 | 必需 | 描述 |
+|------|----------|-------------|
+| `INPUT_FILE` | 是 | 要流式处理的大文件 |
 
 **标志：**
 
 | 短 | 长 | 描述 |
 |-------|------|-------------|
-| `-c` | `--config` | 配置 JSON 文件 |
 | | `--streaming-chunk-chars` | 每块最大字符数（默认：4000） |
-| | `--output` | 输出目录 |
+| | `--streaming-overlap-chars` | 块重叠字符数（默认：200） |
+| | `--batch-size` | 处理批次大小（默认：100） |
+| | `--checkpoint` | 检查点文件路径 |
+| | `--output` | 将收集的分块写为 JSON（可以是 `.json` 文件路径，或一个将写入 `chunks.json` 的目录） |
 
 **示例：**
 
 ```bash
-# 流式处理大文档
-skill-seekers stream --config configs/large-docs.json
+# 流式处理一个大文档文件
+skill-seekers stream big-docs.md
 
-# 自定义块大小
-skill-seekers stream --config configs/large-docs.json --streaming-chunk-chars 1000
+# 自定义块大小和重叠
+skill-seekers stream big-docs.md --streaming-chunk-chars 1000 --streaming-overlap-chars 100
+
+# 保存收集的分块
+skill-seekers stream big-docs.md --output chunks.json
 ```
 
 ---
@@ -897,7 +926,8 @@ skill-seekers create --config FILE [options]
 |-------|------|---------|-------------|
 | | `--merge-mode` | claude-enhanced | 合并模式：rule-based、claude-enhanced |
 | | `--fresh` | | 清除现有数据 |
-| | `--dry-run` | | 干运行模式 |
+| | `--dry-run` | | 干运行模式（预览来源，不写入） |
+| `-o` | `--output` | output/ | 输出目录（统一配置同样生效；结尾斜杠安全） |
 
 **示例：**
 
@@ -933,28 +963,35 @@ skill-seekers create --config configs/react-unified.json --merge-mode rule-based
 
 **语法：**
 ```bash
-skill-seekers update --config CONFIG [options]
+skill-seekers update SKILL_DIRECTORY [options]
 ```
+
+**参数：**
+
+| 名称 | 必需 | 描述 |
+|------|----------|-------------|
+| `SKILL_DIRECTORY` | 是 | 要更新的技能目录 |
 
 **标志：**
 
 | 短 | 长 | 描述 |
 |-------|------|-------------|
-| `-c` | `--config` | 配置 JSON 文件 |
-| | `--since` | 更新起始日期 |
-| | `--check-only` | 仅检查更新 |
+| | `--check-changes` | 仅检查变化 |
+| | `--force` | 强制更新所有文件（当前可接受但尚未实现） |
+| | `--generate-package` | 在指定路径生成更新包 |
+| | `--apply-update` | 应用指定路径的更新包 |
 
 **示例：**
 
 ```bash
-# 检查更新
-skill-seekers update --config configs/react.json --check-only
+# 检查变化
+skill-seekers update output/react/ --check-changes
 
-# 更新自特定日期
-skill-seekers update --config configs/react.json --since 2026-01-01
+# 生成更新包
+skill-seekers update output/react/ --generate-package update-pkg.json
 
-# 完整更新
-skill-seekers update --config configs/react.json
+# 应用更新包
+skill-seekers update output/react/ --apply-update update-pkg.json
 ```
 
 ---
@@ -1115,18 +1152,22 @@ skill-seekers create [options]
 | 短 | 长 | 描述 |
 |-------|------|-------------|
 | | `--space-key` | Confluence 空间密钥 |
-| | `--base-url` | Confluence 基础 URL |
-| | `--export-path` | Confluence 导出目录路径 |
+| | `--conf-base-url` | Confluence 基础 URL |
+| | `--conf-export-path` | Confluence 导出目录路径 |
 | `-n` | `--name` | 技能名称 |
+
+身份验证来自 `CONFLUENCE_USERNAME` / `CONFLUENCE_TOKEN` 环境变量。
 
 **示例：**
 
 ```bash
 # 从 Confluence API
-skill-seekers create --space-key -key DEV --base-url https://wiki.example.com --name team-wiki
+export CONFLUENCE_USERNAME=user@example.com
+export CONFLUENCE_TOKEN=...
+skill-seekers create --conf-base-url https://wiki.example.com --space-key DEV --name team-wiki
 
 # 从 Confluence 导出
-skill-seekers create --export-path ./confluence-export/ --name wiki
+skill-seekers create --conf-export-path ./confluence-export/ --name wiki
 ```
 
 ---
@@ -1146,17 +1187,20 @@ skill-seekers create [options]
 |-------|------|-------------|
 | | `--database-id` | Notion 数据库 ID |
 | | `--page-id` | Notion 页面 ID |
-| | `--export-path` | Notion 导出目录路径 |
+| | `--notion-export-path` | Notion 导出目录路径 |
 | `-n` | `--name` | 技能名称 |
+
+Notion 集成 token 来自 `NOTION_TOKEN` 环境变量。
 
 **示例：**
 
 ```bash
 # 从 Notion API
-skill-seekers create --database-id -id abc123 --name my-notes
+export NOTION_TOKEN=secret_...
+skill-seekers create --database-id abc123 --name my-notes
 
 # 从 Notion 导出
-skill-seekers create --export-path ./notion-export/ --name notes
+skill-seekers create --notion-export-path ./notion-export/ --name notes
 ```
 
 ---
@@ -1167,14 +1211,17 @@ skill-seekers create --export-path ./notion-export/ --name notes
 
 **语法：**
 ```bash
-skill-seekers create --chat-export-path -path DIR [options]
+skill-seekers create --chat-export-path DIR [options]
 ```
 
 **示例：**
 
 ```bash
-skill-seekers create --chat-export-path -path ./slack-export/ --name team-chat
-skill-seekers create --chat-export-path -path ./discord-export/ --name server-archive
+# 从 Slack 导出
+skill-seekers create --chat-export-path ./slack-export/ --name team-chat
+
+# 从 Discord 导出
+skill-seekers create --chat-export-path ./discord-export/ --platform discord --name server-archive
 ```
 
 ---
@@ -1280,7 +1327,7 @@ skill-seekers upload output/react-claude.zip
 
 ```bash
 # 1. 分析代码库
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 
 # 2. 打包
 skill-seekers package output/codebase/ --target claude
@@ -1324,12 +1371,14 @@ skill-seekers create https://docs.react.dev/ --preset standard
 
 ## 退出码
 
+在 `cli/exit_codes.py` 中标准化：
+
 | 码 | 含义 |
 |------|---------|
-| `0` | 成功 |
-| `1` | 一般错误 |
-| `2` | 警告（例如，估算达到上限） |
-| `130` | 用户中断（Ctrl+C） |
+| `0` | 成功（`EXIT_SUCCESS`） |
+| `1` | 一般/运行时错误（`EXIT_ERROR`） |
+| `2` | 参数错误 / 验证失败（`EXIT_VALIDATION`，与 argparse 一致） |
+| `130` | 用户中断（Ctrl+C，`EXIT_INTERRUPT`） |
 
 ---
 

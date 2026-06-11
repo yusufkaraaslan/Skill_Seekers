@@ -61,6 +61,22 @@ skill-seekers-mcp --transport http --port 8765
 skill-seekers-mcp --transport http --host 0.0.0.0 --port 8765
 ```
 
+### Execution Model
+
+Tools run **in-process** — scraping tools via `get_converter()`, and the
+analysis/packaging tools (`estimate_pages`, `detect_patterns`,
+`extract_test_examples`, `extract_config_patterns`, `build_how_to_guides`,
+`split_config`, `generate_router`, `package_skill`, `upload_skill`) via the
+same parsers and `main()` functions the CLI uses (no subprocesses). Two
+exceptions stay subprocess by design: `enhance_skill` with a LOCAL agent and
+`install_skill`'s enhancement step (long-running real agents, guarded against
+recursive spawns).
+
+Shared domain logic (marketplace publishing, config publishing, source
+registry, git repo handling, category detection) lives in the
+`skill_seekers.services` package; the old `skill_seekers.mcp.*` import paths
+remain as back-compat shims.
+
 ---
 
 ## Tool Categories
@@ -295,7 +311,7 @@ Scrape documentation website and generate skill.
 | `config` | object/string | Yes | Config object or file path |
 | `enhance_level` | number | No | 0-3 (default: 2) |
 | `max_pages` | number | No | Override max pages |
-| `dry_run` | boolean | No | Preview only |
+| `dry_run` | boolean | No | Preview only (honored for unified multi-source configs too) |
 
 **Returns:** Scraping results
 

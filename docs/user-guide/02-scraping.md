@@ -197,7 +197,7 @@ skill-seekers create --pdf manual.pdf --name docs
 
 ```bash
 # Enable OCR
-skill-seekers create --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --ocr
 ```
 
 **Requirements:**
@@ -241,20 +241,20 @@ skill-seekers create .
 skill-seekers create ./my-project
 
 # With explicit command
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 ```
 
 ### Analysis Presets
 
 ```bash
 # Quick analysis (1-2 min)
-skill-seekers scan  ./my-project --preset quick
+skill-seekers create ./my-project --preset quick
 
 # Standard analysis (5-10 min) - default
-skill-seekers scan  ./my-project --preset standard
+skill-seekers create ./my-project --preset standard
 
 # Comprehensive (20-60 min)
-skill-seekers scan  ./my-project --preset comprehensive
+skill-seekers create ./my-project --preset comprehensive
 ```
 
 ### What Gets Analyzed
@@ -273,11 +273,11 @@ skill-seekers scan  ./my-project --preset comprehensive
 
 ```bash
 # Specific languages
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --languages Python,JavaScript
 
 # File patterns
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --file-patterns "*.py,*.js"
 ```
 
@@ -285,7 +285,7 @@ skill-seekers scan  ./my-project \
 
 ```bash
 # Skip heavy features
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --skip-dependency-graph \
   --skip-patterns \
   --skip-test-examples
@@ -316,7 +316,7 @@ pip install skill-seekers[video-full]
 skill-seekers create --setup  # auto-detect GPU and install PyTorch
 
 # Extract with visual analysis
-skill-seekers create --video-url  <url> --visual-analysis
+skill-seekers create --video-url <url> --visual
 ```
 
 **Requirements:**
@@ -501,12 +501,12 @@ skill-seekers create curl.1
 ```bash
 # From Confluence API
 skill-seekers create \
-  --base-url https://wiki.example.com \
-  --space DEV \
+  --conf-base-url https://wiki.example.com \
+  --space-key DEV \
   --name team-docs
 
 # From Confluence export directory
-skill-seekers create --export-dir ./confluence-export/
+skill-seekers create --conf-export-path ./confluence-export/
 ```
 
 **Requirements:**
@@ -525,10 +525,10 @@ pip install skill-seekers[confluence]
 ```bash
 # From Notion API
 export NOTION_API_KEY=secret_...
-skill-seekers create --database-id  abc123 --name product-wiki
+skill-seekers create --database-id abc123 --name product-wiki
 
 # From Notion export directory
-skill-seekers create --export-dir ./notion-export/
+skill-seekers create --notion-export-path ./notion-export/
 ```
 
 **Requirements:**

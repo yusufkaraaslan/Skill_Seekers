@@ -14,7 +14,7 @@
 [![ライセンス: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 統合](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![テスト通過](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![テスト通過](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![プロジェクトボード](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI バージョン](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - ダウンロード数](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🔄 **17 種類のソースタイプ** — ドキュメント + GitHub + PDF + 動画 + ノートブック + Wiki などを 1 つのナレッジアセットに統合
 - 🌐 **一度の準備で全ターゲット** — 再スクレイピングなしで 16 プラットフォームにエクスポート
 - 🎬 **動画** — YouTube やローカル動画からコード、字幕、構造化知識を抽出
-- ✅ **実戦テスト済み** — 2,540 以上のテスト、24 以上のフレームワークプリセット、本番運用可能
+- ✅ **実戦テスト済み** — 3,700 以上のテスト、24 以上のフレームワークプリセット、本番運用可能
 
 ## クイックスタート
 
@@ -514,7 +514,7 @@ stages:
 - ✅ **キャッシュシステム** - 一度スクレイプすれば即座にリビルド
 
 ### ✅ 品質保証
-- ✅ **完全テスト** - 2,540 以上のテスト、包括的なカバレッジ
+- ✅ **完全テスト** - 3,700 以上のテスト、包括的なカバレッジ
 
 ---
 
@@ -1132,7 +1132,7 @@ skill-seekers sync-config            # 設定のドリフト検出
 skill-seekers stream <source>        # 大規模ドキュメントのストリーミング取り込み
 skill-seekers update output/react/   # 増分更新
 skill-seekers multilang <source>     # 多言語スキル生成
-skill-seekers quality output/react/  # 品質スコアリング
+skill-seekers quality output/react/  # 品質レポート（--threshold 7 でゲート化: 7/10 未満なら非ゼロ終了）
 ```
 
 ### RAG チャンキング（パッケージング）

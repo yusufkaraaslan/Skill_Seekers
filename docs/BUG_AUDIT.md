@@ -1,5 +1,18 @@
 # Skill Seekers — Bug Audit
 
+> **Addendum (2026-06-11):** Follow-up review during the Grand Unification work
+> (see [UNIFICATION_PLAN.md](UNIFICATION_PLAN.md)) found that two fixes claimed
+> below were no-ops as shipped and have since been fixed properly:
+> 1. **MCP-03 (`dry_run` for unified configs)** — the injected flag never
+>    reached `UnifiedScraper`; it is now genuinely honored (constructor param,
+>    preview-and-return, no directory creation) for both CLI and MCP paths.
+> 2. **ENH timeout fallback** — the raw-config fallbacks for enhancement
+>    settings (incl. timeout/"unlimited") were dead code because
+>    `ExecutionContext.get()` never raises; the gate now uses
+>    `ExecutionContext.is_initialized()`.
+>
+> The findings below are preserved unchanged as a historical record.
+
 **Date:** 2026-06-10
 **Scope:** Full audit of `src/skill_seekers/` (~80K LOC): scan/config pipeline, CLI core & dispatch, platform adaptors, MCP server & tools, codebase-analysis engines (AST/pattern/dependency/guide/router), document & media & remote scrapers, enhancement + unified builder, argument/parser system, and infra (embedding, sync, storage, benchmark, presets).
 

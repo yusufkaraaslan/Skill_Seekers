@@ -14,7 +14,7 @@
 [![الرخصة: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![تكامل MCP](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![الاختبارات](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![الاختبارات](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![لوحة المشروع](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![إصدار PyPI](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - التنزيلات](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **الفيديو** — استخراج الكود والنصوص والمعرفة المنظمة من يوتيوب والفيديوهات المحلية
 - 🔄 **متعدد المصادر** — دمج 17 نوعًا من المصادر (توثيق وGitHub وPDF وفيديو ودفاتر Jupyter وويكي والمزيد) في أصل معرفي واحد
 - 🌐 **تحضير واحد لكل الأهداف** — تصدير نفس الأصل إلى 16 منصة دون إعادة الاستخراج
-- ✅ **مُختبر بإحكام** — أكثر من 3,445 اختبارًا و24 إعدادًا مسبقًا للأطر البرمجية، جاهز للإنتاج
+- ✅ **مُختبر بإحكام** — أكثر من 3,700 اختبارًا و24 إعدادًا مسبقًا للأطر البرمجية، جاهز للإنتاج
 
 ## البدء السريع
 
@@ -514,7 +514,7 @@ stages:
 - ✅ **نظام التخزين المؤقت** - استخراج مرة واحدة وإعادة البناء فورًا
 
 ### ✅ ضمان الجودة
-- ✅ **اختبار كامل** - أكثر من 3,445 اختبارًا بتغطية شاملة
+- ✅ **اختبار كامل** - أكثر من 3,700 اختبارًا بتغطية شاملة
 
 ---
 
@@ -1140,7 +1140,7 @@ skill-seekers sync-config            # كشف انحراف التكوين
 skill-seekers stream <source>        # الاستهلاك المتدفق للمستندات الكبيرة
 skill-seekers update output/react/   # التحديث التزايدي
 skill-seekers multilang <source>     # إنشاء مهارات متعددة اللغات
-skill-seekers quality output/react/  # تقييم الجودة
+skill-seekers quality output/react/  # تقرير الجودة (أضف --threshold 7 لفرض حد أدنى: رمز خروج غير صفري عند أقل من 7/10)
 ```
 
 ### تقسيم RAG (التعبئة)

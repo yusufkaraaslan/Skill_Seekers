@@ -252,7 +252,7 @@ skill-seekers install --config vue --target markdown
 ### Split Unified Config by Source
 ```bash
 # Split multi-source config into separate configs
-skill-seekers split --config configs/react_unified.json --strategy source
+python -m skill_seekers.cli.split_config configs/react_unified.json --strategy source
 
 # Creates:
 # - react-documentation.json (docs only)

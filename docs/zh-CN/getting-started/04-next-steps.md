@@ -151,11 +151,11 @@ export_to_chroma(skill_directory="output/django/")
 **目标：** 自动保持 skills 最新
 
 ```bash
-# 检查更新
-skill-seekers update --config django --check-only
+# 检查变化
+skill-seekers update output/django/ --check-changes
 
 # 如有变化则更新
-skill-seekers update --config django
+skill-seekers update output/django/
 ```
 
 ---

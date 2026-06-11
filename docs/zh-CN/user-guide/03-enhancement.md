@@ -46,13 +46,17 @@
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+如果设置了多个密钥，按优先顺序取第一个：Anthropic → Gemini →
+OpenAI → Moonshot/Kimi。可通过 `SKILL_SEEKER_PROVIDER` 强制指定某一个
+（参见[环境变量](../reference/ENVIRONMENT_VARIABLES.md)）。
+
 **用法：**
 ```bash
 # 自动检测 API 模式
 skill-seekers create <source>
 
-# 显式指定
-skill-seekers enhance output/my-skill/ --agent api
+# 显式指定目标平台（API 模式）
+skill-seekers enhance output/my-skill/ --target claude
 ```
 
 **优点：**
@@ -79,7 +83,7 @@ skill-seekers enhance output/my-skill/ --agent api
 skill-seekers create <source>
 
 # 显式指定
-skill-seekers enhance output/my-skill/ --agent local
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 **优点：**
@@ -114,7 +118,7 @@ skill-seekers create <source> --enhance-level 3
 skill-seekers enhance output/my-skill/
 
 # 使用特定 agent
-skill-seekers enhance output/my-skill/ --agent local
+skill-seekers enhance output/my-skill/ --agent claude
 
 # 设置超时
 skill-seekers enhance output/my-skill/ --timeout 1200
@@ -354,8 +358,8 @@ skill-seekers enhance output/my-skill/  # 再次运行以进一步润色
 # 设置 API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# 或使用 LOCAL 模式
-skill-seekers enhance output/my-skill/ --agent local
+# 或使用 LOCAL 模式（无 API key 时自动选择；指定一个已安装的代理）
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 ### "增强超时"
@@ -376,9 +380,9 @@ skill-seekers enhance output/my-skill/ --background
 # 安装 Claude Code
 # 参见: https://claude.ai/code
 
-# 或切换到 API 模式
+# 或切换到 API 模式（设置密钥后自动使用）
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers enhance output/my-skill/ --agent api
+skill-seekers enhance output/my-skill/
 ```
 
 ### "未找到工作流"

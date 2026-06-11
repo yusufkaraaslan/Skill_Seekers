@@ -16,7 +16,7 @@
 [![Lisans: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Entegrasyonu](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![Test Geçti](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![Test Geçti](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![Proje Panosu](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI Sürümü](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - İndirmeler](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -88,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Videolar** — YouTube ve yerel videolardan kod, altyazı ve yapılandırılmış bilgi çıkarma
 - 🔄 **Çoklu kaynak** — 18 kaynak türünü (dokümantasyon, GitHub, PDF, video, not defterleri, vikiler ve daha fazlası) tek bir bilgi varlığında birleştirme
 - 🌐 **Bir hazırlık, her hedef** — Yeniden tarama yapmadan aynı varlığı 16 platforma dışa aktarma
-- ✅ **Savaşta test edilmiş** — 3.445+ test, 24+ çerçeve ön ayarı, üretime hazır
+- ✅ **Savaşta test edilmiş** — 3.700+ test, 24+ çerçeve ön ayarı, üretime hazır
 
 ## 🚀 Hızlı Başlangıç (3 Komut)
 
@@ -632,7 +632,7 @@ stages:
 - ✅ **Önbellekleme Sistemi** - Bir kez tara, anında yeniden oluştur
 
 ### ✅ Kalite Güvencesi
-- ✅ **Tam Test Kapsamı** - 3.445+ test ile kapsamlı kapsam
+- ✅ **Tam Test Kapsamı** - 3.700+ test ile kapsamlı kapsam
 
 ---
 
@@ -1266,7 +1266,7 @@ skill-seekers sync-config            # Yapılandırma sapması algılama
 skill-seekers stream <source>        # Büyük dokümanlar için akış alımı
 skill-seekers update output/react/   # Artımlı güncelleme
 skill-seekers multilang <source>     # Çok dilli beceri oluşturma
-skill-seekers quality output/react/  # Kalite puanlama
+skill-seekers quality output/react/  # Kalite raporu (kapı için --threshold 7 ekleyin: 7/10 altında sıfırdan farklı çıkış kodu)
 ```
 
 ### RAG Parçalama (paketleme)

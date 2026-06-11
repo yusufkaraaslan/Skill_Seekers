@@ -1,6 +1,6 @@
 # Skill Seekers Documentation
 
-> **Complete documentation for Skill Seekers v3.6.0**
+> **Complete documentation for Skill Seekers v3.7.0**
 
 ---
 
@@ -20,6 +20,7 @@ Start with our **Getting Started** guides:
 2. [Quick Start](getting-started/02-quick-start.md) - Create your first skill in 3 commands
 3. [Your First Skill](getting-started/03-your-first-skill.md) - Complete walkthrough
 4. [Next Steps](getting-started/04-next-steps.md) - Where to go from here
+5. [Scan a Project](getting-started/05-scan-a-project.md) - Bootstrap configs from a codebase
 
 ### 📖 I Want to Learn
 
@@ -40,6 +41,8 @@ Look up specific information:
 - [MCP Reference](reference/MCP_REFERENCE.md) - 40 MCP tools
 - [Config Format](reference/CONFIG_FORMAT.md) - JSON specification
 - [Environment Variables](reference/ENVIRONMENT_VARIABLES.md) - All env vars
+- [FAQ](FAQ.md) - Frequently asked questions
+- [Troubleshooting](TROUBLESHOOTING.md) - Full troubleshooting reference
 
 ### 🚀 I'm Ready for Advanced Topics
 
@@ -103,12 +106,16 @@ skill-seekers doctor
 docs/
 ├── README.md                 # This file - start here
 ├── ARCHITECTURE.md          # How docs are organized
+├── UML_ARCHITECTURE.md      # Software architecture (UML diagrams)
+├── UNIFICATION_PLAN.md      # Grand Unification refactor plan + phase results
+├── BUG_AUDIT.md             # Full-codebase bug audit (historical record)
 │
 ├── getting-started/         # For new users
 │   ├── 01-installation.md
 │   ├── 02-quick-start.md
 │   ├── 03-your-first-skill.md
-│   └── 04-next-steps.md
+│   ├── 04-next-steps.md
+│   └── 05-scan-a-project.md
 │
 ├── user-guide/              # Common tasks
 │   ├── 01-core-concepts.md
@@ -187,8 +194,8 @@ For Cursor, Windsurf, Cline, Roo, Aider, Bolt, Kilo, Continue, Kimi Code:
 
 ## Version Information
 
-- **Current Version:** 3.6.0
-- **Last Updated:** 2026-03-15
+- **Current Version:** 3.7.0
+- **Last Updated:** 2026-06-11
 - **Source Types:** 18
 - **Python Required:** 3.10+
 

@@ -370,75 +370,57 @@ print(f"Vector store ID: {result['vector_store_id']}")
 
 ### 7. AI 增强 API
 
-使用平台特定模型通过 AI 驱动的改进来增强技能。
+使用 AI 驱动的改进来增强技能。所有 API 模式的增强都通过共享的
+`AgentClient`（`skill_seekers.cli.agent_client`）进行，它集中处理
+提供商选择（Anthropic/Gemini/OpenAI/Moonshot）、模型与 base-URL 覆盖、
+截断门禁、超时策略，以及 SKILL.md 的原子化备份保存。
 
-#### API 模式增强
+#### API 模式增强（按平台适配器）
 
 ```python
 import os
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
 
-adaptor = get_adaptor('claude')
+adaptor = get_adaptor('claude')  # 也可以：gemini、openai 以及 OpenAI 兼容目标
 
-# 使用 Claude API 增强
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='api',
-    api_key=os.getenv('ANTHROPIC_API_KEY')
+# 通过平台 API 增强 SKILL.md（成功时返回 True）。
+# 原文件会备份为 SKILL.md.backup，保存为原子操作。
+ok = adaptor.enhance(
+    Path('output/react/'),
+    os.getenv('ANTHROPIC_API_KEY'),
 )
-
-print(f"Enhanced skill: {result['enhanced_path']}")
-print(f"Quality score: {result['quality_score']}/10")
 ```
 
-#### LOCAL 模式增强
+#### 直接使用 AgentClient
 
 ```python
-from skill_seekers.cli.adaptors import get_adaptor
+from skill_seekers.cli.agent_client import AgentClient
 
-adaptor = get_adaptor('claude')
-
-# 使用 Claude Code CLI 增强（免费！）
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='LOCAL',
-    execution_mode='headless',  # 选项：headless、background、daemon
-    timeout=300  # 5 分钟超时
-)
-
-print(f"Enhanced skill: {result['enhanced_path']}")
+client = AgentClient(mode='api')          # 或 mode='local'（启动本地代理）
+reply = client.call('Summarize this skill...', timeout=600)
 ```
 
-#### 后台增强与监控
+#### LOCAL 模式增强（本地编码代理，免费）
 
 ```python
-from skill_seekers.cli.enhance_skill_local import enhance_skill
-from skill_seekers.cli.enhance_status import monitor_enhancement
-import time
+from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-# 启动后台增强
-result = enhance_skill(
-    skill_dir='output/react/',
-    mode='background'
+enhancer = LocalSkillEnhancer(
+    'output/react/',
+    agent='claude',        # claude、codex、copilot、opencode、kimi、custom
 )
-
-pid = result['pid']
-print(f"Enhancement started in background (PID: {pid})")
-
-# 监控进度
-while True:
-    status = monitor_enhancement('output/react/')
-    print(f"Status: {status['state']}, Progress: {status['progress']}%")
-
-    if status['state'] == 'completed':
-        print(f"Enhanced skill: {status['output_path']}")
-        break
-    elif status['state'] == 'failed':
-        print(f"Enhancement failed: {status['error']}")
-        break
-
-    time.sleep(5)  # 每 5 秒检查一次
+enhancer.run(background=True)   # 或 headless=True（默认）、daemon=True
 ```
+
+从 CLI 监控后台运行：
+
+```bash
+skill-seekers enhance-status output/react/ --watch
+```
+
+> LOCAL 模式会在所启动代理的环境中设置 `SKILL_SEEKER_ENHANCE_ACTIVE=1`，
+> 当该变量已设置时会拒绝启动，从而防止代理递归启动。
 
 ---
 
@@ -861,8 +843,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          skill-seekers install react --target claude --enhance --upload
-          skill-seekers install vue --target gemini --enhance --upload
+          skill-seekers install --config react --target claude
+          skill-seekers install --config vue --target gemini
 
       - name: Archive Skills
         uses: actions/upload-artifact@v3

@@ -61,8 +61,8 @@ skill-seekers create <url> --preset quick
 ### "Enhancement failed: No API key"
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-# Or use LOCAL mode (no API key needed)
-skill-seekers enhance output/my-skill/ --agent local
+# Or use LOCAL mode (no API key needed — pick an installed local agent)
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 ---

@@ -14,7 +14,7 @@
 [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP-интеграция](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![Тесты пройдены](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![Тесты пройдены](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![Доска проекта](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI версия](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Загрузки](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Видео** — извлечение кода, субтитров и структурированных знаний из YouTube и локальных видео
 - 🔄 **Множество источников** — объединение 18 типов источников (документация, GitHub, PDF, видео, ноутбуки, вики и другие) в единую базу знаний
 - 🌐 **Одна подготовка — все платформы** — экспорт одного актива на 16 платформ без повторного сканирования
-- ✅ **Проверено в бою** — 3 445+ тестов, 24+ пресетов для фреймворков, готово к продакшену
+- ✅ **Проверено в бою** — 3 700+ тестов, 24+ пресетов для фреймворков, готово к продакшену
 
 ## Быстрый старт
 
@@ -514,7 +514,7 @@ stages:
 - ✅ **Система кэширования** — сканируйте один раз, пересобирайте мгновенно
 
 ### ✅ Контроль качества
-- ✅ **Полное покрытие тестами** — 3 445+ тестов с обширным покрытием
+- ✅ **Полное покрытие тестами** — 3 700+ тестов с обширным покрытием
 
 ---
 
@@ -1140,7 +1140,7 @@ skill-seekers sync-config            # Обнаружение отклонени
 skill-seekers stream <source>        # Потоковое поглощение для больших документов
 skill-seekers update output/react/   # Инкрементальное обновление
 skill-seekers multilang <source>     # Генерация навыков на нескольких языках
-skill-seekers quality output/react/  # Оценка качества
+skill-seekers quality output/react/  # Отчёт о качестве (добавьте --threshold 7 для контроля: ненулевой код выхода ниже 7/10)
 ```
 
 ### RAG-фрагментация (упаковка)

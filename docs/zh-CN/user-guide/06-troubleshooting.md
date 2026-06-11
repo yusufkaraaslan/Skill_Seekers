@@ -190,8 +190,8 @@ export PYTHONWARNINGS="ignore:Unverified HTTPS request"
 # 设置 API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# 或使用 LOCAL 模式
-skill-seekers enhance output/my-skill/ --agent local
+# 或使用 LOCAL 模式（无需 API key — 选择一个已安装的本地代理）
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 ---
@@ -205,9 +205,9 @@ skill-seekers enhance output/my-skill/ --agent local
 # 安装 Claude Code
 # 参见: https://claude.ai/code
 
-# 或使用 API 模式
+# 或使用 API 模式（设置密钥后自动使用）
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers enhance output/my-skill/ --agent api
+skill-seekers enhance output/my-skill/
 ```
 
 ---
@@ -436,7 +436,7 @@ skill-seekers create  owner/repo
 **解决方案：**
 ```bash
 # 启用 OCR
-skill-seekers create --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --ocr
 
 # 安装 OCR 依赖
 pip install skill-seekers[pdf-ocr]

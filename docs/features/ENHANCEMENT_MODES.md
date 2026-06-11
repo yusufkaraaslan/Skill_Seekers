@@ -135,11 +135,11 @@ skill-seekers enhance output/react/ --agent copilot
 # With custom timeout
 skill-seekers enhance output/react/ --timeout 1200
 
-# Force mode - no confirmations
-skill-seekers enhance output/react/ --force
+# Confirmations are skipped by default (force mode); opt back in with --no-force
+skill-seekers enhance output/react/ --no-force
 
-# Combine agent + force mode
-skill-seekers enhance output/react/ --agent codex --force
+# Different agent, default force behavior
+skill-seekers enhance output/react/ --agent codex
 ```
 
 **Behavior**:

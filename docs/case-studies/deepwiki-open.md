@@ -310,7 +310,7 @@ skill-seekers package output/deepwiki-skill/ --target openai
 #### 4. C3.x Codebase Analysis
 ```bash
 # Deep code analysis with pattern detection
-skill-seekers codebase --directory /path/to/deepwiki-open --comprehensive
+skill-seekers create --directory /path/to/deepwiki-open --preset comprehensive
 
 # Includes:
 # - Design patterns (C3.1)

@@ -219,7 +219,7 @@ skill-seekers create --config react
 
 **Using custom URL:**
 ```bash
-skill-seekers create --base-url https://docs.example.com --name my-framework
+skill-seekers create https://docs.example.com --name my-framework
 ```
 
 **From custom config file:**
@@ -251,7 +251,7 @@ Yes! Skill Seekers has powerful GitHub analysis:
 skill-seekers create https://github.com/facebook/react
 
 # Deep C3.x analysis (includes patterns, tests, guides)
-skill-seekers create https://github.com/vercel/next.js --analysis-depth c3x
+skill-seekers create https://github.com/vercel/next.js --depth full
 ```
 
 **C3.x Features:**
@@ -271,10 +271,10 @@ Yes! PDF extraction with OCR support:
 skill-seekers create --pdf manual.pdf --name product-manual
 
 # With OCR (for scanned PDFs)
-skill-seekers create --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --ocr
 
-# Extract images and tables
-skill-seekers create --pdf document.pdf --extract-images --extract-tables
+# Images and tables are extracted automatically
+skill-seekers create --pdf document.pdf
 ```
 
 ### How do I scrape a Jupyter Notebook?
@@ -357,10 +357,10 @@ skill-seekers create grep.1 --name grep-manual
 
 ```bash
 # From a Slack export directory
-skill-seekers create --platform  slack --export-dir ./slack-export --name team-knowledge
+skill-seekers create --chat-export-path ./slack-export --platform slack --name team-knowledge
 
 # From a Discord export directory
-skill-seekers create --platform  discord --export-dir ./discord-export --name server-archive
+skill-seekers create --chat-export-path ./discord-export --platform discord --name server-archive
 ```
 
 ### Can I combine multiple sources?
@@ -409,9 +409,9 @@ export OPENAI_API_KEY=sk-...
 skill-seekers upload output/react-openai.zip --target openai
 ```
 
-**Or use complete workflow:**
+**Or use complete workflow (uploads by default):**
 ```bash
-skill-seekers install react --target claude --upload
+skill-seekers install --config react --target claude
 ```
 
 ---
@@ -446,15 +446,17 @@ for platform in claude gemini openai minimax kimi deepseek qwen openrouter toget
   skill-seekers package output/react/ --target $platform
 done
 
-# Upload to all platforms
-skill-seekers install react --target claude,gemini,openai --upload
+# Install + upload per platform (one --target per run)
+for platform in claude gemini openai; do
+  skill-seekers install --config react --target $platform
+done
 ```
 
 ### How do I use skills in Claude Code?
 
 1. **Install skill to Claude Code directory:**
 ```bash
-skill-seekers install-agent --skill-dir output/react/ --agent-dir ~/.claude/skills/react
+skill-seekers install-agent output/react/ --agent claude
 ```
 
 2. **Use in Claude Code:**
@@ -491,8 +493,8 @@ AI enhancement transforms basic skills (2-3/10 quality) into production-ready sk
 # API mode (if ANTHROPIC_API_KEY is set)
 skill-seekers enhance output/react/
 
-# LOCAL mode (free!)
-skill-seekers enhance output/react/ --mode LOCAL
+# LOCAL mode (free! — auto-selected when no API key is set; pick the agent)
+skill-seekers enhance output/react/ --agent claude
 
 # Background mode
 skill-seekers enhance output/react/ --background
@@ -515,10 +517,10 @@ C3.x features are advanced codebase analysis capabilities:
 **Enable C3.x:**
 ```bash
 # All C3.x features enabled by default
-skill-seekers codebase --directory /path/to/repo
+skill-seekers create --directory /path/to/repo
 
 # Skip specific features
-skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
+skill-seekers create --directory . --skip-patterns --skip-how-to-guides
 ```
 
 ### What are router skills?
@@ -530,10 +532,11 @@ Router skills help Claude navigate large documentation (>500 pages) by providing
 - Complex multi-section docs
 - Large API references
 
-**Generate router:**
+**Generate router (from split sub-skill configs):**
 ```bash
-skill-seekers generate-router output/large-docs/
+python -m skill_seekers.cli.generate_router configs/godot_*.json --name godot
 ```
+(Also available as the `generate_router` MCP tool.)
 
 ### What preset configurations are available?
 
@@ -546,7 +549,7 @@ skill-seekers generate-router output/large-docs/
 
 **List all:**
 ```bash
-skill-seekers create --list-configs
+skill-seekers estimate --all
 ```
 
 ---
@@ -805,10 +808,10 @@ skill-seekers create --config react --verbose
 skill-seekers create --config react --dry-run
 
 # Single page test
-skill-seekers create --base-url https://docs.example.com/intro --max-pages 1
+skill-seekers create https://docs.example.com/intro --max-pages 1
 
-# Check selectors
-skill-seekers validate-config configs/react.json
+# Check config (also available as the validate_config MCP tool)
+python -m skill_seekers.cli.config_validator configs/react.json
 ```
 
 ---

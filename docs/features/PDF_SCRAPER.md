@@ -115,7 +115,7 @@ skill-seekers create --pdf manual.pdf --name mymanual --description "My Manual D
 
 ```bash
 # Step 1: Extract only (saves JSON)
-skill-seekers create manual.pdf -o manual_extracted.json --extract-images
+python -m skill_seekers.cli.pdf_extractor_poc manual.pdf -o manual_extracted.json --extract-images
 
 # Step 2: Build skill from JSON (fast, can iterate)
 skill-seekers create --from-json manual_extracted.json

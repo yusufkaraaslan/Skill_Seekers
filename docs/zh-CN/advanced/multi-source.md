@@ -436,4 +436,4 @@ skill-seekers create --config my-config.json --merge-mode rule-based
 
 - [配置格式](../reference/CONFIG_FORMAT.md) - 完整 JSON 规范
 - [抓取指南](../user-guide/02-scraping.md) - 单个来源选项
-- [MCP 参考](../reference/MCP_REFERENCE.md) - unified_scrape 工具
+- [MCP 参考](../reference/MCP_REFERENCE.md) - `scrape_docs` 工具（处理统一多源配置）

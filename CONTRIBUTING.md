@@ -488,7 +488,8 @@ Skill_Seekers/
 │   │   ├── arguments/         # CLI argument definitions (one per source)
 │   │   ├── parsers/           # Subcommand parsers (one per source)
 │   │   └── storage/           # Cloud storage adaptors
-│   ├── mcp/                # MCP server + tools
+│   ├── services/           # Shared domain logic (marketplace, config publishing, git sources) — used by CLI and MCP
+│   ├── mcp/                # MCP server + tools (in-process; thin layer over cli/ + services/)
 │   └── sync/               # Sync monitoring
 ├── configs/                # Preset JSON scraping configs
 ├── docs/                   # Documentation
@@ -497,7 +498,7 @@ Skill_Seekers/
     └── workflows/          # CI/CD workflows
 ```
 
-**Scraper pattern (18 source types):** Each source type has `cli/<type>_scraper.py` (with `<Type>ToSkillConverter` class + `main()`), `arguments/<type>.py`, and `parsers/<type>_parser.py`. Register new types in: `parsers/__init__.py` PARSERS list, `main.py` COMMAND_MODULES dict, `config_validator.py` VALID_SOURCE_TYPES set.
+**Scraper pattern (18 source types):** Each source type is a `SkillConverter` subclass in `cli/<type>_scraper.py` (document-shaped sources subclass `DocumentSkillBuilder`, which provides the whole build side), reached via `skill-seekers create` auto-detection — there is no per-type `main()`. Register new types in: `CONVERTER_REGISTRY` in `skill_converter.py` (this also enables them in unified multi-source configs), `create_command.py:_build_config()`, `source_detector.py`, and `config_validator.py` VALID_SOURCE_TYPES. CLI flags are defined once in the central `parsers/*.py` classes (a drift-guard test enforces this).
 
 ### UML Architecture
 

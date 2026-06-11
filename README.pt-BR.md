@@ -16,7 +16,7 @@
 [![Licença: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Integração MCP](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![Testes Aprovados](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![Testes Aprovados](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![Quadro do Projeto](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![Versão PyPI](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -88,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎬 **Vídeos** — Extraia código, transcrições e conhecimento estruturado do YouTube e vídeos locais
 - 🔄 **Multi-fonte** — Combine 17 tipos de fontes (docs, GitHub, PDFs, vídeos, notebooks, wikis e mais) em um único ativo de conhecimento
 - 🌐 **Uma preparação, todos os destinos** — Exporte o mesmo ativo para 16 plataformas sem precisar recoletá-lo
-- ✅ **Testado em batalha** — Mais de 3.445 testes, mais de 24 presets de frameworks, pronto para produção
+- ✅ **Testado em batalha** — Mais de 3.700 testes, mais de 24 presets de frameworks, pronto para produção
 
 ## 🚀 Início Rápido (3 Comandos)
 
@@ -618,7 +618,7 @@ stages:
 - ✅ **Sistema de Cache** - Colete uma vez, reconstrua instantaneamente
 
 ### ✅ Garantia de Qualidade
-- ✅ **Totalmente Testado** - Mais de 3.445 testes com cobertura abrangente
+- ✅ **Totalmente Testado** - Mais de 3.700 testes com cobertura abrangente
 
 ---
 
@@ -1252,7 +1252,7 @@ skill-seekers sync-config            # Detecção de divergência de configuraç
 skill-seekers stream <source>        # Ingestão por streaming para documentos grandes
 skill-seekers update output/react/   # Atualização incremental
 skill-seekers multilang <source>     # Geração de skills multilíngue
-skill-seekers quality output/react/  # Pontuação de qualidade
+skill-seekers quality output/react/  # Relatório de qualidade (adicione --threshold 7 para bloquear: saída diferente de zero abaixo de 7/10)
 ```
 
 ### RAG Chunking (package)

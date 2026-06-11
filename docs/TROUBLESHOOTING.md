@@ -291,8 +291,8 @@ skill-seekers create --config config.json --max-pages 100
   "rate_limit": 0.2   # Faster (0.2s delay)
 }
 
-# Use caching for re-runs
-skill-seekers create --config config.json --use-cache
+# Re-runs reuse cached data automatically (use --fresh to discard it)
+skill-seekers create --config config.json
 ```
 
 ### Issue: Pages Not Being Discovered
@@ -478,11 +478,11 @@ Need free alternative
 **Solutions:**
 
 ```bash
-# Use LOCAL mode (free!)
-skill-seekers enhance output/react/ --mode LOCAL
+# Use LOCAL mode (free! — auto-selected when no API key is set)
+skill-seekers enhance output/react/ --agent claude
 
 # Skip enhancement entirely
-skill-seekers create --config config.json --skip-enhance
+skill-seekers create --config config.json --enhance-level 0
 
 # Estimate cost before enhancing
 # Claude API: ~$0.15-$0.30 per skill
@@ -606,8 +606,8 @@ System swapping
 ps aux --sort=-%mem | head -10
 htop
 
-# Reduce batch size
-skill-seekers create --config config.json --batch-size 10
+# Reduce parallel workers
+skill-seekers create --config config.json --workers 2
 
 # Enable memory limits
 # Docker:
@@ -685,13 +685,11 @@ find output/ -type d -mtime +30 -exec rm -rf {} \;
 tar czf benchmarks-archive.tar.gz benchmarks/
 rm -rf benchmarks/*.json
 
-# Use cloud storage
-skill-seekers create --config config.json \
-  --storage s3 \
-  --bucket my-skills-bucket
+# Push outputs to cloud storage (S3/GCS/Azure)
+skill-seekers-cloud --provider s3 --bucket my-skills-bucket upload output/react/
 
-# Clear cache
-skill-seekers cache --clear
+# Clear cached scrape data for a skill
+skill-seekers create --config config.json --fresh
 ```
 
 ## Storage Issues
@@ -806,8 +804,7 @@ sudo yum reinstall ca-certificates
 
 # As last resort (not recommended for production):
 export PYTHONHTTPSVERIFY=0
-# Or in code:
-skill-seekers create --config config.json --no-verify-ssl
+skill-seekers create --config config.json
 ```
 
 ## General Debug Techniques
@@ -1004,8 +1001,8 @@ python -c "import json; json.load(open('notebook.ipynb'))"
 # Install required deps
 pip install nbformat nbconvert
 
-# Try with explicit format version
-skill-seekers create notebook.ipynb --nbformat 4
+# Re-run with verbose output to see the parse error
+skill-seekers create notebook.ipynb --verbose
 ```
 
 ### Issue: OpenAPI Spec Parsing Fails
@@ -1048,8 +1045,8 @@ Warning: No content found in EPUB
 pip install epubcheck
 epubcheck book.epub
 
-# Try with different content extraction
-skill-seekers create book.epub --extract-images --verbose
+# Re-run with verbose output (images are extracted automatically)
+skill-seekers create book.epub --verbose
 
 # Some DRM-protected EPUBs cannot be extracted
 # Ensure your EPUB is DRM-free
@@ -1067,8 +1064,8 @@ Error: No messages found in export
 
 ```bash
 # Specify platform explicitly
-skill-seekers create --platform  slack --export-dir ./slack-export
-skill-seekers create --platform  discord --export-dir ./discord-export
+skill-seekers create --chat-export-path ./slack-export --platform slack
+skill-seekers create --chat-export-path ./discord-export --platform discord
 
 # For Slack: Export from Workspace Settings → Import/Export
 # For Discord: Use DiscordChatExporter or similar tool

@@ -16,7 +16,7 @@
 [![Lizenz: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP-Integration](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![Getestet](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![Getestet](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![Projektboard](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI-Version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -88,7 +88,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - **18 Quelltypen** — Dokumentation + GitHub + PDF + Videos + Notebooks + Wikis u. v. m. zu einer Wissensressource vereinen
 - **Einmal aufbereiten, überall exportieren** — Export auf 16 Plattformen ohne erneutes Scrapen
 - **Videos** — Code, Transkripte und strukturiertes Wissen aus YouTube- und lokalen Videos extrahieren
-- **Kampferprobt** — Über 3.445 Tests, 24+ Framework-Presets, produktionsreif
+- **Kampferprobt** — Über 3.700 Tests, 24+ Framework-Presets, produktionsreif
 
 ## Schnellstart
 
@@ -516,7 +516,7 @@ stages:
 - **Caching-System** - Einmal scrapen, sofort neu erstellen
 
 ### Qualitätssicherung
-- **Vollständig getestet** - Über 3.445 Tests mit umfassender Abdeckung
+- **Vollständig getestet** - Über 3.700 Tests mit umfassender Abdeckung
 
 ---
 
@@ -1142,7 +1142,7 @@ skill-seekers sync-config            # Konfigurationsabweichung erkennen
 skill-seekers stream <source>        # Streaming-Ingestion für große Dokumente
 skill-seekers update output/react/   # Inkrementelles Update
 skill-seekers multilang <source>     # Mehrsprachige Skill-Generierung
-skill-seekers quality output/react/  # Qualitätsbewertung
+skill-seekers quality output/react/  # Qualitätsbericht (mit --threshold 7 als Gate: Exit-Code ungleich null unter 7/10)
 ```
 
 ### RAG-Chunking (package)

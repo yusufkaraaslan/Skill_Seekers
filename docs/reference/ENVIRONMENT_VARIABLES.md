@@ -177,10 +177,20 @@ export OPENAI_BASE_URL=https://openrouter.ai/api/v1
 ## LLM Provider Selection
 
 The AI **enhancement** step (`create`, `scan`, `enhance`) supports multiple providers
-through one abstraction. The provider is chosen by the **first** API key found, in this
-order: `ANTHROPIC_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → `MOONSHOT_API_KEY` →
-`GOOGLE_API_KEY` → `OPENAI_API_KEY`. If none is set, it falls back to **LOCAL agent
-mode** (`--agent`, no API key required — uses your Claude Pro / ChatGPT Plus subscription).
+through one abstraction (`AgentClient` — every API enhancement call routes through it).
+The provider is chosen by the **first** API key found, in the order of the
+`API_PROVIDERS` registry in `cli/agent_client.py`: `ANTHROPIC_API_KEY` →
+`ANTHROPIC_AUTH_TOKEN` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`.
+If none is set, it falls back to **LOCAL agent mode** (`--agent`, no API key
+required — uses your Claude Pro / ChatGPT Plus subscription).
+
+To force a provider when the key prefix is ambiguous (Moonshot keys also start
+with `sk-`), set `SKILL_SEEKER_PROVIDER` to `anthropic`, `google`, `openai`,
+`moonshot` (alias: `kimi`):
+
+```bash
+export SKILL_SEEKER_PROVIDER=moonshot
+```
 
 ### Any OpenAI-compatible provider (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM)
 
@@ -382,6 +392,20 @@ export SKILL_SEEKER_AGENT_CMD="my-llm-cli --prompt-file {prompt_file}"
 
 ---
 
+### SKILL_SEEKER_PROVIDER
+
+**Purpose:** Force the API provider when key-prefix detection is ambiguous
+(Moonshot keys also start with `sk-` and would otherwise be classified as OpenAI).
+
+**Values:** `anthropic`, `google`, `openai`, `moonshot` (alias: `kimi`)
+
+**Example:**
+```bash
+export SKILL_SEEKER_PROVIDER=moonshot
+```
+
+---
+
 ### SKILL_SEEKER_MODEL
 
 **Purpose:** Global model override for API-mode enhancement (wins over all
@@ -426,6 +450,21 @@ export SKILL_SEEKER_ENHANCE_TIMEOUT=3600
 
 # No practical limit
 export SKILL_SEEKER_ENHANCE_TIMEOUT=unlimited
+```
+
+---
+
+### SKILL_SEEKER_ENHANCE_ACTIVE
+
+**Purpose:** Recursion guard for LOCAL agent enhancement. Skill Seekers sets
+this to `1` in the environment of every local agent it spawns (all spawn
+paths); when it is already set, LOCAL enhancement refuses to spawn a nested
+agent. You normally never set this yourself — only when wrapping Skill Seekers
+inside another agent and you want enhancement suppressed.
+
+**Example:**
+```bash
+export SKILL_SEEKER_ENHANCE_ACTIVE=1   # suppress nested local-agent spawns
 ```
 
 ---

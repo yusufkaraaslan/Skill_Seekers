@@ -246,7 +246,7 @@ skill-seekers install --config vue --target markdown
 ### 按来源拆分统一配置
 ```bash
 # 将多源配置拆分为单独的配置
-skill-seekers split --config configs/react_unified.json --strategy source
+python -m skill_seekers.cli.split_config configs/react_unified.json --strategy source
 
 # 创建：
 # - react-documentation.json（仅文档）

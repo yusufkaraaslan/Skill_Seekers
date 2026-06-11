@@ -66,8 +66,8 @@ extract_test_examples(directory="tests/", min_confidence=0.7)
 ### Codebase Integration
 
 ```bash
-# Combine with codebase analysis
-skill-seekers scan --directory . --extract-test-examples
+# Test example extraction runs by default during codebase analysis
+skill-seekers create --directory .
 ```
 
 ## Output Formats

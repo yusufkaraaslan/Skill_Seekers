@@ -399,7 +399,7 @@ python3 -c "from openai import OpenAI; print(OpenAI(api_key='sk-proj-...').model
 # Visit: https://platform.openai.com/account/limits
 
 # Reduce file count
-skill-seekers package output/react/ --target openai --max-files 20
+skill-seekers package output/react/ --target openai
 ```
 
 ### Issue: Enhancement fails
@@ -410,7 +410,7 @@ skill-seekers package output/react/ --target openai --max-files 20
 # Visit: https://platform.openai.com/account/billing
 
 # Try with smaller skill
-skill-seekers enhance output/react/ --target openai --max-files 5
+skill-seekers enhance output/react/ --target openai
 
 # Use without enhancement
 skill-seekers package output/react/ --target openai

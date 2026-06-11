@@ -127,17 +127,14 @@ skill-seekers package output/react --target markdown
 **Option C: Local Codebase**
 ```bash
 # Analyze your own codebase
-skill-seekers scan  /path/to/repo --comprehensive
+skill-seekers create /path/to/repo --preset comprehensive
 skill-seekers package output/codebase --target markdown
 ```
 
 **Option D: Multiple Sources**
 ```bash
-# Combine docs + code
-skill-seekers create --config \
-  --docs-config configs/fastapi.json \
-  --github fastapi/fastapi \
-  --name fastapi-complete
+# Combine docs + code via a unified config (sources array with docs + github)
+skill-seekers create --config configs/fastapi-unified.json
 
 skill-seekers package output/fastapi-complete --target markdown
 ```
@@ -171,10 +168,8 @@ cat output/django/references/models.md >> .cursorrules
 
 **Strategy 3: Router Approach**
 ```bash
-# Use router skill (generates high-level overview)
-skill-seekers create --config \
-  --docs-config configs/django.json \
-  --build-router
+# Use a router skill (split large docs, then generate the router)
+python -m skill_seekers.cli.split_config configs/django.json --strategy router
 
 # Result: Lightweight architectural guide
 cat output/django/ARCHITECTURE.md > .cursorrules
@@ -263,7 +258,7 @@ cat output/postgresql-markdown/SKILL.md >> .cursorrules
 
 ```bash
 # Analyze your codebase
-skill-seekers scan  . --comprehensive
+skill-seekers create . --preset comprehensive
 
 # Extract patterns and architecture
 cat output/codebase/SKILL.md > .cursorrules

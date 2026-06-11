@@ -29,8 +29,8 @@ Both analyze reference documentation and extract the best examples and guidance.
 # Option 1: Standalone enhancement
 skill-seekers enhance output/steam-inventory/
 
-# Option 2: Integrated with scraper
-skill-seekers create --config configs/steam-inventory.json --enhance-local
+# Option 2: Integrated with scraper (LOCAL mode is used when no API key is set)
+skill-seekers create --config configs/steam-inventory.json
 ```
 
 **What happens:**
@@ -50,9 +50,9 @@ skill-seekers create --config configs/steam-inventory.json --enhance-local
 
 ### Installation
 
-```bash
-pip3 install anthropic
-```
+The `anthropic` package is a core dependency — it is installed with
+`skill-seekers` automatically. (All API enhancement now routes through the
+shared `AgentClient`, which also supports Gemini, OpenAI, and Moonshot/Kimi keys.)
 
 ### Setup API Key
 
@@ -70,8 +70,8 @@ skill-seekers enhance output/react/ --api-key sk-ant-...
 # Standalone enhancement
 skill-seekers enhance output/steam-inventory/
 
-# Integrated with scraper
-skill-seekers create --config configs/steam-inventory.json --enhance
+# Integrated with scraper (enhancement is on by default; control with --enhance-level 0-3)
+skill-seekers create --config configs/steam-inventory.json --enhance-level 2
 
 # Dry run (see what would be done)
 skill-seekers enhance output/react/ --dry-run
@@ -147,6 +147,7 @@ skill-seekers create --config configs/react.json
 ```
 
 ### "anthropic package not installed"
+Shouldn't happen on a normal install (it's a core dependency), but if it does:
 ```bash
 pip3 install anthropic
 ```

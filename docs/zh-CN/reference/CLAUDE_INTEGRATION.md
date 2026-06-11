@@ -153,7 +153,7 @@ skill-seekers create --config configs/godot.json --fresh
 skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 
 # 3. Generate router skill
 skill-seekers create configs/godot-*.json
@@ -164,13 +164,12 @@ skill-seekers package output/godot*/
 
 ### AI-powered SKILL.md enhancement
 ```bash
-# Option 1: During scraping (API-based, requires ANTHROPIC_API_KEY)
-pip3 install anthropic
+# Option 1: During scraping (API-based when ANTHROPIC_API_KEY is set)
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers create --config configs/react.json --enhance
+skill-seekers create --config configs/react.json --enhance-level 2
 
 # Option 2: During scraping (LOCAL, no API key - uses Claude Code Max)
-skill-seekers create --config configs/react.json --enhance-local
+skill-seekers create --config configs/react.json --enhance-level 2 --agent claude
 
 # Option 3: Standalone after scraping (API-based)
 skill-seekers enhance output/react/
@@ -229,8 +228,8 @@ skill-seekers upload output/react-openai.zip --target openai
 
 # Enhance with platform-specific AI
 skill-seekers enhance output/react/ --target claude     # Sonnet 4
-skill-seekers enhance output/react/ --target gemini --mode api    # Gemini 2.0
-skill-seekers enhance output/react/ --target openai --mode api    # GPT-4o
+skill-seekers enhance output/react/ --target gemini     # Gemini 2.0
+skill-seekers enhance output/react/ --target openai     # GPT-4o
 ```
 
 See [Multi-Platform Guide](UPLOAD_GUIDE.md) and [Feature Matrix](FEATURE_MATRIX.md) for complete details.
@@ -421,7 +420,7 @@ skill-seekers create --config configs/myframework.json
 skill-seekers estimate configs/godot.json
 
 # 2. Split into focused sub-skills
-skill-seekers create configs/godot.json --strategy router --target-pages 5000
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router --target-pages 5000
 
 # Creates: godot-scripting.json, godot-2d.json, godot-3d.json, etc.
 

@@ -59,6 +59,20 @@ skill-seekers-mcp --transport http --port 8765
 skill-seekers-mcp --transport http --host 0.0.0.0 --port 8765
 ```
 
+### 执行模型
+
+工具**在进程内**运行 — 抓取工具通过 `get_converter()`，分析/打包工具
+（`estimate_pages`、`detect_patterns`、`extract_test_examples`、
+`extract_config_patterns`、`build_how_to_guides`、`split_config`、
+`generate_router`、`package_skill`、`upload_skill`）通过与 CLI 相同的
+解析器和 `main()` 函数运行（无子进程）。有两个例外仍按设计使用子进程：
+使用 LOCAL 代理的 `enhance_skill` 和 `install_skill` 的增强步骤
+（长时间运行的真实代理，已防止递归启动）。
+
+共享的领域逻辑（marketplace 发布、配置发布、来源注册表、git 仓库处理、
+分类检测）位于 `skill_seekers.services` 包中；旧的 `skill_seekers.mcp.*`
+导入路径作为向后兼容 shim 保留。
+
 ---
 
 ## 工具类别
@@ -274,7 +288,7 @@ skill-seekers-mcp --transport http --host 0.0.0.0 --port 8765
 | `config` | object/string | 是 | 配置对象或文件路径 |
 | `enhance_level` | number | 否 | 0-3（默认：2） |
 | `max_pages` | number | 否 | 覆盖最大页数 |
-| `dry_run` | boolean | 否 | 仅预览 |
+| `dry_run` | boolean | 否 | 仅预览（统一多源配置同样支持） |
 
 **返回：** 抓取结果
 

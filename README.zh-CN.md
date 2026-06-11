@@ -14,7 +14,7 @@
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 集成](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![测试通过](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![测试通过](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![项目看板](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 版本](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 下载量](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -86,7 +86,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🔄 **17 种来源类型** — 将文档 + GitHub + PDF + 视频 + 笔记本 + Wiki 等合并为一个知识资产
 - 🌐 **一次准备，导出所有目标** — 无需重新抓取即可导出到 16 个平台
 - 🎬 **视频** — 从 YouTube 和本地视频提取代码、字幕和结构化知识
-- ✅ **久经考验** — 3,445+ 测试，24+ 框架预设，生产就绪
+- ✅ **久经考验** — 3,700+ 测试，24+ 框架预设，生产就绪
 
 ## 快速开始
 
@@ -514,7 +514,7 @@ stages:
 - ✅ **缓存系统** - 抓取一次，即时重建
 
 ### ✅ 质量保证
-- ✅ **全面测试** - 3,445+ 测试，全面覆盖
+- ✅ **全面测试** - 3,700+ 测试，全面覆盖
 
 ---
 
@@ -1132,7 +1132,7 @@ skill-seekers sync-config            # 配置漂移检测
 skill-seekers stream <source>        # 大型文档流式摄取
 skill-seekers update output/react/   # 增量更新
 skill-seekers multilang <source>     # 多语言技能生成
-skill-seekers quality output/react/  # 质量评分
+skill-seekers quality output/react/  # 质量报告（添加 --threshold 7 设置门槛：低于 7/10 时非零退出）
 ```
 
 ### RAG 分块（打包）

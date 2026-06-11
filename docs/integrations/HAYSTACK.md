@@ -111,12 +111,10 @@ skill-seekers create --config configs/fastapi.json
 skill-seekers create  tiangolo/fastapi
 
 # PDF documentation
-skill-seekers create --pdf --file docs/manual.pdf
+skill-seekers create --pdf docs/manual.pdf
 
-# Combine multiple sources
-skill-seekers create --config \
-  --docs https://fastapi.tiangolo.com/ \
-  --github tiangolo/fastapi \
+# Combine multiple sources via a unified config (sources array with docs + github)
+skill-seekers create --config configs/fastapi-unified.json \
   --output output/fastapi-complete
 ```
 
@@ -330,17 +328,15 @@ skill-seekers package output/django --target haystack
 ### Multi-Source RAG System
 
 ```bash
-# Combine official docs + GitHub issues + PDF guides
-skill-seekers create --config \
-  --docs https://docs.example.com/ \
-  --github owner/repo \
-  --pdf guides/*.pdf \
+# Combine official docs + GitHub + PDF guides via a unified config
+# (sources array with documentation/github/pdf entries)
+skill-seekers create --config configs/complete-knowledge.json \
   --output output/complete-knowledge
 
 skill-seekers package output/complete-knowledge --target haystack
 
-# Detect conflicts between sources
-skill-seekers detect-conflicts output/complete-knowledge
+# Conflicts between sources are detected automatically during the unified
+# scrape and written to the conflicts report in the skill directory.
 ```
 
 ### Custom Metadata for Filtering
@@ -419,7 +415,7 @@ results = retriever.run(
 skill-seekers create --config configs/fastapi.json
 
 # Later: Update only changed pages
-skill-seekers create --config configs/fastapi.json --skip-existing
+skill-seekers update output/fastapi/ --check-changes
 
 # Merge with existing documents
 python scripts/merge_documents.py \
@@ -484,8 +480,8 @@ for query in test_queries:
 ### 5. Version Your Documentation
 
 ```bash
-# Include version in metadata
-skill-seekers create --config configs/django.json --metadata version=4.2
+# Include version in metadata (set "version" in the config JSON)
+skill-seekers create --config configs/django.json
 
 # Query specific versions
 results = retriever.run(
@@ -683,7 +679,7 @@ jq '.[0]' output/fastapi-haystack.json
 # }
 
 # Regenerate if malformed
-skill-seekers package output/fastapi --target haystack --force
+skill-seekers package output/fastapi --target haystack
 ```
 
 ### Issue: Poor retrieval quality

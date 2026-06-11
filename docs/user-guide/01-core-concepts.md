@@ -293,7 +293,7 @@ skill-seekers create grep.1
 
 **Command:**
 ```bash
-skill-seekers create --space-key  DEV --base-url https://wiki.example.com
+skill-seekers create --conf-base-url https://wiki.example.com --space-key DEV
 ```
 
 ---

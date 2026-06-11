@@ -50,7 +50,7 @@ This script will:
 
 ```bash
 # 1. Run codebase analysis
-skill-seekers codebase \
+skill-seekers create \
   --directory . \
   --output output/skill-seekers \
   --name skill-seekers
@@ -60,9 +60,7 @@ cat scripts/skill_header.md output/skill-seekers/SKILL.md > output/skill-seekers
 mv output/skill-seekers/SKILL_MERGED.md output/skill-seekers/SKILL.md
 
 # 3. Install to Claude Code
-skill-seekers install-agent \
-  --skill-dir output/skill-seekers \
-  --agent-dir ~/.claude/skills/skill-seekers
+skill-seekers install-agent output/skill-seekers --agent claude
 ```
 
 ---
@@ -107,7 +105,7 @@ The bootstrap skill combines three components:
 The `codebase_scraper.py` module analyzes the Skill Seekers source code:
 
 ```bash
-skill-seekers codebase --directory . --output output/skill-seekers
+skill-seekers create --directory . --output output/skill-seekers
 ```
 
 **What Gets Analyzed:**
@@ -394,7 +392,7 @@ with open('output/skill-seekers/SKILL.md') as f:
 **Solution:**
 ```bash
 # Run analysis manually to see error
-skill-seekers codebase --directory . --output output/test
+skill-seekers create --directory . --output output/test
 
 # Common causes:
 # - Missing dependencies: pip install -e ".[all-llms]"
@@ -525,7 +523,7 @@ open htmlcov/index.html
 
 ```bash
 # Run with basic analysis (faster)
-skill-seekers codebase \
+skill-seekers create \
   --directory . \
   --output output/skill-seekers \
   --skip-patterns \
@@ -542,9 +540,7 @@ cat scripts/skill_header.md output/skill-seekers/SKILL.md > merged.md
 ./scripts/bootstrap_skill.sh
 
 # Install to Claude Code
-skill-seekers install-agent \
-  --skill-dir output/skill-seekers \
-  --agent-dir ~/.claude/skills/skill-seekers
+skill-seekers install-agent output/skill-seekers --agent claude
 
 # Now use in Claude Code:
 # "Use the skill-seekers skill to explain how to scrape documentation"

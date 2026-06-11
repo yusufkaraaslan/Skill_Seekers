@@ -120,14 +120,14 @@ Analyze local codebase and extract code knowledge.
 
 **Syntax:**
 ```bash
-skill-seekers scan  DIR [options]
+skill-seekers create DIR [options]
 ```
 
 **Arguments:**
 
 | Name | Required | Description |
 |------|----------|-------------|
-| `--directory DIR` | Yes | Directory to analyze |
+| `DIR` (positional, or `--directory DIR`) | Yes | Directory to analyze |
 | `--output DIR` | No | Output directory (default: output/codebase/) |
 
 **Flags:**
@@ -162,19 +162,19 @@ skill-seekers scan  DIR [options]
 
 ```bash
 # Basic analysis with defaults
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 
 # Quick analysis (1-2 min)
-skill-seekers scan  ./my-project --preset quick
+skill-seekers create ./my-project --preset quick
 
 # Comprehensive analysis with all features
-skill-seekers scan  ./my-project --preset comprehensive
+skill-seekers create ./my-project --preset comprehensive
 
 # Specific languages only
-skill-seekers scan  ./my-project --languages Python,JavaScript
+skill-seekers create ./my-project --languages Python,JavaScript
 
 # Skip heavy features for faster analysis
-skill-seekers scan  ./my-project --skip-dependency-graph --skip-patterns
+skill-seekers create ./my-project --skip-dependency-graph --skip-patterns
 ```
 
 **Exit Codes:**
@@ -231,11 +231,8 @@ skill-seekers create [options]
 
 | Flag | Description |
 |------|-------------|
-| `--export-path PATH` | Path to chat export directory or file |
+| `--chat-export-path PATH` | Path to Slack/Discord export directory |
 | `--platform {slack,discord}` | Chat platform (default: slack) |
-| `--token TOKEN` | API token for authentication |
-| `--channel CHANNEL` | Channel name or ID to extract from |
-| `--max-messages N` | Max messages to extract (default: 10000) |
 | `-n, --name` | Skill name |
 | `--dry-run` | Preview without executing |
 
@@ -243,10 +240,10 @@ skill-seekers create [options]
 
 ```bash
 # From Slack export
-skill-seekers create --chat-export-path -path ./slack-export/ --name team-knowledge
+skill-seekers create --chat-export-path ./slack-export/ --name team-knowledge
 
-# From Discord via API
-skill-seekers create --platform  discord --token $DISCORD_TOKEN --channel general --name discord-docs
+# From Discord export
+skill-seekers create --chat-export-path ./discord-export/ --platform discord --name discord-docs
 ```
 
 ---
@@ -304,24 +301,26 @@ skill-seekers create [options]
 
 | Flag | Description |
 |------|-------------|
-| `--base-url URL` | Confluence instance base URL |
+| `--conf-base-url URL` | Confluence instance base URL |
 | `--space-key KEY` | Confluence space key |
-| `--export-path PATH` | Path to Confluence HTML/XML export directory |
-| `--username USER` | Confluence username |
-| `--token TOKEN` | Confluence API token |
-| `--max-pages N` | Max pages to extract (default: 500) |
+| `--conf-export-path PATH` | Path to Confluence HTML/XML export directory |
+| `--max-pages N` | Max pages to extract |
 | `-n, --name` | Skill name |
 | `--dry-run` | Preview without executing |
+
+Authentication comes from the `CONFLUENCE_USERNAME` / `CONFLUENCE_TOKEN`
+environment variables.
 
 **Examples:**
 
 ```bash
 # Via API
-skill-seekers create --base-url https://wiki.example.com --space-key DEV \
-  --username user@example.com --token $CONFLUENCE_TOKEN --name dev-wiki
+export CONFLUENCE_USERNAME=user@example.com
+export CONFLUENCE_TOKEN=...
+skill-seekers create --conf-base-url https://wiki.example.com --space-key DEV --name dev-wiki
 
 # From export
-skill-seekers create --export-path ./confluence-export/ --name team-docs
+skill-seekers create --conf-export-path ./confluence-export/ --name team-docs
 ```
 
 ---
@@ -525,7 +524,9 @@ skill-seekers estimate [config] [options]
 | Short | Long | Default | Description |
 |-------|------|---------|-------------|
 | | `--all` | | List all available configs |
-| | `--max-discovery` | 1000 | Max pages to discover |
+| `-m` | `--max-discovery` | 1000 | Max pages to discover (`-1` for unlimited) |
+| `-u` | `--unlimited` | | Remove discovery limit (same as `--max-discovery -1`) |
+| `-t` | `--timeout` | 30 | HTTP request timeout in seconds |
 
 **Examples:**
 
@@ -535,6 +536,9 @@ skill-seekers estimate configs/react.json
 
 # Quick estimate (100 pages)
 skill-seekers estimate configs/react.json --max-discovery 100
+
+# Discover everything, slower sites get more time
+skill-seekers estimate configs/react.json --unlimited --timeout 60
 
 # List all available presets
 skill-seekers estimate --all
@@ -773,7 +777,6 @@ skill-seekers create <manpage.1> [options]
 |------|-------------|
 | `--man-names NAMES` | Comma-separated man page names (e.g., `ls,grep,find`) |
 | `--man-path PATH` | Path to directory containing man page files |
-| `--sections SECTIONS` | Comma-separated section numbers (e.g., `1,3,8`) |
 | `-n, --name` | Skill name |
 | `--dry-run` | Preview without executing |
 
@@ -784,7 +787,7 @@ skill-seekers create <manpage.1> [options]
 skill-seekers create --man-names ls,grep,find,awk --name unix-essentials
 
 # From directory
-skill-seekers create --man-path /usr/share/man/man1/ --sections 1 --name section1-cmds
+skill-seekers create --man-path /usr/share/man/man1/ --name section1-cmds
 ```
 
 ---
@@ -793,30 +796,39 @@ skill-seekers create --man-path /usr/share/man/man1/ --sections 1 --name section
 
 Multi-language documentation support.
 
-**Purpose:** Scrape and merge documentation in multiple languages.
+**Purpose:** Detect, report on, and export the languages present in a scraped skill directory.
 
 **Syntax:**
 ```bash
-skill-seekers multilang --config CONFIG [options]
+skill-seekers multilang SKILL_DIRECTORY [options]
 ```
+
+**Arguments:**
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `SKILL_DIRECTORY` | Yes | Skill directory path |
 
 **Flags:**
 
 | Short | Long | Description |
 |-------|------|-------------|
-| `-c` | `--config` | Config JSON file |
-| | `--primary` | Primary language |
-| | `--languages` | Comma-separated languages |
-| | `--merge-strategy` | How to merge: parallel, hierarchical |
+| | `--detect` | Auto-detect languages |
+| | `--report` | Generate translation report |
+| | `--export` | Export by language to specified directory |
+| | `--languages` | Restrict `--detect`/`--export` to these languages (space-separated, e.g. `en es fr`) |
 
 **Examples:**
 
 ```bash
-# Multi-language scrape
-skill-seekers multilang --config configs/react-i18n.json
+# Detect languages in a skill
+skill-seekers multilang output/react/ --detect
 
-# Specific languages
-skill-seekers multilang --config configs/docs.json --languages en,zh,es
+# Translation coverage report
+skill-seekers multilang output/react/ --report
+
+# Export per-language trees, English and Spanish only
+skill-seekers multilang output/react/ --export output/by-lang/ --languages en es
 ```
 
 ---
@@ -838,20 +850,21 @@ skill-seekers create [options]
 |------|-------------|
 | `--database-id ID` | Notion database ID to extract from |
 | `--page-id ID` | Notion page ID to extract from |
-| `--export-path PATH` | Path to Notion export directory |
-| `--token TOKEN` | Notion integration token |
-| `--max-pages N` | Max pages to extract (default: 500) |
+| `--notion-export-path PATH` | Path to Notion export directory |
 | `-n, --name` | Skill name |
 | `--dry-run` | Preview without executing |
+
+The Notion integration token comes from the `NOTION_TOKEN` environment variable.
 
 **Examples:**
 
 ```bash
 # Via API
-skill-seekers create --database-id -id abc123 --token $NOTION_TOKEN --name team-docs
+export NOTION_TOKEN=secret_...
+skill-seekers create --database-id abc123 --name team-docs
 
 # From export
-skill-seekers create --export-path ./notion-export/ --name project-wiki
+skill-seekers create --notion-export-path ./notion-export/ --name project-wiki
 ```
 
 ---
@@ -885,7 +898,7 @@ skill-seekers create <openapi.yaml> [options]
 skill-seekers create api/openapi.yaml --name my-api
 
 # From URL
-skill-seekers create-url https://petstore.swagger.io/v2/swagger.json --name petstore
+skill-seekers create --spec-url https://petstore.swagger.io/v2/swagger.json --name petstore
 ```
 
 ---
@@ -1009,8 +1022,8 @@ skill-seekers create --pdf [options]
 # Direct PDF path
 skill-seekers create --pdf manual.pdf --name product-manual
 
-# With config file
-skill-seekers create --pdf --config configs/manual.json
+# With config file (the config's source carries the PDF path)
+skill-seekers create --config configs/manual.json
 
 # Enable enhancement
 skill-seekers create --pdf manual.pdf --enhance-level 2
@@ -1076,18 +1089,22 @@ skill-seekers quality SKILL_DIRECTORY [options]
 | Short | Long | Description |
 |-------|------|-------------|
 | | `--report` | Generate detailed report |
-| | `--threshold` | Quality threshold (0-10) |
+| | `--output` | Output path for JSON report |
+| | `--threshold` | Quality gate threshold (0-10). When set, exit non-zero if the skill scores below it; without it the command only reports (exit 0) |
 
 **Examples:**
 
 ```bash
-# Basic quality check
+# Basic quality check (report only, always exits 0)
 skill-seekers quality output/react/
 
 # Detailed report
 skill-seekers quality output/react/ --report
 
-# Fail if below threshold
+# Save report as JSON
+skill-seekers quality output/react/ --output quality.json
+
+# Quality gate: fail (non-zero exit) if below threshold
 skill-seekers quality output/react/ --threshold 7.0
 ```
 
@@ -1149,9 +1166,6 @@ skill-seekers create <feed.rss> [options]
 |------|-------------|
 | `--feed-url URL` | URL of the RSS/Atom feed |
 | `--feed-path PATH` | Path to local RSS/Atom feed file |
-| `--follow-links` | Follow article links for full content (default: true) |
-| `--no-follow-links` | Use feed summary only |
-| `--max-articles N` | Max articles to extract (default: 50) |
 | `-n, --name` | Skill name |
 | `--dry-run` | Preview without executing |
 
@@ -1161,8 +1175,8 @@ skill-seekers create <feed.rss> [options]
 # From URL
 skill-seekers create https://blog.example.com/feed.xml --name blog-knowledge
 
-# From local file, summaries only
-skill-seekers create ./feed.rss --no-follow-links --name feed-summaries
+# From local file
+skill-seekers create --feed-path ./feed.rss --name feed-summaries
 ```
 
 ---
@@ -1350,25 +1364,36 @@ Stream large files chunk-by-chunk.
 
 **Syntax:**
 ```bash
-skill-seekers stream --config CONFIG [options]
+skill-seekers stream INPUT_FILE [options]
 ```
+
+**Arguments:**
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `INPUT_FILE` | Yes | Large file to stream |
 
 **Flags:**
 
 | Short | Long | Description |
 |-------|------|-------------|
-| `-c` | `--config` | Config JSON file |
 | | `--streaming-chunk-chars` | Maximum characters per chunk (default: 4000) |
-| | `--output` | Output directory |
+| | `--streaming-overlap-chars` | Chunk overlap in characters (default: 200) |
+| | `--batch-size` | Batch size for processing (default: 100) |
+| | `--checkpoint` | Checkpoint file path |
+| | `--output` | Write the collected chunks as JSON (a `.json` file path, or a directory that will receive `chunks.json`) |
 
 **Examples:**
 
 ```bash
-# Stream large documentation
-skill-seekers stream --config configs/large-docs.json
+# Stream a large documentation file
+skill-seekers stream big-docs.md
 
-# Custom chunk size
-skill-seekers stream --config configs/large-docs.json --streaming-chunk-chars 1000
+# Custom chunk size and overlap
+skill-seekers stream big-docs.md --streaming-chunk-chars 1000 --streaming-overlap-chars 100
+
+# Save the collected chunks
+skill-seekers stream big-docs.md --output chunks.json
 ```
 
 ---
@@ -1396,7 +1421,8 @@ skill-seekers create --config FILE [options]
 |-------|------|---------|-------------|
 | | `--merge-mode` | claude-enhanced | Merge mode: rule-based, claude-enhanced |
 | | `--fresh` | | Clear existing data |
-| | `--dry-run` | | Dry run mode |
+| | `--dry-run` | | Dry run mode (previews sources without writing) |
+| `-o` | `--output` | output/ | Output directory (honored for unified configs; trailing slashes are safe) |
 | | `--enhance-level` | | Override enhancement level (0-3) |
 | | `--api-key` | | Anthropic API key (or ANTHROPIC_API_KEY env) |
 | | `--enhance-workflow` | | Apply workflow preset (can use multiple) |
@@ -1439,28 +1465,35 @@ Update docs without full rescrape.
 
 **Syntax:**
 ```bash
-skill-seekers update --config CONFIG [options]
+skill-seekers update SKILL_DIRECTORY [options]
 ```
+
+**Arguments:**
+
+| Name | Required | Description |
+|------|----------|-------------|
+| `SKILL_DIRECTORY` | Yes | Skill directory to update |
 
 **Flags:**
 
 | Short | Long | Description |
 |-------|------|-------------|
-| `-c` | `--config` | Config JSON file |
-| | `--since` | Update since date |
-| | `--check-only` | Check for updates only |
+| | `--check-changes` | Check for changes only |
+| | `--force` | Force update all files (currently accepted but not yet implemented) |
+| | `--generate-package` | Generate update package at specified path |
+| | `--apply-update` | Apply update package from specified path |
 
 **Examples:**
 
 ```bash
-# Check for updates
-skill-seekers update --config configs/react.json --check-only
+# Check for changes
+skill-seekers update output/react/ --check-changes
 
-# Update since specific date
-skill-seekers update --config configs/react.json --since 2026-01-01
+# Generate an update package
+skill-seekers update output/react/ --generate-package update-pkg.json
 
-# Full update
-skill-seekers update --config configs/react.json
+# Apply an update package
+skill-seekers update output/react/ --apply-update update-pkg.json
 ```
 
 ---
@@ -1654,7 +1687,7 @@ skill-seekers upload output/react-claude.zip
 
 ```bash
 # 1. Analyze codebase
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 
 # 2. Package
 skill-seekers package output/codebase/ --target claude
@@ -1698,12 +1731,14 @@ skill-seekers create https://docs.react.dev/ --preset standard
 
 ## Exit Codes
 
+Standardized in `cli/exit_codes.py`:
+
 | Code | Meaning |
 |------|---------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Warning (e.g., estimation hit limit) |
-| `130` | Interrupted by user (Ctrl+C) |
+| `0` | Success (`EXIT_SUCCESS`) |
+| `1` | General/runtime error (`EXIT_ERROR`) |
+| `2` | Bad arguments / failed validation (`EXIT_VALIDATION`, matches argparse) |
+| `130` | Interrupted by user (Ctrl+C, `EXIT_INTERRUPT`) |
 
 ---
 

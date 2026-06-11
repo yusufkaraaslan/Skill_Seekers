@@ -1,6 +1,11 @@
 # Skill Seekers Architecture
 
-> Updated 2026-04-08 | StarUML project: `docs/UML/skill_seekers.mdj`
+> Updated 2026-06-11 | StarUML project: `docs/UML/skill_seekers.mdj`
+>
+> ⚠️ The PNG exports under `docs/UML/exports/` predate the Grand Unification
+> refactor (see `docs/UNIFICATION_PLAN.md`) and are stale where noted below
+> (CLICore, Scrapers, Enhancement, MCP Server, Parsers). The text in this file
+> is current; regenerate the exports from StarUML when possible.
 
 ## Overview
 
@@ -33,12 +38,12 @@ Skill Seekers converts documentation from 18 source types into production-ready 
 ### CLICore
 ![CLICore](UML/exports/01_cli_core.png)
 
-Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules via `COMMAND_MODULES` dict. `CreateCommand` auto-detects source type via `SourceDetector`, initializes `ExecutionContext` singleton (Pydantic model, single source of truth for all config), then calls `get_converter()` → `converter.run()`. Enhancement runs centrally in CreateCommand after the converter completes.
+Entry point: `skill-seekers` CLI. `CLIDispatcher` maps subcommands to modules via `COMMAND_MODULES` dict (`scan`/`doctor` use the newer `COMMAND_CLASSES` table — `Cls(args).execute()`). Every command's flags are defined exactly once, in the central `SubcommandParser` classes (`cli/parsers/`); module `main(args=None)` standalone paths build their parser FROM the central class, and a drift-guard test (`tests/test_cli_parsers.py`) pins dests/defaults/option-strings equality. Exit codes are standardized in `cli/exit_codes.py` (0/1/2/130). `CreateCommand` auto-detects source type via `SourceDetector`, initializes `ExecutionContext` singleton (Pydantic model, single source of truth for all config; `override()` is contextvars-based, so concurrent threads/async tasks can't clobber each other), then calls `get_converter()` → `converter.run()`. Enhancement runs centrally in CreateCommand after the converter completes. *(PNG export predates the single-definition parsers + exit codes.)*
 
 ### Scrapers
 ![Scrapers](UML/exports/02_scrapers.png)
 
-18 converter classes inheriting `SkillConverter` base class (Template Method: `run()` → `extract()` → `build_skill()`). Factory: `get_converter(source_type, config)` via `CONVERTER_REGISTRY`. No `main()` entry points — all routing through `CreateCommand`. Notable: `GitHubScraper` (3-stream fetcher) + `GitHubToSkillConverter` (builder), `UnifiedScraper` (multi-source orchestrator).
+18 converter classes inheriting `SkillConverter` base class (Template Method: `run()` → `extract()` → `build_skill()`). Factory: `get_converter(source_type, config)` via `CONVERTER_REGISTRY`. No `main()` entry points — all routing through `CreateCommand`. The 9 document scrapers (pdf, word, epub, html, pptx, jupyter, man, rss, chat) inherit the intermediate `DocumentSkillBuilder` base (`cli/document_skill_builder.py`), which owns the shared build-side machinery (categorization, reference/index/SKILL.md generation) with class-attr + hook-method variation points; ports are byte-identical, pinned by golden trees (`tests/golden/phase2/`). `UnifiedScraper` (multi-source orchestrator) routes via a class-level `SOURCE_DISPATCH` table with a shared `_scrape_with_converter()` engine for the 13 mechanical source types, and is factory-constructible: `get_converter("config", {"config_path": ...})`. Notable: `GitHubScraper` (3-stream fetcher) + `GitHubToSkillConverter` and `UnifiedSkillBuilder` (builder strategies, deliberately outside the converter hierarchy). *(PNG export predates DocumentSkillBuilder and SOURCE_DISPATCH.)*
 
 ### Scan
 
@@ -72,7 +77,7 @@ All JSON writes use `_atomic_write_json` (temp file + `os.replace`) so SIGINT mi
 ### Enhancement
 ![Enhancement](UML/exports/05_enhancement.png)
 
-Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentClient`) and `UnifiedEnhancer` (C3.x pipeline enhancers). Each has specialized subclasses for patterns, test examples, guides, and configs. `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`. The `AgentClient` (`cli/agent_client.py`) centralizes all AI invocations, supporting API mode (Anthropic, Moonshot/Kimi, Gemini, OpenAI) and LOCAL mode (Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents).
+`AgentClient` (`cli/agent_client.py`) is the single AI transport: every API-mode enhancement call routes through it (provider/base_url/model overrides, system prompts, temperature, central truncation gate, timeout policy, error classification). The ordered `API_PROVIDERS` registry in agent_client is the one home for provider/env-var/priority data. SKILL.md enhancement flows through `SkillAdaptor._enhance_skill_md_via_client` (adaptors/base.py) with atomic backup saves — the claude/openai/gemini/openai_compatible adaptors' `enhance()` are thin routing declarations. Two enhancer hierarchies remain for C3.x content: `AIEnhancer` (ai_enhancer.py) and `UnifiedEnhancer` (their duplicated thread pools now share `cli/parallel_batches.py`). `WorkflowEngine` orchestrates multi-stage `EnhancementWorkflow`. LOCAL mode (Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents) uses `build_local_agent_command()` and a recursion guard (`SKILL_SEEKER_ENHANCE_ACTIVE`) on every spawn path. *(PNG export predates the AgentClient consolidation.)*
 
 ### Packaging
 ![Packaging](UML/exports/06_packaging.png)
@@ -82,7 +87,7 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentCl
 ### MCP Server
 ![MCP Server](UML/exports/07_mcp_server.png)
 
-`SkillSeekerMCPServer` (FastMCP) with 40 tools in 10 categories. Supporting classes: `SourceManager` (config CRUD), `AgentDetector` (environment detection), `GitConfigRepo` (community configs), `MarketplacePublisher` (publish skills to marketplace repos), `MarketplaceManager` (marketplace registry CRUD), `ConfigPublisher` (push configs to registered source repos).
+`SkillSeekerMCPServer` (FastMCP) with 40 tools in 10 categories. The MCP layer is a thin adapter over the `skill_seekers.services` package, which now owns the shared domain classes: `SourceManager` (config CRUD), `GitConfigRepo` (community configs), `MarketplacePublisher` (publish skills to marketplace repos), `MarketplaceManager` (marketplace registry CRUD), `ConfigPublisher` (push configs to registered source repos + the only `detect_category` implementation). Back-compat shims remain at the old `mcp.*` paths. `AgentDetector` (environment detection) stays in mcp. Nine former subprocess tools (estimate_pages, detect_patterns, extract_test_examples, extract_config_patterns, build_how_to_guides, split_config, generate_router, package_skill, upload_skill) now run in-process via `run_cli_main()` in `mcp/tools/_common.py`; only LOCAL-agent enhancement stays subprocess by design. *(PNG export predates the services layer.)*
 
 ### Sync
 ![Sync](UML/exports/08_sync.png)
@@ -94,7 +99,7 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentCl
 ### Parsers
 ![Parsers](UML/exports/09_parsers.png)
 
-`SubcommandParser` ABC with 18 subclasses — individual scraper parsers removed after Grand Unification (all source types route through `CreateParser`). Remaining: Create, Doctor, Config, Enhance, EnhanceStatus, Package, Upload, Estimate, Install, InstallAgent, TestExamples, Resume, Quality, Workflows, SyncConfig, Stream, Update, Multilang.
+`SubcommandParser` ABC with 18 subclasses — individual scraper parsers removed after Grand Unification (all source types route through `CreateParser`). Remaining: Create, Doctor, Config, Enhance, EnhanceStatus, Package, Upload, Estimate, Install, InstallAgent, TestExamples, Resume, Quality, Workflows, SyncConfig, Stream, Update, Multilang. These central classes are the ONLY place a command's flags are defined — each module's standalone `main(args=None)` builds its parser from the central class, and `TestCentralParserSingleSource` pins the equality.
 
 ### Storage
 ![Storage](UML/exports/10_storage.png)
@@ -123,9 +128,9 @@ Two enhancement hierarchies: `AIEnhancer` (API mode, multi-provider via `AgentCl
 | Strategy + Factory | Adaptors | `SkillAdaptor` ABC + `get_adaptor()` factory + 20+ implementations |
 | Strategy + Factory | Storage | `BaseStorageAdaptor` ABC + S3/GCS/Azure |
 | Strategy + Factory | Embedding | `EmbeddingProvider` ABC + OpenAI/Local |
-| Template Method + Factory | Scrapers | `SkillConverter` base + `get_converter()` factory + 18 converter subclasses |
-| Singleton | Configuration | `ExecutionContext` Pydantic model — single source of truth for all config |
-| Command | CLI | `CLIDispatcher` + `COMMAND_MODULES` lazy dispatch |
+| Template Method + Factory | Scrapers | `SkillConverter` base (+ `DocumentSkillBuilder` intermediate for the 9 document scrapers) + `get_converter()` factory + 18 converter subclasses |
+| Singleton | Configuration | `ExecutionContext` Pydantic model — single source of truth for all config; `override()` layers a contextvars-based override over the base singleton (thread/async safe) |
+| Command | CLI | `CLIDispatcher` + `COMMAND_MODULES` lazy dispatch (+ `COMMAND_CLASSES` for scan/doctor) |
 | Template Method | Pattern Detection | `BasePatternDetector` + 10 GoF detectors |
 | Template Method | Parsers | `SubcommandParser` + 18 subclasses |
 
@@ -149,7 +154,7 @@ Activity diagram showing `source_detector.py` decision tree in correct code orde
 ### MCP Tool Invocation
 ![MCP Invocation](UML/exports/17_mcp_invocation_sequence.png)
 
-MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocation paths: **Path A** (scraping tools) uses `get_converter(type, config).run()` in-process via `_run_converter()` helper, **Path B** (packaging/config tools) uses direct Python imports (`get_adaptor()`, `sync_config()`). Both return TextContent → JSON-RPC.
+MCP Client (Claude Code/Cursor) → FastMCPServer (stdio/HTTP) with two invocation paths: **Path A** (scraping tools) uses `get_converter(type, config).run()` in-process via `_run_converter()` helper, **Path B** (packaging/analysis/config tools) runs in-process via direct Python imports or `run_cli_main()` (`mcp/tools/_common.py`), which parses argv with the command's real parser. Both return TextContent → JSON-RPC. Only LOCAL-agent enhancement (`enhance_skill`, `install_skill`'s enhance step) spawns subprocesses, by design.
 
 ### Enhancement Pipeline
 ![Enhancement Pipeline](UML/exports/18_enhancement_activity.png)

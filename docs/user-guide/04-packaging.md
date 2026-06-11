@@ -346,10 +346,7 @@ skill-seekers upload output/my-skill-weaviate.zip \
 ### Cursor IDE
 
 ```bash
-# Package (actually creates .cursorrules file)
-skill-seekers package output/my-skill/ --target cursor
-
-# Or install directly
+# Install directly into Cursor's skills directory
 skill-seekers install-agent output/my-skill/ --agent cursor
 ```
 
@@ -378,7 +375,8 @@ skill-seekers quality output/my-skill/
 # Detailed report
 skill-seekers quality output/my-skill/ --report
 
-# Set minimum threshold
+# Set minimum threshold (exits non-zero below it; without --threshold the
+# command only reports and always exits 0)
 skill-seekers quality output/my-skill/ --threshold 7.0
 ```
 
